@@ -14,7 +14,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     pre, post = "(", ")"
     children = _get_children(obj)
     if obj isa Function
-        println(io, " "^indent, obj)
+        println(io, " "^indent, isnothing(name) ? "" : "$name = ", obj)
     elseif all(_show_leaflike, children)
         _layer_show(io, obj, indent, name)
     else
@@ -27,7 +27,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
         elseif obj isa Parallel{<:Any,<:NamedTuple}
             _big_show(io, obj.connection, indent + 4)
             for k in Base.keys(obj)
-                _big_show(io, obj[k], indent + 4, k)
+                _big_show(io, obj.layers[k], indent + 4, k)
             end
         else
             for c in children
@@ -63,7 +63,7 @@ function _get_children(e::T) where {T<:AbstractExplicitLayer}
     return Tuple(children)
 end
 
-for T in [:Conv, :Dense, :BatchNorm]
+for T in [:Conv, :Dense, :BatchNorm, :MaxPool, :MeanPool]
     @eval function Base.show(io::IO, ::MIME"text/plain", x::$T)
         if !get(io, :compact, false)
             _layer_show(io, x)

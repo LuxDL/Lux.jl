@@ -1,6 +1,6 @@
 module ExplicitFluxLayers
 
-using Statistics, Zygote, NNlib, CUDA, Random, Setfield
+using Statistics, NNlib, CUDA, Random, Setfield, ChainRulesCore
 using Flux: Flux
 import Flux:
     zeros32,
@@ -17,10 +17,10 @@ import Flux:
 # Base Type
 abstract type AbstractExplicitLayer end
 
-initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-initialparameters(l::AbstractExplicitLayer) = initialparameters(Random.GLOBAL_RNG, l)
-initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-initialstates(l::AbstractExplicitLayer) = initialstates(Random.GLOBAL_RNG, l)
+initialparameters(::AbstractRNG, ::Any) = NamedTuple()
+initialparameters(l) = initialparameters(Random.GLOBAL_RNG, l)
+initialstates(::AbstractRNG, ::Any) = NamedTuple()
+initialstates(l) = initialstates(Random.GLOBAL_RNG, l)
 
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
     return NamedTuple{Tuple(collect(keys(l)))}(initialparameters.((rng,), values(l)))
@@ -76,6 +76,7 @@ include("chain.jl")
 include("batchnorm.jl")
 include("linear.jl")
 include("convolution.jl")
+include("pooling.jl")
 include("weightnorm.jl")
 include("basics.jl")
 

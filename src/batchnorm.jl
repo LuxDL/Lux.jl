@@ -18,7 +18,7 @@ end
 function initialparameters(rng::AbstractRNG, l::BatchNorm)
     return l.affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
 end
-initialstates(::AbstractRNG, l::BatchNorm) = (μ=zeros32(l.chs), σ²=ones32(l.chs), training=true)
+initialstates(::AbstractRNG, l::BatchNorm) = (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto)
 
 parameterlength(l::BatchNorm) = l.affine ? (l.chs * 2) : 0
 statelength(l::BatchNorm) = 2 * l.chs + 1
@@ -32,7 +32,7 @@ end
 
 function batchnorm_fallback(BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple) where {T,N}
     @assert size(x, ndims(x) - 1) == BN.chs
-    @assert !states.training || size(x, ndims(x)) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
+    @assert !(states.training == :auto ? istraining() : states.training) || size(x, ndims(x)) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
     reduce_dims = [1:(N - 2); N]
     affine_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
     return norm_forward(BN, ps, states, x, reduce_dims, affine_shape)

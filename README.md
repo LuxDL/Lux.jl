@@ -67,6 +67,22 @@ st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
+## Flux --> ExplicitFluxLayers
+
+Call `transform` on the flux model. This will work for common cases, but all cases are not yet covered.
+
+```julia
+using ExplicitFluxLayers, Random, Metalhead
+
+x = rand(Float32, 224, 224, 3, 1)
+
+model = ExplicitFluxLayers.transform(ResNet18().layers[1])
+
+ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
+
+ExplicitFluxLayers.apply(model, x, ps, st)
+```
+
 ## Currently Implemented Explicit Layers (none of these are exported)
 
 These layers have the same API as their Flux counterparts.
@@ -78,3 +94,4 @@ These layers have the same API as their Flux counterparts.
 * `WeightNorm`
 * `Parallel`
 * `SkipConnection`
+* `MaxPool`, `MeanPool`

@@ -5,7 +5,7 @@ end
 (r::ReshapeLayer)(x::AbstractArray, ::NamedTuple, st::NamedTuple) = reshape(x, r.dims..., :), st
 
 
-struct FlattenLayer <:AbstractExplicitLayer end
+struct FlattenLayer <: AbstractExplicitLayer end
 
 (f::FlattenLayer)(x::AbstractArray{T,N}, ::NamedTuple, st::NamedTuple) where {T,N} = reshape(x, :, size(x, N)), st
 
@@ -21,6 +21,13 @@ end
 struct NoOpLayer <: AbstractExplicitLayer end
 
 (noop::NoOpLayer)(x, ::NamedTuple, st::NamedTuple) = x, st
+
+
+struct WrappedFunction{F} <: AbstractExplicitLayer
+    func::F
+end
+
+(wf::WrappedFunction)(x, ::NamedTuple, st::NamedTuple) = wf.func(x), st
 
 
 struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitLayer
