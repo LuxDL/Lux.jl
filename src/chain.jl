@@ -1,4 +1,4 @@
-struct Chain{T} <: ExplicitLayer
+struct Chain{T} <: AbstractExplicitLayer
     layers::T
     function Chain(xs...)
         length(xs) == 1 && return first(xs)

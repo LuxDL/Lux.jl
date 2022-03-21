@@ -15,20 +15,20 @@ import Flux:
     reshape_cell_output
 
 # Base Type
-abstract type ExplicitLayer end
+abstract type AbstractExplicitLayer end
 
-initialparameters(::AbstractRNG, ::ExplicitLayer) = NamedTuple()
-initialparameters(l::ExplicitLayer) = initialparameters(Random.GLOBAL_RNG, l)
-initialstates(::AbstractRNG, ::ExplicitLayer) = NamedTuple()
-initialstates(l::ExplicitLayer) = initialstates(Random.GLOBAL_RNG, l)
+initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
+initialparameters(l::AbstractExplicitLayer) = initialparameters(Random.GLOBAL_RNG, l)
+initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
+initialstates(l::AbstractExplicitLayer) = initialstates(Random.GLOBAL_RNG, l)
 
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
     return NamedTuple{Tuple(collect(keys(l)))}(initialparameters.((rng,), values(l)))
 end
 initialstates(rng::AbstractRNG, l::NamedTuple) = NamedTuple{Tuple(collect(keys(l)))}(initialstates.((rng,), values(l)))
 
-setup(rng::AbstractRNG, l::ExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
-setup(l::ExplicitLayer) = setup(Random.GLOBAL_RNG, l)
+setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
+setup(l::AbstractExplicitLayer) = setup(Random.GLOBAL_RNG, l)
 
 nestedtupleofarrayslength(t::Any) = 1
 nestedtupleofarrayslength(t::AbstractArray) = length(t)
@@ -37,12 +37,12 @@ function nestedtupleofarrayslength(t::Union{NamedTuple,Tuple})
     return sum(nestedtupleofarrayslength, t)
 end
 
-parameterlength(l::ExplicitLayer) = parameterlength(initialparameters(l))
-statelength(l::ExplicitLayer) = statelength(initialstates(l))
+parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(l))
+statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
 parameterlength(ps::NamedTuple) = nestedtupleofarrayslength(ps)
 statelength(st::NamedTuple) = nestedtupleofarrayslength(st)
 
-apply(model::ExplicitLayer, x, ps::NamedTuple, s::NamedTuple) = model(x, ps, s)
+apply(model::AbstractExplicitLayer, x, ps::NamedTuple, s::NamedTuple) = model(x, ps, s)
 
 # Test Mode
 function testmode(states::NamedTuple, mode::Bool=true)
@@ -59,7 +59,7 @@ end
 
 testmode(x::Any, mode::Bool=true) = x
 
-testmode(m::ExplicitLayer, mode::Bool=true) = testmode(initialstates(m), mode)
+testmode(m::AbstractExplicitLayer, mode::Bool=true) = testmode(initialstates(m), mode)
 
 trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
 

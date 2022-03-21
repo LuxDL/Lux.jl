@@ -1,16 +1,16 @@
-struct ReshapeLayer{N} <: ExplicitLayer
+struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N,Int}
 end
 
 (r::ReshapeLayer)(x::AbstractArray, ::NamedTuple, st::NamedTuple) = reshape(x, r.dims..., :), st
 
 
-struct FlattenLayer <:ExplicitLayer end
+struct FlattenLayer <:AbstractExplicitLayer end
 
 (f::FlattenLayer)(x::AbstractArray{T,N}, ::NamedTuple, st::NamedTuple) where {T,N} = reshape(x, :, size(x, N)), st
 
 
-struct SelectDim{I} <: ExplicitLayer
+struct SelectDim{I} <: AbstractExplicitLayer
     dim::Int
     i::I
 end
@@ -18,12 +18,12 @@ end
 (s::SelectDim)(x, ::NamedTuple, st::NamedTuple) = selectdim(x, s.dim, s.i), st
 
 
-struct NoOpLayer <: ExplicitLayer end
+struct NoOpLayer <: AbstractExplicitLayer end
 
 (noop::NoOpLayer)(x, ::NamedTuple, st::NamedTuple) = x, st
 
 
-struct SkipConnection{T<:ExplicitLayer,F} <: ExplicitLayer
+struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitLayer
     layers::T
     connection::F
 end
@@ -44,7 +44,7 @@ function Base.show(io::IO, b::SkipConnection)
 end
 
 
-struct Parallel{F, T<:NamedTuple} <: ExplicitLayer
+struct Parallel{F, T<:NamedTuple} <: AbstractExplicitLayer
     connection::F
     layers::T
 end

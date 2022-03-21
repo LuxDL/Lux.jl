@@ -1,4 +1,4 @@
-struct BatchNorm{F1,F2,F3,N} <: ExplicitLayer
+struct BatchNorm{F1,F2,F3,N} <: AbstractExplicitLayer
     λ::F1
     ϵ::N
     momentum::N

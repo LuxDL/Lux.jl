@@ -1,4 +1,4 @@
-struct Dense{bias,F1,F2,F3} <: ExplicitLayer
+struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     λ::F1
     in_dims::Int
     out_dims::Int

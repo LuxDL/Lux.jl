@@ -44,7 +44,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
 end
 
 _show_leaflike(x) = Flux.Functors.isleaf(x)  # mostly follow Functors, except for:
-_show_leaflike(x::ExplicitLayer) = false
+_show_leaflike(x::AbstractExplicitLayer) = false
 _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
@@ -52,11 +52,11 @@ _get_children(p::Parallel) = (p.connection, p.layers...)
 _get_children(c::Chain) = c.layers
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(::Any) = ()
-function _get_children(e::T) where {T<:ExplicitLayer}
+function _get_children(e::T) where {T<:AbstractExplicitLayer}
     children = []
     for f ∈ fieldnames(T)
         x = getfield(e, f)
-        if supertype(typeof(x)) == ExplicitLayer
+        if supertype(typeof(x)) == AbstractExplicitLayer
             append!(children, x)
         end
     end

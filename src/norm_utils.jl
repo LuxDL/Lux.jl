@@ -25,7 +25,7 @@ function get_stats(::Val{true}, active::Val{true}, μ, σ², x::AbstractArray{T,
 end
 
 function norm_forward(
-    l::ExplicitLayer, ps::NamedTuple, states::NamedTuple, x::AbstractArray{T,N}, reduce_dims, affine_shape
+    l::AbstractExplicitLayer, ps::NamedTuple, states::NamedTuple, x::AbstractArray{T,N}, reduce_dims, affine_shape
 ) where {T,N}
     μ, σ² = get_stats(Val(l.track_stats), Val(states.training), states.μ, states.σ², x, reduce_dims, l.momentum)
     if l.affine

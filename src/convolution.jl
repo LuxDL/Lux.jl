@@ -1,4 +1,4 @@
-struct Conv{N,M,F1,F2} <: ExplicitLayer
+struct Conv{N,M,F1,F2} <: AbstractExplicitLayer
     λ::F1
     in_chs::Int
     out_chs::Int

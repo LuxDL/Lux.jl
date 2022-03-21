@@ -1,9 +1,9 @@
-struct WeightNorm{which_params,L<:ExplicitLayer,D} <: ExplicitLayer
+struct WeightNorm{which_params,L<:AbstractExplicitLayer,D} <: AbstractExplicitLayer
     layer::L
     dims::D
 end
 
-function WeightNorm(layer::ExplicitLayer, which_params::NTuple{N,Symbol}, dims::Union{Tuple,Nothing}=nothing) where {N}
+function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N,Symbol}, dims::Union{Tuple,Nothing}=nothing) where {N}
     return WeightNorm{Val{which_params},typeof(layer),typeof(dims)}(layer, dims)
 end
 
