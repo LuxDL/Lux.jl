@@ -1,6 +1,6 @@
 name = "ExplicitFluxLayers"
 uuid = "aafdbc67-5cd5-409a-82a0-ebc47ac8091e"
-authors = ["Avik Pal <avikpal@iitk.ac.in> and contributors"]
+authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "0.1.0"
 
 [deps]
@@ -13,6 +13,11 @@ Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
+CUDA = "3"
+ChainRulesCore = "1"
+Flux = "0.12"
+NNlib = "0.8"
+Setfield = "0.8"
 julia = "1"
 
 [extras]

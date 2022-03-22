@@ -1,6 +1,6 @@
 # ExplicitFluxLayers
 
-Flux by default relies on storing parameters and states in its model structs. `AbstractExplicitLayers` is an initial prototype
+Flux by default relies on storing parameters and states in its model structs. `ExplicitFluxLayers` is an initial prototype
 to make Flux explicit-parameter first.
 
 An `AbstractExplicitLayer` is simply the minimal set of fixed attributes required to define a layer, i.e. an `AbstractExplicitLayer` is
@@ -33,6 +33,12 @@ None of these attributes of BatchNorm change over time. Next each layer needs to
 
 Additionally each AbstractExplicitLayer must return a Tuple of length 2 with the first element being the computed result and the
 second element being the new state.
+
+## Installation
+
+```julia
+] add ExplicitFluxLayers
+```
 
 ## Usage
 
@@ -83,7 +89,7 @@ ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
 ExplicitFluxLayers.apply(model, x, ps, st)
 ```
 
-## Currently Implemented Explicit Layers (none of these are exported)
+## Implemented Layers
 
 These layers have the same API as their Flux counterparts.
 
@@ -95,3 +101,10 @@ These layers have the same API as their Flux counterparts.
 * `Parallel`
 * `SkipConnection`
 * `MaxPool`, `MeanPool`
+* `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
+
+## TODOs
+
+- [ ] Support Recurrent Neural Networks
+- [ ] Add wider support for Flux Layers
+- [ ] Port tests over from Flux
