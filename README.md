@@ -40,7 +40,8 @@ second element being the new state.
 ] add ExplicitFluxLayers
 ```
 
-## Usage
+## Examples
+### Basic Usage
 
 ```julia
 using ExplicitFluxLayers, Random, Flux, Optimisers
@@ -73,7 +74,7 @@ st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
-## Flux --> ExplicitFluxLayers
+### Automatic Conversion of Flux Models to ExplicitFluxLayers
 
 Call `transform` on the flux model. This will work for common cases, but all cases are not yet covered.
 
@@ -87,6 +88,50 @@ model = ExplicitFluxLayers.transform(ResNet18().layers[1])
 ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
 
 ExplicitFluxLayers.apply(model, x, ps, st)
+```
+
+### Manipulating the Parameter/State Trees
+
+We recommend using `Functors.jl` to manipulate the data structures storing the parameter and state
+variables
+
+```julia
+using Functors, ExplicitFluxLayers, Flux, Optimisers, Random
+
+# Construct the layer
+model = ExplicitFluxLayers.Chain(
+    ExplicitFluxLayers.BatchNorm(128),
+    ExplicitFluxLayers.Dense(128, 256, tanh),
+    ExplicitFluxLayers.BatchNorm(256),
+    ExplicitFluxLayers.Chain(
+        ExplicitFluxLayers.Dense(256, 1, tanh),
+        ExplicitFluxLayers.Dense(1, 10)
+    )
+)
+
+# Parameter and State Variables
+ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
+
+# Let's train the Dense Layers in FP16 while keeping the BatchNorm in FP32
+# The easiest way is the just pass the initW keyword but let's try the
+# fancier approach
+## We know that Dense Layer has (:weight, :bias) and each of them should be
+## an AbstractArray
+should_transform(::Any) = false
+should_transform(x::NamedTuple) = all(in.((:weight, :bias), (keys(x),))) && all(Functors.isleaf, values(x))
+
+fp16(x) = fmap(y -> Float16.(y), x)
+
+ps = fmap(fp16, ps, exclude=should_transform)
+
+## Let's run the model
+x = rand(Float32, 128, 2);
+ExplicitFluxLayers.apply(model, x, ps, st)
+
+### NOTE: That the gradient for Dense Layers will not be in Float16
+###       The updates can be made in Float32 and then converted to
+###       FP16
+gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)
 ```
 
 ## Implemented Layers
