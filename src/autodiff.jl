@@ -11,12 +11,6 @@ ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
 ChainRulesCore.@non_differentiable _update_stats!(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
 
-function ChainRulesCore.rrule(::typeof(Val), x)
-    valx = Val(x)
-    val_pullback(Δ) = NoTangent(), NoTangent()
-    return valx, val_pullback
-end
-
 # Sparse Arrays
 _project(x, y) = x .* one.(y)
 
@@ -32,5 +26,3 @@ function ChainRulesCore.rrule(
     end
     return Z, sparse_matmul_pullback
 end
-
-

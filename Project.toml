@@ -1,7 +1,7 @@
 name = "ExplicitFluxLayers"
 uuid = "aafdbc67-5cd5-409a-82a0-ebc47ac8091e"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"

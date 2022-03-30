@@ -90,8 +90,9 @@ function batchnorm_fallback(BN::BatchNorm, x::AbstractArray{T}, ps::NamedTuple, 
     return norm_forward(BN, ps, states, x, reduce_dims, affine_shape)
 end
 
-function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple) where {T}
-    return vec(batchnorm_fallback(BN, reshape(x, :, 1), ps, states)), states
+function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
+    y, states = BN(reshape(x, :, 1), ps, states)
+    return vec(y), states
 end
 
 function (BN::BatchNorm)(x::AbstractArray{T}, ps::NamedTuple, states::NamedTuple) where {T}
@@ -111,8 +112,8 @@ function (BN::BatchNorm)(
                 states.μ,
                 states.σ²,
                 BN.momentum;
-                alpha=1,
-                beta=0,
+                alpha=true,
+                beta=false,
                 eps=BN.ϵ,
                 training=(states.training == :auto ? istraining() : states.training),
             ),
