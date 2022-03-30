@@ -13,7 +13,7 @@ ChainRulesCore.@non_differentiable _update_stats!(::Any, ::Any, ::Any, ::Any, ::
 
 function ChainRulesCore.rrule(::typeof(Val), x)
     valx = Val(x)
-    val_pullback(::Val{Δ}) where {Δ} = NoTangent(), Δ
+    val_pullback(Δ) = NoTangent(), NoTangent()
     return valx, val_pullback
 end
 

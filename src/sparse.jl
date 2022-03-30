@@ -48,7 +48,7 @@ end
 
 getindex(m::EFLSparseMatrixCSC, i::Integer, j::Integer) = getindex(m.mat, i, j)
 
-function Base.show(io::IO, ::MIME"text/plain", m::EFLSparseMatrixCSC)
+function show(io::IO, ::MIME"text/plain", m::EFLSparseMatrixCSC)
     xnnz = length(nonzeros(m))
     print(io, length(m), "-element ", typeof(m), " with ", xnnz, " stored ", xnnz == 1 ? "entry" : "entries")
     if xnnz != 0
@@ -57,7 +57,10 @@ function Base.show(io::IO, ::MIME"text/plain", m::EFLSparseMatrixCSC)
     end
 end
 
+show(io::IO, m::EFLSparseMatrixCSC) = show(io, m.mat)
+
 cu(m::EFLSparseMatrixCSC) = EFLSparseMatrixCSC(cu(m.mat))
+Flux.cpu(m::EFLSparseMatrixCSC) = EFLSparseMatrixCSC(Flux.cpu(m.mat))
 
 zero(m::EFLSparseMatrixCSC) = m .* zero(eltype(m))
 
