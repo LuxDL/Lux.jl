@@ -243,4 +243,3 @@ end
 function (d::Dense{true})(x::AbstractVector, ps::NamedTuple, st::NamedTuple)
     return (NNlib.fast_act(d.λ, x)).(ps.weight * x .+ vec(ps.bias)), st
 end
-

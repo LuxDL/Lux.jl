@@ -32,6 +32,9 @@ include("transform.jl")
 # Pretty Printing
 include("layers/display.jl")
 
+# Sparse Layers
+include("sparse.jl")
+
 # AutoDiff
 include("autodiff.jl")
 
