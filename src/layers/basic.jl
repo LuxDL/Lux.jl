@@ -243,3 +243,39 @@ end
 function (d::Dense{true})(x::AbstractVector, ps::NamedTuple, st::NamedTuple)
     return (NNlib.fast_act(d.λ, x)).(ps.weight * x .+ vec(ps.bias)), st
 end
+
+
+## Diagonal
+struct Diagonal{bias,F1,F2,F3} <: AbstractExplicitLayer
+    λ::F1
+    dims::Int
+    initW::F2
+    initb::F3
+end
+
+function Base.show(io::IO, d::Diagonal)
+    print(io, "Diagonal($(d.dims)")
+    (d.λ == identity) || print(io, ", $(d.λ)")
+    return print(io, ")")
+end
+
+function Diagonal(dims, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+    return Diagonal{bias,typeof(λ),typeof(initW),typeof(initb)}(λ, dims, initW, initb)
+end
+
+function initialparameters(rng::AbstractRNG, d::Diagonal{true})
+    return (weight=d.initW(rng, d.dims), bias=d.initb(rng, d.dims))
+end
+initialparameters(rng::AbstractRNG, d::Diagonal{false}) = (weight=d.initW(rng, d.dims),)
+
+parameterlength(d::Diagonal{true}) = 2 * d.dims
+parameterlength(d::Diagonal{false}) = d.dims
+statelength(d::Diagonal) = 0
+
+function (d::Diagonal{false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
+    return (NNlib.fast_act(d.λ, x)).(ps.weight .* x), st
+end
+
+function (d::Diagonal{true})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
+    return (NNlib.fast_act(d.λ, x)).(ps.weight .* x .+ ps.bias), st
+end

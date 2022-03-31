@@ -1,7 +1,23 @@
 using SparseArrays
 using CUDA.CUSPARSE
 
-import Base: getindex, size, show, +, -, *, /, zero, display, broadcast, broadcasted, materialize, getfield, convert, transpose, adjoint
+import Base:
+    getindex,
+    size,
+    show,
+    +,
+    -,
+    *,
+    /,
+    zero,
+    display,
+    broadcast,
+    broadcasted,
+    materialize,
+    getfield,
+    convert,
+    transpose,
+    adjoint
 import SparseArrays: AbstractSparseArray, AbstractSparseMatrixCSC, _checkbuffers, getcolptr, rowvals, nonzeros
 import CUDA: cu
 # We have a lot of flexibility for sparse matrices here since we can arbitrarily drop
