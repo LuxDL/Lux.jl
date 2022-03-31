@@ -1,6 +1,6 @@
 module ExplicitFluxLayers
 
-using Statistics, NNlib, CUDA, Random, Setfield, ChainRulesCore, Functors
+using Statistics, NNlib, CUDA, Random, Setfield, ChainRulesCore
 import NNlibCUDA: batchnorm
 import Flux
 import Flux:
