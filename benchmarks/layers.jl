@@ -56,12 +56,12 @@ df = postprocess(btimes)
 df[!, "log₂(Batch Size)"] = Int64.(log2.(df[!, "Batch Size"]))
 df[!, "log₂(Timing (in s))"] = log2.(df[!, "Timing (in s)"])
 
-save("layers.png")(@vlplot(
-    mark = {:line, point = {filled = false, fill = :white}},
+p = @vlplot(
+    :point,
     x = Symbol("log₂(Batch Size)"),
     y = Symbol("log₂(Timing (in s))"),
     color = :Framework,
     row = :Device,
     column = :Pass,
-    size = :Description
-)(df))
+    shape = :Description,
+)(df)
