@@ -36,11 +36,13 @@ end
 
 parameterlength(c::Conv) = prod(c.kernel_size) * c.in_chs * c.out_chs + (c.bias ? c.out_chs : 0)
 
-function (c::Conv)(x::AbstractArray, ps::NamedTuple, st::NamedTuple)
+Base.@pure function (c::Conv)(x::AbstractArray, ps::NamedTuple, st::NamedTuple)
     λ = NNlib.fast_act(c.λ, x)
     cdims = DenseConvDims(x, ps.weight; stride = c.stride, padding = c.pad, dilation = c.dilation, groups = c.groups)
     if c.bias
-        return conv_bias_act(x, ps.weight, cdims, ps.bias, λ), st
+        return λ.(conv(x, ps.weight, cdims) .+ ps.bias), st
+        # FIXME: Needs https://github.com/FluxML/NNlibCUDA.jl/pull/45 to be merged
+        # return conv_bias_act(x, ps.weight, cdims, ps.bias, λ), st
     else
         return λ.(conv(x, ps.weight, cdims)), st
     end
@@ -52,7 +54,7 @@ function Base.show(io::IO, l::Conv)
     _print_conv_opt(io, l)
     print(io, ")")
 end
-  
+
 function _print_conv_opt(io::IO, l)
     l.λ == identity || print(io, ", ", l.λ)
     all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
@@ -67,14 +69,14 @@ struct MaxPool{N,M} <: AbstractExplicitLayer
     pad::NTuple{M,Int}
     stride::NTuple{N,Int}
 end
-  
+
 function MaxPool(k::NTuple{N,Integer}; pad = 0, stride = k) where N
     stride = expand(Val(N), stride)
     pad = calc_padding(MaxPool, pad, k, 1, stride)
     return MaxPool(k, pad, stride)
 end
-  
-function (m::MaxPool)(x, ::NamedTuple, st::NamedTuple)
+
+Base.@pure function (m::MaxPool)(x, ::NamedTuple, st::NamedTuple)
     pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
     return maxpool(x, pdims), st
 end
@@ -92,18 +94,18 @@ struct MeanPool{N,M} <: AbstractExplicitLayer
     pad::NTuple{M,Int}
     stride::NTuple{N,Int}
 end
-  
+
 function MeanPool(k::NTuple{N,Integer}; pad = 0, stride = k) where N
     stride = expand(Val(N), stride)
     pad = calc_padding(MeanPool, pad, k, 1, stride)
     return MeanPool(k, pad, stride)
 end
-  
-function (m::MeanPool)(x, ::NamedTuple, st::NamedTuple)
+
+Base.@pure function (m::MeanPool)(x, ::NamedTuple, st::NamedTuple)
     pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
     return meanpool(x, pdims), st
 end
-  
+
 function Base.show(io::IO, m::MeanPool)
     print(io, "MeanPool(", m.k)
     all(==(0), m.pad) || print(io, ", pad=", _maybetuple_string(m.pad))

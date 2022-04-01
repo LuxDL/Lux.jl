@@ -26,7 +26,7 @@ statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
 parameterlength(ps::NamedTuple) = nestedtupleofarrayslength(ps)
 statelength(st::NamedTuple) = nestedtupleofarrayslength(st)
 
-apply(model::AbstractExplicitLayer, x, ps::NamedTuple, s::NamedTuple) = model(x, ps, s)
+apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple) = model(x, ps, st)
 
 # Test Mode
 function testmode(states::NamedTuple, mode::Bool=true)

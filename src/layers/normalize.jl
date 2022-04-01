@@ -153,7 +153,7 @@ end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
-function (wn::WeightNorm)(x, ps::NamedTuple, s::NamedTuple)
+Base.@pure function (wn::WeightNorm)(x, ps::NamedTuple, s::NamedTuple)
     _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
     return wn.layer(x, (; _ps..., ps.unnormalized...), s)
 end
