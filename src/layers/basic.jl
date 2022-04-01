@@ -231,9 +231,7 @@ end
 parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
-Base.@pure function (d::Dense{bias})(
-    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
-) where {bias,T,N}
+Base.@pure function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
     if bias
         b = N == 1 ? ps.bias[:] : b = ps.bias
         return d.λ.(fast_matmul(ps.weight, x) .+ b), st
@@ -270,9 +268,7 @@ parameterlength(d::Diagonal{true}) = 2 * d.dims
 parameterlength(d::Diagonal{false}) = d.dims
 statelength(d::Diagonal) = 0
 
-Base.@pure function (d::Diagonal{bias})(
-    x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple
-) where {bias}
+Base.@pure function (d::Diagonal{bias})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {bias}
     if bias
         return d.λ.(ps.weight .* x .+ ps.bias), st
     else

@@ -144,8 +144,17 @@ These layers have the same API as their Flux counterparts.
 * `BatchNorm`, `WeightNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 
+## Benchmarks
+
+This is mostly WIP. For some preliminary benchmarks check `benchmarks/` directory.
+
 ## TODOs
 
 - [ ] Support Recurrent Neural Networks
 - [ ] Add wider support for Flux Layers
+  - [ ] Pooling -> AdaptiveMaxPool, AdaptiveMeanPool, GlobalMaxPool, GlobalMeanPool
+  - [ ] Convolution --> ConvTranspose, CrossCor
+  - [ ] Upsampling --> Upsample, PixelShuffle
+  - [ ] General Purpose --> Maxout, Bilinear, Embedding, Dropout, AlphaDropout
+  - [ ] Normalization --> LayerNorm, InstanceNorm, GroupNorm
 - [ ] Port tests over from Flux

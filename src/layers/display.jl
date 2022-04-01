@@ -54,7 +54,7 @@ _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(::Any) = ()
 function _get_children(e::T) where {T<:AbstractExplicitLayer}
     children = []
-    for f ∈ fieldnames(T)
+    for f in fieldnames(T)
         x = getfield(e, f)
         if supertype(typeof(x)) == AbstractExplicitLayer
             append!(children, x)
@@ -103,14 +103,7 @@ function _big_finale(io::IO, m)
             printstyled(io, " "^08, "# Total: ", cnt, " trainable arrays, "; color=:light_black)
             println(io, pars, " parameters,")
             printstyled(
-                io,
-                " "^10,
-                "# plus ",
-                noncnt,
-                " non-trainable, ",
-                nonparam,
-                " states, summarysize ";
-                color=:light_black,
+                io, " "^10, "# plus ", noncnt, " non-trainable, ", nonparam, " states, summarysize "; color=:light_black
             )
             print(io, bytes, ".")
         else
