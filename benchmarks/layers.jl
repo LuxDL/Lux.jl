@@ -14,8 +14,9 @@ run_benchmark_flux!(Dense(784, 1024; bias=false), input_size, sum; model_name, b
 run_benchmark_efl!(ExplicitFluxLayers.Dense(784, 1024; bias=false), input_size, sum ∘ first; model_name, btimes)
 
 # Processing the data
-function postprocess(btimes)
-    df = DataFrame(
+function postprocess(
+    btimes;
+    df=DataFrame(
         "Framework" => String[],
         "Layer" => String[],
         "Description" => String[],
@@ -23,7 +24,8 @@ function postprocess(btimes)
         "Pass" => String[],
         "Batch Size" => Int[],
         "Timing (in s)" => Float64[],
-    )
+    ),
+)
     for framework in keys(btimes)
         for layer_desc in keys(btimes[framework])
             layer, desc = split(layer_desc, " "; limit=2)
@@ -36,7 +38,7 @@ function postprocess(btimes)
                         (
                             framework,
                             layer,
-                            desc,
+                            layer_desc,
                             device,
                             pass,
                             bsize,
@@ -50,20 +52,16 @@ function postprocess(btimes)
     return df
 end
 
-# FIXME: Fuse Layer Name and Description
 df = postprocess(btimes)
 df[!, "log₂(Batch Size)"] = Int64.(log2.(df[!, "Batch Size"]))
 df[!, "log₂(Timing (in s))"] = log2.(df[!, "Timing (in s)"])
 
-df |> @vlplot(
-    mark={
-        :line,
-        point={filled=false, fill=:white}
-    },
-    x=Symbol("log₂(Batch Size)"),
-    y=Symbol("log₂(Timing (in s))"),
-    color=:Framework,
-    row=:Device,
-    column=:Pass,
-    size=:Description
-) |> save("layers.png")
+save("layers.png")(@vlplot(
+    mark = {:line, point = {filled = false, fill = :white}},
+    x = Symbol("log₂(Batch Size)"),
+    y = Symbol("log₂(Timing (in s))"),
+    color = :Framework,
+    row = :Device,
+    column = :Pass,
+    size = :Description
+)(df))
