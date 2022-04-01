@@ -134,46 +134,14 @@ ExplicitFluxLayers.apply(model, x, ps, st)
 gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)
 ```
 
-### Using Other AD Libraries -- Yota
-
-NOTE: This is somewhat experimental
-
-```julia
-using ExplicitFluxLayers, Flux, Optimisers, Random, Yota, Zygote
-
-model = ExplicitFluxLayers.Chain(
-    # ExplicitFluxLayers.BatchNorm(128),
-    ExplicitFluxLayers.Dense(128, 256, tanh),
-    # ExplicitFluxLayers.BatchNorm(256),
-    ExplicitFluxLayers.Chain(
-        ExplicitFluxLayers.Dense(256, 1, tanh),
-        ExplicitFluxLayers.Dense(1, 10)
-    )
-)
-
-ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
-
-x = rand(Float32, 128, 1024)
-
-# using Zygote
-@btime Zygote.gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)[1]  # 7.858 ms (2002 allocations: 26.95 MiB)
-
-# using Yota
-@btime Yota.grad(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)[2][2]  # 
-```
-
 ## Implemented Layers
 
 These layers have the same API as their Flux counterparts.
 
-* `Chain`
-* `Dense`
-* `Conv`
-* `BatchNorm`
-* `WeightNorm`
-* `Parallel`
-* `SkipConnection`
-* `MaxPool`, `MeanPool`
+* `Chain`, `Parallel`, `SkipConnection`
+* `Dense`, `Diagonal`
+* `Conv`, `MaxPool`, `MeanPool`
+* `BatchNorm`, `WeightNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 
 ## TODOs

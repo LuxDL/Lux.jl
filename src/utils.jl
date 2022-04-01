@@ -8,14 +8,18 @@ Base.ones(rng::AbstractRNG, args...; kwargs...) = ones(args...; kwargs...)
 
 Dispatch to Octavian for CPU and CUBLAS for GPU
 """
-fast_matmul(A::AbstractMatrix{T}, B::AbstractMatrix{T}) where {T} =
-    fast_matmul!(similar(A, (size(A, 1), size(B, 2))), A, B)
+function fast_matmul(A::AbstractMatrix{T}, B::AbstractMatrix{T}) where {T}
+    return fast_matmul!(similar(A, (size(A, 1), size(B, 2))), A, B)
+end
 
-fast_matmul(A::AbstractMatrix{T}, b::AbstractVector{T}) where {T} =
-    fast_matmul!(similar(A, size(A, 1)), A, b)
+fast_matmul(A::AbstractMatrix{T}, b::AbstractVector{T}) where {T} = fast_matmul!(similar(A, size(A, 1)), A, b)
 
-fast_matmul!(C::AbstractVecOrMat{T}, A::AbstractMatrix{T}, B::AbstractVecOrMat{T}) where {T} =
-    matmul!(C, A, B)
+fast_matmul!(C::AbstractVecOrMat{T}, A::AbstractMatrix{T}, B::AbstractVecOrMat{T}) where {T} = matmul!(C, A, B)
 
-fast_matmul!(C::CuVecOrMat{T}, A::CuMatrix{T}, B::CuVecOrMat{T}) where {T} =
-    mul!(C, A, B)
+function fast_matmul!(
+    C::CuVecOrMat{T},
+    A::Union{<:CuMatrix{T},<:Adjoint{T,<:CuVecOrMat{T}},<:Transpose{T,<:CuVecOrMat{T}}},
+    B::Union{<:CuVecOrMat{T},<:Adjoint{T,<:CuVecOrMat{T}},<:Transpose{T,<:CuVecOrMat{T}}},
+) where {T}
+    return mul!(C, A, B)
+end

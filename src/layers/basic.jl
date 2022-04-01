@@ -220,30 +220,26 @@ function Dense(in_dims::Int, out_dims::Int, λ=identity; initW=glorot_uniform, i
     return Dense{bias,typeof(λ),typeof(initW),typeof(initb)}(λ, in_dims, out_dims, initW, initb)
 end
 
-function initialparameters(rng::AbstractRNG, d::Dense{true})
-    return (weight=d.initW(rng, d.out_dims, d.in_dims), bias=d.initb(rng, d.out_dims, 1))
+function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
+    if bias
+        return (weight=d.initW(rng, d.out_dims, d.in_dims), bias=d.initb(rng, d.out_dims, 1))
+    else
+        return (weight=d.initW(rng, d.out_dims, d.in_dims),)
+    end
 end
-initialparameters(rng::AbstractRNG, d::Dense{false}) = (weight=d.initW(rng, d.out_dims, d.in_dims),)
 
-parameterlength(d::Dense{true}) = d.out_dims * (d.in_dims + 1)
-parameterlength(d::Dense{false}) = d.out_dims * d.in_dims
+parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
-Base.@pure function (d::Dense)(x::AbstractArray, ps::NamedTuple, st::NamedTuple)
-    y, st = d(reshape(x, size(x, 1), :), ps, st)
-    return reshape(y, :, size(x)[2:end]...), st
-end
-
-Base.@pure function (d::Dense{false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
-    return d.λ.(fast_matmul(ps.weight, x)), st
-end
-
-Base.@pure function (d::Dense{true})(x::AbstractMatrix, ps::NamedTuple, st::NamedTuple)
-    return d.λ.(fast_matmul(ps.weight, x) .+ ps.bias), st
-end
-
-Base.@pure function (d::Dense{true})(x::AbstractVector, ps::NamedTuple, st::NamedTuple)
-    return d.λ.(fast_matmul(ps.weight, x) .+ ps.bias[:]), st
+Base.@pure function (d::Dense{bias})(
+    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
+) where {bias,T,N}
+    if bias
+        b = N == 1 ? ps.bias[:] : b = ps.bias
+        return d.λ.(fast_matmul(ps.weight, x) .+ b), st
+    else
+        return d.λ.(fast_matmul(ps.weight, x)), st
+    end
 end
 
 ## Diagonal
@@ -274,10 +270,12 @@ parameterlength(d::Diagonal{true}) = 2 * d.dims
 parameterlength(d::Diagonal{false}) = d.dims
 statelength(d::Diagonal) = 0
 
-Base.@pure function (d::Diagonal{false})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
-    return d.λ.(ps.weight .* x), st
-end
-
-Base.@pure function (d::Diagonal{true})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple)
-    return d.λ.(ps.weight .* x .+ ps.bias), st
+Base.@pure function (d::Diagonal{bias})(
+    x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple
+) where {bias}
+    if bias
+        return d.λ.(ps.weight .* x .+ ps.bias), st
+    else
+        return d.λ.(ps.weight .* x), st
+    end
 end

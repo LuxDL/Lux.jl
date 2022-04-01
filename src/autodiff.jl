@@ -22,7 +22,23 @@ function ChainRulesCore.rrule(
     Z = X * Y
     function sparse_matmul_pullback(Δ)
         Δ = unthunk(Δ)
-        return NoTangent(), _project(Δ * Y', X), X.mat' * Δ 
+        return NoTangent(), _project(Δ * Y', X), X.mat' * Δ
     end
     return Z, sparse_matmul_pullback
+end
+
+# Fast Matmul
+function ChainRulesCore.rrule(
+    ::typeof(fast_matmul!), C::AbstractVecOrMat{T}, A::AbstractMatrix{T}, B::AbstractVecOrMat{T}
+) where {T}
+    fast_matmul!(C, A, B)
+    function fast_matmul!_pullback(Δ)
+        Δ = unthunk(Δ)
+        return NoTangent(), Δ, fast_matmul(Δ, B'), fast_matmul(A', Δ)
+    end
+    function fast_matmul!_pullback(Δ::FillArrays.Fill)
+        Δ = Array(unthunk(Δ))
+        return NoTangent(), Δ, fast_matmul(Δ, B'), fast_matmul(A', Δ)
+    end
+    return C, fast_matmul!_pullback
 end
