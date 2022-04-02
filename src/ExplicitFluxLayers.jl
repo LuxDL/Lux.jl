@@ -21,6 +21,9 @@ include("core.jl")
 # Utilities
 include("utils.jl")
 
+# Neural Network Backend
+include("nnlib.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/normalize.jl")
