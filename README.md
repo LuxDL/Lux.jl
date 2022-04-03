@@ -144,6 +144,47 @@ These layers have the same API as their Flux counterparts.
 * `BatchNorm`, `WeightNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 
+
+## Cached Layers
+
+### Some notes
+
+1. This is currently WIP and implemented for very few layers
+2. We need to define custom adjoints for cached implementations since Zygote doesn't like mutations. Hence we only support inference at this point.
+
+### Usage
+
+```julia
+using ExplicitFluxLayers, Random, Flux, Optimisers
+
+# Construct the layer
+model = ExplicitFluxLayers.Chain(
+    ExplicitFluxLayers.BatchNorm(128),
+    ExplicitFluxLayers.Dense(128, 256, tanh),
+    ExplicitFluxLayers.BatchNorm(256),
+    ExplicitFluxLayers.Chain(
+        ExplicitFluxLayers.Dense(256, 1, tanh),
+        ExplicitFluxLayers.Dense(1, 10)
+    )
+)
+
+# Dummy Input
+x = randn(Float32, 128, 10) 
+
+# Pass the input to the setup function. Now we get back the parameters, states and a cache
+ps, st, cache = ExplicitFluxLayers.setup(MersenneTwister(0), model, x)
+
+# Run the model
+y, st = ExplicitFluxLayers.apply(model, x, ps, st, cache)
+```
+
+### Layers supporting caching
+
+* `Dense` -- Only for Vectors and Matrices
+* `BatchNorm` -- CUDNN version is still uncached
+* **Container Layer** -- `Chain`
+
+
 ## Benchmarks
 
 This is mostly WIP. For some preliminary benchmarks check `benchmarks/` directory.

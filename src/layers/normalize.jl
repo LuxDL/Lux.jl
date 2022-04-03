@@ -1,34 +1,33 @@
 abstract type AbstractNormalizationLayer{affine,track_stats} <: AbstractExplicitLayer end
 
-istraining() = false
-
-Base.@pure function get_stats(
-    ::Val{true}, ::Val{false}, μ, σ², x::AbstractArray{T,N}, reduce_dims, momentum::T
-) where {T,N}
-    # testmode with tracked stats
-    stats_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
-    return reshape(μ, stats_shape), reshape(σ², stats_shape)
+function get_stats!(
+    ::Val{track_stats}, ::Val{active}, μ, σ², x::AbstractArray{T,N}, reduce_dims, momentum::T
+) where {track_stats,active,T,N}
+    if track_stats
+        if active
+            # Training
+            μ_batch = mean(x; dims=reduce_dims)
+            σ²_batch = std(x; mean=μ_batch, dims=reduce_dims)
+            _update_stats!(reduce_dims, N, μ_batch, σ²_batch, momentum, μ, σ²)
+            return μ_batch, σ²_batch
+        else
+            # Testing
+            stats_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
+            return reshape(μ, stats_shape), reshape(σ², stats_shape)
+        end
+    else
+        # No Statistics Tracking
+        μ = mean(x; dims=reduce_dims)
+        return μ, std(x; mean=μ, dims=reduce_dims)
+    end
 end
 
-Base.@pure function get_stats(::Val{false}, active, μ, σ², x, reduce_dims, momentum::T) where {T}
-    # trainmode or testmode without tracked stats
-    μ = mean(x; dims=reduce_dims)
-    return μ, std(x; mean=μ, dims=reduce_dims)
-end
-
-function get_stats(::Val{true}, active::Val{true}, μ, σ², x::AbstractArray{T,N}, reduce_dims, momentum::T) where {T,N}
-    # trainmode with tracked stats
-    _μ, _σ² = get_stats(Val(false), active, μ, σ², x, reduce_dims, momentum)
-    _update_stats!(x, reduce_dims, N, _μ, _σ², momentum, μ, σ²)
-    return _μ, _σ²
-end
-
-function _update_stats!(x, reduce_dims, N, _μ, _σ², momentum, μ, σ²)
-    m = prod(size(x)[reduce_dims])  # needed for computing corrected var
-    μnew = vec(N ∈ reduce_dims ? _μ : mean(_μ; dims=N))
-    σ²new = vec(N ∈ reduce_dims ? _σ² : mean(_σ²; dims=N))
+function _update_stats!(reduce_dims, N, _μ, _σ², momentum, μ, σ²)
+    μnew = vec(N == reduce_dims[end] ? _μ : mean(_μ; dims=N))
+    σ²new = vec(N == reduce_dims[end] ? _σ² : mean(_σ²; dims=N))
     @. μ = (1 - momentum) * μ + momentum * μnew
-    @. σ² = (1 - momentum) * σ² + momentum * (m / (m - one(eltype(σ²)))) * σ²new
+    @. σ² = (1 - momentum) * σ² + momentum * σ²new
+    return nothing
 end
 
 function norm_forward(
@@ -39,7 +38,7 @@ function norm_forward(
     reduce_dims,
     affine_shape,
 ) where {T,N,affine,track_stats}
-    μ, σ² = get_stats(
+    μ, σ² = get_stats!(
         Val(track_stats),
         Val(states.training == :auto ? istraining() : states.training),
         states.μ,
@@ -57,6 +56,79 @@ function norm_forward(
     end
 end
 
+function get_stats!(
+    ::Val{track_stats},
+    ::Val{active},
+    μ::AbstractArray{T,1},
+    σ²::AbstractArray{T,1},
+    x::AbstractArray{T,N},
+    momentum::T,
+    μ_batch::AbstractArray{T,N},
+    σ²_batch::AbstractArray{T,N},
+    σ²_batch_intermediate::AbstractArray{T,N},
+    l::AbstractNormalizationLayer,
+) where {track_stats,active,T,N}
+    if track_stats
+        if active
+            # Training
+            mean!(μ_batch, x)
+            var!(σ²_batch, σ²_batch_intermediate, x, μ_batch)
+            _update_stats!!(μ_batch, σ²_batch, momentum, μ, σ², l)
+        else
+            # Testing
+            selectdim(μ_batch, N - 1, :) .= μ
+            selectdim(σ²_batch, N - 1, :) .= σ²
+        end
+    else
+        # No Statistics Tracking
+        mean!(μ_batch, x)
+        var!(σ²_batch, σ²_batch_intermediate, x, μ_batch)
+    end
+    return μ_batch, σ²_batch
+end
+
+function _update_stats!!(μnew, σ²new, momentum, μ, σ², ::BatchNorm)
+    @. μ = (1 - momentum) * μ + momentum * μnew
+    @. σ² = (1 - momentum) * σ² + momentum * σ²new
+    return nothing
+end
+
+function norm_forward!(
+    y::AbstractArray{T,N},
+    μ::AbstractArray{T,N},
+    σ²::AbstractArray{T,N},
+    σ²_intermediate::AbstractArray{T,N},
+    γ::Union{AbstractArray{T,N},Nothing},
+    β::Union{AbstractArray{T,N},Nothing},
+    l::AbstractNormalizationLayer{affine,track_stats},
+    ps::NamedTuple,
+    states::NamedTuple,
+    x::AbstractArray{T,N},
+) where {T,N,affine,track_stats}
+    get_stats!(
+        Val(track_stats),
+        Val(states.training == :auto ? istraining() : states.training),
+        states.μ,
+        states.σ²,
+        x,
+        l.momentum,
+        μ,
+        σ²,
+        σ²_intermediate,
+        l,
+    )
+    if affine
+        selectdim(γ, N - 1, :) .= ps.γ
+        selectdim(β, N - 1, :) .= ps.β
+        @. y = l.λ(γ * (x - μ) / sqrt(σ² + l.ϵ) + β)
+    else
+        @. y = l.λ((x - μ) / sqrt(σ² + l.ϵ))
+    end
+    return y
+end
+
+
+# BatchNorm
 struct BatchNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     λ::F1
     ϵ::N
@@ -85,10 +157,27 @@ end
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
     return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
 end
-initialstates(::AbstractRNG, l::BatchNorm) = (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto)
+function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
+    return track_stats ? (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto) : (training=:auto,)
+end
+
+function createcache(
+    ::AbstractRNG, l::BatchNorm{affine}, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple
+) where {T,N,affine}
+    @assert size(x, N - 1) == l.chs
+    return (
+        normalized_input=similar(x),
+        μ_cache=similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)),
+        σ²_cache=similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)),
+        σ²_intermediate=similar(x),
+        γ_cache=affine ? similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)) : nothing,
+        β_cache=affine ? similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)) : nothing,
+    )
+end
 
 parameterlength(l::BatchNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
-statelength(l::BatchNorm) = 2 * l.chs + 1
+statelength(l::BatchNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.chs : 0) + 1
+outputdescriptor(::BatchNorm, input::AbstractArray, ::NamedTuple, ::NamedTuple) = zero(input)
 
 function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     print(io, "BatchNorm($(l.chs)")
@@ -106,6 +195,24 @@ function batchnorm_fallback(BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple
     return norm_forward(BN, ps, states, x, reduce_dims, affine_shape)
 end
 
+function batchnorm_fallback!(
+    BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple, cache::NamedTuple
+) where {T,N}
+    @assert !(states.training == :auto ? istraining() : states.training) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
+    return norm_forward!(
+        cache.normalized_input,
+        cache.μ_cache,
+        cache.σ²_cache,
+        cache.σ²_intermediate,
+        cache.γ_cache,
+        cache.β_cache,
+        BN,
+        ps,
+        states,
+        x,
+    )
+end
+
 function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
     y, states = BN(reshape(x, :, 1), ps, states)
     return vec(y), states
@@ -115,11 +222,46 @@ function (BN::BatchNorm)(x::AbstractArray{T}, ps::NamedTuple, states::NamedTuple
     return batchnorm_fallback(BN, x, ps, states), states
 end
 
+function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple, cache::NamedTuple)
+    y, states = BN(reshape(x, :, 1), ps, states, cache)
+    return vec(y), states
+end
+
+function (BN::BatchNorm)(x::AbstractArray, ps::NamedTuple, states::NamedTuple, cache::NamedTuple)
+    return batchnorm_fallback!(BN, x, ps, states, cache), states
+end
+
 function (BN::BatchNorm{affine,track_stats})(
     x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, states::NamedTuple
 ) where {T<:Union{Float32,Float64},affine,track_stats}
     # TODO: Update to the latest CUDNN API
     (!affine || !track_stats) && return (batchnorm_fallback(BN, x, ps, states), states)
+    return (
+        BN.λ.(
+            batchnorm(
+                ps.γ,
+                ps.β,
+                x,
+                states.μ,
+                states.σ²,
+                BN.momentum;
+                alpha=true,
+                beta=false,
+                eps=BN.ϵ,
+                training=(states.training == :auto ? istraining() : states.training),
+            ),
+        ),
+        states,
+    )
+end
+
+function (BN::BatchNorm{affine,track_stats})(
+    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, states::NamedTuple, cache::NamedTuple
+) where {T<:Union{Float32,Float64},affine,track_stats}
+    # TODO: Update to the latest CUDNN API
+    (!affine || !track_stats) && return (batchnorm_fallback!(BN, x, ps, states, cache), states)
+    # TODO: Use the inplace batchnorm CUDA API
+    #       Need to manually handle array reshaping
     return (
         BN.λ.(
             batchnorm(

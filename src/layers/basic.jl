@@ -182,14 +182,39 @@ function initialstates(rng::AbstractRNG, c::Chain)
     return (; zip(ntuple(i -> Symbol("layer_$i"), length(c.layers)), initialstates.(rng, c.layers))...)
 end
 
-(c::Chain)(x, ps::NamedTuple, s::NamedTuple) = applychain(c.layers, x, ps, s)
+function createcache(rng::AbstractRNG, c::Chain, input, ps::NamedTuple, st::NamedTuple)
+    # return (; zip(ntuple(i -> Symbol("layer_$i"), length(c.layers)), createcache.(rng, c.layers, input, ps, st))...)
+    outputdesc = input
+    cache = Vector{NamedTuple}(undef, length(c.layers))
+    fields = ntuple(i -> Symbol("layer_$i"), length(c.layers))
+    for (i, l) in enumerate(c.layers)
+        cache[i] = createcache(rng, l, outputdesc, ps[i], st[i])
+        outputdesc = outputdescriptor(l, outputdesc, ps[i], st[i])
+    end
+    return NamedTuple{fields}(cache)
+end
 
-@generated function applychain(layers::Tuple{Vararg{<:Any,N}}, x, ps, st::NamedTuple{fields}) where {N,fields}
+(c::Chain)(x, ps::NamedTuple, st::NamedTuple) = applychain(c.layers, x, ps, st)
+(c::Chain)(x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = applychain(c.layers, x, ps, st, cache)
+
+@generated function applychain(layers::Tuple{Vararg{<:Any,N}}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}) where {N,fields}
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps[1], st[1]))]
     append!(
         calls, [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]), ps[$i], st[$i])) for i in 2:N]
+    )
+    append!(calls, [:(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),))))])
+    append!(calls, [:(return $(x_symbols[N]), st)])
+    return Expr(:block, calls...)
+end
+
+@generated function applychain(layers::Tuple{Vararg{<:Any,N}}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}, cache::NamedTuple{fields}) where {N,fields}
+    x_symbols = [gensym() for _ in 1:N]
+    st_symbols = [gensym() for _ in 1:N]
+    calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps[1], st[1], cache[1]))]
+    append!(
+        calls, [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]), ps[$i], st[$i], cache[$i])) for i in 2:N]
     )
     append!(calls, [:(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),))))])
     append!(calls, [:(return $(x_symbols[N]), st)])
@@ -228,12 +253,41 @@ function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
     end
 end
 
+function createcache(::AbstractRNG, d::Dense{bias}, input::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
+    @assert N <= 2 "Cached Dense Layer is not implemented for higher dimensional arrays"
+    _T1 = promote_type(T, eltype(ps.weight))
+    _T2 = bias ? promote_type(_T1, eltype(ps.bias)) : _T1
+    Wx, λWxb = if N == 1
+        similar(input, _T1, (d.out_dims,)), similar(input, _T2, (d.out_dims,))
+    else
+        similar(input, _T1, (d.out_dims, size(input)[2:end]...)), similar(input, _T2, (d.out_dims, size(input)[2:end]...))
+    end
+    return (Wx=Wx, λWxb=λWxb)
+end
+
 parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
+function outputdescriptor(l::Dense{bias}, input::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
+    _T1 = promote_type(T, eltype(ps.weight))
+    _T2 = bias ? promote_type(_T1, eltype(ps.bias)) : _T1
+    return similar(input, _T2, (l.out_dims, size(input)[2:end]...))
+end
+
+function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) where {bias,T,N}
+    if bias
+        b = N == 1 ? view(ps.bias, :, 1) : b = ps.bias
+        cache.λWxb .= d.λ.(fast_matmul!(cache.Wx, ps.weight, x) .+ b)
+        return cache.λWxb, st
+    else
+        cache.λWxb .= d.λ.(fast_matmul!(cache.Wx, ps.weight, x))
+        return cache.λWxb, st
+    end
+end
+
 Base.@pure function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
     if bias
-        b = N == 1 ? ps.bias[:] : b = ps.bias
+        b = N == 1 ? view(ps.bias, :, 1) : b = ps.bias
         return d.λ.(fast_matmul(ps.weight, x) .+ b), st
     else
         return d.λ.(fast_matmul(ps.weight, x)), st

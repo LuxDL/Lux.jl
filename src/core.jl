@@ -1,18 +1,47 @@
 # Base Type
+## API:
+### initialparameters(rng, l)
+### initialstates(rng, l)
+### createcache(rng, l, x, ps, st)
+### outputdescriptor(l, x, ps, st)
+### parameterlength(l)
+### statelength(l)
+### cachesize(l, x, ps, st)
+### l(x, ps, st)
+### l(x, ps, st, cache)
+
 abstract type AbstractExplicitLayer end
 
-initialparameters(::AbstractRNG, ::Any) = NamedTuple()
-initialparameters(l) = initialparameters(Random.GLOBAL_RNG, l)
-initialstates(::AbstractRNG, ::Any) = NamedTuple()
-initialstates(l) = initialstates(Random.GLOBAL_RNG, l)
-
-function initialparameters(rng::AbstractRNG, l::NamedTuple)
-    return NamedTuple{Tuple(collect(keys(l)))}(initialparameters.((rng,), values(l)))
+for f in (:initialparameters, :initialstates, :createcache)
+    @eval begin
+        $(f)(::AbstractRNG, ::Any, args...; kwargs...) = NamedTuple()
+        $(f)(l, args...; kwargs...) = $(f)(Random.GLOBAL_RNG, l, args...; kwargs...)
+        function $(f)(rng::AbstractRNG, l::NamedTuple{fields}, args...; kwargs...) where {fields}
+            return NamedTuple{fields}(map(x -> $(f)(rng, x, args...; kwargs...)), values(l))
+        end
+    end
 end
-initialstates(rng::AbstractRNG, l::NamedTuple) = NamedTuple{Tuple(collect(keys(l)))}(initialstates.((rng,), values(l)))
+
+for (f, g) in ((:parameterlength, :initialparameters), (:statelength, :initialstates), (:cachesize, :createcache))
+    @eval begin
+        $(f)(l::AbstractExplicitLayer, args...; kwargs...) = $(f)($(g)(l), args...; kwargs...)
+        $(f)(x::NamedTuple, args...; kwargs...) = nestedtupleofarrayslength(x)
+    end
+end
 
 setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
 setup(l::AbstractExplicitLayer) = setup(Random.GLOBAL_RNG, l)
+
+function setup(rng::AbstractRNG, l::AbstractExplicitLayer, input)
+    ps, st = setup(rng, l)
+    return (ps, st, createcache(rng, l, input, ps, st))
+end
+setup(l::AbstractExplicitLayer, input) = setup(Random.GLOBAL_RNG, l, input)
+
+function outputdescriptor(l::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple)
+    # Please implement `outputsize`, the default is quite slow
+    return zero(first(l(x, ps, st)))
+end
 
 nestedtupleofarrayslength(t::Any) = 1
 nestedtupleofarrayslength(t::AbstractArray) = length(t)
@@ -21,12 +50,12 @@ function nestedtupleofarrayslength(t::Union{NamedTuple,Tuple})
     return sum(nestedtupleofarrayslength, t)
 end
 
-parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(l))
-statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
-parameterlength(ps::NamedTuple) = nestedtupleofarrayslength(ps)
-statelength(st::NamedTuple) = nestedtupleofarrayslength(st)
+function (model::AbstractExplicitLayer)(x, ps::NamedTuple, st::NamedTuple, ::NamedTuple)
+    return model(x, ps, st)
+end
 
 apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple) = model(x, ps, st)
+apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = model(x, ps, st, cache)
 
 # Test Mode
 function testmode(states::NamedTuple, mode::Bool=true)
