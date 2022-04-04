@@ -34,8 +34,10 @@ function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {a
 end
 
 function createcache(
-    ::AbstractRNG, l::BatchNorm{affine}, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple
-) where {T,N,affine}
+    ::AbstractRNG, l::BatchNorm{affine}, x::AbstractArray{T,_N}, ps::NamedTuple, states::NamedTuple
+) where {T,_N,affine}
+    x = _N == 1 ? @view(x[:, :]) : x
+    N = ndims(x)
     @assert size(x, N - 1) == l.chs
     return (
         normalized_input=similar(x),
@@ -86,8 +88,8 @@ function batchnorm_fallback!(
 end
 
 function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
-    y, states = BN(reshape(x, :, 1), ps, states)
-    return vec(y), states
+    y, states = BN(x[:, :], ps, states)
+    return y[:], states
 end
 
 function (BN::BatchNorm)(x::AbstractArray{T}, ps::NamedTuple, states::NamedTuple) where {T}
