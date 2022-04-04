@@ -277,17 +277,19 @@ end
 function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) where {bias,T,N}
     if bias
         b = N == 1 ? view(ps.bias, :, 1) : b = ps.bias
-        cache.λWxb .= d.λ.(fast_matmul!(cache.Wx, ps.weight, x) .+ b)
+        fast_matmul!(cache.Wx, ps.weight, x)
+        @. cache.λWxb = d.λ(cache.Wx + b)
         return cache.λWxb, st
     else
-        cache.λWxb .= d.λ.(fast_matmul!(cache.Wx, ps.weight, x))
+        fast_matmul!(cache.Wx, ps.weight, x)
+        @. cache.λWxb = d.λ(cache.Wx)
         return cache.λWxb, st
     end
 end
 
 Base.@pure function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
     if bias
-        b = N == 1 ? view(ps.bias, :, 1) : b = ps.bias
+        b = N == 1 ? view(ps.bias, :, 1) : ps.bias
         return d.λ.(fast_matmul(ps.weight, x) .+ b), st
     else
         return d.λ.(fast_matmul(ps.weight, x)), st

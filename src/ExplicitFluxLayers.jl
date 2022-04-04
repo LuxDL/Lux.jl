@@ -21,13 +21,13 @@ include("core.jl")
 # Utilities
 include("utils.jl")
 
-# Neural Network Backend
-include("nnlib.jl")
-
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
+
+# Neural Network Backend
+include("nnlib.jl")
 
 # Transition to Explicit Layers
 include("transform.jl")

@@ -182,7 +182,7 @@ y, st = ExplicitFluxLayers.apply(model, x, ps, st, cache)
 
 * `Dense` -- Only for Vectors and Matrices
 * `BatchNorm` -- CUDNN version is still uncached
-* **Container Layer** -- `Chain`
+* `Chain`
 
 
 ## Benchmarks
