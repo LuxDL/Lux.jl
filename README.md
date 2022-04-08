@@ -138,11 +138,12 @@ gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)
 
 These layers have the same API as their Flux counterparts.
 
-* `Chain`, `Parallel`, `SkipConnection`
+* `Chain`, `Parallel`, `SkipConnection`, `BranchLayer`
 * `Dense`, `Diagonal`
 * `Conv`, `MaxPool`, `MeanPool`
-* `BatchNorm`, `WeightNorm`
+* `BatchNorm`, `WeightNorm`, `GroupNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
+* `Dropout`, `VariationalDropout`
 
 
 ## Cached Layers
@@ -150,7 +151,7 @@ These layers have the same API as their Flux counterparts.
 ### Some notes
 
 1. This is currently WIP and implemented for very few layers
-2. We need to define custom adjoints for cached implementations since Zygote doesn't like mutations. Hence we only support inference at this point.
+2. We need to define custom adjoints for cached implementations since Zygote (like most ADs) doesn't like mutations. Hence we only support inference at this point.
 
 ### Usage
 
@@ -169,7 +170,7 @@ model = ExplicitFluxLayers.Chain(
 )
 
 # Dummy Input
-x = randn(Float32, 128, 10) 
+x = randn(Float32, 128, 10)
 
 # Pass the input to the setup function. Now we get back the parameters, states and a cache
 ps, st, cache = ExplicitFluxLayers.setup(MersenneTwister(0), model, x)

@@ -137,6 +137,47 @@ function Base.show(io::IO, m::Parallel)
     return print(io, "Parallel(", m.connection, ", ", m.layers, ")")
 end
 
+## Branching Layer
+struct BranchLayer{T<:NamedTuple} <: AbstractExplicitLayer
+    layers::T
+end
+
+initialparameters(rng::AbstractRNG, b::BranchLayer) = initialparameters(rng, b.layers)
+initialstates(rng::AbstractRNG, b::BranchLayer) = initialstates(rng, b.layers)
+
+function BranchLayer(layers...)
+    names = ntuple(i -> Symbol("layer_$i"), length(layers))
+    return BranchLayer(NamedTuple{names}(layers))
+end
+
+function BranchLayer(; kwargs...)
+    layers = NamedTuple(kwargs)
+    if :layers in Base.keys(layers)
+        throw(ArgumentError("A BranchLayer cannot have a named sub-layer called `layers`"))
+    end
+    isempty(layers) && throw(ArgumentError("A BranchLayer must have at least one sub-layer"))
+    return BranchLayer(layers)
+end
+
+(m::BranchLayer)(x, ps::NamedTuple, st::NamedTuple) = applybranching(m.layers, x, ps, st)
+
+@generated function applybranching(layers::NamedTuple{names}, x, ps::NamedTuple, st::NamedTuple) where {names}
+    N = length(names)
+    y_symbols = [gensym() for _ in 1:N]
+    st_symbols = [gensym() for _ in 1:N]
+    calls = []
+    append!(calls, [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps[$i], st[$i])) for i in 1:N])
+    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
+    append!(calls, [:(return tuple($(Tuple(y_symbols)...)), st)])
+    return Expr(:block, calls...)
+end
+
+Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
+
+function Base.show(io::IO, m::BranchLayer)
+    return print(io, "BranchLayer(", m.layers, ")")
+end
+
 ## Chain
 struct Chain{T} <: AbstractExplicitLayer
     layers::T
@@ -197,7 +238,9 @@ end
 (c::Chain)(x, ps::NamedTuple, st::NamedTuple) = applychain(c.layers, x, ps, st)
 (c::Chain)(x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = applychain(c.layers, x, ps, st, cache)
 
-@generated function applychain(layers::Tuple{Vararg{<:Any,N}}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}) where {N,fields}
+@generated function applychain(
+    layers::Tuple{Vararg{<:Any,N}}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}
+) where {N,fields}
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps[1], st[1]))]
@@ -209,12 +252,18 @@ end
     return Expr(:block, calls...)
 end
 
-@generated function applychain(layers::Tuple{Vararg{<:Any,N}}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}, cache::NamedTuple{fields}) where {N,fields}
+@generated function applychain(
+    layers::Tuple{Vararg{<:Any,N}}, x, ps::NamedTuple{fields}, st::NamedTuple{fields}, cache::NamedTuple{fields}
+) where {N,fields}
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps[1], st[1], cache[1]))]
     append!(
-        calls, [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]), ps[$i], st[$i], cache[$i])) for i in 2:N]
+        calls,
+        [
+            :(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]), ps[$i], st[$i], cache[$i])) for
+            i in 2:N
+        ],
     )
     append!(calls, [:(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),))))])
     append!(calls, [:(return $(x_symbols[N]), st)])
@@ -253,7 +302,9 @@ function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
     end
 end
 
-function createcache(::AbstractRNG, d::Dense{bias}, input::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
+function createcache(
+    ::AbstractRNG, d::Dense{bias}, input::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
+) where {bias,T,N}
     @assert N <= 2 "Cached Dense Layer is not implemented for higher dimensional arrays"
     _T1 = promote_type(T, eltype(ps.weight))
     _T2 = bias ? promote_type(_T1, eltype(ps.bias)) : _T1
@@ -274,25 +325,43 @@ function outputdescriptor(l::Dense{bias}, input::AbstractArray{T,N}, ps::NamedTu
     return similar(input, _T2, (l.out_dims, size(input)[2:end]...))
 end
 
-function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) where {bias,T,N}
+function (d::Dense{bias,λT})(
+    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple, cache::NamedTuple
+) where {bias,T,N,λT}
     if bias
         b = N == 1 ? view(ps.bias, :, 1) : b = ps.bias
         fast_matmul!(cache.Wx, ps.weight, x)
-        @. cache.λWxb = d.λ(cache.Wx + b)
+        if λT == typeof(identity)
+            @. cache.λWxb = cache.Wx + b
+        else
+            @. cache.λWxb = d.λ(cache.Wx + b)
+        end
         return cache.λWxb, st
     else
         fast_matmul!(cache.Wx, ps.weight, x)
-        @. cache.λWxb = d.λ(cache.Wx)
-        return cache.λWxb, st
+        if λT == typeof(identity)
+            return cache.Wx, st
+        else
+            @. cache.λWxb = d.λ(cache.Wx)
+            return cache.λWxb, st
+        end
     end
 end
 
-Base.@pure function (d::Dense{bias})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N}
+Base.@pure function (d::Dense{bias,λT})(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {bias,T,N,λT}
     if bias
         b = N == 1 ? view(ps.bias, :, 1) : ps.bias
-        return d.λ.(fast_matmul(ps.weight, x) .+ b), st
+        if λT == typeof(identity)
+            return fast_matmul(ps.weight, x) .+ b, st
+        else
+            return d.λ.(fast_matmul(ps.weight, x) .+ b), st
+        end
     else
-        return d.λ.(fast_matmul(ps.weight, x)), st
+        if λT == typeof(identity)
+            return fast_matmul(ps.weight, x), st
+        else
+            return d.λ.(fast_matmul(ps.weight, x)), st
+        end
     end
 end
 

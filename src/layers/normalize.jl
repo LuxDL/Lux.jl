@@ -63,7 +63,7 @@ end
 
 function batchnorm_fallback(BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple) where {T,N}
     @assert size(x, N - 1) == BN.chs
-    @assert !(states.training == :auto ? istraining() : states.training) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
+    @assert !istraining(states) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
     reduce_dims = [1:(N - 2); N]
     affine_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
     return norm_forward(BN, ps, states, x, reduce_dims, affine_shape)
@@ -72,7 +72,7 @@ end
 function batchnorm_fallback!(
     BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple, cache::NamedTuple
 ) where {T,N}
-    @assert !(states.training == :auto ? istraining() : states.training) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
+    @assert !istraining(states) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
     return norm_forward!(
         cache.normalized_input,
         cache.μ_cache,
@@ -122,7 +122,7 @@ function (BN::BatchNorm{affine,track_stats})(
                 alpha=true,
                 beta=false,
                 eps=BN.ϵ,
-                training=(states.training == :auto ? istraining() : states.training),
+                training=istraining(states.training),
             ),
         ),
         states,
@@ -148,13 +148,76 @@ function (BN::BatchNorm{affine,track_stats})(
                 alpha=true,
                 beta=false,
                 eps=BN.ϵ,
-                training=(states.training == :auto ? istraining() : states.training),
+                training=istraining(states.training),
             ),
         ),
         states,
     )
 end
 
+# GroupNorm
+struct GroupNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
+    λ::F1
+    ϵ::N
+    momentum::N
+    chs::Int
+    initβ::F2
+    initγ::F3
+    groups::Int
+end
+
+function GroupNorm(
+    chs::Int,
+    groups::Int,
+    λ=identity;
+    initβ=zeros32,
+    initγ=ones32,
+    affine::Bool=true,
+    track_stats::Bool=true,
+    ϵ=1.0f-5,
+    momentum=0.1f0,
+)
+    @assert chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
+    λ = NNlib.fast_act(λ)
+    return GroupNorm{affine,track_stats,typeof(λ),typeof(initβ),typeof(initγ),typeof(ϵ)}(
+        λ, ϵ, momentum, chs, initβ, initγ, groups
+    )
+end
+
+function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
+    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
+end
+function initialstates(::AbstractRNG, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
+    return track_stats ? (μ=zeros32(l.groups), σ²=ones32(l.groups), training=:auto) : (training=:auto,)
+end
+
+parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
+statelength(l::GroupNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.groups : 0) + 1
+outputdescriptor(::GroupNorm, input::AbstractArray, ::NamedTuple, ::NamedTuple) = zero(input)
+
+function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
+    print(io, "GroupNorm($(l.chs), $(l.groups)")
+    (l.λ == identity) || print(io, ", $(l.λ)")
+    affine || print(io, ", affine=false")
+    track_stats || print(io, ", track_stats=false")
+    return print(io, ")")
+end
+
+function (GN::GroupNorm)(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {T,N}
+    sz = size(x)
+    @assert N > 2
+    @assert sz[N - 1] == GN.chs
+
+    x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
+    N_ = N + 1
+
+    reduce_dims = 1:(N_ - 2)
+    affine_shape = ntuple(i -> i ∈ (N_ - 1, N_ - 2) ? size(x_, i) : 1, N_)
+
+    return reshape(norm_forward(GN, ps, st, x_, reduce_dims, affine_shape), sz), st
+end
+
+# WeightNorm
 struct WeightNorm{which_params,L<:AbstractExplicitLayer,D} <: AbstractExplicitLayer
     layer::L
     dims::D

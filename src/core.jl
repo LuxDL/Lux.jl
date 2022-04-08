@@ -17,7 +17,7 @@ for f in (:initialparameters, :initialstates, :createcache)
         $(f)(::AbstractRNG, ::Any, args...; kwargs...) = NamedTuple()
         $(f)(l, args...; kwargs...) = $(f)(Random.GLOBAL_RNG, l, args...; kwargs...)
         function $(f)(rng::AbstractRNG, l::NamedTuple{fields}, args...; kwargs...) where {fields}
-            return NamedTuple{fields}(map(x -> $(f)(rng, x, args...; kwargs...)), values(l))
+            return NamedTuple{fields}(map(x -> $(f)(rng, x, args...; kwargs...), values(l)))
         end
     end
 end
@@ -58,16 +58,13 @@ apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple) = model(x
 apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = model(x, ps, st, cache)
 
 # Test Mode
+function _update_training_mode(st::NamedTuple, mode::Bool)
+    @set! st.training = mode
+    return st
+end
+
 function testmode(states::NamedTuple, mode::Bool=true)
-    updated_states = []
-    for (k, v) in pairs(states)
-        if k == :training
-            push!(updated_states, k => !mode)
-            continue
-        end
-        push!(updated_states, k => testmode(v, mode))
-    end
-    return (; updated_states...)
+    return fmap(st -> _update_training_mode(st, !mode), states; exclude=x -> :training ∈ keys(x))
 end
 
 testmode(x::Any, mode::Bool=true) = x
@@ -75,3 +72,11 @@ testmode(x::Any, mode::Bool=true) = x
 testmode(m::AbstractExplicitLayer, mode::Bool=true) = testmode(initialstates(m), mode)
 
 trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
+
+# Utilities to modify global state
+function update_state(st::NamedTuple, key::Symbol, value; layer_check=x -> key ∈ keys(x))
+    function _update_state(st, key::Symbol, value)
+        return Setfield.set(st, Setfield.PropertyLens{key}(), value)
+    end
+    return fmap(_st -> _update_state(_st, key, value), st; exclude=layer_check)
+end

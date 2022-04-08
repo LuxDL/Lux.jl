@@ -1,6 +1,6 @@
 module ExplicitFluxLayers
 
-using Statistics, NNlib, CUDA, Random, Setfield, ChainRulesCore, Octavian, LinearAlgebra, FillArrays
+using Statistics, NNlib, CUDA, Random, Setfield, ChainRulesCore, Octavian, LinearAlgebra, FillArrays, Functors
 import NNlibCUDA: batchnorm, cudnnBNForward!
 using Flux: Flux
 import Flux:
@@ -13,7 +13,8 @@ import Flux:
     calc_padding,
     DenseConvDims,
     _maybetuple_string,
-    reshape_cell_output
+    reshape_cell_output,
+    _dropout_mask
 
 # Core
 include("core.jl")
@@ -25,6 +26,7 @@ include("utils.jl")
 include("layers/basic.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
+include("layers/dropout.jl")
 
 # Neural Network Backend
 include("nnlib.jl")

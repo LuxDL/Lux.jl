@@ -10,6 +10,7 @@ Base.zero(l::AbstractExplicitLayer) = l
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
 ChainRulesCore.@non_differentiable _update_stats!(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable _dropout_mask(::Any, ::Any, ::Any)
 
 ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
 
@@ -77,7 +78,6 @@ function ChainRulesCore.rrule(
     y = conv(x, w, cdims)
     @. y += b
     if T != typeof(identity)
-        # For this to work we need to have an rrule for the activation function
         act = rrule(config, Base.broadcasted, λ, y)
         y, act_pullback = if act === nothing
             rrule_via_ad(config, Base.broadcasted, λ, y)

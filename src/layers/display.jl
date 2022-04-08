@@ -49,7 +49,7 @@ _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
 _get_children(p::Parallel) = (p.connection, p.layers...)
-_get_children(c::Chain) = c.layers
+_get_children(c::Union{Chain,BranchLayer}) = c.layers
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(::Any) = ()
 function _get_children(e::T) where {T<:AbstractExplicitLayer}

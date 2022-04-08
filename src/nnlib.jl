@@ -21,7 +21,11 @@ end
     return fast_matmul!(similar(A, promote_type(T1, T2), size(A, 1)), A, b)
 end
 
-fast_matmul!(C::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat) = matmul!(C, A, B)
+function fast_matmul!(C::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat)
+    # Octavian can have unreliable speed sometimes
+    return matmul!(C, A, B)
+    # return mul!(C, A, B)
+end
 
 function fast_matmul!(
     C::CuVecOrMat,
@@ -168,7 +172,7 @@ function fast_conv_bias_act(
     λ=identity;
     kwargs...
 ) where {xT, wT, bT, N}
-    y = similar(x, promote_type(xT, wT, bT), NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x,N))
+    y = similar(x, promote_type(xT, wT, bT), NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
     return fast_conv_bias_act!(y, x, w, cdims, b, λ, kwargs...)
 end
 
@@ -178,14 +182,29 @@ function fast_conv_bias_act!(
     w::AbstractArray{wT,N},
     cdims::ConvDims,
     b::AbstractArray{bT,N},
-    λ=identity;
+    λ::T=identity;
     kwargs...
-) where {yT, xT, wT, bT, N}
+) where {yT, xT, wT, bT, N, T}
     conv!(y, x, w, cdims)
-    if λ == identity
+    if T == typeof(identity)
         @. y += b
     else
         @. y = λ(y + b)
     end
     return y
+end
+
+# Dropout
+_dropout_shape(s, ::Colon) = size(s)
+_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) ∈ enumerate(size(s)))...)
+
+_dropout_kernel(y::T, p::T, q::T) where {T} = y > p ? inv(q) : 0
+
+function dropout(rng::AbstractRNG, x, p; dims=:)
+    y = _dropout_mask(rng, x, p, dims=dims)
+    return dropout(rng, y, x, p; dims=dims), y
+end
+
+function dropout(rng::AbstractRNG, mask, x, p; dims=:)
+    return x .* mask
 end

@@ -16,6 +16,7 @@ function var!(y1, y2, x, μ; corrected::Bool = true)
 end
 
 istraining() = false
+istraining(st::NamedTuple)::Bool = st.training == :auto ? istraining() : st.training
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
 
