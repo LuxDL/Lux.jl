@@ -25,7 +25,9 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
                 _big_show(io, obj[k], indent + 4, k)
             end
         elseif obj isa Parallel{<:Any,<:NamedTuple}
-            _big_show(io, obj.connection, indent + 4)
+            if obj.connection !== nothing
+                _big_show(io, obj.connection, indent + 4)
+            end
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
@@ -48,9 +50,10 @@ _show_leaflike(x::AbstractExplicitLayer) = false
 _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
-_get_children(p::Parallel) = (p.connection, p.layers...)
+_get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
 _get_children(c::Union{Chain,BranchLayer}) = c.layers
 _get_children(s::SkipConnection) = (s.layers, s.connection)
+_get_children(s::WeightNorm) = (s.layer,)
 _get_children(::Any) = ()
 function _get_children(e::T) where {T<:AbstractExplicitLayer}
     children = []

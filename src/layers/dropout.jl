@@ -19,6 +19,14 @@ function (d::Dropout)(x, ::NamedTuple, st::NamedTuple)
     return y, st
 end
 
+function Base.show(io::IO, d::Dropout)
+    print(io, "Dropout(", d.p)
+    if d.dims != Colon()
+        print(io, ", dims=", d.dims)
+    end
+    print(io, ")")
+end
+
 # Variational Hidden Dropout
 ## Mask is retained unless explicitly dropped
 struct VariationalHiddenDropout{T,D} <: AbstractExplicitLayer

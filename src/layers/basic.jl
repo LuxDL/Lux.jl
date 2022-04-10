@@ -41,6 +41,10 @@ struct NoOpLayer <: AbstractExplicitLayer end
 
 Base.@pure (noop::NoOpLayer)(x, ::NamedTuple, st::NamedTuple) = x, st
 
+function Base.show(io::IO, ::NoOpLayer)
+    return print(io, "NoOp()")
+end
+
 """
     WrappedFunction(f)
 
@@ -54,6 +58,10 @@ struct WrappedFunction{F} <: AbstractExplicitLayer
 end
 
 (wf::WrappedFunction)(x, ::NamedTuple, st::NamedTuple) = wf.func(x), st
+
+function Base.show(io::IO, w::WrappedFunction)
+    return print(io, "WrappedFunction(", w.func, ")")
+end
 
 ## SkipConnection
 struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitLayer
@@ -104,29 +112,37 @@ function (m::Parallel)(x, ps::NamedTuple, st::NamedTuple)
 end
 
 @generated function applyparallel(
-    layers::NamedTuple{names}, connection, x, ps::NamedTuple, st::NamedTuple
-) where {names}
+    layers::NamedTuple{names}, connection::C, x, ps::NamedTuple, st::NamedTuple
+) where {names,C}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls, [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps[$i], st[$i])) for i in 1:N])
     append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...)))])
+    if C == Nothing
+        append!(calls, [:($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...)))])
+    else
+        append!(calls, [:($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...)))])
+    end
     append!(calls, [:(return $(y_symbols[N + 1]), st)])
     return Expr(:block, calls...)
 end
 
 @generated function applyparallel(
-    layers::NamedTuple{names}, connection, x::Tuple, ps::NamedTuple, st::NamedTuple
-) where {names}
+    layers::NamedTuple{names}, connection::C, x::Tuple, ps::NamedTuple, st::NamedTuple
+) where {names,C}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls, [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x[$i], ps[$i], st[$i])) for i in 1:N])
     append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...)))])
+    if C == Nothing
+        append!(calls, [:($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...)))])
+    else
+        append!(calls, [:($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...)))])
+    end
     append!(calls, [:(return $(y_symbols[N + 1]), st)])
     return Expr(:block, calls...)
 end
@@ -134,7 +150,11 @@ end
 Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
 function Base.show(io::IO, m::Parallel)
-    return print(io, "Parallel(", m.connection, ", ", m.layers, ")")
+    if m.connection === nothing
+        return print(io, "Parallel(", m.layers, ")")
+    else
+        return print(io, "Parallel(", m.connection, ", ", m.layers, ")")
+    end
 end
 
 ## Branching Layer
@@ -190,12 +210,7 @@ struct Chain{T} <: AbstractExplicitLayer
 end
 
 function Base.show(io::IO, c::Chain)
-    print(io, "Chain(\n")
-    for l in c.layers
-        show(io, l)
-        print(io, "\n")
-    end
-    return print(io, ")")
+    print(io, "Chain(", c.layers, ")")
 end
 
 function flatten_model(layers::Union{AbstractVector,Tuple})

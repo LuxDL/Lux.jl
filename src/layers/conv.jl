@@ -63,7 +63,7 @@ Base.@pure function (c::Conv{N,bias,C})(x::AbstractArray, ps::NamedTuple, st::Na
         # FIXME: Needs https://github.com/FluxML/NNlibCUDA.jl/pull/45 to be merged
         # return conv_bias_act(x, ps.weight, cdims, ps.bias, λ), st
     else
-        return c.λ.(conv(x, ps.weight, cdims)), st
+        return c.λ.(conv_wrapper(x, ps.weight, cdims)), st
     end
 end
 
@@ -139,4 +139,68 @@ function Base.show(io::IO, m::MeanPool)
     all(==(0), m.pad) || print(io, ", pad=", _maybetuple_string(m.pad))
     m.stride == m.k || print(io, ", stride=", _maybetuple_string(m.stride))
     return print(io, ")")
+end
+
+# Upsampling
+struct Upsample{mode,S,T} <: AbstractExplicitLayer
+    scale::S
+    size::T
+end
+
+function Upsample(mode::Symbol=:nearest; scale=nothing, size=nothing)
+    mode in [:nearest, :bilinear, :trilinear] || throw(ArgumentError("mode=:$mode is not supported."))
+    if !(isnothing(scale) ⊻ isnothing(size))
+        throw(ArgumentError("Either scale or size should be specified (but not both)."))
+    end
+    return Upsample{mode,typeof(scale),typeof(size)}(scale, size)
+end
+
+Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
+
+(m::Upsample{:nearest})(x::AbstractArray, ::NamedTuple, st::NamedTuple) = NNlib.upsample_nearest(x, m.scale), st
+function (m::Upsample{:nearest,Int})(x::AbstractArray{T,N}, ::NamedTuple, st::NamedTuple) where {T,N}
+    return NNlib.upsample_nearest(x, ntuple(i -> m.scale, N - 2)), st
+end
+function (m::Upsample{:nearest,Nothing})(x::AbstractArray, ::NamedTuple, st::NamedTuple)
+    return NNlib.upsample_nearest(x; size=m.size), st
+end
+
+(m::Upsample{:bilinear})(x::AbstractArray, ::NamedTuple, st::NamedTuple) = NNlib.upsample_bilinear(x, m.scale), st
+function (m::Upsample{:bilinear,Nothing})(x::AbstractArray, ::NamedTuple, st::NamedTuple)
+    return NNlib.upsample_bilinear(x; size=m.size), st
+end
+
+(m::Upsample{:trilinear})(x::AbstractArray, ::NamedTuple, st::NamedTuple) = NNlib.upsample_trilinear(x, m.scale), st
+function (m::Upsample{:trilinear,Nothing})(x::AbstractArray, ::NamedTuple, st::NamedTuple)
+    return NNlib.upsample_trilinear(x; size=m.size), st
+end
+
+function Base.show(io::IO, u::Upsample{mode}) where {mode}
+    print(io, "Upsample(")
+    print(io, ":", mode)
+    u.scale !== nothing && print(io, ", scale = $(u.scale)")
+    u.size !== nothing && print(io, ", size = $(u.size)")
+    return print(io, ")")
+end
+
+# Global Mean Pooling
+struct GlobalMeanPool <: AbstractExplicitLayer end
+
+Base.@pure function (g::GlobalMeanPool)(x, ::NamedTuple, st::NamedTuple)
+    return meanpool(x, PoolDims(x, size(x)[1:end - 2])), st
+end
+
+function Base.show(io::IO, ::GlobalMeanPool)
+    return print(io, "GlobalMeanPool()")
+end
+
+# Global Max Pooling
+struct GlobalMaxPool <: AbstractExplicitLayer end
+
+Base.@pure function (g::GlobalMaxPool)(x, ::NamedTuple, st::NamedTuple)
+    return maxpool(x, PoolDims(x, size(x)[1:end - 2])), st
+end
+
+function Base.show(io::IO, ::GlobalMaxPool)
+    return print(io, "GlobalMaxPool()")
 end

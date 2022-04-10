@@ -23,8 +23,8 @@ end
 
 function fast_matmul!(C::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat)
     # Octavian can have unreliable speed sometimes
-    return matmul!(C, A, B)
-    # return mul!(C, A, B)
+    # return matmul!(C, A, B)
+    return mul!(C, A, B)
 end
 
 function fast_matmul!(
@@ -164,6 +164,24 @@ function norm_forward!(
 end
 
 # Convolution
+conv_wrapper(x, weight, cdims) = conv(x, weight, cdims)
+
+function conv_wrapper(x::SubArray{T,N,<:CuArray}, weight, cdims) where {T,N}
+    return conv(copy(x), weight, cdims)
+end
+
+function fast_conv_bias_act(
+    x::SubArray{T,N,<:CuArray},
+    w::AbstractArray{wT,N},
+    cdims::ConvDims,
+    b::AbstractArray{bT,N},
+    λ=identity;
+    kwargs...
+) where {T, wT, bT, N}
+    # NOTE: Without this we wont use CUDNN
+    return fast_conv_bias_act(copy(x), w, cdims, b, λ, kwargs...)
+end
+
 function fast_conv_bias_act(
     x::AbstractArray{xT,N},
     w::AbstractArray{wT,N},

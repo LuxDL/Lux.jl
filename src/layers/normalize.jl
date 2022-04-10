@@ -30,7 +30,11 @@ function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine
     return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
 end
 function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
-    return track_stats ? (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto) : (training=:auto,)
+    return if track_stats
+        (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto)
+    else
+        (μ=nothing, σ²=nothing, training=:auto)
+    end
 end
 
 function createcache(
@@ -122,7 +126,7 @@ function (BN::BatchNorm{affine,track_stats})(
                 alpha=true,
                 beta=false,
                 eps=BN.ϵ,
-                training=istraining(states.training),
+                training=istraining(states),
             ),
         ),
         states,
@@ -148,7 +152,7 @@ function (BN::BatchNorm{affine,track_stats})(
                 alpha=true,
                 beta=false,
                 eps=BN.ϵ,
-                training=istraining(states.training),
+                training=istraining(states),
             ),
         ),
         states,
@@ -188,7 +192,11 @@ function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine
     return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
 end
 function initialstates(::AbstractRNG, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
-    return track_stats ? (μ=zeros32(l.groups), σ²=ones32(l.groups), training=:auto) : (training=:auto,)
+    return if track_stats
+        (μ=zeros32(l.groups), σ²=ones32(l.groups), training=:auto)
+    else
+        (μ=nothing, σ²=nothing, training=:auto)
+    end
 end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
@@ -251,7 +259,7 @@ initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 Base.@pure function (wn::WeightNorm)(x, ps::NamedTuple, s::NamedTuple)
     _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
-    return wn.layer(x, (; _ps..., ps.unnormalized...), s)
+    return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end
 
 function get_normalized_parameters(::WeightNorm{Val{which_params}}, ::Nothing, ps::NamedTuple) where {which_params}
@@ -266,4 +274,8 @@ function get_normalized_parameters(::WeightNorm{Val{which_params}}, dims::Tuple,
     _vs = getfield.((ps,), Symbol.(wp_s .* "_v"))
     _gs = getfield.((ps,), Symbol.(wp_s .* "_g"))
     return NamedTuple{which_params}(map((v, g, dim) -> (v .* (g ./ _norm_except(v, dim))), _vs, _gs, dims))
+end
+
+function Base.show(io::IO, w::WeightNorm{Val{which_params}}) where {which_params}
+    return print(io, "WeightNorm{", which_params, "}(", w.layer, ")")
 end

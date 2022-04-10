@@ -58,14 +58,7 @@ apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple) = model(x
 apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = model(x, ps, st, cache)
 
 # Test Mode
-function _update_training_mode(st::NamedTuple, mode::Bool)
-    @set! st.training = mode
-    return st
-end
-
-function testmode(states::NamedTuple, mode::Bool=true)
-    return fmap(st -> _update_training_mode(st, !mode), states; exclude=x -> :training ∈ keys(x))
-end
+testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, !mode)
 
 testmode(x::Any, mode::Bool=true) = x
 
