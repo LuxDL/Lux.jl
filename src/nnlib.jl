@@ -92,6 +92,57 @@ function norm_forward(
     end
 end
 
+Base.@pure function normalization_forward(
+    l::AbstractNormalizationLayer{affine,track_stats},
+    x::AbstractArray{T,N},
+    xmean::Union{Nothing,AbstractArray{T,N}},
+    xvar::Union{Nothing,AbstractArray{T,N}},
+    scale::Union{Nothing,AbstractArray{T,N}},
+    bias::Union{Nothing,AbstractArray{T,N}},
+    activation::AT;
+    training::Bool
+) where {T,N,affine,track_stats,AT}
+    reduce_dims = get_reduce_dims(l, x)
+    if !training
+        # Computing the mean and variance for the batch
+        if !track_stats
+            batchmean = mean(x, dims=reduce_dims)
+            batchvar = .√(std(x; mean=batchmean, dims=reduce_dims))
+        else
+            batchmean = xmean
+            batchvar = xvar
+        end
+    else
+        batchmean = mean(x, dims=reduce_dims)
+        batchvar = .√(std(x; mean=batchmean, dims=reduce_dims))
+
+        if track_stats
+            mometum = l.momentum
+            # Note that the @. after equals to is intentional to prevent mutation
+            xmean = @. (1 - mometum) * xmean + mometum * batchmean
+            xvar = @. (1 - mometum) * xvar + mometum * batchvar
+        end
+    end
+
+    if affine
+        if AT == typeof(identity)
+            x_normalized = @. scale * (x - batchmean) / (batchvar + l.ϵ) + bias
+        else
+            x_normalized = @. activation(scale * (x - batchmean) / (batchvar + l.ϵ) + bias)
+        end
+    else
+        if AT == typeof(identity)
+            x_normalized = @. (x - batchmean) / (batchvar + l.ϵ)
+        else
+            x_normalized = @. activation((x - batchmean) / (batchvar + l.ϵ))
+        end
+    end
+
+    # the mean and variance should not be used in any form other than storing
+    # for future iterations
+    return x_normalized, xmean, xvar
+end
+
 function get_stats!(
     ::Val{track_stats},
     ::Val{active},

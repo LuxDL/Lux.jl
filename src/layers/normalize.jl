@@ -1,5 +1,7 @@
 abstract type AbstractNormalizationLayer{affine,track_stats} <: AbstractExplicitLayer end
 
+get_reduce_dims(::AbstractNormalizationLayer, ::AbstractArray) = error("Not Implemented Yet!!")
+
 # BatchNorm
 struct BatchNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     λ::F1
@@ -27,7 +29,7 @@ function BatchNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
+    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple(γ=nothing, β=nothing)
 end
 function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     return if track_stats
@@ -65,12 +67,46 @@ function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track
     return print(io, ")")
 end
 
+get_reduce_dims(::BatchNorm, x::AbstractArray{T,N}) where {T,N} = [1:(N - 2); N]
+
 function batchnorm_fallback(BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple) where {T,N}
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(states) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
     reduce_dims = [1:(N - 2); N]
     affine_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
     return norm_forward(BN, ps, states, x, reduce_dims, affine_shape)
+end
+
+function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
+    y, states = BN(x[:, :], ps, states)
+    return y[:], states
+end
+
+function (BN::BatchNorm)(x::AbstractArray{T}, ps::NamedTuple, states::NamedTuple) where {T}
+    return batchnorm_fallback(BN, x, ps, states), states
+end
+
+function (BN::BatchNorm{affine,track_stats})(
+    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, states::NamedTuple
+) where {T<:Union{Float32,Float64},affine,track_stats}
+    # TODO: Update to the latest CUDNN API
+    return (
+        BN.λ.(
+            batchnorm(
+                ps.γ,
+                ps.β,
+                x,
+                states.μ,
+                states.σ²,
+                BN.momentum;
+                alpha=true,
+                beta=false,
+                eps=BN.ϵ,
+                training=istraining(states),
+            ),
+        ),
+        states,
+    )
 end
 
 function batchnorm_fallback!(
@@ -91,15 +127,6 @@ function batchnorm_fallback!(
     )
 end
 
-function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
-    y, states = BN(x[:, :], ps, states)
-    return y[:], states
-end
-
-function (BN::BatchNorm)(x::AbstractArray{T}, ps::NamedTuple, states::NamedTuple) where {T}
-    return batchnorm_fallback(BN, x, ps, states), states
-end
-
 function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple, cache::NamedTuple)
     y, states = BN(reshape(x, :, 1), ps, states, cache)
     return vec(y), states
@@ -107,30 +134,6 @@ end
 
 function (BN::BatchNorm)(x::AbstractArray, ps::NamedTuple, states::NamedTuple, cache::NamedTuple)
     return batchnorm_fallback!(BN, x, ps, states, cache), states
-end
-
-function (BN::BatchNorm{affine,track_stats})(
-    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, states::NamedTuple
-) where {T<:Union{Float32,Float64},affine,track_stats}
-    # TODO: Update to the latest CUDNN API
-    (!affine || !track_stats) && return (batchnorm_fallback(BN, x, ps, states), states)
-    return (
-        BN.λ.(
-            batchnorm(
-                ps.γ,
-                ps.β,
-                x,
-                states.μ,
-                states.σ²,
-                BN.momentum;
-                alpha=true,
-                beta=false,
-                eps=BN.ϵ,
-                training=istraining(states),
-            ),
-        ),
-        states,
-    )
 end
 
 function (BN::BatchNorm{affine,track_stats})(
