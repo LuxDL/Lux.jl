@@ -29,7 +29,7 @@ function BatchNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple(γ=nothing, β=nothing)
+    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : (γ=nothing, β=nothing)
 end
 function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     return if track_stats
@@ -69,44 +69,47 @@ end
 
 get_reduce_dims(::BatchNorm, x::AbstractArray{T,N}) where {T,N} = [1:(N - 2); N]
 
-function batchnorm_fallback(BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple) where {T,N}
-    @assert size(x, N - 1) == BN.chs
-    @assert !istraining(states) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
-    reduce_dims = [1:(N - 2); N]
-    affine_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
-    return norm_forward(BN, ps, states, x, reduce_dims, affine_shape)
+get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractArray{T,N}) where {T,N} = y
+function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector) where {T,N}
+    return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
 end
+get_proper_shape(::BatchNorm, ::AbstractArray, y::Nothing) = y
 
 function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
     y, states = BN(x[:, :], ps, states)
     return y[:], states
 end
 
-function (BN::BatchNorm)(x::AbstractArray{T}, ps::NamedTuple, states::NamedTuple) where {T}
-    return batchnorm_fallback(BN, x, ps, states), states
+function (BN::BatchNorm{affine,track_stats})(
+    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
+) where {T,N,affine,track_stats}
+    @assert size(x, N - 1) == BN.chs
+    @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
+
+    x_normalized, xmean, xvar = normalization_forward(
+        BN,
+        x,
+        get_proper_shape(BN, x, st.μ),
+        get_proper_shape(BN, x, st.σ²),
+        get_proper_shape(BN, x, ps.γ),
+        get_proper_shape(BN, x, ps.β),
+        BN.λ;
+        training=istraining(st),
+    )
+
+    st_ = if track_stats
+        (μ=xmean, σ²=xvar, training=st.training)
+    else
+        st
+    end
+
+    return (x_normalized, st_)
 end
 
 function (BN::BatchNorm{affine,track_stats})(
-    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, states::NamedTuple
+    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, st::NamedTuple
 ) where {T<:Union{Float32,Float64},affine,track_stats}
-    # TODO: Update to the latest CUDNN API
-    return (
-        BN.λ.(
-            batchnorm(
-                ps.γ,
-                ps.β,
-                x,
-                states.μ,
-                states.σ²,
-                BN.momentum;
-                alpha=true,
-                beta=false,
-                eps=BN.ϵ,
-                training=istraining(states),
-            ),
-        ),
-        states,
-    )
+    return (BN.λ.(batchnorm(ps.γ, ps.β, x, st.μ, st.σ², BN.momentum; eps=BN.ϵ, training=istraining(st)),), st)
 end
 
 function batchnorm_fallback!(

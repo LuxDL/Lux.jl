@@ -107,34 +107,35 @@ Base.@pure function normalization_forward(
         # Computing the mean and variance for the batch
         if !track_stats
             batchmean = mean(x, dims=reduce_dims)
-            batchvar = .√(std(x; mean=batchmean, dims=reduce_dims))
+            batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
         else
             batchmean = xmean
             batchvar = xvar
         end
     else
         batchmean = mean(x, dims=reduce_dims)
-        batchvar = .√(std(x; mean=batchmean, dims=reduce_dims))
+        batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
 
         if track_stats
             mometum = l.momentum
+            m = T(prod(size(x, i) for i in reduce_dims))
             # Note that the @. after equals to is intentional to prevent mutation
             xmean = @. (1 - mometum) * xmean + mometum * batchmean
-            xvar = @. (1 - mometum) * xvar + mometum * batchvar
+            xvar = @. (1 - mometum) * xvar + mometum * batchvar * (m / (m - 1))
         end
     end
 
     if affine
         if AT == typeof(identity)
-            x_normalized = @. scale * (x - batchmean) / (batchvar + l.ϵ) + bias
+            x_normalized = @. scale * (x - batchmean) / √(batchvar + l.ϵ) + bias
         else
-            x_normalized = @. activation(scale * (x - batchmean) / (batchvar + l.ϵ) + bias)
+            x_normalized = @. activation(scale * (x - batchmean) / √(batchvar + l.ϵ) + bias)
         end
     else
         if AT == typeof(identity)
-            x_normalized = @. (x - batchmean) / (batchvar + l.ϵ)
+            x_normalized = @. (x - batchmean) / √(batchvar + l.ϵ)
         else
-            x_normalized = @. activation((x - batchmean) / (batchvar + l.ϵ))
+            x_normalized = @. activation((x - batchmean) / √(batchvar + l.ϵ))
         end
     end
 
