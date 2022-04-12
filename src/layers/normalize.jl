@@ -2,6 +2,9 @@ abstract type AbstractNormalizationLayer{affine,track_stats} <: AbstractExplicit
 
 get_reduce_dims(::AbstractNormalizationLayer, ::AbstractArray) = error("Not Implemented Yet!!")
 
+get_proper_shape(::AbstractNormalizationLayer, ::AbstractArray, y::Nothing, args...) = y
+get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::AbstractArray{T,N}, args...) where {T,N} = y
+
 # BatchNorm
 struct BatchNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     λ::F1
@@ -69,18 +72,16 @@ end
 
 get_reduce_dims(::BatchNorm, x::AbstractArray{T,N}) where {T,N} = [1:(N - 2); N]
 
-get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractArray{T,N}) where {T,N} = y
 function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector) where {T,N}
     return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
 end
-get_proper_shape(::BatchNorm, ::AbstractArray, y::Nothing) = y
 
 function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
     y, states = BN(x[:, :], ps, states)
     return y[:], states
 end
 
-function (BN::BatchNorm{affine,track_stats})(
+Base.@pure function (BN::BatchNorm{affine,track_stats})(
     x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
 ) where {T,N,affine,track_stats}
     @assert size(x, N - 1) == BN.chs
@@ -217,18 +218,43 @@ function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track
     return print(io, ")")
 end
 
-function (GN::GroupNorm)(x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple) where {T,N}
+get_reduce_dims(::GroupNorm, ::AbstractArray{T,N}) where {T,N} = 1:(N - 1)
+
+function get_proper_shape(::GroupNorm, x::AbstractArray{T,N}, y::AbstractVector, mode::Symbol) where {T,N}
+    if mode == :state
+        return reshape(y, ntuple(i -> i == N - 1 ? size(x, i) : 1, N)...)
+    else
+        return reshape(y, ntuple(i -> i ∈ (N - 2, N - 1) ? size(x, i) : 1, N)...)
+    end
+end
+
+Base.@pure function (GN::GroupNorm{affine,track_stats})(
+    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
+) where {T,N,affine,track_stats}
     sz = size(x)
     @assert N > 2
     @assert sz[N - 1] == GN.chs
 
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
-    N_ = N + 1
 
-    reduce_dims = 1:(N_ - 2)
-    affine_shape = ntuple(i -> i ∈ (N_ - 1, N_ - 2) ? size(x_, i) : 1, N_)
+    x_normalized, xmean, xvar = normalization_forward(
+        GN,
+        x_,
+        get_proper_shape(GN, x_, st.μ, :state),
+        get_proper_shape(GN, x_, st.σ², :state),
+        get_proper_shape(GN, x_, ps.γ, :param),
+        get_proper_shape(GN, x_, ps.β, :param),
+        GN.λ;
+        training=istraining(st),
+    )
 
-    return reshape(norm_forward(GN, ps, st, x_, reduce_dims, affine_shape), sz), st
+    st_ = if track_stats
+        (μ=xmean, σ²=xvar, training=st.training)
+    else
+        st
+    end
+
+    return reshape(x_normalized, sz), st_
 end
 
 # WeightNorm

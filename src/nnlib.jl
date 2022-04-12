@@ -36,60 +36,10 @@ function fast_matmul!(
 end
 
 # Normalization Implementation
-function get_stats!(
-    ::Val{track_stats}, ::Val{active}, μ, σ², x::AbstractArray{T,N}, reduce_dims, momentum::T
-) where {track_stats,active,T,N}
-    if track_stats
-        if active
-            # Training
-            μ_batch = mean(x; dims=reduce_dims)
-            σ²_batch = std(x; mean=μ_batch, dims=reduce_dims)
-            _update_stats!(reduce_dims, N, μ_batch, σ²_batch, momentum, μ, σ²)
-            return μ_batch, σ²_batch
-        else
-            # Testing
-            stats_shape = ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
-            return reshape(μ, stats_shape), reshape(σ², stats_shape)
-        end
-    else
-        # No Statistics Tracking
-        μ = mean(x; dims=reduce_dims)
-        return μ, std(x; mean=μ, dims=reduce_dims)
-    end
-end
-
-function _update_stats!(reduce_dims, N, _μ, _σ², momentum, μ, σ²)
-    μnew = vec(N == reduce_dims[end] ? _μ : mean(_μ; dims=N))
-    σ²new = vec(N == reduce_dims[end] ? _σ² : mean(_σ²; dims=N))
-    @. μ = (1 - momentum) * μ + momentum * μnew
-    @. σ² = (1 - momentum) * σ² + momentum * σ²new
-    return nothing
-end
-
-function norm_forward(
-    l::AbstractNormalizationLayer{affine,track_stats},
-    ps::NamedTuple,
-    states::NamedTuple,
-    x::AbstractArray{T,N},
-    reduce_dims,
-    affine_shape,
-) where {T,N,affine,track_stats}
-    μ, σ² = get_stats!(
-        Val(track_stats),
-        Val(states.training == :auto ? istraining() : states.training),
-        states.μ,
-        states.σ²,
-        x,
-        reduce_dims,
-        l.momentum,
-    )
-    if affine
-        γ = reshape(ps.γ, affine_shape)
-        β = reshape(ps.β, affine_shape)
-        return @. l.λ(γ * (x - μ) / sqrt(σ² + l.ϵ) + β)
-    else
-        return @. l.λ((x - μ) / sqrt(σ² + l.ϵ))
-    end
+Base.@pure function update_statistics(xmean, xvar, batchmean, batchvar, momentum, m)
+    _xmean = @. (1 - momentum) * xmean + momentum * batchmean
+    _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
+    return (_xmean, _xvar)
 end
 
 Base.@pure function normalization_forward(
@@ -100,28 +50,26 @@ Base.@pure function normalization_forward(
     scale::Union{Nothing,AbstractArray{T,N}},
     bias::Union{Nothing,AbstractArray{T,N}},
     activation::AT;
-    training::Bool
+    training::Bool,
 ) where {T,N,affine,track_stats,AT}
     reduce_dims = get_reduce_dims(l, x)
     if !training
         # Computing the mean and variance for the batch
         if !track_stats
-            batchmean = mean(x, dims=reduce_dims)
+            batchmean = mean(x; dims=reduce_dims)
             batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
         else
             batchmean = xmean
             batchvar = xvar
         end
     else
-        batchmean = mean(x, dims=reduce_dims)
+        batchmean = mean(x; dims=reduce_dims)
         batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
 
         if track_stats
-            mometum = l.momentum
-            m = T(prod(size(x, i) for i in reduce_dims))
-            # Note that the @. after equals to is intentional to prevent mutation
-            xmean = @. (1 - mometum) * xmean + mometum * batchmean
-            xvar = @. (1 - mometum) * xvar + mometum * batchvar * (m / (m - 1))
+            xmean, xvar = update_statistics(
+                xmean, xvar, batchmean, batchvar, l.momentum, T(prod(size(x, i) for i in reduce_dims))
+            )
         end
     end
 
@@ -223,25 +171,15 @@ function conv_wrapper(x::SubArray{T,N,<:CuArray}, weight, cdims) where {T,N}
 end
 
 function fast_conv_bias_act(
-    x::SubArray{T,N,<:CuArray},
-    w::AbstractArray{wT,N},
-    cdims::ConvDims,
-    b::AbstractArray{bT,N},
-    λ=identity;
-    kwargs...
-) where {T, wT, bT, N}
+    x::SubArray{T,N,<:CuArray}, w::AbstractArray{wT,N}, cdims::ConvDims, b::AbstractArray{bT,N}, λ=identity; kwargs...
+) where {T,wT,bT,N}
     # NOTE: Without this we wont use CUDNN
     return fast_conv_bias_act(copy(x), w, cdims, b, λ, kwargs...)
 end
 
 function fast_conv_bias_act(
-    x::AbstractArray{xT,N},
-    w::AbstractArray{wT,N},
-    cdims::ConvDims,
-    b::AbstractArray{bT,N},
-    λ=identity;
-    kwargs...
-) where {xT, wT, bT, N}
+    x::AbstractArray{xT,N}, w::AbstractArray{wT,N}, cdims::ConvDims, b::AbstractArray{bT,N}, λ=identity; kwargs...
+) where {xT,wT,bT,N}
     y = similar(x, promote_type(xT, wT, bT), NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
     return fast_conv_bias_act!(y, x, w, cdims, b, λ, kwargs...)
 end
@@ -253,8 +191,8 @@ function fast_conv_bias_act!(
     cdims::ConvDims,
     b::AbstractArray{bT,N},
     λ::T=identity;
-    kwargs...
-) where {yT, xT, wT, bT, N, T}
+    kwargs...,
+) where {yT,xT,wT,bT,N,T}
     conv!(y, x, w, cdims)
     if T == typeof(identity)
         @. y += b
@@ -266,12 +204,12 @@ end
 
 # Dropout
 _dropout_shape(s, ::Colon) = size(s)
-_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) ∈ enumerate(size(s)))...)
+_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 
 _dropout_kernel(y::T, p::T, q::T) where {T} = y > p ? inv(q) : 0
 
 function dropout(rng::AbstractRNG, x, p; dims=:)
-    y = _dropout_mask(rng, x, p, dims=dims)
+    y = _dropout_mask(rng, x, p; dims=dims)
     return dropout(rng, y, x, p; dims=dims), y
 end
 
