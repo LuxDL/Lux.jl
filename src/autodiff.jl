@@ -10,7 +10,6 @@ Base.zero(l::AbstractExplicitLayer) = l
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple) = true, _ -> (NoTangent(), NoTangent())
 
-ChainRulesCore.@non_differentiable _update_stats!(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable _dropout_mask(::Any, ::Any, ::Any)
 

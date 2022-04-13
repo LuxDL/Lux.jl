@@ -198,6 +198,75 @@ function Base.show(io::IO, m::BranchLayer)
     return print(io, "BranchLayer(", m.layers, ")")
 end
 
+## PairwiseFusion
+struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitLayer
+    connection::F
+    layers::T
+end
+
+initialparameters(rng::AbstractRNG, p::PairwiseFusion) = initialparameters(rng, p.layers)
+initialstates(rng::AbstractRNG, p::PairwiseFusion) = initialstates(rng, p.layers)
+
+function PairwiseFusion(connection, layers...)
+    names = ntuple(i -> Symbol("layer_$i"), length(layers))
+    return PairwiseFusion(connection, NamedTuple{names}(layers))
+end
+
+function PairwiseFusion(connection; kw...)
+    layers = NamedTuple(kw)
+    if :layers in Base.keys(layers) || :connection in Base.keys(layers)
+        throw(ArgumentError("a PairwiseFusion layer cannot have a named sub-layer called `connection` or `layers`"))
+    end
+    isempty(layers) && throw(ArgumentError("a PairwiseFusion layer must have at least one sub-layer"))
+    return PairwiseFusion(connection, layers)
+end
+
+function (m::PairwiseFusion)(x, ps::NamedTuple, st::NamedTuple)
+    return applypairwisefusion(m.layers, m.connection, x, ps, st)
+end
+
+@generated function applypairwisefusion(
+    layers::NamedTuple{names}, connection::C, x, ps::NamedTuple, st::NamedTuple
+) where {names,C}
+    N = length(names)
+    y_symbols = [gensym() for _ in 1:(N + 1)]
+    st_symbols = [gensym() for _ in 1:N]
+    calls = [:($(y_symbols[N + 1]) = x)]
+    for i in 1:N
+        push!(calls, :(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]), ps[$i], st[$i])))
+        push!(calls, :($(y_symbols[N + 1]) = connection($(y_symbols[i]), x)))
+    end
+    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
+    append!(calls, [:(return $(y_symbols[N + 1]), st)])
+    return Expr(:block, calls...)
+end
+
+@generated function applypairwisefusion(
+    layers::NamedTuple{names}, connection::C, x::Tuple, ps::NamedTuple, st::NamedTuple
+) where {names,C}
+    N = length(names)
+    y_symbols = [gensym() for _ in 1:(N + 1)]
+    st_symbols = [gensym() for _ in 1:N]
+    calls = [:($(y_symbols[N + 1]) = x[1])]
+    for i in 1:N
+        push!(calls, :(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]), ps[$i], st[$i])))
+        push!(calls, :($(y_symbols[N + 1]) = connection($(y_symbols[i]), x[$(i + 1)])))
+    end
+    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
+    append!(calls, [:(return $(y_symbols[N + 1]), st)])
+    return Expr(:block, calls...)
+end
+
+Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
+
+function Base.show(io::IO, m::PairwiseFusion)
+    if m.connection === nothing
+        return print(io, "PairwiseFusion(", m.layers, ")")
+    else
+        return print(io, "PairwiseFusion(", m.connection, ", ", m.layers, ")")
+    end
+end
+
 ## Chain
 struct Chain{T} <: AbstractExplicitLayer
     layers::T

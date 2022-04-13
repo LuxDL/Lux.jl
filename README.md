@@ -138,7 +138,7 @@ gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)
 
 These layers have the same API as their Flux counterparts.
 
-* `Chain`, `Parallel`, `SkipConnection`, `BranchLayer`
+* `Chain`, `Parallel`, `SkipConnection`, `BranchLayer`, `PairwiseFusion`
 * `Dense`, `Diagonal`
 * `Conv`, `MaxPool`, `MeanPool`
 * `BatchNorm`, `WeightNorm`, `GroupNorm`
