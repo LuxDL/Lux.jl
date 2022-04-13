@@ -20,6 +20,10 @@ Base.@pure function (f::FlattenLayer)(x::AbstractArray{T,N}, ::NamedTuple, st::N
     return reshape(x, :, size(x, N)), st
 end
 
+function Base.show(io::IO, ::FlattenLayer)
+    return print(io, "Flatten()")
+end
+
 """
     SelectDim(dim, i)
 
@@ -271,6 +275,7 @@ end
 struct Chain{T} <: AbstractExplicitLayer
     layers::T
     function Chain(xs...)
+        length(xs) == 0 && return NoOpLayer()
         length(xs) == 1 && return first(xs)
         xs = flatten_model(xs)
         return new{typeof(xs)}(xs)
@@ -290,6 +295,8 @@ function flatten_model(layers::Union{AbstractVector,Tuple})
             append!(new_layers, f)
         elseif f isa Chain
             append!(new_layers, f.layers)
+        elseif f isa NoOpLayer
+            continue
         else
             push!(new_layers, f)
         end

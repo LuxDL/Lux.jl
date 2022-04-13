@@ -1,4 +1,4 @@
-for T in [:Chain, :Parallel, :SkipConnection]  # container types
+for T in [:Chain, :Parallel, :SkipConnection, :BranchLayer, :PairwiseFusion]  # container types
     @eval function Base.show(io::IO, ::MIME"text/plain", x::$T)
         if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
             _big_show(io, x)
@@ -31,6 +31,15 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
+        elseif obj isa PairwiseFusion
+            _big_show(io, obj.connection, indent + 4)
+            for k in Base.keys(obj)
+                _big_show(io, obj.layers[k], indent + 4, k)
+            end
+        elseif obj isa BranchLayer
+            for k in Base.keys(obj)
+                _big_show(io, obj.layers[k], indent + 4, k)
+            end
         else
             for c in children
                 _big_show(io, c, indent + 4)
@@ -51,7 +60,7 @@ _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
 _get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
-_get_children(c::Union{Chain,BranchLayer}) = c.layers
+_get_children(c::Union{Chain,BranchLayer,PairwiseFusion}) = c.layers
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(s::WeightNorm) = (s.layer,)
 _get_children(::Any) = ()
