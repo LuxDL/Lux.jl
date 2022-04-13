@@ -67,9 +67,14 @@ testmode(m::AbstractExplicitLayer, mode::Bool=true) = testmode(initialstates(m),
 trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
 
 # Utilities to modify global state
-function update_state(st::NamedTuple, key::Symbol, value; layer_check=x -> key ∈ keys(x))
+function update_state(st::NamedTuple, key::Symbol, value; layer_check=_default_layer_check)
     function _update_state(st, key::Symbol, value)
         return Setfield.set(st, Setfield.PropertyLens{key}(), value)
     end
     return fmap(_st -> _update_state(_st, key, value), st; exclude=layer_check)
+end
+
+function _default_layer_check(key)
+    _default_layer_check_closure(x) = key ∈ keys(x)
+    _default_layer_check_closure(x::Symbol) = false
 end
