@@ -58,8 +58,7 @@ Base.@pure function (c::Conv{N,bias,C})(x::AbstractArray, ps::NamedTuple, st::Na
         C
     end
     if bias
-        return fast_conv_bias_act(x, ps.weight, cdims, ps.bias, c.λ), st
-        # return c.λ.(conv(x, ps.weight, cdims) .+ ps.bias), st
+        return c.λ.(conv_wrapper(x, ps.weight, cdims) .+ ps.bias), st
         # FIXME: Needs https://github.com/FluxML/NNlibCUDA.jl/pull/45 to be merged
         # return conv_bias_act(x, ps.weight, cdims, ps.bias, λ), st
     else

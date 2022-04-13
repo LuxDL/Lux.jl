@@ -170,38 +170,6 @@ function conv_wrapper(x::SubArray{T,N,<:CuArray}, weight, cdims) where {T,N}
     return conv(copy(x), weight, cdims)
 end
 
-function fast_conv_bias_act(
-    x::SubArray{T,N,<:CuArray}, w::AbstractArray{wT,N}, cdims::ConvDims, b::AbstractArray{bT,N}, λ=identity; kwargs...
-) where {T,wT,bT,N}
-    # NOTE: Without this we wont use CUDNN
-    return fast_conv_bias_act(copy(x), w, cdims, b, λ, kwargs...)
-end
-
-function fast_conv_bias_act(
-    x::AbstractArray{xT,N}, w::AbstractArray{wT,N}, cdims::ConvDims, b::AbstractArray{bT,N}, λ=identity; kwargs...
-) where {xT,wT,bT,N}
-    y = similar(x, promote_type(xT, wT, bT), NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
-    return fast_conv_bias_act!(y, x, w, cdims, b, λ, kwargs...)
-end
-
-function fast_conv_bias_act!(
-    y::AbstractArray{yT,N},
-    x::AbstractArray{xT,N},
-    w::AbstractArray{wT,N},
-    cdims::ConvDims,
-    b::AbstractArray{bT,N},
-    λ::T=identity;
-    kwargs...,
-) where {yT,xT,wT,bT,N,T}
-    conv!(y, x, w, cdims)
-    if T == typeof(identity)
-        @. y += b
-    else
-        @. y = λ(y + b)
-    end
-    return y
-end
-
 # Dropout
 _dropout_shape(s, ::Colon) = size(s)
 _dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
