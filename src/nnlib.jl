@@ -36,7 +36,15 @@ function fast_matmul!(
 end
 
 # Normalization Implementation
-Base.@pure function update_statistics(xmean, xvar, batchmean, batchvar, momentum, m)
+Base.@pure function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
+    batchmean = mean(batchmean, dims=ndims(batchmean))
+    batchvar = mean(batchvar, dims=ndims(batchvar))
+    _xmean = @. (1 - momentum) * xmean + momentum * batchmean
+    _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
+    return (_xmean, _xvar)
+end
+
+Base.@pure function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
     _xmean = @. (1 - momentum) * xmean + momentum * batchmean
     _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
     return (_xmean, _xvar)
@@ -68,7 +76,7 @@ Base.@pure function normalization_forward(
 
         if track_stats
             xmean, xvar = update_statistics(
-                xmean, xvar, batchmean, batchvar, l.momentum, T(prod(size(x, i) for i in reduce_dims))
+                l, xmean, xvar, batchmean, batchvar, l.momentum, T(prod(size(x, i) for i in reduce_dims))
             )
         end
     end
