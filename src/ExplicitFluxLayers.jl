@@ -2,7 +2,8 @@ module ExplicitFluxLayers
 
 const EFL = ExplicitFluxLayers
 
-using Statistics, NNlib, CUDA, Random, Setfield, ChainRulesCore, Octavian, LinearAlgebra, FillArrays, Functors
+using Statistics,
+    NNlib, CUDA, Random, Setfield, ChainRulesCore, Octavian, LinearAlgebra, FillArrays, Functors
 import NNlibCUDA: batchnorm, cudnnBNForward!
 using Flux: Flux
 import Flux:

@@ -57,6 +57,28 @@ end
 apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple) = model(x, ps, st)
 apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = model(x, ps, st, cache)
 
+# Abstract Container Layers
+abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
+
+for f in (:initialparameters, :initialstates, :createcache)
+    @eval begin
+        function $(f)(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}, args...; kwargs...) where {layers}
+            if length(layers) == 1
+                return $(f)(rng, getfield(l, layers[1], args...; kwargs...))
+            end
+            return NamedTuple{layers}(map(x -> $(f)(rng, getfield(l, x, args...; kwargs...)), layers))
+        end
+    end
+end
+
+for f in (:parameterlength, :statelength, :cachesize)
+    @eval begin
+        function $(f)(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}, args...; kwargs...) where {layers}
+            return sum(map(x -> $(f)(rng, getfield(l, x, args...; kwargs...)), layers))
+        end
+    end
+end
+
 # Test Mode
 testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, !mode)
 

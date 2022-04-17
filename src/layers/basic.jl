@@ -68,16 +68,10 @@ function Base.show(io::IO, w::WrappedFunction)
 end
 
 ## SkipConnection
-struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitLayer
+struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
     connection::F
 end
-
-initialparameters(rng::AbstractRNG, s::SkipConnection) = initialparameters(rng, s.layers)
-initialstates(rng::AbstractRNG, s::SkipConnection) = initialstates(rng, s.layers)
-
-parameterlength(s::SkipConnection) = parameterlength(s.layers)
-statelength(s::SkipConnection) = statelength(s.layers)
 
 function (skip::SkipConnection)(input, ps::NamedTuple, st::NamedTuple)
     mx, st = skip.layers(input, ps, st)
@@ -89,13 +83,10 @@ function Base.show(io::IO, b::SkipConnection)
 end
 
 ## Parallel
-struct Parallel{F,T<:NamedTuple} <: AbstractExplicitLayer
+struct Parallel{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
 end
-
-initialparameters(rng::AbstractRNG, p::Parallel) = initialparameters(rng, p.layers)
-initialstates(rng::AbstractRNG, p::Parallel) = initialstates(rng, p.layers)
 
 function Parallel(connection, layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
@@ -162,12 +153,9 @@ function Base.show(io::IO, m::Parallel)
 end
 
 ## Branching Layer
-struct BranchLayer{T<:NamedTuple} <: AbstractExplicitLayer
+struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 end
-
-initialparameters(rng::AbstractRNG, b::BranchLayer) = initialparameters(rng, b.layers)
-initialstates(rng::AbstractRNG, b::BranchLayer) = initialstates(rng, b.layers)
 
 function BranchLayer(layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
@@ -203,13 +191,10 @@ function Base.show(io::IO, m::BranchLayer)
 end
 
 ## PairwiseFusion
-struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitLayer
+struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
 end
-
-initialparameters(rng::AbstractRNG, p::PairwiseFusion) = initialparameters(rng, p.layers)
-initialstates(rng::AbstractRNG, p::PairwiseFusion) = initialstates(rng, p.layers)
 
 function PairwiseFusion(connection, layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
@@ -272,7 +257,7 @@ function Base.show(io::IO, m::PairwiseFusion)
 end
 
 ## Chain
-struct Chain{T} <: AbstractExplicitLayer
+struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
     function Chain(xs...)
         length(xs) == 0 && return NoOpLayer()

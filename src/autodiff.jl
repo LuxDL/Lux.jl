@@ -8,7 +8,9 @@ Base.zero(nt::NamedTuple{fields}) where {fields} = NamedTuple{fields}(zero.(valu
 Base.zero(l::AbstractExplicitLayer) = l
 
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
-ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple) = true, _ -> (NoTangent(), NoTangent())
+function ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple)
+    return (st.training == :auto ? true : st.training), _ -> (NoTangent(), NoTangent())
+end
 
 ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable _dropout_mask(::Any, ::Any, ::Any)
