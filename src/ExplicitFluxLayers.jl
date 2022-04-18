@@ -3,7 +3,17 @@ module ExplicitFluxLayers
 const EFL = ExplicitFluxLayers
 
 using Statistics,
-    NNlib, CUDA, Random, Setfield, ChainRulesCore, Octavian, LinearAlgebra, FillArrays, Functors
+    NNlib,
+    CUDA,
+    Random,
+    Setfield,
+    ChainRulesCore,
+    Octavian,
+    LinearAlgebra,
+    FillArrays,
+    Functors,
+    ComponentArrays,
+    Zygote
 import NNlibCUDA: batchnorm, cudnnBNForward!
 using Flux: Flux
 import Flux:
@@ -17,7 +27,9 @@ import Flux:
     DenseConvDims,
     _maybetuple_string,
     reshape_cell_output,
-    _dropout_mask
+    _dropout_mask,
+    gpu,
+    cpu
 
 # Core
 include("core.jl")

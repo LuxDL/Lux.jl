@@ -24,6 +24,22 @@ istraining(st::NamedTuple)::Bool = st.training == :auto ? istraining() : st.trai
 @inline _norm_except(x::AbstractArray{T,N}, except_dim) where {T,N} = _norm(x; dims=filter(i -> i != except_dim, 1:N))
 @inline _norm_except(x::AbstractArray{T,N}) where {T,N} = _norm_except(x, N)
 
+# Handling ComponentArrays
+gpu(c::ComponentArray) = ComponentArray(gpu(getdata(c)), getaxes(c))
+cpu(c::ComponentArray) = ComponentArray(cpu(getdata(c)), getaxes(c))
 
+Base.zero(c::ComponentArray{T,N,<:CuArray{T}}) where {T,N} = ComponentArray(zero(getdata(c)), getaxes(c))
+
+Base.vec(c::ComponentArray{T,N,<:CuArray{T}}) where {T,N} = getdata(c)
+
+function Base.similar(c::ComponentArray{T,N,<:CuArray{T}}, l::Vararg{Union{Integer, AbstractUnitRange}}) where {T,N}
+    return similar(getdata(c), l)
+end     
+
+function Zygote.accum(x::ComponentArray, y::ComponentArray)
+    return ComponentArray(Zygote.accum(getdata(x), getdata(y)), getaxes(x))
+end
+
+# Zygote things
 unfill_array(x::Fill) = Array(x)
 unfill_array(x::AbstractArray) = x

@@ -2,17 +2,13 @@
 ## API:
 ### initialparameters(rng, l)
 ### initialstates(rng, l)
-### createcache(rng, l, x, ps, st)
-### outputdescriptor(l, x, ps, st)
 ### parameterlength(l)
 ### statelength(l)
-### cachesize(l, x, ps, st)
 ### l(x, ps, st)
-### l(x, ps, st, cache)
 
 abstract type AbstractExplicitLayer end
 
-for f in (:initialparameters, :initialstates, :createcache)
+for f in (:initialparameters, :initialstates)
     @eval begin
         $(f)(::AbstractRNG, ::Any, args...; kwargs...) = NamedTuple()
         $(f)(l, args...; kwargs...) = $(f)(Random.GLOBAL_RNG, l, args...; kwargs...)
@@ -22,7 +18,7 @@ for f in (:initialparameters, :initialstates, :createcache)
     end
 end
 
-for (f, g) in ((:parameterlength, :initialparameters), (:statelength, :initialstates), (:cachesize, :createcache))
+for (f, g) in ((:parameterlength, :initialparameters), (:statelength, :initialstates))
     @eval begin
         $(f)(l::AbstractExplicitLayer, args...; kwargs...) = $(f)($(g)(l), args...; kwargs...)
         $(f)(x::NamedTuple, args...; kwargs...) = nestedtupleofarrayslength(x)
@@ -60,7 +56,7 @@ apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple, cache::Na
 # Abstract Container Layers
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
-for f in (:initialparameters, :initialstates, :createcache)
+for f in (:initialparameters, :initialstates)
     @eval begin
         function $(f)(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}, args...; kwargs...) where {layers}
             if length(layers) == 1
@@ -71,7 +67,7 @@ for f in (:initialparameters, :initialstates, :createcache)
     end
 end
 
-for f in (:parameterlength, :statelength, :cachesize)
+for f in (:parameterlength, :statelength)
     @eval begin
         function $(f)(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}, args...; kwargs...) where {layers}
             return sum(map(x -> $(f)(rng, getfield(l, x, args...; kwargs...)), layers))

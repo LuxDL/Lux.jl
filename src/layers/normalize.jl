@@ -42,25 +42,8 @@ function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {a
     end
 end
 
-function createcache(
-    ::AbstractRNG, l::BatchNorm{affine}, x::AbstractArray{T,_N}, ps::NamedTuple, states::NamedTuple
-) where {T,_N,affine}
-    x = _N == 1 ? @view(x[:, :]) : x
-    N = ndims(x)
-    @assert size(x, N - 1) == l.chs
-    return (
-        normalized_input=similar(x),
-        μ_cache=similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)),
-        σ²_cache=similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)),
-        σ²_intermediate=similar(x),
-        γ_cache=affine ? similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)) : nothing,
-        β_cache=affine ? similar(x, ntuple(i -> i == N - 1 ? l.chs : 1, N)) : nothing,
-    )
-end
-
 parameterlength(l::BatchNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::BatchNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.chs : 0) + 1
-outputdescriptor(::BatchNorm, input::AbstractArray, ::NamedTuple, ::NamedTuple) = zero(input)
 
 function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     print(io, "BatchNorm($(l.chs)")
@@ -107,63 +90,10 @@ Base.@pure function (BN::BatchNorm{affine,track_stats})(
     return (x_normalized, st_)
 end
 
-function (BN::BatchNorm{affine,track_stats})(
+function (BN::BatchNorm)(
     x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, st::NamedTuple
-) where {T<:Union{Float32,Float64},affine,track_stats}
+) where {T<:Union{Float32,Float64}}
     return (BN.λ.(batchnorm(ps.γ, ps.β, x, st.μ, st.σ², BN.momentum; eps=BN.ϵ, training=istraining(st)),), st)
-end
-
-function batchnorm_fallback!(
-    BN::BatchNorm, x::AbstractArray{T,N}, ps::NamedTuple, states::NamedTuple, cache::NamedTuple
-) where {T,N}
-    @assert !istraining(states) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
-    return norm_forward!(
-        cache.normalized_input,
-        cache.μ_cache,
-        cache.σ²_cache,
-        cache.σ²_intermediate,
-        cache.γ_cache,
-        cache.β_cache,
-        BN,
-        ps,
-        states,
-        x,
-    )
-end
-
-function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple, cache::NamedTuple)
-    y, states = BN(reshape(x, :, 1), ps, states, cache)
-    return vec(y), states
-end
-
-function (BN::BatchNorm)(x::AbstractArray, ps::NamedTuple, states::NamedTuple, cache::NamedTuple)
-    return batchnorm_fallback!(BN, x, ps, states, cache), states
-end
-
-function (BN::BatchNorm{affine,track_stats})(
-    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, states::NamedTuple, cache::NamedTuple
-) where {T<:Union{Float32,Float64},affine,track_stats}
-    # TODO: Update to the latest CUDNN API
-    (!affine || !track_stats) && return (batchnorm_fallback!(BN, x, ps, states, cache), states)
-    # TODO: Use the inplace batchnorm CUDA API
-    #       Need to manually handle array reshaping
-    return (
-        BN.λ.(
-            batchnorm(
-                ps.γ,
-                ps.β,
-                x,
-                states.μ,
-                states.σ²,
-                BN.momentum;
-                alpha=true,
-                beta=false,
-                eps=BN.ϵ,
-                training=istraining(states),
-            ),
-        ),
-        states,
-    )
 end
 
 # GroupNorm
@@ -208,7 +138,6 @@ end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::GroupNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.groups : 0) + 1
-outputdescriptor(::GroupNorm, input::AbstractArray, ::NamedTuple, ::NamedTuple) = zero(input)
 
 function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
     print(io, "GroupNorm($(l.chs), $(l.groups)")
