@@ -221,7 +221,8 @@ function initialparameters(rng::AbstractRNG, wn::WeightNorm{Val{which_params}}) 
     ps_normalized = []
     ps_unnormalized = []
     i = 1
-    for (k, v) in pairs(ps_layer)
+    for k in propertynames(ps_layer)
+        v = ps_layer[k]
         if k ∈ which_params
             dim = wn.dims === nothing ? ndims(v) : wn.dims[i]
             push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v, dim))
@@ -231,7 +232,8 @@ function initialparameters(rng::AbstractRNG, wn::WeightNorm{Val{which_params}}) 
             push!(ps_unnormalized, k => v)
         end
     end
-    return (normalized=(; ps_normalized...), unnormalized=(; ps_unnormalized...))
+    ps_unnormalized = length(ps_unnormalized) == 0 ? ComponentArray{Float32}() : ComponentArray(; ps_unnormalized...)
+    return ComponentArray(normalized=ComponentArray(; ps_normalized...), unnormalized=ps_unnormalized)
 end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
