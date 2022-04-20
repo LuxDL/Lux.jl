@@ -248,8 +248,8 @@ function get_normalized_parameters(
     ::WeightNorm{Val{which_params}}, ::Nothing, ps::Union{ComponentArray,NamedTuple}
 ) where {which_params}
     wp_s = string.(which_params)
-    _vs = getfield.((ps,), Symbol.(wp_s .* "_v"))
-    _gs = getfield.((ps,), Symbol.(wp_s .* "_g"))
+    _vs = getproperty.((ps,), Symbol.(wp_s .* "_v"))
+    _gs = getproperty.((ps,), Symbol.(wp_s .* "_g"))
     return NamedTuple{which_params}(map((v, g) -> (v .* (g ./ _norm_except(v))), _vs, _gs))
 end
 
@@ -257,8 +257,8 @@ function get_normalized_parameters(
     ::WeightNorm{Val{which_params}}, dims::Tuple, ps::Union{ComponentArray,NamedTuple}
 ) where {which_params}
     wp_s = string.(which_params)
-    _vs = getfield.((ps,), Symbol.(wp_s .* "_v"))
-    _gs = getfield.((ps,), Symbol.(wp_s .* "_g"))
+    _vs = getproperty.((ps,), Symbol.(wp_s .* "_v"))
+    _gs = getproperty.((ps,), Symbol.(wp_s .* "_g"))
     return NamedTuple{which_params}(map((v, g, dim) -> (v .* (g ./ _norm_except(v, dim))), _vs, _gs, dims))
 end
 

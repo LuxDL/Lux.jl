@@ -22,7 +22,7 @@ None of these attributes of BatchNorm can change over time.
 
 Next each layer needs to have the following functions defined
 
-1. `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a NamedTuple containing the trainable parameters for the layer. For `BatchNorm`, this would contain `γ` and `β` if `affine` is set to `true` else it should be a NamedTuple with fields `γ` and `β` set to `nothing`. As a good practice we recommend all branches to return NamedTuples with same fields.
+1. `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a `ComponentArray` containing the trainable parameters for the layer. For `BatchNorm`, this would contain `γ` and `β` if `affine` is set to `true` else it should be a `ComponentArray` with fields `γ` and `β` set to `nothing`.
 2. `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a NamedTuple containing the current state for the layer. For most layers this is typically empty. Layers that would potentially contain this include `BatchNorm`, Recurrent Neural Networks, etc. For `BatchNorm`, this would contain `μ`, `σ²`, and `training`.
 3. `parameterlength(layer::CustomAbstractExplicitLayer)` & `statelength(layer::CustomAbstractExplicitLayer)` -- These can be automatically calculated, but it is better to define these else we construct the parameter and then count the values which is quite wasteful.
 
@@ -33,6 +33,12 @@ Additionally, each AbstractExplicitLayer must return a Tuple of length 2 with th
 ```julia
 ] add ExplicitFluxLayers
 ```
+
+## Why use ExplicitFluxLayers over Flux?
+
+* 
+
+## Why use Flux over ExplicitFluxLayers?
 
 ## Examples
 ### Basic Usage

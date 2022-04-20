@@ -1,5 +1,5 @@
 # Using EFL for Neural ODEs
-using ExplicitFluxLayers, ComponentArrays, DiffEqSensitivity, OrdinaryDiffEq, Random, Zygote, Flux, CUDA
+using ExplicitFluxLayers, DiffEqSensitivity, OrdinaryDiffEq, Random, Zygote, Flux, CUDA
 
 struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicitContainerLayer{(:model,)}
     model::M
@@ -34,13 +34,13 @@ diffeqsol_to_array(x::ODESolution) = Array(x)
 node =  EFL.Chain(
     NeuralODE(
         EFL.Chain(
-            EFL.WrappedFunction(x -> x .^ 3),
+            x -> x .^ 3,
             EFL.Dense(2, 50, tanh),
             EFL.BatchNorm(50),
             EFL.Dense(50, 2),
         )
     ),
-    EFL.WrappedFunction(diffeqsol_to_array)
+    diffeqsol_to_array
 )
 
 for device in [cpu, gpu]
