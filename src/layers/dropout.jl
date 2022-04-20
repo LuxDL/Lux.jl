@@ -21,9 +21,7 @@ end
 
 function Base.show(io::IO, d::Dropout)
     print(io, "Dropout(", d.p)
-    if d.dims != Colon()
-        print(io, ", dims=", d.dims)
-    end
+    d.dims != Colon() && print(io, ", dims=", d.dims)
     return print(io, ")")
 end
 

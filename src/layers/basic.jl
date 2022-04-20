@@ -24,10 +24,6 @@ Base.@pure function (f::FlattenLayer)(
     return reshape(x, :, size(x, N)), st
 end
 
-function Base.show(io::IO, ::FlattenLayer)
-    return print(io, "Flatten()")
-end
-
 """
     SelectDim(dim, i)
 
@@ -76,10 +72,6 @@ end
 function (skip::SkipConnection)(input, ps::NamedTuple, st::NamedTuple)
     mx, st = skip.layers(input, ps, st)
     return skip.connection(mx, input), st
-end
-
-function Base.show(io::IO, b::SkipConnection)
-    return print(io, "SkipConnection(", b.layers, ", ", b.connection, ")")
 end
 
 ## Parallel
@@ -133,14 +125,6 @@ end
 
 Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
-function Base.show(io::IO, m::Parallel)
-    if m.connection === nothing
-        return print(io, "Parallel(", m.layers, ")")
-    else
-        return print(io, "Parallel(", m.connection, ", ", m.layers, ")")
-    end
-end
-
 ## Branching Layer
 struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
@@ -178,10 +162,6 @@ end
 end
 
 Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
-
-function Base.show(io::IO, m::BranchLayer)
-    return print(io, "BranchLayer(", m.layers, ")")
-end
 
 ## PairwiseFusion
 struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -228,14 +208,6 @@ end
 end
 
 Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
-
-function Base.show(io::IO, m::PairwiseFusion)
-    if m.connection === nothing
-        return print(io, "PairwiseFusion(", m.layers, ")")
-    else
-        return print(io, "PairwiseFusion(", m.connection, ", ", m.layers, ")")
-    end
-end
 
 ## Chain
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -292,10 +264,6 @@ flatten_model(x) = x
 end
 
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
-
-function Base.show(io::IO, c::Chain)
-    return print(io, "Chain(", c.layers, ")")
-end
 
 ## Linear
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer

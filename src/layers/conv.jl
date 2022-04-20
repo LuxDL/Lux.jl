@@ -202,17 +202,9 @@ Base.@pure function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
     return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
-function Base.show(io::IO, ::GlobalMeanPool)
-    return print(io, "GlobalMeanPool()")
-end
-
 # Global Max Pooling
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
 Base.@pure function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
     return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
-end
-
-function Base.show(io::IO, ::GlobalMaxPool)
-    return print(io, "GlobalMaxPool()")
 end

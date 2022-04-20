@@ -51,6 +51,12 @@ function Optimisers.update!(st, ps::ComponentArray, gs::ComponentArray)
     return st, ps
 end
 
+function ComponentArrays.make_carray_args(nt::NamedTuple)
+    data, ax = ComponentArrays.make_carray_args(Vector, nt)
+    data = length(data) == 0 ? data : (length(data)==1 ? [data[1]] : reduce(vcat, data))
+    return (data, ax)
+end
+
 ## For being able to print empty ComponentArrays
 function ComponentArrays.last_index(f::FlatAxis)
     nt = ComponentArrays.indexmap(f)

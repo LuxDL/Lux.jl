@@ -81,9 +81,14 @@ function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
     end
 end
 
+function Base.show(io::IO, x::AbstractExplicitLayer)
+    T = rsplit(string(get_typename(x)), "."; limit=2)[2]
+    print(io, "$T()")
+end
+
 function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
     _str = isnothing(name) ? "" : "$name = "
-    str = _str * sprint(show, get_typename(layer); context=io)
+    str = _str * sprint(show, layer; context=io)
     print(io, " "^indent, str, indent == 0 ? "" : ",")
     paramlength = parameterlength(layer)
     if paramlength > 0
