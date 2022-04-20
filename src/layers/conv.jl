@@ -46,12 +46,16 @@ end
 function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
     initW(args...) = c.initW(rng, args...)
     weight = convfilter(c.kernel_size, c.in_chs => c.out_chs; init=initW, groups=c.groups)
-    return (bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,))
+    return ComponentArray(
+        bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
+    )
 end
 
 parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs + (bias ? c.out_chs : 0)
 
-Base.@pure function (c::Conv{N,bias,C})(x::AbstractArray, ps::NamedTuple, st::NamedTuple) where {N,bias,C}
+Base.@pure function (c::Conv{N,bias,C})(
+    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+) where {N,bias,C}
     cdims = if C === nothing
         DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
     else
@@ -79,7 +83,8 @@ function _print_conv_opt(io::IO, l::Conv{bias}) where {bias}
     all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
     all(==(1), l.dilation) || print(io, ", dilation=", _maybetuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
-    return (bias == false) && print(io, ", bias=false")
+    (bias == false) && print(io, ", bias=false")
+    return nothing
 end
 
 struct MaxPool{N,M,pdims} <: AbstractExplicitLayer
@@ -99,7 +104,7 @@ function MaxPool(k::NTuple{N,Integer}; pad=0, stride=k, input_size::Union{Nothin
     return MaxPool{N,length(pad),pdims}(k, pad, stride)
 end
 
-Base.@pure function (m::MaxPool{N,M,P})(x, ::NamedTuple, st::NamedTuple) where {N,M,P}
+Base.@pure function (m::MaxPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
     pdims = P === nothing ? PoolDims(x, m.k; padding=m.pad, stride=m.stride) : P
     return maxpool(x, pdims), st
 end
@@ -128,7 +133,7 @@ function MeanPool(k::NTuple{N,Integer}; pad=0, stride=k, input_size::Union{Nothi
     return MeanPool{N,length(pad),pdims}(k, pad, stride)
 end
 
-Base.@pure function (m::MeanPool{N,M,P})(x, ::NamedTuple, st::NamedTuple) where {N,M,P}
+Base.@pure function (m::MeanPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
     pdims = P === nothing ? PoolDims(x, m.k; padding=m.pad, stride=m.stride) : P
     return meanpool(x, pdims), st
 end
@@ -156,21 +161,29 @@ end
 
 Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
 
-(m::Upsample{:nearest})(x::AbstractArray, ::NamedTuple, st::NamedTuple) = NNlib.upsample_nearest(x, m.scale), st
-function (m::Upsample{:nearest,Int})(x::AbstractArray{T,N}, ::NamedTuple, st::NamedTuple) where {T,N}
+function (m::Upsample{:nearest})(x::AbstractArray, ps, st::NamedTuple)
+    return NNlib.upsample_nearest(x, m.scale), st
+end
+function (m::Upsample{:nearest,Int})(
+    x::AbstractArray{T,N}, ps, st::NamedTuple
+) where {T,N}
     return NNlib.upsample_nearest(x, ntuple(i -> m.scale, N - 2)), st
 end
-function (m::Upsample{:nearest,Nothing})(x::AbstractArray, ::NamedTuple, st::NamedTuple)
+function (m::Upsample{:nearest,Nothing})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_nearest(x; size=m.size), st
 end
 
-(m::Upsample{:bilinear})(x::AbstractArray, ::NamedTuple, st::NamedTuple) = NNlib.upsample_bilinear(x, m.scale), st
-function (m::Upsample{:bilinear,Nothing})(x::AbstractArray, ::NamedTuple, st::NamedTuple)
+function (m::Upsample{:bilinear})(x::AbstractArray, ps, st::NamedTuple)
+    return NNlib.upsample_bilinear(x, m.scale), st
+end
+function (m::Upsample{:bilinear,Nothing})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_bilinear(x; size=m.size), st
 end
 
-(m::Upsample{:trilinear})(x::AbstractArray, ::NamedTuple, st::NamedTuple) = NNlib.upsample_trilinear(x, m.scale), st
-function (m::Upsample{:trilinear,Nothing})(x::AbstractArray, ::NamedTuple, st::NamedTuple)
+function (m::Upsample{:trilinear})(x::AbstractArray, ps, st::NamedTuple)
+    return NNlib.upsample_trilinear(x, m.scale), st
+end
+function (m::Upsample{:trilinear,Nothing})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_trilinear(x; size=m.size), st
 end
 
@@ -185,8 +198,8 @@ end
 # Global Mean Pooling
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
-Base.@pure function (g::GlobalMeanPool)(x, ::NamedTuple, st::NamedTuple)
-    return meanpool(x, PoolDims(x, size(x)[1:end - 2])), st
+Base.@pure function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
+    return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
 function Base.show(io::IO, ::GlobalMeanPool)
@@ -196,8 +209,8 @@ end
 # Global Max Pooling
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
-Base.@pure function (g::GlobalMaxPool)(x, ::NamedTuple, st::NamedTuple)
-    return maxpool(x, PoolDims(x, size(x)[1:end - 2])), st
+Base.@pure function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
+    return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
 function Base.show(io::IO, ::GlobalMaxPool)

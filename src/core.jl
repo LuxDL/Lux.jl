@@ -1,86 +1,56 @@
 # Base Type
 ## API:
-### initialparameters(rng, l)
-### initialstates(rng, l)
-### parameterlength(l)
-### statelength(l)
+### initialparameters(rng, l) --> Must return a NamedTuple/ComponentArray
+### initialstates(rng, l)     --> Must return a NamedTuple
+### parameterlength(l)        --> Integer
+### statelength(l)            --> Integer
 ### l(x, ps, st)
 
 abstract type AbstractExplicitLayer end
 
-for f in (:initialparameters, :initialstates)
-    @eval begin
-        $(f)(::AbstractRNG, ::Any, args...; kwargs...) = NamedTuple()
-        $(f)(l, args...; kwargs...) = $(f)(Random.GLOBAL_RNG, l, args...; kwargs...)
-        function $(f)(rng::AbstractRNG, l::NamedTuple{fields}, args...; kwargs...) where {fields}
-            return NamedTuple{fields}(map(x -> $(f)(rng, x, args...; kwargs...), values(l)))
-        end
-    end
-end
+initialparameters(::AbstractRNG, ::Any) = ComponentArray{Float32}()
+initialparameters(l) = initialparameters(Random.GLOBAL_RNG, l)
+initialparameters(rng::AbstractRNG, l::NamedTuple{fields}) where {fields} =
+    ComponentArray(NamedTuple{fields}(initialparameters.(rng, values(l))))
 
-for (f, g) in ((:parameterlength, :initialparameters), (:statelength, :initialstates))
-    @eval begin
-        $(f)(l::AbstractExplicitLayer, args...; kwargs...) = $(f)($(g)(l), args...; kwargs...)
-        $(f)(x::NamedTuple, args...; kwargs...) = nestedtupleofarrayslength(x)
-    end
-end
+initialstates(::AbstractRNG, ::Any) = NamedTuple()
+initialstates(l) = initialstates(Random.GLOBAL_RNG, l)
+initialstates(rng::AbstractRNG, l::NamedTuple{fields}) where {fields} =
+    NamedTuple{fields}(initialstates.(rng, values(l)))
+
+parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(l))
+parameterlength(nt::Union{NamedTuple,Tuple}) = nestedtupleofarrayslength(nt)
+parameterlength(ca::ComponentArray) = length(ca)
+
+statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
+statelength(nt::Union{NamedTuple,Tuple}) = nestedtupleofarrayslength(nt)
 
 setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
 setup(l::AbstractExplicitLayer) = setup(Random.GLOBAL_RNG, l)
 
-function setup(rng::AbstractRNG, l::AbstractExplicitLayer, input)
-    ps, st = setup(rng, l)
-    return (ps, st, createcache(rng, l, input, ps, st))
-end
-setup(l::AbstractExplicitLayer, input) = setup(Random.GLOBAL_RNG, l, input)
-
-function outputdescriptor(l::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple)
-    # Please implement `outputsize`, the default is quite slow
-    return zero(first(l(x, ps, st)))
-end
-
-nestedtupleofarrayslength(t::Any) = 1
-nestedtupleofarrayslength(t::AbstractArray) = length(t)
-function nestedtupleofarrayslength(t::Union{NamedTuple,Tuple})
-    length(t) == 0 && return 0
-    return sum(nestedtupleofarrayslength, t)
-end
-
-function (model::AbstractExplicitLayer)(x, ps::NamedTuple, st::NamedTuple, ::NamedTuple)
-    return model(x, ps, st)
-end
-
-apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple) = model(x, ps, st)
-apply(model::AbstractExplicitLayer, x, ps::NamedTuple, st::NamedTuple, cache::NamedTuple) = model(x, ps, st, cache)
+apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = model(x, ps, st)
 
 # Abstract Container Layers
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
-for f in (:initialparameters, :initialstates)
-    @eval begin
-        function $(f)(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}, args...; kwargs...) where {layers}
-            if length(layers) == 1
-                return $(f)(rng, getfield(l, layers[1], args...; kwargs...))
-            end
-            return NamedTuple{layers}(map(x -> $(f)(rng, getfield(l, x, args...; kwargs...)), layers))
-        end
-    end
+function initialparameters(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}) where {layers}
+    length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
+    return ComponentArray(NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers))))
 end
 
-for f in (:parameterlength, :statelength)
-    @eval begin
-        function $(f)(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}, args...; kwargs...) where {layers}
-            return sum(map(x -> $(f)(rng, getfield(l, x, args...; kwargs...)), layers))
-        end
-    end
+function initialstates(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}) where {layers}
+    length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
+    return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
+
+parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layers} =
+    sum(parameterlength, getfield.((l,), layers))
+
+statelength(l::AbstractExplicitContainerLayer{layers}) where {layers} =
+    sum(statelength, getfield.((l,), layers))
 
 # Test Mode
 testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, !mode)
-
-testmode(x::Any, mode::Bool=true) = x
-
-testmode(m::AbstractExplicitLayer, mode::Bool=true) = testmode(initialstates(m), mode)
 
 trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
 
@@ -93,6 +63,6 @@ function update_state(st::NamedTuple, key::Symbol, value; layer_check=_default_l
 end
 
 function _default_layer_check(key)
-    _default_layer_check_closure(x) = key ∈ keys(x)
-    _default_layer_check_closure(x::Symbol) = false
+    _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
+    return _default_layer_check_closure
 end

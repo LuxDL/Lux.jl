@@ -1,12 +1,10 @@
-for T in [:Chain, :Parallel, :SkipConnection, :BranchLayer, :PairwiseFusion]  # container types
-    @eval function Base.show(io::IO, ::MIME"text/plain", x::$T)
-        if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
-            _big_show(io, x)
-        elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
-            _layer_show(io, x)
-        else
-            show(io, x)
-        end
+function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitContainerLayer)
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        _big_show(io, x)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        _layer_show(io, x)
+    else
+        show(io, x)
     end
 end
 
@@ -22,7 +20,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
         if obj isa Chain{<:NamedTuple} && children == getfield(obj, :layers)
             # then we insert names -- can this be done more generically? 
             for k in Base.keys(obj)
-                _big_show(io, obj[k], indent + 4, k)
+                _big_show(io, obj.layers[k], indent + 4, k)
             end
         elseif obj isa Parallel{<:Any,<:NamedTuple}
             if obj.connection !== nothing
@@ -75,19 +73,17 @@ function _get_children(e::T) where {T<:AbstractExplicitLayer}
     return Tuple(children)
 end
 
-for T in [:Conv, :Dense, :BatchNorm, :MaxPool, :MeanPool]
-    @eval function Base.show(io::IO, ::MIME"text/plain", x::$T)
-        if !get(io, :compact, false)
-            _layer_show(io, x)
-        else
-            show(io, x)
-        end
+function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
+    if !get(io, :compact, false)
+        _layer_show(io, x)
+    else
+        show(io, x)
     end
 end
 
 function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
     _str = isnothing(name) ? "" : "$name = "
-    str = _str * sprint(show, layer; context=io)
+    str = _str * sprint(show, get_typename(layer); context=io)
     print(io, " "^indent, str, indent == 0 ? "" : ",")
     paramlength = parameterlength(layer)
     if paramlength > 0

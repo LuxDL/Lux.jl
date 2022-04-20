@@ -12,7 +12,7 @@ function Dropout(p; dims=:, initial_seed::UInt64=UInt64(0))
     return Dropout(p, initial_seed, dims)
 end
 
-function (d::Dropout{T})(x::AbstractArray{T}, ::NamedTuple, st::NamedTuple) where {T}
+Base.@pure function (d::Dropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
     !istraining(st) || return (x, st)
     y = dropout(MersenneTwister(st.seed), x, d.p; dims=d.dims)[1]
     @set! st.seed = st.seed + 1
@@ -24,7 +24,7 @@ function Base.show(io::IO, d::Dropout)
     if d.dims != Colon()
         print(io, ", dims=", d.dims)
     end
-    print(io, ")")
+    return print(io, ")")
 end
 
 # Variational Hidden Dropout
@@ -42,7 +42,9 @@ function VariationalHiddenDropout(p; dims=:, initial_seed::UInt64=UInt64(0))
     return VariationalHiddenDropout(p, initial_seed, dims)
 end
 
-function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ::NamedTuple, st::NamedTuple) where {T}
+Base.@pure function (d::VariationalHiddenDropout{T})(
+    x::AbstractArray{T}, ps, st::NamedTuple
+) where {T}
     !istraining(st) || return (x, st)
     if st.update_mask
         y, mask = dropout(MersenneTwister(st.seed), x, d.p; dims=d.dims)

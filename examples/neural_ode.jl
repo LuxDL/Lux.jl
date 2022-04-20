@@ -1,5 +1,5 @@
 # Using EFL for Neural ODEs
-using ExplicitFluxLayers, ComponentArrays, DiffEqSensitivity, OrdinaryDiffEq, Random, Zygote, Flux
+using ExplicitFluxLayers, ComponentArrays, DiffEqSensitivity, OrdinaryDiffEq, Random, Zygote, Flux, CUDA
 
 struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicitContainerLayer{(:model,)}
     model::M
@@ -20,23 +20,33 @@ function NeuralODE(
 end
 
 function (n::NeuralODE)(x, ps, st)
-    dudt(u, p, t) = n.model(u, p, st)[1]
+    function dudt(u, p, t)
+        u_, st = n.model(u, p, st)
+        return u_
+    end
     prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
-    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...) , st
+    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
 end
 
-node = NeuralODE(EFL.Dense(2, 2))
+diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = gpu(x)
+diffeqsol_to_array(x::ODESolution) = Array(x)
 
-# Won't be needed if/once we move to ComponentArray as default
-ps, st = EFL.setup(MersenneTwister(0), node) .|> ComponentArray
+node =  EFL.Chain(
+    NeuralODE(
+        EFL.Chain(
+            EFL.WrappedFunction(x -> x .^ 3),
+            EFL.Dense(2, 50, tanh),
+            EFL.BatchNorm(50),
+            EFL.Dense(50, 2),
+        )
+    ),
+    EFL.WrappedFunction(diffeqsol_to_array)
+)
 
-x = randn(Float32, 2, 1)
+for device in [cpu, gpu]
+    ps, st = EFL.setup(MersenneTwister(0), node) .|> device
 
-gradient(p -> sum(Array(node(x, p, st)[1])), ps)
+    x = randn(MersenneTwister(1), Float32, 2, 128) |> device
 
-# GPU
-ps, st = (ps, st) .|> gpu
-
-x = x |> gpu
-
-gradient(p -> sum(gpu(node(x, p, st)[1])), ps)
+    gradient(p -> sum(node(x, p, st)[1]), ps)
+end

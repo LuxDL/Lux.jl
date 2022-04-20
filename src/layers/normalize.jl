@@ -32,26 +32,14 @@ function BatchNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : (γ=nothing, β=nothing)
+    return affine ? ComponentArray((γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs))) : ComponentArray{Float32}()
 end
 function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
-    return if track_stats
-        (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto)
-    else
-        (μ=nothing, σ²=nothing, training=:auto)
-    end
+    return track_stats ? (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto) : (training=:auto,)
 end
 
 parameterlength(l::BatchNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::BatchNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.chs : 0) + 1
-
-function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
-    print(io, "BatchNorm($(l.chs)")
-    (l.λ == identity) || print(io, ", $(l.λ)")
-    affine || print(io, ", affine=false")
-    track_stats || print(io, ", track_stats=false")
-    return print(io, ")")
-end
 
 get_reduce_dims(::BatchNorm, x::AbstractArray{T,N}) where {T,N} = [1:(N - 2); N]
 
@@ -59,13 +47,13 @@ function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector)
     return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
 end
 
-function (BN::BatchNorm)(x::AbstractVector, ps::NamedTuple, states::NamedTuple)
+function (BN::BatchNorm)(x::AbstractVector, ps, states::NamedTuple)
     y, states = BN(x[:, :], ps, states)
     return y[:], states
 end
 
 Base.@pure function (BN::BatchNorm{affine,track_stats})(
-    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
+    x::AbstractArray{T,N}, ps, st::NamedTuple
 ) where {T,N,affine,track_stats}
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
@@ -73,27 +61,61 @@ Base.@pure function (BN::BatchNorm{affine,track_stats})(
     x_normalized, xmean, xvar = normalization_forward(
         BN,
         x,
-        get_proper_shape(BN, x, st.μ),
-        get_proper_shape(BN, x, st.σ²),
-        get_proper_shape(BN, x, ps.γ),
-        get_proper_shape(BN, x, ps.β),
+        get_proper_shape(BN, x, track_stats ? st.μ : nothing),
+        get_proper_shape(BN, x, track_stats ? st.σ² : nothing),
+        get_proper_shape(BN, x, affine ? ps.γ : nothing),
+        get_proper_shape(BN, x, affine ? ps.β : nothing),
         BN.λ;
         training=istraining(st),
     )
 
-    st_ = if track_stats
-        (μ=xmean, σ²=xvar, training=st.training)
-    else
-        st
-    end
+    st_ = track_stats ? (μ=xmean, σ²=xvar, training=st.training) : st
 
     return (x_normalized, st_)
 end
 
-function (BN::BatchNorm)(
-    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps::NamedTuple, st::NamedTuple
-) where {T<:Union{Float32,Float64}}
-    return (BN.λ.(batchnorm(ps.γ, ps.β, x, st.μ, st.σ², BN.momentum; eps=BN.ϵ, training=istraining(st)),), st)
+function (BN::BatchNorm{affine,track_stats})(
+    x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps, st::NamedTuple
+) where {T<:Union{Float32,Float64},affine,track_stats}
+    # NNlibCUDA silently updates μ and σ² so copying them
+    if training
+        μ2 = track_stats ? copy(st.μ) : nothing
+        σ²2 = track_stats ? copy(st.σ²) : nothing
+    else
+        if track_stats
+            μ2 = copy(st.μ)
+            σ²2 = copy(st.σ²)
+        else
+            μ2 = mean(x; dims=get_reduce_dims(BN, x))
+            σ²2 = var(x; mean=μ2, dims=reduce_dims, corrected=false)
+        end
+    end
+    res = 
+        BN.λ.(
+            batchnorm(
+                affine ? ps.γ : nothing,
+                affine ? ps.β : nothing,
+                x,
+                μ2,
+                σ²2,
+                BN.momentum;
+                eps=BN.ϵ,
+                training=istraining(st),
+            ),
+        )
+    if track_stats
+        @set! st.μ = μ2
+        @set! st.σ² = σ²2
+    end
+    return res, st
+end
+
+function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
+    print(io, "BatchNorm($(l.chs)")
+    (l.λ == identity) || print(io, ", $(l.λ)")
+    affine || print(io, ", affine=false")
+    track_stats || print(io, ", track_stats=false")
+    return print(io, ")")
 end
 
 # GroupNorm
@@ -126,26 +148,14 @@ function GroupNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
-    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
+    return affine ? ComponentArray((γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs))) : ComponentArray{Float32}()
 end
 function initialstates(::AbstractRNG, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
-    return if track_stats
-        (μ=zeros32(l.groups), σ²=ones32(l.groups), training=:auto)
-    else
-        (μ=nothing, σ²=nothing, training=:auto)
-    end
+    return track_stats ? (μ=zeros32(l.groups), σ²=ones32(l.groups), training=:auto) : (training=:auto,)
 end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::GroupNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.groups : 0) + 1
-
-function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
-    print(io, "GroupNorm($(l.chs), $(l.groups)")
-    (l.λ == identity) || print(io, ", $(l.λ)")
-    affine || print(io, ", affine=false")
-    track_stats || print(io, ", track_stats=false")
-    return print(io, ")")
-end
 
 get_reduce_dims(::GroupNorm, ::AbstractArray{T,N}) where {T,N} = 1:(N - 1)
 
@@ -158,7 +168,7 @@ function get_proper_shape(::GroupNorm, x::AbstractArray{T,N}, y::AbstractVector,
 end
 
 Base.@pure function (GN::GroupNorm{affine,track_stats})(
-    x::AbstractArray{T,N}, ps::NamedTuple, st::NamedTuple
+    x::AbstractArray{T,N}, ps, st::NamedTuple
 ) where {T,N,affine,track_stats}
     sz = size(x)
     @assert N > 2
@@ -169,10 +179,10 @@ Base.@pure function (GN::GroupNorm{affine,track_stats})(
     x_normalized, xmean, xvar = normalization_forward(
         GN,
         x_,
-        get_proper_shape(GN, x_, st.μ, :state),
-        get_proper_shape(GN, x_, st.σ², :state),
-        get_proper_shape(GN, x_, ps.γ, :param),
-        get_proper_shape(GN, x_, ps.β, :param),
+        get_proper_shape(GN, x, track_stats ? st.μ : nothing, :state),
+        get_proper_shape(GN, x, track_stats ? st.σ² : nothing, :state),
+        get_proper_shape(GN, x, affine ? ps.γ : nothing, :param),
+        get_proper_shape(GN, x, affine ? ps.β : nothing, :param),
         GN.λ;
         training=istraining(st),
     )
@@ -184,6 +194,14 @@ Base.@pure function (GN::GroupNorm{affine,track_stats})(
     end
 
     return reshape(x_normalized, sz), st_
+end
+
+function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
+    print(io, "GroupNorm($(l.chs), $(l.groups)")
+    (l.λ == identity) || print(io, ", $(l.λ)")
+    affine || print(io, ", affine=false")
+    track_stats || print(io, ", track_stats=false")
+    return print(io, ")")
 end
 
 # WeightNorm
@@ -218,19 +236,23 @@ end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
-Base.@pure function (wn::WeightNorm)(x, ps::NamedTuple, s::NamedTuple)
+Base.@pure function (wn::WeightNorm)(x, ps::Union{ComponentArray,NamedTuple}, s::NamedTuple)
     _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end
 
-function get_normalized_parameters(::WeightNorm{Val{which_params}}, ::Nothing, ps::NamedTuple) where {which_params}
+function get_normalized_parameters(
+    ::WeightNorm{Val{which_params}}, ::Nothing, ps::Union{ComponentArray,NamedTuple}
+) where {which_params}
     wp_s = string.(which_params)
     _vs = getfield.((ps,), Symbol.(wp_s .* "_v"))
     _gs = getfield.((ps,), Symbol.(wp_s .* "_g"))
     return NamedTuple{which_params}(map((v, g) -> (v .* (g ./ _norm_except(v))), _vs, _gs))
 end
 
-function get_normalized_parameters(::WeightNorm{Val{which_params}}, dims::Tuple, ps::NamedTuple) where {which_params}
+function get_normalized_parameters(
+    ::WeightNorm{Val{which_params}}, dims::Tuple, ps::Union{ComponentArray,NamedTuple}
+) where {which_params}
     wp_s = string.(which_params)
     _vs = getfield.((ps,), Symbol.(wp_s .* "_v"))
     _gs = getfield.((ps,), Symbol.(wp_s .* "_g"))

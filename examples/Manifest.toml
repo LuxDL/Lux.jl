@@ -2,7 +2,7 @@
 
 julia_version = "1.8.0-beta3"
 manifest_format = "2.0"
-project_hash = "f0126ca9737bc5f4d34e177e6bc95584f042511f"
+project_hash = "9543e8529f43b552377f08f0bfbd2b530d1b4e52"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
@@ -345,7 +345,7 @@ uuid = "7cc45869-7501-5eee-bdea-0790c847d4ef"
 version = "0.0.29+0"
 
 [[deps.ExplicitFluxLayers]]
-deps = ["CUDA", "ChainRulesCore", "ComponentArrays", "FillArrays", "Flux", "Functors", "LinearAlgebra", "NNlib", "NNlibCUDA", "Octavian", "Random", "Setfield", "SparseArrays", "Statistics", "Zygote"]
+deps = ["CUDA", "ChainRulesCore", "ComponentArrays", "FillArrays", "Flux", "Functors", "LinearAlgebra", "NNlib", "NNlibCUDA", "Optimisers", "Random", "Setfield", "SparseArrays", "Statistics", "Zygote"]
 path = ".."
 uuid = "aafdbc67-5cd5-409a-82a0-ebc47ac8091e"
 version = "0.2.0"
@@ -820,12 +820,6 @@ deps = ["Reexport", "StructIO"]
 git-tree-sha1 = "55ce61d43409b1fb0279d1781bf3b0f22c83ab3b"
 uuid = "d8793406-e978-5875-9003-1fc021f44a92"
 version = "0.3.7"
-
-[[deps.Octavian]]
-deps = ["ArrayInterface", "CPUSummary", "IfElse", "LoopVectorization", "ManualMemory", "PolyesterWeave", "Requires", "Static", "ThreadingUtilities", "VectorizationBase"]
-git-tree-sha1 = "26c004c96dc634cefe9174cb9180c496f6c7e100"
-uuid = "6fd5a793-0b7e-452c-907f-f8bfe9c57db4"
-version = "0.3.13"
 
 [[deps.OffsetArrays]]
 deps = ["Adapt"]

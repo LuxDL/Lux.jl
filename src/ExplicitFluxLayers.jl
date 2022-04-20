@@ -8,11 +8,11 @@ using Statistics,
     Random,
     Setfield,
     ChainRulesCore,
-    Octavian,
     LinearAlgebra,
     FillArrays,
     Functors,
     ComponentArrays,
+    Optimisers,
     Zygote
 import NNlibCUDA: batchnorm, cudnnBNForward!
 using Flux: Flux
@@ -31,11 +31,11 @@ import Flux:
     gpu,
     cpu
 
-# Core
-include("core.jl")
-
 # Utilities
 include("utils.jl")
+
+# Core
+include("core.jl")
 
 # Layer Implementations
 include("layers/basic.jl")
