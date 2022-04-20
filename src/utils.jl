@@ -68,14 +68,6 @@ end
 unfill_array(x::Fill) = Array(x)
 unfill_array(x::AbstractArray) = x
 
-# Tuple Utilities
-nestedtupleofarrayslength(t::Any) = 1
-nestedtupleofarrayslength(t::AbstractArray) = length(t)
-function nestedtupleofarrayslength(t::Union{NamedTuple,Tuple})
-    length(t) == 0 && return 0
-    return sum(nestedtupleofarrayslength, t)
-end
-
 # Return Nothing if field not present
 function safegetproperty(x::Union{ComponentArray,NamedTuple}, k::Symbol)
     k ∈ propertynames(x) && return getproperty(x, k)

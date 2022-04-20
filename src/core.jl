@@ -19,11 +19,13 @@ initialstates(rng::AbstractRNG, l::NamedTuple{fields}) where {fields} =
     NamedTuple{fields}(initialstates.(rng, values(l)))
 
 parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(l))
-parameterlength(nt::Union{NamedTuple,Tuple}) = nestedtupleofarrayslength(nt)
-parameterlength(ca::ComponentArray) = length(ca)
+parameterlength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(parameterlength, nt)
+parameterlength(a::AbstractArray) = length(a)
 
 statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
-statelength(nt::Union{NamedTuple,Tuple}) = nestedtupleofarrayslength(nt)
+statelength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
+statelength(a::AbstractArray) = length(a)
+statelength(x) = 1
 
 setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
 setup(l::AbstractExplicitLayer) = setup(Random.GLOBAL_RNG, l)

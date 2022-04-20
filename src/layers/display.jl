@@ -18,7 +18,6 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     else
         println(io, " "^indent, isnothing(name) ? "" : "$name = ", nameof(typeof(obj)), pre)
         if obj isa Chain{<:NamedTuple} && children == getfield(obj, :layers)
-            # then we insert names -- can this be done more generically? 
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
@@ -39,8 +38,14 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
         else
-            for c in children
-                _big_show(io, c, indent + 4)
+            if children isa NamedTuple
+                for (k, c) in pairs(children)
+                    _big_show(io, c, indent + 4, k)
+                end
+            else
+                for c in children
+                    _big_show(io, c, indent + 4)
+                end
             end
         end
         if indent == 0  # i.e. this is the outermost container
@@ -57,6 +62,7 @@ _show_leaflike(x::AbstractExplicitLayer) = false
 _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
+_get_children(l::AbstractExplicitContainerLayer{names}) where {names} = NamedTuple{names}(getfield.((l,), names))
 _get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
 _get_children(c::Union{Chain,BranchLayer,PairwiseFusion}) = c.layers
 _get_children(s::SkipConnection) = (s.layers, s.connection)
@@ -82,7 +88,8 @@ function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
 end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
-    T = rsplit(string(get_typename(x)), "."; limit=2)[2]
+    __t = rsplit(string(get_typename(x)), "."; limit=2)
+    T = length(__t) == 2 ? __t[2] : __t[1]
     print(io, "$T()")
 end
 
@@ -127,6 +134,18 @@ function _big_finale(io::IO, m)
 end
 
 _childarray_sum(f, x::AbstractArray{<:Number}) = f(x)
+function _childarray_sum(f, x::ComponentArray)
+    if Flux.Functors.isleaf(x)
+        return 0
+    else
+        c = Flux.Functors.children(x)
+        if length(c) == 0
+            return 0
+        else
+            return sum(y -> _childarray_sum(f, y), c)
+        end
+    end
+end
 function _childarray_sum(f, x)
     if Flux.Functors.isleaf(x)
         return 0

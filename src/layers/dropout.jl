@@ -52,3 +52,9 @@ Base.@pure function (d::VariationalHiddenDropout{T})(
         return y, st
     end
 end
+
+function Base.show(io::IO, d::VariationalHiddenDropout)
+    print(io, "VariationalHiddenDropout(", d.p)
+    d.dims != Colon() && print(io, ", dims=", d.dims)
+    return print(io, ")")
+end
