@@ -37,35 +37,20 @@ Additionally, each AbstractExplicitLayer must return a Tuple of length 2 with th
 ## Why use ExplicitFluxLayers over Flux?
 
 * When using Large Neural Networks (for small networks see [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl)) for SciML Applications (Neural ODEs, Deep Equilibrium Models) -- Solvers typically expect a monolithic parameter vector. Flux enables this via its `destructure` mechanism, however, it often leads to [weird bugs](https://github.com/FluxML/Flux.jl/issues?q=is%3Aissue+destructure). EFL forces users to make an explicit distinction between state variables and parameter variables to avoid these issues.
-* Layers must be properly subtyped which allows easy initialization (like `Flux.@functor`) but also allows proper dispatch for pretty printing arbitrary user models. For example,
+* Layers must be properly subtyped which allows easy initialization (like `Flux.@functor`) but additionally allows proper dispatch for pretty printing arbitrary user models.
+* No arbitrary internal mutations -- all layers are implemented as pure functions (which means there can be a minor overhead compared to Flux).
+* All layers are deterministic given the parameter and state -- if the layer is supposed to be stochastic (say `Dropout`), the state must contain a seed which is then updated after the function call.
+* Returning `state` by each layer makes it easy to RNNs (I promise to implement them soonish).
+* Need to manipulate parameters before passing them to other layers -- `WeightNorm`, `SpectralNorm`
 
-```julia
-julia> struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicitContainerLayer{(:model,)}
-        model::M
-        solver::So
-        sensealg::Se
-        tspan::T
-        kwargs::K
-    end
-
-julia> node = EFL.Chain(
-           NeuralODE(
-               EFL.Chain(
-                   x -> x .^ 3,
-                   EFL.Dense(2, 50, tanh),
-                   EFL.BatchNorm(50),
-                   EFL.Dense(50, 2),
-               )
-           ),
-           diffeqsol_to_array
-      )
-```
-
-## Why not to use ExplicitFluxLayers?
+## Why not use ExplicitFluxLayers?
 
 * Both EFL and Flux use the same backend so performance should not be the motivating reason to shift (it should also not deter the intention to migrate).
-* EFL is verbose and it is meant to be that way. Explicitly passing PRNGKeys and explicitly handing parameter and state variables might not be very user friendly and most people might never need it. However, this design aspect makes code
-## Examples
+* EFL is verbose and it is meant to be that way. Explicitly passing PRNGKeys and explicitly handing parameter and state variables might not be very user friendly and most people might never need it. However, this design aspect makes code less bug ridden and easy to debug/reproduce.
+* Flux is maintained by a larger community while EFL is currently being maintained only by me.
+* Higher Order derivatives are completely broken -- for Flux certain things work but for EFL I can assure you nothing works (mostly Zygote and ComponentArrays/NamedTuple compatibility issues).
+
+## Getting Started
 ### Basic Usage
 
 ```julia
@@ -115,9 +100,9 @@ ps, st = EFL.setup(MersenneTwister(0), model)
 EFL.apply(model, x, ps, st)
 ```
 
-## Advanced Usage
+## Usage Examples
 
-* [Neural ODEs using DiffEqSensitivity](examples/neural_ode.jl)
+* [Neural ODEs for MNIST Image Classification](examples/NeuralODE/neural_ode.jl) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
 * [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
 
 ## Implemented Layers
@@ -146,5 +131,3 @@ This is mostly WIP. For some preliminary benchmarks check `benchmarks/` director
   - [ ] General Purpose --> Maxout, Bilinear, Embedding, AlphaDropout
   - [ ] Normalization --> LayerNorm, InstanceNorm
 - [ ] Port tests over from Flux
-- [x] Migrate the Parameters to ComponentArrays to allow easier integration with SciML Packages
-- [x] ComponentArrays playing well with Functors
