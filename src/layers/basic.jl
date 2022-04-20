@@ -229,6 +229,12 @@ function flatten_model(layers::Union{AbstractVector,Tuple})
         f = flatten_model(l)
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
+        elseif f isa Function
+            if !hasmethod(f, (Any, Union{ComponentArray,NamedTuple}, NamedTuple))
+                push!(new_layers, WrappedFunction(f))
+            else
+                push!(new_layers, f)
+            end
         elseif f isa Chain
             append!(new_layers, f.layers)
         elseif f isa NoOpLayer

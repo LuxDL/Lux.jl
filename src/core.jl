@@ -21,11 +21,13 @@ initialstates(rng::AbstractRNG, l::NamedTuple{fields}) where {fields} =
 parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(l))
 parameterlength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(parameterlength, nt)
 parameterlength(a::AbstractArray) = length(a)
+parameterlength(x) = 0
 
 statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
 statelength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
-statelength(x) = 1
+statelength(x::Union{Number,Symbol}) = 1
+statelength(x) = 0
 
 setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
 setup(l::AbstractExplicitLayer) = setup(Random.GLOBAL_RNG, l)

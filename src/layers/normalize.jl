@@ -78,7 +78,7 @@ function (BN::BatchNorm{affine,track_stats})(
     x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps, st::NamedTuple
 ) where {T<:Union{Float32,Float64},affine,track_stats}
     # NNlibCUDA silently updates μ and σ² so copying them
-    if training
+    if istraining(st)
         μ2 = track_stats ? copy(st.μ) : nothing
         σ²2 = track_stats ? copy(st.σ²) : nothing
     else
