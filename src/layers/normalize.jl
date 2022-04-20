@@ -86,7 +86,8 @@ function (BN::BatchNorm{affine,track_stats})(
             μ2 = copy(st.μ)
             σ²2 = copy(st.σ²)
         else
-            μ2 = mean(x; dims=get_reduce_dims(BN, x))
+            reduce_dims = get_reduce_dims(BN, x)
+            μ2 = mean(x; dims=reduce_dims)
             σ²2 = var(x; mean=μ2, dims=reduce_dims, corrected=false)
         end
     end
