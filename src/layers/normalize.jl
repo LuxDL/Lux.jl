@@ -180,10 +180,10 @@ Base.@pure function (GN::GroupNorm{affine,track_stats})(
     x_normalized, xmean, xvar = normalization_forward(
         GN,
         x_,
-        get_proper_shape(GN, x, track_stats ? st.μ : nothing, :state),
-        get_proper_shape(GN, x, track_stats ? st.σ² : nothing, :state),
-        get_proper_shape(GN, x, affine ? ps.γ : nothing, :param),
-        get_proper_shape(GN, x, affine ? ps.β : nothing, :param),
+        get_proper_shape(GN, x_, track_stats ? st.μ : nothing, :state),
+        get_proper_shape(GN, x_, track_stats ? st.σ² : nothing, :state),
+        get_proper_shape(GN, x_, affine ? ps.γ : nothing, :param),
+        get_proper_shape(GN, x_, affine ? ps.β : nothing, :param),
         GN.λ;
         training=istraining(st),
     )

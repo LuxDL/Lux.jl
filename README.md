@@ -36,10 +36,35 @@ Additionally, each AbstractExplicitLayer must return a Tuple of length 2 with th
 
 ## Why use ExplicitFluxLayers over Flux?
 
-* 
+* When using Large Neural Networks (for small networks see [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl)) for SciML Applications (Neural ODEs, Deep Equilibrium Models) -- Solvers typically expect a monolithic parameter vector. Flux enables this via its `destructure` mechanism, however, it often leads to [weird bugs](https://github.com/FluxML/Flux.jl/issues?q=is%3Aissue+destructure). EFL forces users to make an explicit distinction between state variables and parameter variables to avoid these issues.
+* Layers must be properly subtyped which allows easy initialization (like `Flux.@functor`) but also allows proper dispatch for pretty printing arbitrary user models. For example,
 
-## Why use Flux over ExplicitFluxLayers?
+```julia
+julia> struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicitContainerLayer{(:model,)}
+        model::M
+        solver::So
+        sensealg::Se
+        tspan::T
+        kwargs::K
+    end
 
+julia> node = EFL.Chain(
+           NeuralODE(
+               EFL.Chain(
+                   x -> x .^ 3,
+                   EFL.Dense(2, 50, tanh),
+                   EFL.BatchNorm(50),
+                   EFL.Dense(50, 2),
+               )
+           ),
+           diffeqsol_to_array
+      )
+```
+
+## Why not to use ExplicitFluxLayers?
+
+* Both EFL and Flux use the same backend so performance should not be the motivating reason to shift (it should also not deter the intention to migrate).
+* EFL is verbose and it is meant to be that way. Explicitly passing PRNGKeys and explicitly handing parameter and state variables might not be very user friendly and most people might never need it. However, this design aspect makes code
 ## Examples
 ### Basic Usage
 

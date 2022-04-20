@@ -1,5 +1,5 @@
 # Using EFL for Neural ODEs
-using ExplicitFluxLayers, DiffEqSensitivity, OrdinaryDiffEq, Random, Zygote, Flux, CUDA
+using ExplicitFluxLayers, DiffEqSensitivity, OrdinaryDiffEq, Random, Flux
 
 struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicitContainerLayer{(:model,)}
     model::M
