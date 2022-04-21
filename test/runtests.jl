@@ -1,11 +1,14 @@
-using Test, Random, Statistics
+using Test, Random, Statistics, Zygote, Metalhead, ExplicitFluxLayers
 import Flux: relu, pullback, sigmoid, gradient
 import ExplicitFluxLayers:
     apply,
     setup,
     parameterlength,
     statelength,
+    initialparameters,
+    initialstates,
     trainmode,
+    transform,
     AbstractExplicitLayer,
     AbstractExplicitContainerLayer,
     Dense,
@@ -22,6 +25,20 @@ import ExplicitFluxLayers:
     GlobalMeanPool,
     Upsample
 
+function gradtest(model, input, ps, st)
+    y, pb = Zygote.pullback(p -> model(input, p, st)[1], ps)
+    gs = pb(ones(Float32, size(y)))
+      
+    # if we make it to here with no error, success!
+    return true
+end
+
+function run_model(m::AbstractExplicitLayer, x)
+    ps, st = setup(Random.default_rng(), m)
+    return apply(m, x, ps, st)[1]
+end
+
+
 @testset "ExplicitFluxLayers" begin
     @testset "Layers" begin
         @testset "Basic" begin
@@ -29,6 +46,13 @@ import ExplicitFluxLayers:
         end
         @testset "Normalization" begin
             include("layers/normalize.jl")
+        end
+    end
+
+    # Might not want to run always
+    @testset "Metalhead Models" begin
+        @testset "ConvNets -- ImageNet" begin
+            include("models/convnets.jl")
         end
     end
 end

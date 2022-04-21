@@ -96,9 +96,8 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
 end
 
 function _big_finale(io::IO, m)
-    ps, st = setup(Random.default_rng(), m)
-    paramlength = parameterlength(ps)
-    nonparamlength = statelength(st)
+    paramlength = parameterlength(m)
+    nonparamlength = statelength(m)
     pars = underscorise(paramlength)
     bytes = Base.format_bytes(Base.summarysize(m))
     nonparam = underscorise(nonparamlength)

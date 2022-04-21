@@ -117,6 +117,7 @@ end
 
         par = Parallel(+, L1(), L1())
         ps, st = setup(MersenneTwister(0), par)
+
         ip = Input(rand(Float32, 3, 3))
         ip2 = Input(rand(Float32, 3, 3))
 

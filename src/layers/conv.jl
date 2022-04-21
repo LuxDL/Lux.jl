@@ -22,7 +22,7 @@ Keywords to control initialization of the layer:
 * `initW` - Function used to generate initial weights. Defaults to `glorot_uniform`.
 * `bias` - The initial bias vector is all zero by default. Trainable bias can be disabled entirely by setting this to `false`.
 """
-struct Conv{N,bias,cdims,M,F1,F2} <: AbstractExplicitLayer
+struct Conv{N,bias,M,F1,F2} <: AbstractExplicitLayer
     λ::F1
     in_chs::Int
     out_chs::Int
@@ -50,19 +50,7 @@ function Conv(
     dilation = expand(Val(N), dilation)
     pad = calc_padding(Conv, pad, k, dilation, stride)
     λ = NNlib.fast_act(λ)
-    cdims = if input_size === nothing
-        nothing
-    else
-        DenseConvDims(
-            (input_size..., first(ch), 1),
-            (k..., ch...);
-            stride=stride,
-            padding=pad,
-            dilation=dilation,
-            groups=groups,
-        )
-    end
-    return Conv{N,bias,cdims,length(pad),typeof(λ),typeof(initW)}(
+    return Conv{N,bias,length(pad),typeof(λ),typeof(initW)}(
         λ, first(ch), last(ch), k, stride, pad, dilation, groups, initW
     )
 end
@@ -70,21 +58,15 @@ end
 function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
     initW(args...) = c.initW(rng, args...)
     weight = convfilter(c.kernel_size, c.in_chs => c.out_chs; init=initW, groups=c.groups)
-    return ComponentArray(
-        bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
-    )
+    return bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
 end
 
 parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs + (bias ? c.out_chs : 0)
 
-function (c::Conv{N,bias,C})(
+function (c::Conv{N,bias})(
     x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {N,bias,C}
-    cdims = if C === nothing
-        DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    else
-        C
-    end
+) where {N,bias}
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
     if bias
         return c.λ.(conv_wrapper(x, ps.weight, cdims) .+ ps.bias), st
         # FIXME: Needs https://github.com/FluxML/NNlibCUDA.jl/pull/45 to be merged
@@ -101,7 +83,7 @@ function Base.show(io::IO, l::Conv)
     return print(io, ")")
 end
 
-function _print_conv_opt(io::IO, l::Conv{bias}) where {bias}
+function _print_conv_opt(io::IO, l::Conv{N,bias}) where {N,bias}
     l.λ == identity || print(io, ", ", l.λ)
     all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
     all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
@@ -123,25 +105,20 @@ end
 
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref).
 """
-struct MaxPool{N,M,pdims} <: AbstractExplicitLayer
+struct MaxPool{N,M} <: AbstractExplicitLayer
     k::NTuple{N,Int}
     pad::NTuple{M,Int}
     stride::NTuple{N,Int}
 end
 
-function MaxPool(k::NTuple{N,Integer}; pad=0, stride=k, input_size::Union{Nothing,NTuple{N,Integer}}=nothing) where {N}
+function MaxPool(k::NTuple{N,Integer}; pad=0, stride=k) where {N}
     stride = expand(Val(N), stride)
     pad = calc_padding(MaxPool, pad, k, 1, stride)
-    pdims = if input_size === nothing
-        nothing
-    else
-        PoolDims((input_size..., first(ch), 1), k; stride=stride, padding=pad, dilation=dilation)
-    end
-    return MaxPool{N,length(pad),pdims}(k, pad, stride)
+    return MaxPool{N,length(pad)}(k, pad, stride)
 end
 
-function (m::MaxPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
-    pdims = P === nothing ? PoolDims(x, m.k; padding=m.pad, stride=m.stride) : P
+function (m::MaxPool{N,M})(x, ps, st::NamedTuple) where {N,M}
+    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
     return maxpool(x, pdims), st
 end
 
@@ -165,25 +142,20 @@ end
 
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref).
 """
-struct MeanPool{N,M,pdims} <: AbstractExplicitLayer
+struct MeanPool{N,M} <: AbstractExplicitLayer
     k::NTuple{N,Int}
     pad::NTuple{M,Int}
     stride::NTuple{N,Int}
 end
 
-function MeanPool(k::NTuple{N,Integer}; pad=0, stride=k, input_size::Union{Nothing,NTuple{N,Integer}}=nothing) where {N}
+function MeanPool(k::NTuple{N,Integer}; pad=0, stride=k) where {N}
     stride = expand(Val(N), stride)
     pad = calc_padding(MeanPool, pad, k, 1, stride)
-    pdims = if input_size === nothing
-        nothing
-    else
-        PoolDims((input_size..., first(ch), 1), k; stride=stride, padding=pad, dilation=dilation)
-    end
-    return MeanPool{N,length(pad),pdims}(k, pad, stride)
+    return MeanPool{N,length(pad)}(k, pad, stride)
 end
 
-function (m::MeanPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
-    pdims = P === nothing ? PoolDims(x, m.k; padding=m.pad, stride=m.stride) : P
+function (m::MeanPool{N,M})(x, ps, st::NamedTuple) where {N,M}
+    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
     return meanpool(x, pdims), st
 end
 
@@ -284,4 +256,56 @@ struct GlobalMaxPool <: AbstractExplicitLayer end
 
 function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
     return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
+end
+
+"""
+    AdaptiveMaxPool(out::NTuple)
+
+Adaptive Max Pooling layer. Calculates the necessary window size such that its output has `size(y)[1:N] == out`. Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch dimensions, after the `N` feature dimensions, where `N = length(out)`.
+
+See also [`MaxPool`](@ref), [`AdaptiveMeanPool`](@ref).
+"""
+struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
+    out::NTuple{O, Int}
+    AdaptiveMaxPool(out::NTuple{O, Int}) where O = new{O + 2, O}(out)
+end
+
+function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
+    insize = size(x)[1:end-2]
+    outsize = a.out
+    stride = insize .÷ outsize
+    k = insize .- (outsize .- 1) .* stride
+    pad = 0
+    pdims = PoolDims(x, k; padding=pad, stride=stride)
+    return maxpool(x, pdims), st
+end
+
+function Base.show(io::IO, a::AdaptiveMaxPool)
+    print(io, "AdaptiveMaxPool(", a.out, ")")
+end
+
+"""
+    AdaptiveMeanPool(out::NTuple)
+
+Adaptive Mean Pooling layer. Calculates the necessary window size such that its output has `size(y)[1:N] == out`. Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch dimensions, after the `N` feature dimensions, where `N = length(out)`.
+
+See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref).
+"""
+struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
+    out::NTuple{O, Int}
+    AdaptiveMeanPool(out::NTuple{O, Int}) where O = new{O + 2, O}(out)
+end
+
+function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
+    insize = size(x)[1:end-2]
+    outsize = a.out
+    stride = insize .÷ outsize
+    k = insize .- (outsize .- 1) .* stride
+    pad = 0
+    pdims = PoolDims(x, k; padding=pad, stride=stride)
+    return meanpool(x, pdims), st
+end
+
+function Base.show(io::IO, a::AdaptiveMeanPool)
+    print(io, "AdaptiveMeanPool(", a.out, ")")
 end

@@ -59,7 +59,7 @@ function BatchNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? ComponentArray((γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs))) : ComponentArray{Float32}()
+    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
 end
 function initialstates(::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     return track_stats ? (μ=zeros32(l.chs), σ²=ones32(l.chs), training=:auto) : (training=:auto,)
@@ -188,7 +188,7 @@ function GroupNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
-    return affine ? ComponentArray((γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs))) : ComponentArray{Float32}()
+    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
 end
 function initialstates(::AbstractRNG, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
     return track_stats ? (μ=zeros32(l.groups), σ²=ones32(l.groups), training=:auto) : (training=:auto,)
@@ -282,8 +282,8 @@ function initialparameters(rng::AbstractRNG, wn::WeightNorm{Val{which_params}}) 
             push!(ps_unnormalized, k => v)
         end
     end
-    ps_unnormalized = length(ps_unnormalized) == 0 ? ComponentArray{Float32}() : ComponentArray(; ps_unnormalized...)
-    return ComponentArray(normalized=ComponentArray(; ps_normalized...), unnormalized=ps_unnormalized)
+    ps_unnormalized = length(ps_unnormalized) == 0 ? NamedTuple() : (; ps_unnormalized...)
+    return (normalized=(; ps_normalized...), unnormalized=ps_unnormalized)
 end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)

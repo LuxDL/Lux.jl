@@ -8,9 +8,8 @@
 
 abstract type AbstractExplicitLayer end
 
-initialparameters(::AbstractRNG, ::Any) = ComponentArray{Float32}()
-initialparameters(rng::AbstractRNG, l::NamedTuple) =
-    ComponentArray(map(Base.Fix1(initialparameters, rng), l))
+initialparameters(::AbstractRNG, ::Any) = NamedTuple()
+initialparameters(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialparameters, rng), l)
 
 initialstates(::AbstractRNG, ::Any) = NamedTuple()
 initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
@@ -41,7 +40,7 @@ abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer en
 
 function initialparameters(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
-    return ComponentArray(NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers))))
+    return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}) where {layers}

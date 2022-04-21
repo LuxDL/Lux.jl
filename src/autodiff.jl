@@ -12,7 +12,7 @@ function ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple)
     return (st.training == :auto ? true : st.training), _ -> (NoTangent(), NoTangent())
 end
 
-ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable _dropout_mask(::Any, ::Any, ::Any)
 
 ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
