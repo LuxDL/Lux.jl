@@ -1,17 +1,26 @@
 using Test, Random, Statistics
-import Flux: relu, pullback, sigmoid
+import Flux: relu, pullback, sigmoid, gradient
 import ExplicitFluxLayers:
     apply,
     setup,
     parameterlength,
     statelength,
     trainmode,
+    AbstractExplicitLayer,
+    AbstractExplicitContainerLayer,
     Dense,
     BatchNorm,
     SkipConnection,
     Parallel,
     Chain,
-    WrappedFunction
+    WrappedFunction,
+    NoOpLayer,
+    Conv,
+    MaxPool,
+    MeanPool,
+    GlobalMaxPool,
+    GlobalMeanPool,
+    Upsample
 
 @testset "ExplicitFluxLayers" begin
     @testset "Layers" begin
