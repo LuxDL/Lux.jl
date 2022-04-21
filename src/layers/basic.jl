@@ -312,7 +312,7 @@ flatten_model(x) = x
 
 (c::Chain)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
-@generated function applychain(
+@inbounds @generated function applychain(
     layers::NamedTuple{fields}, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple{fields}
 ) where {fields}
     N = length(fields)

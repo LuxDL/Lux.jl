@@ -111,26 +111,17 @@ end
 
 function _big_finale(io::IO, m)
     ps, st = setup(m)
-    paramlength = parameterlength(m)
-    nonparamlength = statelength(m)
-    cnt = _childarray_sum(_ -> 1, ps)
-    noncnt = _childarray_sum(_ -> 1, st)
-    if cnt > 2
-        pars = underscorise(paramlength)
-        bytes = Base.format_bytes(Base.summarysize(m))
-        if noncnt > 0
-            nonparam = underscorise(nonparamlength)
-            printstyled(io, " "^08, "# Total: ", cnt, " trainable arrays, "; color=:light_black)
-            println(io, pars, " parameters,")
-            printstyled(
-                io, " "^10, "# plus ", noncnt, " non-trainable, ", nonparam, " states, summarysize "; color=:light_black
-            )
-            print(io, bytes, ".")
-        else
-            printstyled(io, " "^18, "# Total: ", cnt, " arrays, "; color=:light_black)
-            print(io, pars, " parameters, ", bytes, ".")
-        end
-    end
+    paramlength = parameterlength(ps)
+    nonparamlength = statelength(st)
+    pars = underscorise(paramlength)
+    bytes = Base.format_bytes(Base.summarysize(m))
+    nonparam = underscorise(nonparamlength)
+    printstyled(io, " "^08, "# Total: "; color=:light_black)
+    println(io, pars, " parameters,")
+    printstyled(io, " "^10, "#        plus "; color=:light_black)
+    print(io, nonparam, " states, ")
+    printstyled(io, "summarysize "; color=:light_black)
+    print(io, bytes, ".")
 end
 
 _childarray_sum(f, x::AbstractArray{<:Number}) = f(x)
