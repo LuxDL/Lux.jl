@@ -41,7 +41,6 @@ st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
-
 ## Design Principles
 
 * **Layers must be immutable** -- i.e. they cannot store any parameters/states but rather stores information to construct them
@@ -57,7 +56,6 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
   b. `AbstractExplicitContainerLayer`: Used when the layer is storing other `AbstractExplicitLayer`s or `AbstractExplicitContainerLayer`s. This allows good defaults of the dispatches for functions mentioned in the previous point.
 
-
 ## Why use ExplicitFluxLayers over Flux?
 
 * **Large Neural Networks**
@@ -72,8 +70,32 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
 ## Usage Examples
 
-* [Neural ODEs for MNIST Image Classification](examples/NeuralODE/neural_ode.jl) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
-* [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
+* Differential Equations + Deep Learning
+  * [Neural ODEs for MNIST Image Classification](examples/NeuralODE/neural_ode.jl) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
+  * [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
+* Optimization Packages
+  * For standard first order gradient based optimization use [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
+  * Other Optimization Packages like Optim.jl should just work:
+    ```julia
+    using Optim, ExplicitFluxLayers, Random
+
+    model = EFL.Chain(EFL.Dense(8, 16, tanh), EFL.Dense(16, 8))
+
+    ps, st = EFL.setup(MersenneTwister(0), model)
+    x = randn(Float32, 8, 512)
+    y = randn(Float32, 8, 512)
+
+    loss_function(p) = sum(abs2, first(model(x, p, st)) .- y)
+
+    result = optimize(
+        loss_function,
+        p -> gradient(loss_function, p)[1],
+        ps,
+        LBFGS();
+        inplace=false
+    )
+    ```
+* Distributed Training using [MPI.jl](https://github.com) -- [FluxMPI](https://github.com/avik-pal/FluxMPI.jl) + [FastDEQ](https://github.com/SciML/FastDEQ.jl/examples)
 
 ## Implemented Layers
 
