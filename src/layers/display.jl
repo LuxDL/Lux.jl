@@ -57,27 +57,19 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     end
 end
 
-_show_leaflike(x) = Flux.Functors.isleaf(x)  # mostly follow Functors, except for:
+_show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
 _show_leaflike(x::AbstractExplicitLayer) = false
 _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
-_get_children(l::AbstractExplicitContainerLayer{names}) where {names} = NamedTuple{names}(getfield.((l,), names))
+function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
+    length(names) == 1 && return getfield(l, names[1])
+    return NamedTuple{names}(getfield.((l,), names))
+end
 _get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
-_get_children(c::Union{Chain,BranchLayer,PairwiseFusion}) = c.layers
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(s::WeightNorm) = (s.layer,)
 _get_children(::Any) = ()
-function _get_children(e::T) where {T<:AbstractExplicitLayer}
-    children = []
-    for f in fieldnames(T)
-        x = getfield(e, f)
-        if supertype(typeof(x)) == AbstractExplicitLayer
-            append!(children, x)
-        end
-    end
-    return Tuple(children)
-end
 
 function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
     if !get(io, :compact, false)
@@ -85,12 +77,6 @@ function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
     else
         show(io, x)
     end
-end
-
-function Base.show(io::IO, x::AbstractExplicitLayer)
-    __t = rsplit(string(get_typename(x)), "."; limit=2)
-    T = length(__t) == 2 ? __t[2] : __t[1]
-    print(io, "$T()")
 end
 
 function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
@@ -110,7 +96,7 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
 end
 
 function _big_finale(io::IO, m)
-    ps, st = setup(m)
+    ps, st = setup(Random.default_rng(), m)
     paramlength = parameterlength(ps)
     nonparamlength = statelength(st)
     pars = underscorise(paramlength)

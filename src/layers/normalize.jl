@@ -132,8 +132,7 @@ function (BN::BatchNorm{affine,track_stats})(
             ),
         )
     if track_stats
-        @set! st.μ = μ2
-        @set! st.σ² = σ²2
+        st = merge(st, (μ=μ2, σ²=σ²2))
     end
     return res, st
 end

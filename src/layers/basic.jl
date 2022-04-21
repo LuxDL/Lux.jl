@@ -355,9 +355,10 @@ struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     initb::F3
 end
 
-function Base.show(io::IO, d::Dense)
+function Base.show(io::IO, d::Dense{bias}) where {bias}
     print(io, "Dense($(d.in_dims) => $(d.out_dims)")
     (d.λ == identity) || print(io, ", $(d.λ)")
+    bias || print(io, ", bias=false")
     return print(io, ")")
 end
 

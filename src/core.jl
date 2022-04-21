@@ -9,30 +9,32 @@
 abstract type AbstractExplicitLayer end
 
 initialparameters(::AbstractRNG, ::Any) = ComponentArray{Float32}()
-initialparameters(l) = initialparameters(Random.GLOBAL_RNG, l)
-initialparameters(rng::AbstractRNG, l::NamedTuple{fields}) where {fields} =
-    ComponentArray(NamedTuple{fields}(initialparameters.(rng, values(l))))
+initialparameters(rng::AbstractRNG, l::NamedTuple) =
+    ComponentArray(map(Base.Fix1(initialparameters, rng), l))
 
 initialstates(::AbstractRNG, ::Any) = NamedTuple()
-initialstates(l) = initialstates(Random.GLOBAL_RNG, l)
-initialstates(rng::AbstractRNG, l::NamedTuple{fields}) where {fields} =
-    NamedTuple{fields}(initialstates.(rng, values(l)))
+initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
 
-parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(l))
+parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(Random.default_rng(), l))
 parameterlength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(parameterlength, nt)
 parameterlength(a::AbstractArray) = length(a)
 parameterlength(x) = 0
 
-statelength(l::AbstractExplicitLayer) = statelength(initialstates(l))
+statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(), l))
 statelength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
 statelength(x::Union{Number,Symbol}) = 1
 statelength(x) = 0
 
 setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
-setup(l::AbstractExplicitLayer) = setup(Random.GLOBAL_RNG, l)
 
 apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = model(x, ps, st)
+
+function Base.show(io::IO, x::AbstractExplicitLayer)
+    __t = rsplit(string(get_typename(x)), "."; limit=2)
+    T = length(__t) == 2 ? __t[2] : __t[1]
+    print(io, "$T()")
+end
 
 # Abstract Container Layers
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
