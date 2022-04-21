@@ -1,4 +1,15 @@
-# Basic Dropout
+"""
+    Dropout(p; dims=:, initial_seed::UInt64=UInt64(0))
+
+Dropout layer.
+
+# Arguments
+
+* To apply dropout along certain dimension(s), specify the `dims` keyword. e.g. `Dropout(p; dims = 3)` will randomly zero out entire channels on WHCN input (also called 2D dropout).
+* Each execution of the Layer increments the `seed` and returns it wrapped in the state
+
+Call [`testmode`](@ref) to switch to test mode.
+"""
 struct Dropout{T,D} <: AbstractExplicitLayer
     p::T
     initial_seed::UInt64
@@ -25,8 +36,18 @@ function Base.show(io::IO, d::Dropout)
     return print(io, ")")
 end
 
-# Variational Hidden Dropout
-## Mask is retained unless explicitly dropped
+"""
+    VariationalHiddenDropout(p; dims=:, initial_seed::UInt64=UInt64(0))
+
+VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until `EFL.update_state(l, :update_mask, true)` is called.
+
+# Arguments
+
+* To apply dropout along certain dimension(s), specify the `dims` keyword. e.g. `Dropout(p; dims = 3)` will randomly zero out entire channels on WHCN input (also called 2D dropout).
+* Each execution of the Layer increments the `seed` and returns it wrapped in the state
+
+Call [`testmode`](@ref) to switch to test mode.
+"""
 struct VariationalHiddenDropout{T,D} <: AbstractExplicitLayer
     p::T
     initial_seed::UInt64

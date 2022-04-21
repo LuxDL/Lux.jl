@@ -77,7 +77,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
   * For standard first order gradient based optimization use [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
   * Other Optimization Packages like Optim.jl should just work:
     ```julia
-    using Optim, ExplicitFluxLayers, Random
+    using Optim, ExplicitFluxLayers, Random, Flux
 
     model = EFL.Chain(EFL.Dense(8, 16, tanh), EFL.Dense(16, 8))
 
@@ -99,7 +99,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
 ## Implemented Layers
 
-These layers have the same API as their Flux counterparts.
+We don't have a Documentation Page as of now. But all these functions have docs which can be access in the REPL help mode.
 
 * `Chain`, `Parallel`, `SkipConnection`, `BranchLayer`, `PairwiseFusion`
 * `Dense`, `Diagonal`

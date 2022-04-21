@@ -5,7 +5,34 @@ get_reduce_dims(::AbstractNormalizationLayer, ::AbstractArray) = error("Not Impl
 get_proper_shape(::AbstractNormalizationLayer, ::AbstractArray, y::Nothing, args...) = y
 get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::AbstractArray{T,N}, args...) where {T,N} = y
 
-# BatchNorm
+"""
+    BatchNorm(chs::Integer, λ=identity; initβ=zeros32, initγ=ones32,
+              affine = true, track_stats = true, ϵ=1f-5, momentum= 0.1f0)
+
+[Batch Normalization](https://arxiv.org/abs/1502.03167) layer.
+
+`BatchNorm` computes the mean and variance for each `D_1×...×D_{N-2}×1×D_N` input slice and normalises the input accordingly.
+
+# Arguments
+
+* `chs` should be the size of the channel dimension in your data (see below). Given an array with `N` dimensions, call the `N-1`th the channel dimension. For a batch of feature vectors this is just the data dimension, for `WHCN` images it's the usual channel dimension.
+* After normalisation, elementwise activation `λ` is applied.
+* If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias β and scale γ parameters.
+* If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
+
+Use [`testmode`](@ref) during inference.
+
+# Examples
+
+```julia
+m = EFL.Chain(
+        EFL.Dense(784 => 64),
+        EFL.BatchNorm(64, relu),
+        EFL.Dense(64 => 10),
+        EFL.BatchNorm(10)
+    )
+```
+"""
 struct BatchNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     λ::F1
     ϵ::N
@@ -119,7 +146,20 @@ function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track
     return print(io, ")")
 end
 
-# GroupNorm
+"""
+    GroupNorm(chs::Integer, groups::Integer, λ=identity; initβ=zeros32, initγ=ones32,
+              affine=true, track_stats=false, ϵ=1f-5, momentum=0.1f0)
+
+[Group Normalization](https://arxiv.org/abs/1803.08494) layer.
+
+# Arguments
+
+* `chs` is the number of channels, the channel dimension of your input. For an array of N dimensions, the `N-1`th index is the channel dimension.
+* `G` is the number of groups along which the statistics are computed. The number of channels must be an integer multiple of the number of groups.
+* After normalisation, elementwise activation `λ` is applied.
+* If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias `β` and scale `γ` parameters.
+* If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
+"""
 struct GroupNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     λ::F1
     ϵ::N
@@ -205,7 +245,17 @@ function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track
     return print(io, ")")
 end
 
-# WeightNorm
+"""
+    WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N,Symbol}, dims::Union{Tuple,Nothing}=nothing)
+
+Applies [weight normalization](https://arxiv.org/abs/1602.07868) to a parameter in the given layer.
+
+    ``w = g\\frac{v}{\\|v\\|}``
+
+Weight normalization is a reparameterization that decouples the magnitude of a weight tensor from its direction. This updates the parameters in `which_params` (e.g. `weight`) using two parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying the direction (e.g. `weight_v`).
+
+By default, a norm over the entire array is computed. Pass `dims` to modify the dimension.
+"""
 struct WeightNorm{which_params,L<:AbstractExplicitLayer,D} <: AbstractExplicitLayer
     layer::L
     dims::D

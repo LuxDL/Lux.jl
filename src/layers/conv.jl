@@ -1,3 +1,27 @@
+"""
+    Conv(filter, in => out, σ = identity; stride = 1, pad = 0, dilation = 1, groups = 1, [bias, initW])
+
+Standard convolutional layer.
+
+# Arguments
+
+* `filter` is a tuple of integers specifying the size of the convolutional kernel
+* `in` and `out` specify the number of input and output channels.
+
+Image data should be stored in WHCN order (width, height, channels, batch). In other words, a 100×100 RGB image would be a `100×100×3×1` array, and a batch of 50 would be a `100×100×3×50` array. This has `N = 2` spatial dimensions, and needs a kernel size like `(5,5)`, a 2-tuple of integers. To take convolutions along `N` feature dimensions, this layer expects as input an array with `ndims(x) == N+2`, where `size(x, N+1) == in` is the number of input channels, and `size(x, ndims(x))` is (as always) the number of observations in a batch.
+* `filter` should be a tuple of `N` integers.
+* Keywords `stride` and `dilation` should each be either single integer, or a tuple with `N` integers.
+* Keyword `pad` specifies the number of elements added to the borders of the data array. It can be
+  - a single integer for equal padding all around,
+  - a tuple of `N` integers, to apply the same padding at begin/end of each spatial dimension,
+  - a tuple of `2*N` integers, for asymmetric padding, or
+  - the singleton `SamePad()`, to calculate padding such that `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial dimension.
+* Keyword `groups` is expected to be an `Int`. It specifies the number of groups to divide a convolution into.
+
+Keywords to control initialization of the layer:
+* `initW` - Function used to generate initial weights. Defaults to `glorot_uniform`.
+* `bias` - The initial bias vector is all zero by default. Trainable bias can be disabled entirely by setting this to `false`.
+"""
 struct Conv{N,bias,cdims,M,F1,F2} <: AbstractExplicitLayer
     λ::F1
     in_chs::Int
@@ -87,6 +111,18 @@ function _print_conv_opt(io::IO, l::Conv{bias}) where {bias}
     return nothing
 end
 
+"""
+    MaxPool(window::NTuple; pad=0, stride=window)
+
+# Arguments
+
+* Max pooling layer, which replaces all pixels in a block of size `window` with one.
+* Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch dimensions, after the `N` feature dimensions, where `N = length(window)`.
+* By default the window size is also the stride in each dimension.
+* The keyword `pad` accepts the same options as for the [`Conv`](@ref) layer, including `SamePad()`.
+
+See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref).
+"""
 struct MaxPool{N,M,pdims} <: AbstractExplicitLayer
     k::NTuple{N,Int}
     pad::NTuple{M,Int}
@@ -116,6 +152,19 @@ function Base.show(io::IO, m::MaxPool)
     return print(io, ")")
 end
 
+
+"""
+    MeanPool(window::NTuple; pad=0, stride=window)
+
+# Arguments
+
+* Mean pooling layer, which replaces all pixels in a block of size `window` with one.
+* Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch dimensions, after the `N` feature dimensions, where `N = length(window)`.
+* By default the window size is also the stride in each dimension.
+* The keyword `pad` accepts the same options as for the [`Conv`](@ref) layer, including `SamePad()`.
+
+See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref).
+"""
 struct MeanPool{N,M,pdims} <: AbstractExplicitLayer
     k::NTuple{N,Int}
     pad::NTuple{M,Int}
@@ -145,7 +194,23 @@ function Base.show(io::IO, m::MeanPool)
     return print(io, ")")
 end
 
-# Upsampling
+"""
+    Upsample(mode = :nearest; [scale, size]) 
+    Upsample(scale, mode = :nearest)  
+
+An upsampling layer.
+
+# Arguments
+
+One of two keywords must be given:
+* If `scale` is a number, this applies to all but the last two dimensions (channel and batch) of the input.  It may also be a tuple, to control dimensions individually.
+ * Alternatively, keyword `size` accepts a tuple, to directly specify the leading dimensions of the output.
+
+Currently supported upsampling `mode`s and corresponding NNlib's methods are:
+  - `:nearest` -> [`NNlib.upsample_nearest`](@ref) 
+  - `:bilinear` -> [`NNlib.upsample_bilinear`](@ref)
+  - `:trilinear` -> [`NNlib.upsample_trilinear`](@ref)
+"""
 struct Upsample{mode,S,T} <: AbstractExplicitLayer
     scale::S
     size::T
@@ -195,14 +260,26 @@ function Base.show(io::IO, u::Upsample{mode}) where {mode}
     return print(io, ")")
 end
 
-# Global Mean Pooling
+"""
+    GlobalMeanPool()
+
+Global Mean Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output, by performing max pooling on the complete (w,h)-shaped feature maps.
+
+See also [`MeanPool`](@ref), [`GlobalMaxPool`](@ref).
+"""
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
 Base.@pure function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
     return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
-# Global Max Pooling
+"""
+    GlobalMaxPool()
+
+Global Max Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output, by performing max pooling on the complete (w,h)-shaped feature maps.
+
+See also [`MaxPool`](@ref), [`GlobalMeanPool`](@ref).
+"""
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
 Base.@pure function (g::GlobalMaxPool)(x, ps, st::NamedTuple)

@@ -63,7 +63,13 @@ function Base.show(io::IO, w::WrappedFunction)
     return print(io, "WrappedFunction(", w.func, ")")
 end
 
-## SkipConnection
+"""
+    SkipConnection(layer, connection)
+
+Create a skip connection which consists of a layer or `Chain` of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.
+
+The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
+"""
 struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
     connection::F
@@ -74,7 +80,13 @@ function (skip::SkipConnection)(input, ps::NamedTuple, st::NamedTuple)
     return skip.connection(mx, input), st
 end
 
-## Parallel
+"""
+    Parallel(connection, layers...)
+
+Behaves differently on different input types:
+* If `x` is a Tuple then each element is passed to each layer
+* Otherwise, `x` is directly passed to all layers
+"""
 struct Parallel{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
@@ -125,7 +137,24 @@ end
 
 Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
-## Branching Layer
+"""
+    BranchLayer(layers...)
+
+Takes an input `x` and passes it through all the `layers` and returns a tuple of the outputs.
+
+This is slightly different from `Parallel(nothing, layers...)`
+    - If the input is a tuple Parallel will pass each element individually to each layer
+    - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+
+An easy way to replicate an input to an NTuple is to do
+```julia
+l = EFL.BranchLayer(
+    EFL.NoOpLayer(),
+    EFL.NoOpLayer(),
+    EFL.NoOpLayer(),
+)
+```
+"""
 struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 end
@@ -163,7 +192,28 @@ end
 
 Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 
-## PairwiseFusion
+"""
+    PairwiseFusion(connection, layers...)
+
+Layer behaves differently based on input type:
+1. Input `x` is a tuple of length `N` then the `layers` must be a tuple of length `N`. The computation is as follows
+
+```julia
+y = x[1]
+for i in 1:N
+    y = connection(x[i], layers[i](y))
+end
+```
+
+2. Any other kind of input
+
+```julia
+y = x
+for i in 1:N
+    y = connection(x, layers[i](y))
+end
+```
+"""
 struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
@@ -209,18 +259,30 @@ end
 
 Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
-## Chain
+"""
+    Chain(layers...; disable_optimizations::Bool = false)
+
+Collects multiple layers / functions to be called in sequence on a given input.
+
+Performs a few optimizations to generate reasonable architectures. Can be disabled using keyword argument `disable_optimizations`.
+* All sublayers are recursively optimized.
+* If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
+* If the layer is a Chain, it is expanded out.
+* `NoOpLayer`s are removed.
+* If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
+* If there are no layers (left after optimizations), a `NoOpLayer` is returned.
+"""
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    function Chain(xs...)
-        xs = flatten_model(xs)
+    function Chain(xs...; disable_optimizations::Bool = false)
+        xs = disable_optimizations ? xs : flatten_model(xs)
         length(xs) == 0 && return NoOpLayer()
         length(xs) == 1 && return first(xs)
         names = ntuple(i -> Symbol("layer_$i"), length(xs))
         layers = NamedTuple{names}(xs)
         return new{typeof(layers)}(layers)
     end
-    Chain(xs::AbstractVector) = Chain(xs...)
+    Chain(xs::AbstractVector; disable_optimizations::Bool = false) = Chain(xs...; disable_optimizations)
 end
 
 function flatten_model(layers::Union{AbstractVector,Tuple})
@@ -271,7 +333,20 @@ end
 
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
-## Linear
+
+"""
+    Dense(in => out, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+
+Create a traditional fully connected layer, whose forward pass is given by: `y = σ.(weight * x .+ bias)`
+
+* The input `x` should be a vector of length `in`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
+* The output `y` will be a vector  of length `out`, or a batch with `size(y) == (out, size(x)[2:end]...)`
+
+Keyword `bias=false` will switch off trainable bias for the layer.
+
+The initialisation of the weight matrix is `W = initW(rng, out, in)`, calling the function
+given to keyword `initW`, with default [`glorot_uniform`](@doc Flux.glorot_uniform).
+"""
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     λ::F1
     in_dims::Int
@@ -325,7 +400,18 @@ Base.@pure function (d::Dense{bias,λT})(
     end
 end
 
-## Diagonal
+"""
+    Diagonal(dims, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+
+Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
+
+* The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
+* The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
+
+Keyword `bias=false` will switch off trainable bias for the layer.
+
+The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@doc Flux.glorot_uniform).
+"""
 struct Diagonal{bias,F1,F2,F3} <: AbstractExplicitLayer
     λ::F1
     dims::Int
