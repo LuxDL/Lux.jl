@@ -1,13 +1,25 @@
 using Test, Random, Statistics
 import Flux: relu, pullback, sigmoid
-import ExplicitFluxLayers: apply, setup, parameterlength, statelength, Dense, BatchNorm, trainmode
+import ExplicitFluxLayers:
+    apply,
+    setup,
+    parameterlength,
+    statelength,
+    trainmode,
+    Dense,
+    BatchNorm,
+    SkipConnection,
+    Parallel,
+    Chain,
+    WrappedFunction
 
 @testset "ExplicitFluxLayers" begin
-    @testset "Linear" begin
-        include("linear.jl")
-    end
-
-    @testset "Normalization" begin
-        include("normalization.jl")
+    @testset "Layers" begin
+        @testset "Basic" begin
+            include("layers/basic.jl")
+        end
+        @testset "Normalization" begin
+            include("layers/normalize.jl")
+        end
     end
 end

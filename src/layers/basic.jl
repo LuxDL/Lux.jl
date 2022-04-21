@@ -75,7 +75,7 @@ struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLa
     connection::F
 end
 
-function (skip::SkipConnection)(input, ps::NamedTuple, st::NamedTuple)
+function (skip::SkipConnection)(input, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
     mx, st = skip.layers(input, ps, st)
     return skip.connection(mx, input), st
 end
