@@ -7,16 +7,16 @@ Dispatch to Octavian for CPU and CUBLAS for GPU
 """
 fast_matmul
 
-@inbounds Base.@pure function fast_matmul(A::AbstractMatrix{T1}, B::AbstractArray{T2,N}) where {T1,T2,N}
+@inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractArray{T2,N}) where {T1,T2,N}
     return reshape(fast_matmul(A, reshape(B, size(B, 1), :)), :, size(B)[2:end]...)
 end
 
-@inbounds Base.@pure function fast_matmul(A::AbstractMatrix{T1}, B::AbstractMatrix{T2}) where {T1,T2}
+@inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractMatrix{T2}) where {T1,T2}
     size(A, 2) != size(B, 1) && throw(DimensionMismatch("$(size(A, 2)) != $(size(B, 1)) for Matrix-Matrix Multiply"))
     return fast_matmul!(similar(A, promote_type(T1, T2), (size(A, 1), size(B, 2))), A, B)
 end
 
-@inbounds Base.@pure function fast_matmul(A::AbstractMatrix{T1}, b::AbstractVector{T2}) where {T1,T2}
+@inbounds function fast_matmul(A::AbstractMatrix{T1}, b::AbstractVector{T2}) where {T1,T2}
     size(A, 2) != length(b) && throw(DimensionMismatch("$(size(A, 2)) != $(length(b)) for Matrix-Vector Multiply"))
     return fast_matmul!(similar(A, promote_type(T1, T2), size(A, 1)), A, b)
 end
@@ -36,7 +36,7 @@ function fast_matmul!(
 end
 
 # Normalization Implementation
-Base.@pure function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
+function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
     batchmean = mean(batchmean, dims=ndims(batchmean))
     batchvar = mean(batchvar, dims=ndims(batchvar))
     _xmean = @. (1 - momentum) * xmean + momentum * batchmean
@@ -44,13 +44,13 @@ Base.@pure function update_statistics(::AbstractNormalizationLayer, xmean, xvar,
     return (_xmean, _xvar)
 end
 
-Base.@pure function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
+function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
     _xmean = @. (1 - momentum) * xmean + momentum * batchmean
     _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
     return (_xmean, _xvar)
 end
 
-Base.@pure function normalization_forward(
+function normalization_forward(
     l::AbstractNormalizationLayer{affine,track_stats},
     x::AbstractArray{T,N},
     xmean::Union{Nothing,AbstractArray{T,N}},

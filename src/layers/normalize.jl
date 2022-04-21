@@ -79,7 +79,7 @@ function (BN::BatchNorm)(x::AbstractVector, ps, states::NamedTuple)
     return y[:], states
 end
 
-Base.@pure function (BN::BatchNorm{affine,track_stats})(
+function (BN::BatchNorm{affine,track_stats})(
     x::AbstractArray{T,N}, ps, st::NamedTuple
 ) where {T,N,affine,track_stats}
     @assert size(x, N - 1) == BN.chs
@@ -208,7 +208,7 @@ function get_proper_shape(::GroupNorm, x::AbstractArray{T,N}, y::AbstractVector,
     end
 end
 
-Base.@pure function (GN::GroupNorm{affine,track_stats})(
+function (GN::GroupNorm{affine,track_stats})(
     x::AbstractArray{T,N}, ps, st::NamedTuple
 ) where {T,N,affine,track_stats}
     sz = size(x)
@@ -289,7 +289,7 @@ end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
-Base.@pure function (wn::WeightNorm)(x, ps::Union{ComponentArray,NamedTuple}, s::NamedTuple)
+function (wn::WeightNorm)(x, ps::Union{ComponentArray,NamedTuple}, s::NamedTuple)
     _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end

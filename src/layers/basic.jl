@@ -7,7 +7,7 @@ struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N,Int}
 end
 
-Base.@pure function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
+function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(x, r.dims..., :), st
 end
 
@@ -18,7 +18,7 @@ Flattens the passed array into a matrix.
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
-Base.@pure function (f::FlattenLayer)(
+function (f::FlattenLayer)(
     x::AbstractArray{T,N}, ps, st::NamedTuple
 ) where {T,N}
     return reshape(x, :, size(x, N)), st
@@ -34,7 +34,7 @@ struct SelectDim{I} <: AbstractExplicitLayer
     i::I
 end
 
-Base.@pure (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
+(s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
 
 """
     NoOpLayer()
@@ -43,7 +43,7 @@ As the name suggests does nothing but allows pretty printing of layers.
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
-Base.@pure (noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
+(noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
 
 """
     WrappedFunction(f)
@@ -312,7 +312,7 @@ flatten_model(x) = x
 
 (c::Chain)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
-@inbounds @generated function applychain(
+@generated function applychain(
     layers::NamedTuple{fields}, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple{fields}
 ) where {fields}
     N = length(fields)
@@ -381,7 +381,7 @@ end
 parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
-Base.@pure function (d::Dense{bias,λT})(
+function (d::Dense{bias,λT})(
     x::AbstractArray{T,N}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 ) where {bias,T,N,λT}
     if bias
@@ -438,7 +438,7 @@ initialparameters(rng::AbstractRNG, d::Diagonal{false}) = (weight=d.initW(rng, d
 parameterlength(d::Diagonal{bias}) where {bias} = (1 + bias) * d.dims
 statelength(d::Diagonal) = 0
 
-Base.@pure function (d::Diagonal{bias})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {bias}
+function (d::Diagonal{bias})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {bias}
     if bias
         return d.λ.(ps.weight .* x .+ ps.bias), st
     else

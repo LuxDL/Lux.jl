@@ -77,7 +77,7 @@ end
 
 parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs + (bias ? c.out_chs : 0)
 
-Base.@pure function (c::Conv{N,bias,C})(
+function (c::Conv{N,bias,C})(
     x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 ) where {N,bias,C}
     cdims = if C === nothing
@@ -140,7 +140,7 @@ function MaxPool(k::NTuple{N,Integer}; pad=0, stride=k, input_size::Union{Nothin
     return MaxPool{N,length(pad),pdims}(k, pad, stride)
 end
 
-Base.@pure function (m::MaxPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
+function (m::MaxPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
     pdims = P === nothing ? PoolDims(x, m.k; padding=m.pad, stride=m.stride) : P
     return maxpool(x, pdims), st
 end
@@ -182,7 +182,7 @@ function MeanPool(k::NTuple{N,Integer}; pad=0, stride=k, input_size::Union{Nothi
     return MeanPool{N,length(pad),pdims}(k, pad, stride)
 end
 
-Base.@pure function (m::MeanPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
+function (m::MeanPool{N,M,P})(x, ps, st::NamedTuple) where {N,M,P}
     pdims = P === nothing ? PoolDims(x, m.k; padding=m.pad, stride=m.stride) : P
     return meanpool(x, pdims), st
 end
@@ -269,7 +269,7 @@ See also [`MeanPool`](@ref), [`GlobalMaxPool`](@ref).
 """
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
-Base.@pure function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
+function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
     return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
@@ -282,6 +282,6 @@ See also [`MaxPool`](@ref), [`GlobalMeanPool`](@ref).
 """
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
-Base.@pure function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
+function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
     return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
