@@ -1,12 +1,3 @@
-Base.zero(s::NamedTuple{(),Tuple{}}) = s
-
-Base.zero(::Symbol) = Symbol()
-
-Base.zero(nt::NamedTuple{fields}) where {fields} = NamedTuple{fields}(zero.(values(nt)))
-
-# Layers are stateless so we can simply return that
-Base.zero(l::AbstractExplicitLayer) = l
-
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 function ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple)
     return (st.training == :auto ? true : st.training), _ -> (NoTangent(), NoTangent())

@@ -38,7 +38,6 @@ function Conv(
     k::NTuple{N,Integer},
     ch::Pair{<:Integer,<:Integer},
     λ=identity;
-    input_size::Union{Nothing,NTuple{N,Integer}}=nothing,
     initW=glorot_uniform,
     stride=1,
     pad=0,
@@ -61,7 +60,7 @@ function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
     return bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
 end
 
-parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs + (bias ? c.out_chs : 0)
+parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups  + (bias ? c.out_chs : 0)
 
 function (c::Conv{N,bias})(
     x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple

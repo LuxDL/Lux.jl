@@ -30,7 +30,7 @@ end
 function transform(model::Flux.Conv)
     return Conv(
         size(model.weight)[1:(end - 2)],
-        size(model.weight, ndims(model.weight) - 1) => size(model.weight, ndims(model.weight)),
+        size(model.weight, ndims(model.weight) - 1) * model.groups => size(model.weight, ndims(model.weight)),
         model.σ;
         stride=model.stride,
         pad=model.pad,
