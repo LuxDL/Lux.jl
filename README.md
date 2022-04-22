@@ -73,6 +73,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 * Differential Equations + Deep Learning
   * [Neural ODEs for MNIST Image Classification](examples/NeuralODE/neural_ode.jl) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
   * [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
+* Scalable Image Classification -- [Imagenet](examples/Imagenet/main.jl)
 * Optimization Packages
   * For standard first order gradient based optimization use [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
   * Other Optimization Packages like Optim.jl should just work:

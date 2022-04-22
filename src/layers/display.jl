@@ -17,7 +17,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
         _layer_show(io, obj, indent, name)
     else
         println(io, " "^indent, isnothing(name) ? "" : "$name = ", nameof(typeof(obj)), pre)
-        if obj isa Chain{<:NamedTuple} && children == getfield(obj, :layers)
+        if obj isa Chain{<:NamedTuple}
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
@@ -63,7 +63,7 @@ _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
 function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
-    length(names) == 1 && return getfield(l, names[1])
+    # length(names) == 1 && return getfield(l, names[1])
     return NamedTuple{names}(getfield.((l,), names))
 end
 _get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
