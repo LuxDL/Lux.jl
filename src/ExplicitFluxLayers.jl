@@ -13,7 +13,8 @@ using Statistics,
     Functors,
     ComponentArrays,
     Optimisers,
-    Zygote
+    Zygote,
+    Yota
 import NNlibCUDA: batchnorm, cudnnBNForward!
 using Flux: Flux
 import Flux:

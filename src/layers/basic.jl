@@ -18,9 +18,7 @@ Flattens the passed array into a matrix.
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
-function (f::FlattenLayer)(
-    x::AbstractArray{T,N}, ps, st::NamedTuple
-) where {T,N}
+function (f::FlattenLayer)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     return reshape(x, :, size(x, N)), st
 end
 
@@ -274,7 +272,7 @@ Performs a few optimizations to generate reasonable architectures. Can be disabl
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    function Chain(xs...; disable_optimizations::Bool = false)
+    function Chain(xs...; disable_optimizations::Bool=false)
         xs = disable_optimizations ? xs : flatten_model(xs)
         length(xs) == 0 && return NoOpLayer()
         length(xs) == 1 && return first(xs)
@@ -282,7 +280,7 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
         layers = NamedTuple{names}(xs)
         return new{typeof(layers)}(layers)
     end
-    Chain(xs::AbstractVector; disable_optimizations::Bool = false) = Chain(xs...; disable_optimizations)
+    Chain(xs::AbstractVector; disable_optimizations::Bool=false) = Chain(xs...; disable_optimizations)
 end
 
 function flatten_model(layers::Union{AbstractVector,Tuple})
@@ -333,7 +331,6 @@ end
 
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
-
 """
     Dense(in => out, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
 
@@ -382,25 +379,31 @@ end
 parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
-function (d::Dense{bias,λT})(
-    x::AbstractArray{T,N}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {bias,T,N,λT}
-    if bias
-        b = N == 1 ? view(ps.bias, :, 1) : ps.bias
-        if λT == typeof(identity)
-            return fast_matmul(ps.weight, x) .+ b, st
-        else
-            return d.λ.(fast_matmul(ps.weight, x) .+ b), st
-        end
-    else
-        if λT == typeof(identity)
-            return fast_matmul(ps.weight, x), st
-        else
-            return d.λ.(fast_matmul(ps.weight, x)), st
-        end
-    end
+function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return d.λ.(fast_matmul(ps.weight, x)), st
 end
 
+function (d::Dense{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return fast_matmul(ps.weight, x), st
+end
+
+function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return d.λ.(fast_matmul(ps.weight, x) .+ ps.bias), st
+end
+
+function (d::Dense{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return fast_matmul(ps.weight, x) .+ ps.bias, st
+end
+
+function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return d.λ.(fast_matmul(ps.weight, x) .+ vec(ps.bias)), st
+end
+
+function (d::Dense{true,typeof(identity)})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return fast_matmul(ps.weight, x) .+ vec(ps.bias), st
+end
+
+# FIXME: Refactor to be Scale
 """
     Diagonal(dims, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
 

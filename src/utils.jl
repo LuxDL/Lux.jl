@@ -1,22 +1,13 @@
+replicate(rng::AbstractRNG) = copy(rng)
+replicate(rng::CUDA.RNG) = deepcopy(rng)
+
 zeros32(rng::AbstractRNG, args...; kwargs...) = zeros32(args...; kwargs...)
 ones32(rng::AbstractRNG, args...; kwargs...) = ones32(args...; kwargs...)
 Base.zeros(rng::AbstractRNG, args...; kwargs...) = zeros(args...; kwargs...)
 Base.ones(rng::AbstractRNG, args...; kwargs...) = ones(args...; kwargs...)
 
-function var!(y1, y2, x; kwargs...)
-    mean!(y1, x)
-    return var!(y1, y2, x, y1; kwargs...)
-end
-
-function var!(y1, y2, x, μ; corrected::Bool=true)
-    m = (length(x) ÷ length(y1)) - corrected
-    @. y2 = abs2(x - μ) / m
-    mean!(y1, x)
-    return y1
-end
-
-istraining() = false
-istraining(st::NamedTuple)::Bool = st.training == :auto ? istraining() : st.training
+@inline istraining() = false
+@inline istraining(st::NamedTuple)::Bool = st.training
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
 
@@ -64,9 +55,7 @@ function ComponentArrays.last_index(f::FlatAxis)
     return ComponentArrays.last_index(last(nt))
 end
 
-# Zygote things
-unfill_array(x::Fill) = Array(x)
-unfill_array(x::AbstractArray) = x
+ComponentArrays.recursive_length(nt::NamedTuple{(), Tuple{}}) = 0
 
 # Return Nothing if field not present
 function safegetproperty(x::Union{ComponentArray,NamedTuple}, k::Symbol)

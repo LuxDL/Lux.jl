@@ -1,4 +1,4 @@
-using Test, Random, Statistics, Zygote, Metalhead, ExplicitFluxLayers
+using Test, Random, Statistics, Zygote, Metalhead, ExplicitFluxLayers, Functors
 import Flux: relu, pullback, sigmoid, gradient
 import ExplicitFluxLayers:
     apply,
@@ -39,7 +39,9 @@ function run_model(m::AbstractExplicitLayer, x)
 end
 
 function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {fields}
-    all(isapprox, values(nt1), values(nt2))
+    checkapprox(xy) = xy[1] ≈ xy[2]
+    checkapprox(t::Tuple{Nothing,Nothing}) = true
+    all(checkapprox, zip(values(nt1), values(nt2)))
 end
 
 

@@ -62,17 +62,18 @@ end
 
 parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups  + (bias ? c.out_chs : 0)
 
-function (c::Conv{N,bias})(
+function (c::Conv{N,false})(
     x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {N,bias}
+) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    if bias
-        return c.λ.(conv_wrapper(x, ps.weight, cdims) .+ ps.bias), st
-        # FIXME: Needs https://github.com/FluxML/NNlibCUDA.jl/pull/45 to be merged
-        # return conv_bias_act(x, ps.weight, cdims, ps.bias, λ), st
-    else
-        return c.λ.(conv_wrapper(x, ps.weight, cdims)), st
-    end
+    return c.λ.(conv_wrapper(x, ps.weight, cdims)), st
+end
+
+function (c::Conv{N,true})(
+    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+) where {N}
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
+    return c.λ.(conv_wrapper(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -270,12 +271,7 @@ struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
 end
 
 function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
-    insize = size(x)[1:end-2]
-    outsize = a.out
-    stride = insize .÷ outsize
-    k = insize .- (outsize .- 1) .* stride
-    pad = 0
-    pdims = PoolDims(x, k; padding=pad, stride=stride)
+    pdims = compute_adaptive_pooling_dims(x, a.out)
     return maxpool(x, pdims), st
 end
 
@@ -296,12 +292,7 @@ struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
 end
 
 function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
-    insize = size(x)[1:end-2]
-    outsize = a.out
-    stride = insize .÷ outsize
-    k = insize .- (outsize .- 1) .* stride
-    pad = 0
-    pdims = PoolDims(x, k; padding=pad, stride=stride)
+    pdims = compute_adaptive_pooling_dims(x, a.out)
     return meanpool(x, pdims), st
 end
 

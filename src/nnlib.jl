@@ -1,24 +1,18 @@
 # Matrix-Matrix & Matrix-Vector Multiplication
-"""
-    fast_matmul(A, B)
-    fast_matmul!(C, A, B)
-
-Dispatch to Octavian for CPU and CUBLAS for GPU
-"""
-fast_matmul
-
-@inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractArray{T2,N}) where {T1,T2,N}
-    return reshape(fast_matmul(A, reshape(B, size(B, 1), :)), :, size(B)[2:end]...)
-end
+# @inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractArray{T2,N}) where {T1,T2,N}
+#     return reshape(fast_matmul(A, reshape(B, size(B, 1), :)), :, size(B)[2:end]...)
+# end
 
 @inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractMatrix{T2}) where {T1,T2}
-    size(A, 2) != size(B, 1) && throw(DimensionMismatch("$(size(A, 2)) != $(size(B, 1)) for Matrix-Matrix Multiply"))
-    return fast_matmul!(similar(A, promote_type(T1, T2), (size(A, 1), size(B, 2))), A, B)
+    # size(A, 2) != size(B, 1) && throw(DimensionMismatch("$(size(A, 2)) != $(size(B, 1)) for Matrix-Matrix Multiply"))
+    # return fast_matmul!(similar(A, promote_type(T1, T2), (size(A, 1), size(B, 2))), A, B)
+    return A * B
 end
 
 @inbounds function fast_matmul(A::AbstractMatrix{T1}, b::AbstractVector{T2}) where {T1,T2}
-    size(A, 2) != length(b) && throw(DimensionMismatch("$(size(A, 2)) != $(length(b)) for Matrix-Vector Multiply"))
-    return fast_matmul!(similar(A, promote_type(T1, T2), size(A, 1)), A, b)
+    # size(A, 2) != length(b) && throw(DimensionMismatch("$(size(A, 2)) != $(length(b)) for Matrix-Vector Multiply"))
+    # return fast_matmul!(similar(A, promote_type(T1, T2), size(A, 1)), A, b)
+    return A * b
 end
 
 function fast_matmul!(C::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat)
@@ -101,23 +95,29 @@ function normalization_forward(
 end
 
 # Convolution
-conv_wrapper(x, weight, cdims) = conv(x, weight, cdims)
+@inline conv_wrapper(x, weight, cdims) = conv(x, weight, cdims)
 
-function conv_wrapper(x::SubArray{T,N,<:CuArray}, weight, cdims) where {T,N}
+@inline function conv_wrapper(x::SubArray{T,N,<:CuArray}, weight, cdims) where {T,N}
     return conv(copy(x), weight, cdims)
 end
 
 # Dropout
-_dropout_shape(s, ::Colon) = size(s)
-_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
-
-_dropout_kernel(y::T, p::T, q::T) where {T} = y > p ? inv(q) : 0
-
-function dropout(rng::AbstractRNG, x, p; dims=:)
-    y = _dropout_mask(rng, x, p; dims=dims)
-    return dropout(rng, y, x, p; dims=dims), y
+function dropout(rng::AbstractRNG, x, prob, dims, training)
+    if training
+        rng = replicate(rng)
+        mask = _dropout_mask(rng, x, prob; dims)
+        return x .* mask, mask, rng
+    else
+        # Return `x` for type stability
+        return x, x, rng
+    end
 end
 
-function dropout(rng::AbstractRNG, mask, x, p; dims=:)
-    return x .* mask
+# Adaptive Pooling
+function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
+    insize = size(x)[1:end-2]
+    stride = insize .÷ outsize
+    k = insize .- (outsize .- 1) .* stride
+    pad = 0
+    return PoolDims(x, k; padding=pad, stride=stride)
 end
