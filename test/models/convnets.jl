@@ -32,7 +32,7 @@ end
                              block_config = [2, 2, 2, 2])
         m2 = transform(m.layers)
 
-        @test size(run_model(m2, rand(Float32, 256, 256, 3, 1))) == (1000, 1)
+        @test_broken size(run_model(m2, rand(Float32, 256, 256, 3, 1))) == (1000, 1)
 
         GC.gc(true)
     end

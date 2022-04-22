@@ -38,6 +38,10 @@ function run_model(m::AbstractExplicitLayer, x)
     return apply(m, x, ps, st)[1]
 end
 
+function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {fields}
+    all(isapprox, values(nt1), values(nt2))
+end
+
 
 @testset "ExplicitFluxLayers" begin
     @testset "Layers" begin
