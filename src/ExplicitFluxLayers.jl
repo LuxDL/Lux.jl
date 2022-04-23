@@ -28,7 +28,8 @@ import Flux:
     DenseConvDims,
     _maybetuple_string,
     reshape_cell_output,
-    _dropout_mask,
+    _dropout_shape,
+    _dropout_kernel,
     gpu,
     cpu
 

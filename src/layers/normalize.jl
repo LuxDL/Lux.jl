@@ -79,9 +79,7 @@ function (BN::BatchNorm)(x::AbstractVector, ps, states::NamedTuple)
     return y[:], states
 end
 
-function (BN::BatchNorm{affine,track_stats})(
-    x::AbstractArray{T,N}, ps, st::NamedTuple
-) where {T,N,affine,track_stats}
+function (BN::BatchNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
 
@@ -118,19 +116,20 @@ function (BN::BatchNorm{affine,track_stats})(
             σ²2 = var(x; mean=μ2, dims=reduce_dims, corrected=false)
         end
     end
-    res = 
-        BN.λ.(
-            batchnorm(
-                affine ? ps.γ : nothing,
-                affine ? ps.β : nothing,
-                x,
-                μ2,
-                σ²2,
-                BN.momentum;
-                eps=BN.ϵ,
-                training=istraining(st),
-            ),
-        )
+    res = applyactivation(
+        BN.λ,
+        batchnorm(
+            affine ? ps.γ : nothing,
+            affine ? ps.β : nothing,
+            x,
+            μ2,
+            σ²2,
+            BN.momentum;
+            eps=BN.ϵ,
+            training=istraining(st),
+        ),
+        Val(!istraining(st))
+    )
     if track_stats
         st = merge(st, (μ=μ2, σ²=σ²2))
     end
@@ -207,9 +206,7 @@ function get_proper_shape(::GroupNorm, x::AbstractArray{T,N}, y::AbstractVector,
     end
 end
 
-function (GN::GroupNorm{affine,track_stats})(
-    x::AbstractArray{T,N}, ps, st::NamedTuple
-) where {T,N,affine,track_stats}
+function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
     sz = size(x)
     @assert N > 2
     @assert sz[N - 1] == GN.chs
@@ -293,22 +290,35 @@ function (wn::WeightNorm)(x, ps::Union{ComponentArray,NamedTuple}, s::NamedTuple
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end
 
-function get_normalized_parameters(
-    ::WeightNorm{Val{which_params}}, ::Nothing, ps::Union{ComponentArray,NamedTuple}
-) where {which_params}
-    wp_s = string.(which_params)
-    _vs = getproperty.((ps,), Symbol.(wp_s .* "_v"))
-    _gs = getproperty.((ps,), Symbol.(wp_s .* "_g"))
-    return NamedTuple{which_params}(map((v, g) -> (v .* (g ./ _norm_except(v))), _vs, _gs))
-end
+@inbounds @generated function get_normalized_parameters(
+    ::WeightNorm{Val{which_params}}, dims::T, ps::Union{ComponentArray,NamedTuple}
+) where {T,which_params}
+    parameter_names = string.(which_params)
+    v_parameter_names = Symbol.(parameter_names .* "_v")
+    g_parameter_names = Symbol.(parameter_names .* "_g")
+    normalized_params_symbol = [gensym(p) for p in parameter_names]
 
-function get_normalized_parameters(
-    ::WeightNorm{Val{which_params}}, dims::Tuple, ps::Union{ComponentArray,NamedTuple}
-) where {which_params}
-    wp_s = string.(which_params)
-    _vs = getproperty.((ps,), Symbol.(wp_s .* "_v"))
-    _gs = getproperty.((ps,), Symbol.(wp_s .* "_g"))
-    return NamedTuple{which_params}(map((v, g, dim) -> (v .* (g ./ _norm_except(v, dim))), _vs, _gs, dims))
+    function get_norm_except_invoke(i)
+        return if T <: Tuple
+            :(_norm_except(ps.$(v_parameter_names[i]), dims[$i]))
+        else
+            :(_norm_except(ps.$(v_parameter_names[i])))
+        end
+    end
+
+    calls = []
+    for i in 1:length(parameter_names)
+        push!(
+            calls,
+            :(
+                $(normalized_params_symbol[i]) =
+                    ps.$(v_parameter_names[i]) .* (ps.$(g_parameter_names[i]) ./ $(get_norm_except_invoke(i)))
+            ),
+        )
+    end
+    push!(calls, :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...)))))
+
+    return Expr(:block, calls...)
 end
 
 function Base.show(io::IO, w::WeightNorm{Val{which_params}}) where {which_params}

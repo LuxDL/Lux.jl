@@ -62,6 +62,28 @@ function Base.show(io::IO, w::WrappedFunction)
 end
 
 """
+    ActivationFunction(f)
+"""
+# struct ActivationFunction{inplace,F} <: AbstractExplicitLayer
+struct ActivationFunction{F} <: AbstractExplicitLayer
+    func::F
+end
+
+# ActivationFunction(f; inplace::Bool = false) = ActivationFunction{inplace,f}(f)
+
+initialstates(rng::AbstractRNG, ::ActivationFunction) = (training=true,)
+
+(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(true)), st
+
+# (af::ActivationFunction{false})(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(false)), st
+
+# (af::ActivationFunction{true})(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(!istraining(st))), st
+
+function Base.show(io::IO, af::ActivationFunction)
+    return print(io, "ActivationFunction(", af.func, ")")
+end
+
+"""
     SkipConnection(layer, connection)
 
 Create a skip connection which consists of a layer or `Chain` of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.

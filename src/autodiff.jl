@@ -11,8 +11,9 @@ end
 
 ChainRulesCore.@non_differentiable replicate(::Any)
 ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
-ChainRulesCore.@non_differentiable _dropout_mask(::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
+ChainRulesCore.@non_differentiable update_state(::Any, ::Any, ::Any)
 
 ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
 
@@ -31,7 +32,7 @@ end
 function ChainRulesCore.rrule(::typeof(dropout), rng, x, prob, dims, training)
     @assert training AssertionError("Trying to conpute dropout gradients when `training`=false")
     rng = replicate(rng)
-    mask = _dropout_mask(rng, x, prob; dims)
+    mask = generate_dropout_mask(rng, x, prob; dims)
     y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
     function dropout_pullback(Δ)
         _, _, Δx, _ = broadcast_pullback(Δ[1])
@@ -75,8 +76,37 @@ function ChainRulesCore.rrule(
     return C, fast_matmul!_pullback
 end
 
-## Zygote Fixes
+# Activation Rrules
+function ChainRulesCore.rrule(
+    ::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}, inplace # Just ignore this argument
+) where {T}
+    mode = getCUDNNActivationMode(f)
+    y = CUDA.CUDNN.cudnnActivationForward(x; mode)
+    function applyactivation_pullback(Δ)
+        # NOTE: Since this is an internal function, we are violating our pure function standards
+        #       and mutating the input
+        Δx = Δ
+        desc = CUDA.CUDNN.cudnnActivationDescriptor(mode, CUDA.CUDNN.CUDNN_NOT_PROPAGATE_NAN, Cdouble(1))
+        CUDA.CUDNN.cudnnActivationBackward(
+            CUDA.CUDNN.handle(),
+            desc,
+            CUDA.CUDNN.scalingParameter(T, 1),
+            CUDA.CUDNN.cudnnTensorDescriptor(y),
+            y,
+            CUDA.CUDNN.cudnnTensorDescriptor(Δ),
+            Δ,
+            CUDA.CUDNN.cudnnTensorDescriptor(x),
+            x,
+            CUDA.CUDNN.scalingParameter(T, 0),
+            CUDA.CUDNN.cudnnTensorDescriptor(Δx),
+            Δx,
+        )
+        return NoTangent(), NoTangent(), Δx, NoTangent()
+    end
+    return y, applyactivation_pullback
+end
 
+## Zygote Fixes
 
 # FIXME: Before merging PR add conditional Dependency
 # For supporting Yota

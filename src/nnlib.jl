@@ -31,8 +31,8 @@ end
 
 # Normalization Implementation
 function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
-    batchmean = mean(batchmean, dims=ndims(batchmean))
-    batchvar = mean(batchvar, dims=ndims(batchvar))
+    batchmean = mean(batchmean; dims=ndims(batchmean))
+    batchvar = mean(batchvar; dims=ndims(batchvar))
     _xmean = @. (1 - momentum) * xmean + momentum * batchmean
     _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
     return (_xmean, _xvar)
@@ -102,10 +102,17 @@ end
 end
 
 # Dropout
+function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
+    realfptype = float(real(eltype(x)))
+    y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
+    y .= _dropout_kernel.(y, p, 1 - p)
+    return y
+end
+
 function dropout(rng::AbstractRNG, x, prob, dims, training)
     if training
         rng = replicate(rng)
-        mask = _dropout_mask(rng, x, prob; dims)
+        mask = generate_dropout_mask(rng, x, prob; dims)
         return x .* mask, mask, rng
     else
         # Return `x` for type stability
@@ -115,9 +122,34 @@ end
 
 # Adaptive Pooling
 function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
-    insize = size(x)[1:end-2]
+    insize = size(x)[1:(end - 2)]
     stride = insize .÷ outsize
     k = insize .- (outsize .- 1) .* stride
     pad = 0
     return PoolDims(x, k; padding=pad, stride=stride)
 end
+
+# Activation Functions
+## I think this is handled by NNlibCUDA. But currently leaving here for
+## benchmarking larger models
+const cudnnValidActivationTypes = Union{
+    typeof(tanh),typeof(sigmoid),typeof(relu),typeof(elu),typeof(tanh_fast),typeof(sigmoid_fast)
+}
+
+getCUDNNActivationMode(::Union{typeof(tanh),typeof(tanh_fast)}) = CUDA.CUDNN.CUDNN_ACTIVATION_TANH
+getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDA.CUDNN.CUDNN_ACTIVATION_SIGMOID
+getCUDNNActivationMode(::Union{typeof(relu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_RELU
+getCUDNNActivationMode(::Union{typeof(elu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_ELU
+
+@inline function applyactivation(f::Function, x, ::Val{true})
+    x .= f.(x)
+end
+@inline applyactivation(f::Function, x, ::Val{false}) = f.(x)
+@inline function applyactivation(f::cudnnValidActivationTypes, x, ::Val{true})
+    return CUDA.CUDNN.cudnnActivationForward!(x, x; mode=getCUDNNActivationMode(f))
+end
+@inline function applyactivation(f::cudnnValidActivationTypes, x, ::Val{false})
+    return CUDA.CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
+end
+@inline applyactivation(::typeof(identity), x, ::Val{true}) = x
+@inline applyactivation(::typeof(identity), x, ::Val{false}) = x
