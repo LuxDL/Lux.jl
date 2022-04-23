@@ -74,11 +74,6 @@ function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector)
     return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
 end
 
-function (BN::BatchNorm)(x::AbstractVector, ps, states::NamedTuple)
-    y, states = BN(x[:, :], ps, states)
-    return y[:], states
-end
-
 function (BN::BatchNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
@@ -157,6 +152,9 @@ end
 * After normalisation, elementwise activation `λ` is applied.
 * If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias `β` and scale `γ` parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
+
+!!! warn
+    GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
 """
 struct GroupNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     λ::F1

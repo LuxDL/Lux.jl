@@ -7,7 +7,7 @@ struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N,Int}
 end
 
-function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
+@inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(x, r.dims..., :), st
 end
 
@@ -18,7 +18,7 @@ Flattens the passed array into a matrix.
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
-function (f::FlattenLayer)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
+@inline function (f::FlattenLayer)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     return reshape(x, :, size(x, N)), st
 end
 
@@ -32,7 +32,7 @@ struct SelectDim{I} <: AbstractExplicitLayer
     i::I
 end
 
-(s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
+@inline (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
 
 """
     NoOpLayer()
@@ -41,7 +41,7 @@ As the name suggests does nothing but allows pretty printing of layers.
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
-(noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
+@inline (noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
 
 """
     WrappedFunction(f)
@@ -63,21 +63,16 @@ end
 
 """
     ActivationFunction(f)
+
+Broadcast `f` on the input but fallback to CUDNN for Backward Pass
 """
-# struct ActivationFunction{inplace,F} <: AbstractExplicitLayer
 struct ActivationFunction{F} <: AbstractExplicitLayer
     func::F
 end
 
-# ActivationFunction(f; inplace::Bool = false) = ActivationFunction{inplace,f}(f)
+initialstates(::AbstractRNG, ::ActivationFunction) = (training=true,)
 
-initialstates(rng::AbstractRNG, ::ActivationFunction) = (training=true,)
-
-(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(true)), st
-
-# (af::ActivationFunction{false})(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(false)), st
-
-# (af::ActivationFunction{true})(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(!istraining(st))), st
+(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(false)), st
 
 function Base.show(io::IO, af::ActivationFunction)
     return print(io, "ActivationFunction(", af.func, ")")
@@ -95,7 +90,7 @@ struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLa
     connection::F
 end
 
-function (skip::SkipConnection)(input, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (skip::SkipConnection)(input, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
     mx, st = skip.layers(input, ps, st)
     return skip.connection(mx, input), st
 end
@@ -401,73 +396,73 @@ end
 parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
-function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return d.λ.(fast_matmul(ps.weight, x)), st
+@inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return applyactivation(d.λ, ps.weight * x, Val(false)), st
 end
 
-function (d::Dense{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return fast_matmul(ps.weight, x), st
+@inline function (d::Dense{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return ps.weight * x, st
 end
 
-function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return d.λ.(fast_matmul(ps.weight, x) .+ ps.bias), st
+@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return applyactivation(d.λ, ps.weight * x .+ ps.bias, Val(false)), st
 end
 
-function (d::Dense{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return fast_matmul(ps.weight, x) .+ ps.bias, st
+@inline function (d::Dense{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return ps.weight * x .+ ps.bias, st
 end
 
-function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return d.λ.(fast_matmul(ps.weight, x) .+ vec(ps.bias)), st
+@inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return applyactivation(d.λ, ps.weight * x .+ vec(ps.bias), Val(false)), st
 end
 
-function (d::Dense{true,typeof(identity)})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return fast_matmul(ps.weight, x) .+ vec(ps.bias), st
+@inline function (d::Dense{true,typeof(identity)})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return ps.weight * x .+ vec(ps.bias), st
 end
 
-# FIXME: Refactor to be Scale
-"""
-    Diagonal(dims, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+# # FIXME: Refactor to be Scale
+# """
+#     Diagonal(dims, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
 
-Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
+# Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
 
-* The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
-* The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
+# * The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
+# * The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
 
-Keyword `bias=false` will switch off trainable bias for the layer.
+# Keyword `bias=false` will switch off trainable bias for the layer.
 
-The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@doc Flux.glorot_uniform).
-"""
-struct Diagonal{bias,F1,F2,F3} <: AbstractExplicitLayer
-    λ::F1
-    dims::Int
-    initW::F2
-    initb::F3
-end
+# The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@doc Flux.glorot_uniform).
+# """
+# struct Diagonal{bias,F1,F2,F3} <: AbstractExplicitLayer
+#     λ::F1
+#     dims::Int
+#     initW::F2
+#     initb::F3
+# end
 
-function Base.show(io::IO, d::Diagonal)
-    print(io, "Diagonal($(d.dims)")
-    (d.λ == identity) || print(io, ", $(d.λ)")
-    return print(io, ")")
-end
+# function Base.show(io::IO, d::Diagonal)
+#     print(io, "Diagonal($(d.dims)")
+#     (d.λ == identity) || print(io, ", $(d.λ)")
+#     return print(io, ")")
+# end
 
-function Diagonal(dims, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
-    λ = NNlib.fast_act(λ)
-    return Diagonal{bias,typeof(λ),typeof(initW),typeof(initb)}(λ, dims, initW, initb)
-end
+# function Diagonal(dims, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+#     λ = NNlib.fast_act(λ)
+#     return Diagonal{bias,typeof(λ),typeof(initW),typeof(initb)}(λ, dims, initW, initb)
+# end
 
-function initialparameters(rng::AbstractRNG, d::Diagonal{true})
-    return (weight=d.initW(rng, d.dims), bias=d.initb(rng, d.dims))
-end
-initialparameters(rng::AbstractRNG, d::Diagonal{false}) = (weight=d.initW(rng, d.dims),)
+# function initialparameters(rng::AbstractRNG, d::Diagonal{true})
+#     return (weight=d.initW(rng, d.dims), bias=d.initb(rng, d.dims))
+# end
+# initialparameters(rng::AbstractRNG, d::Diagonal{false}) = (weight=d.initW(rng, d.dims),)
 
-parameterlength(d::Diagonal{bias}) where {bias} = (1 + bias) * d.dims
-statelength(d::Diagonal) = 0
+# parameterlength(d::Diagonal{bias}) where {bias} = (1 + bias) * d.dims
+# statelength(d::Diagonal) = 0
 
-function (d::Diagonal{bias})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {bias}
-    if bias
-        return d.λ.(ps.weight .* x .+ ps.bias), st
-    else
-        return d.λ.(ps.weight .* x), st
-    end
-end
+# function (d::Diagonal{bias})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {bias}
+#     if bias
+#         return d.λ.(ps.weight .* x .+ ps.bias), st
+#     else
+#         return d.λ.(ps.weight .* x), st
+#     end
+# end

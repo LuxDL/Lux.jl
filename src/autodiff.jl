@@ -29,6 +29,15 @@ function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{f1}, nt2::NamedTu
     return nt, merge_pullback
 end
 
+function ChainRulesCore.rrule(::typeof(applydropout), x, mask)
+    y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
+    function applydropout_pullback(Δ)
+        _, _, Δx, _ = broadcast_pullback(Δ)
+        return (NoTangent(), Δx, NoTangent())
+    end
+    return y, applydropout_pullback
+end
+
 function ChainRulesCore.rrule(::typeof(dropout), rng, x, prob, dims, training)
     @assert training AssertionError("Trying to conpute dropout gradients when `training`=false")
     rng = replicate(rng)
@@ -63,17 +72,6 @@ function ChainRulesCore.rrule(::typeof(lastindex), nt::NTuple{N,Int64}) where {N
         return (NoTangent(), (ntuple(_ -> NoTangent(), N - 1)..., Δ))
     end
     return res, lastindex_pullback
-end
-
-# Fast Matmul
-function ChainRulesCore.rrule(
-    ::typeof(fast_matmul!), C::AbstractVecOrMat{T}, A::AbstractMatrix{T}, B::AbstractVecOrMat{T}
-) where {T}
-    fast_matmul!(C, A, B)
-    function fast_matmul!_pullback(Δ)
-        return NoTangent(), Δ, Δ * B', A' * Δ
-    end
-    return C, fast_matmul!_pullback
 end
 
 # Activation Rrules

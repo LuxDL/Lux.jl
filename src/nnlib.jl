@@ -1,34 +1,3 @@
-# Matrix-Matrix & Matrix-Vector Multiplication
-# @inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractArray{T2,N}) where {T1,T2,N}
-#     return reshape(fast_matmul(A, reshape(B, size(B, 1), :)), :, size(B)[2:end]...)
-# end
-
-@inbounds function fast_matmul(A::AbstractMatrix{T1}, B::AbstractMatrix{T2}) where {T1,T2}
-    # size(A, 2) != size(B, 1) && throw(DimensionMismatch("$(size(A, 2)) != $(size(B, 1)) for Matrix-Matrix Multiply"))
-    # return fast_matmul!(similar(A, promote_type(T1, T2), (size(A, 1), size(B, 2))), A, B)
-    return A * B
-end
-
-@inbounds function fast_matmul(A::AbstractMatrix{T1}, b::AbstractVector{T2}) where {T1,T2}
-    # size(A, 2) != length(b) && throw(DimensionMismatch("$(size(A, 2)) != $(length(b)) for Matrix-Vector Multiply"))
-    # return fast_matmul!(similar(A, promote_type(T1, T2), size(A, 1)), A, b)
-    return A * b
-end
-
-function fast_matmul!(C::AbstractVecOrMat, A::AbstractMatrix, B::AbstractVecOrMat)
-    # Octavian can have unreliable speed sometimes
-    # return matmul!(C, A, B)
-    return mul!(C, A, B)
-end
-
-function fast_matmul!(
-    C::CuVecOrMat,
-    A::Union{<:CuMatrix{T1},<:Adjoint{T1,<:CuVecOrMat{T1}},<:Transpose{T1,<:CuVecOrMat{T1}}},
-    B::Union{<:CuVecOrMat{T2},<:Adjoint{T2,<:CuVecOrMat{T2}},<:Transpose{T2,<:CuVecOrMat{T2}}},
-) where {T1,T2}
-    return mul!(C, A, B)
-end
-
 # Normalization Implementation
 function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
     batchmean = mean(batchmean; dims=ndims(batchmean))
@@ -113,12 +82,14 @@ function dropout(rng::AbstractRNG, x, prob, dims, training)
     if training
         rng = replicate(rng)
         mask = generate_dropout_mask(rng, x, prob; dims)
-        return x .* mask, mask, rng
+        return applydropout(x, mask), mask, rng
     else
         # Return `x` for type stability
         return x, x, rng
     end
 end
+
+applydropout(x, mask) = x .* mask
 
 # Adaptive Pooling
 function compute_adaptive_pooling_dims(x::AbstractArray, outsize)

@@ -60,20 +60,18 @@ function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
     return bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
 end
 
-parameterlength(c::Conv{N,bias}) where {N,bias} = prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups  + (bias ? c.out_chs : 0)
-
-function (c::Conv{N,false})(
-    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return c.λ.(conv_wrapper(x, ps.weight, cdims)), st
+function parameterlength(c::Conv{N,bias}) where {N,bias}
+    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + (bias ? c.out_chs : 0)
 end
 
-function (c::Conv{N,true})(
-    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {N}
+@inline function (c::Conv{N,false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return c.λ.(conv_wrapper(x, ps.weight, cdims) .+ ps.bias), st
+    return applyactivation(c.λ, conv_wrapper(x, ps.weight, cdims), Val(false)), st
+end
+
+@inline function (c::Conv{N,true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) where {N}
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
+    return applyactivation(c.λ, conv_wrapper(x, ps.weight, cdims) .+ ps.bias, Val(false)), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -128,7 +126,6 @@ function Base.show(io::IO, m::MaxPool)
     m.stride == m.k || print(io, ", stride=", _maybetuple_string(m.stride))
     return print(io, ")")
 end
-
 
 """
     MeanPool(window::NTuple; pad=0, stride=window)
@@ -201,9 +198,7 @@ Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
 function (m::Upsample{:nearest})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_nearest(x, m.scale), st
 end
-function (m::Upsample{:nearest,Int})(
-    x::AbstractArray{T,N}, ps, st::NamedTuple
-) where {T,N}
+function (m::Upsample{:nearest,Int})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     return NNlib.upsample_nearest(x, ntuple(i -> m.scale, N - 2)), st
 end
 function (m::Upsample{:nearest,Nothing})(x::AbstractArray, ps, st::NamedTuple)
@@ -265,18 +260,18 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 
 See also [`MaxPool`](@ref), [`AdaptiveMeanPool`](@ref).
 """
-struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
-    out::NTuple{O, Int}
-    AdaptiveMaxPool(out::NTuple{O, Int}) where O = new{O + 2, O}(out)
+struct AdaptiveMaxPool{S,O} <: AbstractExplicitLayer
+    out::NTuple{O,Int}
+    AdaptiveMaxPool(out::NTuple{O,Int}) where {O} = new{O + 2,O}(out)
 end
 
-function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
+function (a::AdaptiveMaxPool{S})(x::AbstractArray{T,S}, ps, st::NamedTuple) where {S,T}
     pdims = compute_adaptive_pooling_dims(x, a.out)
     return maxpool(x, pdims), st
 end
 
 function Base.show(io::IO, a::AdaptiveMaxPool)
-    print(io, "AdaptiveMaxPool(", a.out, ")")
+    return print(io, "AdaptiveMaxPool(", a.out, ")")
 end
 
 """
@@ -286,16 +281,16 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 
 See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref).
 """
-struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
-    out::NTuple{O, Int}
-    AdaptiveMeanPool(out::NTuple{O, Int}) where O = new{O + 2, O}(out)
+struct AdaptiveMeanPool{S,O} <: AbstractExplicitLayer
+    out::NTuple{O,Int}
+    AdaptiveMeanPool(out::NTuple{O,Int}) where {O} = new{O + 2,O}(out)
 end
 
-function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
+function (a::AdaptiveMeanPool{S})(x::AbstractArray{T,S}, ps, st::NamedTuple) where {S,T}
     pdims = compute_adaptive_pooling_dims(x, a.out)
     return meanpool(x, pdims), st
 end
 
 function Base.show(io::IO, a::AdaptiveMeanPool)
-    print(io, "AdaptiveMeanPool(", a.out, ")")
+    return print(io, "AdaptiveMeanPool(", a.out, ")")
 end

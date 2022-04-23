@@ -65,7 +65,7 @@ function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ps, st::NamedTupl
         if !istraining(st)
             return x, st
         end
-        return x .* st.mask, st
+        return applydropout(x, st.mask), st
     end
 end
 
