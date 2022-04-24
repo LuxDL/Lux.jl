@@ -51,6 +51,7 @@
             2.0f0 4.0f0 6.0f0
         ]
         ps, st = setup(MersenneTwister(0), m)
+        st = testmode(st)
         y, st_ = m(x, ps, st)
         @test isapprox(y, sigmoid.((x .- st_.μ) ./ sqrt.(st_.σ² .+ m.ϵ)), atol=1.0e-7)
         @inferred m(x, ps, st)
