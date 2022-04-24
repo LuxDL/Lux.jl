@@ -112,15 +112,15 @@ getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDA.CUD
 getCUDNNActivationMode(::Union{typeof(relu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_RELU
 getCUDNNActivationMode(::Union{typeof(elu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_ELU
 
-@inline function applyactivation(f::Function, x, ::Val{true})
+@inline function applyactivation(f::Function, x::AbstractArray, ::Val{true})
     x .= f.(x)
 end
-@inline applyactivation(f::Function, x, ::Val{false}) = f.(x)
-@inline function applyactivation(f::cudnnValidActivationTypes, x, ::Val{true})
+@inline applyactivation(f::Function, x::AbstractArray, ::Val{false}) = f.(x)
+@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray, ::Val{true})
     return CUDA.CUDNN.cudnnActivationForward!(x, x; mode=getCUDNNActivationMode(f))
 end
-@inline function applyactivation(f::cudnnValidActivationTypes, x, ::Val{false})
+@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray, ::Val{false})
     return CUDA.CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
 end
-@inline applyactivation(::typeof(identity), x, ::Val{true}) = x
-@inline applyactivation(::typeof(identity), x, ::Val{false}) = x
+@inline applyactivation(::typeof(identity), x::AbstractArray, ::Val{true}) = x
+@inline applyactivation(::typeof(identity), x::AbstractArray, ::Val{false}) = x
