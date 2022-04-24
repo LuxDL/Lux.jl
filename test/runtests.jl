@@ -7,7 +7,9 @@ import ExplicitFluxLayers:
     statelength,
     initialparameters,
     initialstates,
+    update_state,
     trainmode,
+    testmode,
     transform,
     AbstractExplicitLayer,
     AbstractExplicitContainerLayer,
@@ -33,9 +35,12 @@ function gradtest(model, input, ps, st)
     return true
 end
 
-function run_model(m::AbstractExplicitLayer, x)
-    ps, st = setup(Random.default_rng(), m)
-    return apply(m, x, ps, st)[1]
+function run_model(m::AbstractExplicitLayer, x, mode=:test)
+    if mode == :test
+        ps, st = setup(Random.default_rng(), m)
+        st = testmode(st)
+        return apply(m, x, ps, st)[1]
+    end
 end
 
 function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {fields}

@@ -400,7 +400,9 @@ statelength(d::Dense) = 0
     return applyactivation(d.λ, ps.weight * x, Val(false)), st
 end
 
-@inline function (d::Dense{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (d::Dense{false,typeof(identity)})(
+    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+)
     return ps.weight * x, st
 end
 
@@ -408,7 +410,9 @@ end
     return applyactivation(d.λ, ps.weight * x .+ ps.bias, Val(false)), st
 end
 
-@inline function (d::Dense{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (d::Dense{true,typeof(identity)})(
+    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+)
     return ps.weight * x .+ ps.bias, st
 end
 
@@ -416,53 +420,62 @@ end
     return applyactivation(d.λ, ps.weight * x .+ vec(ps.bias), Val(false)), st
 end
 
-@inline function (d::Dense{true,typeof(identity)})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (d::Dense{true,typeof(identity)})(
+    x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+)
     return ps.weight * x .+ vec(ps.bias), st
 end
 
-# # FIXME: Refactor to be Scale
-# """
-#     Diagonal(dims, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+"""
+    Scale(dims, σ=identity; initW=ones32, initb=zeros32, bias::Bool=true)
 
-# Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
+Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
 
-# * The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
-# * The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
+* The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
+* The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
 
-# Keyword `bias=false` will switch off trainable bias for the layer.
+Keyword `bias=false` will switch off trainable bias for the layer.
 
-# The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@doc Flux.glorot_uniform).
-# """
-# struct Diagonal{bias,F1,F2,F3} <: AbstractExplicitLayer
-#     λ::F1
-#     dims::Int
-#     initW::F2
-#     initb::F3
-# end
+The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@doc Flux.glorot_uniform).
+"""
+struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
+    λ::F1
+    dims::D
+    initW::F2
+    initb::F3
+end
 
-# function Base.show(io::IO, d::Diagonal)
-#     print(io, "Diagonal($(d.dims)")
-#     (d.λ == identity) || print(io, ", $(d.λ)")
-#     return print(io, ")")
-# end
+function Base.show(io::IO, d::Scale)
+    print(io, "Scale($(d.dims)")
+    (d.λ == identity) || print(io, ", $(d.λ)")
+    return print(io, ")")
+end
 
-# function Diagonal(dims, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
-#     λ = NNlib.fast_act(λ)
-#     return Diagonal{bias,typeof(λ),typeof(initW),typeof(initb)}(λ, dims, initW, initb)
-# end
+function Scale(dims, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+    λ = NNlib.fast_act(λ)
+    return Scale{bias,typeof(λ),typeof(dims),typeof(initW),typeof(initb)}(λ, dims, initW, initb)
+end
 
-# function initialparameters(rng::AbstractRNG, d::Diagonal{true})
-#     return (weight=d.initW(rng, d.dims), bias=d.initb(rng, d.dims))
-# end
-# initialparameters(rng::AbstractRNG, d::Diagonal{false}) = (weight=d.initW(rng, d.dims),)
+function initialparameters(rng::AbstractRNG, d::Scale{true})
+    return (weight=d.initW(rng, d.dims), bias=d.initb(rng, d.dims))
+end
+initialparameters(rng::AbstractRNG, d::Scale{false}) = (weight=d.initW(rng, d.dims),)
 
-# parameterlength(d::Diagonal{bias}) where {bias} = (1 + bias) * d.dims
-# statelength(d::Diagonal) = 0
+parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims
+statelength(d::Scale) = 0
 
-# function (d::Diagonal{bias})(x::AbstractVecOrMat, ps::NamedTuple, st::NamedTuple) where {bias}
-#     if bias
-#         return d.λ.(ps.weight .* x .+ ps.bias), st
-#     else
-#         return d.λ.(ps.weight .* x), st
-#     end
-# end
+function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return applyactivation(d.λ, ps.weight .* x .+ ps.bias, Val(false)), st
+end
+
+function (d::Scale{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return ps.weight .* x .+ ps.bias, st
+end
+
+function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return applyactivation(d.λ, ps.weight .* x, Val(false)), st
+end
+
+function (d::Scale{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    return ps.weight .* x, st
+end

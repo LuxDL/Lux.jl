@@ -33,6 +33,7 @@
         #  1.3
         @test st_.σ² ≈ 0.1 .* var(x; dims=2, corrected=false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0]
 
+        st_ = testmode(st_)
         x′ = m(x, ps, st_)[1]
         @test isapprox(x′[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
@@ -63,6 +64,7 @@
 
     let m = BatchNorm(32), x = randn(Float32, 416, 416, 32, 1)
         ps, st = setup(MersenneTwister(0), m)
+        st = testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
         @inferred m(x, ps, st)
