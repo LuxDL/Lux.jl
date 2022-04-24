@@ -2,63 +2,49 @@ module ExplicitFluxLayers
 
 const EFL = ExplicitFluxLayers
 
-using Statistics,
-    NNlib,
-    CUDA,
-    Random,
-    Setfield,
-    ChainRulesCore,
-    LinearAlgebra,
-    FillArrays,
-    Functors,
-    ComponentArrays,
-    Optimisers,
-    Zygote,
-    Yota
-import NNlibCUDA: batchnorm, cudnnBNForward!
-using Flux: Flux
-import Flux:
-    zeros32,
-    ones32,
-    glorot_normal,
-    glorot_uniform,
-    convfilter,
-    expand,
-    calc_padding,
-    DenseConvDims,
-    _maybetuple_string,
-    reshape_cell_output,
-    _dropout_shape,
-    _dropout_kernel,
-    gpu,
-    cpu
+# Accelerator Support
+using CUDA
+# Neural Network Backend
+using NNlib
+import NNlibCUDA: batchnorm
+# Julia StdLibs
+using Random, Statistics, LinearAlgebra, SparseArrays
+# Parameter Manipulation
+using Functors, Setfield
+import Adapt: adapt, adapt_storage
+# Arrays
+using FillArrays, ComponentArrays
+# Automatic Differentiation
+using ChainRulesCore, Zygote
+# Optimization
+using Optimisers
+# Optional Dependency
+using Requires
 
+const use_cuda = Ref{Union{Nothing,Bool}}(nothing)
+
+# Data Transfer Utilities
+include("adapt.jl")
 # Utilities
 include("utils.jl")
-
 # Core
 include("core.jl")
-
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
-
 # Neural Network Backend
 include("nnlib.jl")
-
-# Transition to Explicit Layers
-include("transform.jl")
-
 # Pretty Printing
 include("layers/display.jl")
-
-# Sparse Layers
-include("sparse.jl")
-
 # AutoDiff
 include("autodiff.jl")
+# Transition to Explicit Layers
+function __init__()
+    @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" include("transform.jl")
+end
+
 
 export EFL
 

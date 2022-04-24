@@ -55,8 +55,7 @@ function Conv(
 end
 
 function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
-    initW(args...) = c.initW(rng, args...)
-    weight = convfilter(c.kernel_size, c.in_chs => c.out_chs; init=initW, groups=c.groups)
+    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.initW, groups=c.groups)
     return bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
 end
 

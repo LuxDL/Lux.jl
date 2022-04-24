@@ -1,6 +1,11 @@
-no_grad(x) = zero(x)
-no_grad(nt::NamedTuple) = fmap(no_grad, nt)
-no_grad(::Union{AbstractRNG,Bool,AbstractExplicitLayer}) = NoTangent()
+# Non Differentiable Functions
+ChainRulesCore.@non_differentiable replicate(::Any)
+ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
+ChainRulesCore.@non_differentiable glorot_normal(::Any...)
+ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
+ChainRulesCore.@non_differentiable check_use_cuda()
 
 ChainRulesCore.Tangent{P}(; kwargs...) where {P<:AbstractExplicitLayer} = NoTangent()
 
@@ -9,14 +14,13 @@ function ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple)
     return st.training, _ -> (NoTangent(), NoTangent())
 end
 
-ChainRulesCore.@non_differentiable replicate(::Any)
-ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
-ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any)
-ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
-ChainRulesCore.@non_differentiable update_state(::Any, ::Any, ::Any)
+no_grad(x) = zero(x)
+no_grad(nt::NamedTuple) = fmap(no_grad, nt)
+no_grad(::Union{AbstractRNG,Bool,AbstractExplicitLayer}) = NoTangent()
 
 ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
 
+# Base Functions
 function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{f1}, nt2::NamedTuple{f2}) where {f1,f2}
     nt = merge(nt1, nt2)
     function merge_pullback(Δ)
@@ -29,6 +33,15 @@ function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{f1}, nt2::NamedTu
     return nt, merge_pullback
 end
 
+function ChainRulesCore.rrule(::typeof(lastindex), nt::NTuple{N,Int64}) where {N}
+    res = lastindex(nt)
+    function lastindex_pullback(Δ)
+        return (NoTangent(), (ntuple(_ -> NoTangent(), N - 1)..., Δ))
+    end
+    return res, lastindex_pullback
+end
+
+# NNlib Functions
 function ChainRulesCore.rrule(::typeof(applydropout), x, mask)
     y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
     function applydropout_pullback(Δ)
@@ -48,30 +61,6 @@ function ChainRulesCore.rrule(::typeof(dropout), rng, x, prob, dims, training)
         return (NoTangent(), NoTangent(), Δx, NoTangent(), NoTangent(), NoTangent())
     end
     return (y, mask, rng), dropout_pullback
-end
-
-# Sparse Arrays
-_project(x, y) = x .* one.(y)
-
-function ChainRulesCore.rrule(
-    ::typeof(*),
-    X::EFLSparseMatrixCSC{<:Union{AbstractSparseMatrixCSC,AbstractCuSparseMatrix}},
-    Y::Union{Matrix,CuMatrix},
-)
-    Z = X * Y
-    function sparse_matmul_pullback(Δ)
-        Δ = unthunk(Δ)
-        return NoTangent(), _project(Δ * Y', X), X.mat' * Δ
-    end
-    return Z, sparse_matmul_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(lastindex), nt::NTuple{N,Int64}) where {N}
-    res = lastindex(nt)
-    function lastindex_pullback(Δ)
-        return (NoTangent(), (ntuple(_ -> NoTangent(), N - 1)..., Δ))
-    end
-    return res, lastindex_pullback
 end
 
 # Activation Rrules
@@ -104,40 +93,20 @@ function ChainRulesCore.rrule(
     return y, applyactivation_pullback
 end
 
-## Zygote Fixes
-
-# FIXME: Before merging PR add conditional Dependency
-# For supporting Yota
-## `zero` should be called something else in Yota.jl ideally with a fallback to
-## `Base.zero`
-Base.zero(s::NamedTuple{(),Tuple{}}) = s
-Base.zero(::Symbol) = NoTangent()
-Base.zero(nt::NamedTuple{fields}) where {fields} = NamedTuple{fields}(zero.(values(nt)))
-Base.zero(l::AbstractExplicitLayer) = NoTangent()
-Base.zero(::AbstractRNG) = NoTangent()
-
-function Yota.ungetindex(nt::NamedTuple{fields}, dy, I...) where {fields}
-    dx = map(1:length(fields)) do i
-        i in I ? dy : zero(nt[i])
-    end
-    return NamedTuple{fields}(dx)
+# Zygote Fixes
+function Zygote.accum(x::ComponentArray, ys::ComponentArray...)
+    return ComponentArray(Zygote.accum(getdata(x), getdata.(ys)...), getaxes(x))
 end
 
-recursive_sum(x, y) = x + y
-recursive_sum(x::AbstractArray{T}, y::AbstractArray{T}) where {T} = x .+ y
-recursive_sum(x::T, y::T) where {T<:AbstractExplicitLayer} = x
-recursive_sum(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {fields} = map(recursive_sum, nt1, nt2)
-
-# Definitely should not be doing this. Upsteam in some reasonable way to Yota
-function Base.broadcast(::typeof(+), nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {fields}
-    # This should always be a tuple of NoTangents
-    return nt1
+# Adapt Interface
+function ChainRulesCore.rrule(::typeof(Array), x::CUDA.CuArray)
+    return Array(x), d -> (NoTangent(), CUDA.cu(d),)
 end
 
-function Base.broadcast(::typeof(+), nt::NoTangent, nt2::NamedTuple)
-    return nt
+function ChainRulesCore.rrule(::typeof(adapt_storage), to::EFLCPUAdaptor, x::CUDA.AbstractGPUArray)
+    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(EFLCUDAAdaptor(), d),)
 end
 
-function Base.broadcast(::typeof(+), nt1::NamedTuple, nt::NoTangent)
-    return nt
+function ChainRulesCore.rrule(::typeof(adapt_storage), to::EFLCUDAAdaptor, x::Array)
+    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(EFLCPUAdaptor(), d),)
 end

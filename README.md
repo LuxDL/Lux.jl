@@ -75,31 +75,10 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ## Usage Examples
 
 * Differential Equations + Deep Learning
-  * [Neural ODEs for MNIST Image Classification](examples/NeuralODE/neural_ode.jl) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
+  * [Neural ODEs for MNIST Image Classification](examples/NeuralODE/) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
   * [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
-* Scalable Image Classification -- [Imagenet](examples/Imagenet/main.jl)
-* Optimization Packages
-  * For standard first order gradient based optimization use [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
-  * Other Optimization Packages like Optim.jl should just work:
-    ```julia
-    using Optim, ExplicitFluxLayers, Random, Flux
-
-    model = EFL.Chain(EFL.Dense(8, 16, tanh), EFL.Dense(16, 8))
-
-    ps, st = EFL.setup(Random.default_rng(), model)
-    x = randn(Float32, 8, 512)
-    y = randn(Float32, 8, 512)
-
-    loss_function(p) = sum(abs2, first(model(x, p, st)) .- y)
-
-    result = optimize(
-        loss_function,
-        p -> gradient(loss_function, p)[1],
-        ps,
-        LBFGS();
-        inplace=false
-    )
-    ```
+* Image Classification
+  * [Imagenet](examples/Imagenet/main.jl)
 * Distributed Training using [MPI.jl](https://github.com) -- [FluxMPI](https://github.com/avik-pal/FluxMPI.jl) + [FastDEQ](https://github.com/SciML/FastDEQ.jl/examples)
 
 ## Implemented Layers
@@ -111,7 +90,7 @@ We don't have a Documentation Page as of now. But all these functions have docs 
 * `Conv`, `MaxPool`, `MeanPool`, `GlobalMaxPool`, `GlobalMeanPool`, `Upsample`
 * `BatchNorm`, `WeightNorm`, `GroupNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
-* `Dropout`, `VariationalDropout`
+* `Dropout`, `VariationalHiddenDropout`
 
 
 ## Benchmarks

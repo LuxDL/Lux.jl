@@ -1,24 +1,74 @@
-replicate(rng::AbstractRNG) = copy(rng)
-replicate(rng::CUDA.RNG) = deepcopy(rng)
+## Quite a few of these are borrowed from Flux.jl
 
-zeros32(rng::AbstractRNG, args...; kwargs...) = zeros32(args...; kwargs...)
-ones32(rng::AbstractRNG, args...; kwargs...) = ones32(args...; kwargs...)
+# Misc
+nfan() = 1, 1 # fan_in, fan_out
+nfan(n) = 1, n # A vector is treated as a n×1 matrix
+nfan(n_out, n_in) = n_in, n_out # In case of Dense kernels: arranged as matrices
+nfan(dims::Tuple) = nfan(dims...)
+nfan(dims...) = prod(dims[1:end-2]) .* (dims[end-1], dims[end]) # In case of convolution kernels
+
+# Neural Network Initialization
+## NOTE: Would be great if these could be moved into its own package and NN frameworks
+##       could just import it.
+zeros32(rng::AbstractRNG, args...; kwargs...) = zeros(rng, Float32, args...; kwargs...)
+ones32(rng::AbstractRNG, args...; kwargs...) = ones(rng, Float32, args...; kwargs...)
 Base.zeros(rng::AbstractRNG, args...; kwargs...) = zeros(args...; kwargs...)
 Base.ones(rng::AbstractRNG, args...; kwargs...) = ones(args...; kwargs...)
 
+function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
+    scale = Float32(gain) * sqrt(24.0f0 / sum(nfan(dims...)))
+    return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
+end
+
+function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
+    std = Float32(gain) * sqrt(2.0f0 / sum(nfan(dims...)))
+    return randn(rng, Float32, dims...) .* std
+end
+
+# PRNG Handling
+replicate(rng::AbstractRNG) = copy(rng)
+replicate(rng::CUDA.RNG) = deepcopy(rng)
+
+# Training Check
 @inline istraining() = false
-@inline istraining(st::NamedTuple)::Bool = st.training
+@inline istraining(st::NamedTuple) = st.training
 
+# Linear Algebra
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
+@inline _norm_except(x::AbstractArray{T,N}, except_dim=N) where {T,N} = _norm(x; dims=filter(i -> i != except_dim, 1:N))
 
-# Compute norm over all dimensions except `except_dim`
-@inline _norm_except(x::AbstractArray{T,N}, except_dim) where {T,N} = _norm(x; dims=filter(i -> i != except_dim, 1:N))
-@inline _norm_except(x::AbstractArray{T,N}) where {T,N} = _norm_except(x, N)
+# Convolution
+function convfilter(rng::AbstractRNG, filter::NTuple{N,Integer}, ch::Pair{<:Integer,<:Integer};
+                    init = glorot_uniform, groups = 1) where N
+    cin, cout = ch
+    @assert cin % groups == 0 "Input channel dimension must be divisible by groups."
+    @assert cout % groups == 0 "Output channel dimension must be divisible by groups."
+    return init(rng, filter..., cin÷groups, cout)
+end
+
+expand(N, i::Tuple) = i
+expand(N, i::Integer) = ntuple(_ -> i, N)
+
+_maybetuple_string(pad) = string(pad)
+_maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1])  : string(pad)
+
+# Padding
+struct SamePad end
+
+calc_padding(lt, pad, k::NTuple{N,T}, dilation, stride) where {T,N}= expand(Val(2*N), pad)
+
+function calc_padding(lt, ::SamePad, k::NTuple{N,T}, dilation, stride) where {N,T}
+    # Ref: "A guide to convolution arithmetic for deep learning" https://arxiv.org/abs/1603.07285
+    # Effective kernel size, including dilation
+    k_eff = @. k + (k - 1) * (dilation - 1)
+    # How much total padding needs to be applied?
+    pad_amt = @. k_eff - 1
+    # In case amount of padding is odd we need to apply different amounts to each side.
+    return Tuple(mapfoldl(i -> [cld(i, 2), fld(i,2)], vcat, pad_amt))
+end
 
 # Handling ComponentArrays
-gpu(c::ComponentArray) = ComponentArray(gpu(getdata(c)), getaxes(c))
-cpu(c::ComponentArray) = ComponentArray(cpu(getdata(c)), getaxes(c))
-
+## NOTE: We should probably upsteam some of these
 Base.zero(c::ComponentArray{T,N,<:CuArray{T}}) where {T,N} = ComponentArray(zero(getdata(c)), getaxes(c))
 
 Base.vec(c::ComponentArray{T,N,<:CuArray{T}}) where {T,N} = getdata(c)
@@ -27,10 +77,6 @@ Base.:-(x::ComponentArray{T,N,<:CuArray{T}}) where {T,N} = ComponentArray(-getda
 
 function Base.similar(c::ComponentArray{T,N,<:CuArray{T}}, l::Vararg{Union{Integer,AbstractUnitRange}}) where {T,N}
     return similar(getdata(c), l)
-end
-
-function Zygote.accum(x::ComponentArray, ys::ComponentArray...)
-    return ComponentArray(Zygote.accum(getdata(x), getdata.(ys)...), getaxes(x))
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)

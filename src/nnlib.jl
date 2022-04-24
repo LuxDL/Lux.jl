@@ -1,3 +1,5 @@
+## TODO: Eventually we want to move all these functions and their adjoints to NNlib.jl
+
 # Normalization Implementation
 @inline function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
     batchmean = mean(batchmean; dims=ndims(batchmean))
@@ -13,6 +15,7 @@ end
     return (_xmean, _xvar)
 end
 
+## FIXME: Zygote doesn't like these branching. We can compile these away pretty easily
 function normalization_forward(
     l::AbstractNormalizationLayer{affine,track_stats},
     x::AbstractArray{T,N},
@@ -71,6 +74,12 @@ end
 end
 
 # Dropout
+_dropout_shape(s, ::Colon) = size(s)
+_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) ∈ enumerate(size(s)))...)
+
+## TODO: Cache `1 / q` since we never need `q`
+_dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
+
 function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
