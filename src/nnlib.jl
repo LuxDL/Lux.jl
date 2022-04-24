@@ -1,5 +1,5 @@
 # Normalization Implementation
-function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
+@inline function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
     batchmean = mean(batchmean; dims=ndims(batchmean))
     batchvar = mean(batchvar; dims=ndims(batchvar))
     _xmean = @. (1 - momentum) * xmean + momentum * batchmean
@@ -7,7 +7,7 @@ function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean,
     return (_xmean, _xvar)
 end
 
-function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
+@inline function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
     _xmean = @. (1 - momentum) * xmean + momentum * batchmean
     _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
     return (_xmean, _xvar)

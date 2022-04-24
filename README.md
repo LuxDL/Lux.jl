@@ -13,6 +13,10 @@ Explicit Parameterization of Flux Layers
 ```julia
 using ExplicitFluxLayers, Random, Flux, Optimisers
 
+# Seeding
+rng = Random.default_rng()
+Random.seed!(rng, 0)
+
 # Construct the layer
 model = EFL.Chain(
     EFL.BatchNorm(128),
@@ -25,10 +29,10 @@ model = EFL.Chain(
 )
 
 # Parameter and State Variables
-ps, st = EFL.setup(MersenneTwister(0), model)
+ps, st = EFL.setup(rng, model)
 
 # Dummy Input
-x = rand(MersenneTwister(0), Float32, 128, 2);
+x = rand(rng, Float32, 128, 2);
 
 # Run the model
 y, st = EFL.apply(model, x, ps, st)
@@ -82,7 +86,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
     model = EFL.Chain(EFL.Dense(8, 16, tanh), EFL.Dense(16, 8))
 
-    ps, st = EFL.setup(MersenneTwister(0), model)
+    ps, st = EFL.setup(Random.default_rng(), model)
     x = randn(Float32, 8, 512)
     y = randn(Float32, 8, 512)
 

@@ -15,7 +15,11 @@ struct Dropout{T,D} <: AbstractExplicitLayer
     dims::D
 end
 
-initialstates(rng::AbstractRNG, ::Dropout) = (rng=rng, training=true)
+function initialstates(rng::AbstractRNG, ::Dropout)
+    # FIXME: Take PRNGs seriously
+    randn(rng, 1)
+    return (rng=replicate(rng), training=true)
+end
 
 function Dropout(p; dims=:)
     @assert 0 ≤ p ≤ 1
@@ -50,7 +54,11 @@ struct VariationalHiddenDropout{T,D} <: AbstractExplicitLayer
     dims::D
 end
 
-initialstates(rng::AbstractRNG, d::VariationalHiddenDropout) = (rng=rng, training=true, update_mask=true)
+function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
+    # FIXME: Take PRNGs seriously
+    randn(rng, 1)
+    return (rng=replicate(rng), training=true, update_mask=true)
+end
 
 function VariationalHiddenDropout(p; dims=:)
     @assert 0 ≤ p ≤ 1
