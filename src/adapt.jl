@@ -31,7 +31,7 @@ cpu(x) = fmap(x -> adapt(EFLCPUAdaptor(), x), x)
 
 function gpu(x)
     check_use_cuda()
-    return use_cuda[] ? fmap(x -> Adapt.adapt(FluxCUDAAdaptor(), x), x; exclude=_isleaf) : x
+    return use_cuda[] ? fmap(x -> adapt(EFLCUDAAdaptor(), x), x; exclude=_isleaf) : x
 end
 
 function check_use_cuda()

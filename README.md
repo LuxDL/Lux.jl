@@ -11,7 +11,7 @@ Explicit Parameterization of Flux Layers
 ## Getting Started
 
 ```julia
-using ExplicitFluxLayers, Random, Flux, Optimisers
+using ExplicitFluxLayers, Random, Optimisers
 
 # Seeding
 rng = Random.default_rng()
@@ -29,10 +29,10 @@ model = EFL.Chain(
 )
 
 # Parameter and State Variables
-ps, st = EFL.setup(rng, model)
+ps, st = EFL.setup(rng, model) .|> EFL.gpu
 
 # Dummy Input
-x = rand(rng, Float32, 128, 2);
+x = rand(rng, Float32, 128, 2) |> EFL.gpu
 
 # Run the model
 y, st = EFL.apply(model, x, ps, st)
