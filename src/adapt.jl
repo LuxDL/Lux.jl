@@ -11,10 +11,11 @@ adapt_storage(::EFLCUDAAdaptor, rng::AbstractRNG) = rng
 
 function adapt_storage(
     ::EFLCPUAdaptor,
-    x::Union{AbstractArray,AbstractRange,FillArrays.AbstractFill,Zygote.OneElement,SparseArrays.AbstractSparseArray},
+    x::Union{AbstractRange,FillArrays.AbstractFill,Zygote.OneElement,SparseArrays.AbstractSparseArray},
 )
     return x
 end
+adapt_storage(::EFLCPUAdaptor, x::AbstractArray) = adapt(Array, x)
 adapt_storage(to::EFLCPUAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
 adapt_storage(::EFLCPUAdaptor, rng::AbstractRNG) = rng
 # TODO: SparseArrays

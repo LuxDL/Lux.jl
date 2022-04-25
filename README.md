@@ -1,5 +1,10 @@
 # ExplicitFluxLayers
 
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![CI](https://github.com/avik-pal/ExplicitFluxLayers.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/ExplicitFluxLayers.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/avik-pal/ExplicitFluxLayers.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/ExplicitFluxLayers.jl)
+
+
 Explicit Parameterization of Flux Layers
 
 ## Installation
@@ -72,6 +77,21 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
   * *All layers are deterministic* given the parameter and state -- if the layer is supposed to be stochastic (say `Dropout`), the state must contain a seed which is then updated after the function call.
 * **Easy Parameter Manipulation** -- Wondering why Flux doesn't have `WeightNorm`, `SpectralNorm`, etc. The implicit parameter handling makes it extremely hard to pass parameters around without mutations which AD systems don't like. With ExplicitFluxLayers implementing them is outright simple.
 
+## Recommended Libraries for Various ML Tasks
+
+ExplicitFluxLayers is pretty much a barebones library for writing Neural Network Architectures. As such it might be hard for users to find utilities that might be available out-of-the-box for other Deep Learning Frameworks. Here is a list of frameworks that we recommend and have tested to work with EFL:
+
+* Data Manipulation/Loading -- Augmentor.jl, DataLoaders.jl, Images.jl
+* Optimisation -- Optimisers.jl, ParameterSchedulers.jl
+* Automatic Differentiation -- Zygote.jl
+* Parameter Manipulation -- Functors.jl
+* Model Checkpointing -- Serialization.jl
+* Activation Functions / Common Neural Network Primitives -- NNlib.jl
+* Distributed Training -- FluxMPI.jl
+* Training Visualization -- Wandb.jl
+
+If you found any other packages useful, please open a PR and add them to this list.
+
 ## Usage Examples
 
 * Differential Equations + Deep Learning
@@ -92,10 +112,6 @@ We don't have a Documentation Page as of now. But all these functions have docs 
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 * `Dropout`, `VariationalHiddenDropout`
 
-
-## Benchmarks
-
-This is mostly WIP. For some preliminary benchmarks check `benchmarks/` directory.
 
 ## TODOs
 
