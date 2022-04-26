@@ -83,7 +83,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
   * [Neural ODEs for MNIST Image Classification](examples/NeuralODE/) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
   * [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
 * Image Classification
-  * [Imagenet](examples/Imagenet/main.jl)
+  * [ImageNet](examples/ImageNet/main.jl)
 * Distributed Training using [MPI.jl](https://github.com) -- [FluxMPI](https://github.com/avik-pal/FluxMPI.jl) + [FastDEQ](https://github.com/SciML/FastDEQ.jl/examples)
 
 ## Recommended Libraries for Various ML Tasks
