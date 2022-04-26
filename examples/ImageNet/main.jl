@@ -222,7 +222,7 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
     classes = readlines(joinpath(@__DIR__, "synsets.txt"))
     mapping = Dict(z => i for (i, z) in enumerate(ulabels))
 
-    istrain = last(rsplit(dirname(folder), "/", limit=2)) == "train"
+    istrain = endswith(folder, r"train|train/")
 
     if istrain
         image_files = vcat(map((x, y) -> joinpath.((x,), y), label_dirs, readdir.(label_dirs))...)
