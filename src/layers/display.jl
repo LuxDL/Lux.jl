@@ -1,12 +1,10 @@
-for T in [:Chain, :Parallel, :SkipConnection]  # container types
-    @eval function Base.show(io::IO, ::MIME"text/plain", x::$T)
-        if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
-            _big_show(io, x)
-        elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
-            _layer_show(io, x)
-        else
-            show(io, x)
-        end
+function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitContainerLayer)
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        _big_show(io, x)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        _layer_show(io, x)
+    else
+        show(io, x)
     end
 end
 
@@ -19,19 +17,35 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
         _layer_show(io, obj, indent, name)
     else
         println(io, " "^indent, isnothing(name) ? "" : "$name = ", nameof(typeof(obj)), pre)
-        if obj isa Chain{<:NamedTuple} && children == getfield(obj, :layers)
-            # then we insert names -- can this be done more generically? 
+        if obj isa Chain{<:NamedTuple}
             for k in Base.keys(obj)
-                _big_show(io, obj[k], indent + 4, k)
+                _big_show(io, obj.layers[k], indent + 4, k)
             end
         elseif obj isa Parallel{<:Any,<:NamedTuple}
+            if obj.connection !== nothing
+                _big_show(io, obj.connection, indent + 4)
+            end
+            for k in Base.keys(obj)
+                _big_show(io, obj.layers[k], indent + 4, k)
+            end
+        elseif obj isa PairwiseFusion
             _big_show(io, obj.connection, indent + 4)
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
+        elseif obj isa BranchLayer
+            for k in Base.keys(obj)
+                _big_show(io, obj.layers[k], indent + 4, k)
+            end
         else
-            for c in children
-                _big_show(io, c, indent + 4)
+            if children isa NamedTuple
+                for (k, c) in pairs(children)
+                    _big_show(io, c, indent + 4, k)
+                end
+            else
+                for c in children
+                    _big_show(io, c, indent + 4)
+                end
             end
         end
         if indent == 0  # i.e. this is the outermost container
@@ -43,33 +57,25 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     end
 end
 
-_show_leaflike(x) = Flux.Functors.isleaf(x)  # mostly follow Functors, except for:
+_show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
 _show_leaflike(x::AbstractExplicitLayer) = false
 _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
-_get_children(p::Parallel) = (p.connection, p.layers...)
-_get_children(c::Chain) = c.layers
-_get_children(s::SkipConnection) = (s.layers, s.connection)
-_get_children(::Any) = ()
-function _get_children(e::T) where {T<:AbstractExplicitLayer}
-    children = []
-    for f ∈ fieldnames(T)
-        x = getfield(e, f)
-        if supertype(typeof(x)) == AbstractExplicitLayer
-            append!(children, x)
-        end
-    end
-    return Tuple(children)
+function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
+    # length(names) == 1 && return getfield(l, names[1])
+    return NamedTuple{names}(getfield.((l,), names))
 end
+_get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
+_get_children(s::SkipConnection) = (s.layers, s.connection)
+_get_children(s::WeightNorm) = (s.layer,)
+_get_children(::Any) = ()
 
-for T in [:Conv, :Dense, :BatchNorm, :MaxPool, :MeanPool]
-    @eval function Base.show(io::IO, ::MIME"text/plain", x::$T)
-        if !get(io, :compact, false)
-            _layer_show(io, x)
-        else
-            show(io, x)
-        end
+function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
+    if !get(io, :compact, false)
+        _layer_show(io, x)
+    else
+        show(io, x)
     end
 end
 
@@ -90,37 +96,32 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
 end
 
 function _big_finale(io::IO, m)
-    ps, st = setup(m)
     paramlength = parameterlength(m)
     nonparamlength = statelength(m)
-    cnt = _childarray_sum(_ -> 1, ps)
-    noncnt = _childarray_sum(_ -> 1, st)
-    if cnt > 2
-        pars = underscorise(paramlength)
-        bytes = Base.format_bytes(Base.summarysize(m))
-        if noncnt > 0
-            nonparam = underscorise(nonparamlength)
-            printstyled(io, " "^08, "# Total: ", cnt, " trainable arrays, "; color=:light_black)
-            println(io, pars, " parameters,")
-            printstyled(
-                io,
-                " "^10,
-                "# plus ",
-                noncnt,
-                " non-trainable, ",
-                nonparam,
-                " states, summarysize ";
-                color=:light_black,
-            )
-            print(io, bytes, ".")
-        else
-            printstyled(io, " "^18, "# Total: ", cnt, " arrays, "; color=:light_black)
-            print(io, pars, " parameters, ", bytes, ".")
-        end
-    end
+    pars = underscorise(paramlength)
+    bytes = Base.format_bytes(Base.summarysize(m))
+    nonparam = underscorise(nonparamlength)
+    printstyled(io, " "^08, "# Total: "; color=:light_black)
+    println(io, pars, " parameters,")
+    printstyled(io, " "^10, "#        plus "; color=:light_black)
+    print(io, nonparam, " states, ")
+    printstyled(io, "summarysize "; color=:light_black)
+    print(io, bytes, ".")
 end
 
 _childarray_sum(f, x::AbstractArray{<:Number}) = f(x)
+function _childarray_sum(f, x::ComponentArray)
+    if Flux.Functors.isleaf(x)
+        return 0
+    else
+        c = Flux.Functors.children(x)
+        if length(c) == 0
+            return 0
+        else
+            return sum(y -> _childarray_sum(f, y), c)
+        end
+    end
+end
 function _childarray_sum(f, x)
     if Flux.Functors.isleaf(x)
         return 0

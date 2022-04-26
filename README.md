@@ -1,38 +1,11 @@
 # ExplicitFluxLayers
 
-Flux by default relies on storing parameters and states in its model structs. `ExplicitFluxLayers` is an initial prototype
-to make Flux explicit-parameter first.
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![CI](https://github.com/avik-pal/ExplicitFluxLayers.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/ExplicitFluxLayers.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/avik-pal/ExplicitFluxLayers.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/ExplicitFluxLayers.jl)
 
-An `AbstractExplicitLayer` is simply the minimal set of fixed attributes required to define a layer, i.e. an `AbstractExplicitLayer` is
-always immutable. It doesn't contain any parameters or state variables. As an example consider `BatchNorm`
 
-```julia
-struct BatchNorm{F1,F2,F3,N} <: AbstractExplicitLayer
-    λ::F1
-    ϵ::N
-    momentum::N
-    chs::Int
-    initβ::F2
-    initγ::F3
-    affine::Bool
-    track_stats::Bool
-end
-```
-
-None of these attributes of BatchNorm change over time. Next each layer needs to have the following functions defined
-
-1. `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a NamedTuple containing the trainable
-   parameters for the layer. For `BatchNorm`, this would contain `γ` and `β` if `affine` is set to `true` else it should
-   be an empty `NamedTuple`.
-2. `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a NamedTuple containing the current
-   state for the layer. For most layers this is typically empty. Layers that would potentially contain this include
-   `BatchNorm`, Recurrent Neural Networks, etc. For `BatchNorm`, this would contain `μ`, `σ²`, and `training`.
-3. `parameterlength(layer::CustomAbstractExplicitLayer)` & `statelength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
-   calculated, but it is better to define these else we construct the parameter and then count the values which is quite
-   wasteful.
-
-Additionally each AbstractExplicitLayer must return a Tuple of length 2 with the first element being the computed result and the
-second element being the new state.
+Explicit Parameterization of Flux Layers
 
 ## Installation
 
@@ -40,116 +13,112 @@ second element being the new state.
 ] add ExplicitFluxLayers
 ```
 
-## Examples
-### Basic Usage
+## Getting Started
 
 ```julia
-using ExplicitFluxLayers, Random, Flux, Optimisers
+using ExplicitFluxLayers, Random, Optimisers
+
+# Seeding
+rng = Random.default_rng()
+Random.seed!(rng, 0)
 
 # Construct the layer
-model = ExplicitFluxLayers.Chain(
-    ExplicitFluxLayers.BatchNorm(128),
-    ExplicitFluxLayers.Dense(128, 256, tanh),
-    ExplicitFluxLayers.BatchNorm(256),
-    ExplicitFluxLayers.Chain(
-        ExplicitFluxLayers.Dense(256, 1, tanh),
-        ExplicitFluxLayers.Dense(1, 10)
+model = EFL.Chain(
+    EFL.BatchNorm(128),
+    EFL.Dense(128, 256, tanh),
+    EFL.BatchNorm(256),
+    EFL.Chain(
+        EFL.Dense(256, 1, tanh),
+        EFL.Dense(1, 10)
     )
 )
 
 # Parameter and State Variables
-ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
+ps, st = EFL.setup(rng, model) .|> EFL.gpu
 
 # Dummy Input
-x = rand(MersenneTwister(0), Float32, 128, 2);
+x = rand(rng, Float32, 128, 2) |> EFL.gpu
 
 # Run the model
-y, st = ExplicitFluxLayers.apply(model, x, ps, st)
+y, st = EFL.apply(model, x, ps, st)
 
 # Gradients
-gs = gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)[1]
+gs = gradient(p -> sum(EFL.apply(model, x, p, st)[1]), ps)[1]
 
-# Optimisation
+# Optimization
 st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
-### Automatic Conversion of Flux Models to ExplicitFluxLayers
+## Design Principles
 
-Call `transform` on the flux model. This will work for common cases, but all cases are not yet covered.
+* **Layers must be immutable** -- i.e. they cannot store any parameters/states but rather stores information to construct them
+* **Layers return a Tuple containing the result and the updated state**
+* **Layers are pure functions**
+* **Given same inputs the outputs must be same** -- stochasticity is controlled by seeds passed in the state variables
+* **Easily extendible for Custom Layers**: Each Custom Layer should be a subtype of either:
 
-```julia
-using ExplicitFluxLayers, Random, Metalhead
+  a. `AbstractExplicitLayer`: Useful for Base Layers and needs to define the following functions
+    1. `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a `ComponentArray`/`NamedTuple` containing the trainable parameters for the layer.
+    2. `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a NamedTuple containing the current state for the layer. For most layers this is typically empty. Layers that would potentially contain this include `BatchNorm`, Recurrent Neural Networks, etc.
+    3. `parameterlength(layer::CustomAbstractExplicitLayer)` & `statelength(layer::CustomAbstractExplicitLayer)` -- These can be automatically calculated, but it is recommended that the user defines these.
 
-x = rand(Float32, 224, 224, 3, 1)
+  b. `AbstractExplicitContainerLayer`: Used when the layer is storing other `AbstractExplicitLayer`s or `AbstractExplicitContainerLayer`s. This allows good defaults of the dispatches for functions mentioned in the previous point.
 
-model = ExplicitFluxLayers.transform(ResNet18().layers[1])
+## Why use ExplicitFluxLayers over Flux?
 
-ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
+* **Large Neural Networks**
+  * For small neural networks we recommend [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl).
+  * For SciML Applications (Neural ODEs, Deep Equilibrium Models) solvers typically expect a monolithic parameter vector. Flux enables this via its `destructure` mechanism, however, it often leads to [weird bugs](https://github.com/FluxML/Flux.jl/issues?q=is%3Aissue+destructure). EFL forces users to make an explicit distinction between state variables and parameter variables to avoid these issues.
+  * Comes battery-included for distributed training using [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
+* **Sensible display of Custom Layers** -- Ever wanted to see Pytorch like Network printouts or wondered how to extend the pretty printing of Flux's layers. ExplicitFluxLayers handles all of that by default.
+* **Less Bug-ridden Code**
+  * *No arbitrary internal mutations* -- all layers are implemented as pure functions.
+  * *All layers are deterministic* given the parameter and state -- if the layer is supposed to be stochastic (say `Dropout`), the state must contain a seed which is then updated after the function call.
+* **Easy Parameter Manipulation** -- Wondering why Flux doesn't have `WeightNorm`, `SpectralNorm`, etc. The implicit parameter handling makes it extremely hard to pass parameters around without mutations which AD systems don't like. With ExplicitFluxLayers implementing them is outright simple.
 
-ExplicitFluxLayers.apply(model, x, ps, st)
-```
+## Usage Examples
 
-### Manipulating the Parameter/State Trees
+* Differential Equations + Deep Learning
+  * [Neural ODEs for MNIST Image Classification](examples/NeuralODE/) -- Example borrowed from [DiffEqFlux.jl](https://diffeqflux.sciml.ai/dev/examples/mnist_neural_ode/)
+  * [Deep Equilibrium Models](https://github.com/SciML/FastDEQ.jl)
+* Image Classification
+  * [ImageNet](examples/ImageNet/main.jl)
+* Distributed Training using [MPI.jl](https://github.com) -- [FluxMPI](https://github.com/avik-pal/FluxMPI.jl) + [FastDEQ](https://github.com/SciML/FastDEQ.jl/examples)
 
-We recommend using `Functors.jl` to manipulate the data structures storing the parameter and state
-variables
+## Recommended Libraries for Various ML Tasks
 
-```julia
-using Functors, ExplicitFluxLayers, Flux, Optimisers, Random
+ExplicitFluxLayers is exclusively focused on designing Neural Network Architectures. All other parts of the DL training/evaluation pipeline should be offloaded to the following frameworks:
 
-# Construct the layer
-model = ExplicitFluxLayers.Chain(
-    ExplicitFluxLayers.BatchNorm(128),
-    ExplicitFluxLayers.Dense(128, 256, tanh),
-    ExplicitFluxLayers.BatchNorm(256),
-    ExplicitFluxLayers.Chain(
-        ExplicitFluxLayers.Dense(256, 1, tanh),
-        ExplicitFluxLayers.Dense(1, 10)
-    )
-)
+* Data Manipulation/Loading -- [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/), [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/), [Images.jl](https://juliaimages.org/stable/)
+* Optimisation -- [Optimisers.jl](https://github.com/FluxML/Optimisers.jl), [ParameterSchedulers.jl](https://darsnack.github.io/ParameterSchedulers.jl/dev/README.html)
+* Automatic Differentiation -- [Zygote.jl](https://github.com/FluxML/Zygote.jl)
+* Parameter Manipulation -- [Functors.jl](https://fluxml.ai/Functors.jl/stable/)
+* Model Checkpointing -- [Serialization.jl](https://docs.julialang.org/en/v1/stdlib/Serialization/)
+* Activation Functions / Common Neural Network Primitives -- [NNlib.jl](https://fluxml.ai/Flux.jl/stable/models/nnlib/)
+* Distributed Training -- [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
+* Training Visualization -- [Wandb.jl](https://github.com/avik-pal/Wandb.jl)
 
-# Parameter and State Variables
-ps, st = ExplicitFluxLayers.setup(MersenneTwister(0), model)
-
-# Let's train the Dense Layers in FP16 while keeping the BatchNorm in FP32
-# The easiest way is the just pass the initW keyword but let's try the
-# fancier approach
-## We know that Dense Layer has (:weight, :bias) and each of them should be
-## an AbstractArray
-should_transform(::Any) = false
-should_transform(x::NamedTuple) = all(in.((:weight, :bias), (keys(x),))) && all(Functors.isleaf, values(x))
-
-fp16(x) = fmap(y -> Float16.(y), x)
-
-ps = fmap(fp16, ps, exclude=should_transform)
-
-## Let's run the model
-x = rand(Float32, 128, 2);
-ExplicitFluxLayers.apply(model, x, ps, st)
-
-### NOTE: That the gradient for Dense Layers will not be in Float16
-###       The updates can be made in Float32 and then converted to
-###       FP16
-gradient(p -> sum(ExplicitFluxLayers.apply(model, x, p, st)[1]), ps)
-```
+If you found any other packages useful, please open a PR and add them to this list.
 
 ## Implemented Layers
 
-These layers have the same API as their Flux counterparts.
+We don't have a Documentation Page as of now. But all these functions have docs which can be access in the REPL help mode.
 
-* `Chain`
-* `Dense`
-* `Conv`
-* `BatchNorm`
-* `WeightNorm`
-* `Parallel`
-* `SkipConnection`
-* `MaxPool`, `MeanPool`
+* `Chain`, `Parallel`, `SkipConnection`, `BranchLayer`, `PairwiseFusion`
+* `Dense`, `Diagonal`
+* `Conv`, `MaxPool`, `MeanPool`, `GlobalMaxPool`, `GlobalMeanPool`, `Upsample`, `AdaptiveMaxPool`, `AdaptiveMeanPool`
+* `BatchNorm`, `WeightNorm`, `GroupNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
+* `Dropout`, `VariationalHiddenDropout`
+
 
 ## TODOs
 
 - [ ] Support Recurrent Neural Networks
 - [ ] Add wider support for Flux Layers
+  - [ ] Convolution --> ConvTranspose, CrossCor
+  - [ ] Upsampling --> PixelShuffle
+  - [ ] General Purpose --> Maxout, Bilinear, Embedding, AlphaDropout
+  - [ ] Normalization --> LayerNorm, InstanceNorm
 - [ ] Port tests over from Flux
