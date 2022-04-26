@@ -261,9 +261,12 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
         labels = [mapping[x] for x in map(x -> x[2], rsplit.(image_files, "/", limit=3))]
     else
         vallist = hcat(split.(readlines(joinpath(@__DIR__, "val_list.txt")))...)
-        labels = parse.(Int, vallist[2, :])
-        filenames = [joinpath(classes[i], vallist[1, i]) for i in labels]
+        labels = parse.(Int, vallist[2, :]) .+ 1
+        filenames = [joinpath(classes[l], vallist[1, i]) for (i, l) in enumerate(labels)]
         image_files = joinpath.((folder,), filenames)
+        idxs = findall(isfile, image_files)
+        image_files = image_files[idxs]
+        labels = labels[idxs]
     end
 
     return ImageDataset(image_files, labels, mapping, augmentation_pipeline, normalization_parameters)
