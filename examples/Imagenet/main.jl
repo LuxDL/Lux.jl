@@ -220,6 +220,39 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
     @assert length(label_dirs) == 1000 "There should be 1000 subdirectories in $folder"
 
     image_files = vcat(map((x, y) -> joinpath.((x,), y), label_dirs, readdir.(label_dirs))...)
+
+    # Remove the CMYK files
+    remove_files = [
+        "n01739381_1309.JPEG",
+        "n02077923_14822.JPEG",
+        "n02447366_23489.JPEG",
+        "n02492035_15739.JPEG",
+        "n02747177_10752.JPEG",
+        "n03018349_4028.JPEG",
+        "n03062245_4620.JPEG",
+        "n03347037_9675.JPEG",
+        "n03467068_12171.JPEG",
+        "n03529860_11437.JPEG",
+        "n03544143_17228.JPEG",
+        "n03633091_5218.JPEG",
+        "n03710637_5125.JPEG",
+        "n03961711_5286.JPEG",
+        "n04033995_2932.JPEG",
+        "n04258138_17003.JPEG",
+        "n04264628_27969.JPEG",
+        "n04336792_7448.JPEG",
+        "n04371774_5854.JPEG",
+        "n04596742_4225.JPEG",
+        "n07583066_647.JPEG",
+        "n13037406_4650.JPEG",
+        "n02105855_2933.JPEG"
+    ]
+    remove_files = joinpath.(
+        (folder,), joinpath.(first.(rsplit.(remove_files, "_", limit=2)), remove_files)
+    )
+
+    image_files = [setdiff(Set(image_files), Set(remove_files))...]
+
     mapping = Dict(z => i for (i, z) in enumerate(ulabels))
     labels = [mapping[x] for x in map(x -> x[2], rsplit.(image_files, "/", limit=3))]
 
@@ -292,7 +325,7 @@ function validate(val_loader, model, ps, st, args)
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
 
-    progress = ProgressMeter(len(val_loader), (batch_time, losses, top1, top5), "Test:")
+    progress = ProgressMeter(length(val_loader), (batch_time, losses, top1, top5), "Test:")
 
     st_ = EFL.testmode(st)
     t = time()
@@ -312,7 +345,7 @@ function validate(val_loader, model, ps, st, args)
         update!(batch_time, bt, 1)
 
         # Print Progress
-        if i % args["print-freq"] == 0 || i == len(val_loader)
+        if i % args["print-freq"] == 0 || i == length(val_loader)
             print_meter(progress, i)
         end
 
@@ -329,7 +362,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
     losses = AverageMeter("Loss", ".4e")
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
-    progress = ProgressMeter(len(train_loader), (batch_time, data_time, losses, top1, top5), "Epoch: [$epoch]")
+    progress = ProgressMeter(length(train_loader), (batch_time, data_time, losses, top1, top5), "Epoch: [$epoch]")
 
     st = EFL.trainmode(st)
 
@@ -353,7 +386,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         update!(batch_time, bt, 1)
 
         # Print Progress
-        if i % args["print-freq"] == 0 || i == len(train_loader)
+        if i % args["print-freq"] == 0 || i == length(train_loader)
             print_meter(progress, i)
         end
 
@@ -406,10 +439,10 @@ function main(args)
     val_loader = DataLoader(val_dataset, args["batch-size"])
 
     # Optimizer and Scheduler
-    should_log() && println("$(now()) => creating optimiser `$(args["optimizer"])`")
+    should_log() && println("$(now()) => creating optimiser")
     optimiser = Optimisers.OptimiserChain(
         Optimisers.Momentum(args["learning-rate"], args["momentum"]),
-        Optimisers.WeightDecay(args["weight-dacay"])
+        Optimisers.WeightDecay(args["weight-decay"])
     )
     if is_distributed()
         optimiser = DistributedOptimiser(optimiser)

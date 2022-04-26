@@ -77,21 +77,6 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
   * *All layers are deterministic* given the parameter and state -- if the layer is supposed to be stochastic (say `Dropout`), the state must contain a seed which is then updated after the function call.
 * **Easy Parameter Manipulation** -- Wondering why Flux doesn't have `WeightNorm`, `SpectralNorm`, etc. The implicit parameter handling makes it extremely hard to pass parameters around without mutations which AD systems don't like. With ExplicitFluxLayers implementing them is outright simple.
 
-## Recommended Libraries for Various ML Tasks
-
-ExplicitFluxLayers is pretty much a barebones library for writing Neural Network Architectures. As such it might be hard for users to find utilities that might be available out-of-the-box for other Deep Learning Frameworks. Here is a list of frameworks that we recommend and have tested to work with EFL:
-
-* Data Manipulation/Loading -- Augmentor.jl, DataLoaders.jl, Images.jl
-* Optimisation -- Optimisers.jl, ParameterSchedulers.jl
-* Automatic Differentiation -- Zygote.jl
-* Parameter Manipulation -- Functors.jl
-* Model Checkpointing -- Serialization.jl
-* Activation Functions / Common Neural Network Primitives -- NNlib.jl
-* Distributed Training -- FluxMPI.jl
-* Training Visualization -- Wandb.jl
-
-If you found any other packages useful, please open a PR and add them to this list.
-
 ## Usage Examples
 
 * Differential Equations + Deep Learning
@@ -101,13 +86,28 @@ If you found any other packages useful, please open a PR and add them to this li
   * [Imagenet](examples/Imagenet/main.jl)
 * Distributed Training using [MPI.jl](https://github.com) -- [FluxMPI](https://github.com/avik-pal/FluxMPI.jl) + [FastDEQ](https://github.com/SciML/FastDEQ.jl/examples)
 
+## Recommended Libraries for Various ML Tasks
+
+ExplicitFluxLayers is exclusively focused on designing Neural Network Architectures. All other parts of the DL training/evaluation pipeline should be offloaded to the following frameworks:
+
+* Data Manipulation/Loading -- [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/), [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/), [Images.jl](https://juliaimages.org/stable/)
+* Optimisation -- [Optimisers.jl](https://github.com/FluxML/Optimisers.jl), [ParameterSchedulers.jl](https://darsnack.github.io/ParameterSchedulers.jl/dev/README.html)
+* Automatic Differentiation -- [Zygote.jl](https://github.com/FluxML/Zygote.jl)
+* Parameter Manipulation -- [Functors.jl](https://fluxml.ai/Functors.jl/stable/)
+* Model Checkpointing -- [Serialization.jl](https://docs.julialang.org/en/v1/stdlib/Serialization/)
+* Activation Functions / Common Neural Network Primitives -- [NNlib.jl](https://fluxml.ai/Flux.jl/stable/models/nnlib/)
+* Distributed Training -- [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
+* Training Visualization -- [Wandb.jl](https://github.com/avik-pal/Wandb.jl)
+
+If you found any other packages useful, please open a PR and add them to this list.
+
 ## Implemented Layers
 
 We don't have a Documentation Page as of now. But all these functions have docs which can be access in the REPL help mode.
 
 * `Chain`, `Parallel`, `SkipConnection`, `BranchLayer`, `PairwiseFusion`
 * `Dense`, `Diagonal`
-* `Conv`, `MaxPool`, `MeanPool`, `GlobalMaxPool`, `GlobalMeanPool`, `Upsample`
+* `Conv`, `MaxPool`, `MeanPool`, `GlobalMaxPool`, `GlobalMeanPool`, `Upsample`, `AdaptiveMaxPool`, `AdaptiveMeanPool`
 * `BatchNorm`, `WeightNorm`, `GroupNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 * `Dropout`, `VariationalHiddenDropout`
@@ -117,7 +117,6 @@ We don't have a Documentation Page as of now. But all these functions have docs 
 
 - [ ] Support Recurrent Neural Networks
 - [ ] Add wider support for Flux Layers
-  - [ ] Pooling --> AdaptiveMaxPool, AdaptiveMeanPool
   - [ ] Convolution --> ConvTranspose, CrossCor
   - [ ] Upsampling --> PixelShuffle
   - [ ] General Purpose --> Maxout, Bilinear, Embedding, AlphaDropout
