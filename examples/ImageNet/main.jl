@@ -338,7 +338,7 @@ function validate(val_loader, model, ps, st, args)
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
 
-    progress = ProgressMeter(length(val_loader), (batch_time, losses, top1, top5), "Test:")
+    progress = ProgressMeter(length(val_loader), (batch_time, losses, top1, top5), "Val:")
 
     st_ = EFL.testmode(st)
     t = time()
@@ -462,7 +462,7 @@ function main(args)
     end
     optimiser_state = Optimisers.setup(optimiser, ps)
     if is_distributed()
-        optimiser_state = FluxMPI.broadcast(optimiser_state)
+        optimiser_state = FluxMPI.synchronize!(optimiser_state)
         should_log() && println("$(now()) ==> synced optimiser state across all ranks")
     end
     scheduler = Step(λ=args["learning-rate"], γ=0.1f0, step_sizes=30)
