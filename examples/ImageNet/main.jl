@@ -478,7 +478,7 @@ function main(args)
     end
 
     if args["evaluate"]
-        @assert is_distributed() "We are not syncing statistics. For evaluation run on 1 process"
+        @assert !is_distributed() "We are not syncing statistics. For evaluation run on 1 process"
         validate(val_loader, model, ps, st, args)
         return
     end
