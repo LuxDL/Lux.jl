@@ -1,6 +1,6 @@
-using Test, Random, Statistics, Zygote, Metalhead, ExplicitFluxLayers, Functors
+using Test, Random, Statistics, Zygote, Metalhead, Lux, Functors
 import Flux: relu, pullback, sigmoid, gradient
-import ExplicitFluxLayers:
+import Lux:
     apply,
     setup,
     parameterlength,
@@ -50,7 +50,7 @@ function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {
 end
 
 
-@testset "ExplicitFluxLayers" begin
+@testset "Lux" begin
     @testset "Layers" begin
         @testset "Basic" begin
             include("layers/basic.jl")

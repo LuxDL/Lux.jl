@@ -113,7 +113,7 @@ end
 
         struct L1 <: AbstractExplicitLayer end
         (::L1)(x, ps, st) = (ps.x * x, st)
-        EFL.initialparameters(rng::AbstractRNG, ::L1) = (x=randn(rng, Float32, 3, 3),)
+        Lux.initialparameters(rng::AbstractRNG, ::L1) = (x=randn(rng, Float32, 3, 3),)
         Base.:*(a::AbstractArray, b::Input) = a * b.x
 
         par = Parallel(+, L1(), L1())

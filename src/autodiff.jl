@@ -103,10 +103,10 @@ function ChainRulesCore.rrule(::typeof(Array), x::CUDA.CuArray)
     return Array(x), d -> (NoTangent(), CUDA.cu(d),)
 end
 
-function ChainRulesCore.rrule(::typeof(adapt_storage), to::EFLCPUAdaptor, x::CUDA.AbstractGPUArray)
-    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(EFLCUDAAdaptor(), d),)
+function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
+    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d),)
 end
 
-function ChainRulesCore.rrule(::typeof(adapt_storage), to::EFLCUDAAdaptor, x::Array)
-    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(EFLCPUAdaptor(), d),)
+function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
+    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d),)
 end

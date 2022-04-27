@@ -5,7 +5,7 @@ using Augmentor                                 # Image Augmentation
 using CUDA                                      # GPUs <3
 using DataLoaders                               # Pytorch like DataLoaders
 using Dates                                     # Printing current time
-using ExplicitFluxLayers                        # Neural Network Framework
+using Lux                        # Neural Network Framework
 using Flux                                      # Only being used for OneHotArrays
 using FluxMPI                                   # Distibuted Training
 using Formatting                                # Pretty Printing
@@ -73,12 +73,12 @@ AVAILABLE_IMAGENET_MODELS = [
 IMAGENET_MODELS_DICT = Dict(string(model) => model for model in AVAILABLE_IMAGENET_MODELS)
 
 function get_model(model_name::String, models_dict::Dict, rng, args...; warmup=true, kwargs...)
-    model = EFL.transform(models_dict[model_name](args...; kwargs...).layers)
-    ps, st = EFL.setup(rng, model) .|> EFL.gpu
+    model = Lux.transform(models_dict[model_name](args...; kwargs...).layers)
+    ps, st = Lux.setup(rng, model) .|> Lux.gpu
     if warmup
         # Warmup for compilation
-        x__ = randn(rng, Float32, 224, 224, 3, 1) |> EFL.gpu
-        y__ = Flux.onehotbatch([1], 1:1000) |> EFL.gpu
+        x__ = randn(rng, Float32, 224, 224, 3, 1) |> Lux.gpu
+        y__ = Flux.onehotbatch([1], 1:1000) |> Lux.gpu
         should_log() && println("$(now()) ==> staring `$model_name` warmup...")
         model(x__, ps, st)
         should_log() && println("$(now()) ==> forward pass warmup completed")
@@ -98,7 +98,7 @@ end
 
 # Parse Training Arguments
 function parse_commandline_arguments()
-    parse_settings = ArgParseSettings("ExplicitFluxLayers ImageNet Training")
+    parse_settings = ArgParseSettings("Lux ImageNet Training")
     @add_arg_table! parse_settings begin
         "--arch"
             default = "ResNet18"
@@ -340,7 +340,7 @@ function validate(val_loader, model, ps, st, args)
 
     progress = ProgressMeter(length(val_loader), (batch_time, losses, top1, top5), "Val:")
 
-    st_ = EFL.testmode(st)
+    st_ = Lux.testmode(st)
     t = time()
     for (i, (x, y)) in enumerate(CuIterator(val_loader))
         # Compute Output
@@ -348,7 +348,7 @@ function validate(val_loader, model, ps, st, args)
         loss = logitcrossentropyloss(ŷ, y)
 
         # Metrics
-        acc1, acc5 = accuracy(EFL.cpu(ŷ), EFL.cpu(y), (1, 5))
+        acc1, acc5 = accuracy(Lux.cpu(ŷ), Lux.cpu(y), (1, 5))
         update!(top1, acc1, size(x, ndims(x)))
         update!(top5, acc5, size(x, ndims(x)))
         update!(losses, loss, size(x, ndims(x)))
@@ -377,7 +377,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
     top5 = AverageMeter("Acc@5", "6.2f")
     progress = ProgressMeter(length(train_loader), (batch_time, data_time, losses, top1, top5), "Epoch: [$epoch]")
 
-    st = EFL.trainmode(st)
+    st = Lux.trainmode(st)
 
     t = time()
     for (i, (x, y)) in enumerate(CuIterator(train_loader))
@@ -389,7 +389,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         optimiser_state, ps = Optimisers.update(optimiser_state, ps, gs)
 
         # Metrics
-        acc1, acc5 = accuracy(EFL.cpu(ŷ), EFL.cpu(y), (1, 5))
+        acc1, acc5 = accuracy(Lux.cpu(ŷ), Lux.cpu(y), (1, 5))
         update!(top1, acc1, size(x, ndims(x)))
         update!(top5, acc5, size(x, ndims(x)))
         update!(losses, loss, size(x, ndims(x)))
@@ -471,9 +471,9 @@ function main(args)
         if isfile(args["resume"])
             checkpoint = deserialize(args["resume"])
             args["start-epoch"] = checkpoint["epoch"]
-            optimiser_state = checkpoint["optimiser_state"] |> EFL.gpu
-            ps = checkpoint["model_parameters"] |> EFL.gpu
-            st = checkpoint["model_states"] |> EFL.gpu
+            optimiser_state = checkpoint["optimiser_state"] |> Lux.gpu
+            ps = checkpoint["model_parameters"] |> Lux.gpu
+            st = checkpoint["model_states"] |> Lux.gpu
             should_log() && println("$(now()) => loaded checkpoint `$(args["resume"])` (epoch $(args["start-epoch"]))")
         else
             should_log() && println("$(now()) => no checkpoint found at `$(args["resume"])`")
@@ -515,9 +515,9 @@ function main(args)
         save_state = Dict(
             "epoch" => epoch,
             "arch" => args["arch"],
-            "model_states" => st |> EFL.cpu,
-            "model_parameters" => ps |> EFL.cpu,
-            "optimiser_state" => optimiser_state |> EFL.cpu,
+            "model_states" => st |> Lux.cpu,
+            "model_parameters" => ps |> Lux.cpu,
+            "optimiser_state" => optimiser_state |> Lux.cpu,
         )
         save_checkpoint(save_state, is_best)
     end

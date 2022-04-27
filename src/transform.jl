@@ -3,18 +3,18 @@ import .Flux
 """
     transform(model)
 
-Convert a Flux Model to ExplicitFluxLayers Model.
+Convert a Flux Model to Lux Model.
 
 # Examples
 ```julia
-using ExplicitFluxLayers, Metalhead, Random
+using Lux, Metalhead, Random
 
 m = ResNet(18)
-m2 = EFL.transform(m.layers)
+m2 = Lux.transform(m.layers)
 
 x = randn(Float32, 224, 224, 3, 1);
 
-ps, st = EFL.setup(Random.default_rng(), m2);
+ps, st = Lux.setup(Random.default_rng(), m2);
 
 m2(x, ps, st)
 ```

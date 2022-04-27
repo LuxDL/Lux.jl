@@ -40,7 +40,7 @@ end
 """
     VariationalHiddenDropout(p; dims=:)
 
-VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until `EFL.update_state(l, :update_mask, true)` is called.
+VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until `Lux.update_state(l, :update_mask, true)` is called.
 
 # Arguments
 

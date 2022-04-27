@@ -1,25 +1,25 @@
-abstract type EFLDeviceAdaptor end
+abstract type LuxDeviceAdaptor end
 
-struct EFLCPUAdaptor <: EFLDeviceAdaptor end
-struct EFLCUDAAdaptor <: EFLDeviceAdaptor end
+struct LuxCPUAdaptor <: LuxDeviceAdaptor end
+struct LuxCUDAAdaptor <: LuxDeviceAdaptor end
 
-adapt_storage(::EFLCUDAAdaptor, x) = CUDA.cu(x)
-adapt_storage(::EFLCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(colelct(x))
-adapt_storage(::EFLCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
-adapt_storage(to::EFLCUDAAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
-adapt_storage(::EFLCUDAAdaptor, rng::AbstractRNG) = rng
+adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
+adapt_storage(::LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(colelct(x))
+adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
+adapt_storage(to::LuxCUDAAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
 function adapt_storage(
-    ::EFLCPUAdaptor,
+    ::LuxCPUAdaptor,
     x::Union{AbstractRange,FillArrays.AbstractFill,Zygote.OneElement,SparseArrays.AbstractSparseArray},
 )
     return x
 end
-adapt_storage(::EFLCPUAdaptor, x::AbstractArray) = adapt(Array, x)
-adapt_storage(to::EFLCPUAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
-adapt_storage(::EFLCPUAdaptor, rng::AbstractRNG) = rng
+adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
+adapt_storage(to::LuxCPUAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 # TODO: SparseArrays
-adapt_storage(::EFLCPUAdaptor, x::CUDA.CUSPARSE.CUDA.CUSPARSE.AbstractCuSparseMatrix) = adapt(Array, x)
+adapt_storage(::LuxCPUAdaptor, x::CUDA.CUSPARSE.CUDA.CUSPARSE.AbstractCuSparseMatrix) = adapt(Array, x)
 
 _isbitsarray(::AbstractArray{<:Number}) = true
 _isbitsarray(::AbstractArray{T}) where {T} = isbitstype(T)
@@ -28,11 +28,11 @@ _isbitsarray(x) = false
 _isleaf(::AbstractRNG) = true
 _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
 
-cpu(x) = fmap(x -> adapt(EFLCPUAdaptor(), x), x)
+cpu(x) = fmap(x -> adapt(LuxCPUAdaptor(), x), x)
 
 function gpu(x)
     check_use_cuda()
-    return use_cuda[] ? fmap(x -> adapt(EFLCUDAAdaptor(), x), x; exclude=_isleaf) : x
+    return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf) : x
 end
 
 function check_use_cuda()
