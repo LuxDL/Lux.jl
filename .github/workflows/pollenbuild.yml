@@ -1,0 +1,33 @@
+name: pollenbuild
+
+on:
+  push:
+    branches: ['master', 'main']
+
+jobs:
+  pollen:
+    name: "Pollen - build documentation data"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          ref: pollen
+          path: pollen
+      - uses: julia-actions/setup-julia@latest
+        with:
+          version: '1.7'
+      - name: "Install package and docs dependencies"
+        run: |
+          julia --color=yes --project=./docs -e 'using Pkg; Pkg.add([Pkg.PackageSpec(path="."), Pkg.PackageSpec(url="https://github.com/c42f/JuliaSyntax.jl"), Pkg.PackageSpec(url="https://github.com/lorenzoh/ModuleInfo.jl"), Pkg.PackageSpec(url="https://github.com/lorenzoh/Pollen.jl", rev="main")]); Pkg.instantiate();'
+      - name: Build
+        run: |
+          julia --color=yes --project=./docs ./docs/make.jl ./pollen/dev/
+      - name: Deploy
+        run: |
+          cd pollen
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "Build documentation data (Pollen.jl)"
+          git push

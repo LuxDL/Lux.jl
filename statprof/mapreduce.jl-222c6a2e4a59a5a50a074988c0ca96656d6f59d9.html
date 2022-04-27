@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'></meta>
+    <link rel='stylesheet' type='text/css' href='statprofiler.css'></link>
+    <title>StatProfilerHTML - /mnt/julia/packages/GPUArrays/Zecv7/src/host/mapreduce.jl</title>
+  </head>
+  <body>
+    <div class='report-header'>
+      <div class='backlink'>
+        <a href='index.html'>Report index</a>
+      </div>
+      <div class='report-title'>
+        StatProfilerHTML.jl report
+      </div>
+      <div class='generated-on'>
+        Generated on Sat, 23 Apr 2022 11:46:57
+      </div>
+    </div>
+    <table>
+      <caption>File source code</caption>
+      <thead>
+        <tr>
+          <th>Line</th>
+          <th>Exclusive</th>
+          <th>Inclusive</th>
+          <th>Code</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id='L1'>
+          <td class='lineno'>1</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'># map-reduce</span>
+          </td>
+        </tr>
+        <tr id='L2'>
+          <td class='lineno'>2</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L3'>
+          <td class='lineno'>3</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>const AbstractArrayOrBroadcasted &#61; Union&#123;AbstractArray,Broadcast.Broadcasted&#125;</span>
+          </td>
+        </tr>
+        <tr id='L4'>
+          <td class='lineno'>4</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L5'>
+          <td class='lineno'>5</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'># GPUArrays&#39; mapreduce methods build on &#96;Base.mapreducedim&#33;&#96;, but with an additional</span>
+          </td>
+        </tr>
+        <tr id='L6'>
+          <td class='lineno'>6</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'># argument &#96;init&#96; value to avoid eager initialization of &#96;R&#96; &#40;if set to something&#41;.</span>
+          </td>
+        </tr>
+        <tr id='L7'>
+          <td class='lineno'>7</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>mapreducedim&#33;&#40;f, op, R::AnyGPUArray, A::AbstractArrayOrBroadcasted;</span>
+          </td>
+        </tr>
+        <tr id='L8'>
+          <td class='lineno'>8</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>              init&#61;nothing&#41; &#61; error&#40;&quot;Not implemented&quot;&#41; # COV_EXCL_LINE</span>
+          </td>
+        </tr>
+        <tr id='L9'>
+          <td class='lineno'>9</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'># resolve ambiguities</span>
+          </td>
+        </tr>
+        <tr id='L10'>
+          <td class='lineno'>10</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.mapreducedim&#33;&#40;f, op, R::AnyGPUArray, A::AbstractArray&#41; &#61; mapreducedim&#33;&#40;f, op, R, A&#41;</span>
+          </td>
+        </tr>
+        <tr id='L11'>
+          <td class='lineno'>11</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.mapreducedim&#33;&#40;f, op, R::AnyGPUArray, A::Broadcast.Broadcasted&#41; &#61; mapreducedim&#33;&#40;f, op, R, A&#41;</span>
+          </td>
+        </tr>
+        <tr id='L12'>
+          <td class='lineno'>12</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L13'>
+          <td class='lineno'>13</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;op, T&#41; &#61;</span>
+          </td>
+        </tr>
+        <tr id='L14'>
+          <td class='lineno'>14</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    error&#40;&quot;&quot;&quot;GPUArrays.jl needs to know the neutral element for your operator &#96;&#36;op&#96;.</span>
+          </td>
+        </tr>
+        <tr id='L15'>
+          <td class='lineno'>15</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>             Please pass it as an explicit argument to &#40;if possible&#41;, or register it</span>
+          </td>
+        </tr>
+        <tr id='L16'>
+          <td class='lineno'>16</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>             globally your operator by defining &#96;GPUArrays.neutral_element&#40;::typeof&#40;&#36;op&#41;, T&#41;&#96;.&quot;&quot;&quot;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L17'>
+          <td class='lineno'>17</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.:&#40;|&#41;&#41;, T&#41; &#61; zero&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L18'>
+          <td class='lineno'>18</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.:&#40;&#43;&#41;&#41;, T&#41; &#61; zero&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L19'>
+          <td class='lineno'>19</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.add_sum&#41;, T&#41; &#61; zero&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L20'>
+          <td class='lineno'>20</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.:&#40;&amp;&#41;&#41;, T&#41; &#61; one&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L21'>
+          <td class='lineno'>21</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.:&#40;*&#41;&#41;, T&#41; &#61; one&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L22'>
+          <td class='lineno'>22</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.mul_prod&#41;, T&#41; &#61; one&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L23'>
+          <td class='lineno'>23</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.min&#41;, T&#41; &#61; typemax&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L24'>
+          <td class='lineno'>24</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>neutral_element&#40;::typeof&#40;Base.max&#41;, T&#41; &#61; typemin&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L25'>
+          <td class='lineno'>25</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>if VERSION &gt;&#61; v&quot;1.8.0-DEV.1465&quot;</span>
+          </td>
+        </tr>
+        <tr id='L26'>
+          <td class='lineno'>26</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    neutral_element&#40;::typeof&#40;Base._extrema_rf&#41;, ::Type&#123;&lt;:NTuple&#123;2,T&#125;&#125;&#41; where &#123;T&#125; &#61; typemax&#40;T&#41;, typemin&#40;T&#41;</span>
+          </td>
+        </tr>
+        <tr id='L27'>
+          <td class='lineno'>27</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>end</span>
+          </td>
+        </tr>
+        <tr id='L28'>
+          <td class='lineno'>28</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L29'>
+          <td class='lineno'>29</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'># resolve ambiguities</span>
+          </td>
+        </tr>
+        <tr id='L30'>
+          <td class='lineno'>30</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.mapreduce&#40;f, op, A::AnyGPUArray, As::AbstractArrayOrBroadcasted...;</span>
+          </td>
+        </tr>
+        <tr id='L31'>
+          <td class='lineno'>31</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'>18 &#40;6 &#37;&#41;</td>
+          <td>
+            <div class='call-sites'>
+              18 &#40;6 &#37;&#41;
+              samples spent in mapreduce
+              <br />
+              
+              1 &#40;6 &#37;&#41; &#40;incl.&#41;
+              when called from #_sum#755
+              <a href='reducedim.jl-a2e7ab18d8c9c2d96afcd8aae9b48f79aca61143.html#L916'>line 916</a>
+              <br />
+              
+              8 &#40;44 &#37;&#41; &#40;incl.&#41;
+              when called from mapreduce
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L31'>line 31</a>
+              <br />
+              
+              1 &#40;6 &#37;&#41; &#40;incl.&#41;
+              when called from mapreduce##kw
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L31'>line 31</a>
+              <br />
+              
+              8 &#40;44 &#37;&#41; &#40;incl.&#41;
+              when called from #_sum#735
+              <a href='reducedim.jl-a2e7ab18d8c9c2d96afcd8aae9b48f79aca61143.html#L894'>line 894</a>
+              <br />
+            </div>
+            <div class='callees'>
+              9 &#40;50 &#37;&#41;
+              samples spent calling
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L31'>#mapreduce#20</a>
+              <br />
+              9 &#40;50 &#37;&#41;
+              samples spent calling
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L37'>_mapreduce##kw</a>
+              <br />
+            </div>
+            <span class='code'>               dims&#61;:, init&#61;nothing&#41; &#61; _mapreduce&#40;f, op, A, As...; dims&#61;dims, init&#61;init&#41;</span>
+          </td>
+        </tr>
+        <tr id='L32'>
+          <td class='lineno'>32</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.mapreduce&#40;f, op, A::Broadcast.Broadcasted&#123;&lt;:AbstractGPUArrayStyle&#125;, As::AbstractArrayOrBroadcasted...;</span>
+          </td>
+        </tr>
+        <tr id='L33'>
+          <td class='lineno'>33</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>               dims&#61;:, init&#61;nothing&#41; &#61; _mapreduce&#40;f, op, A, As...; dims&#61;dims, init&#61;init&#41;</span>
+          </td>
+        </tr>
+        <tr id='L34'>
+          <td class='lineno'>34</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            <div class='call-sites'>
+              9 &#40;3 &#37;&#41;
+              samples spent in #_mapreduce#22
+              <br />
+              
+              9 &#40;100 &#37;&#41; &#40;incl.&#41;
+              when called from _mapreduce##kw
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L37'>line 37</a>
+              <br />
+            </div>
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L35'>
+          <td class='lineno'>35</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>function _mapreduce&#40;f::F, op::OP, As::Vararg&#123;Any,N&#125;; dims::D, init&#41; where &#123;F,OP,N,D&#125;</span>
+          </td>
+        </tr>
+        <tr id='L36'>
+          <td class='lineno'>36</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    # mapreduce should apply &#96;f&#96; like &#96;map&#96; does, consuming elements like iterators</span>
+          </td>
+        </tr>
+        <tr id='L37'>
+          <td class='lineno'>37</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'>9 &#40;3 &#37;&#41;</td>
+          <td>
+            <div class='call-sites'>
+              9 &#40;3 &#37;&#41;
+              samples spent in _mapreduce##kw
+              <br />
+              
+              9 &#40;100 &#37;&#41; &#40;incl.&#41;
+              when called from #mapreduce#20
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L31'>line 31</a>
+              <br />
+            </div>
+            <div class='callees'>
+              9 &#40;100 &#37;&#41;
+              samples spent calling
+              <a href='mapreduce.jl-222c6a2e4a59a5a50a074988c0ca96656d6f59d9.html#L34'>#_mapreduce#22</a>
+              <br />
+            </div>
+            <span class='code'>    bc &#61; if allequal&#40;size.&#40;As&#41;...&#41;</span>
+          </td>
+        </tr>
+        <tr id='L38'>
+          <td class='lineno'>38</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        Broadcast.instantiate&#40;Broadcast.broadcasted&#40;f, As...&#41;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L39'>
+          <td class='lineno'>39</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    else</span>
+          </td>
+        </tr>
+        <tr id='L40'>
+          <td class='lineno'>40</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        # TODO: can we avoid the reshape &#43; view?</span>
+          </td>
+        </tr>
+        <tr id='L41'>
+          <td class='lineno'>41</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        indices &#61; LinearIndices.&#40;As&#41;</span>
+          </td>
+        </tr>
+        <tr id='L42'>
+          <td class='lineno'>42</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        common_length &#61; minimum&#40;length.&#40;indices&#41;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L43'>
+          <td class='lineno'>43</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        Bs &#61; map&#40;As&#41; do A</span>
+          </td>
+        </tr>
+        <tr id='L44'>
+          <td class='lineno'>44</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>            view&#40;reshape&#40;A, length&#40;A&#41;&#41;, 1:common_length&#41;</span>
+          </td>
+        </tr>
+        <tr id='L45'>
+          <td class='lineno'>45</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        end</span>
+          </td>
+        </tr>
+        <tr id='L46'>
+          <td class='lineno'>46</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        Broadcast.instantiate&#40;Broadcast.broadcasted&#40;f, Bs...&#41;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L47'>
+          <td class='lineno'>47</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    end</span>
+          </td>
+        </tr>
+        <tr id='L48'>
+          <td class='lineno'>48</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L49'>
+          <td class='lineno'>49</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    # figure out the destination container type by looking at the initializer element,</span>
+          </td>
+        </tr>
+        <tr id='L50'>
+          <td class='lineno'>50</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    # or by relying on inference to reason through the map and reduce functions</span>
+          </td>
+        </tr>
+        <tr id='L51'>
+          <td class='lineno'>51</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    if init &#61;&#61;&#61; nothing</span>
+          </td>
+        </tr>
+        <tr id='L52'>
+          <td class='lineno'>52</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        ET &#61; Broadcast.combine_eltypes&#40;f, As&#41;</span>
+          </td>
+        </tr>
+        <tr id='L53'>
+          <td class='lineno'>53</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        ET &#61; Base.promote_op&#40;op, ET, ET&#41;</span>
+          </td>
+        </tr>
+        <tr id='L54'>
+          <td class='lineno'>54</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        &#40;ET &#61;&#61;&#61; Union&#123;&#125; || ET &#61;&#61;&#61; Any&#41; &amp;&amp;</span>
+          </td>
+        </tr>
+        <tr id='L55'>
+          <td class='lineno'>55</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>            error&#40;&quot;mapreduce cannot figure the output element type, please pass an explicit init value&quot;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L56'>
+          <td class='lineno'>56</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L57'>
+          <td class='lineno'>57</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        init &#61; neutral_element&#40;op, ET&#41;</span>
+          </td>
+        </tr>
+        <tr id='L58'>
+          <td class='lineno'>58</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    else</span>
+          </td>
+        </tr>
+        <tr id='L59'>
+          <td class='lineno'>59</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        ET &#61; typeof&#40;init&#41;</span>
+          </td>
+        </tr>
+        <tr id='L60'>
+          <td class='lineno'>60</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    end</span>
+          </td>
+        </tr>
+        <tr id='L61'>
+          <td class='lineno'>61</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L62'>
+          <td class='lineno'>62</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    sz &#61; size&#40;bc&#41;</span>
+          </td>
+        </tr>
+        <tr id='L63'>
+          <td class='lineno'>63</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    red &#61; ntuple&#40;i-&gt;&#40;dims&#61;&#61;Colon&#40;&#41; || i in dims&#41; ? 1 : sz&#91;i&#93;, length&#40;sz&#41;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L64'>
+          <td class='lineno'>64</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    R &#61; similar&#40;bc, ET, red&#41;</span>
+          </td>
+        </tr>
+        <tr id='L65'>
+          <td class='lineno'>65</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L66'>
+          <td class='lineno'>66</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    if prod&#40;sz&#41; &#61;&#61; 0</span>
+          </td>
+        </tr>
+        <tr id='L67'>
+          <td class='lineno'>67</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        R .&#61; init</span>
+          </td>
+        </tr>
+        <tr id='L68'>
+          <td class='lineno'>68</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    else</span>
+          </td>
+        </tr>
+        <tr id='L69'>
+          <td class='lineno'>69</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'>6 &#40;2 &#37;&#41;</td>
+          <td>
+            
+            <div class='callees'>
+              6 &#40;100 &#37;&#41;
+              samples spent calling
+              <a href='mapreduce.jl-4d9e0216c899dc4a59dadcdab2a033f85b581d3f.html#L172'>mapreducedim&#33;##kw</a>
+              <br />
+            </div>
+            <span class='code'>        mapreducedim&#33;&#40;identity, op, R, bc; init&#61;init&#41;</span>
+          </td>
+        </tr>
+        <tr id='L70'>
+          <td class='lineno'>70</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    end</span>
+          </td>
+        </tr>
+        <tr id='L71'>
+          <td class='lineno'>71</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L72'>
+          <td class='lineno'>72</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    if dims &#61;&#61;&#61; Colon&#40;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L73'>
+          <td class='lineno'>73</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'>3 &#40;1 &#37;&#41;</td>
+          <td>
+            
+            <div class='callees'>
+              3 &#40;100 &#37;&#41;
+              samples spent calling
+              <a href='indexing.jl-9b72f12553595e423acda7087a7b66a25d3c0b62.html#L74'>macro expansion</a>
+              <br />
+            </div>
+            <span class='code'>        @allowscalar R&#91;&#93;</span>
+          </td>
+        </tr>
+        <tr id='L74'>
+          <td class='lineno'>74</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    else</span>
+          </td>
+        </tr>
+        <tr id='L75'>
+          <td class='lineno'>75</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        R</span>
+          </td>
+        </tr>
+        <tr id='L76'>
+          <td class='lineno'>76</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    end</span>
+          </td>
+        </tr>
+        <tr id='L77'>
+          <td class='lineno'>77</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>end</span>
+          </td>
+        </tr>
+        <tr id='L78'>
+          <td class='lineno'>78</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L79'>
+          <td class='lineno'>79</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.any&#40;A::AnyGPUArray&#123;Bool&#125;&#41; &#61; mapreduce&#40;identity, |, A&#41;</span>
+          </td>
+        </tr>
+        <tr id='L80'>
+          <td class='lineno'>80</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.all&#40;A::AnyGPUArray&#123;Bool&#125;&#41; &#61; mapreduce&#40;identity, &amp;, A&#41;</span>
+          </td>
+        </tr>
+        <tr id='L81'>
+          <td class='lineno'>81</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L82'>
+          <td class='lineno'>82</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.any&#40;f::Function, A::AnyGPUArray&#41; &#61; mapreduce&#40;f, |, A&#41;</span>
+          </td>
+        </tr>
+        <tr id='L83'>
+          <td class='lineno'>83</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.all&#40;f::Function, A::AnyGPUArray&#41; &#61; mapreduce&#40;f, &amp;, A&#41;</span>
+          </td>
+        </tr>
+        <tr id='L84'>
+          <td class='lineno'>84</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L85'>
+          <td class='lineno'>85</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.count&#40;pred::Function, A::AnyGPUArray; dims&#61;:, init&#61;0&#41; &#61;</span>
+          </td>
+        </tr>
+        <tr id='L86'>
+          <td class='lineno'>86</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    mapreduce&#40;pred, Base.add_sum, A; init&#61;init, dims&#61;dims&#41;</span>
+          </td>
+        </tr>
+        <tr id='L87'>
+          <td class='lineno'>87</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L88'>
+          <td class='lineno'>88</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>Base.:&#40;&#61;&#61;&#41;&#40;A::AnyGPUArray, B::AnyGPUArray&#41; &#61; Bool&#40;mapreduce&#40;&#61;&#61;, &amp;, A, B&#41;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L89'>
+          <td class='lineno'>89</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L90'>
+          <td class='lineno'>90</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'># avoid calling into &#96;initarray&#33;&#96;</span>
+          </td>
+        </tr>
+        <tr id='L91'>
+          <td class='lineno'>91</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>for &#40;fname, op&#41; in &#91;&#40;:sum, :&#40;Base.add_sum&#41;&#41;, &#40;:prod, :&#40;Base.mul_prod&#41;&#41;,</span>
+          </td>
+        </tr>
+        <tr id='L92'>
+          <td class='lineno'>92</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>                    &#40;:maximum, :&#40;Base.max&#41;&#41;, &#40;:minimum, :&#40;Base.min&#41;&#41;,</span>
+          </td>
+        </tr>
+        <tr id='L93'>
+          <td class='lineno'>93</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>                    &#40;:all, :&amp;&#41;,              &#40;:any, :|&#41;&#93;</span>
+          </td>
+        </tr>
+        <tr id='L94'>
+          <td class='lineno'>94</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    fname&#33; &#61; Symbol&#40;fname, &#39;&#33;&#39;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L95'>
+          <td class='lineno'>95</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    @eval begin</span>
+          </td>
+        </tr>
+        <tr id='L96'>
+          <td class='lineno'>96</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>        Base.&#36;&#40;fname&#33;&#41;&#40;f::Function, r::AnyGPUArray, A::AnyGPUArray&#123;T&#125;&#41; where T &#61;</span>
+          </td>
+        </tr>
+        <tr id='L97'>
+          <td class='lineno'>97</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>            GPUArrays.mapreducedim&#33;&#40;f, &#36;&#40;op&#41;, r, A; init&#61;neutral_element&#40;&#36;&#40;op&#41;, T&#41;&#41;</span>
+          </td>
+        </tr>
+        <tr id='L98'>
+          <td class='lineno'>98</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>    end</span>
+          </td>
+        </tr>
+        <tr id='L99'>
+          <td class='lineno'>99</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>end</span>
+          </td>
+        </tr>
+        <tr id='L100'>
+          <td class='lineno'>100</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'></span>
+          </td>
+        </tr>
+        <tr id='L101'>
+          <td class='lineno'>101</td>
+          <td class='tracecount excl'></td>
+          <td class='tracecount incl'></td>
+          <td>
+            
+            
+            <span class='code'>LinearAlgebra.ishermitian&#40;A::AbstractGPUMatrix&#41; &#61; mapreduce&#40;&#61;&#61;, &amp;, A, adjoint&#40;A&#41;&#41;</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
+

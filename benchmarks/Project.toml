@@ -1,0 +1,10 @@
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Lux = "aafdbc67-5cd5-409a-82a0-ebc47ac8091e"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+ImageIO = "82e4d734-157c-48bb-816b-45c225c6df19"
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+VegaLite = "112f6efa-9a02-5b7d-90c0-432ed331239a"

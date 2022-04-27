@@ -1,0 +1,58 @@
+name: pollenstatic
+
+on:
+  push:
+    branches: ['pollen']
+  workflow_run:
+    workflows: ['pollenbuild']
+    types:
+      - completed
+
+jobs:
+  pollen:
+    name: "Pollen - Prerender static frontend and deploy"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: pollen
+          path: data
+      - uses: actions/checkout@v2
+        with:
+          ref: "gh-pages"
+          path: pages
+      - uses: actions/checkout@v2
+        with:
+          repository: lorenzoh/pollenjl-frontend
+          path: frontend
+          ref: main
+      - name: Move Pollen data to static folder
+        run: |
+          ls
+          rm -rf data/.git
+          cp -r data/ frontend/static/
+      - uses: actions/setup-node@v2
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+      - name: Build
+        run: |
+          cd frontend
+          npm run build
+      - name: Build search index
+        run: |
+          cd frontend
+          cat static/data/dev/documents.json | node buildindex.cjs > ../data/dev/searchindex.json
+      - name: Deploy changes
+        run: |
+          ls -lt
+          rm -r frontend/build/data
+          cp -r frontend/build/** pages
+          cp -r data pages/
+          cd pages
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -f .
+          git commit -m "Deploy documentation (Pollen.jl)"
+          git push
