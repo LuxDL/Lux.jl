@@ -5,7 +5,7 @@ using Augmentor                                 # Image Augmentation
 using CUDA                                      # GPUs <3
 using DataLoaders                               # Pytorch like DataLoaders
 using Dates                                     # Printing current time
-using Lux                        # Neural Network Framework
+using Lux                                       # Neural Network Framework
 using Flux                                      # Only being used for OneHotArrays
 using FluxMPI                                   # Distibuted Training
 using Formatting                                # Pretty Printing

@@ -3,6 +3,7 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![CI](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
 
 The 🔥 Deep Learning Framework
@@ -111,14 +112,3 @@ We don't have a Documentation Page as of now. But all these functions have docs 
 * `BatchNorm`, `WeightNorm`, `GroupNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 * `Dropout`, `VariationalHiddenDropout`
-
-
-## TODOs
-
-- [ ] Support Recurrent Neural Networks
-- [ ] Add wider support for Flux Layers
-  - [ ] Convolution --> ConvTranspose, CrossCor
-  - [ ] Upsampling --> PixelShuffle
-  - [ ] General Purpose --> Maxout, Bilinear, Embedding, AlphaDropout
-  - [ ] Normalization --> LayerNorm, InstanceNorm
-- [ ] Port tests over from Flux
