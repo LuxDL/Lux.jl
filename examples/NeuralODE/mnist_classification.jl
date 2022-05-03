@@ -1,30 +1,37 @@
-# MNIST Classification using Neural ODEs
-## Package Imports
-using Lux, DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
+# # MNIST Classification using Neural ODEs
+
+# ## Package Imports
+using Lux
+using Pkg #hide
+Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
+using DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
 using Flux.Losses: logitcrossentropy
 using Flux.Data: DataLoader
 import Flux
 CUDA.allowscalar(false)
 
-## DataLoader
+# ## DataLoader
 function loadmnist(batchsize, train_split)
-    # Use MLDataUtils LabelEnc for natural onehot conversion
+    ## Use MLDataUtils LabelEnc for natural onehot conversion
     onehot(labels_raw) = convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
-    # Load MNIST
+    ## Load MNIST
     imgs, labels_raw = MNIST.traindata()
-    # Process images into (H,W,C,BS) batches
+    ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
     y_data = onehot(labels_raw)
     (x_train, y_train), (x_test, y_test) = stratifiedobs((x_data, y_data); p=train_split)
     return (
-        # Use Flux's DataLoader to automatically minibatch and shuffle the data
+        ## Use Flux's DataLoader to automatically minibatch and shuffle the data
         DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
-        # Don't shuffle the test data
+        ## Don't shuffle the test data
         DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false),
     )
 end
 
-## Define the Neural ODE Layer
+# ## Define the Neural ODE Layer
+#
+# The NeuralODE is a ContainerLayer. It stores a `model` and the parameters and states of the NeuralODE is
+# same as that of the underlying model.
 struct NeuralODE{M<:Lux.AbstractExplicitLayer,So,Se,T,K} <: Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
     solver::So
@@ -55,7 +62,8 @@ end
 diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = dropdims(Lux.gpu(x); dims=3)
 diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 
-function train()
+# ## Create and Initialize the Neural ODE Layer
+function create_model()
     ## Construct the Neural ODE Model
     model = Chain(
         FlattenLayer(),
@@ -78,25 +86,32 @@ function train()
     ps = ComponentArray(ps) |> gpu
     st = st |> gpu
 
-    ## Utility Functions
-    get_class(x) = argmax.(eachcol(x))
+    return model, ps, st
+end
 
-    function loss(x, y, model, ps, st)
-        ŷ, st = model(x, ps, st)
-        return logitcrossentropy(ŷ, y), st
-    end
+# ## Define Utility Functions
+get_class(x) = argmax.(eachcol(x))
 
-    function accuracy(model, ps, st, dataloader)
-        total_correct, total = 0, 0
-        st = Lux.testmode(st)
-        for (x, y) in CuIterator(dataloader)
-            target_class = get_class(cpu(y))
-            predicted_class = get_class(cpu(model(x, ps, st)[1]))
-            total_correct += sum(target_class .== predicted_class)
-            total += length(target_class)
-        end
-        return total_correct / total
+function loss(x, y, model, ps, st)
+    ŷ, st = model(x, ps, st)
+    return logitcrossentropy(ŷ, y), st
+end
+
+function accuracy(model, ps, st, dataloader)
+    total_correct, total = 0, 0
+    st = Lux.testmode(st)
+    for (x, y) in CuIterator(dataloader)
+        target_class = get_class(cpu(y))
+        predicted_class = get_class(cpu(model(x, ps, st)[1]))
+        total_correct += sum(target_class .== predicted_class)
+        total += length(target_class)
     end
+    return total_correct / total
+end
+
+# ## Training
+function train()
+    model, ps, st = create_model()
 
     ## Training
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
@@ -129,8 +144,11 @@ function train()
     end
 end
 
-train()
+# Uncomment the following line to run the training
+## train()
 
+# ### Results
+# ```julia
 # [1/10] 	Time 23.27s 	Training Accuracy: 90.88% 	Test Accuracy: 90.45%
 # [2/10] 	Time 26.2s 	Training Accuracy: 92.27% 	Test Accuracy: 91.78%
 # [3/10] 	Time 26.49s 	Training Accuracy: 93.03% 	Test Accuracy: 92.58%
@@ -141,3 +159,4 @@ train()
 # [8/10] 	Time 26.17s 	Training Accuracy: 94.68% 	Test Accuracy: 93.73%
 # [9/10] 	Time 27.03s 	Training Accuracy: 94.78% 	Test Accuracy: 93.65%
 # [10/10] 	Time 26.04s 	Training Accuracy: 94.97% 	Test Accuracy: 94.02%
+# ```
