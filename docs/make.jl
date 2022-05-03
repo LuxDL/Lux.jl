@@ -2,6 +2,7 @@ using Documenter, Lux, Literate, Pkg
 
 # Precompile example dependencies
 Pkg.activate(joinpath(@__DIR__, "..", "examples"))
+Pkg.develop(PackageSpec(path=joinpath(@__DIR__, "..")))
 Pkg.instantiate()
 Pkg.precompile()
 Pkg.activate(@__DIR__)

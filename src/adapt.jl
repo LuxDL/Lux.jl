@@ -28,8 +28,18 @@ _isbitsarray(x) = false
 _isleaf(::AbstractRNG) = true
 _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
 
+"""
+    cpu(x)
+
+Transfer `x` to CPU
+"""
 cpu(x) = fmap(x -> adapt(LuxCPUAdaptor(), x), x)
 
+"""
+    gpu(x)
+
+Transfer `x` to GPU
+"""
 function gpu(x)
     check_use_cuda()
     return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf) : x

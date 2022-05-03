@@ -12,8 +12,8 @@ Lux.gpu
 ## Initialization
 
 ```@docs
+Lux.glorot_normal
 Lux.glorot_uniform
-Lux.glorot_random
 Lux.ones32
 Lux.zeros32
 ```
