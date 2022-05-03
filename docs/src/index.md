@@ -1,30 +1,37 @@
 # Lux
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![CI](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl)
-[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
-[![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://avik-pal.github.io/Lux.jl/dev/)
-[![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://avik-pal.github.io/Lux.jl/stable/)
+`Lux` is a julia deep learning framework which decouples models and parameterization using deeply nested named tuples.
 
+- Functional Layer API -- Pure Functions and Deterministic Function Calls.
+- No more implicit parameterization -- `Zygote.Params`. Everything is a `NamedTuple`.
+- Compiler and AD-friendly Neural Networks
 
-The 🔥 Deep Learning Framework
+# Installation
 
-## Installation
+Install [julia v1.6 or above](https://julialang.org/downloads/).
 
 ```julia
-] add Lux
+using Pkg
+Pkg.add("Lux")
 ```
 
-## Getting Started
+# Quick Example
 
 ```julia
 using Lux, Random, Optimisers, Zygote
+```
 
+We take randomness very seriously
+
+```julia
 # Seeding
 rng = Random.default_rng()
 Random.seed!(rng, 0)
+```
 
+Build the model
+
+```julia
 # Construct the layer
 model = Chain(
     BatchNorm(128),
@@ -35,7 +42,11 @@ model = Chain(
         Dense(1, 10)
     )
 )
+```
 
+Models don't hold parameters and states so initialize them. From there on, we just use our standard AD and Optimisers API.
+
+```julia
 # Parameter and State Variables
 ps, st = Lux.setup(rng, model) .|> gpu
 

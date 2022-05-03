@@ -20,7 +20,7 @@ get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::Abstrac
 * If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias β and scale γ parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
 
-Use [`testmode`](@ref) during inference.
+Use [`Lux.testmode`](@ref) during inference.
 
 # Examples
 
@@ -244,7 +244,7 @@ end
 
 Applies [weight normalization](https://arxiv.org/abs/1602.07868) to a parameter in the given layer.
 
-    ``w = g\\frac{v}{\\|v\\|}``
+``w = g\\frac{v}{\\|v\\|}``
 
 Weight normalization is a reparameterization that decouples the magnitude of a weight tensor from its direction. This updates the parameters in `which_params` (e.g. `weight`) using two parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying the direction (e.g. `weight_v`).
 

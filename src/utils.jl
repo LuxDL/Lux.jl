@@ -10,16 +10,46 @@ nfan(dims...) = prod(dims[1:end-2]) .* (dims[end-1], dims[end]) # In case of con
 # Neural Network Initialization
 ## NOTE: Would be great if these could be moved into its own package and NN frameworks
 ##       could just import it.
+"""
+    zeros32(rng::AbstractRNG, size...) = zeros(Float32, size...)
+
+Return an `Array{Float32}` of zeros of the given `size`. (`rng` is ignored)
+"""
 zeros32(rng::AbstractRNG, args...; kwargs...) = zeros(rng, Float32, args...; kwargs...)
+
+"""
+    ones32(rng::AbstractRNG, size...) = ones(Float32, size...)
+
+Return an `Array{Float32}` of ones of the given `size`. (`rng` is ignored)
+"""
 ones32(rng::AbstractRNG, args...; kwargs...) = ones(rng, Float32, args...; kwargs...)
+
 Base.zeros(rng::AbstractRNG, args...; kwargs...) = zeros(args...; kwargs...)
 Base.ones(rng::AbstractRNG, args...; kwargs...) = ones(args...; kwargs...)
 
+"""
+    glorot_uniform(rng::AbstractRNG, size...; gain = 1)
+
+Return an `Array{Float32}` of the given `size` containing random numbers drawn from a uniform distribution on the interval ``[-x, x]``, where `x = gain * sqrt(6 / (fan_in + fan_out))`. This method is described in [1] and also known as Xavier initialization.
+
+# References
+
+[1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep feedforward neural networks." _Proceedings of the thirteenth international conference on artificial intelligence and statistics_. 2010.
+"""
 function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     scale = Float32(gain) * sqrt(24.0f0 / sum(nfan(dims...)))
     return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
 end
 
+"""
+    glorot_normal(rng::AbstractRNG, size...; gain = 1)
+
+Return an `Array{Float32}` of the given `size` containing random numbers drawn from a normal distribution with standard deviation `gain * sqrt(2 / (fan_in + fan_out))`. This method is described in [1] and also known as Xavier initialization.
+
+# References
+
+[1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep feedforward neural networks." _Proceedings of the thirteenth international conference on artificial intelligence and statistics_. 2010.
+"""
 function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     std = Float32(gain) * sqrt(2.0f0 / sum(nfan(dims...)))
     return randn(rng, Float32, dims...) .* std

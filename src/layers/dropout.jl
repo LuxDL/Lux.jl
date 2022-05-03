@@ -8,7 +8,7 @@ Dropout layer.
 * To apply dropout along certain dimension(s), specify the `dims` keyword. e.g. `Dropout(p; dims = 3)` will randomly zero out entire channels on WHCN input (also called 2D dropout).
 * Each execution of the Layer increments the `seed` and returns it wrapped in the state
 
-Call [`testmode`](@ref) to switch to test mode.
+Call [`Lux.testmode`](@ref) to switch to test mode.
 """
 struct Dropout{T,D} <: AbstractExplicitLayer
     p::T
@@ -40,14 +40,14 @@ end
 """
     VariationalHiddenDropout(p; dims=:)
 
-VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until `Lux.update_state(l, :update_mask, true)` is called.
+VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until [`Lux.update_state(l, :update_mask, true)`](@ref) is called.
 
 # Arguments
 
 * To apply dropout along certain dimension(s), specify the `dims` keyword. e.g. `Dropout(p; dims = 3)` will randomly zero out entire channels on WHCN input (also called 2D dropout).
 * Each execution of the Layer increments the `seed` and returns it wrapped in the state
 
-Call [`testmode`](@ref) to switch to test mode.
+Call [`Lux.testmode`](@ref) to switch to test mode.
 """
 struct VariationalHiddenDropout{T,D} <: AbstractExplicitLayer
     p::T
