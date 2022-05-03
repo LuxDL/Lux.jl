@@ -4,6 +4,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
+Pkg.develop(PackageSpec(path=joinpath(dirname(pathof(Lux)), ".."))) #hide
 using DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
 using Flux.Losses: logitcrossentropy
 using Flux.Data: DataLoader
