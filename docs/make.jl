@@ -68,7 +68,7 @@ makedocs(
 )
 
 deploydocs(
-   repo = "github.com/SciML/FastDEQ.jl.git";
+   repo = "github.com/avik-pal/Lux.jl.git";
    push_preview = true,
    devbranch = "main",
 )
