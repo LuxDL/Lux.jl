@@ -1,7 +1,6 @@
 # MNIST Classification using Neural ODEs
 ## Package Imports
-using Lux,
-    DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
+using Lux, DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
 using Flux.Losses: logitcrossentropy
 using Flux.Data: DataLoader
 import Flux
@@ -72,7 +71,10 @@ function train()
         Dense(20, 10),
     )
 
-    ps, st = setup(MersenneTwister(0), model)
+    rng = Random.default_rng()
+    Random.seed!(rng, 0)
+
+    ps, st = Lux.setup(rng, model)
     ps = ComponentArray(ps) |> gpu
     st = st |> gpu
 

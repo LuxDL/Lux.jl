@@ -1,33 +1,33 @@
 # Imagenet training script based on https://github.com/pytorch/examples/blob/main/imagenet/main.py
 
-using ArgParse                                  # Parse Arguments from Commandline
-using Augmentor                                 # Image Augmentation
-using CUDA                                      # GPUs <3
-using DataLoaders                               # Pytorch like DataLoaders
-using Dates                                     # Printing current time
-using Lux                                       # Neural Network Framework
-using Flux                                      # Only being used for OneHotArrays
-using FluxMPI                                   # Distibuted Training
-using Formatting                                # Pretty Printing
-using Images                                    # Image Processing
-using Metalhead                                 # Image Classification Models
-using MLDataUtils                               # Shuffling and Splitting Data
-using NNlib                                     # Neural Network Backend
-using Optimisers                                # Collection of Gradient Based Optimisers
-using ParameterSchedulers                       # Collection of Schedulers for Parameter Updates
-using Random                                    # Make things less Random
-using Serialization                             # Serialize Models
-using Setfield                                  # Easy Parameter Manipulation
-using Zygote                                    # Our AD Engine
+using ArgParse                                          # Parse Arguments from Commandline
+using Augmentor                                         # Image Augmentation
+using CUDA                                              # GPUs <3
+using DataLoaders                                       # Pytorch like DataLoaders
+using Dates                                             # Printing current time
+using Lux                                               # Neural Network Framework
+using FluxMPI                                           # Distibuted Training
+using Formatting                                        # Pretty Printing
+using Images                                            # Image Processing
+using Metalhead                                         # Image Classification Models
+using MLDataUtils                                       # Shuffling and Splitting Data
+using NNlib                                             # Neural Network Backend
+using Optimisers                                        # Collection of Gradient Based Optimisers
+using ParameterSchedulers                               # Collection of Schedulers for Parameter Updates
+using Random                                            # Make things less Random
+using Serialization                                     # Serialize Models
+using Setfield                                          # Easy Parameter Manipulation
+using Zygote                                            # Our AD Engine
 
-import DataLoaders.LearnBase: getobs, nobs      # Extending Datasets
+import Flux: OneHotArray, onecold, onehot, onehotbatch  # Only being used for OneHotArrays
+import DataLoaders.LearnBase: getobs, nobs              # Extending Datasets
 
 # Distributed Training
 FluxMPI.Init(;verbose=true)
 CUDA.allowscalar(false)
 
 # unsafe_free OneHotArrays
-CUDA.unsafe_free!(x::Flux.OneHotArray) = CUDA.unsafe_free!(x.indices)
+CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
 
 # Image Classification Models
 VGG11_BN(args...; kwargs...) = VGG11(args...; batchnorm=true, kwargs...)
@@ -74,11 +74,11 @@ IMAGENET_MODELS_DICT = Dict(string(model) => model for model in AVAILABLE_IMAGEN
 
 function get_model(model_name::String, models_dict::Dict, rng, args...; warmup=true, kwargs...)
     model = Lux.transform(models_dict[model_name](args...; kwargs...).layers)
-    ps, st = Lux.setup(rng, model) .|> Lux.gpu
+    ps, st = Lux.setup(rng, model) .|> gpu
     if warmup
         # Warmup for compilation
-        x__ = randn(rng, Float32, 224, 224, 3, 1) |> Lux.gpu
-        y__ = Flux.onehotbatch([1], 1:1000) |> Lux.gpu
+        x__ = randn(rng, Float32, 224, 224, 3, 1) |> gpu
+        y__ = onehotbatch([1], 1:1000) |> gpu
         should_log() && println("$(now()) ==> staring `$model_name` warmup...")
         model(x__, ps, st)
         should_log() && println("$(now()) ==> forward pass warmup completed")
@@ -180,7 +180,7 @@ function accuracy(ŷ, y, topk=(1,))
     maxk = maximum(topk)
 
     pred_labels = partialsortperm.(eachcol(ŷ), (1:maxk,), rev=true)
-    true_labels = Flux.onecold(y)
+    true_labels = onecold(y)
 
     accuracies = Vector{Float32}(undef, length(topk))
 
@@ -284,7 +284,7 @@ function getobs(data::ImageDataset, i::Int)
     end
     img = Float32.(permutedims(cimg, (3, 2, 1)))
     img = (img .- data.normalization_parameters.mean) ./ data.normalization_parameters.std
-    return img, Flux.onehot(data.labels[i], 1:1000)
+    return img, onehot(data.labels[i], 1:1000)
 end
 
 
@@ -348,7 +348,7 @@ function validate(val_loader, model, ps, st, args)
         loss = logitcrossentropyloss(ŷ, y)
 
         # Metrics
-        acc1, acc5 = accuracy(Lux.cpu(ŷ), Lux.cpu(y), (1, 5))
+        acc1, acc5 = accuracy(cpu(ŷ), cpu(y), (1, 5))
         update!(top1, acc1, size(x, ndims(x)))
         update!(top5, acc5, size(x, ndims(x)))
         update!(losses, loss, size(x, ndims(x)))
@@ -389,7 +389,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         optimiser_state, ps = Optimisers.update(optimiser_state, ps, gs)
 
         # Metrics
-        acc1, acc5 = accuracy(Lux.cpu(ŷ), Lux.cpu(y), (1, 5))
+        acc1, acc5 = accuracy(cpu(ŷ), cpu(y), (1, 5))
         update!(top1, acc1, size(x, ndims(x)))
         update!(top5, acc5, size(x, ndims(x)))
         update!(losses, loss, size(x, ndims(x)))
@@ -471,9 +471,9 @@ function main(args)
         if isfile(args["resume"])
             checkpoint = deserialize(args["resume"])
             args["start-epoch"] = checkpoint["epoch"]
-            optimiser_state = checkpoint["optimiser_state"] |> Lux.gpu
-            ps = checkpoint["model_parameters"] |> Lux.gpu
-            st = checkpoint["model_states"] |> Lux.gpu
+            optimiser_state = checkpoint["optimiser_state"] |> gpu
+            ps = checkpoint["model_parameters"] |> gpu
+            st = checkpoint["model_states"] |> gpu
             should_log() && println("$(now()) => loaded checkpoint `$(args["resume"])` (epoch $(args["start-epoch"]))")
         else
             should_log() && println("$(now()) => no checkpoint found at `$(args["resume"])`")
@@ -515,9 +515,9 @@ function main(args)
         save_state = Dict(
             "epoch" => epoch,
             "arch" => args["arch"],
-            "model_states" => st |> Lux.cpu,
-            "model_parameters" => ps |> Lux.cpu,
-            "optimiser_state" => optimiser_state |> Lux.cpu,
+            "model_states" => st |> cpu,
+            "model_parameters" => ps |> cpu,
+            "optimiser_state" => optimiser_state |> cpu,
         )
         save_checkpoint(save_state, is_best)
     end
