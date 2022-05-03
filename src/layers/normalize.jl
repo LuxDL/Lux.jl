@@ -25,11 +25,11 @@ Use [`testmode`](@ref) during inference.
 # Examples
 
 ```julia
-m = EFL.Chain(
-        EFL.Dense(784 => 64),
-        EFL.BatchNorm(64, relu),
-        EFL.Dense(64 => 10),
-        EFL.BatchNorm(10)
+m = Chain(
+        Dense(784 => 64),
+        BatchNorm(64, relu),
+        Dense(64 => 10),
+        BatchNorm(10)
     )
 ```
 """

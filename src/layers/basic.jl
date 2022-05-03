@@ -163,11 +163,11 @@ This is slightly different from `Parallel(nothing, layers...)`
 
 An easy way to replicate an input to an NTuple is to do
 ```julia
-l = EFL.BranchLayer(
-    EFL.NoOpLayer(),
-    EFL.NoOpLayer(),
-    EFL.NoOpLayer(),
-)
+l = BranchLayer(
+        NoOpLayer(),
+        NoOpLayer(),
+        NoOpLayer(),
+    )
 ```
 """
 struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}

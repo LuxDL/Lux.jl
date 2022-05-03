@@ -1,9 +1,9 @@
 # MNIST Classification using Neural ODEs
 ## Package Imports
-using ExplicitFluxLayers,
-    DiffEqSensitivity, OrdinaryDiffEq, Random, Flux, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
+using Lux, DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
 using Flux.Losses: logitcrossentropy
 using Flux.Data: DataLoader
+import Flux
 CUDA.allowscalar(false)
 
 ## DataLoader
@@ -25,7 +25,7 @@ function loadmnist(batchsize, train_split)
 end
 
 ## Define the Neural ODE Layer
-struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicitContainerLayer{(:model,)}
+struct NeuralODE{M<:Lux.AbstractExplicitLayer,So,Se,T,K} <: Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
     solver::So
     sensealg::Se
@@ -34,7 +34,7 @@ struct NeuralODE{M<:EFL.AbstractExplicitLayer,So,Se,T,K} <: EFL.AbstractExplicit
 end
 
 function NeuralODE(
-    model::EFL.AbstractExplicitLayer;
+    model::Lux.AbstractExplicitLayer;
     solver=Tsit5(),
     sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
     tspan=(0.0f0, 1.0f0),
@@ -52,28 +52,31 @@ function (n::NeuralODE)(x, ps, st)
     return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
 end
 
-diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = dropdims(EFL.gpu(x); dims=3)
+diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = dropdims(Lux.gpu(x); dims=3)
 diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 
 function train()
     ## Construct the Neural ODE Model
-    model = EFL.Chain(
-        EFL.FlattenLayer(),
-        EFL.Dense(784, 20, tanh),
+    model = Chain(
+        FlattenLayer(),
+        Dense(784, 20, tanh),
         NeuralODE(
-            EFL.Chain(EFL.Dense(20, 10, tanh), EFL.Dense(10, 10, tanh), EFL.Dense(10, 20, tanh));
+            Chain(Dense(20, 10, tanh), Dense(10, 10, tanh), Dense(10, 20, tanh));
             save_everystep=false,
             reltol=1.0f-3,
             abstol=1.0f-3,
             save_start=false,
         ),
         diffeqsol_to_array,
-        EFL.Dense(20, 10),
+        Dense(20, 10),
     )
 
-    ps, st = EFL.setup(MersenneTwister(0), model)
-    ps = ComponentArray(ps) |> EFL.gpu
-    st = st |> EFL.gpu
+    rng = Random.default_rng()
+    Random.seed!(rng, 0)
+
+    ps, st = Lux.setup(rng, model)
+    ps = ComponentArray(ps) |> gpu
+    st = st |> gpu
 
     ## Utility Functions
     get_class(x) = argmax.(eachcol(x))
@@ -85,7 +88,7 @@ function train()
 
     function accuracy(model, ps, st, dataloader)
         total_correct, total = 0, 0
-        st = EFL.testmode(st)
+        st = Lux.testmode(st)
         for (x, y) in CuIterator(dataloader)
             target_class = get_class(cpu(y))
             predicted_class = get_class(cpu(model(x, ps, st)[1]))
@@ -102,7 +105,7 @@ function train()
     st_opt = Optimisers.setup(opt, ps)
 
     ### Warmup the Model
-    img, lab = EFL.gpu(train_dataloader.data[1][:, :, :, 1:1]), EFL.gpu(train_dataloader.data[2][:, 1:1])
+    img, lab = gpu(train_dataloader.data[1][:, :, :, 1:1]), gpu(train_dataloader.data[2][:, 1:1])
     loss(img, lab, model, ps, st)
     (l, _), back = Flux.pullback(p -> loss(img, lab, model, p, st), ps)
     back((one(l), nothing))

@@ -1,4 +1,4 @@
-# Imagenet Training using ExplicitFluxLayers
+# Imagenet Training using Lux
 
 This implements training of popular model architectures, such as ResNet, AlexNet, and VGG on the ImageNet dataset.
 
@@ -38,7 +38,7 @@ usage: main.jl [--arch ARCH] [--epochs EPOCHS]
                [--resume RESUME] [--evaluate] [--pretrained]
                [--seed SEED] [--distributed] [-h] data
 
-ExplicitFluxLayers ImageNet Training
+Lux ImageNet Training
 
 positional arguments:
   data                  path to dataset

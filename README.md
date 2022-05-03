@@ -1,49 +1,50 @@
-# ExplicitFluxLayers
+# Lux
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
-[![CI](https://github.com/avik-pal/ExplicitFluxLayers.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/ExplicitFluxLayers.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/avik-pal/ExplicitFluxLayers.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/ExplicitFluxLayers.jl)
+[![CI](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
 
-Explicit Parameterization of Flux Layers
+The 🔥 Deep Learning Framework
 
 ## Installation
 
 ```julia
-] add ExplicitFluxLayers
+] add Lux
 ```
 
 ## Getting Started
 
 ```julia
-using ExplicitFluxLayers, Random, Optimisers
+using Lux, Random, Optimisers, Zygote
 
 # Seeding
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
 # Construct the layer
-model = EFL.Chain(
-    EFL.BatchNorm(128),
-    EFL.Dense(128, 256, tanh),
-    EFL.BatchNorm(256),
-    EFL.Chain(
-        EFL.Dense(256, 1, tanh),
-        EFL.Dense(1, 10)
+model = Chain(
+    BatchNorm(128),
+    Dense(128, 256, tanh),
+    BatchNorm(256),
+    Chain(
+        Dense(256, 1, tanh),
+        Dense(1, 10)
     )
 )
 
 # Parameter and State Variables
-ps, st = EFL.setup(rng, model) .|> EFL.gpu
+ps, st = Lux.setup(rng, model) .|> gpu
 
 # Dummy Input
-x = rand(rng, Float32, 128, 2) |> EFL.gpu
+x = rand(rng, Float32, 128, 2) |> gpu
 
 # Run the model
-y, st = EFL.apply(model, x, ps, st)
+y, st = Lux.apply(model, x, ps, st)
 
 # Gradients
-gs = gradient(p -> sum(EFL.apply(model, x, p, st)[1]), ps)[1]
+gs = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
 
 # Optimization
 st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
@@ -65,17 +66,17 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
   b. `AbstractExplicitContainerLayer`: Used when the layer is storing other `AbstractExplicitLayer`s or `AbstractExplicitContainerLayer`s. This allows good defaults of the dispatches for functions mentioned in the previous point.
 
-## Why use ExplicitFluxLayers over Flux?
+## Why use Lux over Flux?
 
 * **Large Neural Networks**
   * For small neural networks we recommend [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl).
-  * For SciML Applications (Neural ODEs, Deep Equilibrium Models) solvers typically expect a monolithic parameter vector. Flux enables this via its `destructure` mechanism, however, it often leads to [weird bugs](https://github.com/FluxML/Flux.jl/issues?q=is%3Aissue+destructure). EFL forces users to make an explicit distinction between state variables and parameter variables to avoid these issues.
+  * For SciML Applications (Neural ODEs, Deep Equilibrium Models) solvers typically expect a monolithic parameter vector. Flux enables this via its `destructure` mechanism, however, it often leads to [weird bugs](https://github.com/FluxML/Flux.jl/issues?q=is%3Aissue+destructure). Lux forces users to make an explicit distinction between state variables and parameter variables to avoid these issues.
   * Comes battery-included for distributed training using [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
-* **Sensible display of Custom Layers** -- Ever wanted to see Pytorch like Network printouts or wondered how to extend the pretty printing of Flux's layers. ExplicitFluxLayers handles all of that by default.
+* **Sensible display of Custom Layers** -- Ever wanted to see Pytorch like Network printouts or wondered how to extend the pretty printing of Flux's layers. Lux handles all of that by default.
 * **Less Bug-ridden Code**
   * *No arbitrary internal mutations* -- all layers are implemented as pure functions.
   * *All layers are deterministic* given the parameter and state -- if the layer is supposed to be stochastic (say `Dropout`), the state must contain a seed which is then updated after the function call.
-* **Easy Parameter Manipulation** -- Wondering why Flux doesn't have `WeightNorm`, `SpectralNorm`, etc. The implicit parameter handling makes it extremely hard to pass parameters around without mutations which AD systems don't like. With ExplicitFluxLayers implementing them is outright simple.
+* **Easy Parameter Manipulation** -- Wondering why Flux doesn't have `WeightNorm`, `SpectralNorm`, etc. The implicit parameter handling makes it extremely hard to pass parameters around without mutations which AD systems don't like. With Lux implementing them is outright simple.
 
 ## Usage Examples
 
@@ -88,7 +89,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
 ## Recommended Libraries for Various ML Tasks
 
-ExplicitFluxLayers is exclusively focused on designing Neural Network Architectures. All other parts of the DL training/evaluation pipeline should be offloaded to the following frameworks:
+Lux is exclusively focused on designing Neural Network Architectures. All other parts of the DL training/evaluation pipeline should be offloaded to the following frameworks:
 
 * Data Manipulation/Loading -- [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/), [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/), [Images.jl](https://juliaimages.org/stable/)
 * Optimisation -- [Optimisers.jl](https://github.com/FluxML/Optimisers.jl), [ParameterSchedulers.jl](https://darsnack.github.io/ParameterSchedulers.jl/dev/README.html)
@@ -111,14 +112,3 @@ We don't have a Documentation Page as of now. But all these functions have docs 
 * `BatchNorm`, `WeightNorm`, `GroupNorm`
 * `ReshapeLayer`, `SelectDim`, `FlattenLayer`, `NoOpLayer`, `WrappedFunction`
 * `Dropout`, `VariationalHiddenDropout`
-
-
-## TODOs
-
-- [ ] Support Recurrent Neural Networks
-- [ ] Add wider support for Flux Layers
-  - [ ] Convolution --> ConvTranspose, CrossCor
-  - [ ] Upsampling --> PixelShuffle
-  - [ ] General Purpose --> Maxout, Bilinear, Embedding, AlphaDropout
-  - [ ] Normalization --> LayerNorm, InstanceNorm
-- [ ] Port tests over from Flux

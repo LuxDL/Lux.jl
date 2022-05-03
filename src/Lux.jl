@@ -1,6 +1,4 @@
-module ExplicitFluxLayers
-
-const EFL = ExplicitFluxLayers
+module Lux
 
 # Accelerator Support
 using CUDA
@@ -40,12 +38,20 @@ include("nnlib.jl")
 include("layers/display.jl")
 # AutoDiff
 include("autodiff.jl")
-# Transition to Explicit Layers
+# Flux to Lux
 function __init__()
     @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" include("transform.jl")
 end
 
-
-export EFL
+# Data Transfer
+export cpu, gpu
+# Layers
+export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer
+export Dense, Scale
+export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool, AdaptiveMeanPool, Upsample
+export Dropout, VariationalHiddenDropout
+export BatchNorm, GroupNorm
+export WeightNorm
+export NoOpLayer, ReshapeLayer, FlattenLayer, WrappedFunction, ActivationFunction
 
 end
