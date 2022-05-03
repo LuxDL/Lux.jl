@@ -175,9 +175,9 @@ One of two keywords must be given:
  * Alternatively, keyword `size` accepts a tuple, to directly specify the leading dimensions of the output.
 
 Currently supported upsampling `mode`s and corresponding NNlib's methods are:
-  - `:nearest` -> [`NNlib.upsample_nearest`](@ref)
-  - `:bilinear` -> [`NNlib.upsample_bilinear`](@ref)
-  - `:trilinear` -> [`NNlib.upsample_trilinear`](@ref)
+  - `:nearest` -> `NNlib.upsample_nearest`
+  - `:bilinear` -> `NNlib.upsample_bilinear`
+  - `:trilinear` -> `NNlib.upsample_trilinear`
 """
 struct Upsample{mode,S,T} <: AbstractExplicitLayer
     scale::S

@@ -21,6 +21,8 @@ Lux.parameterlength
 ```@docs
 Lux.initialstates
 Lux.statelength
+Lux.testmode
+Lux.trainmode
 Lux.update_state
 ```
 

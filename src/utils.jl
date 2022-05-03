@@ -44,7 +44,7 @@ end
 """
     glorot_normal(rng::AbstractRNG, size...; gain = 1)
 
-Return an `Array{Float32}` of the given `size` containing random numbers drawn from a normal distribution with standard deviation `gain * sqrt(2 / (fan_in + fan_out))`, using [`nfan`](@ref Flux.nfan). This method is described in [1] and also known as Xavier initialization.
+Return an `Array{Float32}` of the given `size` containing random numbers drawn from a normal distribution with standard deviation `gain * sqrt(2 / (fan_in + fan_out))`. This method is described in [1] and also known as Xavier initialization.
 
 # References
 

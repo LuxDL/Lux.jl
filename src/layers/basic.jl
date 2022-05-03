@@ -47,7 +47,7 @@ struct NoOpLayer <: AbstractExplicitLayer end
     WrappedFunction(f)
 
 Wraps a stateless and parameter less function. Might be used when a function is
-added to [Chain](@ref). For example, `Chain(x -> relu.(x))` would not work and the
+added to `Chain`. For example, `Chain(x -> relu.(x))` would not work and the
 right thing to do would be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing
 to do would be `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
 """
@@ -359,7 +359,7 @@ Create a traditional fully connected layer, whose forward pass is given by: `y =
 Keyword `bias=false` will switch off trainable bias for the layer.
 
 The initialisation of the weight matrix is `W = initW(rng, out, in)`, calling the function
-given to keyword `initW`, with default [`glorot_uniform`](@doc Lux.glorot_uniform).
+given to keyword `initW`, with default [`glorot_uniform`](@ref).
 """
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     λ::F1
@@ -436,7 +436,7 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 Keyword `bias=false` will switch off trainable bias for the layer.
 
-The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@doc Lux.glorot_uniform).
+The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@ref).
 """
 struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
     λ::F1

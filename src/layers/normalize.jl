@@ -20,7 +20,7 @@ get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::Abstrac
 * If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias β and scale γ parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
 
-Use [`testmode`](@ref) during inference.
+Use [`Lux.testmode`](@ref) during inference.
 
 # Examples
 
