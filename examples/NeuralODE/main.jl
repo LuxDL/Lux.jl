@@ -107,7 +107,8 @@ end
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
-    for (x, y) in CuIterator(dataloader)
+    iterator = CUDA.functional() ? CuIterator(dataloader) : dataloader
+    for (x, y) in iterator
         target_class = get_class(cpu(y))
         predicted_class = get_class(cpu(model(x, ps, st)[1]))
         total_correct += sum(target_class .== predicted_class)
@@ -136,7 +137,8 @@ function train()
     nepochs = 9
     for epoch in 1:nepochs
         stime = time()
-        for (x, y) in CuIterator(train_dataloader)
+        iterator = CUDA.functional() ? CuIterator(train_dataloader) : train_dataloader
+        for (x, y) in iterator
             (l, _), back = pullback(p -> loss(x, y, model, p, st), ps)
             gs = back((one(l), nothing))[1]
             st_opt, ps = Optimisers.update(st_opt, ps, gs)
