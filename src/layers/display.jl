@@ -63,7 +63,6 @@ _show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
 _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
 function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
-    # length(names) == 1 && return getfield(l, names[1])
     return NamedTuple{names}(getfield.((l,), names))
 end
 _get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
@@ -107,32 +106,7 @@ function _big_finale(io::IO, m)
     print(io, nonparam, " states, ")
     printstyled(io, "summarysize "; color=:light_black)
     print(io, bytes, ".")
-end
-
-_childarray_sum(f, x::AbstractArray{<:Number}) = f(x)
-function _childarray_sum(f, x::ComponentArray)
-    if Flux.Functors.isleaf(x)
-        return 0
-    else
-        c = Flux.Functors.children(x)
-        if length(c) == 0
-            return 0
-        else
-            return sum(y -> _childarray_sum(f, y), c)
-        end
-    end
-end
-function _childarray_sum(f, x)
-    if Flux.Functors.isleaf(x)
-        return 0
-    else
-        c = Flux.Functors.children(x)
-        if length(c) == 0
-            return 0
-        else
-            return sum(y -> _childarray_sum(f, y), c)
-        end
-    end
+    return
 end
 
 # utility functions
