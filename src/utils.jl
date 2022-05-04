@@ -114,8 +114,8 @@ function Functors.functor(::Type{<:ComponentArray}, c)
 end
 
 function Optimisers.update!(st, ps::ComponentArray, gs::ComponentArray)
-    Optimisers.update!(st, NamedTuple(ps), NamedTuple(gs))
-    return st, ps
+    st, ps_ = Optimisers.update!(st, NamedTuple(ps), NamedTuple(gs))
+    return st, ComponentArray(ps_)
 end
 
 function ComponentArrays.make_carray_args(nt::NamedTuple)

@@ -64,7 +64,7 @@ function (n::NeuralODE)(x, ps, st)
     return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
 end
 
-diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = dropdims(Lux.gpu(x); dims=3)
+diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = dropdims(gpu(x); dims=3)
 diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 
 # ## Create and Initialize the Neural ODE Layer
