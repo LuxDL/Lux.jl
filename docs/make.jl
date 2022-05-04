@@ -9,6 +9,7 @@ Pkg.activate(@__DIR__)
 
 if haskey(ENV, "GITHUB_ACTIONS")
     ENV["JULIA_DEBUG"] = "Documenter"
+    ENV["DATADEPS_ALWAYS_ACCEPT"] = true
 end
 
 deployconfig = Documenter.auto_detect_deploy_system()
