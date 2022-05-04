@@ -4,24 +4,29 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using DiffEqSensitivity, OrdinaryDiffEq, Random, CUDA, MLDataUtils, Printf, MLDatasets, Optimisers, ComponentArrays
-using Flux.Losses: logitcrossentropy
-using Flux.Data: DataLoader
-import Flux
+using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random, Zygote
+import MLDatasets: MNIST
+import MLDataUtils: convertlabel, LabelEnc
+import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
 
-# ## DataLoader
+# ## Loading MNIST
+## Use MLDataUtils LabelEnc for natural onehot conversion
+onehot(labels_raw) = convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
+
 function loadmnist(batchsize, train_split)
-    ## Use MLDataUtils LabelEnc for natural onehot conversion
-    onehot(labels_raw) = convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
-    ## Load MNIST
-    imgs, labels_raw = MNIST.traindata()
+    ## Load MNIST: Only 1500 for demonstration purposes
+    N = 1500
+    imgs = MNIST.traintensor(1:N)
+    labels_raw = MNIST.trainlabels(1:N)
+
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
     y_data = onehot(labels_raw)
-    (x_train, y_train), (x_test, y_test) = stratifiedobs((x_data, y_data); p=train_split)
+    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
+
     return (
-        ## Use Flux's DataLoader to automatically minibatch and shuffle the data
+        ## Use DataLoader to automatically minibatch and shuffle the data
         DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
         ## Don't shuffle the test data
         DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false),
@@ -92,6 +97,8 @@ end
 # ## Define Utility Functions
 get_class(x) = argmax.(eachcol(x))
 
+logitcrossentropy(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ); dims = 1))
+
 function loss(x, y, model, ps, st)
     ŷ, st = model(x, ps, st)
     return logitcrossentropy(ŷ, y), st
@@ -122,15 +129,15 @@ function train()
     ### Warmup the Model
     img, lab = gpu(train_dataloader.data[1][:, :, :, 1:1]), gpu(train_dataloader.data[2][:, 1:1])
     loss(img, lab, model, ps, st)
-    (l, _), back = Flux.pullback(p -> loss(img, lab, model, p, st), ps)
+    (l, _), back = pullback(p -> loss(img, lab, model, p, st), ps)
     back((one(l), nothing))
 
     ### Lets train the model
-    nepochs = 10
+    nepochs = 9
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in CuIterator(train_dataloader)
-            (l, _), back = Flux.pullback(p -> loss(x, y, model, p, st), ps)
+            (l, _), back = pullback(p -> loss(x, y, model, p, st), ps)
             gs = back((one(l), nothing))[1]
             st_opt, ps = Optimisers.update(st_opt, ps, gs)
         end
@@ -144,19 +151,4 @@ function train()
     end
 end
 
-# Uncomment the following line to run the training
-## train()
-
-# ### Results
-# ```julia
-# [1/10] 	Time 23.27s 	Training Accuracy: 90.88% 	Test Accuracy: 90.45%
-# [2/10] 	Time 26.2s 	Training Accuracy: 92.27% 	Test Accuracy: 91.78%
-# [3/10] 	Time 26.49s 	Training Accuracy: 93.03% 	Test Accuracy: 92.58%
-# [4/10] 	Time 25.94s 	Training Accuracy: 93.57% 	Test Accuracy: 92.8%
-# [5/10] 	Time 26.86s 	Training Accuracy: 93.76% 	Test Accuracy: 93.18%
-# [6/10] 	Time 26.63s 	Training Accuracy: 94.17% 	Test Accuracy: 93.48%
-# [7/10] 	Time 25.39s 	Training Accuracy: 94.41% 	Test Accuracy: 93.72%
-# [8/10] 	Time 26.17s 	Training Accuracy: 94.68% 	Test Accuracy: 93.73%
-# [9/10] 	Time 27.03s 	Training Accuracy: 94.78% 	Test Accuracy: 93.65%
-# [10/10] 	Time 26.04s 	Training Accuracy: 94.97% 	Test Accuracy: 94.02%
-# ```
+train()

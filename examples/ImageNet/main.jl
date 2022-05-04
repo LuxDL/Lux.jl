@@ -20,7 +20,8 @@ using Setfield                                          # Easy Parameter Manipul
 using Zygote                                            # Our AD Engine
 
 import Flux: OneHotArray, onecold, onehot, onehotbatch  # Only being used for OneHotArrays
-import DataLoaders.LearnBase: getobs, nobs              # Extending Datasets
+import DataLoaders: LearnBase                           # Extending Datasets
+import MLUtils
 
 # Distributed Training
 FluxMPI.Init(;verbose=true)
@@ -272,9 +273,9 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
     return ImageDataset(image_files, labels, mapping, augmentation_pipeline, normalization_parameters)
 end
 
-nobs(data::ImageDataset) = length(data.image_files)
+LearnBase.nobs(data::ImageDataset) = length(data.image_files)
 
-function getobs(data::ImageDataset, i::Int)
+function LearnBase.getobs(data::ImageDataset, i::Int)
     img = Images.load(data.image_files[i])
     img = augment(img, data.augmentation_pipeline)
     cimg = channelview(img)
@@ -287,6 +288,14 @@ function getobs(data::ImageDataset, i::Int)
     return img, onehot(data.labels[i], 1:1000)
 end
 
+MLUtils.numobs(data::ImageDataset) = length(data.image_files)
+
+MLUtils.getobs(data::ImageDataset, i::Int) = LearnBase.getobs(data, i)
+
+## DataLoaders doesn't yet work with MLUtils
+LearnBase.nobs(data::DistributedDataContainer) = MLUtil.numobs(data)
+
+LearnBase.getobs(data::DistributedDataContainer, i::Int) = MLUtils.getobs(data, i)
 
 # Tracking
 Base.@kwdef mutable struct AverageMeter
