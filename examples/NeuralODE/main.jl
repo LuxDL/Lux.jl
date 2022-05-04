@@ -4,7 +4,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random, Zygote
+using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random, Statistics, Zygote
 import MLDatasets: MNIST
 import MLDataUtils: convertlabel, LabelEnc
 import MLUtils: DataLoader, splitobs

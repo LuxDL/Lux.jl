@@ -18,6 +18,7 @@ using ParameterSchedulers                               # Collection of Schedule
 using Random                                            # Make things less Random
 using Serialization                                     # Serialize Models
 using Setfield                                          # Easy Parameter Manipulation
+using Statistics                                        # Statistics
 using Zygote                                            # Our AD Engine
 
 import Flux: OneHotArray, onecold, onehot, onehotbatch  # Only being used for OneHotArrays
