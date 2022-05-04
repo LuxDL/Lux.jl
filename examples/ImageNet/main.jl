@@ -8,6 +8,7 @@ using Dates                                             # Printing current time
 using Lux                                               # Neural Network Framework
 using FluxMPI                                           # Distibuted Training
 using Formatting                                        # Pretty Printing
+using Functors                                          # Parameter Manipulation
 using Images                                            # Image Processing
 using Metalhead                                         # Image Classification Models
 using MLDataUtils                                       # Shuffling and Splitting Data
