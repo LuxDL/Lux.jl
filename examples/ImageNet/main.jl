@@ -203,7 +203,7 @@ function save_checkpoint(state, is_best, filename="checkpoint.pth.tar")
     if should_log()
         serialize(filename, state)
         if is_best
-            cp(filename, "model_best.pth.tar")
+            cp(filename, "model_best.pth.tar"; force=true)
         end
     end
 end
