@@ -14,13 +14,13 @@ This implements training of popular model architectures, such as ResNet, AlexNet
 To train a model, run `main.jl` with the desired model architecture and the path to the ImageNet dataset:
 
 ```bash
-julia --project=.. -t 16 main.jl --arch ResNet18 [imagenet-folder with train and val folders]
+julia --project=.. -t 8 main.jl --arch ResNet18 [imagenet-folder with train and val folders]
 ```
 
 The default learning rate schedule starts at 0.1 and decays by a factor of 10 every 30 epochs. This is appropriate for ResNet and models with batch normalization, but too high for AlexNet and VGG. Use 0.01 as the initial learning rate for AlexNet or VGG:
 
 ```bash
-julia --project=.. -t 16 main.jl --arch AlexNet --learning-rate 0.01 [imagenet-folder with train and val folders]
+julia --project=.. -t 8 main.jl --arch AlexNet --learning-rate 0.01 [imagenet-folder with train and val folders]
 ```
 
 ## Distributed Data Parallel Training

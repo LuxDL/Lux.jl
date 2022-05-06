@@ -295,7 +295,7 @@ MLUtils.numobs(data::ImageDataset) = length(data.image_files)
 MLUtils.getobs(data::ImageDataset, i::Int) = LearnBase.getobs(data, i)
 
 ## DataLoaders doesn't yet work with MLUtils
-LearnBase.nobs(data::DistributedDataContainer) = MLUtil.numobs(data)
+LearnBase.nobs(data::DistributedDataContainer) = MLUtils.numobs(data)
 
 LearnBase.getobs(data::DistributedDataContainer, i::Int) = MLUtils.getobs(data, i)
 
@@ -370,7 +370,7 @@ function validate(val_loader, model, ps, st, args)
 
         # Print Progress
         if i % args["print-freq"] == 0 || i == length(val_loader)
-            print_meter(progress, i)
+            should_log() && print_meter(progress, i)
         end
 
         t = time()
@@ -411,7 +411,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
 
         # Print Progress
         if i % args["print-freq"] == 0 || i == length(train_loader)
-            print_meter(progress, i)
+            should_log() && print_meter(progress, i)
         end
 
         t = time()
@@ -459,8 +459,8 @@ function main(args)
         val_dataset = DistributedDataContainer(val_dataset)
     end
 
-    train_loader = DataLoader(shuffleobs(train_dataset), args["batch-size"])
-    val_loader = DataLoader(val_dataset, args["batch-size"])
+    train_loader = DataLoader(shuffleobs(train_dataset), args["batch-size"] ÷ total_workers())
+    val_loader = DataLoader(val_dataset, args["batch-size"] ÷ total_workers())
 
     # Optimizer and Scheduler
     should_log() && println("$(now()) => creating optimiser")
