@@ -8,6 +8,7 @@ using Dates                                             # Printing current time
 using Lux                                               # Neural Network Framework
 using FluxMPI                                           # Distibuted Training
 using Formatting                                        # Pretty Printing
+using Functors                                          # Parameter Manipulation
 using Images                                            # Image Processing
 using Metalhead                                         # Image Classification Models
 using MLDataUtils                                       # Shuffling and Splitting Data
@@ -17,10 +18,12 @@ using ParameterSchedulers                               # Collection of Schedule
 using Random                                            # Make things less Random
 using Serialization                                     # Serialize Models
 using Setfield                                          # Easy Parameter Manipulation
+using Statistics                                        # Statistics
 using Zygote                                            # Our AD Engine
 
 import Flux: OneHotArray, onecold, onehot, onehotbatch  # Only being used for OneHotArrays
-import DataLoaders.LearnBase: getobs, nobs              # Extending Datasets
+import DataLoaders: LearnBase                           # Extending Datasets
+import MLUtils
 
 # Distributed Training
 FluxMPI.Init(;verbose=true)
@@ -200,7 +203,7 @@ function save_checkpoint(state, is_best, filename="checkpoint.pth.tar")
     if should_log()
         serialize(filename, state)
         if is_best
-            cp(filename, "model_best.pth.tar")
+            cp(filename, "model_best.pth.tar"; force=true)
         end
     end
 end
@@ -272,9 +275,9 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
     return ImageDataset(image_files, labels, mapping, augmentation_pipeline, normalization_parameters)
 end
 
-nobs(data::ImageDataset) = length(data.image_files)
+LearnBase.nobs(data::ImageDataset) = length(data.image_files)
 
-function getobs(data::ImageDataset, i::Int)
+function LearnBase.getobs(data::ImageDataset, i::Int)
     img = Images.load(data.image_files[i])
     img = augment(img, data.augmentation_pipeline)
     cimg = channelview(img)
@@ -287,6 +290,14 @@ function getobs(data::ImageDataset, i::Int)
     return img, onehot(data.labels[i], 1:1000)
 end
 
+MLUtils.numobs(data::ImageDataset) = length(data.image_files)
+
+MLUtils.getobs(data::ImageDataset, i::Int) = LearnBase.getobs(data, i)
+
+## DataLoaders doesn't yet work with MLUtils
+LearnBase.nobs(data::DistributedDataContainer) = MLUtils.numobs(data)
+
+LearnBase.getobs(data::DistributedDataContainer, i::Int) = MLUtils.getobs(data, i)
 
 # Tracking
 Base.@kwdef mutable struct AverageMeter
@@ -359,7 +370,7 @@ function validate(val_loader, model, ps, st, args)
 
         # Print Progress
         if i % args["print-freq"] == 0 || i == length(val_loader)
-            print_meter(progress, i)
+            should_log() && print_meter(progress, i)
         end
 
         t = time()
@@ -400,7 +411,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
 
         # Print Progress
         if i % args["print-freq"] == 0 || i == length(train_loader)
-            print_meter(progress, i)
+            should_log() && print_meter(progress, i)
         end
 
         t = time()
@@ -448,8 +459,8 @@ function main(args)
         val_dataset = DistributedDataContainer(val_dataset)
     end
 
-    train_loader = DataLoader(shuffleobs(train_dataset), args["batch-size"])
-    val_loader = DataLoader(val_dataset, args["batch-size"])
+    train_loader = DataLoader(shuffleobs(train_dataset), args["batch-size"] ÷ total_workers())
+    val_loader = DataLoader(val_dataset, args["batch-size"] ÷ total_workers())
 
     # Optimizer and Scheduler
     should_log() && println("$(now()) => creating optimiser")

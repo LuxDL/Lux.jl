@@ -14,19 +14,22 @@ This implements training of popular model architectures, such as ResNet, AlexNet
 To train a model, run `main.jl` with the desired model architecture and the path to the ImageNet dataset:
 
 ```bash
-julia main.jl -t 16 -a ResNet18 [imagenet-folder with train and val folders]
+julia --project=.. -t 8 main.jl --arch ResNet18 [imagenet-folder with train and val folders]
 ```
 
 The default learning rate schedule starts at 0.1 and decays by a factor of 10 every 30 epochs. This is appropriate for ResNet and models with batch normalization, but too high for AlexNet and VGG. Use 0.01 as the initial learning rate for AlexNet or VGG:
 
 ```bash
-julia main.jl -t 16 -a AlexNet --learning-rate 0.01 [imagenet-folder with train and val folders]
+julia --project=.. -t 8 main.jl --arch AlexNet --learning-rate 0.01 [imagenet-folder with train and val folders]
 ```
 
 ## Distributed Data Parallel Training
 
 Ensure that you have a CUDA-Aware MPI Installed (else communication might severely bottleneck training) and [MPI.jl](https://juliaparallel.org/MPI.jl/stable/usage/#CUDA-aware-MPI-support) is aware of this build. Apart from this run the script using `mpiexecjl`.
 
+**Learning Rate**: Remember to linearly scale the learning-rate based on the number of processes you are using.
+
+**NOTE**: Currently you need to disable the default CUDA allocator by `export JULIA_CUDA_MEMORY_POOL=none`. This might slow down your code slightly but will prevent any sudden segfaults which occur without setting this parameter.
 
 ## Usage
 
