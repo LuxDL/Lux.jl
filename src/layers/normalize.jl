@@ -122,8 +122,7 @@ function (BN::BatchNorm{affine,track_stats})(
             BN.momentum;
             eps=BN.ϵ,
             training=istraining(st),
-        ),
-        Val(!istraining(st))
+        )
     )
     if track_stats
         st = merge(st, (μ=μ2, σ²=σ²2))

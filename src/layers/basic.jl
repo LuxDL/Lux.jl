@@ -70,9 +70,7 @@ struct ActivationFunction{F} <: AbstractExplicitLayer
     func::F
 end
 
-initialstates(::AbstractRNG, ::ActivationFunction) = (training=true,)
-
-(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x, Val(false)), st
+(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x), st
 
 function Base.show(io::IO, af::ActivationFunction)
     return print(io, "ActivationFunction(", af.func, ")")
@@ -397,7 +395,7 @@ parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 
 statelength(d::Dense) = 0
 
 @inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, ps.weight * x, Val(false)), st
+    return applyactivation(d.λ, ps.weight * x), st
 end
 
 @inline function (d::Dense{false,typeof(identity)})(
@@ -407,23 +405,23 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, ps.weight * x .+ ps.bias, Val(false)), st
+    return applyactivation(d.λ, elementwise_add(ps.weight * x, ps.bias)), st
 end
 
 @inline function (d::Dense{true,typeof(identity)})(
     x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
-    return ps.weight * x .+ ps.bias, st
+    return elementwise_add(ps.weight * x, ps.bias), st
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, ps.weight * x .+ vec(ps.bias), Val(false)), st
+    return applyactivation(d.λ, elementwise_add(ps.weight * x, vec(ps.bias))), st
 end
 
 @inline function (d::Dense{true,typeof(identity)})(
     x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
-    return ps.weight * x .+ vec(ps.bias), st
+    return elementwise_add(ps.weight * x, vec(ps.bias)), st
 end
 
 """
@@ -465,17 +463,17 @@ parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims
 statelength(d::Scale) = 0
 
 function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, ps.weight .* x .+ ps.bias, Val(false)), st
+    return applyactivation(d.λ, elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
 end
 
 function (d::Scale{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return ps.weight .* x .+ ps.bias, st
+    return elementwise_add(elementwise_mul(ps.weight, x), ps.bias), st
 end
 
 function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, ps.weight .* x, Val(false)), st
+    return applyactivation(d.λ, elementwise_mul(ps.weight, x)), st
 end
 
 function (d::Scale{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return ps.weight .* x, st
+    return elementwise_mul(ps.weight, x), st
 end

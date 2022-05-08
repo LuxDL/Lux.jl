@@ -82,36 +82,26 @@ function ChainRulesCore.rrule(
 end
 
 # Activation Rrules
-function ChainRulesCore.rrule(
-    ::typeof(applyactivation),
-    f::cudnnValidActivationTypes,
-    x::CuArray{T},
-    inplace, # Just ignore this argument
-) where {T}
+function ChainRulesCore.rrule(::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}) where {T}
     mode = getCUDNNActivationMode(f)
-    y = CUDA.CUDNN.cudnnActivationForward(x; mode)
+    y = CUDNN.cudnnActivationForward(x; mode)
     function applyactivation_pullback(Δ)
-        # NOTE: Since this is an internal function, we are violating our pure function standards
-        #       and mutating the input
-        Δx = Δ
-        desc = CUDA.CUDNN.cudnnActivationDescriptor(mode, CUDA.CUDNN.CUDNN_NOT_PROPAGATE_NAN, Cdouble(1))
-        CUDA.CUDNN.cudnnActivationBackward(
-            CUDA.CUDNN.handle(),
-            desc,
-            CUDA.CUDNN.scalingParameter(T, 1),
-            CUDA.CUDNN.cudnnTensorDescriptor(y),
-            y,
-            CUDA.CUDNN.cudnnTensorDescriptor(Δ),
-            Δ,
-            CUDA.CUDNN.cudnnTensorDescriptor(x),
-            x,
-            CUDA.CUDNN.scalingParameter(T, 0),
-            CUDA.CUDNN.cudnnTensorDescriptor(Δx),
-            Δx,
-        )
-        return NoTangent(), NoTangent(), Δx, NoTangent()
+        return NoTangent(), NoTangent(), cudnnActivationBackward(y, Δ, x; mode), NoTangent()
     end
     return y, applyactivation_pullback
+end
+
+# Elementwise Functions
+function ChainRulesCore.rrule(::typeof(elementwise_add), x, y) where {T}
+    z = elementwise_add(x, y)
+    _elementwise_add_pullback(Δ) = (NoTangent(), elementwise_add_pullback(x, y, Δ)...)
+    return z, _elementwise_add_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(elementwise_mul), x, y) where {T}
+    z = elementwise_mul(x, y)
+    _elementwise_mul_pullback(Δ) = (NoTangent(), elementwise_mul_pullback(x, y, Δ)...)
+    return z, _elementwise_mul_pullback
 end
 
 # Zygote Fixes

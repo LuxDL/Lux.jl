@@ -74,20 +74,20 @@ end
 end
 
 # Dropout
-_dropout_shape(s, ::Colon) = size(s)
-_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) ∈ enumerate(size(s)))...)
+@inline _dropout_shape(s, ::Colon) = size(s)
+@inline _dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 
 ## TODO: Cache `1 / q` since we never need `q`
-_dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
+@inline _dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
 
-function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
+@inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
     y .= _dropout_kernel.(y, p, 1 - p)
     return y
 end
 
-function dropout(rng::AbstractRNG, x, prob, dims, training)
+@inline function dropout(rng::AbstractRNG, x, prob, dims, training)
     if training
         rng = replicate(rng)
         mask = generate_dropout_mask(rng, x, prob; dims)
@@ -98,10 +98,10 @@ function dropout(rng::AbstractRNG, x, prob, dims, training)
     end
 end
 
-applydropout(x, mask) = x .* mask
+@inline applydropout(x, mask) = x .* mask
 
 # Adaptive Pooling
-function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
+@inline function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
     insize = size(x)[1:(end - 2)]
     stride = insize .÷ outsize
     k = insize .- (outsize .- 1) .* stride
@@ -116,20 +116,102 @@ const cudnnValidActivationTypes = Union{
     typeof(tanh),typeof(sigmoid),typeof(relu),typeof(elu),typeof(tanh_fast),typeof(sigmoid_fast)
 }
 
-getCUDNNActivationMode(::Union{typeof(tanh),typeof(tanh_fast)}) = CUDA.CUDNN.CUDNN_ACTIVATION_TANH
-getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDA.CUDNN.CUDNN_ACTIVATION_SIGMOID
-getCUDNNActivationMode(::Union{typeof(relu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_RELU
-getCUDNNActivationMode(::Union{typeof(elu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_ELU
+getCUDNNActivationMode(::Union{typeof(tanh),typeof(tanh_fast)}) = CUDNN.CUDNN_ACTIVATION_TANH
+getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDNN.CUDNN_ACTIVATION_SIGMOID
+getCUDNNActivationMode(::Union{typeof(relu)}) = CUDNN.CUDNN_ACTIVATION_RELU
+getCUDNNActivationMode(::Union{typeof(elu)}) = CUDNN.CUDNN_ACTIVATION_ELU
 
-@inline function applyactivation(f::Function, x::AbstractArray, ::Val{true})
-    x .= f.(x)
+"""
+    applyactivation(f::Function, x::AbstractArray)
+
+Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if possible.
+"""
+@inline applyactivation(f::Function, x::AbstractArray) = f.(x)
+@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray)
+    return CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
 end
-@inline applyactivation(f::Function, x::AbstractArray, ::Val{false}) = f.(x)
-@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray, ::Val{true})
-    return CUDA.CUDNN.cudnnActivationForward!(x, x; mode=getCUDNNActivationMode(f))
+@inline applyactivation(::typeof(identity), x::AbstractArray) = x
+
+# Dispatch Certain Broadcasted Functions to CUDNN
+@inline function broadcast_shape_pullback(x, Δ)
+    sx = size(x)
+    sΔ = size(Δ)
+    sx == sΔ && return Δ
+    return sum(Δ; dims=findall(sx .!= sΔ))
 end
-@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray, ::Val{false})
-    return CUDA.CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
+
+@inline isvalidtensorop(x1, x2) = false
+@inline function isvalidtensorop(x1::CuArray{N,T}, x2::CuArray{N,T}) where {N,T}
+    return ndims(x1) <= 5 && (all(size(x2, i) == size(x1, i) || size(x2, i) == 1 for i in 1:ndims(x2)))
 end
-@inline applyactivation(::typeof(identity), x::AbstractArray, ::Val{true}) = x
-@inline applyactivation(::typeof(identity), x::AbstractArray, ::Val{false}) = x
+
+"""
+    elementwise_add(x, y)
+
+Computes `x .+ y`. Dispatches to CUDNN if possible
+"""
+@inline elementwise_add(x, y) = x .+ y
+@inline function elementwise_add(x::CuArray, y::CuArray)
+    !isvalidtensorop(x, y) && return x .+ y
+    return cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
+end
+
+@inline elementwise_add_pullback(x, y, Δ) = broadcast_shape_pullback(x, Δ), broadcast_shape_pullback(y, Δ)
+
+"""
+    elementwise_mul(x, y)
+
+Computes `x .* y`. Dispatches to CUDNN if possible
+"""
+@inline elementwise_mul(x, y) = x .* y
+@inline function elementwise_mul(x::CuArray, y::CuArray)
+    !isvalidtensorop(x, y) && return x .* y
+    return cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
+end
+
+@inline function elementwise_mul_pullback(x, y, Δ)
+    return broadcast_shape_pullback(x, elementwise_mul(Δ, y)), broadcast_shape_pullback(y, elementwise_mul(Δ, x))
+end
+
+# CUDNN Helpers
+function cudnnOpTensorWithDefaults(
+    x1,
+    x2;
+    y=similar(x1),
+    op::CUDNN.cudnnOpTensorOp_t=CUDNN.CUDNN_OP_TENSOR_ADD,
+    compType::DataType=(eltype(x1) <: Float64 ? Float64 : Float32),
+    nanOpt::CUDNN.cudnnNanPropagation_t=CUDNN.CUDNN_NOT_PROPAGATE_NAN,
+    opTensorDesc::CUDNN.cudnnOpTensorDescriptor=CUDNN.cudnnOpTensorDescriptor(
+        op, CUDNN.cudnnDataType(compType), nanOpt
+    ),
+    alpha1::Real=1,
+    alpha2::Real=1,
+    beta::Real=0,
+    x1Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x1),
+    x2Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x2),
+    yDesc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(y),
+)
+    T = eltype(x1)
+    alpha1, alpha2, beta = scalingParameter(T, alpha1), scalingParameter(T, alpha2), scalingParameter(T, beta)
+    return CUDNN.cudnnOpTensorAD(x1, x2; opTensorDesc, alpha1, x1Desc, alpha2, x2Desc, beta, yDesc, y)
+end
+
+function cudnnActivationBackward(y::CuArray{T}, Δ::CuArray{T}, x::CuArray{T}; mode) where {T}
+    Δx = similar(x)
+    desc = CUDNN.cudnnActivationDescriptor(mode, CUDNN.CUDNN_NOT_PROPAGATE_NAN, Cdouble(1))
+    CUDNN.cudnnActivationBackward(
+        CUDNN.handle(),
+        desc,
+        CUDNN.scalingParameter(T, 1),
+        CUDNN.cudnnTensorDescriptor(y),
+        y,
+        CUDNN.cudnnTensorDescriptor(Δ),
+        Δ,
+        CUDNN.cudnnTensorDescriptor(x),
+        x,
+        CUDNN.scalingParameter(T, 0),
+        CUDNN.cudnnTensorDescriptor(Δx),
+        Δx,
+    )
+    return Δx
+end
