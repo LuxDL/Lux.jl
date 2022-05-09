@@ -63,9 +63,30 @@ function ChainRulesCore.rrule(::typeof(dropout), rng, x, prob, dims, training)
     return (y, mask, rng), dropout_pullback
 end
 
+function ChainRulesCore.rrule(
+    ::typeof(batchnorm),
+    g::CuArray{T},
+    b::CuArray{T},
+    x::Union{CuArray{T,4},CuArray{T,5}},
+    running_mean,
+    running_var,
+    momentum;
+    kwargs...,
+) where {T<:CUDNNFloat}
+    y = batchnorm(g, b, x, running_mean, running_var, momentum; kwargs...)
+    function batchnorm_pullback(dy)
+        dg, db, dx = ∇batchnorm(g, b, x, dy, running_mean, running_var, momentum; kwargs...)
+        return NoTangent(), dg, db, dx, NoTangent(), NoTangent(), NoTangent()
+    end
+    return y, batchnorm_pullback
+end
+
 # Activation Rrules
 function ChainRulesCore.rrule(
-    ::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}, inplace # Just ignore this argument
+    ::typeof(applyactivation),
+    f::cudnnValidActivationTypes,
+    x::CuArray{T},
+    inplace, # Just ignore this argument
 ) where {T}
     mode = getCUDNNActivationMode(f)
     y = CUDA.CUDNN.cudnnActivationForward(x; mode)
@@ -100,13 +121,13 @@ end
 
 # Adapt Interface
 function ChainRulesCore.rrule(::typeof(Array), x::CUDA.CuArray)
-    return Array(x), d -> (NoTangent(), CUDA.cu(d),)
+    return Array(x), d -> (NoTangent(), CUDA.cu(d))
 end
 
 function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
-    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d),)
+    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
 end
 
 function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
-    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d),)
+    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
 end

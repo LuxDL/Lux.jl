@@ -4,7 +4,7 @@ module Lux
 using CUDA
 # Neural Network Backend
 using NNlib
-import NNlibCUDA: batchnorm
+import NNlibCUDA: batchnorm, ∇batchnorm, CUDNNFloat
 # Julia StdLibs
 using Random, Statistics, LinearAlgebra, SparseArrays
 # Parameter Manipulation
