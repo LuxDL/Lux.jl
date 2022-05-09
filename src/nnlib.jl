@@ -153,7 +153,7 @@ Computes `x .+ y`. Dispatches to CUDNN if possible
 @inline elementwise_add(x, y) = x .+ y
 @inline function elementwise_add(x::CuArray, y::CuArray)
     !isvalidtensorop(x, y) && return x .+ y
-    return cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
+    return CUDNN.cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
 end
 
 @inline elementwise_add_pullback(x, y, Δ) = broadcast_shape_pullback(x, Δ), broadcast_shape_pullback(y, Δ)
@@ -166,7 +166,7 @@ Computes `x .* y`. Dispatches to CUDNN if possible
 @inline elementwise_mul(x, y) = x .* y
 @inline function elementwise_mul(x::CuArray, y::CuArray)
     !isvalidtensorop(x, y) && return x .* y
-    return cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
+    return CUDNN.cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
 end
 
 @inline function elementwise_mul_pullback(x, y, Δ)
