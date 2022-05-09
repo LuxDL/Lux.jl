@@ -153,7 +153,7 @@ Computes `x .+ y`. Dispatches to CUDNN if possible
 @inline elementwise_add(x, y) = x .+ y
 @inline function elementwise_add(x::CuArray, y::CuArray)
     !isvalidtensorop(x, y) && return x .+ y
-    return CUDNN.cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
+    return cudnnOpTensorWithDefaults(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
 end
 
 @inline elementwise_add_pullback(x, y, Δ) = broadcast_shape_pullback(x, Δ), broadcast_shape_pullback(y, Δ)
@@ -166,7 +166,7 @@ Computes `x .* y`. Dispatches to CUDNN if possible
 @inline elementwise_mul(x, y) = x .* y
 @inline function elementwise_mul(x::CuArray, y::CuArray)
     !isvalidtensorop(x, y) && return x .* y
-    return CUDNN.cudnnOpTensor(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
+    return cudnnOpTensorWithDefaults(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
 end
 
 @inline function elementwise_mul_pullback(x, y, Δ)
@@ -192,7 +192,7 @@ function cudnnOpTensorWithDefaults(
     yDesc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(y),
 )
     T = eltype(x1)
-    alpha1, alpha2, beta = scalingParameter(T, alpha1), scalingParameter(T, alpha2), scalingParameter(T, beta)
+    alpha1, alpha2, beta = CUDNN.scalingParameter.((T,), (alpha1, alpha2, beta))
     return CUDNN.cudnnOpTensorAD(x1, x2; opTensorDesc, alpha1, x1Desc, alpha2, x2Desc, beta, yDesc, y)
 end
 

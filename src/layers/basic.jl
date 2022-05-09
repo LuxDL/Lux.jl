@@ -347,7 +347,7 @@ end
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 """
-    Dense(in => out, σ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
+    Dense(in => out, σ=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
 
 Create a traditional fully connected layer, whose forward pass is given by: `y = σ.(weight * x .+ bias)`
 
@@ -356,38 +356,38 @@ Create a traditional fully connected layer, whose forward pass is given by: `y =
 
 Keyword `bias=false` will switch off trainable bias for the layer.
 
-The initialisation of the weight matrix is `W = initW(rng, out, in)`, calling the function
-given to keyword `initW`, with default [`glorot_uniform`](@ref).
+The initialisation of the weight matrix is `W = init_weight(rng, out, in)`, calling the function
+given to keyword `init_weight`, with default [`glorot_uniform`](@ref).
 """
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
-    λ::F1
+    activation::F1
     in_dims::Int
     out_dims::Int
-    initW::F2
-    initb::F3
+    init_weight::F2
+    init_bias::F3
 end
 
 function Base.show(io::IO, d::Dense{bias}) where {bias}
     print(io, "Dense($(d.in_dims) => $(d.out_dims)")
-    (d.λ == identity) || print(io, ", $(d.λ)")
+    (d.activation == identity) || print(io, ", $(d.activation)")
     bias || print(io, ", bias=false")
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int,<:Int}, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
-    return Dense(first(mapping), last(mapping), λ; initW=initW, initb=initb, bias=bias)
+function Dense(mapping::Pair{<:Int,<:Int}, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    return Dense(first(mapping), last(mapping), activation; init_weight=init_weight, init_bias=init_bias, bias=bias)
 end
 
-function Dense(in_dims::Int, out_dims::Int, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
-    λ = NNlib.fast_act(λ)
-    return Dense{bias,typeof(λ),typeof(initW),typeof(initb)}(λ, in_dims, out_dims, initW, initb)
+function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    activation = NNlib.fast_act(activation)
+    return Dense{bias,typeof(activation),typeof(init_weight),typeof(init_bias)}(activation, in_dims, out_dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
     if bias
-        return (weight=d.initW(rng, d.out_dims, d.in_dims), bias=d.initb(rng, d.out_dims, 1))
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims), bias=d.init_bias(rng, d.out_dims, 1))
     else
-        return (weight=d.initW(rng, d.out_dims, d.in_dims),)
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
 end
 
@@ -395,7 +395,7 @@ parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 
 statelength(d::Dense) = 0
 
 @inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, ps.weight * x), st
+    return applyactivation(d.activation, ps.weight * x), st
 end
 
 @inline function (d::Dense{false,typeof(identity)})(
@@ -405,7 +405,7 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, elementwise_add(ps.weight * x, ps.bias)), st
+    return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
 end
 
 @inline function (d::Dense{true,typeof(identity)})(
@@ -415,7 +415,7 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, elementwise_add(ps.weight * x, vec(ps.bias))), st
+    return applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st
 end
 
 @inline function (d::Dense{true,typeof(identity)})(
@@ -425,7 +425,7 @@ end
 end
 
 """
-    Scale(dims, σ=identity; initW=ones32, initb=zeros32, bias::Bool=true)
+    Scale(dims, σ=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
 
 Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
 
@@ -434,36 +434,36 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 Keyword `bias=false` will switch off trainable bias for the layer.
 
-The initialisation of the weight matrix is `W = initW(rng, dims)`, calling the function given to keyword `initW`, with default [`glorot_uniform`](@ref).
+The initialisation of the weight matrix is `W = init_weight(rng, dims)`, calling the function given to keyword `init_weight`, with default [`glorot_uniform`](@ref).
 """
 struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
-    λ::F1
+    activation::F1
     dims::D
-    initW::F2
-    initb::F3
+    init_weight::F2
+    init_bias::F3
 end
 
 function Base.show(io::IO, d::Scale)
     print(io, "Scale($(d.dims)")
-    (d.λ == identity) || print(io, ", $(d.λ)")
+    (d.activation == identity) || print(io, ", $(d.activation)")
     return print(io, ")")
 end
 
-function Scale(dims, λ=identity; initW=glorot_uniform, initb=zeros32, bias::Bool=true)
-    λ = NNlib.fast_act(λ)
-    return Scale{bias,typeof(λ),typeof(dims),typeof(initW),typeof(initb)}(λ, dims, initW, initb)
+function Scale(dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    activation = NNlib.fast_act(activation)
+    return Scale{bias,typeof(activation),typeof(dims),typeof(init_weight),typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Scale{true})
-    return (weight=d.initW(rng, d.dims), bias=d.initb(rng, d.dims))
+    return (weight=d.init_weight(rng, d.dims), bias=d.init_bias(rng, d.dims))
 end
-initialparameters(rng::AbstractRNG, d::Scale{false}) = (weight=d.initW(rng, d.dims),)
+initialparameters(rng::AbstractRNG, d::Scale{false}) = (weight=d.init_weight(rng, d.dims),)
 
 parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims
 statelength(d::Scale) = 0
 
 function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
+    return applyactivation(d.activation, elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
 end
 
 function (d::Scale{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
@@ -471,7 +471,7 @@ function (d::Scale{true,typeof(identity)})(x::AbstractArray, ps::Union{Component
 end
 
 function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.λ, elementwise_mul(ps.weight, x)), st
+    return applyactivation(d.activation, elementwise_mul(ps.weight, x)), st
 end
 
 function (d::Scale{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
