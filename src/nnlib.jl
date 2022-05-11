@@ -1,69 +1,108 @@
 ## TODO: Eventually we want to move all these functions and their adjoints to NNlib.jl
 
 # Normalization Implementation
-@inline function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
-    batchmean = mean(batchmean; dims=ndims(batchmean))
-    batchvar = mean(batchvar; dims=ndims(batchvar))
-    _xmean = @. (1 - momentum) * xmean + momentum * batchmean
-    _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
-    return (_xmean, _xvar)
-end
-
-@inline function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
-    _xmean = @. (1 - momentum) * xmean + momentum * batchmean
-    _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
-    return (_xmean, _xvar)
-end
-
-## FIXME: Zygote doesn't like these branching. We can compile these away pretty easily
-function normalization_forward(
-    l::AbstractNormalizationLayer{affine,track_stats},
+@inline function update_statistics(
     x::AbstractArray{T,N},
-    xmean::Union{Nothing,AbstractArray{T,N}},
-    xvar::Union{Nothing,AbstractArray{T,N}},
-    scale::Union{Nothing,AbstractArray{T,N}},
-    bias::Union{Nothing,AbstractArray{T,N}},
-    activation::AT;
-    training::Bool,
-) where {T,N,affine,track_stats,AT}
-    reduce_dims = get_reduce_dims(l, x)
+    running_mean::AbstractArray{T,N},
+    running_var::AbstractArray{T,N},
+    batchmean::AbstractArray{T,N},
+    batchvar::AbstractArray{T,N},
+    momentum::T,
+    reduce_dims,
+) where {T,N}
+    m::T = T(prod(size(x)[reduce_dims]))
+    if reduce_dims[end] != N
+        batchmean = mean(batchmean; dims=N)
+        batchvar = mean(batchvar; dims=N)
+    end
+    running_mean = @. (1 - momentum) * running_mean + momentum * batchmean
+    running_var = @. (1 - momentum) * running_var + momentum * batchvar * (m / (m - one(m)))
+    return (running_mean, running_var)
+end
+
+@inline function normalization_forward(
+    x::AbstractArray{T,N},
+    running_mean::Union{Nothing,AbstractVector{T}},
+    running_var::Union{Nothing,AbstractVector{T}},
+    scale::Union{Nothing,AbstractVector{T}},
+    bias::Union{Nothing,AbstractVector{T}},
+    activation,
+    reduce_dims,
+    t::Val,
+    momentum::T=T(0.1),
+    epsilon::T=T(1e-5),
+) where {T,N}
+    x_norm, running_mean_, running_var_ = normalization_forward_impl(
+        x,
+        reshape_into_proper_shape(running_mean, x),
+        reshape_into_proper_shape(running_var, x),
+        reshape_into_proper_shape(scale, x),
+        reshape_into_proper_shape(bias, x),
+        activation,
+        reduce_dims,
+        t,
+        momentum,
+        epsilon,
+    )
+    return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
+end
+
+@generated function normalization_forward_impl(
+    x::AbstractArray{T,N},
+    running_mean::RM,
+    running_var::RV,
+    scale::S,
+    bias::B,
+    activation::A,
+    reduce_dims,
+    ::Val{training},
+    momentum::T=T(0.1f0),
+    epsilon::T=T(1.0f-5),
+) where {RM,RV,S,B,T,N,A,training}
+    batchmean, batchvar, result = gensym.(("batchmean", "batchvar", "x_normalized"))
+
+    calls = []
     if !training
-        # Computing the mean and variance for the batch
-        if !track_stats
-            batchmean = mean(x; dims=reduce_dims)
-            batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
+        if RM == Nothing
+            push!(calls, :($(batchmean) = mean(x; dims=reduce_dims)))
+            push!(calls, :($(batchvar) = var(x; mean=$(batchmean), dims=reduce_dims, corrected=false)))
         else
-            batchmean = xmean
-            batchvar = xvar
+            push!(calls, :($(batchmean) = running_mean))
+            push!(calls, :($(batchvar) = running_var))
         end
     else
-        batchmean = mean(x; dims=reduce_dims)
-        batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
+        push!(calls, :($(batchmean) = mean(x; dims=reduce_dims)))
+        push!(calls, :($(batchvar) = var(x; dims=reduce_dims, corrected=false)))
 
-        if track_stats
-            xmean, xvar = update_statistics(
-                l, xmean, xvar, batchmean, batchvar, l.momentum, T(prod(size(x, i) for i in reduce_dims))
+        if RM != Nothing
+            push!(
+                calls,
+                :(
+                    (running_mean, running_var) = update_statistics(
+                        x, running_mean, running_var, $(batchmean), $(batchvar), momentum, reduce_dims
+                    )
+                ),
             )
         end
     end
 
-    if affine
-        if AT == typeof(identity)
-            x_normalized = @. scale * (x - batchmean) / √(batchvar + l.ϵ) + bias
+    if S != Nothing
+        if A == typeof(identity)
+            push!(calls, :($(result) = @. scale * (x - $(batchmean)) / sqrt($(batchvar) + epsilon) + bias))
         else
-            x_normalized = @. activation(scale * (x - batchmean) / √(batchvar + l.ϵ) + bias)
+            push!(calls, :($(result) = @. activation(scale * (x - $(batchmean)) / sqrt($(batchvar) + epsilon) + bias)))
         end
     else
-        if AT == typeof(identity)
-            x_normalized = @. (x - batchmean) / √(batchvar + l.ϵ)
+        if A == typeof(identity)
+            push!(calls, :($(result) = @. (x - $(batchmean)) / sqrt($(batchvar) + epsilon)))
         else
-            x_normalized = @. activation((x - batchmean) / √(batchvar + l.ϵ))
+            push!(calls, :($(result) = @. activation((x - $(batchmean)) / sqrt($(batchvar) + epsilon))))
         end
     end
 
-    # the mean and variance should not be used in any form other than storing
-    # for future iterations
-    return x_normalized, xmean, xvar
+    push!(calls, :(return $(result), running_mean, running_var))
+
+    return Expr(:block, calls...)
 end
 
 # Convolution
@@ -87,18 +126,40 @@ end
     return y
 end
 
-@inline function dropout(rng::AbstractRNG, x, prob, dims, training)
+"""
+    dropout(rng::AbstractRNG, x, prob, dims, ::Val{training})
+    dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask})
+
+If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask` is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is generated and used.
+"""
+@inline @generated function dropout(rng::AbstractRNG, x, prob, dims, ::Val{training}) where {training}
+    calls = []
     if training
-        rng = replicate(rng)
-        mask = generate_dropout_mask(rng, x, prob; dims)
-        return applydropout(x, mask), mask, rng
+        push!(calls, :(rng = replicate(rng)))
+        push!(calls, :(mask = generate_dropout_mask(rng, x, prob; dims)))
+        push!(calls, :(return elementwise_mul(x, mask), mask, rng))
     else
-        # Return `x` for type stability
-        return x, x, rng
+        push!(calls, :(return x, x, rng))
     end
+    return Expr(:block, calls...)
 end
 
-@inline applydropout(x, mask) = x .* mask
+@inline @generated function dropout(
+    rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask}
+) where {training,update_mask}
+    calls = []
+    if update_mask
+        push!(calls, :((y, mask, rng) = dropout(rng, x, prob, dims, t)))
+        push!(calls, :(return y, mask, rng, Val(false)))
+    else
+        if training
+            push!(calls, :(return elementwise_mul(x, mask), mask, rng, Val(false)))
+        else
+            push!(calls, :(return x, mask, rng, Val(false)))
+        end
+    end
+    return Expr(:block, calls...)
+end
 
 # Adaptive Pooling
 @inline function compute_adaptive_pooling_dims(x::AbstractArray, outsize)

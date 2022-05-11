@@ -61,7 +61,8 @@ replicate(rng::CUDA.RNG) = deepcopy(rng)
 
 # Training Check
 @inline istraining() = false
-@inline istraining(st::NamedTuple) = st.training
+@inline istraining(::Val{training}) where {training} = training
+@inline istraining(st::NamedTuple) = istraining(st.training)
 
 # Linear Algebra
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
@@ -141,3 +142,21 @@ end
 
 # Getting typename
 get_typename(::T) where {T} = Base.typename(T).wrapper
+
+# For Normalization
+@inline @generated safe_copy(x::T) where {T} = hasmethod(copy, (T,)) ? :(copy(x)) : :x
+
+@inline @generated safe_vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
+
+@inline function get_reshape_dims(sx::NTuple{N,<:Int}, ly::Int)::typeof(sx) where {N}
+    return if ly == sx[N - 1]
+        ntuple(i -> i == N - 1 ? ly : 1, N)
+    elseif ly == sx[N - 1] * sx[N - 2]
+        ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
+    else
+        error("Invalid Dimensions")
+    end
+end
+
+@inline reshape_into_proper_shape(x::Nothing, y)::Nothing = x
+@inline reshape_into_proper_shape(x, y)::typeof(y) = reshape(x, get_reshape_dims(size(y), length(x)))

@@ -6,13 +6,11 @@ ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
+ChainRulesCore.@non_differentiable istraining(::Any)
 
 ChainRulesCore.Tangent{P}(; kwargs...) where {P<:AbstractExplicitLayer} = NoTangent()
 
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
-function ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple)
-    return st.training, _ -> (NoTangent(), NoTangent())
-end
 
 no_grad(x) = zero(x)
 no_grad(nt::NamedTuple) = fmap(no_grad, nt)
@@ -42,27 +40,6 @@ function ChainRulesCore.rrule(::typeof(lastindex), nt::NTuple{N,Int64}) where {N
 end
 
 # NNlib Functions
-function ChainRulesCore.rrule(::typeof(applydropout), x, mask)
-    y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
-    function applydropout_pullback(Δ)
-        _, _, Δx, _ = broadcast_pullback(Δ)
-        return (NoTangent(), Δx, NoTangent())
-    end
-    return y, applydropout_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(dropout), rng, x, prob, dims, training)
-    @assert training AssertionError("Trying to conpute dropout gradients when `training`=false")
-    rng = replicate(rng)
-    mask = generate_dropout_mask(rng, x, prob; dims)
-    y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
-    function dropout_pullback(Δ)
-        _, _, Δx, _ = broadcast_pullback(Δ[1])
-        return (NoTangent(), NoTangent(), Δx, NoTangent(), NoTangent(), NoTangent())
-    end
-    return (y, mask, rng), dropout_pullback
-end
-
 function ChainRulesCore.rrule(
     ::typeof(batchnorm),
     g::CuArray{T},

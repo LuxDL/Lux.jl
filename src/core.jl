@@ -91,7 +91,7 @@ statelength(l::AbstractExplicitContainerLayer{layers}) where {layers} =
 
 Make all occurances of `training` in state `st` `!mode`
 """
-testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, !mode)
+testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, Val(!mode))
 
 """
     trainmode(x::Any, mode::Bool=true)

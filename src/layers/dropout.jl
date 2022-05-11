@@ -18,7 +18,7 @@ end
 function initialstates(rng::AbstractRNG, ::Dropout)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng=replicate(rng), training=true)
+    return (rng=replicate(rng), training=Val(true))
 end
 
 function Dropout(p; dims=:)
@@ -27,7 +27,7 @@ function Dropout(p; dims=:)
 end
 
 function (d::Dropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, _, rng = dropout(st.rng, x, d.p, d.dims, istraining(st))
+    y, _, rng = dropout(st.rng, x, d.p, d.dims, st.training)
     return y, merge(st, (rng=rng,))
 end
 
@@ -40,7 +40,7 @@ end
 """
     VariationalHiddenDropout(p; dims=:)
 
-VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until [`Lux.update_state(l, :update_mask, true)`](@ref) is called.
+VariationalHiddenDropout layer. The only difference from Dropout is that the `mask` is retained until [`Lux.update_state(l, :update_mask, Val(true))`](@ref) is called.
 
 # Arguments
 
@@ -57,7 +57,7 @@ end
 function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng=replicate(rng), training=true, update_mask=true)
+    return (rng=replicate(rng), training=Val(true), update_mask=Val(true), mask=nothing)
 end
 
 function VariationalHiddenDropout(p; dims=:)
@@ -66,15 +66,8 @@ function VariationalHiddenDropout(p; dims=:)
 end
 
 function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    if st.update_mask
-        y, mask, rng = dropout(st.rng, x, d.p, d.dims, istraining(st))
-        return y, (mask=mask, rng=rng, update_mask=false, training=st.training)
-    else
-        if !istraining(st)
-            return x, st
-        end
-        return applydropout(x, st.mask), st
-    end
+    y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.dims, st.training, st.update_mask)
+    return y, merge(st, (mask=mask, rng=rng, update_mask=update_mask))
 end
 
 function Base.show(io::IO, d::VariationalHiddenDropout)

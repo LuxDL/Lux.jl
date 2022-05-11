@@ -53,9 +53,9 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 If you found this library to be useful in academic work, then please cite:
 
 ```bibtex
-@misc{pal2022lux,
+@software{pal2022lux,
     author = {Pal, Avik},
-    title = {Lux: Explicit Parameterization of Deep Neural Networks in Julia},
+    title = {{L}ux: Explicit Parameterization of Deep Neural Networks in Julia},
     year = {2022},
     publisher = {GitHub},
     journal = {GitHub repository},

@@ -12,20 +12,7 @@ import Lux:
     testmode,
     transform,
     AbstractExplicitLayer,
-    AbstractExplicitContainerLayer,
-    Dense,
-    BatchNorm,
-    SkipConnection,
-    Parallel,
-    Chain,
-    WrappedFunction,
-    NoOpLayer,
-    Conv,
-    MaxPool,
-    MeanPool,
-    GlobalMaxPool,
-    GlobalMeanPool,
-    Upsample
+    AbstractExplicitContainerLayer
 
 function gradtest(model, input, ps, st)
     y, pb = Zygote.pullback(p -> model(input, p, st)[1], ps)

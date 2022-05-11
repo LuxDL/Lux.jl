@@ -7,7 +7,7 @@ get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::Abstrac
 
 """
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-              affine = true, track_stats = true, ϵ=1f-5, momentum= 0.1f0)
+              affine = true, track_stats = true, epsilon=1f-5, momentum= 0.1f0)
 
 [Batch Normalization](https://arxiv.org/abs/1502.03167) layer.
 
@@ -35,7 +35,7 @@ m = Chain(
 """
 struct BatchNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     activation::F1
-    ϵ::N
+    epsilon::N
     momentum::N
     chs::Int
     init_bias::F2
@@ -49,12 +49,12 @@ function BatchNorm(
     init_scale=ones32,
     affine::Bool=true,
     track_stats::Bool=true,
-    ϵ=1.0f-5,
+    epsilon=1.0f-5,
     momentum=0.1f0,
 )
     activation = NNlib.fast_act(activation)
-    return BatchNorm{affine,track_stats,typeof(activation),typeof(init_bias),typeof(init_scale),typeof(ϵ)}(
-        activation, ϵ, momentum, chs, init_bias, init_scale
+    return BatchNorm{affine,track_stats,typeof(activation),typeof(init_bias),typeof(init_scale),typeof(epsilon)}(
+        activation, epsilon, momentum, chs, init_bias, init_scale
     )
 end
 
@@ -63,16 +63,14 @@ function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine
 end
 function initialstates(rng::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     return if track_stats
-        (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs), training=true)
+        (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs), training=Val(true))
     else
-        (training=true,)
+        (running_mean=nothing, running_var=nothing, training=Val(true),)
     end
 end
 
 parameterlength(l::BatchNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::BatchNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.chs : 0) + 1
-
-get_reduce_dims(::BatchNorm, x::AbstractArray{T,N}) where {T,N} = [1:(N - 2); N]
 
 function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector) where {T,N}
     return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
@@ -83,14 +81,16 @@ function (BN::BatchNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::Name
     @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
 
     x_normalized, xmean, xvar = normalization_forward(
-        BN,
         x,
-        get_proper_shape(BN, x, track_stats ? st.running_mean : nothing),
-        get_proper_shape(BN, x, track_stats ? st.running_var : nothing),
-        get_proper_shape(BN, x, affine ? ps.scale : nothing),
-        get_proper_shape(BN, x, affine ? ps.bias : nothing),
-        BN.activation;
-        training=istraining(st),
+        st.running_mean,
+        st.running_var,
+        ps.scale,
+        ps.bias,
+        BN.activation,
+        collect([1:(N - 2); N]),
+        st.training,
+        BN.momentum,
+        BN.epsilon,
     )
 
     st_ = track_stats ? (running_mean=xmean, running_var=xvar, training=st.training) : st
@@ -124,7 +124,7 @@ function (BN::BatchNorm{affine,track_stats})(
             running_mean2,
             running_var2,
             BN.momentum;
-            eps=BN.ϵ,
+            eps=BN.epsilon,
             training=istraining(st),
         ),
     )
@@ -144,14 +144,14 @@ end
 
 """
     GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-              affine=true, track_stats=false, ϵ=1f-5, momentum=0.1f0)
+              affine=true, track_stats=false, epsilon=1f-5, momentum=0.1f0)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
 
 # Arguments
 
 * `chs` is the number of channels, the channel dimension of your input. For an array of N dimensions, the `N-1`th index is the channel dimension.
-* `G` is the number of groups along which the statistics are computed. The number of channels must be an integer multiple of the number of groups.
+* `groups` is the number of groups along which the statistics are computed. The number of channels must be an integer multiple of the number of groups.
 * After normalisation, elementwise activation `activation` is applied.
 * If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias `bias` and scale `scale` parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
@@ -161,7 +161,7 @@ end
 """
 struct GroupNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
     activation::F1
-    ϵ::N
+    epsilon::N
     momentum::N
     chs::Int
     init_bias::F2
@@ -177,13 +177,13 @@ function GroupNorm(
     init_scale=ones32,
     affine::Bool=true,
     track_stats::Bool=true,
-    ϵ=1.0f-5,
+    epsilon=1.0f-5,
     momentum=0.1f0,
 )
     @assert chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = NNlib.fast_act(activation)
-    return GroupNorm{affine,track_stats,typeof(activation),typeof(init_bias),typeof(init_scale),typeof(ϵ)}(
-        activation, ϵ, momentum, chs, init_bias, init_scale, groups
+    return GroupNorm{affine,track_stats,typeof(activation),typeof(init_bias),typeof(init_scale),typeof(epsilon)}(
+        activation, epsilon, momentum, chs, init_bias, init_scale, groups
     )
 end
 
@@ -192,24 +192,14 @@ function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine
 end
 function initialstates(rng::AbstractRNG, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
     return if track_stats
-        (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups), training=true)
+        (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups), training=Val(true))
     else
-        (training=true,)
+        (running_mean=nothing, running_var=nothing, training=Val(true,))
     end
 end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::GroupNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.groups : 0) + 1
-
-get_reduce_dims(::GroupNorm, ::AbstractArray{T,N}) where {T,N} = 1:(N - 1)
-
-function get_proper_shape(::GroupNorm, x::AbstractArray{T,N}, y::AbstractVector, mode::Symbol) where {T,N}
-    if mode == :state
-        return reshape(y, ntuple(i -> i == N - 1 ? size(x, i) : 1, N)...)
-    else
-        return reshape(y, ntuple(i -> i ∈ (N - 2, N - 1) ? size(x, i) : 1, N)...)
-    end
-end
 
 function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
     sz = size(x)
@@ -219,14 +209,16 @@ function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::Name
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
     x_normalized, xmean, xvar = normalization_forward(
-        GN,
-        x_,
-        get_proper_shape(GN, x_, track_stats ? st.running_mean : nothing, :state),
-        get_proper_shape(GN, x_, track_stats ? st.running_var : nothing, :state),
-        get_proper_shape(GN, x_, affine ? ps.scale : nothing, :param),
-        get_proper_shape(GN, x_, affine ? ps.bias : nothing, :param),
-        GN.activation;
-        training=istraining(st),
+        x,
+        st.running_mean,
+        st.running_var,
+        ps.scale,
+        ps.bias,
+        BN.activation,
+        collect(1:N),
+        st.training,
+        BN.momentum,
+        BN.epsilon,
     )
 
     st_ = if track_stats
