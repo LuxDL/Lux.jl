@@ -76,11 +76,11 @@ function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector)
     return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
 end
 
-function (BN::BatchNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
+function (BN::BatchNorm)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
 
-    x_normalized, xmean, xvar = normalization_forward(
+    x_normalized, xmean, xvar = normalization(
         x,
         st.running_mean,
         st.running_var,
@@ -93,9 +93,9 @@ function (BN::BatchNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::Name
         BN.epsilon,
     )
 
-    st_ = track_stats ? (running_mean=xmean, running_var=xvar, training=st.training) : st
+    st = merge(st, (running_mean=xmean, running_var=xvar))
 
-    return (x_normalized, st_)
+    return x_normalized, st
 end
 
 function (BN::BatchNorm{affine,track_stats})(
@@ -201,14 +201,14 @@ end
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::GroupNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.groups : 0) + 1
 
-function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
+function (GN::GroupNorm)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     sz = size(x)
     @assert N > 2
     @assert sz[N - 1] == GN.chs
 
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
-    x_normalized, xmean, xvar = normalization_forward(
+    x_normalized, xmean, xvar = normalization(
         x_,
         st.running_mean,
         st.running_var,
@@ -221,13 +221,9 @@ function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::Name
         GN.epsilon,
     )
 
-    st_ = if track_stats
-        (running_mean=xmean, running_var=xvar, training=st.training)
-    else
-        st
-    end
+    st = merge(st, (running_mean=xmean, running_var=xvar))
 
-    return reshape(x_normalized, sz), st_
+    return reshape(x_normalized, sz), st
 end
 
 function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track_stats}

@@ -20,7 +20,15 @@
     return (running_mean, running_var)
 end
 
-@inline function normalization_forward(
+"""
+    normalization(x, running_mean, running_var, scale, bias, activation, reduce_dims, ::Val{training}, momentum, epsilon)
+
+Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
+
+!!! note
+    Detailed docs are WIP
+"""
+@inline function normalization(
     x::AbstractArray{T,N},
     running_mean::Union{Nothing,AbstractVector{T}},
     running_var::Union{Nothing,AbstractVector{T}},
@@ -30,9 +38,10 @@ end
     reduce_dims,
     t::Val,
     momentum::T=T(0.1),
-    epsilon::T=T(1e-5),
+    epsilon::T=T(1e-5);
+    kwargs...
 ) where {T,N}
-    x_norm, running_mean_, running_var_ = normalization_forward_impl(
+    x_norm, running_mean_, running_var_ = normalization_forward(
         x,
         reshape_into_proper_shape(running_mean, x),
         reshape_into_proper_shape(running_var, x),
@@ -42,12 +51,19 @@ end
         reduce_dims,
         t,
         momentum,
-        epsilon,
+        epsilon;
+        kwargs...
     )
     return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
 end
 
-@generated function normalization_forward_impl(
+# CUDNN only works for 4D and 5D Tensors
+# function normalization(x::Union{CuVector{T},CuMatrix{T},CuArray{T,3}}, args...; kwargs...) where {T}
+#     x_, rmean, rvec = normalization(reshape(x, (1, 1, size(x)...), args...; kwargs...), args...; kwargs...)
+#     return reshape(x_, size(x)), rmean, rvec
+# end
+
+@generated function normalization_forward(
     x::AbstractArray{T,N},
     running_mean::RM,
     running_var::RV,
@@ -57,7 +73,8 @@ end
     reduce_dims,
     ::Val{training},
     momentum::T=T(0.1f0),
-    epsilon::T=T(1.0f-5),
+    epsilon::T=T(1.0f-5);
+    kwargs...
 ) where {RM,RV,S,B,T,N,A,training}
     batchmean, batchvar, result = gensym.(("batchmean", "batchvar", "x_normalized"))
 

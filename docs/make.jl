@@ -54,7 +54,12 @@ makedocs(;
             "Advanced" => MAPPING["advanced"],
             "Additional Examples" => "examples.md",
         ],
-        "API" => ["Layers" => "api/layers.md", "Core" => "api/core.md", "Utilities" => "api/utilities.md"],
+        "API" => [
+            "Layers" => "api/layers.md",
+            "Functional" => "api/functional.md",
+            "Core" => "api/core.md",
+            "Utilities" => "api/utilities.md",
+        ],
     ],
 )
 
