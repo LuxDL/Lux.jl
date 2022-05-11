@@ -25,7 +25,7 @@ transform(model::Flux.Chain) = Chain(transform.(model.layers)...)
 
 function transform(model::Flux.BatchNorm)
     return BatchNorm(
-        model.chs, model.λ; affine=model.affine, track_stats=model.track_stats, ϵ=model.ϵ, momentum=model.momentum
+        model.chs, model.λ; affine=model.affine, track_stats=model.track_stats, epsilon=model.ϵ, momentum=model.momentum
     )
 end
 

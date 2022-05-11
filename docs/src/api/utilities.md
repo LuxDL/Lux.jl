@@ -18,6 +18,14 @@ Lux.ones32
 Lux.zeros32
 ```
 
+## Miscellaneous Utilities
+
+```@docs
+Lux.applyactivation
+Lux.elementwise_add
+Lux.elementwise_mul
+```
+
 ## Index
 
 ```@index

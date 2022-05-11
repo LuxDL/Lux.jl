@@ -6,13 +6,11 @@ ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
+ChainRulesCore.@non_differentiable istraining(::Any)
 
 ChainRulesCore.Tangent{P}(; kwargs...) where {P<:AbstractExplicitLayer} = NoTangent()
 
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
-function ChainRulesCore.rrule(::typeof(istraining), st::NamedTuple)
-    return st.training, _ -> (NoTangent(), NoTangent())
-end
 
 no_grad(x) = zero(x)
 no_grad(nt::NamedTuple) = fmap(no_grad, nt)
@@ -42,27 +40,6 @@ function ChainRulesCore.rrule(::typeof(lastindex), nt::NTuple{N,Int64}) where {N
 end
 
 # NNlib Functions
-function ChainRulesCore.rrule(::typeof(applydropout), x, mask)
-    y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
-    function applydropout_pullback(Δ)
-        _, _, Δx, _ = broadcast_pullback(Δ)
-        return (NoTangent(), Δx, NoTangent())
-    end
-    return y, applydropout_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(dropout), rng, x, prob, dims, training)
-    @assert training AssertionError("Trying to conpute dropout gradients when `training`=false")
-    rng = replicate(rng)
-    mask = generate_dropout_mask(rng, x, prob; dims)
-    y, broadcast_pullback = rrule_via_ad(Zygote.ZygoteRuleConfig(), broadcast, *, x, mask)
-    function dropout_pullback(Δ)
-        _, _, Δx, _ = broadcast_pullback(Δ[1])
-        return (NoTangent(), NoTangent(), Δx, NoTangent(), NoTangent(), NoTangent())
-    end
-    return (y, mask, rng), dropout_pullback
-end
-
 function ChainRulesCore.rrule(
     ::typeof(batchnorm),
     g::CuArray{T},
@@ -82,36 +59,26 @@ function ChainRulesCore.rrule(
 end
 
 # Activation Rrules
-function ChainRulesCore.rrule(
-    ::typeof(applyactivation),
-    f::cudnnValidActivationTypes,
-    x::CuArray{T},
-    inplace, # Just ignore this argument
-) where {T}
+function ChainRulesCore.rrule(::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}) where {T}
     mode = getCUDNNActivationMode(f)
-    y = CUDA.CUDNN.cudnnActivationForward(x; mode)
+    y = CUDNN.cudnnActivationForward(x; mode)
     function applyactivation_pullback(Δ)
-        # NOTE: Since this is an internal function, we are violating our pure function standards
-        #       and mutating the input
-        Δx = Δ
-        desc = CUDA.CUDNN.cudnnActivationDescriptor(mode, CUDA.CUDNN.CUDNN_NOT_PROPAGATE_NAN, Cdouble(1))
-        CUDA.CUDNN.cudnnActivationBackward(
-            CUDA.CUDNN.handle(),
-            desc,
-            CUDA.CUDNN.scalingParameter(T, 1),
-            CUDA.CUDNN.cudnnTensorDescriptor(y),
-            y,
-            CUDA.CUDNN.cudnnTensorDescriptor(Δ),
-            Δ,
-            CUDA.CUDNN.cudnnTensorDescriptor(x),
-            x,
-            CUDA.CUDNN.scalingParameter(T, 0),
-            CUDA.CUDNN.cudnnTensorDescriptor(Δx),
-            Δx,
-        )
-        return NoTangent(), NoTangent(), Δx, NoTangent()
+        return NoTangent(), NoTangent(), cudnnActivationBackward(y, Δ, x; mode), NoTangent()
     end
     return y, applyactivation_pullback
+end
+
+# Elementwise Functions
+function ChainRulesCore.rrule(::typeof(elementwise_add), x, y) where {T}
+    z = elementwise_add(x, y)
+    _elementwise_add_pullback(Δ) = (NoTangent(), elementwise_add_pullback(x, y, Δ)...)
+    return z, _elementwise_add_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(elementwise_mul), x, y) where {T}
+    z = elementwise_mul(x, y)
+    _elementwise_mul_pullback(Δ) = (NoTangent(), elementwise_mul_pullback(x, y, Δ)...)
+    return z, _elementwise_mul_pullback
 end
 
 # Zygote Fixes

@@ -6,8 +6,8 @@ get_proper_shape(::AbstractNormalizationLayer, ::AbstractArray, y::Nothing, args
 get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::AbstractArray{T,N}, args...) where {T,N} = y
 
 """
-    BatchNorm(chs::Integer, λ=identity; initβ=zeros32, initγ=ones32,
-              affine = true, track_stats = true, ϵ=1f-5, momentum= 0.1f0)
+    BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
+              affine = true, track_stats = true, epsilon=1f-5, momentum= 0.1f0)
 
 [Batch Normalization](https://arxiv.org/abs/1502.03167) layer.
 
@@ -16,8 +16,8 @@ get_proper_shape(::AbstractNormalizationLayer, x::AbstractArray{T,N}, y::Abstrac
 # Arguments
 
 * `chs` should be the size of the channel dimension in your data (see below). Given an array with `N` dimensions, call the `N-1`th the channel dimension. For a batch of feature vectors this is just the data dimension, for `WHCN` images it's the usual channel dimension.
-* After normalisation, elementwise activation `λ` is applied.
-* If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias β and scale γ parameters.
+* After normalisation, elementwise activation `activation` is applied.
+* If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias bias and scale scale parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
 
 Use [`Lux.testmode`](@ref) during inference.
@@ -34,206 +34,201 @@ m = Chain(
 ```
 """
 struct BatchNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
-    λ::F1
-    ϵ::N
+    activation::F1
+    epsilon::N
     momentum::N
     chs::Int
-    initβ::F2
-    initγ::F3
+    init_bias::F2
+    init_scale::F3
 end
 
 function BatchNorm(
     chs::Int,
-    λ=identity;
-    initβ=zeros32,
-    initγ=ones32,
+    activation=identity;
+    init_bias=zeros32,
+    init_scale=ones32,
     affine::Bool=true,
     track_stats::Bool=true,
-    ϵ=1.0f-5,
+    epsilon=1.0f-5,
     momentum=0.1f0,
 )
-    λ = NNlib.fast_act(λ)
-    return BatchNorm{affine,track_stats,typeof(λ),typeof(initβ),typeof(initγ),typeof(ϵ)}(
-        λ, ϵ, momentum, chs, initβ, initγ
+    activation = NNlib.fast_act(activation)
+    return BatchNorm{affine,track_stats,typeof(activation),typeof(init_bias),typeof(init_scale),typeof(epsilon)}(
+        activation, epsilon, momentum, chs, init_bias, init_scale
     )
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
+    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) : NamedTuple()
 end
 function initialstates(rng::AbstractRNG, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
-    return track_stats ? (μ=zeros32(rng, l.chs), σ²=ones32(rng, l.chs), training=true) : (training=true,)
+    return if track_stats
+        (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs), training=Val(true))
+    else
+        (running_mean=nothing, running_var=nothing, training=Val(true),)
+    end
 end
 
 parameterlength(l::BatchNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::BatchNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.chs : 0) + 1
 
-get_reduce_dims(::BatchNorm, x::AbstractArray{T,N}) where {T,N} = [1:(N - 2); N]
-
 function get_proper_shape(::BatchNorm, x::AbstractArray{T,N}, y::AbstractVector) where {T,N}
     return reshape(y, ntuple(i -> i == N - 1 ? length(y) : 1, N)...)
 end
 
-function (BN::BatchNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
+function (BN::BatchNorm)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st) || size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
 
-    x_normalized, xmean, xvar = normalization_forward(
-        BN,
+    x_normalized, xmean, xvar = normalization(
         x,
-        get_proper_shape(BN, x, track_stats ? st.μ : nothing),
-        get_proper_shape(BN, x, track_stats ? st.σ² : nothing),
-        get_proper_shape(BN, x, affine ? ps.γ : nothing),
-        get_proper_shape(BN, x, affine ? ps.β : nothing),
-        BN.λ;
-        training=istraining(st),
+        st.running_mean,
+        st.running_var,
+        ps.scale,
+        ps.bias,
+        BN.activation,
+        collect([1:(N - 2); N]),
+        st.training,
+        BN.momentum,
+        BN.epsilon,
     )
 
-    st_ = track_stats ? (μ=xmean, σ²=xvar, training=st.training) : st
+    st = merge(st, (running_mean=xmean, running_var=xvar))
 
-    return (x_normalized, st_)
+    return x_normalized, st
 end
 
 function (BN::BatchNorm{affine,track_stats})(
     x::Union{CuArray{T,2},CuArray{T,4},CuArray{T,5}}, ps, st::NamedTuple
 ) where {T<:Union{Float32,Float64},affine,track_stats}
-    # NNlibCUDA silently updates μ and σ² so copying them
+    # NNlibCUDA silently updates running_mean and running_var so copying them
     if istraining(st)
-        μ2 = track_stats ? copy(st.μ) : nothing
-        σ²2 = track_stats ? copy(st.σ²) : nothing
+        running_mean2 = track_stats ? copy(st.running_mean) : nothing
+        running_var2 = track_stats ? copy(st.running_var) : nothing
     else
         if track_stats
-            μ2 = copy(st.μ)
-            σ²2 = copy(st.σ²)
+            running_mean2 = copy(st.running_mean)
+            running_var2 = copy(st.running_var)
         else
             reduce_dims = get_reduce_dims(BN, x)
-            μ2 = mean(x; dims=reduce_dims)
-            σ²2 = var(x; mean=μ2, dims=reduce_dims, corrected=false)
+            running_mean2 = mean(x; dims=reduce_dims)
+            running_var2 = var(x; mean=running_mean2, dims=reduce_dims, corrected=false)
         end
     end
     res = applyactivation(
-        BN.λ,
+        BN.activation,
         batchnorm(
-            affine ? ps.γ : nothing,
-            affine ? ps.β : nothing,
+            affine ? ps.scale : nothing,
+            affine ? ps.bias : nothing,
             x,
-            μ2,
-            σ²2,
+            running_mean2,
+            running_var2,
             BN.momentum;
-            eps=BN.ϵ,
+            eps=BN.epsilon,
             training=istraining(st),
         ),
-        Val(!istraining(st))
     )
     if track_stats
-        st = merge(st, (μ=μ2, σ²=σ²2))
+        st = merge(st, (running_mean=running_mean2, running_var=running_var2))
     end
     return res, st
 end
 
 function Base.show(io::IO, l::BatchNorm{affine,track_stats}) where {affine,track_stats}
     print(io, "BatchNorm($(l.chs)")
-    (l.λ == identity) || print(io, ", $(l.λ)")
+    (l.activation == identity) || print(io, ", $(l.activation)")
     affine || print(io, ", affine=false")
     track_stats || print(io, ", track_stats=false")
     return print(io, ")")
 end
 
 """
-    GroupNorm(chs::Integer, groups::Integer, λ=identity; initβ=zeros32, initγ=ones32,
-              affine=true, track_stats=false, ϵ=1f-5, momentum=0.1f0)
+    GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
+              affine=true, track_stats=false, epsilon=1f-5, momentum=0.1f0)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
 
 # Arguments
 
 * `chs` is the number of channels, the channel dimension of your input. For an array of N dimensions, the `N-1`th index is the channel dimension.
-* `G` is the number of groups along which the statistics are computed. The number of channels must be an integer multiple of the number of groups.
-* After normalisation, elementwise activation `λ` is applied.
-* If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias `β` and scale `γ` parameters.
+* `groups` is the number of groups along which the statistics are computed. The number of channels must be an integer multiple of the number of groups.
+* After normalisation, elementwise activation `activation` is applied.
+* If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias `bias` and scale `scale` parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
 
 !!! warn
     GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
 """
 struct GroupNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}
-    λ::F1
-    ϵ::N
+    activation::F1
+    epsilon::N
     momentum::N
     chs::Int
-    initβ::F2
-    initγ::F3
+    init_bias::F2
+    init_scale::F3
     groups::Int
 end
 
 function GroupNorm(
     chs::Int,
     groups::Int,
-    λ=identity;
-    initβ=zeros32,
-    initγ=ones32,
+    activation=identity;
+    init_bias=zeros32,
+    init_scale=ones32,
     affine::Bool=true,
     track_stats::Bool=true,
-    ϵ=1.0f-5,
+    epsilon=1.0f-5,
     momentum=0.1f0,
 )
     @assert chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
-    λ = NNlib.fast_act(λ)
-    return GroupNorm{affine,track_stats,typeof(λ),typeof(initβ),typeof(initγ),typeof(ϵ)}(
-        λ, ϵ, momentum, chs, initβ, initγ, groups
+    activation = NNlib.fast_act(activation)
+    return GroupNorm{affine,track_stats,typeof(activation),typeof(init_bias),typeof(init_scale),typeof(epsilon)}(
+        activation, epsilon, momentum, chs, init_bias, init_scale, groups
     )
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
-    return affine ? (γ=l.initγ(rng, l.chs), β=l.initβ(rng, l.chs)) : NamedTuple()
+    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) : NamedTuple()
 end
 function initialstates(rng::AbstractRNG, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
-    return track_stats ? (μ=zeros32(rng, l.groups), σ²=ones32(rng, l.groups), training=true) : (training=true,)
+    return if track_stats
+        (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups), training=Val(true))
+    else
+        (running_mean=nothing, running_var=nothing, training=Val(true,))
+    end
 end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 statelength(l::GroupNorm{affine,track_stats}) where {affine,track_stats} = (track_stats ? 2 * l.groups : 0) + 1
 
-get_reduce_dims(::GroupNorm, ::AbstractArray{T,N}) where {T,N} = 1:(N - 1)
-
-function get_proper_shape(::GroupNorm, x::AbstractArray{T,N}, y::AbstractVector, mode::Symbol) where {T,N}
-    if mode == :state
-        return reshape(y, ntuple(i -> i == N - 1 ? size(x, i) : 1, N)...)
-    else
-        return reshape(y, ntuple(i -> i ∈ (N - 2, N - 1) ? size(x, i) : 1, N)...)
-    end
-end
-
-function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N,affine,track_stats}
+function (GN::GroupNorm)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
     sz = size(x)
     @assert N > 2
     @assert sz[N - 1] == GN.chs
 
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
-    x_normalized, xmean, xvar = normalization_forward(
-        GN,
+    x_normalized, xmean, xvar = normalization(
         x_,
-        get_proper_shape(GN, x_, track_stats ? st.μ : nothing, :state),
-        get_proper_shape(GN, x_, track_stats ? st.σ² : nothing, :state),
-        get_proper_shape(GN, x_, affine ? ps.γ : nothing, :param),
-        get_proper_shape(GN, x_, affine ? ps.β : nothing, :param),
-        GN.λ;
-        training=istraining(st),
+        st.running_mean,
+        st.running_var,
+        ps.scale,
+        ps.bias,
+        GN.activation,
+        collect(1:N),
+        st.training,
+        GN.momentum,
+        GN.epsilon,
     )
 
-    st_ = if track_stats
-        (μ=xmean, σ²=xvar, training=st.training)
-    else
-        st
-    end
+    st = merge(st, (running_mean=xmean, running_var=xvar))
 
-    return reshape(x_normalized, sz), st_
+    return reshape(x_normalized, sz), st
 end
 
 function Base.show(io::IO, l::GroupNorm{affine,track_stats}) where {affine,track_stats}
     print(io, "GroupNorm($(l.chs), $(l.groups)")
-    (l.λ == identity) || print(io, ", $(l.λ)")
+    (l.activation == identity) || print(io, ", $(l.activation)")
     affine || print(io, ", affine=false")
     track_stats || print(io, ", track_stats=false")
     return print(io, ")")

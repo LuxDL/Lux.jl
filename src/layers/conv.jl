@@ -1,5 +1,5 @@
 """
-    Conv(filter, in => out, σ = identity; stride = 1, pad = 0, dilation = 1, groups = 1, [bias, initW])
+    Conv(filter, in => out, σ = identity; stride = 1, pad = 0, dilation = 1, groups = 1, [bias, init_weight])
 
 Standard convolutional layer.
 
@@ -19,11 +19,11 @@ Image data should be stored in WHCN order (width, height, channels, batch). In o
 * Keyword `groups` is expected to be an `Int`. It specifies the number of groups to divide a convolution into.
 
 Keywords to control initialization of the layer:
-* `initW` - Function used to generate initial weights. Defaults to `glorot_uniform`.
+* `init_weight` - Function used to generate initial weights. Defaults to `glorot_uniform`.
 * `bias` - The initial bias vector is all zero by default. Trainable bias can be disabled entirely by setting this to `false`.
 """
 struct Conv{N,bias,M,F1,F2} <: AbstractExplicitLayer
-    λ::F1
+    activation::F1
     in_chs::Int
     out_chs::Int
     kernel_size::NTuple{N,Int}
@@ -31,14 +31,14 @@ struct Conv{N,bias,M,F1,F2} <: AbstractExplicitLayer
     pad::NTuple{M,Int}
     dilation::NTuple{N,Int}
     groups::Int
-    initW::F2
+    init_weight::F2
 end
 
 function Conv(
     k::NTuple{N,Integer},
     ch::Pair{<:Integer,<:Integer},
-    λ=identity;
-    initW=glorot_uniform,
+    activation=identity;
+    init_weight=glorot_uniform,
     stride=1,
     pad=0,
     dilation=1,
@@ -48,14 +48,14 @@ function Conv(
     stride = expand(Val(N), stride)
     dilation = expand(Val(N), dilation)
     pad = calc_padding(Conv, pad, k, dilation, stride)
-    λ = NNlib.fast_act(λ)
-    return Conv{N,bias,length(pad),typeof(λ),typeof(initW)}(
-        λ, first(ch), last(ch), k, stride, pad, dilation, groups, initW
+    activation = NNlib.fast_act(activation)
+    return Conv{N,bias,length(pad),typeof(activation),typeof(init_weight)}(
+        activation, first(ch), last(ch), k, stride, pad, dilation, groups, init_weight
     )
 end
 
 function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
-    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.initW, groups=c.groups)
+    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
     return bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
 end
 
@@ -65,12 +65,12 @@ end
 
 @inline function (c::Conv{N,false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return applyactivation(c.λ, conv_wrapper(x, ps.weight, cdims), Val(false)), st
+    return applyactivation(c.activation, conv_wrapper(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N,true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return applyactivation(c.λ, conv_wrapper(x, ps.weight, cdims) .+ ps.bias, Val(false)), st
+    return applyactivation(c.activation, elementwise_add(conv_wrapper(x, ps.weight, cdims), ps.bias)), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -81,7 +81,7 @@ function Base.show(io::IO, l::Conv)
 end
 
 function _print_conv_opt(io::IO, l::Conv{N,bias}) where {N,bias}
-    l.λ == identity || print(io, ", ", l.λ)
+    l.activation == identity || print(io, ", ", l.activation)
     all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
     all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
     all(==(1), l.dilation) || print(io, ", dilation=", _maybetuple_string(l.dilation))

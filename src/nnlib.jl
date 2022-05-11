@@ -1,69 +1,125 @@
 ## TODO: Eventually we want to move all these functions and their adjoints to NNlib.jl
 
 # Normalization Implementation
-@inline function update_statistics(::AbstractNormalizationLayer, xmean, xvar, batchmean, batchvar, momentum, m)
-    batchmean = mean(batchmean; dims=ndims(batchmean))
-    batchvar = mean(batchvar; dims=ndims(batchvar))
-    _xmean = @. (1 - momentum) * xmean + momentum * batchmean
-    _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
-    return (_xmean, _xvar)
-end
-
-@inline function update_statistics(::BatchNorm, xmean, xvar, batchmean, batchvar, momentum, m)
-    _xmean = @. (1 - momentum) * xmean + momentum * batchmean
-    _xvar = @. (1 - momentum) * xvar + momentum * batchvar * (m / (m - 1))
-    return (_xmean, _xvar)
-end
-
-## FIXME: Zygote doesn't like these branching. We can compile these away pretty easily
-function normalization_forward(
-    l::AbstractNormalizationLayer{affine,track_stats},
+@inline function update_statistics(
     x::AbstractArray{T,N},
-    xmean::Union{Nothing,AbstractArray{T,N}},
-    xvar::Union{Nothing,AbstractArray{T,N}},
-    scale::Union{Nothing,AbstractArray{T,N}},
-    bias::Union{Nothing,AbstractArray{T,N}},
-    activation::AT;
-    training::Bool,
-) where {T,N,affine,track_stats,AT}
-    reduce_dims = get_reduce_dims(l, x)
+    running_mean::AbstractArray{T,N},
+    running_var::AbstractArray{T,N},
+    batchmean::AbstractArray{T,N},
+    batchvar::AbstractArray{T,N},
+    momentum::T,
+    reduce_dims,
+) where {T,N}
+    m::T = T(prod(size(x)[reduce_dims]))
+    if reduce_dims[end] != N
+        batchmean = mean(batchmean; dims=N)
+        batchvar = mean(batchvar; dims=N)
+    end
+    running_mean = @. (1 - momentum) * running_mean + momentum * batchmean
+    running_var = @. (1 - momentum) * running_var + momentum * batchvar * (m / (m - one(m)))
+    return (running_mean, running_var)
+end
+
+"""
+    normalization(x, running_mean, running_var, scale, bias, activation, reduce_dims, ::Val{training}, momentum, epsilon)
+
+Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
+
+!!! note
+    Detailed docs are WIP
+"""
+@inline function normalization(
+    x::AbstractArray{T,N},
+    running_mean::Union{Nothing,AbstractVector{T}},
+    running_var::Union{Nothing,AbstractVector{T}},
+    scale::Union{Nothing,AbstractVector{T}},
+    bias::Union{Nothing,AbstractVector{T}},
+    activation,
+    reduce_dims,
+    t::Val,
+    momentum::T=T(0.1),
+    epsilon::T=T(1e-5);
+    kwargs...
+) where {T,N}
+    x_norm, running_mean_, running_var_ = normalization_forward(
+        x,
+        reshape_into_proper_shape(running_mean, x),
+        reshape_into_proper_shape(running_var, x),
+        reshape_into_proper_shape(scale, x),
+        reshape_into_proper_shape(bias, x),
+        activation,
+        reduce_dims,
+        t,
+        momentum,
+        epsilon;
+        kwargs...
+    )
+    return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
+end
+
+# CUDNN only works for 4D and 5D Tensors
+# function normalization(x::Union{CuVector{T},CuMatrix{T},CuArray{T,3}}, args...; kwargs...) where {T}
+#     x_, rmean, rvec = normalization(reshape(x, (1, 1, size(x)...), args...; kwargs...), args...; kwargs...)
+#     return reshape(x_, size(x)), rmean, rvec
+# end
+
+@generated function normalization_forward(
+    x::AbstractArray{T,N},
+    running_mean::RM,
+    running_var::RV,
+    scale::S,
+    bias::B,
+    activation::A,
+    reduce_dims,
+    ::Val{training},
+    momentum::T=T(0.1f0),
+    epsilon::T=T(1.0f-5);
+    kwargs...
+) where {RM,RV,S,B,T,N,A,training}
+    batchmean, batchvar, result = gensym.(("batchmean", "batchvar", "x_normalized"))
+
+    calls = []
     if !training
-        # Computing the mean and variance for the batch
-        if !track_stats
-            batchmean = mean(x; dims=reduce_dims)
-            batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
+        if RM == Nothing
+            push!(calls, :($(batchmean) = mean(x; dims=reduce_dims)))
+            push!(calls, :($(batchvar) = var(x; mean=$(batchmean), dims=reduce_dims, corrected=false)))
         else
-            batchmean = xmean
-            batchvar = xvar
+            push!(calls, :($(batchmean) = running_mean))
+            push!(calls, :($(batchvar) = running_var))
         end
     else
-        batchmean = mean(x; dims=reduce_dims)
-        batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)
+        push!(calls, :($(batchmean) = mean(x; dims=reduce_dims)))
+        push!(calls, :($(batchvar) = var(x; dims=reduce_dims, corrected=false)))
 
-        if track_stats
-            xmean, xvar = update_statistics(
-                l, xmean, xvar, batchmean, batchvar, l.momentum, T(prod(size(x, i) for i in reduce_dims))
+        if RM != Nothing
+            push!(
+                calls,
+                :(
+                    (running_mean, running_var) = update_statistics(
+                        x, running_mean, running_var, $(batchmean), $(batchvar), momentum, reduce_dims
+                    )
+                ),
             )
         end
     end
 
-    if affine
-        if AT == typeof(identity)
-            x_normalized = @. scale * (x - batchmean) / √(batchvar + l.ϵ) + bias
+    if S != Nothing
+        if A == typeof(identity)
+            push!(calls, :($(result) = @. scale * (x - $(batchmean)) / sqrt($(batchvar) + epsilon) + bias))
         else
-            x_normalized = @. activation(scale * (x - batchmean) / √(batchvar + l.ϵ) + bias)
+            push!(calls, :($(result) = @. activation(scale * (x - $(batchmean)) / sqrt($(batchvar) + epsilon) + bias)))
         end
     else
-        if AT == typeof(identity)
-            x_normalized = @. (x - batchmean) / √(batchvar + l.ϵ)
+        if A == typeof(identity)
+            push!(calls, :($(result) = @. (x - $(batchmean)) / sqrt($(batchvar) + epsilon)))
         else
-            x_normalized = @. activation((x - batchmean) / √(batchvar + l.ϵ))
+            push!(calls, :($(result) = @. activation((x - $(batchmean)) / sqrt($(batchvar) + epsilon))))
         end
     end
 
-    # the mean and variance should not be used in any form other than storing
-    # for future iterations
-    return x_normalized, xmean, xvar
+    push!(calls, :(return $(result), running_mean, running_var))
+
+    return Expr(:block, calls...)
 end
 
 # Convolution
@@ -74,34 +130,56 @@ end
 end
 
 # Dropout
-_dropout_shape(s, ::Colon) = size(s)
-_dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) ∈ enumerate(size(s)))...)
+@inline _dropout_shape(s, ::Colon) = size(s)
+@inline _dropout_shape(s, dims) = tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 
 ## TODO: Cache `1 / q` since we never need `q`
-_dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
+@inline _dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
 
-function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
+@inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
     y .= _dropout_kernel.(y, p, 1 - p)
     return y
 end
 
-function dropout(rng::AbstractRNG, x, prob, dims, training)
+"""
+    dropout(rng::AbstractRNG, x, prob, dims, ::Val{training})
+    dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask})
+
+If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask` is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is generated and used.
+"""
+@inline @generated function dropout(rng::AbstractRNG, x, prob, dims, ::Val{training}) where {training}
+    calls = []
     if training
-        rng = replicate(rng)
-        mask = generate_dropout_mask(rng, x, prob; dims)
-        return applydropout(x, mask), mask, rng
+        push!(calls, :(rng = replicate(rng)))
+        push!(calls, :(mask = generate_dropout_mask(rng, x, prob; dims)))
+        push!(calls, :(return elementwise_mul(x, mask), mask, rng))
     else
-        # Return `x` for type stability
-        return x, x, rng
+        push!(calls, :(return x, x, rng))
     end
+    return Expr(:block, calls...)
 end
 
-applydropout(x, mask) = x .* mask
+@inline @generated function dropout(
+    rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask}
+) where {training,update_mask}
+    calls = []
+    if update_mask
+        push!(calls, :((y, mask, rng) = dropout(rng, x, prob, dims, t)))
+        push!(calls, :(return y, mask, rng, Val(false)))
+    else
+        if training
+            push!(calls, :(return elementwise_mul(x, mask), mask, rng, Val(false)))
+        else
+            push!(calls, :(return x, mask, rng, Val(false)))
+        end
+    end
+    return Expr(:block, calls...)
+end
 
 # Adaptive Pooling
-function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
+@inline function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
     insize = size(x)[1:(end - 2)]
     stride = insize .÷ outsize
     k = insize .- (outsize .- 1) .* stride
@@ -116,20 +194,102 @@ const cudnnValidActivationTypes = Union{
     typeof(tanh),typeof(sigmoid),typeof(relu),typeof(elu),typeof(tanh_fast),typeof(sigmoid_fast)
 }
 
-getCUDNNActivationMode(::Union{typeof(tanh),typeof(tanh_fast)}) = CUDA.CUDNN.CUDNN_ACTIVATION_TANH
-getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDA.CUDNN.CUDNN_ACTIVATION_SIGMOID
-getCUDNNActivationMode(::Union{typeof(relu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_RELU
-getCUDNNActivationMode(::Union{typeof(elu)}) = CUDA.CUDNN.CUDNN_ACTIVATION_ELU
+getCUDNNActivationMode(::Union{typeof(tanh),typeof(tanh_fast)}) = CUDNN.CUDNN_ACTIVATION_TANH
+getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDNN.CUDNN_ACTIVATION_SIGMOID
+getCUDNNActivationMode(::Union{typeof(relu)}) = CUDNN.CUDNN_ACTIVATION_RELU
+getCUDNNActivationMode(::Union{typeof(elu)}) = CUDNN.CUDNN_ACTIVATION_ELU
 
-@inline function applyactivation(f::Function, x::AbstractArray, ::Val{true})
-    x .= f.(x)
+"""
+    applyactivation(f::Function, x::AbstractArray)
+
+Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if possible.
+"""
+@inline applyactivation(f::Function, x::AbstractArray) = f.(x)
+@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray)
+    return CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
 end
-@inline applyactivation(f::Function, x::AbstractArray, ::Val{false}) = f.(x)
-@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray, ::Val{true})
-    return CUDA.CUDNN.cudnnActivationForward!(x, x; mode=getCUDNNActivationMode(f))
+@inline applyactivation(::typeof(identity), x::AbstractArray) = x
+
+# Dispatch Certain Broadcasted Functions to CUDNN
+@inline function broadcast_shape_pullback(x, Δ)
+    sx = size(x)
+    sΔ = size(Δ)
+    sx == sΔ && return Δ
+    return sum(Δ; dims=findall(sx .!= sΔ))
 end
-@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray, ::Val{false})
-    return CUDA.CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
+
+@inline isvalidtensorop(x1, x2) = false
+@inline function isvalidtensorop(x1::CuArray{N,T}, x2::CuArray{N,T}) where {N,T}
+    return ndims(x1) <= 5 && (all(size(x2, i) == size(x1, i) || size(x2, i) == 1 for i in 1:ndims(x2)))
 end
-@inline applyactivation(::typeof(identity), x::AbstractArray, ::Val{true}) = x
-@inline applyactivation(::typeof(identity), x::AbstractArray, ::Val{false}) = x
+
+"""
+    elementwise_add(x, y)
+
+Computes `x .+ y`. Dispatches to CUDNN if possible
+"""
+@inline elementwise_add(x, y) = x .+ y
+@inline function elementwise_add(x::CuArray, y::CuArray)
+    !isvalidtensorop(x, y) && return x .+ y
+    return cudnnOpTensorWithDefaults(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
+end
+
+@inline elementwise_add_pullback(x, y, Δ) = broadcast_shape_pullback(x, Δ), broadcast_shape_pullback(y, Δ)
+
+"""
+    elementwise_mul(x, y)
+
+Computes `x .* y`. Dispatches to CUDNN if possible
+"""
+@inline elementwise_mul(x, y) = x .* y
+@inline function elementwise_mul(x::CuArray, y::CuArray)
+    !isvalidtensorop(x, y) && return x .* y
+    return cudnnOpTensorWithDefaults(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
+end
+
+@inline function elementwise_mul_pullback(x, y, Δ)
+    return broadcast_shape_pullback(x, elementwise_mul(Δ, y)), broadcast_shape_pullback(y, elementwise_mul(Δ, x))
+end
+
+# CUDNN Helpers
+function cudnnOpTensorWithDefaults(
+    x1,
+    x2;
+    y=similar(x1),
+    op::CUDNN.cudnnOpTensorOp_t=CUDNN.CUDNN_OP_TENSOR_ADD,
+    compType::DataType=(eltype(x1) <: Float64 ? Float64 : Float32),
+    nanOpt::CUDNN.cudnnNanPropagation_t=CUDNN.CUDNN_NOT_PROPAGATE_NAN,
+    opTensorDesc::CUDNN.cudnnOpTensorDescriptor=CUDNN.cudnnOpTensorDescriptor(
+        op, CUDNN.cudnnDataType(compType), nanOpt
+    ),
+    alpha1::Real=1,
+    alpha2::Real=1,
+    beta::Real=0,
+    x1Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x1),
+    x2Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x2),
+    yDesc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(y),
+)
+    T = eltype(x1)
+    alpha1, alpha2, beta = CUDNN.scalingParameter.((T,), (alpha1, alpha2, beta))
+    return CUDNN.cudnnOpTensorAD(x1, x2; opTensorDesc, alpha1, x1Desc, alpha2, x2Desc, beta, yDesc, y)
+end
+
+function cudnnActivationBackward(y::CuArray{T}, Δ::CuArray{T}, x::CuArray{T}; mode) where {T}
+    Δx = similar(x)
+    desc = CUDNN.cudnnActivationDescriptor(mode, CUDNN.CUDNN_NOT_PROPAGATE_NAN, Cdouble(1))
+    CUDNN.cudnnActivationBackward(
+        CUDNN.handle(),
+        desc,
+        CUDNN.scalingParameter(T, 1),
+        CUDNN.cudnnTensorDescriptor(y),
+        y,
+        CUDNN.cudnnTensorDescriptor(Δ),
+        Δ,
+        CUDNN.cudnnTensorDescriptor(x),
+        x,
+        CUDNN.scalingParameter(T, 0),
+        CUDNN.cudnnTensorDescriptor(Δx),
+        Δx,
+    )
+    return Δx
+end

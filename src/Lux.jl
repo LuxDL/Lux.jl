@@ -2,6 +2,7 @@ module Lux
 
 # Accelerator Support
 using CUDA
+using CUDA.CUDNN
 # Neural Network Backend
 using NNlib
 import NNlibCUDA: batchnorm, ∇batchnorm, CUDNNFloat
