@@ -209,16 +209,16 @@ function (GN::GroupNorm{affine,track_stats})(x::AbstractArray{T,N}, ps, st::Name
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
     x_normalized, xmean, xvar = normalization_forward(
-        x,
+        x_,
         st.running_mean,
         st.running_var,
         ps.scale,
         ps.bias,
-        BN.activation,
+        GN.activation,
         collect(1:N),
         st.training,
-        BN.momentum,
-        BN.epsilon,
+        GN.momentum,
+        GN.epsilon,
     )
 
     st_ = if track_stats
