@@ -24,8 +24,8 @@ function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{f1}, nt2::NamedTu
     function merge_pullback(Δ)
         return (
             NoTangent(),
-            NamedTuple{f1}(map(k -> k ∈ f2 ? NoTangent() : Δ[k], keys(Δ))),
-            NamedTuple{f2}(getfield.((Δ,), f2)),
+            NamedTuple{f1}(map(k -> k ∈ f2 ? NoTangent() : getproperty(Δ, k), keys(Δ))),
+            NamedTuple{f2}(getproperty.((Δ,), f2)),
         )
     end
     return nt, merge_pullback
