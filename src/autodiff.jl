@@ -12,10 +12,6 @@ ChainRulesCore.Tangent{P}(; kwargs...) where {P<:AbstractExplicitLayer} = NoTang
 
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
-no_grad(x) = zero(x)
-no_grad(nt::NamedTuple) = fmap(no_grad, nt)
-no_grad(::Union{AbstractRNG,Bool,AbstractExplicitLayer}) = NoTangent()
-
 ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
 
 # Base Functions

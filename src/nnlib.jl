@@ -170,7 +170,7 @@ end
         push!(calls, :(return y, mask, rng, Val(false)))
     else
         if training
-            push!(calls, :(return elementwise_mul(x, mask), mask, rng, Val(false)))
+            push!(calls, :(return elementwise_mul(x, ignore_derivatives(mask)), mask, rng, Val(false)))
         else
             push!(calls, :(return x, mask, rng, Val(false)))
         end

@@ -110,6 +110,7 @@ function (BN::BatchNorm{affine,track_stats})(
             running_mean2 = copy(st.running_mean)
             running_var2 = copy(st.running_var)
         else
+            N = ndims(x)
             reduce_dims = collect([1:(N - 2); N])
             running_mean2 = mean(x; dims=reduce_dims)
             running_var2 = var(x; mean=running_mean2, dims=reduce_dims, corrected=false)
