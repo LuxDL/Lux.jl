@@ -154,7 +154,7 @@ If `training` then dropout is applied on `x` with probability `prob` along `dims
     if training
         push!(calls, :(rng = replicate(rng)))
         push!(calls, :(mask = generate_dropout_mask(rng, x, prob; dims)))
-        push!(calls, :(return elementwise_mul(x, mask), mask, rng))
+        push!(calls, :(return elementwise_mul(x, ignore_derivatives(mask)), mask, rng))
     else
         push!(calls, :(return x, x, rng))
     end
@@ -174,7 +174,7 @@ end
                 calls,
                 :(size(x, ndims(x)) != size(mask, ndims(x)) && return (dropout(rng, x, prob, dims, t)..., Val(false))),
             )
-            push!(calls, :(return elementwise_mul(x, mask), mask, rng, Val(false)))
+            push!(calls, :(return elementwise_mul(x, ignore_derivatives(mask)), mask, rng, Val(false)))
         else
             push!(calls, :(return x, mask, rng, Val(false)))
         end
