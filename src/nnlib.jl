@@ -39,7 +39,7 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
     t::Val,
     momentum::T=T(0.1),
     epsilon::T=T(1e-5);
-    kwargs...
+    kwargs...,
 ) where {T,N}
     x_norm, running_mean_, running_var_ = normalization_forward(
         x,
@@ -52,7 +52,7 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
         t,
         momentum,
         epsilon;
-        kwargs...
+        kwargs...,
     )
     return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
 end
@@ -74,7 +74,7 @@ end
     ::Val{training},
     momentum::T=T(0.1f0),
     epsilon::T=T(1.0f-5);
-    kwargs...
+    kwargs...,
 ) where {RM,RV,S,B,T,N,A,training}
     batchmean, batchvar, result = gensym.(("batchmean", "batchvar", "x_normalized"))
 
@@ -170,7 +170,11 @@ end
         push!(calls, :(return y, mask, rng, Val(false)))
     else
         if training
-            push!(calls, :(return elementwise_mul(x, ignore_derivatives(mask)), mask, rng, Val(false)))
+            push!(
+                calls,
+                :(size(x, ndims(x)) != size(mask, ndims(x)) && return (dropout(rng, x, prob, dims, t)..., Val(false))),
+            )
+            push!(calls, :(return elementwise_mul(x, mask), mask, rng, Val(false)))
         else
             push!(calls, :(return x, mask, rng, Val(false)))
         end

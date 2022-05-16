@@ -155,17 +155,23 @@ Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
 Takes an input `x` and passes it through all the `layers` and returns a tuple of the outputs.
 
+## Comparison with [`Parallel`](@ref)
+
 This is slightly different from `Parallel(nothing, layers...)`
-    - If the input is a tuple Parallel will pass each element individually to each layer
-    - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+
+    * If the input is a tuple Parallel will pass each element individually to each layer
+    * `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+
+## Example
 
 An easy way to replicate an input to an NTuple is to do
+
 ```julia
 l = BranchLayer(
-        NoOpLayer(),
-        NoOpLayer(),
-        NoOpLayer(),
-    )
+    NoOpLayer(),
+    NoOpLayer(),
+    NoOpLayer(),
+)
 ```
 """
 struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -207,6 +213,25 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 
 """
     PairwiseFusion(connection, layers...)
+
+```
+x1 --> layer1 --> y1
+                  |
+                  connection --> layer2 --> y2
+                  |                         |
+                  x2                        connection --> layer3 --> y3
+                                            |                         |
+                                            x3                        connection --> y4
+                                                                      |
+                                                                      x4
+```
+
+## Arguments
+
+* `connection`: Takes 2 inputs and combines them
+* `layers`: [`AbstractExplicitLayer`](@ref)s 
+
+## Input
 
 Layer behaves differently based on input type:
 1. Input `x` is a tuple of length `N` then the `layers` must be a tuple of length `N`. The computation is as follows
@@ -277,13 +302,29 @@ Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
 Collects multiple layers / functions to be called in sequence on a given input.
 
+## Optimizations
+
 Performs a few optimizations to generate reasonable architectures. Can be disabled using keyword argument `disable_optimizations`.
 * All sublayers are recursively optimized.
 * If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
-* If the layer is a Chain, it is expanded out.
+* If the layer is a Chain, it is flattened.
 * `NoOpLayer`s are removed.
 * If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
 * If there are no layers (left after optimizations), a `NoOpLayer` is returned.
+
+## Input
+
+Input `x` is passed sequentially to each layer, and must conform to the input requirements of the internal layers.
+
+## Example
+
+```julia
+c = Chain(
+    Dense(2, 3, relu),
+    BatchNorm(3),
+    Dense(3, 2)
+)
+```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
@@ -347,17 +388,22 @@ end
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 """
-    Dense(in => out, σ=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
 
-Create a traditional fully connected layer, whose forward pass is given by: `y = σ.(weight * x .+ bias)`
+Create a traditional fully connected layer, whose forward pass is given by: `y = activation.(weight * x .+ bias)`
 
-* The input `x` should be a vector of length `in`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
-* The output `y` will be a vector  of length `out`, or a batch with `size(y) == (out, size(x)[2:end]...)`
+## Arguments
 
-Keyword `bias=false` will switch off trainable bias for the layer.
+* `in_dims`: number of input dimensions
+* `out_dims`: number of output dimensions
+* `activation`: activation function
+* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+* `init_bias`: initializer for the bias vector (ignored if `bias=false`)
+* `bias`: whether to include a bias vector
 
-The initialisation of the weight matrix is `W = init_weight(rng, out, in)`, calling the function
-given to keyword `init_weight`, with default [`glorot_uniform`](@ref).
+## Input
+
+Input `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
 """
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     activation::F1
@@ -425,16 +471,21 @@ end
 end
 
 """
-    Scale(dims, σ=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
+    Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
 
-Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
+Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = activation.(weight .* x .+ bias)`
 
-* The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
-* The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
+## Arguments
 
-Keyword `bias=false` will switch off trainable bias for the layer.
+* `dims`: dimension of the input
+* `activation`: activation function
+* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out, in)`)
+* `init_bias`: initializer for the bias vector (ignored if `bias=false`)
+* `bias`: whether to include a bias vector
 
-The initialisation of the weight matrix is `W = init_weight(rng, dims)`, calling the function given to keyword `init_weight`, with default [`glorot_uniform`](@ref).
+## Input
+
+Input `x` must be a Matrix of size `dims × B` or a Vector of length `dims`
 """
 struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
     activation::F1
