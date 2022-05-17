@@ -55,7 +55,9 @@ function ChainRulesCore.rrule(
 end
 
 # Activation Rrules
-function ChainRulesCore.rrule(::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}) where {T}
+function ChainRulesCore.rrule(
+    ::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}
+) where {T<:CUDNNFloat}
     mode = getCUDNNActivationMode(f)
     y = CUDNN.cudnnActivationForward(x; mode)
     function applyactivation_pullback(Δ)
