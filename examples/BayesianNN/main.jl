@@ -166,7 +166,7 @@ contour!(x1_range, x2_range, Z)
 # Suppose we are interested in how the predictive power of our Bayesian neural network evolved between samples. In that case, the following graph displays an animation of the contour plot generated from the network weights in samples 1 to 1,000.
 
 ## Number of iterations to plot.
-n_end = 500
+n_end = 1000
 
 anim = @gif for i in 1:n_end
     plot_data()
