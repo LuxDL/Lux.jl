@@ -27,13 +27,13 @@ ADVANCED_TUTORIALS = []
 ADVANCED_TUTORIAL_NAMES = []
 MAPPING = Dict("beginner" => [], "intermediate" => [], "advanced" => [])
 
-for (d, names, paths) in
-    (("beginner", BEGINNER_TUTORIAL_NAMES, BEGINNER_TUTORIALS), ("intermediate", INTERMEDIATE_TUTORIAL_NAMES, INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIAL_NAMES, ADVANCED_TUTORIALS))
-    for (n, p) in zip(names, paths)
-        Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p)); documenter=true)
-        push!(MAPPING[d], n => joinpath("examples/generated", d, dirname(p), splitext(basename(p))[1] * ".md"))
-    end
-end
+# for (d, names, paths) in
+#     (("beginner", BEGINNER_TUTORIAL_NAMES, BEGINNER_TUTORIALS), ("intermediate", INTERMEDIATE_TUTORIAL_NAMES, INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIAL_NAMES, ADVANCED_TUTORIALS))
+#     for (n, p) in zip(names, paths)
+#         Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p)); documenter=true)
+#         push!(MAPPING[d], n => joinpath("examples/generated", d, dirname(p), splitext(basename(p))[1] * ".md"))
+#     end
+# end
 
 display(MAPPING)
 
@@ -46,15 +46,15 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", nothing) == "true",
         assets=["assets/custom.css"],
-        # analytics = ""
+        # analytics = "G-Q8GYTEVTZ2"
     ),
     pages=[
         "Lux: Explicitly Parameterized Neural Networks" => "index.md",
         "Introduction" => ["All about Lux" => "introduction/overview.md", "Ecosystem" => "introduction/ecosystem.md"],
         "Examples" => [
-            "Beginner" => MAPPING["beginner"],
-            "Intermediate" => MAPPING["intermediate"],
-            "Advanced" => MAPPING["advanced"],
+            # "Beginner" => MAPPING["beginner"],
+            # "Intermediate" => MAPPING["intermediate"],
+            # "Advanced" => MAPPING["advanced"],
             "Additional Examples" => "examples.md",
         ],
         "API" => [

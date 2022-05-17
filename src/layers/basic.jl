@@ -96,9 +96,14 @@ end
 """
     Parallel(connection, layers...)
 
-Behaves differently on different input types:
-* If `x` is a Tuple then each element is passed to each layer
-* Otherwise, `x` is directly passed to all layers
+Create a layer which passes an input array to each path in `layers`, before reducing the output with `connection`.
+
+Called with one input x, this is equivalent to `connection([l(x) for l in layers]...)`. If called with multiple inputs, one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+
+If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+
+
+See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
 struct Parallel{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
@@ -159,8 +164,9 @@ Takes an input `x` and passes it through all the `layers` and returns a tuple of
 
 This is slightly different from `Parallel(nothing, layers...)`
 
-    * If the input is a tuple Parallel will pass each element individually to each layer
-    * `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+* If the input is a tuple Parallel will pass each element individually to each layer
+
+* `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
 
 ## Example
 

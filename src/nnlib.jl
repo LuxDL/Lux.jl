@@ -10,7 +10,8 @@
     momentum::T,
     reduce_dims,
 ) where {T,N}
-    m::T = T(prod(size(x)[reduce_dims]))
+    sx = size(x)
+    m = prod((sx[i] for i in reduce_dims))
     if reduce_dims[end] != N
         batchmean = mean(batchmean; dims=N)
         batchvar = mean(batchvar; dims=N)
