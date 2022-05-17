@@ -21,8 +21,8 @@ OUTPUT = joinpath(@__DIR__, "src", "examples", "generated")
 
 BEGINNER_TUTORIALS = ["Basics/main.jl", "SimpleRNN/main.jl"]
 BEGINNER_TUTORIAL_NAMES = ["Julia & Lux for the Uninitiated", "Training a Simple LSTM"]
-INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl"]
-INTERMEDIATE_TUTORIAL_NAMES = ["MNIST NeuralODE Classification"]
+INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl"]
+INTERMEDIATE_TUTORIAL_NAMES = ["MNIST NeuralODE Classification", "Bayesian Neural Network"]
 ADVANCED_TUTORIALS = []
 ADVANCED_TUTORIAL_NAMES = []
 MAPPING = Dict("beginner" => [], "intermediate" => [], "advanced" => [])
