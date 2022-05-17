@@ -36,6 +36,12 @@ MaxPool
 MeanPool
 ```
 
+## Recurrent Layers
+
+```@docs
+RNNCell
+```
+
 ## Linear Layers
 
 ```@docs

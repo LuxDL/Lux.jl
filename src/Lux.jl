@@ -33,6 +33,7 @@ include("layers/basic.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
+include("layers/recurrent.jl")
 # Neural Network Backend
 include("nnlib.jl")
 # Pretty Printing
@@ -54,5 +55,6 @@ export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, FlattenLayer, WrappedFunction, ActivationFunction
+export RNNCell
 
 end
