@@ -116,11 +116,3 @@ function _default_layer_check(key)
     _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
     return _default_layer_check_closure
 end
-
-# """
-#     update_recurrent_hidden_state(st::NamedTuple)
-
-# Reset the hidden states for the recurrent layers.
-# """
-# function update_recurrent_hidden_state(st::NamedTuple)
-# end
