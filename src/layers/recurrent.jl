@@ -3,7 +3,7 @@
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
-``h_{new} = activation.(weight_{ih} \\times x + weight_{hh} \\times h_{prev} + bias)``
+``h_{new} = activation(weight_{ih} \\times x + weight_{hh} \\times h_{prev} + bias)``
 
 ## Arguments
 
@@ -82,28 +82,28 @@ function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple},
 end
 
 function (rnn::RNNCell{true})(
-    (x, hidden_state)::NTuple{2,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
     return h_new, st
 end
 
 function (rnn::RNNCell{true,typeof(identity)})(
-    (x, hidden_state)::NTuple{2,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
 
 function (rnn::RNNCell{false})(
-    (x, hidden_state)::NTuple{2,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
     return h_new, st
 end
 
 function (rnn::RNNCell{false,typeof(identity)})(
-    (x, hidden_state)::NTuple{2,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
     return h_new, st
@@ -115,7 +115,6 @@ function Base.show(io::IO, r::RNNCell{bias}) where {bias}
     bias || print(io, ", bias=false")
     return print(io, ")")
 end
-
 
 """
     LSTMCell(in_dims => out_dims; init_weight=(glorot_uniform, glorot_uniform, glorot_uniform, glorot_uniform), init_bias=(zeros32, zeros32, ones32, zeros32), init_state=zeros32)
@@ -205,12 +204,14 @@ function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple
 end
 
 function (lstm::LSTMCell)(
-    (x, hidden_state, memory)::NTuple{3,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+    (x, hidden_state, memory)::Tuple{<:AbstractMatrix,<:AbstractMatrix,<:AbstractMatrix},
+    ps::Union{ComponentArray,NamedTuple},
+    st::NamedTuple,
 )
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
-    memory_new = @.. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
-    hidden_state_new = @.. sigmoid_fast(output) * tanh_fast(memory_new)
+    memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
+    hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
     return (hidden_state_new, memory_new), st
 end
 

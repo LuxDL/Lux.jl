@@ -19,7 +19,7 @@ Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/L
 get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 OUTPUT = joinpath(@__DIR__, "src", "examples", "generated")
 
-BEGINNER_TUTORIALS = []
+BEGINNER_TUTORIALS = ["SimpleRNN/main.jl"]
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl"]
 ADVANCED_TUTORIALS = []
 MAPPING = Dict("beginner" => [], "intermediate" => [], "advanced" => [])

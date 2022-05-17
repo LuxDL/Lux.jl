@@ -19,8 +19,6 @@ using ChainRulesCore, Zygote
 using Optimisers
 # Optional Dependency
 using Requires
-# Faster Broadcasting for Same Sized Arrays
-using FastBroadcast
 
 const use_cuda = Ref{Union{Nothing,Bool}}(nothing)
 

@@ -1,6 +1,6 @@
 # Recurrent Neural Networks
 
-## Explicit Management on End-User Side (Current Implementation)
+## Explicit Management on End-User Side (Current)
 
 User is responsible for managing the memory and hidden states.
 
