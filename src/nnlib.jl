@@ -187,13 +187,15 @@ end
     return PoolDims(x, k; padding=pad, stride=stride)
 end
 
-# Activation Functions
-## I think this is handled by NNlibCUDA. But currently leaving here for
-## benchmarking larger models
+# CUDNN Constants
 const cudnnValidActivationTypes = Union{
     typeof(tanh),typeof(sigmoid),typeof(relu),typeof(elu),typeof(tanh_fast),typeof(sigmoid_fast)
 }
+const cudnnValidDataTypes = Union{Float16,Float32,Float64}
 
+# Activation Functions
+## I think this is handled by NNlibCUDA. But currently leaving here for
+## benchmarking larger models
 getCUDNNActivationMode(::Union{typeof(tanh),typeof(tanh_fast)}) = CUDNN.CUDNN_ACTIVATION_TANH
 getCUDNNActivationMode(::Union{typeof(sigmoid),typeof(sigmoid_fast)}) = CUDNN.CUDNN_ACTIVATION_SIGMOID
 getCUDNNActivationMode(::Union{typeof(relu)}) = CUDNN.CUDNN_ACTIVATION_RELU
@@ -205,7 +207,7 @@ getCUDNNActivationMode(::Union{typeof(elu)}) = CUDNN.CUDNN_ACTIVATION_ELU
 Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if possible.
 """
 @inline applyactivation(f::Function, x::AbstractArray) = f.(x)
-@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray)
+@inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray{<:cudnnValidDataTypes})
     return CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
 end
 @inline applyactivation(::typeof(identity), x::AbstractArray) = x
@@ -219,7 +221,7 @@ end
 end
 
 @inline isvalidtensorop(x1, x2) = false
-@inline function isvalidtensorop(x1::CuArray{N,T}, x2::CuArray{N,T}) where {N,T}
+@inline function isvalidtensorop(x1::CuArray{N,T}, x2::CuArray{N,T}) where {N,T<:cudnnValidDataTypes}
     return ndims(x1) <= 5 && (all(size(x2, i) == size(x1, i) || size(x2, i) == 1 for i in 1:ndims(x2)))
 end
 

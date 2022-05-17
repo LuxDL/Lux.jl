@@ -1,18 +1,4 @@
-using Test, Random, Statistics, Zygote, Metalhead, Lux, Functors
-import Flux: relu, pullback, sigmoid, gradient
-import Lux:
-    apply,
-    setup,
-    parameterlength,
-    statelength,
-    initialparameters,
-    initialstates,
-    update_state,
-    trainmode,
-    testmode,
-    transform,
-    AbstractExplicitLayer,
-    AbstractExplicitContainerLayer
+using Test, Random, Statistics, Zygote, Metalhead, Lux, Functors, NNlib, CUDA
 
 function gradtest(model, input, ps, st)
     y, pb = Zygote.pullback(p -> model(input, p, st)[1], ps)
@@ -22,11 +8,11 @@ function gradtest(model, input, ps, st)
     return true
 end
 
-function run_model(m::AbstractExplicitLayer, x, mode=:test)
+function run_model(m::Lux.AbstractExplicitLayer, x, mode=:test)
     if mode == :test
-        ps, st = setup(Random.default_rng(), m)
-        st = testmode(st)
-        return apply(m, x, ps, st)[1]
+        ps, st = Lux.setup(Random.default_rng(), m)
+        st = Lux.testmode(st)
+        return Lux.apply(m, x, ps, st)[1]
     end
 end
 
@@ -45,6 +31,10 @@ end
         @testset "Normalization" begin
             include("layers/normalize.jl")
         end
+    end
+
+    @testset "Functional Operations" begin
+        include("functional.jl")
     end
 
     # Might not want to run always
