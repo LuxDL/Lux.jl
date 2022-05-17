@@ -1,15 +1,17 @@
 [deps]
-Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
+NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-Flux = "0.13"
+CUDA = "3"
 Functors = "0.2"
 Metalhead = "0.7"
+NNlib = "0.8"
 Zygote = "0.6"
 julia = "1.6"
