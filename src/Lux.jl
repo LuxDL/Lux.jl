@@ -19,6 +19,8 @@ using ChainRulesCore, Zygote
 using Optimisers
 # Optional Dependency
 using Requires
+# Faster Broadcasting for Same Sized Arrays
+using FastBroadcast
 
 const use_cuda = Ref{Union{Nothing,Bool}}(nothing)
 
@@ -55,6 +57,6 @@ export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, FlattenLayer, WrappedFunction, ActivationFunction
-export RNNCell
+export RNNCell, LSTMCell
 
 end

@@ -60,6 +60,9 @@ makedocs(;
             "Core" => "api/core.md",
             "Utilities" => "api/utilities.md",
         ],
+        "Design Docs" => [
+            "Recurrent Neural Networks" => "design/recurrent.md",
+        ]
     ],
 )
 

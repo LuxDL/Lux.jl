@@ -26,6 +26,12 @@ Lux.elementwise_add
 Lux.elementwise_mul
 ```
 
+## RNN Utilities
+
+```@docs
+Lux.multigate
+```
+
 ## Index
 
 ```@index

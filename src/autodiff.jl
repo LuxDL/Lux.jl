@@ -96,3 +96,17 @@ end
 function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
     return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
 end
+
+# RNN Helpers
+## Taken from https://github.com/FluxML/Flux.jl/blob/1f82da4bfa051c809f7f3ce7dd7aeb43be515b14/src/layers/recurrent.jl#L9
+function ChainRulesCore.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
+    function multigate_pullback(dy)
+        dx = map!(zero, similar(x, float(eltype(x)), axes(x)), x)
+        foreach(multigate(dx, c), dy) do dxᵢ, dyᵢ
+            dyᵢ isa AbstractZero && return
+            @. dxᵢ += dyᵢ
+        end
+        return (NoTangent(), dx, NoTangent(), NoTangent())
+    end
+    return multigate(x, c), multigate_pullback
+end
