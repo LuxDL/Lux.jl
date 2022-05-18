@@ -1,10 +1,9 @@
-using CUDA, Functors, JET, Lux, Metalhead, NNlib, Random, Statistics, Test, Zygote
+using ComponentArrays, CUDA, FiniteDifferences, Functors, JET, Lux, Metalhead, NNlib, Random, Statistics, Test, Zygote
 
 # Some Helper Functions
 function gradtest(model, input, ps, st)
     y, pb = Zygote.pullback(p -> model(input, p, st)[1], ps)
     gs = pb(ones(Float32, size(y)))
-      
     # if we make it to here with no error, success!
     return true
 end
@@ -17,10 +16,10 @@ function run_model(m::Lux.AbstractExplicitLayer, x, mode=:test)
     end
 end
 
-function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}) where {fields}
-    checkapprox(xy) = xy[1] ≈ xy[2]
+function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...) where {fields}
+    checkapprox(xy) = isapprox(xy[1], xy[2]; kwargs...)
     checkapprox(t::Tuple{Nothing,Nothing}) = true
-    all(checkapprox, zip(values(nt1), values(nt2)))
+    return all(checkapprox, zip(values(nt1), values(nt2)))
 end
 
 # Main Tests

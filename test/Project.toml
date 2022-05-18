@@ -1,5 +1,7 @@
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
