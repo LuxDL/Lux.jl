@@ -12,6 +12,7 @@ Random.seed!(rng, 0)
         RNNCell(3 => 5, tanh; bias=false),
         RNNCell(3 => 5, identity; bias=false),
     )
+        println(rnncell)
         ps, st = Lux.setup(rng, rnncell)
         x = randn(rng, Float32, 3, 2)
         h, st_ = Lux.apply(rnncell, x, ps, st)
@@ -35,6 +36,7 @@ end
 
 @testset "LSTMCell" begin
     lstmcell = LSTMCell(3 => 5)
+    println(lstmcell)
     ps, st = Lux.setup(rng, lstmcell)
     x = randn(rng, Float32, 3, 2)
     (h, c), st_ = Lux.apply(lstmcell, x, ps, st)
@@ -57,6 +59,7 @@ end
 
 @testset "GRUCell" begin
     grucell = GRUCell(3 => 5)
+    println(grucell)
     ps, st = Lux.setup(rng, grucell)
     x = randn(rng, Float32, 3, 2)
     h, st_ = Lux.apply(grucell, x, ps, st)

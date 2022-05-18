@@ -153,7 +153,7 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 ## Inputs
 
-* `input`: Will be passed directly to `layer`
+* `x`: Will be passed directly to `layer`
 
 ## Returns
 
@@ -175,20 +175,37 @@ struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLa
     connection::F
 end
 
-@inline function (skip::SkipConnection)(input, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    mx, st = skip.layers(input, ps, st)
-    return skip.connection(mx, input), st
+@inline function (skip::SkipConnection)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    mx, st = skip.layers(x, ps, st)
+    return skip.connection(mx, x), st
 end
 
 """
     Parallel(connection, layers...)
 
-Create a layer which passes an input array to each path in `layers`, before reducing the output with `connection`.
+Create a layer which passes an input to each path in `layers`, before reducing the output with `connection`.
 
-Called with one input x, this is equivalent to `connection([l(x) for l in layers]...)`. If called with multiple inputs, one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+## Arguments
 
-If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+* `layers`: A list of `N` Lux layers
+* `connection`: An `N`-argument function that is called after passing the input through each layer. If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
 
+## Inputs
+
+* `x`: if `x` is not a tuple, then return is computed as `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+
+## Returns
+
+* See the Inputs section for how the output is computed
+* Updated state of `layer`
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with fields = layer\\_1, layer\\_2, ..., layer\\_N
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with fields = layer\\_1, layer\\_2, ..., layer\\_N
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
@@ -200,15 +217,6 @@ end
 function Parallel(connection, layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
     return Parallel(connection, NamedTuple{names}(layers))
-end
-
-function Parallel(connection; kw...)
-    layers = NamedTuple(kw)
-    if :layers in Base.keys(layers) || :connection in Base.keys(layers)
-        throw(ArgumentError("a Parallel layer cannot have a named sub-layer called `connection` or `layers`"))
-    end
-    isempty(layers) && throw(ArgumentError("a Parallel layer must have at least one sub-layer"))
-    return Parallel(connection, layers)
 end
 
 function (m::Parallel)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
@@ -324,7 +332,7 @@ x1 --> layer1 --> y1
 * `connection`: Takes 2 inputs and combines them
 * `layers`: [`AbstractExplicitLayer`](@ref)s 
 
-## Input
+## Inputs
 
 Layer behaves differently based on input type:
 1. Input `x` is a tuple of length `N` then the `layers` must be a tuple of length `N`. The computation is as follows
@@ -344,6 +352,12 @@ for i in 1:N
     y = connection(x, layers[i](y))
 end
 ```
+
+## Returns
+
+* See Inputs section for how the return value is computed
+* Updated model state for all the contained layers
+
 """
 struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
