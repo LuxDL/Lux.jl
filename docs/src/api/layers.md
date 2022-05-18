@@ -36,6 +36,17 @@ MaxPool
 MeanPool
 ```
 
+## Recurrent Layers
+
+!!! warn
+    Recurrent Layers API should be considered Experimental at this point
+
+```@docs
+GRUCell
+LSTMCell
+RNNCell
+```
+
 ## Linear Layers
 
 ```@docs

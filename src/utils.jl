@@ -160,3 +160,15 @@ end
 
 @inline reshape_into_proper_shape(x::Nothing, y)::Nothing = x
 @inline reshape_into_proper_shape(x, y)::typeof(y) = reshape(x, get_reshape_dims(size(y), length(x)))
+
+# RNN Utilities
+@inline gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
+@inline gate(x::AbstractVector, h::Int, n::Int) = view(x, gate(h, n))
+@inline gate(x::AbstractMatrix, h::Int, n::Int) = view(x, gate(h, n), :)
+
+"""
+    multigate(x::AbstractArray, ::Val{N})
+
+Split up `x` into `N` equally sized chunks (along dimension `1`).
+"""
+@inline multigate(x::AbstractArray, ::Val{N}) where N = gate.((x,), size(x, 1) ÷ N, 1:N)

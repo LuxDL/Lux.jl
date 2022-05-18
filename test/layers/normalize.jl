@@ -1,10 +1,13 @@
+rng = Random.default_rng()
+Random.seed!(rng, 0)
+
 @testset "BatchNorm" begin
     let m = BatchNorm(2), x = [
             1.0f0 3.0f0 5.0f0
             2.0f0 4.0f0 6.0f0
         ]
 
-        ps, st = Lux.setup(MersenneTwister(0), m)
+        ps, st = Lux.setup(rng, m)
 
         @test Lux.parameterlength(m) == 2 * 2
 
@@ -41,7 +44,7 @@
     end
 
     let m = BatchNorm(2; track_stats=false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
-        ps, st = Lux.setup(MersenneTwister(0), m)
+        ps, st = Lux.setup(rng, m)
         @inferred m(x, ps, st)
     end
 
@@ -50,7 +53,7 @@
             1.0f0 3.0f0 5.0f0
             2.0f0 4.0f0 6.0f0
         ]
-        ps, st = Lux.setup(MersenneTwister(0), m)
+        ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
         @test isapprox(y, sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
@@ -58,13 +61,13 @@
     end
 
     let m = BatchNorm(2), x = reshape(Float32.(1:6), 3, 2, 1)
-        ps, st = Lux.setup(MersenneTwister(0), m)
+        ps, st = Lux.setup(rng, m)
         st = Lux.trainmode(st)
         @test_throws AssertionError m(x, ps, st)[1]
     end
 
     let m = BatchNorm(32), x = randn(Float32, 416, 416, 32, 1)
-        ps, st = Lux.setup(MersenneTwister(0), m)
+        ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
