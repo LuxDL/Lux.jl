@@ -148,11 +148,11 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 
 @inline @generated safe_vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
 
-@inline function get_reshape_dims(sx::NTuple{N,<:Int}, ly::Int)::typeof(sx) where {N}
-    return if ly == sx[N - 1]
-        ntuple(i -> i == N - 1 ? ly : 1, N)
-    elseif ly == sx[N - 1] * sx[N - 2]
-        ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
+@inline @inbounds function get_reshape_dims(sx::NTuple{N,<:Int}, ly::Int)::typeof(sx) where {N}
+    if ly == sx[N - 1]
+        return ntuple(i -> i == N - 1 ? ly : 1, N)
+    elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
+        return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
     else
         error("Invalid Dimensions")
     end

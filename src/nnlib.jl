@@ -11,7 +11,7 @@
     reduce_dims,
 ) where {T,N}
     sx = size(x)
-    m = prod((sx[i] for i in reduce_dims))
+    m = T(prod((sx[i] for i in reduce_dims)))
     if reduce_dims[end] != N
         batchmean = mean(batchmean; dims=N)
         batchvar = mean(batchvar; dims=N)

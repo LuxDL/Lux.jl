@@ -41,11 +41,16 @@ Random.seed!(rng, 0)
         @test isapprox(x′[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
         @inferred m(x, ps, st)
+
+        @test_call m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
     end
 
     let m = BatchNorm(2; track_stats=false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
         ps, st = Lux.setup(rng, m)
         @inferred m(x, ps, st)
+        @test_call m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
     end
 
     # with activation function
@@ -58,6 +63,8 @@ Random.seed!(rng, 0)
         y, st_ = m(x, ps, st)
         @test isapprox(y, sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
         @inferred m(x, ps, st)
+        @test_call m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
     end
 
     let m = BatchNorm(2), x = reshape(Float32.(1:6), 3, 2, 1)
@@ -72,5 +79,7 @@ Random.seed!(rng, 0)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
         @inferred m(x, ps, st)
+        @test_call m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
     end
 end
