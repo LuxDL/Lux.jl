@@ -1,3 +1,7 @@
+using JET, Lux, NNlib, Random, Statistics, Zygote
+
+include("../utils.jl")
+
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
@@ -44,6 +48,8 @@ Random.seed!(rng, 0)
 
         @test_call m(x, ps, st)
         @test_opt target_modules=(Lux,) m(x, ps, st)
+
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps; atol=1f-3, rtol=1f-3)
     end
 
     let m = BatchNorm(2; track_stats=false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
@@ -51,6 +57,8 @@ Random.seed!(rng, 0)
         @inferred m(x, ps, st)
         @test_call m(x, ps, st)
         @test_opt target_modules=(Lux,) m(x, ps, st)
+
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps; atol=1f-3, rtol=1f-3)
     end
 
     # with activation function
@@ -65,6 +73,8 @@ Random.seed!(rng, 0)
         @inferred m(x, ps, st)
         @test_call m(x, ps, st)
         @test_opt target_modules=(Lux,) m(x, ps, st)
+
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps; atol=1f-3, rtol=1f-3)
     end
 
     let m = BatchNorm(2), x = reshape(Float32.(1:6), 3, 2, 1)

@@ -157,7 +157,7 @@ end
 * If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias `bias` and scale `scale` parameters.
 * If `track_stats=true`, accumulates mean and var statistics in training phase that will be used to renormalize the input in test phase.
 
-!!! warn
+!!! warning
     GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
 """
 struct GroupNorm{affine,track_stats,F1,F2,F3,N} <: AbstractNormalizationLayer{affine,track_stats}

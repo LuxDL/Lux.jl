@@ -1,3 +1,7 @@
+using Lux, NNlib, Random
+
+include("../utils.jl")
+
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
