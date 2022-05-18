@@ -52,9 +52,9 @@ makedocs(;
         "Lux: Explicitly Parameterized Neural Networks" => "index.md",
         "Introduction" => ["All about Lux" => "introduction/overview.md", "Ecosystem" => "introduction/ecosystem.md"],
         "Examples" => [
-            # "Beginner" => MAPPING["beginner"],
-            # "Intermediate" => MAPPING["intermediate"],
-            # "Advanced" => MAPPING["advanced"],
+            "Beginner" => MAPPING["beginner"],
+            "Intermediate" => MAPPING["intermediate"],
+            "Advanced" => MAPPING["advanced"],
             "Additional Examples" => "examples.md",
         ],
         "API" => [
