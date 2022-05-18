@@ -54,7 +54,7 @@ export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool, 
 export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm
 export WeightNorm
-export NoOpLayer, ReshapeLayer, FlattenLayer, WrappedFunction, ActivationFunction
+export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
 export RNNCell, LSTMCell, GRUCell
 
 end

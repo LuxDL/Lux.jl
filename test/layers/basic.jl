@@ -1,9 +1,113 @@
-using Lux, NNlib, Random
+using JET, Lux, NNlib, Random
 
 include("../utils.jl")
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)
+
+@testset "Miscellaneous Layers" begin
+    @testset "Reshape Layer" begin
+        layer = ReshapeLayer((2, 3))
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, 6, 3)
+
+        @test size(layer(x, ps, st)[1]) == (2, 3, 3)
+        @test_call layer(x, ps, st)
+        @test_opt target_modules = (Lux,)  layer(x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+    end
+
+    @testset "Flatten Layer" begin
+        layer = FlattenLayer()
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, 6, 3, 2)
+
+        @test size(layer(x, ps, st)[1]) == (18, 2)
+        @test_call layer(x, ps, st)
+        @test_opt target_modules = (Lux,)  layer(x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+    end
+
+    @testset "NoOpLayer" begin
+        layer = NoOpLayer()
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = (x = 2, b = 5) # Something totally arbitrary
+
+        @test layer(x, ps, st)[1] == x
+        @test_call layer(x, ps, st)
+        @test_opt target_modules = (Lux,)  layer(x, ps, st)
+
+        x = randn(rng, 6, 3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+    end
+
+    @testset "SelectDim Layer" begin
+        layer = SelectDim(3, 1)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, 6, 4, 3, 2)
+
+        @test size(layer(x, ps, st)[1]) == (6, 4, 2)
+        @test_call layer(x, ps, st)
+        @test_opt target_modules = (Lux,) layer(x, ps, st) broken=true
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+    end
+
+    @testset "WrappedFunction" begin
+        layer = WrappedFunction(x -> x .* x)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, 6, 4, 3, 2)
+
+        @test layer(x, ps, st)[1] == x .* x
+        @test_call layer(x, ps, st)
+        @test_opt target_modules = (Lux,) layer(x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+    end
+
+    @testset "ActivationFunction" begin
+        layer = ActivationFunction(tanh)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, 6, 4, 3, 2)
+
+        @test layer(x, ps, st)[1] == tanh.(x)
+        @test_call layer(x, ps, st)
+        @test_opt target_modules = (Lux,) layer(x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+    end
+end
+
+@testset "Containers" begin
+    @testset "SkipConnection" begin
+        @testset "zero sum" begin
+            layer = SkipConnection(WrappedFunction(zero), (a, b) -> a .+ b)
+            println(layer)
+            ps, st = Lux.setup(rng, layer)
+            x = randn(rng, 10, 10, 10, 10)
+
+            @test layer(x, ps, st)[1] == x
+            @test_call layer(x, ps, st)
+            @test_opt target_modules = (Lux,) layer(x, ps, st)
+            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+        end
+
+        @testset "concat size" begin
+            layer = SkipConnection(Dense(10, 10), (a, b) -> hcat(a, b))
+            println(layer)
+            ps, st = Lux.setup(rng, layer)
+            x = randn(rng, 10, 2)
+
+            @test size(layer(x, ps, st)[1]) == (10, 4)
+            @test_call layer(x, ps, st)
+            @test_opt target_modules = (Lux,) layer(x, ps, st)
+            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+        end
+    end
+end
 
 @testset "Dense" begin
     @testset "constructors" begin
@@ -61,20 +165,6 @@ Random.seed!(rng, 0)
             layer = Dense(10, 2, identity; init_weight=ones, bias=false)
             first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
         end == [10 20; 10 20]
-    end
-end
-
-@testset "SkipConnection" begin
-    @testset "zero sum" begin
-        input = randn(10, 10, 10, 10)
-        layer = SkipConnection(WrappedFunction(zero), (a, b) -> a .+ b)
-        @test Lux.apply(layer, input, Lux.setup(rng, layer)...)[1] == input
-    end
-
-    @testset "concat size" begin
-        input = randn(10, 2)
-        layer = SkipConnection(Dense(10, 10), (a, b) -> hcat(a, b))
-        @test size(Lux.apply(layer, input, Lux.setup(rng, layer)...)[1]) == (10, 4)
     end
 end
 

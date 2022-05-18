@@ -20,7 +20,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 * Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
 * Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
-## Outputs
+## Returns
 
 * New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
 * Updated model state
@@ -146,7 +146,7 @@ Long Short-Term (LSTM) Cell
 * Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state and memory using `init_state` and proceeds to Case 2.
 * Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
 
-## Outputs
+## Returns
 
 * Tuple Containing
     * New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
@@ -217,7 +217,6 @@ end
 
 Base.show(io::IO, l::LSTMCell) = print(io, "LSTMCell($(l.in_dims) => $(l.out_dims))")
 
-
 """
     GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; init_weight::Tuple{Function,Function,Function}=(glorot_uniform, glorot_uniform, glorot_uniform), init_bias::Tuple{Function,Function,Function}=(zeros32, zeros32, zeros32), init_state::Function=zeros32)
 
@@ -244,7 +243,7 @@ Gated Recurrent Unit (GRU) Cell
 * Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
 * Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
-## Outputs
+## Returns
 
 * New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
 * Updated model state
@@ -299,9 +298,7 @@ function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple},
 end
 
 function (gru::GRUCell)(
-    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix},
-    ps::Union{ComponentArray,NamedTuple},
-    st::NamedTuple,
+    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
 )
     gxs = multigate(ps.weight_i * x, Val(3))
     ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))

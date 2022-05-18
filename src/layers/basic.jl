@@ -2,19 +2,43 @@
     ReshapeLayer(dims)
 
 Reshapes the passed array to have a size of `(dims..., :)`
+
+## Arguments
+
+* `dims`: The new dimensions of the array (excluding the last dimension).
+
+## Inputs
+
+* `x`: AbstractArray of any shape which can be reshaped in `(dims..., size(x, ndims(x)))`
+
+## Returns
+
+* AbstractArray of size `(dims..., size(x, ndims(x)))`
+* Empty `NamedTuple()`
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N,Int}
 end
 
 @inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
-    return reshape(x, r.dims..., :), st
+    return reshape(x, r.dims..., size(x, ndims(x))), st
 end
+
+Base.show(io::IO, r::ReshapeLayer) = print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
 
 """
     FlattenLayer()
 
 Flattens the passed array into a matrix.
+
+## Inputs
+
+* `x`: AbstractArray
+
+## Returns
+
+* AbstractMatrix of size `(:, size(x, ndims(x)))`
+* Empty `NamedTuple()`
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
@@ -25,7 +49,21 @@ end
 """
     SelectDim(dim, i)
 
-See the documentation for `selectdim` for more information.
+Return a view of all the data of the input `x` where the index for dimension `dim` equals `i`. Equivalent to `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`.
+
+## Arguments
+
+* `dim`: Dimension for indexing
+* `i`: Index for dimension `dim`
+
+## Inputs
+
+* `x`: AbstractArray that can be indexed with `view(x,:,:,...,i,:,:,...)`
+
+## Returns
+
+* `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
+* Empty `NamedTuple()`
 """
 struct SelectDim{I} <: AbstractExplicitLayer
     dim::Int
@@ -34,10 +72,12 @@ end
 
 @inline (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
 
+Base.show(io::IO, s::SelectDim) = print(io, "SelectDim(dim = ", s.dim, ", index = ", s.i, ")")
+
 """
     NoOpLayer()
 
-As the name suggests does nothing but allows pretty printing of layers.
+As the name suggests does nothing but allows pretty printing of layers. Whatever input is passed is returned.
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
@@ -46,10 +86,20 @@ struct NoOpLayer <: AbstractExplicitLayer end
 """
     WrappedFunction(f)
 
-Wraps a stateless and parameter less function. Might be used when a function is
-added to `Chain`. For example, `Chain(x -> relu.(x))` would not work and the
-right thing to do would be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing
-to do would be `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
+Wraps a stateless and parameter less function. Might be used when a function is added to `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
+
+## Arguments
+
+* `f::Function`: A stateless and parameterless function
+
+## Inputs
+
+* `x`: s.t `hasmethod(f, (typeof(x),))` is `true`
+
+## Returns
+
+* Output of `f(x)`
+* Empty `NamedTuple()`
 """
 struct WrappedFunction{F} <: AbstractExplicitLayer
     func::F
@@ -64,7 +114,20 @@ end
 """
     ActivationFunction(f)
 
-Broadcast `f` on the input but fallback to CUDNN for Backward Pass
+Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally calls [`Lux.applyactivation`](@ref)
+
+## Arguments
+
+* `f`: Activation function
+
+## Inputs
+
+* `x`: Any array type s.t. `f` can be broadcasted over it
+
+## Returns
+
+* Broadcasted Activation `f.(x)`
+* Empty `NamedTuple()`
 """
 struct ActivationFunction{F} <: AbstractExplicitLayer
     func::F
@@ -79,9 +142,33 @@ end
 """
     SkipConnection(layer, connection)
 
-Create a skip connection which consists of a layer or `Chain` of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.
+Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.
 
 The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
+
+## Arguments
+
+* `layer`: Layer or `Chain` of layers to be applied to the input
+* `connection`: A 2-argument function that takes `layer(input)` and the input
+
+## Inputs
+
+* `input`: Will be passed directly to `layer`
+
+## Returns
+
+* Output of `connection(layer(input), input)`
+* Updated state of `layer`
+
+## Parameters
+
+* Parameters of `layer`
+
+## States
+
+* States of `layer`
+
+See [`Parallel`](@ref) for a more general implementation.
 """
 struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
