@@ -1,4 +1,5 @@
-using CUDA, Functors, JET, Lux, Metalhead, NNlib, Random, Statistics, Test, Zygote
+using CUDA, Functors, JET, Lux, NNlib, Random, Statistics, Test, Zygote
+# using Metalhead
 
 # Some Helper Functions
 function gradtest(model, input, ps, st)
@@ -42,9 +43,9 @@ end
     end
 
     # Might not want to run always
-    @testset "Metalhead Models" begin
-        @testset "ConvNets -- ImageNet" begin
-            include("models/convnets.jl")
-        end
-    end
+    # @testset "Metalhead Models" begin
+    #     @testset "ConvNets -- ImageNet" begin
+    #         include("models/convnets.jl")
+    #     end
+    # end
 end
