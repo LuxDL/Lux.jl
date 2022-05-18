@@ -55,6 +55,6 @@ export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, FlattenLayer, WrappedFunction, ActivationFunction
-export RNNCell, LSTMCell
+export RNNCell, LSTMCell, GRUCell
 
 end

@@ -42,6 +42,7 @@ MeanPool
     Recurrent Layers API should be considered Experimental at this point
 
 ```@docs
+GRUCell
 LSTMCell
 RNNCell
 ```

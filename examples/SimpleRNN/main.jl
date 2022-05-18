@@ -10,7 +10,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using MLUtils, Optimisers, Zygote, NNlib, Random
+using MLUtils, Optimisers, Zygote, NNlib, Random, Statistics
 
 # ## Dataset
 
