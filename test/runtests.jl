@@ -4,6 +4,7 @@ using SafeTestsets, Test
     @time @safetestset "Basic" begin include("layers/basic.jl") end
     @time @safetestset "Normalization" begin include("layers/normalize.jl") end
     @time @safetestset "Recurrent" begin include("layers/recurrent.jl") end
+    @time @safetestset "Dropout" begin include("layers/dropout.jl") end
 end
 
 @time @safetestset "Functional Operations" begin include("functional.jl") end

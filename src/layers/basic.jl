@@ -197,15 +197,15 @@ Create a layer which passes an input to each path in `layers`, before reducing t
 ## Returns
 
 * See the Inputs section for how the output is computed
-* Updated state of `layer`
+* Updated state of the `layers`
 
 ## Parameters
 
-* Parameters of each `layer` wrapped in a NamedTuple with fields = layer\\_1, layer\\_2, ..., layer\\_N
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-* States of each `layer` wrapped in a NamedTuple with fields = layer\\_1, layer\\_2, ..., layer\\_N
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
@@ -255,11 +255,32 @@ Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
 Takes an input `x` and passes it through all the `layers` and returns a tuple of the outputs.
 
+## Arguments
+
+* `layers`: A list of `N` Lux layers
+
+## Inputs
+
+* `x`: Will be directly passed to each of the `layers`
+
+## Returns
+
+* Tuple: `(layer_1(x), layer_2(x), ..., layer_N(x))`
+* Updated state of the `layers`
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
 ## Comparison with [`Parallel`](@ref)
 
 This is slightly different from `Parallel(nothing, layers...)`
 
-* If the input is a tuple Parallel will pass each element individually to each layer
+* If the input is a tuple, `Parallel` will pass each element individually to each layer
 
 * `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
 
@@ -282,15 +303,6 @@ end
 function BranchLayer(layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
     return BranchLayer(NamedTuple{names}(layers))
-end
-
-function BranchLayer(; kwargs...)
-    layers = NamedTuple(kwargs)
-    if :layers in Base.keys(layers)
-        throw(ArgumentError("A BranchLayer cannot have a named sub-layer called `layers`"))
-    end
-    isempty(layers) && throw(ArgumentError("A BranchLayer must have at least one sub-layer"))
-    return BranchLayer(layers)
 end
 
 (m::BranchLayer)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = applybranching(m.layers, x, ps, st)
@@ -318,13 +330,13 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 ```
 x1 --> layer1 --> y1
                   |
-                  connection --> layer2 --> y2
-                  |                         |
-                  x2                        connection --> layer3 --> y3
-                                            |                         |
-                                            x3                        connection --> y4
-                                                                      |
-                                                                      x4
+                  |--> connection --> layer2 --> y2
+                  |                              |
+                  x2                             |--> connection --> layer3 --> y3
+                                                 |                              |
+                                                 x3                             |--> connection --> y4
+                                                                                |
+                                                                                x4
 ```
 
 ## Arguments
@@ -357,6 +369,14 @@ end
 
 * See Inputs section for how the return value is computed
 * Updated model state for all the contained layers
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 """
 struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
