@@ -114,6 +114,15 @@ function Functors.functor(::Type{<:ComponentArray}, c)
     return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))), ComponentArray
 end
 
+# Updating a monolithic vector is way faster than chunks of smaller ones
+# Also helps in distributed settings
+Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
+
+function Optimisers.update(opt_state, ps::ComponentArray, gs::ComponentArray)
+    opt_state, ps_new = Optimisers.update(opt_state, getdata(ps), getdata(gs))
+    return opt_state, ComponentArray(ps_new, getaxes(ps))
+end
+
 function Optimisers.update!(st, ps::ComponentArray, gs::ComponentArray)
     st, ps_ = Optimisers.update!(st, NamedTuple(ps), NamedTuple(gs))
     return st, ComponentArray(ps_)

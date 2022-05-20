@@ -104,7 +104,7 @@ end
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @test_call layer(x, ps, st)
             @test_opt target_modules = (Lux,) layer(x, ps, st)
-            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+            test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1f-3, rtol=1f-3)
         end
     end
 
@@ -151,7 +151,7 @@ end
             @test size(layer(x, ps, st)[1]) == (2, 1)
             @test_call layer(x, ps, st)
             @test_opt target_modules = (Lux,) layer(x, ps, st)
-            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1f-3, rtol=1f-3)
+            test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1f-3, rtol=1f-3)
         end
 
         @testset "connection is called once" begin
