@@ -34,7 +34,7 @@ Image data should be stored in WHCN order (width, height, channels, batch). In o
 
 ## Returns
 
-* Output of the convolution `y` of size `O_N, ..., O_1, C_out, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
+* Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
 * Empty `NamedTuple()`
 
 ## Parameters
@@ -134,7 +134,7 @@ Max pooling layer, which replaces all pixels in a block of size `window` with th
   
 ## Returns
 
-* Output of the pooling `y` of size `O_N, ..., O_1, C, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
+* Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
 * Empty `NamedTuple()`
 
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref), [`AdaptiveMaxPool`](@ref)
@@ -187,7 +187,7 @@ Mean pooling layer, which replaces all pixels in a block of size `window` with t
   
 ## Returns
 
-* Output of the pooling `y` of size `O_N, ..., O_1, C, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
+* Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
 * Empty `NamedTuple()`
 
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref), [`AdaptiveMeanPool`](@ref)

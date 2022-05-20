@@ -377,7 +377,6 @@ end
 ## States
 
 * States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
-
 """
 struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
@@ -387,15 +386,6 @@ end
 function PairwiseFusion(connection, layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
     return PairwiseFusion(connection, NamedTuple{names}(layers))
-end
-
-function PairwiseFusion(connection; kw...)
-    layers = NamedTuple(kw)
-    if :layers in Base.keys(layers) || :connection in Base.keys(layers)
-        throw(ArgumentError("a PairwiseFusion layer cannot have a named sub-layer called `connection` or `layers`"))
-    end
-    isempty(layers) && throw(ArgumentError("a PairwiseFusion layer must have at least one sub-layer"))
-    return PairwiseFusion(connection, layers)
 end
 
 function (m::PairwiseFusion)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
@@ -429,19 +419,40 @@ Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
 Collects multiple layers / functions to be called in sequence on a given input.
 
+## Arguments
+
+* `layers`: A list of `N` Lux layers
+
+## Keyword Arguments
+
+* `disable_optimizations`: Prevents any structural optimization
+
+## Inputs
+
+Input `x` is passed sequentially to each layer, and must conform to the input requirements of the internal layers.
+
+## Returns
+
+* Output after sequentially applying all the layers to `x`
+* Updated model states
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
 ## Optimizations
 
 Performs a few optimizations to generate reasonable architectures. Can be disabled using keyword argument `disable_optimizations`.
 * All sublayers are recursively optimized.
 * If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
 * If the layer is a Chain, it is flattened.
-* `NoOpLayer`s are removed.
+* [`NoOpLayer`](@ref)s are removed.
 * If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
-* If there are no layers (left after optimizations), a `NoOpLayer` is returned.
-
-## Input
-
-Input `x` is passed sequentially to each layer, and must conform to the input requirements of the internal layers.
+* If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
 
 ## Example
 
@@ -524,13 +535,26 @@ Create a traditional fully connected layer, whose forward pass is given by: `y =
 * `in_dims`: number of input dimensions
 * `out_dims`: number of output dimensions
 * `activation`: activation function
+
+## Keyword Arguments
+
 * `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
 * `init_bias`: initializer for the bias vector (ignored if `bias=false`)
 * `bias`: whether to include a bias vector
 
 ## Input
 
-Input `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
+* `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
+
+## Returns
+
+* Matrix of size `out_dims × B` or a Vector of length `out_dims`
+* Empty `NamedTuple()`
+
+## Parameters
+
+* `weight`: Weight Matrix of size `out_dims × in_dims`
+* `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
 """
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     activation::F1
@@ -604,15 +628,28 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Arguments
 
-* `dims`: dimension of the input
+* `dims`: number of input and output dimensions
 * `activation`: activation function
-* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out, in)`)
+
+## Keyword Arguments
+
+* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
 * `init_bias`: initializer for the bias vector (ignored if `bias=false`)
 * `bias`: whether to include a bias vector
 
 ## Input
 
-Input `x` must be a Matrix of size `dims × B` or a Vector of length `dims`
+* `x` must be a Matrix of size `dims × B` or a Vector of length `dims`
+
+## Returns
+
+* Matrix of size `dims × B` or a Vector of length `dims`
+* Empty `NamedTuple()`
+
+## Parameters
+
+* `weight`: Weight Vector of size `(dims,)`
+* `bias`: Bias of size `(dims,)`
 """
 struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
     activation::F1
