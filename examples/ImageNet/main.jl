@@ -396,7 +396,7 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
 
         # Gradients and Update
         (loss, ŷ, st), back = Zygote.pullback(p -> logitcrossentropyloss(x, y, model, p, st), ps)
-        gs = back((one(loss), nothing, nothing))[1]
+        gs = back((one(loss) / total_workers(), nothing, nothing))[1]
         optimiser_state, ps = Optimisers.update(optimiser_state, ps, gs)
 
         # Metrics
