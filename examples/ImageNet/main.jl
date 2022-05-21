@@ -408,7 +408,8 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         t_forward, t = time() - t, time()
         gs = back((one(loss) / total_workers(), nothing, nothing))[1]
         t_backward, t = time() - t, time()
-        optimiser_state, ps = Optimisers.update(optimiser_state, ps, gs)
+        gs = FluxMPI.allreduce_gradients(gs)
+        optimiser_state, ps = Optimisers.update!(optimiser_state, ps, gs)
         t_opt = time() - t
 
         # Metrics
@@ -483,9 +484,6 @@ function main(args)
         Optimisers.Momentum(args["learning-rate"], args["momentum"]),
         Optimisers.WeightDecay(args["weight-decay"])
     )
-    if is_distributed()
-        optimiser = DistributedOptimiser(optimiser)
-    end
     optimiser_state = Optimisers.setup(optimiser, ps)
     if is_distributed()
         optimiser_state = FluxMPI.synchronize!(optimiser_state)

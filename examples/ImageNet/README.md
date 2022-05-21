@@ -25,7 +25,7 @@ julia --project=.. -t 8 main.jl --arch AlexNet --learning-rate 0.01 [imagenet-fo
 
 ## Distributed Data Parallel Training
 
-Setup [MPI.jl](https://juliaparallel.org/MPI.jl/stable/usage/#CUDA-aware-MPI-support) preferably with the system MPI. Set `FLUXMPI_DISABLE_CUDAMPI_SUPPORT=true` to disable communication via CuArrays (currently this is more stable and faster due to UCX cuda memory handling issues).
+Setup [MPI.jl](https://juliaparallel.org/MPI.jl/stable/usage/#CUDA-aware-MPI-support) preferably with the system MPI. Set `FLUXMPI_DISABLE_CUDAMPI_SUPPORT=true` to disable communication via CuArrays (note that this will lead to a very high communication bottleneck).
 
 **Learning Rate**: Remember to linearly scale the learning-rate based on the number of processes you are using.
 
