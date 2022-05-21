@@ -10,7 +10,8 @@
     momentum::T,
     reduce_dims,
 ) where {T,N}
-    m::T = T(prod(size(x)[reduce_dims]))
+    sx = size(x)
+    m = T(prod((sx[i] for i in reduce_dims)))
     if reduce_dims[end] != N
         batchmean = mean(batchmean; dims=N)
         batchvar = mean(batchvar; dims=N)
@@ -39,7 +40,7 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
     t::Val,
     momentum::T=T(0.1),
     epsilon::T=T(1e-5);
-    kwargs...
+    kwargs...,
 ) where {T,N}
     x_norm, running_mean_, running_var_ = normalization_forward(
         x,
@@ -52,7 +53,7 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
         t,
         momentum,
         epsilon;
-        kwargs...
+        kwargs...,
     )
     return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
 end
@@ -74,7 +75,7 @@ end
     ::Val{training},
     momentum::T=T(0.1f0),
     epsilon::T=T(1.0f-5);
-    kwargs...
+    kwargs...,
 ) where {RM,RV,S,B,T,N,A,training}
     batchmean, batchvar, result = gensym.(("batchmean", "batchvar", "x_normalized"))
 
@@ -154,7 +155,7 @@ If `training` then dropout is applied on `x` with probability `prob` along `dims
     if training
         push!(calls, :(rng = replicate(rng)))
         push!(calls, :(mask = generate_dropout_mask(rng, x, prob; dims)))
-        push!(calls, :(return elementwise_mul(x, mask), mask, rng))
+        push!(calls, :(return elementwise_mul(x, ignore_derivatives(mask)), mask, rng))
     else
         push!(calls, :(return x, x, rng))
     end
@@ -170,6 +171,10 @@ end
         push!(calls, :(return y, mask, rng, Val(false)))
     else
         if training
+            push!(
+                calls,
+                :(size(x, ndims(x)) != size(mask, ndims(x)) && return (dropout(rng, x, prob, dims, t)..., Val(false))),
+            )
             push!(calls, :(return elementwise_mul(x, ignore_derivatives(mask)), mask, rng, Val(false)))
         else
             push!(calls, :(return x, mask, rng, Val(false)))

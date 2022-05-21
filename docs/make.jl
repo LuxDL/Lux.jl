@@ -19,16 +19,19 @@ Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/L
 get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 OUTPUT = joinpath(@__DIR__, "src", "examples", "generated")
 
-BEGINNER_TUTORIALS = ["SimpleRNN/main.jl"]
-INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl"]
+BEGINNER_TUTORIALS = ["Basics/main.jl", "SimpleRNN/main.jl"]
+BEGINNER_TUTORIAL_NAMES = ["Julia & Lux for the Uninitiated", "Training a Simple LSTM"]
+INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl"]
+INTERMEDIATE_TUTORIAL_NAMES = ["MNIST NeuralODE Classification", "Bayesian Neural Network"]
 ADVANCED_TUTORIALS = []
+ADVANCED_TUTORIAL_NAMES = []
 MAPPING = Dict("beginner" => [], "intermediate" => [], "advanced" => [])
 
-for (d, paths) in
-    (("beginner", BEGINNER_TUTORIALS), ("intermediate", INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIALS))
-    for p in paths
+for (d, names, paths) in
+    (("beginner", BEGINNER_TUTORIAL_NAMES, BEGINNER_TUTORIALS), ("intermediate", INTERMEDIATE_TUTORIAL_NAMES, INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIAL_NAMES, ADVANCED_TUTORIALS))
+    for (n, p) in zip(names, paths)
         Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p)); documenter=true)
-        push!(MAPPING[d], dirname(p) => joinpath("examples/generated", d, dirname(p), splitext(basename(p))[1] * ".md"))
+        push!(MAPPING[d], n => joinpath("examples/generated", d, dirname(p), splitext(basename(p))[1] * ".md"))
     end
 end
 
@@ -43,7 +46,7 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", nothing) == "true",
         assets=["assets/custom.css"],
-        # analytics = ""
+        # analytics = "G-Q8GYTEVTZ2"
     ),
     pages=[
         "Lux: Explicitly Parameterized Neural Networks" => "index.md",
@@ -61,6 +64,7 @@ makedocs(;
             "Utilities" => "api/utilities.md",
         ],
         "Design Docs" => [
+            "Documentation" => "design/documentation.md",
             "Recurrent Neural Networks" => "design/recurrent.md",
         ]
     ],

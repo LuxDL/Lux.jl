@@ -1,4 +1,4 @@
-!!! warn
+!!! warning
     These were not written in the form of tutorials but standalone scripts/packages for people to use
 
 ## Packages

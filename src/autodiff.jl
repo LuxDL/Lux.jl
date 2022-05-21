@@ -14,27 +14,6 @@ ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
 ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
 
-# Base Functions
-function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{f1}, nt2::NamedTuple{f2}) where {f1,f2}
-    nt = merge(nt1, nt2)
-    function merge_pullback(Δ)
-        return (
-            NoTangent(),
-            NamedTuple{f1}(map(k -> k ∈ f2 ? NoTangent() : getproperty(Δ, k), keys(Δ))),
-            NamedTuple{f2}(getproperty.((Δ,), f2)),
-        )
-    end
-    return nt, merge_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(lastindex), nt::NTuple{N,Int64}) where {N}
-    res = lastindex(nt)
-    function lastindex_pullback(Δ)
-        return (NoTangent(), (ntuple(_ -> NoTangent(), N - 1)..., Δ))
-    end
-    return res, lastindex_pullback
-end
-
 # NNlib Functions
 function ChainRulesCore.rrule(
     ::typeof(batchnorm),

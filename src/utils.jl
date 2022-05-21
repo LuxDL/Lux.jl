@@ -114,6 +114,15 @@ function Functors.functor(::Type{<:ComponentArray}, c)
     return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))), ComponentArray
 end
 
+# Updating a monolithic vector is way faster than chunks of smaller ones
+# Also helps in distributed settings
+Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
+
+function Optimisers.update(opt_state, ps::ComponentArray, gs::ComponentArray)
+    opt_state, ps_new = Optimisers.update(opt_state, getdata(ps), getdata(gs))
+    return opt_state, ComponentArray(ps_new, getaxes(ps))
+end
+
 function Optimisers.update!(st, ps::ComponentArray, gs::ComponentArray)
     st, ps_ = Optimisers.update!(st, NamedTuple(ps), NamedTuple(gs))
     return st, ComponentArray(ps_)
@@ -148,11 +157,11 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 
 @inline @generated safe_vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
 
-@inline function get_reshape_dims(sx::NTuple{N,<:Int}, ly::Int)::typeof(sx) where {N}
-    return if ly == sx[N - 1]
-        ntuple(i -> i == N - 1 ? ly : 1, N)
-    elseif ly == sx[N - 1] * sx[N - 2]
-        ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
+@inline @inbounds function get_reshape_dims(sx::NTuple{N,<:Int}, ly::Int)::typeof(sx) where {N}
+    if ly == sx[N - 1]
+        return ntuple(i -> i == N - 1 ? ly : 1, N)
+    elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
+        return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
     else
         error("Invalid Dimensions")
     end

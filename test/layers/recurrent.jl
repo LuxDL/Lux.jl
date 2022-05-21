@@ -1,6 +1,9 @@
+using JET, Lux, Random, Test
+
+include("../utils.jl")
+
 rng = Random.default_rng()
 Random.seed!(rng, 0)
-fdm = FiniteDifferences.central_fdm(5, 1)
 
 @testset "RNNCell" begin
     for rnncell in (
@@ -9,6 +12,7 @@ fdm = FiniteDifferences.central_fdm(5, 1)
         RNNCell(3 => 5, tanh; bias=false),
         RNNCell(3 => 5, identity; bias=false),
     )
+        println(rnncell)
         ps, st = Lux.setup(rng, rnncell)
         x = randn(rng, Float32, 3, 2)
         h, st_ = Lux.apply(rnncell, x, ps, st)
@@ -26,14 +30,13 @@ fdm = FiniteDifferences.central_fdm(5, 1)
             return sum(abs2, h)
         end
 
-        gs_ad = gradient(loss_loop_rnncell, ps)[1]
-        gs_fdm = FiniteDifferences.grad(fdm, loss_loop_rnncell, ps)[1]
-        @test isapprox(gs_ad, gs_fdm, rtol=1f-3, atol=1f-3)
+        test_gradient_correctness_fdm(loss_loop_rnncell, ps, atol=1e-3, rtol=1e-3)
     end
 end
 
 @testset "LSTMCell" begin
     lstmcell = LSTMCell(3 => 5)
+    println(lstmcell)
     ps, st = Lux.setup(rng, lstmcell)
     x = randn(rng, Float32, 3, 2)
     (h, c), st_ = Lux.apply(lstmcell, x, ps, st)
@@ -51,13 +54,12 @@ end
         return sum(abs2, h)
     end
 
-    gs_ad = gradient(loss_loop_lstmcell, ps)[1]
-    gs_fdm = FiniteDifferences.grad(fdm, loss_loop_lstmcell, ps)[1]
-    @test isapprox(gs_ad, gs_fdm, rtol=1f-3, atol=1f-3)
+    test_gradient_correctness_fdm(loss_loop_lstmcell, ps, atol=1e-3, rtol=1e-3)
 end
 
 @testset "GRUCell" begin
     grucell = GRUCell(3 => 5)
+    println(grucell)
     ps, st = Lux.setup(rng, grucell)
     x = randn(rng, Float32, 3, 2)
     h, st_ = Lux.apply(grucell, x, ps, st)
@@ -75,9 +77,7 @@ end
         return sum(abs2, h)
     end
 
-    gs_ad = gradient(loss_loop_grucell, ps)[1]
-    gs_fdm = FiniteDifferences.grad(fdm, loss_loop_grucell, ps)[1]
-    @test isapprox(gs_ad, gs_fdm, rtol=1f-3, atol=1f-3)
+    test_gradient_correctness_fdm(loss_loop_grucell, ps, atol=1e-3, rtol=1e-3)
 end
 
 @testset "multigate" begin

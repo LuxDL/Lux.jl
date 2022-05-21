@@ -1,49 +1,15 @@
-using ComponentArrays, CUDA, FiniteDifferences, Functors, JET, Lux, Metalhead, NNlib, Random, Statistics, Test, Zygote
+using SafeTestsets, Test
 
-# Some Helper Functions
-function gradtest(model, input, ps, st)
-    y, pb = Zygote.pullback(p -> model(input, p, st)[1], ps)
-    gs = pb(ones(Float32, size(y)))
-    # if we make it to here with no error, success!
-    return true
+@testset "Layers" begin
+    @time @safetestset "Basic" begin include("layers/basic.jl") end
+    @time @safetestset "Convolution" begin include("layers/conv.jl") end
+    @time @safetestset "Normalization" begin include("layers/normalize.jl") end
+    @time @safetestset "Recurrent" begin include("layers/recurrent.jl") end
+    @time @safetestset "Dropout" begin include("layers/dropout.jl") end
 end
 
-function run_model(m::Lux.AbstractExplicitLayer, x, mode=:test)
-    if mode == :test
-        ps, st = Lux.setup(Random.default_rng(), m)
-        st = Lux.testmode(st)
-        return Lux.apply(m, x, ps, st)[1]
-    end
-end
+@time @safetestset "Functional Operations" begin include("functional.jl") end
 
-function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...) where {fields}
-    checkapprox(xy) = isapprox(xy[1], xy[2]; kwargs...)
-    checkapprox(t::Tuple{Nothing,Nothing}) = true
-    return all(checkapprox, zip(values(nt1), values(nt2)))
-end
-
-# Main Tests
-@testset "Lux" begin
-    @testset "Layers" begin
-        @testset "Basic" begin
-            include("layers/basic.jl")
-        end
-        @testset "Normalization" begin
-            include("layers/normalize.jl")
-        end
-        @testset "Recurrent" begin
-            include("layers/recurrent.jl")
-        end
-    end
-
-    @testset "Functional Operations" begin
-        include("functional.jl")
-    end
-
-    # Might not want to run always
-    @testset "Metalhead Models" begin
-        @testset "ConvNets -- ImageNet" begin
-            include("models/convnets.jl")
-        end
-    end
+@testset "Metalhead Models" begin
+    @time @safetestset "ConvNets -- ImageNet" begin include("models/convnets.jl") end
 end

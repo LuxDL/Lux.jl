@@ -2,19 +2,43 @@
     ReshapeLayer(dims)
 
 Reshapes the passed array to have a size of `(dims..., :)`
+
+## Arguments
+
+* `dims`: The new dimensions of the array (excluding the last dimension).
+
+## Inputs
+
+* `x`: AbstractArray of any shape which can be reshaped in `(dims..., size(x, ndims(x)))`
+
+## Returns
+
+* AbstractArray of size `(dims..., size(x, ndims(x)))`
+* Empty `NamedTuple()`
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N,Int}
 end
 
 @inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
-    return reshape(x, r.dims..., :), st
+    return reshape(x, r.dims..., size(x, ndims(x))), st
 end
+
+Base.show(io::IO, r::ReshapeLayer) = print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
 
 """
     FlattenLayer()
 
 Flattens the passed array into a matrix.
+
+## Inputs
+
+* `x`: AbstractArray
+
+## Returns
+
+* AbstractMatrix of size `(:, size(x, ndims(x)))`
+* Empty `NamedTuple()`
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
@@ -25,7 +49,21 @@ end
 """
     SelectDim(dim, i)
 
-See the documentation for `selectdim` for more information.
+Return a view of all the data of the input `x` where the index for dimension `dim` equals `i`. Equivalent to `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`.
+
+## Arguments
+
+* `dim`: Dimension for indexing
+* `i`: Index for dimension `dim`
+
+## Inputs
+
+* `x`: AbstractArray that can be indexed with `view(x,:,:,...,i,:,:,...)`
+
+## Returns
+
+* `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
+* Empty `NamedTuple()`
 """
 struct SelectDim{I} <: AbstractExplicitLayer
     dim::Int
@@ -34,10 +72,12 @@ end
 
 @inline (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
 
+Base.show(io::IO, s::SelectDim) = print(io, "SelectDim(dim = ", s.dim, ", index = ", s.i, ")")
+
 """
     NoOpLayer()
 
-As the name suggests does nothing but allows pretty printing of layers.
+As the name suggests does nothing but allows pretty printing of layers. Whatever input is passed is returned.
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
@@ -46,10 +86,20 @@ struct NoOpLayer <: AbstractExplicitLayer end
 """
     WrappedFunction(f)
 
-Wraps a stateless and parameter less function. Might be used when a function is
-added to `Chain`. For example, `Chain(x -> relu.(x))` would not work and the
-right thing to do would be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing
-to do would be `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
+Wraps a stateless and parameter less function. Might be used when a function is added to `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
+
+## Arguments
+
+* `f::Function`: A stateless and parameterless function
+
+## Inputs
+
+* `x`: s.t `hasmethod(f, (typeof(x),))` is `true`
+
+## Returns
+
+* Output of `f(x)`
+* Empty `NamedTuple()`
 """
 struct WrappedFunction{F} <: AbstractExplicitLayer
     func::F
@@ -64,7 +114,20 @@ end
 """
     ActivationFunction(f)
 
-Broadcast `f` on the input but fallback to CUDNN for Backward Pass
+Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally calls [`Lux.applyactivation`](@ref)
+
+## Arguments
+
+* `f`: Activation function
+
+## Inputs
+
+* `x`: Any array type s.t. `f` can be broadcasted over it
+
+## Returns
+
+* Broadcasted Activation `f.(x)`
+* Empty `NamedTuple()`
 """
 struct ActivationFunction{F} <: AbstractExplicitLayer
     func::F
@@ -79,26 +142,72 @@ end
 """
     SkipConnection(layer, connection)
 
-Create a skip connection which consists of a layer or `Chain` of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.
+Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.
 
 The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
+
+## Arguments
+
+* `layer`: Layer or `Chain` of layers to be applied to the input
+* `connection`: A 2-argument function that takes `layer(input)` and the input
+
+## Inputs
+
+* `x`: Will be passed directly to `layer`
+
+## Returns
+
+* Output of `connection(layer(input), input)`
+* Updated state of `layer`
+
+## Parameters
+
+* Parameters of `layer`
+
+## States
+
+* States of `layer`
+
+See [`Parallel`](@ref) for a more general implementation.
 """
 struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
     connection::F
 end
 
-@inline function (skip::SkipConnection)(input, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    mx, st = skip.layers(input, ps, st)
-    return skip.connection(mx, input), st
+@inline function (skip::SkipConnection)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    mx, st = skip.layers(x, ps, st)
+    return skip.connection(mx, x), st
 end
 
 """
     Parallel(connection, layers...)
 
-Behaves differently on different input types:
-* If `x` is a Tuple then each element is passed to each layer
-* Otherwise, `x` is directly passed to all layers
+Create a layer which passes an input to each path in `layers`, before reducing the output with `connection`.
+
+## Arguments
+
+* `layers`: A list of `N` Lux layers
+* `connection`: An `N`-argument function that is called after passing the input through each layer. If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+
+## Inputs
+
+* `x`: if `x` is not a tuple, then return is computed as `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+
+## Returns
+
+* See the Inputs section for how the output is computed
+* Updated state of the `layers`
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
 struct Parallel{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
@@ -108,15 +217,6 @@ end
 function Parallel(connection, layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
     return Parallel(connection, NamedTuple{names}(layers))
-end
-
-function Parallel(connection; kw...)
-    layers = NamedTuple(kw)
-    if :layers in Base.keys(layers) || :connection in Base.keys(layers)
-        throw(ArgumentError("a Parallel layer cannot have a named sub-layer called `connection` or `layers`"))
-    end
-    isempty(layers) && throw(ArgumentError("a Parallel layer must have at least one sub-layer"))
-    return Parallel(connection, layers)
 end
 
 function (m::Parallel)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
@@ -155,17 +255,45 @@ Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
 Takes an input `x` and passes it through all the `layers` and returns a tuple of the outputs.
 
+## Arguments
+
+* `layers`: A list of `N` Lux layers
+
+## Inputs
+
+* `x`: Will be directly passed to each of the `layers`
+
+## Returns
+
+* Tuple: `(layer_1(x), layer_2(x), ..., layer_N(x))`
+* Updated state of the `layers`
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## Comparison with [`Parallel`](@ref)
+
 This is slightly different from `Parallel(nothing, layers...)`
-    - If the input is a tuple Parallel will pass each element individually to each layer
-    - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+
+* If the input is a tuple, `Parallel` will pass each element individually to each layer
+
+* `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+
+## Example
 
 An easy way to replicate an input to an NTuple is to do
+
 ```julia
 l = BranchLayer(
-        NoOpLayer(),
-        NoOpLayer(),
-        NoOpLayer(),
-    )
+    NoOpLayer(),
+    NoOpLayer(),
+    NoOpLayer(),
+)
 ```
 """
 struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -175,15 +303,6 @@ end
 function BranchLayer(layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
     return BranchLayer(NamedTuple{names}(layers))
-end
-
-function BranchLayer(; kwargs...)
-    layers = NamedTuple(kwargs)
-    if :layers in Base.keys(layers)
-        throw(ArgumentError("A BranchLayer cannot have a named sub-layer called `layers`"))
-    end
-    isempty(layers) && throw(ArgumentError("A BranchLayer must have at least one sub-layer"))
-    return BranchLayer(layers)
 end
 
 (m::BranchLayer)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = applybranching(m.layers, x, ps, st)
@@ -208,6 +327,25 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 """
     PairwiseFusion(connection, layers...)
 
+```
+x1 --> layer1 --> y1
+                  |
+                  |--> connection --> layer2 --> y2
+                  |                              |
+                  x2                             |--> connection --> layer3 --> y3
+                                                 |                              |
+                                                 x3                             |--> connection --> y4
+                                                                                |
+                                                                                x4
+```
+
+## Arguments
+
+* `connection`: Takes 2 inputs and combines them
+* `layers`: [`AbstractExplicitLayer`](@ref)s 
+
+## Inputs
+
 Layer behaves differently based on input type:
 1. Input `x` is a tuple of length `N` then the `layers` must be a tuple of length `N`. The computation is as follows
 
@@ -226,6 +364,19 @@ for i in 1:N
     y = connection(x, layers[i](y))
 end
 ```
+
+## Returns
+
+* See Inputs section for how the return value is computed
+* Updated model state for all the contained layers
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 """
 struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
@@ -235,15 +386,6 @@ end
 function PairwiseFusion(connection, layers...)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
     return PairwiseFusion(connection, NamedTuple{names}(layers))
-end
-
-function PairwiseFusion(connection; kw...)
-    layers = NamedTuple(kw)
-    if :layers in Base.keys(layers) || :connection in Base.keys(layers)
-        throw(ArgumentError("a PairwiseFusion layer cannot have a named sub-layer called `connection` or `layers`"))
-    end
-    isempty(layers) && throw(ArgumentError("a PairwiseFusion layer must have at least one sub-layer"))
-    return PairwiseFusion(connection, layers)
 end
 
 function (m::PairwiseFusion)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
@@ -277,13 +419,50 @@ Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
 Collects multiple layers / functions to be called in sequence on a given input.
 
+## Arguments
+
+* `layers`: A list of `N` Lux layers
+
+## Keyword Arguments
+
+* `disable_optimizations`: Prevents any structural optimization
+
+## Inputs
+
+Input `x` is passed sequentially to each layer, and must conform to the input requirements of the internal layers.
+
+## Returns
+
+* Output after sequentially applying all the layers to `x`
+* Updated model states
+
+## Parameters
+
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## States
+
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+
+## Optimizations
+
 Performs a few optimizations to generate reasonable architectures. Can be disabled using keyword argument `disable_optimizations`.
 * All sublayers are recursively optimized.
 * If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
-* If the layer is a Chain, it is expanded out.
-* `NoOpLayer`s are removed.
+* If the layer is a Chain, it is flattened.
+* [`NoOpLayer`](@ref)s are removed.
 * If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
-* If there are no layers (left after optimizations), a `NoOpLayer` is returned.
+* If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
+
+## Example
+
+```julia
+c = Chain(
+    Dense(2, 3, relu),
+    BatchNorm(3),
+    Dense(3, 2)
+)
+```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
@@ -347,17 +526,35 @@ end
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 """
-    Dense(in => out, σ=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
 
-Create a traditional fully connected layer, whose forward pass is given by: `y = σ.(weight * x .+ bias)`
+Create a traditional fully connected layer, whose forward pass is given by: `y = activation.(weight * x .+ bias)`
 
-* The input `x` should be a vector of length `in`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
-* The output `y` will be a vector  of length `out`, or a batch with `size(y) == (out, size(x)[2:end]...)`
+## Arguments
 
-Keyword `bias=false` will switch off trainable bias for the layer.
+* `in_dims`: number of input dimensions
+* `out_dims`: number of output dimensions
+* `activation`: activation function
 
-The initialisation of the weight matrix is `W = init_weight(rng, out, in)`, calling the function
-given to keyword `init_weight`, with default [`glorot_uniform`](@ref).
+## Keyword Arguments
+
+* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+* `init_bias`: initializer for the bias vector (ignored if `bias=false`)
+* `bias`: whether to include a bias vector
+
+## Input
+
+* `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
+
+## Returns
+
+* Matrix of size `out_dims × B` or a Vector of length `out_dims`
+* Empty `NamedTuple()`
+
+## Parameters
+
+* `weight`: Weight Matrix of size `out_dims × in_dims`
+* `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
 """
 struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
     activation::F1
@@ -425,16 +622,34 @@ end
 end
 
 """
-    Scale(dims, σ=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
+    Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
 
-Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = σ.(weight .* x .+ bias)`
+Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = activation.(weight .* x .+ bias)`
 
-* The input `x` should be a vector of length `dims`, or batch of vectors represented as an `in × N` matrix, or any array with `size(x,1) == in`.
-* The output `y` will be a vector  of length `dims`, or a batch with `size(y) == (dims, size(x)[2:end]...)`
+## Arguments
 
-Keyword `bias=false` will switch off trainable bias for the layer.
+* `dims`: number of input and output dimensions
+* `activation`: activation function
 
-The initialisation of the weight matrix is `W = init_weight(rng, dims)`, calling the function given to keyword `init_weight`, with default [`glorot_uniform`](@ref).
+## Keyword Arguments
+
+* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+* `init_bias`: initializer for the bias vector (ignored if `bias=false`)
+* `bias`: whether to include a bias vector
+
+## Input
+
+* `x` must be a Matrix of size `dims × B` or a Vector of length `dims`
+
+## Returns
+
+* Matrix of size `dims × B` or a Vector of length `dims`
+* Empty `NamedTuple()`
+
+## Parameters
+
+* `weight`: Weight Vector of size `(dims,)`
+* `bias`: Bias of size `(dims,)`
 """
 struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
     activation::F1

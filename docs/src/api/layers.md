@@ -38,7 +38,7 @@ MeanPool
 
 ## Recurrent Layers
 
-!!! warn
+!!! warning
     Recurrent Layers API should be considered Experimental at this point
 
 ```@docs
