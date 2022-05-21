@@ -408,7 +408,9 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         t_forward, t = time() - t, time()
         gs = back((one(loss) / total_workers(), nothing, nothing))[1]
         t_backward, t = time() - t, time()
-        gs = FluxMPI.allreduce_gradients(gs)
+        if is_distributed()
+            gs = FluxMPI.allreduce_gradients(gs)
+        end
         optimiser_state, ps = Optimisers.update!(optimiser_state, ps, gs)
         t_opt = time() - t
 
