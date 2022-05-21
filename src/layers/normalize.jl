@@ -99,7 +99,7 @@ function initialstates(rng::AbstractRNG, l::BatchNorm{affine,track_stats}) where
     return if track_stats
         (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs), training=Val(true))
     else
-        (running_mean=nothing, running_var=nothing, training=Val(true),)
+        (running_mean=nothing, running_var=nothing, training=Val(true))
     end
 end
 
@@ -276,7 +276,7 @@ function initialstates(rng::AbstractRNG, l::GroupNorm{affine,track_stats}) where
     return if track_stats
         (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups), training=Val(true))
     else
-        (running_mean=nothing, running_var=nothing, training=Val(true,))
+        (running_mean=nothing, running_var=nothing, training=Val(true))
     end
 end
 
@@ -297,7 +297,7 @@ function (GN::GroupNorm)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
         ps.scale,
         ps.bias,
         GN.activation,
-        collect(1:N),
+        collect(1:(N - 1)),
         st.training,
         GN.momentum,
         GN.epsilon,

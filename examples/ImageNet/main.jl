@@ -345,18 +345,23 @@ end
 # Validation
 function validate(val_loader, model, ps, st, args)
     batch_time = AverageMeter("Batch Time", "6.3f")
+    data_time = AverageMeter("Data Time", "6.3f")
+    forward_time = AverageMeter("Forward Pass Time", "6.3f")
     losses = AverageMeter("Loss", ".4f")
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
 
-    progress = ProgressMeter(length(val_loader), (batch_time, losses, top1, top5), "Val:")
+    progress = ProgressMeter(length(val_loader), (batch_time, data_time, forward_time, losses, top1, top5), "Val:")
 
     st_ = Lux.testmode(st)
     t = time()
     for (i, (x, y)) in enumerate(CuIterator(val_loader))
+        t_data, t = time() - t, time()
+
         # Compute Output
         ŷ, st_ = model(x, ps, st_)
         loss = logitcrossentropyloss(ŷ, y)
+        t_forward = time() - t
 
         # Metrics
         acc1, acc5 = accuracy(cpu(ŷ), cpu(y), (1, 5))
@@ -365,8 +370,9 @@ function validate(val_loader, model, ps, st, args)
         update!(losses, loss, size(x, ndims(x)))
 
         # Measure Elapsed Time
-        bt = time() - t
-        update!(batch_time, bt, 1)
+        update!(data_time, t_data, size(x, ndims(x)))
+        update!(forward_time, t_forward, size(x, ndims(x)))
+        update!(batch_time, t_data + t_forward, size(x, ndims(x)))
 
         # Print Progress
         if i % args["print-freq"] == 0 || i == length(val_loader)
@@ -383,21 +389,27 @@ end
 function train(train_loader, model, ps, st, optimiser_state, epoch, args)
     batch_time = AverageMeter("Batch Time", "6.3f")
     data_time = AverageMeter("Data Time", "6.3f")
+    forward_time = AverageMeter("Forward Pass Time", "6.3f")
+    backward_time = AverageMeter("Forward Pass Time", "6.3f")
+    optimize_time = AverageMeter("Forward Pass Time", "6.3f")
     losses = AverageMeter("Loss", ".4e")
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
-    progress = ProgressMeter(length(train_loader), (batch_time, data_time, losses, top1, top5), "Epoch: [$epoch]")
+    progress = ProgressMeter(length(train_loader), (batch_time, data_time, forward_time, backward_time, optimize_time, losses, top1, top5), "Epoch: [$epoch]")
 
     st = Lux.trainmode(st)
 
     t = time()
     for (i, (x, y)) in enumerate(CuIterator(train_loader))
-        update!(data_time, time() - t, size(x, ndims(x)))
+        t_data, t = time() - t, time()
 
         # Gradients and Update
         (loss, ŷ, st), back = Zygote.pullback(p -> logitcrossentropyloss(x, y, model, p, st), ps)
+        t_forward, t = time() - t, time()
         gs = back((one(loss) / total_workers(), nothing, nothing))[1]
+        t_backward, t = time() - t, time()
         optimiser_state, ps = Optimisers.update(optimiser_state, ps, gs)
+        t_opt = time() - t
 
         # Metrics
         acc1, acc5 = accuracy(cpu(ŷ), cpu(y), (1, 5))
@@ -406,8 +418,11 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         update!(losses, loss, size(x, ndims(x)))
 
         # Measure Elapsed Time
-        bt = time() - t
-        update!(batch_time, bt, 1)
+        update!(data_time, t_data, size(x, ndims(x)))
+        update!(forward_time, t_forward, size(x, ndims(x)))
+        update!(backward_time, t_backward, size(x, ndims(x)))
+        update!(optimize_time, t_opt, size(x, ndims(x)))
+        update!(batch_time, t_data + t_forward + t_backward + t_opt, 1)
 
         # Print Progress
         if i % args["print-freq"] == 0 || i == length(train_loader)
