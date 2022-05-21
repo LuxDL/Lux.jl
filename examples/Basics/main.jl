@@ -133,10 +133,119 @@ end
 
 # ## Automatic Differentiation
 
+# Julia has quite a few (maybe too many) AD tools. For the purpose of this tutorial, we will use [AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl) which provides an uniform API across multiple AD backends. For the backends we will use:
+#
+# 1. [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) -- For Jacobian-Vector Product (JVP)
+# 2. [Zygote.jl](https://github.com/FluxML/Zygote.jl) -- For Vector-Jacobian Product (VJP)
+#
+# *Slight Detour*: We have had several questions regarding if we will be considering any other AD system for the reverse-diff backend. For now we will stick to Zygote.jl, however once [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) has support for custom rules and we have tested Lux extensively with it, we will make the switch.
+
+# Even though, theoretically, a VJP (Vector-Jacobian product - reverse autodiff) and a JVP (Jacobian-Vector product - forward-mode autodiff) are similar—they compute a product of a Jacobian and a vector—they differ by the computational complexity of the operation. In short, when you have a large number of parameters (hence a wide matrix), a JVP is less efficient computationally than a VJP, and, conversely, a JVP is more efficient when the Jacobian matrix is a tall matrix.
+
+using ForwardDiff, Zygote, AbstractDifferentiation
+
 # ### Gradients
+
+# For our first example, consider a simple function computing ``f(x) = \\frac{1}{2}x^T x``, where ``\\nabla f(x) = x``
+
+f(x) = x' * x / 2
+∇f(x) = x
+v = randn(rng, Float32, 4)
+
+# Let's use AbstractDifferentiation and Zygote to compute the gradients
+
+println("Actual Gradient: ", ∇f(v))
+println("Computed Gradient via Reverse Mode AD (Zygote): ", AD.gradient(AD.ZygoteBackend(), f, v)[1])
+println("Computed Gradient via Forward Mode AD (ForwardDiff): ", AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
+
+# Note that `AD.gradient` will only work for scalar valued outputs
 
 # ### Jacobian-Vector Product
 
+# I will defer the discussion on forward-mode AD to https://book.sciml.ai/notes/08/. Here let us just look at a mini example on how to use it.
+
+f(x) = x .* x ./ 2
+x = randn(rng, Float32, 5)
+v = ones(Float32, 5)
+
+# Construct the pushforward function.
+
+pf_f = AD.value_and_pushforward_function(AD.ForwardDiffBackend(), f, x)
+
+# Compute the jvp
+
+val, jvp = pf_f(v)
+println("Computed Value: f(", x, ") = ", val)
+println("JVP: ", jvp[1])
+
 # ### Vector-Jacobian Product
 
+# Using the same function and inputs, let us compute the VJP
+
+pb_f = AD.value_and_pullback_function(AD.ZygoteBackend(), f, x)
+
+# Compute the vjp
+
+val, vjp = pb_f(v)
+println("Computed Value: f(", x, ") = ", val)
+println("VJP: ", vjp[1])
+
 # ## Linear Regression
+
+# Finally, now let us consider a linear regression problem. From a set of data-points ``\\left\\{ (x_i, y_i), i \\in \\left\\{ 1, \\dots, k \\right\\}, x_i \\in \\R^n, y_i \\in \\R^m \\right\\}``, we try to find a set of parameters ``W`` and ``b``, s.t. ``f_{W,b}(x) = Wx + b`` minimizes the mean squared error:
+
+# ``L(W, b) \\longrightarrow \\sum_{i = 1}^{k} \\frac{1}{2} \\| y_i - f_{W,b}(x_i) \\|_2^2
+
+# We can write `f` from scratch, but to demonstrate `Lux` let us use the `Dense` layer.
+
+model = Dense(10 => 5)
+
+rng = Random.default_rng()
+Random.seed!(rng, 0)
+
+# Let us initialize the parameters and states (in this case it is empty) for the model
+ps, st = Lux.setup(rng, model)
+ps = ps |> ComponentArray
+
+# Set problem dimensions.
+n_samples = 20
+x_dim = 10
+y_dim = 5
+
+# Generate random ground truth W and b.
+W = randn(rng, Float32, y_dim, x_dim)
+b = randn(rng, Float32, y_dim)
+
+# Generate samples with additional noise.
+x_samples = randn(rng, Float32, x_dim, n_samples)
+y_samples = W * x_samples .+ b .+ 0.01f0 .* randn(rng, Float32, y_dim, n_samples)
+println("x shape: ", size(x_samples), "; y shape: ", size(y_samples))
+
+# For updating our parameters let's use [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
+
+using Optimisers
+
+opt = Optimisers.Descent(0.01f0)
+
+# Initialize the initial state of the optimiser
+
+opt_state = Optimisers.setup(opt, ps)
+
+# Define the loss function
+mse(model, ps, st, X, y) = sum(abs2, model(X, ps, st)[1] .- y)
+mse(weight, bias, X, y) = sum(abs2, weight * X .+ bias .- y)
+loss_function(ps, X, y) = mse(model, ps, st, X, y)
+
+println("Loss Value with ground true W & b: ", mse(W, b, x_samples, y_samples))
+
+for i in 1:100
+    ## In actual code, don't use globals. But here I will simply for the sake of demonstration
+    global ps, st, opt_state
+    ## Compute the gradient
+    gs = AD.gradient(AD.ZygoteBackend(),loss_function, ps, x_samples, y_samples)[1]
+    ## Perform parameter update
+    opt_state, ps = Optimisers.update(opt_state, ps, gs)
+    if i % 10 == 1 || i == 100
+        println("Loss Value after $i iterations: ", mse(model, ps, st, x_samples, y_samples))
+    end
+end

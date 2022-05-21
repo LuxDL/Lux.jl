@@ -221,15 +221,8 @@ end
         layer = Dense(10, 5)
         ps, st = Lux.setup(rng, layer)
 
-        # For now only support 2D/1D input
-        # @test length(first(Lux.apply(layer, randn(10), ps, st))) == 5
-        # @test_throws DimensionMismatch first(Lux.apply(layer, randn(1), ps, st))
-        # @test_throws MethodError first(Lux.apply(layer, 1, ps, st))
         @test size(first(Lux.apply(layer, randn(10), ps, st))) == (5,)
         @test size(first(Lux.apply(layer, randn(10, 2), ps, st))) == (5, 2)
-        # @test size(first(Lux.apply(layer, randn(10, 2, 3), ps, st))) == (5, 2, 3)
-        # @test size(first(Lux.apply(layer, randn(10, 2, 3, 4), ps, st))) == (5, 2, 3, 4)
-        # @test_throws DimensionMismatch first(Lux.apply(layer, randn(11, 2, 3), ps, st))
     end
 
     @testset "zeros" begin
