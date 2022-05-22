@@ -46,7 +46,7 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", nothing) == "true",
         assets=["assets/custom.css"],
-        # analytics = "G-Q8GYTEVTZ2"
+        analytics = "G-Q8GYTEVTZ2"
     ),
     pages=[
         "Lux: Explicitly Parameterized Neural Networks" => "index.md",
