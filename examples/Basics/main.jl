@@ -6,7 +6,7 @@
 # 2. [Flux's tutorial](https://fluxml.ai/tutorials/2020/09/15/deep-learning-flux.html).
 # 3. [Flax's tutorial](https://flax.readthedocs.io/en/latest/notebooks/jax_for_the_impatient.html).
 #
-# It introduces basic Julia programming, as well `Zygote``, a source-to-source automatic differentiation (AD) framework in Julia. We'll use these tools to build a very simple neural network. Let's start with importing `Lux.jl`
+# It introduces basic Julia programming, as well `Zygote`, a source-to-source automatic differentiation (AD) framework in Julia. We'll use these tools to build a very simple neural network. Let's start with importing `Lux.jl`
 
 using Lux, Random
 using Pkg #hide
@@ -146,7 +146,7 @@ using ForwardDiff, Zygote, AbstractDifferentiation
 
 # ### Gradients
 
-# For our first example, consider a simple function computing ``f(x) = \\frac{1}{2}x^T x``, where ``\\nabla f(x) = x``
+# For our first example, consider a simple function computing ``f(x) = \frac{1}{2}x^T x``, where ``\nabla f(x) = x``
 
 f(x) = x' * x / 2
 ∇f(x) = x
@@ -192,9 +192,11 @@ println("VJP: ", vjp[1])
 
 # ## Linear Regression
 
-# Finally, now let us consider a linear regression problem. From a set of data-points $\\left\\{ (x_i, y_i), i \\in \\left\\{ 1, \\dots, k \\right\\}, x_i \\in \\R^n, y_i \\in \\R^m \\right\\}$, we try to find a set of parameters $W$ and $b$, s.t. $f_{W,b}(x) = Wx + b$ minimizes the mean squared error:
+# Finally, now let us consider a linear regression problem. From a set of data-points
+# $\left\{ (x_i, y_i), i \in \left\{ 1, \dots, k \right\}, x_i \in \R^n, y_i \in \R^m \right\}$,
+# we try to find a set of parameters $W$ and $b$, s.t. $f_{W,b}(x) = Wx + b$ minimizes the mean squared error:
 
-# $$L(W, b) \\longrightarrow \\sum_{i = 1}^{k} \\frac{1}{2} \\| y_i - f_{W,b}(x_i) \\|_2^2$$
+# $$L(W, b) \longrightarrow \sum_{i = 1}^{k} \frac{1}{2} \| y_i - f_{W,b}(x_i) \|_2^2$$
 
 # We can write `f` from scratch, but to demonstrate `Lux` let us use the `Dense` layer.
 
