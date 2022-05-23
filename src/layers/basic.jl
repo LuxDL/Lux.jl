@@ -485,7 +485,11 @@ function flatten_model(layers::Union{AbstractVector,Tuple})
             append!(new_layers, f)
         elseif f isa Function
             if !hasmethod(f, (Any, Union{ComponentArray,NamedTuple}, NamedTuple))
-                push!(new_layers, WrappedFunction(f))
+                if f === identity
+                    continue
+                else
+                    push!(new_layers, WrappedFunction(f))
+                end
             else
                 push!(new_layers, f)
             end
@@ -571,13 +575,19 @@ function Base.show(io::IO, d::Dense{bias}) where {bias}
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int,<:Int}, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+function Dense(
+    mapping::Pair{<:Int,<:Int}, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true
+)
     return Dense(first(mapping), last(mapping), activation; init_weight=init_weight, init_bias=init_bias, bias=bias)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+function Dense(
+    in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true
+)
     activation = NNlib.fast_act(activation)
-    return Dense{bias,typeof(activation),typeof(init_weight),typeof(init_bias)}(activation, in_dims, out_dims, init_weight, init_bias)
+    return Dense{bias,typeof(activation),typeof(init_weight),typeof(init_bias)}(
+        activation, in_dims, out_dims, init_weight, init_bias
+    )
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
@@ -591,34 +601,65 @@ end
 parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 statelength(d::Dense) = 0
 
-@inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.activation, ps.weight * x), st
-end
-
-@inline function (d::Dense{false,typeof(identity)})(
-    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
-    return ps.weight * x, st
-end
-
-@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
-end
-
-@inline function (d::Dense{true,typeof(identity)})(
-    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
-    return elementwise_add(ps.weight * x, ps.bias), st
-end
-
-@inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st
-end
-
-@inline function (d::Dense{true,typeof(identity)})(
-    x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
-    return elementwise_add(ps.weight * x, vec(ps.bias)), st
+@generated function (d::Dense{bias,activation})(
+    x::AbstractArray{T,N}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
+) where {bias,activation,T,N}
+    if bias
+        if activation == typeof(identity)
+            if N == 1
+                return :(elementwise_add(ps.weight * x, vec(ps.bias)), st)
+            elseif N == 2
+                return :(elementwise_add(ps.weight * x, ps.bias), st)
+            else
+                return :(
+                    sz = size(x);
+                    x_reshaped = reshape(x, sz[1], :);
+                    return (reshape(elementwise_add(ps.weight * x_reshaped, ps.bias), d.out_dims, sz[2:end]...), st)
+                )
+            end
+        else
+            if N == 1
+                return :(applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st)
+            elseif N == 2
+                return :(applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st)
+            else
+                return :(
+                    sz = size(x);
+                    x_reshaped = reshape(x, sz[1], :);
+                    return (
+                        reshape(
+                            applyactivation(d.activation, elementwise_add(ps.weight * x_reshaped, ps.bias)),
+                            d.out_dims,
+                            sz[2:end]...,
+                        ),
+                        st,
+                    )
+                )
+            end
+        end
+    else
+        if activation == typeof(identity)
+            if N <= 2
+                return :(ps.weight * x, st)
+            else
+                return :(sz = size(x);
+                x_reshaped = reshape(x, sz[1], :);
+                return (reshape(ps.weight * x_reshaped, d.out_dims, sz[2:end]...), st))
+            end
+        else
+            if N <= 2
+                return :(applyactivation(d.activation, ps.weight * x), st)
+            else
+                return :(
+                    sz = size(x);
+                    x_reshaped = reshape(x, sz[1], :);
+                    return (
+                        reshape(applyactivation(d.activation, ps.weight * x_reshaped), d.out_dims, sz[2:end]...), st
+                    )
+                )
+            end
+        end
+    end
 end
 
 """
@@ -666,7 +707,9 @@ end
 
 function Scale(dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
-    return Scale{bias,typeof(activation),typeof(dims),typeof(init_weight),typeof(init_bias)}(activation, dims, init_weight, init_bias)
+    return Scale{bias,typeof(activation),typeof(dims),typeof(init_weight),typeof(init_bias)}(
+        activation, dims, init_weight, init_bias
+    )
 end
 
 function initialparameters(rng::AbstractRNG, d::Scale{true})
