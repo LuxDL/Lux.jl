@@ -499,7 +499,7 @@ c = Chain(
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    function Chain(xs...; disable_optimizations::Bool = false)
+    function Chain(xs...; disable_optimizations::Bool=false)
         xs = disable_optimizations ? xs : flatten_model(xs)
         length(xs) == 0 && return NoOpLayer()
         length(xs) == 1 && return first(xs)
@@ -507,7 +507,7 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
         layers = NamedTuple{names}(xs)
         return new{typeof(layers)}(layers)
     end
-    function Chain(xs::AbstractVector; disable_optimizations::Bool = false)
+    function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
         Chain(xs...; disable_optimizations)
     end
 end
@@ -618,14 +618,14 @@ function Base.show(io::IO, d::Dense{bias}) where {bias}
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int, <:Int}, activation = identity;
-               init_weight = glorot_uniform, init_bias = zeros32, bias::Bool = true)
-    return Dense(first(mapping), last(mapping), activation; init_weight = init_weight,
-                 init_bias = init_bias, bias = bias)
+function Dense(mapping::Pair{<:Int, <:Int}, activation=identity;
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    return Dense(first(mapping), last(mapping), activation; init_weight=init_weight,
+                 init_bias=init_bias, bias=bias)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation = identity;
-               init_weight = glorot_uniform, init_bias = zeros32, bias::Bool = true)
+function Dense(in_dims::Int, out_dims::Int, activation=identity;
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Dense{bias, typeof(activation), typeof(init_weight), typeof(init_bias)}(activation,
                                                                                    in_dims,
@@ -636,10 +636,10 @@ end
 
 function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
     if bias
-        return (weight = d.init_weight(rng, d.out_dims, d.in_dims),
-                bias = d.init_bias(rng, d.out_dims, 1))
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
+                bias=d.init_bias(rng, d.out_dims, 1))
     else
-        return (weight = d.init_weight(rng, d.out_dims, d.in_dims),)
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
 end
 
@@ -724,18 +724,18 @@ function Base.show(io::IO, d::Scale)
     return print(io, ")")
 end
 
-function Scale(dims, activation = identity; init_weight = glorot_uniform,
-               init_bias = zeros32, bias::Bool = true)
+function Scale(dims, activation=identity; init_weight=glorot_uniform,
+               init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Scale{bias, typeof(activation), typeof(dims), typeof(init_weight),
                  typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Scale{true})
-    return (weight = d.init_weight(rng, d.dims), bias = d.init_bias(rng, d.dims))
+    return (weight=d.init_weight(rng, d.dims), bias=d.init_bias(rng, d.dims))
 end
 function initialparameters(rng::AbstractRNG, d::Scale{false})
-    (weight = d.init_weight(rng, d.dims),)
+    (weight=d.init_weight(rng, d.dims),)
 end
 
 parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims

@@ -33,7 +33,7 @@ function run_fwd_and_bwd(model, input, ps, st)
     return true
 end
 
-function run_model(m::Lux.AbstractExplicitLayer, x, mode = :test)
+function run_model(m::Lux.AbstractExplicitLayer, x, mode=:test)
     ps, st = Lux.setup(Random.default_rng(), m)
     if mode == :test
         st = Lux.testmode(st)

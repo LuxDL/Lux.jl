@@ -36,7 +36,7 @@ Return an `Array{Float32}` of the given `size` containing random numbers drawn f
 
 [1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep feedforward neural networks." _Proceedings of the thirteenth international conference on artificial intelligence and statistics_. 2010.
 """
-function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real = 1)
+function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     scale = Float32(gain) * sqrt(24.0f0 / sum(nfan(dims...)))
     return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
 end
@@ -50,7 +50,7 @@ Return an `Array{Float32}` of the given `size` containing random numbers drawn f
 
 [1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep feedforward neural networks." _Proceedings of the thirteenth international conference on artificial intelligence and statistics_. 2010.
 """
-function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real = 1)
+function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     std = Float32(gain) * sqrt(2.0f0 / sum(nfan(dims...)))
     return randn(rng, Float32, dims...) .* std
 end
@@ -65,15 +65,15 @@ replicate(rng::CUDA.RNG) = deepcopy(rng)
 @inline istraining(st::NamedTuple) = istraining(st.training)
 
 # Linear Algebra
-@inline _norm(x; dims = Colon()) = sqrt.(sum(abs2, x; dims = dims))
-@inline function _norm_except(x::AbstractArray{T, N}, except_dim = N) where {T, N}
-    _norm(x; dims = filter(i -> i != except_dim, 1:N))
+@inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
+@inline function _norm_except(x::AbstractArray{T, N}, except_dim=N) where {T, N}
+    _norm(x; dims=filter(i -> i != except_dim, 1:N))
 end
 
 # Convolution
 function convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
                     ch::Pair{<:Integer, <:Integer};
-                    init = glorot_uniform, groups = 1) where {N}
+                    init=glorot_uniform, groups=1) where {N}
     cin, cout = ch
     @assert cin % groups==0 "Input channel dimension must be divisible by groups."
     @assert cout % groups==0 "Output channel dimension must be divisible by groups."

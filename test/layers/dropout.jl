@@ -22,8 +22,8 @@ Random.seed!(rng, 0)
 
     @test_call layer(x, ps, st)
     @test_opt target_modules=(Lux,) layer(x, ps, st)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                  rtol = 1.0f-3)
+    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                  rtol=1.0f-3)
 
     st = Lux.testmode(st)
 
@@ -50,10 +50,10 @@ end
     @test_call layer(x, ps, st_)
     @test_opt target_modules=(Lux,) layer(x, ps, st)
     @test_opt target_modules=(Lux,) layer(x, ps, st_)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                  rtol = 1.0f-3)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st_)[1]), x; atol = 1.0f-3,
-                                  rtol = 1.0f-3)
+    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                  rtol=1.0f-3)
+    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st_)[1]), x; atol=1.0f-3,
+                                  rtol=1.0f-3)
 
     st__ = Lux.update_state(st_, :update_mask, Val(true))
     x___, st___ = layer(x, ps, st__)
@@ -63,6 +63,6 @@ end
 
     @test_call layer(x, ps, st__)
     @test_opt target_modules=(Lux,) layer(x, ps, st__)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st__)[1]), x; atol = 1.0f-3,
-                                  rtol = 1.0f-3)
+    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st__)[1]), x; atol=1.0f-3,
+                                  rtol=1.0f-3)
 end

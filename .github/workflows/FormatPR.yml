@@ -9,7 +9,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install JuliaFormatter and format
         run: |
-          julia  -e 'import Pkg; Pkg.add("JuliaFormatter")'
+          julia  -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/YingboMa/JuliaFormatter.jl.git", rev="myb/scimlstyle"))'
           julia  -e 'using JuliaFormatter; format(".")'
       # https://github.com/marketplace/actions/create-pull-request
       # https://github.com/peter-evans/create-pull-request#reference-example

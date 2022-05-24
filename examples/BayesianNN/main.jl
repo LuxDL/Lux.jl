@@ -52,8 +52,8 @@ function plot_data()
     x2 = first.(xt0s)
     y2 = last.(xt0s)
 
-    plt = Plots.scatter(x1, y1; color = "red", clim = (0, 1))
-    Plots.scatter!(plt, x2, y2; color = "blue", clim = (0, 1))
+    plt = Plots.scatter(x1, y1; color="red", clim=(0, 1))
+    Plots.scatter!(plt, x2, y2; color="blue", clim=(0, 1))
 
     return plt
 end
@@ -135,8 +135,8 @@ _, i = findmax(ch[:lp])
 i = i.I[1]
 
 ## Plot the posterior distribution with a contour plot
-x1_range = collect(range(-6; stop = 6, length = 25))
-x2_range = collect(range(-6; stop = 6, length = 25))
+x1_range = collect(range(-6; stop=6, length=25))
+x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
 
@@ -157,8 +157,8 @@ end
 plot_data()
 
 n_end = 1500
-x1_range = collect(range(-6; stop = 6, length = 25))
-x2_range = collect(range(-6; stop = 6, length = 25))
+x1_range = collect(range(-6; stop=6, length=25))
+x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_predict([x1, x2], theta, n_end)[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
 
@@ -170,5 +170,5 @@ n_end = 1000
 anim = @gif for i in 1:n_end
     plot_data()
     Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
-    contour!(x1_range, x2_range, Z; title = "Iteration $i", clim = (0, 1))
+    contour!(x1_range, x2_range, Z; title="Iteration $i", clim=(0, 1))
 end every 5

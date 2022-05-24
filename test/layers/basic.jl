@@ -15,8 +15,8 @@ Random.seed!(rng, 0)
         @test size(layer(x, ps, st)[1]) == (2, 3, 3)
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                      rtol = 1.0f-3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
     end
 
     @testset "Flatten Layer" begin
@@ -28,23 +28,23 @@ Random.seed!(rng, 0)
         @test size(layer(x, ps, st)[1]) == (18, 2)
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                      rtol = 1.0f-3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
     end
 
     @testset "NoOpLayer" begin
         layer = NoOpLayer()
         println(layer)
         ps, st = Lux.setup(rng, layer)
-        x = (x = 2, b = 5) # Something totally arbitrary
+        x = (x=2, b=5) # Something totally arbitrary
 
         @test layer(x, ps, st)[1] == x
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
 
         x = randn(rng, 6, 3)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                      rtol = 1.0f-3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
     end
 
     @testset "SelectDim Layer" begin
@@ -56,8 +56,8 @@ Random.seed!(rng, 0)
         @test size(layer(x, ps, st)[1]) == (6, 4, 2)
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st) broken=true
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                      rtol = 1.0f-3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
     end
 
     @testset "WrappedFunction" begin
@@ -69,8 +69,8 @@ Random.seed!(rng, 0)
         @test layer(x, ps, st)[1] == x .* x
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                      rtol = 1.0f-3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
     end
 
     @testset "ActivationFunction" begin
@@ -82,8 +82,8 @@ Random.seed!(rng, 0)
         @test layer(x, ps, st)[1] == tanh.(x)
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                      rtol = 1.0f-3)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
     end
 end
 
@@ -98,8 +98,8 @@ end
             @test layer(x, ps, st)[1] == x
             @test_call layer(x, ps, st)
             @test_opt target_modules=(Lux,) layer(x, ps, st)
-            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                          rtol = 1.0f-3)
+            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                          rtol=1.0f-3)
         end
 
         @testset "concat size" begin
@@ -112,7 +112,7 @@ end
             @test_call layer(x, ps, st)
             @test_opt target_modules=(Lux,) layer(x, ps, st)
             test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                          atol = 1.0f-3, rtol = 1.0f-3)
+                                          atol=1.0f-3, rtol=1.0f-3)
         end
     end
 
@@ -126,12 +126,12 @@ end
             @test layer(x, ps, st)[1] == x
             @test_call layer(x, ps, st)
             @test_opt target_modules=(Lux,) layer(x, ps, st)
-            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                          rtol = 1.0f-3)
+            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                          rtol=1.0f-3)
         end
 
         @testset "concat size" begin
-            layer = Parallel((a, b) -> cat(a, b; dims = 2), Dense(10, 10), NoOpLayer())
+            layer = Parallel((a, b) -> cat(a, b; dims=2), Dense(10, 10), NoOpLayer())
             println(layer)
             ps, st = Lux.setup(rng, layer)
             x = randn(rng, 10, 2)
@@ -139,8 +139,8 @@ end
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @test_call layer(x, ps, st)
             @test_opt target_modules=(Lux,) layer(x, ps, st)
-            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                          rtol = 1.0f-3)
+            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                          rtol=1.0f-3)
 
             layer = Parallel(hcat, Dense(10, 10), NoOpLayer())
             println(layer)
@@ -149,8 +149,8 @@ end
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @test_call layer(x, ps, st)
             @test_opt target_modules=(Lux,) layer(x, ps, st)
-            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol = 1.0f-3,
-                                          rtol = 1.0f-3)
+            test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                          rtol=1.0f-3)
         end
 
         @testset "vararg input" begin
@@ -163,7 +163,7 @@ end
             @test_call layer(x, ps, st)
             @test_opt target_modules=(Lux,) layer(x, ps, st)
             test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                          atol = 1.0f-3, rtol = 1.0f-3)
+                                          atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "connection is called once" begin
@@ -189,7 +189,7 @@ end
 
             struct L1 <: Lux.AbstractExplicitLayer end
             (::L1)(x, ps, st) = (ps.x * x, st)
-            Lux.initialparameters(rng::AbstractRNG, ::L1) = (x = randn(rng, Float32, 3, 3),)
+            Lux.initialparameters(rng::AbstractRNG, ::L1) = (x=randn(rng, Float32, 3, 3),)
             Base.:*(a::AbstractArray, b::Input) = a * b.x
 
             par = Parallel(+, L1(), L1())
@@ -226,7 +226,7 @@ end
         @test size(ps.bias) == (100, 1)
         @test layer.activation == identity
 
-        layer = Dense(10, 100, relu; bias = false)
+        layer = Dense(10, 100, relu; bias=false)
         ps, st = Lux.setup(rng, layer)
 
         @test !haskey(ps, :bias)
@@ -243,27 +243,27 @@ end
 
     @testset "zeros" begin
         @test begin
-            layer = Dense(10, 1, identity; init_weight = ones)
+            layer = Dense(10, 1, identity; init_weight=ones)
             first(Lux.apply(layer, ones(10, 1), Lux.setup(rng, layer)...))
         end == 10 * ones(1, 1)
 
         @test begin
-            layer = Dense(10, 1, identity; init_weight = ones)
+            layer = Dense(10, 1, identity; init_weight=ones)
             first(Lux.apply(layer, ones(10, 2), Lux.setup(rng, layer)...))
         end == 10 * ones(1, 2)
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight = ones)
+            layer = Dense(10, 2, identity; init_weight=ones)
             first(Lux.apply(layer, ones(10, 1), Lux.setup(rng, layer)...))
         end == 10 * ones(2, 1)
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight = ones)
+            layer = Dense(10, 2, identity; init_weight=ones)
             first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
         end == [10 20; 10 20]
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight = ones, bias = false)
+            layer = Dense(10, 2, identity; init_weight=ones, bias=false)
             first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
         end == [10 20; 10 20]
     end

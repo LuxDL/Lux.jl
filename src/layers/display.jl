@@ -8,7 +8,7 @@ function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitContainerLayer
     end
 end
 
-function _big_show(io::IO, obj, indent::Int = 0, name = nothing)
+function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     pre, post = "(", ")"
     children = _get_children(obj)
     if obj isa Function
@@ -80,19 +80,19 @@ function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
     end
 end
 
-function _layer_show(io::IO, layer, indent::Int = 0, name = nothing)
+function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
     _str = isnothing(name) ? "" : "$name = "
-    str = _str * sprint(show, layer; context = io)
+    str = _str * sprint(show, layer; context=io)
     print(io, " "^indent, str, indent == 0 ? "" : ",")
     paramlength = parameterlength(layer)
     if paramlength > 0
         print(io, " "^max(2, (indent == 0 ? 20 : 39) - indent - length(str)))
         printstyled(io, "# ", underscorise(paramlength), " parameters";
-                    color = :light_black)
+                    color=:light_black)
         nonparam = statelength(layer)
         if nonparam > 0
             printstyled(io, ", plus ", underscorise(nonparam),
-                        indent == 0 ? " non-trainable" : ""; color = :light_black)
+                        indent == 0 ? " non-trainable" : ""; color=:light_black)
         end
     end
     return indent == 0 || println(io)
@@ -104,11 +104,11 @@ function _big_finale(io::IO, m)
     pars = underscorise(paramlength)
     bytes = Base.format_bytes(Base.summarysize(m))
     nonparam = underscorise(nonparamlength)
-    printstyled(io, " "^08, "# Total: "; color = :light_black)
+    printstyled(io, " "^08, "# Total: "; color=:light_black)
     println(io, pars, " parameters,")
-    printstyled(io, " "^10, "#        plus "; color = :light_black)
+    printstyled(io, " "^10, "#        plus "; color=:light_black)
     print(io, nonparam, " states, ")
-    printstyled(io, "summarysize "; color = :light_black)
+    printstyled(io, "summarysize "; color=:light_black)
     print(io, bytes, ".")
     return
 end
@@ -121,11 +121,11 @@ end
 
 function _nan_show(io::IO, x)
     if !isempty(x) && _all(iszero, x)
-        printstyled(io, "  (all zero)"; color = :cyan)
+        printstyled(io, "  (all zero)"; color=:cyan)
     elseif _any(isnan, x)
-        printstyled(io, "  (some NaN)"; color = :red)
+        printstyled(io, "  (some NaN)"; color=:red)
     elseif _any(isinf, x)
-        printstyled(io, "  (some Inf)"; color = :red)
+        printstyled(io, "  (some Inf)"; color=:red)
     end
 end
 

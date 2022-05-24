@@ -26,8 +26,11 @@ jobs:
         # This will use the latest version by default but you can set the version like so:
         #
         # julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version="0.13.0"))'
+        #
+        # FIXME: Before merging change to default release
+        # julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter"))'
         run: |
-          julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter"))'
+          julia  -e 'using Pkg; Pkg.add(PackageSpec(url="https://github.com/YingboMa/JuliaFormatter.jl.git", rev="myb/scimlstyle"))'
           julia  -e 'using JuliaFormatter; format(".", verbose=true)'
       - name: Format check
         run: |

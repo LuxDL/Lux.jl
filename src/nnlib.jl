@@ -11,8 +11,8 @@
     sx = size(x)
     m = T(prod((sx[i] for i in reduce_dims)))
     if reduce_dims[end] != N
-        batchmean = mean(batchmean; dims = N)
-        batchvar = mean(batchvar; dims = N)
+        batchmean = mean(batchmean; dims=N)
+        batchvar = mean(batchvar; dims=N)
     end
     running_mean = @. (1 - momentum) * running_mean + momentum * batchmean
     running_var = @. (1 - momentum) * running_var + momentum * batchvar * (m / (m - one(m)))
@@ -35,8 +35,8 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                activation,
                                reduce_dims,
                                t::Val,
-                               momentum::T = T(0.1),
-                               epsilon::T = T(1e-5);
+                               momentum::T=T(0.1),
+                               epsilon::T=T(1e-5);
                                kwargs...) where {T, N}
     x_norm, running_mean_, running_var_ = normalization_forward(x,
                                                                 reshape_into_proper_shape(running_mean,
@@ -137,7 +137,7 @@ end
 ## TODO: Cache `1 / q` since we never need `q`
 @inline _dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
 
-@inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims = :)
+@inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
     y .= _dropout_kernel.(y, p, 1 - p)
@@ -188,7 +188,7 @@ end
     stride = insize .÷ outsize
     k = insize .- (outsize .- 1) .* stride
     pad = 0
-    return PoolDims(x, k; padding = pad, stride = stride)
+    return PoolDims(x, k; padding=pad, stride=stride)
 end
 
 # CUDNN Constants
@@ -216,7 +216,7 @@ Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if 
 """
 @inline applyactivation(f::Function, x::AbstractArray) = f.(x)
 @inline function applyactivation(f::cudnnValidActivationTypes, x::CuArray{<:CUDNNFloat})
-    return CUDNN.cudnnActivationForward(x; mode = getCUDNNActivationMode(f))
+    return CUDNN.cudnnActivationForward(x; mode=getCUDNNActivationMode(f))
 end
 @inline applyactivation(::typeof(identity), x::AbstractArray) = x
 
@@ -225,7 +225,7 @@ end
     sx = size(x)
     sΔ = size(Δ)
     sx == sΔ && return Δ
-    return sum(Δ; dims = findall(sx .!= sΔ))
+    return sum(Δ; dims=findall(sx .!= sΔ))
 end
 
 @inline isvalidtensorop(x1, x2) = false
@@ -243,7 +243,7 @@ Computes `x .+ y`. Dispatches to CUDNN if possible
 @inline elementwise_add(x, y) = x .+ y
 @inline function elementwise_add(x::CuArray, y::CuArray)
     !isvalidtensorop(x, y) && return x .+ y
-    return cudnnOpTensorWithDefaults(x, y; op = CUDNN.CUDNN_OP_TENSOR_ADD)
+    return cudnnOpTensorWithDefaults(x, y; op=CUDNN.CUDNN_OP_TENSOR_ADD)
 end
 
 @inline function elementwise_add_pullback(x, y, Δ)
@@ -258,7 +258,7 @@ Computes `x .* y`. Dispatches to CUDNN if possible
 @inline elementwise_mul(x, y) = x .* y
 @inline function elementwise_mul(x::CuArray, y::CuArray)
     !isvalidtensorop(x, y) && return x .* y
-    return cudnnOpTensorWithDefaults(x, y; op = CUDNN.CUDNN_OP_TENSOR_MUL)
+    return cudnnOpTensorWithDefaults(x, y; op=CUDNN.CUDNN_OP_TENSOR_MUL)
 end
 
 @inline function elementwise_mul_pullback(x, y, Δ)
@@ -269,20 +269,20 @@ end
 # CUDNN Helpers
 function cudnnOpTensorWithDefaults(x1,
                                    x2;
-                                   y = similar(x1),
-                                   op::CUDNN.cudnnOpTensorOp_t = CUDNN.CUDNN_OP_TENSOR_ADD,
-                                   compType::DataType = (eltype(x1) <: Float64 ? Float64 :
-                                                         Float32),
-                                   nanOpt::CUDNN.cudnnNanPropagation_t = CUDNN.CUDNN_NOT_PROPAGATE_NAN,
-                                   opTensorDesc::CUDNN.cudnnOpTensorDescriptor = CUDNN.cudnnOpTensorDescriptor(op,
-                                                                                                               CUDNN.cudnnDataType(compType),
-                                                                                                               nanOpt),
-                                   alpha1::Real = 1,
-                                   alpha2::Real = 1,
-                                   beta::Real = 0,
-                                   x1Desc::CUDNN.cudnnTensorDescriptor = CUDNN.cudnnTensorDescriptor(x1),
-                                   x2Desc::CUDNN.cudnnTensorDescriptor = CUDNN.cudnnTensorDescriptor(x2),
-                                   yDesc::CUDNN.cudnnTensorDescriptor = CUDNN.cudnnTensorDescriptor(y))
+                                   y=similar(x1),
+                                   op::CUDNN.cudnnOpTensorOp_t=CUDNN.CUDNN_OP_TENSOR_ADD,
+                                   compType::DataType=(eltype(x1) <: Float64 ? Float64 :
+                                                       Float32),
+                                   nanOpt::CUDNN.cudnnNanPropagation_t=CUDNN.CUDNN_NOT_PROPAGATE_NAN,
+                                   opTensorDesc::CUDNN.cudnnOpTensorDescriptor=CUDNN.cudnnOpTensorDescriptor(op,
+                                                                                                             CUDNN.cudnnDataType(compType),
+                                                                                                             nanOpt),
+                                   alpha1::Real=1,
+                                   alpha2::Real=1,
+                                   beta::Real=0,
+                                   x1Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x1),
+                                   x2Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x2),
+                                   yDesc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(y))
     T = eltype(x1)
     alpha1, alpha2, beta = CUDNN.scalingParameter.((T,), (alpha1, alpha2, beta))
     return CUDNN.cudnnOpTensorAD(x1, x2; opTensorDesc, alpha1, x1Desc, alpha2, x2Desc, beta,

@@ -6,9 +6,9 @@ rng = Random.default_rng()
 Random.seed!(rng, 0)
 
 @testset "RNNCell" begin for rnncell in (RNNCell(3 => 5, identity),
-                              RNNCell(3 => 5, tanh),
-                              RNNCell(3 => 5, tanh; bias = false),
-                              RNNCell(3 => 5, identity; bias = false))
+                                         RNNCell(3 => 5, tanh),
+                                         RNNCell(3 => 5, tanh; bias=false),
+                                         RNNCell(3 => 5, identity; bias=false))
     println(rnncell)
     ps, st = Lux.setup(rng, rnncell)
     x = randn(rng, Float32, 3, 2)
@@ -27,7 +27,7 @@ Random.seed!(rng, 0)
         return sum(abs2, h)
     end
 
-    test_gradient_correctness_fdm(loss_loop_rnncell, ps, atol = 1e-3, rtol = 1e-3)
+    test_gradient_correctness_fdm(loss_loop_rnncell, ps, atol=1e-3, rtol=1e-3)
 end end
 
 @testset "LSTMCell" begin
@@ -50,7 +50,7 @@ end end
         return sum(abs2, h)
     end
 
-    test_gradient_correctness_fdm(loss_loop_lstmcell, ps, atol = 1e-3, rtol = 1e-3)
+    test_gradient_correctness_fdm(loss_loop_lstmcell, ps, atol=1e-3, rtol=1e-3)
 end
 
 @testset "GRUCell" begin
@@ -73,7 +73,7 @@ end
         return sum(abs2, h)
     end
 
-    test_gradient_correctness_fdm(loss_loop_grucell, ps, atol = 1e-3, rtol = 1e-3)
+    test_gradient_correctness_fdm(loss_loop_grucell, ps, atol=1e-3, rtol=1e-3)
 end
 
 @testset "multigate" begin

@@ -13,7 +13,7 @@ GC.gc(true)
 @testset "VGG" begin @testset "VGG($sz, batchnorm=$bn)" for sz in [11, 13, 16, 19],
                                                             bn in [true, false]
 
-    m = VGG(sz, batchnorm = bn)
+    m = VGG(sz, batchnorm=bn)
     m2 = Lux.transform(m.layers)
 
     @test size(run_model(m2, rand(Float32, 224, 224, 3, 1))) == (1000, 1)

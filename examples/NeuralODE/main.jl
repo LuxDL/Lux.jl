@@ -26,13 +26,13 @@ function loadmnist(batchsize, train_split)
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
     y_data = onehot(labels_raw)
-    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at = train_split)
+    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
 
     return (
             ## Use DataLoader to automatically minibatch and shuffle the data
-            DataLoader(collect.((x_train, y_train)); batchsize = batchsize, shuffle = true),
+            DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
             ## Don't shuffle the test data
-            DataLoader(collect.((x_test, y_test)); batchsize = batchsize, shuffle = false))
+            DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false))
 end
 
 # ## Define the Neural ODE Layer
@@ -49,9 +49,9 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
 end
 
 function NeuralODE(model::Lux.AbstractExplicitLayer;
-                   solver = Tsit5(),
-                   sensealg = InterpolatingAdjoint(; autojacvec = ZygoteVJP()),
-                   tspan = (0.0f0, 1.0f0),
+                   solver=Tsit5(),
+                   sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
+                   tspan=(0.0f0, 1.0f0),
                    kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
@@ -62,13 +62,13 @@ function (n::NeuralODE)(x, ps, st)
         return u_
     end
     prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
-    return solve(prob, n.solver; sensealg = n.sensealg, n.kwargs...), st
+    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
 end
 
 function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:CuArray}}) where {T, N}
-    dropdims(gpu(x); dims = 3)
+    dropdims(gpu(x); dims=3)
 end
-diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims = 3)
+diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 
 # ## Create and Initialize the Neural ODE Layer
 function create_model()
@@ -77,10 +77,10 @@ function create_model()
                   Dense(784, 20, tanh),
                   NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh),
                                   Dense(10, 20, tanh));
-                            save_everystep = false,
-                            reltol = 1.0f-3,
-                            abstol = 1.0f-3,
-                            save_start = false),
+                            save_everystep=false,
+                            reltol=1.0f-3,
+                            abstol=1.0f-3,
+                            save_start=false),
                   diffeqsol_to_array,
                   Dense(20, 10))
 
@@ -97,7 +97,7 @@ end
 # ## Define Utility Functions
 get_class(x) = argmax.(eachcol(x))
 
-logitcrossentropy(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ); dims = 1))
+logitcrossentropy(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ); dims=1))
 
 function loss(x, y, model, ps, st)
     ŷ, st = model(x, ps, st)

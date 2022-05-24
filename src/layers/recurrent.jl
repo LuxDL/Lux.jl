@@ -45,21 +45,21 @@ struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
 end
 
 function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int},
-                 activation = tanh;
-                 bias::Bool = true,
-                 init_bias = zeros32,
-                 init_weight = glorot_uniform,
-                 init_state = ones32)
+                 activation=tanh;
+                 bias::Bool=true,
+                 init_bias=zeros32,
+                 init_weight=glorot_uniform,
+                 init_state=ones32)
     return RNNCell{bias, typeof(activation), typeof(init_bias), typeof(init_weight),
                    typeof(init_state)}(activation, in_dims, out_dims, init_bias,
                                        init_weight, init_state)
 end
 
 function initialparameters(rng::AbstractRNG, rnn::RNNCell{bias}) where {bias}
-    ps = (weight_ih = rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
-          weight_hh = rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
+    ps = (weight_ih=rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
+          weight_hh=rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
     if bias
-        ps = merge(ps, (bias = rnn.init_bias(rng, rnn.out_dims),))
+        ps = merge(ps, (bias=rnn.init_bias(rng, rnn.out_dims),))
     end
     return ps
 end
@@ -67,7 +67,7 @@ end
 function initialstates(rng::AbstractRNG, ::RNNCell)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng = replicate(rng),)
+    return (rng=replicate(rng),)
 end
 
 function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
@@ -171,15 +171,15 @@ struct LSTMCell{B, W, S} <: AbstractExplicitLayer
 end
 
 function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-                  init_weight::Tuple{Function, Function, Function, Function} = (glorot_uniform,
-                                                                                glorot_uniform,
-                                                                                glorot_uniform,
-                                                                                glorot_uniform),
-                  init_bias::Tuple{Function, Function, Function, Function} = (zeros32,
-                                                                              zeros32,
-                                                                              ones32,
-                                                                              zeros32),
-                  init_state::Function = zeros32)
+                  init_weight::Tuple{Function, Function, Function, Function}=(glorot_uniform,
+                                                                              glorot_uniform,
+                                                                              glorot_uniform,
+                                                                              glorot_uniform),
+                  init_bias::Tuple{Function, Function, Function, Function}=(zeros32,
+                                                                            zeros32,
+                                                                            ones32,
+                                                                            zeros32),
+                  init_state::Function=zeros32)
     return LSTMCell(in_dims, out_dims, init_bias, init_weight, init_state)
 end
 
@@ -189,13 +189,13 @@ function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
     weight_h = vcat([init_weight(rng, lstm.out_dims, lstm.out_dims)
                      for init_weight in lstm.init_weight]...)
     bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
-    return (weight_i = weight_i, weight_h = weight_h, bias = bias)
+    return (weight_i=weight_i, weight_h=weight_h, bias=bias)
 end
 
 function initialstates(rng::AbstractRNG, ::LSTMCell)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng = replicate(rng),)
+    return (rng=replicate(rng),)
 end
 
 function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
@@ -272,12 +272,12 @@ struct GRUCell{W, B, S} <: AbstractExplicitLayer
 end
 
 function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-                 init_weight::Tuple{Function, Function, Function} = (glorot_uniform,
-                                                                     glorot_uniform,
-                                                                     glorot_uniform),
-                 init_bias::Tuple{Function, Function, Function} = (zeros32, zeros32,
-                                                                   zeros32),
-                 init_state::Function = zeros32)
+                 init_weight::Tuple{Function, Function, Function}=(glorot_uniform,
+                                                                   glorot_uniform,
+                                                                   glorot_uniform),
+                 init_bias::Tuple{Function, Function, Function}=(zeros32, zeros32,
+                                                                 zeros32),
+                 init_state::Function=zeros32)
     return GRUCell(in_dims, out_dims, init_weight, init_bias, init_state)
 end
 
@@ -288,13 +288,13 @@ function initialparameters(rng::AbstractRNG, gru::GRUCell)
                      for init_weight in gru.init_weight]...)
     bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
     bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)
-    return (weight_i = weight_i, weight_h = weight_h, bias_i = bias_i, bias_h = bias_h)
+    return (weight_i=weight_i, weight_h=weight_h, bias_i=bias_i, bias_h=bias_h)
 end
 
 function initialstates(rng::AbstractRNG, ::GRUCell)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng = replicate(rng),)
+    return (rng=replicate(rng),)
 end
 
 function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
