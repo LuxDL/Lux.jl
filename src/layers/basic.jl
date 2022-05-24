@@ -238,13 +238,13 @@ end
             i in 1:N
         ],
     )
-    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
+    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
-        append!(calls, [:($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...)))])
+        push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
     else
-        append!(calls, [:($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...)))])
+        push!(calls, :($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...))))
     end
-    append!(calls, [:(return $(y_symbols[N + 1]), st)])
+    push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
 
@@ -317,8 +317,8 @@ end
     append!(
         calls, [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]), st.$(names[i]))) for i in 1:N]
     )
-    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return tuple($(Tuple(y_symbols)...)), st)])
+    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
 end
 
@@ -400,15 +400,18 @@ end
     st_symbols = [gensym() for _ in 1:N]
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
-    for i in 1:N
-        push!(
-            calls,
-            :(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]))),
-        )
-        push!(calls, :($(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))))
-    end
-    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return $(y_symbols[N + 1]), st)])
+    append!(
+        calls,
+        [
+            :(
+                ($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
+                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))
+            )
+            for i in 1:N
+        ]
+    )
+    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
 
@@ -522,8 +525,8 @@ flatten_model(x) = x
             for i in 2:N
         ],
     )
-    append!(calls, [:(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return $(x_symbols[N]), st)])
+    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(return $(x_symbols[N]), st))
     return Expr(:block, calls...)
 end
 
