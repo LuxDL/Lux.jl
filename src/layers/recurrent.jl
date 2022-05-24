@@ -35,7 +35,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
 * `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct RNNCell{bias,A,B,W,S} <: AbstractExplicitLayer
+struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
     activation::A
     in_dims::Int
     out_dims::Int
@@ -44,26 +44,22 @@ struct RNNCell{bias,A,B,W,S} <: AbstractExplicitLayer
     init_state::S
 end
 
-function RNNCell(
-    (in_dims, out_dims)::Pair{<:Int,<:Int},
-    activation=tanh;
-    bias::Bool=true,
-    init_bias=zeros32,
-    init_weight=glorot_uniform,
-    init_state=ones32,
-)
-    return RNNCell{bias,typeof(activation),typeof(init_bias),typeof(init_weight),typeof(init_state)}(
-        activation, in_dims, out_dims, init_bias, init_weight, init_state
-    )
+function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int},
+                 activation = tanh;
+                 bias::Bool = true,
+                 init_bias = zeros32,
+                 init_weight = glorot_uniform,
+                 init_state = ones32)
+    return RNNCell{bias, typeof(activation), typeof(init_bias), typeof(init_weight),
+                   typeof(init_state)}(activation, in_dims, out_dims, init_bias,
+                                       init_weight, init_state)
 end
 
 function initialparameters(rng::AbstractRNG, rnn::RNNCell{bias}) where {bias}
-    ps = (
-        weight_ih=rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
-        weight_hh=rnn.init_weight(rng, rnn.out_dims, rnn.out_dims),
-    )
+    ps = (weight_ih = rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
+          weight_hh = rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
     if bias
-        ps = merge(ps, (bias=rnn.init_bias(rng, rnn.out_dims),))
+        ps = merge(ps, (bias = rnn.init_bias(rng, rnn.out_dims),))
     end
     return ps
 end
@@ -71,40 +67,43 @@ end
 function initialstates(rng::AbstractRNG, ::RNNCell)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng=replicate(rng),)
+    return (rng = replicate(rng),)
 end
 
-function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                        st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = rnn.init_state(rng, rnn.out_dims, size(x, 2))
     return rnn((x, hidden_state), ps, st)
 end
 
-function (rnn::RNNCell{true})(
-    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+function (rnn::RNNCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
+                              ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
     return h_new, st
 end
 
-function (rnn::RNNCell{true,typeof(identity)})(
-    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+function (rnn::RNNCell{true, typeof(identity)})((x,
+                                                 hidden_state)::Tuple{<:AbstractMatrix,
+                                                                      <:AbstractMatrix},
+                                                ps::Union{ComponentArray, NamedTuple},
+                                                st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
 
-function (rnn::RNNCell{false})(
-    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+function (rnn::RNNCell{false})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
+                               ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
     return h_new, st
 end
 
-function (rnn::RNNCell{false,typeof(identity)})(
-    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+function (rnn::RNNCell{false, typeof(identity)})((x,
+                                                  hidden_state)::Tuple{<:AbstractMatrix,
+                                                                       <:AbstractMatrix},
+                                                 ps::Union{ComponentArray, NamedTuple},
+                                                 st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
     return h_new, st
 end
@@ -163,7 +162,7 @@ Long Short-Term (LSTM) Cell
 
 * `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct LSTMCell{B,W,S} <: AbstractExplicitLayer
+struct LSTMCell{B, W, S} <: AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
     init_bias::B
@@ -171,31 +170,36 @@ struct LSTMCell{B,W,S} <: AbstractExplicitLayer
     init_state::S
 end
 
-function LSTMCell(
-    (in_dims, out_dims)::Pair{<:Int,<:Int};
-    init_weight::Tuple{Function,Function,Function,Function}=(
-        glorot_uniform, glorot_uniform, glorot_uniform, glorot_uniform
-    ),
-    init_bias::Tuple{Function,Function,Function,Function}=(zeros32, zeros32, ones32, zeros32),
-    init_state::Function=zeros32,
-)
+function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
+                  init_weight::Tuple{Function, Function, Function, Function} = (glorot_uniform,
+                                                                                glorot_uniform,
+                                                                                glorot_uniform,
+                                                                                glorot_uniform),
+                  init_bias::Tuple{Function, Function, Function, Function} = (zeros32,
+                                                                              zeros32,
+                                                                              ones32,
+                                                                              zeros32),
+                  init_state::Function = zeros32)
     return LSTMCell(in_dims, out_dims, init_bias, init_weight, init_state)
 end
 
 function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
-    weight_i = vcat([init_weight(rng, lstm.out_dims, lstm.in_dims) for init_weight in lstm.init_weight]...)
-    weight_h = vcat([init_weight(rng, lstm.out_dims, lstm.out_dims) for init_weight in lstm.init_weight]...)
+    weight_i = vcat([init_weight(rng, lstm.out_dims, lstm.in_dims)
+                     for init_weight in lstm.init_weight]...)
+    weight_h = vcat([init_weight(rng, lstm.out_dims, lstm.out_dims)
+                     for init_weight in lstm.init_weight]...)
     bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
-    return (weight_i=weight_i, weight_h=weight_h, bias=bias)
+    return (weight_i = weight_i, weight_h = weight_h, bias = bias)
 end
 
 function initialstates(rng::AbstractRNG, ::LSTMCell)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng=replicate(rng),)
+    return (rng = replicate(rng),)
 end
 
-function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                          st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = lstm.init_state(rng, lstm.out_dims, size(x, 2))
@@ -203,11 +207,11 @@ function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple
     return lstm((x, hidden_state, memory), ps, st)
 end
 
-function (lstm::LSTMCell)(
-    (x, hidden_state, memory)::Tuple{<:AbstractMatrix,<:AbstractMatrix,<:AbstractMatrix},
-    ps::Union{ComponentArray,NamedTuple},
-    st::NamedTuple,
-)
+function (lstm::LSTMCell)((x, hidden_state,
+                           memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
+                                          <:AbstractMatrix},
+                          ps::Union{ComponentArray, NamedTuple},
+                          st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
@@ -259,7 +263,7 @@ Gated Recurrent Unit (GRU) Cell
 
 * `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct GRUCell{W,B,S} <: AbstractExplicitLayer
+struct GRUCell{W, B, S} <: AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
     init_weight::W
@@ -267,39 +271,42 @@ struct GRUCell{W,B,S} <: AbstractExplicitLayer
     init_state::S
 end
 
-function GRUCell(
-    (in_dims, out_dims)::Pair{<:Int,<:Int};
-    init_weight::Tuple{Function,Function,Function}=(glorot_uniform, glorot_uniform, glorot_uniform),
-    init_bias::Tuple{Function,Function,Function}=(zeros32, zeros32, zeros32),
-    init_state::Function=zeros32,
-)
+function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
+                 init_weight::Tuple{Function, Function, Function} = (glorot_uniform,
+                                                                     glorot_uniform,
+                                                                     glorot_uniform),
+                 init_bias::Tuple{Function, Function, Function} = (zeros32, zeros32,
+                                                                   zeros32),
+                 init_state::Function = zeros32)
     return GRUCell(in_dims, out_dims, init_weight, init_bias, init_state)
 end
 
 function initialparameters(rng::AbstractRNG, gru::GRUCell)
-    weight_i = vcat([init_weight(rng, gru.out_dims, gru.in_dims) for init_weight in gru.init_weight]...)
-    weight_h = vcat([init_weight(rng, gru.out_dims, gru.out_dims) for init_weight in gru.init_weight]...)
+    weight_i = vcat([init_weight(rng, gru.out_dims, gru.in_dims)
+                     for init_weight in gru.init_weight]...)
+    weight_h = vcat([init_weight(rng, gru.out_dims, gru.out_dims)
+                     for init_weight in gru.init_weight]...)
     bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
     bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)
-    return (weight_i=weight_i, weight_h=weight_h, bias_i=bias_i, bias_h=bias_h)
+    return (weight_i = weight_i, weight_h = weight_h, bias_i = bias_i, bias_h = bias_h)
 end
 
 function initialstates(rng::AbstractRNG, ::GRUCell)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng=replicate(rng),)
+    return (rng = replicate(rng),)
 end
 
-function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                        st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = gru.init_state(rng, gru.out_dims, size(x, 2))
     return gru((x, hidden_state), ps, st)
 end
 
-function (gru::GRUCell)(
-    (x, hidden_state)::Tuple{<:AbstractMatrix,<:AbstractMatrix}, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+function (gru::GRUCell)((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
+                        ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     gxs = multigate(ps.weight_i * x, Val(3))
     ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))
 

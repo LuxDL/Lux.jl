@@ -68,11 +68,11 @@ x .+ 1
 
 # We can see Julia tile the column vector `1:5` across all rows of the larger array.
 
-zeros(5,5) .+ (1:5)
+zeros(5, 5) .+ (1:5)
 
 # The x' syntax is used to transpose a column `1:5` into an equivalent row, and Julia will tile that across columns.
 
-zeros(5,5) .+ (1:5)'
+zeros(5, 5) .+ (1:5)'
 
 # We can use this to make a times table.
 
@@ -121,13 +121,13 @@ Random.seed!(rng, 0)
 
 # First, let us run a random number generator 3 times with the `replicate`d rng
 
-for i = 1:3
+for i in 1:3
     println("Iteration $i ", rand(Lux.replicate(rng), 10))
 end
 
 # As expected we get the same output. We can remove the `replicate` call and we will get different outputs
 
-for i = 1:3
+for i in 1:3
     println("Iteration $i ", rand(rng, 10))
 end
 
@@ -155,8 +155,10 @@ v = randn(rng, Float32, 4)
 # Let's use AbstractDifferentiation and Zygote to compute the gradients
 
 println("Actual Gradient: ", ∇f(v))
-println("Computed Gradient via Reverse Mode AD (Zygote): ", AD.gradient(AD.ZygoteBackend(), f, v)[1])
-println("Computed Gradient via Forward Mode AD (ForwardDiff): ", AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
+println("Computed Gradient via Reverse Mode AD (Zygote): ",
+        AD.gradient(AD.ZygoteBackend(), f, v)[1])
+println("Computed Gradient via Forward Mode AD (ForwardDiff): ",
+        AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
 
 # Note that `AD.gradient` will only work for scalar valued outputs
 
@@ -248,6 +250,7 @@ for i in 1:100
     ## Perform parameter update
     opt_state, ps = Optimisers.update(opt_state, ps, gs)
     if i % 10 == 1 || i == 100
-        println("Loss Value after $i iterations: ", mse(model, ps, st, x_samples, y_samples))
+        println("Loss Value after $i iterations: ",
+                mse(model, ps, st, x_samples, y_samples))
     end
 end

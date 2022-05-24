@@ -4,7 +4,8 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random, Statistics, Zygote
+using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random,
+      Statistics, Zygote
 import MLDatasets: MNIST
 import MLDataUtils: convertlabel, LabelEnc
 import MLUtils: DataLoader, splitobs
@@ -12,7 +13,9 @@ CUDA.allowscalar(false)
 
 # ## Loading MNIST
 ## Use MLDataUtils LabelEnc for natural onehot conversion
-onehot(labels_raw) = convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
+function onehot(labels_raw)
+    convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
+end
 
 function loadmnist(batchsize, train_split)
     ## Load MNIST: Only 1500 for demonstration purposes
@@ -23,21 +26,21 @@ function loadmnist(batchsize, train_split)
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
     y_data = onehot(labels_raw)
-    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
+    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at = train_split)
 
     return (
-        ## Use DataLoader to automatically minibatch and shuffle the data
-        DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
-        ## Don't shuffle the test data
-        DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false),
-    )
+            ## Use DataLoader to automatically minibatch and shuffle the data
+            DataLoader(collect.((x_train, y_train)); batchsize = batchsize, shuffle = true),
+            ## Don't shuffle the test data
+            DataLoader(collect.((x_test, y_test)); batchsize = batchsize, shuffle = false))
 end
 
 # ## Define the Neural ODE Layer
 #
 # The NeuralODE is a ContainerLayer. It stores a `model` and the parameters and states of the NeuralODE is
 # same as that of the underlying model.
-struct NeuralODE{M<:Lux.AbstractExplicitLayer,So,Se,T,K} <: Lux.AbstractExplicitContainerLayer{(:model,)}
+struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
+       Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
     solver::So
     sensealg::Se
@@ -45,13 +48,11 @@ struct NeuralODE{M<:Lux.AbstractExplicitLayer,So,Se,T,K} <: Lux.AbstractExplicit
     kwargs::K
 end
 
-function NeuralODE(
-    model::Lux.AbstractExplicitLayer;
-    solver=Tsit5(),
-    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-    tspan=(0.0f0, 1.0f0),
-    kwargs...,
-)
+function NeuralODE(model::Lux.AbstractExplicitLayer;
+                   solver = Tsit5(),
+                   sensealg = InterpolatingAdjoint(; autojacvec = ZygoteVJP()),
+                   tspan = (0.0f0, 1.0f0),
+                   kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 
@@ -61,28 +62,27 @@ function (n::NeuralODE)(x, ps, st)
         return u_
     end
     prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
-    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
+    return solve(prob, n.solver; sensealg = n.sensealg, n.kwargs...), st
 end
 
-diffeqsol_to_array(x::ODESolution{T,N,<:AbstractVector{<:CuArray}}) where {T,N} = dropdims(gpu(x); dims=3)
-diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
+function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:CuArray}}) where {T, N}
+    dropdims(gpu(x); dims = 3)
+end
+diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims = 3)
 
 # ## Create and Initialize the Neural ODE Layer
 function create_model()
     ## Construct the Neural ODE Model
-    model = Chain(
-        FlattenLayer(),
-        Dense(784, 20, tanh),
-        NeuralODE(
-            Chain(Dense(20, 10, tanh), Dense(10, 10, tanh), Dense(10, 20, tanh));
-            save_everystep=false,
-            reltol=1.0f-3,
-            abstol=1.0f-3,
-            save_start=false,
-        ),
-        diffeqsol_to_array,
-        Dense(20, 10),
-    )
+    model = Chain(FlattenLayer(),
+                  Dense(784, 20, tanh),
+                  NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh),
+                                  Dense(10, 20, tanh));
+                            save_everystep = false,
+                            reltol = 1.0f-3,
+                            abstol = 1.0f-3,
+                            save_start = false),
+                  diffeqsol_to_array,
+                  Dense(20, 10))
 
     rng = Random.default_rng()
     Random.seed!(rng, 0)
@@ -128,7 +128,8 @@ function train()
     st_opt = Optimisers.setup(opt, ps)
 
     ### Warmup the Model
-    img, lab = gpu(train_dataloader.data[1][:, :, :, 1:1]), gpu(train_dataloader.data[2][:, 1:1])
+    img, lab = gpu(train_dataloader.data[1][:, :, :, 1:1]),
+               gpu(train_dataloader.data[2][:, 1:1])
     loss(img, lab, model, ps, st)
     (l, _), back = pullback(p -> loss(img, lab, model, p, st), ps)
     back((one(l), nothing))
@@ -145,11 +146,9 @@ function train()
         end
         ttime = time() - stime
 
-        println(
-            "[$epoch/$nepochs] \t Time $(round(ttime; digits=2))s \t Training Accuracy: " *
-            "$(round(accuracy(model, ps, st, train_dataloader) * 100; digits=2))% \t " *
-            "Test Accuracy: $(round(accuracy(model, ps, st, test_dataloader) * 100; digits=2))%"
-        )
+        println("[$epoch/$nepochs] \t Time $(round(ttime; digits=2))s \t Training Accuracy: " *
+                "$(round(accuracy(model, ps, st, train_dataloader) * 100; digits=2))% \t " *
+                "Test Accuracy: $(round(accuracy(model, ps, st, test_dataloader) * 100; digits=2))%")
     end
 end
 

@@ -20,7 +20,7 @@ using Optimisers
 # Optional Dependency
 using Requires
 
-const use_cuda = Ref{Union{Nothing,Bool}}(nothing)
+const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
 # Data Transfer Utilities
 include("adapt.jl")
@@ -50,7 +50,8 @@ export cpu, gpu
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer
 export Dense, Scale
-export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool, AdaptiveMeanPool, Upsample
+export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool,
+       AdaptiveMeanPool, Upsample
 export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm
 export WeightNorm
