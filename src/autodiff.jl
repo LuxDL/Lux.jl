@@ -1,6 +1,7 @@
 # Non Differentiable Functions
 ChainRulesCore.@non_differentiable replicate(::Any)
-ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any,
+                                                     ::Any, ::Any)
 ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
@@ -8,23 +9,23 @@ ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
 
-ChainRulesCore.Tangent{P}(; kwargs...) where {P<:AbstractExplicitLayer} = NoTangent()
+ChainRulesCore.Tangent{P}(; kwargs...) where {P <: AbstractExplicitLayer} = NoTangent()
 
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
-ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x) = x, Δ -> (NoTangent(), NoTangent(), Δ)
+function ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x)
+    x, Δ -> (NoTangent(), NoTangent(), Δ)
+end
 
 # NNlib Functions
-function ChainRulesCore.rrule(
-    ::typeof(batchnorm),
-    g::CuArray{T},
-    b::CuArray{T},
-    x::Union{CuArray{T,4},CuArray{T,5}},
-    running_mean,
-    running_var,
-    momentum;
-    kwargs...,
-) where {T<:CUDNNFloat}
+function ChainRulesCore.rrule(::typeof(batchnorm),
+                              g::CuArray{T},
+                              b::CuArray{T},
+                              x::Union{CuArray{T, 4}, CuArray{T, 5}},
+                              running_mean,
+                              running_var,
+                              momentum;
+                              kwargs...) where {T <: CUDNNFloat}
     y = batchnorm(g, b, x, running_mean, running_var, momentum; kwargs...)
     function batchnorm_pullback(dy)
         dg, db, dx = ∇batchnorm(g, b, x, dy, running_mean, running_var, momentum; kwargs...)
@@ -34,9 +35,8 @@ function ChainRulesCore.rrule(
 end
 
 # Activation Rrules
-function ChainRulesCore.rrule(
-    ::typeof(applyactivation), f::cudnnValidActivationTypes, x::CuArray{T}
-) where {T<:CUDNNFloat}
+function ChainRulesCore.rrule(::typeof(applyactivation), f::cudnnValidActivationTypes,
+                              x::CuArray{T}) where {T <: CUDNNFloat}
     mode = getCUDNNActivationMode(f)
     y = CUDNN.cudnnActivationForward(x; mode)
     function applyactivation_pullback(Δ)
@@ -68,12 +68,15 @@ function ChainRulesCore.rrule(::typeof(Array), x::CUDA.CuArray)
     return Array(x), d -> (NoTangent(), CUDA.cu(d))
 end
 
-function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
-    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
+function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor,
+                              x::CUDA.AbstractGPUArray)
+    return adapt_storage(to, x),
+           d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
 end
 
 function ChainRulesCore.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
-    return adapt_storage(to, x), d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
+    return adapt_storage(to, x),
+           d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
 end
 
 # RNN Helpers

@@ -2,7 +2,7 @@ using Documenter, Lux, Literate, Pkg
 
 # Precompile example dependencies
 Pkg.activate(joinpath(@__DIR__, "..", "examples"))
-Pkg.develop(PackageSpec(; path=joinpath(@__DIR__, "..")))
+Pkg.develop(PackageSpec(; path = joinpath(@__DIR__, "..")))
 Pkg.instantiate()
 Pkg.precompile()
 Pkg.activate(@__DIR__)
@@ -13,7 +13,8 @@ if haskey(ENV, "GITHUB_ACTIONS")
 end
 
 deployconfig = Documenter.auto_detect_deploy_system()
-Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/Lux.jl.git")
+Documenter.post_status(deployconfig; type = "pending",
+                       repo = "github.com/avik-pal/Lux.jl.git")
 
 # Tutorials
 get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
@@ -28,10 +29,15 @@ ADVANCED_TUTORIAL_NAMES = []
 MAPPING = Dict("beginner" => [], "intermediate" => [], "advanced" => [])
 
 for (d, names, paths) in
-    (("beginner", BEGINNER_TUTORIAL_NAMES, BEGINNER_TUTORIALS), ("intermediate", INTERMEDIATE_TUTORIAL_NAMES, INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIAL_NAMES, ADVANCED_TUTORIALS))
+    (("beginner", BEGINNER_TUTORIAL_NAMES, BEGINNER_TUTORIALS),
+     ("intermediate", INTERMEDIATE_TUTORIAL_NAMES, INTERMEDIATE_TUTORIALS),
+     ("advanced", ADVANCED_TUTORIAL_NAMES, ADVANCED_TUTORIALS))
     for (n, p) in zip(names, paths)
-        Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p)); documenter=true)
-        push!(MAPPING[d], n => joinpath("examples/generated", d, dirname(p), splitext(basename(p))[1] * ".md"))
+        Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p));
+                          documenter = true)
+        push!(MAPPING[d],
+              n => joinpath("examples/generated", d, dirname(p),
+                            splitext(basename(p))[1] * ".md"))
     end
 end
 
@@ -70,6 +76,7 @@ makedocs(;
     ],
 )
 
-deploydocs(; repo="github.com/avik-pal/Lux.jl.git", push_preview=true, devbranch="main")
+deploydocs(; repo = "github.com/avik-pal/Lux.jl.git", push_preview = true,
+           devbranch = "main")
 
 Pkg.activate(@__DIR__)

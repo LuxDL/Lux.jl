@@ -42,55 +42,67 @@ Image data should be stored in WHCN order (width, height, channels, batch). In o
 * `weight`: Convolution kernel
 * `bias`: Bias (present if `bias=true`)
 """
-struct Conv{N,bias,M,F1,F2} <: AbstractExplicitLayer
+struct Conv{N, bias, M, F1, F2} <: AbstractExplicitLayer
     activation::F1
     in_chs::Int
     out_chs::Int
-    kernel_size::NTuple{N,Int}
-    stride::NTuple{N,Int}
-    pad::NTuple{M,Int}
-    dilation::NTuple{N,Int}
+    kernel_size::NTuple{N, Int}
+    stride::NTuple{N, Int}
+    pad::NTuple{M, Int}
+    dilation::NTuple{N, Int}
     groups::Int
     init_weight::F2
 end
 
-function Conv(
-    k::NTuple{N,Integer},
-    ch::Pair{<:Integer,<:Integer},
-    activation=identity;
-    init_weight=glorot_uniform,
-    stride=1,
-    pad=0,
-    dilation=1,
-    groups=1,
-    bias=true,
-) where {N}
+function Conv(k::NTuple{N, Integer},
+              ch::Pair{<:Integer, <:Integer},
+              activation = identity;
+              init_weight = glorot_uniform,
+              stride = 1,
+              pad = 0,
+              dilation = 1,
+              groups = 1,
+              bias = true) where {N}
     stride = expand(Val(N), stride)
     dilation = expand(Val(N), dilation)
     pad = calc_padding(Conv, pad, k, dilation, stride)
     activation = NNlib.fast_act(activation)
-    return Conv{N,bias,length(pad),typeof(activation),typeof(init_weight)}(
-        activation, first(ch), last(ch), k, stride, pad, dilation, groups, init_weight
-    )
+    return Conv{N, bias, length(pad), typeof(activation), typeof(init_weight)}(activation,
+                                                                               first(ch),
+                                                                               last(ch), k,
+                                                                               stride, pad,
+                                                                               dilation,
+                                                                               groups,
+                                                                               init_weight)
 end
 
-function initialparameters(rng::AbstractRNG, c::Conv{N,bias}) where {N,bias}
-    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
-    return bias ? (weight=weight, bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) : (weight=weight,)
+function initialparameters(rng::AbstractRNG, c::Conv{N, bias}) where {N, bias}
+    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init = c.init_weight,
+                        groups = c.groups)
+    return bias ?
+           (weight = weight,
+            bias = zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) :
+           (weight = weight,)
 end
 
-function parameterlength(c::Conv{N,bias}) where {N,bias}
+function parameterlength(c::Conv{N, bias}) where {N, bias}
     return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + (bias ? c.out_chs : 0)
 end
 
-@inline function (c::Conv{N,false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
+@inline function (c::Conv{N, false})(x::AbstractArray,
+                                     ps::Union{ComponentArray, NamedTuple},
+                                     st::NamedTuple) where {N}
+    cdims = DenseConvDims(x, ps.weight; stride = c.stride, padding = c.pad,
+                          dilation = c.dilation, groups = c.groups)
     return applyactivation(c.activation, conv_wrapper(x, ps.weight, cdims)), st
 end
 
-@inline function (c::Conv{N,true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return applyactivation(c.activation, elementwise_add(conv_wrapper(x, ps.weight, cdims), ps.bias)), st
+@inline function (c::Conv{N, true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+                                    st::NamedTuple) where {N}
+    cdims = DenseConvDims(x, ps.weight; stride = c.stride, padding = c.pad,
+                          dilation = c.dilation, groups = c.groups)
+    return applyactivation(c.activation,
+                           elementwise_add(conv_wrapper(x, ps.weight, cdims), ps.bias)), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -100,7 +112,7 @@ function Base.show(io::IO, l::Conv)
     return print(io, ")")
 end
 
-function _print_conv_opt(io::IO, l::Conv{N,bias}) where {N,bias}
+function _print_conv_opt(io::IO, l::Conv{N, bias}) where {N, bias}
     l.activation == identity || print(io, ", ", l.activation)
     all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
     all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
@@ -139,20 +151,20 @@ Max pooling layer, which replaces all pixels in a block of size `window` with th
 
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref), [`AdaptiveMaxPool`](@ref)
 """
-struct MaxPool{N,M} <: AbstractExplicitLayer
-    k::NTuple{N,Int}
-    pad::NTuple{M,Int}
-    stride::NTuple{N,Int}
+struct MaxPool{N, M} <: AbstractExplicitLayer
+    k::NTuple{N, Int}
+    pad::NTuple{M, Int}
+    stride::NTuple{N, Int}
 end
 
-function MaxPool(k::NTuple{N,Integer}; pad=0, stride=k) where {N}
+function MaxPool(k::NTuple{N, Integer}; pad = 0, stride = k) where {N}
     stride = expand(Val(N), stride)
     pad = calc_padding(MaxPool, pad, k, 1, stride)
-    return MaxPool{N,length(pad)}(k, pad, stride)
+    return MaxPool{N, length(pad)}(k, pad, stride)
 end
 
-function (m::MaxPool{N,M})(x, ps, st::NamedTuple) where {N,M}
-    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
+function (m::MaxPool{N, M})(x, ps, st::NamedTuple) where {N, M}
+    pdims = PoolDims(x, m.k; padding = m.pad, stride = m.stride)
     return maxpool(x, pdims), st
 end
 
@@ -192,20 +204,20 @@ Mean pooling layer, which replaces all pixels in a block of size `window` with t
 
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref), [`AdaptiveMeanPool`](@ref)
 """
-struct MeanPool{N,M} <: AbstractExplicitLayer
-    k::NTuple{N,Int}
-    pad::NTuple{M,Int}
-    stride::NTuple{N,Int}
+struct MeanPool{N, M} <: AbstractExplicitLayer
+    k::NTuple{N, Int}
+    pad::NTuple{M, Int}
+    stride::NTuple{N, Int}
 end
 
-function MeanPool(k::NTuple{N,Integer}; pad=0, stride=k) where {N}
+function MeanPool(k::NTuple{N, Integer}; pad = 0, stride = k) where {N}
     stride = expand(Val(N), stride)
     pad = calc_padding(MeanPool, pad, k, 1, stride)
-    return MeanPool{N,length(pad)}(k, pad, stride)
+    return MeanPool{N, length(pad)}(k, pad, stride)
 end
 
-function (m::MeanPool{N,M})(x, ps, st::NamedTuple) where {N,M}
-    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
+function (m::MeanPool{N, M})(x, ps, st::NamedTuple) where {N, M}
+    pdims = PoolDims(x, m.k; padding = m.pad, stride = m.stride)
     return meanpool(x, pdims), st
 end
 
@@ -255,43 +267,45 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 * Upsampled Input of size `size` or of size `(I_1 × scale[1], ..., I_N × scale[N], C, N)`
 * Empty `NamedTuple()`
 """
-struct Upsample{mode,S,T} <: AbstractExplicitLayer
+struct Upsample{mode, S, T} <: AbstractExplicitLayer
     scale::S
     size::T
 end
 
-function Upsample(mode::Symbol=:nearest; scale=nothing, size=nothing)
-    mode in [:nearest, :bilinear, :trilinear] || throw(ArgumentError("mode=:$mode is not supported."))
+function Upsample(mode::Symbol = :nearest; scale = nothing, size = nothing)
+    mode in [:nearest, :bilinear, :trilinear] ||
+        throw(ArgumentError("mode=:$mode is not supported."))
     if !(isnothing(scale) ⊻ isnothing(size))
         throw(ArgumentError("Either scale or size should be specified (but not both)."))
     end
-    return Upsample{mode,typeof(scale),typeof(size)}(scale, size)
+    return Upsample{mode, typeof(scale), typeof(size)}(scale, size)
 end
 
-Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
+Upsample(scale, mode::Symbol = :nearest) = Upsample(mode; scale)
 
 function (m::Upsample{:nearest})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_nearest(x, m.scale), st
 end
-function (m::Upsample{:nearest,Int})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
+function (m::Upsample{:nearest, Int})(x::AbstractArray{T, N}, ps,
+                                      st::NamedTuple) where {T, N}
     return NNlib.upsample_nearest(x, ntuple(i -> m.scale, N - 2)), st
 end
-function (m::Upsample{:nearest,Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_nearest(x; size=m.size), st
+function (m::Upsample{:nearest, Nothing})(x::AbstractArray, ps, st::NamedTuple)
+    return NNlib.upsample_nearest(x; size = m.size), st
 end
 
 function (m::Upsample{:bilinear})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_bilinear(x, m.scale), st
 end
-function (m::Upsample{:bilinear,Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_bilinear(x; size=m.size), st
+function (m::Upsample{:bilinear, Nothing})(x::AbstractArray, ps, st::NamedTuple)
+    return NNlib.upsample_bilinear(x; size = m.size), st
 end
 
 function (m::Upsample{:trilinear})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_trilinear(x, m.scale), st
 end
-function (m::Upsample{:trilinear,Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_trilinear(x; size=m.size), st
+function (m::Upsample{:trilinear, Nothing})(x::AbstractArray, ps, st::NamedTuple)
+    return NNlib.upsample_trilinear(x; size = m.size), st
 end
 
 function Base.show(io::IO, u::Upsample{mode}) where {mode}
@@ -366,12 +380,12 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 
 See also [`MaxPool`](@ref), [`AdaptiveMeanPool`](@ref).
 """
-struct AdaptiveMaxPool{S,O} <: AbstractExplicitLayer
-    out::NTuple{O,Int}
-    AdaptiveMaxPool(out::NTuple{O,Int}) where {O} = new{O + 2,O}(out)
+struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
+    out::NTuple{O, Int}
+    AdaptiveMaxPool(out::NTuple{O, Int}) where {O} = new{O + 2, O}(out)
 end
 
-function (a::AdaptiveMaxPool{S})(x::AbstractArray{T,S}, ps, st::NamedTuple) where {S,T}
+function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
     pdims = compute_adaptive_pooling_dims(x, a.out)
     return maxpool(x, pdims), st
 end
@@ -400,12 +414,12 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 
 See also [`MeanPool`](@ref), [`AdaptiveMaxPool`](@ref).
 """
-struct AdaptiveMeanPool{S,O} <: AbstractExplicitLayer
-    out::NTuple{O,Int}
-    AdaptiveMeanPool(out::NTuple{O,Int}) where {O} = new{O + 2,O}(out)
+struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
+    out::NTuple{O, Int}
+    AdaptiveMeanPool(out::NTuple{O, Int}) where {O} = new{O + 2, O}(out)
 end
 
-function (a::AdaptiveMeanPool{S})(x::AbstractArray{T,S}, ps, st::NamedTuple) where {S,T}
+function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
     pdims = compute_adaptive_pooling_dims(x, a.out)
     return meanpool(x, pdims), st
 end

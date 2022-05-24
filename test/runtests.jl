@@ -10,6 +10,4 @@ end
 
 @time @safetestset "Functional Operations" begin include("functional.jl") end
 
-@testset "Metalhead Models" begin
-    @time @safetestset "ConvNets -- ImageNet" begin include("models/convnets.jl") end
-end
+@testset "Metalhead Models" begin @time @safetestset "ConvNets -- ImageNet" begin include("models/convnets.jl") end end

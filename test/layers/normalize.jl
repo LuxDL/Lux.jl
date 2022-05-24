@@ -6,10 +6,8 @@ rng = Random.default_rng()
 Random.seed!(rng, 0)
 
 @testset "BatchNorm" begin
-    let m = BatchNorm(2), x = [
-            1.0f0 3.0f0 5.0f0
-            2.0f0 4.0f0 6.0f0
-        ]
+    let m = BatchNorm(2), x = [1.0f0 3.0f0 5.0f0
+                               2.0f0 4.0f0 6.0f0]
         ps, st = Lux.setup(rng, m)
 
         @test Lux.parameterlength(m) == 2 * 2
@@ -18,7 +16,7 @@ Random.seed!(rng, 0)
         @test ps.scale == [1, 1]  # init_scale(2)
 
         y, st_ = pullback(m, x, ps, st)[1]
-        @test isapprox(y, [-1.22474 0 1.22474; -1.22474 0 1.22474], atol=1.0e-5)
+        @test isapprox(y, [-1.22474 0 1.22474; -1.22474 0 1.22474], atol = 1.0e-5)
         # julia> x
         #  2×3 Array{Float64,2}:
         #  1.0  3.0  5.0
@@ -37,43 +35,47 @@ Random.seed!(rng, 0)
         # 2×1 Array{Float64,2}:
         #  1.3
         #  1.3
-        @test st_.running_var ≈ 0.1 .* var(x; dims=2, corrected=false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0]
+        @test st_.running_var ≈
+              0.1 .* var(x; dims = 2, corrected = false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0]
 
         st_ = Lux.testmode(st_)
         x′ = m(x, ps, st_)[1]
-        @test isapprox(x′[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
+        @test isapprox(x′[1], (1 .- 0.3) / sqrt(1.3), atol = 1.0e-5)
 
         @inferred m(x, ps, st)
 
         @test_call m(x, ps, st)
-        @test_opt target_modules = (Lux,) m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
 
-        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps; atol=1.0f-3, rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
+                                      atol = 1.0f-3, rtol = 1.0f-3)
     end
 
-    let m = BatchNorm(2; track_stats=false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
+    let m = BatchNorm(2; track_stats = false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
         ps, st = Lux.setup(rng, m)
         @inferred m(x, ps, st)
         @test_call m(x, ps, st)
-        @test_opt target_modules = (Lux,) m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
 
-        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps; atol=1.0f-3, rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
+                                      atol = 1.0f-3, rtol = 1.0f-3)
     end
 
     # with activation function
-    let m = BatchNorm(2, sigmoid), x = [
-            1.0f0 3.0f0 5.0f0
-            2.0f0 4.0f0 6.0f0
-        ]
+    let m = BatchNorm(2, sigmoid), x = [1.0f0 3.0f0 5.0f0
+                                        2.0f0 4.0f0 6.0f0]
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
-        @test isapprox(y, sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
+        @test isapprox(y,
+                       sigmoid.((x .- st_.running_mean) ./
+                                sqrt.(st_.running_var .+ m.epsilon)), atol = 1.0e-7)
         @inferred m(x, ps, st)
         @test_call m(x, ps, st)
-        @test_opt target_modules = (Lux,) m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
 
-        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps; atol=1.0f-3, rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
+                                      atol = 1.0f-3, rtol = 1.0f-3)
     end
 
     let m = BatchNorm(2), x = reshape(Float32.(1:6), 3, 2, 1)
@@ -89,15 +91,17 @@ Random.seed!(rng, 0)
         @test (@allocated m(x, ps, st)) < 100_000_000
         @inferred m(x, ps, st)
         @test_call m(x, ps, st)
-        @test_opt target_modules = (Lux,) m(x, ps, st)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
     end
 end
 
 @testset "GroupNorm" begin
     # begin tests
-    squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
+    squeeze(x) = dropdims(x; dims = tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
-    let m = GroupNorm(4, 2; track_stats=true), sizes = (3, 4, 2), x = reshape(collect(1:prod(sizes)), sizes)
+    let m = GroupNorm(4, 2; track_stats = true), sizes = (3, 4, 2),
+        x = reshape(collect(1:prod(sizes)), sizes)
+
         @test Lux.parameterlength(m) == 2 * 4
         x = Float32.(x)
         ps, st = Lux.setup(rng, m)
@@ -135,17 +139,19 @@ end
         n = prod(size(x)) ÷ m.groups ÷ size(x)[end]
         corr = n / (n - 1)
         z = reshape(x, 3, 2, 2, 2)
-        variance = var(z; dims=(1, 2), corrected=false)
-        @test st_.running_var ≈ 0.1 * corr * vec(mean(variance; dims=4)) .+ 0.9 * 1
+        variance = var(z; dims = (1, 2), corrected = false)
+        @test st_.running_var ≈ 0.1 * corr * vec(mean(variance; dims = 4)) .+ 0.9 * 1
 
         st__ = Lux.testmode(st_)
         y, st__ = m(x, ps, st__)
-        out = (z .- reshape(st_.running_mean, 1, 1, 2, 1)) ./ sqrt.(reshape(st_.running_var, 1, 1, 2, 1) .+ 1.0f-5)
-        @test y ≈ reshape(out, size(x)) atol = 1.0e-5
+        out = (z .- reshape(st_.running_mean, 1, 1, 2, 1)) ./
+              sqrt.(reshape(st_.running_var, 1, 1, 2, 1) .+ 1.0f-5)
+        @test y≈reshape(out, size(x)) atol=1.0e-5
 
         @inferred m(x, ps, st)
         @test_call m(x, ps, st)
-        @test_opt target_modules = (Lux,) m(x, ps, st)
-        test_gradient_correctness_fdm(ps -> sum(first(m(x, ps, st))), ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_opt target_modules=(Lux,) m(x, ps, st)
+        test_gradient_correctness_fdm(ps -> sum(first(m(x, ps, st))), ps; atol = 1.0f-3,
+                                      rtol = 1.0f-3)
     end
 end

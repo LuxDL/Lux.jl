@@ -6,20 +6,26 @@ struct LuxCUDAAdaptor <: LuxDeviceAdaptor end
 adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
 adapt_storage(::LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(colelct(x))
 adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
-adapt_storage(to::LuxCUDAAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+function adapt_storage(to::LuxCUDAAdaptor, x::ComponentArray)
+    ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+end
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
-function adapt_storage(
-    ::LuxCPUAdaptor,
-    x::Union{AbstractRange,FillArrays.AbstractFill,Zygote.OneElement,SparseArrays.AbstractSparseArray},
-)
+function adapt_storage(::LuxCPUAdaptor,
+                       x::Union{AbstractRange, FillArrays.AbstractFill, Zygote.OneElement,
+                                SparseArrays.AbstractSparseArray})
     return x
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
-adapt_storage(to::LuxCPUAdaptor, x::ComponentArray) = ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+function adapt_storage(to::LuxCPUAdaptor, x::ComponentArray)
+    ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+end
 adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 # TODO: SparseArrays
-adapt_storage(::LuxCPUAdaptor, x::CUDA.CUSPARSE.CUDA.CUSPARSE.AbstractCuSparseMatrix) = adapt(Array, x)
+function adapt_storage(::LuxCPUAdaptor,
+                       x::CUDA.CUSPARSE.CUDA.CUSPARSE.AbstractCuSparseMatrix)
+    adapt(Array, x)
+end
 
 _isbitsarray(::AbstractArray{<:Number}) = true
 _isbitsarray(::AbstractArray{T}) where {T} = isbitstype(T)
@@ -42,7 +48,7 @@ Transfer `x` to GPU
 """
 function gpu(x)
     check_use_cuda()
-    return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf) : x
+    return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude = _isleaf) : x
 end
 
 function check_use_cuda()
@@ -53,7 +59,7 @@ function check_use_cuda()
         end
         if !(use_cuda[])
             @info """The GPU function is being called but the GPU is not accessible. 
-                     Defaulting back to the CPU. (No action is required if you want to run on the CPU).""" maxlog = 1
+                     Defaulting back to the CPU. (No action is required if you want to run on the CPU).""" maxlog=1
         end
     end
 end

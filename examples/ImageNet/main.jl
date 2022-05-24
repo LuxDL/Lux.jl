@@ -26,17 +26,17 @@ import DataLoaders: LearnBase                           # Extending Datasets
 import MLUtils
 
 # Distributed Training
-FluxMPI.Init(;verbose=true)
+FluxMPI.Init(; verbose = true)
 CUDA.allowscalar(false)
 
 # unsafe_free OneHotArrays
 CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
 
 # Image Classification Models
-VGG11_BN(args...; kwargs...) = VGG11(args...; batchnorm=true, kwargs...)
-VGG13_BN(args...; kwargs...) = VGG13(args...; batchnorm=true, kwargs...)
-VGG16_BN(args...; kwargs...) = VGG16(args...; batchnorm=true, kwargs...)
-VGG19_BN(args...; kwargs...) = VGG19(args...; batchnorm=true, kwargs...)
+VGG11_BN(args...; kwargs...) = VGG11(args...; batchnorm = true, kwargs...)
+VGG13_BN(args...; kwargs...) = VGG13(args...; batchnorm = true, kwargs...)
+VGG16_BN(args...; kwargs...) = VGG16(args...; batchnorm = true, kwargs...)
+VGG19_BN(args...; kwargs...) = VGG19(args...; batchnorm = true, kwargs...)
 MobileNetv3_small(args...; kwargs...) = MobileNetv3(:small, args...; kwargs...)
 MobileNetv3_large(args...; kwargs...) = MobileNetv3(:large, args...; kwargs...)
 ResNeXt50(args...; kwargs...) = ResNeXt(50, args...; kwargs...)
@@ -75,7 +75,8 @@ AVAILABLE_IMAGENET_MODELS = [
 
 IMAGENET_MODELS_DICT = Dict(string(model) => model for model in AVAILABLE_IMAGENET_MODELS)
 
-function get_model(model_name::String, models_dict::Dict, rng, args...; warmup=true, kwargs...)
+function get_model(model_name::String, models_dict::Dict, rng, args...; warmup = true,
+                   kwargs...)
     model = Lux.transform(models_dict[model_name](args...; kwargs...).layers)
     ps, st = Lux.setup(rng, model) .|> gpu
     if warmup
@@ -85,14 +86,15 @@ function get_model(model_name::String, models_dict::Dict, rng, args...; warmup=t
         should_log() && println("$(now()) ==> staring `$model_name` warmup...")
         model(x__, ps, st)
         should_log() && println("$(now()) ==> forward pass warmup completed")
-        (l, _, _), back = Zygote.pullback(p -> logitcrossentropyloss(x__, y__, model, p, st), ps)
+        (l, _, _), back = Zygote.pullback(p -> logitcrossentropyloss(x__, y__, model, p, st),
+                                          ps)
         back((one(l), nothing, nothing))
         should_log() && println("$(now()) ==> backward pass warmup completed")
     end
 
     if is_distributed()
-        ps = FluxMPI.synchronize!(ps; root_rank=0)
-        st = FluxMPI.synchronize!(st; root_rank=0)
+        ps = FluxMPI.synchronize!(ps; root_rank = 0)
+        st = FluxMPI.synchronize!(st; root_rank = 0)
         should_log() && println("$(now()) ==> models synced across all ranks")
     end
 
@@ -104,61 +106,61 @@ function parse_commandline_arguments()
     parse_settings = ArgParseSettings("Lux ImageNet Training")
     @add_arg_table! parse_settings begin
         "--arch"
-            default = "ResNet18"
-            range_tester = x -> x ∈ keys(IMAGENET_MODELS_DICT)
-            help = "model architectures: " * join(keys(IMAGENET_MODELS_DICT), ", ", " or ")
+        default = "ResNet18"
+        range_tester = x -> x ∈ keys(IMAGENET_MODELS_DICT)
+        help = "model architectures: " * join(keys(IMAGENET_MODELS_DICT), ", ", " or ")
         "--epochs"
-            help = "number of total epochs to run"
-            arg_type = Int
-            default = 90
+        help = "number of total epochs to run"
+        arg_type = Int
+        default = 90
         "--start-epoch"
-            help = "manual epoch number (useful on restarts)"
-            arg_type = Int
-            default = 0
+        help = "manual epoch number (useful on restarts)"
+        arg_type = Int
+        default = 0
         "--batch-size"
-            help = "mini-batch size, this is the total batch size across all GPUs"
-            arg_type = Int
-            default = 256
+        help = "mini-batch size, this is the total batch size across all GPUs"
+        arg_type = Int
+        default = 256
         "--learning-rate"
-            help = "initial learning rate"
-            arg_type = Float32
-            default = 0.1f0
+        help = "initial learning rate"
+        arg_type = Float32
+        default = 0.1f0
         "--momentum"
-            help = "momentum"
-            arg_type = Float32
-            default = 0.9f0
+        help = "momentum"
+        arg_type = Float32
+        default = 0.9f0
         "--weight-decay"
-            help = "weight decay"
-            arg_type = Float32
-            default = 1.0f-4
+        help = "weight decay"
+        arg_type = Float32
+        default = 1.0f-4
         "--print-freq"
-            help = "print frequency"
-            arg_type = Int
-            default = 10
+        help = "print frequency"
+        arg_type = Int
+        default = 10
         "--resume"
-            help = "resume from checkpoint"
-            arg_type = String
-            default = ""
+        help = "resume from checkpoint"
+        arg_type = String
+        default = ""
         "--evaluate"
-            help = "evaluate model on validation set"
-            action = :store_true
+        help = "evaluate model on validation set"
+        action = :store_true
         "--pretrained"
-            help = "use pre-trained model"
-            action = :store_true
+        help = "use pre-trained model"
+        action = :store_true
         "--seed"
-            help = "seed for initializing training. "
-            arg_type = Int
-            default = 0
+        help = "seed for initializing training. "
+        arg_type = Int
+        default = 0
         "data"
-            help = "path to dataset"
-            required = true
+        help = "path to dataset"
+        required = true
     end
 
     return parse_args(parse_settings)
 end
 
 # Loss Function
-logitcrossentropyloss(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ; dims=1); dims=1))
+logitcrossentropyloss(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ; dims = 1); dims = 1))
 
 function logitcrossentropyloss(x, y, model, ps, st)
     ŷ, st_ = model(x, ps, st)
@@ -179,16 +181,17 @@ end
 update_lr(st_opt::NamedTuple, eta) = fmap(l -> update_lr(l, eta), st_opt)
 
 # Accuracy
-function accuracy(ŷ, y, topk=(1,))
+function accuracy(ŷ, y, topk = (1,))
     maxk = maximum(topk)
 
-    pred_labels = partialsortperm.(eachcol(ŷ), (1:maxk,), rev=true)
+    pred_labels = partialsortperm.(eachcol(ŷ), (1:maxk,), rev = true)
     true_labels = onecold(y)
 
     accuracies = Vector{Float32}(undef, length(topk))
 
     for (i, k) in enumerate(topk)
-        accuracies[i] = sum(map((a, b) -> sum(view(a, 1:k) .== b), pred_labels, true_labels))
+        accuracies[i] = sum(map((a, b) -> sum(view(a, 1:k) .== b), pred_labels,
+                                true_labels))
     end
 
     return accuracies .* 100 ./ size(y, ndims(y))
@@ -199,28 +202,28 @@ is_distributed() = FluxMPI.Initialized() && total_workers() > 1
 should_log() = !FluxMPI.Initialized() || local_rank() == 0
 
 # Checkpointing
-function save_checkpoint(state, is_best, filename="checkpoint.pth.tar")
+function save_checkpoint(state, is_best, filename = "checkpoint.pth.tar")
     if should_log()
         serialize(filename, state)
         if is_best
-            cp(filename, "model_best.pth.tar"; force=true)
+            cp(filename, "model_best.pth.tar"; force = true)
         end
     end
 end
 
 # DataLoading
 struct ImageDataset
-    image_files
-    labels
-    mapping
-    augmentation_pipeline
-    normalization_parameters
+    image_files::Any
+    labels::Any
+    mapping::Any
+    augmentation_pipeline::Any
+    normalization_parameters::Any
 end
 
 function ImageDataset(folder::String, augmentation_pipeline, normalization_parameters)
     ulabels = readdir(folder)
     label_dirs = joinpath.((folder,), ulabels)
-    @assert length(label_dirs) == 1000 "There should be 1000 subdirectories in $folder"
+    @assert length(label_dirs)==1000 "There should be 1000 subdirectories in $folder"
 
     classes = readlines(joinpath(@__DIR__, "synsets.txt"))
     mapping = Dict(z => i for (i, z) in enumerate(ulabels))
@@ -228,7 +231,8 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
     istrain = endswith(folder, r"train|train/")
 
     if istrain
-        image_files = vcat(map((x, y) -> joinpath.((x,), y), label_dirs, readdir.(label_dirs))...)
+        image_files = vcat(map((x, y) -> joinpath.((x,), y), label_dirs,
+                               readdir.(label_dirs))...)
 
         remove_files = [
             "n01739381_1309.JPEG",
@@ -253,15 +257,15 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
             "n04596742_4225.JPEG",
             "n07583066_647.JPEG",
             "n13037406_4650.JPEG",
-            "n02105855_2933.JPEG"
+            "n02105855_2933.JPEG",
         ]
-        remove_files = joinpath.(
-            (folder,), joinpath.(first.(rsplit.(remove_files, "_", limit=2)), remove_files)
-        )
-    
+        remove_files = joinpath.((folder,),
+                                 joinpath.(first.(rsplit.(remove_files, "_", limit = 2)),
+                                           remove_files))
+
         image_files = [setdiff(Set(image_files), Set(remove_files))...]
 
-        labels = [mapping[x] for x in map(x -> x[2], rsplit.(image_files, "/", limit=3))]
+        labels = [mapping[x] for x in map(x -> x[2], rsplit.(image_files, "/", limit = 3))]
     else
         vallist = hcat(split.(readlines(joinpath(@__DIR__, "val_list.txt")))...)
         labels = parse.(Int, vallist[2, :]) .+ 1
@@ -272,7 +276,8 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
         labels = labels[idxs]
     end
 
-    return ImageDataset(image_files, labels, mapping, augmentation_pipeline, normalization_parameters)
+    return ImageDataset(image_files, labels, mapping, augmentation_pipeline,
+                        normalization_parameters)
 end
 
 LearnBase.nobs(data::ImageDataset) = length(data.image_files)
@@ -301,7 +306,7 @@ LearnBase.getobs(data::DistributedDataContainer, i::Int) = MLUtils.getobs(data, 
 
 # Tracking
 Base.@kwdef mutable struct AverageMeter
-    fmtstr
+    fmtstr::Any
     val::Float64 = 0.0
     sum::Float64 = 0.0
     count::Int = 0
@@ -310,7 +315,7 @@ end
 
 function AverageMeter(name::String, fmt::String)
     fmtstr = FormatExpr("$name {1:$fmt} ({2:$fmt})")
-    return AverageMeter(; fmtstr=fmtstr)
+    return AverageMeter(; fmtstr = fmtstr)
 end
 
 function update!(meter::AverageMeter, val, n::Int)
@@ -324,11 +329,11 @@ end
 print_meter(meter::AverageMeter) = printfmt(meter.fmtstr, meter.val, meter.average)
 
 struct ProgressMeter{N}
-    batch_fmtstr
-    meters::NTuple{N,AverageMeter}
+    batch_fmtstr::Any
+    meters::NTuple{N, AverageMeter}
 end
 
-function ProgressMeter(num_batches::Int, meters::NTuple{N}, prefix::String="") where {N}
+function ProgressMeter(num_batches::Int, meters::NTuple{N}, prefix::String = "") where {N}
     fmt = "%" * string(length(string(num_batches))) * "d"
     prefix = prefix != "" ? endswith(prefix, " ") ? prefix : prefix * " " : ""
     batch_fmtstr = generate_formatter("$prefix[$fmt/" * sprintf1(fmt, num_batches) * "]")
@@ -351,7 +356,9 @@ function validate(val_loader, model, ps, st, args)
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
 
-    progress = ProgressMeter(length(val_loader), (batch_time, data_time, forward_time, losses, top1, top5), "Val:")
+    progress = ProgressMeter(length(val_loader),
+                             (batch_time, data_time, forward_time, losses, top1, top5),
+                             "Val:")
 
     st_ = Lux.testmode(st)
     t = time()
@@ -395,7 +402,9 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
     losses = AverageMeter("Loss", ".4e")
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
-    progress = ProgressMeter(length(train_loader), (batch_time, data_time, forward_time, backward_time, optimize_time, losses, top1, top5), "Epoch: [$epoch]")
+    progress = ProgressMeter(length(train_loader),
+                             (batch_time, data_time, forward_time, backward_time,
+                              optimize_time, losses, top1, top5), "Epoch: [$epoch]")
 
     st = Lux.trainmode(st)
 
@@ -404,7 +413,8 @@ function train(train_loader, model, ps, st, optimiser_state, epoch, args)
         t_data, t = time() - t, time()
 
         # Gradients and Update
-        (loss, ŷ, st), back = Zygote.pullback(p -> logitcrossentropyloss(x, y, model, p, st), ps)
+        (loss, ŷ, st), back = Zygote.pullback(p -> logitcrossentropyloss(x, y, model, p,
+                                                                          st), ps)
         t_forward, t = time() - t, time()
         gs = back((one(loss) / total_workers(), nothing, nothing))[1]
         t_backward, t = time() - t, time()
@@ -454,44 +464,39 @@ function main(args)
             println("$(now()) => creating model `$(args["arch"])`")
         end
     end
-    model, ps, st = get_model(args["arch"], IMAGENET_MODELS_DICT, rng; warmup=true, pretrain=args["pretrained"])
+    model, ps, st = get_model(args["arch"], IMAGENET_MODELS_DICT, rng; warmup = true,
+                              pretrain = args["pretrained"])
 
-    normalization_parameters = (
-        mean=reshape([0.485f0, 0.456f0, 0.406f0], 1, 1, 3),
-        std=reshape([0.229f0, 0.224f0, 0.225f0], 1, 1, 3)
-    )
+    normalization_parameters = (mean = reshape([0.485f0, 0.456f0, 0.406f0], 1, 1, 3),
+                                std = reshape([0.229f0, 0.224f0, 0.225f0], 1, 1, 3))
     train_data_augmentation = Resize(256, 256) |> FlipX(0.5) |> RCropSize(224, 224)
     val_data_augmentation = Resize(256, 256) |> CropSize(224, 224)
-    train_dataset = ImageDataset(
-        joinpath(args["data"], "train"),
-        train_data_augmentation,
-        normalization_parameters
-    )
-    val_dataset = ImageDataset(
-        joinpath(args["data"], "val"),
-        val_data_augmentation,
-        normalization_parameters
-    )
+    train_dataset = ImageDataset(joinpath(args["data"], "train"),
+                                 train_data_augmentation,
+                                 normalization_parameters)
+    val_dataset = ImageDataset(joinpath(args["data"], "val"),
+                               val_data_augmentation,
+                               normalization_parameters)
     if is_distributed()
         train_dataset = DistributedDataContainer(train_dataset)
         val_dataset = DistributedDataContainer(val_dataset)
     end
 
-    train_loader = DataLoader(shuffleobs(train_dataset), args["batch-size"] ÷ total_workers())
+    train_loader = DataLoader(shuffleobs(train_dataset),
+                              args["batch-size"] ÷ total_workers())
     val_loader = DataLoader(val_dataset, args["batch-size"] ÷ total_workers())
 
     # Optimizer and Scheduler
     should_log() && println("$(now()) => creating optimiser")
-    optimiser = Optimisers.OptimiserChain(
-        Optimisers.Momentum(args["learning-rate"], args["momentum"]),
-        Optimisers.WeightDecay(args["weight-decay"])
-    )
+    optimiser = Optimisers.OptimiserChain(Optimisers.Momentum(args["learning-rate"],
+                                                              args["momentum"]),
+                                          Optimisers.WeightDecay(args["weight-decay"]))
     optimiser_state = Optimisers.setup(optimiser, ps)
     if is_distributed()
         optimiser_state = FluxMPI.synchronize!(optimiser_state)
         should_log() && println("$(now()) ==> synced optimiser state across all ranks")
     end
-    scheduler = Step(λ=args["learning-rate"], γ=0.1f0, step_sizes=30)
+    scheduler = Step(λ = args["learning-rate"], γ = 0.1f0, step_sizes = 30)
 
     if args["resume"] != ""
         if isfile(args["resume"])
@@ -500,9 +505,11 @@ function main(args)
             optimiser_state = checkpoint["optimiser_state"] |> gpu
             ps = checkpoint["model_parameters"] |> gpu
             st = checkpoint["model_states"] |> gpu
-            should_log() && println("$(now()) => loaded checkpoint `$(args["resume"])` (epoch $(args["start-epoch"]))")
+            should_log() &&
+                println("$(now()) => loaded checkpoint `$(args["resume"])` (epoch $(args["start-epoch"]))")
         else
-            should_log() && println("$(now()) => no checkpoint found at `$(args["resume"])`")
+            should_log() &&
+                println("$(now()) => no checkpoint found at `$(args["resume"])`")
         end
     end
 
@@ -517,7 +524,8 @@ function main(args)
 
     for epoch in args["start-epoch"]:args["epochs"]
         # Train for 1 epoch
-        ps, st, optimiser_state, _ = train(train_loader, model, ps, st, optimiser_state, epoch, args)
+        ps, st, optimiser_state, _ = train(train_loader, model, ps, st, optimiser_state,
+                                           epoch, args)
 
         # Some Housekeeping
         GC.gc(true)
@@ -538,13 +546,11 @@ function main(args)
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
 
-        save_state = Dict(
-            "epoch" => epoch,
-            "arch" => args["arch"],
-            "model_states" => st |> cpu,
-            "model_parameters" => ps |> cpu,
-            "optimiser_state" => optimiser_state |> cpu,
-        )
+        save_state = Dict("epoch" => epoch,
+                          "arch" => args["arch"],
+                          "model_states" => st |> cpu,
+                          "model_parameters" => ps |> cpu,
+                          "optimiser_state" => optimiser_state |> cpu)
         save_checkpoint(save_state, is_best)
     end
 end
