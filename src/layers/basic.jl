@@ -633,7 +633,7 @@ function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
 end
 
 function parameterlength(d::Dense{bias}) where {bias}
-    bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
+    return bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 end
 statelength(d::Dense) = 0
 

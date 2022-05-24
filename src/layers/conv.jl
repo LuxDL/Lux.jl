@@ -79,10 +79,12 @@ end
 function initialparameters(rng::AbstractRNG, c::Conv{N, bias}) where {N, bias}
     weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight,
                         groups=c.groups)
-    return bias ?
-           (weight=weight,
-            bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) :
-           (weight=weight,)
+    if bias
+        return (weight=weight,
+                bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1))
+    else
+        return (weight=weight,)
+    end
 end
 
 function parameterlength(c::Conv{N, bias}) where {N, bias}
@@ -92,15 +94,15 @@ end
 @inline function (c::Conv{N, false})(x::AbstractArray,
                                      ps::Union{ComponentArray, NamedTuple},
                                      st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad,
-                          dilation=c.dilation, groups=c.groups)
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
+                          groups=c.groups)
     return applyactivation(c.activation, conv_wrapper(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
                                     st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad,
-                          dilation=c.dilation, groups=c.groups)
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
+                          groups=c.groups)
     return applyactivation(c.activation,
                            elementwise_add(conv_wrapper(x, ps.weight, cdims), ps.bias)), st
 end
