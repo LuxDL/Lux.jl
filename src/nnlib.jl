@@ -56,49 +56,38 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
     return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
 end
 
-@generated function normalization_forward(
-    x::AbstractArray{T,N},
-    running_mean::RM,
-    running_var::RV,
-    scale::S,
-    bias::B,
-    activation::A,
-    reduce_dims,
-    ::Val{training},
-    momentum::T=T(0.1f0),
-    epsilon::T=T(1.0f-5);
-    kwargs...,
-) where {RM,RV,S,B,T,N,A,training}
+@generated function normalization_forward(x::AbstractArray{T, N},
+                                          running_mean::RM,
+                                          running_var::RV,
+                                          scale::S,
+                                          bias::B,
+                                          activation::A,
+                                          reduce_dims,
+                                          ::Val{training},
+                                          momentum::T=T(0.1f0),
+                                          epsilon::T=T(1.0f-5);
+                                          kwargs...) where {RM, RV, S, B, T, N, A, training}
     calls = []
     if !training
         if RM == Nothing
-            expr = :(
-                batchmean = mean(x; dims=reduce_dims);
-                batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false);
-            )
+            expr = :(batchmean = mean(x; dims=reduce_dims);
+                     batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false))
         else
-            expr = :(
-                batchmean = running_mean;
-                batchvar = running_var;
-            )
+            expr = :(batchmean = running_mean;
+                     batchvar = running_var)
         end
         push!(calls, expr)
     else
-        expr = :(
-            batchmean = mean(x; dims=reduce_dims);
-            batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false);
-        )
+        expr = :(batchmean = mean(x; dims=reduce_dims);
+                 batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false))
         push!(calls, expr)
 
         if RM != Nothing
-            push!(
-                calls,
-                :(
-                    (running_mean, running_var) = update_statistics(
-                        x, running_mean, running_var, batchmean, batchvar, momentum, reduce_dims
-                    )
-                ),
-            )
+            push!(calls,
+                  :((running_mean, running_var) = update_statistics(x, running_mean,
+                                                                    running_var, batchmean,
+                                                                    batchvar, momentum,
+                                                                    reduce_dims)))
         end
     end
 
@@ -106,7 +95,8 @@ end
         if A == typeof(identity)
             :(result = @. scale * (x - batchmean) / sqrt(batchvar + epsilon) + bias)
         else
-            :(result = @. activation(scale * (x - batchmean) / sqrt(batchvar + epsilon) + bias))
+            :(result = @. activation(scale * (x - batchmean) / sqrt(batchvar + epsilon) +
+                                     bias))
         end
     else
         if A == typeof(identity)
@@ -150,32 +140,28 @@ end
 
 If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask` is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is generated and used.
 """
-@inline @generated function dropout(rng::AbstractRNG, x, prob, dims, ::Val{training}) where {training}
+@inline @generated function dropout(rng::AbstractRNG, x, prob, dims,
+                                    ::Val{training}) where {training}
     if training
-        return :(
-            rng = replicate(rng);
-            mask = generate_dropout_mask(rng, x, prob; dims);
-            return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng)
-        )
+        return :(rng = replicate(rng);
+                 mask = generate_dropout_mask(rng, x, prob; dims);
+                 return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng))
     else
         return :(return (x, x, rng))
     end
 end
 
-@inline @generated function dropout(
-    rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask}
-) where {training,update_mask}
+@inline @generated function dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training},
+                                    ::Val{update_mask}) where {training, update_mask}
     if update_mask
-        return :(
-            (y, mask, rng) = dropout(rng, x, prob, dims, t);
-            return (y, mask, rng, Val(false))
-        )
+        return :((y, mask, rng) = dropout(rng, x, prob, dims, t);
+                 return (y, mask, rng, Val(false)))
     else
         if training
-            return :(
-                size(x, ndims(x)) != size(mask, ndims(x)) && return (dropout(rng, x, prob, dims, t)..., Val(false));
-                return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng, Val(false))
-            )
+            return :(size(x, ndims(x)) != size(mask, ndims(x)) &&
+                         return (dropout(rng, x, prob, dims, t)..., Val(false));
+                     return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng,
+                             Val(false)))
         else
             return :(return (x, mask, rng, Val(false)))
         end
