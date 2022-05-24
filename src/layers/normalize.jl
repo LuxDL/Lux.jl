@@ -73,13 +73,13 @@ struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
 end
 
 function BatchNorm(chs::Int,
-                   activation = identity;
-                   init_bias = zeros32,
-                   init_scale = ones32,
-                   affine::Bool = true,
-                   track_stats::Bool = true,
-                   epsilon = 1.0f-5,
-                   momentum = 0.1f0)
+                   activation=identity;
+                   init_bias=zeros32,
+                   init_scale=ones32,
+                   affine::Bool=true,
+                   track_stats::Bool=true,
+                   epsilon=1.0f-5,
+                   momentum=0.1f0)
     activation = NNlib.fast_act(activation)
     return BatchNorm{affine, track_stats, typeof(activation), typeof(init_bias),
                      typeof(init_scale), typeof(epsilon)}(activation, epsilon, momentum,
@@ -87,16 +87,16 @@ function BatchNorm(chs::Int,
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (scale = l.init_scale(rng, l.chs), bias = l.init_bias(rng, l.chs)) :
+    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
            NamedTuple()
 end
 function initialstates(rng::AbstractRNG,
                        l::BatchNorm{affine, track_stats}) where {affine, track_stats}
     return if track_stats
-        (running_mean = zeros32(rng, l.chs), running_var = ones32(rng, l.chs),
-         training = Val(true))
+        (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs),
+         training=Val(true))
     else
-        (running_mean = nothing, running_var = nothing, training = Val(true))
+        (running_mean=nothing, running_var=nothing, training=Val(true))
     end
 end
 
@@ -120,7 +120,7 @@ function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
                                               BN.momentum,
                                               BN.epsilon)
 
-    st = merge(st, (running_mean = xmean, running_var = xvar))
+    st = merge(st, (running_mean=xmean, running_var=xvar))
 
     return x_normalized, st
 end
@@ -143,9 +143,9 @@ function (BN::BatchNorm{affine, track_stats})(x::Union{CuArray{T, 2}, CuArray{T,
         else
             N = ndims(x)
             reduce_dims = collect([1:(N - 2); N])
-            running_mean2 = mean(x; dims = reduce_dims)
-            running_var2 = var(x; mean = running_mean2, dims = reduce_dims,
-                               corrected = false)
+            running_mean2 = mean(x; dims=reduce_dims)
+            running_var2 = var(x; mean=running_mean2, dims=reduce_dims,
+                               corrected=false)
         end
     end
     res = applyactivation(BN.activation,
@@ -155,10 +155,10 @@ function (BN::BatchNorm{affine, track_stats})(x::Union{CuArray{T, 2}, CuArray{T,
                                     running_mean2,
                                     running_var2,
                                     BN.momentum;
-                                    eps = BN.epsilon,
-                                    training = istraining(st)))
+                                    eps=BN.epsilon,
+                                    training=istraining(st)))
     if track_stats
-        st = merge(st, (running_mean = running_mean2, running_var = running_var2))
+        st = merge(st, (running_mean=running_mean2, running_var=running_var2))
     end
     return res, st
 end
@@ -248,13 +248,13 @@ end
 
 function GroupNorm(chs::Int,
                    groups::Int,
-                   activation = identity;
-                   init_bias = zeros32,
-                   init_scale = ones32,
-                   affine::Bool = true,
-                   track_stats::Bool = true,
-                   epsilon = 1.0f-5,
-                   momentum = 0.1f0)
+                   activation=identity;
+                   init_bias=zeros32,
+                   init_scale=ones32,
+                   affine::Bool=true,
+                   track_stats::Bool=true,
+                   epsilon=1.0f-5,
+                   momentum=0.1f0)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = NNlib.fast_act(activation)
     return GroupNorm{affine, track_stats, typeof(activation), typeof(init_bias),
@@ -264,16 +264,16 @@ function GroupNorm(chs::Int,
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
-    return affine ? (scale = l.init_scale(rng, l.chs), bias = l.init_bias(rng, l.chs)) :
+    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
            NamedTuple()
 end
 function initialstates(rng::AbstractRNG,
                        l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     return if track_stats
-        (running_mean = zeros32(rng, l.groups), running_var = ones32(rng, l.groups),
-         training = Val(true))
+        (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups),
+         training=Val(true))
     else
-        (running_mean = nothing, running_var = nothing, training = Val(true))
+        (running_mean=nothing, running_var=nothing, training=Val(true))
     end
 end
 
@@ -300,7 +300,7 @@ function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
                                               GN.momentum,
                                               GN.epsilon)
 
-    st = merge(st, (running_mean = xmean, running_var = xvar))
+    st = merge(st, (running_mean=xmean, running_var=xvar))
 
     return reshape(x_normalized, sz), st
 end
@@ -352,7 +352,7 @@ struct WeightNorm{which_params, L <: AbstractExplicitLayer, D} <: AbstractExplic
 end
 
 function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
-                    dims::Union{Tuple, Nothing} = nothing) where {N}
+                    dims::Union{Tuple, Nothing}=nothing) where {N}
     return WeightNorm{Val{which_params}, typeof(layer), typeof(dims)}(layer, dims)
 end
 
@@ -374,7 +374,7 @@ function initialparameters(rng::AbstractRNG,
         end
     end
     ps_unnormalized = length(ps_unnormalized) == 0 ? NamedTuple() : (; ps_unnormalized...)
-    return (normalized = (; ps_normalized...), unnormalized = ps_unnormalized)
+    return (normalized=(; ps_normalized...), unnormalized=ps_unnormalized)
 end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)

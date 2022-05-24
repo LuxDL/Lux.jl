@@ -16,7 +16,7 @@ using MLUtils, Optimisers, Zygote, NNlib, Random, Statistics
 
 # We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise spirals. Using this data we will create a `MLUtils.DataLoader`. Our dataloader will give us sequences of size 2 × seq_len × batch_size and we need to predict a binary value whether the sequence is clockwise or anticlockwise
 
-function get_dataloaders(; dataset_size = 1000, sequence_length = 50)
+function get_dataloaders(; dataset_size=1000, sequence_length=50)
     ## Create the spirals
     data = [MLUtils.Datasets.make_spiral(sequence_length) for _ in 1:dataset_size]
     ## Get the labels
@@ -25,16 +25,16 @@ function get_dataloaders(; dataset_size = 1000, sequence_length = 50)
                          for d in data[1:(dataset_size ÷ 2)]]
     anticlockwise_spirals = [reshape(d[1][:, (sequence_length + 1):end], :, sequence_length,
                                      1) for d in data[((dataset_size ÷ 2) + 1):end]]
-    x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims = 3))
+    x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     ## Split the dataset
-    (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at = 0.8,
-                                                  shuffle = true)
+    (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8,
+                                                  shuffle=true)
     ## Create DataLoaders
     return (
             ## Use DataLoader to automatically minibatch and shuffle the data
-            DataLoader(collect.((x_train, y_train)); batchsize = 128, shuffle = true),
+            DataLoader(collect.((x_train, y_train)); batchsize=128, shuffle=true),
             ## Don't shuffle the validation data
-            DataLoader(collect.((x_val, y_val)); batchsize = 128, shuffle = false))
+            DataLoader(collect.((x_val, y_val)); batchsize=128, shuffle=false))
 end
 
 # ## Creating a Classifier
@@ -72,7 +72,7 @@ function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
     ## After running through the sequence we will pass the output through the classifier
     y, st_classifier = s.classifier(h, ps.classifier, st.classifier)
     ## Finally remember to create the updated state
-    st = merge(st, (classifier = st_classifier, lstm_cell = st_lstm))
+    st = merge(st, (classifier=st_classifier, lstm_cell=st_lstm))
     return vec(y), st
 end
 

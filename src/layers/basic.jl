@@ -326,8 +326,8 @@ end
             [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]),
                                                                 st.$(names[i])))
              for i in 1:N])
-    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return tuple($(Tuple(y_symbols)...)), st)])
+    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
 end
 
@@ -476,7 +476,7 @@ c = Chain(
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    function Chain(xs...; disable_optimizations::Bool = false)
+    function Chain(xs...; disable_optimizations::Bool=false)
         xs = disable_optimizations ? xs : flatten_model(xs)
         length(xs) == 0 && return NoOpLayer()
         length(xs) == 1 && return first(xs)
@@ -484,7 +484,7 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
         layers = NamedTuple{names}(xs)
         return new{typeof(layers)}(layers)
     end
-    function Chain(xs::AbstractVector; disable_optimizations::Bool = false)
+    function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
         Chain(xs...; disable_optimizations)
     end
 end
@@ -496,17 +496,12 @@ function flatten_model(layers::Union{AbstractVector, Tuple})
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-<<<<<<< HEAD
             if !hasmethod(f, (Any, Union{ComponentArray,NamedTuple}, NamedTuple))
                 if f === identity
                     continue
                 else
                     push!(new_layers, WrappedFunction(f))
                 end
-=======
-            if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
-                push!(new_layers, WrappedFunction(f))
->>>>>>> ed30635 (enforce SciMLStyle)
             else
                 push!(new_layers, f)
             end
@@ -534,7 +529,6 @@ end
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layer_1, st.layer_1))]
-<<<<<<< HEAD
     append!(
         calls,
         [
@@ -544,15 +538,6 @@ end
     )
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N]), st))
-=======
-    append!(calls,
-            [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
-                                                                ps.$(fields[i]),
-                                                                st.$(fields[i])))
-             for i in 2:N])
-    append!(calls, [:(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return $(x_symbols[N]), st)])
->>>>>>> 862526f (enforce SciMLStyle)
     return Expr(:block, calls...)
 end
 
@@ -605,6 +590,7 @@ function Base.show(io::IO, d::Dense{bias}) where {bias}
 end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 function Dense(
     mapping::Pair{<:Int,<:Int}, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true
 )
@@ -623,10 +609,16 @@ function Dense(mapping::Pair{<:Int, <:Int}, activation = identity;
                init_weight = glorot_uniform, init_bias = zeros32, bias::Bool = true)
     return Dense(first(mapping), last(mapping), activation; init_weight = init_weight,
                  init_bias = init_bias, bias = bias)
+=======
+function Dense(mapping::Pair{<:Int, <:Int}, activation=identity;
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    return Dense(first(mapping), last(mapping), activation; init_weight=init_weight,
+                 init_bias=init_bias, bias=bias)
+>>>>>>> ac04b1f (Change formatting style)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation = identity;
-               init_weight = glorot_uniform, init_bias = zeros32, bias::Bool = true)
+function Dense(in_dims::Int, out_dims::Int, activation=identity;
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Dense{bias, typeof(activation), typeof(init_weight), typeof(init_bias)}(activation,
                                                                                    in_dims,
@@ -638,10 +630,10 @@ end
 
 function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
     if bias
-        return (weight = d.init_weight(rng, d.out_dims, d.in_dims),
-                bias = d.init_bias(rng, d.out_dims, 1))
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
+                bias=d.init_bias(rng, d.out_dims, 1))
     else
-        return (weight = d.init_weight(rng, d.out_dims, d.in_dims),)
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
 end
 
@@ -726,18 +718,18 @@ function Base.show(io::IO, d::Scale)
     return print(io, ")")
 end
 
-function Scale(dims, activation = identity; init_weight = glorot_uniform,
-               init_bias = zeros32, bias::Bool = true)
+function Scale(dims, activation=identity; init_weight=glorot_uniform,
+               init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Scale{bias, typeof(activation), typeof(dims), typeof(init_weight),
                  typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Scale{true})
-    return (weight = d.init_weight(rng, d.dims), bias = d.init_bias(rng, d.dims))
+    return (weight=d.init_weight(rng, d.dims), bias=d.init_bias(rng, d.dims))
 end
 function initialparameters(rng::AbstractRNG, d::Scale{false})
-    (weight = d.init_weight(rng, d.dims),)
+    (weight=d.init_weight(rng, d.dims),)
 end
 
 parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims

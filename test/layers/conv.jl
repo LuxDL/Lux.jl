@@ -70,7 +70,7 @@ include("../utils.jl")
 
         x = ones(Float32, (k .+ 3)..., 1, 1)
 
-        layer = ltype(k; pad = Lux.SamePad())
+        layer = ltype(k; pad=Lux.SamePad())
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], k)
@@ -82,7 +82,7 @@ end
 @testset "CNN" begin
     @testset "Grouped Conv" begin
         x = rand(rng, Float32, 4, 6, 1)
-        layer = Conv((3,), 6 => 2; groups = 2)
+        layer = Conv((3,), 6 => 2; groups=2)
         ps, st = Lux.setup(rng, layer)
 
         @test size(ps.weight) == (3, 3, 2)
@@ -90,10 +90,10 @@ end
         @test_call layer(x, ps, st) broken=true
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         x = rand(rng, Float32, 4, 4, 6, 1)
-        layer = Conv((3, 3), 6 => 2; groups = 2)
+        layer = Conv((3, 3), 6 => 2; groups=2)
         ps, st = Lux.setup(rng, layer)
 
         @test size(ps.weight) == (3, 3, 3, 2)
@@ -101,10 +101,10 @@ end
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         x = rand(rng, Float32, 4, 4, 4, 6, 1)
-        layer = Conv((3, 3, 3), 6 => 2; groups = 2)
+        layer = Conv((3, 3, 3), 6 => 2; groups=2)
         ps, st = Lux.setup(rng, layer)
 
         @test size(ps.weight) == (3, 3, 3, 3, 2)
@@ -112,17 +112,17 @@ end
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         # Test that we cannot ask for non-integer multiplication factors
-        layer = Conv((2, 2), 3 => 10, groups = 2)
+        layer = Conv((2, 2), 3 => 10, groups=2)
         @test_throws AssertionError Lux.setup(rng, layer)
-        layer = Conv((2, 2), 2 => 9, groups = 2)
+        layer = Conv((2, 2), 2 => 9, groups=2)
         @test_throws AssertionError Lux.setup(rng, layer)
     end
 
     @testset "Asymmetric Padding" begin
-        layer = Conv((3, 3), 1 => 1, relu; pad = (0, 1, 1, 2))
+        layer = Conv((3, 3), 1 => 1, relu; pad=(0, 1, 1, 2))
         x = ones(Float32, 28, 28, 1, 1)
         ps, st = Lux.setup(rng, layer)
 
@@ -144,7 +144,7 @@ end
 
     @testset "Variable BitWidth Parameters" begin
         # https://github.com/FluxML/Flux.jl/issues/1421
-        layer = Conv((5, 5), 10 => 20, identity; init_weight = Base.randn)
+        layer = Conv((5, 5), 10 => 20, identity; init_weight=Base.randn)
         ps, st = Lux.setup(rng, layer)
         @test ps.bias isa Array{Float64, 4}
     end
@@ -152,68 +152,68 @@ end
     @testset "Depthwise Conv" begin
         x = randn(rng, Float32, 4, 4, 3, 2)
 
-        layer = Conv((2, 2), 3 => 15; groups = 3)
+        layer = Conv((2, 2), 3 => 15; groups=3)
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 15
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
-        layer = Conv((2, 2), 3 => 9; groups = 3)
+        layer = Conv((2, 2), 3 => 9; groups=3)
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 9
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
-        layer = Conv((2, 2), 3 => 9; groups = 3, bias = false)
+        layer = Conv((2, 2), 3 => 9; groups=3, bias=false)
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 9
         @test_call layer(x, ps, st)
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         # Test that we cannot ask for non-integer multiplication factors
-        layer = Conv((2, 2), 3 => 10; groups = 3)
+        layer = Conv((2, 2), 3 => 10; groups=3)
         @test_throws AssertionError Lux.setup(rng, layer)
     end
 
     @testset "Conv SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3), (1, 2, 3))
         x = ones(Float32, (k .+ 3)..., 1, 1)
 
-        layer = Conv(k, 1 => 1; pad = Lux.SamePad())
+        layer = Conv(k, 1 => 1; pad=Lux.SamePad())
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1]) == size(x)
         @test_call layer(x, ps, st) broken=length(k) == 1
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
-        layer = Conv(k, 1 => 1; pad = Lux.SamePad(), dilation = k .÷ 2)
+        layer = Conv(k, 1 => 1; pad=Lux.SamePad(), dilation=k .÷ 2)
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1]) == size(x)
         @test_call layer(x, ps, st) broken=length(k) == 1
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         stride = 3
-        layer = Conv(k, 1 => 1; pad = Lux.SamePad(), stride = stride)
+        layer = Conv(k, 1 => 1; pad=Lux.SamePad(), stride=stride)
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], stride)
         @test_call layer(x, ps, st) broken=length(k) == 1
         @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol = 1.0f-3, rtol = 1.0f-3)
+                                      atol=1.0f-3, rtol=1.0f-3)
     end
 
     @testset "Conv with non quadratic window #700" begin

@@ -24,9 +24,9 @@ transform(::T) where {T} = error("Transformation for type $T not implemented")
 transform(model::Flux.Chain) = Chain(transform.(model.layers)...)
 
 function transform(model::Flux.BatchNorm)
-    return BatchNorm(model.chs, model.λ; affine = model.affine,
-                     track_stats = model.track_stats, epsilon = model.ϵ,
-                     momentum = model.momentum)
+    return BatchNorm(model.chs, model.λ; affine=model.affine,
+                     track_stats=model.track_stats, epsilon=model.ϵ,
+                     momentum=model.momentum)
 end
 
 function transform(model::Flux.Conv)
@@ -34,11 +34,11 @@ function transform(model::Flux.Conv)
                 size(model.weight, ndims(model.weight) - 1) * model.groups => size(model.weight,
                                                                                    ndims(model.weight)),
                 model.σ;
-                stride = model.stride,
-                pad = model.pad,
-                bias = model.bias isa Bool ? model.bias : !(model.bias isa Flux.Zeros),
-                dilation = model.dilation,
-                groups = model.groups)
+                stride=model.stride,
+                pad=model.pad,
+                bias=model.bias isa Bool ? model.bias : !(model.bias isa Flux.Zeros),
+                dilation=model.dilation,
+                groups=model.groups)
 end
 
 function transform(model::Flux.SkipConnection)
@@ -78,7 +78,7 @@ function transform(model::Flux.Parallel)
 end
 
 function transform(d::Flux.Dropout)
-    return Dropout(Float32(d.p); dims = d.dims)
+    return Dropout(Float32(d.p); dims=d.dims)
 end
 
 transform(::typeof(identity)) = NoOpLayer()

@@ -26,17 +26,17 @@ import DataLoaders: LearnBase                           # Extending Datasets
 import MLUtils
 
 # Distributed Training
-FluxMPI.Init(; verbose = true)
+FluxMPI.Init(; verbose=true)
 CUDA.allowscalar(false)
 
 # unsafe_free OneHotArrays
 CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
 
 # Image Classification Models
-VGG11_BN(args...; kwargs...) = VGG11(args...; batchnorm = true, kwargs...)
-VGG13_BN(args...; kwargs...) = VGG13(args...; batchnorm = true, kwargs...)
-VGG16_BN(args...; kwargs...) = VGG16(args...; batchnorm = true, kwargs...)
-VGG19_BN(args...; kwargs...) = VGG19(args...; batchnorm = true, kwargs...)
+VGG11_BN(args...; kwargs...) = VGG11(args...; batchnorm=true, kwargs...)
+VGG13_BN(args...; kwargs...) = VGG13(args...; batchnorm=true, kwargs...)
+VGG16_BN(args...; kwargs...) = VGG16(args...; batchnorm=true, kwargs...)
+VGG19_BN(args...; kwargs...) = VGG19(args...; batchnorm=true, kwargs...)
 MobileNetv3_small(args...; kwargs...) = MobileNetv3(:small, args...; kwargs...)
 MobileNetv3_large(args...; kwargs...) = MobileNetv3(:large, args...; kwargs...)
 ResNeXt50(args...; kwargs...) = ResNeXt(50, args...; kwargs...)
@@ -75,7 +75,7 @@ AVAILABLE_IMAGENET_MODELS = [
 
 IMAGENET_MODELS_DICT = Dict(string(model) => model for model in AVAILABLE_IMAGENET_MODELS)
 
-function get_model(model_name::String, models_dict::Dict, rng, args...; warmup = true,
+function get_model(model_name::String, models_dict::Dict, rng, args...; warmup=true,
                    kwargs...)
     model = Lux.transform(models_dict[model_name](args...; kwargs...).layers)
     ps, st = Lux.setup(rng, model) .|> gpu
@@ -160,7 +160,7 @@ function parse_commandline_arguments()
 end
 
 # Loss Function
-logitcrossentropyloss(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ; dims = 1); dims = 1))
+logitcrossentropyloss(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ; dims=1); dims=1))
 
 function logitcrossentropyloss(x, y, model, ps, st)
     ŷ, st_ = model(x, ps, st)
@@ -181,10 +181,10 @@ end
 update_lr(st_opt::NamedTuple, eta) = fmap(l -> update_lr(l, eta), st_opt)
 
 # Accuracy
-function accuracy(ŷ, y, topk = (1,))
+function accuracy(ŷ, y, topk=(1,))
     maxk = maximum(topk)
 
-    pred_labels = partialsortperm.(eachcol(ŷ), (1:maxk,), rev = true)
+    pred_labels = partialsortperm.(eachcol(ŷ), (1:maxk,), rev=true)
     true_labels = onecold(y)
 
     accuracies = Vector{Float32}(undef, length(topk))
@@ -202,11 +202,11 @@ is_distributed() = FluxMPI.Initialized() && total_workers() > 1
 should_log() = !FluxMPI.Initialized() || local_rank() == 0
 
 # Checkpointing
-function save_checkpoint(state, is_best, filename = "checkpoint.pth.tar")
+function save_checkpoint(state, is_best, filename="checkpoint.pth.tar")
     if should_log()
         serialize(filename, state)
         if is_best
-            cp(filename, "model_best.pth.tar"; force = true)
+            cp(filename, "model_best.pth.tar"; force=true)
         end
     end
 end
@@ -260,12 +260,12 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
             "n02105855_2933.JPEG",
         ]
         remove_files = joinpath.((folder,),
-                                 joinpath.(first.(rsplit.(remove_files, "_", limit = 2)),
+                                 joinpath.(first.(rsplit.(remove_files, "_", limit=2)),
                                            remove_files))
 
         image_files = [setdiff(Set(image_files), Set(remove_files))...]
 
-        labels = [mapping[x] for x in map(x -> x[2], rsplit.(image_files, "/", limit = 3))]
+        labels = [mapping[x] for x in map(x -> x[2], rsplit.(image_files, "/", limit=3))]
     else
         vallist = hcat(split.(readlines(joinpath(@__DIR__, "val_list.txt")))...)
         labels = parse.(Int, vallist[2, :]) .+ 1
@@ -315,7 +315,7 @@ end
 
 function AverageMeter(name::String, fmt::String)
     fmtstr = FormatExpr("$name {1:$fmt} ({2:$fmt})")
-    return AverageMeter(; fmtstr = fmtstr)
+    return AverageMeter(; fmtstr=fmtstr)
 end
 
 function update!(meter::AverageMeter, val, n::Int)
@@ -333,7 +333,7 @@ struct ProgressMeter{N}
     meters::NTuple{N, AverageMeter}
 end
 
-function ProgressMeter(num_batches::Int, meters::NTuple{N}, prefix::String = "") where {N}
+function ProgressMeter(num_batches::Int, meters::NTuple{N}, prefix::String="") where {N}
     fmt = "%" * string(length(string(num_batches))) * "d"
     prefix = prefix != "" ? endswith(prefix, " ") ? prefix : prefix * " " : ""
     batch_fmtstr = generate_formatter("$prefix[$fmt/" * sprintf1(fmt, num_batches) * "]")
@@ -464,11 +464,11 @@ function main(args)
             println("$(now()) => creating model `$(args["arch"])`")
         end
     end
-    model, ps, st = get_model(args["arch"], IMAGENET_MODELS_DICT, rng; warmup = true,
-                              pretrain = args["pretrained"])
+    model, ps, st = get_model(args["arch"], IMAGENET_MODELS_DICT, rng; warmup=true,
+                              pretrain=args["pretrained"])
 
-    normalization_parameters = (mean = reshape([0.485f0, 0.456f0, 0.406f0], 1, 1, 3),
-                                std = reshape([0.229f0, 0.224f0, 0.225f0], 1, 1, 3))
+    normalization_parameters = (mean=reshape([0.485f0, 0.456f0, 0.406f0], 1, 1, 3),
+                                std=reshape([0.229f0, 0.224f0, 0.225f0], 1, 1, 3))
     train_data_augmentation = Resize(256, 256) |> FlipX(0.5) |> RCropSize(224, 224)
     val_data_augmentation = Resize(256, 256) |> CropSize(224, 224)
     train_dataset = ImageDataset(joinpath(args["data"], "train"),
@@ -496,7 +496,7 @@ function main(args)
         optimiser_state = FluxMPI.synchronize!(optimiser_state)
         should_log() && println("$(now()) ==> synced optimiser state across all ranks")
     end
-    scheduler = Step(λ = args["learning-rate"], γ = 0.1f0, step_sizes = 30)
+    scheduler = Step(λ=args["learning-rate"], γ=0.1f0, step_sizes=30)
 
     if args["resume"] != ""
         if isfile(args["resume"])

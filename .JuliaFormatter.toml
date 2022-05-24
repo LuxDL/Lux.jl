@@ -1,2 +1,2 @@
 style = "sciml"
-whitespace_in_kwargs = true
+whitespace_in_kwargs = false

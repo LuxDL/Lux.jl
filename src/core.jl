@@ -71,7 +71,7 @@ function apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray, NamedT
 end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
-    __t = rsplit(string(get_typename(x)), "."; limit = 2)
+    __t = rsplit(string(get_typename(x)), "."; limit=2)
     T = length(__t) == 2 ? __t[2] : __t[1]
     print(io, "$T()")
 end
@@ -105,14 +105,14 @@ end
 
 Make all occurances of `training` in state `st` `!mode`
 """
-testmode(st::NamedTuple, mode::Bool = true) = update_state(st, :training, Val(!mode))
+testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, Val(!mode))
 
 """
     trainmode(x::Any, mode::Bool=true)
 
 Make all occurances of `training` in state `st` `mode`
 """
-trainmode(x::Any, mode::Bool = true) = testmode(x, !mode)
+trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
 
 """
     update_state(st::NamedTuple, key::Symbol, value; layer_check=_default_layer_check(key))
@@ -120,11 +120,11 @@ trainmode(x::Any, mode::Bool = true) = testmode(x, !mode)
 Recursively update all occurances of the `key` in the state `st` with the `value`.
 """
 function update_state(st::NamedTuple, key::Symbol, value;
-                      layer_check = _default_layer_check(key))
+                      layer_check=_default_layer_check(key))
     function _update_state(st, key::Symbol, value)
         return Setfield.set(st, Setfield.PropertyLens{key}(), value)
     end
-    return fmap(_st -> _update_state(_st, key, value), st; exclude = layer_check)
+    return fmap(_st -> _update_state(_st, key, value), st; exclude=layer_check)
 end
 
 function _default_layer_check(key)

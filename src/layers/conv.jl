@@ -56,13 +56,13 @@ end
 
 function Conv(k::NTuple{N, Integer},
               ch::Pair{<:Integer, <:Integer},
-              activation = identity;
-              init_weight = glorot_uniform,
-              stride = 1,
-              pad = 0,
-              dilation = 1,
-              groups = 1,
-              bias = true) where {N}
+              activation=identity;
+              init_weight=glorot_uniform,
+              stride=1,
+              pad=0,
+              dilation=1,
+              groups=1,
+              bias=true) where {N}
     stride = expand(Val(N), stride)
     dilation = expand(Val(N), dilation)
     pad = calc_padding(Conv, pad, k, dilation, stride)
@@ -77,12 +77,12 @@ function Conv(k::NTuple{N, Integer},
 end
 
 function initialparameters(rng::AbstractRNG, c::Conv{N, bias}) where {N, bias}
-    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init = c.init_weight,
-                        groups = c.groups)
+    weight = convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight,
+                        groups=c.groups)
     return bias ?
-           (weight = weight,
-            bias = zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) :
-           (weight = weight,)
+           (weight=weight,
+            bias=zeros(eltype(weight), ntuple(_ -> 1, N)..., c.out_chs, 1)) :
+           (weight=weight,)
 end
 
 function parameterlength(c::Conv{N, bias}) where {N, bias}
@@ -92,15 +92,15 @@ end
 @inline function (c::Conv{N, false})(x::AbstractArray,
                                      ps::Union{ComponentArray, NamedTuple},
                                      st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride = c.stride, padding = c.pad,
-                          dilation = c.dilation, groups = c.groups)
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad,
+                          dilation=c.dilation, groups=c.groups)
     return applyactivation(c.activation, conv_wrapper(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
                                     st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride = c.stride, padding = c.pad,
-                          dilation = c.dilation, groups = c.groups)
+    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad,
+                          dilation=c.dilation, groups=c.groups)
     return applyactivation(c.activation,
                            elementwise_add(conv_wrapper(x, ps.weight, cdims), ps.bias)), st
 end
@@ -157,14 +157,14 @@ struct MaxPool{N, M} <: AbstractExplicitLayer
     stride::NTuple{N, Int}
 end
 
-function MaxPool(k::NTuple{N, Integer}; pad = 0, stride = k) where {N}
+function MaxPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
     stride = expand(Val(N), stride)
     pad = calc_padding(MaxPool, pad, k, 1, stride)
     return MaxPool{N, length(pad)}(k, pad, stride)
 end
 
 function (m::MaxPool{N, M})(x, ps, st::NamedTuple) where {N, M}
-    pdims = PoolDims(x, m.k; padding = m.pad, stride = m.stride)
+    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
     return maxpool(x, pdims), st
 end
 
@@ -210,14 +210,14 @@ struct MeanPool{N, M} <: AbstractExplicitLayer
     stride::NTuple{N, Int}
 end
 
-function MeanPool(k::NTuple{N, Integer}; pad = 0, stride = k) where {N}
+function MeanPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
     stride = expand(Val(N), stride)
     pad = calc_padding(MeanPool, pad, k, 1, stride)
     return MeanPool{N, length(pad)}(k, pad, stride)
 end
 
 function (m::MeanPool{N, M})(x, ps, st::NamedTuple) where {N, M}
-    pdims = PoolDims(x, m.k; padding = m.pad, stride = m.stride)
+    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
     return meanpool(x, pdims), st
 end
 
@@ -272,7 +272,7 @@ struct Upsample{mode, S, T} <: AbstractExplicitLayer
     size::T
 end
 
-function Upsample(mode::Symbol = :nearest; scale = nothing, size = nothing)
+function Upsample(mode::Symbol=:nearest; scale=nothing, size=nothing)
     mode in [:nearest, :bilinear, :trilinear] ||
         throw(ArgumentError("mode=:$mode is not supported."))
     if !(isnothing(scale) ⊻ isnothing(size))
@@ -281,7 +281,7 @@ function Upsample(mode::Symbol = :nearest; scale = nothing, size = nothing)
     return Upsample{mode, typeof(scale), typeof(size)}(scale, size)
 end
 
-Upsample(scale, mode::Symbol = :nearest) = Upsample(mode; scale)
+Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
 
 function (m::Upsample{:nearest})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_nearest(x, m.scale), st
@@ -291,21 +291,21 @@ function (m::Upsample{:nearest, Int})(x::AbstractArray{T, N}, ps,
     return NNlib.upsample_nearest(x, ntuple(i -> m.scale, N - 2)), st
 end
 function (m::Upsample{:nearest, Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_nearest(x; size = m.size), st
+    return NNlib.upsample_nearest(x; size=m.size), st
 end
 
 function (m::Upsample{:bilinear})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_bilinear(x, m.scale), st
 end
 function (m::Upsample{:bilinear, Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_bilinear(x; size = m.size), st
+    return NNlib.upsample_bilinear(x; size=m.size), st
 end
 
 function (m::Upsample{:trilinear})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_trilinear(x, m.scale), st
 end
 function (m::Upsample{:trilinear, Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_trilinear(x; size = m.size), st
+    return NNlib.upsample_trilinear(x; size=m.size), st
 end
 
 function Base.show(io::IO, u::Upsample{mode}) where {mode}
