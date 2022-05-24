@@ -237,13 +237,12 @@ end
     st_symbols = [gensym() for _ in 1:N]
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = []
-    append!(
-        calls,
-        [
-            :(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(getinput(i)), ps.$(names[i]), st.$(names[i]))) for
-            i in 1:N
-        ],
-    )
+    append!(calls,
+            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(getinput(i)),
+                                                                ps.$(names[i]),
+                                                                st.$(names[i])))
+             for
+             i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
         push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
@@ -322,20 +321,12 @@ end
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = []
-<<<<<<< HEAD
-    append!(
-        calls, [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]), st.$(names[i]))) for i in 1:N]
-    )
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
-=======
     append!(calls,
             [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]),
                                                                 st.$(names[i])))
              for i in 1:N])
-    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return tuple($(Tuple(y_symbols)...)), st)])
->>>>>>> 862526f (enforce SciMLStyle)
+    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
 end
 
@@ -417,31 +408,14 @@ end
     st_symbols = [gensym() for _ in 1:N]
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
-<<<<<<< HEAD
-    append!(
-        calls,
-        [
-            :(
-                ($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
-                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))
-            )
-            for i in 1:N
-        ]
-    )
+    append!(calls,
+            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]),
+                                                                ps.$(names[i]),
+                                                                st.$(names[i]));
+               $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
+             for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(y_symbols[N + 1]), st))
-=======
-    for i in 1:N
-        push!(calls,
-              :(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]),
-                                                                 ps.$(names[i]),
-                                                                 st.$(names[i]))))
-        push!(calls,
-              :($(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))))
-    end
-    append!(calls, [:(st = NamedTuple{$names}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return $(y_symbols[N + 1]), st)])
->>>>>>> 862526f (enforce SciMLStyle)
     return Expr(:block, calls...)
 end
 
@@ -548,25 +522,13 @@ end
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layer_1, st.layer_1))]
-<<<<<<< HEAD
-    append!(
-        calls,
-        [
-            :(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]), ps.$(fields[i]), st.$(fields[i])))
-            for i in 2:N
-        ],
-    )
-    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return $(x_symbols[N]), st))
-=======
     append!(calls,
             [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
                                                                 ps.$(fields[i]),
                                                                 st.$(fields[i])))
              for i in 2:N])
-    append!(calls, [:(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),))))])
-    append!(calls, [:(return $(x_symbols[N]), st)])
->>>>>>> 862526f (enforce SciMLStyle)
+    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(return $(x_symbols[N]), st))
     return Expr(:block, calls...)
 end
 

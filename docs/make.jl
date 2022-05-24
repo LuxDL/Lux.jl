@@ -75,6 +75,7 @@ makedocs(;
              "Design Docs" => [
                  "Documentation" => "design/documentation.md",
                  "Recurrent Neural Networks" => "design/recurrent.md",
+                 "Add new functionality to Lux" => "design/core.md",
              ],
          ])
 
