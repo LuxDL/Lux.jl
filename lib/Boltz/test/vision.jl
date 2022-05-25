@@ -52,9 +52,9 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
                             (:gigantic, false),
                         ])
 
-@testset "$model" for (model, config) in pairs(models_available)
+@testset "$model_creator" for (model_creator, config) in pairs(models_available)
     @time begin @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
-        model, ps, st = model(name; pretrained)
+        model, ps, st = model_creator(name; pretrained)
         st = Lux.testmode(st)
         x = randn(Float32, 224, 224, 3, 1)
         @test size(first(model(x, ps, st))) == (1000, 1)
