@@ -11,12 +11,27 @@ end
     fast_chunk.((x,), size(x, D) ÷ N, 1:N, d)
 end
 
+"""
+    flatten_spatial(x::AbstractArray{T, 4})
+
+Flattens the first 2 dimensions of `x`, and permutes the remaining dimensions to (2, 1, 3)
+"""
 @inline function flatten_spatial(x::AbstractArray{T, 4}) where {T}
     return permutedims(reshape(x, (:, size(x, 3), size(x, 4))), (2, 1, 3))
 end
 
+"""
+    seconddimmean(x)
+
+Computes the mean of `x` along dimension `2`
+"""
 @inline seconddimmean(x) = dropdims(mean(x, dims=2); dims=2)
 
+"""
+    normalise(x::AbstractArray, activation; dims=ndims(x), epsilon=ofeltype(x, 1e-5))
+
+Normalises the array `x` to have a mean of 0 and standard deviation of 1, and applies the activation function `activation` to the result.
+"""
 @inline function normalise(x::AbstractArray, ::typeof(identity); dims=ndims(x),
                            epsilon=ofeltype(x, 1e-5))
     xmean = mean(x, dims=dims)
@@ -29,4 +44,36 @@ end
     xmean = mean(x, dims=dims)
     xstd = std(x, dims=dims, mean=xmean, corrected=false)
     return @. activation((x - xmean) / (xstd + epsilon))
+end
+
+# Model construction utilities
+function assert_name_present_in(name, possibilities)
+    @assert name in possibilities "`name` must be one of $(possibilities)"
+end
+
+get_pretrained_weights_path(name::Symbol) = get_pretrained_weights_path(string(name))
+function get_pretrained_weights_path(name::String)
+    try
+        return @artifact_str(name)
+    catch LoadError
+        throw(ArgumentError("No pretrained weights available for `$name`"))
+    end
+end
+
+function initialize_model(name::Symbol, model; pretrained::Bool=false, rng=nothing, seed=0,
+                          kwargs...)
+    if pretrained
+        path = get_pretrained_weights_path(name)
+        jls = deserialize(joinpath(path, "$name.jls"))
+        ps = jls.parameters
+        st = jls.states
+    else
+        if rng === nothing
+            rng = Random.default_rng()
+            Random.seed!(rng, seed)
+        end
+
+        ps, st = Lux.setup(rng, model)
+    end
+    return model, ps, st
 end

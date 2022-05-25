@@ -691,7 +691,6 @@ end
                     sz[2:end]...), st)
 end
 
-
 """
     Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
 

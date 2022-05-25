@@ -1,17 +1,99 @@
-function alexnet(name::Symbol; pretrained::Bool=false, kwargs...)
+function alexnet(name::Symbol; kwargs...)
     assert_name_present_in(name, (:default,))
+    model = Lux.transform(AlexNet().layers)
+    return initialize_model(name, model; kwargs...)
 end
 
-function vgg(name::Symbol; pretrained::Bool=false, kwargs...) end
+function vgg(name::Symbol; kwargs...)
+    assert_name_present_in(name,
+                           (:vgg11, :vgg11_bn, :vgg13, :vgg13_bn, :vgg16, :vgg16_bn, :vgg19,
+                            :vgg19_bn))
+    model = if name == :vgg11
+        Lux.transform(VGG11().layers)
+    elseif name == :vgg11_bn
+        Lux.transform(VGG11(; batchnorm=true).layers)
+    elseif name == :vgg13
+        Lux.transform(VGG13().layers)
+    elseif name == :vgg13_bn
+        Lux.transform(VGG13(; batchnorm=true).layers)
+    elseif name == :vgg16
+        Lux.transform(VGG16().layers)
+    elseif name == :vgg16_bn
+        Lux.transform(VGG16(; batchnorm=true).layers)
+    elseif name == :vgg19
+        Lux.transform(VGG19().layers)
+    elseif name == :vgg19_bn
+        Lux.transform(VGG19(; batchnorm=true).layers)
+    end
+    return initialize_model(name, model; kwargs...)
+end
 
-function resnet(name::Symbol; pretrained::Bool=false, kwargs...) end
+function resnet(name::Symbol; kwargs...)
+    assert_name_present_in(name, (:resnet18, :resnet34, :resnet50, :resnet101, :resnet152))
+    model = if name == :resnet18
+        Lux.transform(ResNet18().layers)
+    elseif name == :resnet34
+        Lux.transform(ResNet34().layers)
+    elseif name == :resnet50
+        Lux.transform(ResNet50().layers)
+    elseif name == :resnet101
+        Lux.transform(ResNet101().layers)
+    elseif name == :resnet152
+        Lux.transform(ResNet152().layers)
+    end
+    return initialize_model(name, model; kwargs...)
+end
 
-function resnext(name::Symbol; pretrained::Bool=false, kwargs...) end
+function resnext(name::Symbol; kwargs...)
+    assert_name_present_in(name, (:resnext50, :resnext101, :resnext152))
+    model = if name == :resnext50
+        Lux.transform(ResNeXt50().layers)
+    elseif name == :resnext101
+        Lux.transform(ResNeXt101().layers)
+    elseif name == :resnext152
+        Lux.transform(ResNeXt152().layers)
+    end
+    return initialize_model(name, model; kwargs...)
+end
 
-function googlenet(name::Symbol; pretrained::Bool=false, kwargs...) end
+function googlenet(name::Symbol; kwargs...)
+    assert_name_present_in(name, (:default,))
+    model = Lux.transform(GoogLeNet().layers)
+    return initialize_model(name, model; kwargs...)
+end
 
-function densenet(name::Symbol; pretrained::Bool=false, kwargs...) end
+function densenet(name::Symbol; kwargs...)
+    assert_name_present_in(name, (:densenet121, :densenet161, :densenet169, :densenet201))
+    model = if name == :densenet121
+        Lux.transform(DenseNet121().layers)
+    elseif name == :densenet161
+        Lux.transform(DenseNet161().layers)
+    elseif name == :densenet169
+        Lux.transform(DenseNet169().layers)
+    elseif name == :densenet201
+        Lux.transform(DenseNet201().layers)
+    end
+    return initialize_model(name, model; kwargs...)
+end
 
-function mobilenet(name::Symbol; pretrained::Bool=false, kwargs...) end
+function mobilenet(name::Symbol; kwargs...)
+    assert_name_present_in(name,
+                           (:mobilenet_v1, :mobilenet_v2, :mobilenet_v3_small,
+                            :mobilenet_v3_large))
+    model = if name == :v1
+        Lux.transform(MobileNetv1().layers)
+    elseif name == :v2
+        Lux.transform(MobileNetv2().layers)
+    elseif name == :v3_small
+        Lux.transform(MobileNetv3(:small).layers)
+    elseif name == :v3_large
+        Lux.transform(MobileNetv3(:large).layers)
+    end
+    return initialize_model(name, model; kwargs...)
+end
 
-function convmixer(name::Symbol; pretrained::Bool=false, kwargs...) end
+function convmixer(name::Symbol; kwargs...)
+    assert_name_present_in(name, (:base, :large, :small))
+    model = Lux.transform(ConvMixer(name).layers)
+    return initialize_model(name, model; kwargs...)
+end

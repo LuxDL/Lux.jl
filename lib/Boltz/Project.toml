@@ -4,10 +4,13 @@ authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "0.1.0"
 
 [deps]
+Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+LazyArtifacts = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 Metalhead = "dbeba491-748d-5e0e-a39e-b530a07fa0cc"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]

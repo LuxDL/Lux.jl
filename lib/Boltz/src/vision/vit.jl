@@ -19,11 +19,8 @@ function MultiHeadAttention(in_planes::Int,
                             projection_dropout_rate::T=0.0f0) where {T}
     @assert in_planes % number_heads==0 "`in_planes` should be divisible by `number_heads`"
     qkv_layer = Dense(in_planes, in_planes * 3; bias=qkv_bias)
-    attention_dropout = iszero(attention_dropout_rate) ? NoOpLayer() :
-                        Dropout(attention_dropout_rate)
-    projection = Chain(Dense(in_planes, in_planes),
-                       iszero(projection_dropout_rate) ? NoOpLayer() :
-                       Dropout(projection_dropout_rate))
+    attention_dropout = Dropout(attention_dropout_rate)
+    projection = Chain(Dense(in_planes, in_planes), Dropout(projection_dropout_rate))
 
     return MultiHeadAttention(number_heads, qkv_layer, attention_dropout, projection)
 end
@@ -42,9 +39,9 @@ function (m::MultiHeadAttention)(x::AbstractArray{T, 3}, ps, st) where {T}
                            nfeatures ÷ m.number_heads, seq_len * batch_size)
     query_reshaped = reshape(query, nfeatures ÷ m.number_heads, m.number_heads,
                              seq_len * batch_size)
-    attention, st_attention = m.attention_dropout(softmax(batched_mul(query_reshaped,
-                                                                      key_reshaped) .*
-                                                          scale), ps.attention_dropout,
+
+    attention = softmax(batched_mul(query_reshaped, key_reshaped) .* scale)
+    attention, st_attention = m.attention_dropout(attention, ps.attention_dropout,
                                                   st.attention_dropout)
 
     value_reshaped = reshape(value, nfeatures ÷ m.number_heads, m.number_heads,
@@ -95,7 +92,7 @@ function ViPosEmbedding(embedding_size::Int, number_patches::Int;
 end
 
 function Lux.initialparameters(rng::AbstractRNG, v::ViPosEmbedding)
-    (vectors=v.init(rng, v.embedding_size, v.number_patches),)
+    return (vectors=v.init(rng, v.embedding_size, v.number_patches),)
 end
 
 (v::ViPosEmbedding)(x, ps, st) = x .+ ps.vectors, st
@@ -125,10 +122,8 @@ function transformer_encoder(in_planes, depth, number_heads; mlp_ratio=4.0f0,
                                    +),
                     SkipConnection(Chain(layer_norm(in_planes),
                                          Chain(Dense(in_planes => hidden_planes, gelu),
-                                               iszero(dropout_rate) ? NoOpLayer() :
                                                Dropout(dropout_rate),
                                                Dense(hidden_planes => in_planes),
-                                               iszero(dropout_rate) ? NoOpLayer() :
                                                Dropout(dropout_rate))),
                                    +)) for _ in 1:depth]
     return Chain(layers...)
@@ -163,18 +158,18 @@ function vision_transformer(;
                             dropout_rate=0.1f0,
                             embedding_dropout_rate=0.1f0,
                             pool::Symbol=:class,
-                            num_classes::Int=1000)
+                            num_classes::Int=1000,
+                            kwargs...)
     @assert pool in (:class, :mean) "Pool type must be either :class (class token) or :mean (mean pooling)"
     number_patches = prod(imsize .÷ patch_size)
 
     return Chain(Chain(patch_embedding(imsize; in_channels, patch_size, embed_planes),
                        ClassTokens(embed_planes),
                        ViPosEmbedding(embed_planes, number_patches + 1),
-                       iszero(embedding_dropout_rate) ? NoOpLayer() :
                        Dropout(embedding_dropout_rate),
                        transformer_encoder(embed_planes, depth, number_heads; mlp_ratio,
                                            dropout_rate),
-                       (pool == :class) ? x -> x[:, 1, :] : seconddimmean),
+                       (pool == :class) ? x -> view(x, :, 1, :) : seconddimmean),
                  Chain(layer_norm(embed_planes), Dense(embed_planes, num_classes, tanh)))
 end
 
