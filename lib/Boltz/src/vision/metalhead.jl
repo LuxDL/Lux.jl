@@ -65,13 +65,13 @@ end
 function densenet(name::Symbol; kwargs...)
     assert_name_present_in(name, (:densenet121, :densenet161, :densenet169, :densenet201))
     model = if name == :densenet121
-        Lux.transform(DenseNet121().layers)
+        Lux.transform(DenseNet(121).layers)
     elseif name == :densenet161
-        Lux.transform(DenseNet161().layers)
+        Lux.transform(DenseNet(161).layers)
     elseif name == :densenet169
-        Lux.transform(DenseNet169().layers)
+        Lux.transform(DenseNet(169).layers)
     elseif name == :densenet201
-        Lux.transform(DenseNet201().layers)
+        Lux.transform(DenseNet(201).layers)
     end
     return initialize_model(name, model; kwargs...)
 end

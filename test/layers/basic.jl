@@ -55,7 +55,7 @@ Random.seed!(rng, 0)
 
         @test size(layer(x, ps, st)[1]) == (6, 4, 2)
         @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st) broken=true
+        @test_opt target_modules=(Lux,) layer(x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
