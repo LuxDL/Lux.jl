@@ -14,7 +14,7 @@ function vgg_block(input_filters, output_filters, depth, batchnorm)
     p = (1, 1)
     layers = []
     for _ in 1:depth
-        push!(layers, Conv(k, input_filters => output_filters; pad=p))
+        push!(layers, Conv(k, input_filters => output_filters, batchnorm ? identity : relu; pad=p))
         if batchnorm
             push!(layers, BatchNorm(output_filters, relu))
         end
