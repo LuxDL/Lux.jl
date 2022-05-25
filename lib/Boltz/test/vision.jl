@@ -1,0 +1,64 @@
+using Boltz, Lux
+
+models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
+                        convmixer => [(:small, false), (:base, false), (:large, false)],
+                        densenet => [
+                            (:densenet121, false),
+                            (:densenet161, false),
+                            (:densenet169, false),
+                            (:densenet201, false),
+                        ],
+                        googlenet => [(:googlenet, false)],
+                        mobilenet => [
+                            (:mobilenet_v1, false),
+                            (:mobilenet_v2, false),
+                            (:mobilenet_v3_small, false),
+                            (:mobilenet_v3_large, false),
+                        ],
+                        resnet => [
+                            (:resnet18, true),
+                            (:resnet18, false),
+                            (:resnet34, true),
+                            (:resnet34, false),
+                            (:resnet50, true),
+                            (:resnet50, false),
+                            (:resnet101, true),
+                            (:resnet101, false),
+                            (:resnet152, true),
+                            (:resnet152, false),
+                        ],
+                        resnext => [
+                            (:resnext50, false),
+                            (:resnext101, false),
+                            (:resnext152, false),
+                        ],
+                        vgg => [
+                            (:vgg11, false),
+                            (:vgg11_bn, false),
+                            (:vgg13, false),
+                            (:vgg13_bn, false),
+                            (:vgg16, false),
+                            (:vgg16_bn, false),
+                            (:vgg19, false),
+                            (:vgg19_bn, false),
+                        ],
+                        vision_transformer => [
+                            (:tiny, false),
+                            (:small, false),
+                            (:base, false),
+                            (:large, false),
+                            (:huge, false),
+                            (:giant, false),
+                            (:gigantic, false),
+                        ])
+
+@testset "$model" for (model, config) in pairs(models_available)
+    @time begin @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
+        model, ps, st = model(name; pretrained)
+        st = Lux.testmode(st)
+        x = randn(Float32, 224, 224, 3, 1)
+        @test size(first(model(x, ps, st))) == (1000, 1)
+
+        GC.gc(true)
+    end end
+end

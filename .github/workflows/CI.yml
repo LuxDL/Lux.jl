@@ -15,9 +15,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
+        group:
+          - Lux    # Core Framework
+          - Boltz  # Prebuilt Models using Lux
         version:
-          - 1.7
+          - '1.7'  # JET doesn't work in the prior versions
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1

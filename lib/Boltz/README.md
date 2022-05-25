@@ -8,7 +8,7 @@ List of models provided by Boltz. Some of these models provide pretrained weight
 
 | MODEL NAME | FUNCTION | NAME | PRETRAINED | TOP 5 ACCURACY (%) | TOP 1 ACCURACY (%) |
 | - | - | - | :-: | :-: | :-: |
-| AlexNet | `alexnet` | `:default` | ✅ | | |
+| AlexNet | `alexnet` | `:alexnet` | ✅ | | |
 | ConvMixer | `convmixer` | `:small` | 🚫 | | |
 | ConvMixer | `convmixer` | `:base` | 🚫 | | |
 | ConvMixer | `convmixer` | `:large` | 🚫 | | |
@@ -16,7 +16,7 @@ List of models provided by Boltz. Some of these models provide pretrained weight
 | DenseNet | `densenet` | `:densenet161` | 🚫 | | |
 | DenseNet | `densenet` | `:densenet169` | 🚫 | | |
 | DenseNet | `densenet` | `:densenet201` | 🚫 | | |
-| GoogleNet | `googlenet` | `:default` | 🚫 | | |
+| GoogleNet | `googlenet` | `:googlenet` | 🚫 | | |
 | MobileNet | `mobilenet` | `:mobilenet_v1` | 🚫 | | |
 | MobileNet | `mobilenet` | `:mobilenet_v2` | 🚫 | | |
 | MobileNet | `mobilenet` | `:mobilenet_v3_small` | 🚫 | | |

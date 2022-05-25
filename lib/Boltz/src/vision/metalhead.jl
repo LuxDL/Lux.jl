@@ -1,5 +1,5 @@
 function alexnet(name::Symbol; kwargs...)
-    assert_name_present_in(name, (:default,))
+    assert_name_present_in(name, (:alexnet,))
     model = Lux.transform(AlexNet().layers)
     return initialize_model(name, model; kwargs...)
 end
@@ -57,7 +57,7 @@ function resnext(name::Symbol; kwargs...)
 end
 
 function googlenet(name::Symbol; kwargs...)
-    assert_name_present_in(name, (:default,))
+    assert_name_present_in(name, (:googlenet,))
     model = Lux.transform(GoogLeNet().layers)
     return initialize_model(name, model; kwargs...)
 end
