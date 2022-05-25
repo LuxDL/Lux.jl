@@ -56,7 +56,10 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
     @time begin @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
         model, ps, st = model_creator(name; pretrained)
         st = Lux.testmode(st)
-        x = randn(Float32, 224, 224, 3, 1)
+
+        imsize = string(name) == "vision_transformer" ? (256, 256) : (224, 224)
+        x = randn(Float32, imsize..., 3, 1)
+
         @test size(first(model(x, ps, st))) == (1000, 1)
 
         GC.gc(true)

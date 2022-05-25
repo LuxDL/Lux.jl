@@ -80,13 +80,13 @@ function mobilenet(name::Symbol; kwargs...)
     assert_name_present_in(name,
                            (:mobilenet_v1, :mobilenet_v2, :mobilenet_v3_small,
                             :mobilenet_v3_large))
-    model = if name == :v1
+    model = if name == :mobilenet_v1
         Lux.transform(MobileNetv1().layers)
-    elseif name == :v2
+    elseif name == :mobilenet_v2
         Lux.transform(MobileNetv2().layers)
-    elseif name == :v3_small
+    elseif name == :mobilenet_v3_small
         Lux.transform(MobileNetv3(:small).layers)
-    elseif name == :v3_large
+    elseif name == :mobilenet_v3_large
         Lux.transform(MobileNetv3(:large).layers)
     end
     return initialize_model(name, model; kwargs...)
