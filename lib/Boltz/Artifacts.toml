@@ -45,3 +45,35 @@ lazy = true
     [[resnet50.download]]
     sha256 = "275365d76e592c6ea35574853a75ee068767641664e7817aedf394fcd7fea25a"
     url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/resnet50.tar.gz"
+
+[vgg11]
+git-tree-sha1 = "ea7e8ef9399a0fe0aad2331781af5d6435950d36"
+lazy = true
+
+    [[vgg11.download]]
+    sha256 = "a88b78c4e939138270068933f6278fa6392ce699991385000b1b9bb0ff53fa3e"
+    url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/vgg11.tar.gz"
+
+[vgg13]
+git-tree-sha1 = "260246834e15048ec128fadc6d1a5dd050dd0928"
+lazy = true
+
+    [[vgg13.download]]
+    sha256 = "757c555f47e2dd4898e89fcb6fb94f1a7a9977e4cdbdba5502eacd1d3496cf3b"
+    url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/vgg13.tar.gz"
+
+[vgg16]
+git-tree-sha1 = "0e4d8a869e2688c765a3126c8a8c59e4a58fe97d"
+lazy = true
+
+    [[vgg16.download]]
+    sha256 = "79463750e1fd2424928b21a8d5d0cb2328c46e5cf39252600e0d132570bfd931"
+    url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/vgg16.tar.gz"
+
+[vgg19]
+git-tree-sha1 = "8c0f1bdb7e540f1529a4038a0c73971debb1634b"
+lazy = true
+
+    [[vgg19.download]]
+    sha256 = "2cedf1574207abe1989619aab292c51964dc27226b8852f0ce8a5acbc66ded31"
+    url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/vgg19.tar.gz"

@@ -22,6 +22,8 @@ include("layers.jl")
 # Vision Models
 ## Vision Transformer Implementation
 include("vision/vit.jl")
+## VGG Nets
+include("vision/vgg.jl")
 ## Metalhead to Lux
 include("vision/metalhead.jl")
 

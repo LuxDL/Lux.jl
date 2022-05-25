@@ -4,30 +4,6 @@ function alexnet(name::Symbol; kwargs...)
     return initialize_model(name, model; kwargs...)
 end
 
-function vgg(name::Symbol; kwargs...)
-    assert_name_present_in(name,
-                           (:vgg11, :vgg11_bn, :vgg13, :vgg13_bn, :vgg16, :vgg16_bn, :vgg19,
-                            :vgg19_bn))
-    model = if name == :vgg11
-        Lux.transform(VGG(11).layers)
-    elseif name == :vgg11_bn
-        Lux.transform(VGG(11; batchnorm=true).layers)
-    elseif name == :vgg13
-        Lux.transform(VGG(13).layers)
-    elseif name == :vgg13_bn
-        Lux.transform(VGG(13; batchnorm=true).layers)
-    elseif name == :vgg16
-        Lux.transform(VGG(16).layers)
-    elseif name == :vgg16_bn
-        Lux.transform(VGG(16; batchnorm=true).layers)
-    elseif name == :vgg19
-        Lux.transform(VGG(19).layers)
-    elseif name == :vgg19_bn
-        Lux.transform(VGG(19; batchnorm=true).layers)
-    end
-    return initialize_model(name, model; kwargs...)
-end
-
 function resnet(name::Symbol; kwargs...)
     assert_name_present_in(name, (:resnet18, :resnet34, :resnet50, :resnet101, :resnet152))
     model = if name == :resnet18
