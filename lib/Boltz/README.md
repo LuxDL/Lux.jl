@@ -27,11 +27,11 @@ model, ps, st = resnet(:resnet18; pretrained=true)
 | ResNet | `resnet` | `:resnet50` | ✅ | 74.55 | 92.36 |
 | ResNet | `resnet` | `:resnet101` | ✅ | 74.81 | 92.36 |
 | ResNet | `resnet` | `:resnet152` | ✅ | 77.63 | 93.84 |
-| VGG | `vgg` | `:vgg11` | ✅ | | |
+| VGG | `vgg` | `:vgg11` | ✅ | 67.35 | 87.91 |
 | VGG | `vgg` | `:vgg11_bn` | ✅ | | |
 | VGG | `vgg` | `:vgg13` | ✅ | | |
 | VGG | `vgg` | `:vgg13_bn` | ✅ | | |
-| VGG | `vgg` | `:vgg16` | ✅ | | |
+| VGG | `vgg` | `:vgg16` | ✅ | 70.24 | 89.80 |
 | VGG | `vgg` | `:vgg16_bn` | ✅ | | |
 | VGG | `vgg` | `:vgg19` | ✅ | | |
 | VGG | `vgg` | `:vgg19_bn` | ✅ | | |
