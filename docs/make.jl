@@ -51,7 +51,8 @@ makedocs(;
          modules=[Lux],
          format=Documenter.HTML(;
                                 prettyurls=get(ENV, "CI", nothing) == "true",
-                                assets=["assets/custom.css"]
+                                assets=["assets/custom.css"],
+                                edit_branch="main",
                                 # analytics = "G-Q8GYTEVTZ2"
                                 ),
          pages=[
