@@ -5,7 +5,7 @@ Dropout layer.
 
 ## Arguments
 
-* `p`: Probability of Dropout
+* `p`: Probability of Dropout (if `p = 0` then [`NoOpLayer`](@ref) is returned)
 
 ## Keyword Arguments
 
@@ -42,6 +42,7 @@ end
 
 function Dropout(p; dims=:)
     @assert 0 ≤ p ≤ 1
+    iszero(p) && return NoOpLayer()
     return Dropout(p, dims)
 end
 
@@ -63,7 +64,7 @@ VariationalHiddenDropout layer. The only difference from Dropout is that the `ma
 
 ## Arguments
 
-* `p`: Probability of Dropout
+* `p`: Probability of Dropout (if `p = 0` then [`NoOpLayer`](@ref) is returned)
 
 ## Keyword Arguments
 
@@ -103,6 +104,7 @@ end
 
 function VariationalHiddenDropout(p; dims=:)
     @assert 0 ≤ p ≤ 1
+    iszero(p) && return NoOpLayer()
     return VariationalHiddenDropout(p, dims)
 end
 

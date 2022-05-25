@@ -95,7 +95,7 @@ function get_model(model_name::String, models_dict::Dict, rng, args...; warmup=t
     if is_distributed()
         ps = FluxMPI.synchronize!(ps; root_rank=0)
         st = FluxMPI.synchronize!(st; root_rank=0)
-        should_log() && println("$(now()) ==> models synced across all ranks")
+        should_log() && println("$(now()) ===> models synced across all ranks")
     end
 
     return model, ps, st

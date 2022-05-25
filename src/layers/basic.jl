@@ -67,15 +67,16 @@ Return a view of all the data of the input `x` where the index for dimension `di
 * `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
 * Empty `NamedTuple()`
 """
-struct SelectDim{I} <: AbstractExplicitLayer
-    dim::Int
-    i::I
+struct SelectDim{dim, index} <: AbstractExplicitLayer end
+
+SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
+
+@inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
+    selectdim(x, get_known(dim), get_known(index)), st
 end
 
-@inline (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
-
-function Base.show(io::IO, s::SelectDim)
-    print(io, "SelectDim(dim = ", s.dim, ", index = ", s.i, ")")
+function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
+    print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index), ")")
 end
 
 """
@@ -494,7 +495,11 @@ function flatten_model(layers::Union{AbstractVector, Tuple})
             append!(new_layers, f)
         elseif f isa Function
             if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
-                push!(new_layers, WrappedFunction(f))
+                if f === identity
+                    continue
+                else
+                    push!(new_layers, WrappedFunction(f))
+                end
             else
                 push!(new_layers, f)
             end
@@ -580,14 +585,14 @@ function Base.show(io::IO, d::Dense{bias}) where {bias}
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int, <:Int}, activation=identity;
-               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; init_weight=glorot_uniform,
+               init_bias=zeros32, bias::Bool=true)
     return Dense(first(mapping), last(mapping), activation; init_weight=init_weight,
                  init_bias=init_bias, bias=bias)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation=identity;
-               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
+               init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Dense{bias, typeof(activation), typeof(init_weight), typeof(init_bias)}(activation,
                                                                                    in_dims,
@@ -610,26 +615,33 @@ function parameterlength(d::Dense{bias}) where {bias}
 end
 statelength(d::Dense) = 0
 
-@inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+@inline function (d::Dense{false})(x::AbstractVecOrMat,
+                                   ps::Union{ComponentArray, NamedTuple},
                                    st::NamedTuple)
     return applyactivation(d.activation, ps.weight * x), st
 end
 
-@inline function (d::Dense{false, typeof(identity)})(x::AbstractArray,
+@inline function (d::Dense{false, typeof(identity)})(x::AbstractVecOrMat,
                                                      ps::Union{ComponentArray, NamedTuple},
                                                      st::NamedTuple)
     return ps.weight * x, st
 end
 
-@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
-                                  st::NamedTuple)
-    return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
+@inline function (d::Dense{false})(x::AbstractArray,
+                                   ps::Union{ComponentArray, NamedTuple},
+                                   st::NamedTuple)
+    sz = size(x)
+    x_reshaped = reshape(x, sz[1], :)
+    return reshape(applyactivation(d.activation, ps.weight * x_reshaped), d.out_dims,
+                   sz[2:end]...), st
 end
 
-@inline function (d::Dense{true, typeof(identity)})(x::AbstractArray,
-                                                    ps::Union{ComponentArray, NamedTuple},
-                                                    st::NamedTuple)
-    return elementwise_add(ps.weight * x, ps.bias), st
+@inline function (d::Dense{false, typeof(identity)})(x::AbstractArray,
+                                                     ps::Union{ComponentArray, NamedTuple},
+                                                     st::NamedTuple)
+    sz = size(x)
+    x_reshaped = reshape(x, sz[1], :)
+    return reshape(ps.weight * x_reshaped, d.out_dims, sz[2:end]...), st
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray, NamedTuple},
@@ -641,6 +653,35 @@ end
                                                     ps::Union{ComponentArray, NamedTuple},
                                                     st::NamedTuple)
     return elementwise_add(ps.weight * x, vec(ps.bias)), st
+end
+
+@inline function (d::Dense{true})(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                                  st::NamedTuple)
+    return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
+end
+
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractMatrix,
+                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    st::NamedTuple)
+    return elementwise_add(ps.weight * x, ps.bias), st
+end
+
+@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+                                  st::NamedTuple)
+    sz = size(x)
+    x_reshaped = reshape(x, sz[1], :)
+    return (reshape(applyactivation(d.activation,
+                                    elementwise_add(ps.weight * x_reshaped, ps.bias)),
+                    d.out_dims, sz[2:end]...), st)
+end
+
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractArray,
+                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    st::NamedTuple)
+    sz = size(x)
+    x_reshaped = reshape(x, sz[1], :)
+    return (reshape(elementwise_add(ps.weight * x_reshaped, ps.bias), d.out_dims,
+                    sz[2:end]...), st)
 end
 
 """
