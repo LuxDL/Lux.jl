@@ -169,7 +169,7 @@ function vision_transformer(;
                        Dropout(embedding_dropout_rate),
                        transformer_encoder(embed_planes, depth, number_heads; mlp_ratio,
                                            dropout_rate),
-                       (pool == :class) ? x -> view(x, :, 1, :) : seconddimmean),
+                       (pool == :class) ? SelectDim(2, 1) : seconddimmean),
                  Chain(layer_norm(embed_planes), Dense(embed_planes, num_classes, tanh)))
 end
 

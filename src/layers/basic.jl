@@ -67,15 +67,16 @@ Return a view of all the data of the input `x` where the index for dimension `di
 * `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
 * Empty `NamedTuple()`
 """
-struct SelectDim{I} <: AbstractExplicitLayer
-    dim::Int
-    i::I
+struct SelectDim{dim, index} <: AbstractExplicitLayer end
+
+SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
+
+@inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
+    selectdim(x, get_known(dim), get_known(index)), st
 end
 
-@inline (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
-
-function Base.show(io::IO, s::SelectDim)
-    print(io, "SelectDim(dim = ", s.dim, ", index = ", s.i, ")")
+function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
+    print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index), ")")
 end
 
 """

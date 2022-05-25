@@ -196,3 +196,6 @@ end
 Split up `x` into `N` equally sized chunks (along dimension `1`).
 """
 @inline multigate(x::AbstractArray, ::Val{N}) where {N} = gate.((x,), size(x, 1) ÷ N, 1:N)
+
+# Val utilities
+get_known(::Val{T}) where {T} = T
