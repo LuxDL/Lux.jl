@@ -21,8 +21,8 @@ List of models provided by Boltz. Some of these models provide pretrained weight
 | MobileNet | `mobilenet` | `:mobilenet_v2` | 🚫 | | |
 | MobileNet | `mobilenet` | `:mobilenet_v3_small` | 🚫 | | |
 | MobileNet | `mobilenet` | `:mobilenet_v3_large` | 🚫 | | |
-| ResNet | `resnet` | `:resnet18` | ✅ | | |
-| ResNet | `resnet` | `:resnet34` | ✅ | | |
+| ResNet | `resnet` | `:resnet18` | ✅ | 68.08 | 88.44 |
+| ResNet | `resnet` | `:resnet34` | ✅ | 72.13 | 90.91 |
 | ResNet | `resnet` | `:resnet50` | ✅ | | |
 | ResNet | `resnet` | `:resnet101` | ✅ | | |
 | ResNet | `resnet` | `:resnet152` | ✅ | | |

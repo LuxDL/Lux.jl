@@ -57,7 +57,7 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
         model, ps, st = model_creator(name; pretrained)
         st = Lux.testmode(st)
 
-        imsize = string(name) == "vision_transformer" ? (256, 256) : (224, 224)
+        imsize = string(model_creator) == "vision_transformer" ? (256, 256) : (224, 224)
         x = randn(Float32, imsize..., 3, 1)
 
         @test size(first(model(x, ps, st))) == (1000, 1)
