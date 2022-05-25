@@ -8,7 +8,7 @@ List of models provided by Boltz. Some of these models provide pretrained weight
 
 | MODEL NAME | FUNCTION | NAME | PRETRAINED | TOP 5 ACCURACY (%) | TOP 1 ACCURACY (%) |
 | - | - | - | :-: | :-: | :-: |
-| AlexNet | `alexnet` | `:alexnet` | ✅ | | |
+| AlexNet | `alexnet` | `:alexnet` | ✅ | 54.48 | 77.72 |
 | ConvMixer | `convmixer` | `:small` | 🚫 | | |
 | ConvMixer | `convmixer` | `:base` | 🚫 | | |
 | ConvMixer | `convmixer` | `:large` | 🚫 | | |
@@ -24,7 +24,7 @@ List of models provided by Boltz. Some of these models provide pretrained weight
 | ResNet | `resnet` | `:resnet18` | ✅ | 68.08 | 88.44 |
 | ResNet | `resnet` | `:resnet34` | ✅ | 72.13 | 90.91 |
 | ResNet | `resnet` | `:resnet50` | ✅ | | |
-| ResNet | `resnet` | `:resnet101` | ✅ | | |
+| ResNet | `resnet` | `:resnet101` | ✅ | 74.81 | 92.36 |
 | ResNet | `resnet` | `:resnet152` | ✅ | | |
 | ResNeXT | `resnext` | `:resnext50` | 🚫 | | |
 | ResNeXT | `resnext` | `:resnext101` | 🚫 | | |

@@ -46,10 +46,11 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
                             (:tiny, false),
                             (:small, false),
                             (:base, false),
-                            (:large, false),
-                            (:huge, false),
-                            (:giant, false),
-                            (:gigantic, false),
+                            # CI cant handle these
+                            # (:large, false),
+                            # (:huge, false),
+                            # (:giant, false),
+                            # (:gigantic, false),
                         ])
 
 @testset "$model_creator" for (model_creator, config) in pairs(models_available)

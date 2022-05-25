@@ -15,11 +15,11 @@ lazy = true
     url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/resnet101.tar.gz"
 
 [resnet152]
-git-tree-sha1 = "067e1abf4b00227976e0e7b2d4413be8fa3e4957"
+git-tree-sha1 = "892915c44de37537aad97da3de8a4458dfa36297"
 lazy = true
 
     [[resnet152.download]]
-    sha256 = "a0cabbc46d94b1cf63d716213a308f4b73cc8a7c1f34f640a0b12ab3c90bb7ec"
+    sha256 = "6033a1ecc46d7f4ed1139067c5f9f5ea0d247656e9abbbe755c4702ec5a636d6"
     url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/resnet152.tar.gz"
 
 [resnet18]
@@ -39,9 +39,9 @@ lazy = true
     url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/resnet34.tar.gz"
 
 [resnet50]
-git-tree-sha1 = "400d466110f9f0527c0f85d21b8fcb6600c45029"
+git-tree-sha1 = "8c5866edb29b53f581a9ed7148efa1dbccde6133"
 lazy = true
 
     [[resnet50.download]]
-    sha256 = "e8278d85e9d8114bf86855142ae19a3b87ad744291e8ea8f6fb07638c12f922c"
+    sha256 = "275365d76e592c6ea35574853a75ee068767641664e7817aedf394fcd7fea25a"
     url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/resnet50.tar.gz"
