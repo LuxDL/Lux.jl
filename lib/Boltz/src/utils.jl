@@ -64,9 +64,8 @@ function initialize_model(name::Symbol, model; pretrained::Bool=false, rng=nothi
                           kwargs...)
     if pretrained
         path = get_pretrained_weights_path(name)
-        jls = deserialize(joinpath(path, "$name.jls"))
-        ps = jls.parameters
-        st = jls.states
+        ps = load(joinpath(path, "$name.jld2"), "parameters")
+        st = load(joinpath(path, "$name.jld2"), "states")
     else
         if rng === nothing
             rng = Random.default_rng()

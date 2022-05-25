@@ -7,7 +7,7 @@ using Statistics
 
 # Loading Pretained Weights
 using Artifacts, LazyArtifacts
-using Serialization
+using JLD2
 
 # TODO: We want to have generic Lux implementaions for Metalhead models
 # We can automatically convert several Metalhead.jl models to Lux
