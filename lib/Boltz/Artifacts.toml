@@ -101,3 +101,11 @@ lazy = true
     [[vgg19.download]]
     sha256 = "2cedf1574207abe1989619aab292c51964dc27226b8852f0ce8a5acbc66ded31"
     url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/vgg19.tar.gz"
+
+[vgg19_bn]
+git-tree-sha1 = "fb3ec225e8a0b2eb838be682c6facceaa5b8aad3"
+lazy = true
+
+    [[vgg19_bn.download]]
+    sha256 = "7a8d3d43ea092db4f53e721015078fcba4980dd5534a743f2b388165f8af185d"
+    url = "https://github.com/avik-pal/Lux.jl/releases/download/weights/vgg19_bn.tar.gz"
