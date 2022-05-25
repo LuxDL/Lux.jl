@@ -52,6 +52,12 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
 Look in the [examples](/examples/) directory for self-contained usage examples. The [documentation](https://lux.csail.mit.edu/dev) has examples sorted into proper categories.
 
+## Ecosystem
+
+### Prebuilt Deep Learning Models
+
+See [Boltz](lib/Boltz/) for pre-built deep learning models with pretrained weights for popular datasets.
+
 ## Getting Help
 
 For usage related questions, please use [Github Discussions](https://github.com/avik-pal/Lux.jl/discussions) or [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/avik-pal/Lux.jl/issues) or even better send in a [pull request](https://github.com/avik-pal/Lux.jl/pulls).
