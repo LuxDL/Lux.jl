@@ -3,15 +3,16 @@ using Lux
 using Random
 using Zygote
 
-function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...) where {fields}
+function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
+                       kwargs...) where {fields}
     checkapprox(xy) = isapprox(xy[1], xy[2]; kwargs...)
-    checkapprox(t::Tuple{Nothing,Nothing}) = true
+    checkapprox(t::Tuple{Nothing, Nothing}) = true
     return all(checkapprox, zip(values(nt1), values(nt2)))
 end
 
-function Base.isapprox(t1::NTuple{N,T}, t2::NTuple{N,T}; kwargs...) where {N,T}
+function Base.isapprox(t1::NTuple{N, T}, t2::NTuple{N, T}; kwargs...) where {N, T}
     checkapprox(xy) = isapprox(xy[1], xy[2]; kwargs...)
-    checkapprox(t::Tuple{Nothing,Nothing}) = true
+    checkapprox(t::Tuple{Nothing, Nothing}) = true
     return all(checkapprox, zip(t1, t2))
 end
 

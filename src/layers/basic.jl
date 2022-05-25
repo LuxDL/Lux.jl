@@ -17,14 +17,16 @@ Reshapes the passed array to have a size of `(dims..., :)`
 * Empty `NamedTuple()`
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
-    dims::NTuple{N,Int}
+    dims::NTuple{N, Int}
 end
 
 @inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(x, r.dims..., size(x, ndims(x))), st
 end
 
-Base.show(io::IO, r::ReshapeLayer) = print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
+function Base.show(io::IO, r::ReshapeLayer)
+    print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
+end
 
 """
     FlattenLayer()
@@ -42,7 +44,7 @@ Flattens the passed array into a matrix.
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
-@inline function (f::FlattenLayer)(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T,N}
+@inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     return reshape(x, :, size(x, N)), st
 end
 
@@ -72,7 +74,9 @@ end
 
 @inline (s::SelectDim)(x, ps, st::NamedTuple) = selectdim(x, s.dim, s.i), st
 
-Base.show(io::IO, s::SelectDim) = print(io, "SelectDim(dim = ", s.dim, ", index = ", s.i, ")")
+function Base.show(io::IO, s::SelectDim)
+    print(io, "SelectDim(dim = ", s.dim, ", index = ", s.i, ")")
+end
 
 """
     NoOpLayer()
@@ -170,12 +174,14 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-struct SkipConnection{T<:AbstractExplicitLayer,F} <: AbstractExplicitContainerLayer{(:layers,)}
+struct SkipConnection{T <: AbstractExplicitLayer, F} <:
+       AbstractExplicitContainerLayer{(:layers,)}
     layers::T
     connection::F
 end
 
-@inline function (skip::SkipConnection)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (skip::SkipConnection)(x, ps::Union{ComponentArray, NamedTuple},
+                                        st::NamedTuple)
     mx, st = skip.layers(x, ps, st)
     return skip.connection(mx, x), st
 end
@@ -209,7 +215,7 @@ Create a layer which passes an input to each path in `layers`, before reducing t
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
-struct Parallel{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Parallel{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
 end
@@ -219,25 +225,24 @@ function Parallel(connection, layers...)
     return Parallel(connection, NamedTuple{names}(layers))
 end
 
-function (m::Parallel)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (m::Parallel)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     return applyparallel(m.layers, m.connection, x, ps, st)
 end
 
-@generated function applyparallel(
-    layers::NamedTuple{names}, connection::C, x::T, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {names,C,T}
+@generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T,
+                                  ps::Union{ComponentArray, NamedTuple},
+                                  st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = []
-    append!(
-        calls,
-        [
-            :(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(getinput(i)), ps.$(names[i]), st.$(names[i]))) for
-            i in 1:N
-        ],
-    )
+    append!(calls,
+            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(getinput(i)),
+                                                                ps.$(names[i]),
+                                                                st.$(names[i])))
+             for
+             i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
         push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
@@ -296,7 +301,7 @@ l = BranchLayer(
 )
 ```
 """
-struct BranchLayer{T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 end
 
@@ -305,18 +310,21 @@ function BranchLayer(layers...)
     return BranchLayer(NamedTuple{names}(layers))
 end
 
-(m::BranchLayer)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = applybranching(m.layers, x, ps, st)
+function (m::BranchLayer)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+    applybranching(m.layers, x, ps, st)
+end
 
-@generated function applybranching(
-    layers::NamedTuple{names}, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {names}
+@generated function applybranching(layers::NamedTuple{names}, x,
+                                   ps::Union{ComponentArray, NamedTuple},
+                                   st::NamedTuple) where {names}
     N = length(names)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = []
-    append!(
-        calls, [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]), st.$(names[i]))) for i in 1:N]
-    )
+    append!(calls,
+            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]),
+                                                                st.$(names[i])))
+             for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
@@ -378,7 +386,7 @@ end
 
 * States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 """
-struct PairwiseFusion{F,T<:NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct PairwiseFusion{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
 end
@@ -388,28 +396,24 @@ function PairwiseFusion(connection, layers...)
     return PairwiseFusion(connection, NamedTuple{names}(layers))
 end
 
-function (m::PairwiseFusion)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (m::PairwiseFusion)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     return applypairwisefusion(m.layers, m.connection, x, ps, st)
 end
 
-@generated function applypairwisefusion(
-    layers::NamedTuple{names}, connection::C, x::T, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-) where {names,C,T}
+@generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T,
+                                        ps::Union{ComponentArray, NamedTuple},
+                                        st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
-    append!(
-        calls,
-        [
-            :(
-                ($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
-                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1)))
-            )
-            for i in 1:N
-        ]
-    )
+    append!(calls,
+            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]),
+                                                                ps.$(names[i]),
+                                                                st.$(names[i]));
+               $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
+             for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
@@ -477,17 +481,19 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
         layers = NamedTuple{names}(xs)
         return new{typeof(layers)}(layers)
     end
-    Chain(xs::AbstractVector; disable_optimizations::Bool=false) = Chain(xs...; disable_optimizations)
+    function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
+        Chain(xs...; disable_optimizations)
+    end
 end
 
-function flatten_model(layers::Union{AbstractVector,Tuple})
+function flatten_model(layers::Union{AbstractVector, Tuple})
     new_layers = []
     for l in layers
         f = flatten_model(l)
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-            if !hasmethod(f, (Any, Union{ComponentArray,NamedTuple}, NamedTuple))
+            if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
                 push!(new_layers, WrappedFunction(f))
             else
                 push!(new_layers, f)
@@ -505,22 +511,22 @@ end
 
 flatten_model(x) = x
 
-(c::Chain)(x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = applychain(c.layers, x, ps, st)
+function (c::Chain)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+    applychain(c.layers, x, ps, st)
+end
 
-@generated function applychain(
-    layers::NamedTuple{fields}, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple{fields}
-) where {fields}
+@generated function applychain(layers::NamedTuple{fields}, x,
+                               ps::Union{ComponentArray, NamedTuple},
+                               st::NamedTuple{fields}) where {fields}
     N = length(fields)
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layer_1, st.layer_1))]
-    append!(
-        calls,
-        [
-            :(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]), ps.$(fields[i]), st.$(fields[i])))
-            for i in 2:N
-        ],
-    )
+    append!(calls,
+            [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
+                                                                ps.$(fields[i]),
+                                                                st.$(fields[i])))
+             for i in 2:N])
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N]), st))
     return Expr(:block, calls...)
@@ -559,7 +565,7 @@ Create a traditional fully connected layer, whose forward pass is given by: `y =
 * `weight`: Weight Matrix of size `out_dims × in_dims`
 * `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
 """
-struct Dense{bias,F1,F2,F3} <: AbstractExplicitLayer
+struct Dense{bias, F1, F2, F3} <: AbstractExplicitLayer
     activation::F1
     in_dims::Int
     out_dims::Int
@@ -574,53 +580,66 @@ function Base.show(io::IO, d::Dense{bias}) where {bias}
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int,<:Int}, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
-    return Dense(first(mapping), last(mapping), activation; init_weight=init_weight, init_bias=init_bias, bias=bias)
+function Dense(mapping::Pair{<:Int, <:Int}, activation=identity;
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    return Dense(first(mapping), last(mapping), activation; init_weight=init_weight,
+                 init_bias=init_bias, bias=bias)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+function Dense(in_dims::Int, out_dims::Int, activation=identity;
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
-    return Dense{bias,typeof(activation),typeof(init_weight),typeof(init_bias)}(activation, in_dims, out_dims, init_weight, init_bias)
+    return Dense{bias, typeof(activation), typeof(init_weight), typeof(init_bias)}(activation,
+                                                                                   in_dims,
+                                                                                   out_dims,
+                                                                                   init_weight,
+                                                                                   init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense{bias}) where {bias}
     if bias
-        return (weight=d.init_weight(rng, d.out_dims, d.in_dims), bias=d.init_bias(rng, d.out_dims, 1))
+        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
+                bias=d.init_bias(rng, d.out_dims, 1))
     else
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
 end
 
-parameterlength(d::Dense{bias}) where {bias} = bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
+function parameterlength(d::Dense{bias}) where {bias}
+    return bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
+end
 statelength(d::Dense) = 0
 
-@inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (d::Dense{false})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+                                   st::NamedTuple)
     return applyactivation(d.activation, ps.weight * x), st
 end
 
-@inline function (d::Dense{false,typeof(identity)})(
-    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+@inline function (d::Dense{false, typeof(identity)})(x::AbstractArray,
+                                                     ps::Union{ComponentArray, NamedTuple},
+                                                     st::NamedTuple)
     return ps.weight * x, st
 end
 
-@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+                                  st::NamedTuple)
     return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
 end
 
-@inline function (d::Dense{true,typeof(identity)})(
-    x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractArray,
+                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    st::NamedTuple)
     return elementwise_add(ps.weight * x, ps.bias), st
 end
 
-@inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+@inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray, NamedTuple},
+                                  st::NamedTuple)
     return applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st
 end
 
-@inline function (d::Dense{true,typeof(identity)})(
-    x::AbstractVector, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple
-)
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractVector,
+                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    st::NamedTuple)
     return elementwise_add(ps.weight * x, vec(ps.bias)), st
 end
 
@@ -654,7 +673,7 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 * `weight`: Weight Vector of size `(dims,)`
 * `bias`: Bias of size `(dims,)`
 """
-struct Scale{bias,F1,D,F2,F3} <: AbstractExplicitLayer
+struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer
     activation::F1
     dims::D
     init_weight::F2
@@ -667,31 +686,42 @@ function Base.show(io::IO, d::Scale)
     return print(io, ")")
 end
 
-function Scale(dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+function Scale(dims, activation=identity; init_weight=glorot_uniform,
+               init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
-    return Scale{bias,typeof(activation),typeof(dims),typeof(init_weight),typeof(init_bias)}(activation, dims, init_weight, init_bias)
+    return Scale{bias, typeof(activation), typeof(dims), typeof(init_weight),
+                 typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Scale{true})
     return (weight=d.init_weight(rng, d.dims), bias=d.init_bias(rng, d.dims))
 end
-initialparameters(rng::AbstractRNG, d::Scale{false}) = (weight=d.init_weight(rng, d.dims),)
+function initialparameters(rng::AbstractRNG, d::Scale{false})
+    (weight=d.init_weight(rng, d.dims),)
+end
 
 parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims
 statelength(d::Scale) = 0
 
-function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
-    return applyactivation(d.activation, elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
+function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+                          st::NamedTuple)
+    return applyactivation(d.activation,
+                           elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
 end
 
-function (d::Scale{true,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (d::Scale{true, typeof(identity)})(x::AbstractArray,
+                                            ps::Union{ComponentArray, NamedTuple},
+                                            st::NamedTuple)
     return elementwise_add(elementwise_mul(ps.weight, x), ps.bias), st
 end
 
-function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+                           st::NamedTuple)
     return applyactivation(d.activation, elementwise_mul(ps.weight, x)), st
 end
 
-function (d::Scale{false,typeof(identity)})(x::AbstractArray, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+function (d::Scale{false, typeof(identity)})(x::AbstractArray,
+                                             ps::Union{ComponentArray, NamedTuple},
+                                             st::NamedTuple)
     return elementwise_mul(ps.weight, x), st
 end

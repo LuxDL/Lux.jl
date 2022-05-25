@@ -29,7 +29,7 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 
 See also [`VariationalHiddenDropout`](@ref)
 """
-struct Dropout{T,D} <: AbstractExplicitLayer
+struct Dropout{T, D} <: AbstractExplicitLayer
     p::T
     dims::D
 end
@@ -89,7 +89,7 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 
 See also [`Dropout`](@ref)
 """
-struct VariationalHiddenDropout{T,D} <: AbstractExplicitLayer
+struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer
     p::T
     dims::D
 end
@@ -97,7 +97,8 @@ end
 function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
     # FIXME: Take PRNGs seriously
     randn(rng, 1)
-    return (rng=replicate(rng), training=Val(true), update_mask=Val(true), mask=nothing)
+    return (rng=replicate(rng), training=Val(true), update_mask=Val(true),
+            mask=nothing)
 end
 
 function VariationalHiddenDropout(p; dims=:)
@@ -106,7 +107,8 @@ function VariationalHiddenDropout(p; dims=:)
 end
 
 function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.dims, st.training, st.update_mask)
+    y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.dims, st.training,
+                                        st.update_mask)
     return y, merge(st, (mask=mask, rng=rng, update_mask=update_mask))
 end
 

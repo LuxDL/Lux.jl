@@ -32,14 +32,14 @@ x2s = rand(rng, Float32, M) * 4.5f0;
 xt1s = Array([[x1s[i] + 0.5f0; x2s[i] + 0.5f0] for i in 1:M])
 x1s = rand(rng, Float32, M) * 4.5f0;
 x2s = rand(rng, Float32, M) * 4.5f0;
-append!(xt1s, Array([[x1s[i] - 5f0; x2s[i] - 5f0] for i in 1:M]))
+append!(xt1s, Array([[x1s[i] - 5.0f0; x2s[i] - 5.0f0] for i in 1:M]))
 
 x1s = rand(rng, Float32, M) * 4.5f0;
 x2s = rand(rng, Float32, M) * 4.5f0;
-xt0s = Array([[x1s[i] + 0.5f0; x2s[i] - 5f0] for i in 1:M])
+xt0s = Array([[x1s[i] + 0.5f0; x2s[i] - 5.0f0] for i in 1:M])
 x1s = rand(rng, Float32, M) * 4.5f0;
 x2s = rand(rng, Float32, M) * 4.5f0;
-append!(xt0s, Array([[x1s[i] - 5f0; x2s[i] + 0.5f0] for i in 1:M]))
+append!(xt0s, Array([[x1s[i] - 5.0f0; x2s[i] + 0.5f0] for i in 1:M]))
 
 ## Store all the data for later.
 xs = [xt1s; xt0s]
@@ -139,7 +139,6 @@ x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
-
 
 # The contour plot above shows that the MAP method is not too bad at classifying our data. Now we can visualize our predictions.
 

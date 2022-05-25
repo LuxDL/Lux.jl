@@ -14,7 +14,9 @@ abstract type AbstractExplicitLayer end
 Generate the initial parameters of the layer `l`.
 """
 initialparameters(::AbstractRNG, ::Any) = NamedTuple()
-initialparameters(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialparameters, rng), l)
+function initialparameters(rng::AbstractRNG, l::NamedTuple)
+    map(Base.Fix1(initialparameters, rng), l)
+end
 
 """
     initialstates(rng::AbstractRNG, l)
@@ -29,11 +31,14 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 
 Return the total number of parameters of the layer `l`.
 """
-parameterlength(l::AbstractExplicitLayer) = parameterlength(initialparameters(Random.default_rng(), l))
-parameterlength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(parameterlength, nt)
+function parameterlength(l::AbstractExplicitLayer)
+    parameterlength(initialparameters(Random.default_rng(), l))
+end
+function parameterlength(nt::Union{NamedTuple, Tuple})
+    length(nt) == 0 ? 0 : sum(parameterlength, nt)
+end
 parameterlength(a::AbstractArray) = length(a)
 parameterlength(x) = 0
-
 
 """
     statelength(l)
@@ -41,9 +46,9 @@ parameterlength(x) = 0
 Return the total number of states of the layer `l`.
 """
 statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(), l))
-statelength(nt::Union{NamedTuple,Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
+statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
-statelength(x::Union{Number,Symbol}) = 1
+statelength(x::Union{Number, Symbol}) = 1
 statelength(x) = 0
 
 """
@@ -51,14 +56,19 @@ statelength(x) = 0
 
 Shorthand for getting the parameters and states of the layer `l`. Is equivalent to `(initialparameters(rng, l), initialstates(rng, l))`.
 """
-setup(rng::AbstractRNG, l::AbstractExplicitLayer) = (initialparameters(rng, l), initialstates(rng, l))
+function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
+    (initialparameters(rng, l), initialstates(rng, l))
+end
 
 """
     apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
 
 Simply calls `model(x, ps, st)`
 """
-apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple) = model(x, ps, st)
+function apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray, NamedTuple},
+               st::NamedTuple)
+    model(x, ps, st)
+end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
     __t = rsplit(string(get_typename(x)), "."; limit=2)
@@ -69,21 +79,25 @@ end
 # Abstract Container Layers
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
-function initialparameters(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}) where {layers}
+function initialparameters(rng::AbstractRNG,
+                           l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
-function initialstates(rng::AbstractRNG, l::AbstractExplicitContainerLayer{layers}) where {layers}
+function initialstates(rng::AbstractRNG,
+                       l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
-parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layers} =
+function parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     sum(parameterlength, getfield.((l,), layers))
+end
 
-statelength(l::AbstractExplicitContainerLayer{layers}) where {layers} =
+function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     sum(statelength, getfield.((l,), layers))
+end
 
 # Test Mode
 """
@@ -105,7 +119,8 @@ trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
 
 Recursively update all occurances of the `key` in the state `st` with the `value`.
 """
-function update_state(st::NamedTuple, key::Symbol, value; layer_check=_default_layer_check(key))
+function update_state(st::NamedTuple, key::Symbol, value;
+                      layer_check=_default_layer_check(key))
     function _update_state(st, key::Symbol, value)
         return Setfield.set(st, Setfield.PropertyLens{key}(), value)
     end

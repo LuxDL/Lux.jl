@@ -21,7 +21,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
-        elseif obj isa Parallel{<:Any,<:NamedTuple}
+        elseif obj isa Parallel{<:Any, <:NamedTuple}
             if obj.connection !== nothing
                 _big_show(io, obj.connection, indent + 4)
             end
@@ -65,7 +65,9 @@ _show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LS
 function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
     return NamedTuple{names}(getfield.((l,), names))
 end
-_get_children(p::Parallel) = p.connection === nothing ? p.layers : (p.connection, p.layers...)
+function _get_children(p::Parallel)
+    p.connection === nothing ? p.layers : (p.connection, p.layers...)
+end
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(s::WeightNorm) = (s.layer,)
 _get_children(::Any) = ()
@@ -85,10 +87,12 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
     paramlength = parameterlength(layer)
     if paramlength > 0
         print(io, " "^max(2, (indent == 0 ? 20 : 39) - indent - length(str)))
-        printstyled(io, "# ", underscorise(paramlength), " parameters"; color=:light_black)
+        printstyled(io, "# ", underscorise(paramlength), " parameters";
+                    color=:light_black)
         nonparam = statelength(layer)
         if nonparam > 0
-            printstyled(io, ", plus ", underscorise(nonparam), indent == 0 ? " non-trainable" : ""; color=:light_black)
+            printstyled(io, ", plus ", underscorise(nonparam),
+                        indent == 0 ? " non-trainable" : ""; color=:light_black)
         end
     end
     return indent == 0 || println(io)
@@ -111,7 +115,9 @@ end
 
 # utility functions
 
-underscorise(n::Integer) = join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
+function underscorise(n::Integer)
+    join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
+end
 
 function _nan_show(io::IO, x)
     if !isempty(x) && _all(iszero, x)
