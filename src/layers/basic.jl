@@ -590,9 +590,8 @@ function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; init_weight=glo
                  init_bias=init_bias, bias=bias)
 end
 
-function Dense(
-    in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true
-)
+function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
+               init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Dense{bias, typeof(activation), typeof(init_weight), typeof(init_bias)}(activation,
                                                                                    in_dims,
