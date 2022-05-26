@@ -424,16 +424,18 @@ Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
 """
     Chain(layers...; disable_optimizations::Bool = false)
+    Chain(nt::NamedTuple)
 
 Collects multiple layers / functions to be called in sequence on a given input.
 
 ## Arguments
 
 * `layers`: A list of `N` Lux layers
+* `nt`: Alternatively, a NamedTuple `nt` can be passed to enable prettier naming for the layers
 
 ## Keyword Arguments
 
-* `disable_optimizations`: Prevents any structural optimization
+* `disable_optimizations`: Prevents any structural optimization. (ignored with warning if named tuple is passed)
 
 ## Inputs
 
@@ -465,11 +467,10 @@ Performs a few optimizations to generate reasonable architectures. Can be disabl
 ## Example
 
 ```julia
-c = Chain(
-    Dense(2, 3, relu),
-    BatchNorm(3),
-    Dense(3, 2)
-)
+c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
+
+c = Chain((feature_extractor=Chain(Dense(2, 3, relu), BatchNorm(3)),
+           classifier=Chain(Dense(3, 2))))
 ```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -484,6 +485,11 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     end
     function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
         Chain(xs...; disable_optimizations)
+    end
+    function Chain(nt::NamedTuple; disable_optimizations::Bool=false)
+        disable_optimizations &&
+            @warn "Chain(::NamedTuple) ignores `disable_optimizations`" maxlog=1
+        return new{typeof(nt)}(nt)
     end
 end
 
@@ -524,13 +530,16 @@ end
                                ps::Union{ComponentArray, NamedTuple},
                                st::NamedTuple{fields}) where {fields}
     N = length(fields)
-    x_symbols = [gensym() for _ in 1:N]
-    st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layer_1, st.layer_1))]
+    x_symbols = [gensym("x") for _ in 1:N]
+    st_symbols = [gensym("st") for _ in 1:N]
+    calls = [
+        :(($(x_symbols[1]), $(st_symbols[1])) = (layers.$(fields[1]))(x, ps.$(fields[1]),
+                                                                      st.$(fields[1]))),
+    ]
     append!(calls,
-            [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
-                                                                ps.$(fields[i]),
-                                                                st.$(fields[i])))
+            [:(($(x_symbols[i]), $(st_symbols[i])) = (layers.$(fields[i]))($(x_symbols[i - 1]),
+                                                                           ps.$(fields[i]),
+                                                                           st.$(fields[i])))
              for i in 2:N])
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N]), st))
