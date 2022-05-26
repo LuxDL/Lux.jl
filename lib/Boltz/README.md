@@ -19,7 +19,7 @@ model, ps, st = resnet(:resnet18; pretrained=true)
 
 ## Classification Models
 
-| MODEL NAME | FUNCTION | NAME | PRETRAINED | TOP 5 ACCURACY (%) | TOP 1 ACCURACY (%) |
+| MODEL NAME | FUNCTION | NAME | PRETRAINED | TOP 1 ACCURACY (%) | TOP 5 ACCURACY (%) |
 | - | - | - | :-: | :-: | :-: |
 | AlexNet | `alexnet` | `:alexnet` | ✅ | 54.48 | 77.72 |
 | ResNet | `resnet` | `:resnet18` | ✅ | 68.08 | 88.44 |
