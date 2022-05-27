@@ -2,7 +2,7 @@
 ChainRulesCore.@non_differentiable replicate(::Any)
 ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any,
                                                      ::Any, ::Any)
-ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
@@ -32,6 +32,21 @@ function ChainRulesCore.rrule(::typeof(batchnorm),
         return NoTangent(), dg, db, dx, NoTangent(), NoTangent(), NoTangent()
     end
     return y, batchnorm_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(dropout),
+                              rng::AbstractRNG,
+                              x::AbstractArray{T, N},
+                              p::T,
+                              q::T,
+                              dims,
+                              t::Val{training}) where {T, N, training}
+    y, mask, rng = dropout(rng, x, p, q, dims, t)
+    function dropout_pullback((dy, dmask, drng))
+        return (NoTangent(), NoTangent(), elementwise_mul(dy, mask), NoTangent(), NoTangent(),
+                NoTangent(), NoTangent())
+    end
+    return (y, mask, rng), dropout_pullback
 end
 
 # Activation Rrules

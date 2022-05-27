@@ -99,6 +99,11 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     sum(statelength, getfield.((l,), layers))
 end
 
+function Base.keys(l::AbstractExplicitContainerLayer{layers}) where {layers}
+    length(layers) == 1 && return keys(getproperty(l, layers[1]))
+    return layers
+end
+
 # Test Mode
 """
     testmode(st::NamedTuple, mode::Bool=true)

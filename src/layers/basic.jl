@@ -254,8 +254,6 @@ end
     return Expr(:block, calls...)
 end
 
-Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
-
 """
     BranchLayer(layers...)
 
@@ -330,8 +328,6 @@ end
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
 end
-
-Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 
 """
     PairwiseFusion(connection, layers...)
@@ -419,8 +415,6 @@ end
     push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
-
-Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
 """
     Chain(layers...; disable_optimizations::Bool = false)
@@ -545,8 +539,6 @@ end
     push!(calls, :(return $(x_symbols[N]), st))
     return Expr(:block, calls...)
 end
-
-Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)

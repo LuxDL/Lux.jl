@@ -124,42 +124,41 @@ end
     tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 end
 
-## TODO: Cache `1 / q` since we never need `q`
-@inline _dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
+@inline _dropout_kernel(y::T, p, q) where {T} = y > p ? q : zero(T)
 
-@inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
+@inline function generate_dropout_mask(rng::AbstractRNG, x, p, q; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
-    y .= _dropout_kernel.(y, p, 1 - p)
+    @. y = _dropout_kernel(y, p, q)
     return y
 end
 
 """
-    dropout(rng::AbstractRNG, x, prob, dims, ::Val{training})
-    dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask})
+    dropout(rng::AbstractRNG, x, p, q, dims, ::Val{training})
+    dropout(rng::AbstractRNG, x, mask, p, q, dims, t::Val{training}, ::Val{update_mask})
 
-If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask` is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is generated and used.
+If `training` then dropout is applied on `x` with probability `p` along `dims`. If `mask` is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is generated and used.
 """
-@inline @generated function dropout(rng::AbstractRNG, x, prob, dims,
+@inline @generated function dropout(rng::AbstractRNG, x, p, q, dims,
                                     ::Val{training}) where {training}
     if training
         return :(rng = replicate(rng);
-                 mask = generate_dropout_mask(rng, x, prob; dims);
+                 mask = generate_dropout_mask(rng, x, p, q; dims);
                  return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng))
     else
         return :(return (x, x, rng))
     end
 end
 
-@inline @generated function dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training},
+@inline @generated function dropout(rng::AbstractRNG, x, mask, p, q, dims, t::Val{training},
                                     ::Val{update_mask}) where {training, update_mask}
     if update_mask
-        return :((y, mask, rng) = dropout(rng, x, prob, dims, t);
+        return :((y, mask, rng) = dropout(rng, x, p, q, dims, t);
                  return (y, mask, rng, Val(false)))
     else
         if training
             return :(size(x, ndims(x)) != size(mask, ndims(x)) &&
-                         return (dropout(rng, x, prob, dims, t)..., Val(false));
+                         return (dropout(rng, x, p, q, dims, t)..., Val(false));
                      return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng,
                              Val(false)))
         else

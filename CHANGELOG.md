@@ -1,5 +1,11 @@
 # v0.4
 
+## v0.4.4
+
+* `Chain` allows custom naming for its sublayers
+* `Dropout` Layers caches `1 / (1 - p)` for minor improvements for forward pass
+* `dropout` has a custom rrule -- significantly improves performance for smaller arrays
+
 ## v0.4.3
 
 * Extending Scale to allow for multiple dimension inputs (https://github.com/avik-pal/Lux.jl/pull/40)
