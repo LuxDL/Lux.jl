@@ -310,7 +310,8 @@ end
         end == [2.0 3.0; 4.0 5.0]
 
         @test begin
-            layer = Scale(2, tanh; bias = false, init_weight=zeros)
+            layer = Scale(2, tanh; bias=false, init_weight=zeros)
             first(Lux.apply(layer, [1 2; 3 4], Lux.setup(rng, layer)...))
         end == zeros(2, 2)
+    end
 end

@@ -727,15 +727,18 @@ function Base.show(io::IO, d::Scale)
     return print(io, ")")
 end
 
-function Scale(dims::Tuple{Vararg{Integer}}, activation=identity; init_weight=glorot_uniform,
+function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
+               init_weight=glorot_uniform,
                init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Scale{bias, typeof(activation), typeof(dims), typeof(init_weight),
                  typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
-Scale(s1::Integer, s23::Integer...; _act = identity, kw...) = Scale(tuple(s1, s23...), _act; kw...)
-Scale(size_act...; kw...) = Scale(size_act[1:end-1]...; _act = size_act[end], kw...)
+function Scale(s1::Integer, s23::Integer...; _act=identity, kw...)
+    Scale(tuple(s1, s23...), _act; kw...)
+end
+Scale(size_act...; kw...) = Scale(size_act[1:(end - 1)]...; _act=size_act[end], kw...)
 
 function initialparameters(rng::AbstractRNG, d::Scale{true})
     return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
