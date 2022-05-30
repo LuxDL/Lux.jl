@@ -51,9 +51,8 @@ makedocs(;
          modules=[Lux],
          format=Documenter.HTML(;
                                 prettyurls=get(ENV, "CI", nothing) == "true",
-                                assets=["assets/custom.css"]
-                                # analytics = "G-Q8GYTEVTZ2"
-                                ),
+                                assets=["assets/custom.css"], edit_branch="main",
+                                analytics="G-Q8GYTEVTZ2"),
          pages=[
              "Lux: Explicitly Parameterized Neural Networks" => "index.md",
              "Introduction" => [
