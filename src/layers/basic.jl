@@ -691,7 +691,7 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Arguments
 
-* `dims`: number of input and output dimensions
+* `dims`: size of the learnable scale and bias parameters.
 * `activation`: activation function
 
 ## Keyword Arguments
@@ -702,17 +702,20 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Input
 
-* `x` must be a Matrix of size `dims × B` or a Vector of length `dims`
+* `x` must be an Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
 
 ## Returns
 
-* Matrix of size `dims × B` or a Vector of length `dims`
+* Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
 * Empty `NamedTuple()`
 
 ## Parameters
 
-* `weight`: Weight Vector of size `(dims,)`
-* `bias`: Bias of size `(dims,)`
+* `weight`: Weight Array of size `(dims...)`
+* `bias`: Bias of size `(dims...)`
+
+!!! compat "Lux 0.4.3"
+    `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer
     activation::F1
