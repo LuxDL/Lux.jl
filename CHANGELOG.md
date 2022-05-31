@@ -1,5 +1,9 @@
 # v0.4
 
+## v0.4.3
+
+* Extending Scale to allow for multiple dimension inputs (https://github.com/avik-pal/Lux.jl/pull/40)
+
 ## v0.4.2
 
 * `SelectDim` is no longer type unstable -- Internal storage for the Layer has been changed
