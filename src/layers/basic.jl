@@ -691,7 +691,7 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Arguments
 
-* `dims`: number of input and output dimensions
+* `dims`: size of the learnable scale and bias parameters.
 * `activation`: activation function
 
 ## Keyword Arguments
@@ -702,17 +702,20 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Input
 
-* `x` must be a Matrix of size `dims × B` or a Vector of length `dims`
+* `x` must be an Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
 
 ## Returns
 
-* Matrix of size `dims × B` or a Vector of length `dims`
+* Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
 * Empty `NamedTuple()`
 
 ## Parameters
 
-* `weight`: Weight Vector of size `(dims,)`
-* `bias`: Bias of size `(dims,)`
+* `weight`: Weight Array of size `(dims...)`
+* `bias`: Bias of size `(dims...)`
+
+!!! compat "Lux 0.4.3"
+    `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer
     activation::F1
@@ -727,21 +730,27 @@ function Base.show(io::IO, d::Scale)
     return print(io, ")")
 end
 
-function Scale(dims, activation=identity; init_weight=glorot_uniform,
+function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
+               init_weight=glorot_uniform,
                init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Scale{bias, typeof(activation), typeof(dims), typeof(init_weight),
                  typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
+function Scale(s1::Integer, s23::Integer...; _act=identity, kw...)
+    Scale(tuple(s1, s23...), _act; kw...)
+end
+Scale(size_act...; kw...) = Scale(size_act[1:(end - 1)]...; _act=size_act[end], kw...)
+
 function initialparameters(rng::AbstractRNG, d::Scale{true})
-    return (weight=d.init_weight(rng, d.dims), bias=d.init_bias(rng, d.dims))
+    return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
 end
 function initialparameters(rng::AbstractRNG, d::Scale{false})
-    (weight=d.init_weight(rng, d.dims),)
+    (weight=d.init_weight(rng, d.dims...),)
 end
 
-parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * d.dims
+parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
 function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
