@@ -13,6 +13,9 @@ using JLD2
 # We can automatically convert several Metalhead.jl models to Lux
 using Metalhead
 
+# Mark certain parts of layers as non-differentiable
+import ChainRulesCore
+
 # Utility Functions
 include("utils.jl")
 

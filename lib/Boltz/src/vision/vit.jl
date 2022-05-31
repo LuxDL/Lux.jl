@@ -69,9 +69,12 @@ ClassTokens(dim::Int; init=Lux.zeros32) = ClassTokens(dim, init)
 
 Lux.initialparameters(rng::AbstractRNG, c::ClassTokens) = (token=c.init(rng, c.dim, 1, 1),)
 
+_fill_like(y::AbstractArray{T, 3}) where {T} = fill!(similar(y, 1, 1, size(y, 3)), one(T))
+ChainRulesCore.@non_differentiable _fill_like(y)
+
 function (m::ClassTokens)(x::AbstractArray{T, 3}, ps, st) where {T}
     # Generic Alternative: Repeat is extremely inefficient on GPUs and even in general
-    tokens = ps.token .* fill!(similar(x, 1, 1, size(x, 3)), one(T))
+    tokens = ps.token .* _fill_like(x)
     return hcat(tokens, x), st
 end
 
