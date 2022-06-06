@@ -25,7 +25,7 @@ end
 end
 
 function Base.show(io::IO, r::ReshapeLayer)
-    print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
+    return print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
 end
 
 """
@@ -72,11 +72,12 @@ struct SelectDim{dim, index} <: AbstractExplicitLayer end
 SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
 
 @inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
-    selectdim(x, get_known(dim), get_known(index)), st
+    return selectdim(x, get_known(dim), get_known(index)), st
 end
 
 function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
-    print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index), ")")
+    return print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index),
+                 ")")
 end
 
 """
@@ -181,7 +182,7 @@ struct SkipConnection{T <: AbstractExplicitLayer, F} <:
     connection::F
 end
 
-@inline function (skip::SkipConnection)(x, ps::Union{ComponentArray, NamedTuple},
+@inline function (skip::SkipConnection)(x, ps::VALID_PARAMETER_TYPES,
                                         st::NamedTuple)
     mx, st = skip.layers(x, ps, st)
     return skip.connection(mx, x), st
@@ -226,12 +227,12 @@ function Parallel(connection, layers...)
     return Parallel(connection, NamedTuple{names}(layers))
 end
 
-function (m::Parallel)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (m::Parallel)(x, ps::VALID_PARAMETER_TYPES, st::NamedTuple)
     return applyparallel(m.layers, m.connection, x, ps, st)
 end
 
 @generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T,
-                                  ps::Union{ComponentArray, NamedTuple},
+                                  ps::VALID_PARAMETER_TYPES,
                                   st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
@@ -309,12 +310,12 @@ function BranchLayer(layers...)
     return BranchLayer(NamedTuple{names}(layers))
 end
 
-function (m::BranchLayer)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
-    applybranching(m.layers, x, ps, st)
+function (m::BranchLayer)(x, ps::VALID_PARAMETER_TYPES, st::NamedTuple)
+    return applybranching(m.layers, x, ps, st)
 end
 
 @generated function applybranching(layers::NamedTuple{names}, x,
-                                   ps::Union{ComponentArray, NamedTuple},
+                                   ps::VALID_PARAMETER_TYPES,
                                    st::NamedTuple) where {names}
     N = length(names)
     y_symbols = [gensym() for _ in 1:N]
@@ -393,12 +394,12 @@ function PairwiseFusion(connection, layers...)
     return PairwiseFusion(connection, NamedTuple{names}(layers))
 end
 
-function (m::PairwiseFusion)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (m::PairwiseFusion)(x, ps::VALID_PARAMETER_TYPES, st::NamedTuple)
     return applypairwisefusion(m.layers, m.connection, x, ps, st)
 end
 
 @generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T,
-                                        ps::Union{ComponentArray, NamedTuple},
+                                        ps::VALID_PARAMETER_TYPES,
                                         st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
@@ -418,6 +419,7 @@ end
 
 """
     Chain(layers...; disable_optimizations::Bool = false)
+    Chain(; kwargs...)
     Chain(nt::NamedTuple)
 
 Collects multiple layers / functions to be called in sequence on a given input.
@@ -425,7 +427,9 @@ Collects multiple layers / functions to be called in sequence on a given input.
 ## Arguments
 
 * `layers`: A list of `N` Lux layers
-* `nt`: Alternatively, a NamedTuple `nt` can be passed to enable prettier naming for the layers
+Alternatively either of the following could be done:
+* `nt`: a NamedTuple `nt` can be passed to enable prettier naming for the layers
+* `kwargs`: Pass the layers and the layer names as keyword arguments
 
 ## Keyword Arguments
 
@@ -442,11 +446,11 @@ Input `x` is passed sequentially to each layer, and must conform to the input re
 
 ## Parameters
 
-* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N` or custom names
 
 ## States
 
-* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N` or custom names
 
 ## Optimizations
 
@@ -463,8 +467,8 @@ Performs a few optimizations to generate reasonable architectures. Can be disabl
 ```julia
 c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 
-c = Chain((feature_extractor=Chain(Dense(2, 3, relu), BatchNorm(3)),
-           classifier=Chain(Dense(3, 2))))
+c = Chain(feature_extractor=Chain(Dense(2, 3, relu), BatchNorm(3)),
+          classifier=Chain(Dense(3, 2)))
 ```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -478,12 +482,16 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
         return new{typeof(layers)}(layers)
     end
     function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
-        Chain(xs...; disable_optimizations)
+        return Chain(xs...; disable_optimizations)
     end
     function Chain(nt::NamedTuple; disable_optimizations::Bool=false)
-        disable_optimizations &&
-            @warn "Chain(::NamedTuple) ignores `disable_optimizations`" maxlog=1
+        if disable_optimizations
+            error("`Chain(::NamedTuple)` or `Chain(; kwargs...)` doesn't accept `disable_optimizations`")
+        end
         return new{typeof(nt)}(nt)
+    end
+    function Chain(; disable_optimizations::Bool=false, kwargs...)
+        return Chain((; kwargs...); disable_optimizations)
     end
 end
 
@@ -494,7 +502,7 @@ function flatten_model(layers::Union{AbstractVector, Tuple})
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-            if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
+            if !hasmethod(f, (Any, VALID_PARAMETER_TYPES, NamedTuple))
                 if f === identity
                     continue
                 else
@@ -516,12 +524,12 @@ end
 
 flatten_model(x) = x
 
-function (c::Chain)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
-    applychain(c.layers, x, ps, st)
+function (c::Chain)(x, ps::VALID_PARAMETER_TYPES, st::NamedTuple)
+    return applychain(c.layers, x, ps, st)
 end
 
 @generated function applychain(layers::NamedTuple{fields}, x,
-                               ps::Union{ComponentArray, NamedTuple},
+                               ps::VALID_PARAMETER_TYPES,
                                st::NamedTuple{fields}) where {fields}
     N = length(fields)
     x_symbols = [gensym("x") for _ in 1:N]
@@ -617,19 +625,19 @@ end
 statelength(d::Dense) = 0
 
 @inline function (d::Dense{false})(x::AbstractVecOrMat,
-                                   ps::Union{ComponentArray, NamedTuple},
+                                   ps::VALID_PARAMETER_TYPES,
                                    st::NamedTuple)
     return applyactivation(d.activation, ps.weight * x), st
 end
 
 @inline function (d::Dense{false, typeof(identity)})(x::AbstractVecOrMat,
-                                                     ps::Union{ComponentArray, NamedTuple},
+                                                     ps::VALID_PARAMETER_TYPES,
                                                      st::NamedTuple)
     return ps.weight * x, st
 end
 
 @inline function (d::Dense{false})(x::AbstractArray,
-                                   ps::Union{ComponentArray, NamedTuple},
+                                   ps::VALID_PARAMETER_TYPES,
                                    st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
@@ -638,36 +646,36 @@ end
 end
 
 @inline function (d::Dense{false, typeof(identity)})(x::AbstractArray,
-                                                     ps::Union{ComponentArray, NamedTuple},
+                                                     ps::VALID_PARAMETER_TYPES,
                                                      st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
     return reshape(ps.weight * x_reshaped, d.out_dims, sz[2:end]...), st
 end
 
-@inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray, NamedTuple},
+@inline function (d::Dense{true})(x::AbstractVector, ps::VALID_PARAMETER_TYPES,
                                   st::NamedTuple)
     return applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractVector,
-                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    ps::VALID_PARAMETER_TYPES,
                                                     st::NamedTuple)
     return elementwise_add(ps.weight * x, vec(ps.bias)), st
 end
 
-@inline function (d::Dense{true})(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+@inline function (d::Dense{true})(x::AbstractMatrix, ps::VALID_PARAMETER_TYPES,
                                   st::NamedTuple)
     return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractMatrix,
-                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    ps::VALID_PARAMETER_TYPES,
                                                     st::NamedTuple)
     return elementwise_add(ps.weight * x, ps.bias), st
 end
 
-@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+@inline function (d::Dense{true})(x::AbstractArray, ps::VALID_PARAMETER_TYPES,
                                   st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
@@ -677,7 +685,7 @@ end
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractArray,
-                                                    ps::Union{ComponentArray, NamedTuple},
+                                                    ps::VALID_PARAMETER_TYPES,
                                                     st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
@@ -740,7 +748,7 @@ function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
 end
 
 function Scale(s1::Integer, s23::Integer...; _act=identity, kw...)
-    Scale(tuple(s1, s23...), _act; kw...)
+    return Scale(tuple(s1, s23...), _act; kw...)
 end
 Scale(size_act...; kw...) = Scale(size_act[1:(end - 1)]...; _act=size_act[end], kw...)
 
@@ -748,31 +756,31 @@ function initialparameters(rng::AbstractRNG, d::Scale{true})
     return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
 end
 function initialparameters(rng::AbstractRNG, d::Scale{false})
-    (weight=d.init_weight(rng, d.dims...),)
+    return (weight=d.init_weight(rng, d.dims...),)
 end
 
 parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
-function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+function (d::Scale{true})(x::AbstractArray, ps::VALID_PARAMETER_TYPES,
                           st::NamedTuple)
     return applyactivation(d.activation,
                            elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
 end
 
 function (d::Scale{true, typeof(identity)})(x::AbstractArray,
-                                            ps::Union{ComponentArray, NamedTuple},
+                                            ps::VALID_PARAMETER_TYPES,
                                             st::NamedTuple)
     return elementwise_add(elementwise_mul(ps.weight, x), ps.bias), st
 end
 
-function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
+function (d::Scale{false})(x::AbstractArray, ps::VALID_PARAMETER_TYPES,
                            st::NamedTuple)
     return applyactivation(d.activation, elementwise_mul(ps.weight, x)), st
 end
 
 function (d::Scale{false, typeof(identity)})(x::AbstractArray,
-                                             ps::Union{ComponentArray, NamedTuple},
+                                             ps::VALID_PARAMETER_TYPES,
                                              st::NamedTuple)
     return elementwise_mul(ps.weight, x), st
 end

@@ -69,7 +69,7 @@ function initialstates(rng::AbstractRNG, ::RNNCell)
     return (rng=replicate(rng),)
 end
 
-function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+function (rnn::RNNCell)(x::AbstractMatrix, ps::VALID_PARAMETER_TYPES,
                         st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
@@ -78,7 +78,7 @@ function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple}
 end
 
 function (rnn::RNNCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                              ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                              ps::VALID_PARAMETER_TYPES, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
     return h_new, st
 end
@@ -86,14 +86,14 @@ end
 function (rnn::RNNCell{true, typeof(identity)})((x,
                                                  hidden_state)::Tuple{<:AbstractMatrix,
                                                                       <:AbstractMatrix},
-                                                ps::Union{ComponentArray, NamedTuple},
+                                                ps::VALID_PARAMETER_TYPES,
                                                 st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
 
 function (rnn::RNNCell{false})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                               ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                               ps::VALID_PARAMETER_TYPES, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
     return h_new, st
 end
@@ -101,7 +101,7 @@ end
 function (rnn::RNNCell{false, typeof(identity)})((x,
                                                   hidden_state)::Tuple{<:AbstractMatrix,
                                                                        <:AbstractMatrix},
-                                                 ps::Union{ComponentArray, NamedTuple},
+                                                 ps::VALID_PARAMETER_TYPES,
                                                  st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
     return h_new, st
@@ -196,7 +196,7 @@ function initialstates(rng::AbstractRNG, ::LSTMCell)
     return (rng=replicate(rng),)
 end
 
-function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+function (lstm::LSTMCell)(x::AbstractMatrix, ps::VALID_PARAMETER_TYPES,
                           st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
@@ -208,7 +208,7 @@ end
 function (lstm::LSTMCell)((x, hidden_state,
                            memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
                                           <:AbstractMatrix},
-                          ps::Union{ComponentArray, NamedTuple},
+                          ps::VALID_PARAMETER_TYPES,
                           st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
@@ -294,7 +294,7 @@ function initialstates(rng::AbstractRNG, ::GRUCell)
     return (rng=replicate(rng),)
 end
 
-function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+function (gru::GRUCell)(x::AbstractMatrix, ps::VALID_PARAMETER_TYPES,
                         st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
@@ -303,7 +303,7 @@ function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple}
 end
 
 function (gru::GRUCell)((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                        ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                        ps::VALID_PARAMETER_TYPES, st::NamedTuple)
     gxs = multigate(ps.weight_i * x, Val(3))
     ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))
 

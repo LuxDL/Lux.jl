@@ -102,7 +102,7 @@ end
 
 parameterlength(l::BatchNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 function statelength(l::BatchNorm{affine, track_stats}) where {affine, track_stats}
-    (track_stats ? 2 * l.chs : 0) + 1
+    return (track_stats ? 2 * l.chs : 0) + 1
 end
 
 function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
@@ -279,7 +279,7 @@ end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
 function statelength(l::GroupNorm{affine, track_stats}) where {affine, track_stats}
-    (track_stats ? 2 * l.groups : 0) + 1
+    return (track_stats ? 2 * l.groups : 0) + 1
 end
 
 function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
@@ -379,7 +379,7 @@ end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
-function (wn::WeightNorm)(x, ps::Union{ComponentArray, NamedTuple}, s::NamedTuple)
+function (wn::WeightNorm)(x, ps::VALID_PARAMETER_TYPES, s::NamedTuple)
     _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end

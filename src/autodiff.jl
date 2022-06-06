@@ -14,7 +14,7 @@ ChainRulesCore.Tangent{P}(; kwargs...) where {P <: AbstractExplicitLayer} = NoTa
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
 function ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x)
-    x, Δ -> (NoTangent(), NoTangent(), Δ)
+    return x, Δ -> (NoTangent(), NoTangent(), Δ)
 end
 
 # NNlib Functions
@@ -43,7 +43,8 @@ function ChainRulesCore.rrule(::typeof(dropout),
                               t::Val{training}) where {T, N, training}
     y, mask, rng = dropout(rng, x, p, q, dims, t)
     function dropout_pullback((dy, dmask, drng))
-        return (NoTangent(), NoTangent(), elementwise_mul(dy, mask), NoTangent(), NoTangent(),
+        return (NoTangent(), NoTangent(), elementwise_mul(dy, mask), NoTangent(),
+                NoTangent(),
                 NoTangent(), NoTangent())
     end
     return (y, mask, rng), dropout_pullback

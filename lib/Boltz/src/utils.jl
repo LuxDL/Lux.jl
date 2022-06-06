@@ -5,10 +5,10 @@ Type-stable and faster version of `MLUtils.chunk`
 """
 @inline fast_chunk(h::Int, n::Int) = (1:h) .+ h * (n - 1)
 @inline function fast_chunk(x::AbstractArray, h::Int, n::Int, ::Val{dim}) where {dim}
-    selectdim(x, dim, fast_chunk(h, n))
+    return selectdim(x, dim, fast_chunk(h, n))
 end
 @inline function fast_chunk(x::AbstractArray, ::Val{N}, d::Val{D}) where {N, D}
-    fast_chunk.((x,), size(x, D) ÷ N, 1:N, d)
+    return fast_chunk.((x,), size(x, D) ÷ N, 1:N, d)
 end
 
 """

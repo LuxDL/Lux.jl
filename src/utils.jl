@@ -67,7 +67,7 @@ replicate(rng::CUDA.RNG) = deepcopy(rng)
 # Linear Algebra
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
 @inline function _norm_except(x::AbstractArray{T, N}, except_dim=N) where {T, N}
-    _norm(x; dims=filter(i -> i != except_dim, 1:N))
+    return _norm(x; dims=filter(i -> i != except_dim, 1:N))
 end
 
 # Convolution
@@ -90,7 +90,7 @@ _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(
 struct SamePad end
 
 function calc_padding(lt, pad, k::NTuple{N, T}, dilation, stride) where {T, N}
-    expand(Val(2 * N), pad)
+    return expand(Val(2 * N), pad)
 end
 
 function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
@@ -106,13 +106,13 @@ end
 # Handling ComponentArrays
 ## NOTE: We should probably upsteam some of these
 function Base.zero(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
-    ComponentArray(zero(getdata(c)), getaxes(c))
+    return ComponentArray(zero(getdata(c)), getaxes(c))
 end
 
 Base.vec(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N} = getdata(c)
 
 function Base.:-(x::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
-    ComponentArray(-getdata(x), getaxes(x))
+    return ComponentArray(-getdata(x), getaxes(x))
 end
 
 function Base.similar(c::ComponentArray{T, N, <:CuArray{T}},
@@ -156,7 +156,7 @@ end
 ComponentArrays.recursive_length(nt::NamedTuple{(), Tuple{}}) = 0
 
 # Return Nothing if field not present
-function safe_getproperty(x::Union{ComponentArray, NamedTuple}, k::Symbol)
+function safe_getproperty(x::VALID_PARAMETER_TYPES, k::Symbol)
     k ∈ propertynames(x) && return getproperty(x, k)
     return nothing
 end

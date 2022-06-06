@@ -206,8 +206,8 @@ end
                   par.layers[2](ip2.x, ps.layer_2, st.layer_2)[1]
             gs = gradient((p, x...) -> sum(par(x, p, st)[1]), ps, ip, ip2)
             gs_reg = gradient(ps, ip, ip2) do p, x, y
-                sum(par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
-                    par.layers[2](y.x, p.layer_2, st.layer_2)[1])
+                return sum(par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
+                           par.layers[2](y.x, p.layer_2, st.layer_2)[1])
             end
 
             @test gs[1] ≈ gs_reg[1]

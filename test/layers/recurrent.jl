@@ -80,7 +80,7 @@ end
     x = rand(6, 5)
     res, (dx,) = Zygote.withgradient(x) do x
         x1, _, x3 = Lux.multigate(x, Val(3))
-        sum(x1) + sum(x3 .* 2)
+        return sum(x1) + sum(x3 .* 2)
     end
     @test res == sum(x[1:2, :]) + 2sum(x[5:6, :])
     @test dx == [ones(2, 5); zeros(2, 5); fill(2, 2, 5)]

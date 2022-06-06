@@ -22,6 +22,11 @@ using Requires
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
+# NOTE: In theory, we can support any parameter type which allows us to access
+# parameters using getproperty. But I will be conservative here and only specify
+# NamedTuple and ComponentArray until we have tested other cases properly.
+const VALID_PARAMETER_TYPES = Union{NamedTuple, ComponentArray}
+
 # Data Transfer Utilities
 include("adapt.jl")
 # Utilities
