@@ -470,6 +470,9 @@ c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 c = Chain(feature_extractor=Chain(Dense(2, 3, relu), BatchNorm(3)),
           classifier=Chain(Dense(3, 2)))
 ```
+
+!!! compat "Lux 0.4.4"
+    `Chain` with named layers require at least Lux v0.4.4
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
@@ -724,7 +727,7 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 * `bias`: Bias of size `(dims...)`
 
 !!! compat "Lux 0.4.3"
-    `Scale` with multiple dimensions requires at least Lux 0.4.3.
+    `Scale` with multiple dimensions requires at least Lux v0.4.3
 """
 struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer
     activation::F1
