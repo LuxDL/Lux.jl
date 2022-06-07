@@ -1,5 +1,9 @@
 # v0.4
 
+## v0.4.5
+
+* Introduces an experimental macro `Lux.@compact` for simpler custom model definitions
+
 ## v0.4.4
 
 * Updated to support julia v1.6 (test time dependency issues)
