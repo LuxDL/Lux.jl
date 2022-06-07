@@ -65,6 +65,10 @@ makedocs(;
                  "Advanced" => MAPPING["advanced"],
                  "Additional Examples" => "examples.md",
              ],
+             "How do I..." => [
+                 "Convert my Flux model to Lux?" => "manual/flux_to_lux.md",
+                 "Reuse parts of my Network? (aka Parameter Sharing)" => "manual/sharing_parameters.md",
+             ],
              "API" => [
                  "Layers" => "api/layers.md",
                  "Functional" => "api/functional.md",
