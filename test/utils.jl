@@ -44,7 +44,7 @@ end
 
 # JET Tests
 function run_JET_tests(f, args...; call_broken=false, opt_broken=false, kwargs...)
-    if VERSION >= v"1.7"
+    @static if VERSION >= v"1.7"
         @test_call f(args...; kwargs...) broken=call_broken
         @test_opt target_modules=(Lux,) f(args...; kwargs...) broken=opt_broken
     end
