@@ -65,6 +65,7 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
     @time begin @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
         if VERSION <= v"1.7" && pretrained
             @warn "Skipping pretrained models in Julia < 1.7"
+            continue
         end
         model, ps, st = model_creator(name; pretrained)
         st = Lux.testmode(st)
