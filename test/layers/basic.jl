@@ -1,4 +1,4 @@
-using JET, Lux, NNlib, Random, Test
+using Lux, NNlib, Random, Test
 
 include("../utils.jl")
 
@@ -13,8 +13,7 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 3)
 
         @test size(layer(x, ps, st)[1]) == (2, 3, 3)
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
@@ -26,8 +25,7 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 3, 2)
 
         @test size(layer(x, ps, st)[1]) == (18, 2)
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
@@ -39,8 +37,7 @@ Random.seed!(rng, 0)
         x = (x=2, b=5) # Something totally arbitrary
 
         @test layer(x, ps, st)[1] == x
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
 
         x = randn(rng, 6, 3)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
@@ -54,8 +51,7 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 4, 3, 2)
 
         @test size(layer(x, ps, st)[1]) == (6, 4, 2)
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
@@ -67,8 +63,7 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 4, 3, 2)
 
         @test layer(x, ps, st)[1] == x .* x
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
@@ -80,8 +75,7 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 4, 3, 2)
 
         @test layer(x, ps, st)[1] == tanh.(x)
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
@@ -96,8 +90,7 @@ end
             x = randn(rng, 10, 10, 10, 10)
 
             @test layer(x, ps, st)[1] == x
-            @test_call layer(x, ps, st)
-            @test_opt target_modules=(Lux,) layer(x, ps, st)
+            run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
         end
@@ -109,8 +102,7 @@ end
             x = randn(rng, 10, 2)
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
-            @test_call layer(x, ps, st)
-            @test_opt target_modules=(Lux,) layer(x, ps, st)
+            run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                           atol=1.0f-3, rtol=1.0f-3)
         end
@@ -124,8 +116,7 @@ end
             x = randn(rng, 10, 10, 10, 10)
 
             @test layer(x, ps, st)[1] == x
-            @test_call layer(x, ps, st)
-            @test_opt target_modules=(Lux,) layer(x, ps, st)
+            run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
         end
@@ -137,8 +128,7 @@ end
             x = randn(rng, 10, 2)
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
-            @test_call layer(x, ps, st)
-            @test_opt target_modules=(Lux,) layer(x, ps, st)
+            run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
 
@@ -147,8 +137,7 @@ end
             ps, st = Lux.setup(rng, layer)
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
-            @test_call layer(x, ps, st)
-            @test_opt target_modules=(Lux,) layer(x, ps, st)
+            run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
         end
@@ -160,8 +149,7 @@ end
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1))
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
-            @test_call layer(x, ps, st)
-            @test_opt target_modules=(Lux,) layer(x, ps, st)
+            run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                           atol=1.0f-3, rtol=1.0f-3)
         end
@@ -174,6 +162,7 @@ end
             ps, st = Lux.setup(rng, layer)
             Lux.apply(layer, 1, ps, st)
             @test CNT[] == 1
+            run_JET_tests(layer, x, ps, st)
             Lux.apply(layer, (1, 2, 3), ps, st)
             @test CNT[] == 2
             layer = Parallel(f_cnt, WrappedFunction(sin))

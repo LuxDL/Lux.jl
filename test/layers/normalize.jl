@@ -1,4 +1,4 @@
-using JET, Lux, NNlib, Random, Statistics, Zygote
+using Lux, NNlib, Random, Statistics, Zygote
 
 include("../utils.jl")
 
@@ -44,8 +44,7 @@ Random.seed!(rng, 0)
 
         @inferred m(x, ps, st)
 
-        @test_call m(x, ps, st)
-        @test_opt target_modules=(Lux,) m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
 
         test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -54,8 +53,7 @@ Random.seed!(rng, 0)
     let m = BatchNorm(2; track_stats=false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
         ps, st = Lux.setup(rng, m)
         @inferred m(x, ps, st)
-        @test_call m(x, ps, st)
-        @test_opt target_modules=(Lux,) m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
 
         test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -71,8 +69,7 @@ Random.seed!(rng, 0)
                        sigmoid.((x .- st_.running_mean) ./
                                 sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
         @inferred m(x, ps, st)
-        @test_call m(x, ps, st)
-        @test_opt target_modules=(Lux,) m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
 
         test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -90,8 +87,7 @@ Random.seed!(rng, 0)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
         @inferred m(x, ps, st)
-        @test_call m(x, ps, st)
-        @test_opt target_modules=(Lux,) m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
     end
 end
 
@@ -149,8 +145,7 @@ end
         @test y≈reshape(out, size(x)) atol=1.0e-5
 
         @inferred m(x, ps, st)
-        @test_call m(x, ps, st)
-        @test_opt target_modules=(Lux,) m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
         test_gradient_correctness_fdm(ps -> sum(first(m(x, ps, st))), ps; atol=1.0f-3,
                                       rtol=1.0f-3)
     end

@@ -1,4 +1,5 @@
 using FiniteDifferences
+using JET
 using Lux
 using Random
 using Zygote
@@ -39,4 +40,12 @@ function run_model(m::Lux.AbstractExplicitLayer, x, mode=:test)
         st = Lux.testmode(st)
     end
     return Lux.apply(m, x, ps, st)[1]
+end
+
+# JET Tests
+function run_JET_tests(f, args...; call_broken=false, opt_broken=false, kwargs...)
+    if VERSION >= v"1.7"
+        @test_call f(args...; kwargs...) broken=call_broken
+        @test_opt target_modules=(Lux,) f(args...; kwargs...) broken=opt_broken
+    end
 end
