@@ -14,10 +14,8 @@ Random.seed!(rng, 0)
     x = randn(rng, Float32, 3, 2)
     h, st_ = Lux.apply(rnncell, x, ps, st)
 
-    @test_call rnncell(x, ps, st)
-    @test_opt target_modules=(Lux,) rnncell(x, ps, st)
-    @test_call rnncell((x, h), ps, st_)
-    @test_opt target_modules=(Lux,) rnncell((x, h), ps, st_)
+    run_JET_tests(rnncell, x, ps, st)
+    run_JET_tests(rnncell, (x, h), ps, st_)
 
     function loss_loop_rnncell(p)
         h, st_ = rnncell(x, p, st)
@@ -37,10 +35,8 @@ end end
     x = randn(rng, Float32, 3, 2)
     (h, c), st_ = Lux.apply(lstmcell, x, ps, st)
 
-    @test_call lstmcell(x, ps, st)
-    @test_opt target_modules=(Lux,) lstmcell(x, ps, st)
-    @test_call lstmcell((x, h, c), ps, st_)
-    @test_opt target_modules=(Lux,) lstmcell((x, h, c), ps, st_)
+    run_JET_tests(lstmcell, x, ps, st)
+    run_JET_tests(lstmcell, (x, h, c), ps, st_)
 
     function loss_loop_lstmcell(p)
         (h, c), st_ = lstmcell(x, p, st)
@@ -60,10 +56,8 @@ end
     x = randn(rng, Float32, 3, 2)
     h, st_ = Lux.apply(grucell, x, ps, st)
 
-    @test_call grucell(x, ps, st)
-    @test_opt target_modules=(Lux,) grucell(x, ps, st)
-    @test_call grucell((x, h), ps, st_)
-    @test_opt target_modules=(Lux,) grucell((x, h), ps, st_)
+    run_JET_tests(grucell, x, ps, st)
+    run_JET_tests(grucell, (x, h), ps, st_)
 
     function loss_loop_grucell(p)
         h, st_ = grucell(x, p, st)

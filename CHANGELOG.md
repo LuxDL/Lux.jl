@@ -1,5 +1,9 @@
 # v0.4
 
+## v0.4.4
+
+* Updated to support julia v1.6 (test time dependency issues)
+
 ## v0.4.3
 
 * Extending Scale to allow for multiple dimension inputs (https://github.com/avik-pal/Lux.jl/pull/40)

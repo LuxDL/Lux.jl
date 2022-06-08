@@ -1,4 +1,4 @@
-using JET, Lux, Random, Test
+using Lux, Random, Test
 
 include("../utils.jl")
 
@@ -20,8 +20,7 @@ Random.seed!(rng, 0)
     @test x_ == x__
     @test x_ != x___
 
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
     test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                   rtol=1.0f-3)
 
@@ -46,10 +45,8 @@ end
     @test x_ == x__
     @test x_ != x___
 
-    @test_call layer(x, ps, st)
-    @test_call layer(x, ps, st_)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st_)
+    run_JET_tests(layer, x, ps, st)
+    run_JET_tests(layer, x, ps, st_)
     test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                   rtol=1.0f-3)
     test_gradient_correctness_fdm(x -> sum(layer(x, ps, st_)[1]), x; atol=1.0f-3,
@@ -61,8 +58,7 @@ end
     @test st___.mask != st__.mask
     @test x___ != x_
 
-    @test_call layer(x, ps, st__)
-    @test_opt target_modules=(Lux,) layer(x, ps, st__)
+    run_JET_tests(layer, x, ps, st__)
     test_gradient_correctness_fdm(x -> sum(layer(x, ps, st__)[1]), x; atol=1.0f-3,
                                   rtol=1.0f-3)
 end

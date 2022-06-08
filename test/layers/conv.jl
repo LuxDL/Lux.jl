@@ -1,4 +1,4 @@
-using JET, Lux, NNlib, Random, Test, Zygote
+using Lux, NNlib, Random, Test, Zygote
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)
@@ -13,57 +13,49 @@ include("../utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == maxpool(x, PoolDims(x, 2))
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = AdaptiveMeanPool((5, 5))
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == meanpool(x, PoolDims(x, 2))
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = AdaptiveMaxPool((10, 5))
     ps, st = Lux.setup(rng, layer)
 
     @test layer(y, ps, st)[1] == maxpool(y, PoolDims(y, (2, 4)))
-    @test_call layer(y, ps, st)
-    @test_opt target_modules=(Lux,) layer(y, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = AdaptiveMeanPool((10, 5))
     ps, st = Lux.setup(rng, layer)
 
     @test layer(y, ps, st)[1] == meanpool(y, PoolDims(y, (2, 4)))
-    @test_call layer(y, ps, st)
-    @test_opt target_modules=(Lux,) layer(y, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = GlobalMaxPool()
     ps, st = Lux.setup(rng, layer)
 
     @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = GlobalMeanPool()
     ps, st = Lux.setup(rng, layer)
 
     @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = MaxPool((2, 2))
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == maxpool(x, PoolDims(x, 2))
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     layer = MeanPool((2, 2))
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == meanpool(x, PoolDims(x, 2))
-    @test_call layer(x, ps, st)
-    @test_opt target_modules=(Lux,) layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
 
     @testset "$ltype SamePad windowsize $k" for ltype in (MeanPool, MaxPool),
                                                 k in ((1,), (2,), (3,), (4, 5), (6, 7, 8))
@@ -74,8 +66,7 @@ include("../utils.jl")
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], k)
-        @test_call layer(x, ps, st) broken=length(k) == 1
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
     end
 end
 
@@ -87,8 +78,7 @@ end
 
         @test size(ps.weight) == (3, 3, 2)
         @test size(layer(x, ps, st)[1]) == (2, 2, 1)
-        @test_call layer(x, ps, st) broken=true
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st; call_broken=true)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -98,8 +88,7 @@ end
 
         @test size(ps.weight) == (3, 3, 3, 2)
         @test size(layer(x, ps, st)[1]) == (2, 2, 2, 1)
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -109,8 +98,7 @@ end
 
         @test size(ps.weight) == (3, 3, 3, 3, 2)
         @test size(layer(x, ps, st)[1]) == (2, 2, 2, 2, 1)
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -138,8 +126,7 @@ end
         @test y_hat[1, end - 1] ≈ 6.0
         @test y_hat[end, end] ≈ 2.0
 
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
     end
 
     @testset "Variable BitWidth Parameters" begin
@@ -156,8 +143,7 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 15
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -165,8 +151,7 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 9
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -174,8 +159,7 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 9
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -191,8 +175,7 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1]) == size(x)
-        @test_call layer(x, ps, st) broken=length(k) == 1
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -200,8 +183,7 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1]) == size(x)
-        @test_call layer(x, ps, st) broken=length(k) == 1
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
 
@@ -210,8 +192,7 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], stride)
-        @test_call layer(x, ps, st) broken=length(k) == 1
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
     end
@@ -226,8 +207,7 @@ end
         y = zeros(eltype(ps.weight), 5, 5, 1, 1)
         y[2:(end - 1), 2:(end - 1), 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
 
         layer = Conv((3, 1), 1 => 1)
         ps, st = Lux.setup(rng, layer)
@@ -235,8 +215,7 @@ end
         y = zeros(eltype(ps.weight), 5, 7, 1, 1)
         y[2:(end - 1), 4, 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
 
         layer = Conv((1, 3), 1 => 1)
         ps, st = Lux.setup(rng, layer)
@@ -244,7 +223,6 @@ end
         y = zeros(eltype(ps.weight), 7, 5, 1, 1)
         y[4, 2:(end - 1), 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
-        @test_call layer(x, ps, st)
-        @test_opt target_modules=(Lux,) layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
     end
 end
