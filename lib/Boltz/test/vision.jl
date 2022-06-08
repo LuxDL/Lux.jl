@@ -34,13 +34,21 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
                         ],
                         vgg => [
                             (:vgg11, false),
+                            (:vgg11, true),
                             (:vgg11_bn, false),
+                            (:vgg11_bn, true),
                             (:vgg13, false),
+                            (:vgg13, true),
                             (:vgg13_bn, false),
+                            (:vgg13_bn, true),
                             (:vgg16, false),
+                            (:vgg16, true),
                             (:vgg16_bn, false),
+                            (:vgg16_bn, true),
                             (:vgg19, false),
+                            (:vgg19, true),
                             (:vgg19_bn, false),
+                            (:vgg19_bn, true),
                         ],
                         vision_transformer => [
                             (:tiny, false),
@@ -55,6 +63,9 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
 
 @testset "$model_creator" for (model_creator, config) in pairs(models_available)
     @time begin @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
+        if VERSION <= v"1.7" && pretrained
+            @warn "Skipping pretrained models in Julia < 1.7"
+        end
         model, ps, st = model_creator(name; pretrained)
         st = Lux.testmode(st)
 
