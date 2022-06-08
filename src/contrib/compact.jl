@@ -69,6 +69,53 @@ quote
 end
 ```
 
+## What not to do while writing `compact` models?
+
+Here are some common cases where `@compact` will silently fail to generate the correct code. (Encountered some additional cases, open an issue so that we can solve it or expand this list)
+
+1. **Imcomplete Layer Calls**: All layer calls must be complete, i.e. the following is not allowed:
+
+```julia
+Lux.@compact function ThisModelDoesNotWork(x)
+    @assert size(x, 1) == 2 && size(y, 1) == 2
+    shared = Dense(2, 3, gelu)
+    a = Dense(3, 3, relu)(shared(x) .+ Dense(2, 3, relu)(x)) .- shared(x)
+    b = Dense(3, 2, sigmoid)(a)
+    return b
+end
+```
+
+Instead write it as:
+
+```julia
+Lux.@compact function ThisModelWorks(x)
+    @assert size(x, 1) == 2 && size(y, 1) == 2
+    shared = Dense(2, 3, gelu)(x)
+    a = Dense(3, 3, relu)(shared .+ Dense(2, 3, relu)(x)) .- shared
+    b = Dense(3, 2, sigmoid)(a)
+    return b
+end
+```
+
+Unfortunately, this means currently we cannot invoke the same model twice.
+
+2. **Creating layers without `=`**: All layer definitions must be preceeded by `=`. Anything else be it `return`, ".+=". ".=", etc. is not allowed.
+
+```julia
+# Invalid
+Lux.@compact function WrongReturn(x)
+    return Dense(2, 2)(x)
+end
+
+Lux.@compact WrongOneLiner(x) = Dense(2, 2)(x)
+
+# Valid
+Lux.@compact function CorrectReturn(x)
+    x = Dense(2, 2)(x)
+    return x
+end
+```
+
 !!! note
     This is heavily inspired by [flax.linen.compact](https://flax.readthedocs.io/en/latest/design_notes/module_lifecycle.html?highlight=compact#compact-modules). Unlike Flax, in Lux.@compact we still need to use the complete API to define the model. We don't perform automatic shape inference at this point. (This is a planned feature for future releases). Additionally, we don't allow specifying names for each layer.
 

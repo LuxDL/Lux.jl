@@ -70,6 +70,7 @@ makedocs(;
                  "Functional" => "api/functional.md",
                  "Core" => "api/core.md",
                  "Utilities" => "api/utilities.md",
+                 "Experimental" => "api/experimental.md",
              ],
              "Design Docs" => [
                  "Documentation" => "design/documentation.md",
