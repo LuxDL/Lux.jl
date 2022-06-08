@@ -162,7 +162,7 @@ end
             ps, st = Lux.setup(rng, layer)
             Lux.apply(layer, 1, ps, st)
             @test CNT[] == 1
-            run_JET_tests(layer, x, ps, st)
+            run_JET_tests(layer, 1, ps, st)
             Lux.apply(layer, (1, 2, 3), ps, st)
             @test CNT[] == 2
             layer = Parallel(f_cnt, WrappedFunction(sin))
