@@ -16,7 +16,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 JLD2 = "0.4"
-Lux = "0.4, 0.5"
+Lux = "0.4"
 Metalhead = "0.7"
 ChainRulesCore = "1.15"
 NNlib = "0.8"

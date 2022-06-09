@@ -104,14 +104,14 @@ Unfortunately, this means currently we cannot invoke the same model twice.
 ```julia
 # Invalid
 Lux.@compact function WrongReturn(x)
-    return Dense(2, 2)(x)
+    return Dense(2, 2)(x) .+ Dense(2, 2)(x)
 end
 
-Lux.@compact WrongOneLiner(x) = Dense(2, 2)(x)
+Lux.@compact WrongOneLiner(x) = Dense(2, 2)(x) .+ Dense(2, 2)(x)
 
 # Valid
 Lux.@compact function CorrectReturn(x)
-    x = Dense(2, 2)(x)
+    x = Dense(2, 2)(x) .+ Dense(2, 2)(x)
     return x
 end
 ```

@@ -58,6 +58,7 @@ makedocs(;
              "Introduction" => [
                  "All about Lux" => "introduction/overview.md",
                  "Ecosystem" => "introduction/ecosystem.md",
+                 "Update Guide" => "introduction/update_guide.md",
              ],
              "Examples" => [
                  "Beginner" => MAPPING["beginner"],
