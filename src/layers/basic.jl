@@ -183,8 +183,8 @@ end
 
 @inline function (skip::SkipConnection)(x, ps::Union{ComponentArray, NamedTuple},
                                         st::NamedTuple)
-    mx, st = skip.layers(x, ps, st)
-    return skip.connection(mx, x), st
+    mx, st = skip.layers(x, ps.layers, st.layers)
+    return skip.connection(mx, x), (layers=st,)
 end
 
 """
@@ -240,11 +240,11 @@ end
     calls = []
     append!(calls,
             [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(getinput(i)),
-                                                                ps.$(names[i]),
-                                                                st.$(names[i])))
+                                                                ps.layers.$(names[i]),
+                                                                st.layers.$(names[i])))
              for
              i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(st = (layers=NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
     if C == Nothing
         push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
     else
@@ -323,10 +323,10 @@ end
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.$(names[i]),
-                                                                st.$(names[i])))
+            [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.layers.$(names[i]),
+                                                                st.layers.$(names[i])))
              for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(st = (layers=NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
 end
@@ -411,11 +411,11 @@ end
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
     append!(calls,
             [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(y_symbols[N + 1]),
-                                                                ps.$(names[i]),
-                                                                st.$(names[i]));
+                                                                ps.layers.$(names[i]),
+                                                                st.layers.$(names[i]));
                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
              for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(st = (layers=NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
     push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
@@ -526,13 +526,13 @@ end
     N = length(fields)
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layer_1, st.layer_1))]
+    calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layers.layer_1, st.layers.layer_1))]
     append!(calls,
             [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
-                                                                ps.$(fields[i]),
-                                                                st.$(fields[i])))
+                                                                ps.layers.$(fields[i]),
+                                                                st.layers.$(fields[i])))
              for i in 2:N])
-    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(st = (layers=NamedTuple{$fields}((($(Tuple(st_symbols)...),))),)))
     push!(calls, :(return $(x_symbols[N]), st))
     return Expr(:block, calls...)
 end

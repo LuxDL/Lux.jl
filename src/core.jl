@@ -81,13 +81,11 @@ abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer en
 
 function initialparameters(rng::AbstractRNG,
                            l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG,
                        l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 

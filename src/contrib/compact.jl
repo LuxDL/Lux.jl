@@ -99,7 +99,7 @@ end
 
 Unfortunately, this means currently we cannot invoke the same model twice.
 
-2. **Creating layers without `=`**: All layer definitions must be preceeded by `=`. Anything else be it `return`, ".+=". ".=", etc. is not allowed.
+2. **Creating layers without `=`**: All layer definitions must be preceeded by `=`. Anything else be it `return`, `.+=`. `.=`, etc. is not allowed.
 
 ```julia
 # Invalid
@@ -116,11 +116,13 @@ Lux.@compact function CorrectReturn(x)
 end
 ```
 
-!!! note
-    This is heavily inspired by [flax.linen.compact](https://flax.readthedocs.io/en/latest/design_notes/module_lifecycle.html?highlight=compact#compact-modules). Unlike Flax, in Lux.@compact we still need to use the complete API to define the model. We don't perform automatic shape inference at this point. (This is a planned feature for future releases). Additionally, we don't allow specifying names for each layer.
+## Deviations from `flax.linen.compact`
 
-!!! warning
-    Currently `whichparams` are completely ignored. (This is a planned feature for future releases)
+This is heavily inspired by [flax.linen.compact](https://flax.readthedocs.io/en/latest/design_notes/module_lifecycle.html?highlight=compact#compact-modules), though the way this works is entirely different from flax.
+
+* Unlike Flax, in Lux.@compact we still need to use the complete API to define the model. We don't perform automatic shape inference at this point. (This is a planned feature for future releases).
+* We don't allow specifying names for each layer.
+* Conditionals are not an issue
 
 !!! warning
     This is an experimental API. It is likely to have bugs and untested edge cases. If you find the generated code to be incorrect, please file an issue.
