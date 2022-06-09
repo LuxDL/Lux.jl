@@ -244,7 +244,7 @@ end
                                                                 st.layers.$(names[i])))
              for
              i in 1:N])
-    push!(calls, :(st = (layers=NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
+    push!(calls, :(st = (layers = NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
     if C == Nothing
         push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
     else
@@ -326,7 +326,7 @@ end
             [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i](x, ps.layers.$(names[i]),
                                                                 st.layers.$(names[i])))
              for i in 1:N])
-    push!(calls, :(st = (layers=NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
+    push!(calls, :(st = (layers = NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
 end
@@ -415,7 +415,7 @@ end
                                                                 st.layers.$(names[i]));
                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
              for i in 1:N])
-    push!(calls, :(st = (layers=NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
+    push!(calls, :(st = (layers = NamedTuple{$names}((($(Tuple(st_symbols)...),))))))
     push!(calls, :(return $(y_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
@@ -526,7 +526,10 @@ end
     N = length(fields)
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layers.layer_1, st.layers.layer_1))]
+    calls = [
+        :(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layers.layer_1,
+                                                          st.layers.layer_1)),
+    ]
     append!(calls,
             [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
                                                                 ps.layers.$(fields[i]),
