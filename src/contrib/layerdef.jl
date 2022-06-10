@@ -243,7 +243,8 @@ function __rewrite_body_expression(mod, layer_name, expr::Expr, storage)
 
     # If it's a macro, we expand it
     if Meta.isexpr(expr, :macrocall)
-        return __rewrite_body_expression(mod, layer_name, macroexpand(mod, expr; recursive=true),
+        return __rewrite_body_expression(mod, layer_name,
+                                         macroexpand(mod, expr; recursive=true),
                                          storage)
     end
 
@@ -364,14 +365,14 @@ function __update_layer_expressions(mod, layer_name, expr::Expr, store_in, stora
                 push!(lifted_exprs,
                       :(($(store_in_var),
                         $(storage.layer_state_variables[lname])) = $updated_expr(tuple($(func_args...)),
-                                                                                  ps.$lname,
-                                                                                  st.$lname)))
+                                                                                 ps.$lname,
+                                                                                 st.$lname)))
             else
                 push!(lifted_exprs,
                       :(($(store_in_var),
                         $(storage.layer_state_variables[lname])) = $updated_expr($(func_args[1]),
-                                                                                  ps.$lname,
-                                                                                  st.$lname)))
+                                                                                 ps.$lname,
+                                                                                 st.$lname)))
             end
             push!(expr_calls, :__do_collapse__)
             push!(expr_calls, :($store_in_var))
