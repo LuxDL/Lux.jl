@@ -10,14 +10,14 @@ CurrentModule = Lux
 # `Lux.@layerdef` API
 
 ```@docs
-Lux.@compact
+Lux.@layerdef
 ```
 
 ## Showcase
 
-1. [`SimpleRNN`](/examples/SimpleRNN/main.jl) example rewitten using `@layerdef`
+* [`SimpleRNN`](/examples/SimpleRNN/main.jl) example rewitten using `@layerdef`
 
-```julia
+```@example
 using Lux, Random
 
 Lux.@layerdef function SpiralClassifier(x::AbstractArray{T, 3}) where {T}
@@ -34,7 +34,6 @@ model = SpiralClassifier()
 
 x = randn(Float32, 2, 4, 1)
 ps, st = Lux.setup(Random.default_rng(), model)
-
 
 model(x, ps, st)
 ```
