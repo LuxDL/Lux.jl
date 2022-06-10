@@ -342,7 +342,8 @@ function __update_layer_expressions(mod, layer_name, expr::Expr, store_in, stora
                                                        storage.layers,
                                                        storage.layer_state_variables,
                                                        layer_name)
-                return updated_expr, lname, [:($(storage.layer_state_variables[lname]) = st.$lname)]
+                return updated_expr, lname,
+                       [:($(storage.layer_state_variables[lname]) = st.$lname)]
             end
         end
     catch e
