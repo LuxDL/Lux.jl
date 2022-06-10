@@ -465,11 +465,7 @@ Performs a few optimizations to generate reasonable architectures. Can be disabl
 ## Example
 
 ```julia
-c = Chain(
-    Dense(2, 3, relu),
-    BatchNorm(3),
-    Dense(3, 2)
-)
+c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 ```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}

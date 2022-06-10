@@ -2,7 +2,7 @@
 CurrentModule = Lux
 ```
 
-## Containers
+# Containers
 
 ```@docs
 BranchLayer
@@ -12,20 +12,20 @@ Parallel
 SkipConnection
 ```
 
-## Convolutional Layers
+# Convolutional Layers
 
 ```@docs
 Conv
 ```
 
-## Dropout Layers
+# Dropout Layers
 
 ```@docs
 Dropout
 VariationalHiddenDropout
 ```
 
-## Pooling Layers
+# Pooling Layers
 
 ```@docs
 AdaptiveMaxPool
@@ -36,7 +36,7 @@ MaxPool
 MeanPool
 ```
 
-## Recurrent Layers
+# Recurrent Layers
 
 !!! warning
     Recurrent Layers API should be considered Experimental at this point
@@ -47,14 +47,14 @@ LSTMCell
 RNNCell
 ```
 
-## Linear Layers
+# Linear Layers
 
 ```@docs
 Dense
 Scale
 ```
 
-## Misc. Helper Layers
+# Misc. Helper Layers
 
 ```@docs
 ActivationFunction
@@ -65,7 +65,7 @@ SelectDim
 WrappedFunction
 ```
 
-## Normalization Layers
+# Normalization Layers
 
 ```@docs
 BatchNorm
@@ -73,13 +73,13 @@ GroupNorm
 WeightNorm
 ```
 
-## Upsampling
+# Upsampling
 
 ```@docs
 Upsample
 ```
 
-## Index
+# Index
 
 ```@index
 Pages = ["layers.md"]

@@ -159,6 +159,7 @@ function layerdef(mod, linenumbernode, expr)
     layers = Dict()
     layer_counters = Dict()
     layer_state_variables = Dict()
+    first_encounters = Dict()
 
     # Descend into the expressions
     lname = gensym("layer")
@@ -166,7 +167,8 @@ function layerdef(mod, linenumbernode, expr)
                                                (layer_declaration_variables=layer_declaration_variables,
                                                 layers=layers,
                                                 layer_counters=layer_counters,
-                                                layer_state_variables=layer_state_variables))
+                                                layer_state_variables=layer_state_variables,
+                                                first_encounters=first_encounters))
 
     which_layers = Tuple(sort(collect(keys(layers))))
     tnames = [Symbol("__$(w)_type") for w in which_layers]
@@ -320,7 +322,13 @@ __update_layer_expressions(mod, layer_name, x, store_in, storage) = (x, nothing,
 function __update_layer_expressions(mod, layer_name, x::Symbol, store_in, storage)
     if x in keys(storage.layer_declaration_variables)
         lname = storage.layer_declaration_variables[x]
-        return (:($layer_name.$lname), lname, [])
+        lifted_exprs = if x in keys(storage.first_encounters)
+            []
+        else
+            storage.first_encounters[x] = true
+            [:($(storage.layer_state_variables[lname]) = st.$lname)]
+        end
+        return (:($layer_name.$lname), lname, lifted_exprs)
     end
     return (x, nothing, [])
 end
@@ -334,7 +342,7 @@ function __update_layer_expressions(mod, layer_name, expr::Expr, store_in, stora
                                                        storage.layers,
                                                        storage.layer_state_variables,
                                                        layer_name)
-                return updated_expr, lname, []
+                return updated_expr, lname, [:($(storage.layer_state_variables[lname]) = st.$lname)]
             end
         end
     catch e
@@ -350,7 +358,7 @@ function __update_layer_expressions(mod, layer_name, expr::Expr, store_in, stora
                                                                         storage)
         lifted_exprs = append!(lifted_priors, lifted_exprs)
         if lname !== nothing
-            store_in_var = gensym(store_in)
+            store_in_var = gensym()
 
             func_args = []
             for arg in expr.args[(i + 1):end]
@@ -366,13 +374,13 @@ function __update_layer_expressions(mod, layer_name, expr::Expr, store_in, stora
                       :(($(store_in_var),
                         $(storage.layer_state_variables[lname])) = $updated_expr(tuple($(func_args...)),
                                                                                  ps.$lname,
-                                                                                 st.$lname)))
+                                                                                 $(storage.layer_state_variables[lname]))))
             else
                 push!(lifted_exprs,
                       :(($(store_in_var),
                         $(storage.layer_state_variables[lname])) = $updated_expr($(func_args[1]),
                                                                                  ps.$lname,
-                                                                                 st.$lname)))
+                                                                                 $(storage.layer_state_variables[lname]))))
             end
             push!(expr_calls, :__do_collapse__)
             push!(expr_calls, :($store_in_var))
