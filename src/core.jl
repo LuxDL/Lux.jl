@@ -65,7 +65,7 @@ end
 
 Simply calls `model(x, ps, st)`
 """
-function apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray, NamedTuple},
+function apply(model::AbstractExplicitLayer, x, ps::VALID_PARAMETER_TYPES,
                st::NamedTuple)
     model(x, ps, st)
 end
