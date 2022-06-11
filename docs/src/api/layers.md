@@ -2,7 +2,7 @@
 CurrentModule = Lux
 ```
 
-# Containers
+## Containers
 
 ```@docs
 BranchLayer
@@ -12,20 +12,20 @@ Parallel
 SkipConnection
 ```
 
-# Convolutional Layers
+## Convolutional Layers
 
 ```@docs
 Conv
 ```
 
-# Dropout Layers
+## Dropout Layers
 
 ```@docs
 Dropout
 VariationalHiddenDropout
 ```
 
-# Pooling Layers
+## Pooling Layers
 
 ```@docs
 AdaptiveMaxPool
@@ -36,7 +36,7 @@ MaxPool
 MeanPool
 ```
 
-# Recurrent Layers
+## Recurrent Layers
 
 !!! warning
     Recurrent Layers API should be considered Experimental at this point
