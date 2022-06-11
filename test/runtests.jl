@@ -32,6 +32,8 @@ end
                 @time @safetestset "Dropout" begin include("layers/dropout.jl") end
             end
 
+            @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
+
             @time @safetestset "Functional Operations" begin include("functional.jl") end
         end
     else
