@@ -294,9 +294,7 @@ This is slightly different from `Parallel(nothing, layers...)`
 An easy way to replicate an input to an NTuple is to do
 
 ```julia
-l = BranchLayer(NoOpLayer(),
-                NoOpLayer(),
-                NoOpLayer())
+l = BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
 ```
 """
 struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -333,15 +331,10 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
     PairwiseFusion(connection, layers...)
 
 ```
-x1 --> layer1 --> y1
-                  |
-                  |--> connection --> layer2 --> y2
-                  |                              |
-                  x2                             |--> connection --> layer3 --> y3
-                                                 |                              |
-                                                 x3                             |--> connection --> y4
-                                                                                |
-                                                                                x4
+x1 → layer1 → y1 ↘
+                  connection → layer2 → y2 ↘
+              x2 ↗                          connection → layer3 → y3
+                                        x3 ↗
 ```
 
 ## Arguments
@@ -462,9 +455,7 @@ Performs a few optimizations to generate reasonable architectures. Can be disabl
 ## Example
 
 ```julia
-c = Chain(Dense(2, 3, relu),
-          BatchNorm(3),
-          Dense(3, 2))
+c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 ```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
