@@ -5,16 +5,16 @@ Reshapes the passed array to have a size of `(dims..., :)`
 
 ## Arguments
 
-* `dims`: The new dimensions of the array (excluding the last dimension).
+  - `dims`: The new dimensions of the array (excluding the last dimension).
 
 ## Inputs
 
-* `x`: AbstractArray of any shape which can be reshaped in `(dims..., size(x, ndims(x)))`
+  - `x`: AbstractArray of any shape which can be reshaped in `(dims..., size(x, ndims(x)))`
 
 ## Returns
 
-* AbstractArray of size `(dims..., size(x, ndims(x)))`
-* Empty `NamedTuple()`
+  - AbstractArray of size `(dims..., size(x, ndims(x)))`
+  - Empty `NamedTuple()`
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N, Int}
@@ -25,7 +25,7 @@ end
 end
 
 function Base.show(io::IO, r::ReshapeLayer)
-    print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
+    return print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
 end
 
 """
@@ -35,12 +35,12 @@ Flattens the passed array into a matrix.
 
 ## Inputs
 
-* `x`: AbstractArray
+  - `x`: AbstractArray
 
 ## Returns
 
-* AbstractMatrix of size `(:, size(x, ndims(x)))`
-* Empty `NamedTuple()`
+  - AbstractMatrix of size `(:, size(x, ndims(x)))`
+  - Empty `NamedTuple()`
 """
 struct FlattenLayer <: AbstractExplicitLayer end
 
@@ -55,28 +55,29 @@ Return a view of all the data of the input `x` where the index for dimension `di
 
 ## Arguments
 
-* `dim`: Dimension for indexing
-* `i`: Index for dimension `dim`
+  - `dim`: Dimension for indexing
+  - `i`: Index for dimension `dim`
 
 ## Inputs
 
-* `x`: AbstractArray that can be indexed with `view(x,:,:,...,i,:,:,...)`
+  - `x`: AbstractArray that can be indexed with `view(x,:,:,...,i,:,:,...)`
 
 ## Returns
 
-* `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
-* Empty `NamedTuple()`
+  - `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
+  - Empty `NamedTuple()`
 """
 struct SelectDim{dim, index} <: AbstractExplicitLayer end
 
 SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
 
 @inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
-    selectdim(x, get_known(dim), get_known(index)), st
+    return selectdim(x, get_known(dim), get_known(index)), st
 end
 
 function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
-    print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index), ")")
+    return print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index),
+                 ")")
 end
 
 """
@@ -95,16 +96,16 @@ Wraps a stateless and parameter less function. Might be used when a function is 
 
 ## Arguments
 
-* `f::Function`: A stateless and parameterless function
+  - `f::Function`: A stateless and parameterless function
 
 ## Inputs
 
-* `x`: s.t `hasmethod(f, (typeof(x),))` is `true`
+  - `x`: s.t `hasmethod(f, (typeof(x),))` is `true`
 
 ## Returns
 
-* Output of `f(x)`
-* Empty `NamedTuple()`
+  - Output of `f(x)`
+  - Empty `NamedTuple()`
 """
 struct WrappedFunction{F} <: AbstractExplicitLayer
     func::F
@@ -123,16 +124,16 @@ Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally c
 
 ## Arguments
 
-* `f`: Activation function
+  - `f`: Activation function
 
 ## Inputs
 
-* `x`: Any array type s.t. `f` can be broadcasted over it
+  - `x`: Any array type s.t. `f` can be broadcasted over it
 
 ## Returns
 
-* Broadcasted Activation `f.(x)`
-* Empty `NamedTuple()`
+  - Broadcasted Activation `f.(x)`
+  - Empty `NamedTuple()`
 """
 struct ActivationFunction{F} <: AbstractExplicitLayer
     func::F
@@ -153,25 +154,25 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 ## Arguments
 
-* `layer`: Layer or `Chain` of layers to be applied to the input
-* `connection`: A 2-argument function that takes `layer(input)` and the input
+  - `layer`: Layer or `Chain` of layers to be applied to the input
+  - `connection`: A 2-argument function that takes `layer(input)` and the input
 
 ## Inputs
 
-* `x`: Will be passed directly to `layer`
+  - `x`: Will be passed directly to `layer`
 
 ## Returns
 
-* Output of `connection(layer(input), input)`
-* Updated state of `layer`
+  - Output of `connection(layer(input), input)`
+  - Updated state of `layer`
 
 ## Parameters
 
-* Parameters of `layer`
+  - Parameters of `layer`
 
 ## States
 
-* States of `layer`
+  - States of `layer`
 
 See [`Parallel`](@ref) for a more general implementation.
 """
@@ -181,8 +182,7 @@ struct SkipConnection{T <: AbstractExplicitLayer, F} <:
     connection::F
 end
 
-@inline function (skip::SkipConnection)(x, ps::Union{ComponentArray, NamedTuple},
-                                        st::NamedTuple)
+@inline function (skip::SkipConnection)(x, ps, st::NamedTuple)
     mx, st = skip.layers(x, ps, st)
     return skip.connection(mx, x), st
 end
@@ -194,25 +194,25 @@ Create a layer which passes an input to each path in `layers`, before reducing t
 
 ## Arguments
 
-* `layers`: A list of `N` Lux layers
-* `connection`: An `N`-argument function that is called after passing the input through each layer. If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+  - `layers`: A list of `N` Lux layers
+  - `connection`: An `N`-argument function that is called after passing the input through each layer. If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
 
 ## Inputs
 
-* `x`: if `x` is not a tuple, then return is computed as `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+  - `x`: if `x` is not a tuple, then return is computed as `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
 
 ## Returns
 
-* See the Inputs section for how the output is computed
-* Updated state of the `layers`
+  - See the Inputs section for how the output is computed
+  - Updated state of the `layers`
 
 ## Parameters
 
-* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
@@ -226,12 +226,11 @@ function Parallel(connection, layers...)
     return Parallel(connection, NamedTuple{names}(layers))
 end
 
-function (m::Parallel)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (m::Parallel)(x, ps, st::NamedTuple)
     return applyparallel(m.layers, m.connection, x, ps, st)
 end
 
-@generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T,
-                                  ps::Union{ComponentArray, NamedTuple},
+@generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T, ps,
                                   st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
@@ -263,43 +262,41 @@ Takes an input `x` and passes it through all the `layers` and returns a tuple of
 
 ## Arguments
 
-* `layers`: A list of `N` Lux layers
+  - `layers`: A list of `N` Lux layers
 
 ## Inputs
 
-* `x`: Will be directly passed to each of the `layers`
+  - `x`: Will be directly passed to each of the `layers`
 
 ## Returns
 
-* Tuple: `(layer_1(x), layer_2(x), ..., layer_N(x))`
-* Updated state of the `layers`
+  - Tuple: `(layer_1(x), layer_2(x), ..., layer_N(x))`
+  - Updated state of the `layers`
 
 ## Parameters
 
-* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## Comparison with [`Parallel`](@ref)
 
 This is slightly different from `Parallel(nothing, layers...)`
 
-* If the input is a tuple, `Parallel` will pass each element individually to each layer
+  - If the input is a tuple, `Parallel` will pass each element individually to each layer
 
-* `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
+  - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N` outputs
 
 ## Example
 
 An easy way to replicate an input to an NTuple is to do
 
 ```julia
-l = BranchLayer(
-    NoOpLayer(),
-    NoOpLayer(),
-    NoOpLayer(),
-)
+l = BranchLayer(NoOpLayer(),
+                NoOpLayer(),
+                NoOpLayer())
 ```
 """
 struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -311,12 +308,11 @@ function BranchLayer(layers...)
     return BranchLayer(NamedTuple{names}(layers))
 end
 
-function (m::BranchLayer)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
-    applybranching(m.layers, x, ps, st)
+function (m::BranchLayer)(x, ps, st::NamedTuple)
+    return applybranching(m.layers, x, ps, st)
 end
 
-@generated function applybranching(layers::NamedTuple{names}, x,
-                                   ps::Union{ComponentArray, NamedTuple},
+@generated function applybranching(layers::NamedTuple{names}, x, ps,
                                    st::NamedTuple) where {names}
     N = length(names)
     y_symbols = [gensym() for _ in 1:N]
@@ -350,13 +346,14 @@ x1 --> layer1 --> y1
 
 ## Arguments
 
-* `connection`: Takes 2 inputs and combines them
-* `layers`: [`AbstractExplicitLayer`](@ref)s 
+  - `connection`: Takes 2 inputs and combines them
+  - `layers`: [`AbstractExplicitLayer`](@ref)s
 
 ## Inputs
 
 Layer behaves differently based on input type:
-1. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of length `N`. The computation is as follows
+
+ 1. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of length `N`. The computation is as follows
 
 ```julia
 y = x[1]
@@ -365,7 +362,7 @@ for i in 1:N
 end
 ```
 
-2. Any other kind of input
+ 2. Any other kind of input
 
 ```julia
 y = x
@@ -376,16 +373,16 @@ end
 
 ## Returns
 
-* See Inputs section for how the return value is computed
-* Updated model state for all the contained layers
+  - See Inputs section for how the return value is computed
+  - Updated model state for all the contained layers
 
 ## Parameters
 
-* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 """
 struct PairwiseFusion{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
@@ -397,12 +394,11 @@ function PairwiseFusion(connection, layers...)
     return PairwiseFusion(connection, NamedTuple{names}(layers))
 end
 
-function (m::PairwiseFusion)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (m::PairwiseFusion)(x, ps, st::NamedTuple)
     return applypairwisefusion(m.layers, m.connection, x, ps, st)
 end
 
-@generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T,
-                                        ps::Union{ComponentArray, NamedTuple},
+@generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T, ps,
                                         st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
@@ -429,11 +425,11 @@ Collects multiple layers / functions to be called in sequence on a given input.
 
 ## Arguments
 
-* `layers`: A list of `N` Lux layers
+  - `layers`: A list of `N` Lux layers
 
 ## Keyword Arguments
 
-* `disable_optimizations`: Prevents any structural optimization
+  - `disable_optimizations`: Prevents any structural optimization
 
 ## Inputs
 
@@ -441,35 +437,34 @@ Input `x` is passed sequentially to each layer, and must conform to the input re
 
 ## Returns
 
-* Output after sequentially applying all the layers to `x`
-* Updated model states
+  - Output after sequentially applying all the layers to `x`
+  - Updated model states
 
 ## Parameters
 
-* Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-* States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
 
 ## Optimizations
 
 Performs a few optimizations to generate reasonable architectures. Can be disabled using keyword argument `disable_optimizations`.
-* All sublayers are recursively optimized.
-* If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
-* If the layer is a Chain, it is flattened.
-* [`NoOpLayer`](@ref)s are removed.
-* If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
-* If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
+
+  - All sublayers are recursively optimized.
+  - If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
+  - If the layer is a Chain, it is flattened.
+  - [`NoOpLayer`](@ref)s are removed.
+  - If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
+  - If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
 
 ## Example
 
 ```julia
-c = Chain(
-    Dense(2, 3, relu),
-    BatchNorm(3),
-    Dense(3, 2)
-)
+c = Chain(Dense(2, 3, relu),
+          BatchNorm(3),
+          Dense(3, 2))
 ```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
@@ -483,7 +478,7 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
         return new{typeof(layers)}(layers)
     end
     function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
-        Chain(xs...; disable_optimizations)
+        return Chain(xs...; disable_optimizations)
     end
 end
 
@@ -516,12 +511,11 @@ end
 
 flatten_model(x) = x
 
-function (c::Chain)(x, ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
-    applychain(c.layers, x, ps, st)
+function (c::Chain)(x, ps, st::NamedTuple)
+    return applychain(c.layers, x, ps, st)
 end
 
-@generated function applychain(layers::NamedTuple{fields}, x,
-                               ps::Union{ComponentArray, NamedTuple},
+@generated function applychain(layers::NamedTuple{fields}, x, ps,
                                st::NamedTuple{fields}) where {fields}
     N = length(fields)
     x_symbols = [gensym() for _ in 1:N]
@@ -546,29 +540,29 @@ Create a traditional fully connected layer, whose forward pass is given by: `y =
 
 ## Arguments
 
-* `in_dims`: number of input dimensions
-* `out_dims`: number of output dimensions
-* `activation`: activation function
+  - `in_dims`: number of input dimensions
+  - `out_dims`: number of output dimensions
+  - `activation`: activation function
 
 ## Keyword Arguments
 
-* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
-* `init_bias`: initializer for the bias vector (ignored if `bias=false`)
-* `bias`: whether to include a bias vector
+  - `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+  - `init_bias`: initializer for the bias vector (ignored if `bias=false`)
+  - `bias`: whether to include a bias vector
 
 ## Input
 
-* `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
+  - `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
 
 ## Returns
 
-* Matrix of size `out_dims × B` or a Vector of length `out_dims`
-* Empty `NamedTuple()`
+  - Matrix of size `out_dims × B` or a Vector of length `out_dims`
+  - Empty `NamedTuple()`
 
 ## Parameters
 
-* `weight`: Weight Matrix of size `out_dims × in_dims`
-* `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
+  - `weight`: Weight Matrix of size `out_dims × in_dims`
+  - `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
 """
 struct Dense{bias, F1, F2, F3} <: AbstractExplicitLayer
     activation::F1
@@ -615,69 +609,54 @@ function parameterlength(d::Dense{bias}) where {bias}
 end
 statelength(d::Dense) = 0
 
-@inline function (d::Dense{false})(x::AbstractVecOrMat,
-                                   ps::Union{ComponentArray, NamedTuple},
-                                   st::NamedTuple)
+@inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
     return applyactivation(d.activation, ps.weight * x), st
 end
 
-@inline function (d::Dense{false, typeof(identity)})(x::AbstractVecOrMat,
-                                                     ps::Union{ComponentArray, NamedTuple},
+@inline function (d::Dense{false, typeof(identity)})(x::AbstractVecOrMat, ps,
                                                      st::NamedTuple)
     return ps.weight * x, st
 end
 
-@inline function (d::Dense{false})(x::AbstractArray,
-                                   ps::Union{ComponentArray, NamedTuple},
-                                   st::NamedTuple)
+@inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
     return reshape(applyactivation(d.activation, ps.weight * x_reshaped), d.out_dims,
                    sz[2:end]...), st
 end
 
-@inline function (d::Dense{false, typeof(identity)})(x::AbstractArray,
-                                                     ps::Union{ComponentArray, NamedTuple},
-                                                     st::NamedTuple)
+@inline function (d::Dense{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
     return reshape(ps.weight * x_reshaped, d.out_dims, sz[2:end]...), st
 end
 
-@inline function (d::Dense{true})(x::AbstractVector, ps::Union{ComponentArray, NamedTuple},
-                                  st::NamedTuple)
+@inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
     return applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st
 end
 
-@inline function (d::Dense{true, typeof(identity)})(x::AbstractVector,
-                                                    ps::Union{ComponentArray, NamedTuple},
-                                                    st::NamedTuple)
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractVector, ps, st::NamedTuple)
     return elementwise_add(ps.weight * x, vec(ps.bias)), st
 end
 
-@inline function (d::Dense{true})(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
-                                  st::NamedTuple)
+@inline function (d::Dense{true})(x::AbstractMatrix, ps, st::NamedTuple)
     return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
 end
 
-@inline function (d::Dense{true, typeof(identity)})(x::AbstractMatrix,
-                                                    ps::Union{ComponentArray, NamedTuple},
-                                                    st::NamedTuple)
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractMatrix, ps, st::NamedTuple)
     return elementwise_add(ps.weight * x, ps.bias), st
 end
 
-@inline function (d::Dense{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
-                                  st::NamedTuple)
+@inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
     return (reshape(applyactivation(d.activation,
                                     elementwise_add(ps.weight * x_reshaped, ps.bias)),
-                    d.out_dims, sz[2:end]...), st)
+                    d.out_dims, sz[2:end]...),
+            st)
 end
 
-@inline function (d::Dense{true, typeof(identity)})(x::AbstractArray,
-                                                    ps::Union{ComponentArray, NamedTuple},
-                                                    st::NamedTuple)
+@inline function (d::Dense{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
     return (reshape(elementwise_add(ps.weight * x_reshaped, ps.bias), d.out_dims,
@@ -691,30 +670,31 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Arguments
 
-* `dims`: size of the learnable scale and bias parameters.
-* `activation`: activation function
+  - `dims`: size of the learnable scale and bias parameters.
+  - `activation`: activation function
 
 ## Keyword Arguments
 
-* `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
-* `init_bias`: initializer for the bias vector (ignored if `bias=false`)
-* `bias`: whether to include a bias vector
+  - `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+  - `init_bias`: initializer for the bias vector (ignored if `bias=false`)
+  - `bias`: whether to include a bias vector
 
 ## Input
 
-* `x` must be an Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
+  - `x` must be an Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
 
 ## Returns
 
-* Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
-* Empty `NamedTuple()`
+  - Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
+  - Empty `NamedTuple()`
 
 ## Parameters
 
-* `weight`: Weight Array of size `(dims...)`
-* `bias`: Bias of size `(dims...)`
+  - `weight`: Weight Array of size `(dims...)`
+  - `bias`: Bias of size `(dims...)`
 
 !!! compat "Lux 0.4.3"
+    
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer
@@ -731,15 +711,14 @@ function Base.show(io::IO, d::Scale)
 end
 
 function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
-               init_weight=glorot_uniform,
-               init_bias=zeros32, bias::Bool=true)
+               init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
     activation = NNlib.fast_act(activation)
     return Scale{bias, typeof(activation), typeof(dims), typeof(init_weight),
                  typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
 function Scale(s1::Integer, s23::Integer...; _act=identity, kw...)
-    Scale(tuple(s1, s23...), _act; kw...)
+    return Scale(tuple(s1, s23...), _act; kw...)
 end
 Scale(size_act...; kw...) = Scale(size_act[1:(end - 1)]...; _act=size_act[end], kw...)
 
@@ -747,31 +726,25 @@ function initialparameters(rng::AbstractRNG, d::Scale{true})
     return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
 end
 function initialparameters(rng::AbstractRNG, d::Scale{false})
-    (weight=d.init_weight(rng, d.dims...),)
+    return (weight=d.init_weight(rng, d.dims...),)
 end
 
 parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
-function (d::Scale{true})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
-                          st::NamedTuple)
+function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
     return applyactivation(d.activation,
                            elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
 end
 
-function (d::Scale{true, typeof(identity)})(x::AbstractArray,
-                                            ps::Union{ComponentArray, NamedTuple},
-                                            st::NamedTuple)
+function (d::Scale{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
     return elementwise_add(elementwise_mul(ps.weight, x), ps.bias), st
 end
 
-function (d::Scale{false})(x::AbstractArray, ps::Union{ComponentArray, NamedTuple},
-                           st::NamedTuple)
+function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
     return applyactivation(d.activation, elementwise_mul(ps.weight, x)), st
 end
 
-function (d::Scale{false, typeof(identity)})(x::AbstractArray,
-                                             ps::Union{ComponentArray, NamedTuple},
-                                             st::NamedTuple)
+function (d::Scale{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
     return elementwise_mul(ps.weight, x), st
 end

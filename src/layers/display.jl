@@ -66,7 +66,7 @@ function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
     return NamedTuple{names}(getfield.((l,), names))
 end
 function _get_children(p::Parallel)
-    p.connection === nothing ? p.layers : (p.connection, p.layers...)
+    return p.connection === nothing ? p.layers : (p.connection, p.layers...)
 end
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(s::WeightNorm) = (s.layer,)
@@ -116,7 +116,7 @@ end
 # utility functions
 
 function underscorise(n::Integer)
-    join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
+    return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end
 
 function _nan_show(io::IO, x)

@@ -102,16 +102,17 @@ end
 
 # Helper Functions
 """
-   transformer\\_encoder(in\\_planes, depth, number\\_heads; mlp\\_ratio = 4.0f0, dropout = 0.0f0)
+transformer\\_encoder(in\\_planes, depth, number\\_heads; mlp\\_ratio = 4.0f0, dropout = 0.0f0)
 
 Transformer as used in the base ViT architecture. ([reference](https://arxiv.org/abs/2010.11929)).
 
 ## Arguments
-- `in_planes`: number of input channels
-- `depth`: number of attention blocks
-- `number_heads`: number of attention heads
-- `mlp_ratio`: ratio of MLP layers to the number of input channels
-- `dropout_rate`: dropout rate
+
+  - `in_planes`: number of input channels
+  - `depth`: number of attention blocks
+  - `number_heads`: number of attention heads
+  - `mlp_ratio`: ratio of MLP layers to the number of input channels
+  - `dropout_rate`: dropout rate
 """
 function transformer_encoder(in_planes, depth, number_heads; mlp_ratio=4.0f0,
                              dropout_rate=0.0f0)

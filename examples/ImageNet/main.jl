@@ -105,53 +105,79 @@ end
 function parse_commandline_arguments()
     parse_settings = ArgParseSettings("Lux ImageNet Training")
     @add_arg_table! parse_settings begin
-        "--arch"
+        """
+        --arch
+        """
         default = "ResNet18"
         range_tester = x -> x ∈ keys(IMAGENET_MODELS_DICT)
         help = "model architectures: " * join(keys(IMAGENET_MODELS_DICT), ", ", " or ")
-        "--epochs"
+        """
+        --epochs
+        """
         help = "number of total epochs to run"
         arg_type = Int
         default = 90
-        "--start-epoch"
+        """
+        --start-epoch
+        """
         help = "manual epoch number (useful on restarts)"
         arg_type = Int
         default = 0
-        "--batch-size"
+        """
+        --batch-size
+        """
         help = "mini-batch size, this is the total batch size across all GPUs"
         arg_type = Int
         default = 256
-        "--learning-rate"
+        """
+        --learning-rate
+        """
         help = "initial learning rate"
         arg_type = Float32
         default = 0.1f0
-        "--momentum"
+        """
+        --momentum
+        """
         help = "momentum"
         arg_type = Float32
         default = 0.9f0
-        "--weight-decay"
+        """
+        --weight-decay
+        """
         help = "weight decay"
         arg_type = Float32
         default = 1.0f-4
-        "--print-freq"
+        """
+        --print-freq
+        """
         help = "print frequency"
         arg_type = Int
         default = 10
-        "--resume"
+        """
+        --resume
+        """
         help = "resume from checkpoint"
         arg_type = String
         default = ""
-        "--evaluate"
+        """
+        --evaluate
+        """
         help = "evaluate model on validation set"
         action = :store_true
-        "--pretrained"
+        """
+        --pretrained
+        """
         help = "use pre-trained model"
         action = :store_true
-        "--seed"
+        """
+        --seed
+        """
         help = "seed for initializing training. "
         arg_type = Int
         default = 0
-        "data"
+        """
+        data
+        """
         help = "path to dataset"
         required = true
     end
@@ -496,7 +522,7 @@ function main(args)
         optimiser_state = FluxMPI.synchronize!(optimiser_state)
         should_log() && println("$(now()) ==> synced optimiser state across all ranks")
     end
-    scheduler = Step(λ=args["learning-rate"], γ=0.1f0, step_sizes=30)
+    scheduler = Step(; λ=args["learning-rate"], γ=0.1f0, step_sizes=30)
 
     if args["resume"] != ""
         if isfile(args["resume"])

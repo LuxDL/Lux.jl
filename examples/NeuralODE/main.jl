@@ -14,7 +14,7 @@ CUDA.allowscalar(false)
 # ## Loading MNIST
 ## Use MLDataUtils LabelEnc for natural onehot conversion
 function onehot(labels_raw)
-    convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
+    return convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
 end
 
 function loadmnist(batchsize, train_split)
@@ -66,7 +66,7 @@ function (n::NeuralODE)(x, ps, st)
 end
 
 function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:CuArray}}) where {T, N}
-    dropdims(gpu(x); dims=3)
+    return dropdims(gpu(x); dims=3)
 end
 diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 

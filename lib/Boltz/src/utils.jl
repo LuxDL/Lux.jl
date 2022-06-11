@@ -5,10 +5,10 @@ Type-stable and faster version of `MLUtils.chunk`
 """
 @inline fast_chunk(h::Int, n::Int) = (1:h) .+ h * (n - 1)
 @inline function fast_chunk(x::AbstractArray, h::Int, n::Int, ::Val{dim}) where {dim}
-    selectdim(x, dim, fast_chunk(h, n))
+    return selectdim(x, dim, fast_chunk(h, n))
 end
 @inline function fast_chunk(x::AbstractArray, ::Val{N}, d::Val{D}) where {N, D}
-    fast_chunk.((x,), size(x, D) ÷ N, 1:N, d)
+    return fast_chunk.((x,), size(x, D) ÷ N, 1:N, d)
 end
 
 """
@@ -25,7 +25,7 @@ end
 
 Computes the mean of `x` along dimension `2`
 """
-@inline seconddimmean(x) = dropdims(mean(x, dims=2); dims=2)
+@inline seconddimmean(x) = dropdims(mean(x; dims=2); dims=2)
 
 """
     normalise(x::AbstractArray, activation; dims=ndims(x), epsilon=ofeltype(x, 1e-5))
@@ -34,15 +34,15 @@ Normalises the array `x` to have a mean of 0 and standard deviation of 1, and ap
 """
 @inline function normalise(x::AbstractArray, ::typeof(identity); dims=ndims(x),
                            epsilon=ofeltype(x, 1e-5))
-    xmean = mean(x, dims=dims)
-    xstd = std(x, dims=dims, mean=xmean, corrected=false)
+    xmean = mean(x; dims=dims)
+    xstd = std(x; dims=dims, mean=xmean, corrected=false)
     return @. (x - xmean) / (xstd + epsilon)
 end
 
 @inline function normalise(x::AbstractArray, activation; dims=ndims(x),
                            epsilon=ofeltype(x, 1e-5))
-    xmean = mean(x, dims=dims)
-    xstd = std(x, dims=dims, mean=xmean, corrected=false)
+    xmean = mean(x; dims=dims)
+    xstd = std(x; dims=dims, mean=xmean, corrected=false)
     return @. activation((x - xmean) / (xstd + epsilon))
 end
 

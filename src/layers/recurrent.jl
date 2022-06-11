@@ -7,33 +7,33 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
 ## Arguments
 
-* `in_dims`: Input Dimension
-* `out_dims`: Output (Hidden State) Dimension
-* `activation`: Activation function
-* `bias`: Set to false to deactivate bias
-* `init_bias`: Initializer for bias
-* `init_weight`: Initializer for weight
-* `init_state`: Initializer for hidden state
+  - `in_dims`: Input Dimension
+  - `out_dims`: Output (Hidden State) Dimension
+  - `activation`: Activation function
+  - `bias`: Set to false to deactivate bias
+  - `init_bias`: Initializer for bias
+  - `init_weight`: Initializer for weight
+  - `init_state`: Initializer for hidden state
 
 ## Inputs
 
-* Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
-* Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns
 
-* New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-* Updated model state
+  - New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+  - Updated model state
 
 ## Parameters
 
-* `weight_ih`: Maps the input to the hidden state.
-* `weight_hh`: Maps the hidden state to the hidden state.
-* `bias`: Bias vector (not present if `bias=false`)
+  - `weight_ih`: Maps the input to the hidden state.
+  - `weight_hh`: Maps the hidden state to the hidden state.
+  - `bias`: Bias vector (not present if `bias=false`)
 
 ## States
 
-* `rng`: Controls the randomness (if any) in the initial state generation
+  - `rng`: Controls the randomness (if any) in the initial state generation
 """
 struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
     activation::A
@@ -70,39 +70,37 @@ function initialstates(rng::AbstractRNG, ::RNNCell)
     return (rng=replicate(rng),)
 end
 
-function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
-                        st::NamedTuple)
+function (rnn::RNNCell)(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = rnn.init_state(rng, rnn.out_dims, size(x, 2))
     return rnn((x, hidden_state), ps, st)
 end
 
-function (rnn::RNNCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                              ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (rnn::RNNCell{true})((x, hidden_state)::NTuple{2, <:AbstractMatrix}, ps,
+                              st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
     return h_new, st
 end
 
 function (rnn::RNNCell{true, typeof(identity)})((x,
-                                                 hidden_state)::Tuple{<:AbstractMatrix,
-                                                                      <:AbstractMatrix},
-                                                ps::Union{ComponentArray, NamedTuple},
+                                                 hidden_state)::NTuple{2, <:AbstractMatrix},
+                                                ps,
                                                 st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
 
-function (rnn::RNNCell{false})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                               ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (rnn::RNNCell{false})((x, hidden_state)::NTuple{2, <:AbstractMatrix}, ps,
+                               st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
     return h_new, st
 end
 
 function (rnn::RNNCell{false, typeof(identity)})((x,
-                                                  hidden_state)::Tuple{<:AbstractMatrix,
-                                                                       <:AbstractMatrix},
-                                                 ps::Union{ComponentArray, NamedTuple},
+                                                  hidden_state)::NTuple{2, <:AbstractMatrix
+                                                                        },
+                                                 ps,
                                                  st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
     return h_new, st
@@ -134,33 +132,35 @@ Long Short-Term (LSTM) Cell
 
 ## Arguments
 
-* `in_dims`: Input Dimension
-* `out_dims`: Output (Hidden State & Memory) Dimension
-* `init_bias`: Initializer for bias. Must be a tuple containing 4 functions
-* `init_weight`: Initializer for weight. Must be a tuple containing 4 functions
-* `init_state`: Initializer for hidden state and memory
+  - `in_dims`: Input Dimension
+  - `out_dims`: Output (Hidden State & Memory) Dimension
+  - `init_bias`: Initializer for bias. Must be a tuple containing 4 functions
+  - `init_weight`: Initializer for weight. Must be a tuple containing 4 functions
+  - `init_state`: Initializer for hidden state and memory
 
 ## Inputs
 
-* Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state and memory using `init_state` and proceeds to Case 2.
-* Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state and memory using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
 
 ## Returns
 
-* Tuple Containing
-    * New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-    * Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
-* Updated model state
+  - Tuple Containing
+    
+      + New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
+
+  - Updated model state
 
 ## Parameters
 
-* `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ii}, W_{if}, W_{ig}, W_{io} \\right\\}``.
-* `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \\right\\}``
-* `bias`: Bias vector
+  - `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ii}, W_{if}, W_{ig}, W_{io} \\right\\}``.
+  - `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \\right\\}``
+  - `bias`: Bias vector
 
 ## States
 
-* `rng`: Controls the randomness (if any) in the initial state generation
+  - `rng`: Controls the randomness (if any) in the initial state generation
 """
 struct LSTMCell{B, W, S} <: AbstractExplicitLayer
     in_dims::Int
@@ -171,14 +171,9 @@ struct LSTMCell{B, W, S} <: AbstractExplicitLayer
 end
 
 function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-                  init_weight::Tuple{Function, Function, Function, Function}=(glorot_uniform,
-                                                                              glorot_uniform,
-                                                                              glorot_uniform,
-                                                                              glorot_uniform),
-                  init_bias::Tuple{Function, Function, Function, Function}=(zeros32,
-                                                                            zeros32,
-                                                                            ones32,
-                                                                            zeros32),
+                  init_weight::NTuple{4, Function}=(glorot_uniform, glorot_uniform,
+                                                    glorot_uniform, glorot_uniform),
+                  init_bias::NTuple{4, Function}=(zeros32, zeros32, ones32, zeros32),
                   init_state::Function=zeros32)
     return LSTMCell(in_dims, out_dims, init_bias, init_weight, init_state)
 end
@@ -198,8 +193,7 @@ function initialstates(rng::AbstractRNG, ::LSTMCell)
     return (rng=replicate(rng),)
 end
 
-function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
-                          st::NamedTuple)
+function (lstm::LSTMCell)(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = lstm.init_state(rng, lstm.out_dims, size(x, 2))
@@ -207,10 +201,8 @@ function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTupl
     return lstm((x, hidden_state, memory), ps, st)
 end
 
-function (lstm::LSTMCell)((x, hidden_state,
-                           memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
-                                          <:AbstractMatrix},
-                          ps::Union{ComponentArray, NamedTuple},
+function (lstm::LSTMCell)((x, hidden_state, memory)::NTuple{3, <:AbstractMatrix},
+                          ps,
                           st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
@@ -236,32 +228,32 @@ Gated Recurrent Unit (GRU) Cell
 
 ## Arguments
 
-* `in_dims`: Input Dimension
-* `out_dims`: Output (Hidden State) Dimension
-* `init_bias`: Initializer for bias. Must be a tuple containing 3 functions
-* `init_weight`: Initializer for weight. Must be a tuple containing 3 functions
-* `init_state`: Initializer for hidden state
+  - `in_dims`: Input Dimension
+  - `out_dims`: Output (Hidden State) Dimension
+  - `init_bias`: Initializer for bias. Must be a tuple containing 3 functions
+  - `init_weight`: Initializer for weight. Must be a tuple containing 3 functions
+  - `init_state`: Initializer for hidden state
 
 ## Inputs
 
-* Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
-* Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns
 
-* New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-* Updated model state
+  - New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+  - Updated model state
 
 ## Parameters
 
-* `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
-* `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
-* `bias_i`: Bias vector (``b_{in}``)
-* `bias_h`: Concatenated Bias vector for the hidden space ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
+  - `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
+  - `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
+  - `bias_i`: Bias vector (``b_{in}``)
+  - `bias_h`: Concatenated Bias vector for the hidden space ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
 
 ## States
 
-* `rng`: Controls the randomness (if any) in the initial state generation
+  - `rng`: Controls the randomness (if any) in the initial state generation
 """
 struct GRUCell{W, B, S} <: AbstractExplicitLayer
     in_dims::Int
@@ -272,11 +264,9 @@ struct GRUCell{W, B, S} <: AbstractExplicitLayer
 end
 
 function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-                 init_weight::Tuple{Function, Function, Function}=(glorot_uniform,
-                                                                   glorot_uniform,
-                                                                   glorot_uniform),
-                 init_bias::Tuple{Function, Function, Function}=(zeros32, zeros32,
-                                                                 zeros32),
+                 init_weight::NTuple{3, Function}=(glorot_uniform, glorot_uniform,
+                                                   glorot_uniform),
+                 init_bias::NTuple{3, Function}=(zeros32, zeros32, zeros32),
                  init_state::Function=zeros32)
     return GRUCell(in_dims, out_dims, init_weight, init_bias, init_state)
 end
@@ -297,16 +287,14 @@ function initialstates(rng::AbstractRNG, ::GRUCell)
     return (rng=replicate(rng),)
 end
 
-function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
-                        st::NamedTuple)
+function (gru::GRUCell)(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = gru.init_state(rng, gru.out_dims, size(x, 2))
     return gru((x, hidden_state), ps, st)
 end
 
-function (gru::GRUCell)((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                        ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (gru::GRUCell)((x, hidden_state)::NTuple{2, <:AbstractMatrix}, ps, st::NamedTuple)
     gxs = multigate(ps.weight_i * x, Val(3))
     ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))
 
