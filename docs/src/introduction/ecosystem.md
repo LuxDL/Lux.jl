@@ -1,12 +1,67 @@
-# Extended Deep Learning Ecosystem
+# Ecosystem
+
+## Frameworks extending Lux
+
+- [Boltz.jl](https://github.com/avik-pal/Lux.jl/tree/main/lib/Boltz) -- Prebuilt deep learning models for image classification tasks
+- [DeepEquilibriumNetworks.jl](https://github.com/SciML/DeepEquilibriumNetworks.jl) -- Continuous and Discrete Deep Equilibrium Networks
+- [DiffEqFlux.jl](https://github.com/SciML/DiffEqFlux.jl) -- Neural Differential Equations, Continuous Normalizing Flows, etc.
+
+## Extended Julia Ecosystem
 
 As you might have noticed we don't do much apart from Neural Networks. All other parts of the DL training/evaluation pipeline should be offloaded to:
 
-* Data Manipulation/Loading -- [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/), [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/), [Images.jl](https://juliaimages.org/stable/), [DataAugmentation.jl](https://lorenzoh.github.io/DataAugmentation.jl/dev/README.md.html)
-* Optimisation -- [Optimisers.jl](https://github.com/FluxML/Optimisers.jl), [ParameterSchedulers.jl](https://darsnack.github.io/ParameterSchedulers.jl/dev/README.html)
-* Automatic Differentiation -- [Zygote.jl](https://github.com/FluxML/Zygote.jl) _(Default AD)_, [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) _(Experimental Support)_
-* Parameter Manipulation -- [Functors.jl](https://fluxml.ai/Functors.jl/stable/)
-* Model Checkpointing -- [Serialization.jl](https://docs.julialang.org/en/v1/stdlib/Serialization/)
-* Activation Functions / Common Neural Network Primitives -- [NNlib.jl](https://fluxml.ai/Flux.jl/stable/models/nnlib/)
-* Distributed DataParallel Training -- [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
-* Training Visualization -- [Wandb.jl](https://github.com/avik-pal/Wandb.jl), [TensorBoardLogger.jl](https://github.com/PhilipVinc/TensorBoardLogger.jl)
+
+### Automatic Differentiation
+
+- [Zygote.jl](https://github.com/FluxML/Zygote.jl) -- Currently the default and recommended AD library
+- [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) -- Experimental Support (but will most likely become the future default)
+- [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) -- For forward mode AD support
+- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) -- Tape based reverse mode AD (mostly untested)
+
+
+### Data Manipulation and Loading
+
+-  [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/)
+-  [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/)
+-  [Images.jl](https://juliaimages.org/stable/)
+-  [DataAugmentation.jl](https://lorenzoh.github.io/DataAugmentation.jl/dev/README.md.html)
+
+
+### Distributed DataParallel Training
+
+- [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
+
+
+### Neural Network Primitives
+
+- [NNlib.jl](https://fluxml.ai/Flux.jl/stable/models/nnlib/)
+
+
+### Optimisation 
+
+- [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
+- [ParameterSchedulers.jl](https://darsnack.github.io/ParameterSchedulers.jl/dev/README.html)
+- [Optimization.jl](http://optimization.sciml.ai/stable/)
+
+
+### Parameter Manipulation
+
+- [Functors.jl](https://fluxml.ai/Functors.jl/stable/)
+
+
+### Serialization
+
+- [Serialization.jl](https://docs.julialang.org/en/v1/stdlib/Serialization/)
+- [JLD2.jl](https://github.com/JuliaIO/JLD2.jl)
+
+
+### Testing Utilities
+
+- [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl) -- Finite Differencing. Useful for testing gradient correctness
+- [JET.jl](https://aviatesk.github.io/JET.jl/dev/)
+
+
+### Training Visualization & Logging
+
+- [Wandb.jl](https://github.com/avik-pal/Wandb.jl)
+- [TensorBoardLogger.jl](https://github.com/PhilipVinc/TensorBoardLogger.jl)
