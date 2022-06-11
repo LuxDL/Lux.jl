@@ -7,33 +7,33 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
 ## Arguments
 
-* `in_dims`: Input Dimension
-* `out_dims`: Output (Hidden State) Dimension
-* `activation`: Activation function
-* `bias`: Set to false to deactivate bias
-* `init_bias`: Initializer for bias
-* `init_weight`: Initializer for weight
-* `init_state`: Initializer for hidden state
+  - `in_dims`: Input Dimension
+  - `out_dims`: Output (Hidden State) Dimension
+  - `activation`: Activation function
+  - `bias`: Set to false to deactivate bias
+  - `init_bias`: Initializer for bias
+  - `init_weight`: Initializer for weight
+  - `init_state`: Initializer for hidden state
 
 ## Inputs
 
-* Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
-* Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns
 
-* New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-* Updated model state
+  - New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+  - Updated model state
 
 ## Parameters
 
-* `weight_ih`: Maps the input to the hidden state.
-* `weight_hh`: Maps the hidden state to the hidden state.
-* `bias`: Bias vector (not present if `bias=false`)
+  - `weight_ih`: Maps the input to the hidden state.
+  - `weight_hh`: Maps the hidden state to the hidden state.
+  - `bias`: Bias vector (not present if `bias=false`)
 
 ## States
 
-* `rng`: Controls the randomness (if any) in the initial state generation
+  - `rng`: Controls the randomness (if any) in the initial state generation
 """
 struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
     activation::A
@@ -134,33 +134,35 @@ Long Short-Term (LSTM) Cell
 
 ## Arguments
 
-* `in_dims`: Input Dimension
-* `out_dims`: Output (Hidden State & Memory) Dimension
-* `init_bias`: Initializer for bias. Must be a tuple containing 4 functions
-* `init_weight`: Initializer for weight. Must be a tuple containing 4 functions
-* `init_state`: Initializer for hidden state and memory
+  - `in_dims`: Input Dimension
+  - `out_dims`: Output (Hidden State & Memory) Dimension
+  - `init_bias`: Initializer for bias. Must be a tuple containing 4 functions
+  - `init_weight`: Initializer for weight. Must be a tuple containing 4 functions
+  - `init_state`: Initializer for hidden state and memory
 
 ## Inputs
 
-* Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state and memory using `init_state` and proceeds to Case 2.
-* Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state and memory using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
 
 ## Returns
 
-* Tuple Containing
-    * New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-    * Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
-* Updated model state
+  - Tuple Containing
+    
+      + New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
+
+  - Updated model state
 
 ## Parameters
 
-* `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ii}, W_{if}, W_{ig}, W_{io} \\right\\}``.
-* `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \\right\\}``
-* `bias`: Bias vector
+  - `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ii}, W_{if}, W_{ig}, W_{io} \\right\\}``.
+  - `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \\right\\}``
+  - `bias`: Bias vector
 
 ## States
 
-* `rng`: Controls the randomness (if any) in the initial state generation
+  - `rng`: Controls the randomness (if any) in the initial state generation
 """
 struct LSTMCell{B, W, S} <: AbstractExplicitLayer
     in_dims::Int
@@ -236,32 +238,32 @@ Gated Recurrent Unit (GRU) Cell
 
 ## Arguments
 
-* `in_dims`: Input Dimension
-* `out_dims`: Output (Hidden State) Dimension
-* `init_bias`: Initializer for bias. Must be a tuple containing 3 functions
-* `init_weight`: Initializer for weight. Must be a tuple containing 3 functions
-* `init_state`: Initializer for hidden state
+  - `in_dims`: Input Dimension
+  - `out_dims`: Output (Hidden State) Dimension
+  - `init_bias`: Initializer for bias. Must be a tuple containing 3 functions
+  - `init_weight`: Initializer for weight. Must be a tuple containing 3 functions
+  - `init_state`: Initializer for hidden state
 
 ## Inputs
 
-* Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
-* Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns
 
-* New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-* Updated model state
+  - New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+  - Updated model state
 
 ## Parameters
 
-* `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
-* `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
-* `bias_i`: Bias vector (``b_{in}``)
-* `bias_h`: Concatenated Bias vector for the hidden space ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
+  - `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
+  - `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
+  - `bias_i`: Bias vector (``b_{in}``)
+  - `bias_h`: Concatenated Bias vector for the hidden space ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
 
 ## States
 
-* `rng`: Controls the randomness (if any) in the initial state generation
+  - `rng`: Controls the randomness (if any) in the initial state generation
 """
 struct GRUCell{W, B, S} <: AbstractExplicitLayer
     in_dims::Int

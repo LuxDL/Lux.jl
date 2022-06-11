@@ -15,7 +15,7 @@ Generate the initial parameters of the layer `l`.
 """
 initialparameters(::AbstractRNG, ::Any) = NamedTuple()
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
-    map(Base.Fix1(initialparameters, rng), l)
+    return map(Base.Fix1(initialparameters, rng), l)
 end
 
 """
@@ -32,10 +32,10 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 Return the total number of parameters of the layer `l`.
 """
 function parameterlength(l::AbstractExplicitLayer)
-    parameterlength(initialparameters(Random.default_rng(), l))
+    return parameterlength(initialparameters(Random.default_rng(), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
-    length(nt) == 0 ? 0 : sum(parameterlength, nt)
+    return length(nt) == 0 ? 0 : sum(parameterlength, nt)
 end
 parameterlength(a::AbstractArray) = length(a)
 parameterlength(x) = 0
@@ -57,7 +57,7 @@ statelength(x) = 0
 Shorthand for getting the parameters and states of the layer `l`. Is equivalent to `(initialparameters(rng, l), initialstates(rng, l))`.
 """
 function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
-    (initialparameters(rng, l), initialstates(rng, l))
+    return (initialparameters(rng, l), initialstates(rng, l))
 end
 
 """
@@ -65,15 +65,15 @@ end
 
 Simply calls `model(x, ps, st)`
 """
-function apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray, NamedTuple},
+function apply(model::AbstractExplicitLayer, x, ps,
                st::NamedTuple)
-    model(x, ps, st)
+    return model(x, ps, st)
 end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
     __t = rsplit(string(get_typename(x)), "."; limit=2)
     T = length(__t) == 2 ? __t[2] : __t[1]
-    print(io, "$T()")
+    return print(io, "$T()")
 end
 
 # Abstract Container Layers
@@ -92,11 +92,11 @@ function initialstates(rng::AbstractRNG,
 end
 
 function parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layers}
-    sum(parameterlength, getfield.((l,), layers))
+    return sum(parameterlength, getfield.((l,), layers))
 end
 
 function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
-    sum(statelength, getfield.((l,), layers))
+    return sum(statelength, getfield.((l,), layers))
 end
 
 # Test Mode

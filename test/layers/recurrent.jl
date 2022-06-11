@@ -25,7 +25,7 @@ Random.seed!(rng, 0)
         return sum(abs2, h)
     end
 
-    test_gradient_correctness_fdm(loss_loop_rnncell, ps, atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(loss_loop_rnncell, ps; atol=1e-3, rtol=1e-3)
 end end
 
 @testset "LSTMCell" begin
@@ -46,7 +46,7 @@ end end
         return sum(abs2, h)
     end
 
-    test_gradient_correctness_fdm(loss_loop_lstmcell, ps, atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(loss_loop_lstmcell, ps; atol=1e-3, rtol=1e-3)
 end
 
 @testset "GRUCell" begin
@@ -67,14 +67,14 @@ end
         return sum(abs2, h)
     end
 
-    test_gradient_correctness_fdm(loss_loop_grucell, ps, atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(loss_loop_grucell, ps; atol=1e-3, rtol=1e-3)
 end
 
 @testset "multigate" begin
     x = rand(6, 5)
     res, (dx,) = Zygote.withgradient(x) do x
         x1, _, x3 = Lux.multigate(x, Val(3))
-        sum(x1) + sum(x3 .* 2)
+        return sum(x1) + sum(x3 .* 2)
     end
     @test res == sum(x[1:2, :]) + 2sum(x[5:6, :])
     @test dx == [ones(2, 5); zeros(2, 5); fill(2, 2, 5)]

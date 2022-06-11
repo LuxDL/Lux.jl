@@ -4,14 +4,14 @@ const GROUP = get(ENV, "GROUP", "All")
 
 function dev_subpkg(subpkg)
     subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
-    Pkg.develop(PackageSpec(path=subpkg_path))
+    return Pkg.develop(PackageSpec(; path=subpkg_path))
 end
 
 function activate_subpkg_env(subpkg)
     subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
     Pkg.activate(subpkg_path)
-    Pkg.develop(PackageSpec(path=subpkg_path))
-    Pkg.instantiate()
+    Pkg.develop(PackageSpec(; path=subpkg_path))
+    return Pkg.instantiate()
 end
 
 groups = if GROUP == "All"
@@ -32,11 +32,13 @@ end
                 @time @safetestset "Dropout" begin include("layers/dropout.jl") end
             end
 
+            @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
+
             @time @safetestset "Functional Operations" begin include("functional.jl") end
         end
     else
         dev_subpkg(group)
         subpkg_path = joinpath(dirname(@__DIR__), "lib", group)
-        Pkg.test(PackageSpec(name=group, path=subpkg_path))
+        Pkg.test(PackageSpec(; name=group, path=subpkg_path))
     end
 end end

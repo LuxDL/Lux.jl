@@ -103,9 +103,9 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         # Test that we cannot ask for non-integer multiplication factors
-        layer = Conv((2, 2), 3 => 10, groups=2)
+        layer = Conv((2, 2), 3 => 10; groups=2)
         @test_throws AssertionError Lux.setup(rng, layer)
-        layer = Conv((2, 2), 2 => 9, groups=2)
+        layer = Conv((2, 2), 2 => 9; groups=2)
         @test_throws AssertionError Lux.setup(rng, layer)
     end
 

@@ -25,6 +25,7 @@ end
 Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
 
 !!! note
+    
     Detailed docs are WIP
 """
 @inline function normalization(x::AbstractArray{T, N},
@@ -121,7 +122,7 @@ end
 # Dropout
 @inline _dropout_shape(s, ::Colon) = size(s)
 @inline function _dropout_shape(s, dims)
-    tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
+    return tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 end
 
 ## TODO: Cache `1 / q` since we never need `q`
@@ -187,10 +188,10 @@ const cudnnValidActivationTypes = Union{
 ## I think this is handled by NNlibCUDA. But currently leaving here for
 ## benchmarking larger models
 function getCUDNNActivationMode(::Union{typeof(tanh), typeof(tanh_fast)})
-    CUDNN.CUDNN_ACTIVATION_TANH
+    return CUDNN.CUDNN_ACTIVATION_TANH
 end
 function getCUDNNActivationMode(::Union{typeof(sigmoid), typeof(sigmoid_fast)})
-    CUDNN.CUDNN_ACTIVATION_SIGMOID
+    return CUDNN.CUDNN_ACTIVATION_SIGMOID
 end
 getCUDNNActivationMode(::Union{typeof(relu)}) = CUDNN.CUDNN_ACTIVATION_RELU
 getCUDNNActivationMode(::Union{typeof(elu)}) = CUDNN.CUDNN_ACTIVATION_ELU
@@ -233,7 +234,7 @@ Computes `x .+ y`. Dispatches to CUDNN if possible
 end
 
 @inline function elementwise_add_pullback(x, y, Δ)
-    broadcast_shape_pullback(x, Δ), broadcast_shape_pullback(y, Δ)
+    return broadcast_shape_pullback(x, Δ), broadcast_shape_pullback(y, Δ)
 end
 
 """

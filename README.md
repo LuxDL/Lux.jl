@@ -1,6 +1,6 @@
 # Lux 🔥
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://lux.csail.mit.edu/dev/) [![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](http://lux.csail.mit.edu/stable/) [![CI](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml) [![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl) [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active) [![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://lux.csail.mit.edu/dev/) [![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](http://lux.csail.mit.edu/stable/) [![CI](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml) [![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl) [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac) [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
 
 The 🔥 Deep Learning Framework
@@ -21,15 +21,8 @@ rng = Random.default_rng()
 Random.seed!(rng, 0)
 
 # Construct the layer
-model = Chain(
-    BatchNorm(128),
-    Dense(128, 256, tanh),
-    BatchNorm(256),
-    Chain(
-        Dense(256, 1, tanh),
-        Dense(1, 10)
-    )
-)
+model = Chain(BatchNorm(128), Dense(128, 256, tanh), BatchNorm(256),
+              Chain(Dense(256, 1, tanh),Dense(1, 10)))
 
 # Parameter and State Variables
 ps, st = Lux.setup(rng, model) .|> gpu
@@ -54,9 +47,7 @@ Look in the [examples](/examples/) directory for self-contained usage examples. 
 
 ## Ecosystem
 
-### Prebuilt Deep Learning Models
-
-See [Boltz](lib/Boltz/) for pre-built deep learning models with pretrained weights for popular datasets.
+Checkout our [Ecosystem](http://lux.csail.mit.edu/dev/introduction/ecosystem/) page for more details. 
 
 ## Getting Help
 

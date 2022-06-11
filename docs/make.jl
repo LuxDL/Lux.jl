@@ -72,9 +72,8 @@ makedocs(;
                  "Utilities" => "api/utilities.md",
              ],
              "Design Docs" => [
-                 "Documentation" => "design/documentation.md",
-                 "Recurrent Neural Networks" => "design/recurrent.md",
-                 "Add new functionality to Lux" => "design/core.md",
+                 "Contribution Guide" => "design/contributing.md",
+                 "Layer Implementation" => "design/layer_implementation.md",
              ],
          ])
 

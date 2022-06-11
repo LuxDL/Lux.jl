@@ -14,7 +14,7 @@ ChainRulesCore.Tangent{P}(; kwargs...) where {P <: AbstractExplicitLayer} = NoTa
 ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
 
 function ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x)
-    x, Δ -> (NoTangent(), NoTangent(), Δ)
+    return x, Δ -> (NoTangent(), NoTangent(), Δ)
 end
 
 # NNlib Functions

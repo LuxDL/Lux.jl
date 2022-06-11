@@ -7,7 +7,7 @@ adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
 adapt_storage(::LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(colelct(x))
 adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 function adapt_storage(to::LuxCUDAAdaptor, x::ComponentArray)
-    ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+    return ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
 end
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
@@ -18,13 +18,13 @@ function adapt_storage(::LuxCPUAdaptor,
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
 function adapt_storage(to::LuxCPUAdaptor, x::ComponentArray)
-    ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
+    return ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
 end
 adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 # TODO: SparseArrays
 function adapt_storage(::LuxCPUAdaptor,
                        x::CUDA.CUSPARSE.CUDA.CUSPARSE.AbstractCuSparseMatrix)
-    adapt(Array, x)
+    return adapt(Array, x)
 end
 
 _isbitsarray(::AbstractArray{<:Number}) = true
