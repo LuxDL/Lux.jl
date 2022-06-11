@@ -513,7 +513,7 @@ end
 flatten_model(x) = x
 
 function (c::Chain)(x, ps::VALID_PARAMETER_TYPES, st::NamedTuple)
-    applychain(c.layers, x, ps, st)
+    applychain(c.layers, x, ps, st.layers)
 end
 
 @generated function applychain(layers::NamedTuple{fields}, x,
@@ -524,12 +524,12 @@ end
     st_symbols = [gensym() for _ in 1:N]
     calls = [
         :(($(x_symbols[1]), $(st_symbols[1])) = layers[1](x, ps.layers.layer_1,
-                                                          st.layers.layer_1)),
+                                                          st.layer_1)),
     ]
     append!(calls,
             [:(($(x_symbols[i]), $(st_symbols[i])) = layers[$i]($(x_symbols[i - 1]),
                                                                 ps.layers.$(fields[i]),
-                                                                st.layers.$(fields[i])))
+                                                                st.$(fields[i])))
              for i in 2:N])
     push!(calls, :(st = (layers=NamedTuple{$fields}((($(Tuple(st_symbols)...),))),)))
     push!(calls, :(return $(x_symbols[N]), st))

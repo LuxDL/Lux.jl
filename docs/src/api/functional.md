@@ -2,7 +2,7 @@
 CurrentModule = Lux
 ```
 
-# Functional Layers
+## Functional Layers
 
 !!! note
     These functions expose the backend of `Lux.jl`. In the long-term we plan to move these into NNlib
@@ -12,7 +12,7 @@ Lux.dropout
 Lux.normalization
 ```
 
-# Index
+## Index
 
 ```@index
 Pages = ["functional.md"]

@@ -2,14 +2,14 @@
 CurrentModule = Lux
 ```
 
-# Data Transfer
+## Data Transfer
 
 ```@docs
 Lux.cpu
 Lux.gpu
 ```
 
-# Initialization
+## Initialization
 
 ```@docs
 Lux.glorot_normal
@@ -18,7 +18,7 @@ Lux.ones32
 Lux.zeros32
 ```
 
-# Miscellaneous Utilities
+## Miscellaneous Utilities
 
 ```@docs
 Lux.applyactivation
@@ -26,13 +26,13 @@ Lux.elementwise_add
 Lux.elementwise_mul
 ```
 
-# RNN Utilities
+## RNN Utilities
 
 ```@docs
 Lux.multigate
 ```
 
-# Index
+## Index
 
 ```@index
 Pages = ["utilities.md"]

@@ -47,14 +47,14 @@ LSTMCell
 RNNCell
 ```
 
-# Linear Layers
+## Linear Layers
 
 ```@docs
 Dense
 Scale
 ```
 
-# Misc. Helper Layers
+## Misc. Helper Layers
 
 ```@docs
 ActivationFunction
@@ -65,7 +65,7 @@ SelectDim
 WrappedFunction
 ```
 
-# Normalization Layers
+## Normalization Layers
 
 ```@docs
 BatchNorm
@@ -73,13 +73,13 @@ GroupNorm
 WeightNorm
 ```
 
-# Upsampling
+## Upsampling
 
 ```@docs
 Upsample
 ```
 
-# Index
+## Index
 
 ```@index
 Pages = ["layers.md"]

@@ -2,23 +2,23 @@
 CurrentModule = Lux
 ```
 
-# Experimental Features
+## Experimental Features
 
 !!! warning
     These features are relatively new additions to `Lux`, and as such haven't been pressure tested enough. We recommend users to carefully go through these docs, since they highlight some of the common gotchas when using these features. As always, if something doesn't work and the documentation doesn't explicitly mention that it shouldn't work, please file an issue
 
-# `Lux.@layerdef` API
+## `Lux.@layerdef` API
 
 ```@docs
 Lux.@layerdef
 ```
 
-## Showcase
+### Showcase
 
 * [`SimpleRNN`](/examples/SimpleRNN/main.jl) example rewitten using `@layerdef`
 
 ```@example
-using Lux, Random
+using Lux, Random, NNlib
 
 Lux.@layerdef function SpiralClassifier(x::AbstractArray{T, 3}) where {T}
     lstm_cell ← LSTMCell(2 => 8)
@@ -38,7 +38,7 @@ ps, st = Lux.setup(Random.default_rng(), model)
 model(x, ps, st)
 ```
 
-# Index
+## Index
 
 ```@index
 Pages = ["experimental.md"]

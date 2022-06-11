@@ -2,21 +2,21 @@
 CurrentModule = Lux
 ```
 
-# General
+## General
 
 ```@docs
 Lux.apply
 Lux.setup
 ```
 
-# Parameters
+## Parameters
 
 ```@docs
 Lux.initialparameters
 Lux.parameterlength
 ```
 
-# States
+## States
 
 ```@docs
 Lux.initialstates
@@ -26,7 +26,7 @@ Lux.trainmode
 Lux.update_state
 ```
 
-# Index
+## Index
 
 ```@index
 Pages = ["core.md"]
