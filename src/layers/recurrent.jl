@@ -70,37 +70,39 @@ function initialstates(rng::AbstractRNG, ::RNNCell)
     return (rng=replicate(rng),)
 end
 
-function (rnn::RNNCell)(x::AbstractMatrix, ps, st::NamedTuple)
+function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                        st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = rnn.init_state(rng, rnn.out_dims, size(x, 2))
     return rnn((x, hidden_state), ps, st)
 end
 
-function (rnn::RNNCell{true})((x, hidden_state)::NTuple{2, <:AbstractMatrix}, ps,
-                              st::NamedTuple)
+function (rnn::RNNCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
+                              ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
     return h_new, st
 end
 
 function (rnn::RNNCell{true, typeof(identity)})((x,
-                                                 hidden_state)::NTuple{2, <:AbstractMatrix},
-                                                ps,
+                                                 hidden_state)::Tuple{<:AbstractMatrix,
+                                                                      <:AbstractMatrix},
+                                                ps::Union{ComponentArray, NamedTuple},
                                                 st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
 
-function (rnn::RNNCell{false})((x, hidden_state)::NTuple{2, <:AbstractMatrix}, ps,
-                               st::NamedTuple)
+function (rnn::RNNCell{false})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
+                               ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
     return h_new, st
 end
 
 function (rnn::RNNCell{false, typeof(identity)})((x,
-                                                  hidden_state)::NTuple{2, <:AbstractMatrix
-                                                                        },
-                                                 ps,
+                                                  hidden_state)::Tuple{<:AbstractMatrix,
+                                                                       <:AbstractMatrix},
+                                                 ps::Union{ComponentArray, NamedTuple},
                                                  st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
     return h_new, st
@@ -171,9 +173,14 @@ struct LSTMCell{B, W, S} <: AbstractExplicitLayer
 end
 
 function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-                  init_weight::NTuple{4, Function}=(glorot_uniform, glorot_uniform,
-                                                    glorot_uniform, glorot_uniform),
-                  init_bias::NTuple{4, Function}=(zeros32, zeros32, ones32, zeros32),
+                  init_weight::Tuple{Function, Function, Function, Function}=(glorot_uniform,
+                                                                              glorot_uniform,
+                                                                              glorot_uniform,
+                                                                              glorot_uniform),
+                  init_bias::Tuple{Function, Function, Function, Function}=(zeros32,
+                                                                            zeros32,
+                                                                            ones32,
+                                                                            zeros32),
                   init_state::Function=zeros32)
     return LSTMCell(in_dims, out_dims, init_bias, init_weight, init_state)
 end
@@ -193,7 +200,8 @@ function initialstates(rng::AbstractRNG, ::LSTMCell)
     return (rng=replicate(rng),)
 end
 
-function (lstm::LSTMCell)(x::AbstractMatrix, ps, st::NamedTuple)
+function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                          st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = lstm.init_state(rng, lstm.out_dims, size(x, 2))
@@ -201,8 +209,10 @@ function (lstm::LSTMCell)(x::AbstractMatrix, ps, st::NamedTuple)
     return lstm((x, hidden_state, memory), ps, st)
 end
 
-function (lstm::LSTMCell)((x, hidden_state, memory)::NTuple{3, <:AbstractMatrix},
-                          ps,
+function (lstm::LSTMCell)((x, hidden_state,
+                           memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
+                                          <:AbstractMatrix},
+                          ps::Union{ComponentArray, NamedTuple},
                           st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
@@ -264,9 +274,11 @@ struct GRUCell{W, B, S} <: AbstractExplicitLayer
 end
 
 function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-                 init_weight::NTuple{3, Function}=(glorot_uniform, glorot_uniform,
-                                                   glorot_uniform),
-                 init_bias::NTuple{3, Function}=(zeros32, zeros32, zeros32),
+                 init_weight::Tuple{Function, Function, Function}=(glorot_uniform,
+                                                                   glorot_uniform,
+                                                                   glorot_uniform),
+                 init_bias::Tuple{Function, Function, Function}=(zeros32, zeros32,
+                                                                 zeros32),
                  init_state::Function=zeros32)
     return GRUCell(in_dims, out_dims, init_weight, init_bias, init_state)
 end
@@ -287,14 +299,16 @@ function initialstates(rng::AbstractRNG, ::GRUCell)
     return (rng=replicate(rng),)
 end
 
-function (gru::GRUCell)(x::AbstractMatrix, ps, st::NamedTuple)
+function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+                        st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = gru.init_state(rng, gru.out_dims, size(x, 2))
     return gru((x, hidden_state), ps, st)
 end
 
-function (gru::GRUCell)((x, hidden_state)::NTuple{2, <:AbstractMatrix}, ps, st::NamedTuple)
+function (gru::GRUCell)((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
+                        ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     gxs = multigate(ps.weight_i * x, Val(3))
     ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))
 
