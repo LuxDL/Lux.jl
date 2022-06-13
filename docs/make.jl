@@ -49,6 +49,14 @@ makedocs(;
          clean=true,
          doctest=false,
          modules=[Lux],
+         strict=[
+             :doctest,
+             :linkcheck,
+             :parse_error,
+             :example_block,
+             # Other available options are
+             # :autodocs_block, :cross_references, :docs_block, :eval_block, :example_block, :footnote, :meta_block, :missing_docs, :setup_block
+         ],
          format=Documenter.HTML(;
                                 prettyurls=get(ENV, "CI", nothing) == "true",
                                 assets=["assets/custom.css"], edit_branch="main",
