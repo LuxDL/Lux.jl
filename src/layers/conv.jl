@@ -1,17 +1,27 @@
-"""
-    Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer}, activation=identity; init_weight=glorot_uniform, stride=1, pad=0, dilation=1, groups=1, bias=true)
+@doc doc"""
+    Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
+         activation=identity; init_weight=glorot_uniform, stride=1, pad=0,
+         dilation=1, groups=1, bias=true)
 
 Standard convolutional layer.
 
-Image data should be stored in WHCN order (width, height, channels, batch). In other words, a `100 × 100` RGB image would be a `100 × 100 × 3 × 1` array, and a batch of 50 would be a `100 × 100 × 3 × 50` array. This has `N = 2` spatial dimensions, and needs a kernel size like `(5, 5)`, a 2-tuple of integers. To take convolutions along `N` feature dimensions, this layer expects as input an array with `ndims(x) == N + 2`, where `size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is the number of observations in a batch.
+Image data should be stored in WHCN order (width, height, channels, batch). In other words,
+a `100 × 100` RGB image would be a `100 × 100 × 3 × 1` array, and a batch of 50 would be a
+`100 × 100 × 3 × 50` array. This has `N = 2` spatial dimensions, and needs a kernel size
+like `(5, 5)`, a 2-tuple of integers. To take convolutions along `N` feature dimensions,
+this layer expects as input an array with `ndims(x) == N + 2`, where
+`size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is the
+number of observations in a batch.
 
 !!! note
     
-    Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d) perform cross-correlation in their convolution layers
+    Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d)
+    perform cross-correlation in their convolution layers
 
 ## Arguments
 
-  - `k`: Tuple of integers specifying the size of the convolutional kernel. Eg, for 2D convolutions `length(k) == 2`
+  - `k`: Tuple of integers specifying the size of the convolutional kernel. Eg, for 2D
+         convolutions `length(k) == 2`
   - `in_chs`: Number of input channels
   - `out_chs`: Number of input and output channels
   - `activation`: Activation Function
@@ -22,22 +32,32 @@ Image data should be stored in WHCN order (width, height, channels, batch). In o
 
   - `stride`: Should each be either single integer, or a tuple with `N` integers
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
-  - `pad`: Specifies the number of elements added to the borders of the data array. It can be
+  - `pad`: Specifies the number of elements added to the borders of the data array. It can
+           be
     
       + a single integer for equal padding all around,
-      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial dimension,
+      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
+        dimension,
       + a tuple of `2*N` integers, for asymmetric padding, or
-      + the singleton `SamePad()`, to calculate padding such that `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial dimension.
-  - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs` and `out_chs` must be divisible by `groups`.
-  - `bias`: The initial bias vector is all zero by default. Trainable bias can be disabled entirely by setting this to `false`.
+      + the singleton `SamePad()`, to calculate padding such that
+        `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
+        dimension.
+
+  - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a
+              convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
+              and `out_chs` must be divisible by `groups`.
+  - `bias`: The initial bias vector is all zero by default. Trainable bias can be disabled
+            entirely by setting this to `false`.
 
 ## Inputs
 
-  - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e. `size(x) = (I_N, ..., I_1, C_in, N)`
+  - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e.
+         `size(x) = (I_N, ..., I_1, C_in, N)`
 
 ## Returns
 
-  - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
+  - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where
+    ``O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)``
   - Empty `NamedTuple()`
 
 ## Parameters
@@ -127,25 +147,31 @@ function _print_conv_opt(io::IO, l::Conv{N, bias}) where {N, bias}
     return nothing
 end
 
-"""
+@doc doc"""
     MaxPool(window::NTuple; pad=0, stride=window)
 
-Max pooling layer, which replaces all pixels in a block of size `window` with the maximum value.
+Max pooling layer, which replaces all pixels in a block of size `window` with the maximum
+value.
 
 # Arguments
 
-  - `window`: Tuple of integers specifying the size of the window. Eg, for 2D pooling `length(window) == 2`
+  - `window`: Tuple of integers specifying the size of the window. Eg, for 2D pooling
+              `length(window) == 2`
 
 ## Keyword Arguments
 
   - `stride`: Should each be either single integer, or a tuple with `N` integers
 
-  - `pad`: Specifies the number of elements added to the borders of the data array. It can be
+  - `pad`: Specifies the number of elements added to the borders of the data array. It can
+           be
     
       + a single integer for equal padding all around,
-      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial dimension,
+      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
+        dimension,
       + a tuple of `2*N` integers, for asymmetric padding, or
-      + the singleton `SamePad()`, to calculate padding such that `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial dimension.
+      + the singleton `SamePad()`, to calculate padding such that
+        `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
+        dimension.
 
 ## Inputs
 
@@ -153,10 +179,12 @@ Max pooling layer, which replaces all pixels in a block of size `window` with th
 
 ## Returns
 
-  - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
+  - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
+    ``O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)``
   - Empty `NamedTuple()`
 
-See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref), [`AdaptiveMaxPool`](@ref)
+See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref),
+[`AdaptiveMaxPool`](@ref)
 """
 struct MaxPool{N, M} <: AbstractExplicitLayer
     k::NTuple{N, Int}
@@ -182,25 +210,31 @@ function Base.show(io::IO, m::MaxPool)
     return print(io, ")")
 end
 
-"""
+@doc doc"""
     MeanPool(window::NTuple; pad=0, stride=window)
 
-Mean pooling layer, which replaces all pixels in a block of size `window` with the mean value.
+Mean pooling layer, which replaces all pixels in a block of size `window` with the mean
+value.
 
 # Arguments
 
-  - `window`: Tuple of integers specifying the size of the window. Eg, for 2D pooling `length(window) == 2`
+  - `window`: Tuple of integers specifying the size of the window. Eg, for 2D pooling
+              `length(window) == 2`
 
 ## Keyword Arguments
 
   - `stride`: Should each be either single integer, or a tuple with `N` integers
 
-  - `pad`: Specifies the number of elements added to the borders of the data array. It can be
+  - `pad`: Specifies the number of elements added to the borders of the data array. It can
+           be
     
       + a single integer for equal padding all around,
-      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial dimension,
+      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
+        dimension,
       + a tuple of `2*N` integers, for asymmetric padding, or
-      + the singleton `SamePad()`, to calculate padding such that `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial dimension.
+      + the singleton `SamePad()`, to calculate padding such that
+        `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
+        dimension.
 
 ## Inputs
 
@@ -208,10 +242,12 @@ Mean pooling layer, which replaces all pixels in a block of size `window` with t
 
 ## Returns
 
-  - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where ``O_i = floor\\left(\\frac{I_i + pad[i] + pad[(i + N) \\% length(pad)] - dilation[i] \\times (k[i] - 1)}{stride[i]} + 1\\right)``
+  - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
+    ``O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)``
   - Empty `NamedTuple()`
 
-See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref), [`AdaptiveMeanPool`](@ref)
+See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref),
+[`AdaptiveMeanPool`](@ref)
 """
 struct MeanPool{N, M} <: AbstractExplicitLayer
     k::NTuple{N, Int}
@@ -251,12 +287,15 @@ Upsampling Layer.
 
 One of two keywords must be given:
 
-  - If `scale` is a number, this applies to all but the last two dimensions (channel and batch) of the input.  It may also be a tuple, to control dimensions individually.
-  - Alternatively, keyword `size` accepts a tuple, to directly specify the leading dimensions of the output.
+  - If `scale` is a number, this applies to all but the last two dimensions (channel and
+    batch) of the input.  It may also be a tuple, to control dimensions individually.
+  - Alternatively, keyword `size` accepts a tuple, to directly specify the leading
+    dimensions of the output.
 
 ### Option 2
 
-  - If `scale` is a number, this applies to all but the last two dimensions (channel and batch) of the input.  It may also be a tuple, to control dimensions individually.
+  - If `scale` is a number, this applies to all but the last two dimensions (channel and
+    batch) of the input.  It may also be a tuple, to control dimensions individually.
   - `mode`: Set to `:nearest`, `:linear`, `:bilinear` or `:trilinear`
 
 Currently supported upsampling `mode`s and corresponding NNlib's methods are:
@@ -268,10 +307,12 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 
 ## Inputs
 
-  - `x`: For the input dimensions look into the documentation for the corresponding `NNlib` function
+  - `x`: For the input dimensions look into the documentation for the corresponding `NNlib`
+         function
     
       + As a rule of thumb, `:nearest` should work with arrays of arbitrary dimensions
-      + `:linear` works with 3D Arrays, `:bilinear` works with 4D Arrays, and `:trilinear` works with 5D Arrays
+      + `:linear` works with 3D Arrays, `:bilinear` works with 4D Arrays, and `:trilinear`
+        works with 5D Arrays
 
 ## Returns
 
@@ -330,7 +371,8 @@ end
 """
     GlobalMaxPool()
 
-Global Mean Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output, by performing max pooling on the complete (w,h)-shaped feature maps.
+Global Mean Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output,
+by performing max pooling on the complete (w,h)-shaped feature maps.
 
 ## Inputs
 
@@ -352,7 +394,8 @@ end
 """
     GlobalMeanPool()
 
-Global Mean Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output, by performing mean pooling on the complete (w,h)-shaped feature maps.
+Global Mean Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output,
+by performing mean pooling on the complete (w,h)-shaped feature maps.
 
 ## Inputs
 
@@ -374,7 +417,8 @@ end
 """
     AdaptiveMaxPool(out::NTuple)
 
-Adaptive Max Pooling layer. Calculates the necessary window size such that its output has `size(y)[1:N] == out`.
+Adaptive Max Pooling layer. Calculates the necessary window size such that its output has
+`size(y)[1:N] == out`.
 
 ## Arguments
 
@@ -382,7 +426,8 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 
 ## Inputs
 
-  - `x`: Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch dimensions, after the `N` feature dimensions, where `N = length(out)`.
+  - `x`: Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch
+         dimensions, after the `N` feature dimensions, where `N = length(out)`.
 
 ## Returns
 
@@ -408,7 +453,8 @@ end
 """
     AdaptiveMeanPool(out::NTuple)
 
-Adaptive Mean Pooling layer. Calculates the necessary window size such that its output has `size(y)[1:N] == out`.
+Adaptive Mean Pooling layer. Calculates the necessary window size such that its output has
+`size(y)[1:N] == out`.
 
 ## Arguments
 
@@ -416,7 +462,8 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 
 ## Inputs
 
-  - `x`: Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch dimensions, after the `N` feature dimensions, where `N = length(out)`.
+  - `x`: Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch
+         dimensions, after the `N` feature dimensions, where `N = length(out)`.
 
 ## Returns
 

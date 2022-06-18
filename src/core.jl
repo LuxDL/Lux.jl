@@ -54,14 +54,16 @@ statelength(x) = 0
 """
     setup(rng::AbstractRNG, l::AbstractExplicitLayer)
 
-Shorthand for getting the parameters and states of the layer `l`. Is equivalent to `(initialparameters(rng, l), initialstates(rng, l))`.
+Shorthand for getting the parameters and states of the layer `l`. Is equivalent to
+`(initialparameters(rng, l), initialstates(rng, l))`.
 """
 function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
     return (initialparameters(rng, l), initialstates(rng, l))
 end
 
 """
-    apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple}, st::NamedTuple)
+    apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple},
+          st::NamedTuple)
 
 Simply calls `model(x, ps, st)`
 """

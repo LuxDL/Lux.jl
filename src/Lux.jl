@@ -19,6 +19,8 @@ using ChainRulesCore, Zygote
 using Optimisers
 # Optional Dependency
 using Requires
+# Docstrings
+using Markdown
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
@@ -57,5 +59,6 @@ export BatchNorm, GroupNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
 export RNNCell, LSTMCell, GRUCell
+export SamePad
 
 end
