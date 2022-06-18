@@ -64,7 +64,10 @@ makedocs(;
          build=joinpath(@__DIR__, "docs"))
 
 deploydocs(; repo="github.com/avik-pal/Lux.jl.git", push_preview=true,
-           deps = Deps.pip("mkdocs", "pygments", "python-markdown-math"),
+           deps=Deps.pip("mkdocs", "pygments", "python-markdown-math",
+                         "mkdocs-material", "pymdown-extensions", "mkdocstrings",
+                         "mknotebooks", "pytkdocs_tweaks", "mkdocs_include_exclude_files",
+                         "jinja2"),
            make=() -> run(`mkdocs build`), target="site", devbranch="main")
 
 Pkg.activate(@__DIR__)
