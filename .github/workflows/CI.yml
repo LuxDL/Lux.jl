@@ -21,9 +21,10 @@ jobs:
           - Lux    # Core Framework
           - Boltz  # Prebuilt Models using Lux
         version:
-          - '~1.8.0-0'
+          - '1.6'      # JET tests are disabled on 1.6
           - '1.7'
-          - '1.6'  # JET tests are disabled on 1.6
+          - '~1.8.0-0' # merge even if tests fail (until v1.8.0 is released)
+          - 'nightly'  # merge even if tests fail
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
