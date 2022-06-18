@@ -206,14 +206,14 @@ with `connection`.
 
   - `layers`: A list of `N` Lux layers
   - `connection`: An `N`-argument function that is called after passing the input through
-                  each layer. If `connection = nothing`, we return a tuple
-                  `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+    each layer. If `connection = nothing`, we return a tuple
+    `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
 
 ## Inputs
 
   - `x`: If `x` is not a tuple, then return is computed as
-         `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus
-         `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+    `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus
+    `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
 
 ## Returns
 
@@ -568,7 +568,7 @@ Create a traditional fully connected layer, whose forward pass is given by:
 ## Keyword Arguments
 
   - `init_weight`: initializer for the weight matrix
-                   (`weight = init_weight(rng, out_dims, in_dims)`)
+    (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `bias=false`)
   - `bias`: whether to include a bias vector
 
@@ -699,7 +699,7 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
 ## Keyword Arguments
 
   - `init_weight`: initializer for the weight matrix
-                   (`weight = init_weight(rng, out_dims, in_dims)`)
+    (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `bias=false`)
   - `bias`: whether to include a bias vector
 

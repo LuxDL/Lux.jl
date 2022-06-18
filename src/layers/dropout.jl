@@ -89,7 +89,7 @@ retained until [`Lux.update_state(l, :update_mask, Val(true))`](@ref) is called.
   - `rng`: Pseudo Random Number Generator
   - `training`: Used to check if training/inference mode
   - `mask`: Dropout mask. Initilly set to nothing. After every run, contains the mask
-            applied in that call
+    applied in that call
   - `update_mask`: Stores whether new mask needs to be generated in the current call
 
 Call [`Lux.testmode`](@ref) to switch to test mode.

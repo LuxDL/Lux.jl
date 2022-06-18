@@ -12,8 +12,8 @@ slice and normalises the input accordingly.
 ## Arguments
 
   - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions,
-           call the `N-1`th the channel dimension. For a batch of feature vectors this is
-           just the data dimension, for `WHCN` images it's the usual channel dimension.
+    call the `N-1`th the channel dimension. For a batch of feature vectors this is
+    just the data dimension, for `WHCN` images it's the usual channel dimension.
   - `activation`: After normalisation, elementwise activation `activation` is applied.
 
 ## Keyword Arguments
@@ -190,8 +190,8 @@ end
 ## Arguments
 
   - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions,
-           call the `N-1`th the channel dimension. For a batch of feature vectors this is
-           just the data dimension, for `WHCN` images it's the usual channel dimension.
+    call the `N-1`th the channel dimension. For a batch of feature vectors this is
+    just the data dimension, for `WHCN` images it's the usual channel dimension.
   - `groups` is the number of groups along which the statistics are computed. The number of
     channels must be an integer multiple of the number of groups.
   - `activation`: After normalisation, elementwise activation `activation` is applied.

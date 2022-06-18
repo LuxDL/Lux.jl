@@ -308,7 +308,7 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 ## Inputs
 
   - `x`: For the input dimensions look into the documentation for the corresponding `NNlib`
-         function
+    function
     
       + As a rule of thumb, `:nearest` should work with arrays of arbitrary dimensions
       + `:linear` works with 3D Arrays, `:bilinear` works with 4D Arrays, and `:trilinear`
@@ -427,7 +427,7 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 ## Inputs
 
   - `x`: Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch
-         dimensions, after the `N` feature dimensions, where `N = length(out)`.
+    dimensions, after the `N` feature dimensions, where `N = length(out)`.
 
 ## Returns
 
@@ -463,7 +463,7 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 ## Inputs
 
   - `x`: Expects as input an array with `ndims(x) == N+2`, i.e. channel and batch
-         dimensions, after the `N` feature dimensions, where `N = length(out)`.
+    dimensions, after the `N` feature dimensions, where `N = length(out)`.
 
 ## Returns
 
