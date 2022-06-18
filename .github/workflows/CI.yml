@@ -21,6 +21,7 @@ jobs:
           - Lux    # Core Framework
           - Boltz  # Prebuilt Models using Lux
         version:
+          - '1.8'
           - '1.7'
           - '1.6'  # JET tests are disabled on 1.6
     steps:
