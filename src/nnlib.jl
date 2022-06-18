@@ -20,7 +20,8 @@
 end
 
 """
-    normalization(x, running_mean, running_var, scale, bias, activation, reduce_dims, ::Val{training}, momentum, epsilon)
+    normalization(x, running_mean, running_var, scale, bias, activation, reduce_dims,
+                  ::Val{training}, momentum, epsilon)
 
 Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
 
@@ -139,7 +140,9 @@ end
     dropout(rng::AbstractRNG, x, prob, dims, ::Val{training})
     dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask})
 
-If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask` is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is generated and used.
+If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask`
+is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is
+generated and used.
 """
 @inline @generated function dropout(rng::AbstractRNG, x, prob, dims,
                                     ::Val{training}) where {training}

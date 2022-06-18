@@ -124,17 +124,16 @@ end
 
 Long Short-Term (LSTM) Cell
 
-``i = \sigma(W_{ii} \times x + W_{hi} \times h_{prev} + b_{i})``
-
-``f = \sigma(W_{if} \times x + W_{hf} \times h_{prev} + b_{f})``
-
-``g = tanh(W_{ig} \times x + W_{hg} \times h_{prev} + b_{g})``
-
-``o = \sigma(W_{io} \times x + W_{ho} \times h_{prev} + b_{o})``
-
-``c_{new} = f \cdot c_{prev} + i \cdot g``
-
-``h_{new} = o \cdot tanh(c_{new})``
+```math
+\begin{align}
+  i &= \sigma(W_{ii} \times x + W_{hi} \times h_{prev} + b_{i})\\
+  f &= \sigma(W_{if} \times x + W_{hf} \times h_{prev} + b_{f})\\
+  g &= tanh(W_{ig} \times x + W_{hg} \times h_{prev} + b_{g})\\
+  o &= \sigma(W_{io} \times x + W_{ho} \times h_{prev} + b_{o})\\
+  c_{new} &= f \cdot c_{prev} + i \cdot g\\
+  h_{new} &= o \cdot tanh(c_{new})
+\end{align}
+```
 
 ## Arguments
 
@@ -239,13 +238,14 @@ Base.show(io::IO, l::LSTMCell) = print(io, "LSTMCell($(l.in_dims) => $(l.out_dim
 
 Gated Recurrent Unit (GRU) Cell
 
-``r = \sigma(W_{ir} \times x + W_{hr} \times h_{prev} + b_{hr})``
-
-``z = \sigma(W_{iz} \times x + W_{hz} \times h_{prev} + b_{hz})``
-
-``n = \sigma(W_{in} \times x + b_{in} + r \cdot (W_{hn} \times h_{prev} + b_{hn}))``
-
-``h_{new} = (1 - z) \cdot n + z \cdot h_{prev}``
+```math
+\begin{align}
+  r &= \sigma(W_{ir} \times x + W_{hr} \times h_{prev} + b_{hr})\\
+  z &= \sigma(W_{iz} \times x + W_{hz} \times h_{prev} + b_{hz})\\
+  n &= \sigma(W_{in} \times x + b_{in} + r \cdot (W_{hn} \times h_{prev} + b_{hn}))\\
+  h_{new} &= (1 - z) \cdot n + z \cdot h_{prev}
+\end{align}
+```
 
 ## Arguments
 
@@ -257,8 +257,8 @@ Gated Recurrent Unit (GRU) Cell
 
 ## Inputs
 
-  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state
-            using `init_state` and proceeds to Case 2.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden
+            state using `init_state` and proceeds to Case 2.
   - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns

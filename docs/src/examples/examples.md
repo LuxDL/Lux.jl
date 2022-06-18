@@ -8,4 +8,4 @@
 
 ## Packages
 
-See [Ecosystem](introduction/ecosystem.md) for more details
+See [Ecosystem](../introduction/ecosystem.md) for more details
