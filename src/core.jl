@@ -6,6 +6,28 @@
 ### statelength(l)            --> Integer
 ### l(x, ps, st)
 
+"""
+    AbstractExplicitLayer
+
+Abstract Type for all Lux Layers
+
+Users implementing their custom layer, **must** implement
+
+  - `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This
+    returns a `NamedTuple` containing the trainable parameters for the layer.
+  - `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a
+    NamedTuple containing the current state for the layer. For most layers this is typically
+    empty. Layers that would potentially contain this include `BatchNorm`, `LSTM`, `GRU` etc.
+
+Optionally:
+
+  - `parameterlength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
+    calculated, but it is recommended that the user defines these.
+  - `statelength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
+    calculated, but it is recommended that the user defines these.
+
+See also [`AbstractExplicitContainerLayer`](@ref)
+"""
 abstract type AbstractExplicitLayer end
 
 """
@@ -79,6 +101,15 @@ function Base.show(io::IO, x::AbstractExplicitLayer)
 end
 
 # Abstract Container Layers
+"""
+    AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer
+
+Abstract Container Type for certain Lux Layers. `layers` is a tuple containing fieldnames
+for the layer, and constructs the parameters and states using those.
+
+Users implementing their custom layer can extend the same functions as in
+[`AbstractExplicitLayer`](@ref)
+"""
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
 function initialparameters(rng::AbstractRNG,

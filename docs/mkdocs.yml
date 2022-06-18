@@ -49,6 +49,7 @@ extra_javascript:
 
 extra_css:
   - assets/custom.css
+  - assets/Documenter.css
 
 markdown_extensions:
   - pymdownx.arithmatex: # Render LaTeX via MathJax
@@ -115,5 +116,5 @@ nav:
       - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
   - "Development Documentation":
-      - "Contribution Guide": "design/contributing.md"
-      - "Layer Implementation": "design/layer_implementation.md"
+      - "Style Guide": "devdocs/style_guide.md"
+      - "Layer Implementation": "devdocs/layer_implementation.md"

@@ -77,9 +77,9 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 Having a high-level overview of how this documentation is structured will help you know where to look for certain things.
 
 * `Introduction` -- Talks about why we wrote Lux and has pointers to frameworks in the extended julia ecosystem which might help users to get started with deep learning
-* `Examples` -- Contain tutorials of varying complexity. These contain worked examples of solving problems with Lux. Start here if you are new to Lux, or you have a particular problem class you want to model.
-* `API` -- Contains a complete list of the functions you can use in Lux. Look here if you want to know how to use a particular function.
-* `Design Docs` -- Contains information for people contributing to Lux development or writing Lux extensions. Don't worry about this section if you are using Lux to formulate and solve problems as a user.
+* `Tutorials` -- Contain tutorials of varying complexity. These contain worked examples of solving problems with Lux. Start here if you are new to Lux, or you have a particular problem class you want to model.
+* `API Reference` -- Contains a complete list of the functions you can use in Lux. Look here if you want to know how to use a particular function.
+* `Development Documentation` -- Contains information for people contributing to Lux development or writing Lux extensions. Don't worry about this section if you are using Lux to formulate and solve problems as a user.
 
 # Citation
 

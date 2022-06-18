@@ -57,7 +57,11 @@ number of observations in a batch.
 ## Returns
 
   - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where
-    ``O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)``
+
+  ```math
+    O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+  ```
+
   - Empty `NamedTuple()`
 
 ## Parameters
@@ -180,7 +184,11 @@ value.
 ## Returns
 
   - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
-    ``O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)``
+
+    ```math
+      O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+    ```
+
   - Empty `NamedTuple()`
 
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref),
@@ -243,7 +251,11 @@ value.
 ## Returns
 
   - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
-    ``O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)``
+
+    ```julia
+      O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+    ```
+
   - Empty `NamedTuple()`
 
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref),

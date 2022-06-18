@@ -145,9 +145,10 @@ Long Short-Term (LSTM) Cell
 
 ## Inputs
 
-  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state
-            and memory using `init_state` and proceeds to Case 2.
-  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden
+  state and memory using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is
+  returned.
 
 ## Returns
 
