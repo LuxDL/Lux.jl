@@ -58,9 +58,9 @@ number of observations in a batch.
 
   - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where
 
-  ```math
-    O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
-  ```
+```math
+O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+```
 
   - Empty `NamedTuple()`
 
@@ -185,9 +185,9 @@ value.
 
   - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
 
-    ```math
-      O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
-    ```
+```math
+  O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+```
 
   - Empty `NamedTuple()`
 
@@ -252,9 +252,9 @@ value.
 
   - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
 
-    ```math
-      O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
-    ```
+```math
+  O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+```
 
   - Empty `NamedTuple()`
 
