@@ -20,6 +20,8 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+  font:
+    text: Lato
   icon:
     repo: fontawesome/brands/github # GitHub logo in top right
     # logo: "material/circle-opacity" # Equinox logo in top left
@@ -30,6 +32,11 @@ theme:
   twitter_name: "@avikpal1410"
   twitter_url: "https://twitter.com/avikpal1410"
 
+# TODO: Setup mkdocs for showing documentation versions
+# extra:
+#   version:
+#     provider: mike
+
 site_name: Lux.jl
 site_description: Documentation for Lux.jl
 site_author: Avik Pal
@@ -39,7 +46,7 @@ repo_url: https://github.com/avik-pal/Lux.jl
 repo_name: avik-pal/Lux.jl
 edit_uri: "" # No edit button, as some of our pages are in /docs and some in /examples via symlink, so it's impossible for them all to be accurate
 
-strict: false # Don't allow warnings during the build process
+strict: true # Don't allow warnings during the build process
 
 extra_javascript:
   # The below three make MathJax work, see https://squidfunk.github.io/mkdocs-material/reference/mathjax/
@@ -52,25 +59,20 @@ extra_css:
   - assets/Documenter.css
 
 markdown_extensions:
-  - pymdownx.arithmatex: # Render LaTeX via MathJax
-      generic: true
-  - pymdownx.superfences # Seems to enable syntax highlighting when used with the Material theme.
-  - pymdownx.details # Allowing hidden expandable regions denoted by ???
-  - pymdownx.snippets: # Include one Markdown file into another
-      base_path: docs
   - admonition
   - toc:
       permalink: "¤" # Adds a clickable permalink to each section heading
       toc_depth: 4
-  - pymdownx.highlight:
-      anchor_linenums: true
+  - pymdownx.arithmatex: # Render LaTeX via MathJax
+      generic: true
+  - pymdownx.details # Allowing hidden expandable regions denoted by ???
+  - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.snippets
-  - pymdownx.superfences
-  - extra
-  - tables
-  - fenced_code
-  - mdx_math
+  - pymdownx.superfences # Seems to enable syntax highlighting when used with the Material theme.
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - def_list
 
 plugins:
   - search # default search plugin; needs manually re-enabling when using any other plugins
@@ -79,23 +81,6 @@ plugins:
       exclude:
         - "_overrides"
   - mknotebooks # Jupyter notebooks
-  - mkdocstrings:
-      handlers:
-        python:
-          setup_commands:
-            - import pytkdocs_tweaks
-            - pytkdocs_tweaks.main()
-
-          selection:
-            inherited_members: true # Allow looking up inherited methods
-          rendering:
-            show_root_heading: true # actually display anything at all...
-            show_root_full_path: true # display "diffrax.asdf" not just "asdf"
-            show_if_no_docstring: true
-            show_signature_annotations: true
-            show_source: false # don't include source code
-            members_order: source # order methods according to their order of definition in the source code, not alphabetical order
-            heading_level: 4
 
 nav:
   - "Lux.jl: Explicitly Parameterized Neural Networks": "index.md"
@@ -115,6 +100,8 @@ nav:
       - "Functional": "api/functional.md"
       - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
+  - "Frameworks":
+      - "Boltz.jl": "lib/Boltz/index.md"
   - "Development Documentation":
       - "Style Guide": "devdocs/style_guide.md"
       - "Layer Implementation": "devdocs/layer_implementation.md"
