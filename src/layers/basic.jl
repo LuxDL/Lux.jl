@@ -51,7 +51,8 @@ end
 """
     SelectDim(dim, i)
 
-Return a view of all the data of the input `x` where the index for dimension `dim` equals `i`. Equivalent to `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`.
+Return a view of all the data of the input `x` where the index for dimension `dim` equals
+`i`. Equivalent to `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`.
 
 ## Arguments
 
@@ -83,7 +84,8 @@ end
 """
     NoOpLayer()
 
-As the name suggests does nothing but allows pretty printing of layers. Whatever input is passed is returned.
+As the name suggests does nothing but allows pretty printing of layers. Whatever input is
+passed is returned.
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
@@ -92,7 +94,10 @@ struct NoOpLayer <: AbstractExplicitLayer end
 """
     WrappedFunction(f)
 
-Wraps a stateless and parameter less function. Might be used when a function is added to `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
+Wraps a stateless and parameter less function. Might be used when a function is added to
+`Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
+be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
+`Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
 
 ## Arguments
 
@@ -120,7 +125,8 @@ end
 """
     ActivationFunction(f)
 
-Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally calls [`Lux.applyactivation`](@ref)
+Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally
+calls [`Lux.applyactivation`](@ref)
 
 ## Arguments
 
@@ -148,7 +154,10 @@ end
 """
     SkipConnection(layer, connection)
 
-Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers and a shortcut connection linking the block's input to the output through a user-supplied 2-argument callable. The first argument to the callable will be propagated through the given `layer` while the second is the unchanged, "skipped" input.
+Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers
+and a shortcut connection linking the block's input to the output through a user-supplied
+2-argument callable. The first argument to the callable will be propagated through the given
+`layer` while the second is the unchanged, "skipped" input.
 
 The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
@@ -190,16 +199,21 @@ end
 """
     Parallel(connection, layers...)
 
-Create a layer which passes an input to each path in `layers`, before reducing the output with `connection`.
+Create a layer which passes an input to each path in `layers`, before reducing the output
+with `connection`.
 
 ## Arguments
 
   - `layers`: A list of `N` Lux layers
-  - `connection`: An `N`-argument function that is called after passing the input through each layer. If `connection = nothing`, we return a tuple `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
+  - `connection`: An `N`-argument function that is called after passing the input through
+    each layer. If `connection = nothing`, we return a tuple
+    `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
 
 ## Inputs
 
-  - `x`: if `x` is not a tuple, then return is computed as `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
+  - `x`: If `x` is not a tuple, then return is computed as
+    `connection([l(x) for l in layers]...)`. Else one is passed to each layer, thus
+    `Parallel(+, f, g)(x, y) = f(x) + g(y)`.
 
 ## Returns
 
@@ -208,11 +222,13 @@ Create a layer which passes an input to each path in `layers`, before reducing t
 
 ## Parameters
 
-  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
@@ -258,7 +274,8 @@ Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 """
     BranchLayer(layers...)
 
-Takes an input `x` and passes it through all the `layers` and returns a tuple of the outputs.
+Takes an input `x` and passes it through all the `layers` and returns a tuple of the
+outputs.
 
 ## Arguments
 
@@ -275,11 +292,13 @@ Takes an input `x` and passes it through all the `layers` and returns a tuple of
 
 ## Parameters
 
-  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 ## Comparison with [`Parallel`](@ref)
 
@@ -346,7 +365,8 @@ x1 → layer1 → y1 ↘
 
 Layer behaves differently based on input type:
 
- 1. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of length `N`. The computation is as follows
+ 1. If the input `x` is a tuple of length `N + 1`, then the `layers` must be a tuple of
+    length `N`. The computation is as follows
 
 ```julia
 y = x[1]
@@ -371,11 +391,13 @@ end
 
 ## Parameters
 
-  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 """
 struct PairwiseFusion{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection::F
@@ -426,7 +448,8 @@ Collects multiple layers / functions to be called in sequence on a given input.
 
 ## Inputs
 
-Input `x` is passed sequentially to each layer, and must conform to the input requirements of the internal layers.
+Input `x` is passed sequentially to each layer, and must conform to the input requirements
+of the internal layers.
 
 ## Returns
 
@@ -435,21 +458,26 @@ Input `x` is passed sequentially to each layer, and must conform to the input re
 
 ## Parameters
 
-  - Parameters of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - Parameters of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 ## States
 
-  - States of each `layer` wrapped in a NamedTuple with `fields = layer_1, layer_2, ..., layer_N`
+  - States of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N`
 
 ## Optimizations
 
-Performs a few optimizations to generate reasonable architectures. Can be disabled using keyword argument `disable_optimizations`.
+Performs a few optimizations to generate reasonable architectures. Can be disabled using
+keyword argument `disable_optimizations`.
 
   - All sublayers are recursively optimized.
-  - If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to a WrappedFunction(`f`) which takes only one input.
+  - If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to
+    a WrappedFunction(`f`) which takes only one input.
   - If the layer is a Chain, it is flattened.
   - [`NoOpLayer`](@ref)s are removed.
-  - If there is only 1 layer (left after optimizations), then it is returned without the `Chain` wrapper.
+  - If there is only 1 layer (left after optimizations), then it is returned without the
+    `Chain` wrapper.
   - If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
 
 ## Example
@@ -525,9 +553,11 @@ end
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 """
-    Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform, init_bias=zeros32, bias::Bool=true)
+    Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform,
+          init_bias=zeros32, bias::Bool=true)
 
-Create a traditional fully connected layer, whose forward pass is given by: `y = activation.(weight * x .+ bias)`
+Create a traditional fully connected layer, whose forward pass is given by:
+`y = activation.(weight * x .+ bias)`
 
 ## Arguments
 
@@ -537,7 +567,8 @@ Create a traditional fully connected layer, whose forward pass is given by: `y =
 
 ## Keyword Arguments
 
-  - `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+  - `init_weight`: initializer for the weight matrix
+    (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `bias=false`)
   - `bias`: whether to include a bias vector
 
@@ -657,7 +688,8 @@ end
 """
     Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
 
-Create a Sparsely Connected Layer with a very specific structure (only Diagonal Elements are non-zero). The forward pass is given by: `y = activation.(weight .* x .+ bias)`
+Create a Sparsely Connected Layer with a very specific structure (only Diagonal
+Elements are non-zero). The forward pass is given by: `y = activation.(weight .* x .+ bias)`
 
 ## Arguments
 
@@ -666,13 +698,15 @@ Create a Sparsely Connected Layer with a very specific structure (only Diagonal 
 
 ## Keyword Arguments
 
-  - `init_weight`: initializer for the weight matrix (`weight = init_weight(rng, out_dims, in_dims)`)
+  - `init_weight`: initializer for the weight matrix
+    (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `bias=false`)
   - `bias`: whether to include a bias vector
 
 ## Input
 
-  - `x` must be an Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])` for `k ≤ size(dims)`
+  - `x` must be an Array of size `(dims..., B)` or `(dims...[0], ..., dims[k])`
+    for `k ≤ size(dims)`
 
 ## Returns
 

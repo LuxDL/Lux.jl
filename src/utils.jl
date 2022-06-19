@@ -30,11 +30,16 @@ Base.ones(rng::AbstractRNG, args...; kwargs...) = ones(args...; kwargs...)
 """
     glorot_uniform(rng::AbstractRNG, size...; gain = 1)
 
-Return an `Array{Float32}` of the given `size` containing random numbers drawn from a uniform distribution on the interval ``[-x, x]``, where `x = gain * sqrt(6 / (fan_in + fan_out))`. This method is described in [1] and also known as Xavier initialization.
+Return an `Array{Float32}` of the given `size` containing random numbers drawn from a
+uniform distribution on the interval ``[-x, x]``, where
+`x = gain * sqrt(6 / (fan_in + fan_out))`. This method is described in [1] and also known as
+Xavier initialization.
 
 # References
 
-[1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep feedforward neural networks." _Proceedings of the thirteenth international conference on artificial intelligence and statistics_. 2010.
+[1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep
+feedforward neural networks." _Proceedings of the thirteenth international conference on
+artificial intelligence and statistics_. 2010.
 """
 function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     scale = Float32(gain) * sqrt(24.0f0 / sum(nfan(dims...)))
@@ -44,11 +49,15 @@ end
 """
     glorot_normal(rng::AbstractRNG, size...; gain = 1)
 
-Return an `Array{Float32}` of the given `size` containing random numbers drawn from a normal distribution with standard deviation `gain * sqrt(2 / (fan_in + fan_out))`. This method is described in [1] and also known as Xavier initialization.
+Return an `Array{Float32}` of the given `size` containing random numbers drawn from a normal
+distribution with standard deviation `gain * sqrt(2 / (fan_in + fan_out))`. This method is
+described in [1] and also known as Xavier initialization.
 
 # References
 
-[1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep feedforward neural networks." _Proceedings of the thirteenth international conference on artificial intelligence and statistics_. 2010.
+[1] Glorot, Xavier, and Yoshua Bengio. "Understanding the difficulty of training deep
+feedforward neural networks." _Proceedings of the thirteenth international conference on
+artificial intelligence and statistics_. 2010.
 """
 function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     std = Float32(gain) * sqrt(2.0f0 / sum(nfan(dims...)))
@@ -94,8 +103,8 @@ function calc_padding(lt, pad, k::NTuple{N, T}, dilation, stride) where {T, N}
 end
 
 function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
-    # Ref: "A guide to convolution arithmetic for deep learning" https://arxiv.org/abs/1603.07285
-    # Effective kernel size, including dilation
+    # Ref: "A guide to convolution arithmetic for deep learning"
+    # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
     k_eff = @. k + (k - 1) * (dilation - 1)
     # How much total padding needs to be applied?
     pad_amt = @. k_eff - 1

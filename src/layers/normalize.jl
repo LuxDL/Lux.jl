@@ -1,25 +1,31 @@
 abstract type AbstractNormalizationLayer{affine, track_stats} <: AbstractExplicitLayer end
 
 """
-    BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32, affine=true, track_stats=true, epsilon=1f-5, momentum=0.1f0)
+    BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
+              affine=true, track_stats=true, epsilon=1f-5, momentum=0.1f0)
 
 [Batch Normalization](https://arxiv.org/abs/1502.03167) layer.
 
-`BatchNorm` computes the mean and variance for each `D_1×...×D_{N-2}×1×D_N` input slice and normalises the input accordingly.
+`BatchNorm` computes the mean and variance for each `D_1 × ... × D_{N-2} × 1 × D_N` input
+slice and normalises the input accordingly.
 
 ## Arguments
 
-  - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions, call the `N-1`th the channel dimension. For a batch of feature vectors this is just the data dimension, for `WHCN` images it's the usual channel dimension.
+  - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions,
+    call the `N-1`th the channel dimension. For a batch of feature vectors this is
+    just the data dimension, for `WHCN` images it's the usual channel dimension.
   - `activation`: After normalisation, elementwise activation `activation` is applied.
 
 ## Keyword Arguments
 
-  - If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias bias and scale scale parameters.
+  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+    learnable per-channel bias and scale parameters.
     
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
 
-  - If `track_stats=true`, accumulates mean and variance statistics in training phase that will be used to renormalize the input in test phase.
+  - If `track_stats=true`, accumulates mean and variance statistics in training phase that
+    will be used to renormalize the input in test phase.
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation
 
@@ -59,9 +65,7 @@ Use [`Lux.testmode`](@ref) during inference.
 ## Example
 
 ```julia
-m = Chain(Dense(784 => 64),
-          BatchNorm(64, relu),
-          Dense(64 => 10),
+m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10),
           BatchNorm(10))
 ```
 
@@ -177,24 +181,31 @@ function Base.show(io::IO, l::BatchNorm{affine, track_stats}) where {affine, tra
 end
 
 """
-    GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32, init_scale=ones32, affine=true, track_stats=false, epsilon=1f-5, momentum=0.1f0)
+    GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
+              init_scale=ones32, affine=true, track_stats=false, epsilon=1f-5,
+              momentum=0.1f0)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
 
 ## Arguments
 
-  - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions, call the `N-1`th the channel dimension. For a batch of feature vectors this is just the data dimension, for `WHCN` images it's the usual channel dimension.
-  - `groups` is the number of groups along which the statistics are computed. The number of channels must be an integer multiple of the number of groups.
+  - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions,
+    call the `N-1`th the channel dimension. For a batch of feature vectors this is
+    just the data dimension, for `WHCN` images it's the usual channel dimension.
+  - `groups` is the number of groups along which the statistics are computed. The number of
+    channels must be an integer multiple of the number of groups.
   - `activation`: After normalisation, elementwise activation `activation` is applied.
 
 ## Keyword Arguments
 
-  - If `affine=true`, it also applies  a shift and a rescale to the input through to learnable per-channel bias bias and scale scale parameters.
+  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+    learnable per-channel bias and scale parameters.
     
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
 
-  - If `track_stats=true`, accumulates mean and variance statistics in training phase that will be used to renormalize the input in test phase.
+  - If `track_stats=true`, accumulates mean and variance statistics in training phase that
+    will be used to renormalize the input in test phase.
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation
 
@@ -234,10 +245,7 @@ Use [`Lux.testmode`](@ref) during inference.
 ## Example
 
 ```julia
-m = Chain(Dense(784 => 64),
-          GroupNorm(64, 4, relu),
-          Dense(64 => 10),
-          GroupNorm(10, 5))
+m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(10, 5))
 ```
 
 !!! warning
@@ -324,20 +332,26 @@ function Base.show(io::IO, l::GroupNorm{affine, track_stats}) where {affine, tra
     return print(io, ")")
 end
 
-"""
-    WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N,Symbol}, dims::Union{Tuple,Nothing}=nothing)
+@doc doc"""
+    WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N,Symbol},
+               dims::Union{Tuple,Nothing}=nothing)
 
-Applies [weight normalization](https://arxiv.org/abs/1602.07868) to a parameter in the given layer.
+Applies [weight normalization](https://arxiv.org/abs/1602.07868) to a parameter in the given
+layer.
 
-``w = g\\frac{v}{\\|v\\|}``
+``w = g\frac{v}{\|v\|}``
 
-Weight normalization is a reparameterization that decouples the magnitude of a weight tensor from its direction. This updates the parameters in `which_params` (e.g. `weight`) using two parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying the direction (e.g. `weight_v`).
+Weight normalization is a reparameterization that decouples the magnitude of a weight tensor
+from its direction. This updates the parameters in `which_params` (e.g. `weight`) using two
+parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying the direction
+(e.g. `weight_v`).
 
 ## Arguments
 
   - `layer` whose parameters are being reparameterized
   - `which_params`: parameter names for the parameters being reparameterized
-  - By default, a norm over the entire array is computed. Pass `dims` to modify the dimension.
+  - By default, a norm over the entire array is computed. Pass `dims` to modify the
+    dimension.
 
 ## Inputs
 

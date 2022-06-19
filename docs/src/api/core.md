@@ -2,6 +2,13 @@
 CurrentModule = Lux
 ```
 
+## Abstract Types
+
+```@docs
+Lux.AbstractExplicitLayer
+Lux.AbstractExplicitContainerLayer
+```
+
 ## General
 
 ```@docs

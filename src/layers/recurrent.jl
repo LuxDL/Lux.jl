@@ -1,9 +1,10 @@
-"""
-    RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true, init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
+@doc doc"""
+    RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true, init_bias=zeros32,
+            init_weight=glorot_uniform, init_state=ones32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
-``h_{new} = activation(weight_{ih} \\times x + weight_{hh} \\times h_{prev} + bias)``
+``h_{new} = activation(weight_{ih} \times x + weight_{hh} \times h_{prev} + bias)``
 
 ## Arguments
 
@@ -17,7 +18,8 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
 ## Inputs
 
-  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden
+            state using `init_state` and proceeds to Case 2.
   - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns
@@ -115,22 +117,23 @@ function Base.show(io::IO, r::RNNCell{bias}) where {bias}
     return print(io, ")")
 end
 
-"""
-    LSTMCell(in_dims => out_dims; init_weight=(glorot_uniform, glorot_uniform, glorot_uniform, glorot_uniform), init_bias=(zeros32, zeros32, ones32, zeros32), init_state=zeros32)
+@doc doc"""
+    LSTMCell(in_dims => out_dims; init_weight=(glorot_uniform, glorot_uniform,
+                                               glorot_uniform, glorot_uniform),
+             init_bias=(zeros32, zeros32, ones32, zeros32), init_state=zeros32)
 
 Long Short-Term (LSTM) Cell
 
-``i = \\sigma(W_{ii} \\times x + W_{hi} \\times h_{prev} + b_{i})``
-
-``f = \\sigma(W_{if} \\times x + W_{hf} \\times h_{prev} + b_{f})``
-
-``g = tanh(W_{ig} \\times x + W_{hg} \\times h_{prev} + b_{g})``
-
-``o = \\sigma(W_{io} \\times x + W_{ho} \\times h_{prev} + b_{o})``
-
-``c_{new} = f \\cdot c_{prev} + i \\cdot g``
-
-``h_{new} = o \\cdot tanh(c_{new})``
+```math
+\begin{align}
+  i &= \sigma(W_{ii} \times x + W_{hi} \times h_{prev} + b_{i})\\
+  f &= \sigma(W_{if} \times x + W_{hf} \times h_{prev} + b_{f})\\
+  g &= tanh(W_{ig} \times x + W_{hg} \times h_{prev} + b_{g})\\
+  o &= \sigma(W_{io} \times x + W_{ho} \times h_{prev} + b_{o})\\
+  c_{new} &= f \cdot c_{prev} + i \cdot g\\
+  h_{new} &= o \cdot tanh(c_{new})
+\end{align}
+```
 
 ## Arguments
 
@@ -142,8 +145,10 @@ Long Short-Term (LSTM) Cell
 
 ## Inputs
 
-  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state and memory using `init_state` and proceeds to Case 2.
-  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is returned.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden
+  state and memory using `init_state` and proceeds to Case 2.
+  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is
+  returned.
 
 ## Returns
 
@@ -156,8 +161,10 @@ Long Short-Term (LSTM) Cell
 
 ## Parameters
 
-  - `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ii}, W_{if}, W_{ig}, W_{io} \\right\\}``.
-  - `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \\right\\}``
+  - `weight_i`: Concatenated Weights to map from input space
+                ``\left\{ W_{ii}, W_{if}, W_{ig}, W_{io} \right\}``.
+  - `weight_h`: Concatenated Weights to map from hidden space
+                ``\left\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \right\}``
   - `bias`: Bias vector
 
 ## States
@@ -223,18 +230,23 @@ end
 
 Base.show(io::IO, l::LSTMCell) = print(io, "LSTMCell($(l.in_dims) => $(l.out_dims))")
 
-"""
-    GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; init_weight::Tuple{Function,Function,Function}=(glorot_uniform, glorot_uniform, glorot_uniform), init_bias::Tuple{Function,Function,Function}=(zeros32, zeros32, zeros32), init_state::Function=zeros32)
+@doc doc"""
+    GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int};
+            init_weight::Tuple{Function,Function,Function}=(glorot_uniform, glorot_uniform,
+                                                            glorot_uniform),
+            init_bias::Tuple{Function,Function,Function}=(zeros32, zeros32, zeros32),
+            init_state::Function=zeros32)
 
 Gated Recurrent Unit (GRU) Cell
 
-``r = \\sigma(W_{ir} \\times x + W_{hr} \\times h_{prev} + b_{hr})``
-
-``z = \\sigma(W_{iz} \\times x + W_{hz} \\times h_{prev} + b_{hz})``
-
-``n = \\sigma(W_{in} \\times x + b_{in} + r \\cdot (W_{hn} \\times h_{prev} + b_{hn}))``
-
-``h_{new} = (1 - z) \\cdot n + z \\cdot h_{prev}``
+```math
+\begin{align}
+  r &= \sigma(W_{ir} \times x + W_{hr} \times h_{prev} + b_{hr})\\
+  z &= \sigma(W_{iz} \times x + W_{hz} \times h_{prev} + b_{hz})\\
+  n &= \sigma(W_{in} \times x + b_{in} + r \cdot (W_{hn} \times h_{prev} + b_{hn}))\\
+  h_{new} &= (1 - z) \cdot n + z \cdot h_{prev}
+\end{align}
+```
 
 ## Arguments
 
@@ -246,7 +258,8 @@ Gated Recurrent Unit (GRU) Cell
 
 ## Inputs
 
-  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden state using `init_state` and proceeds to Case 2.
+  - Case 1: Only a single input `x` of shape `(in_dims, batch_size)` - Creates a hidden
+            state using `init_state` and proceeds to Case 2.
   - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
 
 ## Returns
@@ -256,10 +269,13 @@ Gated Recurrent Unit (GRU) Cell
 
 ## Parameters
 
-  - `weight_i`: Concatenated Weights to map from input space ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
-  - `weight_h`: Concatenated Weights to map from hidden space ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
+  - `weight_i`: Concatenated Weights to map from input space
+                ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
+  - `weight_h`: Concatenated Weights to map from hidden space
+                ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
   - `bias_i`: Bias vector (``b_{in}``)
-  - `bias_h`: Concatenated Bias vector for the hidden space ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
+  - `bias_h`: Concatenated Bias vector for the hidden space
+              ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
 
 ## States
 

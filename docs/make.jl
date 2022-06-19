@@ -1,4 +1,4 @@
-using Documenter, Lux, Literate, Pkg
+using Documenter, DocumenterMarkdown, Lux, Literate, Pkg
 
 # Precompile example dependencies
 Pkg.activate(joinpath(@__DIR__, "..", "examples"))
@@ -47,7 +47,7 @@ makedocs(;
          sitename="Lux",
          authors="Avik Pal et al.",
          clean=true,
-         doctest=false,
+         doctest=true,
          modules=[Lux],
          strict=[
              :doctest,
@@ -55,37 +55,19 @@ makedocs(;
              :parse_error,
              :example_block,
              # Other available options are
-             # :autodocs_block, :cross_references, :docs_block, :eval_block, :example_block, :footnote, :meta_block, :missing_docs, :setup_block
+             # :autodocs_block, :cross_references, :docs_block, :eval_block, :example_block,
+             # :footnote, :meta_block, :missing_docs, :setup_block
          ],
-         format=Documenter.HTML(;
-                                prettyurls=get(ENV, "CI", nothing) == "true",
-                                assets=["assets/custom.css"], edit_branch="main",
-                                analytics="G-Q8GYTEVTZ2"),
-         pages=[
-             "Lux: Explicitly Parameterized Neural Networks" => "index.md",
-             "Introduction" => [
-                 "All about Lux" => "introduction/overview.md",
-                 "Ecosystem" => "introduction/ecosystem.md",
-             ],
-             "Examples" => [
-                 "Beginner" => MAPPING["beginner"],
-                 "Intermediate" => MAPPING["intermediate"],
-                 "Advanced" => MAPPING["advanced"],
-                 "Additional Examples" => "examples.md",
-             ],
-             "API" => [
-                 "Layers" => "api/layers.md",
-                 "Functional" => "api/functional.md",
-                 "Core" => "api/core.md",
-                 "Utilities" => "api/utilities.md",
-             ],
-             "Design Docs" => [
-                 "Contribution Guide" => "design/contributing.md",
-                 "Layer Implementation" => "design/layer_implementation.md",
-             ],
-         ])
+         checkdocs=:all,
+         format=Markdown(),
+         draft=false,
+         build=joinpath(@__DIR__, "docs"))
 
 deploydocs(; repo="github.com/avik-pal/Lux.jl.git", push_preview=true,
-           devbranch="main")
+           deps=Deps.pip("mkdocs", "pygments", "python-markdown-math",
+                         "mkdocs-material", "pymdown-extensions", "mkdocstrings",
+                         "mknotebooks", "pytkdocs_tweaks", "mkdocs_include_exclude_files",
+                         "jinja2"),
+           make=() -> run(`mkdocs build`), target="site", devbranch="main")
 
 Pkg.activate(@__DIR__)
