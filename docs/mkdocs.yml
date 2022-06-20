@@ -73,6 +73,11 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - def_list
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - attr_list
+  - md_in_html
+
 
 plugins:
   - search # default search plugin; needs manually re-enabling when using any other plugins
@@ -95,6 +100,8 @@ nav:
           - "MNIST Classification using NeuralODE": "examples/generated/intermediate/NeuralODE/main.md"
           - "Bayesian Neural Network": "examples/generated/intermediate/BayesianNN/main.md"
       - "Other Examples": "examples/examples.md"
+  - "Manual":
+      - "Migrating from Flux to Lux": "manual/migrate_from_flux.md"
   - "API Reference":
       - "Layers": "api/layers.md"
       - "Functional": "api/functional.md"

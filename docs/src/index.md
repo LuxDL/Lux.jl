@@ -91,6 +91,7 @@ where to look for certain things.
 * `Tutorials` -- Contain tutorials of varying complexity. These contain worked examples of
   solving problems with Lux. Start here if you are new to Lux, or you have a particular
   problem class you want to model.
+* `Manual` -- Contains guides to some common problems encountered by users.
 * `API Reference` -- Contains a complete list of the functions you can use in Lux. Look here
   if you want to know how to use a particular function.
 * `Development Documentation` -- Contains information for people contributing to Lux

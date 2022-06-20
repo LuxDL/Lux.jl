@@ -24,12 +24,12 @@ using Markdown
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
-# Data Transfer Utilities
-include("adapt.jl")
 # Utilities
 include("utils.jl")
 # Core
 include("core.jl")
+# Data Transfer Utilities
+include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/normalize.jl")
@@ -46,6 +46,9 @@ include("autodiff.jl")
 function __init__()
     @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" include("transform.jl")
 end
+
+# Deprecations
+include("deprecated.jl")
 
 # Data Transfer
 export cpu, gpu
