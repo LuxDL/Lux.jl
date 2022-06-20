@@ -24,12 +24,12 @@ using Markdown
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
-# Data Transfer Utilities
-include("adapt.jl")
 # Utilities
 include("utils.jl")
 # Core
 include("core.jl")
+# Data Transfer Utilities
+include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/normalize.jl")
