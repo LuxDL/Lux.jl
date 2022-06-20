@@ -41,6 +41,10 @@ Transfer `x` to CPU
 """
 cpu(x) = fmap(x -> adapt(LuxCPUAdaptor(), x), x)
 
+function cpu(::AbstractExplicitLayer)
+    return error("Applying `cpu` on a layer is an invalid operation. Instead apply it on the parameters and states returned by `Lux.setup`.")
+end
+
 """
     gpu(x)
 
@@ -49,6 +53,10 @@ Transfer `x` to GPU
 function gpu(x)
     check_use_cuda()
     return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf) : x
+end
+
+function gpu(::AbstractExplicitLayer)
+    return error("Applying `gpu` on a layer is an invalid operation. Instead apply it on the parameters and states returned by `Lux.setup`.")
 end
 
 function check_use_cuda()
