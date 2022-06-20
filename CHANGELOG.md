@@ -3,7 +3,7 @@
 ## v0.4.6
 
   - Documentation revamped
-  - `gpu` and `cpu` throw error if used on an `AbstractExplicitLayer`
+  - `gpu` and `cpu` give a deprecation warning if used on an `AbstractExplicitLayer`
 
 ## v0.4.5
 
