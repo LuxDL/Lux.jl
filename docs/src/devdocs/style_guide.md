@@ -25,6 +25,11 @@ We do have automatic formatter, which opens PR after fixing common style issues,
 * Format docstrings as you would format regular code. If the docstring constains LaTeX in
   multiple lines, use `math` block.
 
+## Unicode
+
+* No use of unicode characters is allowed.
+* The only exception is when defining DSLs. In this particular case, how to type the unicode
+  must be properly documented.
 
 ## Testing
 
