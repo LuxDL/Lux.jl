@@ -24,8 +24,10 @@ We do have automatic formatter, which opens PR after fixing common style issues,
   actually want it returned?
 * Format docstrings as you would format regular code. If the docstring constains LaTeX in
   multiple lines, use `math` block.
+* No avoiding multiply symbol -- so `2x` is invalid instead do it like other languages
+  `2 * x`
 
-## Unicode
+## Unicode Characters
 
 * No use of unicode characters is allowed.
 * The only exception is when defining DSLs. In this particular case, how to type the unicode
