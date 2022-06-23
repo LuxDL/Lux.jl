@@ -1,19 +1,5 @@
 using Documenter, DocumenterMarkdown, Lux, Literate, Pkg
 
-# Precompile example dependencies
-Pkg.activate(joinpath(@__DIR__, "..", "examples"))
-Pkg.develop(PackageSpec(; path=joinpath(@__DIR__, "..")))
-Pkg.instantiate()
-Pkg.precompile()
-
-using DiffEqSensitivity
-Pkg.activate(@__DIR__)
-
-if haskey(ENV, "GITHUB_ACTIONS")
-    ENV["JULIA_DEBUG"] = "Documenter"
-    ENV["DATADEPS_ALWAYS_ACCEPT"] = true
-end
-
 deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending",
                        repo="github.com/avik-pal/Lux.jl.git")
@@ -71,5 +57,3 @@ deploydocs(; repo="github.com/avik-pal/Lux.jl.git", push_preview=true,
                          "mknotebooks", "pytkdocs_tweaks", "mkdocs_include_exclude_files",
                          "jinja2"),
            make=() -> run(`mkdocs build`), target="site", devbranch="main")
-
-Pkg.activate(@__DIR__)
