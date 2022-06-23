@@ -7,6 +7,8 @@ Pkg.instantiate()
 Pkg.precompile()
 Pkg.activate(@__DIR__)
 
+using DiffEqSensitivity
+
 if haskey(ENV, "GITHUB_ACTIONS")
     ENV["JULIA_DEBUG"] = "Documenter"
     ENV["DATADEPS_ALWAYS_ACCEPT"] = true
