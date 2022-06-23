@@ -5,9 +5,9 @@ Pkg.activate(joinpath(@__DIR__, "..", "examples"))
 Pkg.develop(PackageSpec(; path=joinpath(@__DIR__, "..")))
 Pkg.instantiate()
 Pkg.precompile()
-Pkg.activate(@__DIR__)
 
 using DiffEqSensitivity
+Pkg.activate(@__DIR__)
 
 if haskey(ENV, "GITHUB_ACTIONS")
     ENV["JULIA_DEBUG"] = "Documenter"
