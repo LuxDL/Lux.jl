@@ -12,6 +12,8 @@ using Lux, Random
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 
+using DiffEqSensitivity
+
 # Now let us control the randomness in our code using proper Pseudo Random Number Generator (PRNG)
 rng = Random.default_rng()
 Random.seed!(rng, 0)

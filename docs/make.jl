@@ -22,8 +22,6 @@ makedocs(;
          checkdocs=:all,
          format=Markdown(),
          draft=false,
-         expandfirst=[joinpath(@__DIR__,
-                               "src/examples/generated/intermediate/NeuralODE/main.md")],
          build=joinpath(@__DIR__, "docs"))
 
 deploydocs(; repo="github.com/avik-pal/Lux.jl.git", push_preview=true,
