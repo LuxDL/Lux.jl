@@ -37,3 +37,23 @@ end
     @test !Lux.istraining((no_training=1,))
     @test_throws MethodError Lux.istraining((training=true,))
 end
+
+@testset "multigate" begin
+    x = randn(rng, 10, 1)
+    x1, x2 = Lux.multigate(x, Val(2))
+
+    @test x1 == x[1:5, :]
+    @test x2 == x[6:10, :]
+    @inferred Lux.multigate(x, Val(2))
+
+    run_JET_tests(Lux.multigate, x, Val(2))
+
+    x = randn(rng, 10)
+    x1, x2 = Lux.multigate(x, Val(2))
+
+    @test x1 == x[1:5]
+    @test x2 == x[6:10]
+    @inferred Lux.multigate(x, Val(2))
+
+    run_JET_tests(Lux.multigate, x, Val(2))
+end

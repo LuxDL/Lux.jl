@@ -224,5 +224,13 @@ end
         y[4, 2:(end - 1), 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
         run_JET_tests(layer, x, ps, st)
+
+        layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal)
+        ps, st = Lux.setup(rng, layer)
+
+        y = zeros(eltype(ps.weight), 7, 5, 1, 1)
+        y[4, 2:(end - 1), 1, 1] = ps.weight
+        @test y ≈ layer(x, ps, st)[1]
+        run_JET_tests(layer, x, ps, st)
     end
 end

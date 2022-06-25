@@ -25,13 +25,8 @@ Lux.applyactivation
 Lux.elementwise_add
 Lux.elementwise_mul
 Lux.istraining
-Lux.replicate
-```
-
-## RNN Utilities
-
-```@docs
 Lux.multigate
+Lux.replicate
 ```
 
 ## Index
