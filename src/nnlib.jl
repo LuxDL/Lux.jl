@@ -1,4 +1,4 @@
-## TODO: Eventually we want to move all these functions and their adjoints to NNlib.jl
+# TODO(@avik-pal): Eventually we want to move all these functions and their adjoints to NNlib.jl
 
 # Normalization Implementation
 @inline function update_statistics(x::AbstractArray{T, N},
@@ -126,7 +126,7 @@ end
     return tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 end
 
-## TODO: Cache `1 / q` since we never need `q`
+# TODO (@avik-pal): Cache `1 / q` since we never need `q`
 @inline _dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
 
 @inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)

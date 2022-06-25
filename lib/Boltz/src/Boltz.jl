@@ -9,7 +9,7 @@ using Statistics
 using Artifacts, LazyArtifacts
 using JLD2
 
-# TODO: We want to have generic Lux implementaions for Metalhead models
+# TODO(@avik-pal): We want to have generic Lux implementaions for Metalhead models
 # We can automatically convert several Metalhead.jl models to Lux
 using Metalhead
 

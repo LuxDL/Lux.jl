@@ -122,39 +122,20 @@ function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N
 end
 
 # Handling ComponentArrays
-## NOTE: We should probably upsteam some of these
-function Base.zero(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
-    return ComponentArray(zero(getdata(c)), getaxes(c))
-end
+# NOTE(@avik-pal): We should probably upsteam some of these
+Base.zero(c::ComponentArray) = ComponentArray(zero(getdata(c)), getaxes(c))
 
-Base.vec(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N} = getdata(c)
+Base.vec(c::ComponentArray) = getdata(c)
 
-function Base.:-(x::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
-    return ComponentArray(-getdata(x), getaxes(x))
-end
+Base.:-(x::ComponentArray) = ComponentArray(-getdata(x), getaxes(x))
 
-function Base.similar(c::ComponentArray{T, N, <:CuArray{T}},
-                      l::Vararg{Union{Integer, AbstractUnitRange}}) where {T, N}
-    return similar(getdata(c), l)
+function Base.similar(::ComponentArray, ::Vararg{Union{Integer, AbstractUnitRange}})
+    return error("`similar` on ComponentArray with different size is undefined")
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)
     return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
            ComponentArray
-end
-
-# Updating a monolithic vector is way faster than chunks of smaller ones
-# Also helps in distributed settings
-Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
-
-function Optimisers.update(opt_state, ps::ComponentArray, gs::ComponentArray)
-    opt_state, ps_new = Optimisers.update(opt_state, getdata(ps), getdata(gs))
-    return opt_state, ComponentArray(ps_new, getaxes(ps))
-end
-
-function Optimisers.update!(st, ps::ComponentArray, gs::ComponentArray)
-    st, ps_ = Optimisers.update!(st, NamedTuple(ps), NamedTuple(gs))
-    return st, ComponentArray(ps_)
 end
 
 function ComponentArrays.make_carray_args(nt::NamedTuple)

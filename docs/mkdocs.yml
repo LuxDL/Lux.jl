@@ -32,7 +32,7 @@ theme:
   twitter_name: "@avikpal1410"
   twitter_url: "https://twitter.com/avikpal1410"
 
-# TODO: Setup mkdocs for showing documentation versions
+# TODO(@avik-pal): Setup mkdocs for showing documentation versions
 # extra:
 #   version:
 #     provider: mike

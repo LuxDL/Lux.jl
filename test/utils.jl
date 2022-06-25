@@ -1,4 +1,4 @@
-using Lux, ComponentArrays, CUDA, ReverseDiff, Random, Zygote, Test
+using Lux, ComponentArrays, CUDA, Functors, ReverseDiff, Random, Optimisers, Zygote, Test
 
 include("test_utils.jl")
 
@@ -56,4 +56,36 @@ end
     @inferred Lux.multigate(x, Val(2))
 
     run_JET_tests(Lux.multigate, x, Val(2))
+end
+
+@testset "ComponentArrays" begin
+    ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
+    p_flat, re = Optimisers.destructure(ps)
+    ps_c = ComponentArray(ps)
+
+    @test ps_c.weight == ps.weight
+    @test ps_c.bias == ps.bias
+
+    @test p_flat == vec(ps_c)
+    @test -p_flat == vec(-ps_c)
+    @test zero(p_flat) == vec(zero(ps_c))
+
+    # Meaningless to call `similar` with different shape
+    err_msg = "`similar` on ComponentArray with different size is undefined"
+    @test_throws err_msg similar(ps_c, 10)
+    @test_nowarn similar(ps_c)
+
+    ps_c_f, ps_c_re = Functors.functor(ps_c)
+    @test ps_c_f == ps
+    @test ps_c_re(ps_c_f) == ps_c
+
+    # Empty ComponentArray test
+    @test_nowarn display(ComponentArray(NamedTuple()))
+
+    # Optimisers
+    opt = Optimisers.ADAM(0.001f0)
+    st_opt = Optimisers.setup(opt, ps_c)
+
+    @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
+    @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
 end
