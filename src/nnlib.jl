@@ -41,21 +41,21 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                epsilon::T=T(1e-5);
                                kwargs...) where {T, N}
     x_norm, running_mean_, running_var_ = normalization_forward(x,
-                                                                reshape_into_proper_shape(running_mean,
-                                                                                          x),
-                                                                reshape_into_proper_shape(running_var,
-                                                                                          x),
-                                                                reshape_into_proper_shape(scale,
-                                                                                          x),
-                                                                reshape_into_proper_shape(bias,
-                                                                                          x),
+                                                                _reshape_into_proper_shape(running_mean,
+                                                                                           x),
+                                                                _reshape_into_proper_shape(running_var,
+                                                                                           x),
+                                                                _reshape_into_proper_shape(scale,
+                                                                                           x),
+                                                                _reshape_into_proper_shape(bias,
+                                                                                           x),
                                                                 activation,
                                                                 reduce_dims,
                                                                 t,
                                                                 momentum,
                                                                 epsilon;
                                                                 kwargs...)
-    return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
+    return x_norm, _safe_vec(running_mean_), _safe_vec(running_var_)
 end
 
 @generated function normalization_forward(x::AbstractArray{T, N},

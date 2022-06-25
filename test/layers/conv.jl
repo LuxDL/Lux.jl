@@ -3,7 +3,7 @@ using Lux, NNlib, Random, Test, Zygote
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-include("../utils.jl")
+include("../test_utils.jl")
 
 @testset "Pooling" begin
     x = randn(rng, Float32, 10, 10, 3, 2)

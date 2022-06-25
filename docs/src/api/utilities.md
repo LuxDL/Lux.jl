@@ -24,6 +24,8 @@ Lux.zeros32
 Lux.applyactivation
 Lux.elementwise_add
 Lux.elementwise_mul
+Lux.istraining
+Lux.replicate
 ```
 
 ## RNN Utilities

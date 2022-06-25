@@ -1,6 +1,6 @@
 using Lux, ComponentArrays, ReverseDiff, Random, Zygote, Test
 
-include("utils.jl")
+include("test_utils.jl")
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)

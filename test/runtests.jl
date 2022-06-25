@@ -35,6 +35,8 @@ end
             @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
 
             @time @safetestset "Functional Operations" begin include("functional.jl") end
+
+            @time @safetestset "Utils" begin include("utils.jl") end
         end
     else
         dev_subpkg(group)

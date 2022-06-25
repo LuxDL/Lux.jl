@@ -1,6 +1,6 @@
 using Lux, Random, Test
 
-include("../utils.jl")
+include("../test_utils.jl")
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)
