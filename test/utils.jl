@@ -1,4 +1,4 @@
-using Lux, ComponentArrays, ReverseDiff, Random, Zygote, Test
+using Lux, ComponentArrays, CUDA, ReverseDiff, Random, Zygote, Test
 
 include("test_utils.jl")
 
