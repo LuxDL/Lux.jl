@@ -97,11 +97,11 @@ end
 # ## Define Utility Functions
 get_class(x) = argmax.(eachcol(x))
 
-logitcrossentropy(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ); dims=1))
+logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
 
 function loss(x, y, model, ps, st)
-    ŷ, st = model(x, ps, st)
-    return logitcrossentropy(ŷ, y), st
+    y_pred, st = model(x, ps, st)
+    return logitcrossentropy(y_pred, y), st
 end
 
 function accuracy(model, ps, st, dataloader)

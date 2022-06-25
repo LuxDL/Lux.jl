@@ -88,7 +88,7 @@ trainable.
 === "Flux"
 
     ```julia
-    using Flux, Random, NNlib, Zygote
+    using Flux, Random, NNlib, Zygote, Optimisers
 
     struct FluxLinear
         A
@@ -102,7 +102,7 @@ trainable.
 
 
     # `A` is not trainable
-    Flux.trainable(f::FluxLinear) = (f.B,)
+    Optimisers.trainable(f::FluxLinear) = (B=f.B,)
   
     # Needed so that both `A` and `B` can be transfered between devices
     Flux.@functor FluxLinear
@@ -139,7 +139,7 @@ Now let us run the model.
 
     model(x)
 
-    gradient(() -> sum(model(x)), Flux.params(model))
+    gradient(model -> sum(model(x)), model)
     ```
 ```
 
