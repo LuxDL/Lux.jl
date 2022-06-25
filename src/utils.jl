@@ -129,8 +129,8 @@ Base.vec(c::ComponentArray) = getdata(c)
 
 Base.:-(x::ComponentArray) = ComponentArray(-getdata(x), getaxes(x))
 
-function Base.similar(::ComponentArray, ::Vararg{Union{Integer, AbstractUnitRange}})
-    return error("`similar` on ComponentArray with different size is undefined")
+function Base.similar(c::ComponentArray, l::Vararg{Union{Integer, AbstractUnitRange}})
+    return similar(getdata(c), l)
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)

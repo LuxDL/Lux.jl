@@ -70,9 +70,7 @@ end
     @test -p_flat == vec(-ps_c)
     @test zero(p_flat) == vec(zero(ps_c))
 
-    # Meaningless to call `similar` with different shape
-    err_msg = "`similar` on ComponentArray with different size is undefined"
-    @test_throws ErrorException(err_msg) similar(ps_c, 10)
+    @test_nowarn similar(ps_c, 10)
     @test_nowarn similar(ps_c)
 
     ps_c_f, ps_c_re = Functors.functor(ps_c)
