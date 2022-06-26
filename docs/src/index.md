@@ -38,6 +38,11 @@ Pkg.add("Lux")
 
 # Quickstart
 
+!!! tip
+    You need to install `Optimisers` and `Zygote` if not done already.
+
+    `Pkg.add(["Optimisers", "Zygote"])`
+
 ```julia
 using Lux, Random, Optimisers, Zygote
 ```
