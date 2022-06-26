@@ -81,13 +81,8 @@ struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
     init_scale::F3
 end
 
-function BatchNorm(chs::Int,
-                   activation=identity;
-                   init_bias=zeros32,
-                   init_scale=ones32,
-                   affine::Bool=true,
-                   track_stats::Bool=true,
-                   epsilon=1.0f-5,
+function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=ones32,
+                   affine::Bool=true, track_stats::Bool=true, epsilon=1.0f-5,
                    momentum=0.1f0)
     activation = NNlib.fast_act(activation)
     return BatchNorm{affine, track_stats, typeof(activation), typeof(init_bias),
@@ -265,14 +260,8 @@ struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
     groups::Int
 end
 
-function GroupNorm(chs::Int,
-                   groups::Int,
-                   activation=identity;
-                   init_bias=zeros32,
-                   init_scale=ones32,
-                   affine::Bool=true,
-                   track_stats::Bool=false,
-                   epsilon=1.0f-5,
+function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
+                   init_scale=ones32, affine=true, track_stats=false, epsilon=1.0f-5,
                    momentum=0.1f0)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = NNlib.fast_act(activation)
@@ -410,9 +399,7 @@ function (wn::WeightNorm)(x, ps, s::NamedTuple)
 end
 
 @inbounds @generated function get_normalized_parameters(::WeightNorm{Val{which_params}},
-                                                        dims::T,
-                                                        ps::Union{ComponentArray, NamedTuple
-                                                                  }) where {T, which_params}
+                                                        dims::T, ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
     g_parameter_names = Symbol.(parameter_names .* "_g")

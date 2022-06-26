@@ -5,8 +5,7 @@
                                    running_mean::AbstractArray{T, N},
                                    running_var::AbstractArray{T, N},
                                    batchmean::AbstractArray{T, N},
-                                   batchvar::AbstractArray{T, N},
-                                   momentum::T,
+                                   batchvar::AbstractArray{T, N}, momentum::T,
                                    reduce_dims) where {T, N}
     sx = size(x)
     m = T(prod((sx[i] for i in reduce_dims)))
@@ -34,21 +33,17 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                running_var::Union{Nothing, AbstractVector{T}},
                                scale::Union{Nothing, AbstractVector{T}},
                                bias::Union{Nothing, AbstractVector{T}},
-                               activation,
-                               reduce_dims,
-                               t::Val,
-                               momentum::T=T(0.1),
-                               epsilon::T=T(1e-5);
-                               kwargs...) where {T, N}
+                               activation, reduce_dims, t::Val, momentum::T=T(0.1),
+                               epsilon::T=T(1e-5); kwargs...) where {T, N}
+    running_mean_reshaped = _reshape_into_proper_shape(running_mean, x)
+    running_var_reshaped = _reshape_into_proper_shape(running_var, x)
+    scale_reshaped = _reshape_into_proper_shape(scale, x)
+    bias_reshaped = _reshape_into_proper_shape(bias, x)
     x_norm, running_mean_, running_var_ = normalization_forward(x,
-                                                                _reshape_into_proper_shape(running_mean,
-                                                                                           x),
-                                                                _reshape_into_proper_shape(running_var,
-                                                                                           x),
-                                                                _reshape_into_proper_shape(scale,
-                                                                                           x),
-                                                                _reshape_into_proper_shape(bias,
-                                                                                           x),
+                                                                running_mean_reshaped,
+                                                                running_var_reshaped,
+                                                                scale_reshaped,
+                                                                bias_reshaped,
                                                                 activation,
                                                                 reduce_dims,
                                                                 t,
@@ -58,16 +53,10 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
     return x_norm, _safe_vec(running_mean_), _safe_vec(running_var_)
 end
 
-@generated function normalization_forward(x::AbstractArray{T, N},
-                                          running_mean::RM,
-                                          running_var::RV,
-                                          scale::S,
-                                          bias::B,
-                                          activation::A,
-                                          reduce_dims,
-                                          ::Val{training},
-                                          momentum::T=T(0.1f0),
-                                          epsilon::T=T(1.0f-5);
+@generated function normalization_forward(x::AbstractArray{T, N}, running_mean::RM,
+                                          running_var::RV, scale::S, bias::B, activation::A,
+                                          reduce_dims, ::Val{training},
+                                          momentum::T=T(0.1f0), epsilon::T=T(1.0f-5);
                                           kwargs...) where {RM, RV, S, B, T, N, A, training}
     calls = []
     if !training
