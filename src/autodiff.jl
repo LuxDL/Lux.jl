@@ -2,7 +2,7 @@
 ChainRulesCore.@non_differentiable replicate(::Any)
 ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any,
                                                      ::Any, ::Any)
-ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any, ::Any)
 ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)

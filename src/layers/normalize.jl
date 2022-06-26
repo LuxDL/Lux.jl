@@ -271,7 +271,7 @@ function GroupNorm(chs::Int,
                    init_bias=zeros32,
                    init_scale=ones32,
                    affine::Bool=true,
-                   track_stats::Bool=true,
+                   track_stats::Bool=false,
                    epsilon=1.0f-5,
                    momentum=0.1f0)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"

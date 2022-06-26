@@ -123,7 +123,9 @@ end
 
 # Handling ComponentArrays
 # NOTE(@avik-pal): We should probably upsteam some of these
-Base.zero(c::ComponentArray) = ComponentArray(zero(getdata(c)), getaxes(c))
+function Base.zero(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
+    return ComponentArray(zero(getdata(c)), getaxes(c))
+end
 
 Base.vec(c::ComponentArray) = getdata(c)
 
