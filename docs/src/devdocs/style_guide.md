@@ -47,7 +47,7 @@ We do have automatic formatter, which opens PR after fixing common style issues,
   files.
 
 * Use [JET.jl](https://aviatesk.github.io/JET.jl/dev/) to test for dynamic dispatch in the
-  functionality you added, specifically use `run_JET_tests` from `test/utils.jl`.
+  functionality you added, specifically use `run_JET_tests` from `test/test_utils.jl`.
 
 * **Always** test for gradient correctness. Zygote can be notorious for incorrect gradients,
   so add tests using `test_gradient_correctness_fdm` for finite differencing or use any

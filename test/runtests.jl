@@ -24,7 +24,11 @@ end
     @info "Testing GROUP $group"
     if group == "Lux"
         @testset "Lux.jl" begin
+            @time @safetestset "Utils" begin include("utils.jl") end
+
             @time @safetestset "Core" begin include("core.jl") end
+
+            @time @safetestset "Adapt" begin include("adapt.jl") end
 
             @testset "Layers" begin
                 @time @safetestset "Basic" begin include("layers/basic.jl") end
@@ -34,11 +38,9 @@ end
                 @time @safetestset "Dropout" begin include("layers/dropout.jl") end
             end
 
+            @time @safetestset "NNlib" begin include("nnlib.jl") end
+
             @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
-
-            @time @safetestset "Functional Operations" begin include("functional.jl") end
-
-            @time @safetestset "Utils" begin include("utils.jl") end
         end
     else
         dev_subpkg(group)

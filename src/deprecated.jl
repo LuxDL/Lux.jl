@@ -2,14 +2,14 @@
 
 ## Device transfer of AbstractExplicitLayers
 function cpu(l::AbstractExplicitLayer)
-    Base.depwarn("`cpu` on a layer is a no-op and will be removed in v0.5. Apply `cpu` on" *
-                 " the layer's parameters and states instead.", :cpu)
+    Base.depwarn("`cpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
+                 "`cpu` on the layer's parameters and states instead.", :cpu)
     return l
 end
 
 function gpu(l::AbstractExplicitLayer)
-    Base.depwarn("`gpu` on a layer is a no-op and will be removed in v0.5. Apply `gpu` on" *
-                 " the layer's parameters and states instead.", :cpu)
+    Base.depwarn("`gpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
+                 "`gpu` on the layer's parameters and states instead.", :gpu)
     return l
 end
 
