@@ -1,6 +1,6 @@
 using Lux, NNlib, Random, Statistics, Zygote
 
-include("../utils.jl")
+include("../test_utils.jl")
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)

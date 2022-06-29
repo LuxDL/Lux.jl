@@ -3,7 +3,7 @@ using Lux, NNlib, Random, Test, Zygote
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-include("../utils.jl")
+include("../test_utils.jl")
 
 @testset "Pooling" begin
     x = randn(rng, Float32, 10, 10, 3, 2)
@@ -218,6 +218,14 @@ end
         run_JET_tests(layer, x, ps, st)
 
         layer = Conv((1, 3), 1 => 1)
+        ps, st = Lux.setup(rng, layer)
+
+        y = zeros(eltype(ps.weight), 7, 5, 1, 1)
+        y[4, 2:(end - 1), 1, 1] = ps.weight
+        @test y ≈ layer(x, ps, st)[1]
+        run_JET_tests(layer, x, ps, st)
+
+        layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal)
         ps, st = Lux.setup(rng, layer)
 
         y = zeros(eltype(ps.weight), 7, 5, 1, 1)

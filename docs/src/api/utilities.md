@@ -24,12 +24,9 @@ Lux.zeros32
 Lux.applyactivation
 Lux.elementwise_add
 Lux.elementwise_mul
-```
-
-## RNN Utilities
-
-```@docs
+Lux.istraining
 Lux.multigate
+Lux.replicate
 ```
 
 ## Index

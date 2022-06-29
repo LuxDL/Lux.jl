@@ -473,7 +473,7 @@ keyword argument `disable_optimizations`.
 
   - All sublayers are recursively optimized.
   - If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to
-    a WrappedFunction(`f`) which takes only one input.
+    a [`WrappedFunction`](@ref)(`f`) which takes only one input.
   - If the layer is a Chain, it is flattened.
   - [`NoOpLayer`](@ref)s are removed.
   - If there is only 1 layer (left after optimizations), then it is returned without the

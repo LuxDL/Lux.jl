@@ -67,7 +67,7 @@ function initialparameters(rng::AbstractRNG, rnn::RNNCell{bias}) where {bias}
 end
 
 function initialstates(rng::AbstractRNG, ::RNNCell)
-    # FIXME: Take PRNGs seriously
+    # FIXME(@avik-pal): Take PRNGs seriously
     randn(rng, 1)
     return (rng=replicate(rng),)
 end
@@ -202,7 +202,7 @@ function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
 end
 
 function initialstates(rng::AbstractRNG, ::LSTMCell)
-    # FIXME: Take PRNGs seriously
+    # FIXME(@avik-pal): Take PRNGs seriously
     randn(rng, 1)
     return (rng=replicate(rng),)
 end
@@ -310,7 +310,7 @@ function initialparameters(rng::AbstractRNG, gru::GRUCell)
 end
 
 function initialstates(rng::AbstractRNG, ::GRUCell)
-    # FIXME: Take PRNGs seriously
+    # FIXME(@avik-pal): Take PRNGs seriously
     randn(rng, 1)
     return (rng=replicate(rng),)
 end

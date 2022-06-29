@@ -1,6 +1,6 @@
 using CUDA, Lux, Random, Test
 
-include("utils.jl")
+include("test_utils.jl")
 
 @testset "Elementwise Operation Dispatches" begin
     rng = Random.default_rng()

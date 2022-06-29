@@ -1,5 +1,13 @@
 # v0.4
 
+## v0.4.7
+
+  - Manual detailing Lux Interface
+  - Fixes bug with ComponentArray + Optimiser
+    https://github.com/FluxML/Optimisers.jl/issues/91
+  - `Dropout` Layers caches `1 / (1 - p)` for minor improvements for forward pass
+  - `dropout` has a custom rrule -- significantly improves performance for smaller arrays
+
 ## v0.4.6
 
   - Documentation revamped

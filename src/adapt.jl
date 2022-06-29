@@ -21,7 +21,7 @@ function adapt_storage(to::LuxCPUAdaptor, x::ComponentArray)
     return ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
 end
 adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
-# TODO: SparseArrays
+# TODO(@avik-pal): SparseArrays
 function adapt_storage(::LuxCPUAdaptor,
                        x::CUDA.CUSPARSE.CUDA.CUSPARSE.AbstractCuSparseMatrix)
     return adapt(Array, x)

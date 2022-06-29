@@ -43,7 +43,7 @@ We do have automatic formatter, which opens PR after fixing common style issues,
   in src should have a complementary file in the test folder, containing tests relevant to
   that file's contents.
 
-* Add generic utilities for testing in `test/utils.jl` and include them in the relevant
+* Add generic utilities for testing in `test/test_utils.jl` and include them in the relevant
   files.
 
 * Use [JET.jl](https://aviatesk.github.io/JET.jl/dev/) to test for dynamic dispatch in the

@@ -1,12 +1,11 @@
-## TODO: Eventually we want to move all these functions and their adjoints to NNlib.jl
+# TODO(@avik-pal): Eventually we want to move all these functions and their adjoints to NNlib.jl
 
 # Normalization Implementation
 @inline function update_statistics(x::AbstractArray{T, N},
                                    running_mean::AbstractArray{T, N},
                                    running_var::AbstractArray{T, N},
                                    batchmean::AbstractArray{T, N},
-                                   batchvar::AbstractArray{T, N},
-                                   momentum::T,
+                                   batchvar::AbstractArray{T, N}, momentum::T,
                                    reduce_dims) where {T, N}
     sx = size(x)
     m = T(prod((sx[i] for i in reduce_dims)))
@@ -34,40 +33,30 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                running_var::Union{Nothing, AbstractVector{T}},
                                scale::Union{Nothing, AbstractVector{T}},
                                bias::Union{Nothing, AbstractVector{T}},
-                               activation,
-                               reduce_dims,
-                               t::Val,
-                               momentum::T=T(0.1),
-                               epsilon::T=T(1e-5);
-                               kwargs...) where {T, N}
+                               activation, reduce_dims, t::Val, momentum::T=T(0.1),
+                               epsilon::T=T(1e-5); kwargs...) where {T, N}
+    running_mean_reshaped = _reshape_into_proper_shape(running_mean, x)
+    running_var_reshaped = _reshape_into_proper_shape(running_var, x)
+    scale_reshaped = _reshape_into_proper_shape(scale, x)
+    bias_reshaped = _reshape_into_proper_shape(bias, x)
     x_norm, running_mean_, running_var_ = normalization_forward(x,
-                                                                reshape_into_proper_shape(running_mean,
-                                                                                          x),
-                                                                reshape_into_proper_shape(running_var,
-                                                                                          x),
-                                                                reshape_into_proper_shape(scale,
-                                                                                          x),
-                                                                reshape_into_proper_shape(bias,
-                                                                                          x),
+                                                                running_mean_reshaped,
+                                                                running_var_reshaped,
+                                                                scale_reshaped,
+                                                                bias_reshaped,
                                                                 activation,
                                                                 reduce_dims,
                                                                 t,
                                                                 momentum,
                                                                 epsilon;
                                                                 kwargs...)
-    return x_norm, safe_vec(running_mean_), safe_vec(running_var_)
+    return x_norm, _safe_vec(running_mean_), _safe_vec(running_var_)
 end
 
-@generated function normalization_forward(x::AbstractArray{T, N},
-                                          running_mean::RM,
-                                          running_var::RV,
-                                          scale::S,
-                                          bias::B,
-                                          activation::A,
-                                          reduce_dims,
-                                          ::Val{training},
-                                          momentum::T=T(0.1f0),
-                                          epsilon::T=T(1.0f-5);
+@generated function normalization_forward(x::AbstractArray{T, N}, running_mean::RM,
+                                          running_var::RV, scale::S, bias::B, activation::A,
+                                          reduce_dims, ::Val{training},
+                                          momentum::T=T(0.1f0), epsilon::T=T(1.0f-5);
                                           kwargs...) where {RM, RV, S, B, T, N, A, training}
     calls = []
     if !training
@@ -126,44 +115,43 @@ end
     return tuple((i ∉ dims ? 1 : si for (i, si) in enumerate(size(s)))...)
 end
 
-## TODO: Cache `1 / q` since we never need `q`
-@inline _dropout_kernel(y::T, p, q) where {T} = y > p ? T(1 / q) : T(0)
+@inline _dropout_kernel(y::T, p, q) where {T} = y > p ? q : zero(T)
 
-@inline function generate_dropout_mask(rng::AbstractRNG, x, p; dims=:)
+@inline function generate_dropout_mask(rng::AbstractRNG, x, p, q; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
-    y .= _dropout_kernel.(y, p, 1 - p)
+    @. y = _dropout_kernel(y, p, q)
     return y
 end
 
 """
-    dropout(rng::AbstractRNG, x, prob, dims, ::Val{training})
-    dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training}, ::Val{update_mask})
+    dropout(rng::AbstractRNG, x, p, q, dims, ::Val{training})
+    dropout(rng::AbstractRNG, x, mask, p, q, dims, t::Val{training}, ::Val{update_mask})
 
-If `training` then dropout is applied on `x` with probability `prob` along `dims`. If `mask`
-is passed it is used if `update_mask` is false. If `update_mask` is true then the mask is
+If `training` then dropout is applied on `x` with probability `p` along `dims`. If `mask` is
+passed it is used if `update_mask` is false. If `update_mask` is true then the mask is
 generated and used.
 """
-@inline @generated function dropout(rng::AbstractRNG, x, prob, dims,
+@inline @generated function dropout(rng::AbstractRNG, x, p, q, dims,
                                     ::Val{training}) where {training}
     if training
         return :(rng = replicate(rng);
-                 mask = generate_dropout_mask(rng, x, prob; dims);
+                 mask = generate_dropout_mask(rng, x, p, q; dims);
                  return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng))
     else
         return :(return (x, x, rng))
     end
 end
 
-@inline @generated function dropout(rng::AbstractRNG, x, mask, prob, dims, t::Val{training},
+@inline @generated function dropout(rng::AbstractRNG, x, mask, p, q, dims, t::Val{training},
                                     ::Val{update_mask}) where {training, update_mask}
     if update_mask
-        return :((y, mask, rng) = dropout(rng, x, prob, dims, t);
+        return :((y, mask, rng) = dropout(rng, x, p, q, dims, t);
                  return (y, mask, rng, Val(false)))
     else
         if training
             return :(size(x, ndims(x)) != size(mask, ndims(x)) &&
-                         return (dropout(rng, x, prob, dims, t)..., Val(false));
+                         return (dropout(rng, x, p, q, dims, t)..., Val(false));
                      return (elementwise_mul(x, ignore_derivatives(mask)), mask, rng,
                              Val(false)))
         else
