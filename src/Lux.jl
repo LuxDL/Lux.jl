@@ -15,8 +15,6 @@ import Adapt: adapt, adapt_storage
 using FillArrays, ComponentArrays
 # Automatic Differentiation
 using ChainRulesCore, Zygote
-# Optimization
-using Optimisers
 # Optional Dependency
 using Requires
 # Docstrings

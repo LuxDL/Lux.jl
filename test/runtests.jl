@@ -24,6 +24,8 @@ end
     @info "Testing GROUP $group"
     if group == "Lux"
         @testset "Lux.jl" begin
+            @time @safetestset "Core" begin include("core.jl") end
+
             @testset "Layers" begin
                 @time @safetestset "Basic" begin include("layers/basic.jl") end
                 @time @safetestset "Convolution" begin include("layers/conv.jl") end

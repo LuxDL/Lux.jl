@@ -1,11 +1,3 @@
-# Base Type
-## API:
-### initialparameters(rng, l) --> Must return a NamedTuple/ComponentArray
-### initialstates(rng, l)     --> Must return a NamedTuple
-### parameterlength(l)        --> Integer
-### statelength(l)            --> Integer
-### l(x, ps, st)
-
 """
     AbstractExplicitLayer
 
@@ -35,7 +27,7 @@ abstract type AbstractExplicitLayer end
 
 Generate the initial parameters of the layer `l`.
 """
-initialparameters(::AbstractRNG, ::Any) = NamedTuple()
+initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
     return map(Base.Fix1(initialparameters, rng), l)
 end
@@ -45,7 +37,7 @@ end
 
 Generate the initial states of the layer `l`.
 """
-initialstates(::AbstractRNG, ::Any) = NamedTuple()
+initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
 
 """
@@ -54,24 +46,22 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 Return the total number of parameters of the layer `l`.
 """
 function parameterlength(l::AbstractExplicitLayer)
-    return parameterlength(initialparameters(Random.default_rng(), l))
+    return parameterlength(initialparameters(Random.default_rng(0), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
     return length(nt) == 0 ? 0 : sum(parameterlength, nt)
 end
 parameterlength(a::AbstractArray) = length(a)
-parameterlength(x) = 0
 
 """
     statelength(l)
 
 Return the total number of states of the layer `l`.
 """
-statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(), l))
+statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(0), l))
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
-statelength(x::Union{Number, Symbol}) = 1
-statelength(x) = 0
+statelength(x::Union{Number, Symbol, Val}) = 1
 
 """
     setup(rng::AbstractRNG, l::AbstractExplicitLayer)
@@ -134,18 +124,18 @@ end
 
 # Test Mode
 """
-    testmode(st::NamedTuple, mode::Bool=true)
+    testmode(st::NamedTuple)
 
-Make all occurances of `training` in state `st` `!mode`
+Make all occurances of `training` in state `st` -- `Val(false)`.
 """
-testmode(st::NamedTuple, mode::Bool=true) = update_state(st, :training, Val(!mode))
+testmode(st::NamedTuple) = update_state(st, :training, Val(false))
 
 """
-    trainmode(x::Any, mode::Bool=true)
+    trainmode(st::NamedTuple)
 
-Make all occurances of `training` in state `st` `mode`
+Make all occurances of `training` in state `st` -- `Val(true)`.
 """
-trainmode(x::Any, mode::Bool=true) = testmode(x, !mode)
+trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
 """
     update_state(st::NamedTuple, key::Symbol, value; layer_check=_default_layer_check(key))
