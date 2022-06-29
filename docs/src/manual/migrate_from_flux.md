@@ -158,11 +158,6 @@ model or running inference. This is the default mode for `Flux.BatchNorm`, `Flux
 do exactly what the user wants), hence our default mode is `training`. This can be changed
 using [`Lux.testmode`](@ref).
 
-### Group Normalization
-
-`Flux.GroupNorm` sets `track_stats=true` by default. We set it to `false` since we found
-little to no reference for tracking statistics in Group Normalization.
-
 ## Can't access functions like `relu`, `sigmoid`, etc?
 
 Unlike Flux we don't reexport functionality from `NNlib`, all you need to do to fix this is

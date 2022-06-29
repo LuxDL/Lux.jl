@@ -177,7 +177,7 @@ end
 
 """
     GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-              init_scale=ones32, affine=true, track_stats=false, epsilon=1f-5,
+              init_scale=ones32, affine=true, track_stats=true, epsilon=1f-5,
               momentum=0.1f0)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
@@ -261,7 +261,7 @@ struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
 end
 
 function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-                   init_scale=ones32, affine=true, track_stats=false, epsilon=1.0f-5,
+                   init_scale=ones32, affine=true, track_stats=true, epsilon=1.0f-5,
                    momentum=0.1f0)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = NNlib.fast_act(activation)
