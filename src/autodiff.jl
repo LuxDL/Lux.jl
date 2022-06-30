@@ -9,10 +9,6 @@ ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
 
-function ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x)
-    return x, Δ -> (NoTangent(), NoTangent(), Δ)
-end
-
 # NNlib Functions
 function ChainRulesCore.rrule(::typeof(batchnorm), g::CuArray{T}, b::CuArray{T},
                               x::Union{CuArray{T, 4}, CuArray{T, 5}}, running_mean,

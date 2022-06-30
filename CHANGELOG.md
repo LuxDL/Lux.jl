@@ -1,5 +1,14 @@
 # v0.4
 
+## v0.4.8
+
+  - Deprecations
+    - `ActivationFunction` -- See reasoning in https://github.com/avik-pal/Lux.jl/issues/71
+    - Default `parameterlength` / `statelength` / `initialparameters` / `initialstates` for
+      certain types
+    - `trainmode` / `testmode` with `mode` argument
+    - `Conv`: `bias` deprecated in favor of `use_bias`
+
 ## v0.4.7
 
   - Manual detailing Lux Interface

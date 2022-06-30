@@ -89,6 +89,25 @@ away those optimizations (these can be tested via `Zygote.@code_ir`).
   `true`, `false`, etc. ensuring there is no runtime cost for these operations.
   See [`BatchNorm`](@ref), [`Dropout`](@ref), etc.
 
+## Deprecation
+
+Deprecations should be handled according to SemVar recommendations, i.e. there should be
+atleast one version where we throw a deprecation warning. This ensures users know how to
+modify their code for upcoming releases.
+
+[This blog](https://invenia.github.io/blog/2022/06/17/deprecating-in-julia/) details the
+process of deprecating functionalities in Julia packages. We follow the same process. Some
+additional guidelines are:
+
+  - Add tests using `Test.@test_deprecated` to ensure that deprecations are indeed working
+    as expected.
+  - Add a warning to the documentation about deprecations (and how to use the new
+    recommended functionality).
+  - Add `# Deprecated Functionality (Remove in <VERSION NUMBER>)` before the tests and
+    deprecated functionality not placed in `src/deprecated.jl` (like kwarg deprecations).
+    This makes it easier to search and delete the functionalities before making a breaking
+    release.
+
 ## Documentation
 
 We use `Documenter.jl` + `mkdocs` for our documentation.

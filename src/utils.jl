@@ -89,17 +89,17 @@ Method undefined if `st.training` is not of type `Val`.
 @inline istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.training)
 
 # Convolution
-function convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
-                    ch::Pair{<:Integer, <:Integer};
-                    init=glorot_uniform, groups=1) where {N}
+function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
+                     ch::Pair{<:Integer, <:Integer};
+                     init=glorot_uniform, groups=1) where {N}
     cin, cout = ch
     @assert cin % groups==0 "Input channel dimension must be divisible by groups."
     @assert cout % groups==0 "Output channel dimension must be divisible by groups."
     return init(rng, filter..., cin ÷ groups, cout)
 end
 
-expand(N, i::Tuple) = i
-expand(N, i::Integer) = ntuple(_ -> i, N)
+_expand(N, i::Tuple) = i
+_expand(N, i::Integer) = ntuple(_ -> i, N)
 
 _maybetuple_string(pad) = string(pad)
 _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
@@ -108,7 +108,7 @@ _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(
 struct SamePad end
 
 function calc_padding(lt, pad, k::NTuple{N, T}, dilation, stride) where {T, N}
-    return expand(Val(2 * N), pad)
+    return _expand(Val(2 * N), pad)
 end
 
 function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
