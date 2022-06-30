@@ -123,35 +123,6 @@ function Base.show(io::IO, w::WrappedFunction)
 end
 
 """
-    ActivationFunction(f)
-
-Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally
-calls [`Lux.applyactivation`](@ref)
-
-## Arguments
-
-  - `f`: Activation function
-
-## Inputs
-
-  - `x`: Any array type s.t. `f` can be broadcasted over it
-
-## Returns
-
-  - Broadcasted Activation `f.(x)`
-  - Empty `NamedTuple()`
-"""
-struct ActivationFunction{F} <: AbstractExplicitLayer
-    func::F
-end
-
-(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x), st
-
-function Base.show(io::IO, af::ActivationFunction)
-    return print(io, "ActivationFunction(", af.func, ")")
-end
-
-"""
     SkipConnection(layer, connection)
 
 Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers

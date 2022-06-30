@@ -46,7 +46,7 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 Return the total number of parameters of the layer `l`.
 """
 function parameterlength(l::AbstractExplicitLayer)
-    return parameterlength(initialparameters(Random.default_rng(0), l))
+    return parameterlength(initialparameters(Random.default_rng(), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
     return length(nt) == 0 ? 0 : sum(parameterlength, nt)
@@ -58,7 +58,7 @@ parameterlength(a::AbstractArray) = length(a)
 
 Return the total number of states of the layer `l`.
 """
-statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(0), l))
+statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(), l))
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
 statelength(x::Union{Number, Symbol, Val}) = 1

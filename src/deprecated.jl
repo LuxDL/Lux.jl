@@ -57,3 +57,34 @@ function statelength(x::Any)
                  :statelength)
     return 0
 end
+
+## Layers
+"""
+    ActivationFunction(f)
+
+Broadcast `f` on the input.
+
+## Arguments
+
+  - `f`: Activation function
+
+## Inputs
+
+  - `x`: Any array type s.t. `f` can be broadcasted over it
+
+## Returns
+
+  - Broadcasted Activation `f.(x)`
+  - Empty `NamedTuple()`
+
+!!! warn
+    
+    This layer is deprecated and will be removed in v0.5. Use [`WrappedFunction`](@ref) with
+    manual broadcasting
+"""
+function ActivationFunction(f)
+    Base.depwarn("`Lux.ActivationFunction(f)` has been deprecated and will be removed in" *
+                 " v0.5. Use `Lux.WrappedFunction(x -> f.(x))` instead.",
+                 :ActivationFunction)
+    return WrappedFunction(Base.Fix1(broadcast, f))
+end
