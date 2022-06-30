@@ -9,10 +9,6 @@ ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
 
-ChainRulesCore.Tangent{P}(; kwargs...) where {P <: AbstractExplicitLayer} = NoTangent()
-
-ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
-
 function ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x)
     return x, Δ -> (NoTangent(), NoTangent(), Δ)
 end

@@ -79,6 +79,7 @@ end
 
     # Empty ComponentArray test
     @test_nowarn display(ComponentArray(NamedTuple()))
+    println()
 
     # Optimisers
     opt = Optimisers.ADAM(0.001f0)
