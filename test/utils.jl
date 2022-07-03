@@ -87,4 +87,12 @@ end
 
     @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
     @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
+
+    if CUDA.functional()
+        ps_c = ps_c |> gpu
+        st_opt = Optimisers.setup(opt, ps_c)
+
+        @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
+        @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
+    end
 end

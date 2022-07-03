@@ -19,6 +19,8 @@ using ChainRulesCore, Zygote
 using Requires
 # Docstrings
 using Markdown
+# Optimisers + ComponentArrays
+using Optimisers
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 

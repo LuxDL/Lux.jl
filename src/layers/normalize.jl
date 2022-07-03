@@ -200,9 +200,11 @@ end
       + `init_scale`: Controls how the `scale` is initiliazed
 
   - If `track_stats=true`, accumulates mean and variance statistics in training phase that
-    will be used to renormalize the input in test phase.
+    will be used to renormalize the input in test phase. **(This feature has been
+    deprecated and will be removed in v0.5)**
   - `epsilon`: a value added to the denominator for numerical stability
-  - `momentum`:  the value used for the `running_mean` and `running_var` computation
+  - `momentum`:  the value used for the `running_mean` and `running_var` computation **(This
+    feature has been deprecated and will be removed in v0.5)**
 
 ## Inputs
 
@@ -261,10 +263,25 @@ struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
 end
 
 function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-                   init_scale=ones32, affine=true, track_stats=true, epsilon=1.0f-5,
-                   momentum=0.1f0)
+                   init_scale=ones32, affine=true, track_stats=missing, epsilon=1.0f-5,
+                   momentum=missing)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = NNlib.fast_act(activation)
+
+    # Deprecated Functionality (Remove in v0.5)
+    if !ismissing(momentum)
+        Base.depwarn("`momentum` for `GroupNorm` has been deprecated and will be removed " *
+                     "in v0.5", :GroupNorm)
+    else
+        momentum = 0.1f0
+    end
+    if !ismissing(track_stats) && track_stats
+        Base.depwarn("`track_stats` for `GroupNorm` has been deprecated and will be " *
+                     "removed in v0.5", :GroupNorm)
+    else
+        track_stats = true
+    end
+
     return GroupNorm{affine, track_stats, typeof(activation), typeof(init_bias),
                      typeof(init_scale), typeof(epsilon)}(activation, epsilon, momentum,
                                                           chs, init_bias, init_scale,
@@ -297,15 +314,9 @@ function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
 
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
-    x_normalized, xmean, xvar = normalization(x_,
-                                              st.running_mean,
-                                              st.running_var,
-                                              ps.scale,
-                                              ps.bias,
-                                              GN.activation,
-                                              collect(1:(N - 1)),
-                                              st.training,
-                                              GN.momentum,
+    x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var,
+                                              ps.scale, ps.bias, GN.activation,
+                                              collect(1:(N - 1)), st.training, GN.momentum,
                                               GN.epsilon)
 
     st = merge(st, (running_mean=xmean, running_var=xvar))

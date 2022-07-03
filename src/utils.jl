@@ -156,6 +156,18 @@ end
 
 ComponentArrays.recursive_length(nt::NamedTuple{(), Tuple{}}) = 0
 
+Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
+
+function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
+    tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
+    return tree, ComponentArray(ps_new, getaxes(ps))
+end
+
+function Optimisers.update!(tree::Optimisers.Leaf, ps::ComponentArray, gs::ComponentArray)
+    tree, ps_new = Optimisers.update!(tree, getdata(ps), getdata(gs))
+    return tree, ComponentArray(ps_new, getaxes(ps))
+end
+
 # Getting typename
 get_typename(::T) where {T} = Base.typename(T).wrapper
 

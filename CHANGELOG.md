@@ -16,6 +16,8 @@
     https://github.com/FluxML/Optimisers.jl/issues/91
   - `Dropout` Layers caches `1 / (1 - p)` for minor improvements for forward pass
   - `dropout` has a custom rrule -- significantly improves performance for smaller arrays
+  - **WARN** A bug with ComponentArray + CUDA + Optimiser usage was introduced. Please
+    update to v0.4.8 or higher.
 
 ## v0.4.6
 
