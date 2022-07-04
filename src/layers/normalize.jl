@@ -170,8 +170,8 @@ end
 function Base.show(io::IO, l::BatchNorm{affine, track_stats}) where {affine, track_stats}
     print(io, "BatchNorm($(l.chs)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    affine || print(io, ", affine=false")
-    track_stats || print(io, ", track_stats=false")
+    print(io, ", affine=$(affine)")
+    print(io, ", track_stats=$(track_stats)")
     return print(io, ")")
 end
 
@@ -226,7 +226,7 @@ end
 
 ## States
 
-  - Statistics if `track_stats=true`
+  - Statistics if `track_stats=true` **(DEPRECATED)**
     
       + `running_mean`: Running mean of shape `(groups,)`
       + `running_var`: Running variance of shape `(groups,)`
@@ -292,6 +292,7 @@ function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine
     return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
            NamedTuple()
 end
+
 function initialstates(rng::AbstractRNG,
                        l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     return if track_stats
@@ -303,6 +304,7 @@ function initialstates(rng::AbstractRNG,
 end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
+
 function statelength(l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     return (track_stats ? 2 * l.groups : 0) + 1
 end
@@ -327,8 +329,8 @@ end
 function Base.show(io::IO, l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     print(io, "GroupNorm($(l.chs), $(l.groups)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    affine || print(io, ", affine=false")
-    track_stats || print(io, ", track_stats=false")
+    print(io, ", affine=$(affine)")
+    print(io, ", track_stats=$(track_stats)")
     return print(io, ")")
 end
 
