@@ -65,8 +65,7 @@ Use [`Lux.testmode`](@ref) during inference.
 ## Example
 
 ```julia
-m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10),
-          BatchNorm(10))
+m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 ```
 
 See also [`GroupNorm`](@ref)
@@ -113,16 +112,10 @@ function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st)||size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
 
-    x_normalized, xmean, xvar = normalization(x,
-                                              st.running_mean,
-                                              st.running_var,
-                                              ps.scale,
-                                              ps.bias,
-                                              BN.activation,
-                                              collect([1:(N - 2); N]),
-                                              st.training,
-                                              BN.momentum,
-                                              BN.epsilon)
+    x_normalized, xmean, xvar = normalization(x, st.running_mean, st.running_var, ps.scale,
+                                              ps.bias, BN.activation,
+                                              collect([1:(N - 2); N]), st.training,
+                                              BN.momentum, BN.epsilon)
 
     st = merge(st, (running_mean=xmean, running_var=xvar))
 
@@ -148,19 +141,13 @@ function (BN::BatchNorm{affine, track_stats})(x::Union{CuArray{T, 2}, CuArray{T,
             N = ndims(x)
             reduce_dims = collect([1:(N - 2); N])
             running_mean2 = mean(x; dims=reduce_dims)
-            running_var2 = var(x; mean=running_mean2, dims=reduce_dims,
-                               corrected=false)
+            running_var2 = var(x; mean=running_mean2, dims=reduce_dims, corrected=false)
         end
     end
     res = applyactivation(BN.activation,
-                          batchnorm(affine ? ps.scale : nothing,
-                                    affine ? ps.bias : nothing,
-                                    x,
-                                    running_mean2,
-                                    running_var2,
-                                    BN.momentum;
-                                    eps=BN.epsilon,
-                                    training=istraining(st)))
+                          batchnorm(affine ? ps.scale : nothing, affine ? ps.bias : nothing,
+                                    x, running_mean2, running_var2, BN.momentum;
+                                    eps=BN.epsilon, training=istraining(st)))
     if track_stats
         st = merge(st, (running_mean=running_mean2, running_var=running_var2))
     end
@@ -275,9 +262,11 @@ function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias
     else
         momentum = 0.1f0
     end
-    if !ismissing(track_stats) && track_stats
-        Base.depwarn("`track_stats` for `GroupNorm` has been deprecated and will be " *
-                     "removed in v0.5", :GroupNorm)
+    if !ismissing(track_stats)
+        if track_stats
+            Base.depwarn("`track_stats` for `GroupNorm` has been deprecated and will be " *
+                         "removed in v0.5", :GroupNorm)
+        end
     else
         track_stats = true
     end
@@ -316,10 +305,9 @@ function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
 
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
-    x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var,
-                                              ps.scale, ps.bias, GN.activation,
-                                              collect(1:(N - 1)), st.training, GN.momentum,
-                                              GN.epsilon)
+    x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var, ps.scale,
+                                              ps.bias, GN.activation, collect(1:(N - 1)),
+                                              st.training, GN.momentum, GN.epsilon)
 
     st = merge(st, (running_mean=xmean, running_var=xvar))
 

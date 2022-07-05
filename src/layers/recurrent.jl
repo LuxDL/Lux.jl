@@ -46,12 +46,8 @@ struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
     init_state::S
 end
 
-function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int},
-                 activation=tanh;
-                 bias::Bool=true,
-                 init_bias=zeros32,
-                 init_weight=glorot_uniform,
-                 init_state=ones32)
+function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh; bias::Bool=true,
+                 init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
     return RNNCell{bias, typeof(activation), typeof(init_bias), typeof(init_weight),
                    typeof(init_state)}(activation, in_dims, out_dims, init_bias,
                                        init_weight, init_state)
@@ -185,8 +181,7 @@ function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
                                                                               glorot_uniform,
                                                                               glorot_uniform),
                   init_bias::Tuple{Function, Function, Function, Function}=(zeros32,
-                                                                            zeros32,
-                                                                            ones32,
+                                                                            zeros32, ones32,
                                                                             zeros32),
                   init_state::Function=zeros32)
     return LSTMCell(in_dims, out_dims, init_bias, init_weight, init_state)
@@ -219,8 +214,7 @@ end
 function (lstm::LSTMCell)((x, hidden_state,
                            memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
                                           <:AbstractMatrix},
-                          ps::Union{ComponentArray, NamedTuple},
-                          st::NamedTuple)
+                          ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
@@ -293,8 +287,7 @@ function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
                  init_weight::Tuple{Function, Function, Function}=(glorot_uniform,
                                                                    glorot_uniform,
                                                                    glorot_uniform),
-                 init_bias::Tuple{Function, Function, Function}=(zeros32, zeros32,
-                                                                 zeros32),
+                 init_bias::Tuple{Function, Function, Function}=(zeros32, zeros32, zeros32),
                  init_state::Function=zeros32)
     return GRUCell(in_dims, out_dims, init_weight, init_bias, init_state)
 end

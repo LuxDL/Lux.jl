@@ -79,8 +79,7 @@ end
 
 Simply calls `model(x, ps, st)`
 """
-function apply(model::AbstractExplicitLayer, x, ps,
-               st::NamedTuple)
+function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
     return model(x, ps, st)
 end
 

@@ -104,8 +104,7 @@ end
 
 function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
     randn(rng)
-    return (rng=replicate(rng), training=Val(true), update_mask=Val(true),
-            mask=nothing)
+    return (rng=replicate(rng), training=Val(true), update_mask=Val(true), mask=nothing)
 end
 
 function VariationalHiddenDropout(p; dims=:)

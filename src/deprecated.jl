@@ -38,23 +38,20 @@ end
 function initialstates(::AbstractRNG, l::Any)
     Base.depwarn("Default fallback for non `AbstractExplicitLayer` types are deprecated" *
                  "and will be removed in v0.5. Define" *
-                 " `Lux.initialstates(::AbstractRNG, ::$(typeof(l)))`",
-                 :initialstates)
+                 " `Lux.initialstates(::AbstractRNG, ::$(typeof(l)))`", :initialstates)
     return NamedTuple()
 end
 
 ## Fallback `parameterlength` / `statelength`
 function parameterlength(x::Any)
     Base.depwarn("Fallback for `parameterlength` of type $(typeof(x)) is deprecated." *
-                 " This will generate an error from v0.5.",
-                 :parameterlength)
+                 " This will generate an error from v0.5.", :parameterlength)
     return 0
 end
 
 function statelength(x::Any)
     Base.depwarn("Fallback for `statelength` of type $(typeof(x)) is deprecated." *
-                 " This will generate an error from v0.5.",
-                 :statelength)
+                 " This will generate an error from v0.5.", :statelength)
     return 0
 end
 

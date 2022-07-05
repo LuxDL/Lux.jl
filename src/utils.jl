@@ -90,8 +90,8 @@ Method undefined if `st.training` is not of type `Val`.
 
 # Convolution
 function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
-                     ch::Pair{<:Integer, <:Integer};
-                     init=glorot_uniform, groups=1) where {N}
+                     ch::Pair{<:Integer, <:Integer}; init=glorot_uniform,
+                     groups=1) where {N}
     cin, cout = ch
     @assert cin % groups==0 "Input channel dimension must be divisible by groups."
     @assert cout % groups==0 "Output channel dimension must be divisible by groups."

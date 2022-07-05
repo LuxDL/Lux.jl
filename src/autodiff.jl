@@ -26,8 +26,7 @@ function ChainRulesCore.rrule(::typeof(dropout), rng::AbstractRNG, x::AbstractAr
     y, mask, rng = dropout(rng, x, p, q, dims, t)
     function dropout_pullback((dy, dmask, drng))
         return (NoTangent(), NoTangent(), elementwise_mul(dy, mask), NoTangent(),
-                NoTangent(),
-                NoTangent(), NoTangent())
+                NoTangent(), NoTangent(), NoTangent())
     end
     return (y, mask, rng), dropout_pullback
 end

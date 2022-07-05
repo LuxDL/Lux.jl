@@ -32,24 +32,19 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                running_mean::Union{Nothing, AbstractVector{T}},
                                running_var::Union{Nothing, AbstractVector{T}},
                                scale::Union{Nothing, AbstractVector{T}},
-                               bias::Union{Nothing, AbstractVector{T}},
-                               activation, reduce_dims, t::Val, momentum::T=T(0.1),
-                               epsilon::T=T(1e-5); kwargs...) where {T, N}
+                               bias::Union{Nothing, AbstractVector{T}}, activation,
+                               reduce_dims, t::Val, momentum::T=T(0.1), epsilon::T=T(1e-5);
+                               kwargs...) where {T, N}
     running_mean_reshaped = _reshape_into_proper_shape(running_mean, x)
     running_var_reshaped = _reshape_into_proper_shape(running_var, x)
     scale_reshaped = _reshape_into_proper_shape(scale, x)
     bias_reshaped = _reshape_into_proper_shape(bias, x)
-    x_norm, running_mean_, running_var_ = normalization_forward(x,
-                                                                running_mean_reshaped,
+    x_norm, running_mean_, running_var_ = normalization_forward(x, running_mean_reshaped,
                                                                 running_var_reshaped,
                                                                 scale_reshaped,
-                                                                bias_reshaped,
-                                                                activation,
-                                                                reduce_dims,
-                                                                t,
-                                                                momentum,
-                                                                epsilon;
-                                                                kwargs...)
+                                                                bias_reshaped, activation,
+                                                                reduce_dims, t, momentum,
+                                                                epsilon; kwargs...)
     return x_norm, _safe_vec(running_mean_), _safe_vec(running_var_)
 end
 
@@ -170,8 +165,7 @@ end
 end
 
 # CUDNN Constants
-const cudnnValidActivationTypes = Union{
-                                        typeof(tanh), typeof(sigmoid), typeof(relu),
+const cudnnValidActivationTypes = Union{typeof(tanh), typeof(sigmoid), typeof(relu),
                                         typeof(elu), typeof(tanh_fast), typeof(sigmoid_fast)
                                         }
 
@@ -245,9 +239,7 @@ end
 end
 
 # CUDNN Helpers
-function cudnnOpTensorWithDefaults(x1,
-                                   x2;
-                                   y=similar(x1),
+function cudnnOpTensorWithDefaults(x1, x2; y=similar(x1),
                                    op::CUDNN.cudnnOpTensorOp_t=CUDNN.CUDNN_OP_TENSOR_ADD,
                                    compType::DataType=(eltype(x1) <: Float64 ? Float64 :
                                                        Float32),
@@ -255,9 +247,7 @@ function cudnnOpTensorWithDefaults(x1,
                                    opTensorDesc::CUDNN.cudnnOpTensorDescriptor=CUDNN.cudnnOpTensorDescriptor(op,
                                                                                                              CUDNN.cudnnDataType(compType),
                                                                                                              nanOpt),
-                                   alpha1::Real=1,
-                                   alpha2::Real=1,
-                                   beta::Real=0,
+                                   alpha1::Real=1, alpha2::Real=1, beta::Real=0,
                                    x1Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x1),
                                    x2Desc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(x2),
                                    yDesc::CUDNN.cudnnTensorDescriptor=CUDNN.cudnnTensorDescriptor(y))
@@ -271,17 +261,11 @@ function cudnnActivationBackward(y::CuArray{T}, Δ::CuArray{T}, x::CuArray{T};
                                  mode) where {T}
     Δx = similar(x)
     desc = CUDNN.cudnnActivationDescriptor(mode, CUDNN.CUDNN_NOT_PROPAGATE_NAN, Cdouble(1))
-    CUDNN.cudnnActivationBackward(CUDNN.handle(),
-                                  desc,
-                                  CUDNN.scalingParameter(T, 1),
-                                  CUDNN.cudnnTensorDescriptor(y),
-                                  y,
-                                  CUDNN.cudnnTensorDescriptor(Δ),
-                                  Δ,
-                                  CUDNN.cudnnTensorDescriptor(x),
-                                  x,
+    CUDNN.cudnnActivationBackward(CUDNN.handle(), desc, CUDNN.scalingParameter(T, 1),
+                                  CUDNN.cudnnTensorDescriptor(y), y,
+                                  CUDNN.cudnnTensorDescriptor(Δ), Δ,
+                                  CUDNN.cudnnTensorDescriptor(x), x,
                                   CUDNN.scalingParameter(T, 0),
-                                  CUDNN.cudnnTensorDescriptor(Δx),
-                                  Δx)
+                                  CUDNN.cudnnTensorDescriptor(Δx), Δx)
     return Δx
 end

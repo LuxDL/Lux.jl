@@ -101,7 +101,8 @@ end
     # begin tests
     squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
-    let m = GroupNorm(4, 2; track_stats=true), sizes = (3, 4, 2),
+    let m = GroupNorm(4, 2; track_stats=true),
+        sizes = (3, 4, 2),
         x = reshape(collect(1:prod(sizes)), sizes)
 
         println(m)

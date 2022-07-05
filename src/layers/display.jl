@@ -87,8 +87,7 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
     paramlength = parameterlength(layer)
     if paramlength > 0
         print(io, " "^max(2, (indent == 0 ? 20 : 39) - indent - length(str)))
-        printstyled(io, "# ", underscorise(paramlength), " parameters";
-                    color=:light_black)
+        printstyled(io, "# ", underscorise(paramlength), " parameters"; color=:light_black)
         nonparam = statelength(layer)
         if nonparam > 0
             printstyled(io, ", plus ", underscorise(nonparam),
