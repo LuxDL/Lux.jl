@@ -371,6 +371,11 @@ function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol
     return WeightNorm{Val{which_params}, typeof(layer), typeof(dims)}(layer, dims)
 end
 
+@inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
+@inline function _norm_except(x::AbstractArray{T, N}, except_dim=N) where {T, N}
+    return _norm(x; dims=filter(i -> i != except_dim, 1:N))
+end
+
 function initialparameters(rng::AbstractRNG,
                            wn::WeightNorm{Val{which_params}}) where {which_params}
     ps_layer = initialparameters(rng, wn.layer)
