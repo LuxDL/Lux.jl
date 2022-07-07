@@ -48,11 +48,9 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
     kwargs::K
 end
 
-function NeuralODE(model::Lux.AbstractExplicitLayer;
-                   solver=Tsit5(),
+function NeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(),
                    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-                   tspan=(0.0f0, 1.0f0),
-                   kwargs...)
+                   tspan=(0.0f0, 1.0f0), kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 
@@ -73,15 +71,10 @@ diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 # ## Create and Initialize the Neural ODE Layer
 function create_model()
     ## Construct the Neural ODE Model
-    model = Chain(FlattenLayer(),
-                  Dense(784, 20, tanh),
+    model = Chain(FlattenLayer(), Dense(784, 20, tanh),
                   NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh),
-                                  Dense(10, 20, tanh));
-                            save_everystep=false,
-                            reltol=1.0f-3,
-                            abstol=1.0f-3,
-                            save_start=false),
-                  diffeqsol_to_array,
+                                  Dense(10, 20, tanh)); save_everystep=false, reltol=1.0f-3,
+                            abstol=1.0f-3, save_start=false), diffeqsol_to_array,
                   Dense(20, 10))
 
     rng = Random.default_rng()

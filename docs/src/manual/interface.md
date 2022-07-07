@@ -45,6 +45,8 @@ function Linear(in_dims::Int, out_dims::Int; init_weight=Lux.glorot_uniform,
     return Linear{typeof(init_weight), typeof(init_bias)}(in_dims, out_dims, init_weight,
                                                           init_bias)
 end
+
+l = Linear(2, 4)
 ```
 
 Next, we need to implement functions which return the parameters and states for the layer.
@@ -66,6 +68,11 @@ You could also implement [`Lux.parameterlength`](@ref) and [`Lux.statelength`](@
 prevent wasteful reconstruction of the parameters and states.
 
 ```@example layer_interface
+# This works
+println("Parameter Length: ", Lux.parameterlength(l), "; State Length: ",
+        Lux.statelength(l))
+
+# But still recommened to define these
 Lux.parameterlength(l::Linear) = l.out_dims * l.in_dims + l.out_dims
 
 Lux.statelength(::Linear) = 0
@@ -91,8 +98,6 @@ Finally, let's run this layer. If you have made this far into the documentation,
 feel you need a refresher on that.
 
 ```@example layer_interface
-l = Linear(2, 4)
-
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 

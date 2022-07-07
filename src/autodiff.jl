@@ -9,14 +9,6 @@ ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
 
-ChainRulesCore.Tangent{P}(; kwargs...) where {P <: AbstractExplicitLayer} = NoTangent()
-
-ChainRulesCore.rrule(::typeof(istraining)) = true, _ -> (NoTangent(),)
-
-function ChainRulesCore.rrule(::typeof(Base.broadcasted), ::typeof(identity), x)
-    return x, Δ -> (NoTangent(), NoTangent(), Δ)
-end
-
 # NNlib Functions
 function ChainRulesCore.rrule(::typeof(batchnorm), g::CuArray{T}, b::CuArray{T},
                               x::Union{CuArray{T, 4}, CuArray{T, 5}}, running_mean,
@@ -34,8 +26,7 @@ function ChainRulesCore.rrule(::typeof(dropout), rng::AbstractRNG, x::AbstractAr
     y, mask, rng = dropout(rng, x, p, q, dims, t)
     function dropout_pullback((dy, dmask, drng))
         return (NoTangent(), NoTangent(), elementwise_mul(dy, mask), NoTangent(),
-                NoTangent(),
-                NoTangent(), NoTangent())
+                NoTangent(), NoTangent(), NoTangent())
     end
     return (y, mask, rng), dropout_pullback
 end

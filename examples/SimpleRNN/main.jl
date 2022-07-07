@@ -27,8 +27,7 @@ function get_dataloaders(; dataset_size=1000, sequence_length=50)
                                      1) for d in data[((dataset_size ÷ 2) + 1):end]]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     ## Split the dataset
-    (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8,
-                                                  shuffle=true)
+    (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8, shuffle=true)
     ## Create DataLoaders
     return (
             ## Use DataLoader to automatically minibatch and shuffle the data

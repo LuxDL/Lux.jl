@@ -47,7 +47,7 @@ We do have automatic formatter, which opens PR after fixing common style issues,
   files.
 
 * Use [JET.jl](https://aviatesk.github.io/JET.jl/dev/) to test for dynamic dispatch in the
-  functionality you added, specifically use `run_JET_tests` from `test/utils.jl`.
+  functionality you added, specifically use `run_JET_tests` from `test/test_utils.jl`.
 
 * **Always** test for gradient correctness. Zygote can be notorious for incorrect gradients,
   so add tests using `test_gradient_correctness_fdm` for finite differencing or use any
@@ -88,6 +88,25 @@ away those optimizations (these can be tested via `Zygote.@code_ir`).
   Instead if we pass `Val(true)`, we will be able to specialize functions directly based on
   `true`, `false`, etc. ensuring there is no runtime cost for these operations.
   See [`BatchNorm`](@ref), [`Dropout`](@ref), etc.
+
+## Deprecation
+
+Deprecations should be handled according to SemVar recommendations, i.e. there should be
+atleast one version where we throw a deprecation warning. This ensures users know how to
+modify their code for upcoming releases.
+
+[This blog](https://invenia.github.io/blog/2022/06/17/deprecating-in-julia/) details the
+process of deprecating functionalities in Julia packages. We follow the same process. Some
+additional guidelines are:
+
+  - Add tests using `Test.@test_deprecated` to ensure that deprecations are indeed working
+    as expected.
+  - Add a warning to the documentation about deprecations (and how to use the new
+    recommended functionality).
+  - Add `# Deprecated Functionality (Remove in <VERSION NUMBER>)` before the tests and
+    deprecated functionality not placed in `src/deprecated.jl` (like kwarg deprecations).
+    This makes it easier to search and delete the functionalities before making a breaking
+    release.
 
 ## Documentation
 

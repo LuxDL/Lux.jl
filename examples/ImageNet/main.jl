@@ -497,11 +497,9 @@ function main(args)
                                 std=reshape([0.229f0, 0.224f0, 0.225f0], 1, 1, 3))
     train_data_augmentation = Resize(256, 256) |> FlipX(0.5) |> RCropSize(224, 224)
     val_data_augmentation = Resize(256, 256) |> CropSize(224, 224)
-    train_dataset = ImageDataset(joinpath(args["data"], "train"),
-                                 train_data_augmentation,
+    train_dataset = ImageDataset(joinpath(args["data"], "train"), train_data_augmentation,
                                  normalization_parameters)
-    val_dataset = ImageDataset(joinpath(args["data"], "val"),
-                               val_data_augmentation,
+    val_dataset = ImageDataset(joinpath(args["data"], "val"), val_data_augmentation,
                                normalization_parameters)
     if is_distributed()
         train_dataset = DistributedDataContainer(train_dataset)
@@ -572,10 +570,8 @@ function main(args)
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
 
-        save_state = Dict("epoch" => epoch,
-                          "arch" => args["arch"],
-                          "model_states" => st |> cpu,
-                          "model_parameters" => ps |> cpu,
+        save_state = Dict("epoch" => epoch, "arch" => args["arch"],
+                          "model_states" => st |> cpu, "model_parameters" => ps |> cpu,
                           "optimiser_state" => optimiser_state |> cpu)
         save_checkpoint(save_state, is_best)
     end

@@ -1,5 +1,14 @@
 # v0.4
 
+## v0.4.8
+
+  - Deprecations
+    - `ActivationFunction` -- See reasoning in https://github.com/avik-pal/Lux.jl/issues/71
+    - Default `parameterlength` / `statelength` / `initialparameters` / `initialstates` for
+      certain types
+    - `trainmode` / `testmode` with `mode` argument
+    - `Conv`: `bias` deprecated in favor of `use_bias`
+
 ## v0.4.7
 
   - Manual detailing Lux Interface
@@ -7,6 +16,8 @@
     https://github.com/FluxML/Optimisers.jl/issues/91
   - `Dropout` Layers caches `1 / (1 - p)` for minor improvements for forward pass
   - `dropout` has a custom rrule -- significantly improves performance for smaller arrays
+  - **WARN** A bug with ComponentArray + CUDA + Optimiser usage was introduced. Please
+    update to v0.4.8 or higher.
 
 ## v0.4.6
 

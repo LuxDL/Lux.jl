@@ -8,9 +8,11 @@ Random.seed!(rng, 0)
 @testset "BatchNorm" begin
     let m = BatchNorm(2), x = [1.0f0 3.0f0 5.0f0
                                2.0f0 4.0f0 6.0f0]
+        println(m)
         ps, st = Lux.setup(rng, m)
 
-        @test Lux.parameterlength(m) == 2 * 2
+        @test Lux.parameterlength(m) == Lux.parameterlength(ps)
+        @test Lux.statelength(m) == Lux.statelength(st)
 
         @test ps.bias == [0, 0]  # init_bias(2)
         @test ps.scale == [1, 1]  # init_scale(2)
@@ -51,6 +53,7 @@ Random.seed!(rng, 0)
     end
 
     let m = BatchNorm(2; track_stats=false), x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
+        println(m)
         ps, st = Lux.setup(rng, m)
         @inferred m(x, ps, st)
         run_JET_tests(m, x, ps, st)
@@ -62,6 +65,7 @@ Random.seed!(rng, 0)
     # with activation function
     let m = BatchNorm(2, sigmoid), x = [1.0f0 3.0f0 5.0f0
                                         2.0f0 4.0f0 6.0f0]
+        println(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
@@ -76,12 +80,14 @@ Random.seed!(rng, 0)
     end
 
     let m = BatchNorm(2), x = reshape(Float32.(1:6), 3, 2, 1)
+        println(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.trainmode(st)
         @test_throws AssertionError m(x, ps, st)[1]
     end
 
     let m = BatchNorm(32), x = randn(Float32, 416, 416, 32, 1)
+        println(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         m(x, ps, st)
@@ -95,12 +101,15 @@ end
     # begin tests
     squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
-    let m = GroupNorm(4, 2; track_stats=true), sizes = (3, 4, 2),
+    let m = GroupNorm(4, 2; track_stats=true),
+        sizes = (3, 4, 2),
         x = reshape(collect(1:prod(sizes)), sizes)
 
-        @test Lux.parameterlength(m) == 2 * 4
+        println(m)
         x = Float32.(x)
         ps, st = Lux.setup(rng, m)
+        @test Lux.parameterlength(m) == Lux.parameterlength(ps)
+        @test Lux.statelength(m) == Lux.statelength(st)
         @test ps.bias == [0, 0, 0, 0]   # init_bias(32)
         @test ps.scale == [1, 1, 1, 1]  # init_scale(32)
 
@@ -149,4 +158,44 @@ end
         test_gradient_correctness_fdm(ps -> sum(first(m(x, ps, st))), ps; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
+
+    let m = GroupNorm(2, 2; track_stats=false), x = randn(rng, Float32, 3, 2, 1)
+        println(m)
+        ps, st = Lux.setup(rng, m)
+        @inferred m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
+
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    # with activation function
+    let m = GroupNorm(2, 2, sigmoid), x = randn(rng, Float32, 3, 2, 1)
+        println(m)
+        ps, st = Lux.setup(rng, m)
+        st = Lux.testmode(st)
+        y, st_ = m(x, ps, st)
+
+        @inferred m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
+
+        test_gradient_correctness_fdm((x, ps) -> sum(first(m(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    let m = GroupNorm(32, 16), x = randn(Float32, 416, 416, 32, 1)
+        println(m)
+        ps, st = Lux.setup(rng, m)
+        st = Lux.testmode(st)
+        m(x, ps, st)
+        @test (@allocated m(x, ps, st)) < 100_000_000
+        @inferred m(x, ps, st)
+        run_JET_tests(m, x, ps, st)
+    end
+
+    @test_throws AssertionError GroupNorm(5, 2)
+
+    # Deprecated Functionality (remove in v0.5)
+    @test_deprecated GroupNorm(4, 2; track_stats=true)
+    @test_deprecated GroupNorm(4, 2; track_stats=false, momentum=0.3f0)
 end

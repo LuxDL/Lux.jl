@@ -65,8 +65,7 @@ Use [`Lux.testmode`](@ref) during inference.
 ## Example
 
 ```julia
-m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10),
-          BatchNorm(10))
+m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 ```
 
 See also [`GroupNorm`](@ref)
@@ -113,16 +112,10 @@ function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
     @assert size(x, N - 1) == BN.chs
     @assert !istraining(st)||size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
 
-    x_normalized, xmean, xvar = normalization(x,
-                                              st.running_mean,
-                                              st.running_var,
-                                              ps.scale,
-                                              ps.bias,
-                                              BN.activation,
-                                              collect([1:(N - 2); N]),
-                                              st.training,
-                                              BN.momentum,
-                                              BN.epsilon)
+    x_normalized, xmean, xvar = normalization(x, st.running_mean, st.running_var, ps.scale,
+                                              ps.bias, BN.activation,
+                                              collect([1:(N - 2); N]), st.training,
+                                              BN.momentum, BN.epsilon)
 
     st = merge(st, (running_mean=xmean, running_var=xvar))
 
@@ -148,19 +141,13 @@ function (BN::BatchNorm{affine, track_stats})(x::Union{CuArray{T, 2}, CuArray{T,
             N = ndims(x)
             reduce_dims = collect([1:(N - 2); N])
             running_mean2 = mean(x; dims=reduce_dims)
-            running_var2 = var(x; mean=running_mean2, dims=reduce_dims,
-                               corrected=false)
+            running_var2 = var(x; mean=running_mean2, dims=reduce_dims, corrected=false)
         end
     end
     res = applyactivation(BN.activation,
-                          batchnorm(affine ? ps.scale : nothing,
-                                    affine ? ps.bias : nothing,
-                                    x,
-                                    running_mean2,
-                                    running_var2,
-                                    BN.momentum;
-                                    eps=BN.epsilon,
-                                    training=istraining(st)))
+                          batchnorm(affine ? ps.scale : nothing, affine ? ps.bias : nothing,
+                                    x, running_mean2, running_var2, BN.momentum;
+                                    eps=BN.epsilon, training=istraining(st)))
     if track_stats
         st = merge(st, (running_mean=running_mean2, running_var=running_var2))
     end
@@ -170,8 +157,8 @@ end
 function Base.show(io::IO, l::BatchNorm{affine, track_stats}) where {affine, track_stats}
     print(io, "BatchNorm($(l.chs)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    affine || print(io, ", affine=false")
-    track_stats || print(io, ", track_stats=false")
+    print(io, ", affine=$(affine)")
+    print(io, ", track_stats=$(track_stats)")
     return print(io, ")")
 end
 
@@ -200,9 +187,11 @@ end
       + `init_scale`: Controls how the `scale` is initiliazed
 
   - If `track_stats=true`, accumulates mean and variance statistics in training phase that
-    will be used to renormalize the input in test phase.
+    will be used to renormalize the input in test phase. **(This feature has been
+    deprecated and will be removed in v0.5)**
   - `epsilon`: a value added to the denominator for numerical stability
-  - `momentum`:  the value used for the `running_mean` and `running_var` computation
+  - `momentum`:  the value used for the `running_mean` and `running_var` computation **(This
+    feature has been deprecated and will be removed in v0.5)**
 
 ## Inputs
 
@@ -224,7 +213,7 @@ end
 
 ## States
 
-  - Statistics if `track_stats=true`
+  - Statistics if `track_stats=true` **(DEPRECATED)**
     
       + `running_mean`: Running mean of shape `(groups,)`
       + `running_var`: Running variance of shape `(groups,)`
@@ -261,10 +250,27 @@ struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
 end
 
 function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-                   init_scale=ones32, affine=true, track_stats=true, epsilon=1.0f-5,
-                   momentum=0.1f0)
+                   init_scale=ones32, affine=true, track_stats=missing, epsilon=1.0f-5,
+                   momentum=missing)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = NNlib.fast_act(activation)
+
+    # Deprecated Functionality (Remove in v0.5)
+    if !ismissing(momentum)
+        Base.depwarn("`momentum` for `GroupNorm` has been deprecated and will be removed " *
+                     "in v0.5", :GroupNorm)
+    else
+        momentum = 0.1f0
+    end
+    if !ismissing(track_stats)
+        if track_stats
+            Base.depwarn("`track_stats` for `GroupNorm` has been deprecated and will be " *
+                         "removed in v0.5", :GroupNorm)
+        end
+    else
+        track_stats = true
+    end
+
     return GroupNorm{affine, track_stats, typeof(activation), typeof(init_bias),
                      typeof(init_scale), typeof(epsilon)}(activation, epsilon, momentum,
                                                           chs, init_bias, init_scale,
@@ -275,6 +281,7 @@ function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine
     return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
            NamedTuple()
 end
+
 function initialstates(rng::AbstractRNG,
                        l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     return if track_stats
@@ -286,6 +293,7 @@ function initialstates(rng::AbstractRNG,
 end
 
 parameterlength(l::GroupNorm{affine}) where {affine} = affine ? (l.chs * 2) : 0
+
 function statelength(l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     return (track_stats ? 2 * l.groups : 0) + 1
 end
@@ -297,16 +305,9 @@ function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N
 
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
-    x_normalized, xmean, xvar = normalization(x_,
-                                              st.running_mean,
-                                              st.running_var,
-                                              ps.scale,
-                                              ps.bias,
-                                              GN.activation,
-                                              collect(1:(N - 1)),
-                                              st.training,
-                                              GN.momentum,
-                                              GN.epsilon)
+    x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var, ps.scale,
+                                              ps.bias, GN.activation, collect(1:(N - 1)),
+                                              st.training, GN.momentum, GN.epsilon)
 
     st = merge(st, (running_mean=xmean, running_var=xvar))
 
@@ -316,8 +317,8 @@ end
 function Base.show(io::IO, l::GroupNorm{affine, track_stats}) where {affine, track_stats}
     print(io, "GroupNorm($(l.chs), $(l.groups)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    affine || print(io, ", affine=false")
-    track_stats || print(io, ", track_stats=false")
+    print(io, ", affine=$(affine)")
+    print(io, ", track_stats=$(track_stats)")
     return print(io, ")")
 end
 
@@ -368,6 +369,11 @@ end
 function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
                     dims::Union{Tuple, Nothing}=nothing) where {N}
     return WeightNorm{Val{which_params}, typeof(layer), typeof(dims)}(layer, dims)
+end
+
+@inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
+@inline function _norm_except(x::AbstractArray{T, N}, except_dim=N) where {T, N}
+    return _norm(x; dims=filter(i -> i != except_dim, 1:N))
 end
 
 function initialparameters(rng::AbstractRNG,

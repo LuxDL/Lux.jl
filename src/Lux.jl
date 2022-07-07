@@ -15,12 +15,12 @@ import Adapt: adapt, adapt_storage
 using FillArrays, ComponentArrays
 # Automatic Differentiation
 using ChainRulesCore, Zygote
-# Optimization
-using Optimisers
 # Optional Dependency
 using Requires
 # Docstrings
 using Markdown
+# Optimisers + ComponentArrays
+using Optimisers
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 

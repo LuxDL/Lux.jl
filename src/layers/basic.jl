@@ -123,35 +123,6 @@ function Base.show(io::IO, w::WrappedFunction)
 end
 
 """
-    ActivationFunction(f)
-
-Broadcast `f` on the input but fallback to CUDNN for Backward Pass. Internally
-calls [`Lux.applyactivation`](@ref)
-
-## Arguments
-
-  - `f`: Activation function
-
-## Inputs
-
-  - `x`: Any array type s.t. `f` can be broadcasted over it
-
-## Returns
-
-  - Broadcasted Activation `f.(x)`
-  - Empty `NamedTuple()`
-"""
-struct ActivationFunction{F} <: AbstractExplicitLayer
-    func::F
-end
-
-(af::ActivationFunction)(x, ps, st::NamedTuple) = applyactivation(af.func, x), st
-
-function Base.show(io::IO, af::ActivationFunction)
-    return print(io, "ActivationFunction(", af.func, ")")
-end
-
-"""
     SkipConnection(layer, connection)
 
 Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers
@@ -257,8 +228,7 @@ end
             [:(($(y_symbols[i]), $(st_symbols[i])) = layers[$i]($(getinput(i)),
                                                                 ps.$(names[i]),
                                                                 st.$(names[i])))
-             for
-             i in 1:N])
+             for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
         push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
@@ -674,8 +644,7 @@ end
     x_reshaped = reshape(x, sz[1], :)
     return (reshape(applyactivation(d.activation,
                                     elementwise_add(ps.weight * x_reshaped, ps.bias)),
-                    d.out_dims, sz[2:end]...),
-            st)
+                    d.out_dims, sz[2:end]...), st)
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)

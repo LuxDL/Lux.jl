@@ -12,9 +12,7 @@ struct MultiHeadAttention{Q, A, P} <:
     projection::P
 end
 
-function MultiHeadAttention(in_planes::Int,
-                            number_heads::Int;
-                            qkv_bias::Bool=false,
+function MultiHeadAttention(in_planes::Int, number_heads::Int; qkv_bias::Bool=false,
                             attention_dropout_rate::T=0.0f0,
                             projection_dropout_rate::T=0.0f0) where {T}
     @assert in_planes % number_heads==0 "`in_planes` should be divisible by `number_heads`"
@@ -119,8 +117,7 @@ function transformer_encoder(in_planes, depth, number_heads; mlp_ratio=4.0f0,
     # Currently Lux doesn't have a LayerNorm implementation. Relying on layer_norm
     hidden_planes = floor(Int, mlp_ratio * in_planes)
     layers = [Chain(SkipConnection(Chain(layer_norm(in_planes),
-                                         MultiHeadAttention(in_planes,
-                                                            number_heads;
+                                         MultiHeadAttention(in_planes, number_heads;
                                                             attention_dropout_rate=dropout_rate,
                                                             projection_dropout_rate=dropout_rate)),
                                    +),
@@ -128,17 +125,14 @@ function transformer_encoder(in_planes, depth, number_heads; mlp_ratio=4.0f0,
                                          Chain(Dense(in_planes => hidden_planes, gelu),
                                                Dropout(dropout_rate),
                                                Dense(hidden_planes => in_planes),
-                                               Dropout(dropout_rate))),
-                                   +)) for _ in 1:depth]
+                                               Dropout(dropout_rate))), +))
+              for _ in 1:depth]
     return Chain(layers...)
 end
 
-function patch_embedding(imsize::Tuple{<:Int, <:Int}=(224, 224);
-                         in_channels=3,
-                         patch_size::Tuple{<:Int, <:Int}=(16, 16),
-                         embed_planes=768,
-                         norm_layer=in_planes -> NoOpLayer(),
-                         flatten=true)
+function patch_embedding(imsize::Tuple{<:Int, <:Int}=(224, 224); in_channels=3,
+                         patch_size::Tuple{<:Int, <:Int}=(16, 16), embed_planes=768,
+                         norm_layer=in_planes -> NoOpLayer(), flatten=true)
     im_width, im_height = imsize
     patch_width, patch_height = patch_size
 
@@ -146,24 +140,15 @@ function patch_embedding(imsize::Tuple{<:Int, <:Int}=(224, 224);
     "Image dimensions must be divisible by the patch size."
 
     return Chain(Conv(patch_size, in_channels => embed_planes; stride=patch_size),
-                 flatten ? flatten_spatial : identity,
-                 norm_layer(embed_planes))
+                 flatten ? flatten_spatial : identity, norm_layer(embed_planes))
 end
 
 # ViT Implementation
-function vision_transformer(;
-                            imsize::Tuple{<:Int, <:Int}=(256, 256),
-                            in_channels::Int=3,
-                            patch_size::Tuple{<:Int, <:Int}=(16, 16),
-                            embed_planes::Int=768,
-                            depth::Int=6,
-                            number_heads=16,
-                            mlp_ratio=4.0f0,
-                            dropout_rate=0.1f0,
-                            embedding_dropout_rate=0.1f0,
-                            pool::Symbol=:class,
-                            num_classes::Int=1000,
-                            kwargs...)
+function vision_transformer(; imsize::Tuple{<:Int, <:Int}=(256, 256), in_channels::Int=3,
+                            patch_size::Tuple{<:Int, <:Int}=(16, 16), embed_planes::Int=768,
+                            depth::Int=6, number_heads=16, mlp_ratio=4.0f0,
+                            dropout_rate=0.1f0, embedding_dropout_rate=0.1f0,
+                            pool::Symbol=:class, num_classes::Int=1000, kwargs...)
     @assert pool in (:class, :mean) "Pool type must be either :class (class token) or :mean (mean pooling)"
     number_patches = prod(imsize .÷ patch_size)
 
