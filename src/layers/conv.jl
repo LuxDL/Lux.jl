@@ -34,7 +34,7 @@ number of observations in a batch.
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -68,7 +68,7 @@ O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] 
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `bias=true`)
 """
-struct Conv{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer
+struct Conv{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer{true, false}
     activation::F1
     in_chs::Int
     out_chs::Int
@@ -168,7 +168,7 @@ value.
 
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -194,7 +194,7 @@ value.
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref),
 [`AdaptiveMaxPool`](@ref)
 """
-struct MaxPool{N, M} <: AbstractExplicitLayer
+struct MaxPool{N, M} <: AbstractExplicitLayer{false, false}
     k::NTuple{N, Int}
     pad::NTuple{M, Int}
     stride::NTuple{N, Int}
@@ -235,7 +235,7 @@ value.
 
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -261,7 +261,7 @@ value.
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref),
 [`AdaptiveMeanPool`](@ref)
 """
-struct MeanPool{N, M} <: AbstractExplicitLayer
+struct MeanPool{N, M} <: AbstractExplicitLayer{false, false}
     k::NTuple{N, Int}
     pad::NTuple{M, Int}
     stride::NTuple{N, Int}
@@ -286,8 +286,8 @@ function Base.show(io::IO, m::MeanPool)
 end
 
 """
-    Upsample(mode = :nearest; [scale, size]) 
-    Upsample(scale, mode = :nearest)  
+    Upsample(mode = :nearest; [scale, size])
+    Upsample(scale, mode = :nearest)
 
 Upsampling Layer.
 
@@ -320,7 +320,7 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 
   - `x`: For the input dimensions look into the documentation for the corresponding `NNlib`
     function
-    
+
       + As a rule of thumb, `:nearest` should work with arrays of arbitrary dimensions
       + `:bilinear` works with 4D Arrays
       + `:trilinear` works with 5D Arrays
@@ -330,7 +330,7 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
   - Upsampled Input of size `size` or of size `(I_1 x scale[1], ..., I_N x scale[N], C, N)`
   - Empty `NamedTuple()`
 """
-struct Upsample{mode, S, T} <: AbstractExplicitLayer
+struct Upsample{mode, S, T} <: AbstractExplicitLayer{false, false}
     scale::S
     size::T
 end
@@ -395,7 +395,7 @@ by performing max pooling on the complete (w,h)-shaped feature maps.
 
 See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 """
-struct GlobalMaxPool <: AbstractExplicitLayer end
+struct GlobalMaxPool <: AbstractExplicitLayer{false, false} end
 
 function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
     return maximum(x; dims=1:(ndims(x) - 2)), st
@@ -418,7 +418,7 @@ by performing mean pooling on the complete (w,h)-shaped feature maps.
 
 See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 """
-struct GlobalMeanPool <: AbstractExplicitLayer end
+struct GlobalMeanPool <: AbstractExplicitLayer{false, false} end
 
 function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
     return mean(x; dims=1:(ndims(x) - 2)), st
@@ -446,7 +446,7 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 
 See also [`MaxPool`](@ref), [`AdaptiveMeanPool`](@ref).
 """
-struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
+struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer{false, false}
     out::NTuple{O, Int}
     AdaptiveMaxPool(out::NTuple{O, Int}) where {O} = new{O + 2, O}(out)
 end
@@ -482,7 +482,7 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 
 See also [`MeanPool`](@ref), [`AdaptiveMaxPool`](@ref).
 """
-struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
+struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer{false, false}
     out::NTuple{O, Int}
     AdaptiveMeanPool(out::NTuple{O, Int}) where {O} = new{O + 2, O}(out)
 end

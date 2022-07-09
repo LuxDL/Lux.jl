@@ -5,7 +5,8 @@
 Multi-head self-attention layer
 """
 struct MultiHeadAttention{Q, A, P} <:
-       Lux.AbstractExplicitContainerLayer{(:qkv_layer, :attention_dropout, :projection)}
+       Lux.AbstractExplicitContainerLayer{(:qkv_layer, :attention_dropout, :projection),
+                                          true, true}
     number_heads::Int
     qkv_layer::Q
     attention_dropout::A
@@ -58,7 +59,7 @@ end
 
 Appends class tokens to an input with embedding dimension `dim` for use in many vision transformer namels.
 """
-struct ClassTokens{I} <: Lux.AbstractExplicitLayer
+struct ClassTokens{I} <: Lux.AbstractExplicitLayer{true, false}
     dim::Int
     init::I
 end
@@ -81,7 +82,7 @@ end
 
 Positional embedding layer used by many vision transformer-like namels.
 """
-struct ViPosEmbedding{I} <: Lux.AbstractExplicitLayer
+struct ViPosEmbedding{I} <: Lux.AbstractExplicitLayer{true, false}
     embedding_size::Int
     number_patches::Int
     init::I

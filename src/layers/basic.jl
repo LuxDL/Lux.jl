@@ -16,7 +16,7 @@ Reshapes the passed array to have a size of `(dims..., :)`
   - AbstractArray of size `(dims..., size(x, ndims(x)))`
   - Empty `NamedTuple()`
 """
-struct ReshapeLayer{N} <: AbstractExplicitLayer
+struct ReshapeLayer{N} <: AbstractExplicitLayer{false, false}
     dims::NTuple{N, Int}
 end
 
@@ -42,7 +42,7 @@ Flattens the passed array into a matrix.
   - AbstractMatrix of size `(:, size(x, ndims(x)))`
   - Empty `NamedTuple()`
 """
-struct FlattenLayer <: AbstractExplicitLayer end
+struct FlattenLayer <: AbstractExplicitLayer{false, false} end
 
 @inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     return reshape(x, :, size(x, N)), st
@@ -68,7 +68,7 @@ Return a view of all the data of the input `x` where the index for dimension `di
   - `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
   - Empty `NamedTuple()`
 """
-struct SelectDim{dim, index} <: AbstractExplicitLayer end
+struct SelectDim{dim, index} <: AbstractExplicitLayer{false, false} end
 
 SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
 
@@ -87,21 +87,21 @@ end
 As the name suggests does nothing but allows pretty printing of layers. Whatever input is
 passed is returned.
 """
-struct NoOpLayer <: AbstractExplicitLayer end
+struct NoOpLayer <: AbstractExplicitLayer{false, false} end
 
 @inline (noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
 
 """
     WrappedFunction(f)
 
-Wraps a stateless and parameter less function. Might be used when a function is added to
+Wraps a hasstate and parameter less function. Might be used when a function is added to
 `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
 be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
 
 ## Arguments
 
-  - `f::Function`: A stateless and parameterless function
+  - `f::Function`: A hasstate and parameterless function
 
 ## Inputs
 
@@ -112,7 +112,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-struct WrappedFunction{F} <: AbstractExplicitLayer
+struct WrappedFunction{F} <: AbstractExplicitLayer{false, false}
     func::F
 end
 
@@ -156,8 +156,8 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-struct SkipConnection{T <: AbstractExplicitLayer, F} <:
-       AbstractExplicitContainerLayer{(:layers,)}
+struct SkipConnection{hasparams, hasstate, T <: AbstractExplicitLayer{hasparams, hasstate},
+                      F} <: AbstractExplicitContainerLayer{(:layers,), hasparams, hasstate}
     layers::T
     connection::F
 end
@@ -203,7 +203,8 @@ with `connection`.
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
-struct Parallel{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Parallel{F, T <: NamedTuple} <:
+       AbstractExplicitContainerLayer{(:layers,), true, true}  # TODO: can we be more precise?
     connection::F
     layers::T
 end
@@ -286,7 +287,8 @@ An easy way to replicate an input to an NTuple is to do
 l = BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
 ```
 """
-struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct BranchLayer{T <: NamedTuple} <:
+       AbstractExplicitContainerLayer{(:layers,), true, true}  # TODO: can we be more precise?
     layers::T
 end
 
@@ -369,7 +371,8 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N`
 """
-struct PairwiseFusion{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct PairwiseFusion{F, T <: NamedTuple} <:
+       AbstractExplicitContainerLayer{(:layers,), true, true}  # TODO: can we be more precise?
     connection::F
     layers::T
 end
@@ -456,7 +459,7 @@ keyword argument `disable_optimizations`.
 c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 ```
 """
-struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,), true, true}  # TODO: can we be more precise?
     layers::T
     function Chain(xs...; disable_optimizations::Bool=false)
         xs = disable_optimizations ? xs : flatten_model(xs)
@@ -556,7 +559,7 @@ Create a traditional fully connected layer, whose forward pass is given by:
   - `weight`: Weight Matrix of size `out_dims × in_dims`
   - `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
 """
-struct Dense{bias, F1, F2, F3} <: AbstractExplicitLayer
+struct Dense{bias, F1, F2, F3} <: AbstractExplicitLayer{true, false}
     activation::F1
     in_dims::Int
     out_dims::Int
@@ -688,10 +691,10 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `bias`: Bias of size `(dims...)`
 
 !!! compat "Lux 0.4.3"
-    
+
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
-struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer
+struct Scale{bias, F1, D, F2, F3} <: AbstractExplicitLayer{true, false}
     activation::F1
     dims::D
     init_weight::F2

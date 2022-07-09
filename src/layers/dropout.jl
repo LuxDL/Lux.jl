@@ -31,7 +31,7 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 
 See also [`VariationalHiddenDropout`](@ref)
 """
-struct Dropout{T, D} <: AbstractExplicitLayer
+struct Dropout{T, D} <: AbstractExplicitLayer{false, true}
     p::T
     q::T
     dims::D
@@ -96,7 +96,7 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 
 See also [`Dropout`](@ref)
 """
-struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer
+struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer{false, true}
     p::T
     q::T
     dims::D

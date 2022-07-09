@@ -37,7 +37,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
+struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer{true, true}
     activation::A
     in_dims::Int
     out_dims::Int
@@ -149,7 +149,7 @@ Long Short-Term (LSTM) Cell
 ## Returns
 
   - Tuple Containing
-    
+
       + New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
       + Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
 
@@ -167,7 +167,7 @@ Long Short-Term (LSTM) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct LSTMCell{B, W, S} <: AbstractExplicitLayer
+struct LSTMCell{B, W, S} <: AbstractExplicitLayer{true, true}
     in_dims::Int
     out_dims::Int
     init_bias::B
@@ -275,7 +275,7 @@ Gated Recurrent Unit (GRU) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct GRUCell{W, B, S} <: AbstractExplicitLayer
+struct GRUCell{W, B, S} <: AbstractExplicitLayer{true, true}
     in_dims::Int
     out_dims::Int
     init_weight::W
