@@ -100,12 +100,11 @@ function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
     return model(x, ps, st)
 end
 
-function apply(model::AbstractExplicitLayer{hasparams, false}, x, ps) where {hasparams}
+function apply(model::AbstractExplicitLayer{true, false}, x, ps)
     return model(x, ps, NamedTuple())
 end
 
-function apply(model::AbstractExplicitLayer{false, hasstate}, x,
-               st::NamedTuple) where {hasstate}
+function apply(model::AbstractExplicitLayer{false, true}, x, st::NamedTuple)
     return model(x, NamedTuple(), st)
 end
 

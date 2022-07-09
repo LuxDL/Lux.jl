@@ -23,14 +23,14 @@ end
 @time begin for group in groups
     @info "Testing GROUP $group"
     if group == "Lux"
-        @testset "Lux.jl" begin
+        @testset verbose=true "Lux.jl" begin
             @time @safetestset "Utils" begin include("utils.jl") end
 
             @time @safetestset "Core" begin include("core.jl") end
 
             @time @safetestset "Adapt" begin include("adapt.jl") end
 
-            @testset "Layers" begin
+            @testset verbose=true "Layers" begin
                 @time @safetestset "Basic" begin include("layers/basic.jl") end
                 @time @safetestset "Convolution" begin include("layers/conv.jl") end
                 @time @safetestset "Normalization" begin include("layers/normalize.jl") end

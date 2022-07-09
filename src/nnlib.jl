@@ -25,7 +25,7 @@ end
 Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
 
 !!! note
-    
+
     Detailed docs are WIP
 """
 @inline function normalization(x::AbstractArray{T, N},
