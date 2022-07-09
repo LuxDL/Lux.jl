@@ -13,6 +13,8 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 3)
 
         @test size(layer(x, ps, st)[1]) == (2, 3, 3)
+        @test size(layer(x)[1]) == (2, 3, 3)
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
@@ -25,6 +27,8 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 3, 2)
 
         @test size(layer(x, ps, st)[1]) == (18, 2)
+        @test size(layer(x)[1]) == (18, 2)
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
@@ -37,6 +41,8 @@ Random.seed!(rng, 0)
         x = (x=2, b=5) # Something totally arbitrary
 
         @test layer(x, ps, st)[1] == x
+        @test layer(x)[1] == x
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st)
 
         x = randn(rng, 6, 3)
@@ -51,6 +57,8 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 4, 3, 2)
 
         @test size(layer(x, ps, st)[1]) == (6, 4, 2)
+        @test size(layer(x)[1]) == (6, 4, 2)
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
@@ -63,6 +71,8 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 4, 3, 2)
 
         @test layer(x, ps, st)[1] == x .* x
+        @test layer(x)[1] == x .* x
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
@@ -75,6 +85,8 @@ Random.seed!(rng, 0)
         x = randn(rng, 6, 4, 3, 2)
 
         @test layer(x, ps, st)[1] == tanh.(x)
+        @test layer(x)[1] == tanh.(x)
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
@@ -90,6 +102,8 @@ end
             x = randn(rng, 10, 10, 10, 10)
 
             @test layer(x, ps, st)[1] == x
+            @test layer(x)[1] == x
+            @test_throws MethodError layer(x, ps)
             run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
@@ -102,6 +116,8 @@ end
             x = randn(rng, 10, 2)
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
+            @test size(layer(x, ps)[1]) == (10, 4)
+            @test_throws MethodError layer(x)
             run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                           atol=1.0f-3, rtol=1.0f-3)
@@ -116,6 +132,8 @@ end
             x = randn(rng, 10, 10, 10, 10)
 
             @test layer(x, ps, st)[1] == x
+            @test_throws MethodError layer(x, ps)
+            @test_throws MethodError layer(x)
             run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
@@ -128,6 +146,8 @@ end
             x = randn(rng, 10, 2)
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
+            @test_throws MethodError layer(x, ps)
+            @test_throws MethodError layer(x)
             run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                           rtol=1.0f-3)
@@ -149,6 +169,8 @@ end
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1))
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
+            @test_throws MethodError layer(x, ps)
+            @test_throws MethodError layer(x)
             run_JET_tests(layer, x, ps, st)
             test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                           atol=1.0f-3, rtol=1.0f-3)
@@ -168,6 +190,8 @@ end
             layer = Parallel(f_cnt, WrappedFunction(sin))
             Lux.apply(layer, 1, ps, st)
             @test CNT[] == 3
+            @test_throws MethodError layer(1, ps)
+            @test_throws MethodError layer(1)
         end
 
         # Ref https://github.com/FluxML/Flux.jl/issues/1673
@@ -176,7 +200,7 @@ end
                 x::Any
             end
 
-            struct L1 <: Lux.AbstractExplicitLayer{true, true} end
+            struct L1 <: Lux.AbstractExplicitLayer{true, false} end
             (::L1)(x, ps, st) = (ps.x * x, st)
             Lux.initialparameters(rng::AbstractRNG, ::L1) = (x=randn(rng, Float32, 3, 3),)
             Base.:*(a::AbstractArray, b::Input) = a * b.x
@@ -228,6 +252,9 @@ end
 
         @test size(first(Lux.apply(layer, randn(10), ps, st))) == (5,)
         @test size(first(Lux.apply(layer, randn(10, 2), ps, st))) == (5, 2)
+        @test size(first(Lux.apply(layer, randn(10), ps))) == (5,)
+        @test size(first(Lux.apply(layer, randn(10, 2), ps))) == (5, 2)
+        @test_throws MethodError layer(randn(10))
     end
 
     @testset "zeros" begin
@@ -280,6 +307,9 @@ end
 
         @test size(first(Lux.apply(layer, randn(10), ps, st))) == (10, 5)
         @test size(first(Lux.apply(layer, randn(10, 5, 2), ps, st))) == (10, 5, 2)
+        @test size(first(Lux.apply(layer, randn(10), ps))) == (10, 5)
+        @test size(first(Lux.apply(layer, randn(10, 5, 2), ps))) == (10, 5, 2)
+        @test_throws MethodError layer(randn(10))
     end
 
     @testset "zeros" begin

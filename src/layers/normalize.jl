@@ -21,7 +21,7 @@ slice and normalises the input accordingly.
 
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
-
+    
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
 
@@ -42,7 +42,7 @@ slice and normalises the input accordingly.
 ## Parameters
 
   - `affine=true`
-
+    
       + `bias`: Bias of shape `(chs,)`
       + `scale`: Scale of shape `(chs,)`
 
@@ -51,12 +51,12 @@ slice and normalises the input accordingly.
 ## States
 
   - Statistics if `track_stats=true`
-
+    
       + `running_mean`: Running mean of shape `(chs,)`
       + `running_var`: Running variance of shape `(chs,)`
 
   - Statistics if `track_stats=false`
-
+    
       + `running_mean`: nothing
       + `running_var`: nothing
   - `training`: Used to check if training/inference mode
@@ -72,7 +72,7 @@ m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 See also [`GroupNorm`](@ref)
 """
 struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
-       AbstractNormalizationLayer{affine, track_stats, affine, false}  # TODO: check
+       AbstractNormalizationLayer{affine, track_stats, affine, true}  # TODO: check
     activation::F1
     epsilon::N
     momentum::N
@@ -183,7 +183,7 @@ end
 
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
-
+    
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
 
@@ -206,7 +206,7 @@ end
 ## Parameters
 
   - `affine=true`
-
+    
       + `bias`: Bias of shape `(chs,)`
       + `scale`: Scale of shape `(chs,)`
 
@@ -215,12 +215,12 @@ end
 ## States
 
   - Statistics if `track_stats=true` **(DEPRECATED)**
-
+    
       + `running_mean`: Running mean of shape `(groups,)`
       + `running_var`: Running variance of shape `(groups,)`
 
   - Statistics if `track_stats=false`
-
+    
       + `running_mean`: nothing
       + `running_var`: nothing
   - `training`: Used to check if training/inference mode
@@ -234,13 +234,13 @@ m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(1
 ```
 
 !!! warning
-
+    
     GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
 
 See also [`BatchNorm`](@ref)
 """
 struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
-       AbstractNormalizationLayer{affine, track_stats, affine, false}  # TODO: check
+       AbstractNormalizationLayer{affine, track_stats, affine, true}  # TODO: check
     activation::F1
     epsilon::N
     momentum::N

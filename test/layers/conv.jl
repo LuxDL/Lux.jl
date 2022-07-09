@@ -14,6 +14,8 @@ include("../test_utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == maxpool(x, PoolDims(x, 2))
+    @test layer(x)[1] == maxpool(x, PoolDims(x, 2))
+    @test_throws MethodError layer(x, ps)
     run_JET_tests(layer, x, ps, st)
 
     layer = AdaptiveMeanPool((5, 5))
@@ -21,6 +23,8 @@ include("../test_utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == meanpool(x, PoolDims(x, 2))
+    @test layer(x)[1] == meanpool(x, PoolDims(x, 2))
+    @test_throws MethodError layer(x, ps)
     run_JET_tests(layer, x, ps, st)
 
     layer = AdaptiveMaxPool((10, 5))
@@ -28,20 +32,26 @@ include("../test_utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test layer(y, ps, st)[1] == maxpool(y, PoolDims(y, (2, 4)))
-    run_JET_tests(layer, x, ps, st)
+    @test layer(y)[1] == maxpool(y, PoolDims(y, (2, 4)))
+    @test_throws MethodError layer(y, ps)
+    run_JET_tests(layer, y, ps, st)
 
     layer = AdaptiveMeanPool((10, 5))
     println(layer)
     ps, st = Lux.setup(rng, layer)
 
     @test layer(y, ps, st)[1] == meanpool(y, PoolDims(y, (2, 4)))
-    run_JET_tests(layer, x, ps, st)
+    @test layer(y)[1] == meanpool(y, PoolDims(y, (2, 4)))
+    @test_throws MethodError layer(y, ps)
+    run_JET_tests(layer, y, ps, st)
 
     layer = GlobalMaxPool()
     println(layer)
     ps, st = Lux.setup(rng, layer)
 
     @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
+    @test size(layer(x)[1]) == (1, 1, 3, 2)
+    @test_throws MethodError layer(x, ps)
     run_JET_tests(layer, x, ps, st)
 
     layer = GlobalMeanPool()
@@ -49,6 +59,8 @@ include("../test_utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
+    @test size(layer(x)[1]) == (1, 1, 3, 2)
+    @test_throws MethodError layer(x, ps)
     run_JET_tests(layer, x, ps, st)
 
     layer = MaxPool((2, 2))
@@ -56,6 +68,8 @@ include("../test_utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == maxpool(x, PoolDims(x, 2))
+    @test layer(x)[1] == maxpool(x, PoolDims(x, 2))
+    @test_throws MethodError layer(x, ps)
     run_JET_tests(layer, x, ps, st)
 
     layer = MeanPool((2, 2))
@@ -63,6 +77,8 @@ include("../test_utils.jl")
     ps, st = Lux.setup(rng, layer)
 
     @test layer(x, ps, st)[1] == meanpool(x, PoolDims(x, 2))
+    @test layer(x)[1] == meanpool(x, PoolDims(x, 2))
+    @test_throws MethodError layer(x, ps)
     run_JET_tests(layer, x, ps, st)
 
     @testset "$ltype SamePad windowsize $k" for ltype in (MeanPool, MaxPool),
@@ -75,6 +91,8 @@ include("../test_utils.jl")
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], k)
+        @test size(layer(x)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], k)
+        @test_throws MethodError layer(x, ps)
         run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
     end
 end
@@ -88,6 +106,8 @@ end
 
         @test size(ps.weight) == (3, 3, 2)
         @test size(layer(x, ps, st)[1]) == (2, 2, 1)
+        @test size(layer(x, ps)[1]) == (2, 2, 1)
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st; call_broken=true)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -99,6 +119,8 @@ end
 
         @test size(ps.weight) == (3, 3, 3, 2)
         @test size(layer(x, ps, st)[1]) == (2, 2, 2, 1)
+        @test size(layer(x, ps)[1]) == (2, 2, 2, 1)
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -110,6 +132,8 @@ end
 
         @test size(ps.weight) == (3, 3, 3, 3, 2)
         @test size(layer(x, ps, st)[1]) == (2, 2, 2, 2, 1)
+        @test size(layer(x, ps)[1]) == (2, 2, 2, 2, 1)
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -133,6 +157,8 @@ end
         ps.bias .= 0.0
 
         y_hat = layer(x, ps, st)[1][:, :, 1, 1]
+        @test y_hat == layer(x, ps)[1][:, :, 1, 1]
+        @test_throws MethodError layer(x)
         @test size(y_hat) == (27, 29)
         @test y_hat[1, 1] ≈ 6.0
         @test y_hat[2, 2] ≈ 9.0
@@ -163,6 +189,8 @@ end
         @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
 
         @test size(layer(x, ps, st)[1], 3) == 15
+        @test size(layer(x, ps)[1], 3) == 15
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -172,6 +200,8 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1], 3) == 9
+        @test size(layer(x, ps)[1], 3) == 9
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -182,6 +212,8 @@ end
         @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
 
         @test size(layer(x, ps, st)[1], 3) == 9
+        @test size(layer(x, ps)[1], 3) == 9
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -200,6 +232,8 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1]) == size(x)
+        @test size(layer(x, ps)[1]) == size(x)
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -209,6 +243,8 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1]) == size(x)
+        @test size(layer(x, ps)[1]) == size(x)
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -219,6 +255,8 @@ end
         ps, st = Lux.setup(rng, layer)
 
         @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], stride)
+        @test size(layer(x, ps)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], stride)
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
         test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
                                       atol=1.0f-3, rtol=1.0f-3)
@@ -235,6 +273,8 @@ end
         y = zeros(eltype(ps.weight), 5, 5, 1, 1)
         y[2:(end - 1), 2:(end - 1), 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
+        @test y ≈ layer(x, ps)[1]
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
 
         layer = Conv((3, 1), 1 => 1)
@@ -244,6 +284,8 @@ end
         y = zeros(eltype(ps.weight), 5, 7, 1, 1)
         y[2:(end - 1), 4, 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
+        @test y ≈ layer(x, ps)[1]
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
 
         layer = Conv((1, 3), 1 => 1)
@@ -253,6 +295,8 @@ end
         y = zeros(eltype(ps.weight), 7, 5, 1, 1)
         y[4, 2:(end - 1), 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
+        @test y ≈ layer(x, ps)[1]
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
 
         layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal)
@@ -262,6 +306,8 @@ end
         y = zeros(eltype(ps.weight), 7, 5, 1, 1)
         y[4, 2:(end - 1), 1, 1] = ps.weight
         @test y ≈ layer(x, ps, st)[1]
+        @test y ≈ layer(x, ps)[1]
+        @test_throws MethodError layer(x)
         run_JET_tests(layer, x, ps, st)
     end
 
@@ -311,6 +357,9 @@ end
             run_JET_tests(layer, x, ps, st)
 
             y, _ = layer(x, ps, st)
+            @test y == layer(x)[1]
+            @test_throws MethodError layer(x, ps)
+
             if isnothing(scale)
                 @test size(y)[1:2] == xsize
             else
@@ -334,6 +383,8 @@ end
             run_JET_tests(layer, x, ps, st)
 
             y, _ = layer(x, ps, st)
+            @test y == layer(x)[1]
+            @test_throws MethodError layer(x, ps)
 
             if isnothing(scale)
                 @test size(y)[1:3] == xsize

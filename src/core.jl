@@ -101,15 +101,27 @@ function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
 end
 
 function apply(model::AbstractExplicitLayer{true, false}, x, ps)
-    return model(x, ps, NamedTuple())
+    return apply(model, x, ps, NamedTuple())
 end
 
 function apply(model::AbstractExplicitLayer{false, true}, x, st::NamedTuple)
-    return model(x, NamedTuple(), st)
+    return apply(model, x, NamedTuple(), st)
 end
 
 function apply(model::AbstractExplicitLayer{false, false}, x)
-    return model(x, NamedTuple(), NamedTuple())
+    return apply(model, x, NamedTuple(), NamedTuple())
+end
+
+function (model::AbstractExplicitLayer{true, false})(x, ps)
+    return apply(model, x, ps)
+end
+
+function (model::AbstractExplicitLayer{false, true})(x, st::NamedTuple)
+    return apply(model, x, st)
+end
+
+function (model::AbstractExplicitLayer{false, false})(x)
+    return apply(model, x)
 end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)

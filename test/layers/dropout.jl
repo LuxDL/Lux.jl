@@ -15,6 +15,16 @@ Random.seed!(rng, 0)
     x__, st__ = layer(x, ps, st)
     x___, st___ = layer(x_, ps, st_)
 
+    x_2, st_2 = layer(x, st)
+    x___2, st___2 = layer(x_, st_)
+
+    @test_throws MethodError layer(x)
+
+    @test x_2 == x_
+    @test st_2 == st_
+    @test x___2 == x___
+    @test st___2 == st___
+
     @test st_.rng != st.rng
     @test st_.rng == st__.rng
     @test x_ == x__
@@ -27,6 +37,7 @@ Random.seed!(rng, 0)
     st = Lux.testmode(st)
 
     @test first(layer(x, ps, st)) == x
+    @test first(layer(x, st)) == x
 end
 
 @testset "VariationalHiddenDropout" begin
@@ -38,6 +49,16 @@ end
     x_, st_ = layer(x, ps, st)
     x__, st__ = layer(x, ps, st)
     x___, st___ = layer(x_, ps, st_)
+
+    x_2, st_2 = layer(x, st)
+    x___2, st___2 = layer(x_, st_)
+
+    @test_throws MethodError layer(x)
+
+    @test x_2 == x_
+    @test st_2 == st_
+    @test x___2 == x___
+    @test st___2 == st___
 
     @test st_.rng != st.rng
     @test st_.rng == st__.rng

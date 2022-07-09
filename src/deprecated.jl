@@ -75,7 +75,7 @@ Broadcast `f` on the input.
   - Empty `NamedTuple()`
 
 !!! warning
-
+    
     This layer is deprecated and will be removed in v0.5. Use [`WrappedFunction`](@ref) with
     manual broadcasting
 """

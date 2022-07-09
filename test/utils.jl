@@ -82,7 +82,7 @@ end
     println()
 
     # Optimisers
-    opt = Optimisers.ADAM(0.001f0)
+    opt = Optimisers.Adam(0.001f0)
     st_opt = Optimisers.setup(opt, ps_c)
 
     @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
