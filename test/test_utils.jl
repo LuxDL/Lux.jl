@@ -1,4 +1,4 @@
-using FiniteDifferences, JET, Lux, Random, Zygote
+using FiniteDifferences, JET, Lux, Random, Test, Zygote
 
 function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
                        kwargs...) where {fields}

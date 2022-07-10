@@ -68,6 +68,10 @@ Use [`Lux.testmode`](@ref) during inference.
 m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 ```
 
+!!! warning
+    
+    Passing a batch size of 1, during training will result in NaNs.
+
 See also [`GroupNorm`](@ref)
 """
 struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
@@ -90,9 +94,13 @@ function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
-           NamedTuple()
+    if affine
+        return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
+    else
+        return (scale=nothing, bias=nothing)
+    end
 end
+
 function initialstates(rng::AbstractRNG,
                        l::BatchNorm{affine, track_stats}) where {affine, track_stats}
     return if track_stats
@@ -109,9 +117,6 @@ function statelength(l::BatchNorm{affine, track_stats}) where {affine, track_sta
 end
 
 function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    @assert size(x, N - 1) == BN.chs
-    @assert !istraining(st)||size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
-
     x_normalized, xmean, xvar = normalization(x, st.running_mean, st.running_var, ps.scale,
                                               ps.bias, BN.activation,
                                               collect([1:(N - 2); N]), st.training,
@@ -278,8 +283,11 @@ function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
-    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
-           NamedTuple()
+    if affine
+        return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
+    else
+        return (scale=nothing, bias=nothing)
+    end
 end
 
 function initialstates(rng::AbstractRNG,
@@ -300,9 +308,6 @@ end
 
 function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     sz = size(x)
-    @assert N > 2
-    @assert sz[N - 1] == GN.chs
-
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
     x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var, ps.scale,

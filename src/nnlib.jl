@@ -33,8 +33,8 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                running_var::Union{Nothing, AbstractVector{T}},
                                scale::Union{Nothing, AbstractVector{T}},
                                bias::Union{Nothing, AbstractVector{T}}, activation,
-                               reduce_dims, t::Val, momentum::T=T(0.1), epsilon::T=T(1e-5);
-                               kwargs...) where {T, N}
+                               reduce_dims, t::Val, momentum::T=T(0.1),
+                               epsilon::T=T(1e-5)) where {T, N}
     running_mean_reshaped = _reshape_into_proper_shape(running_mean, x)
     running_var_reshaped = _reshape_into_proper_shape(running_var, x)
     scale_reshaped = _reshape_into_proper_shape(scale, x)
@@ -44,15 +44,16 @@ Performs BatchNorm/GroupNorm/InstanceNorm based on input configuration
                                                                 scale_reshaped,
                                                                 bias_reshaped, activation,
                                                                 reduce_dims, t, momentum,
-                                                                epsilon; kwargs...)
+                                                                epsilon)
     return x_norm, _safe_vec(running_mean_), _safe_vec(running_var_)
 end
 
 @generated function normalization_forward(x::AbstractArray{T, N}, running_mean::RM,
                                           running_var::RV, scale::S, bias::B, activation::A,
                                           reduce_dims, ::Val{training},
-                                          momentum::T=T(0.1f0), epsilon::T=T(1.0f-5);
-                                          kwargs...) where {RM, RV, S, B, T, N, A, training}
+                                          momentum::T=T(0.1f0),
+                                          epsilon::T=T(1.0f-5)) where {RM, RV, S, B, T, N,
+                                                                       A, training}
     calls = []
     if !training
         if RM == Nothing
@@ -79,16 +80,16 @@ end
 
     expr = if S != Nothing
         if A == typeof(identity)
-            :(result = @. scale * (x - batchmean) / sqrt(batchvar + epsilon) + bias)
+            :(result = scale .* (x .- batchmean) ./ sqrt.(batchvar .+ epsilon) .+ bias)
         else
-            :(result = @. activation(scale * (x - batchmean) / sqrt(batchvar + epsilon) +
-                                     bias))
+            :(result = activation.(scale .* (x .- batchmean) ./
+                                   sqrt.(batchvar .+ epsilon) .+ bias))
         end
     else
         if A == typeof(identity)
-            :(result = @. (x - batchmean) / sqrt(batchvar + epsilon))
+            :(result = (x .- batchmean) ./ sqrt.(batchvar .+ epsilon))
         else
-            :(result = @. activation((x - batchmean) / sqrt(batchvar + epsilon)))
+            :(result = activation.((x .- batchmean) ./ sqrt.(batchvar .+ epsilon)))
         end
     end
     push!(calls, expr)
@@ -115,7 +116,7 @@ end
 @inline function generate_dropout_mask(rng::AbstractRNG, x, p, q; dims=:)
     realfptype = float(real(eltype(x)))
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
-    @. y = _dropout_kernel(y, p, q)
+    y .= _dropout_kernel.(y, p, q)
     return y
 end
 
