@@ -3,11 +3,13 @@ ChainRulesCore.@non_differentiable replicate(::Any)
 ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any,
                                                      ::Any, ::Any)
 ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any, ::Any)
+ChainRulesCore.@non_differentiable _get_reshape_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
+ChainRulesCore.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 
 # NNlib Functions
 function ChainRulesCore.rrule(::typeof(batchnorm), g::CuArray{T}, b::CuArray{T},
@@ -31,7 +33,63 @@ function ChainRulesCore.rrule(::typeof(dropout), rng::AbstractRNG, x::AbstractAr
     return (y, mask, rng), dropout_pullback
 end
 
-# Activation Rrules
+# Utilities
+
+function ChainRulesCore.rrule(::typeof(_reshape_into_proper_shape), ::Nothing, y)
+    function _reshape_into_proper_shape_pullback(dx)
+        return NoTangent(), NoTangent(), NoTangent()
+    end
+    return nothing, _reshape_into_proper_shape_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(_reshape_into_proper_shape), x, y)
+    res = _reshape_into_proper_shape(x, y)
+    function _reshape_into_proper_shape_pullback(dx)
+        return NoTangent(), reshape(dx, size(x)), NoTangent()
+    end
+    return res, _reshape_into_proper_shape_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{F1},
+                              nt2::NamedTuple{F2}) where {F1, F2}
+    y = merge(nt1, nt2)
+    function merge_pullback(dy)
+        dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1))
+                           for f1 in F1))
+        dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
+        return (NoTangent(), dnt1, dnt2)
+    end
+    return y, merge_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(vec), x::AbstractMatrix)
+    y = vec(x)
+    vec_pullback(dy) = NoTangent(), reshape(dy, size(x))
+    return y, vec_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(convert), T::DataType, x::AbstractMatrix)
+    y = convert(T, x)
+    function convert_pullback(dy)
+        if dy isa NoTangent || dy isa ZeroTangent
+            dx = dy
+        else
+            dx = convert(typeof(x), dy)
+        end
+        return NoTangent(), NoTangent(), dx
+    end
+    return y, convert_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(collect), v::Vector)
+    y = collect(v)
+    function collect_pullback(dy)
+        return NoTangent(), dy
+    end
+    return y, collect_pullback
+end
+
+# Activation rrules
 function ChainRulesCore.rrule(::typeof(applyactivation), f::cudnnValidActivationTypes,
                               x::CuArray{T}) where {T <: CUDNNFloat}
     mode = getCUDNNActivationMode(f)

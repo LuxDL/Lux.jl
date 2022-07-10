@@ -68,6 +68,10 @@ Use [`Lux.testmode`](@ref) during inference.
 m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 ```
 
+!!! warning
+    
+    Passing a batch size of 1, during training will result in NaNs.
+
 See also [`GroupNorm`](@ref)
 """
 struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
@@ -90,9 +94,13 @@ function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm{affine}) where {affine}
-    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
-           NamedTuple()
+    if affine
+        return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
+    else
+        return (scale=nothing, bias=nothing)
+    end
 end
+
 function initialstates(rng::AbstractRNG,
                        l::BatchNorm{affine, track_stats}) where {affine, track_stats}
     return if track_stats
@@ -109,9 +117,6 @@ function statelength(l::BatchNorm{affine, track_stats}) where {affine, track_sta
 end
 
 function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    @assert size(x, N - 1) == BN.chs
-    @assert !istraining(st)||size(x, N) > 1 "During `training`, `BatchNorm` can't handle Batch Size == 1"
-
     x_normalized, xmean, xvar = normalization(x, st.running_mean, st.running_var, ps.scale,
                                               ps.bias, BN.activation,
                                               collect([1:(N - 2); N]), st.training,
@@ -278,8 +283,11 @@ function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm{affine}) where {affine}
-    return affine ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
-           NamedTuple()
+    if affine
+        return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
+    else
+        return (scale=nothing, bias=nothing)
+    end
 end
 
 function initialstates(rng::AbstractRNG,
@@ -300,9 +308,6 @@ end
 
 function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     sz = size(x)
-    @assert N > 2
-    @assert sz[N - 1] == GN.chs
-
     x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
 
     x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var, ps.scale,
@@ -372,9 +377,12 @@ function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
-@inline function _norm_except(x::AbstractArray{T, N}, except_dim=N) where {T, N}
-    return _norm(x; dims=filter(i -> i != except_dim, 1:N))
+@inline function _norm_except(x::AbstractArray{T, N};
+                              dims::Union{Int, Tuple}=N) where {T, N}
+    return _norm(x; dims=_get_norm_except_dims(N, dims))
 end
+@inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
+@inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> !(i in dims), 1:N)
 
 function initialparameters(rng::AbstractRNG,
                            wn::WeightNorm{Val{which_params}}) where {which_params}
@@ -386,7 +394,7 @@ function initialparameters(rng::AbstractRNG,
         v = ps_layer[k]
         if k ∈ which_params
             dim = wn.dims === nothing ? ndims(v) : wn.dims[i]
-            push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v, dim))
+            push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v; dims=dim))
             push!(ps_normalized, Symbol(string(k) * "_v") => v)
             i += 1
         else
@@ -400,12 +408,13 @@ end
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 function (wn::WeightNorm)(x, ps, s::NamedTuple)
-    _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
+    _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end
 
-@inbounds @generated function get_normalized_parameters(::WeightNorm{Val{which_params}},
-                                                        dims::T, ps) where {T, which_params}
+@inbounds @generated function _get_normalized_parameters(::WeightNorm{Val{which_params}},
+                                                         dims::T,
+                                                         ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
     g_parameter_names = Symbol.(parameter_names .* "_g")
@@ -413,7 +422,7 @@ end
 
     function get_norm_except_invoke(i)
         return if T <: Tuple
-            :(_norm_except(ps.$(v_parameter_names[i]), dims[$i]))
+            :(_norm_except(ps.$(v_parameter_names[i]); dims=dims[$i]))
         else
             :(_norm_except(ps.$(v_parameter_names[i])))
         end
@@ -424,7 +433,8 @@ end
         push!(calls,
               :($(normalized_params_symbol[i]) = ps.$(v_parameter_names[i]) .*
                                                  (ps.$(g_parameter_names[i]) ./
-                                                  $(get_norm_except_invoke(i)))))
+                                                  ($(get_norm_except_invoke(i)) .+
+                                                   eps(eltype(ps.$(v_parameter_names[i])))))))
     end
     push!(calls,
           :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...)))))
