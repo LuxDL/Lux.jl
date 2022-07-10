@@ -94,14 +94,14 @@ struct NoOpLayer <: AbstractExplicitLayer{false, false} end
 """
     WrappedFunction(f)
 
-Wraps a hasstate and parameter less function. Might be used when a function is added to
+Wraps a stateless and parameter less function. Might be used when a function is added to
 `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
 be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 `Chain(WrappedFunction(Base.Fix1(broadcast, relu)))`
 
 ## Arguments
 
-  - `f::Function`: A hasstate and parameterless function
+  - `f::Function`: A stateless and parameterless function
 
 ## Inputs
 
@@ -156,8 +156,8 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-struct SkipConnection{hasparams, hasstate, T <: AbstractExplicitLayer{hasparams, hasstate},
-                      F} <: AbstractExplicitContainerLayer{(:layers,), hasparams, hasstate}
+struct SkipConnection{P, S, T <: AbstractExplicitLayer{P, S}, F} <:
+       AbstractExplicitContainerLayer{(:layers,), P, S}
     layers::T
     connection::F
 end

@@ -1,12 +1,12 @@
 """
-    AbstractExplicitLayer{hasparams,hasstate}
+    AbstractExplicitLayer{P, S}
 
 Abstract Type for all Lux Layers
 
 Type parameters:
 
-  - `hasparams::Bool`: indicates that the layer requires parameters
-  - `hasstate::Bool`: indicates that the layer requires a state
+  - `P::Bool`: indicates that the layer requires parameters
+  - `S::Bool`: indicates that the layer requires a state
 
 Users implementing their custom layer, **must** implement
 
@@ -25,7 +25,13 @@ Optionally:
 
 See also [`AbstractExplicitContainerLayer`](@ref)
 """
-abstract type AbstractExplicitLayer{hasparams, hasstate} end
+abstract type AbstractExplicitLayer{P, S} end
+
+hasparams(l) = false
+hasparams(::AbstractExplicitLayer{P}) where {P} = P
+
+hasstate(l) = false
+hasstate(::AbstractExplicitLayer{P, S}) where {P, S} = S
 
 """
     initialparameters(rng::AbstractRNG, l)
@@ -33,10 +39,7 @@ abstract type AbstractExplicitLayer{hasparams, hasstate} end
 Generate the initial parameters of the layer `l`.
 """
 initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-function initialparameters(::AbstractRNG,
-                           ::AbstractExplicitLayer{false, hasstate}) where {hasstate}
-    return NamedTuple()
-end
+initialparameters(::AbstractRNG, ::AbstractExplicitLayer{false}) = NamedTuple()
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
     return map(Base.Fix1(initialparameters, rng), l)
 end
@@ -47,10 +50,7 @@ end
 Generate the initial states of the layer `l`.
 """
 initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-function initialstates(::AbstractRNG,
-                       ::AbstractExplicitLayer{hasparams, false}) where {hasparams}
-    return NamedTuple()
-end
+initialstates(::AbstractRNG, ::AbstractExplicitLayer{P, false}) where {P} = NamedTuple()
 initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
 
 """
@@ -61,9 +61,7 @@ Return the total number of parameters of the layer `l`.
 function parameterlength(l::AbstractExplicitLayer)
     return parameterlength(initialparameters(Random.default_rng(), l))
 end
-function parameterlength(::AbstractExplicitLayer{hasstate, false}) where {hasstate}
-    return 0
-end
+parameterlength(::AbstractExplicitLayer{false}) = 0
 function parameterlength(nt::Union{NamedTuple, Tuple})
     return length(nt) == 0 ? 0 : sum(parameterlength, nt)
 end
@@ -75,7 +73,7 @@ parameterlength(a::AbstractArray) = length(a)
 Return the total number of states of the layer `l`.
 """
 statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(), l))
-statelength(l::AbstractExplicitLayer{false, hasparams}) where {hasparams} = 0
+statelength(l::AbstractExplicitLayer{P, false}) where {P} = 0
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
 statelength(x::Union{Number, Symbol, Val}) = 1
@@ -96,33 +94,14 @@ end
 
 Simply calls `model(x, ps, st)`
 """
-function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
-    return model(x, ps, st)
-end
+apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple) = model(x, ps, st)
+apply(model::AbstractExplicitLayer{true, false}, x, ps) = model(x, ps)
+apply(model::AbstractExplicitLayer{false, true}, x, st::NamedTuple) = model(x, st)
+apply(model::AbstractExplicitLayer{false, false}, x) = model(x)
 
-function apply(model::AbstractExplicitLayer{true, false}, x, ps)
-    return apply(model, x, ps, NamedTuple())
-end
-
-function apply(model::AbstractExplicitLayer{false, true}, x, st::NamedTuple)
-    return apply(model, x, NamedTuple(), st)
-end
-
-function apply(model::AbstractExplicitLayer{false, false}, x)
-    return apply(model, x, NamedTuple(), NamedTuple())
-end
-
-function (model::AbstractExplicitLayer{true, false})(x, ps)
-    return apply(model, x, ps)
-end
-
-function (model::AbstractExplicitLayer{false, true})(x, st::NamedTuple)
-    return apply(model, x, st)
-end
-
-function (model::AbstractExplicitLayer{false, false})(x)
-    return apply(model, x)
-end
+(model::AbstractExplicitLayer{true, false})(x, ps) = model(x, ps, NamedTuple())
+(model::AbstractExplicitLayer{false, true})(x, st::NamedTuple) = model(x, NamedTuple(), st)
+(model::AbstractExplicitLayer{false, false})(x) = model(x, NamedTuple(), NamedTuple())
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
     __t = rsplit(string(get_typename(x)), "."; limit=2)
@@ -132,7 +111,7 @@ end
 
 # Abstract Container Layers
 """
-    AbstractExplicitContainerLayer{layers,hasparams,hasstate} <: AbstractExplicitLayer{hasparams,hasstate}
+    AbstractExplicitContainerLayer{layers,P,S} <: AbstractExplicitLayer{P,S}
 
 Abstract Container Type for certain Lux Layers. `layers` is a tuple containing fieldnames
 for the layer, and constructs the parameters and states using those.
@@ -141,21 +120,12 @@ Users implementing their custom layer can extend the same functions as in
 initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 [`AbstractExplicitLayer`](@ref)
 """
-abstract type AbstractExplicitContainerLayer{layers, hasparams, hasstate} <:
-              AbstractExplicitLayer{hasparams, hasstate} end
+abstract type AbstractExplicitContainerLayer{layers, P, S} <: AbstractExplicitLayer{P, S} end
 
 function initialparameters(rng::AbstractRNG,
                            l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
-end
-
-function initialparameters(::AbstractRNG,
-                           ::AbstractExplicitContainerLayer{layers, false, hasstate}) where {
-                                                                                             layers,
-                                                                                             hasstate
-                                                                                             }
-    return NamedTuple()
 end
 
 function initialstates(rng::AbstractRNG,
@@ -164,11 +134,13 @@ function initialstates(rng::AbstractRNG,
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
+function initialparameters(::AbstractRNG,
+                           ::AbstractExplicitContainerLayer{layers, false}) where {layers}
+    return NamedTuple()
+end
+
 function initialstates(::AbstractRNG,
-                       ::AbstractExplicitContainerLayer{layers, hasparams, false}) where {
-                                                                                          layers,
-                                                                                          hasparams
-                                                                                          }
+                       ::AbstractExplicitContainerLayer{layers, P, false}) where {layers, P}
     return NamedTuple()
 end
 
@@ -176,23 +148,12 @@ function parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layer
     return sum(parameterlength, getfield.((l,), layers))
 end
 
-function parameterlength(::AbstractExplicitContainerLayer{layers, false, hasstate}) where {
-                                                                                           layers,
-                                                                                           hasstate
-                                                                                           }
-    return 0
-end
-
 function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
-function statelength(::AbstractExplicitContainerLayer{layers, hasparams, false}) where {
-                                                                                        layers,
-                                                                                        hasparams
-                                                                                        }
-    return 0
-end
+parameterlength(::AbstractExplicitContainerLayer{layers, false}) where {layers} = 0
+statelength(::AbstractExplicitContainerLayer{layers, P, false}) where {layers, P} = 0
 
 # Test Mode
 """

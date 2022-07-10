@@ -1,5 +1,5 @@
-abstract type AbstractNormalizationLayer{affine, track_stats, hasparams, hasstate} <:
-              AbstractExplicitLayer{hasparams, hasstate} end
+abstract type AbstractNormalizationLayer{affine, track_stats, P, S} <:
+              AbstractExplicitLayer{P, S} end
 
 """
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
@@ -362,16 +362,15 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
 
   - Same as that of `layer`
 """
-struct WeightNorm{which_params, hasstate, L <: AbstractExplicitLayer{true, hasstate}, D} <:
-       AbstractExplicitLayer{true, hasstate}
+struct WeightNorm{which_params, S, L <: AbstractExplicitLayer{true, S}, D} <:
+       AbstractExplicitLayer{true, S}
     layer::L
     dims::D
 end
 
-function WeightNorm(layer::AbstractExplicitLayer{true, hasstate},
-                    which_params::NTuple{N, Symbol},
-                    dims::Union{Tuple, Nothing}=nothing) where {hasstate, N}
-    return WeightNorm{Val{which_params}, hasstate, typeof(layer), typeof(dims)}(layer, dims)
+function WeightNorm(layer::AbstractExplicitLayer{true, S}, which_params::NTuple{N, Symbol},
+                    dims::Union{Tuple, Nothing}=nothing) where {S, N}
+    return WeightNorm{Val{which_params}, S, typeof(layer), typeof(dims)}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
