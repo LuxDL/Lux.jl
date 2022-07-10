@@ -377,9 +377,12 @@ function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
-@inline function _norm_except(x::AbstractArray{T, N}, except_dim=N) where {T, N}
-    return _norm(x; dims=filter(i -> i != except_dim, 1:N))
+@inline function _norm_except(x::AbstractArray{T, N};
+                              dims::Union{Int, Tuple}=N) where {T, N}
+    return _norm(x; dims=_get_norm_except_dims(N, dims))
 end
+@inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
+@inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> !(i in dims), 1:N)
 
 function initialparameters(rng::AbstractRNG,
                            wn::WeightNorm{Val{which_params}}) where {which_params}
@@ -391,7 +394,7 @@ function initialparameters(rng::AbstractRNG,
         v = ps_layer[k]
         if k ∈ which_params
             dim = wn.dims === nothing ? ndims(v) : wn.dims[i]
-            push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v, dim))
+            push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v; dims=dim))
             push!(ps_normalized, Symbol(string(k) * "_v") => v)
             i += 1
         else
@@ -405,12 +408,13 @@ end
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 function (wn::WeightNorm)(x, ps, s::NamedTuple)
-    _ps = get_normalized_parameters(wn, wn.dims, ps.normalized)
+    _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end
 
-@inbounds @generated function get_normalized_parameters(::WeightNorm{Val{which_params}},
-                                                        dims::T, ps) where {T, which_params}
+@inbounds @generated function _get_normalized_parameters(::WeightNorm{Val{which_params}},
+                                                         dims::T,
+                                                         ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
     g_parameter_names = Symbol.(parameter_names .* "_g")
@@ -418,7 +422,7 @@ end
 
     function get_norm_except_invoke(i)
         return if T <: Tuple
-            :(_norm_except(ps.$(v_parameter_names[i]), dims[$i]))
+            :(_norm_except(ps.$(v_parameter_names[i]); dims=dims[$i]))
         else
             :(_norm_except(ps.$(v_parameter_names[i])))
         end
@@ -429,7 +433,8 @@ end
         push!(calls,
               :($(normalized_params_symbol[i]) = ps.$(v_parameter_names[i]) .*
                                                  (ps.$(g_parameter_names[i]) ./
-                                                  $(get_norm_except_invoke(i)))))
+                                                  ($(get_norm_except_invoke(i)) .+
+                                                   eps(eltype(ps.$(v_parameter_names[i])))))))
     end
     push!(calls,
           :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...)))))

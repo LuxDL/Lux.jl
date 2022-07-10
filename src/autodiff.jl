@@ -9,6 +9,7 @@ ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
+ChainRulesCore.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 
 # NNlib Functions
 function ChainRulesCore.rrule(::typeof(batchnorm), g::CuArray{T}, b::CuArray{T},

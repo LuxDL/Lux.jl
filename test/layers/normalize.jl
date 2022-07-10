@@ -215,3 +215,98 @@ end
     @test_deprecated GroupNorm(4, 2; track_stats=true)
     @test_deprecated GroupNorm(4, 2; track_stats=false, momentum=0.3f0)
 end
+
+@testset "WeightNorm" begin
+    @testset "_norm_except" begin
+        z = randn(rng, Float32, 3, 3, 4, 2)
+
+        @test size(Lux._norm(z; dims=(1, 2))) == (1, 1, 4, 2)
+        @test size(Lux._norm_except(z; dims=1)) == (3, 1, 1, 1)
+        @test Lux._norm_except(z; dims=2) == Lux._norm(z; dims=(1, 3, 4))
+        @test size(Lux._norm_except(z; dims=(1, 2))) == (3, 3, 1, 1)
+        @test Lux._norm_except(z; dims=(1, 2)) == Lux._norm(z; dims=(3, 4))
+
+        run_JET_tests(Lux._norm_except, z)
+        run_JET_tests(x -> Lux._norm_except(x; dims=(3, 4)), z)
+    end
+
+    @testset "Conv" begin
+        c = Conv((3, 3), 3 => 3)
+
+        wn = WeightNorm(c, (:weight, :bias))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 3, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+
+        wn = WeightNorm(c, (:weight,))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 3, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+
+        wn = WeightNorm(c, (:weight, :bias), (2, 2))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 3, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+
+        wn = WeightNorm(c, (:weight,), (2,))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 3, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+    end
+
+    @testset "Dense" begin
+        d = Dense(3 => 3)
+
+        wn = WeightNorm(d, (:weight, :bias))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+
+        wn = WeightNorm(d, (:weight,))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+
+        wn = WeightNorm(d, (:weight, :bias), (2, 2))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+
+        wn = WeightNorm(d, (:weight,), (2,))
+        println(wn)
+        ps, st = Lux.setup(rng, wn)
+        x = randn(rng, Float32, 3, 1)
+
+        run_JET_tests(wn, x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+    end
+end
