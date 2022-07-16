@@ -22,25 +22,25 @@ it both compiler and autodiff friendly.
 
 * **Neural Networks for SciML**: For SciML Applications (Neural ODEs, Deep Equilibrium
   Models) solvers typically expect a monolithic parameter vector. Flux enables this via its
-  `destructure` mechanism, however, it often leads to
-  [weird bugs](https://github.com/FluxML/Flux.jl/issues?q=is%3Aissue+destructure). Lux
+  `destructure` mechanism, but `destructure` comes with various
+  [edge cases and limitations](https://fluxml.ai/Optimisers.jl/dev/api/#Optimisers.destructure). Lux
   forces users to make an explicit distinction between state variables and parameter
   variables to avoid these issues. Also, it comes battery-included for distributed training
   using [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl) *(I know :P the naming)*
   
 * **Sensible display of Custom Layers** -- Ever wanted to see Pytorch like Network printouts
-  or wondered how to extend the pretty printing of Flux's layers. Lux handles all of that
+  or wondered how to extend the pretty printing of Flux's layers? Lux handles all of that
   by default.
   
-* **Less Bug-ridden Code** - *No arbitrary internal mutations* since all layers are
-  implemented as pure functions. *All layers are deterministic* given the parameter and
-  state (if the layer is supposed to be stochastic (say `Dropout`), the state must contain a
-  seed which is then updated after the function call).
+* **Truly immutable models** - No *unexpected internal mutations* since all layers are
+  implemented as pure functions. All layers are also *deterministic* given the parameters and
+  state: if a layer is supposed to be stochastic (say `Dropout`), the state must contain a
+  seed which is then updated after the function call.
 
-* **Easy Parameter Manipulation** -- Wondering why Flux doesn't have `WeightNorm`,
-  `SpectralNorm`, etc. The implicit parameter handling makes it extremely hard to pass
-  parameters around without mutations which AD systems don't like. With Lux implementing
-  them is outright simple.
+* **Easy Parameter Manipulation** -- By separating parameter data and layer structures,
+  Lux makes implementing `WeightNorm`, `SpectralNorm`, etc. downright trivial.
+  Without this separation, it is much harder to pass such parameters
+  around without mutations which AD systems don't like.
 
 
 # Why not use Lux?
