@@ -5,7 +5,7 @@ Julia already has quite a few well established Neural Network Frameworks --
 certain design elements -- **Coupled Model and Parameters** & **Internal Mutations** --
 associated with these frameworks make them less compiler and user friendly. Making changes
 to address these problems in the respective frameworks would be too disruptive for users.
-Here comes in `Lux` a neural network framework built completely using pure functions to make
+Here comes in `Lux`: a neural network framework built completely using pure functions to make
 it both compiler and autodiff friendly.
 
 # Design Principles
@@ -16,7 +16,7 @@ it both compiler and autodiff friendly.
 * **Layers return a Tuple containing the result and the updated state**
 * **Given same inputs the outputs must be same** -- yes this must hold true even for
   stochastic functions. Randomness must be controlled using `rng`s passed in the state.
-* **Easily extendible**
+* **Easily extensible**
 
 # Why use Lux over Flux?
 
