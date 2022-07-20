@@ -37,8 +37,8 @@ end
 
 # ## Define the Neural ODE Layer
 #
-# The NeuralODE is a ContainerLayer. It stores a `model` and the parameters and states of the NeuralODE is
-# same as that of the underlying model.
+# The NeuralODE is a ContainerLayer, which stores a `model`. The parameters and states of the NeuralODE are
+# same as those of the underlying model.
 struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
        Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
