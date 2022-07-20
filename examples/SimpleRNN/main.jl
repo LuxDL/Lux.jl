@@ -2,9 +2,9 @@
 
 # In this tutorial we will go over using a recurrent neural network to classify clockwise and anticlockwise spirals. By the end of this tutorial you will be able to:
 
-# 1. Create custom Lux models
-# 2. Become familiar with the Lux recurrent neural network API
-# 3. Training using Optimisers.jl and Zygote.jl
+# 1. Create custom Lux models.
+# 2. Become familiar with the Lux recurrent neural network API.
+# 3. Training using Optimisers.jl and Zygote.jl.
 
 # ## Package Imports
 using Lux
