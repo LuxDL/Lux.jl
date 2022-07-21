@@ -14,7 +14,7 @@ make in the following example.
 
     model = Chain(Dense(2 => 4), BatchNorm(4, relu), Dense(4 => 2))
     rng = Random.default_rng()
-    x = randn(rng, 2, 4)
+    x = randn(rng, Float32, 2, 4)
   
     ps, st = Lux.setup(rng, model)
 
@@ -30,7 +30,7 @@ make in the following example.
 
     model = Chain(Dense(2 => 4), BatchNorm(4, relu), Dense(4 => 2))
     rng = Random.default_rng()
-    x = randn(rng, 2, 4)
+    x = randn(rng, Float32, 2, 4)
 
 
 
