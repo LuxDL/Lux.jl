@@ -2,31 +2,31 @@
 
 # We borrow this tutorial from the [official Turing Docs](https://turing.ml/dev/tutorials/03-bayesian-neural-network/). We will show how the explicit parameterization of Lux enables first-class composability with packages which expect flattened out parameter vectors.
 
-# We will use [Turing.jl](https://turing.ml) with [Lux.jl](https://lux.csail.mit.edu/stable) to implement implementing a classification algorithm. Lets start by importing the relevant libraries
+# We will use [Turing.jl](https://turing.ml) with [Lux.jl](https://lux.csail.mit.edu/stable) to implement implementing a classification algorithm. Lets start by importing the relevant libraries.
 
-## Import libraries.
+## Import libraries
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 using Turing, Plots, Random, ReverseDiff, NNlib, Functors
 
-## Hide sampling progress.
+## Hide sampling progress
 Turing.setprogress!(false);
 
-## Use reverse_diff due to the number of parameters in neural networks.
+## Use reverse_diff due to the number of parameters in neural networks
 Turing.setadbackend(:reversediff)
 
 # ## Generating data
 
 # Our goal here is to use a Bayesian neural network to classify points in an artificial dataset. The code below generates data points arranged in a box-like pattern and displays a graph of the dataset we'll be working with.
 
-## Number of points to generate.
+## Number of points to generate
 N = 80
 M = round(Int, N / 4)
 rng = Random.default_rng()
 Random.seed!(rng, 1234)
 
-## Generate artificial data.
+## Generate artificial data
 x1s = rand(rng, Float32, M) * 4.5f0;
 x2s = rand(rng, Float32, M) * 4.5f0;
 xt1s = Array([[x1s[i] + 0.5f0; x2s[i] + 0.5f0] for i in 1:M])
@@ -41,11 +41,11 @@ x1s = rand(rng, Float32, M) * 4.5f0;
 x2s = rand(rng, Float32, M) * 4.5f0;
 append!(xt0s, Array([[x1s[i] - 5.0f0; x2s[i] + 0.5f0] for i in 1:M]))
 
-## Store all the data for later.
+## Store all the data for later
 xs = [xt1s; xt0s]
 ts = [ones(2 * M); zeros(2 * M)]
 
-## Plot data points.
+## Plot data points
 function plot_data()
     x1 = first.(xt1s)
     y1 = last.(xt1s)
@@ -62,7 +62,7 @@ plot_data()
 
 # ## Building the Neural Network
 
-# The next step is to define a feedforward neural network where we express our parameters as distributions, and not single points as with traditional neural networks. For this we will use `Dense` to define liner layers and compose them via `Chain`, both are neural network primitives from `Lux`. The network `nn` we will creat will have two hidden layers with `tanh` activations and one output layer with `sigmoid` activation, as shown below.
+# The next step is to define a feedforward neural network where we express our parameters as distributions, and not single points as with traditional neural networks. For this we will use `Dense` to define liner layers and compose them via `Chain`, both are neural network primitives from `Lux`. The network `nn` we will create will have two hidden layers with `tanh` activations and one output layer with `sigmoid` activation, as shown below.
 
 # The `nn` is an instance that acts as a function and can take data, parameters and current state as inputs and output predictions. We will define distributions on the neural network parameters.
 

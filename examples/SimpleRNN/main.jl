@@ -2,9 +2,9 @@
 
 # In this tutorial we will go over using a recurrent neural network to classify clockwise and anticlockwise spirals. By the end of this tutorial you will be able to:
 
-# 1. Create custom Lux models
-# 2. Become familiar with the Lux recurrent neural network API
-# 3. Training using Optimisers.jl and Zygote.jl
+# 1. Create custom Lux models.
+# 2. Become familiar with the Lux recurrent neural network API.
+# 3. Training using Optimisers.jl and Zygote.jl.
 
 # ## Package Imports
 using Lux
@@ -14,7 +14,7 @@ using MLUtils, Optimisers, Zygote, NNlib, Random, Statistics
 
 # ## Dataset
 
-# We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise spirals. Using this data we will create a `MLUtils.DataLoader`. Our dataloader will give us sequences of size 2 × seq_len × batch_size and we need to predict a binary value whether the sequence is clockwise or anticlockwise
+# We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise spirals. Using this data we will create a `MLUtils.DataLoader`. Our dataloader will give us sequences of size 2 × seq_len × batch_size and we need to predict a binary value whether the sequence is clockwise or anticlockwise.
 
 function get_dataloaders(; dataset_size=1000, sequence_length=50)
     ## Create the spirals
@@ -48,14 +48,14 @@ struct SpiralClassifier{L, C} <:
     classifier::C
 end
 
-# We won't define the model from scratch but rather use the [`Lux.LSTMCell`](@ref) and [`Lux.Dense`](@ref)
+# We won't define the model from scratch but rather use the [`Lux.LSTMCell`](@ref) and [`Lux.Dense`](@ref).
 
 function SpiralClassifier(in_dims, hidden_dims, out_dims)
     return SpiralClassifier(LSTMCell(in_dims => hidden_dims),
                             Dense(hidden_dims => out_dims, sigmoid))
 end
 
-# Now we need to define the behavior of the Classifier when it is invoked
+# Now we need to define the behavior of the Classifier when it is invoked.
 
 function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
                                st::NamedTuple) where {T}
@@ -77,7 +77,7 @@ end
 
 # ## Defining Accuracy, Loss and Optimiser
 
-# Now let's define the binarycrossentropy loss. Typically it is recommended to use `logitbinarycrossentropy` since it is more numerically stable, but for the sake of simplicity we will use `binarycrossentropy`
+# Now let's define the binarycrossentropy loss. Typically it is recommended to use `logitbinarycrossentropy` since it is more numerically stable, but for the sake of simplicity we will use `binarycrossentropy`.
 
 function xlogy(x, y)
     result = x * log(y)
@@ -97,7 +97,7 @@ end
 matches(y_pred, y_true) = sum((y_pred .> 0.5) .== y_true)
 accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
 
-# Finally lets create an optimiser given the model parameters
+# Finally lets create an optimiser given the model parameters.
 
 function create_optimiser(ps)
     opt = Optimisers.ADAM(0.01f0)

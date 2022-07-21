@@ -1,6 +1,6 @@
 # Boltz ⚡
 
-Accelerate ⚡ your ML research using pre-built Deep Learning Models with Lux
+Accelerate ⚡ your ML research using pre-built Deep Learning Models with Lux.
 
 ## Installation
 
@@ -59,7 +59,7 @@ model, ps, st = resnet(:resnet18; pretrained=true)
 | Vision Transformer | `vision_transformer` | `:giant` | 🚫 | | |
 | Vision Transformer | `vision_transformer` | `:gigantic` | 🚫 | | |
 
-These models can be created using `<FUNCTION>(<NAME>; pretrained = <PRETRAINED>)`
+These models can be created using `<FUNCTION>(<NAME>; pretrained = <PRETRAINED>)`.
 
 ### Preprocessing
 

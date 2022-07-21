@@ -97,7 +97,7 @@ W * x
 
 # ## (Im)mutability
 
-# Lux as you might have read is [Immutable by convention](http://lux.csail.mit.edu/dev/introduction/overview/#Design-Principles) which means that the core library is built without any form of mutation and all functions are pure. However, we don't enfore it in any form. We do **strongly recommend** that users extending this framework for their respective applications don't mutate their arrays.
+# Lux as you might have read is [Immutable by convention](http://lux.csail.mit.edu/dev/introduction/overview/#Design-Principles) which means that the core library is built without any form of mutation and all functions are pure. However, we don't enforce it in any form. We do **strongly recommend** that users extending this framework for their respective applications don't mutate their arrays.
 
 x = reshape(1:8, 2, 4)
 
@@ -113,19 +113,19 @@ println("Mutated Array ", x_copy)
 
 # ## Managing Randomness
 
-# We relu on the Julia StdLib `Random` for managing the randomness in our execution. First, we create an PRNG and seed it.
+# We rely on the Julia StdLib `Random` for managing the randomness in our execution. First, we create an PRNG and seed it.
 rng = Random.default_rng() # Creates a Xoshiro PRNG
 Random.seed!(rng, 0)
 
 # If we call any function that relies on `rng` and uses it via `randn`, `rand`, etc. `rng` will be mutated. As we have already established we care a lot about immutability, hence we should use `Lux.replicate` on PRNG before using them.
 
-# First, let us run a random number generator 3 times with the `replicate`d rng
+# First, let us run a random number generator 3 times with the `replicate`d rng.
 
 for i in 1:3
     println("Iteration $i ", rand(Lux.replicate(rng), 10))
 end
 
-# As expected we get the same output. We can remove the `replicate` call and we will get different outputs
+# As expected we get the same output. We can remove the `replicate` call and we will get different outputs.
 
 for i in 1:3
     println("Iteration $i ", rand(rng, 10))
@@ -133,7 +133,7 @@ end
 
 # ## Automatic Differentiation
 
-# Julia has quite a few (maybe too many) AD tools. For the purpose of this tutorial, we will use [AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl) which provides an uniform API across multiple AD backends. For the backends we will use:
+# Julia has quite a few (maybe too many) AD tools. For the purpose of this tutorial, we will use [AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl) which provides a uniform API across multiple AD backends. For the backends we will use:
 #
 # 1. [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) -- For Jacobian-Vector Product (JVP)
 # 2. [Zygote.jl](https://github.com/FluxML/Zygote.jl) -- For Vector-Jacobian Product (VJP)
@@ -152,7 +152,7 @@ f(x) = x' * x / 2
 ∇f(x) = x
 v = randn(rng, Float32, 4)
 
-# Let's use AbstractDifferentiation and Zygote to compute the gradients
+# Let's use AbstractDifferentiation and Zygote to compute the gradients.
 
 println("Actual Gradient: ", ∇f(v))
 println("Computed Gradient via Reverse Mode AD (Zygote): ",
@@ -160,11 +160,11 @@ println("Computed Gradient via Reverse Mode AD (Zygote): ",
 println("Computed Gradient via Forward Mode AD (ForwardDiff): ",
         AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
 
-# Note that `AD.gradient` will only work for scalar valued outputs
+# Note that `AD.gradient` will only work for scalar valued outputs.
 
 # ### Jacobian-Vector Product
 
-# I will defer the discussion on forward-mode AD to https://book.sciml.ai/notes/08/. Here let us just look at a mini example on how to use it.
+# I will defer the discussion on forward-mode AD to [https://book.sciml.ai/notes/08/](https://book.sciml.ai/notes/08/). Here let us just look at a mini example on how to use it.
 
 f(x) = x .* x ./ 2
 x = randn(rng, Float32, 5)
@@ -174,7 +174,7 @@ v = ones(Float32, 5)
 
 pf_f = AD.value_and_pushforward_function(AD.ForwardDiffBackend(), f, x)
 
-# Compute the jvp
+# Compute the jvp.
 
 val, jvp = pf_f(v)
 println("Computed Value: f(", x, ") = ", val)
@@ -182,11 +182,11 @@ println("JVP: ", jvp[1])
 
 # ### Vector-Jacobian Product
 
-# Using the same function and inputs, let us compute the VJP
+# Using the same function and inputs, let us compute the VJP.
 
 pb_f = AD.value_and_pullback_function(AD.ZygoteBackend(), f, x)
 
-# Compute the vjp
+# Compute the vjp.
 
 val, vjp = pb_f(v)
 println("Computed Value: f(", x, ") = ", val)
@@ -196,18 +196,18 @@ println("VJP: ", vjp[1])
 
 # Finally, now let us consider a linear regression problem. From a set of data-points
 # $\left\{ (x_i, y_i), i \in \left\{ 1, \dots, k \right\}, x_i \in \mathbb{R}^n, y_i \in \mathbb{R}^m \right\}$,
-# we try to find a set of parameters $W$ and $b$, s.t. $f_{W,b}(x) = Wx + b$ minimizes the mean squared error:
+# we try to find a set of parameters $W$ and $b$, s.t. $f_{W,b}(x) = Wx + b$, which minimizes the mean squared error:
 
 # $$L(W, b) \longrightarrow \sum_{i = 1}^{k} \frac{1}{2} \| y_i - f_{W,b}(x_i) \|_2^2$$
 
-# We can write `f` from scratch, but to demonstrate `Lux` let us use the `Dense` layer.
+# We can write `f` from scratch, but to demonstrate `Lux`, let us use the `Dense` layer.
 
 model = Dense(10 => 5)
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-# Let us initialize the parameters and states (in this case it is empty) for the model
+# Let us initialize the parameters and states (in this case it is empty) for the model.
 ps, st = Lux.setup(rng, model)
 ps = ps |> Lux.ComponentArray
 

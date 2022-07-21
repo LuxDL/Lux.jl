@@ -119,7 +119,7 @@ could treat it as a [`Singular Layer`](#singular-layer), and it is still fine. F
 cannot subtype your layer with [`Lux.AbstractExplicitContainerLayer`](@ref) then you
 should go down the [`Singular Layer`](#singular-layer) route. But subtyping allows us to
 bypass some of these common definitions. Let us now define a layer, which is basically a
-composition of two linear layers
+composition of two linear layers.
 
 ```@example layer_interface
 struct ComposedLinear{L1, L2} <: Lux.AbstractExplicitContainerLayer{(:linear_1, :linear_2)}
