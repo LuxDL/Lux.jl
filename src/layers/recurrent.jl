@@ -72,7 +72,7 @@ function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple}
                         st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
-    hidden_state = init_hidden_state(rng, rnn, x)
+    hidden_state = _init_hidden_state(rng, rnn, x)
     return rnn((x, hidden_state), ps, st)
 end
 
@@ -206,8 +206,8 @@ function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTupl
                           st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
-    hidden_state = init_hidden_state(rng, lstm, x)
-    memory = init_hidden_state(rng, lstm, x)
+    hidden_state = _init_hidden_state(rng, lstm, x)
+    memory = _init_hidden_state(rng, lstm, x)
     return lstm((x, hidden_state, memory), ps, st)
 end
 
@@ -312,7 +312,7 @@ function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple}
                         st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
-    hidden_state = init_hidden_state(rng, gru, x)
+    hidden_state = _init_hidden_state(rng, gru, x)
     return gru((x, hidden_state), ps, st)
 end
 

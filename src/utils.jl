@@ -195,11 +195,11 @@ end
 @inline _gate(x::AbstractVector, h::Int, n::Int) = view(x, _gate(h, n))
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
-@inline function init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+@inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
     return rnn.init_state(rng, rnn.out_dims, size(x, 2))
 end
 
-@inline function init_hidden_state(rng::AbstractRNG, rnn,
+@inline function _init_hidden_state(rng::AbstractRNG, rnn,
                                    x::Union{CUDA.StridedSubCuArray, CuArray})
     return rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> gpu
 end
