@@ -194,6 +194,8 @@ end
 @inline _gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
 @inline _gate(x::AbstractVector, h::Int, n::Int) = view(x, _gate(h, n))
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
+@inline init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix) = rnn.init_state(rng, rnn.out_dims, size(x, 2))
+@inline init_hidden_state(rng::AbstractRNG, rnn, x::CUDA.StridedSubCuArray) = rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> gpu
 
 """
     multigate(x::AbstractArray, ::Val{N})
