@@ -6,15 +6,12 @@ if CUDA.functional()
     using CUDA  # exports CuArray, etc
     @info "starting CUDA tests"
 else
-    @info "CUDA not functional, testing via GPUArrays"
-    using GPUArrays
-    GPUArrays.allowscalar(false)
+    @info "CUDA not functional, testing via JLArrays"
+    using JLArrays
+    JLArrays.allowscalar(false)
 
-    # GPUArrays provides a fake GPU array, for testing
-    jl_file = normpath(joinpath(pathof(GPUArrays), "..", "..", "test", "jlarray.jl"))
-    using Random, Adapt  # loaded within jl_file
-    include(jl_file)
-    using .JLArrays
+    # JLArrays provides a fake GPU array, for testing
+    using Random, Adapt
     CUDA.cu(x) = jl(x)
     CuArray{T, N} = JLArray{T, N}
 
