@@ -12,7 +12,6 @@ else
 
     # JLArrays provides a fake GPU array, for testing
     using Random, Adapt
-    using JLArrays
     CUDA.cu(x) = jl(x)
     CuArray{T, N} = JLArray{T, N}
 
