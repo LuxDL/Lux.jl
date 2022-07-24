@@ -14,12 +14,12 @@ CUDA.allowscalar(false)
 function loadmnist(batchsize, train_split)
     ## Load MNIST: Only 1500 for demonstration purposes
     N = 1500
-    imgs = MNIST(split=:train).features[:,:,1:N]
-    labels_raw = MNIST(split=:train).targets[1:N]
+    imgs = MNIST(; split=:train).features[:, :, 1:N]
+    labels_raw = MNIST(; split=:train).targets[1:N]
 
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
-    y_data = onehotbatch(labels_raw,0:9)
+    y_data = onehotbatch(labels_raw, 0:9)
     (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
 
     return (
