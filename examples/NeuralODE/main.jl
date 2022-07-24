@@ -5,27 +5,21 @@ using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random,
-      Statistics, Zygote
+      Statistics, Zygote, OneHotArrays
 import MLDatasets: MNIST
-import MLDataUtils: convertlabel, LabelEnc
 import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
 
 # ## Loading MNIST
-## Use MLDataUtils LabelEnc for natural onehot conversion
-function onehot(labels_raw)
-    return convertlabel(LabelEnc.OneOfK, labels_raw, LabelEnc.NativeLabels(collect(0:9)))
-end
-
 function loadmnist(batchsize, train_split)
     ## Load MNIST: Only 1500 for demonstration purposes
     N = 1500
-    imgs = MNIST.traintensor(1:N)
-    labels_raw = MNIST.trainlabels(1:N)
+    imgs = MNIST(split=:train).features[:,:,1:N]
+    labels_raw = MNIST(split=:train).targets[1:N]
 
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
-    y_data = onehot(labels_raw)
+    y_data = onehotbatch(labels_raw,0:9)
     (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
 
     return (
@@ -88,8 +82,6 @@ function create_model()
 end
 
 # ## Define Utility Functions
-get_class(x) = argmax.(eachcol(x))
-
 logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
 
 function loss(x, y, model, ps, st)
@@ -102,8 +94,8 @@ function accuracy(model, ps, st, dataloader)
     st = Lux.testmode(st)
     iterator = CUDA.functional() ? CuIterator(dataloader) : dataloader
     for (x, y) in iterator
-        target_class = get_class(cpu(y))
-        predicted_class = get_class(cpu(model(x, ps, st)[1]))
+        target_class = onecold(cpu(y))
+        predicted_class = onecold(cpu(model(x, ps, st)[1]))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
