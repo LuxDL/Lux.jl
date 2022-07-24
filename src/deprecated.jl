@@ -3,13 +3,13 @@
 ## Device transfer of AbstractExplicitLayers
 function cpu(l::AbstractExplicitLayer)
     Base.depwarn("`cpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
-                 "`cpu` on the layer's parameters and states instead.", :cpu)
+                 " `cpu` on the layer's parameters and states instead.", :cpu)
     return l
 end
 
 function gpu(l::AbstractExplicitLayer)
     Base.depwarn("`gpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
-                 "`gpu` on the layer's parameters and states instead.", :gpu)
+                 " `gpu` on the layer's parameters and states instead.", :gpu)
     return l
 end
 
@@ -29,7 +29,7 @@ end
 ## Fallback `initialparameters` / `initialstates`
 function initialparameters(::AbstractRNG, l::Any)
     Base.depwarn("Default fallback for non `AbstractExplicitLayer` types are deprecated" *
-                 "and will be removed in v0.5. Define" *
+                 " and will be removed in v0.5. Define" *
                  " `Lux.initialparameters(::AbstractRNG, ::$(typeof(l)))`",
                  :initialparameters)
     return NamedTuple()

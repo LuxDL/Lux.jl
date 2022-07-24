@@ -1,4 +1,13 @@
-using FiniteDifferences, JET, Lux, Random, Test, Zygote
+using FiniteDifferences, JET, Lux, Optimisers, Random, Test, Zygote
+
+function Base.isapprox(x, y; kwargs...)
+    @warn "`isapprox` is not defined for ($(typeof(x)), $(typeof(y))). Using `==` instead."
+    return x == y
+end
+
+function Base.isapprox(x::Optimisers.Leaf, y::Optimisers.Leaf; kwargs...)
+    return isapprox(x.rule, y.rule; kwargs...) && isapprox(x.state, y.state; kwargs...)
+end
 
 function Base.isapprox(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
                        kwargs...) where {fields}
