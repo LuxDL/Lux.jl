@@ -96,3 +96,14 @@ end
         @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
     end
 end
+
+@testset "_init_hidden_state" begin
+    rnn = RNNCell(3 => 5, init_state=ones32)
+    x = randn(rng, Float32, 3, 2, 2)
+    @test _init_hidden_state(rng, rnn, view(x, :, 1, :)) == zeros(Float32, 5, 2)
+    
+    if CUDA.functional()
+        x = x |> gpu
+        @test _init_hidden_state(rng, rnn, view(x, :, 1, :)) == CUDA.zeros(Float32, 5, 2)
+    end
+end
