@@ -98,12 +98,13 @@ end
 end
 
 @testset "_init_hidden_state" begin
-    rnn = RNNCell(3 => 5, init_state=Lux.zeros32)
+    rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
     x = randn(rng, Float32, 3, 2, 2)
     @test Lux._init_hidden_state(rng, rnn, view(x, :, 1, :)) == zeros(Float32, 5, 2)
-    
+
     if CUDA.functional()
         x = x |> gpu
-        @test Lux._init_hidden_state(rng, rnn, view(x, :, 1, :)) == CUDA.zeros(Float32, 5, 2)
+        @test Lux._init_hidden_state(rng, rnn, view(x, :, 1, :)) ==
+              CUDA.zeros(Float32, 5, 2)
     end
 end
