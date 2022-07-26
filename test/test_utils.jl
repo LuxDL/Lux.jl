@@ -1,4 +1,4 @@
-using FiniteDifferences, JET, Lux, Optimisers, Random, Test, Zygote
+using ComponentArrays, FiniteDifferences, JET, Lux, Optimisers, Random, Test, Zygote
 
 function Base.isapprox(x, y; kwargs...)
     @warn "`isapprox` is not defined for ($(typeof(x)), $(typeof(y))). Using `==` instead."
@@ -22,10 +22,18 @@ function Base.isapprox(t1::NTuple{N, T}, t2::NTuple{N, T}; kwargs...) where {N, 
     return all(checkapprox, zip(t1, t2))
 end
 
+Base.isapprox(::Nothing, v::AbstractArray; kwargs...) = length(v) == 0
+Base.isapprox(v::AbstractArray, ::Nothing; kwargs...) = length(v) == 0
+
 # Test the gradients generated using AD against the gradients generated using Finite Differences
+_named_tuple(x::ComponentArray) = NamedTuple(x)
+_named_tuple(x) = x
+
 function test_gradient_correctness_fdm(f::Function, args...; kwargs...)
     gs_ad = Zygote.gradient(f, args...)
-    gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(5, 1), f, args...)
+    gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(5, 1), f,
+                                    ComponentArray.(args)...)
+    gs_fdm = _named_tuple.(gs_fdm)
     for (g_ad, g_fdm) in zip(gs_ad, gs_fdm)
         @test isapprox(g_ad, g_fdm; kwargs...)
     end

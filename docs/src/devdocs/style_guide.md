@@ -91,7 +91,7 @@ away those optimizations (these can be tested via `Zygote.@code_ir`).
 
 ## Deprecation
 
-Deprecations should be handled according to SemVar recommendations, i.e. there should be
+Deprecations should be handled according to SemVer recommendations, i.e. there should be
 atleast one version where we throw a deprecation warning. This ensures users know how to
 modify their code for upcoming releases.
 

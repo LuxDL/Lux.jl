@@ -4,7 +4,7 @@ CurrentModule = Lux
 
 All features listed on this page are **experimental** which means:
 
-  1. No SemVar Guarantees. We use code here to iterate fast and most users should wait for
+  1. No SemVer Guarantees. We use code here to iterate fast and most users should wait for
      these features to be marked non-experimental.
   2. The code will probably be moved into a separate repository in the future.
   3. Expect edge-cases and report them. It will help us move these features out of

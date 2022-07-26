@@ -3,6 +3,7 @@
 ## v0.4.11
 
   - Introduces `Lux.Training` API for less clunky training loops.
+  - WeightNorm cannot be invoked on a parameter with all elements equal to 0.
 
 ## v0.4.10
 
