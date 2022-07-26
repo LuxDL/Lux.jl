@@ -231,7 +231,7 @@ end
     end
 
     @testset "Conv" begin
-        c = Conv((3, 3), 3 => 3)
+        c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(c, (:weight, :bias))
         println(wn)
@@ -239,8 +239,8 @@ end
         x = randn(rng, Float32, 3, 3, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight,))
         println(wn)
@@ -248,8 +248,8 @@ end
         x = randn(rng, Float32, 3, 3, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight, :bias), (2, 2))
         println(wn)
@@ -257,8 +257,8 @@ end
         x = randn(rng, Float32, 3, 3, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight,), (2,))
         println(wn)
@@ -266,12 +266,12 @@ end
         x = randn(rng, Float32, 3, 3, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
     end
 
     @testset "Dense" begin
-        d = Dense(3 => 3)
+        d = Dense(3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(d, (:weight, :bias))
         println(wn)
@@ -279,8 +279,8 @@ end
         x = randn(rng, Float32, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight,))
         println(wn)
@@ -288,8 +288,8 @@ end
         x = randn(rng, Float32, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight, :bias), (2, 2))
         println(wn)
@@ -297,8 +297,8 @@ end
         x = randn(rng, Float32, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight,), (2,))
         println(wn)
@@ -306,7 +306,26 @@ end
         x = randn(rng, Float32, 3, 1)
 
         run_JET_tests(wn, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(first(wn(x, ps, st))), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        test_gradient_correctness_fdm((x, ps) -> sum(first(wn(x, ps, st))), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    # See https://github.com/avik-pal/Lux.jl/issues/95
+    @testset "Normalizing Zero Parameters" begin
+        c = Conv((3, 3), 3 => 3)
+
+        wn = WeightNorm(c, (:weight, :bias))
+        @test_throws ArgumentError Lux.setup(rng, wn)
+
+        wn = WeightNorm(c, (:weight,))
+        @test_nowarn Lux.setup(rng, wn)
+
+        c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
+
+        wn = WeightNorm(c, (:weight, :bias))
+        @test_nowarn Lux.setup(rng, wn)
+
+        wn = WeightNorm(c, (:weight,))
+        @test_nowarn Lux.setup(rng, wn)
     end
 end
