@@ -41,6 +41,8 @@ end
             @time @safetestset "NNlib" begin include("nnlib.jl") end
 
             @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
+
+            @testset "Experimental" begin @time @safetestset "Training" begin include("contrib/training.jl") end end
         end
     else
         dev_subpkg(group)

@@ -96,6 +96,7 @@ nav:
       - "Home": "examples/examples.md"
       - "Beginner":
           - "Julia & Lux for the Uninitiated": "examples/generated/beginner/Basics/main.md"
+          - "Fitting a Polynomial": "examples/generated/beginner/PolynomialFitting/main.md"
           - "Training a Simple LSTM": "examples/generated/beginner/SimpleRNN/main.md"
       - "Intermediate":
           - "MNIST Classification using NeuralODE": "examples/generated/intermediate/NeuralODE/main.md"
@@ -108,8 +109,11 @@ nav:
       - "Functional": "api/functional.md"
       - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
+      - "Experimental": "api/contrib.md"
   - "Frameworks":
       - "Boltz.jl": "lib/Boltz/index.md"
+      - "FluxMPI.jl": "https://avik-pal.github.io/FluxMPI.jl/dev/"
+      - "NNlib.jl": "https://fluxml.ai/Flux.jl/stable/models/nnlib/"
   - "Development Documentation":
       - "Style Guide": "devdocs/style_guide.md"
       - "Layer Implementation": "devdocs/layer_implementation.md"
