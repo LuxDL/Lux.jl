@@ -201,7 +201,7 @@ end
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn,
                                     x::Union{CUDA.StridedSubCuArray, CuArray})
-    return rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> gpu
+    return CuArray(rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
 """
