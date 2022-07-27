@@ -126,7 +126,7 @@ function train()
         stime = time()
         iterator = CUDA.functional() ? CuIterator(train_dataloader) : train_dataloader
         for (x, y) in iterator
-            (l, _), back = pullback(p -> loss(x, y, model, p, st), ps)
+            (l, st), back = pullback(p -> loss(x, y, model, p, st), ps)
             gs = back((one(l), nothing))[1]
             st_opt, ps = Optimisers.update(st_opt, ps, gs)
         end
