@@ -11,7 +11,7 @@ adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
 function adapt_structure(to, ca::ComponentArray)
-    ComponentArray(adapt_structure(to, getdata(ca)), getaxes(ca))
+    return ComponentArray(adapt_structure(to, getdata(ca)), getaxes(ca))
 end
 
 function adapt_storage(::LuxCPUAdaptor,
