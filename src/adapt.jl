@@ -51,11 +51,6 @@ function gpu(x)
     return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf) : x
 end
 
-function gpu(x::ComponentArray)
-    check_use_cuda()
-    return use_cuda[] ? adapt(LuxCUDAAdaptor(), x) : x
-end
-
 function check_use_cuda()
     if use_cuda[] === nothing
         use_cuda[] = CUDA.functional()
