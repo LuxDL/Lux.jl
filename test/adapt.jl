@@ -1,4 +1,4 @@
-using Lux, Functors, Random, Test
+using Lux, Functors, Random, Test, ComponentArrays
 
 import CUDA
 
