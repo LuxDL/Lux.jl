@@ -10,7 +10,7 @@ import NNlibCUDA: batchnorm, ∇batchnorm, CUDNNFloat
 using Random, Statistics, LinearAlgebra, SparseArrays
 # Parameter Manipulation
 using Functors, Setfield
-import Adapt: adapt, adapt_storage
+import Adapt: adapt, adapt_storage, adapt_structure
 import GPUArrays
 # Arrays
 using FillArrays, ComponentArrays
