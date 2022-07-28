@@ -3,13 +3,16 @@ abstract type LuxDeviceAdaptor end
 struct LuxCPUAdaptor <: LuxDeviceAdaptor end
 struct LuxCUDAAdaptor <: LuxDeviceAdaptor end
 
+GPUArrays.backend(x::ComponentArray) = GPUArrays.backend(getdata(x))
+
 adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
 adapt_storage(::LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(collect(x))
 adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
-function adapt_storage(to::LuxCUDAAdaptor, x::ComponentArray)
-    return ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
-end
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
+
+function adapt_structure(to, ca::ComponentArray)
+    ComponentArray(adapt_structure(to, getdata(ca)), getaxes(ca))
+end
 
 function adapt_storage(::LuxCPUAdaptor,
                        x::Union{AbstractRange, FillArrays.AbstractFill, Zygote.OneElement,
@@ -17,9 +20,6 @@ function adapt_storage(::LuxCPUAdaptor,
     return x
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
-function adapt_storage(to::LuxCPUAdaptor, x::ComponentArray)
-    return ComponentArray(adapt_storage(to, getdata(x)), getaxes(x))
-end
 adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 # TODO(@avik-pal): SparseArrays
 function adapt_storage(::LuxCPUAdaptor,
@@ -51,16 +51,21 @@ function gpu(x)
     return use_cuda[] ? fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf) : x
 end
 
+function gpu(x::ComponentArray)
+    check_use_cuda()
+    return use_cuda[] ? adapt(LuxCUDAAdaptor(), x) : x
+end
+
 function check_use_cuda()
     if use_cuda[] === nothing
         use_cuda[] = CUDA.functional()
         if use_cuda[] && !CUDA.has_cudnn()
-            @warn """CUDA.jl found cuda, but did not find libcudnn. Some functionality 
+            @warn """CUDA.jl found cuda, but did not find libcudnn. Some functionality
                      will not be available."""
         end
         if !(use_cuda[])
-            @info """The GPU function is being called but the GPU is not accessible. 
-                     Defaulting back to the CPU. (No action is required if you want 
+            @info """The GPU function is being called but the GPU is not accessible.
+                     Defaulting back to the CPU. (No action is required if you want
                      to run on the CPU).""" maxlog=1
         end
     end

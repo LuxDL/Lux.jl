@@ -11,6 +11,7 @@ using Random, Statistics, LinearAlgebra, SparseArrays
 # Parameter Manipulation
 using Functors, Setfield
 import Adapt: adapt, adapt_storage
+import GPUArrays
 # Arrays
 using FillArrays, ComponentArrays
 # Automatic Differentiation

@@ -46,3 +46,10 @@ end
     @test_deprecated cpu(Dense(10, 10))
     @test_deprecated gpu(Dense(10, 10))
 end
+
+@testset "ComponentArray Broadcast" begin
+    ps = ComponentArray(a=[1,2], b=[3,4])
+    @test ps .* 0 == zero(ps)
+    ps_g = ps_g |> gpu
+    @test ps_g .* 0 == zero(ps_g)
+end
