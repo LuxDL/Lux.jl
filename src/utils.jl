@@ -135,10 +135,10 @@ function Base.similar(c::ComponentArray, l::Vararg{Union{Integer, AbstractUnitRa
     return similar(getdata(c), l)
 end
 
-function Base.mapreduce(f, op, A::ComponentArray{T, N, <:AnyGPUArray{T, N}},
+function Base.mapreduce(f, op, A::ComponentArray{T, N, <:GPUArrays.AnyGPUArray{T, N}},
                         As::GPUArrays.AbstractArrayOrBroadcasted...; dims=:,
                         init=nothing) where {T, N}
-    return GPUArrays._mapreduce(f, op, A, As...; dims=dims, init=init)
+    return mapreduce(f, op, getdata(A), As...; dims=dims, init=init)
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)

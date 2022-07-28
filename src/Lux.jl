@@ -12,7 +12,6 @@ using Random, Statistics, LinearAlgebra, SparseArrays
 using Functors, Setfield
 import Adapt: adapt, adapt_storage, adapt_structure
 import GPUArrays
-import GPUArrays: AnyGPUArray
 # Arrays
 using FillArrays, ComponentArrays
 # Automatic Differentiation
