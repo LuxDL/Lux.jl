@@ -47,9 +47,9 @@ end
     @test_deprecated gpu(Dense(10, 10))
 end
 
-@testset "ComponentArray Broadcast" begin
-    ps = ComponentArray(; a=[1, 2], b=[3, 4])
-    @test ps .* 0 == zero(ps)
+@testset "ComponentArray Broadcast" begin for T in [Float64, Float32, Int64, Int32]
+    ps = ComponentArray(; w=ones(T, 3), b=ones(T, 4))
+    @test ps .* zero(T) == zero(ps)
     ps_g = ps |> gpu
-    @test ps_g .* 0 == zero(ps_g)
-end
+    @test ps_g .* zero(T) == zero(ps_g)
+end end
