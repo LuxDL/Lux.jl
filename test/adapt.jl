@@ -48,7 +48,7 @@ end
 end
 
 @testset "ComponentArray Broadcast" begin
-    ps = ComponentArray(a=[1,2], b=[3,4])
+    ps = ComponentArray(; a=[1, 2], b=[3, 4])
     @test ps .* 0 == zero(ps)
     ps_g = ps_g |> gpu
     @test ps_g .* 0 == zero(ps_g)
