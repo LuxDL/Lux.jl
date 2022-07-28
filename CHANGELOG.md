@@ -1,5 +1,14 @@
 # v0.4
 
+## v0.4.11
+
+  - Introduces `Lux.Training` API for less clunky training loops.
+  - WeightNorm cannot be invoked on a parameter with all elements equal to 0.
+
+## v0.4.10
+
+  - Fixes Recurrent Model bug on GPUs
+
 ## v0.4.8
 
   - Deprecations
