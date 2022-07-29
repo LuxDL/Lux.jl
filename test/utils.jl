@@ -98,7 +98,7 @@ end
 
     @testset "mapreduce" begin for T in [Float64, Float32, Int64, Int32]
         ps = ComponentArray(; w=ones(T, 3), b=ones(T, 4)) |> gpu
-        @test mapreduce(x -> x - 1, +, ps) == zero(T)
+        @test mapreduce(x -> x - one(T), +, ps) == zero(T)
     end end
 end
 
