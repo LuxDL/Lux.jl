@@ -129,11 +129,6 @@ function Base.similar(c::ComponentArray, l::Vararg{Union{Integer, AbstractUnitRa
     return similar(getdata(c), l)
 end
 
-function Functors.functor(::Type{<:ComponentArray}, c)
-    return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
-           ComponentArray
-end
-
 function ComponentArrays.make_carray_args(nt::NamedTuple)
     data, ax = ComponentArrays.make_carray_args(Vector, nt)
     data = length(data) == 0 ? Float32[] :
@@ -149,18 +144,6 @@ function ComponentArrays.last_index(f::FlatAxis)
 end
 
 ComponentArrays.recursive_length(nt::NamedTuple{(), Tuple{}}) = 0
-
-Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
-
-function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
-    return tree, ComponentArray(ps_new, getaxes(ps))
-end
-
-function Optimisers.update!(tree::Optimisers.Leaf, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update!(tree, getdata(ps), getdata(gs))
-    return tree, ComponentArray(ps_new, getaxes(ps))
-end
 
 # Getting typename
 get_typename(::T) where {T} = Base.typename(T).wrapper
