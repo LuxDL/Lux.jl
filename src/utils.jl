@@ -123,13 +123,7 @@ end
 
 # Handling ComponentArrays
 # NOTE(@avik-pal): We should probably upsteam some of these
-function Base.zero(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
-    return ComponentArray(zero(getdata(c)), getaxes(c))
-end
-
 Base.vec(c::ComponentArray) = getdata(c)
-
-Base.:-(x::ComponentArray) = ComponentArray(-getdata(x), getaxes(x))
 
 function Base.similar(c::ComponentArray, l::Vararg{Union{Integer, AbstractUnitRange}})
     return similar(getdata(c), l)
