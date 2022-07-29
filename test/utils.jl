@@ -95,11 +95,6 @@ end
         @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
         @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
     end
-
-    @testset "mapreduce" begin for T in [Float64, Float32, Int64, Int32]
-        ps = ComponentArray(; w=ones(T, 3), b=ones(T, 4)) |> gpu
-        @test mapreduce(x -> x - one(T), +, ps) == zero(T)
-    end end
 end
 
 @testset "_init_hidden_state" begin

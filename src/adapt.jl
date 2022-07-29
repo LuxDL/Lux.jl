@@ -3,16 +3,10 @@ abstract type LuxDeviceAdaptor end
 struct LuxCPUAdaptor <: LuxDeviceAdaptor end
 struct LuxCUDAAdaptor <: LuxDeviceAdaptor end
 
-GPUArrays.backend(x::ComponentArray) = GPUArrays.backend(getdata(x))
-
 adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
 adapt_storage(::LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(collect(x))
 adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
-
-function adapt_structure(to, ca::ComponentArray)
-    return ComponentArray(adapt_structure(to, getdata(ca)), getaxes(ca))
-end
 
 function adapt_storage(::LuxCPUAdaptor,
                        x::Union{AbstractRange, FillArrays.AbstractFill, Zygote.OneElement,
