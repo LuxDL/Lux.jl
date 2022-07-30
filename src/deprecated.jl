@@ -85,3 +85,48 @@ function ActivationFunction(f)
                  :ActivationFunction)
     return WrappedFunction(Base.Fix1(broadcast, f))
 end
+
+"""
+    applyactivation(f::Function, x::AbstractArray)
+
+Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if possible.
+
+!!! warning
+    
+    This function has been deprecated. Use `f.(x)` instead.
+"""
+@inline function applyactivation(f::Function, x::AbstractArray)
+    Base.depwarn("`Lux.applyactivation` has been deprecated and will be removed in" *
+                 " v0.5. Directly apply broadcasting instead.", :applyactivation)
+    return f.(x)
+end
+
+"""
+    elementwise_add(x, y)
+
+Computes `x .+ y`. Dispatches to CUDNN if possible.
+
+!!! warning
+    
+    This function has been deprecated. Use `x .+ y` instead.
+"""
+@inline function elementwise_add(x, y)
+    Base.depwarn("`Lux.elementwise_add` has been deprecated and will be removed in" *
+                 " v0.5. Use `x .+ y` instead.", :elementwise_add)
+    return x .+ y
+end
+
+"""
+    elementwise_mul(x, y)
+
+Computes `x .* y`. Dispatches to CUDNN if possible.
+
+!!! warning
+    
+    This function has been deprecated. Use `x .* y` instead.
+"""
+@inline function elementwise_mul(x, y)
+    Base.depwarn("`Lux.elementwise_mul` has been deprecated and will be removed in" *
+                 " v0.5. Use `x .* y` instead.", :elementwise_mul)
+    return x .* y
+end

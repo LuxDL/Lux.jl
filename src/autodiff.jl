@@ -27,8 +27,8 @@ function ChainRulesCore.rrule(::typeof(dropout), rng::AbstractRNG, x::AbstractAr
                               p::T, q::T, dims, t::Val{training}) where {T, N, training}
     y, mask, rng = dropout(rng, x, p, q, dims, t)
     function dropout_pullback((dy, dmask, drng))
-        return (NoTangent(), NoTangent(), elementwise_mul(dy, mask), NoTangent(),
-                NoTangent(), NoTangent(), NoTangent())
+        return (NoTangent(), NoTangent(), dy .* mask, NoTangent(), NoTangent(), NoTangent(),
+                NoTangent())
     end
     return (y, mask, rng), dropout_pullback
 end
@@ -87,30 +87,6 @@ function ChainRulesCore.rrule(::typeof(collect), v::Vector)
         return NoTangent(), dy
     end
     return y, collect_pullback
-end
-
-# Activation rrules
-function ChainRulesCore.rrule(::typeof(applyactivation), f::cudnnValidActivationTypes,
-                              x::CuArray{T}) where {T <: CUDNNFloat}
-    mode = getCUDNNActivationMode(f)
-    y = CUDNN.cudnnActivationForward(x; mode)
-    function applyactivation_pullback(Δ)
-        return NoTangent(), NoTangent(), cudnnActivationBackward(y, Δ, x; mode), NoTangent()
-    end
-    return y, applyactivation_pullback
-end
-
-# Elementwise Functions
-function ChainRulesCore.rrule(::typeof(elementwise_add), x, y) where {T}
-    z = elementwise_add(x, y)
-    _elementwise_add_pullback(Δ) = (NoTangent(), elementwise_add_pullback(x, y, Δ)...)
-    return z, _elementwise_add_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(elementwise_mul), x, y) where {T}
-    z = elementwise_mul(x, y)
-    _elementwise_mul_pullback(Δ) = (NoTangent(), elementwise_mul_pullback(x, y, Δ)...)
-    return z, _elementwise_mul_pullback
 end
 
 # Zygote Fixes
