@@ -1,5 +1,10 @@
 # v0.4
 
+## v0.4.12
+
+  - Deprecate `bias` in favor of `use_bias` for `Dense` and `Scale`.
+  - Deprecate `elementwise_*` and `applyactivation` functions.
+
 ## v0.4.11
 
   - Introduces `Lux.Training` API for less clunky training loops.
