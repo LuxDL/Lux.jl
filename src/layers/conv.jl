@@ -124,14 +124,13 @@ end
 @inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
                           groups=c.groups)
-    return applyactivation(c.activation, conv_wrapper(x, ps.weight, cdims)), st
+    return c.activation.(conv_wrapper(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
                           groups=c.groups)
-    return applyactivation(c.activation,
-                           elementwise_add(conv_wrapper(x, ps.weight, cdims), ps.bias)), st
+    return c.activation.(conv_wrapper(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::Conv)

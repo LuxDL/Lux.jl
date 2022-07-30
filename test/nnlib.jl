@@ -13,9 +13,12 @@ include("test_utils.jl")
 
         # On CPU the fallback should always work
         @test Lux.elementwise_add(x, y) == x .+ y
+        @test_deprecated Lux.elementwise_add(x, y)
         @test Lux.elementwise_mul(x, y) == x .* y
+        @test_deprecated Lux.elementwise_mul(x, y)
         @test Lux.applyactivation(tanh, x) == tanh.(x)
         @test Lux.applyactivation(custom_activation, x) == custom_activation.(x)
+        @test_deprecated Lux.applyactivation(tanh, x)
 
         if T <: Real
             # Gradient for complex outputs are not defined
@@ -29,12 +32,7 @@ include("test_utils.jl")
 
             @test Lux.elementwise_add(x_g, y_g) == x_g .+ y_g
             @test Lux.elementwise_mul(x_g, y_g) == x_g .* y_g
-            if T <: Real
-                @test Lux.applyactivation(tanh, x_g) == tanh.(x_g)
-            else
-                ## See https://github.com/FluxML/NNlibCUDA.jl/issues/47
-                @test_broken Lux.applyactivation(tanh, x_g) == tanh.(x_g)
-            end
+            @test Lux.applyactivation(tanh, x_g) == tanh.(x_g)
             # Custom Activation test
             @test Lux.applyactivation(custom_activation, x_g) == custom_activation.(x_g)
         end

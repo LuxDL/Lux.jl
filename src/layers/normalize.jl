@@ -149,10 +149,9 @@ function (BN::BatchNorm{affine, track_stats})(x::Union{CuArray{T, 2}, CuArray{T,
             running_var2 = var(x; mean=running_mean2, dims=reduce_dims, corrected=false)
         end
     end
-    res = applyactivation(BN.activation,
-                          batchnorm(affine ? ps.scale : nothing, affine ? ps.bias : nothing,
-                                    x, running_mean2, running_var2, BN.momentum;
-                                    eps=BN.epsilon, training=istraining(st)))
+    res = BN.activation.(batchnorm(affine ? ps.scale : nothing, affine ? ps.bias : nothing,
+                                   x, running_mean2, running_var2, BN.momentum;
+                                   eps=BN.epsilon, training=istraining(st)))
     if track_stats
         st = merge(st, (running_mean=running_mean2, running_var=running_var2))
     end

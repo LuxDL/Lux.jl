@@ -602,7 +602,7 @@ end
 statelength(d::Dense) = 0
 
 @inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    return applyactivation(d.activation, ps.weight * x), st
+    return d.activation.(ps.weight * x), st
 end
 
 @inline function (d::Dense{false, typeof(identity)})(x::AbstractVecOrMat, ps,
@@ -613,8 +613,7 @@ end
 @inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
-    return reshape(applyactivation(d.activation, ps.weight * x_reshaped), d.out_dims,
-                   sz[2:end]...), st
+    return reshape(d.activation.(ps.weight * x_reshaped), d.out_dims, sz[2:end]...), st
 end
 
 @inline function (d::Dense{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
@@ -624,34 +623,32 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
-    return applyactivation(d.activation, elementwise_add(ps.weight * x, vec(ps.bias))), st
+    return d.activation.(ps.weight * x .+ vec(ps.bias)), st
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractVector, ps, st::NamedTuple)
-    return elementwise_add(ps.weight * x, vec(ps.bias)), st
+    return ps.weight * x .+ vec(ps.bias), st
 end
 
 @inline function (d::Dense{true})(x::AbstractMatrix, ps, st::NamedTuple)
-    return applyactivation(d.activation, elementwise_add(ps.weight * x, ps.bias)), st
+    return d.activation.(ps.weight * x .+ ps.bias), st
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractMatrix, ps, st::NamedTuple)
-    return elementwise_add(ps.weight * x, ps.bias), st
+    return ps.weight * x .+ ps.bias, st
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
-    return (reshape(applyactivation(d.activation,
-                                    elementwise_add(ps.weight * x_reshaped, ps.bias)),
-                    d.out_dims, sz[2:end]...), st)
+    return (reshape(d.activation.(ps.weight * x_reshaped .+ ps.bias), d.out_dims,
+                    sz[2:end]...), st)
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
     sz = size(x)
     x_reshaped = reshape(x, sz[1], :)
-    return (reshape(elementwise_add(ps.weight * x_reshaped, ps.bias), d.out_dims,
-                    sz[2:end]...), st)
+    return (reshape(ps.weight * x_reshaped .+ ps.bias, d.out_dims, sz[2:end]...), st)
 end
 
 """
@@ -727,18 +724,17 @@ parameterlength(d::Scale{bias}) where {bias} = (1 + bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
-    return applyactivation(d.activation,
-                           elementwise_add(elementwise_mul(ps.weight, x), ps.bias)), st
+    return d.activation.(ps.weight .* x .+ ps.bias), st
 end
 
 function (d::Scale{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    return elementwise_add(elementwise_mul(ps.weight, x), ps.bias), st
+    return ps.weight .* x .+ ps.bias, st
 end
 
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    return applyactivation(d.activation, elementwise_mul(ps.weight, x)), st
+    return d.activation.(ps.weight .* x), st
 end
 
 function (d::Scale{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    return elementwise_mul(ps.weight, x), st
+    return ps.weight .* x, st
 end
