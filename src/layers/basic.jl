@@ -469,6 +469,7 @@ struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
     function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
         return Chain(xs...; disable_optimizations)
     end
+    Chain(nt::NamedTuple) = new{typeof(nt)}(nt)
 end
 
 function flatten_model(layers::Union{AbstractVector, Tuple})

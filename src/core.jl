@@ -125,6 +125,19 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
+function Functors.functor(::Type{<:AbstractExplicitContainerLayer},
+                          x::AbstractExplicitContainerLayer{layers}) where {layers}
+    _children = getproperty.((x,), layers)
+    function layer_reconstructor(z)
+        l = x
+        for (child, name) in zip(z, layers)
+            l = Setfield.set(l, Setfield.PropertyLens{name}(), child)
+        end
+        return l
+    end
+    return _children, layer_reconstructor
+end
+
 # Test Mode
 """
     testmode(st::NamedTuple)
