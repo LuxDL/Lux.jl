@@ -123,8 +123,6 @@ end
 
 # Handling ComponentArrays
 # NOTE(@avik-pal): We should probably upsteam some of these
-Base.vec(c::ComponentArray) = getdata(c)
-
 function Base.similar(c::ComponentArray, l::Vararg{Union{Integer, AbstractUnitRange}})
     return similar(getdata(c), l)
 end
