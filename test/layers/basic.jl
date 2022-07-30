@@ -215,7 +215,7 @@ end
         @test size(ps.bias) == (100, 1)
         @test layer.activation == identity
 
-        layer = Dense(10, 100, relu; bias=false)
+        layer = Dense(10, 100, relu; use_bias=false)
         ps, st = Lux.setup(rng, layer)
 
         @test !haskey(ps, :bias)
@@ -256,6 +256,13 @@ end
             first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
         end == [10 20; 10 20]
     end
+
+    # Deprecated Functionality (Remove in v0.5)
+    @testset "Deprecations" begin
+        @test_deprecated Dense(10, 100, relu; bias=false)
+        @test_deprecated Dense(10, 100, relu; bias=true)
+        @test_throws ArgumentError Dense(10, 100, relu; bias=false, use_bias=false)
+    end
 end
 
 @testset "Scale" begin
@@ -267,7 +274,7 @@ end
         @test size(ps.bias) == (10, 100)
         @test layer.activation == identity
 
-        layer = Scale(10, 100, relu; bias=false)
+        layer = Scale(10, 100, relu; use_bias=false)
         ps, st = Lux.setup(rng, layer)
 
         @test !haskey(ps, :bias)
@@ -302,5 +309,12 @@ end
             layer = Scale(2, tanh; bias=false, init_weight=zeros)
             first(Lux.apply(layer, [1 2; 3 4], Lux.setup(rng, layer)...))
         end == zeros(2, 2)
+    end
+
+    # Deprecated Functionality (Remove in v0.5)
+    @testset "Deprecations" begin
+        @test_deprecated Scale(10, 100, relu; bias=false)
+        @test_deprecated Scale(10, 100, relu; bias=true)
+        @test_throws ArgumentError Scale(10, 100, relu; bias=false, use_bias=false)
     end
 end

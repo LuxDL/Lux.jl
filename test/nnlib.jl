@@ -13,12 +13,9 @@ include("test_utils.jl")
 
         # On CPU the fallback should always work
         @test Lux.elementwise_add(x, y) == x .+ y
-        @test_deprecated Lux.elementwise_add(x, y)
         @test Lux.elementwise_mul(x, y) == x .* y
-        @test_deprecated Lux.elementwise_mul(x, y)
         @test Lux.applyactivation(tanh, x) == tanh.(x)
         @test Lux.applyactivation(custom_activation, x) == custom_activation.(x)
-        @test_deprecated Lux.applyactivation(tanh, x)
 
         if T <: Real
             # Gradient for complex outputs are not defined
@@ -36,5 +33,10 @@ include("test_utils.jl")
             # Custom Activation test
             @test Lux.applyactivation(custom_activation, x_g) == custom_activation.(x_g)
         end
+
+        # Deprecated Functionality (Remove in v0.5)
+        @test_deprecated Lux.elementwise_add(x, y)
+        @test_deprecated Lux.elementwise_mul(x, y)
+        @test_deprecated Lux.applyactivation(tanh, x)
     end
 end
