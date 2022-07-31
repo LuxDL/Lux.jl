@@ -743,7 +743,7 @@ function initialparameters(rng::AbstractRNG, d::Scale{use_bias}) where {use_bias
     end
 end
 
-parameterlength(d::Scale{use_bias}) where {use_bias} = (1 + bias) * prod(d.dims)
+parameterlength(d::Scale{use_bias}) where {use_bias} = (1 + use_bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
