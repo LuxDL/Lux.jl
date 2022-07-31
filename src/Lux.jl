@@ -49,6 +49,8 @@ end
 
 # Experimental
 include("contrib/training.jl")
+include("contrib/freeze.jl")
+include("contrib/functor.jl")
 
 # Deprecations
 include("deprecated.jl")
