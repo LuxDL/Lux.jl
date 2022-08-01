@@ -220,8 +220,8 @@ function initialparameters(rng::AbstractRNG, lstm::LSTMCell{TI}) where {TI}
     bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
     ps = (weight_i=weight_i, weight_h=weight_h, bias=bias)
     if TI
-        hidden_state = init_state(rng, lstm)
-        memory = init_state(rng, lstm)
+        hidden_state = lstm.init_state(rng, lstm)
+        memory = lstm.init_state(rng, lstm)
         ps = merge(ps, (hidden_state=hidden_state, memory=memory))
     end
     return ps
@@ -344,7 +344,7 @@ function initialparameters(rng::AbstractRNG, gru::GRUCell{TI}) where {TI}
     bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)
     ps = (weight_i=weight_i, weight_h=weight_h, bias_i=bias_i, bias_h=bias_h)
     if TI
-        hidden_state = init_state(rng, gru)
+        hidden_state = gru.init_state(rng, gru)
         ps = merge(ps, (hidden_state=hidden_state,))
     end
     return ps
