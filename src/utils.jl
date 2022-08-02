@@ -130,7 +130,7 @@ end
 function ComponentArrays.make_carray_args(nt::NamedTuple)
     data, ax = ComponentArrays.make_carray_args(Vector, nt)
     data = length(data) == 0 ? Float32[] :
-           (length(data) == 1 ? [data[1]] : reduce(vcat, data))
+           (length(data) == 1 ? [data[1]] : map(identity, data))
     return (data, ax)
 end
 
