@@ -505,7 +505,7 @@ function (c::Chain)(x, ps, st::NamedTuple)
 end
 
 @generated function applychain(layers::NamedTuple{fields}, x, ps,
-                               st::NamedTuple{fields}) where {fields}
+                               st::NamedTuple) where {fields}
     N = length(fields)
     x_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
@@ -694,7 +694,7 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `bias`: Bias of size `(dims...)`
 
 !!! compat "Lux 0.4.3"
-    
+
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{use_bias, F1, D, F2, F3} <: AbstractExplicitLayer
