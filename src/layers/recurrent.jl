@@ -37,7 +37,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
+struct RNNCell{use_bias, A, B, W, S} <: AbstractExplicitLayer
     activation::A
     in_dims::Int
     out_dims::Int
@@ -46,17 +46,29 @@ struct RNNCell{bias, A, B, W, S} <: AbstractExplicitLayer
     init_state::S
 end
 
-function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh; bias::Bool=true,
-                 init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
-    return RNNCell{bias, typeof(activation), typeof(init_bias), typeof(init_weight),
-                   typeof(init_state)}(activation, in_dims, out_dims, init_bias,
-                                       init_weight, init_state)
+function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
+                 use_bias::Bool=true, bias::Union{Missing, Bool}=missing, init_bias=zeros32,
+                 init_weight=glorot_uniform, init_state=ones32)
+
+    if !ismissing(bias)
+        Base.depwarn("`bias` argument to `RNNCell` has been deprecated and will be removed" *
+                     " in v0.5. Use `use_bias` kwarg instead.", :RNNCell)
+        if !use_bias
+            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
+                                "the `use_bias` keyword argument."))
+        end
+        use_bias = bias
+    end
+
+    return RNNCell{use_bias, typeof(activation), typeof(init_bias), typeof(init_weight),
+                   typeof(init_state)}(activation, in_dims, out_dims, init_bias, init_weight,
+                                       init_state)
 end
 
-function initialparameters(rng::AbstractRNG, rnn::RNNCell{bias}) where {bias}
+function initialparameters(rng::AbstractRNG, rnn::RNNCell{use_bias}) where {use_bias}
     ps = (weight_ih=rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
           weight_hh=rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
-    if bias
+    if use_bias
         ps = merge(ps, (bias=rnn.init_bias(rng, rnn.out_dims),))
     end
     return ps
@@ -106,10 +118,10 @@ function (rnn::RNNCell{false, typeof(identity)})((x,
     return h_new, st
 end
 
-function Base.show(io::IO, r::RNNCell{bias}) where {bias}
+function Base.show(io::IO, r::RNNCell{use_bias}) where {use_bias}
     print(io, "RNNCell($(r.in_dims) => $(r.out_dims)")
     (r.activation == identity) || print(io, ", $(r.activation)")
-    bias || print(io, ", bias=false")
+    use_bias || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
@@ -149,7 +161,7 @@ Long Short-Term (LSTM) Cell
 ## Returns
 
   - Tuple Containing
-    
+
       + New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
       + Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
 
