@@ -149,7 +149,7 @@ Long Short-Term (LSTM) Cell
 ## Returns
 
   - Tuple Containing
-    
+
       + New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
       + Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
 

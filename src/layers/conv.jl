@@ -34,7 +34,7 @@ number of observations in a batch.
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -167,7 +167,7 @@ value.
 
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -234,7 +234,7 @@ value.
 
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -285,8 +285,8 @@ function Base.show(io::IO, m::MeanPool)
 end
 
 """
-    Upsample(mode = :nearest; [scale, size]) 
-    Upsample(scale, mode = :nearest)  
+    Upsample(mode = :nearest; [scale, size])
+    Upsample(scale, mode = :nearest)
 
 Upsampling Layer.
 
@@ -319,7 +319,7 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 
   - `x`: For the input dimensions look into the documentation for the corresponding `NNlib`
     function
-    
+
       + As a rule of thumb, `:nearest` should work with arrays of arbitrary dimensions
       + `:bilinear` works with 4D Arrays
       + `:trilinear` works with 5D Arrays
