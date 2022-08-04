@@ -49,7 +49,6 @@ end
 function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
                  use_bias::Bool=true, bias::Union{Missing, Bool}=missing, init_bias=zeros32,
                  init_weight=glorot_uniform, init_state=ones32)
-
     if !ismissing(bias)
         Base.depwarn("`bias` argument to `RNNCell` has been deprecated and will be removed" *
                      " in v0.5. Use `use_bias` kwarg instead.", :RNNCell)
@@ -61,8 +60,8 @@ function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
     end
 
     return RNNCell{use_bias, typeof(activation), typeof(init_bias), typeof(init_weight),
-                   typeof(init_state)}(activation, in_dims, out_dims, init_bias, init_weight,
-                                       init_state)
+                   typeof(init_state)}(activation, in_dims, out_dims, init_bias,
+                                       init_weight, init_state)
 end
 
 function initialparameters(rng::AbstractRNG, rnn::RNNCell{use_bias}) where {use_bias}
