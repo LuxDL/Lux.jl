@@ -1,4 +1,4 @@
-using JET, Lux, Random, Test
+using JET, Lux, NNlib, Random, Test
 
 include("../test_utils.jl")
 
