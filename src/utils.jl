@@ -122,39 +122,10 @@ function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N
 end
 
 # Handling ComponentArrays
-# NOTE(@avik-pal): We should probably upsteam some of these
-function Base.zero(c::ComponentArray{T, N, <:CuArray{T}}) where {T, N}
-    return ComponentArray(zero(getdata(c)), getaxes(c))
-end
-
-Base.vec(c::ComponentArray) = getdata(c)
-
-Base.:-(x::ComponentArray) = ComponentArray(-getdata(x), getaxes(x))
-
-function Base.similar(c::ComponentArray, l::Vararg{Union{Integer, AbstractUnitRange}})
-    return similar(getdata(c), l)
-end
-
 function Functors.functor(::Type{<:ComponentArray}, c)
     return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
            ComponentArray
 end
-
-function ComponentArrays.make_carray_args(nt::NamedTuple)
-    data, ax = ComponentArrays.make_carray_args(Vector, nt)
-    data = length(data) == 0 ? Float32[] :
-           (length(data) == 1 ? [data[1]] : reduce(vcat, data))
-    return (data, ax)
-end
-
-## For being able to print empty ComponentArrays
-function ComponentArrays.last_index(f::FlatAxis)
-    nt = ComponentArrays.indexmap(f)
-    length(nt) == 0 && return 0
-    return ComponentArrays.last_index(last(nt))
-end
-
-ComponentArrays.recursive_length(nt::NamedTuple{(), Tuple{}}) = 0
 
 Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
 
