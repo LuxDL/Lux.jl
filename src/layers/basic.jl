@@ -544,17 +544,17 @@ Create a traditional fully connected layer, whose forward pass is given by:
 
 ## Input
 
-  - `x` must be a Matrix of size `in_dims × B` or a Vector of length `in_dims`
+  - `x` must be an AbstractArray with `size(x, 1) == in_dims`
 
 ## Returns
 
-  - Matrix of size `out_dims × B` or a Vector of length `out_dims`
+  - AbstractArray with dimensions `(out_dims, ...)` where `...` are the dimensions of `x`
   - Empty `NamedTuple()`
 
 ## Parameters
 
-  - `weight`: Weight Matrix of size `out_dims × in_dims`
-  - `bias`: Bias of size `out_dims × 1` (present if `bias=true`)
+  - `weight`: Weight Matrix of size `(out_dims, in_dims)`
+  - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
 struct Dense{use_bias, F1, F2, F3} <: AbstractExplicitLayer
     activation::F1
