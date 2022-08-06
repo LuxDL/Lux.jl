@@ -61,7 +61,7 @@ export Dense, Scale
 export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool,
        AdaptiveMeanPool, Upsample
 export Dropout, VariationalHiddenDropout
-export BatchNorm, GroupNorm
+export BatchNorm, GroupNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
 export RNNCell, LSTMCell, GRUCell
