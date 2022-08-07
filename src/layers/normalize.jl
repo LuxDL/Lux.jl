@@ -14,7 +14,7 @@ slice and normalises the input accordingly.
   - `chs`: Size of the channel dimension in your data. Given an array with `N` dimensions,
     call the `N-1`th the channel dimension. For a batch of feature vectors this is
     just the data dimension, for `WHCN` images it's the usual channel dimension.
-  - `activation`: After normalisation, elementwise activation `activation` is applied.
+  - `activation`: After normalization, elementwise activation `activation` is applied.
 
 ## Keyword Arguments
 
@@ -180,7 +180,7 @@ end
     just the data dimension, for `WHCN` images it's the usual channel dimension.
   - `groups` is the number of groups along which the statistics are computed. The number of
     channels must be an integer multiple of the number of groups.
-  - `activation`: After normalisation, elementwise activation `activation` is applied.
+  - `activation`: After normalization, elementwise activation `activation` is applied.
 
 ## Keyword Arguments
 
@@ -451,4 +451,114 @@ end
 
 function Base.show(io::IO, w::WeightNorm{Val{which_params}}) where {which_params}
     return print(io, "WeightNorm{", which_params, "}(", w.layer, ")")
+end
+
+@doc doc"""
+    LayerNorm(shape::NTuple{N, Int}, activation=identity; epsilon=1f-5, dims=Colon(),
+              affine::Bool=false, init_bias=zeros32, init_scale=ones32,)
+
+Computes mean and standard deviation over the whole input array, and uses these to
+normalize the whole array. Optionally applies an elementwise affine transformation
+afterwards.
+
+Given an input array ``x``, this layer computes
+
+```math
+y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
+```
+
+where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
+
+## Arguments
+
+  - `shape`: Broadcastable shape of input array excluding the batch dimension.
+  - `activation`: After normalization, elementwise activation `activation` is applied.
+
+## Keyword Arguments
+
+  - `epsilon`: a value added to the denominator for numerical stability.
+  - `dims`: Dimensions to normalize the array over.
+  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+    learnable per-channel bias and scale parameters.
+
+      + `init_bias`: Controls how the `bias` is initiliazed
+      + `init_scale`: Controls how the `scale` is initiliazed
+
+
+## Inputs
+
+  - `x`: AbstractArray
+
+## Returns
+
+  - `y`: Normalized Array
+  - Empty NamedTuple()
+
+## Parameters
+
+  - `affine=false`: Empty `NamedTuple()`
+  - `affine=true`
+    
+      + `bias`: Bias of shape `(shape..., 1)`
+      + `scale`: Scale of shape `(shape..., 1)`
+"""
+struct LayerNorm{affine, F1, N, T, F2, F3, D} <: AbstractExplicitLayer
+    shape::NTuple{N, Int}
+    activation::F1
+    epsilon::T
+    init_bias::F2
+    init_scale::F3
+    dims::D
+end
+
+function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f-5,
+                   dims=Colon(), affine::Bool=true, init_bias=zeros32,
+                   init_scale=ones32) where {N, T}
+    activation = NNlib.fast_act(activation)
+    return LayerNorm{affine, typeof(activation), N, T, typeof(init_bias),
+                     typeof(init_scale), typeof(dims)}(shape, activation, epsilon,
+                                                       init_bias, init_scale, dims)
+end
+
+function initialparameters(rng::AbstractRNG, ln::LayerNorm{affine}) where {affine}
+    if affine
+        return (bias=ln.init_bias(rng, ln.shape..., 1),
+                scale=ln.init_scale(rng, ln.shape..., 1))
+    else
+        return NamedTuple()
+    end
+end
+
+@generated function (l::LayerNorm{affine, F1})(x::AbstractArray, ps,
+                                               st::NamedTuple) where {affine, F1}
+    calls = []
+    push!(calls, :(_mean = mean(x; dims=l.dims);
+                   _var = var(x; corrected=false, mean=_mean)))
+
+    if affine
+        if F1 == typeof(identity)
+            push!(calls,
+                  :(return ps.scale .* (x .- _mean) ./ sqrt.(_var .+ l.epsilon) .+ ps.bias,
+                           st))
+        else
+            push!(calls,
+                  :(return l.activation.(ps.scale .* (x .- _mean) ./
+                                         sqrt.(_var .+ l.epsilon) .+ ps.bias), st))
+        end
+    else
+        if F1 == typeof(identity)
+            push!(calls, :(return (x .- _mean) ./ sqrt.(_var .+ l.epsilon), st))
+        else
+            push!(calls,
+                  :(return l.activation.((x .- _mean) ./ sqrt.(_var .+ l.epsilon)), st))
+        end
+    end
+    return Expr(:block, calls...)
+end
+
+function Base.show(io::IO, l::LayerNorm{affine}) where {affine}
+    print(io, "LayerNorm($(l.shape)")
+    (l.activation == identity) || print(io, ", $(l.activation)")
+    print(io, ", affine=$(affine), dims=$(l.dims)")
+    return print(io, ")")
 end
