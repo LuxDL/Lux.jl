@@ -116,7 +116,7 @@ end
 function Base.show(io::IO, r::RNNCell{use_bias}) where {use_bias}
     print(io, "RNNCell($(r.in_dims) => $(r.out_dims)")
     (r.activation == identity) || print(io, ", $(r.activation)")
-    use_bias || print(io, ", use_bias=false")
+    use_bias || print(io, ", bias=false")
     return print(io, ")")
 end
 
