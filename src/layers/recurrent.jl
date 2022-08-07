@@ -92,9 +92,10 @@ function (rnn::RNNCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:Abstr
     return h_new, st
 end
 
-function (rnn::RNNCell{true, typeof(identity)})((x, hidden_state)::Tuple{<:AbstractMatrix,
-                                                                         <:AbstractMatrix},
-                                                ps, st::NamedTuple)
+function (rnn::RNNCell{true, typeof(identity)})((x,
+                                                 hidden_state)::Tuple{<:AbstractMatrix,
+                                                                      <:AbstractMatrix}, ps,
+                                                st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
