@@ -79,8 +79,7 @@ function initialstates(rng::AbstractRNG, ::RNNCell)
     return (rng=replicate(rng),)
 end
 
-function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
-                        st::NamedTuple)
+function (rnn::RNNCell)(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = _init_hidden_state(rng, rnn, x)
@@ -88,22 +87,20 @@ function (rnn::RNNCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple}
 end
 
 function (rnn::RNNCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                              ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                              ps, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
     return h_new, st
 end
 
-function (rnn::RNNCell{true, typeof(identity)})((x,
-                                                 hidden_state)::Tuple{<:AbstractMatrix,
-                                                                      <:AbstractMatrix},
-                                                ps::Union{ComponentArray, NamedTuple},
-                                                st::NamedTuple)
+function (rnn::RNNCell{true, typeof(identity)})((x, hidden_state)::Tuple{<:AbstractMatrix,
+                                                                         <:AbstractMatrix},
+                                                ps, st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
     return h_new, st
 end
 
 function (rnn::RNNCell{false})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                               ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                               ps, st::NamedTuple)
     h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
     return h_new, st
 end
@@ -111,8 +108,7 @@ end
 function (rnn::RNNCell{false, typeof(identity)})((x,
                                                   hidden_state)::Tuple{<:AbstractMatrix,
                                                                        <:AbstractMatrix},
-                                                 ps::Union{ComponentArray, NamedTuple},
-                                                 st::NamedTuple)
+                                                 ps, st::NamedTuple)
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
     return h_new, st
 end
