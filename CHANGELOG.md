@@ -1,5 +1,9 @@
 # v0.4
 
+## v0.4.14
+  - Deprecate `bias` in favor of `use_bias` for `RNNCell`.
+  - Add `use_bias` kwarg to `LSTMCell` and `GRUCell`
+
 ## v0.4.12
 
   - Deprecate `bias` in favor of `use_bias` for `Dense` and `Scale`.

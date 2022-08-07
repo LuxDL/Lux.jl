@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.4.12"
+version = "0.4.14"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -26,7 +26,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 Adapt = "3"
 CUDA = "3"
 ChainRulesCore = "1"
-ComponentArrays = "0.11, 0.12"
+ComponentArrays = "0.11 - 0.12.5"
 FillArrays = "0.13"
 Functors = "0.2, 0.3"
 NNlib = "0.8"

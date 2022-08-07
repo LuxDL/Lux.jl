@@ -329,3 +329,50 @@ end
         @test_nowarn Lux.setup(rng, wn)
     end
 end
+
+@testset "LayerNorm" begin
+    x = randn(rng, Float32, 3, 3, 3, 2)
+
+    for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
+        for affine in (true, false)
+            ln = LayerNorm(bshape; affine)
+            println(ln)
+            ps, st = Lux.setup(rng, ln)
+
+            @inferred ln(x, ps, st)
+            y, st_ = ln(x, ps, st)
+
+            @test isapprox(mean(y), 0; atol=1.0f-3, rtol=1.0f-3)
+            @test isapprox(std(y), 1; atol=1.0f-2, rtol=1.0f-2)
+
+            run_JET_tests(ln, x, ps, st)
+
+            if affine
+                test_gradient_correctness_fdm((x, ps) -> sum(first(ln(x, ps, st))), x, ps;
+                                              atol=1.0f-1, rtol=1.0f-1)
+            else
+                test_gradient_correctness_fdm(x -> sum(first(ln(x, ps, st))), x;
+                                              atol=1.0f-1, rtol=1.0f-1)
+            end
+
+            for act in (relu, sigmoid, tanh)
+                ln = LayerNorm(bshape, act; affine)
+                println(ln)
+                ps, st = Lux.setup(rng, ln)
+
+                @inferred ln(x, ps, st)
+                y, st_ = ln(x, ps, st)
+
+                run_JET_tests(ln, x, ps, st)
+
+                if affine
+                    test_gradient_correctness_fdm((x, ps) -> sum(first(ln(x, ps, st))), x,
+                                                  ps; atol=1.0f-1, rtol=1.0f-1)
+                else
+                    test_gradient_correctness_fdm(x -> sum(first(ln(x, ps, st))), x;
+                                                  atol=1.0f-1, rtol=1.0f-1)
+                end
+            end
+        end
+    end
+end

@@ -70,6 +70,7 @@ WrappedFunction
 ```@docs
 BatchNorm
 GroupNorm
+LayerNorm
 WeightNorm
 ```
 
