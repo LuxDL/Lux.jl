@@ -19,7 +19,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 CUDA = "3"
-ComponentArrays = "0.11, 0.12"
+ComponentArrays = "0.13"
 FiniteDifferences = "0.12"
 Functors = "0.2, 0.3"
 JET = "0.4, 0.5, 0.6"

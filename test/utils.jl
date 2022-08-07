@@ -66,9 +66,9 @@ end
     @test ps_c.weight == ps.weight
     @test ps_c.bias == ps.bias
 
-    @test p_flat == vec(ps_c)
-    @test -p_flat == vec(-ps_c)
-    @test zero(p_flat) == vec(zero(ps_c))
+    @test p_flat == getdata(ps_c)
+    @test -p_flat == getdata(-ps_c)
+    @test zero(p_flat) == getdata(zero(ps_c))
 
     @test_nowarn similar(ps_c, 10)
     @test_nowarn similar(ps_c)
