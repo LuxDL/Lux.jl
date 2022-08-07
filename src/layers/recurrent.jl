@@ -49,6 +49,7 @@ end
 function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
                  use_bias::Bool=true, bias::Union{Missing, Bool}=missing, init_bias=zeros32,
                  init_weight=glorot_uniform, init_state=ones32)
+    # Deprecated Functionality (Remove in v0.5)
     if !ismissing(bias)
         Base.depwarn("`bias` argument to `RNNCell` has been deprecated and will be removed" *
                      " in v0.5. Use `use_bias` kwarg instead.", :RNNCell)
