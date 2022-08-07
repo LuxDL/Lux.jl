@@ -149,7 +149,7 @@ function Base.show(io::IO, r::RNNCell{use_bias, train_state}) where {use_bias, t
     print(io, "RNNCell($(r.in_dims) => $(r.out_dims)")
     (r.activation == identity) || print(io, ", $(r.activation)")
     use_bias || print(io, ", bias=false")
-    train_state || print(io, ", train_state=false")
+    train_state && print(io, ", train_state=true")
     return print(io, ")")
 end
 
@@ -350,8 +350,8 @@ function Base.show(io::IO,
                                                                                train_memory}
     print(io, "LSTMCell($(lstm.in_dims) => $(lstm.out_dims)")
     use_bias || print(io, ", bias=false")
-    train_state || print(io, ", train_state=false")
-    train_memory || print(io, ", train_memory=false")
+    train_state && print(io, ", train_state=true")
+    train_memory && print(io, ", train_memory=true")
     return print(io, ")")
 end
 
@@ -504,6 +504,6 @@ end
 function Base.show(io::IO, g::GRUCell{use_bias, train_state}) where {use_bias, train_state}
     print(io, "GRUCell($(g.in_dims) => $(g.out_dims)")
     use_bias || print(io, ", bias=false")
-    train_state || print(io, ", train_state=false")
+    train_state && print(io, ", train_state=true")
     return print(io, ")")
 end
