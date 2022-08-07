@@ -74,7 +74,8 @@ function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
 end
 
 function initialparameters(rng::AbstractRNG,
-                           rnn::RNNCell{use_bias}) where {use_bias, train_state}
+                           rnn::RNNCell{use_bias, train_state}) where {use_bias, train_state
+                                                                       }
     ps = (weight_ih=rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
           weight_hh=rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
     if use_bias
@@ -413,7 +414,7 @@ Gated Recurrent Unit (GRU) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct GRUCell{use_bias, train_state, W, B, S} <: AbstractExplicitLayer
+struct GRUCell{use_bias, train_state, B, W, S} <: AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
     init_bias::B
@@ -428,12 +429,14 @@ function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int}; use_bias::Bool=true,
                                                                    glorot_uniform),
                  init_bias::Tuple{Function, Function, Function}=(zeros32, zeros32, zeros32),
                  init_state::Function=zeros32)
-    return GRUCell{use_bias, train_state, typeof(init_weight), typeof(init_bias),
-                   typeof(init_state)}(in_dims, out_dims, init_weight, init_bias,
+    return GRUCell{use_bias, train_state, typeof(init_bias), typeof(init_weight),
+                   typeof(init_state)}(in_dims, out_dims, init_bias, init_weight,
                                        init_state)
 end
 
-function initialparameters(rng::AbstractRNG, gru::GRUCell{train_state}) where {train_state}
+function initialparameters(rng::AbstractRNG,
+                           gru::GRUCell{use_bias, train_state}) where {use_bias, train_state
+                                                                       }
     weight_i = vcat([init_weight(rng, gru.out_dims, gru.in_dims)
                      for init_weight in gru.init_weight]...)
     weight_h = vcat([init_weight(rng, gru.out_dims, gru.out_dims)
