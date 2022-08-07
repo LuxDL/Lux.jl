@@ -1,31 +1,39 @@
-using JET, Lux, Random, Test
+using JET, Lux, NNlib, Random, Test
 
 include("../test_utils.jl")
 
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-@testset "RNNCell" begin for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
-                                         RNNCell(3 => 5, tanh; bias=false),
-                                         RNNCell(3 => 5, identity; bias=false))
-    println(rnncell)
-    ps, st = Lux.setup(rng, rnncell)
-    x = randn(rng, Float32, 3, 2)
-    h, st_ = Lux.apply(rnncell, x, ps, st)
+@testset "RNNCell" begin
+    for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
+                    RNNCell(3 => 5, tanh; use_bias=false),
+                    RNNCell(3 => 5, identity; use_bias=false))
+        println(rnncell)
+        ps, st = Lux.setup(rng, rnncell)
+        x = randn(rng, Float32, 3, 2)
+        h, st_ = Lux.apply(rnncell, x, ps, st)
 
-    run_JET_tests(rnncell, x, ps, st)
-    run_JET_tests(rnncell, (x, h), ps, st_)
+        run_JET_tests(rnncell, x, ps, st)
+        run_JET_tests(rnncell, (x, h), ps, st_)
 
-    function loss_loop_rnncell(p)
-        h, st_ = rnncell(x, p, st)
-        for i in 1:10
-            h, st_ = rnncell((x, h), p, st_)
+        function loss_loop_rnncell(p)
+            h, st_ = rnncell(x, p, st)
+            for i in 1:10
+                h, st_ = rnncell((x, h), p, st_)
+            end
+            return sum(abs2, h)
         end
-        return sum(abs2, h)
-    end
 
-    test_gradient_correctness_fdm(loss_loop_rnncell, ps; atol=1e-3, rtol=1e-3)
-end end
+        test_gradient_correctness_fdm(loss_loop_rnncell, ps; atol=1e-3, rtol=1e-3)
+    end
+    # Deprecated Functionality (Remove in v0.5)
+    @testset "Deprecations" begin
+        @test_deprecated RNNCell(3 => 5, relu; bias=false)
+        @test_deprecated RNNCell(3 => 5, relu; bias=true)
+        @test_throws ArgumentError RNNCell(3 => 5, relu; bias=false, use_bias=false)
+    end
+end
 
 @testset "LSTMCell" begin for lstmcell in (LSTMCell(3 => 5),
                                            LSTMCell(3 => 5; use_bias=true),
