@@ -211,8 +211,7 @@ function initialstates(rng::AbstractRNG, ::LSTMCell)
     return (rng=replicate(rng),)
 end
 
-function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
-                          st::NamedTuple)
+function (lstm::LSTMCell)(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
     hidden_state = _init_hidden_state(rng, lstm, x)
@@ -220,10 +219,10 @@ function (lstm::LSTMCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTupl
     return lstm((x, hidden_state, memory), ps, st)
 end
 
-function (lstm::LSTMCell{true})((x, hidden_state,
-                                 memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
-                                                <:AbstractMatrix},
-                                ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (lstm::LSTMCell{true})((x, hidden_state, memory)::Tuple{<:AbstractMatrix,
+                                                                 <:AbstractMatrix,
+                                                                 <:AbstractMatrix},
+                                ps, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
@@ -231,10 +230,10 @@ function (lstm::LSTMCell{true})((x, hidden_state,
     return (hidden_state_new, memory_new), st
 end
 
-function (lstm::LSTMCell{false})((x, hidden_state,
-                                  memory)::Tuple{<:AbstractMatrix, <:AbstractMatrix,
-                                                 <:AbstractMatrix},
-                                 ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+function (lstm::LSTMCell{false})((x, hidden_state, memory)::Tuple{<:AbstractMatrix,
+                                                                  <:AbstractMatrix,
+                                                                  <:AbstractMatrix},
+                                 ps, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
@@ -342,7 +341,7 @@ function initialstates(rng::AbstractRNG, ::GRUCell)
     return (rng=replicate(rng),)
 end
 
-function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple},
+function (gru::GRUCell)(x::AbstractMatrix, ps,
                         st::NamedTuple)
     rng = replicate(st.rng)
     @set! st.rng = rng
@@ -351,7 +350,7 @@ function (gru::GRUCell)(x::AbstractMatrix, ps::Union{ComponentArray, NamedTuple}
 end
 
 function (gru::GRUCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                              ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                              ps, st::NamedTuple)
     gxs = multigate(ps.weight_i * x, Val(3))
     ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))
 
@@ -364,7 +363,7 @@ function (gru::GRUCell{true})((x, hidden_state)::Tuple{<:AbstractMatrix, <:Abstr
 end
 
 function (gru::GRUCell{false})((x, hidden_state)::Tuple{<:AbstractMatrix, <:AbstractMatrix},
-                               ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                               ps, st::NamedTuple)
     gxs = multigate(ps.weight_i * x, Val(3))
     ghs = multigate(ps.weight_h * hidden_state, Val(3))
 
