@@ -175,6 +175,11 @@ end
     return CuArray(rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
+@inline function _init_trainable_hidden_state(hidden_state::AbstractVector,
+                                              x::AbstractMatrix)
+    return repeat(hidden_state, 1, size(x, 2))
+end
+
 """
     multigate(x::AbstractArray, ::Val{N})
 
