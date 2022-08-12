@@ -53,7 +53,7 @@ An example implementation would be
 ```julia
 function (l::LSTM)(x::AbstractArray{T,3}, ps::NamedTuple, st::NamedTuple) where {T}
     (h, c), st = s.lstm_cell(view(x, :, 1, :), ps, st)
-    for i in 1:size(x, 2)
+    for i in 2:size(x, 2)
         (h, c), st = s.lstm_cell((view(x, :, i, :), h, c), ps, st)
     end
     return h, st

@@ -65,7 +65,7 @@ function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
     ## We use `view(x, :, 1, :)` to get the first element in the sequence without copying it
     (h, c), st_lstm = s.lstm_cell(view(x, :, 1, :), ps.lstm_cell, st.lstm_cell)
     ## Now that we have the hidden state we will pass the input and hidden state jointly
-    for i in 1:size(x, 2)
+    for i in 2:size(x, 2)
         (h, c), st_lstm = s.lstm_cell((view(x, :, i, :), h, c), ps.lstm_cell, st_lstm)
     end
     ## After running through the sequence we will pass the output through the classifier
