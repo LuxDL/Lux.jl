@@ -322,7 +322,7 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 ```
 x1 → layer1 → y1 ↘
                   connection → layer2 → y2 ↘
-              x2 ↗                          connection → layer3 → y3
+              x2 ↗                          connection → y3
                                         x3 ↗
 ```
 
@@ -397,7 +397,7 @@ end
                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return $(y_symbols[N + 1]), st))
+    push!(calls, :(return $(y_symbols[N + 1]), $st))
     return Expr(:block, calls...)
 end
 
@@ -694,7 +694,7 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `bias`: Bias of size `(dims...)`
 
 !!! compat "Lux 0.4.3"
-    
+
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{use_bias, F1, D, F2, F3} <: AbstractExplicitLayer
