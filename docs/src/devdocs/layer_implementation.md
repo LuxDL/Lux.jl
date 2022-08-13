@@ -51,10 +51,15 @@ varying how calls are made at different timesteps.
 An example implementation would be
 
 ```julia
+struct LSTM{L} <: Lux.AbstractExplicitContainerLayer{(:lstm_cell,)}
+    lstm_cell::L
+end
+
 function (l::LSTM)(x::AbstractArray{T,3}, ps::NamedTuple, st::NamedTuple) where {T}
-    (h, c), st = s.lstm_cell(view(x, :, 1, :), ps, st)
-    for i in 1:size(x, 2)
-        (h, c), st = s.lstm_cell((view(x, :, i, :), h, c), ps, st)
+    x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
+    (h, c), st = l.lstm_cell(x_init, ps, st)
+    for x in x_rest
+        (h, c), st = l.lstm_cell((x, h, c), ps, st)
     end
     return h, st
 end
