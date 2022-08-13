@@ -322,7 +322,7 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 ```
 x1 → layer1 → y1 ↘
                   connection → layer2 → y2 ↘
-              x2 ↗                          connection → layer3 → y3
+              x2 ↗                          connection → y3
                                         x3 ↗
 ```
 
