@@ -56,7 +56,7 @@ struct LSTM{L} <: Lux.AbstractExplicitContainerLayer{(:lstm_cell,)}
 end
 
 function (l::LSTM)(x::AbstractArray{T,3}, ps::NamedTuple, st::NamedTuple) where {T}
-    x_init, x_rest = Iterators.peel(eachslice(x, dims = 2))
+    x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
     (h, c), st = l.lstm_cell(x_init, ps, st)
     for x in x_rest
         (h, c), st = l.lstm_cell((x, h, c), ps, st)
