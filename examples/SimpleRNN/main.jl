@@ -64,7 +64,7 @@ function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
     ## See that the parameters and states are automatically populated into a field called `lstm_cell`
     ## We use `eachslice` to get the elements in the sequence without copying,
     ## and `Iterators.peel` to split out the first element for LSTM initialization.
-    x_init, x_rest = Iterators.peel(eachslice(x, dims = 2))
+    x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
     (h, c), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
     ## Now that we have the hidden state we will pass the input and hidden state jointly
     for x in x_rest
