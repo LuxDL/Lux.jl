@@ -62,11 +62,13 @@ function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
     ## First we will have to run the sequence through the LSTM Cell
     ## The first call to LSTM Cell will create the initial hidden state
     ## See that the parameters and states are automatically populated into a field called `lstm_cell`
-    ## We use `view(x, :, 1, :)` to get the first element in the sequence without copying it
-    (h, c), st_lstm = s.lstm_cell(view(x, :, 1, :), ps.lstm_cell, st.lstm_cell)
+    ## We use `eachslice` to get the elements in the sequence without copying,
+    ## and `Iterators.peel` to split out the first element for LSTM initialization.
+    x_init, x_rest = Iterators.peel(eachslice(x, dims = 2))
+    (h, c), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
     ## Now that we have the hidden state we will pass the input and hidden state jointly
-    for i in 2:size(x, 2)
-        (h, c), st_lstm = s.lstm_cell((view(x, :, i, :), h, c), ps.lstm_cell, st_lstm)
+    for x in x_rest
+        (h, c), st_lstm = s.lstm_cell((x, h, c), ps.lstm_cell, st_lstm)
     end
     ## After running through the sequence we will pass the output through the classifier
     y, st_classifier = s.classifier(h, ps.classifier, st.classifier)
