@@ -13,17 +13,17 @@ Random.seed!(rng, 0)
         println(rnncell)
         ps, st = Lux.setup(rng, rnncell)
         x = randn(rng, Float32, 3, 2)
-        h, st_ = Lux.apply(rnncell, x, ps, st)
+        (y, carry), st_ = Lux.apply(rnncell, x, ps, st)
 
         run_JET_tests(rnncell, x, ps, st)
-        run_JET_tests(rnncell, (x, h), ps, st_)
+        run_JET_tests(rnncell, (x, carry), ps, st_)
 
         function loss_loop_rnncell(p)
-            h, st_ = rnncell(x, p, st)
+            (y, carry), st_ = rnncell(x, p, st)
             for i in 1:10
-                h, st_ = rnncell((x, h), p, st_)
+                (y, carry), st_ = rnncell((x, carry), p, st_)
             end
-            return sum(abs2, h)
+            return sum(abs2, y)
         end
 
         @test_throws ErrorException ps.train_state
@@ -41,15 +41,15 @@ Random.seed!(rng, 0)
                                          train_state=false)
         x = randn(rng, Float32, 3, 2)
         _ps, _st = Lux.setup(rng, rnn_no_trainable_state)
-        _h, _ = Lux.apply(rnn_no_trainable_state, x, _ps, _st)
+        (_y, _carry), _ = Lux.apply(rnn_no_trainable_state, x, _ps, _st)
 
         rnncell = RNNCell(3 => 5, identity; use_bias=false, train_state=true)
         ps, st = Lux.setup(rng, rnncell)
         ps = merge(_ps, (hidden_state=ps.hidden_state,))
-        h, _ = Lux.apply(rnncell, x, ps, st)
-        @test h == _h
+        (y, carry), _ = Lux.apply(rnncell, x, ps, st)
+        @test carry == _carry
 
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- rnncell(x, p, st)[1]), ps)
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- rnncell(x, p, st)[1][1]), ps)
         gs = back(one(l))[1]
         @test !isnothing(gs.hidden_state)
     end end
@@ -68,17 +68,17 @@ end
         println(lstmcell)
         ps, st = Lux.setup(rng, lstmcell)
         x = randn(rng, Float32, 3, 2)
-        (h, c), st_ = Lux.apply(lstmcell, x, ps, st)
+        (y, carry), st_ = Lux.apply(lstmcell, x, ps, st)
 
         run_JET_tests(lstmcell, x, ps, st)
-        run_JET_tests(lstmcell, (x, h, c), ps, st_)
+        run_JET_tests(lstmcell, (x, carry), ps, st_)
 
         function loss_loop_lstmcell(p)
-            (h, c), st_ = lstmcell(x, p, st)
+            (y, carry), st_ = lstmcell(x, p, st)
             for i in 1:10
-                (h, c), st_ = lstmcell((x, h, c), p, st_)
+                (y, carry), st_ = lstmcell((x, carry), p, st_)
             end
-            return sum(abs2, h)
+            return sum(abs2, y)
         end
 
         test_gradient_correctness_fdm(loss_loop_lstmcell, ps; atol=1e-3, rtol=1e-3)
@@ -91,14 +91,14 @@ end
         x = randn(rng, Float32, 3, 2)
         _lstm = LSTMCell(3 => 5; use_bias=false, train_state=false, train_memory=false)
         _ps, _st = Lux.setup(rng, _lstm)
-        (_h, _c), _ = Lux.apply(_lstm, x, _ps, _st)
+        (_y, _carry), _ = Lux.apply(_lstm, x, _ps, _st)
 
         lstm = LSTMCell(3 => 5; use_bias=false, train_state=false, train_memory=false)
         ps, st = Lux.setup(rng, lstm)
         ps = _ps
-        (h, c), _ = Lux.apply(lstm, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(lstm, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test_throws ErrorException gs.bias
         @test_throws ErrorException gs.hidden_state
@@ -107,9 +107,9 @@ end
         lstm = LSTMCell(3 => 5; use_bias=false, train_state=true, train_memory=false)
         ps, st = Lux.setup(rng, lstm)
         ps = merge(_ps, (hidden_state=ps.hidden_state,))
-        (h, c), _ = Lux.apply(lstm, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(lstm, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test_throws ErrorException gs.bias
         @test !isnothing(gs.hidden_state)
@@ -118,9 +118,9 @@ end
         lstm = LSTMCell(3 => 5; use_bias=false, train_state=false, train_memory=true)
         ps, st = Lux.setup(rng, lstm)
         ps = merge(_ps, (memory=ps.memory,))
-        (h, c), _ = Lux.apply(lstm, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(lstm, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test_throws ErrorException gs.bias
         @test_throws ErrorException gs.hidden_state
@@ -129,9 +129,9 @@ end
         lstm = LSTMCell(3 => 5; use_bias=false, train_state=true, train_memory=true)
         ps, st = Lux.setup(rng, lstm)
         ps = merge(_ps, (hidden_state=ps.hidden_state, memory=ps.memory))
-        (h, c), _ = Lux.apply(lstm, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(lstm, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test_throws ErrorException gs.bias
         @test !isnothing(gs.hidden_state)
@@ -140,8 +140,8 @@ end
         lstm = LSTMCell(3 => 5; use_bias=true, train_state=true, train_memory=true)
         ps, st = Lux.setup(rng, lstm)
         ps = merge(_ps, (bias=ps.bias, hidden_state=ps.hidden_state, memory=ps.memory))
-        (h, c), _ = Lux.apply(lstm, x, ps, st)
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(lstm, x, ps, st)
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test !isnothing(gs.bias)
         @test !isnothing(gs.hidden_state)
@@ -155,17 +155,17 @@ end
         println(grucell)
         ps, st = Lux.setup(rng, grucell)
         x = randn(rng, Float32, 3, 2)
-        h, st_ = Lux.apply(grucell, x, ps, st)
+        (y, carry), st_ = Lux.apply(grucell, x, ps, st)
 
         run_JET_tests(grucell, x, ps, st)
-        run_JET_tests(grucell, (x, h), ps, st_)
+        run_JET_tests(grucell, (x, carry), ps, st_)
 
         function loss_loop_grucell(p)
-            h, st_ = grucell(x, p, st)
+            (y, carry), st_ = grucell(x, p, st)
             for i in 1:10
-                h, st_ = grucell((x, h), p, st_)
+                (y, carry), st_ = grucell((x, carry), p, st_)
             end
-            return sum(abs2, h)
+            return sum(abs2, y)
         end
 
         test_gradient_correctness_fdm(loss_loop_grucell, ps; atol=1e-3, rtol=1e-3)
@@ -177,14 +177,14 @@ end
         x = randn(rng, Float32, 3, 2)
         _gru = GRUCell(3 => 5; use_bias=false, train_state=false)
         _ps, _st = Lux.setup(rng, _gru)
-        (_h, _c), _ = Lux.apply(_gru, x, _ps, _st)
+        (_y, _carry), _ = Lux.apply(_gru, x, _ps, _st)
 
         gru = GRUCell(3 => 5; use_bias=false, train_state=false)
         ps, st = Lux.setup(rng, gru)
         ps = _ps
-        (h, c), _ = Lux.apply(gru, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(gru, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test_throws ErrorException gs.bias
         @test_throws ErrorException gs.hidden_state
@@ -192,18 +192,18 @@ end
         gru = GRUCell(3 => 5; use_bias=false, train_state=true)
         ps, st = Lux.setup(rng, gru)
         ps = merge(_ps, (hidden_state=ps.hidden_state,))
-        (h, c), _ = Lux.apply(gru, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(gru, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test !isnothing(gs.hidden_state)
 
         gru = GRUCell(3 => 5; use_bias=true, train_state=true)
         ps, st = Lux.setup(rng, gru)
         ps = merge(_ps, (bias_h=ps.bias_h, bias_i=ps.bias_i, hidden_state=ps.hidden_state))
-        (h, c), _ = Lux.apply(gru, x, ps, st)
-        @test h == _h
-        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1])), ps)
+        (y, carry), _ = Lux.apply(gru, x, ps, st)
+        @test carry == _carry
+        l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
         gs = back(one(l))[1]
         @test !isnothing(gs.hidden_state)
     end
