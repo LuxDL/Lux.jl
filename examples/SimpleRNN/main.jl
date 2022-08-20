@@ -65,13 +65,13 @@ function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
     ## We use `eachslice` to get the elements in the sequence without copying,
     ## and `Iterators.peel` to split out the first element for LSTM initialization.
     x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
-    (h, c), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
-    ## Now that we have the hidden state we will pass the input and hidden state jointly
+    (y, carry), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
+    ## Now that we have the hidden state and memory in `carry` we will pass the input and `carry` jointly
     for x in x_rest
-        (h, c), st_lstm = s.lstm_cell((x, h, c), ps.lstm_cell, st_lstm)
+        (y, carry), st_lstm = s.lstm_cell((x, carry), ps.lstm_cell, st_lstm)
     end
     ## After running through the sequence we will pass the output through the classifier
-    y, st_classifier = s.classifier(h, ps.classifier, st.classifier)
+    y, st_classifier = s.classifier(y, ps.classifier, st.classifier)
     ## Finally remember to create the updated state
     st = merge(st, (classifier=st_classifier, lstm_cell=st_lstm))
     return vec(y), st

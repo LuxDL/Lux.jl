@@ -25,11 +25,14 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
   - Case 1b: Only a single input `x` of shape `(in_dims, batch_size)`, `train_state` is set
              to `true` - Repeats `hidden_state` from parameters to match the shape of `x`
              and proceeds to Case 2.
-  - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
+  - Case 2: Tuple `(x, (h, ))` is provided, then the output and a tuple containing the updated hidden state is returned.
 
 ## Returns
+  - Tuple containing
 
-  - New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Output ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Tuple containing new hidden state ``h_{new}``
+
   - Updated model state
 
 ## Parameters
@@ -202,15 +205,15 @@ Long Short-Term (LSTM) Cell
              to `true`, `train_memory` is set to `true` - Repeats the hidden state and
              memory vectors from the parameters to match the shape of  `x` and proceeds to
              Case 2.
-  - Case 2: Tuple (`x`, `h`, `c`) is provided, then the updated hidden state and memory is
-            returned.
+  - Case 2: Tuple `(x, (h, c))` is provided, then the output and a tuple containing the 
+            updated hidden state and memory is returned.
 
 ## Returns
 
   - Tuple Containing
 
-      + New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
-      + Updated Memory ``c_{new}`` of shape `(out_dims, batch_size)`
+      + Output ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Tuple containing new hidden state ``h_{new}`` and new memory ``c_{new}``
 
   - Updated model state
 
@@ -390,11 +393,16 @@ Gated Recurrent Unit (GRU) Cell
   - Case 1b: Only a single input `x` of shape `(in_dims, batch_size)`, `train_state` is set
              to `true` - Repeats `hidden_state` from parameters to match the shape of `x`
              and proceeds to Case 2.
-  - Case 2: Tuple (`x`, `h`) is provided, then the updated hidden state is returned.
+  - Case 2: Tuple `(x, (h, ))` is provided, then the output and a tuple containing the 
+            updated hidden state is returned.
 
 ## Returns
+  
+  - Tuple containing
 
-  - New hidden state ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Output ``h_{new}`` of shape `(out_dims, batch_size)`
+      + Tuple containing new hidden state ``h_{new}``
+
   - Updated model state
 
 ## Parameters
