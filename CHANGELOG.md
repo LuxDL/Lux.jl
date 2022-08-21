@@ -1,5 +1,9 @@
 # v0.4
 
+## v0.4.17
+
+  - Major breakcing change in experimental Recurrent Cell Implementations.
+
 ## v0.4.14
   - Deprecate `bias` in favor of `use_bias` for `RNNCell`.
   - Add `use_bias` kwarg to `LSTMCell` and `GRUCell`

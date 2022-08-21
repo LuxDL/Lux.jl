@@ -355,7 +355,7 @@ end
                                               atol=1.0f-1, rtol=1.0f-1)
             end
 
-            for act in (relu, sigmoid, tanh)
+            for act in (sigmoid, tanh)
                 ln = LayerNorm(bshape, act; affine)
                 println(ln)
                 ps, st = Lux.setup(rng, ln)
