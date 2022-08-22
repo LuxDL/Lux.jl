@@ -68,16 +68,17 @@ end
 """
     kaiming_uniform(rng::AbstractRNG, size...; gain = √2f0)
 
-Return an `Array{Float32}` of the given `size` containing random numbers drawn from a uniform distribution
-on the interval `[-x, x]`, where `x = gain * sqrt(3/fan_in)`.
+Return an `Array{Float32}` of the given `size` containing random numbers drawn from a
+uniform distribution on the interval `[-x, x]`, where `x = gain * sqrt(3/fan_in)`.
 
 # References
 
-[1] He, Kaiming, et al. "Delving deep into rectifiers: Surpassing human-level performance on imagenet classification." _Proceedings of the IEEE international conference on computer vision_. 2015.
-
+[1] He, Kaiming, et al. "Delving deep into rectifiers: Surpassing human-level performance on
+imagenet classification." _Proceedings of the IEEE international conference on computer
+vision_. 2015.
 """
-function kaiming_uniform(rng::AbstractRNG, dims::Integer...; gain::Real = √2f0)
-    bound = Float32(√3f0 * gain / sqrt(first(_nfan(dims...))))
+function kaiming_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0)
+    bound = Float32(√3.0f0 * gain / sqrt(first(_nfan(dims...))))
     return (rand(rng, Float32, dims...) .- 0.5f0) .* 2bound
 end
 
@@ -85,14 +86,15 @@ end
     kaiming_normal(rng::AbstractRNG, size...; gain = √2f0)
 
 Return an `Array{Float32}` of the given `size` containing random numbers taken from a normal
-distribution standard deviation `gain / sqrt(fan_in)`.
+distribution standard deviation `gain / sqrt(fan_in)`
 
 # References
 
-[1] He, Kaiming, et al. "Delving deep into rectifiers: Surpassing human-level performance on imagenet classification." _Proceedings of the IEEE international conference on computer vision_. 2015.
-
+[1] He, Kaiming, et al. "Delving deep into rectifiers: Surpassing human-level performance on
+imagenet classification." _Proceedings of the IEEE international conference on computer
+vision_. 2015.
 """
-function kaiming_normal(rng::AbstractRNG, dims::Integer...; gain::Real = √2f0)
+function kaiming_normal(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0)
     std = Float32(gain / sqrt(first(_nfan(dims...))))
     return randn(rng, Float32, dims...) .* std
 end
