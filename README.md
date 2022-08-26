@@ -29,7 +29,7 @@ Random.seed!(rng, 0)
 
 # Construct the layer
 model = Chain(BatchNorm(128), Dense(128, 256, tanh), BatchNorm(256),
-              Chain(Dense(256, 1, tanh),Dense(1, 10)))
+              Chain(Dense(256, 1, tanh), Dense(1, 10)))
 
 # Parameter and State Variables
 ps, st = Lux.setup(rng, model) .|> gpu
