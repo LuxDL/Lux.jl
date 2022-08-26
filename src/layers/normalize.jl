@@ -372,7 +372,7 @@ end
 
 function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
                     dims::Union{Tuple, Nothing}=nothing) where {N}
-    return WeightNorm{Val{which_params}, typeof(layer), typeof(dims)}(layer, dims)
+    return WeightNorm{which_params, typeof(layer), typeof(dims)}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
@@ -384,7 +384,7 @@ end
 @inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> !(i in dims), 1:N)
 
 function initialparameters(rng::AbstractRNG,
-                           wn::WeightNorm{Val{which_params}}) where {which_params}
+                           wn::WeightNorm{which_params}) where {which_params}
     ps_layer = initialparameters(rng, wn.layer)
     ps_normalized = []
     ps_unnormalized = []
@@ -419,7 +419,7 @@ function (wn::WeightNorm)(x, ps, s::NamedTuple)
     return wn.layer(x, merge(_ps, ps.unnormalized), s)
 end
 
-@inbounds @generated function _get_normalized_parameters(::WeightNorm{Val{which_params}},
+@inbounds @generated function _get_normalized_parameters(::WeightNorm{which_params},
                                                          dims::T,
                                                          ps) where {T, which_params}
     parameter_names = string.(which_params)
@@ -449,7 +449,7 @@ end
     return Expr(:block, calls...)
 end
 
-function Base.show(io::IO, w::WeightNorm{Val{which_params}}) where {which_params}
+function Base.show(io::IO, w::WeightNorm{which_params}) where {which_params}
     return print(io, "WeightNorm{", which_params, "}(", w.layer, ")")
 end
 
