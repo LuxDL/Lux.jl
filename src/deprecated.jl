@@ -2,57 +2,57 @@
 
 ## Device transfer of AbstractExplicitLayers
 function cpu(l::AbstractExplicitLayer)
-    Base.depwarn("`cpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
-                 " `cpu` on the layer's parameters and states instead.", :cpu)
-    return l
+  Base.depwarn("`cpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
+               " `cpu` on the layer's parameters and states instead.", :cpu)
+  return l
 end
 
 function gpu(l::AbstractExplicitLayer)
-    Base.depwarn("`gpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
-                 " `gpu` on the layer's parameters and states instead.", :gpu)
-    return l
+  Base.depwarn("`gpu` on a layer has been deprecated and will be removed in v0.5. Apply" *
+               " `gpu` on the layer's parameters and states instead.", :gpu)
+  return l
 end
 
 ## Trainmode/Testmode with argument
 function trainmode(st::NamedTuple, mode::Bool)
-    Base.depwarn("Setting `mode` for `trainmode` is deprecated and will be removed in v0.5.",
-                 :trainmode)
-    return mode ? trainmode(st) : testmode(st)
+  Base.depwarn("Setting `mode` for `trainmode` is deprecated and will be removed in v0.5.",
+               :trainmode)
+  return mode ? trainmode(st) : testmode(st)
 end
 
 function testmode(st::NamedTuple, mode::Bool)
-    Base.depwarn("Setting `mode` for testmode is deprecated and will be removed in v0.5",
-                 :testmode)
-    return mode ? testmode(st) : trainmode(st)
+  Base.depwarn("Setting `mode` for testmode is deprecated and will be removed in v0.5",
+               :testmode)
+  return mode ? testmode(st) : trainmode(st)
 end
 
 ## Fallback `initialparameters` / `initialstates`
 function initialparameters(::AbstractRNG, l::Any)
-    Base.depwarn("Default fallback for non `AbstractExplicitLayer` types are deprecated" *
-                 " and will be removed in v0.5. Define" *
-                 " `Lux.initialparameters(::AbstractRNG, ::$(typeof(l)))`",
-                 :initialparameters)
-    return NamedTuple()
+  Base.depwarn("Default fallback for non `AbstractExplicitLayer` types are deprecated" *
+               " and will be removed in v0.5. Define" *
+               " `Lux.initialparameters(::AbstractRNG, ::$(typeof(l)))`",
+               :initialparameters)
+  return NamedTuple()
 end
 
 function initialstates(::AbstractRNG, l::Any)
-    Base.depwarn("Default fallback for non `AbstractExplicitLayer` types are deprecated" *
-                 "and will be removed in v0.5. Define" *
-                 " `Lux.initialstates(::AbstractRNG, ::$(typeof(l)))`", :initialstates)
-    return NamedTuple()
+  Base.depwarn("Default fallback for non `AbstractExplicitLayer` types are deprecated" *
+               "and will be removed in v0.5. Define" *
+               " `Lux.initialstates(::AbstractRNG, ::$(typeof(l)))`", :initialstates)
+  return NamedTuple()
 end
 
 ## Fallback `parameterlength` / `statelength`
 function parameterlength(x::Any)
-    Base.depwarn("Fallback for `parameterlength` of type $(typeof(x)) is deprecated." *
-                 " This will generate an error from v0.5.", :parameterlength)
-    return 0
+  Base.depwarn("Fallback for `parameterlength` of type $(typeof(x)) is deprecated." *
+               " This will generate an error from v0.5.", :parameterlength)
+  return 0
 end
 
 function statelength(x::Any)
-    Base.depwarn("Fallback for `statelength` of type $(typeof(x)) is deprecated." *
-                 " This will generate an error from v0.5.", :statelength)
-    return 0
+  Base.depwarn("Fallback for `statelength` of type $(typeof(x)) is deprecated." *
+               " This will generate an error from v0.5.", :statelength)
+  return 0
 end
 
 ## Layers
@@ -80,10 +80,9 @@ Broadcast `f` on the input.
     manual broadcasting
 """
 function ActivationFunction(f)
-    Base.depwarn("`Lux.ActivationFunction(f)` has been deprecated and will be removed in" *
-                 " v0.5. Use `Lux.WrappedFunction(x -> f.(x))` instead.",
-                 :ActivationFunction)
-    return WrappedFunction(Base.Fix1(broadcast, f))
+  Base.depwarn("`Lux.ActivationFunction(f)` has been deprecated and will be removed in" *
+               " v0.5. Use `Lux.WrappedFunction(x -> f.(x))` instead.", :ActivationFunction)
+  return WrappedFunction(Base.Fix1(broadcast, f))
 end
 
 """
@@ -96,9 +95,9 @@ Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if 
     This function has been deprecated. Use `f.(x)` instead.
 """
 @inline function applyactivation(f::Function, x::AbstractArray)
-    Base.depwarn("`Lux.applyactivation` has been deprecated and will be removed in" *
-                 " v0.5. Directly apply broadcasting instead.", :applyactivation)
-    return f.(x)
+  Base.depwarn("`Lux.applyactivation` has been deprecated and will be removed in" *
+               " v0.5. Directly apply broadcasting instead.", :applyactivation)
+  return f.(x)
 end
 
 """
@@ -111,9 +110,9 @@ Computes `x .+ y`. Dispatches to CUDNN if possible.
     This function has been deprecated. Use `x .+ y` instead.
 """
 @inline function elementwise_add(x, y)
-    Base.depwarn("`Lux.elementwise_add` has been deprecated and will be removed in" *
-                 " v0.5. Use `x .+ y` instead.", :elementwise_add)
-    return x .+ y
+  Base.depwarn("`Lux.elementwise_add` has been deprecated and will be removed in" *
+               " v0.5. Use `x .+ y` instead.", :elementwise_add)
+  return x .+ y
 end
 
 """
@@ -126,7 +125,7 @@ Computes `x .* y`. Dispatches to CUDNN if possible.
     This function has been deprecated. Use `x .* y` instead.
 """
 @inline function elementwise_mul(x, y)
-    Base.depwarn("`Lux.elementwise_mul` has been deprecated and will be removed in" *
-                 " v0.5. Use `x .* y` instead.", :elementwise_mul)
-    return x .* y
+  Base.depwarn("`Lux.elementwise_mul` has been deprecated and will be removed in" *
+               " v0.5. Use `x .* y` instead.", :elementwise_mul)
+  return x .* y
 end

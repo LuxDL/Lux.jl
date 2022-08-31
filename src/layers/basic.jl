@@ -17,15 +17,15 @@ Reshapes the passed array to have a size of `(dims..., :)`
   - Empty `NamedTuple()`
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
-    dims::NTuple{N, Int}
+  dims::NTuple{N, Int}
 end
 
 @inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
-    return reshape(x, r.dims..., size(x, ndims(x))), st
+  return reshape(x, r.dims..., size(x, ndims(x))), st
 end
 
 function Base.show(io::IO, r::ReshapeLayer)
-    return print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
+  return print(io, "ReshapeLayer(output_dims = (", join(r.dims, ", "), ", :))")
 end
 
 """
@@ -45,7 +45,7 @@ Flattens the passed array into a matrix.
 struct FlattenLayer <: AbstractExplicitLayer end
 
 @inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return reshape(x, :, size(x, N)), st
+  return reshape(x, :, size(x, N)), st
 end
 
 """
@@ -73,12 +73,11 @@ struct SelectDim{dim, index} <: AbstractExplicitLayer end
 SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
 
 @inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
-    return selectdim(x, get_known(dim), get_known(index)), st
+  return selectdim(x, get_known(dim), get_known(index)), st
 end
 
 function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
-    return print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index),
-                 ")")
+  return print(io, "SelectDim(dim = ", get_known(dim), ", index = ", get_known(index), ")")
 end
 
 """
@@ -113,13 +112,13 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Empty `NamedTuple()`
 """
 struct WrappedFunction{F} <: AbstractExplicitLayer
-    func::F
+  func::F
 end
 
 (wf::WrappedFunction)(x, ps, st::NamedTuple) = wf.func(x), st
 
 function Base.show(io::IO, w::WrappedFunction)
-    return print(io, "WrappedFunction(", w.func, ")")
+  return print(io, "WrappedFunction(", w.func, ")")
 end
 
 """
@@ -157,107 +156,107 @@ Create a traditional fully connected layer, whose forward pass is given by:
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
 struct Dense{use_bias, F1, F2, F3} <: AbstractExplicitLayer
-    activation::F1
-    in_dims::Int
-    out_dims::Int
-    init_weight::F2
-    init_bias::F3
+  activation::F1
+  in_dims::Int
+  out_dims::Int
+  init_weight::F2
+  init_bias::F3
 end
 
 function Base.show(io::IO, d::Dense{use_bias}) where {use_bias}
-    print(io, "Dense($(d.in_dims) => $(d.out_dims)")
-    (d.activation == identity) || print(io, ", $(d.activation)")
-    use_bias || print(io, ", bias=false")
-    return print(io, ")")
+  print(io, "Dense($(d.in_dims) => $(d.out_dims)")
+  (d.activation == identity) || print(io, ", $(d.activation)")
+  use_bias || print(io, ", bias=false")
+  return print(io, ")")
 end
 
 function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; init_weight=glorot_uniform,
                init_bias=zeros32, use_bias::Bool=true, bias::Union{Missing, Bool}=missing)
-    return Dense(first(mapping), last(mapping), activation; init_weight, init_bias,
-                 use_bias, bias)
+  return Dense(first(mapping), last(mapping), activation; init_weight, init_bias, use_bias,
+               bias)
 end
 
 function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
                init_bias=zeros32, use_bias::Bool=true, bias::Union{Missing, Bool}=missing)
-    activation = NNlib.fast_act(activation)
+  activation = NNlib.fast_act(activation)
 
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `Dense` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.", :Dense)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
+  # Deprecated Functionality (Remove in v0.5)
+  if !ismissing(bias)
+    Base.depwarn("`bias` argument to `Dense` has been deprecated and will be removed" *
+                 " in v0.5. Use `use_bias` kwarg instead.", :Dense)
+    if !use_bias
+      throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
+                          "the `use_bias` keyword argument."))
     end
+    use_bias = bias
+  end
 
-    dtype = (use_bias, typeof(activation), typeof(init_weight), typeof(init_bias))
-    return Dense{dtype...}(activation, in_dims, out_dims, init_weight, init_bias)
+  dtype = (use_bias, typeof(activation), typeof(init_weight), typeof(init_bias))
+  return Dense{dtype...}(activation, in_dims, out_dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias}
-    if use_bias
-        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
-                bias=d.init_bias(rng, d.out_dims, 1))
-    else
-        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
-    end
+  if use_bias
+    return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
+            bias=d.init_bias(rng, d.out_dims, 1))
+  else
+    return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
+  end
 end
 
 function parameterlength(d::Dense{use_bias}) where {use_bias}
-    return use_bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
+  return use_bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
 end
 statelength(d::Dense) = 0
 
 @inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    return d.activation.(ps.weight * x), st
+  return d.activation.(ps.weight * x), st
 end
 
 @inline function (d::Dense{false, typeof(identity)})(x::AbstractVecOrMat, ps,
                                                      st::NamedTuple)
-    return ps.weight * x, st
+  return ps.weight * x, st
 end
 
 @inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
-    return reshape(d.activation.(ps.weight * x_reshaped), d.out_dims, sz[2:end]...), st
+  sz = size(x)
+  x_reshaped = reshape(x, sz[1], :)
+  return reshape(d.activation.(ps.weight * x_reshaped), d.out_dims, sz[2:end]...), st
 end
 
 @inline function (d::Dense{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
-    return reshape(ps.weight * x_reshaped, d.out_dims, sz[2:end]...), st
+  sz = size(x)
+  x_reshaped = reshape(x, sz[1], :)
+  return reshape(ps.weight * x_reshaped, d.out_dims, sz[2:end]...), st
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
-    return d.activation.(ps.weight * x .+ vec(ps.bias)), st
+  return d.activation.(ps.weight * x .+ vec(ps.bias)), st
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractVector, ps, st::NamedTuple)
-    return ps.weight * x .+ vec(ps.bias), st
+  return ps.weight * x .+ vec(ps.bias), st
 end
 
 @inline function (d::Dense{true})(x::AbstractMatrix, ps, st::NamedTuple)
-    return d.activation.(ps.weight * x .+ ps.bias), st
+  return d.activation.(ps.weight * x .+ ps.bias), st
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractMatrix, ps, st::NamedTuple)
-    return ps.weight * x .+ ps.bias, st
+  return ps.weight * x .+ ps.bias, st
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
-    return (reshape(d.activation.(ps.weight * x_reshaped .+ ps.bias), d.out_dims,
-                    sz[2:end]...), st)
+  sz = size(x)
+  x_reshaped = reshape(x, sz[1], :)
+  return (reshape(d.activation.(ps.weight * x_reshaped .+ ps.bias), d.out_dims,
+                  sz[2:end]...), st)
 end
 
 @inline function (d::Dense{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
-    return (reshape(ps.weight * x_reshaped .+ ps.bias, d.out_dims, sz[2:end]...), st)
+  sz = size(x)
+  x_reshaped = reshape(x, sz[1], :)
+  return (reshape(ps.weight * x_reshaped .+ ps.bias, d.out_dims, sz[2:end]...), st)
 end
 
 """
@@ -298,66 +297,66 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{use_bias, F1, D, F2, F3} <: AbstractExplicitLayer
-    activation::F1
-    dims::D
-    init_weight::F2
-    init_bias::F3
+  activation::F1
+  dims::D
+  init_weight::F2
+  init_bias::F3
 end
 
 function Base.show(io::IO, d::Scale)
-    print(io, "Scale($(d.dims)")
-    (d.activation == identity) || print(io, ", $(d.activation)")
-    return print(io, ")")
+  print(io, "Scale($(d.dims)")
+  (d.activation == identity) || print(io, ", $(d.activation)")
+  return print(io, ")")
 end
 
 function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
                init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
                bias::Union{Missing, Bool}=missing)
-    activation = NNlib.fast_act(activation)
+  activation = NNlib.fast_act(activation)
 
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `Scale` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.", :Scale)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
+  # Deprecated Functionality (Remove in v0.5)
+  if !ismissing(bias)
+    Base.depwarn("`bias` argument to `Scale` has been deprecated and will be removed" *
+                 " in v0.5. Use `use_bias` kwarg instead.", :Scale)
+    if !use_bias
+      throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
+                          "the `use_bias` keyword argument."))
     end
+    use_bias = bias
+  end
 
-    return Scale{use_bias, typeof(activation), typeof(dims), typeof(init_weight),
-                 typeof(init_bias)}(activation, dims, init_weight, init_bias)
+  return Scale{use_bias, typeof(activation), typeof(dims), typeof(init_weight),
+               typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
 function Scale(s1::Integer, s23::Integer...; _act=identity, kw...)
-    return Scale(tuple(s1, s23...), _act; kw...)
+  return Scale(tuple(s1, s23...), _act; kw...)
 end
 Scale(size_act...; kw...) = Scale(size_act[1:(end - 1)]...; _act=size_act[end], kw...)
 
 function initialparameters(rng::AbstractRNG, d::Scale{use_bias}) where {use_bias}
-    if use_bias
-        return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
-    else
-        return (weight=d.init_weight(rng, d.dims...),)
-    end
+  if use_bias
+    return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
+  else
+    return (weight=d.init_weight(rng, d.dims...),)
+  end
 end
 
 parameterlength(d::Scale{use_bias}) where {use_bias} = (1 + use_bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
-    return d.activation.(ps.weight .* x .+ ps.bias), st
+  return d.activation.(ps.weight .* x .+ ps.bias), st
 end
 
 function (d::Scale{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    return ps.weight .* x .+ ps.bias, st
+  return ps.weight .* x .+ ps.bias, st
 end
 
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    return d.activation.(ps.weight .* x), st
+  return d.activation.(ps.weight .* x), st
 end
 
 function (d::Scale{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    return ps.weight .* x, st
+  return ps.weight .* x, st
 end

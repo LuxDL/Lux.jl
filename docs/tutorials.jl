@@ -10,8 +10,7 @@ ADVANCED_TUTORIALS = []
 for (d, paths) in (("beginner", BEGINNER_TUTORIALS),
                    ("intermediate", INTERMEDIATE_TUTORIALS),
                    ("advanced", ADVANCED_TUTORIALS))
-    for p in paths
-        Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p));
-                          documenter=true)
-    end
+  for p in paths
+    Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p)); documenter=true)
+  end
 end

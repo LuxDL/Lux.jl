@@ -11,18 +11,18 @@ A VGG block of convolution layers ([reference](https://arxiv.org/abs/1409.1556v6
   - `batchnorm`: set to `true` to include batch normalization after each convolution
 """
 function vgg_block(input_filters, output_filters, depth, batchnorm)
-    k = (3, 3)
-    p = (1, 1)
-    layers = []
-    for _ in 1:depth
-        push!(layers,
-              Conv(k, input_filters => output_filters, batchnorm ? identity : relu; pad=p))
-        if batchnorm
-            push!(layers, BatchNorm(output_filters, relu))
-        end
-        input_filters = output_filters
+  k = (3, 3)
+  p = (1, 1)
+  layers = []
+  for _ in 1:depth
+    push!(layers,
+          Conv(k, input_filters => output_filters, batchnorm ? identity : relu; pad=p))
+    if batchnorm
+      push!(layers, BatchNorm(output_filters, relu))
     end
-    return Chain(layers...)
+    input_filters = output_filters
+  end
+  return Chain(layers...)
 end
 
 """
@@ -37,14 +37,14 @@ Create VGG convolution layers ([reference](https://arxiv.org/abs/1409.1556v6)).
   - `inchannels`: number of input channels
 """
 function vgg_convolutional_layers(config, batchnorm, inchannels)
-    layers = []
-    input_filters = inchannels
-    for c in config
-        push!(layers, vgg_block(input_filters, c..., batchnorm))
-        push!(layers, MaxPool((2, 2); stride=2))
-        input_filters, _ = c
-    end
-    return Chain(layers...)
+  layers = []
+  input_filters = inchannels
+  for c in config
+    push!(layers, vgg_block(input_filters, c..., batchnorm))
+    push!(layers, MaxPool((2, 2); stride=2))
+    input_filters, _ = c
+  end
+  return Chain(layers...)
 end
 
 """
@@ -60,8 +60,8 @@ Create VGG classifier (fully connected) layers ([reference](https://arxiv.org/ab
   - `dropout`: the dropout level between each fully connected layer
 """
 function vgg_classifier_layers(imsize, nclasses, fcsize, dropout)
-    return Chain(FlattenLayer(), Dense(Int(prod(imsize)), fcsize, relu), Dropout(dropout),
-                 Dense(fcsize, fcsize, relu), Dropout(dropout), Dense(fcsize, nclasses))
+  return Chain(FlattenLayer(), Dense(Int(prod(imsize)), fcsize, relu), Dropout(dropout),
+               Dense(fcsize, fcsize, relu), Dropout(dropout), Dense(fcsize, nclasses))
 end
 
 """
@@ -81,9 +81,9 @@ Create a VGG model ([reference](https://arxiv.org/abs/1409.1556v6)).
   - `dropout`: dropout level between fully connected layers
 """
 function vgg(imsize; config, inchannels, batchnorm=false, nclasses, fcsize, dropout)
-    conv = vgg_convolutional_layers(config, batchnorm, inchannels)
-    class = vgg_classifier_layers((7, 7, 512), nclasses, fcsize, dropout)
-    return Chain(Chain(conv), class)
+  conv = vgg_convolutional_layers(config, batchnorm, inchannels)
+  class = vgg_classifier_layers((7, 7, 512), nclasses, fcsize, dropout)
+  return Chain(Chain(conv), class)
 end
 
 const VGG_CONV_CONFIG = Dict(:A => [(64, 1), (128, 1), (256, 2), (512, 2), (512, 2)],
@@ -94,33 +94,33 @@ const VGG_CONV_CONFIG = Dict(:A => [(64, 1), (128, 1), (256, 2), (512, 2), (512,
 const VGG_CONFIG = Dict(11 => :A, 13 => :B, 16 => :D, 19 => :E)
 
 function vgg(name::Symbol; kwargs...)
-    assert_name_present_in(name,
-                           (:vgg11, :vgg11_bn, :vgg13, :vgg13_bn, :vgg16, :vgg16_bn, :vgg19,
-                            :vgg19_bn))
-    model = if name == :vgg11
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[11]], inchannels=3,
-            batchnorm=false, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg11_bn
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[11]], inchannels=3,
-            batchnorm=true, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg13
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[13]], inchannels=3,
-            batchnorm=false, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg13_bn
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[13]], inchannels=3,
-            batchnorm=true, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg16
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[16]], inchannels=3,
-            batchnorm=false, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg16_bn
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[16]], inchannels=3,
-            batchnorm=true, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg19
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[19]], inchannels=3,
-            batchnorm=false, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    elseif name == :vgg19_bn
-        vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[19]], inchannels=3,
-            batchnorm=true, nclasses=1000, fcsize=4096, dropout=0.5f0)
-    end
-    return initialize_model(name, model; kwargs...)
+  assert_name_present_in(name,
+                         (:vgg11, :vgg11_bn, :vgg13, :vgg13_bn, :vgg16, :vgg16_bn, :vgg19,
+                          :vgg19_bn))
+  model = if name == :vgg11
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[11]], inchannels=3, batchnorm=false,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg11_bn
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[11]], inchannels=3, batchnorm=true,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg13
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[13]], inchannels=3, batchnorm=false,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg13_bn
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[13]], inchannels=3, batchnorm=true,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg16
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[16]], inchannels=3, batchnorm=false,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg16_bn
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[16]], inchannels=3, batchnorm=true,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg19
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[19]], inchannels=3, batchnorm=false,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  elseif name == :vgg19_bn
+    vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[19]], inchannels=3, batchnorm=true,
+        nclasses=1000, fcsize=4096, dropout=0.5f0)
+  end
+  return initialize_model(name, model; kwargs...)
 end

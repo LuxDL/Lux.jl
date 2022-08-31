@@ -122,13 +122,13 @@ Random.seed!(rng, 0)
 # First, let us run a random number generator 3 times with the `replicate`d rng.
 
 for i in 1:3
-    println("Iteration $i ", rand(Lux.replicate(rng), 10))
+  println("Iteration $i ", rand(Lux.replicate(rng), 10))
 end
 
 # As expected we get the same output. We can remove the `replicate` call and we will get different outputs.
 
 for i in 1:3
-    println("Iteration $i ", rand(rng, 10))
+  println("Iteration $i ", rand(rng, 10))
 end
 
 # ## Automatic Differentiation
@@ -243,14 +243,13 @@ loss_function(ps, X, y) = mse(model, ps, st, X, y)
 println("Loss Value with ground true W & b: ", mse(W, b, x_samples, y_samples))
 
 for i in 1:100
-    ## In actual code, don't use globals. But here I will simply for the sake of demonstration
-    global ps, st, opt_state
-    ## Compute the gradient
-    gs = gradient(loss_function, ps, x_samples, y_samples)[1]
-    ## Perform parameter update
-    opt_state, ps = Optimisers.update(opt_state, ps, gs)
-    if i % 10 == 1 || i == 100
-        println("Loss Value after $i iterations: ",
-                mse(model, ps, st, x_samples, y_samples))
-    end
+  ## In actual code, don't use globals. But here I will simply for the sake of demonstration
+  global ps, st, opt_state
+  ## Compute the gradient
+  gs = gradient(loss_function, ps, x_samples, y_samples)[1]
+  ## Perform parameter update
+  opt_state, ps = Optimisers.update(opt_state, ps, gs)
+  if i % 10 == 1 || i == 100
+    println("Loss Value after $i iterations: ", mse(model, ps, st, x_samples, y_samples))
+  end
 end

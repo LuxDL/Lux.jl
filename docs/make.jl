@@ -5,13 +5,13 @@ Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/L
 
 makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
          modules=[Lux], strict=[
-             :doctest,
-             :linkcheck,
-             :parse_error,
-             :example_block,
-             # Other available options are
-             # :autodocs_block, :cross_references, :docs_block, :eval_block, :example_block,
-             # :footnote, :meta_block, :missing_docs, :setup_block
+           :doctest,
+           :linkcheck,
+           :parse_error,
+           :example_block,
+           # Other available options are
+           # :autodocs_block, :cross_references, :docs_block, :eval_block, :example_block,
+           # :footnote, :meta_block, :missing_docs, :setup_block
          ], checkdocs=:all, format=Markdown(), draft=false,
          build=joinpath(@__DIR__, "docs"))
 

@@ -32,31 +32,31 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 See also [`VariationalHiddenDropout`](@ref)
 """
 struct Dropout{T, D} <: AbstractExplicitLayer
-    p::T
-    q::T
-    dims::D
+  p::T
+  q::T
+  dims::D
 end
 
 function initialstates(rng::AbstractRNG, ::Dropout)
-    randn(rng)
-    return (rng=replicate(rng), training=Val(true))
+  randn(rng)
+  return (rng=replicate(rng), training=Val(true))
 end
 
 function Dropout(p; dims=:)
-    @assert 0 ≤ p ≤ 1
-    iszero(p) && return NoOpLayer()
-    return Dropout(p, 1 / (1 - p), dims)
+  @assert 0 ≤ p ≤ 1
+  iszero(p) && return NoOpLayer()
+  return Dropout(p, 1 / (1 - p), dims)
 end
 
 function (d::Dropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, _, rng = dropout(st.rng, x, d.p, d.q, d.dims, st.training)
-    return y, merge(st, (rng=rng,))
+  y, _, rng = dropout(st.rng, x, d.p, d.q, d.dims, st.training)
+  return y, merge(st, (rng=rng,))
 end
 
 function Base.show(io::IO, d::Dropout)
-    print(io, "Dropout(", d.p)
-    d.dims != Colon() && print(io, ", dims=", d.dims)
-    return print(io, ")")
+  print(io, "Dropout(", d.p)
+  d.dims != Colon() && print(io, ", dims=", d.dims)
+  return print(io, ")")
 end
 
 """
@@ -97,30 +97,30 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 See also [`Dropout`](@ref)
 """
 struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer
-    p::T
-    q::T
-    dims::D
+  p::T
+  q::T
+  dims::D
 end
 
 function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
-    randn(rng)
-    return (rng=replicate(rng), training=Val(true), update_mask=Val(true), mask=nothing)
+  randn(rng)
+  return (rng=replicate(rng), training=Val(true), update_mask=Val(true), mask=nothing)
 end
 
 function VariationalHiddenDropout(p; dims=:)
-    @assert 0 ≤ p ≤ 1
-    iszero(p) && return NoOpLayer()
-    return VariationalHiddenDropout(p, 1 / (1 - p), dims)
+  @assert 0 ≤ p ≤ 1
+  iszero(p) && return NoOpLayer()
+  return VariationalHiddenDropout(p, 1 / (1 - p), dims)
 end
 
 function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.q, d.dims, st.training,
-                                        st.update_mask)
-    return y, merge(st, (mask=mask, rng=rng, update_mask=update_mask))
+  y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.q, d.dims, st.training,
+                                      st.update_mask)
+  return y, merge(st, (mask=mask, rng=rng, update_mask=update_mask))
 end
 
 function Base.show(io::IO, d::VariationalHiddenDropout)
-    print(io, "VariationalHiddenDropout(", d.p)
-    d.dims != Colon() && print(io, ", dims=", d.dims)
-    return print(io, ")")
+  print(io, "VariationalHiddenDropout(", d.p)
+  d.dims != Colon() && print(io, ", dims=", d.dims)
+  return print(io, ")")
 end

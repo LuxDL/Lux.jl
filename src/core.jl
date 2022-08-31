@@ -29,7 +29,7 @@ Generate the initial parameters of the layer `l`.
 """
 initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
-    return map(Base.Fix1(initialparameters, rng), l)
+  return map(Base.Fix1(initialparameters, rng), l)
 end
 
 """
@@ -46,10 +46,10 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 Return the total number of parameters of the layer `l`.
 """
 function parameterlength(l::AbstractExplicitLayer)
-    return parameterlength(initialparameters(Random.default_rng(), l))
+  return parameterlength(initialparameters(Random.default_rng(), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
-    return length(nt) == 0 ? 0 : sum(parameterlength, nt)
+  return length(nt) == 0 ? 0 : sum(parameterlength, nt)
 end
 parameterlength(a::AbstractArray) = length(a)
 
@@ -74,7 +74,7 @@ Shorthand for getting the parameters and states of the layer `l`. Is equivalent 
     This function is not pure, it mutates `rng`.
 """
 function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
-    return (initialparameters(rng, l), initialstates(rng, l))
+  return (initialparameters(rng, l), initialstates(rng, l))
 end
 
 """
@@ -84,13 +84,13 @@ end
 Simply calls `model(x, ps, st)`
 """
 function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
-    return model(x, ps, st)
+  return model(x, ps, st)
 end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
-    __t = rsplit(string(get_typename(x)), "."; limit=2)
-    T = length(__t) == 2 ? __t[2] : __t[1]
-    return print(io, "$T()")
+  __t = rsplit(string(get_typename(x)), "."; limit=2)
+  T = length(__t) == 2 ? __t[2] : __t[1]
+  return print(io, "$T()")
 end
 
 # Abstract Container Layers
@@ -107,22 +107,22 @@ abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer en
 
 function initialparameters(rng::AbstractRNG,
                            l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
-    return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
+  length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
+  return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG,
                        l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
-    return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
+  length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
+  return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
 function parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layers}
-    return sum(parameterlength, getfield.((l,), layers))
+  return sum(parameterlength, getfield.((l,), layers))
 end
 
 function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
-    return sum(statelength, getfield.((l,), layers))
+  return sum(statelength, getfield.((l,), layers))
 end
 
 # Test Mode
@@ -147,13 +147,13 @@ Recursively update all occurances of the `key` in the state `st` with the `value
 """
 function update_state(st::NamedTuple, key::Symbol, value;
                       layer_check=_default_layer_check(key))
-    function _update_state(st, key::Symbol, value)
-        return Setfield.set(st, Setfield.PropertyLens{key}(), value)
-    end
-    return fmap(_st -> _update_state(_st, key, value), st; exclude=layer_check)
+  function _update_state(st, key::Symbol, value)
+    return Setfield.set(st, Setfield.PropertyLens{key}(), value)
+  end
+  return fmap(_st -> _update_state(_st, key, value), st; exclude=layer_check)
 end
 
 function _default_layer_check(key)
-    _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
-    return _default_layer_check_closure
+  _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
+  return _default_layer_check_closure
 end

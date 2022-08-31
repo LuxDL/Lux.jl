@@ -47,15 +47,15 @@ ts = [ones(2 * M); zeros(2 * M)]
 
 ## Plot data points
 function plot_data()
-    x1 = first.(xt1s)
-    y1 = last.(xt1s)
-    x2 = first.(xt0s)
-    y2 = last.(xt0s)
+  x1 = first.(xt1s)
+  y1 = last.(xt1s)
+  x2 = first.(xt0s)
+  y2 = last.(xt0s)
 
-    plt = Plots.scatter(x1, y1; color="red", clim=(0, 1))
-    Plots.scatter!(plt, x2, y2; color="blue", clim=(0, 1))
+  plt = Plots.scatter(x1, y1; color="red", clim=(0, 1))
+  Plots.scatter!(plt, x2, y2; color="blue", clim=(0, 1))
 
-    return plt
+  return plt
 end
 
 plot_data()
@@ -82,31 +82,31 @@ sig = sqrt(1.0 / alpha)
 
 # Construct named tuple from a sampled parameter vector. We could also use ComponentArrays here and simply broadcast to avoid doing this. But let's do it this way to avoid dependencies.
 function vector_to_parameters(ps_new::AbstractVector, ps::NamedTuple)
-    @assert length(ps_new) == Lux.parameterlength(ps)
-    i = 1
-    function get_ps(x)
-        z = reshape(view(ps_new, i:(i + length(x) - 1)), size(x))
-        i += length(x)
-        return z
-    end
-    return fmap(get_ps, ps)
+  @assert length(ps_new) == Lux.parameterlength(ps)
+  i = 1
+  function get_ps(x)
+    z = reshape(view(ps_new, i:(i + length(x) - 1)), size(x))
+    i += length(x)
+    return z
+  end
+  return fmap(get_ps, ps)
 end
 
 ## Specify the probabilistic model.
 @model function bayes_nn(xs, ts)
-    global st
+  global st
 
-    ## Sample the parameters
-    nparameters = Lux.parameterlength(nn)
-    parameters ~ MvNormal(zeros(nparameters), sig .* ones(nparameters))
+  ## Sample the parameters
+  nparameters = Lux.parameterlength(nn)
+  parameters ~ MvNormal(zeros(nparameters), sig .* ones(nparameters))
 
-    ## Forward NN to make predictions
-    preds, st = nn(xs, vector_to_parameters(parameters, ps), st)
+  ## Forward NN to make predictions
+  preds, st = nn(xs, vector_to_parameters(parameters, ps), st)
 
-    ## Observe each prediction.
-    for i in 1:length(ts)
-        ts[i] ~ Bernoulli(preds[i])
-    end
+  ## Observe each prediction.
+  for i in 1:length(ts)
+    ts[i] ~ Bernoulli(preds[i])
+  end
 end
 
 # Inference can now be performed by calling sample. We use the HMC sampler here.
@@ -148,7 +148,7 @@ contour!(x1_range, x2_range, Z)
 
 ## Return the average predicted value across multiple weights.
 function nn_predict(x, theta, num)
-    return mean([nn_forward(x, view(theta, i, :))[1] for i in 1:10:num])
+  return mean([nn_forward(x, view(theta, i, :))[1] for i in 1:10:num])
 end
 
 # Next, we use the `nn_predict` function to predict the value at a sample of points where the x1 and x2 coordinates range between -6 and 6. As we can see below, we still have a satisfactory fit to our data, and more importantly, we can also see where the neural network is uncertain about its predictions much easier---those regions between cluster boundaries.
@@ -168,7 +168,7 @@ contour!(x1_range, x2_range, Z)
 n_end = 1000
 
 anim = @gif for i in 1:n_end
-    plot_data()
-    Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
-    contour!(x1_range, x2_range, Z; title="Iteration $i", clim=(0, 1))
+  plot_data()
+  Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
+  contour!(x1_range, x2_range, Z; title="Iteration $i", clim=(0, 1))
 end every 5

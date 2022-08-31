@@ -17,11 +17,11 @@ Training State containing:
   - `step`: Number of updates of the parameters made.
 """
 struct TrainState{Ps, St, Ost, M}
-    model::M
-    parameters::Ps
-    states::St
-    optimizer_state::Ost
-    step::Int
+  model::M
+  parameters::Ps
+  states::St
+  optimizer_state::Ost
+  step::Int
 end
 
 """
@@ -45,9 +45,9 @@ Constructor for `TrainState`.
 function TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
                     optimizer::Optimisers.AbstractRule;
                     transform_variables::Function=Lux.cpu)
-    ps, st = Lux.setup(rng, model) .|> transform_variables
-    st_opt = Optimisers.setup(optimizer, ps)
-    return TrainState(model, ps, st, st_opt, 0)
+  ps, st = Lux.setup(rng, model) .|> transform_variables
+  st_opt = Optimisers.setup(optimizer, ps)
+  return TrainState(model, ps, st, st_opt, 0)
 end
 
 """
@@ -65,9 +65,8 @@ Update the parameters stored in `ts` using the gradients `grads`.
 Updated `TrainState` object.
 """
 function apply_gradients(ts::TrainState, grads)
-    optimizer_state, parameters = Optimisers.update(ts.optimizer_state, ts.parameters,
-                                                    grads)
-    return TrainState(ts.model, parameters, ts.states, optimizer_state, ts.step + 1)
+  optimizer_state, parameters = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
+  return TrainState(ts.model, parameters, ts.states, optimizer_state, ts.step + 1)
 end
 
 # VJPs
@@ -84,7 +83,7 @@ abstract type AbstractVJP end
 Package used to compute the VJP.
 """
 function backend(::T) where {T <: AbstractVJP}
-    throw(ArgumentError("`backend` function must be defined for type $T"))
+  throw(ArgumentError("`backend` function must be defined for type $T"))
 end
 
 """
@@ -112,8 +111,8 @@ A 4-Tuple containing:
 """
 function compute_gradients(t::T, objective_function::Function, data,
                            ts::TrainState) where {T <: AbstractVJP}
-    throw(ArgumentError("Support for AD backend $(backend(t)) has not been implemented " *
-                        "yet!!!"))
+  throw(ArgumentError("Support for AD backend $(backend(t)) has not been implemented " *
+                      "yet!!!"))
 end
 
 """
@@ -126,12 +125,12 @@ struct ZygoteVJP <: AbstractVJP end
 backend(::ZygoteVJP) = :Zygote
 
 function compute_gradients(::ZygoteVJP, objective_function::Function, data, ts::TrainState)
-    (loss, st, stats), back = Zygote.pullback(ps -> objective_function(ts.model, ps,
-                                                                       ts.states, data),
-                                              ts.parameters)
-    grads = back((one(loss), nothing, nothing))[1]
-    Setfield.@set! ts.states = st
-    return grads, loss, stats, ts
+  (loss, st, stats), back = Zygote.pullback(ps -> objective_function(ts.model, ps,
+                                                                     ts.states, data),
+                                            ts.parameters)
+  grads = back((one(loss), nothing, nothing))[1]
+  Setfield.@set! ts.states = st
+  return grads, loss, stats, ts
 end
 
 """

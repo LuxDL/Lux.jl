@@ -43,8 +43,8 @@ feedforward neural networks." _Proceedings of the thirteenth international confe
 artificial intelligence and statistics_. 2010.
 """
 function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
-    scale = Float32(gain) * sqrt(24.0f0 / sum(_nfan(dims...)))
-    return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
+  scale = Float32(gain) * sqrt(24.0f0 / sum(_nfan(dims...)))
+  return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
 end
 
 """
@@ -61,8 +61,8 @@ feedforward neural networks." _Proceedings of the thirteenth international confe
 artificial intelligence and statistics_. 2010.
 """
 function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
-    std = Float32(gain) * sqrt(2.0f0 / sum(_nfan(dims...)))
-    return randn(rng, Float32, dims...) .* std
+  std = Float32(gain) * sqrt(2.0f0 / sum(_nfan(dims...)))
+  return randn(rng, Float32, dims...) .* std
 end
 
 # PRNG Handling
@@ -92,10 +92,10 @@ Method undefined if `st.training` is not of type `Val`.
 function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
                      ch::Pair{<:Integer, <:Integer}; init=glorot_uniform,
                      groups=1) where {N}
-    cin, cout = ch
-    @assert cin % groups==0 "Input channel dimension must be divisible by groups."
-    @assert cout % groups==0 "Output channel dimension must be divisible by groups."
-    return init(rng, filter..., cin ÷ groups, cout)
+  cin, cout = ch
+  @assert cin % groups==0 "Input channel dimension must be divisible by groups."
+  @assert cout % groups==0 "Output channel dimension must be divisible by groups."
+  return init(rng, filter..., cin ÷ groups, cout)
 end
 
 _expand(N, i::Tuple) = i
@@ -108,35 +108,34 @@ _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(
 struct SamePad end
 
 function calc_padding(lt, pad, k::NTuple{N, T}, dilation, stride) where {T, N}
-    return _expand(Val(2 * N), pad)
+  return _expand(Val(2 * N), pad)
 end
 
 function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
-    # Ref: "A guide to convolution arithmetic for deep learning"
-    # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
-    k_eff = @. k + (k - 1) * (dilation - 1)
-    # How much total padding needs to be applied?
-    pad_amt = @. k_eff - 1
-    # In case amount of padding is odd we need to apply different amounts to each side.
-    return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
+  # Ref: "A guide to convolution arithmetic for deep learning"
+  # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
+  k_eff = @. k + (k - 1) * (dilation - 1)
+  # How much total padding needs to be applied?
+  pad_amt = @. k_eff - 1
+  # In case amount of padding is odd we need to apply different amounts to each side.
+  return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
 end
 
 # Handling ComponentArrays
 function Functors.functor(::Type{<:ComponentArray}, c)
-    return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
-           ComponentArray
+  return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))), ComponentArray
 end
 
 Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
 
 function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
-    return tree, ComponentArray(ps_new, getaxes(ps))
+  tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
+  return tree, ComponentArray(ps_new, getaxes(ps))
 end
 
 function Optimisers.update!(tree::Optimisers.Leaf, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update!(tree, getdata(ps), getdata(gs))
-    return tree, ComponentArray(ps_new, getaxes(ps))
+  tree, ps_new = Optimisers.update!(tree, getdata(ps), getdata(gs))
+  return tree, ComponentArray(ps_new, getaxes(ps))
 end
 
 # Getting typename
@@ -147,13 +146,13 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 
 @inline @inbounds function _get_reshape_dims(sx::NTuple{N, <:Int},
                                              ly::Int)::typeof(sx) where {N}
-    if ly == sx[N - 1]
-        return ntuple(i -> i == N - 1 ? ly : 1, N)
-    elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
-        return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
-    else
-        error("Invalid Dimensions")
-    end
+  if ly == sx[N - 1]
+    return ntuple(i -> i == N - 1 ? ly : 1, N)
+  elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
+    return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
+  else
+    error("Invalid Dimensions")
+  end
 end
 
 @inline _reshape_into_proper_shape(x::Nothing, y)::Nothing = x
@@ -167,17 +166,17 @@ end
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
-    return rnn.init_state(rng, rnn.out_dims, size(x, 2))
+  return rnn.init_state(rng, rnn.out_dims, size(x, 2))
 end
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn,
                                     x::Union{CUDA.StridedSubCuArray, CuArray})
-    return CuArray(rnn.init_state(rng, rnn.out_dims, size(x, 2)))
+  return CuArray(rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
 @inline function _init_trainable_hidden_state(hidden_state::AbstractVector,
                                               x::AbstractMatrix)
-    return repeat(hidden_state, 1, size(x, 2))
+  return repeat(hidden_state, 1, size(x, 2))
 end
 
 """

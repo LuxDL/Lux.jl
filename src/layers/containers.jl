@@ -35,13 +35,13 @@ See [`Parallel`](@ref) for a more general implementation.
 """
 struct SkipConnection{T <: AbstractExplicitLayer, F} <:
        AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
-    connection::F
+  layers::T
+  connection::F
 end
 
 @inline function (skip::SkipConnection)(x, ps, st::NamedTuple)
-    mx, st = skip.layers(x, ps, st)
-    return skip.connection(mx, x), st
+  mx, st = skip.layers(x, ps, st)
+  return skip.connection(mx, x), st
 end
 
 """
@@ -86,41 +86,41 @@ with `connection`.
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
 struct Parallel{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
-    connection::F
-    layers::T
+  connection::F
+  layers::T
 end
 
 function Parallel(connection, layers...)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return Parallel(connection, NamedTuple{names}(layers))
+  names = ntuple(i -> Symbol("layer_$i"), length(layers))
+  return Parallel(connection, NamedTuple{names}(layers))
 end
 
 Parallel(connection; kwargs...) = Parallel(connection, (; kwargs...))
 
 function (m::Parallel)(x, ps, st::NamedTuple)
-    return applyparallel(m.layers, m.connection, x, ps, st)
+  return applyparallel(m.layers, m.connection, x, ps, st)
 end
 
 @generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T, ps,
                                   st::NamedTuple) where {names, C, T}
-    N = length(names)
-    y_symbols = [gensym() for _ in 1:(N + 1)]
-    st_symbols = [gensym() for _ in 1:N]
-    getinput(i) = T <: Tuple ? :(x[$i]) : :x
-    calls = []
-    append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(getinput(i)),
-                                                                        ps.$(names[i]),
-                                                                        st.$(names[i])))
-             for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    if C == Nothing
-        push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
-    else
-        push!(calls, :($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...))))
-    end
-    push!(calls, :(return $(y_symbols[N + 1]), st))
-    return Expr(:block, calls...)
+  N = length(names)
+  y_symbols = [gensym() for _ in 1:(N + 1)]
+  st_symbols = [gensym() for _ in 1:N]
+  getinput(i) = T <: Tuple ? :(x[$i]) : :x
+  calls = []
+  append!(calls,
+          [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(getinput(i)),
+                                                                      ps.$(names[i]),
+                                                                      st.$(names[i])))
+           for i in 1:N])
+  push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+  if C == Nothing
+    push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
+  else
+    push!(calls, :($(y_symbols[N + 1]) = connection($(Tuple(y_symbols[1:N])...))))
+  end
+  push!(calls, :(return $(y_symbols[N + 1]), st))
+  return Expr(:block, calls...)
 end
 
 Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
@@ -178,33 +178,33 @@ l = BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
 ```
 """
 struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
+  layers::T
 end
 
 function BranchLayer(layers...)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return BranchLayer(NamedTuple{names}(layers))
+  names = ntuple(i -> Symbol("layer_$i"), length(layers))
+  return BranchLayer(NamedTuple{names}(layers))
 end
 
 BranchLayer(; kwargs...) = BranchLayer((; kwargs...))
 
 function (m::BranchLayer)(x, ps, st::NamedTuple)
-    return applybranching(m.layers, x, ps, st)
+  return applybranching(m.layers, x, ps, st)
 end
 
 @generated function applybranching(layers::NamedTuple{names}, x, ps,
                                    st::NamedTuple) where {names}
-    N = length(names)
-    y_symbols = [gensym() for _ in 1:N]
-    st_symbols = [gensym() for _ in 1:N]
-    calls = []
-    append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])(x, ps.$(names[i]),
-                                                                        st.$(names[i])))
-             for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
-    return Expr(:block, calls...)
+  N = length(names)
+  y_symbols = [gensym() for _ in 1:N]
+  st_symbols = [gensym() for _ in 1:N]
+  calls = []
+  append!(calls,
+          [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])(x, ps.$(names[i]),
+                                                                      st.$(names[i])))
+           for i in 1:N])
+  push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+  push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
+  return Expr(:block, calls...)
 end
 
 Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
@@ -239,7 +239,7 @@ Layer behaves differently based on input type:
 ```julia
 y = x[1]
 for i in 1:N
-    y = connection(x[i + 1], layers[i](y))
+  y = connection(x[i + 1], layers[i](y))
 end
 ```
 
@@ -248,7 +248,7 @@ end
 ```julia
 y = x
 for i in 1:N
-    y = connection(x, layers[i](y))
+  y = connection(x, layers[i](y))
 end
 ```
 
@@ -268,37 +268,37 @@ end
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
 struct PairwiseFusion{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
-    connection::F
-    layers::T
+  connection::F
+  layers::T
 end
 
 function PairwiseFusion(connection, layers...)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return PairwiseFusion(connection, NamedTuple{names}(layers))
+  names = ntuple(i -> Symbol("layer_$i"), length(layers))
+  return PairwiseFusion(connection, NamedTuple{names}(layers))
 end
 
 PairwiseFusion(connection; kwargs...) = PairwiseFusion(connection, (; kwargs...))
 
 function (m::PairwiseFusion)(x, ps, st::NamedTuple)
-    return applypairwisefusion(m.layers, m.connection, x, ps, st)
+  return applypairwisefusion(m.layers, m.connection, x, ps, st)
 end
 
 @generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T, ps,
                                         st::NamedTuple) where {names, C, T}
-    N = length(names)
-    y_symbols = [gensym() for _ in 1:(N + 1)]
-    st_symbols = [gensym() for _ in 1:N]
-    getinput(i) = T <: Tuple ? :(x[$i]) : :x
-    calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
-    append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(y_symbols[N + 1]),
-                                                                        ps.$(names[i]),
-                                                                        st.$(names[i]));
-               $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
-             for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return $(y_symbols[N + 1]), st))
-    return Expr(:block, calls...)
+  N = length(names)
+  y_symbols = [gensym() for _ in 1:(N + 1)]
+  st_symbols = [gensym() for _ in 1:N]
+  getinput(i) = T <: Tuple ? :(x[$i]) : :x
+  calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
+  append!(calls,
+          [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(y_symbols[N + 1]),
+                                                                      ps.$(names[i]),
+                                                                      st.$(names[i]));
+             $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
+           for i in 1:N])
+  push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
+  push!(calls, :(return $(y_symbols[N + 1]), st))
+  return Expr(:block, calls...)
 end
 
 Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
@@ -361,79 +361,79 @@ c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 ```
 """
 struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
+  layers::T
 
-    function Chain(xs...; disable_optimizations::Bool=false)
-        xs = disable_optimizations ? xs : _flatten_model(xs)
-        length(xs) == 0 && return NoOpLayer()
-        length(xs) == 1 && return first(xs)
-        names = ntuple(i -> Symbol("layer_$i"), length(xs))
-        layers = NamedTuple{names}(xs)
-        return new{typeof(layers)}(layers)
-    end
+  function Chain(xs...; disable_optimizations::Bool=false)
+    xs = disable_optimizations ? xs : _flatten_model(xs)
+    length(xs) == 0 && return NoOpLayer()
+    length(xs) == 1 && return first(xs)
+    names = ntuple(i -> Symbol("layer_$i"), length(xs))
+    layers = NamedTuple{names}(xs)
+    return new{typeof(layers)}(layers)
+  end
 
-    function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
-        return Chain(xs...; disable_optimizations)
-    end
+  function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
+    return Chain(xs...; disable_optimizations)
+  end
 
-    function Chain(nt::NamedTuple; disable_optimizations::Bool=true)
-        if !disable_optimizations
-            throw(ArgumentError("Chain(::NamedTuple) is not compatible with" *
-                                " disable_optimizations=true"))
-        end
-        return new{typeof(nt)}(nt)
+  function Chain(nt::NamedTuple; disable_optimizations::Bool=true)
+    if !disable_optimizations
+      throw(ArgumentError("Chain(::NamedTuple) is not compatible with" *
+                          " disable_optimizations=true"))
     end
+    return new{typeof(nt)}(nt)
+  end
 
-    function Chain(; disable_optimizations::Bool=true, kwargs...)
-        return Chain((; kwargs...); disable_optimizations)
-    end
+  function Chain(; disable_optimizations::Bool=true, kwargs...)
+    return Chain((; kwargs...); disable_optimizations)
+  end
 end
 
 function _flatten_model(layers::Union{AbstractVector, Tuple})
-    new_layers = []
-    for l in layers
-        f = _flatten_model(l)
-        if f isa Tuple || f isa AbstractVector
-            append!(new_layers, f)
-        elseif f isa Function
-            if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
-                if f === identity
-                    continue
-                else
-                    push!(new_layers, WrappedFunction(f))
-                end
-            else
-                push!(new_layers, f)
-            end
-        elseif f isa Chain
-            append!(new_layers, f.layers)
-        elseif f isa NoOpLayer
-            continue
+  new_layers = []
+  for l in layers
+    f = _flatten_model(l)
+    if f isa Tuple || f isa AbstractVector
+      append!(new_layers, f)
+    elseif f isa Function
+      if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
+        if f === identity
+          continue
         else
-            push!(new_layers, f)
+          push!(new_layers, WrappedFunction(f))
         end
+      else
+        push!(new_layers, f)
+      end
+    elseif f isa Chain
+      append!(new_layers, f.layers)
+    elseif f isa NoOpLayer
+      continue
+    else
+      push!(new_layers, f)
     end
-    return layers isa AbstractVector ? new_layers : Tuple(new_layers)
+  end
+  return layers isa AbstractVector ? new_layers : Tuple(new_layers)
 end
 
 _flatten_model(x) = x
 
 function (c::Chain)(x, ps, st::NamedTuple)
-    return applychain(c.layers, x, ps, st)
+  return applychain(c.layers, x, ps, st)
 end
 
 @generated function applychain(layers::NamedTuple{fields}, x, ps,
                                st::NamedTuple{fields}) where {fields}
-    N = length(fields)
-    x_symbols = vcat([:x], [gensym() for _ in 1:N])
-    st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = layers.$(fields[i])($(x_symbols[i]),
-                                                                             ps.$(fields[i]),
-                                                                             st.$(fields[i])))
-             for i in 1:N]
-    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return $(x_symbols[N + 1]), st))
-    return Expr(:block, calls...)
+  N = length(fields)
+  x_symbols = vcat([:x], [gensym() for _ in 1:N])
+  st_symbols = [gensym() for _ in 1:N]
+  calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = layers.$(fields[i])($(x_symbols[i]),
+                                                                           ps.$(fields[i]),
+                                                                           st.$(fields[i])))
+           for i in 1:N]
+  push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+  push!(calls, :(return $(x_symbols[N + 1]), st))
+  return Expr(:block, calls...)
 end
 
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
