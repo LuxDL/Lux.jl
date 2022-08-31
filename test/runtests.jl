@@ -32,6 +32,7 @@ end
 
             @testset "Layers" begin
                 @time @safetestset "Basic" begin include("layers/basic.jl") end
+                @time @safetestset "Containers" begin include("layers/containers.jl") end
                 @time @safetestset "Convolution" begin include("layers/conv.jl") end
                 @time @safetestset "Normalization" begin include("layers/normalize.jl") end
                 @time @safetestset "Recurrent" begin include("layers/recurrent.jl") end

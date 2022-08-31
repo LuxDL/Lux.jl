@@ -1,8 +1,13 @@
 # v0.4
 
+## v0.4.19
+
+  - Generic Container layers (like `Chain`, `Parallel`, etc.) can now used custom naming for
+    their internal layers.
+
 ## v0.4.17
 
-  - Major breakcing change in experimental Recurrent Cell Implementations.
+  - Major breaking change in experimental Recurrent Cell Implementations.
 
 ## v0.4.14
   - Deprecate `bias` in favor of `use_bias` for `RNNCell`.
