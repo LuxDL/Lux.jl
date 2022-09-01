@@ -5,6 +5,10 @@ function Base.isapprox(x, y; kwargs...)
     return x == y
 end
 
+function Base.isapprox(x::Tuple, y::Tuple; kwargs...)
+    return all(isapprox.(x, y; kwargs...))
+end
+
 function Base.isapprox(x::Optimisers.Leaf, y::Optimisers.Leaf; kwargs...)
     return isapprox(x.rule, y.rule; kwargs...) && isapprox(x.state, y.state; kwargs...)
 end

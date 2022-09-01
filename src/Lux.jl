@@ -32,6 +32,7 @@ include("core.jl")
 include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
+include("layers/containers.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
