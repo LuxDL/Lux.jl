@@ -1,5 +1,10 @@
 # v0.4
 
+## v0.4.20
+
+  - Introduces `Lux.@layer_map` and `Lux.layer_map` for mapping over layers.
+  - Allows `fmap`-ping over layers.
+
 ## v0.4.19
 
   - Generic Container layers (like `Chain`, `Parallel`, etc.) can now used custom naming for

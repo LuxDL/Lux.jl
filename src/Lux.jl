@@ -49,6 +49,7 @@ function __init__()
 end
 
 # Experimental
+include("contrib/map.jl")
 include("contrib/training.jl")
 
 # Deprecations
