@@ -1,4 +1,4 @@
-using SafeTestsets, Test, Pkg
+using Pkg, SafeTestsets, Test
 
 const GROUP = get(ENV, "GROUP", "All")
 
@@ -43,7 +43,10 @@ end
 
             @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
 
-            @testset "Experimental" begin @time @safetestset "Training" begin include("contrib/training.jl") end end
+            @testset "Experimental" begin
+                @time @safetestset "Map" begin include("contrib/map.jl") end
+                @time @safetestset "Training" begin include("contrib/training.jl") end
+            end
         end
     else
         dev_subpkg(group)

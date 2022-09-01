@@ -101,7 +101,13 @@ Abstract Container Type for certain Lux Layers. `layers` is a tuple containing f
 for the layer, and constructs the parameters and states using those.
 
 Users implementing their custom layer can extend the same functions as in
-[`AbstractExplicitLayer`](@ref)
+[`AbstractExplicitLayer`](@ref).
+
+!!! tip
+    
+    Advanced structure manipulation of these layers post construction is possible via
+    `Functors.fmap`. For a more flexible interface, we recommend using the experimental
+    feature [`Lux.@layer_map`](@ref).
 """
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
@@ -123,6 +129,20 @@ end
 
 function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
+end
+
+# Make AbstractExplicit Layers Functor Compatible
+function Functors.functor(::Type{<:AbstractExplicitContainerLayer},
+                          x::AbstractExplicitContainerLayer{layers}) where {layers}
+    _children = getproperty.((x,), layers)
+    function layer_reconstructor(z)
+        l = x
+        for (child, name) in zip(z, layers)
+            l = Setfield.set(l, Setfield.PropertyLens{name}(), child)
+        end
+        return l
+    end
+    return _children, layer_reconstructor
 end
 
 # Test Mode

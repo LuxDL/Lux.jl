@@ -39,6 +39,13 @@ refactors being planned (See [this issue](https://github.com/EnzymeAD/Enzyme.jl/
 Once the package is stable and we have the necessary backend support, we will be dropping
 the VJP rules in this module.
 
+## Map over Layer
+
+```@docs
+Lux.layer_map
+Lux.@layer_map
+```
+
 ## Index
 
 ```@index
