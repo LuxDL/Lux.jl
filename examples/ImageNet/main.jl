@@ -26,11 +26,11 @@ using Zygote                                            # Our AD Engine
 FluxMPI.Init(; verbose=true)
 
 # Experiment Configuration
-includet("config.jl")
+include("config.jl")
 # Utility Functions
-includet("utils.jl")
+include("utils.jl")
 # DataLoading
-includet("data.jl")
+include("data.jl")
 
 function construct(rng::Random.AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
     model, ps, st = getfield(Boltz, Symbol(cfg.name))(Symbol(cfg.arch); cfg.pretrained)
