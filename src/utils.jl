@@ -189,3 +189,6 @@ Split up `x` into `N` equally sized chunks (along dimension `1`).
 
 # Val utilities
 get_known(::Val{T}) where {T} = T
+
+# Copy and don't allow gradient propagation
+_copy_autodiff_barrier(x) = copy(x)

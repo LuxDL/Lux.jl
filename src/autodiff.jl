@@ -10,17 +10,23 @@ ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
 ChainRulesCore.@non_differentiable check_use_cuda()
 ChainRulesCore.@non_differentiable istraining(::Any)
 ChainRulesCore.@non_differentiable _get_norm_except_dims(::Any, ::Any)
+ChainRulesCore.@non_differentiable _affine(::Any)
+ChainRulesCore.@non_differentiable _track_stats(::Any)
+ChainRulesCore.@non_differentiable _copy_autodiff_barrier(::Any)
 
 # NNlib Functions
-function ChainRulesCore.rrule(::typeof(batchnorm), g::CuArray{T}, b::CuArray{T},
-                              x::Union{CuArray{T, 4}, CuArray{T, 5}}, running_mean,
-                              running_var, momentum; kwargs...) where {T <: CUDNNFloat}
-    y = batchnorm(g, b, x, running_mean, running_var, momentum; kwargs...)
-    function batchnorm_pullback(dy)
-        dg, db, dx = ∇batchnorm(g, b, x, dy, running_mean, running_var, momentum; kwargs...)
-        return NoTangent(), dg, db, dx, NoTangent(), NoTangent(), NoTangent()
+function ChainRulesCore.rrule(::typeof(_batchnorm), g::CuArray{T}, b::CuArray{T},
+                              x::Union{CuArray{T, 2}, CuArray{T, 4}, CuArray{T, 5}},
+                              running_mean, running_var, momentum, epsilon,
+                              training) where {T <: CUDNNFloat}
+    y = _batchnorm(g, b, x, running_mean, running_var, momentum, epsilon, training)
+    function _batchnorm_pullback(dy)
+        dg, db, dx = ∇batchnorm(g, b, x, unthunk(dy), running_mean, running_var, momentum;
+                                eps=epsilon, training=training)
+        return NoTangent(), dg, db, dx, NoTangent(), NoTangent(), NoTangent(), NoTangent(),
+               NoTangent()
     end
-    return y, batchnorm_pullback
+    return y, _batchnorm_pullback
 end
 
 function ChainRulesCore.rrule(::typeof(dropout), rng::AbstractRNG, x::AbstractArray{T, N},
@@ -59,6 +65,9 @@ function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{F1},
         dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
         return (NoTangent(), dnt1, dnt2)
     end
+    function merge_pullback(dy::Union{NoTangent, ZeroTangent})
+        return (NoTangent(), NoTangent(), NoTangent())
+    end
     return y, merge_pullback
 end
 
@@ -87,6 +96,11 @@ function ChainRulesCore.rrule(::typeof(collect), v::Vector)
         return NoTangent(), dy
     end
     return y, collect_pullback
+end
+
+function ChainRulesCore.rrule(::typeof(copy), x)
+    copy_pullback(dy) = (NoTangent(), dy)
+    return copy(x), copy_pullback
 end
 
 # Zygote Fixes
