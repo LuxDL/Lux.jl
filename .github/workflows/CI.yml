@@ -20,6 +20,7 @@ jobs:
         group:
           - Lux    # Core Framework
           - Boltz  # Prebuilt Models using Lux
+          - BruLux # Experimental Integration with Brutus
         version:
           - '1.6'      # JET tests are disabled on 1.6
           - '1.7'
