@@ -109,7 +109,7 @@ function Zygote.accum(x::ComponentArray, ys::ComponentArray...)
 end
 
 # Adapt Interface
-function ChainRulesCore.rrule(::typeof(Array), x::CUDA.CuArray)
+function ChainRulesCore.rrule(::Type{Array}, x::CUDA.CuArray)
     return Array(x), d -> (NoTangent(), CUDA.cu(d))
 end
 
