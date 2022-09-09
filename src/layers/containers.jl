@@ -354,6 +354,11 @@ keyword argument `disable_optimizations`.
     `Chain` wrapper.
   - If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
 
+## Miscellaneous Properties
+
+  - Allows indexing. We can access the `i`th layer using `m[i]`. We can also index using
+    ranges or arrays.
+
 ## Example
 
 ```julia
@@ -437,3 +442,6 @@ end
 end
 
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
+
+Base.getindex(c::Chain, i::Int) = c.layers[i]
+Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))

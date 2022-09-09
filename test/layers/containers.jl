@@ -232,6 +232,28 @@ end
     test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1.0f-3,
                                   rtol=1.0f-3)
 
+    layer = Chain(; l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
+    println(layer)
+    layer = layer[1:2]
+    ps, st = Lux.setup(rng, layer)
+    x = rand(Float32, 10, 1)
+    y, _ = layer(x, ps, st)
+    @test size(y) == (2, 1)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1.0f-3,
+                                  rtol=1.0f-3)
+
+    layer = Chain(; l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
+    println(layer)
+    layer = layer[1]
+    ps, st = Lux.setup(rng, layer)
+    x = rand(Float32, 10, 1)
+    y, _ = layer(x, ps, st)
+    @test size(y) == (5, 1)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1.0f-3,
+                                  rtol=1.0f-3)
+
     @test_throws ArgumentError Chain(; l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
                                      d21=Dense(2 => 1), d2=Dense(2 => 1),
                                      disable_optimizations=false)
