@@ -39,6 +39,22 @@ refactors being planned (See [this issue](https://github.com/EnzymeAD/Enzyme.jl/
 Once the package is stable and we have the necessary backend support, we will be dropping
 the VJP rules in this module.
 
+
+## Parameter Freezing
+
+!!! note
+    In the long term, this will be supported via
+    [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
+
+```@docs
+Lux.FrozenLayer
+Lux.freeze
+Lux.unfreeze
+```
+
+For detailed usage example look at the [manual page](../manual/freezing_parameters.md).
+
+
 ## Map over Layer
 
 ```@docs

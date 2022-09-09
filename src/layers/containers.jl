@@ -445,3 +445,7 @@ Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 Base.getindex(c::Chain, i::Int) = c.layers[i]
 Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))
+
+Base.length(c::Chain) = length(c.layers)
+Base.lastindex(c::Chain) = lastindex(c.layers)
+Base.firstindex(c::Chain) = firstindex(c.layers)
