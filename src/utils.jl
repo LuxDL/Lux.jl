@@ -192,3 +192,8 @@ get_known(::Val{T}) where {T} = T
 
 # Copy and don't allow gradient propagation
 _copy_autodiff_barrier(x) = copy(x)
+
+# Indexing into NamedTuple
+function _index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
+    return NamedTuple{fields[idxs]}(values(nt)[idxs])
+end
