@@ -1,5 +1,10 @@
 # v0.4
 
+## v0.4.22
+
+  - `Chain` supports indexing.
+  - Introduces an API for freezing model parameters.
+
 ## v0.4.20
 
   - Introduces `Lux.@layer_map` and `Lux.layer_map` for mapping over layers.

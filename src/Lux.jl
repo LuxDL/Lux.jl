@@ -51,6 +51,7 @@ end
 # Experimental
 include("contrib/map.jl")
 include("contrib/training.jl")
+include("contrib/freeze.jl")
 
 # Deprecations
 include("deprecated.jl")
