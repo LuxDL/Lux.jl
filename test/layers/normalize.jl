@@ -100,6 +100,13 @@ Random.seed!(rng, 0)
         @inferred m(x, ps, st)
         run_JET_tests(m, x, ps, st)
     end
+
+    @testset "allow fast activation" begin
+        layer = BatchNorm(10, tanh)
+        @test layer.activation == tanh_fast
+        layer = BatchNorm(10, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
 end
 
 @testset "GroupNorm" begin
@@ -210,6 +217,13 @@ end
     end
 
     @test_throws AssertionError GroupNorm(5, 2)
+
+    @testset "allow fast activation" begin
+        layer = GroupNorm(10, 2, tanh)
+        @test layer.activation == tanh_fast
+        layer = GroupNorm(10, 2, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
 
     # Deprecated Functionality (remove in v0.5)
     @test_deprecated GroupNorm(4, 2; track_stats=true)
@@ -374,5 +388,12 @@ end
                 end
             end
         end
+    end
+
+    @testset "allow fast activation" begin
+        layer = LayerNorm((3, 1), tanh)
+        @test layer.activation == tanh_fast
+        layer = LayerNorm((3, 1), tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
     end
 end

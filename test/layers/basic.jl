@@ -97,6 +97,13 @@ end
         @test layer.activation == relu
     end
 
+    @testset "allow fast activation" begin
+        layer = Dense(10, 10, tanh)
+        @test layer.activation == tanh_fast
+        layer = Dense(10, 10, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
+
     @testset "dimensions" begin
         layer = Dense(10, 5)
         ps, st = Lux.setup(rng, layer)
@@ -154,6 +161,13 @@ end
 
         @test !haskey(ps, :bias)
         @test layer.activation == relu
+    end
+
+    @testset "allow fast activation" begin
+        layer = Scale(10, 5, tanh)
+        @test layer.activation == tanh_fast
+        layer = Scale(10, 5, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
     end
 
     @testset "dimensions" begin

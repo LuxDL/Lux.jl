@@ -265,6 +265,13 @@ end
         run_JET_tests(layer, x, ps, st)
     end
 
+    @testset "allow fast activation" begin
+        layer = Conv((3, 3), 1 => 1, tanh)
+        @test layer.activation == tanh_fast
+        layer = Conv((3, 3), 1 => 1, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
+
     # Deprecated Functionality (Remove in v0.5)
     @testset "Deprecations" begin
         @test_deprecated layer = Conv((3, 3), 1 => 1; bias=false)
