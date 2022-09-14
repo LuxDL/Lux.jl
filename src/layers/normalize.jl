@@ -31,6 +31,9 @@ slice and normalises the input accordingly.
     will be used to renormalize the input in test phase.
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
 
 ## Inputs
 
@@ -89,8 +92,8 @@ end
 
 function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=ones32,
                    affine::Bool=true, track_stats::Bool=true, epsilon=1.0f-5,
-                   momentum=0.1f0)
-    activation = NNlib.fast_act(activation)
+                   momentum=0.1f0, allow_fast_activation::Bool=true)
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return BatchNorm{affine, track_stats, typeof(activation), typeof(init_bias),
                      typeof(init_scale), typeof(epsilon)}(activation, epsilon, momentum,
                                                           chs, init_bias, init_scale)
@@ -196,6 +199,9 @@ end
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation **(This
     feature has been deprecated and will be removed in v0.5)**
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
 
 ## Inputs
 
@@ -255,9 +261,9 @@ end
 
 function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
                    init_scale=ones32, affine=true, track_stats=missing, epsilon=1.0f-5,
-                   momentum=missing)
+                   momentum=missing, allow_fast_activation::Bool=true)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
-    activation = NNlib.fast_act(activation)
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     # Deprecated Functionality (Remove in v0.5)
     if !ismissing(momentum)
@@ -481,6 +487,9 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
 
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
 
 ## Inputs
 
@@ -509,9 +518,9 @@ struct LayerNorm{affine, F1, N, T, F2, F3, D} <: AbstractExplicitLayer
 end
 
 function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f-5,
-                   dims=Colon(), affine::Bool=true, init_bias=zeros32,
-                   init_scale=ones32) where {N, T}
-    activation = NNlib.fast_act(activation)
+                   dims=Colon(), affine::Bool=true, init_bias=zeros32, init_scale=ones32,
+                   allow_fast_activation::Bool=true) where {N, T}
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return LayerNorm{affine, typeof(activation), N, T, typeof(init_bias),
                      typeof(init_scale), typeof(dims)}(shape, activation, epsilon,
                                                        init_bias, init_scale, dims)

@@ -47,6 +47,9 @@ number of observations in a batch.
               convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
               and `out_chs` must be divisible by `groups`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
 
 ## Inputs
 
@@ -83,7 +86,8 @@ end
 
 function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
               init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
-              groups=1, use_bias::Bool=true, bias::Union{Missing, Bool}=missing) where {N}
+              groups=1, use_bias::Bool=true, bias::Union{Missing, Bool}=missing,
+              allow_fast_activation::Bool=true) where {N}
 
     # Deprecated Functionality (Remove in v0.5)
     if !ismissing(bias)
@@ -99,7 +103,7 @@ function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = calc_padding(Conv, pad, k, dilation, stride)
-    activation = NNlib.fast_act(activation)
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     return Conv{N, use_bias, length(pad), typeof(activation), typeof(init_weight),
                 typeof(init_bias)}(activation, first(ch), last(ch), k, stride, pad,

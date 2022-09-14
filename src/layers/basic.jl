@@ -141,6 +141,9 @@ Create a traditional fully connected layer, whose forward pass is given by:
     (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
 
 ## Input
 
@@ -178,8 +181,9 @@ function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; init_weight=glo
 end
 
 function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
-               init_bias=zeros32, use_bias::Bool=true, bias::Union{Missing, Bool}=missing)
-    activation = NNlib.fast_act(activation)
+               init_bias=zeros32, use_bias::Bool=true, bias::Union{Missing, Bool}=missing,
+               allow_fast_activation::Bool=true)
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     # Deprecated Functionality (Remove in v0.5)
     if !ismissing(bias)
@@ -277,6 +281,9 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
     (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
 
 ## Input
 
@@ -312,8 +319,8 @@ end
 
 function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
                init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
-               bias::Union{Missing, Bool}=missing)
-    activation = NNlib.fast_act(activation)
+               bias::Union{Missing, Bool}=missing, allow_fast_activation::Bool=true)
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     # Deprecated Functionality (Remove in v0.5)
     if !ismissing(bias)

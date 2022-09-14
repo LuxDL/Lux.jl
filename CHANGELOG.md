@@ -1,5 +1,9 @@
 # v0.4
 
+## v0.4.23
+
+  - Introduces `allow_fast_activation` for layers which store activation functions.
+
 ## v0.4.22
 
   - `Chain` supports indexing.

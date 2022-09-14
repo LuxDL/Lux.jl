@@ -21,7 +21,6 @@ jobs:
           - Lux    # Core Framework
           - Boltz  # Prebuilt Models using Lux
         version:
-          - '~1.8.0-0' # merge even if tests fail (until v1.8.0 is released)
           - 'nightly'  # merge even if tests fail
     steps:
       - uses: actions/checkout@v2
