@@ -18,8 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         group:
-          - Lux    # Core Framework
-          - Boltz  # Prebuilt Models using Lux
+          - Lux     # Core Framework
+          - Boltz   # Prebuilt Models using Lux
+          - LuxLib  # Backend of Lux
         version:
           - '1.6'      # JET tests are disabled on 1.6
           - '1.7'
