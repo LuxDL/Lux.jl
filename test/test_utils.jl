@@ -1,4 +1,12 @@
-using ComponentArrays, FiniteDifferences, JET, Lux, Optimisers, Random, Test, Zygote
+using ComponentArrays, FiniteDifferences, Lux, Optimisers, Random, Test, Zygote
+
+try
+    using JET
+catch
+    @warn "JET not not precompiling. All JET tests will be skipped." maxlog=1
+    global test_call(args...; kwargs...) = nothing
+    global test_opt(args...; kwargs...) = nothing
+end
 
 function Base.isapprox(x, y; kwargs...)
     @warn "`isapprox` is not defined for ($(typeof(x)), $(typeof(y))). Using `==` instead."
