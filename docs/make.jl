@@ -1,10 +1,10 @@
-using Documenter, DocumenterMarkdown, Lux, Pkg
+using Documenter, DocumenterMarkdown, Lux, LuxLib, Pkg
 
 deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/Lux.jl.git")
 
 makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
-         modules=[Lux], strict=[
+         modules=[Lux, LuxLib], strict=[
              :doctest,
              :linkcheck,
              :parse_error,

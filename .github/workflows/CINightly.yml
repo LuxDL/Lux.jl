@@ -20,6 +20,7 @@ jobs:
         group:
           - Lux    # Core Framework
           - Boltz  # Prebuilt Models using Lux
+          - LuxLib  # Backend of Lux
         version:
           - 'nightly'  # merge even if tests fail
     steps:
