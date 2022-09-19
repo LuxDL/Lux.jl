@@ -1,9 +1,5 @@
 # Non Differentiable Functions
 ChainRulesCore.@non_differentiable replicate(::Any)
-ChainRulesCore.@non_differentiable update_statistics(::Any, ::Any, ::Any, ::Any, ::Any,
-                                                     ::Any, ::Any)
-ChainRulesCore.@non_differentiable generate_dropout_mask(::Any, ::Any, ::Any, ::Any)
-ChainRulesCore.@non_differentiable _get_reshape_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable glorot_normal(::Any...)
 ChainRulesCore.@non_differentiable glorot_uniform(::Any...)
@@ -12,50 +8,8 @@ ChainRulesCore.@non_differentiable istraining(::Any)
 ChainRulesCore.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable _affine(::Any)
 ChainRulesCore.@non_differentiable _track_stats(::Any)
-ChainRulesCore.@non_differentiable _copy_autodiff_barrier(::Any)
-
-# NNlib Functions
-function ChainRulesCore.rrule(::typeof(_batchnorm), g::CuArray{T}, b::CuArray{T},
-                              x::Union{CuArray{T, 2}, CuArray{T, 4}, CuArray{T, 5}},
-                              running_mean, running_var, momentum, epsilon,
-                              training) where {T <: CUDNNFloat}
-    y = _batchnorm(g, b, x, running_mean, running_var, momentum, epsilon, training)
-    function _batchnorm_pullback(dy)
-        dg, db, dx = ∇batchnorm(g, b, x, unthunk(dy), running_mean, running_var, momentum;
-                                eps=epsilon, training=training)
-        return NoTangent(), dg, db, dx, NoTangent(), NoTangent(), NoTangent(), NoTangent(),
-               NoTangent()
-    end
-    return y, _batchnorm_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(dropout), rng::AbstractRNG, x::AbstractArray{T, N},
-                              p::T, q::T, dims, t::Val{training}) where {T, N, training}
-    y, mask, rng = dropout(rng, x, p, q, dims, t)
-    function dropout_pullback((dy, dmask, drng))
-        return (NoTangent(), NoTangent(), dy .* mask, NoTangent(), NoTangent(), NoTangent(),
-                NoTangent())
-    end
-    return (y, mask, rng), dropout_pullback
-end
 
 # Utilities
-
-function ChainRulesCore.rrule(::typeof(_reshape_into_proper_shape), ::Nothing, y)
-    function _reshape_into_proper_shape_pullback(dx)
-        return NoTangent(), NoTangent(), NoTangent()
-    end
-    return nothing, _reshape_into_proper_shape_pullback
-end
-
-function ChainRulesCore.rrule(::typeof(_reshape_into_proper_shape), x, y)
-    res = _reshape_into_proper_shape(x, y)
-    function _reshape_into_proper_shape_pullback(dx)
-        return NoTangent(), reshape(dx, size(x)), NoTangent()
-    end
-    return res, _reshape_into_proper_shape_pullback
-end
-
 function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{F1},
                               nt2::NamedTuple{F2}) where {F1, F2}
     y = merge(nt1, nt2)

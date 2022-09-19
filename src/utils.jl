@@ -142,25 +142,6 @@ end
 # Getting typename
 get_typename(::T) where {T} = Base.typename(T).wrapper
 
-# For Normalization
-@inline @generated _safe_vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
-
-@inline @inbounds function _get_reshape_dims(sx::NTuple{N, <:Int},
-                                             ly::Int)::typeof(sx) where {N}
-    if ly == sx[N - 1]
-        return ntuple(i -> i == N - 1 ? ly : 1, N)
-    elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
-        return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
-    else
-        error("Invalid Dimensions")
-    end
-end
-
-@inline _reshape_into_proper_shape(x::Nothing, y)::Nothing = x
-@inline _reshape_into_proper_shape(x, y)::typeof(y) = reshape(x,
-                                                              _get_reshape_dims(size(y),
-                                                                                length(x)))
-
 # RNN Utilities
 @inline _gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
 @inline _gate(x::AbstractVector, h::Int, n::Int) = view(x, _gate(h, n))
@@ -190,10 +171,20 @@ Split up `x` into `N` equally sized chunks (along dimension `1`).
 # Val utilities
 get_known(::Val{T}) where {T} = T
 
-# Copy and don't allow gradient propagation
-_copy_autodiff_barrier(x) = copy(x)
-
 # Indexing into NamedTuple
 function _index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
     return NamedTuple{fields[idxs]}(values(nt)[idxs])
+end
+
+# If doesn't have a property, return nothing
+@generated function _getproperty(x::NamedTuple{names}, ::Val{v}) where {names, v}
+    if v in names
+        return :(x.$v)
+    else
+        return :(nothing)
+    end
+end
+
+function _getproperty(x::ComponentArray, ::Val{prop}) where {prop}
+    return prop in propertynames(x) ? getproperty(x, prop) : nothing
 end

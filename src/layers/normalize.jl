@@ -21,19 +21,19 @@ slice and normalises the input accordingly.
 
 ## Keyword Arguments
 
-  - If `affine=true`, it also applies  a shift and a rescale to the input through to
-    learnable per-channel bias and scale parameters.
-    
-      + `init_bias`: Controls how the `bias` is initiliazed
-      + `init_scale`: Controls how the `scale` is initiliazed
-
   - If `track_stats=true`, accumulates mean and variance statistics in training phase that
     will be used to renormalize the input in test phase.
+
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation
   - `allow_fast_activation`: If `true`, then certain activations can be approximated with
     a faster version. The new activation function will be given by
     `NNlib.fast_act(activation)`
+  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+    learnable per-channel bias and scale parameters.
+    
+      + `init_bias`: Controls how the `bias` is initiliazed
+      + `init_scale`: Controls how the `scale` is initiliazed
 
 ## Inputs
 
@@ -103,7 +103,7 @@ function initialparameters(rng::AbstractRNG, l::BatchNorm)
     if _affine(l)
         return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
     else
-        return (scale=nothing, bias=nothing)
+        return NamedTuple()
     end
 end
 
@@ -112,53 +112,26 @@ function initialstates(rng::AbstractRNG, l::BatchNorm)
         return (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs),
                 training=Val(true))
     else
-        return (running_mean=nothing, running_var=nothing, training=Val(true))
+        return (; training=Val(true))
     end
 end
 
 parameterlength(l::BatchNorm) = _affine(l) ? (l.chs * 2) : 0
 statelength(l::BatchNorm) = (_track_stats(l) ? 2 * l.chs : 0) + 1
 
-function (BN::BatchNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    x_normalized, xmean, xvar = normalization(x, st.running_mean, st.running_var, ps.scale,
-                                              ps.bias, BN.activation,
-                                              collect([1:(N - 2); N]), st.training,
-                                              BN.momentum, BN.epsilon)
+function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
+    y, stats = LuxLib.batchnorm(x, _getproperty(ps, Val(:scale)),
+                                _getproperty(ps, Val(:bias)),
+                                _getproperty(st, Val(:running_mean)),
+                                _getproperty(st, Val(:running_var)); BN.momentum,
+                                BN.epsilon, st.training)
 
-    st = merge(st, (running_mean=xmean, running_var=xvar))
-
-    return x_normalized, st
-end
-
-function _batchnorm(scale, bias, x, running_mean, running_var, momentum, epsilon, training)
-    return batchnorm(scale, bias, x, running_mean, running_var, momentum; eps=epsilon,
-                     training=training)
-end
-
-function (BN::BatchNorm)(x::Union{CuArray{T, 2}, CuArray{T, 4}, CuArray{T, 5}}, ps,
-                         st::NamedTuple) where {T <: Union{Float32, Float64}}
-    # NNlibCUDA silently updates running_mean and running_var so copying them
-    if istraining(st)
-        running_mean2 = _track_stats(BN) ? _copy_autodiff_barrier(st.running_mean) : nothing
-        running_var2 = _track_stats(BN) ? _copy_autodiff_barrier(st.running_var) : nothing
-    else
-        if _track_stats(BN)
-            running_mean2 = _copy_autodiff_barrier(st.running_mean)
-            running_var2 = _copy_autodiff_barrier(st.running_var)
-        else
-            N = ndims(x)
-            reduce_dims = collect([1:(N - 2); N])
-            running_mean2 = mean(x; dims=reduce_dims)
-            running_var2 = var(x; mean=running_mean2, dims=reduce_dims, corrected=false)
-        end
-    end
-    res = BN.activation.(_batchnorm(_affine(BN) ? ps.scale : nothing,
-                                    _affine(BN) ? ps.bias : nothing, x, running_mean2,
-                                    running_var2, BN.momentum, BN.epsilon, istraining(st)))
     if _track_stats(BN)
-        st = merge(st, (running_mean=running_mean2, running_var=running_var2))
+        @set! st.running_mean = stats.running_mean
+        @set! st.running_var = stats.running_var
     end
-    return res, st
+
+    return BN.activation.(y), st
 end
 
 function Base.show(io::IO, l::BatchNorm)
@@ -187,21 +160,21 @@ end
 
 ## Keyword Arguments
 
-  - If `affine=true`, it also applies  a shift and a rescale to the input through to
-    learnable per-channel bias and scale parameters.
-    
-      + `init_bias`: Controls how the `bias` is initiliazed
-      + `init_scale`: Controls how the `scale` is initiliazed
-
   - If `track_stats=true`, accumulates mean and variance statistics in training phase that
     will be used to renormalize the input in test phase. **(This feature has been
     deprecated and will be removed in v0.5)**
+
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation **(This
     feature has been deprecated and will be removed in v0.5)**
   - `allow_fast_activation`: If `true`, then certain activations can be approximated with
     a faster version. The new activation function will be given by
     `NNlib.fast_act(activation)`
+  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+    learnable per-channel bias and scale parameters.
+    
+      + `init_bias`: Controls how the `bias` is initiliazed
+      + `init_scale`: Controls how the `scale` is initiliazed
 
 ## Inputs
 
@@ -300,7 +273,7 @@ function initialstates(rng::AbstractRNG, l::GroupNorm)
         (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups),
          training=Val(true))
     else
-        (running_mean=nothing, running_var=nothing, training=Val(true))
+        (; training=Val(true))
     end
 end
 
@@ -308,17 +281,19 @@ parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 statelength(l::GroupNorm) = (_track_stats(l) ? 2 * l.groups : 0) + 1
 
-function (GN::GroupNorm)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    sz = size(x)
-    x_ = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ GN.groups, GN.groups, sz[N])
+function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
+    y, stats = LuxLib.groupnorm(x, _getproperty(ps, Val(:scale)),
+                                _getproperty(ps, Val(:bias)),
+                                _getproperty(st, Val(:running_mean)),
+                                _getproperty(st, Val(:running_var)); GN.groups, GN.epsilon,
+                                GN.momentum, st.training)
 
-    x_normalized, xmean, xvar = normalization(x_, st.running_mean, st.running_var, ps.scale,
-                                              ps.bias, GN.activation, collect(1:(N - 1)),
-                                              st.training, GN.momentum, GN.epsilon)
+    if _track_stats(GN)
+        @set! st.running_mean = stats.running_mean
+        @set! st.running_var = stats.running_var
+    end
 
-    st = merge(st, (running_mean=xmean, running_var=xvar))
-
-    return reshape(x_normalized, sz), st
+    return GN.activation.(y), st
 end
 
 function Base.show(io::IO, l::GroupNorm)
@@ -479,6 +454,9 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
 ## Keyword Arguments
 
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
   - `epsilon`: a value added to the denominator for numerical stability.
   - `dims`: Dimensions to normalize the array over.
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
@@ -486,10 +464,6 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
-
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 ## Inputs
 
@@ -508,7 +482,7 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
       + `bias`: Bias of shape `(shape..., 1)`
       + `scale`: Scale of shape `(shape..., 1)`
 """
-struct LayerNorm{affine, F1, N, T, F2, F3, D} <: AbstractExplicitLayer
+struct LayerNorm{affine, F1, N, T, F2, F3, D} <: AbstractNormalizationLayer{affine, false}
     shape::NTuple{N, Int}
     activation::F1
     epsilon::T
@@ -526,8 +500,8 @@ function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f
                                                        init_bias, init_scale, dims)
 end
 
-function initialparameters(rng::AbstractRNG, ln::LayerNorm{affine}) where {affine}
-    if affine
+function initialparameters(rng::AbstractRNG, ln::LayerNorm)
+    if _affine(ln)
         return (bias=ln.init_bias(rng, ln.shape..., 1),
                 scale=ln.init_scale(rng, ln.shape..., 1))
     else
@@ -535,36 +509,15 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm{affine}) where {affin
     end
 end
 
-@generated function (l::LayerNorm{affine, F1})(x::AbstractArray, ps,
-                                               st::NamedTuple) where {affine, F1}
-    calls = []
-    push!(calls, :(_mean = mean(x; dims=l.dims);
-                   _var = var(x; corrected=false, mean=_mean)))
-
-    if affine
-        if F1 == typeof(identity)
-            push!(calls,
-                  :(return ps.scale .* (x .- _mean) ./ sqrt.(_var .+ l.epsilon) .+ ps.bias,
-                           st))
-        else
-            push!(calls,
-                  :(return l.activation.(ps.scale .* (x .- _mean) ./
-                                         sqrt.(_var .+ l.epsilon) .+ ps.bias), st))
-        end
-    else
-        if F1 == typeof(identity)
-            push!(calls, :(return (x .- _mean) ./ sqrt.(_var .+ l.epsilon), st))
-        else
-            push!(calls,
-                  :(return l.activation.((x .- _mean) ./ sqrt.(_var .+ l.epsilon)), st))
-        end
-    end
-    return Expr(:block, calls...)
+function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
+    y = l.activation.(LuxLib.layernorm(x, _getproperty(ps, Val(:scale)),
+                                       _getproperty(ps, Val(:bias)); l.dims, l.epsilon))
+    return y, st
 end
 
-function Base.show(io::IO, l::LayerNorm{affine}) where {affine}
+function Base.show(io::IO, l::LayerNorm)
     print(io, "LayerNorm($(l.shape)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    print(io, ", affine=$(affine), dims=$(l.dims)")
+    print(io, ", affine=$(_affine(l)), dims=$(l.dims)")
     return print(io, ")")
 end

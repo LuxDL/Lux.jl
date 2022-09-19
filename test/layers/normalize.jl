@@ -45,7 +45,7 @@ Random.seed!(rng, 0)
     x_ = m(x, ps, st_)[1]
     @test isapprox(x_[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
-    @inferred m(x, ps, st)
+    @inferred first(m(x, ps, st))
 
     run_JET_tests(m, x, ps, st)
 
@@ -57,7 +57,7 @@ Random.seed!(rng, 0)
         x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
         println(m)
         ps, st = Lux.setup(rng, m)
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -79,7 +79,7 @@ Random.seed!(rng, 0)
         @test isapprox(y,
                        sigmoid.((x .- st_.running_mean) ./
                                 sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -97,7 +97,7 @@ Random.seed!(rng, 0)
         st = Lux.testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
     end
 
@@ -165,7 +165,7 @@ end
           sqrt.(reshape(st_.running_var, 1, 1, 2, 1) .+ 1.0f-5)
     @test y≈reshape(out, size(x)) atol=1.0e-5
 
-    @inferred m(x, ps, st)
+    @inferred first(m(x, ps, st))
     run_JET_tests(m, x, ps, st)
     test_gradient_correctness_fdm(ps -> sum(first(m(x, ps, st))), ps; atol=1.0f-3,
                                   rtol=1.0f-3)
@@ -175,7 +175,7 @@ end
         x = randn(rng, Float32, 3, 2, 1)
         println(m)
         ps, st = Lux.setup(rng, m)
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -194,7 +194,7 @@ end
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
 
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -212,7 +212,7 @@ end
         st = Lux.testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
     end
 
@@ -353,7 +353,7 @@ end
             println(ln)
             ps, st = Lux.setup(rng, ln)
 
-            @inferred ln(x, ps, st)
+            @inferred first(ln(x, ps, st))
             y, st_ = ln(x, ps, st)
 
             @test isapprox(mean(y), 0; atol=1.0f-3, rtol=1.0f-3)
@@ -374,7 +374,7 @@ end
                 println(ln)
                 ps, st = Lux.setup(rng, ln)
 
-                @inferred ln(x, ps, st)
+                @inferred first(ln(x, ps, st))
                 y, st_ = ln(x, ps, st)
 
                 run_JET_tests(ln, x, ps, st)

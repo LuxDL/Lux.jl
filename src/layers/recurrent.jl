@@ -338,7 +338,7 @@ function (lstm::LSTMCell{true})((x,
                                  (hidden_state, memory))::Tuple{<:AbstractMatrix,
                                                                 Tuple{<:AbstractMatrix,
                                                                       <:AbstractMatrix}},
-                                ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                                ps, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
@@ -350,7 +350,7 @@ function (lstm::LSTMCell{false})((x,
                                   (hidden_state, memory))::Tuple{<:AbstractMatrix,
                                                                  Tuple{<:AbstractMatrix,
                                                                        <:AbstractMatrix}},
-                                 ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                                 ps, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
