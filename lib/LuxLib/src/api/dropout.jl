@@ -1,4 +1,4 @@
-"""
+@doc doc"""
     dropout(rng::AbstractRNG, x, p, ::Val{training}; dims, invp)
     dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask} invp; dims)
 

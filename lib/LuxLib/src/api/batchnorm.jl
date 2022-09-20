@@ -23,7 +23,8 @@ accordingly.
 
 ## Returns
 
-Normalized Array of same size as `x`.
+Normalized Array of same size as `x`. And a Named Tuple containing the updated running
+mean and variance.
 
 ## Performance Considerations
 
