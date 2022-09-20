@@ -40,7 +40,7 @@ struct SkipConnection{T <: AbstractExplicitLayer, F} <:
 end
 
 @inline function (skip::SkipConnection)(x, ps, st::NamedTuple)
-    mx, st = skip.layers(x, ps, st)
+    mx, st = Lux.apply(skip.layers, x, ps, st)
     return skip.connection(mx, x), st
 end
 
@@ -109,9 +109,10 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = []
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(getinput(i)),
-                                                                        ps.$(names[i]),
-                                                                        st.$(names[i])))
+            [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
+                                                               $(getinput(i)),
+                                                               ps.$(names[i]),
+                                                               st.$(names[i])))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
@@ -199,8 +200,9 @@ end
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])(x, ps.$(names[i]),
-                                                                        st.$(names[i])))
+            [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]), x,
+                                                               ps.$(names[i]),
+                                                               st.$(names[i])))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
@@ -291,9 +293,10 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(y_symbols[N + 1]),
-                                                                        ps.$(names[i]),
-                                                                        st.$(names[i]));
+            [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
+                                                               $(y_symbols[N + 1]),
+                                                               ps.$(names[i]),
+                                                               st.$(names[i]));
                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
@@ -432,9 +435,10 @@ end
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = layers.$(fields[i])($(x_symbols[i]),
-                                                                             ps.$(fields[i]),
-                                                                             st.$(fields[i])))
+    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = Lux.apply(layers.$(fields[i]),
+                                                                   $(x_symbols[i]),
+                                                                   ps.$(fields[i]),
+                                                                   st.$(fields[i])))
              for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N + 1]), st))
