@@ -32,10 +32,12 @@ Lux.Training.compute_gradients
 Lux.Training.apply_gradients
 ```
 
-### Why VJP rules when we already have [AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl/)?
+### Why VJP rules ?
 
-In the long term, the goal is to just use AD.jl directly. However, there are current
-refactors being planned (See [this issue](https://github.com/EnzymeAD/Enzyme.jl/issues/349#issuecomment-1144514285)).
+In the long term, the goal is to just use
+[AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl/)?
+directly. However, there are current refactors being planned (See
+[this issue](https://github.com/EnzymeAD/Enzyme.jl/issues/349#issuecomment-1144514285)).
 Once the package is stable and we have the necessary backend support, we will be dropping
 the VJP rules in this module.
 

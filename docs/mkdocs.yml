@@ -105,6 +105,7 @@ nav:
       - "Lux Interface": "manual/interface.md"
       - "Migrating from Flux to Lux": "manual/migrate_from_flux.md"
       - "Freezing Model Parameters": "manual/freezing_parameters.md"
+      - "Dispatch on Custom Inputs": "manual/dispatch_custom_inputs.md"
   - "API Reference":
       - "Layers": "api/layers.md"
       - "Functional": "api/functional.md"
