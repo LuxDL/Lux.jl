@@ -2,13 +2,11 @@
 
 ## Which function should participate in dispatch?
 
-  * Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient,
-  since it requires the user to define a new method for every layer type.
+  * Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient, since it requires the user to define a new method for every layer type.
 
   * `(::AbstractExplicitLayer)(x::MyInputType, ps, st::NamedTuple)` doesn't work.
 
-  * Instead, we need to define the dispatch on
-  `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
+  * Instead, we need to define the dispatch on `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
 
 ## Concrete Example
 
