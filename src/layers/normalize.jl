@@ -417,9 +417,9 @@ end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
-function (wn::WeightNorm)(x, ps, s::NamedTuple)
+function (wn::WeightNorm)(x, ps, st::NamedTuple)
     _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
-    return wn.layer(x, merge(_ps, ps.unnormalized), s)
+    return Lux.apply(wn.layer, x, merge(_ps, ps.unnormalized), st)
 end
 
 @inbounds @generated function _get_normalized_parameters(::WeightNorm{which_params},
