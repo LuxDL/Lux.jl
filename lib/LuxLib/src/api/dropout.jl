@@ -1,6 +1,6 @@
 @doc doc"""
-    dropout(rng::AbstractRNG, x, p, ::Val{training}; dims, invp)
-    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask} invp; dims)
+    dropout(rng::AbstractRNG, x, p, ::Val{training}; dims, invp=inv(p))
+    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}; dims, invp=inv(p))
 
 Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [1].
 
