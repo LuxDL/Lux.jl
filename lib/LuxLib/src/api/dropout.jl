@@ -75,3 +75,6 @@ end
     y .= _dropout_kernel.(y, p, invp)
     return y
 end
+
+CRC.@non_differentiable _generate_dropout_mask(::Any...)
+CRC.@non_differentiable _dropout_shape(::Any...)
