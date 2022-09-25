@@ -1,6 +1,14 @@
-using CUDA, FiniteDifferences, JET, LuxLib, Test, Zygote
+using CUDA, FiniteDifferences, LuxLib, Test, Zygote
 
 const LUXLIB_TESTING_MODE = get(ENV, "LUXLIB_TESTING_MODE", :all)
+
+try
+    using JET
+catch
+    @warn "JET not not precompiling. All JET tests will be skipped." maxlog=1
+    global test_call(args...; kwargs...) = nothing
+    global test_opt(args...; kwargs...) = nothing
+end
 
 function cpu_testing()
     return LUXLIB_TESTING_MODE == :all || LUXLIB_TESTING_MODE == :cpu
