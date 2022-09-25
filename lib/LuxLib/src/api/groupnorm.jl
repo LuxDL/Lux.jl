@@ -102,7 +102,7 @@ function groupnorm(x::AbstractArray{<:Real, N},
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
                             "channels (N - 1 dim of the input array)."))
     end
-    if size(x, 3) % groups != 0
+    if size(x, N - 1) % groups != 0
         throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
                             "number of groups $groups."))
     end
