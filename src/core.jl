@@ -78,8 +78,7 @@ function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
 end
 
 """
-    apply(model::AbstractExplicitLayer, x, ps::Union{ComponentArray,NamedTuple},
-          st::NamedTuple)
+    apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
 
 Simply calls `model(x, ps, st)`
 """

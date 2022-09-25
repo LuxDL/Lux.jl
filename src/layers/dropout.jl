@@ -49,8 +49,8 @@ function Dropout(p; dims=:)
 end
 
 function (d::Dropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, _, rng = dropout(st.rng, x, d.p, d.q, d.dims, st.training)
-    return y, merge(st, (rng=rng,))
+    y, _, rng = LuxLib.dropout(st.rng, x, d.p, st.training; invp=d.q, d.dims)
+    return y, merge(st, (; rng))
 end
 
 function Base.show(io::IO, d::Dropout)
@@ -114,9 +114,10 @@ function VariationalHiddenDropout(p; dims=:)
 end
 
 function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.q, d.dims, st.training,
-                                        st.update_mask)
-    return y, merge(st, (mask=mask, rng=rng, update_mask=update_mask))
+    _mask = st.mask === nothing ? x : st.mask
+    y, mask, rng = LuxLib.dropout(st.rng, x, _mask, d.p, st.training, st.update_mask;
+                                  invp=d.q, d.dims)
+    return y, merge(st, (; mask, rng, update_mask=Val(false)))
 end
 
 function Base.show(io::IO, d::VariationalHiddenDropout)

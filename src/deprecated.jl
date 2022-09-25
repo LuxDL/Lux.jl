@@ -130,3 +130,60 @@ Computes `x .* y`. Dispatches to CUDNN if possible.
                  " v0.5. Use `x .* y` instead.", :elementwise_mul)
     return x .* y
 end
+
+# Dropout
+"""
+    dropout(rng::AbstractRNG, x, p, q, dims, ::Val{training})
+    dropout(rng::AbstractRNG, x, mask, p, q, dims, t::Val{training}, ::Val{update_mask})
+
+If `training` then dropout is applied on `x` with probability `p` along `dims`. If `mask` is
+passed it is used if `update_mask` is false. If `update_mask` is true then the mask is
+generated and used.
+
+!!! warning
+    
+    This function has been deprecated and will be removed in v0.5. Use `LuxLib.dropout`
+    instead.
+"""
+@inline function dropout(rng::AbstractRNG, x, p, q, dims, t::Val)
+    # Deprecated Functionality (Remove in v0.5)
+    Base.depwarn("`Lux.dropout` has been deprecated and will be removed in v0.5. Use " *
+                 "`LuxLib.dropout` instead.", :dropout)
+
+    return LuxLib.dropout(rng, x, p, t; invp=q, dims)
+end
+
+@inline function dropout(rng::AbstractRNG, x, mask, p, q, dims, t::Val, um::Val)
+    # Deprecated Functionality (Remove in v0.5)
+    Base.depwarn("`Lux.dropout` has been deprecated and will be removed in v0.5. Use " *
+                 "`LuxLib.dropout` instead.", :dropout)
+
+    return (LuxLib.dropout(rng, x, mask, p, t, um; invp=q, dims)..., Val(false))
+end
+
+# Normalization Implementation
+"""
+    normalization(x, running_mean, running_var, scale, bias, activation, reduce_dims,
+                  ::Val{training}, momentum, epsilon)
+
+Performs BatchNorm/GroupNorm based on input configuration
+
+!!! warning
+    
+    This function has been deprecated and will be removed in v0.5. Use
+    `LuxLib.(batch/group)norm` instead.
+"""
+@inline function normalization(x::AbstractArray{T, N},
+                               running_mean::Union{Nothing, AbstractVector{T}},
+                               running_var::Union{Nothing, AbstractVector{T}},
+                               scale::Union{Nothing, AbstractVector{T}},
+                               bias::Union{Nothing, AbstractVector{T}}, activation,
+                               reduce_dims, t::Val, momentum::T=T(0.1),
+                               epsilon::T=T(1e-5)) where {T, N}
+    # Deprecated Functionality (Remove in v0.5)
+    Base.depwarn("`Lux.normalization` has been deprecated and will be removed in v0.5. " *
+                 "Use `LuxLib.(batch/group)norm` instead.", :normalization)
+
+    return activation.(LuxLib._normalization(x, running_mean, running_var, scale, bias,
+                                             reduce_dims, t, momentum, epsilon))
+end

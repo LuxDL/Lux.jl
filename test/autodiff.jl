@@ -30,16 +30,3 @@ end
 
     @test gs_x_1 == gs_x_2
 end
-
-@testset "_reshape_into_proper_shape" begin
-    x = randn(rng, Float32, 3, 2)
-    y = randn(rng, Float32, 2, 2, 6, 2)
-
-    @test size(Lux._reshape_into_proper_shape(x, y)) == (1, 1, 6, 1)
-    @inferred Lux._reshape_into_proper_shape(x, y)
-
-    gs_1 = Zygote.gradient(x -> sum(Lux._reshape_into_proper_shape(x, y)), x)[1]
-    gs_2 = Zygote.gradient(x -> sum(reshape(x, (1, 1, 6, 1))), x)[1]
-
-    @test gs_1 == gs_2
-end

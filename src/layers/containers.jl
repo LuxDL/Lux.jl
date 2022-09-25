@@ -404,7 +404,7 @@ function _flatten_model(layers::Union{AbstractVector, Tuple})
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-            if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
+            if !hasmethod(f, (Any, Any, NamedTuple))
                 if f === identity
                     continue
                 else
