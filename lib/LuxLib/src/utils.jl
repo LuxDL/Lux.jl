@@ -7,6 +7,7 @@ else
     # KA.get_device is not present in <= v0.7 but that is what works on julia 1.6
     get_device(x::CuArray) = CUDADevice()
     get_device(x::Array) = CPU()
+    get_device(x::SubArray) = CPU()
     function get_device(x)
         throw(ArgumentError("get_device not implemented for $(typeof(x)). This is an" *
                             "undesirable codepath. Please use julia 1.7+ for more " *
