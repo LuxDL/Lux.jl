@@ -9,7 +9,7 @@ Random.seed!(rng, 0)
     m = BatchNorm(2)
     x = [1.0f0 3.0f0 5.0f0
          2.0f0 4.0f0 6.0f0]
-    println(m)
+    display(m)
     ps, st = Lux.setup(rng, m)
 
     @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -55,7 +55,7 @@ Random.seed!(rng, 0)
     for affine in (true, false)
         m = BatchNorm(2; affine, track_stats=false)
         x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
@@ -72,7 +72,7 @@ Random.seed!(rng, 0)
         m = BatchNorm(2, sigmoid; affine)
         x = [1.0f0 3.0f0 5.0f0
              2.0f0 4.0f0 6.0f0]
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
@@ -92,7 +92,7 @@ Random.seed!(rng, 0)
 
         m = BatchNorm(32; affine)
         x = randn(Float32, 416, 416, 32, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         m(x, ps, st)
@@ -117,7 +117,7 @@ end
     sizes = (3, 4, 2)
     x = reshape(collect(1:prod(sizes)), sizes)
 
-    println(m)
+    display(m)
     x = Float32.(x)
     ps, st = Lux.setup(rng, m)
     @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -173,7 +173,7 @@ end
     for affine in (true, false)
         m = GroupNorm(2, 2; affine, track_stats=false)
         x = randn(rng, Float32, 3, 2, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
@@ -189,7 +189,7 @@ end
         # with activation function
         m = GroupNorm(2, 2, sigmoid; affine)
         x = randn(rng, Float32, 3, 2, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
@@ -207,7 +207,7 @@ end
 
         m = GroupNorm(32, 16; affine)
         x = randn(rng, Float32, 416, 416, 32, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         m(x, ps, st)
@@ -248,7 +248,7 @@ end
         c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(c, (:weight, :bias))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -257,7 +257,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -266,7 +266,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight, :bias), (2, 2))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -275,7 +275,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight,), (2,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -288,7 +288,7 @@ end
         d = Dense(3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(d, (:weight, :bias))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -297,7 +297,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -306,7 +306,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight, :bias), (2, 2))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -315,7 +315,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight,), (2,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -350,7 +350,7 @@ end
     for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
         for affine in (true, false)
             ln = LayerNorm(bshape; affine)
-            println(ln)
+            display(ln)
             ps, st = Lux.setup(rng, ln)
 
             @inferred first(ln(x, ps, st))
@@ -371,7 +371,7 @@ end
 
             for act in (sigmoid, tanh)
                 ln = LayerNorm(bshape, act; affine)
-                println(ln)
+                display(ln)
                 ps, st = Lux.setup(rng, ln)
 
                 @inferred first(ln(x, ps, st))

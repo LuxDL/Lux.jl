@@ -8,6 +8,8 @@ ChainRulesCore.@non_differentiable istraining(::Any)
 ChainRulesCore.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 ChainRulesCore.@non_differentiable _affine(::Any)
 ChainRulesCore.@non_differentiable _track_stats(::Any)
+ChainRulesCore.@non_differentiable _conv_transpose_dims(::Any...)
+ChainRulesCore.@non_differentiable _calc_padding(::Any...)
 
 # Utilities
 function ChainRulesCore.rrule(::typeof(merge), nt1::NamedTuple{F1},

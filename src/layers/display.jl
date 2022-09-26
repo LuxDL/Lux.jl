@@ -37,6 +37,10 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
+        elseif obj isa Maxout
+            for k in Base.keys(obj)
+                _big_show(io, obj.layers[k], indent + 4, k)
+            end
         else
             if children isa NamedTuple
                 for (k, c) in pairs(children)

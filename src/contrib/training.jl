@@ -10,7 +10,7 @@ import Optimisers, Random, Setfield, Zygote
 
 Training State containing:
 
-  - `model`: `Lux`` model.
+  - `model`: `Lux` model.
   - `parameters`: Trainable Variables of the `model`.
   - `states`: Non-trainable Variables of the `model`.
   - `optimizer_state`: Optimizer State.

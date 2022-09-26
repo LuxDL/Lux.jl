@@ -16,6 +16,8 @@ SkipConnection
 
 ```@docs
 Conv
+ConvTranspose
+CrossCor
 ```
 
 ## Dropout Layers
@@ -50,7 +52,9 @@ RNNCell
 ## Linear Layers
 
 ```@docs
+Bilinear
 Dense
+Embedding
 Scale
 ```
 
@@ -59,6 +63,7 @@ Scale
 ```@docs
 ActivationFunction
 FlattenLayer
+Maxout
 NoOpLayer
 ReshapeLayer
 SelectDim

@@ -8,7 +8,7 @@ Random.seed!(rng, 0)
 @testset "Miscellaneous Layers" begin
     @testset "Reshape Layer" begin
         layer = ReshapeLayer((2, 3))
-        println(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer)
         x = randn(rng, 6, 3)
 
@@ -20,7 +20,7 @@ Random.seed!(rng, 0)
 
     @testset "Flatten Layer" begin
         layer = FlattenLayer()
-        println(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer)
         x = randn(rng, 6, 3, 2)
 
@@ -32,7 +32,7 @@ Random.seed!(rng, 0)
 
     @testset "NoOpLayer" begin
         layer = NoOpLayer()
-        println(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer)
         x = (x=2, b=5) # Something totally arbitrary
 
@@ -46,7 +46,7 @@ Random.seed!(rng, 0)
 
     @testset "SelectDim Layer" begin
         layer = SelectDim(3, 1)
-        println(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer)
         x = randn(rng, 6, 4, 3, 2)
 
@@ -58,7 +58,7 @@ Random.seed!(rng, 0)
 
     @testset "WrappedFunction" begin
         layer = WrappedFunction(x -> x .* x)
-        println(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer)
         x = randn(rng, 6, 4, 3, 2)
 
@@ -70,7 +70,7 @@ Random.seed!(rng, 0)
 
     @testset "ActivationFunction" begin
         layer = ActivationFunction(tanh)
-        println(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer)
         x = randn(rng, 6, 4, 3, 2)
 
@@ -206,4 +206,113 @@ end
         @test_deprecated Scale(10, 100, relu; bias=true)
         @test_throws ArgumentError Scale(10, 100, relu; bias=false, use_bias=false)
     end
+end
+
+@testset "Bilinear" begin
+    @testset "SkipConnection recombinator" begin
+        d = Dense(2 => 2)
+        display(d)
+        b = Bilinear((2, 2) => 3)
+        display(b)
+        layer = SkipConnection(d, b)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, Float32, 2, 1)
+
+        @test size(layer(x, ps, st)[1]) == (3, 1)
+        @inferred layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+
+        d = Dense(2 => 2)
+        display(d)
+        b = Bilinear((2, 2) => 3; use_bias=false)
+        display(b)
+        layer = SkipConnection(d, b)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, Float32, 2, 1)
+
+        @test size(layer(x, ps, st)[1]) == (3, 1)
+        @inferred layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    @testset "Two-streams zero sum" begin
+        x = zeros(Float32, 2, 1)
+        y = zeros(Float32, 1, 1)
+        layer = Bilinear((2, 1) => 3)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer((x, y), ps, st)[1]) == (3, 1)
+        @test sum(abs2, layer((x, y), ps, st)[1]) == 0.0f0
+        @inferred layer((x, y), ps, st)
+        run_JET_tests(layer, (x, y), ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), (x, y), ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    @testset "Inner interactions" begin
+        x = randn(Float32, 2, 1)
+        layer = Bilinear((2, 2) => 3)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer(x, ps, st)[1]) == (3, 1)
+        @inferred layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+
+        x = randn(Float32, 2, 1)
+        layer = Bilinear(2 => 3)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer(x, ps, st)[1]) == (3, 1)
+        @inferred layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+end
+
+@testset "Embedding" begin
+    vocab_size, embed_size = 10, 4
+    layer = Embedding(vocab_size => embed_size)
+    display(layer)
+    ps, st = Lux.setup(rng, layer)
+
+    @test size(ps.weight) == (embed_size, vocab_size)
+
+    x = rand(1:vocab_size, 1)[1]
+    y, st_ = layer(x, ps, st)
+    @test size(layer(x, ps, st)[1]) == (embed_size,)
+    @test y == ps.weight[:, x]
+    @inferred layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm(ps -> sum(layer(x, ps, st)[1]), ps; atol=1.0f-3,
+                                  rtol=1.0f-3)
+
+    x = rand(1:vocab_size, 3)
+    y, st_ = layer(x, ps, st)
+    @test y isa Matrix{Float32}
+    @test y == ps.weight[:, x]
+    @inferred layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm(ps -> sum(layer(x, ps, st)[1]), ps; atol=1.0f-3,
+                                  rtol=1.0f-3)
+
+    x = rand(1:vocab_size, 3, 4)
+    y, st_ = layer(x, ps, st)
+    @test y isa Array{Float32, 3}
+    @test size(y) == (embed_size, 3, 4)
+    @inferred layer(x, ps, st)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm(ps -> sum(layer(x, ps, st)[1]), ps; atol=1.0f-3,
+                                  rtol=1.0f-3)
 end

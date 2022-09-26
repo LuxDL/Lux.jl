@@ -368,3 +368,180 @@ end
 function (d::Scale{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
     return ps.weight .* x, st
 end
+
+"""
+    Bilinear((in1_dims, in2_dims) => out, activation=identity; init_weight=glorot_uniform,
+             init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
+    Bilinear(in12_dims => out, activation=identity; init_weight=glorot_uniform,
+             init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
+
+Create a fully connected layer between two inputs and an output, and otherwise similar to
+[`Dense`](@ref). Its output, given vectors `x` & `y`, is another vector `z` with, for all
+`i in 1:out`:
+
+`z[i] = activation(x' * W[i, :, :] * y + bias[i])`
+
+If `x` and `y` are matrices, then each column of the output `z = B(x, y)` is of this form,
+with `B` the Bilinear layer.
+
+## Arguments
+
+  - `in1_dims`: number of input dimensions of `x`
+  - `in2_dims`: number of input dimensions of `y`
+  - `in12_dims`: If specified, then `in1_dims = in2_dims = in12_dims`
+  - `out`: number of output dimensions
+  - `activation`: activation function
+
+## Keyword Arguments
+
+  - `init_weight`: initializer for the weight matrix
+    (`weight = init_weight(rng, out_dims, in1_dims, in2_dims)`)
+  - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
+  - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
+  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
+    a faster version. The new activation function will be given by
+    `NNlib.fast_act(activation)`
+
+## Input
+
+  - A 2-Tuple containing
+    
+      + `x` must be an AbstractArray with `size(x, 1) == in1_dims`
+      + `y` must be an AbstractArray with `size(x, 1) == in2_dims`
+
+  - If the input is an AbstractArray, then `x = y`
+
+## Returns
+
+  - AbstractArray with dimensions `(out_dims, size(x, 2))`
+  - Empty `NamedTuple()`
+
+## Parameters
+
+  - `weight`: Weight Matrix of size `(out_dims, in1_dims, in2_dims)`
+  - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
+"""
+struct Bilinear{use_bias, F1, F2, F3} <: AbstractExplicitLayer
+    activation::F1
+    in1_dims::Int
+    in2_dims::Int
+    out_dims::Int
+    init_weight::F2
+    init_bias::F3
+end
+
+function Base.show(io::IO, b::Bilinear{use_bias}) where {use_bias}
+    print(io, "Bilinear(($(b.in1_dims), $(b.in2_dims)) => $(b.out_dims)")
+    (b.activation == identity) || print(io, ", $(b.activation)")
+    use_bias || print(io, ", bias=false")
+    return print(io, ")")
+end
+
+function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:Integer},
+                  activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+                  use_bias::Bool=true, allow_fast_activation::Bool=true)
+    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
+    _types = (use_bias, typeof(activation), typeof(init_weight), typeof(init_bias))
+    return Bilinear{_types...}(activation, in1_dims, in2_dims, out, init_weight, init_bias)
+end
+function Bilinear((in12_dims, out)::Pair{<:Integer, <:Integer}, activation=identity;
+                  kwargs...)
+    return Bilinear((in12_dims, in12_dims) => out, activation; kwargs...)
+end
+
+function initialparameters(rng::AbstractRNG, b::Bilinear{use_bias}) where {use_bias}
+    if use_bias
+        return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),
+                bias=b.init_bias(rng, b.out_dims, 1))
+    else
+        return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),)
+    end
+end
+
+function parameterlength(b::Bilinear{use_bias}) where {use_bias}
+    return b.out_dims * b.in1_dims * b.in2_dims + use_bias * b.out_dims
+end
+statelength(b::Bilinear) = 0
+
+function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps,
+                                 st::NamedTuple) where {use_bias}
+    d_z, d_x, d_y = size(ps.weight)
+    if d_x != size(x, 1) || d_y != size(y, 1)
+        throw(DimensionMismatch("number of rows in data must match `ps.weight`"))
+    end
+    if size(x, 2) != size(y, 2)
+        throw(DimensionMismatch("data inputs must agree on batch size, got $(size(x, 2)) " *
+                                "and $(size(y, 2))"))
+    end
+
+    Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))
+    Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
+
+    if use_bias
+        return b.activation.(Wyx .+ ps.bias), st
+    else
+        return b.activation.(Wyx), st
+    end
+end
+
+(b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
+
+"""
+    Embedding(in_dims => out_dims; init_weight=randn32)
+
+A lookup table that stores embeddings of dimension `out_dims` for a vocabulary of size
+`in_dims`.
+
+This layer is often used to store word embeddings and retrieve them using indices.
+
+!!! warning
+    
+    Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
+
+## Arguments
+
+  - `in_dims`: number of input dimensions
+  - `out_dims`: number of output dimensions
+
+## Keyword Arguments
+
+  - `init_weight`: initializer for the weight matrix
+    (`weight = init_weight(rng, out_dims, in_dims)`)
+
+## Input
+
+  - Integer OR
+  - Abstract Vector of Integers OR
+  - Abstract Array of Integers
+
+## Returns
+
+  - Returns the embedding corresponding to each index in the input. For an N dimensional
+    input, an N + 1 dimensional output is returned.
+  - Empty `NamedTuple()`
+"""
+struct Embedding{F} <: AbstractExplicitLayer
+    in_dims::Int
+    out_dims::Int
+    init_weight::F
+
+    function Embedding((in_dims, out_dims)::Pair{<:Integer, <:Integer}; init_weight=randn32)
+        return new{typeof(init_weight)}(in_dims, out_dims, init_weight)
+    end
+end
+
+function initialparameters(rng::AbstractRNG, e::Embedding)
+    return (weight=e.init_weight(rng, e.out_dims, e.in_dims),)
+end
+
+(e::Embedding)(x::Integer, ps, st::NamedTuple) = view(ps.weight, :, x), st
+function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)
+    return NNlib.gather(ps.weight, x), st
+end
+function (e::Embedding)(x::AbstractArray{<:Integer}, ps, st::NamedTuple)
+    return reshape(e(vec(x), ps, st)[1], :, size(x)...), st
+end
+
+function Base.show(io::IO, e::Embedding)
+    return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
+end

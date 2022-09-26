@@ -29,6 +29,22 @@ Base.zeros(rng::AbstractRNG, args...; kwargs...) = zeros(args...; kwargs...)
 Base.ones(rng::AbstractRNG, args...; kwargs...) = ones(args...; kwargs...)
 
 """
+    randn32(rng::AbstractRNG, size...) = randn(rng, Float32, size...)
+
+Return an `Array{Float32}` of random numbers from a standard normal distribution of the
+given `size`.
+"""
+randn32(rng::AbstractRNG, size...) = randn(rng, Float32, size...)
+
+"""
+    rand32(rng::AbstractRNG, size...) = rand(rng, Float32, size...)
+
+Return an `Array{Float32}` of random numbers from a uniform distribution of the given
+`size`.
+"""
+rand32(rng::AbstractRNG, size...) = rand(rng, Float32, size...)
+
+"""
     glorot_uniform(rng::AbstractRNG, size...; gain = 1)
 
 Return an `Array{Float32}` of the given `size` containing random numbers drawn from a
@@ -107,11 +123,11 @@ _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(
 # Padding
 struct SamePad end
 
-function calc_padding(lt, pad, k::NTuple{N, T}, dilation, stride) where {T, N}
+function _calc_padding(pad, k::NTuple{N, T}, dilation, stride) where {T, N}
     return _expand(Val(2 * N), pad)
 end
 
-function calc_padding(lt, ::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
+function _calc_padding(::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
     # Ref: "A guide to convolution arithmetic for deep learning"
     # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
     k_eff = @. k + (k - 1) * (dilation - 1)
