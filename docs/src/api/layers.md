@@ -52,6 +52,7 @@ RNNCell
 ```@docs
 Bilinear
 Dense
+Embedding
 Scale
 ```
 

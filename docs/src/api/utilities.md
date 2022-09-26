@@ -15,6 +15,8 @@ Lux.gpu
 Lux.glorot_normal
 Lux.glorot_uniform
 Lux.ones32
+Lux.rand32
+Lux.randn32
 Lux.zeros32
 ```
 

@@ -485,3 +485,63 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractArray, <:AbstractArray}
 end
 
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
+
+"""
+    Embedding(in_dims => out_dims; init_weight=randn32)
+
+A lookup table that stores embeddings of dimension `out_dims` for a vocabulary of size
+`in_dims`.
+
+This layer is often used to store word embeddings and retrieve them using indices.
+
+!!! warning
+    
+    Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
+
+## Arguments
+
+  - `in_dims`: number of input dimensions
+  - `out_dims`: number of output dimensions
+
+## Keyword Arguments
+
+  - `init_weight`: initializer for the weight matrix
+    (`weight = init_weight(rng, out_dims, in_dims)`)
+
+## Input
+
+  - Integer OR
+  - Abstract Vector of Integers OR
+  - Abstract Array of Integers
+
+## Returns
+
+  - Returns the embedding corresponding to each index in the input. For an N dimensional
+    input, an N + 1 dimensional output is returned.
+  - Empty `NamedTuple()`
+"""
+struct Embedding{F} <: AbstractExplicitLayer
+    in_dims::Int
+    out_dims::Int
+    init_weight::F
+
+    function Embedding((in_dims, out_dims)::Pair{<:Integer, <:Integer}; init_weight=randn32)
+        return new{typeof(init_weight)}(in_dims, out_dims, init_weight)
+    end
+end
+
+function initialparameters(rng::AbstractRNG, e::Embedding)
+    return (weight=e.init_weight(rng, e.out_dims, e.in_dims),)
+end
+
+(e::Embedding)(x::Integer, ps, st::NamedTuple) = view(ps.weight, :, x), st
+function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)
+    return NNlib.gather(ps.weight, x), st
+end
+function (e::Embedding)(x::AbstractArray{<:Integer}, ps, st::NamedTuple)
+    return reshape(e(vec(x), ps, st)[1], :, size(x)...), st
+end
+
+function Base.show(io::IO, e::Embedding)
+    return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
+end

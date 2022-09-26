@@ -7,7 +7,7 @@ Random.seed!(rng, 0)
 
 @testset "Dropout" begin
     layer = Dropout(0.5f0)
-    println(layer)
+    display(layer)
     ps, st = Lux.setup(rng, layer)
     x = randn(Float32, 5, 2)
 
@@ -31,7 +31,7 @@ end
 
 @testset "VariationalHiddenDropout" begin
     layer = VariationalHiddenDropout(0.5f0)
-    println(layer)
+    display(layer)
     ps, st = Lux.setup(rng, layer)
     x = randn(Float32, 5, 2)
 
