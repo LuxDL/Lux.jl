@@ -375,3 +375,75 @@ end
     run_JET_tests(layer, x, ps, st)
     test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1e-3, rtol=1e-3)
 end
+
+@testset "CrossCor" begin
+    @testset "Asymmetric Padding" begin
+        layer = CrossCor((3, 3), 1 => 1, relu; pad=(0, 1, 1, 2))
+        display(layer)
+        x = ones(Float32, 28, 28, 1, 1)
+        ps, st = Lux.setup(rng, layer)
+
+        ps.weight .= 1.0
+        ps.bias .= 0.0
+
+        y_hat = layer(x, ps, st)[1][:, :, 1, 1]
+        @test size(y_hat) == (27, 29)
+        @test y_hat[1, 1] ≈ 6.0
+        @test y_hat[2, 2] ≈ 9.0
+        @test y_hat[end, 1] ≈ 4.0
+        @test y_hat[1, end] ≈ 3.0
+        @test y_hat[1, end - 1] ≈ 6.0
+        @test y_hat[end, end] ≈ 2.0
+
+        run_JET_tests(layer, x, ps, st)
+    end
+
+    @testset "Variable BitWidth Parameters" begin
+        # https://github.com/FluxML/Flux.jl/issues/1421
+        layer = CrossCor((5, 5), 10 => 20, identity; init_weight=Base.randn,
+                         init_bias=(rng, dims...) -> randn(rng, Float16, dims...))
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+        @test ps.weight isa Array{Float64, 4}
+        @test ps.bias isa Array{Float16, 4}
+    end
+
+    @testset "CrossCor SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3), (1, 2, 3))
+        x = ones(Float32, (k .+ 3)..., 1, 1)
+
+        layer = CrossCor(k, 1 => 1; pad=Lux.SamePad())
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer(x, ps, st)[1]) == size(x)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+
+        layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), dilation=k .÷ 2)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer(x, ps, st)[1]) == size(x)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+
+        stride = 3
+        layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), stride=stride)
+        display(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], stride)
+        run_JET_tests(layer, x, ps, st; call_broken=length(k) == 1)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    @testset "allow fast activation" begin
+        layer = CrossCor((3, 3), 1 => 1, tanh)
+        @test layer.activation == tanh_fast
+        layer = CrossCor((3, 3), 1 => 1, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
+end

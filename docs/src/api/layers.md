@@ -16,6 +16,7 @@ SkipConnection
 
 ```@docs
 Conv
+CrossCor
 ```
 
 ## Dropout Layers
