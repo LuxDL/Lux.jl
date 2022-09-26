@@ -16,6 +16,7 @@ SkipConnection
 
 ```@docs
 Conv
+ConvTranspose
 CrossCor
 ```
 

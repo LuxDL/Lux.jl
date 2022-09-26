@@ -61,8 +61,8 @@ export cpu, gpu
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
-export Conv, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool,
-       AdaptiveMeanPool, Upsample, PixelShuffle
+export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
+       AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
 export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, LayerNorm
 export WeightNorm
