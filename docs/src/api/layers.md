@@ -50,6 +50,7 @@ RNNCell
 ## Linear Layers
 
 ```@docs
+Bilinear
 Dense
 Scale
 ```

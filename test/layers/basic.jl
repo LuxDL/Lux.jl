@@ -207,3 +207,50 @@ end
         @test_throws ArgumentError Scale(10, 100, relu; bias=false, use_bias=false)
     end
 end
+
+@testset "Bilinear" begin
+    @testset "SkipConnection recombinator" begin
+        d = Dense(2 => 2)
+        println(d)
+        b = Bilinear((2, 2) => 3)
+        println(b)
+        layer = SkipConnection(d, b)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = randn(rng, Float32, 2, 1)
+
+        @test size(layer(x, ps, st)[1]) == (3, 1)
+        @inferred layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    @testset "Two-streams zero sum" begin
+        x = zeros(Float32, 2, 1)
+        y = zeros(Float32, 1, 1)
+        layer = Bilinear((2, 1) => 3)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer((x, y), ps, st)[1]) == (3, 1)
+        @test sum(abs2, layer((x, y), ps, st)[1]) == 0.0f0
+        @inferred layer((x, y), ps, st)
+        run_JET_tests(layer, (x, y), ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), (x, y), ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+
+    @testset "Inner interactions" begin
+        x = randn(Float32, 2, 1)
+        layer = Bilinear((2, 2) => 3)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+
+        @test size(layer(x, ps, st)[1]) == (3, 1)
+        @inferred layer(x, ps, st)
+        run_JET_tests(layer, x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-3, rtol=1.0f-3)
+    end
+end

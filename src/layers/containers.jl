@@ -12,7 +12,11 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 ## Arguments
 
   - `layer`: Layer or `Chain` of layers to be applied to the input
-  - `connection`: A 2-argument function that takes `layer(input)` and the input
+
+  - `connection`:
+    
+      + A 2-argument function that takes `layer(input)` and the input OR
+      + An AbstractExplicitLayer that takes `(layer(input), input)` as input
 
 ## Inputs
 
@@ -25,11 +29,15 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 ## Parameters
 
-  - Parameters of `layer`
+  - Parameters of `layer` OR
+  - If `connection` is an AbstractExplicitLayer, then NamedTuple with fields `:layers` and
+    `:connection`
 
 ## States
 
-  - States of `layer`
+  - States of `layer` OR
+  - If `connection` is an AbstractExplicitLayer, then NamedTuple with fields `:layers` and
+    `:connection`
 
 See [`Parallel`](@ref) for a more general implementation.
 """
@@ -39,9 +47,28 @@ struct SkipConnection{T <: AbstractExplicitLayer, F} <:
     connection::F
 end
 
-@inline function (skip::SkipConnection)(x, ps, st::NamedTuple)
+function initialparameters(rng::AbstractRNG,
+                           l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    return (layers=initialparameters(rng, l.layers),
+            connection=initialparameters(rng, l.connection))
+end
+
+function initialstates(rng::AbstractRNG,
+                       l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    return (layers=initialstates(rng, l.layers),
+            connection=initialstates(rng, l.connection))
+end
+
+function (skip::SkipConnection)(x, ps, st::NamedTuple)
     mx, st = Lux.apply(skip.layers, x, ps, st)
     return skip.connection(mx, x), st
+end
+
+function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(x, ps,
+                                                                                  st::NamedTuple)
+    mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
+    y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
+    return y, (layers=st1, connection=st2)
 end
 
 """
