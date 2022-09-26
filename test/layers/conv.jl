@@ -351,3 +351,27 @@ end
         end
     end
 end
+
+@testset "PixelShuffle" begin
+    layer = PixelShuffle(2)
+    display(layer)
+    ps, st = Lux.setup(rng, layer)
+    x = rand(rng, Float32, 3, 6, 3)
+
+    y, st_ = layer(x, ps, st)
+    @test y isa Array{Float32, 3}
+    @test size(y) == (6, 3, 3)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1e-3, rtol=1e-3)
+
+    layer = PixelShuffle(3)
+    display(layer)
+    ps, st = Lux.setup(rng, layer)
+    x = rand(Float32, 3, 4, 9, 3)
+
+    y, st_ = layer(x, ps, st)
+    @test y isa Array{Float32, 4}
+    @test size(y) == (9, 12, 1, 3)
+    run_JET_tests(layer, x, ps, st)
+    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1e-3, rtol=1e-3)
+end
