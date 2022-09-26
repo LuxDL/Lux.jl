@@ -59,6 +59,7 @@ Scale
 ```@docs
 ActivationFunction
 FlattenLayer
+Maxout
 NoOpLayer
 ReshapeLayer
 SelectDim

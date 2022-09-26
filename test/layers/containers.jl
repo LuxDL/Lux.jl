@@ -269,3 +269,58 @@ end
                                      d21=Dense(2 => 1), d2=Dense(2 => 1),
                                      disable_optimizations=false)
 end
+
+@testset "Maxout" begin
+    @testset "constructor" begin
+        layer = Maxout(() -> NoOpLayer(), 4)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = rand(rng, Float32, 10, 1)
+
+        @test layer(x, ps, st)[1] == x
+        run_JET_tests(layer, x, ps, st)
+        @inferred layer(x, ps, st)
+    end
+
+    @testset "simple alternatives" begin
+        layer = Maxout(NoOpLayer(), WrappedFunction(x -> 2x), WrappedFunction(x -> 0.5x))
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = rand(rng, 40)
+
+        @test layer(x, ps, st)[1] == 2 .* x
+        run_JET_tests(layer, x, ps, st)
+        @inferred layer(x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+    end
+
+    @testset "complex alternatives" begin
+        layer = Maxout(WrappedFunction(x -> [0.5; 0.1] * x),
+                       WrappedFunction(x -> [0.2; 0.7] * x))
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = [3.0 2.0]
+        y = [0.5, 0.7] .* x
+
+        @test layer(x, ps, st)[1] == y
+        run_JET_tests(layer, x, ps, st)
+        @inferred layer(x, ps, st)
+        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
+                                      rtol=1.0f-3)
+    end
+
+    @testset "params" begin
+        layer = Maxout(() -> Dense(2, 4), 4)
+        println(layer)
+        ps, st = Lux.setup(rng, layer)
+        x = rand(rng, Float32, 2, 1)
+
+        @test Lux.parameterlength(layer) == sum(Lux.parameterlength.(values(layer.layers)))
+        @test size(layer(x, ps, st)[1]) == (4, 1)
+        run_JET_tests(layer, x, ps, st)
+        @inferred layer(x, ps, st)
+        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
+                                      atol=1.0f-1, rtol=1.0f-1)
+    end
+end

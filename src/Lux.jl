@@ -59,7 +59,7 @@ include("deprecated.jl")
 # Data Transfer
 export cpu, gpu
 # Layers
-export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer
+export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Dense, Scale
 export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool,
        AdaptiveMeanPool, Upsample
