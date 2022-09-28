@@ -46,6 +46,7 @@ end
             @testset "Experimental" begin
                 @time @safetestset "Map" begin include("contrib/map.jl") end
                 @time @safetestset "Training" begin include("contrib/training.jl") end
+                @time @safetestset "Freeze" begin include("contrib/freeze.jl") end
             end
         end
     else
