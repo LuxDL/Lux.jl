@@ -6,7 +6,7 @@ function _update_normalization_statistics(x::AbstractArray{<:Real, N},
                                           batchvar::AbstractArray{<:Real, N},
                                           momentum::Real, reduce_dims) where {N}
     sx = size(x)
-    m = (eltype(x))(prod(sx[reduce_dims]))
+    m = (eltype(x))(prod(sx[reduce_dims]))::eltype(x)
     if last(reduce_dims) != N
         batchmean = mean(batchmean; dims=N)
         batchvar = mean(batchvar; dims=N)
