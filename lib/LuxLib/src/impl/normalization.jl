@@ -4,9 +4,9 @@ function _update_normalization_statistics(x::AbstractArray{<:Real, N},
                                           running_var::AbstractArray{<:Real, N},
                                           batchmean::AbstractArray{<:Real, N},
                                           batchvar::AbstractArray{<:Real, N},
-                                          momentum::Real, reduce_dims) where {N}
-    sx = size(x)
-    m = (eltype(x))(prod(sx[reduce_dims]))::eltype(x)
+                                          momentum::Real,
+                                          ::Val{reduce_dims}) where {N, reduce_dims}
+    m = eltype(x)(prod(Base.Fix1(size, x), reduce_dims))
     if last(reduce_dims) != N
         batchmean = mean(batchmean; dims=N)
         batchvar = mean(batchvar; dims=N)
@@ -17,8 +17,9 @@ function _update_normalization_statistics(x::AbstractArray{<:Real, N},
 end
 
 @generated function _get_batch_statistics(x::AbstractArray, running_mean::R, running_var::R,
-                                          reduce_dims, ::Val{training}, momentum::Real,
-                                          epsilon::Real) where {R, training}
+                                          r::Val{reduce_dims}, ::Val{training},
+                                          momentum::Real,
+                                          epsilon::Real) where {R, reduce_dims, training}
     calls = []
     if !training
         if R == Nothing
@@ -37,7 +38,7 @@ end
             push!(calls,
                   :(_stats = _update_normalization_statistics(x, running_mean, running_var,
                                                               batchmean, batchvar, momentum,
-                                                              reduce_dims)))
+                                                              r)))
             push!(calls, :((running_mean, running_var) = _stats))
         end
     end
@@ -55,10 +56,10 @@ end
 end
 
 function _normalization_impl(x::AbstractArray, running_mean::R, running_var::R, scale::A,
-                             bias::A, reduce_dims, training::Val, momentum::Real,
-                             epsilon::Real) where {R, A}
-    _stats = _get_batch_statistics(x, running_mean, running_var, reduce_dims, training,
-                                   momentum, epsilon)
+                             bias::A, r::Val{reduce_dims}, training::Val, momentum::Real,
+                             epsilon::Real) where {R, A, reduce_dims}
+    _stats = _get_batch_statistics(x, running_mean, running_var, r, training, momentum,
+                                   epsilon)
     _m = mean(x; dims=reduce_dims)
     _v = var(x; dims=reduce_dims, corrected=false, mean=_m)
     (batchmean, batchvar), (running_mean, running_var) = _stats
@@ -69,8 +70,8 @@ end
 function _normalization(x::AbstractArray, running_mean::Union{AbstractVector, Nothing},
                         running_var::Union{AbstractVector, Nothing},
                         scale::Union{AbstractVector, Nothing},
-                        bias::Union{AbstractVector, Nothing}, reduce_dims, training::Val,
-                        momentum::Real, epsilon::Real)
+                        bias::Union{AbstractVector, Nothing}, reduce_dims::Val,
+                        training::Val, momentum::Real, epsilon::Real)
     rm_ = _reshape_into_proper_shape(running_mean, x)
     rv_ = _reshape_into_proper_shape(running_var, x)
     s_ = _reshape_into_proper_shape(scale, x)

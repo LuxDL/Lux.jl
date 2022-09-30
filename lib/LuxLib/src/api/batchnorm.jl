@@ -45,9 +45,13 @@ function batchnorm(x::AbstractArray{<:Real, N},
                    running_var::Union{AbstractVector{<:Real}, Nothing}; momentum::Real,
                    training::Val, epsilon::Real) where {N}
     x_, xm, xv = _normalization(x, running_mean, running_var, scale, bias,
-                                collect([1:(N - 2); N]), training, momentum, epsilon)
+                                _get_batchnorm_reduce_dims(x), training, momentum, epsilon)
 
     return x_, (; running_mean=xm, running_var=xv)
+end
+
+@generated function _get_batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
+    return :($(Val(Tuple(collect([1:(N - 2); N])))))
 end
 
 _CUDNN_BATCHNORM_FLOAT = Union{Float32, Float64}

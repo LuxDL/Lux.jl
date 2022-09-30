@@ -110,9 +110,14 @@ function groupnorm(x::AbstractArray{<:Real, N},
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
     x_, xmean, xvar = _normalization(x_reshaped, running_mean, running_var, scale, bias,
-                                     collect(1:(N - 1)), training, momentum, epsilon)
+                                     _get_groupnorm_reduce_dims(x), training, momentum,
+                                     epsilon)
 
     return reshape(x_, sz), (; running_mean=xmean, running_var=xvar)
+end
+
+@generated function _get_groupnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
+    return :($(Val(Tuple(collect(1:(N - 1))))))
 end
 
 # Custom Pullbacks
