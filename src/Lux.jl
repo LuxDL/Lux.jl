@@ -56,6 +56,12 @@ include("contrib/freeze.jl")
 # Deprecations
 include("deprecated.jl")
 
+# Snoop Precompile
+import SnoopPrecompile
+import Preferences
+
+SnoopPrecompile.@precompile_all_calls begin include("precompile.jl") end
+
 # Data Transfer
 export cpu, gpu
 # Layers

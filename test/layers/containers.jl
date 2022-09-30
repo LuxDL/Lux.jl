@@ -286,7 +286,7 @@ end
         layer = Maxout(NoOpLayer(), WrappedFunction(x -> 2x), WrappedFunction(x -> 0.5x))
         display(layer)
         ps, st = Lux.setup(rng, layer)
-        x = rand(rng, 40)
+        x = Float32.(collect(1:40))
 
         @test layer(x, ps, st)[1] == 2 .* x
         run_JET_tests(layer, x, ps, st)
@@ -314,7 +314,7 @@ end
         layer = Maxout(() -> Dense(2, 4), 4)
         display(layer)
         ps, st = Lux.setup(rng, layer)
-        x = rand(rng, Float32, 2, 1)
+        x = [10.0f0 3.0f0]'
 
         @test Lux.parameterlength(layer) == sum(Lux.parameterlength.(values(layer.layers)))
         @test size(layer(x, ps, st)[1]) == (4, 1)

@@ -82,6 +82,7 @@ WeightNorm
 ## Upsampling
 
 ```@docs
+PixelShuffle
 Upsample
 ```
 
