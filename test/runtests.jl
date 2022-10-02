@@ -15,7 +15,7 @@ function activate_subpkg_env(subpkg)
 end
 
 groups = if GROUP == "All"
-    ["Lux", "Boltz", "LuxLib"]
+    ["Lux", "Boltz", "LuxLib", "Flux2Lux"]
 else
     [GROUP]
 end

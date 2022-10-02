@@ -18,9 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         group:
-          - Lux     # Core Framework
-          - Boltz   # Prebuilt Models using Lux
-          - LuxLib  # Backend of Lux
+          - Lux       # Core Framework
+          - Boltz     # Prebuilt Models using Lux
+          - LuxLib    # Backend of Lux
+          - Flux2Lux  # Flux2Lux Converter
         version:
           - '1.6'      # JET tests are disabled on 1.6
           - '1.7'
