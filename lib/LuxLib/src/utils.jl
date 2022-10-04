@@ -60,3 +60,9 @@ _replicate(rng::AbstractRNG) = copy(rng)
 _replicate(rng::CUDA.RNG) = deepcopy(rng)
 
 CRC.@non_differentiable _replicate(::Any)
+
+# Var Implementation
+## Using the default version from Statistics causes issues with Tracker.jl
+function _var(x, ::Val{corrected}, _mean, ::Val{dims}) where {corrected, dims}
+    return sum((x .- _mean) .^ 2; dims) ./ (prod(Base.Fix1(size, x), dims) - corrected)
+end

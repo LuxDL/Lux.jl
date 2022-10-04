@@ -24,15 +24,13 @@ end
     if !training
         if R == Nothing
             push!(calls, :(batchmean = mean(x; dims=reduce_dims)))
-            push!(calls,
-                  :(batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)))
+            push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
         else
             push!(calls, :((batchmean, batchvar) = (running_mean, running_var)))
         end
     else
         push!(calls, :(batchmean = mean(x; dims=reduce_dims)))
-        push!(calls,
-              :(batchvar = var(x; mean=batchmean, dims=reduce_dims, corrected=false)))
+        push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
 
         if R != Nothing
             push!(calls,
@@ -60,8 +58,6 @@ function _normalization_impl(x::AbstractArray, running_mean::R, running_var::R, 
                              epsilon::Real) where {R, A, reduce_dims}
     _stats = _get_batch_statistics(x, running_mean, running_var, r, training, momentum,
                                    epsilon)
-    _m = mean(x; dims=reduce_dims)
-    _v = var(x; dims=reduce_dims, corrected=false, mean=_m)
     (batchmean, batchvar), (running_mean, running_var) = _stats
     x_norm = _affine_normalize(x, batchmean, batchvar, scale, bias, epsilon)
     return (x_norm, running_mean, running_var)
