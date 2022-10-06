@@ -7,6 +7,7 @@
 - [Training a Simple LSTM](generated/beginner/SimpleRNN/main.md)
 - [MNIST Classification using NeuralODE](generated/intermediate/NeuralODE/main.md)
 - [Bayesian Neural Network](generated/intermediate/BayesianNN/main.md)
+- [Hyper Network on MNIST and FashionMNIST](generated/intermediate/HyperNet/main.md)
 
 ## Scipts
 

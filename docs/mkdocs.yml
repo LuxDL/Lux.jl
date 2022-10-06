@@ -101,6 +101,7 @@ nav:
       - "Intermediate":
           - "MNIST Classification using NeuralODE": "examples/generated/intermediate/NeuralODE/main.md"
           - "Bayesian Neural Network": "examples/generated/intermediate/BayesianNN/main.md"
+          - "Training a Hyper Network": "examples/generated/intermediate/HyperNet/main.md"
   - "Manual":
       - "Lux Interface": "manual/interface.md"
       - "Migrating from Flux to Lux": "manual/migrate_from_flux.md"
