@@ -1,13 +1,9 @@
 module Boltz
 
-using Lux
-using NNlib
-using Random
-using Statistics
+using CUDA, Lux, NNlib, Random, Statistics
 
 # Loading Pretained Weights
-using Artifacts, LazyArtifacts
-using JLD2
+using Artifacts, JLD2, LazyArtifacts
 
 # TODO(@avik-pal): We want to have generic Lux implementaions for Metalhead models
 # We can automatically convert several Metalhead.jl models to Lux
@@ -18,9 +14,6 @@ import ChainRulesCore
 
 # Utility Functions
 include("utils.jl")
-
-# General Layer Implementations
-include("layers.jl")
 
 # Vision Models
 ## Vision Transformer Implementation

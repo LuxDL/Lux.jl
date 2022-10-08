@@ -1,6 +1,8 @@
 # Custom Layers needed for ViT
 """
-    MultiHeadAttention(in_planes::Int, number_heads::Int; qkv_bias::Bool=false, attention_dropout_rate::T=0.0f0, projection_dropout_rate::T=0.0f0) where {T}
+    MultiHeadAttention(in_planes::Int, number_heads::Int; qkv_bias::Bool=false,
+                       attention_dropout_rate::T=0.0f0,
+                       projection_dropout_rate::T=0.0f0) where {T}
 
 Multi-head self-attention layer
 """
@@ -56,7 +58,8 @@ end
 """
     ClassTokens(dim; init=Lux.zeros32)
 
-Appends class tokens to an input with embedding dimension `dim` for use in many vision transformer namels.
+Appends class tokens to an input with embedding dimension `dim` for use in many vision
+transformer namels.
 """
 struct ClassTokens{I} <: Lux.AbstractExplicitLayer
     dim::Int
@@ -77,7 +80,8 @@ function (m::ClassTokens)(x::AbstractArray{T, 3}, ps, st) where {T}
 end
 
 """
-    ViPosEmbedding(embedsize, npatches; init = (rng, dims...) -> randn(rng, Float32, dims...))
+    ViPosEmbedding(embedsize, npatches;
+                   init = (rng, dims...) -> randn(rng, Float32, dims...))
 
 Positional embedding layer used by many vision transformer-like namels.
 """
@@ -100,9 +104,10 @@ end
 
 # Helper Functions
 """
-transformer\\_encoder(in\\_planes, depth, number\\_heads; mlp\\_ratio = 4.0f0, dropout = 0.0f0)
+    transformer_encoder(in_planes, depth, number_heads; mlp_ratio = 4.0f0, dropout = 0.0f0)
 
-Transformer as used in the base ViT architecture. ([reference](https://arxiv.org/abs/2010.11929)).
+Transformer as used in the base ViT architecture.
+([reference](https://arxiv.org/abs/2010.11929)).
 
 ## Arguments
 
@@ -114,20 +119,19 @@ Transformer as used in the base ViT architecture. ([reference](https://arxiv.org
 """
 function transformer_encoder(in_planes, depth, number_heads; mlp_ratio=4.0f0,
                              dropout_rate=0.0f0)
-    # Currently Lux doesn't have a LayerNorm implementation. Relying on layer_norm
     hidden_planes = floor(Int, mlp_ratio * in_planes)
-    layers = [Chain(SkipConnection(Chain(layer_norm(in_planes),
+    layers = [Chain(SkipConnection(Chain(LayerNorm((in_planes, 1); affine=true),
                                          MultiHeadAttention(in_planes, number_heads;
                                                             attention_dropout_rate=dropout_rate,
                                                             projection_dropout_rate=dropout_rate)),
                                    +),
-                    SkipConnection(Chain(layer_norm(in_planes),
+                    SkipConnection(Chain(LayerNorm((in_planes, 1); affine=true),
                                          Chain(Dense(in_planes => hidden_planes, gelu),
                                                Dropout(dropout_rate),
                                                Dense(hidden_planes => in_planes),
-                                               Dropout(dropout_rate))), +))
-              for _ in 1:depth]
-    return Chain(layers...)
+                                               Dropout(dropout_rate));
+                                         disable_optimizations=true), +)) for _ in 1:depth]
+    return Chain(layers...; disable_optimizations=true)
 end
 
 function patch_embedding(imsize::Tuple{<:Int, <:Int}=(224, 224); in_channels=3,
@@ -158,8 +162,11 @@ function vision_transformer(; imsize::Tuple{<:Int, <:Int}=(256, 256), in_channel
                        Dropout(embedding_dropout_rate),
                        transformer_encoder(embed_planes, depth, number_heads; mlp_ratio,
                                            dropout_rate),
-                       (pool == :class) ? SelectDim(2, 1) : seconddimmean),
-                 Chain(layer_norm(embed_planes), Dense(embed_planes, num_classes, tanh)))
+                       ((pool == :class) ? WrappedFunction(x -> x[:, 1, :]) :
+                        WrappedFunction(seconddimmean)); disable_optimizations=true),
+                 Chain(LayerNorm((embed_planes,); affine=true),
+                       Dense(embed_planes, num_classes, tanh); disable_optimizations=true);
+                 disable_optimizations=true)
 end
 
 const VIT_CONFIGS = Dict(:tiny => (depth=12, embed_planes=192, number_heads=3),
