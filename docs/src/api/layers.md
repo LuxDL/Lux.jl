@@ -40,13 +40,12 @@ MeanPool
 
 ## Recurrent Layers
 
-!!! warning
-    Recurrent Layers API should be considered Experimental at this point
-
 ```@docs
 GRUCell
 LSTMCell
 RNNCell
+Recurrence
+StatefulRecurrentCell
 ```
 
 ## Linear Layers

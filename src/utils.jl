@@ -201,6 +201,10 @@ end
     end
 end
 
-function _getproperty(x::ComponentArray, ::Val{prop}) where {prop}
+@inline function _getproperty(x::ComponentArray, ::Val{prop}) where {prop}
     return prop in propertynames(x) ? getproperty(x, prop) : nothing
+end
+
+@inline function _eachslice(x::T, ::Val{dims}) where {T <: AbstractArray, dims}
+    return [selectdim(x, dims, i) for i in axes(x, dims)]
 end
