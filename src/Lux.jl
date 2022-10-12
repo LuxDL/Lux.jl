@@ -73,7 +73,7 @@ export Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
-export RNNCell, LSTMCell, GRUCell
+export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
 
 end
