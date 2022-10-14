@@ -143,7 +143,7 @@ function Functors.functor(::Type{<:ComponentArray}, c)
            ComponentArray
 end
 
-Optimisers.setup(opt, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
+Optimisers.setup(opt::AbstractRule, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
 
 function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
     tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
