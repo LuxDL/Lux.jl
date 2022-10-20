@@ -1,11 +1,14 @@
-# TODO(@avik-pal): Deprecation warnings once Flux2Lux.jl is registered.
-
 import .Flux
 
 """
     transform(model)
 
 Convert a Flux Model to Lux Model.
+
+!!! tip
+    
+    It is recommended to use the package `Flux2Lux` instead of this function. It supports
+    convertion of a wider variation of Flux models.
 
 # Examples
 
@@ -22,66 +25,54 @@ ps, st = Lux.setup(Random.default_rng(), m2);
 m2(x, ps, st)
 ```
 """
-transform(::T) where {T} = error("Transformation for type $T not implemented")
+function transform(x)
+    Base.depwarn("`Lux.transform` has been deprecated in favor of the package `Flux2Lux`." *
+                 "This function will be removed in v0.5", :transform)
+    return _transform(x)
+end
 
-transform(model::Flux.Chain) = Chain(transform.(model.layers)...)
+_transform(::T) where {T} = error("Transformation for type $T not implemented")
 
-function transform(model::Flux.BatchNorm)
+_transform(model::Flux.Chain) = Chain(_transform.(model.layers)...)
+
+function _transform(model::Flux.BatchNorm)
     return BatchNorm(model.chs, model.λ; affine=model.affine, track_stats=model.track_stats,
                      epsilon=model.ϵ, momentum=model.momentum)
 end
 
-function transform(model::Flux.Conv)
+function _transform(model::Flux.Conv)
+    in_chs = size(model.weight, ndims(model.weight) - 1) * model.groups
     return Conv(size(model.weight)[1:(end - 2)],
-                size(model.weight, ndims(model.weight) - 1) * model.groups => size(model.weight,
-                                                                                   ndims(model.weight)),
-                model.σ; stride=model.stride, pad=model.pad,
+                in_chs => size(model.weight, ndims(model.weight)), model.σ;
+                stride=model.stride, pad=model.pad,
                 bias=model.bias isa Bool ? model.bias : !(model.bias isa Flux.Zeros),
                 dilation=model.dilation, groups=model.groups)
 end
 
-function transform(model::Flux.SkipConnection)
-    return SkipConnection(transform(model.layers), model.connection)
+function _transform(model::Flux.SkipConnection)
+    return SkipConnection(_transform(model.layers), model.connection)
 end
 
-function transform(model::Flux.Dense)
-    return Dense(size(model.weight, 2), size(model.weight, 1), model.σ)
-end
+_transform(model::Flux.Dense) = Dense(size(model.weight, 2), size(model.weight, 1), model.σ)
 
-function transform(model::Flux.MaxPool)
-    return MaxPool(model.k, model.pad, model.stride)
-end
+_transform(model::Flux.MaxPool) = MaxPool(model.k, model.pad, model.stride)
 
-function transform(model::Flux.MeanPool)
-    return MeanPool(model.k, model.pad, model.stride)
-end
+_transform(model::Flux.MeanPool) = MeanPool(model.k, model.pad, model.stride)
 
-function transform(::Flux.GlobalMaxPool)
-    return GlobalMaxPool()
-end
+_transform(::Flux.GlobalMaxPool) = GlobalMaxPool()
 
-function transform(::Flux.GlobalMeanPool)
-    return GlobalMeanPool()
-end
+_transform(::Flux.GlobalMeanPool) = GlobalMeanPool()
 
-function transform(p::Flux.AdaptiveMaxPool)
-    return AdaptiveMaxPool(p.out)
-end
+_transform(p::Flux.AdaptiveMaxPool) = AdaptiveMaxPool(p.out)
 
-function transform(p::Flux.AdaptiveMeanPool)
-    return AdaptiveMeanPool(p.out)
-end
+_transform(p::Flux.AdaptiveMeanPool) = AdaptiveMeanPool(p.out)
 
-function transform(model::Flux.Parallel)
-    return Parallel(model.connection, transform.(model.layers)...)
-end
+_transform(model::Flux.Parallel) = Parallel(model.connection, _transform.(model.layers)...)
 
-function transform(d::Flux.Dropout)
-    return Dropout(Float32(d.p); dims=d.dims)
-end
+_transform(d::Flux.Dropout) = Dropout(Float32(d.p); dims=d.dims)
 
-transform(::typeof(identity)) = NoOpLayer()
+_transform(::typeof(identity)) = NoOpLayer()
 
-transform(::typeof(Flux.flatten)) = FlattenLayer()
+_transform(::typeof(Flux.flatten)) = FlattenLayer()
 
-transform(f::Function) = WrappedFunction(f)
+_transform(f::Function) = WrappedFunction(f)

@@ -32,7 +32,7 @@ function (m::MultiHeadAttention)(x::AbstractArray{T, 3}, ps, st) where {T}
     qkv, st_qkv = m.qkv_layer(x_reshaped, ps.qkv_layer, st.qkv_layer)
     qkv_reshaped = reshape(qkv, nfeatures ÷ m.number_heads, m.number_heads, seq_len,
                            3 * batch_size)
-    query, key, value = fast_chunk(qkv_reshaped, Val(3), Val(4))
+    query, key, value = _fast_chunk(qkv_reshaped, Val(3), Val(4))
 
     scale = convert(T, sqrt(size(query, 1) / m.number_heads))
     key_reshaped = reshape(permutedims(key, (2, 1, 3, 4)), m.number_heads,
@@ -144,7 +144,7 @@ function patch_embedding(imsize::Tuple{<:Int, <:Int}=(224, 224); in_channels=3,
     "Image dimensions must be divisible by the patch size."
 
     return Chain(Conv(patch_size, in_channels => embed_planes; stride=patch_size),
-                 flatten ? flatten_spatial : identity, norm_layer(embed_planes))
+                 flatten ? _flatten_spatial : identity, norm_layer(embed_planes))
 end
 
 # ViT Implementation
@@ -163,7 +163,7 @@ function vision_transformer(; imsize::Tuple{<:Int, <:Int}=(256, 256), in_channel
                        transformer_encoder(embed_planes, depth, number_heads; mlp_ratio,
                                            dropout_rate),
                        ((pool == :class) ? WrappedFunction(x -> x[:, 1, :]) :
-                        WrappedFunction(seconddimmean)); disable_optimizations=true),
+                        WrappedFunction(_seconddimmean)); disable_optimizations=true),
                  Chain(LayerNorm((embed_planes,); affine=true),
                        Dense(embed_planes, num_classes, tanh); disable_optimizations=true);
                  disable_optimizations=true)
@@ -182,5 +182,5 @@ const VIT_CONFIGS = Dict(:tiny => (depth=12, embed_planes=192, number_heads=3),
 function vision_transformer(name::Symbol; kwargs...)
     assert_name_present_in(name, keys(VIT_CONFIGS))
     model = vision_transformer(; VIT_CONFIGS[name]..., kwargs...)
-    return initialize_model(name, model; kwargs...)
+    return _initialize_model(name, model; kwargs...)
 end
