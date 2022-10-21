@@ -41,15 +41,13 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
+        elseif children isa NamedTuple
+            for (k, c) in pairs(children)
+                _big_show(io, c, indent + 4, k)
+            end
         else
-            if children isa NamedTuple
-                for (k, c) in pairs(children)
-                    _big_show(io, c, indent + 4, k)
-                end
-            else
-                for c in children
-                    _big_show(io, c, indent + 4)
-                end
+            for c in children
+                _big_show(io, c, indent + 4)
             end
         end
         if indent == 0  # i.e. this is the outermost container
@@ -75,6 +73,7 @@ end
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(s::WeightNorm) = (s.layer,)
 _get_children(::Any) = ()
+_get_children(nt::NamedTuple) = nt
 
 function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
     if !get(io, :compact, false)
@@ -120,16 +119,6 @@ end
 
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
-end
-
-function _nan_show(io::IO, x)
-    if !isempty(x) && _all(iszero, x)
-        printstyled(io, "  (all zero)"; color=:cyan)
-    elseif _any(isnan, x)
-        printstyled(io, "  (some NaN)"; color=:red)
-    elseif _any(isinf, x)
-        printstyled(io, "  (some Inf)"; color=:red)
-    end
 end
 
 _any(f, xs::AbstractArray{<:Number}) = any(f, xs)
