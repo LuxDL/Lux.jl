@@ -5,8 +5,8 @@ include("../test_utils.jl")
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-@testset "Dropout" begin
-    layer = Dropout(0.5f0)
+@testset "Dropout" begin for p in (0.5f0, 0.5)
+    layer = Dropout(p)
     display(layer)
     ps, st = Lux.setup(rng, layer)
     x = randn(Float32, 5, 2)
@@ -27,10 +27,10 @@ Random.seed!(rng, 0)
     st = Lux.testmode(st)
 
     @test first(layer(x, ps, st)) == x
-end
+end end
 
-@testset "VariationalHiddenDropout" begin
-    layer = VariationalHiddenDropout(0.5f0)
+@testset "VariationalHiddenDropout" begin for p in (0.5f0, 0.5)
+    layer = VariationalHiddenDropout(p)
     display(layer)
     ps, st = Lux.setup(rng, layer)
     x = randn(Float32, 5, 2)
@@ -61,4 +61,4 @@ end
     run_JET_tests(layer, x, ps, st__)
     test_gradient_correctness_fdm(x -> sum(layer(x, ps, st__)[1]), x; atol=1.0f-3,
                                   rtol=1.0f-3)
-end
+end end
