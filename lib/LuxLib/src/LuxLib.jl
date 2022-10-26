@@ -16,9 +16,10 @@ include("impl/normalization.jl")
 include("api/batchnorm.jl")
 include("api/dropout.jl")
 include("api/groupnorm.jl")
+include("api/instancenorm.jl")
 include("api/layernorm.jl")
 
-export batchnorm, groupnorm, layernorm
-export dropout
+export batchnorm, groupnorm, instancenorm, layernorm
+export alpha_dropout, dropout
 
 end

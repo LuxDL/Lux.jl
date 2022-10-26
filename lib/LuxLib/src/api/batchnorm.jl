@@ -4,7 +4,7 @@
 Batch Normalization. For details see [1].
 
 Batch Normalization computes the mean and variance for each
-``D_1 \times ... \times D_{N - 2} \times 1 \times D_N` input slice and normalises the input
+``D_1 \times ... \times D_{N - 2} \times 1 \times D_N`` input slice and normalises the input
 accordingly.
 
 ## Arguments
