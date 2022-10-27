@@ -397,3 +397,53 @@ end
         @test layer.activation == tanh
     end
 end
+
+@testset "InstanceNorm" begin
+    for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
+              randn(rng, Float32, 3, 3, 3, 3, 2))
+        for affine in (true, false)
+            layer = InstanceNorm(3; affine)
+            display(layer)
+            ps, st = Lux.setup(rng, layer)
+
+            @inferred first(layer(x, ps, st))
+            y, st_ = layer(x, ps, st)
+
+            run_JET_tests(layer, x, ps, st)
+
+            if affine
+                test_gradient_correctness_fdm((x, ps) -> sum(first(layer(x, ps, st))), x,
+                                              ps; atol=1.0f-1, rtol=1.0f-1)
+            else
+                test_gradient_correctness_fdm(x -> sum(first(layer(x, ps, st))), x;
+                                              atol=1.0f-1, rtol=1.0f-1)
+            end
+
+            for act in (sigmoid, tanh)
+                layer = InstanceNorm(3, act; affine)
+                display(layer)
+                ps, st = Lux.setup(rng, layer)
+
+                @inferred first(layer(x, ps, st))
+                y, st_ = layer(x, ps, st)
+
+                run_JET_tests(layer, x, ps, st)
+
+                if affine
+                    test_gradient_correctness_fdm((x, ps) -> sum(first(layer(x, ps, st))),
+                                                  x, ps; atol=1.0f-1, rtol=1.0f-1)
+                else
+                    test_gradient_correctness_fdm(x -> sum(first(layer(x, ps, st))), x;
+                                                  atol=1.0f-1, rtol=1.0f-1)
+                end
+            end
+        end
+    end
+
+    @testset "allow fast activation" begin
+        layer = InstanceNorm(3, tanh)
+        @test layer.activation == tanh_fast
+        layer = InstanceNorm(3, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
+end
