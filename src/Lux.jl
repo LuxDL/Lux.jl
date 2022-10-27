@@ -69,8 +69,8 @@ export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
        AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
-export Dropout, VariationalHiddenDropout
-export BatchNorm, GroupNorm, LayerNorm
+export AlphaDropout, Dropout, VariationalHiddenDropout
+export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell

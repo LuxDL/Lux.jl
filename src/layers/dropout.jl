@@ -1,4 +1,65 @@
 """
+    AlphaDropout(p::Real)
+
+AlphaDropout layer.
+
+## Arguments
+
+  - `p`: Probability of Dropout
+    
+      + if `p = 0` then [`NoOpLayer`](@ref) is returned.
+      + if `p = 1` then `WrappedLayer(Base.Fix1(broadcast, zero))` is returned.
+
+## Inputs
+
+  - `x`: Must be an AbstractArray
+
+## Returns
+
+  - `x` with dropout mask applied if `training=Val(true)` else just `x`
+  - State with updated `rng`
+
+## States
+
+  - `rng`: Pseudo Random Number Generator
+  - `training`: Used to check if training/inference mode
+
+Call [`Lux.testmode`](@ref) to switch to test mode.
+
+See also [`Dropout`](@ref), [`VariationalHiddenDropout`](@ref)
+"""
+struct AlphaDropout{T <: Real} <: AbstractExplicitLayer
+    p::T
+    alpha::T
+    scale::T
+    bias::T
+end
+
+function initialstates(rng::AbstractRNG, ::AlphaDropout)
+    randn(rng)
+    return (rng=replicate(rng), training=Val(true))
+end
+
+function AlphaDropout(p::T) where {T <: Real}
+    @assert 0 ≤ p ≤ 1
+    iszero(p) && return NoOpLayer()
+    isone(p) && WrappedLayer(Base.Fix1(broadcast, zero))
+
+    alpha = T(-1.7580993408473766)
+    scale = T(inv(sqrt((1 - p) * (1 + p * alpha^2))))
+    bias = T(-scale * alpha * p)
+
+    return AlphaDropout(p, alpha, scale, bias)
+end
+
+function (d::AlphaDropout)(x, ps, st::NamedTuple)
+    y, rng = LuxLib.alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
+    return y, (; rng, st.training)
+end
+
+Base.show(io::IO, d::AlphaDropout) = print(io, "AlphaDropout(", d.p, ")")
+
+"""
     Dropout(p; dims=:)
 
 Dropout layer.
@@ -29,7 +90,7 @@ Dropout layer.
 
 Call [`Lux.testmode`](@ref) to switch to test mode.
 
-See also [`VariationalHiddenDropout`](@ref)
+See also [`AlphaDropout`](@ref), [`VariationalHiddenDropout`](@ref)
 """
 struct Dropout{T, D} <: AbstractExplicitLayer
     p::T
@@ -94,7 +155,7 @@ retained until [`Lux.update_state(l, :update_mask, Val(true))`](@ref) is called.
 
 Call [`Lux.testmode`](@ref) to switch to test mode.
 
-See also [`Dropout`](@ref)
+See also [`AlphaDropout`](@ref), [`Dropout`](@ref)
 """
 struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer
     p::T
