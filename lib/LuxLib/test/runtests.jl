@@ -5,5 +5,6 @@ using SafeTestsets, Test
 
     @time @safetestset "BatchNorm" begin include("api/batchnorm.jl") end
     @time @safetestset "GroupNorm" begin include("api/groupnorm.jl") end
+    @time @safetestset "InstanceNorm" begin include("api/instancenorm.jl") end
     @time @safetestset "LayerNorm" begin include("api/layernorm.jl") end
 end

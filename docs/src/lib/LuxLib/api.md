@@ -5,6 +5,7 @@ CurrentModule = LuxLib
 ## Dropout
 
 ```@docs
+alpha_dropout
 dropout
 ```
 
@@ -13,6 +14,7 @@ dropout
 ```@docs
 batchnorm
 groupnorm
+instancenorm
 layernorm
 ```
 

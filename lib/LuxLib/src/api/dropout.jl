@@ -1,6 +1,7 @@
 @doc doc"""
     dropout(rng::AbstractRNG, x, p, ::Val{training}; dims, invp=inv(p))
-    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}; dims, invp=inv(p))
+    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}; dims,
+            invp=inv(p))
 
 Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [1].
 
@@ -29,7 +30,7 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
 ## References
 
 [1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
-overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
+    overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
 function dropout(rng::AbstractRNG, x::AbstractArray, p::T, ::Val{true}; dims,
                  invp::T=inv(p)) where {T}
@@ -62,6 +63,56 @@ function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{
     return (x, mask, rng)
 end
 
+@doc doc"""
+    alpha_dropout(rng::AbstractRNG, x, p, ::Val{training})
+    alpha_dropout(rng::AbstractRNG, x, p, ::Val{training}, α, A, B)
+
+Alpha Dropout: Dropout ensuring that the mean and variance of the output remains same as the
+input. For details see [1]. Use the second call signature to avoid recomputing the constants
+for a fixed dropout probability.
+
+## Arguments
+
+  - `rng`: Random number generator
+  - `x`: Input Array
+  - `p`: Probability of an element to be dropped out
+  - `Val(training)`: If `true` then dropout is applied on `x` with probability `p`. Else,
+    `x` is returned
+  - `α`: -1.7580993408473766. Computed at limit x tends to infinity, `selu(x) = -λβ = α`
+  - `A`: Scaling factor for the mean
+  - `B`: Scaling factor for the variance
+
+## Returns
+
+  - Output Array after applying alpha dropout
+  - Updated state for the random number generator
+
+## References
+
+[1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
+    information processing systems 30 (2017).
+"""
+function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, t::Val{true}) where {T}
+    α = T(-1.7580993408473766)
+    A = T(inv(sqrt((1 - p) * (1 + p * α^2))))
+    B = T(-A * α * p)
+
+    return alpha_dropout(rng, x, p, t, α, A, B)
+end
+
+function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, t::Val{false})
+    return alpha_dropout(rng, x, p, t, 0, 0, 0)
+end
+
+function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
+    rng = _replicate(rng)
+    noise = rand!(rng, similar(x))
+    return (A .* ifelse.(noise .> p, x, α) .+ B), rng
+end
+
+alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B) = (x, rng)
+
+# Mask Generation
 @inline _dropout_shape(s, ::Colon) = size(s)
 @inline function _dropout_shape(s, dims)
     return tuple((i in dims ? si : 1 for (i, si) in enumerate(size(s)))...)
