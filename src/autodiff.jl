@@ -33,19 +33,6 @@ function ChainRulesCore.rrule(::typeof(vec), x::AbstractMatrix)
     return y, vec_pullback
 end
 
-function ChainRulesCore.rrule(::typeof(convert), T::DataType, x::AbstractMatrix)
-    y = convert(T, x)
-    function convert_pullback(dy)
-        if dy isa NoTangent || dy isa ZeroTangent
-            dx = dy
-        else
-            dx = convert(typeof(x), dy)
-        end
-        return NoTangent(), NoTangent(), dx
-    end
-    return y, convert_pullback
-end
-
 function ChainRulesCore.rrule(::typeof(collect), v::Vector)
     y = collect(v)
     function collect_pullback(dy)
