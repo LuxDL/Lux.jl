@@ -1,3 +1,126 @@
+# TODO(@avik-pal): We can add another subtype `AbstractRecurrentCell` in the type hierarchy
+#                  to make it safer to compose these cells with `Recurrence`
+"""
+    Recurrence(cell)
+
+Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
+automatically operate over a sequence of inputs.
+
+!!! warning
+    
+    This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
+    rather allows operating on an entire sequence of inputs at once. See
+    [`StatefulRecurrentCell`](@ref) for functionality similar to [`Flux.Recur`](@ref).
+
+## Arguments
+
+  - `cell`: A recurrent cell. See [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref),
+    for how the inputs/outputs of a recurrent cell must be structured.
+
+## Inputs
+
+  - If `x` is a
+    
+      + Tuple or Vector: Each element is fed to the `cell` sequentially.
+    
+      + Array (except a Vector): It is spliced along the penultimate dimension and each
+        slice is fed to the `cell` sequentially.
+
+## Returns
+
+  - Output of the `cell` for the entire sequence.
+  - Update state of the `cell`.
+
+## Parameters
+
+  - Same as `cell`.
+
+## States
+
+  - Same as `cell`.
+"""
+struct Recurrence{C <: AbstractExplicitLayer} <: AbstractExplicitContainerLayer{(:cell,)}
+    cell::C
+end
+
+@inline function (r::Recurrence)(x::A, ps, st::NamedTuple) where {A <: AbstractArray}
+    return Lux.apply(r, _eachslice(x, Val(ndims(x) - 1)), ps, st)
+end
+
+# Non-ideal dispatch since we can't unroll the loop easily while the code is exactly
+# as NTuple
+function (r::Recurrence)(x::AbstractVector, ps, st::NamedTuple)
+    (out, carry), st = r.cell(first(x), ps, st)
+    for x_ in x[2:end]
+        (out, carry), st = r.cell((x_, carry), ps, st)
+    end
+    return out, st
+end
+
+@generated function (r::Recurrence)(x::NTuple{N}, ps, st::NamedTuple) where {N}
+    quote
+        (out, carry), st = r.cell(x[1], ps, st)
+        Base.Cartesian.@nexprs $(N - 1) i->((out, carry), st) = r.cell((x[i + 1], carry),
+                                                                       ps, st)
+        return out, st
+    end
+end
+
+"""
+    StatefulRecurrentCell(cell)
+
+Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) and
+makes it stateful.
+
+!!! tip
+    
+    This is very similar to `Flux.Recur`
+
+To avoid undefined behavior, once the processing of a single sequence of data is complete,
+update the state with `Lux.update_state(st, :carry, nothing)`.
+
+## Arguments
+
+  - `cell`: A recurrent cell. See [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref),
+    for how the inputs/outputs of a recurrent cell must be structured.
+
+## Inputs
+
+  - Input to the `cell`.
+
+## Returns
+
+  - Output of the `cell` for the entire sequence.
+  - Update state of the `cell` and updated `carry`.
+
+## Parameters
+
+  - Same as `cell`.
+
+## States
+
+  - NamedTuple containing:
+    
+      + `cell`: Same as `cell`.
+      + `carry`: The carry state of the `cell`.
+"""
+struct StatefulRecurrentCell{C <: AbstractExplicitLayer} <:
+       AbstractExplicitContainerLayer{(:cell,)}
+    cell::C
+end
+
+function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)
+    return (cell=initialstates(rng, r.cell), carry=nothing)
+end
+
+function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
+    (out, carry), st_ = applyrecurrentcell(r.cell, x, ps, st.cell, st.carry)
+    return out, (; cell=st_, carry)
+end
+
+applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, carry) = l((x, carry), ps, st)
+applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, ::Nothing) = l(x, ps, st)
+
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true,
             train_state::Bool=false, init_bias=zeros32, init_weight=glorot_uniform,
@@ -338,7 +461,7 @@ function (lstm::LSTMCell{true})((x,
                                  (hidden_state, memory))::Tuple{<:AbstractMatrix,
                                                                 Tuple{<:AbstractMatrix,
                                                                       <:AbstractMatrix}},
-                                ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                                ps, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
@@ -350,7 +473,7 @@ function (lstm::LSTMCell{false})((x,
                                   (hidden_state, memory))::Tuple{<:AbstractMatrix,
                                                                  Tuple{<:AbstractMatrix,
                                                                        <:AbstractMatrix}},
-                                 ps::Union{ComponentArray, NamedTuple}, st::NamedTuple)
+                                 ps, st::NamedTuple)
     g = ps.weight_i * x .+ ps.weight_h * hidden_state
     input, forget, cell, output = multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)

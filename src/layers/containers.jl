@@ -12,7 +12,11 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 ## Arguments
 
   - `layer`: Layer or `Chain` of layers to be applied to the input
-  - `connection`: A 2-argument function that takes `layer(input)` and the input
+
+  - `connection`:
+    
+      + A 2-argument function that takes `layer(input)` and the input OR
+      + An AbstractExplicitLayer that takes `(layer(input), input)` as input
 
 ## Inputs
 
@@ -25,11 +29,15 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 ## Parameters
 
-  - Parameters of `layer`
+  - Parameters of `layer` OR
+  - If `connection` is an AbstractExplicitLayer, then NamedTuple with fields `:layers` and
+    `:connection`
 
 ## States
 
-  - States of `layer`
+  - States of `layer` OR
+  - If `connection` is an AbstractExplicitLayer, then NamedTuple with fields `:layers` and
+    `:connection`
 
 See [`Parallel`](@ref) for a more general implementation.
 """
@@ -39,9 +47,28 @@ struct SkipConnection{T <: AbstractExplicitLayer, F} <:
     connection::F
 end
 
-@inline function (skip::SkipConnection)(x, ps, st::NamedTuple)
-    mx, st = skip.layers(x, ps, st)
+function initialparameters(rng::AbstractRNG,
+                           l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    return (layers=initialparameters(rng, l.layers),
+            connection=initialparameters(rng, l.connection))
+end
+
+function initialstates(rng::AbstractRNG,
+                       l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    return (layers=initialstates(rng, l.layers),
+            connection=initialstates(rng, l.connection))
+end
+
+function (skip::SkipConnection)(x, ps, st::NamedTuple)
+    mx, st = Lux.apply(skip.layers, x, ps, st)
     return skip.connection(mx, x), st
+end
+
+function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(x, ps,
+                                                                                  st::NamedTuple)
+    mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
+    y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
+    return y, (layers=st1, connection=st2)
 end
 
 """
@@ -109,9 +136,10 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = []
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(getinput(i)),
-                                                                        ps.$(names[i]),
-                                                                        st.$(names[i])))
+            [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
+                                                               $(getinput(i)),
+                                                               ps.$(names[i]),
+                                                               st.$(names[i])))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
@@ -199,8 +227,9 @@ end
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])(x, ps.$(names[i]),
-                                                                        st.$(names[i])))
+            [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]), x,
+                                                               ps.$(names[i]),
+                                                               st.$(names[i])))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
@@ -291,9 +320,10 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
     append!(calls,
-            [:(($(y_symbols[i]), $(st_symbols[i])) = layers.$(names[i])($(y_symbols[N + 1]),
-                                                                        ps.$(names[i]),
-                                                                        st.$(names[i]));
+            [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
+                                                               $(y_symbols[N + 1]),
+                                                               ps.$(names[i]),
+                                                               st.$(names[i]));
                $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
              for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
@@ -354,13 +384,18 @@ keyword argument `disable_optimizations`.
     `Chain` wrapper.
   - If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
 
+## Miscellaneous Properties
+
+  - Allows indexing. We can access the `i`th layer using `m[i]`. We can also index using
+    ranges or arrays.
+
 ## Example
 
 ```julia
 c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 ```
 """
-struct Chain{T} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 
     function Chain(xs...; disable_optimizations::Bool=false)
@@ -396,7 +431,7 @@ function _flatten_model(layers::Union{AbstractVector, Tuple})
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-            if !hasmethod(f, (Any, Union{ComponentArray, NamedTuple}, NamedTuple))
+            if !hasmethod(f, (Any, Any, NamedTuple))
                 if f === identity
                     continue
                 else
@@ -427,9 +462,10 @@ end
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = layers.$(fields[i])($(x_symbols[i]),
-                                                                             ps.$(fields[i]),
-                                                                             st.$(fields[i])))
+    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = Lux.apply(layers.$(fields[i]),
+                                                                   $(x_symbols[i]),
+                                                                   ps.$(fields[i]),
+                                                                   st.$(fields[i])))
              for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N + 1]), st))
@@ -437,3 +473,89 @@ end
 end
 
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
+
+Base.getindex(c::Chain, i::Int) = c.layers[i]
+Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))
+
+Base.length(c::Chain) = length(c.layers)
+Base.lastindex(c::Chain) = lastindex(c.layers)
+Base.firstindex(c::Chain) = firstindex(c.layers)
+
+"""
+    Maxout(layers...)
+    Maxout(; layers...)
+    Maxout(f::Function, n_alts::Int)
+
+This contains a number of internal layers, each of which receives the same input. Its output
+is the elementwise maximum of the the internal layers' outputs.
+
+Maxout over linear dense layers satisfies the univeral approximation theorem. See [1].
+
+See also [`Parallel`](@ref) to reduce with other operators.
+
+## Arguments
+
+  - Layers can be specified in three formats:
+    
+      + A list of `N` Lux layers
+      + Specified as `N` keyword arguments.
+      + A no argument function `f` and an integer `n_alts` which specifies the number of
+        layers.
+
+## Inputs
+
+  - `x`: Input that is passed to each of the layers
+
+## Returns
+
+  - Output is computed by taking elementwise `max` of the outputs of the individual layers.
+  - Updated state of the `layers`
+
+## Parameters
+
+  - Parameters of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
+
+## States
+
+  - States of each `layer` wrapped in a NamedTuple with
+    `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
+
+## References
+
+[1] Goodfellow, Warde-Farley, Mirza, Courville & Bengio "Maxout Networks"
+[https://arxiv.org/abs/1302.4389](https://arxiv.org/abs/1302.4389)
+"""
+struct Maxout{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+    layers::T
+end
+
+function Maxout(layers...)
+    names = ntuple(i -> Symbol("layer_$i"), length(layers))
+    return Maxout(NamedTuple{names}(layers))
+end
+
+Maxout(; kwargs...) = Maxout((; kwargs...))
+
+Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
+
+# NOTE(@avik-pal): Calling `applyparallel` with broadcasted `max` is slower than this
+#                  implementation.
+(m::Maxout)(x, ps, st::NamedTuple) = applymaxout(m.layers, x, ps, st)
+
+@generated function applymaxout(layers::NamedTuple{fields}, x, ps,
+                                st::NamedTuple{fields}) where {fields}
+    N = length(fields)
+    y_symbols = [gensym() for _ in 1:N]
+    st_symbols = [gensym() for _ in 1:N]
+    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(fields[i]), x,
+                                                               ps.$(fields[i]),
+                                                               st.$(fields[i])))
+             for i in 1:N]
+    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+    push!(calls, :(res = max.($(Tuple(y_symbols)...))))
+    push!(calls, :(return res, st))
+    return Expr(:block, calls...)
+end
+
+Base.keys(m::Maxout) = Base.keys(getfield(m, :layers))

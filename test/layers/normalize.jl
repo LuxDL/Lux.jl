@@ -9,7 +9,7 @@ Random.seed!(rng, 0)
     m = BatchNorm(2)
     x = [1.0f0 3.0f0 5.0f0
          2.0f0 4.0f0 6.0f0]
-    println(m)
+    display(m)
     ps, st = Lux.setup(rng, m)
 
     @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -45,7 +45,7 @@ Random.seed!(rng, 0)
     x_ = m(x, ps, st_)[1]
     @test isapprox(x_[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
-    @inferred m(x, ps, st)
+    @inferred first(m(x, ps, st))
 
     run_JET_tests(m, x, ps, st)
 
@@ -55,9 +55,9 @@ Random.seed!(rng, 0)
     for affine in (true, false)
         m = BatchNorm(2; affine, track_stats=false)
         x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0]
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -72,14 +72,14 @@ Random.seed!(rng, 0)
         m = BatchNorm(2, sigmoid; affine)
         x = [1.0f0 3.0f0 5.0f0
              2.0f0 4.0f0 6.0f0]
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
         @test isapprox(y,
                        sigmoid.((x .- st_.running_mean) ./
                                 sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -92,13 +92,20 @@ Random.seed!(rng, 0)
 
         m = BatchNorm(32; affine)
         x = randn(Float32, 416, 416, 32, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
+    end
+
+    @testset "allow fast activation" begin
+        layer = BatchNorm(10, tanh)
+        @test layer.activation == tanh_fast
+        layer = BatchNorm(10, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
     end
 end
 
@@ -110,7 +117,7 @@ end
     sizes = (3, 4, 2)
     x = reshape(collect(1:prod(sizes)), sizes)
 
-    println(m)
+    display(m)
     x = Float32.(x)
     ps, st = Lux.setup(rng, m)
     @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -158,7 +165,7 @@ end
           sqrt.(reshape(st_.running_var, 1, 1, 2, 1) .+ 1.0f-5)
     @test y≈reshape(out, size(x)) atol=1.0e-5
 
-    @inferred m(x, ps, st)
+    @inferred first(m(x, ps, st))
     run_JET_tests(m, x, ps, st)
     test_gradient_correctness_fdm(ps -> sum(first(m(x, ps, st))), ps; atol=1.0f-3,
                                   rtol=1.0f-3)
@@ -166,9 +173,9 @@ end
     for affine in (true, false)
         m = GroupNorm(2, 2; affine, track_stats=false)
         x = randn(rng, Float32, 3, 2, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -182,12 +189,12 @@ end
         # with activation function
         m = GroupNorm(2, 2, sigmoid; affine)
         x = randn(rng, Float32, 3, 2, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
 
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
 
         if affine
@@ -200,16 +207,23 @@ end
 
         m = GroupNorm(32, 16; affine)
         x = randn(rng, Float32, 416, 416, 32, 1)
-        println(m)
+        display(m)
         ps, st = Lux.setup(rng, m)
         st = Lux.testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
-        @inferred m(x, ps, st)
+        @inferred first(m(x, ps, st))
         run_JET_tests(m, x, ps, st)
     end
 
     @test_throws AssertionError GroupNorm(5, 2)
+
+    @testset "allow fast activation" begin
+        layer = GroupNorm(10, 2, tanh)
+        @test layer.activation == tanh_fast
+        layer = GroupNorm(10, 2, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
 
     # Deprecated Functionality (remove in v0.5)
     @test_deprecated GroupNorm(4, 2; track_stats=true)
@@ -234,7 +248,7 @@ end
         c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(c, (:weight, :bias))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -243,7 +257,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -252,7 +266,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight, :bias), (2, 2))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -261,7 +275,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(c, (:weight,), (2,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 3, 3, 1)
 
@@ -274,7 +288,7 @@ end
         d = Dense(3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(d, (:weight, :bias))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -283,7 +297,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -292,7 +306,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight, :bias), (2, 2))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -301,7 +315,7 @@ end
                                       atol=1.0f-3, rtol=1.0f-3)
 
         wn = WeightNorm(d, (:weight,), (2,))
-        println(wn)
+        display(wn)
         ps, st = Lux.setup(rng, wn)
         x = randn(rng, Float32, 3, 1)
 
@@ -336,10 +350,10 @@ end
     for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
         for affine in (true, false)
             ln = LayerNorm(bshape; affine)
-            println(ln)
+            display(ln)
             ps, st = Lux.setup(rng, ln)
 
-            @inferred ln(x, ps, st)
+            @inferred first(ln(x, ps, st))
             y, st_ = ln(x, ps, st)
 
             @test isapprox(mean(y), 0; atol=1.0f-3, rtol=1.0f-3)
@@ -357,10 +371,10 @@ end
 
             for act in (sigmoid, tanh)
                 ln = LayerNorm(bshape, act; affine)
-                println(ln)
+                display(ln)
                 ps, st = Lux.setup(rng, ln)
 
-                @inferred ln(x, ps, st)
+                @inferred first(ln(x, ps, st))
                 y, st_ = ln(x, ps, st)
 
                 run_JET_tests(ln, x, ps, st)
@@ -374,5 +388,62 @@ end
                 end
             end
         end
+    end
+
+    @testset "allow fast activation" begin
+        layer = LayerNorm((3, 1), tanh)
+        @test layer.activation == tanh_fast
+        layer = LayerNorm((3, 1), tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
+    end
+end
+
+@testset "InstanceNorm" begin
+    for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
+              randn(rng, Float32, 3, 3, 3, 3, 2))
+        for affine in (true, false)
+            layer = InstanceNorm(3; affine)
+            display(layer)
+            ps, st = Lux.setup(rng, layer)
+
+            @inferred first(layer(x, ps, st))
+            y, st_ = layer(x, ps, st)
+
+            run_JET_tests(layer, x, ps, st)
+
+            if affine
+                test_gradient_correctness_fdm((x, ps) -> sum(first(layer(x, ps, st))), x,
+                                              ps; atol=1.0f-1, rtol=1.0f-1)
+            else
+                test_gradient_correctness_fdm(x -> sum(first(layer(x, ps, st))), x;
+                                              atol=1.0f-1, rtol=1.0f-1)
+            end
+
+            for act in (sigmoid, tanh)
+                layer = InstanceNorm(3, act; affine)
+                display(layer)
+                ps, st = Lux.setup(rng, layer)
+
+                @inferred first(layer(x, ps, st))
+                y, st_ = layer(x, ps, st)
+
+                run_JET_tests(layer, x, ps, st)
+
+                if affine
+                    test_gradient_correctness_fdm((x, ps) -> sum(first(layer(x, ps, st))),
+                                                  x, ps; atol=1.0f-1, rtol=1.0f-1)
+                else
+                    test_gradient_correctness_fdm(x -> sum(first(layer(x, ps, st))), x;
+                                                  atol=1.0f-1, rtol=1.0f-1)
+                end
+            end
+        end
+    end
+
+    @testset "allow fast activation" begin
+        layer = InstanceNorm(3, tanh)
+        @test layer.activation == tanh_fast
+        layer = InstanceNorm(3, tanh; allow_fast_activation=false)
+        @test layer.activation == tanh
     end
 end

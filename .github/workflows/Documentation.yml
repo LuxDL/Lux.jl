@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
-          version: "1.7"
+          version: '1.8'
       - uses: actions/cache@v1
         env:
           cache-name: cache-artifacts
@@ -30,7 +30,7 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - name: Install documentation dependencies
-        run: julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib/Flux2Lux"))); Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib/LuxLib"))); Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Install examples dependencies
         run: julia --project=examples -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy

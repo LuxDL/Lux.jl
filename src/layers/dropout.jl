@@ -1,4 +1,65 @@
 """
+    AlphaDropout(p::Real)
+
+AlphaDropout layer.
+
+## Arguments
+
+  - `p`: Probability of Dropout
+    
+      + if `p = 0` then [`NoOpLayer`](@ref) is returned.
+      + if `p = 1` then `WrappedLayer(Base.Fix1(broadcast, zero))` is returned.
+
+## Inputs
+
+  - `x`: Must be an AbstractArray
+
+## Returns
+
+  - `x` with dropout mask applied if `training=Val(true)` else just `x`
+  - State with updated `rng`
+
+## States
+
+  - `rng`: Pseudo Random Number Generator
+  - `training`: Used to check if training/inference mode
+
+Call [`Lux.testmode`](@ref) to switch to test mode.
+
+See also [`Dropout`](@ref), [`VariationalHiddenDropout`](@ref)
+"""
+struct AlphaDropout{T <: Real} <: AbstractExplicitLayer
+    p::T
+    alpha::T
+    scale::T
+    bias::T
+end
+
+function initialstates(rng::AbstractRNG, ::AlphaDropout)
+    randn(rng)
+    return (rng=replicate(rng), training=Val(true))
+end
+
+function AlphaDropout(p::T) where {T <: Real}
+    @assert 0 ≤ p ≤ 1
+    iszero(p) && return NoOpLayer()
+    isone(p) && WrappedLayer(Base.Fix1(broadcast, zero))
+
+    alpha = T(-1.7580993408473766)
+    scale = T(inv(sqrt((1 - p) * (1 + p * alpha^2))))
+    bias = T(-scale * alpha * p)
+
+    return AlphaDropout(p, alpha, scale, bias)
+end
+
+function (d::AlphaDropout)(x, ps, st::NamedTuple)
+    y, rng = LuxLib.alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
+    return y, (; rng, st.training)
+end
+
+Base.show(io::IO, d::AlphaDropout) = print(io, "AlphaDropout(", d.p, ")")
+
+"""
     Dropout(p; dims=:)
 
 Dropout layer.
@@ -29,7 +90,7 @@ Dropout layer.
 
 Call [`Lux.testmode`](@ref) to switch to test mode.
 
-See also [`VariationalHiddenDropout`](@ref)
+See also [`AlphaDropout`](@ref), [`VariationalHiddenDropout`](@ref)
 """
 struct Dropout{T, D} <: AbstractExplicitLayer
     p::T
@@ -48,9 +109,9 @@ function Dropout(p; dims=:)
     return Dropout(p, 1 / (1 - p), dims)
 end
 
-function (d::Dropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, _, rng = dropout(st.rng, x, d.p, d.q, d.dims, st.training)
-    return y, merge(st, (rng=rng,))
+function (d::Dropout)(x, ps, st::NamedTuple)
+    y, _, rng = LuxLib.dropout(st.rng, x, d.p, st.training; invp=d.q, d.dims)
+    return y, merge(st, (; rng))
 end
 
 function Base.show(io::IO, d::Dropout)
@@ -94,7 +155,7 @@ retained until [`Lux.update_state(l, :update_mask, Val(true))`](@ref) is called.
 
 Call [`Lux.testmode`](@ref) to switch to test mode.
 
-See also [`Dropout`](@ref)
+See also [`AlphaDropout`](@ref), [`Dropout`](@ref)
 """
 struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer
     p::T
@@ -113,10 +174,11 @@ function VariationalHiddenDropout(p; dims=:)
     return VariationalHiddenDropout(p, 1 / (1 - p), dims)
 end
 
-function (d::VariationalHiddenDropout{T})(x::AbstractArray{T}, ps, st::NamedTuple) where {T}
-    y, mask, rng, update_mask = dropout(st.rng, x, st.mask, d.p, d.q, d.dims, st.training,
-                                        st.update_mask)
-    return y, merge(st, (mask=mask, rng=rng, update_mask=update_mask))
+function (d::VariationalHiddenDropout)(x, ps, st::NamedTuple)
+    _mask = st.mask === nothing ? x : st.mask
+    y, mask, rng = LuxLib.dropout(st.rng, x, _mask, d.p, st.training, st.update_mask;
+                                  invp=d.q, d.dims)
+    return y, merge(st, (; mask, rng, update_mask=Val(false)))
 end
 
 function Base.show(io::IO, d::VariationalHiddenDropout)

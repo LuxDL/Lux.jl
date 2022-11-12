@@ -5,7 +5,7 @@ using CUDA
 using CUDA.CUDNN
 # Neural Network Backend
 using NNlib
-import NNlibCUDA: batchnorm, ∇batchnorm, CUDNNFloat
+import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
 # Julia StdLibs
 using Random, Statistics, LinearAlgebra, SparseArrays
 # Parameter Manipulation
@@ -51,22 +51,29 @@ end
 # Experimental
 include("contrib/map.jl")
 include("contrib/training.jl")
+include("contrib/freeze.jl")
 
 # Deprecations
 include("deprecated.jl")
 
+# Snoop Precompile
+import SnoopPrecompile
+import Preferences
+
+SnoopPrecompile.@precompile_all_calls begin include("precompile.jl") end
+
 # Data Transfer
 export cpu, gpu
 # Layers
-export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer
-export Dense, Scale
-export Conv, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool, AdaptiveMaxPool,
-       AdaptiveMeanPool, Upsample
-export Dropout, VariationalHiddenDropout
-export BatchNorm, GroupNorm, LayerNorm
+export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
+export Bilinear, Dense, Embedding, Scale
+export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
+       AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
+export AlphaDropout, Dropout, VariationalHiddenDropout
+export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
-export RNNCell, LSTMCell, GRUCell
+export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
 
 end

@@ -1,9 +1,8 @@
 theme:
   name: material
   features:
-    - navigation.sections # Sections are included in the navigation on the left.
-    - toc.integrate # Table of contents is integrated on the left; does not appear separately on the right.
     - header.autohide # header disappears as you scroll
+    - navigation.top
   palette:
     # Light mode / dark mode
     # We deliberately don't automatically use `media` to check a user's preferences. We default to light mode as
@@ -33,9 +32,9 @@ theme:
   twitter_url: "https://twitter.com/avikpal1410"
 
 # TODO(@avik-pal): Setup mkdocs for showing documentation versions
-# extra:
-#   version:
-#     provider: mike
+extra:
+  version:
+    provider: mike
 
 site_name: Lux.jl
 site_description: Documentation for Lux.jl
@@ -101,9 +100,13 @@ nav:
       - "Intermediate":
           - "MNIST Classification using NeuralODE": "examples/generated/intermediate/NeuralODE/main.md"
           - "Bayesian Neural Network": "examples/generated/intermediate/BayesianNN/main.md"
+          - "Training a Hyper Network": "examples/generated/intermediate/HyperNet/main.md"
   - "Manual":
       - "Lux Interface": "manual/interface.md"
       - "Migrating from Flux to Lux": "manual/migrate_from_flux.md"
+      - "Freezing Model Parameters": "manual/freezing_parameters.md"
+      - "Dispatch on Custom Inputs": "manual/dispatch_custom_inputs.md"
+      - "Controlling Precompilation": "manual/precompilation.md"
   - "API Reference":
       - "Layers": "api/layers.md"
       - "Functional": "api/functional.md"
@@ -111,9 +114,15 @@ nav:
       - "Utilities": "api/utilities.md"
       - "Experimental": "api/contrib.md"
   - "Frameworks":
-      - "Boltz.jl": "lib/Boltz/index.md"
-      - "FluxMPI.jl": "https://avik-pal.github.io/FluxMPI.jl/dev/"
-      - "NNlib.jl": "https://fluxml.ai/Flux.jl/stable/models/nnlib/"
+      - "Boltz": "lib/Boltz/index.md"
+      - "FluxMPI": "https://avik-pal.github.io/FluxMPI.jl/dev/"
+      - "Flux2Lux":
+        - "Introduction": "lib/Flux2Lux/index.md"
+        - "API Reference": "lib/Flux2Lux/api.md"
+      - "NNlib": "https://fluxml.ai/Flux.jl/stable/models/nnlib/"
+      - "LuxLib":
+        - "Introduction": "lib/LuxLib/index.md"
+        - "API Reference": "lib/LuxLib/api.md"
   - "Development Documentation":
       - "Style Guide": "devdocs/style_guide.md"
       - "Layer Implementation": "devdocs/layer_implementation.md"

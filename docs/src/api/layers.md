@@ -16,6 +16,8 @@ SkipConnection
 
 ```@docs
 Conv
+ConvTranspose
+CrossCor
 ```
 
 ## Dropout Layers
@@ -38,19 +40,20 @@ MeanPool
 
 ## Recurrent Layers
 
-!!! warning
-    Recurrent Layers API should be considered Experimental at this point
-
 ```@docs
 GRUCell
 LSTMCell
 RNNCell
+Recurrence
+StatefulRecurrentCell
 ```
 
 ## Linear Layers
 
 ```@docs
+Bilinear
 Dense
+Embedding
 Scale
 ```
 
@@ -59,6 +62,7 @@ Scale
 ```@docs
 ActivationFunction
 FlattenLayer
+Maxout
 NoOpLayer
 ReshapeLayer
 SelectDim
@@ -77,6 +81,7 @@ WeightNorm
 ## Upsampling
 
 ```@docs
+PixelShuffle
 Upsample
 ```
 
