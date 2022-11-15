@@ -1,4 +1,5 @@
 using Lux, ComponentArrays, CUDA, Functors, ReverseDiff, Random, Optimisers, Zygote, Test
+using Statistics: std
 
 include("test_utils.jl")
 
@@ -27,6 +28,23 @@ end
         @test randn(curng, 10, 2) != randn(curng, 10, 2)
         @test randn(Lux.replicate(curng), 10, 2) == randn(Lux.replicate(curng), 10, 2)
     end
+end
+
+@testset "kaiming" begin
+    # kaiming_uniform should yield a kernel in range [-sqrt(6/n_out), sqrt(6/n_out)]
+    # and kaiming_normal should yield a kernel with stddev ~= sqrt(2/n_out)
+    for (n_in, n_out) in [(100, 100), (100, 400)]
+        v = Lux.kaiming_uniform(rng, n_in, n_out)
+        σ2 = sqrt(6 / n_out)
+        @test -1σ2 < minimum(v) < -0.9σ2
+        @test 0.9σ2 < maximum(v) < 1σ2
+
+        v = Lux.kaiming_normal(rng, n_in, n_out)
+        σ2 = sqrt(2 / n_out)
+        @test 0.9σ2 < std(v) < 1.1σ2
+    end
+    @test eltype(Lux.kaiming_uniform(rng, 3, 4; gain=1.5)) == Float32
+    @test eltype(Lux.kaiming_normal(rng, 3, 4; gain=1.5)) == Float32
 end
 
 @testset "istraining" begin

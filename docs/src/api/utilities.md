@@ -14,6 +14,8 @@ Lux.gpu
 ```@docs
 Lux.glorot_normal
 Lux.glorot_uniform
+Lux.kaiming_normal
+Lux.kaiming_uniform
 Lux.ones32
 Lux.rand32
 Lux.randn32
