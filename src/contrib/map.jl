@@ -90,7 +90,7 @@ function layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
 
     length(l_c) == 0 && return f(l, ps, st, name)
 
-    l_c_ = l_c isa Tuple ? l_c[1] : l_c
+    l_c_ = __fix_tuple_functor(l_c, ps_c)
     ks = keys(l_c_)
 
     l_c_new, ps_c_new, st_c_new = [], [], []
@@ -112,3 +112,10 @@ function layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
 
     return l_new, ps_new, st_new
 end
+
+function __fix_tuple_functor(x::Tuple, ::NamedTuple{names}) where {names}
+    length(x) == 1 && length(names) > 1 && first(x) isa NamedTuple && return first(x)
+    @assert length(x)==length(names) "length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
+    return NamedTuple{names}(x)
+end
+__fix_tuple_functor(x, y) = x
