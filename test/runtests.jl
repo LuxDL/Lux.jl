@@ -2,16 +2,11 @@ using Pkg, SafeTestsets, Test
 
 const GROUP = get(ENV, "GROUP", "All")
 
-function dev_subpkg(subpkg)
-    subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
-    return Pkg.develop(PackageSpec(; path=subpkg_path))
-end
+_get_lib_path(subpkg) = joinpath(dirname(@__DIR__), "lib", subpkg)
 
-function activate_subpkg_env(subpkg)
-    subpkg_path = joinpath(dirname(@__DIR__), "lib", subpkg)
-    Pkg.activate(subpkg_path)
-    Pkg.develop(PackageSpec(; path=subpkg_path))
-    return Pkg.instantiate()
+function _dev_pkg(path)
+    @info "Pkg.develop $path"
+    return Pkg.develop(PackageSpec(; path))
 end
 
 groups = if GROUP == "All"
@@ -20,9 +15,23 @@ else
     [GROUP]
 end
 
+cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib")],
+                          "Boltz" => [_get_lib_path("LuxLib"), dirname(@__DIR__)],
+                          "LuxLib" => [],
+                          "Flux2Lux" => [_get_lib_path("LuxLib"), dirname(@__DIR__)])
+
+const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "false") ==
+                                    "true"
+
 @time begin for group in groups
     @info "Testing GROUP $group"
+
     if group == "Lux"
+        if !OVERRIDE_INTER_DEPENDENCIES
+            # Use unreleased versions of inter-dependencies
+            _dev_pkg.(cross_dependencies[group])
+        end
+
         @testset "Lux.jl" begin
             @time @safetestset "Utils" begin include("utils.jl") end
 
@@ -50,8 +59,17 @@ end
             end
         end
     else
-        dev_subpkg(group)
-        subpkg_path = joinpath(dirname(@__DIR__), "lib", group)
-        Pkg.test(PackageSpec(; name=group, path=subpkg_path))
+        subpkg_path = _get_lib_path(group)
+        _dev_pkg(subpkg_path)
+
+        if !OVERRIDE_INTER_DEPENDENCIES
+            # Use unreleased versions of inter-dependencies
+            _dev_pkg.(cross_dependencies[group])
+        end
+
+        # this should inherit the GROUP envvar
+        run_coverage = get(ENV, "COVERAGE", "false")
+        Pkg.test(PackageSpec(; name=group, path=subpkg_path);
+                 coverage=(run_coverage == "true"))
     end
 end end
