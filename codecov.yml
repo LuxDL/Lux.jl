@@ -1,0 +1,22 @@
+flag_management:
+  default_rules: # the rules that will be followed for any flag added, generally
+    carryforward: true
+    statuses:
+      - type: project
+        target: auto
+        threshold: 80%
+      - type: patch
+        target: 90%
+  individual_flags: # exceptions to the default rules above, stated flag by flag
+    - name: Lux
+      paths: 
+      - src/**
+    - name: Boltz
+      paths: 
+      - lib/Boltz/src/**
+    - name: Flux2Lux
+      paths: 
+      - lib/Flux2Lux/src/**
+    - name: LuxLib
+      paths: 
+      - lib/LuxLib/src/**

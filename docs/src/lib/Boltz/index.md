@@ -7,7 +7,7 @@
 
 [![CI](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CI.yml)
 [![CI Nightly](https://github.com/avik-pal/Lux.jl/actions/workflows/CINightly.yml/badge.svg)](https://github.com/avik-pal/Lux.jl/actions/workflows/CINightly.yml)
-[![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl)
+[![codecov](https://codecov.io/gh/avik-pal/Lux.jl/branch/main/graph/badge.svg?flag=Boltz&token=IMqBM1e3hz)](https://codecov.io/gh/avik-pal/Lux.jl)
 [![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/Boltz)](https://pkgs.genieframework.com?packages=Boltz)
 
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
@@ -30,11 +30,10 @@ using Boltz, Lux
 model, ps, st = resnet(:resnet18; pretrained=true)
 ```
 
-
 ## Classification Models
 
 | MODEL NAME | FUNCTION | NAME | PRETRAINED | TOP 1 ACCURACY (%) | TOP 5 ACCURACY (%) |
-| ---------- | -------- | ---- | ---------- | ------------------ | ------------------ |
+| - | - | - | :-: | :-: | :-: |
 | AlexNet | `alexnet` | `:alexnet` | ✅ | 54.48 | 77.72 |
 | ResNet | `resnet` | `:resnet18` | ✅ | 68.08 | 88.44 |
 | ResNet | `resnet` | `:resnet34` | ✅ | 72.13 | 90.91 |
