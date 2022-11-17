@@ -1,5 +1,5 @@
 """
-    vgg_block(input_filters, output_filters, depth, batchnorm)
+    _vgg_block(input_filters, output_filters, depth, batchnorm)
 
 A VGG block of convolution layers ([reference](https://arxiv.org/abs/1409.1556v6)).
 
@@ -10,7 +10,7 @@ A VGG block of convolution layers ([reference](https://arxiv.org/abs/1409.1556v6
   - `depth`: number of convolution/convolution + batch norm layers
   - `batchnorm`: set to `true` to include batch normalization after each convolution
 """
-function vgg_block(input_filters, output_filters, depth, batchnorm)
+function _vgg_block(input_filters, output_filters, depth, batchnorm)
     k = (3, 3)
     p = (1, 1)
     layers = []
@@ -26,22 +26,22 @@ function vgg_block(input_filters, output_filters, depth, batchnorm)
 end
 
 """
-    vgg_convolutional_layers(config, batchnorm, inchannels)
+    _vgg_convolutional_layers(config, batchnorm, inchannels)
 
 Create VGG convolution layers ([reference](https://arxiv.org/abs/1409.1556v6)).
 
 # Arguments
 
   - `config`: vector of tuples `(output_channels, num_convolutions)` for each block
-    (see [`Metalhead.vgg_block`](#))
+    (see [`Metalhead._vgg_block`](#))
   - `batchnorm`: set to `true` to include batch normalization after each convolution
   - `inchannels`: number of input channels
 """
-function vgg_convolutional_layers(config, batchnorm, inchannels)
+function _vgg_convolutional_layers(config, batchnorm, inchannels)
     layers = []
     input_filters = inchannels
     for c in config
-        push!(layers, vgg_block(input_filters, c..., batchnorm))
+        push!(layers, _vgg_block(input_filters, c..., batchnorm))
         push!(layers, MaxPool((2, 2); stride=2))
         input_filters, _ = c
     end
@@ -49,7 +49,7 @@ function vgg_convolutional_layers(config, batchnorm, inchannels)
 end
 
 """
-    vgg_classifier_layers(imsize, nclasses, fcsize, dropout)
+    _vgg_classifier_layers(imsize, nclasses, fcsize, dropout)
 
 Create VGG classifier (fully connected) layers
 ([reference](https://arxiv.org/abs/1409.1556v6)).
@@ -57,12 +57,12 @@ Create VGG classifier (fully connected) layers
 # Arguments
 
   - `imsize`: tuple `(width, height, channels)` indicating the size after the convolution
-    layers (see [`Metalhead.vgg_convolutional_layers`](#))
+    layers (see [`Metalhead._vgg_convolutional_layers`](#))
   - `nclasses`: number of output classes
   - `fcsize`: input and output size of the intermediate fully connected layer
   - `dropout`: the dropout level between each fully connected layer
 """
-function vgg_classifier_layers(imsize, nclasses, fcsize, dropout)
+function _vgg_classifier_layers(imsize, nclasses, fcsize, dropout)
     return Chain(FlattenLayer(), Dense(Int(prod(imsize)), fcsize, relu), Dropout(dropout),
                  Dense(fcsize, fcsize, relu), Dropout(dropout), Dense(fcsize, nclasses))
 end
@@ -80,12 +80,12 @@ Create a VGG model ([reference](https://arxiv.org/abs/1409.1556v6)).
   - `batchnorm`: set to `true` to use batch normalization after each convolution
   - `nclasses`: number of output classes
   - `fcsize`: intermediate fully connected layer size
-    (see [`Metalhead.vgg_classifier_layers`](#))
+    (see [`Metalhead._vgg_classifier_layers`](#))
   - `dropout`: dropout level between fully connected layers
 """
 function vgg(imsize; config, inchannels, batchnorm=false, nclasses, fcsize, dropout)
-    conv = vgg_convolutional_layers(config, batchnorm, inchannels)
-    class = vgg_classifier_layers((7, 7, 512), nclasses, fcsize, dropout)
+    conv = _vgg_convolutional_layers(config, batchnorm, inchannels)
+    class = _vgg_classifier_layers((7, 7, 512), nclasses, fcsize, dropout)
     return Chain(Chain(conv), class)
 end
 
@@ -125,5 +125,5 @@ function vgg(name::Symbol; kwargs...)
         vgg((224, 224); config=VGG_CONV_CONFIG[VGG_CONFIG[19]], inchannels=3,
             batchnorm=true, nclasses=1000, fcsize=4096, dropout=0.5f0)
     end
-    return initialize_model(name, model; kwargs...)
+    return _initialize_model(name, model; kwargs...)
 end
