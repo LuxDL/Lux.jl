@@ -5,6 +5,7 @@
 The implementation follows [the Keras example](https://keras.io/examples/generative/ddim/).
 
 The model generates images from Gaussian noises by <em>denoising</em> iteratively.
+
 ![](output/generate/img_004.gif)
 ![](output/generate/img_005.gif)
 # Usage
