@@ -33,6 +33,7 @@ need to be followed:
       `Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib/<project name>")))`.
     - Add a dependency in `docs/Project.toml` (don't add compat entries).
     - Add `using <Project Name>` in `docs/make.jl`.
+    - Add the package name to `modules` in `docs/make.jl`.
   * For every new page that you have added (including `index.md` if using `README.md` file)
     update `docs/mkdocs.yml` `nav` field.
 

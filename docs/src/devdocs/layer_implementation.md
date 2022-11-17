@@ -41,28 +41,3 @@ varying how calls are made at different timesteps.
 1. `reset`ing the hidden-state and memory is slightly tricky.
    1. One way would be to store a `initial_hidden_state` and `initial_memory` in the state
       alongside the `hidden_state` and `memory`.
-
-
-### RNN Blocks
-
-!!! note
-    This is currently unimplemented
-
-An example implementation would be
-
-```julia
-struct RNN{R} <: Lux.AbstractExplicitContainerLayer{(:recurrent_cell,)}
-    recurrent_cell::R
-end
-
-function (l::RNN)(x::AbstractArray{T,3}, ps::NamedTuple, st::NamedTuple) where {T}
-    x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
-    (y, carry), st = l.recurrent_cell(x_init, ps, st)
-    for x in x_rest
-        (y, carry), st = l.recurrent_cell((x, carry), ps, st)
-    end
-    return y, st
-end
-```
-
-We enforce the inputs to be of the format `in_dims × sequence_length × batch_size`.

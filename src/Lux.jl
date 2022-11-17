@@ -24,9 +24,9 @@ using Optimisers
 
 # LuxCore
 using LuxCore
-using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
-               initialstates, parameterlength, statelength, update_state, trainmode,
-               testmode, setup, apply
+import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
+                initialstates, parameterlength, statelength, update_state, trainmode,
+                testmode, setup, apply
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 

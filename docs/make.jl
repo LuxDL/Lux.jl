@@ -1,7 +1,7 @@
 using Documenter, DocumenterMarkdown, Flux2Lux, LuxCore, Lux, LuxLib, Pkg
 
 function _setup_subdir_pkgs_index_file(subpkg)
-    src_file = joinpath(dirname(@__DIR__), "../lib", subpkg, "README.md")
+    src_file = joinpath(dirname(@__DIR__), "lib", subpkg, "README.md")
     dst_file = joinpath(dirname(@__DIR__), "docs/src/lib", subpkg, "index.md")
     rm(dst_file; force=true)
     cp(src_file, dst_file)
@@ -14,7 +14,7 @@ deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/Lux.jl.git")
 
 makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
-         modules=[Flux2Lux, Lux, LuxLib],
+         modules=[Flux2Lux, Lux, LuxLib, LuxCore],
          strict=[
              :doctest,
              :linkcheck,
