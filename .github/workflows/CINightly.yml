@@ -22,6 +22,7 @@ jobs:
           - Boltz     # Prebuilt Models using Lux
           - LuxLib    # Backend of Lux
           - Flux2Lux  # Flux2Lux Converter
+          - LuxCore   # Avoid the heavy Lux Dependency
         version:
           - 'nightly'  # merge even if tests fail
     steps:
@@ -43,6 +44,7 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         env:
           GROUP: ${{ matrix.group }}
+          OVERRIDE_INTER_DEPENDENCIES: "false"
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,lib/Boltz/src,lib/LuxLib/src,lib/Flux2Lux/src

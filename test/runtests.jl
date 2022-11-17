@@ -23,7 +23,7 @@ cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib")],
                           ], "LuxLib" => [],
                           "Flux2Lux" => [_get_lib_path("LuxLib"), dirname(@__DIR__)])
 
-const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "false") ==
+const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "true") ==
                                     "true"
 
 @time begin for group in groups
