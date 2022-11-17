@@ -47,7 +47,7 @@ jobs:
           OVERRIDE_INTER_DEPENDENCIES: "false"
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/Flux2Lux/src
+          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/Flux2Lux/src,lib/LuxCore/src
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info

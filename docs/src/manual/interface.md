@@ -1,5 +1,11 @@
 # Lux Interface
 
+!!! tip
+
+    If you just want to define compatibility with Lux without actually using any of the
+    other functionality provided by Lux (like layers), it is recommended to depend on
+    `LuxCore.jl` instead of `Lux.jl`. `LuxCore.jl` is a significantly lighter dependency.
+
 First let's set the expectations straight.
 
 - Do you **have to** follow the interface? *No*.

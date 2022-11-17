@@ -123,6 +123,10 @@ nav:
       - "LuxLib":
         - "Introduction": "lib/LuxLib/index.md"
         - "API Reference": "lib/LuxLib/api.md"
+      - "LuxCore":
+        - "Introduction": "lib/LuxCore/index.md"
+        - "API Reference": "lib/LuxCore/api.md"
   - "Development Documentation":
       - "Style Guide": "devdocs/style_guide.md"
       - "Layer Implementation": "devdocs/layer_implementation.md"
+      - "Sub Packages": "devdocs/subpackages.md"
