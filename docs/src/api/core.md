@@ -2,39 +2,7 @@
 CurrentModule = Lux
 ```
 
-## Abstract Types
-
-```@docs
-Lux.AbstractExplicitLayer
-Lux.AbstractExplicitContainerLayer
-```
-
-## General
-
-```@docs
-Lux.apply
-Lux.setup
-```
-
-## Parameters
-
-```@docs
-Lux.initialparameters
-Lux.parameterlength
-```
-
-## States
-
-```@docs
-Lux.initialstates
-Lux.statelength
-Lux.testmode
-Lux.trainmode
-Lux.update_state
-```
-
-## Index
-
-```@index
-Pages = ["core.md"]
-```
+The documentation for this page has been moved to [LuxCore.jl](../lib/LuxCore/api.md).
+However, this the functionality has in **no way been deprecated** and there is no plan
+to deprecated access to these functionalities in the future. The change was made merely to
+allow lighter dependencies for users extending `Lux.jl`.

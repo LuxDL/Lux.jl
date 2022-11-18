@@ -18,14 +18,14 @@ jobs:
       fail-fast: false
       matrix:
         group:
-          - Lux       # Core Framework
-          - Boltz     # Prebuilt Models using Lux
-          - LuxLib    # Backend of Lux
-          - Flux2Lux  # Flux2Lux Converter
+          - Lux # Core Framework
+          - Boltz # Prebuilt Models using Lux
+          - LuxLib # Backend of Lux
+          - Flux2Lux # Flux2Lux Converter
+          - LuxCore # Avoid the heavy Lux Dependency
         version:
-          - '1.6'      # JET tests are disabled on 1.6
-          - '1.7'
-          - '1.8'
+          - "1.6"
+          - "1.8"
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
@@ -41,13 +41,16 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@v1
+      - name: Build Package
+        run: |
+          julia --project=. -e 'using Pkg; Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib/LuxCore"))); Pkg.instantiate()'
       - uses: julia-actions/julia-runtest@v1
         env:
           GROUP: ${{ matrix.group }}
+          OVERRIDE_INTER_DEPENDENCIES: "false"
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/Flux2Lux/src
+          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/Flux2Lux/src,lib/LuxCore/src
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info

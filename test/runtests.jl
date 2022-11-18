@@ -10,20 +10,25 @@ function _dev_pkg(path)
 end
 
 groups = if GROUP == "All"
-    ["Lux", "Boltz", "LuxLib", "Flux2Lux"]
+    ["Lux", "Boltz", "LuxLib", "Flux2Lux", "LuxCore"]
 else
     [GROUP]
 end
 
-cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib")],
+cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib"), _get_lib_path("LuxCore")],
                           "Boltz" => [
                               _get_lib_path("LuxLib"),
+                              _get_lib_path("LuxCore"),
                               dirname(@__DIR__),
                               _get_lib_path("Flux2Lux"),
-                          ], "LuxLib" => [],
-                          "Flux2Lux" => [_get_lib_path("LuxLib"), dirname(@__DIR__)])
+                          ],
+                          "Flux2Lux" => [
+                              _get_lib_path("LuxLib"),
+                              _get_lib_path("LuxCore"),
+                              dirname(@__DIR__),
+                          ], "LuxLib" => [], "LuxCore" => [])
 
-const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "false") ==
+const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "true") ==
                                     "true"
 
 @time begin for group in groups

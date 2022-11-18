@@ -1,3 +1,15 @@
+module LuxCore
+
+using Functors, Random, Setfield
+
+function _default_rng()
+    @static if VERSION >= v"1.7"
+        return Xoshiro(1234)
+    else
+        return MersenneTwister(1234)
+    end
+end
+
 """
     AbstractExplicitLayer
 
@@ -46,7 +58,7 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 Return the total number of parameters of the layer `l`.
 """
 function parameterlength(l::AbstractExplicitLayer)
-    return parameterlength(initialparameters(Random.default_rng(), l))
+    return parameterlength(initialparameters(_default_rng(), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
     return length(nt) == 0 ? 0 : sum(parameterlength, nt)
@@ -58,10 +70,10 @@ parameterlength(a::AbstractArray) = length(a)
 
 Return the total number of states of the layer `l`.
 """
-statelength(l::AbstractExplicitLayer) = statelength(initialstates(Random.default_rng(), l))
+statelength(l::AbstractExplicitLayer) = statelength(initialstates(_default_rng(), l))
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
-statelength(x::Union{Number, Symbol, Val}) = 1
+statelength(x::Union{Number, Symbol, Val, <:AbstractRNG}) = 1
 
 """
     setup(rng::AbstractRNG, l::AbstractExplicitLayer)
@@ -87,7 +99,7 @@ function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
 end
 
 function Base.show(io::IO, x::AbstractExplicitLayer)
-    __t = rsplit(string(get_typename(x)), "."; limit=2)
+    __t = rsplit(string(Base.typename(typeof(x)).wrapper), "."; limit=2)
     T = length(__t) == 2 ? __t[2] : __t[1]
     return print(io, "$T()")
 end
@@ -175,4 +187,6 @@ end
 function _default_layer_check(key)
     _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
     return _default_layer_check_closure
+end
+
 end
