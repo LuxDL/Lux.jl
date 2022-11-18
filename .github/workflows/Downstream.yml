@@ -33,9 +33,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
-      - name: Build Package
-        run: |
-          julia --project=. -e 'using Pkg; Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib/LuxCore"))); Pkg.instantiate()'
+      - uses: julia-actions/julia-buildpkg@v1
       - name: Clone Downstream
         uses: actions/checkout@v2
         with:
