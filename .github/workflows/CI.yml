@@ -41,9 +41,7 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - name: Build Package
-        run: |
-          julia --project=. -e 'using Pkg; Pkg.develop(PackageSpec(path=joinpath(pwd(), "lib/LuxCore"))); Pkg.instantiate()'
+      - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
           GROUP: ${{ matrix.group }}
