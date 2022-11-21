@@ -47,7 +47,7 @@ y, st = Lux.apply(model, x, ps, st)
 gs = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
 
 # Optimization
-st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
+st_opt = Optimisers.setup(Optimisers.Adam(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
