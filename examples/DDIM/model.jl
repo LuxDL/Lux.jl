@@ -53,7 +53,7 @@ end
 # Downsampling block of UNet
 # It narrows height and width while increasing channels.
 struct DownBlock <: Lux.AbstractExplicitContainerLayer{(:residual_blocks, :maxpool)}
-    residual_blocks::Chain
+    residual_blocks::Lux.AbstractExplicitLayer
     maxpool::MaxPool
 end
 
@@ -87,7 +87,7 @@ end
 # Upsampling block of UNet
 # It doubles height and width while decreasing channels.
 struct UpBlock <: Lux.AbstractExplicitContainerLayer{(:residual_blocks, :upsample)}
-    residual_blocks::Chain
+    residual_blocks::Lux.AbstractExplicitLayer
     upsample::Upsample
 end
 
@@ -125,9 +125,9 @@ struct UNet <:
     upsample::Upsample
     conv_in::Conv
     conv_out::Conv
-    down_blocks::Chain
-    residual_blocks::Chain
-    up_blocks::Chain
+    down_blocks::Lux.AbstractExplicitLayer
+    residual_blocks::Lux.AbstractExplicitLayer
+    up_blocks::Lux.AbstractExplicitLayer
     noise_embedding::Function
 end
 
