@@ -145,7 +145,7 @@ end
     ps, st = Lux.setup(rng, ddim) .|> gpu
 
     println("Set optimizer.")
-    opt = Optimisers.AdamW(learning_rate, (9.0f-1, 9.99f-1), weight_decay)
+    opt = AdamW(learning_rate, (9.0f-1, 9.99f-1), weight_decay)
     opt_st = Optimisers.setup(opt, ps) |> gpu
 
     rng_gen = Random.Xoshiro()
