@@ -119,7 +119,7 @@ end
 # UNet
 # It takes as input images array and returns the array of the same size.
 struct UNet <:
-       Lux.Lux.AbstractExplicitContainerLayer{(:upsample, :conv_in, :conv_out, :down_blocks,
+       Lux.AbstractExplicitContainerLayer{(:upsample, :conv_in, :conv_out, :down_blocks,
                                                :residual_blocks, :up_blocks)}
     upsample::Upsample
     conv_in::Conv
