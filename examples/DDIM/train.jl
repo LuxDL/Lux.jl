@@ -76,7 +76,7 @@ end
 #=
 Training utilities
 =#
-function compute_loss(ddim::DenoisingDiffusionImplicitModel, images::AbstractArray{T, 4},
+function compute_loss(ddim::DenoisingDiffusionImplicitModel{T}, images::AbstractArray{T, 4},
                       rng::AbstractRNG, ps, st::NamedTuple) where {T <: AbstractFloat}
     (noises, images, pred_noises, pred_images), st = ddim((images, rng), ps, st)
     noise_loss = Statistics.mean(abs.(pred_noises - noises))
@@ -85,7 +85,7 @@ function compute_loss(ddim::DenoisingDiffusionImplicitModel, images::AbstractArr
     return loss, st
 end
 
-function train_step(ddim::DenoisingDiffusionImplicitModel, images::AbstractArray{T, 4},
+function train_step(ddim::DenoisingDiffusionImplicitModel{T}, images::AbstractArray{T, 4},
                     rng::AbstractRNG, ps, st::NamedTuple,
                     opt_st::NamedTuple) where {T <: AbstractFloat}
     (loss, st), back = Zygote.pullback(p -> compute_loss(ddim, images, rng, p, st), ps)

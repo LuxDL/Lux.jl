@@ -212,12 +212,12 @@ end
 
 # Define DDIM model
 # This generates noise, adds it to images and calls UNet on it to denoise.
-struct DenoisingDiffusionImplicitModel <:
+struct DenoisingDiffusionImplicitModel{T <: AbstractFloat} <:
        Lux.AbstractExplicitContainerLayer{(:unet, :batchnorm)}
     unet::UNet
     batchnorm::BatchNorm
-    min_signal_rate::AbstractFloat
-    max_signal_rate::AbstractFloat
+    min_signal_rate::T
+    max_signal_rate::T
 end
 
 function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
@@ -233,9 +233,11 @@ function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
                                            max_signal_rate)
 end
 
-function (ddim::DenoisingDiffusionImplicitModel)(x::Tuple{AbstractArray{T, 4}, AbstractRNG},
-                                                 ps,
-                                                 st::NamedTuple) where {T <: AbstractFloat}
+function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{AbstractArray{T, 4},
+                                                             AbstractRNG}, ps,
+                                                    st::NamedTuple) where {
+                                                                           T <:
+                                                                           AbstractFloat}
     images, rng = x
     images, new_st = ddim.batchnorm(images, ps.batchnorm, st.batchnorm)
     @set! st.batchnorm = new_st
@@ -270,8 +272,9 @@ function diffusion_schedules(diffusion_times::AbstractArray{T, 4}, min_signal_ra
     return noise_rates, signal_rates
 end
 
-function denoise(ddim::DenoisingDiffusionImplicitModel, noisy_images::AbstractArray{T, 4},
-                 noise_rates::AbstractArray{T, 4}, signal_rates::AbstractArray{T, 4}, ps,
+function denoise(ddim::DenoisingDiffusionImplicitModel{T},
+                 noisy_images::AbstractArray{T, 4}, noise_rates::AbstractArray{T, 4},
+                 signal_rates::AbstractArray{T, 4}, ps,
                  st::NamedTuple) where {T <: AbstractFloat}
     pred_noises, new_st = ddim.unet((noisy_images, noise_rates .^ 2), ps.unet, st.unet)
     @set! st.unet = new_st
@@ -281,7 +284,7 @@ function denoise(ddim::DenoisingDiffusionImplicitModel, noisy_images::AbstractAr
     return (pred_noises, pred_images), st
 end
 
-function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel,
+function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
                            initial_noise::AbstractArray{T, 4}, diffusion_steps::Int, ps,
                            st::NamedTuple; save_each_step=false) where {T <: AbstractFloat}
     num_images = size(initial_noise, 4)
@@ -323,7 +326,7 @@ function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel,
     return pred_images, images_each_step
 end
 
-function denormalize(ddim::DenoisingDiffusionImplicitModel, x::AbstractArray{T, 4},
+function denormalize(ddim::DenoisingDiffusionImplicitModel{T}, x::AbstractArray{T, 4},
                      st) where {T <: AbstractFloat}
     mean = reshape(st.running_mean, 1, 1, 3, 1)
     var = reshape(st.running_var, 1, 1, 3, 1)
@@ -331,9 +334,9 @@ function denormalize(ddim::DenoisingDiffusionImplicitModel, x::AbstractArray{T, 
     return std .* x .+ mean
 end
 
-function generate(ddim::DenoisingDiffusionImplicitModel, rng::AbstractRNG,
+function generate(ddim::DenoisingDiffusionImplicitModel{T}, rng::AbstractRNG,
                   image_shape::Tuple{Int, Int, Int, Int}, diffusion_steps::Int, ps,
-                  st::NamedTuple; save_each_step=false, T=Float32)
+                  st::NamedTuple; save_each_step=false) where {T}
     initial_noise = randn(rng, T, image_shape...) |> gpu
     generated_images, images_each_step = reverse_diffusion(ddim, initial_noise,
                                                            diffusion_steps, ps, st;
