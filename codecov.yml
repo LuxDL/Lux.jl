@@ -20,3 +20,6 @@ flag_management:
     - name: LuxLib
       paths: 
       - lib/LuxLib/src/**
+    - name: LuxCore
+      paths:
+      - lib/LuxCore/src/**
