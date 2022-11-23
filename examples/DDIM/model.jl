@@ -41,21 +41,19 @@ function residual_block(in_channels::Int, out_channels::Int)
         first_layer = Conv((3, 3), in_channels => out_channels; pad=SamePad())
     end
 
-    return Lux.Chain(first_layer,
-                     Lux.SkipConnection(Lux.Chain(BatchNorm(out_channels; affine=false,
-                                                            momentum=0.99),
-                                                  Conv((3, 3), out_channels => out_channels;
-                                                       stride=1, pad=(1, 1)),
-                                                  swish,
-                                                  Conv((3, 3), out_channels => out_channels;
-                                                       stride=1, pad=(1, 1))), +))
+    return Chain(first_layer,
+                 SkipConnection(Chain(BatchNorm(out_channels; affine=false, momentum=0.99),
+                                      Conv((3, 3), out_channels => out_channels; stride=1,
+                                           pad=(1, 1)), swish,
+                                      Conv((3, 3), out_channels => out_channels; stride=1,
+                                           pad=(1, 1))), +))
 end
 
 # Downsampling block of UNet
 # It narrows height and width while increasing channels.
 struct DownBlock <: Lux.AbstractExplicitContainerLayer{(:residual_blocks, :maxpool)}
-    residual_blocks::Lux.Chain
-    maxpool::Lux.MaxPool
+    residual_blocks::Chain
+    maxpool::MaxPool
 end
 
 function DownBlock(in_channels::Int, out_channels::Int, block_depth::Int)
@@ -65,8 +63,8 @@ function DownBlock(in_channels::Int, out_channels::Int, block_depth::Int)
         push!(layers, residual_block(out_channels, out_channels))
     end
     # disable optimizations to keep block index
-    residual_blocks = Lux.Chain(layers...; disable_optimizations=true)
-    maxpool = Lux.MaxPool((2, 2); pad=0)
+    residual_blocks = Chain(layers...; disable_optimizations=true)
+    maxpool = MaxPool((2, 2); pad=0)
     return DownBlock(residual_blocks, maxpool)
 end
 
@@ -88,8 +86,8 @@ end
 # Upsampling block of UNet
 # It doubles height and width while decreasing channels.
 struct UpBlock <: Lux.AbstractExplicitContainerLayer{(:residual_blocks, :upsample)}
-    residual_blocks::Lux.Chain
-    upsample::Lux.Upsample
+    residual_blocks::Chain
+    upsample::Upsample
 end
 
 function UpBlock(in_channels::Int, out_channels::Int, block_depth::Int)
@@ -98,8 +96,8 @@ function UpBlock(in_channels::Int, out_channels::Int, block_depth::Int)
     for _ in 2:block_depth
         push!(layers, residual_block(out_channels * 2, out_channels))
     end
-    residual_blocks = Lux.Chain(layers...; disable_optimizations=true)
-    upsample = Lux.Upsample(:bilinear; scale=2)
+    residual_blocks = Chain(layers...; disable_optimizations=true)
+    upsample = Upsample(:bilinear; scale=2)
     return UpBlock(residual_blocks, upsample)
 end
 
@@ -121,22 +119,22 @@ end
 # UNet
 # It takes as input images array and returns the array of the same size.
 struct UNet <:
-       Lux.AbstractExplicitContainerLayer{(:upsample, :conv_in, :conv_out, :down_blocks,
-                                           :residual_blocks, :up_blocks)}
-    upsample::Lux.Upsample
-    conv_in::Lux.Conv
-    conv_out::Lux.Conv
-    down_blocks::Lux.Chain
-    residual_blocks::Lux.Chain
-    up_blocks::Lux.Chain
+       Lux.Lux.AbstractExplicitContainerLayer{(:upsample, :conv_in, :conv_out, :down_blocks,
+                                               :residual_blocks, :up_blocks)}
+    upsample::Upsample
+    conv_in::Conv
+    conv_out::Conv
+    down_blocks::Chain
+    residual_blocks::Chain
+    up_blocks::Chain
     noise_embedding::Function
 end
 
 function UNet(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128], block_depth=2,
               min_freq=1.0f0, max_freq=1000.0f0, embedding_dims=32)
-    upsample = Lux.Upsample(:nearest; size=image_size)
-    conv_in = Lux.Conv((1, 1), 3 => channels[1])
-    conv_out = Lux.Conv((1, 1), channels[1] => 3; init_weight=Lux.zeros32)
+    upsample = Upsample(:nearest; size=image_size)
+    conv_in = Conv((1, 1), 3 => channels[1])
+    conv_out = Conv((1, 1), channels[1] => 3; init_weight=Lux.zeros32)
 
     noise_embedding = x -> sinusoidal_embedding(x, min_freq, max_freq, embedding_dims)
 
@@ -147,19 +145,19 @@ function UNet(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128], block_dep
     for i in 1:(length(channels) - 2)
         push!(down_blocks, DownBlock(channels[i], channels[i + 1], block_depth))
     end
-    down_blocks = Lux.Chain(down_blocks...; disable_optimizations=true)
+    down_blocks = Chain(down_blocks...; disable_optimizations=true)
 
     residual_blocks = []
     push!(residual_blocks, residual_block(channels[end - 1], channels[end]))
     for _ in 2:block_depth
         push!(residual_blocks, residual_block(channels[end], channels[end]))
     end
-    residual_blocks = Lux.Chain(residual_blocks...; disable_optimizations=true)
+    residual_blocks = Chain(residual_blocks...; disable_optimizations=true)
 
     reverse!(channels)
     up_blocks = [UpBlock(channels[i], channels[i + 1], block_depth)
                  for i in 1:(length(channels) - 1)]
-    up_blocks = Lux.Chain(up_blocks...)
+    up_blocks = Chain(up_blocks...)
 
     return UNet(upsample, conv_in, conv_out, down_blocks, residual_blocks, up_blocks,
                 noise_embedding)
@@ -218,7 +216,7 @@ end
 struct DenoisingDiffusionImplicitModel <:
        Lux.AbstractExplicitContainerLayer{(:unet, :batchnorm)}
     unet::UNet
-    batchnorm::Lux.BatchNorm
+    batchnorm::BatchNorm
     min_signal_rate::AbstractFloat
     max_signal_rate::AbstractFloat
 end
@@ -230,7 +228,7 @@ function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
                                          max_signal_rate=0.95f0)
     unet = UNet(image_size; channels=channels, block_depth=block_depth, min_freq=min_freq,
                 max_freq=max_freq, embedding_dims=embedding_dims)
-    batchnorm = Lux.BatchNorm(3; affine=false, momentum=0.99, track_stats=true)
+    batchnorm = BatchNorm(3; affine=false, momentum=0.99, track_stats=true)
 
     return DenoisingDiffusionImplicitModel(unet, batchnorm, min_signal_rate,
                                            max_signal_rate)
