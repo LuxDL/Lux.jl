@@ -3,7 +3,7 @@
 using Lux
 using Random
 using CUDA
-
+using NNlib
 # Note: Julia/Lux assume image batch of WHCN ordering
 
 # Embed noise variances to embedding
@@ -33,15 +33,6 @@ function sinusoidal_embedding(x::AbstractArray{T, 4}, min_freq::T, max_freq::T,
     return embeddings
 end
 
-# activations
-function sigmoid(x)
-    return 1 / (1 + exp(-x))
-end
-
-function silu(x)
-    return x * sigmoid(x)
-end
-
 # Basic building block of UNet
 function residual_block(in_channels::Int, out_channels::Int)
     if in_channels == out_channels
@@ -55,8 +46,7 @@ function residual_block(in_channels::Int, out_channels::Int)
                                                             momentum=0.99),
                                                   Conv((3, 3), out_channels => out_channels;
                                                        stride=1, pad=(1, 1)),
-                                                  WrappedFunction(Base.Fix1(broadcast,
-                                                                            silu)),
+                                                  swish,
                                                   Conv((3, 3), out_channels => out_channels;
                                                        stride=1, pad=(1, 1))), +))
 end
