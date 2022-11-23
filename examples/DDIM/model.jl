@@ -4,6 +4,7 @@ using Lux
 using Random
 using CUDA
 using NNlib
+using Setfield
 # Note: Julia/Lux assume image batch of WHCN ordering
 
 # Embed noise variances to embedding
@@ -77,7 +78,7 @@ function (db::DownBlock)(x::AbstractArray{T, 4}, ps,
                                           st.residual_blocks[layer_name])
         # Don't use push! on vector because it invokes Zygote error
         skips = (skips..., x)
-        Lux.@set! st.residual_blocks[layer_name] = new_st
+        @set! st.residual_blocks[layer_name] = new_st
     end
     x, _ = db.maxpool(x, ps.maxpool, st.maxpool)
     return (x, skips), st
@@ -110,7 +111,7 @@ function (up::UpBlock)(x::Tuple{AbstractArray{T, 4}, NTuple{N, AbstractArray{T, 
         x = cat(x, skips[end - i + 1]; dims=3) # cat on channel
         x, new_st = up.residual_blocks[i](x, ps.residual_blocks[layer_name],
                                           st.residual_blocks[layer_name])
-        Lux.@set! st.residual_blocks[layer_name] = new_st
+        @set! st.residual_blocks[layer_name] = new_st
     end
 
     return x, st
@@ -120,7 +121,7 @@ end
 # It takes as input images array and returns the array of the same size.
 struct UNet <:
        Lux.AbstractExplicitContainerLayer{(:upsample, :conv_in, :conv_out, :down_blocks,
-                                               :residual_blocks, :up_blocks)}
+                                           :residual_blocks, :up_blocks)}
     upsample::Upsample
     conv_in::Conv
     conv_out::Conv
@@ -178,7 +179,7 @@ function (unet::UNet)(x::Tuple{AbstractArray{T, N}, AbstractArray{T, N}}, ps,
             (size(noisy_images, 1), size(noisy_images, 2), size(noise_variances, 4))
 
     x, new_st = unet.conv_in(noisy_images, ps.conv_in, st.conv_in)
-    Lux.@set! st.conv_in = new_st
+    @set! st.conv_in = new_st
     @assert size(x)[[1, 2, 4]] ==
             (size(noisy_images, 1), size(noisy_images, 2), size(noisy_images, 4))
 
@@ -191,22 +192,22 @@ function (unet::UNet)(x::Tuple{AbstractArray{T, N}, AbstractArray{T, N}}, ps,
         layer_name = Symbol(:layer_, i)
         (x, skips), new_st = unet.down_blocks[i](x, ps.down_blocks[layer_name],
                                                  st.down_blocks[layer_name])
-        Lux.@set! st.down_blocks[layer_name] = new_st
+        @set! st.down_blocks[layer_name] = new_st
         skips_at_each_stage = (skips_at_each_stage..., skips)
     end
 
     x, new_st = unet.residual_blocks(x, ps.residual_blocks, st.residual_blocks)
-    Lux.@set! st.residual_blocks = new_st
+    @set! st.residual_blocks = new_st
 
     for i in 1:length(unet.up_blocks)
         layer_name = Symbol(:layer_, i)
         x, new_st = unet.up_blocks[i]((x, skips_at_each_stage[end - i + 1]),
                                       ps.up_blocks[layer_name], st.up_blocks[layer_name])
-        Lux.@set! st.up_blocks[layer_name] = new_st
+        @set! st.up_blocks[layer_name] = new_st
     end
 
     x, new_st = unet.conv_out(x, ps.conv_out, st.conv_out)
-    Lux.@set! st.conv_out = new_st
+    @set! st.conv_out = new_st
 
     return x, st
 end
@@ -239,7 +240,7 @@ function (ddim::DenoisingDiffusionImplicitModel)(x::Tuple{AbstractArray{T, 4}, A
                                                  st::NamedTuple) where {T <: AbstractFloat}
     images, rng = x
     images, new_st = ddim.batchnorm(images, ps.batchnorm, st.batchnorm)
-    Lux.@set! st.batchnorm = new_st
+    @set! st.batchnorm = new_st
 
     noises = randn(rng, eltype(images), size(images)...) |> gpu
 
@@ -275,7 +276,7 @@ function denoise(ddim::DenoisingDiffusionImplicitModel, noisy_images::AbstractAr
                  noise_rates::AbstractArray{T, 4}, signal_rates::AbstractArray{T, 4}, ps,
                  st::NamedTuple) where {T <: AbstractFloat}
     pred_noises, new_st = ddim.unet((noisy_images, noise_rates .^ 2), ps.unet, st.unet)
-    Lux.@set! st.unet = new_st
+    @set! st.unet = new_st
 
     pred_images = (noisy_images - pred_noises .* noise_rates) ./ signal_rates
 
