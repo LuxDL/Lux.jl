@@ -164,11 +164,9 @@ function UNet(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128], block_dep
                 noise_embedding)
 end
 
-function (unet::UNet)(x::Tuple{AbstractArray{T, N}, AbstractArray{T, N}}, ps,
-                      st::NamedTuple) where {T <: AbstractFloat, N}
+function (unet::UNet)(x::Tuple{AbstractArray{T, 4}, AbstractArray{T, 4}}, ps,
+                      st::NamedTuple) where {T <: AbstractFloat}
     noisy_images, noise_variances = x
-    @assert length(size(noisy_images)) == 4
-    @assert length(size(noise_variances)) == 4
     @assert size(noise_variances)[1:3] == (1, 1, 1)
     @assert size(noisy_images, 4) == size(noise_variances, 4)
 
