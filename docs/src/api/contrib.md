@@ -64,6 +64,12 @@ Lux.layer_map
 Lux.@layer_map
 ```
 
+## Tied Parameters
+
+```@docs
+Lux.share_parameters
+```
+
 ## Index
 
 ```@index

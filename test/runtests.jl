@@ -64,6 +64,7 @@ const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "tru
                 @time @safetestset "Map" begin include("contrib/map.jl") end
                 @time @safetestset "Training" begin include("contrib/training.jl") end
                 @time @safetestset "Freeze" begin include("contrib/freeze.jl") end
+                @time @safetestset "Shared Parameters" begin include("contrib/share_parameters.jl") end
             end
         end
     else
