@@ -55,5 +55,13 @@ Registration is simply, just run `@JuliaRegistrator register subdir="lib/<projec
 
 ## Code Coverage
 
+Add the following to `.codecov.yml`:
+
+```yaml
+    - name: <package name>
+      paths: 
+      - lib/<package name>/**
+```
+
 If you have performed all the steps correctly the code coverage for the subpackage will
 be available under the flag `<project name>`.

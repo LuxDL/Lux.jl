@@ -56,6 +56,7 @@ end
 include("contrib/map.jl")
 include("contrib/training.jl")
 include("contrib/freeze.jl")
+include("contrib/share_parameters.jl")
 
 # Deprecations
 include("deprecated.jl")
