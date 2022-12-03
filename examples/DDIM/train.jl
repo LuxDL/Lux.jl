@@ -161,7 +161,7 @@ end
             images = images |> gpu
             loss, ps, st, opt_st = train_step(ddim, images, rng, ps, st, opt_st)
             push!(losses, loss)
-            set_description(iter, "Epoch: $(epoch) Loss: $(Statistics.mean(losses))")
+            set_description(iter, "Epoch: $(epoch) Loss: $(mean(losses))")
         end
 
         st = Lux.testmode(st)
