@@ -45,7 +45,7 @@ end
                     min_freq::Float32=1.0f0, max_freq::Float32=1000.0f0,
                     embedding_dims::Int=32, min_signal_rate::Float32=0.02f0,
                     max_signal_rate::Float32=0.95f0)
-    rng = Random.Xoshiro()
+    rng = Random.MersenneTwister()
     Random.seed!(rng, 1234)
 
     mkpath(output_dir)

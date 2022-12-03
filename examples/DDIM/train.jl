@@ -117,7 +117,7 @@ end
                     min_freq::Float32=1.0f0, max_freq::Float32=1000.0f0,
                     embedding_dims::Int=32, min_signal_rate::Float32=0.02f0,
                     max_signal_rate::Float32=0.95f0)
-    rng = Random.Xoshiro()
+    rng = Random.MersenneTwister()
     Random.seed!(rng, 1234)
 
     image_dir = joinpath(output_dir, "images")
@@ -148,7 +148,7 @@ end
     opt = AdamW(learning_rate, (9.0f-1, 9.99f-1), weight_decay)
     opt_st = Optimisers.setup(opt, ps) |> gpu
 
-    rng_gen = Random.Xoshiro()
+    rng_gen = Random.MersenneTwister()
     Random.seed!(rng_gen, 0)
 
     println("Training.")
