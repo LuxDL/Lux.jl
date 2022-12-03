@@ -1,8 +1,7 @@
 using Lux
 using Random
 using Images
-using ImageFiltering
-using Interpolations
+using Augmentor
 using MLUtils
 using Optimisers
 using Statistics
@@ -47,30 +46,11 @@ function Base.getindex(ds::ImageDataset, i::Int)
     end
 end
 
-function center_crop(image::Matrix{RGB{T}}) where {T <: Real}
-    height, width = size(image)
-    crop_size = min(height, width)
-
-    x1 = 1 + div((width - crop_size), 2)
-    x2 = x1 + crop_size - 1
-    y1 = 1 + div((height - crop_size), 2)
-    y2 = y1 + crop_size - 1
-
-    return image[y1:y2, x1:x2]
-end
-
-function resize(image::Matrix{RGB{T}}, image_size::Tuple{Int, Int}) where {T <: Real}
-    # We perform anitaliasing before downsampling
-    sigma = map((o, n) -> 0.75 * o / n, size(image), image_size)
-    kern = KernelFactors.gaussian(sigma)
-    return imresize(imfilter(image, kern, NA()), image_size; method=Interpolations.Linear())
-end
-
-function preprocess_image(image::Matrix{RGB{T}},
-                          image_size::Tuple{Int, Int}) where {T <: Real}
-    image = center_crop(image)
-    image = resize(image, image_size)
-    return image
+function preprocess_image(image::Matrix{RGB{T}}, image_size::Int) where {T <: Real}
+    sigma = min(size(image)...) / image_size
+    k = round(Int, 2 * sigma) * 2 + 1 # kernel size of two sigma in each direction
+    pl = CropRatio(1.0) |> GaussianBlur(k, sigma) |> Resize(image_size, image_size)
+    return augment(image, pl)
 end
 
 #=
@@ -132,7 +112,7 @@ end
     end
 
     println("Preparing dataset.")
-    ds = ImageDataset(dataset_dir, x -> preprocess_image(x, (image_size, image_size)), true)
+    ds = ImageDataset(dataset_dir, x -> preprocess_image(x, image_size), true)
     data_loader = DataLoader(ds; batchsize=batchsize, partial=false, collate=true,
                              parallel=true, rng=rng, shuffle=true)
 
