@@ -79,7 +79,7 @@ Training utilities
 function compute_loss(ddim::DenoisingDiffusionImplicitModel{T}, images::AbstractArray{T, 4},
                       rng::AbstractRNG, ps, st::NamedTuple) where {T <: AbstractFloat}
     (noises, images, pred_noises, pred_images), st = ddim((images, rng), ps, st)
-    noise_loss = Statistics.mean(abs.(pred_noises - noises))
+    noise_loss = mean(abs.(pred_noises - noises))
     image_loss = Statistics.mean(abs.(pred_images - images))
     loss = noise_loss + image_loss
     return loss, st
