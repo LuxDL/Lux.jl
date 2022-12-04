@@ -27,8 +27,9 @@ jobs:
       - name: "Run CompatHelper"
         run: |
           import CompatHelper
-          CompatHelper.main(; subdirs=["", "examples", "examples/ImageNet", "lib/Boltz",
-                                       "lib/LuxLib", "lib/Flux2Lux", "lib/LuxCore"])
+          CompatHelper.main(; subdirs=["", "examples", "examples/ImageNet", "examples/DDIM",
+                                       "lib/Boltz", "lib/LuxLib", "lib/Flux2Lux",
+                                       "lib/LuxCore"])
         shell: julia --color=yes {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
