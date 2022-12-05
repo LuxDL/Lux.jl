@@ -1,4 +1,4 @@
-# DDIM.jl
+# Denoising Diffusion Implicit Model (DDIM)
 
 [Lux.jl](https://github.com/avik-pal/Lux.jl) implementation of Denoising Diffusion Implicit Models ([arXiv:2010.02502](https://arxiv.org/abs/2010.02502)).
 
