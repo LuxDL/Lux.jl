@@ -1,14 +1,19 @@
 # # Bayesian Neural Network
 
-# We borrow this tutorial from the [official Turing Docs](https://turing.ml/dev/tutorials/03-bayesian-neural-network/). We will show how the explicit parameterization of Lux enables first-class composability with packages which expect flattened out parameter vectors.
+# We borrow this tutorial from the
+# [official Turing Docs](https://turing.ml/dev/tutorials/03-bayesian-neural-network/). We
+# will show how the explicit parameterization of Lux enables first-class composability with
+# packages which expect flattened out parameter vectors.
 
-# We will use [Turing.jl](https://turing.ml) with [Lux.jl](https://lux.csail.mit.edu/stable) to implement implementing a classification algorithm. Lets start by importing the relevant libraries.
+# We will use [Turing.jl](https://turing.ml) with [Lux.jl](https://lux.csail.mit.edu/stable)
+# to implement implementing a classification algorithm. Lets start by importing the relevant
+# libraries.
 
 ## Import libraries
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using Turing, Plots, Random, ReverseDiff, NNlib, Functors
+using Turing, CairoMakie, Random, ReverseDiff, NNlib, Functors, MakiePublication
 
 ## Hide sampling progress
 Turing.setprogress!(false);
@@ -46,41 +51,71 @@ xs = [xt1s; xt0s]
 ts = [ones(2 * M); zeros(2 * M)]
 
 ## Plot data points
+
+# with_theme(theme_web()) do
+#     fig = Figure()
+#     ax = Axis(fig[1, 1]; xlabel="x", ylabel="y")
+
+#     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+#     s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange, strokecolor=:black,
+#                  strokewidth=1)
+
+#     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
+
+#     return fig
+# end
 function plot_data()
     x1 = first.(xt1s)
     y1 = last.(xt1s)
     x2 = first.(xt0s)
     y2 = last.(xt0s)
 
-    plt = Plots.scatter(x1, y1; color="red", clim=(0, 1))
-    Plots.scatter!(plt, x2, y2; color="blue", clim=(0, 1))
+    fig = with_theme(theme_web()) do
+        fig = Figure()
+        ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    return plt
+        scatter!(ax, x1, y1; markersize=8, color=:red, strokecolor=:black, strokewidth=1)
+        scatter!(ax, x2, y2; markersize=8, color=:blue, strokecolor=:black, strokewidth=1)
+
+        return fig
+    end
+
+    return fig
 end
 
 plot_data()
 
 # ## Building the Neural Network
 
-# The next step is to define a feedforward neural network where we express our parameters as distributions, and not single points as with traditional neural networks. For this we will use `Dense` to define liner layers and compose them via `Chain`, both are neural network primitives from `Lux`. The network `nn` we will create will have two hidden layers with `tanh` activations and one output layer with `sigmoid` activation, as shown below.
+# The next step is to define a feedforward neural network where we express our parameters as
+# distributions, and not single points as with traditional neural networks. For this we will
+# use `Dense` to define liner layers and compose them via `Chain`, both are neural network
+# primitives from `Lux`. The network `nn` we will create will have two hidden layers with
+# `tanh` activations and one output layer with `sigmoid` activation, as shown below.
 
-# The `nn` is an instance that acts as a function and can take data, parameters and current state as inputs and output predictions. We will define distributions on the neural network parameters.
+# The `nn` is an instance that acts as a function and can take data, parameters and current
+# state as inputs and output predictions. We will define distributions on the neural network
+# parameters.
 
 ## Construct a neural network using Lux
-nn = Chain(Dense(2, 3, tanh), Dense(3, 2, tanh), Dense(2, 1, sigmoid))
+nn = Chain(Dense(2 => 3, tanh), Dense(3 => 2, tanh), Dense(2 => 1, sigmoid))
 
 ## Initialize the model weights and state
 ps, st = Lux.setup(rng, nn)
 
 Lux.parameterlength(nn) # number of paraemters in NN
 
-# The probabilistic model specification below creates a parameters variable, which has IID normal variables. The parameters represents all parameters of our neural net (weights and biases).
+# The probabilistic model specification below creates a parameters variable, which has IID
+# normal variables. The parameters represents all parameters of our neural net (weights and
+# biases).
 
 ## Create a regularization term and a Gaussian prior variance term.
 alpha = 0.09
 sig = sqrt(1.0 / alpha)
 
-# Construct named tuple from a sampled parameter vector. We could also use ComponentArrays here and simply broadcast to avoid doing this. But let's do it this way to avoid dependencies.
+# Construct named tuple from a sampled parameter vector. We could also use ComponentArrays
+# here and simply broadcast to avoid doing this. But let's do it this way to avoid
+# dependencies.
 function vector_to_parameters(ps_new::AbstractVector, ps::NamedTuple)
     @assert length(ps_new) == Lux.parameterlength(ps)
     i = 1
@@ -115,7 +150,9 @@ end
 N = 5000
 ch = sample(bayes_nn(hcat(xs...), ts), HMC(0.05, 4), N)
 
-# Now we extract the parameter samples from the sampled chain as theta (this is of size `5000 x 20` where `5000` is the number of iterations and `20` is the number of parameters). We'll use these primarily to determine how good our model's classifier is.
+# Now we extract the parameter samples from the sampled chain as theta (this is of size
+# `5000 x 20` where `5000` is the number of iterations and `20` is the number of
+# parameters). We'll use these primarily to determine how good our model's classifier is.
 
 ## Extract all weight and bias parameters.
 theta = MCMCChains.group(ch, :parameters).value;
@@ -126,7 +163,7 @@ theta = MCMCChains.group(ch, :parameters).value;
 nn_forward(x, theta) = nn(x, vector_to_parameters(theta, ps), st)[1]
 
 ## Plot the data we have.
-plot_data()
+fig = plot_data()
 
 ## Find the index that provided the highest log posterior in the chain.
 _, i = findmax(ch[:lp])
@@ -139,36 +176,54 @@ x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
+fig
 
-# The contour plot above shows that the MAP method is not too bad at classifying our data. Now we can visualize our predictions.
+# The contour plot above shows that the MAP method is not too bad at classifying our data.
+# Now we can visualize our predictions.
 
 # $p(\tilde{x} | X, \alpha) = \int_{\theta} p(\tilde{x} | \theta) p(\theta | X, \alpha) \approx \sum_{\theta \sim p(\theta | X, \alpha)}f_{\theta}(\tilde{x})$
 
-# The `nn_predict` function takes the average predicted value from a network parameterized by weights drawn from the MCMC chain.
+# The `nn_predict` function takes the average predicted value from a network parameterized
+# by weights drawn from the MCMC chain.
 
 ## Return the average predicted value across multiple weights.
 function nn_predict(x, theta, num)
     return mean([nn_forward(x, view(theta, i, :))[1] for i in 1:10:num])
 end
 
-# Next, we use the `nn_predict` function to predict the value at a sample of points where the x1 and x2 coordinates range between -6 and 6. As we can see below, we still have a satisfactory fit to our data, and more importantly, we can also see where the neural network is uncertain about its predictions much easier---those regions between cluster boundaries.
+# Next, we use the `nn_predict` function to predict the value at a sample of points where
+# the x1 and x2 coordinates range between -6 and 6. As we can see below, we still have a
+# satisfactory fit to our data, and more importantly, we can also see where the neural
+# network is uncertain about its predictions much easier---those regions between cluster
+# boundaries.
 
 # Plot the average prediction.
-plot_data()
+fig = plot_data()
 
 n_end = 1500
 x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_predict([x1, x2], theta, n_end)[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
+fig
 
-# Suppose we are interested in how the predictive power of our Bayesian neural network evolved between samples. In that case, the following graph displays an animation of the contour plot generated from the network weights in samples 1 to 1,000.
+# Suppose we are interested in how the predictive power of our Bayesian neural network
+# evolved between samples. In that case, the following graph displays an animation of the
+# contour plot generated from the network weights in samples 1 to 1,000.
 
 ## Number of iterations to plot.
 n_end = 1000
 
-anim = @gif for i in 1:n_end
-    plot_data()
+fig = plot_data()
+Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
+c = contour!(x1_range, x2_range, Z)
+current_axis(fig).title = "Iteration 1"
+
+CairoMakie.record(fig, joinpath(@__DIR__, "animationbayesiannn.mp4"), 1:5:n_end;
+                  framerate=60) do i
     Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
-    contour!(x1_range, x2_range, Z; title="Iteration $i", clim=(0, 1))
-end every 5
+    c[3] = Z
+    return current_axis(fig).title = "Iteration $i"
+end
+
+# <video controls> <source src="../animationbayesiannn.mp4" type="video/mp4"> </video>

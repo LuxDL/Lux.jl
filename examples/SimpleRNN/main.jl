@@ -1,6 +1,7 @@
 # # Training a Simple LSTM
 
-# In this tutorial we will go over using a recurrent neural network to classify clockwise and anticlockwise spirals. By the end of this tutorial you will be able to:
+# In this tutorial we will go over using a recurrent neural network to classify clockwise
+# and anticlockwise spirals. By the end of this tutorial you will be able to:
 
 # 1. Create custom Lux models.
 # 2. Become familiar with the Lux recurrent neural network API.
@@ -14,7 +15,10 @@ using MLUtils, Optimisers, Zygote, NNlib, Random, Statistics
 
 # ## Dataset
 
-# We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise spirals. Using this data we will create a `MLUtils.DataLoader`. Our dataloader will give us sequences of size 2 × seq_len × batch_size and we need to predict a binary value whether the sequence is clockwise or anticlockwise.
+# We will use MLUtils to generate 500 (noisy) clockwise and 500 (noisy) anticlockwise
+# spirals. Using this data we will create a `MLUtils.DataLoader`. Our dataloader will give
+# us sequences of size 2 × seq_len × batch_size and we need to predict a binary value
+# whether the sequence is clockwise or anticlockwise.
 
 function get_dataloaders(; dataset_size=1000, sequence_length=50)
     ## Create the spirals
@@ -38,9 +42,12 @@ end
 
 # ## Creating a Classifier
 
-# We will be extending the `Lux.AbstractExplicitContainerLayer` type for our custom model since it will contain a lstm block and a classifier head.
+# We will be extending the `Lux.AbstractExplicitContainerLayer` type for our custom model
+# since it will contain a lstm block and a classifier head.
 
-# We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the parameters and states are automatically populated and we don't have to define [`Lux.initialparameters`](@ref) and [`Lux.initialstates`](@ref).
+# We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the
+# parameters and states are automatically populated and we don't have to define
+# [`Lux.initialparameters`](@ref) and [`Lux.initialstates`](@ref).
 
 struct SpiralClassifier{L, C} <:
        Lux.AbstractExplicitContainerLayer{(:lstm_cell, :classifier)}
@@ -48,7 +55,8 @@ struct SpiralClassifier{L, C} <:
     classifier::C
 end
 
-# We won't define the model from scratch but rather use the [`Lux.LSTMCell`](@ref) and [`Lux.Dense`](@ref).
+# We won't define the model from scratch but rather use the [`Lux.LSTMCell`](@ref) and
+# [`Lux.Dense`](@ref).
 
 function SpiralClassifier(in_dims, hidden_dims, out_dims)
     return SpiralClassifier(LSTMCell(in_dims => hidden_dims),
@@ -61,12 +69,13 @@ function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
                                st::NamedTuple) where {T}
     ## First we will have to run the sequence through the LSTM Cell
     ## The first call to LSTM Cell will create the initial hidden state
-    ## See that the parameters and states are automatically populated into a field called `lstm_cell`
-    ## We use `eachslice` to get the elements in the sequence without copying,
+    ## See that the parameters and states are automatically populated into a field called
+    ## `lstm_cell` We use `eachslice` to get the elements in the sequence without copying,
     ## and `Iterators.peel` to split out the first element for LSTM initialization.
     x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
     (y, carry), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
-    ## Now that we have the hidden state and memory in `carry` we will pass the input and `carry` jointly
+    ## Now that we have the hidden state and memory in `carry` we will pass the input and
+    ## `carry` jointly
     for x in x_rest
         (y, carry), st_lstm = s.lstm_cell((x, carry), ps.lstm_cell, st_lstm)
     end
@@ -79,7 +88,9 @@ end
 
 # ## Defining Accuracy, Loss and Optimiser
 
-# Now let's define the binarycrossentropy loss. Typically it is recommended to use `logitbinarycrossentropy` since it is more numerically stable, but for the sake of simplicity we will use `binarycrossentropy`.
+# Now let's define the binarycrossentropy loss. Typically it is recommended to use
+# `logitbinarycrossentropy` since it is more numerically stable, but for the sake of
+# simplicity we will use `binarycrossentropy`.
 
 function xlogy(x, y)
     result = x * log(y)
