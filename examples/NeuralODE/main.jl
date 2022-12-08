@@ -4,7 +4,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CUDA, DiffEqSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random,
+using ComponentArrays, CUDA, SciMLSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random,
       Statistics, Zygote, OneHotArrays
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
@@ -32,8 +32,8 @@ end
 
 # ## Define the Neural ODE Layer
 #
-# The NeuralODE is a ContainerLayer, which stores a `model`. The parameters and states of the NeuralODE are
-# same as those of the underlying model.
+# The NeuralODE is a ContainerLayer, which stores a `model`. The parameters and states of
+# the NeuralODE are same as those of the underlying model.
 struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
        Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M

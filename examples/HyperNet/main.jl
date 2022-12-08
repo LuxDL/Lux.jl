@@ -2,8 +2,8 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CUDA, MLDatasets, MLUtils, NNlib, OneHotArrays, Optimisers, Plots,
-      Random, Setfield, Statistics, Zygote
+using ComponentArrays, CUDA, MLDatasets, MLUtils, NNlib, OneHotArrays, Optimisers, Random,
+      Setfield, Statistics, Zygote
 CUDA.allowscalar(false)
 
 # ## Loading Datasets
