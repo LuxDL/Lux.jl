@@ -138,13 +138,13 @@ println("Mutated Array ", x_copy)
 # ## Managing Randomness
 
 # We rely on the Julia StdLib `Random` for managing the randomness in our execution. First,
-# we create an PRNG and seed it.
+# we create an PRNG (pseudorandom number generator) and seed it.
 rng = Random.default_rng() # Creates a Xoshiro PRNG
 Random.seed!(rng, 0)
 
 # If we call any function that relies on `rng` and uses it via `randn`, `rand`, etc. `rng`
 # will be mutated. As we have already established we care a lot about immutability, hence we
-# should use `Lux.replicate` on PRNG before using them.
+# should use `Lux.replicate` on PRNGs before using them.
 
 # First, let us run a random number generator 3 times with the `replicate`d rng.
 
@@ -189,7 +189,7 @@ using ForwardDiff, Zygote, AbstractDifferentiation
 # where ``\nabla f(x) = x``
 
 f(x) = x' * x / 2
-∇f(x) = x
+∇f(x) = x  # `∇` can be typed as `\nabla<TAB>`
 v = randn(rng, Float32, 4)
 
 # Let's use AbstractDifferentiation and Zygote to compute the gradients.
@@ -269,14 +269,14 @@ y_samples = W * x_samples .+ b .+ 0.01f0 .* randn(rng, Float32, y_dim, n_samples
 println("x shape: ", size(x_samples), "; y shape: ", size(y_samples))
 
 # For updating our parameters let's use
-# [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
+# [Optimisers.jl](https://github.com/FluxML/Optimisers.jl). We will use Stochastic Gradient
+# Descent (SGD) with a learning rate of `0.01`.
 
 using Optimisers
 
 opt = Optimisers.Descent(0.01f0)
 
 # Initialize the initial state of the optimiser
-
 opt_state = Optimisers.setup(opt, ps)
 
 # Define the loss function
@@ -284,14 +284,15 @@ mse(model, ps, st, X, y) = sum(abs2, model(X, ps, st)[1] .- y)
 mse(weight, bias, X, y) = sum(abs2, weight * X .+ bias .- y)
 loss_function(ps, X, y) = mse(model, ps, st, X, y)
 
-println("Loss Value with ground true W & b: ", mse(W, b, x_samples, y_samples))
+println("Loss Value with ground true parameters: ", mse(W, b, x_samples, y_samples))
 
 for i in 1:100
-    ## In actual code, don't use globals. But here I will simply for the sake of demonstration
+    ## In actual code, don't use globals. But here I will simply for the sake of
+    ## demonstration
     global ps, st, opt_state
     ## Compute the gradient
     gs = gradient(loss_function, ps, x_samples, y_samples)[1]
-    ## Perform parameter update
+    ## Update model parameters
     opt_state, ps = Optimisers.update(opt_state, ps, gs)
     if i % 10 == 1 || i == 100
         println("Loss Value after $i iterations: ",

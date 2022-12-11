@@ -39,7 +39,7 @@ bottleneck).
 
 !!! tip "Learning Rate"
 
-    Remember to linearly scale the learning-rate based on the number of processes you are
+    Remember to linearly increase the learning-rate based on the number of processes you are
     using.
 
 !!! note
