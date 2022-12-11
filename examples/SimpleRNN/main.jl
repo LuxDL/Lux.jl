@@ -49,6 +49,9 @@ end
 # parameters and states are automatically populated and we don't have to define
 # [`Lux.initialparameters`](@ref) and [`Lux.initialstates`](@ref).
 
+# To understand more about container layers, please look at
+# [Container Layer](http://lux.csail.mit.edu/stable/manual/interface/#container-layer).
+
 struct SpiralClassifier{L, C} <:
        Lux.AbstractExplicitContainerLayer{(:lstm_cell, :classifier)}
     lstm_cell::L
@@ -62,6 +65,9 @@ function SpiralClassifier(in_dims, hidden_dims, out_dims)
     return SpiralClassifier(LSTMCell(in_dims => hidden_dims),
                             Dense(hidden_dims => out_dims, sigmoid))
 end
+
+# We can use default Lux blocks -- `Recurrence(LSTMCell(in_dims => hidden_dims)` -- instead
+# of defining the following. But let's still do it for the sake of it.
 
 # Now we need to define the behavior of the Classifier when it is invoked.
 
