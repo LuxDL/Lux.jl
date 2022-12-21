@@ -75,7 +75,7 @@ Broadcast `f` on the input.
   - Empty `NamedTuple()`
 
 !!! warning
-    
+
     This layer is deprecated and will be removed in v0.5. Use [`WrappedFunction`](@ref) with
     manual broadcasting
 """
@@ -92,7 +92,7 @@ end
 Apply the function `f` on `x` elementwise, i.e. `f.(x)`. Dispatches to CUDNN if possible.
 
 !!! warning
-    
+
     This function has been deprecated. Use `f.(x)` instead.
 """
 @inline function applyactivation(f::Function, x::AbstractArray)
@@ -107,7 +107,7 @@ end
 Computes `x .+ y`. Dispatches to CUDNN if possible.
 
 !!! warning
-    
+
     This function has been deprecated. Use `x .+ y` instead.
 """
 @inline function elementwise_add(x, y)
@@ -122,7 +122,7 @@ end
 Computes `x .* y`. Dispatches to CUDNN if possible.
 
 !!! warning
-    
+
     This function has been deprecated. Use `x .* y` instead.
 """
 @inline function elementwise_mul(x, y)
@@ -141,7 +141,7 @@ passed it is used if `update_mask` is false. If `update_mask` is true then the m
 generated and used.
 
 !!! warning
-    
+
     This function has been deprecated and will be removed in v0.5. Use `LuxLib.dropout`
     instead.
 """
@@ -169,7 +169,7 @@ end
 Performs BatchNorm/GroupNorm based on input configuration
 
 !!! warning
-    
+
     This function has been deprecated and will be removed in v0.5. Use
     `LuxLib.(batch/group)norm` instead.
 """

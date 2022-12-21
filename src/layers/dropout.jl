@@ -6,7 +6,7 @@ AlphaDropout layer.
 ## Arguments
 
   - `p`: Probability of Dropout
-    
+
       + if `p = 0` then [`NoOpLayer`](@ref) is returned.
       + if `p = 1` then `WrappedLayer(Base.Fix1(broadcast, zero))` is returned.
 

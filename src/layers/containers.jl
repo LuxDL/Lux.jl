@@ -14,7 +14,7 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
   - `layer`: Layer or `Chain` of layers to be applied to the input
 
   - `connection`:
-    
+
       + A 2-argument function that takes `layer(input)` and the input OR
       + An AbstractExplicitLayer that takes `(layer(input), input)` as input
 
@@ -85,7 +85,7 @@ with `connection`.
     `Parallel(nothing, f, g)(x, y) = (f(x), g(y))`
 
   - Layers can be specified in two formats:
-    
+
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
@@ -163,7 +163,7 @@ outputs.
 ## Arguments
 
   - Layers can be specified in two formats:
-    
+
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
@@ -188,12 +188,12 @@ outputs.
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 
 !!! note "Comparison with Parallel"
-    
+
     This is slightly different from [`Parallel(nothing, layers...)`](@ref)
-    
+
       - If the input is a tuple, `Parallel` will pass each element individually to each
         layer.
-    
+
       - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N`
         outputs.
 
@@ -254,7 +254,7 @@ x1 → layer1 → y1 ↘
   - `connection`: Takes 2 inputs and combines them
 
   - `layers`: [`AbstractExplicitLayer`](@ref)s. Layers can be specified in two formats:
-    
+
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
@@ -342,7 +342,7 @@ Collects multiple layers / functions to be called in sequence on a given input.
 ## Arguments
 
   - Layers can be specified in two formats:
-    
+
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
@@ -496,7 +496,7 @@ See also [`Parallel`](@ref) to reduce with other operators.
 ## Arguments
 
   - Layers can be specified in three formats:
-    
+
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
       + A no argument function `f` and an integer `n_alts` which specifies the number of

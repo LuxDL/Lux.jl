@@ -301,7 +301,7 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `bias`: Bias of size `(dims...)`
 
 !!! compat "Lux 0.4.3"
-    
+
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 struct Scale{use_bias, F1, D, F2, F3} <: AbstractExplicitLayer
@@ -405,7 +405,7 @@ with `B` the Bilinear layer.
 ## Input
 
   - A 2-Tuple containing
-    
+
       + `x` must be an AbstractArray with `size(x, 1) == in1_dims`
       + `y` must be an AbstractArray with `size(x, 1) == in2_dims`
 
@@ -495,7 +495,7 @@ A lookup table that stores embeddings of dimension `out_dims` for a vocabulary o
 This layer is often used to store word embeddings and retrieve them using indices.
 
 !!! warning
-    
+
     Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
 
 ## Arguments

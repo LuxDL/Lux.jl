@@ -7,7 +7,7 @@ Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](
 automatically operate over a sequence of inputs.
 
 !!! warning
-    
+
     This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
     rather allows operating on an entire sequence of inputs at once. See
     [`StatefulRecurrentCell`](@ref) for functionality similar to [`Flux.Recur`](@ref).
@@ -20,9 +20,9 @@ automatically operate over a sequence of inputs.
 ## Inputs
 
   - If `x` is a
-    
+
       + Tuple or Vector: Each element is fed to the `cell` sequentially.
-    
+
       + Array (except a Vector): It is spliced along the penultimate dimension and each
         slice is fed to the `cell` sequentially.
 
@@ -73,7 +73,7 @@ Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](
 makes it stateful.
 
 !!! tip
-    
+
     This is very similar to `Flux.Recur`
 
 To avoid undefined behavior, once the processing of a single sequence of data is complete,
@@ -100,7 +100,7 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
 ## States
 
   - NamedTuple containing:
-    
+
       + `cell`: Same as `cell`.
       + `carry`: The carry state of the `cell`.
 """

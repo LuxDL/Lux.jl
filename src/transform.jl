@@ -6,7 +6,7 @@ import .Flux
 Convert a Flux Model to Lux Model.
 
 !!! tip
-    
+
     It is recommended to use the package `Flux2Lux` instead of this function. It supports
     convertion of a wider variation of Flux models.
 

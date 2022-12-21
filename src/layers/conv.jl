@@ -323,7 +323,7 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 
   - `x`: For the input dimensions look into the documentation for the corresponding `NNlib`
     function
-    
+
       + As a rule of thumb, `:nearest` should work with arrays of arbitrary dimensions
       + `:bilinear` works with 4D Arrays
       + `:trilinear` works with 5D Arrays

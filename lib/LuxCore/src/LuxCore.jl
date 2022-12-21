@@ -82,7 +82,7 @@ Shorthand for getting the parameters and states of the layer `l`. Is equivalent 
 `(initialparameters(rng, l), initialstates(rng, l))`.
 
 !!! warning
-    
+
     This function is not pure, it mutates `rng`.
 """
 function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
@@ -115,7 +115,7 @@ Users implementing their custom layer can extend the same functions as in
 [`AbstractExplicitLayer`](@ref).
 
 !!! tip
-    
+
     Advanced structure manipulation of these layers post construction is possible via
     `Functors.fmap`. For a more flexible interface, we recommend using the experimental
     feature [`Lux.@layer_map`](@ref).
