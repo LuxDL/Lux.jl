@@ -1,7 +1,7 @@
 name = "LuxCore"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"

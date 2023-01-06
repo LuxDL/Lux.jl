@@ -143,8 +143,8 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
 end
 
 # Make AbstractExplicit Layers Functor Compatible
-function Functors.functor(::Type{<:AbstractExplicitContainerLayer},
-                          x::AbstractExplicitContainerLayer{layers}) where {layers}
+function Functors.functor(::Type{<:AbstractExplicitContainerLayer}, x)
+    layers = _get_layers(x)
     _children = getproperty.((x,), layers)
     function layer_reconstructor(z)
         l = x
@@ -155,6 +155,8 @@ function Functors.functor(::Type{<:AbstractExplicitContainerLayer},
     end
     return _children, layer_reconstructor
 end
+
+_get_layers(::AbstractExplicitContainerLayer{layers}) where {layers} = layers
 
 # Test Mode
 """
