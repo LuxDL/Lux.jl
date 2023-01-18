@@ -61,19 +61,21 @@ models_available = Dict(alexnet => [(:alexnet, true), (:alexnet, false)],
                         ])
 
 @testset "$model_creator" for (model_creator, config) in pairs(models_available)
-    @time begin @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
-        if VERSION <= v"1.7" && pretrained
-            @warn "Skipping pretrained models in Julia < 1.7"
-            continue
+    @time begin
+        @testset "name = $name & pretrained = $pretrained" for (name, pretrained) in config
+            if VERSION <= v"1.7" && pretrained
+                @warn "Skipping pretrained models in Julia < 1.7"
+                continue
+            end
+            model, ps, st = model_creator(name; pretrained)
+            st = Lux.testmode(st)
+
+            imsize = string(model_creator) == "vision_transformer" ? (256, 256) : (224, 224)
+            x = randn(Float32, imsize..., 3, 1)
+
+            @test size(first(model(x, ps, st))) == (1000, 1)
+
+            GC.gc(true)
         end
-        model, ps, st = model_creator(name; pretrained)
-        st = Lux.testmode(st)
-
-        imsize = string(model_creator) == "vision_transformer" ? (256, 256) : (224, 224)
-        x = randn(Float32, imsize..., 3, 1)
-
-        @test size(first(model(x, ps, st))) == (1000, 1)
-
-        GC.gc(true)
-    end end
+    end
 end
