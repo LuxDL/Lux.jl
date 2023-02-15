@@ -174,7 +174,7 @@ end
     `NNlib.fast_act(activation)`
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
-
+    
       + `init_bias`: Controls how the `bias` is initiliazed
       + `init_scale`: Controls how the `scale` is initiliazed
 
@@ -190,7 +190,7 @@ end
 ## Parameters
 
   - `affine=true`
-
+    
       + `bias`: Bias of shape `(chs,)`
       + `scale`: Scale of shape `(chs,)`
 
@@ -199,12 +199,12 @@ end
 ## States
 
   - Statistics if `track_stats=true` **(DEPRECATED)**
-
+    
       + `running_mean`: Running mean of shape `(groups,)`
       + `running_var`: Running variance of shape `(groups,)`
 
   - Statistics if `track_stats=false`
-
+    
       + `running_mean`: nothing
       + `running_var`: nothing
   - `training`: Used to check if training/inference mode
@@ -218,7 +218,7 @@ m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(1
 ```
 
 !!! warning
-
+    
     GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
 
 See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),

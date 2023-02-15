@@ -40,8 +40,8 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
+      - name: Run Tests
+        run: julia --color=yes .ci/test.jl
         env:
           GROUP: ${{ matrix.group }}
           OVERRIDE_INTER_DEPENDENCIES: "false"
