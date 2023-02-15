@@ -24,7 +24,7 @@ jobs:
           - Flux2Lux # Flux2Lux Converter
           - LuxCore # Avoid the heavy Lux Dependency
         version:
-          - "1.6"
+          - "1.7"
           - "1.8"
     steps:
       - uses: actions/checkout@v2

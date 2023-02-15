@@ -31,7 +31,7 @@ cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib"), _get_lib_path("LuxC
 const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "true") ==
                                     "true"
 
-@time begin for group in groups
+for group in groups
     @info "Testing GROUP $group"
 
     pkg_path = group == "Lux" ? dirname(@__DIR__) : _get_lib_path(group)
@@ -47,4 +47,4 @@ const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "tru
     # this should inherit the GROUP envvar
     run_coverage = get(ENV, "COVERAGE", "false")
     Pkg.test(PackageSpec(; name=group, path=pkg_path); coverage=(run_coverage == "true"))
-end end
+end
