@@ -1,4 +1,5 @@
-using ComponentArrays, FiniteDifferences, Lux, Optimisers, Random, Test, Zygote
+using ComponentArrays, FiniteDifferences, Lux, LuxCore, LuxLib, Optimisers, Random, Test,
+      Zygote
 
 try
     using JET
@@ -70,7 +71,8 @@ end
 # JET Tests
 function run_JET_tests(f, args...; call_broken=false, opt_broken=false, kwargs...)
     @static if VERSION >= v"1.7"
-        test_call(f, typeof.(args); broken=call_broken)
+        test_call(f, typeof.(args); broken=call_broken,
+                  target_modules=(Lux, LuxCore, LuxLib))
         test_opt(f, typeof.(args); broken=opt_broken, target_modules=(Lux,))
     end
 end

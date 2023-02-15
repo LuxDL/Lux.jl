@@ -97,7 +97,7 @@ _istraining(::Val{training}) where {training} = training
                 @test_broken isapprox(std(Array(y); dims=1:(length(sz) - 2)), _target_std;
                                       atol=0.2)
             end
-            @test std(Array(y); dims=1:(length(sz) - 2)) != std(x; dims=1:(length(sz) - 2))
+            @test std(Array(y); dims=1:(length(sz) - 2)) != std(Array(x); dims=1:(length(sz) - 2))
 
             Zygote.gradient(sum ∘ first ∘ _f, x, scale, bias)  # Compile
             @time gs_x, gs_scale, gs_bias, = Zygote.gradient(sum ∘ first ∘ _f, x, scale,

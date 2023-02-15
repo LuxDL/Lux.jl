@@ -48,7 +48,7 @@ end
 function check_use_cuda()
     if use_cuda[] === nothing
         use_cuda[] = CUDA.functional()
-        if use_cuda[] && !CUDA.has_cudnn()
+        if use_cuda[] && !cuDNN.has_cudnn()
             @warn """CUDA.jl found cuda, but did not find libcudnn. Some functionality
                      will not be available."""
         end
