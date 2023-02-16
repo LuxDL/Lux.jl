@@ -27,7 +27,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Adapt = "3"
-CUDA = "3"
+CUDA = "3, 4"
 ChainRulesCore = "1"
 ComponentArrays = "0.13"
 FillArrays = "0.13"
