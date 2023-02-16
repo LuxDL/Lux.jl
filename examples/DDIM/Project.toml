@@ -19,7 +19,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Augmentor = "0.6"
 BSON = "0.3"
-CUDA = "3"
+CUDA = "3, 4"
 Comonicon = "1"
 Images = "0.24, 0.25"
 Lux = "0.4"
