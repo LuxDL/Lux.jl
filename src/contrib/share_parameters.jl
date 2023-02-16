@@ -61,17 +61,14 @@ function _safe_update_parameter(ps, lens, new_ps)
         msg = "The structure of the new parameters must be the same as the " *
               "old parameters for lens $(lens)!!! The new parameters have a structure: " *
               "$new_ps_st while the old parameters have a structure: $ps_st."
-        if !(new_ps isa Union{ComponentArray, AbstractArray, NamedTuple, Tuple, Number})
-            msg = msg *
-                  "This could potentially be caused since `_parameter_structure` is not" *
-                  " appropriately defined for type $(typeof(new_ps))."
-        end
+        msg = msg *
+              " This could potentially be caused since `_parameter_structure` is not" *
+              " appropriately defined for type $(typeof(new_ps))."
         throw(ArgumentError(msg))
     end
     return Setfield.set(ps, lens, new_ps)
 end
 
-_parameter_structure(ps::ComponentArray) = _parameter_structure(NamedTuple(ps))
 _parameter_structure(ps::AbstractArray) = size(ps)
 _parameter_structure(::Number) = 1
 _parameter_structure(ps) = fmap(_parameter_structure, ps)

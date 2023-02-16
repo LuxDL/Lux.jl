@@ -25,16 +25,5 @@ if Preferences.@load_preference("LuxSnoopPrecompile", true)
 
         layer(x, ps, st)
         Zygote.gradient(p -> sum(layer(x, ps, st)[1]), ps)
-
-        # ComponentArrays
-        if Preferences.@load_preference("LuxPrecompileComponentArrays", true)
-            ps, st = setup(rng, layer)
-            ps = ps |> ComponentArray |> dev
-            st = st |> dev
-            x = rand(rng, Float32, x_size...) |> dev
-
-            layer(x, ps, st)
-            Zygote.gradient(p -> sum(layer(x, ps, st)[1]), ps)
-        end
     end
 end

@@ -112,7 +112,7 @@ nav:
       - "Functional": "api/functional.md"
       - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
-      - "Flux2Lux": "api/flux2lux.md"
+      - "Flux & Lux InterOp": "api/flux2lux.md"
       - "Experimental": "api/contrib.md"
   - "Frameworks":
       - "Boltz": "lib/Boltz/index.md"

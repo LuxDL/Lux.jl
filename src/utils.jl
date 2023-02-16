@@ -171,24 +171,6 @@ function _calc_padding(::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T
     return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
 end
 
-# Handling ComponentArrays
-function Functors.functor(::Type{<:ComponentArray}, c)
-    return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
-           ComponentArray
-end
-
-Optimisers.setup(opt::AbstractRule, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
-
-function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
-    return tree, ComponentArray(ps_new, getaxes(ps))
-end
-
-function Optimisers.update!(tree::Optimisers.Leaf, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update!(tree, getdata(ps), getdata(gs))
-    return tree, ComponentArray(ps_new, getaxes(ps))
-end
-
 # Getting typename
 get_typename(::T) where {T} = Base.typename(T).wrapper
 
@@ -233,10 +215,6 @@ end
     else
         return :(nothing)
     end
-end
-
-@inline function _getproperty(x::ComponentArray, ::Val{prop}) where {prop}
-    return prop in propertynames(x) ? getproperty(x, prop) : nothing
 end
 
 @inline function _eachslice(x::T, ::Val{dims}) where {T <: AbstractArray, dims}

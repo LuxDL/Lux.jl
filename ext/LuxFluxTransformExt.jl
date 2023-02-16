@@ -1,14 +1,8 @@
-module Flux2LuxExt
+module LuxFluxTransformExt
 
-@static if isdefined(Base, :get_extension)
-    import Flux
-    using Optimisers
-else
-    import ..Flux
-    using ..Optimisers
-end
-
-using Lux, Random
+isdefined(Base, :get_extension) ? (import Flux) : (import ..Flux)
+using Lux, Random, Optimisers
+import Lux: transform, FluxLayer
 
 struct FluxModelConversionError <: Exception
     msg::String
@@ -42,12 +36,6 @@ API internally.
 
   - `p`: Flattened parameters of the `layer`
 """
-struct FluxLayer{L, RE, I} <: Lux.AbstractExplicitLayer
-    layer::L
-    re::RE
-    init_parameters::I
-end
-
 function FluxLayer(l)
     p, re = Optimisers.destructure(l)
     p_ = copy(p)
@@ -68,7 +56,7 @@ Convert a Flux Model to Lux Model.
 !!! warning
 
     `transform` always ingores the `active` field of some of the Flux layers. This is
-    almost never going to be supported on Flux2Lux.
+    almost never going to be supported.
 
 ## Arguments
 
@@ -88,7 +76,8 @@ Convert a Flux Model to Lux Model.
 # Examples
 
 ```julia
-using Flux2Lux, Lux, Metalhead, Random
+import Flux
+using Lux, Metalhead, Random
 
 m = ResNet(18)
 m2 = transform(m.layers)
@@ -339,8 +328,8 @@ function transform(l::Flux.BatchNorm; preserve_ps_st::Bool=false,
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
-            @warn """Preserving the state of `Flux.BatchNorm` is currently not supported by
-                    Flux2Lux. Ignoring the state.""" maxlog=1
+            @warn """Preserving the state of `Flux.BatchNorm` is currently not supported.
+                     Ignoring the state.""" maxlog=1
         end
         if l.affine
             return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum,
@@ -358,8 +347,8 @@ function transform(l::Flux.GroupNorm; preserve_ps_st::Bool=false,
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
-            @warn """Preserving the state of `Flux.GroupNorm` is currently not supported by
-                    Flux2Lux. Ignoring the state.""" maxlog=1
+            @warn """Preserving the state of `Flux.GroupNorm` is currently not supported.
+                     Ignoring the state.""" maxlog=1
         end
         if l.affine
             return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
@@ -378,7 +367,5 @@ const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
 function transform(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
     throw(FluxModelConversionError("Transformation of type $(T) is not supported."))
 end
-
-export transform, FluxLayer
 
 end
