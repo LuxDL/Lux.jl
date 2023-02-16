@@ -29,8 +29,7 @@ jobs:
           import CompatHelper
           CompatHelper.main(; subdirs=["", "test", "examples", "examples/ImageNet",
                                        "examples/DDIM", "lib/Boltz", "lib/Boltz/test",
-                                       "lib/LuxLib", "lib/LuxLib/test", "lib/Flux2Lux",
-                                       "lib/Flux2Lux/test", "lib/LuxCore",
+                                       "lib/LuxLib", "lib/LuxLib/test", "lib/LuxCore",
                                        "lib/LuxCore/test"])
         shell: julia --color=yes {0}
         env:

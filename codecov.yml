@@ -14,9 +14,6 @@ flag_management:
     - name: Boltz
       paths: 
       - lib/Boltz/src/**
-    - name: Flux2Lux
-      paths: 
-      - lib/Flux2Lux/src/**
     - name: LuxLib
       paths: 
       - lib/LuxLib/src/**

@@ -112,13 +112,11 @@ nav:
       - "Functional": "api/functional.md"
       - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
+      - "Flux2Lux": "api/flux2lux.md"
       - "Experimental": "api/contrib.md"
   - "Frameworks":
       - "Boltz": "lib/Boltz/index.md"
       - "FluxMPI": "https://avik-pal.github.io/FluxMPI.jl/dev/"
-      - "Flux2Lux":
-        - "Introduction": "lib/Flux2Lux/index.md"
-        - "API Reference": "lib/Flux2Lux/api.md"
       - "NNlib": "https://fluxml.ai/Flux.jl/stable/models/nnlib/"
       - "LuxLib":
         - "Introduction": "lib/LuxLib/index.md"

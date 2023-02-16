@@ -80,9 +80,6 @@ flowchart LR
         NNlib
         CUDA
     end
-    subgraph InterOp
-        Flux2Lux(Flux2Lux)
-    end
     subgraph ExternalML[External ML Packages]
         Flux
         Metalhead
@@ -125,8 +122,6 @@ flowchart LR
     Lux --> Opt
     Lux --> CompViz
     ExternalML -.-> CompViz
-    Lux --> InterOp
-    ExternalML -.-> InterOp
 ```
 
 ## Related Projects

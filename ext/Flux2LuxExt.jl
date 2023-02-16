@@ -1,8 +1,14 @@
-module Flux2Lux
+module Flux2LuxExt
 
-# Don't do using, both Lux and Flux have very similar exports
-import Flux
-using Lux, Optimisers, Random
+@static if isdefined(Base, :get_extension)
+    import Flux
+    using Optimisers
+else
+    import ..Flux
+    using ..Optimisers
+end
+
+using Lux, Random
 
 struct FluxModelConversionError <: Exception
     msg::String

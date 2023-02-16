@@ -21,7 +21,6 @@ jobs:
           - Lux       # Core Framework
           - Boltz     # Prebuilt Models using Lux
           - LuxLib    # Backend of Lux
-          - Flux2Lux  # Flux2Lux Converter
           - LuxCore   # Avoid the heavy Lux Dependency
         version:
           - 'nightly'  # merge even if tests fail
@@ -48,7 +47,7 @@ jobs:
           OVERRIDE_INTER_DEPENDENCIES: "false"
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/Flux2Lux/src,lib/LuxCore/src
+          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/LuxCore/src,ext
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info
