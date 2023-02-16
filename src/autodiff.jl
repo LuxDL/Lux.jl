@@ -48,11 +48,6 @@ function ChainRulesCore.rrule(::typeof(copy), x)
     return copy(x), copy_pullback
 end
 
-# Zygote Fixes
-function Zygote.accum(x::ComponentArray, ys::ComponentArray...)
-    return ComponentArray(Zygote.accum(getdata(x), getdata.(ys)...), getaxes(x))
-end
-
 # Adapt Interface
 function ChainRulesCore.rrule(::Type{Array}, x::CUDA.CuArray)
     return Array(x), d -> (NoTangent(), CUDA.cu(d))

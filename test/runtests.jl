@@ -26,4 +26,9 @@ using SafeTestsets, Test
         @time @safetestset "Freeze" begin include("contrib/freeze.jl") end
         @time @safetestset "Shared Parameters" begin include("contrib/share_parameters.jl") end
     end
+
+    @testset "Extensions" begin
+        # CA tests are already included in the other tests
+        @time @safetestset "Flux" begin include("ext/LuxFluxTransformExt.jl") end
+    end
 end

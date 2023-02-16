@@ -1,6 +1,6 @@
 using Documenter, DocumenterMarkdown, LuxCore, Lux, LuxLib, Pkg
 
-import Flux, Optimisers  # Load weak dependencies
+import Flux  # Load weak dependencies
 
 function _setup_subdir_pkgs_index_file(subpkg)
     src_file = joinpath(dirname(@__DIR__), "lib", subpkg, "README.md")

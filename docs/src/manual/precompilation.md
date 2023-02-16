@@ -54,8 +54,6 @@ using Preferences, UUIDs
 
 Preferences.@set_preferences!(UUID("b2108857-7c20-44ae-9111-449ecde12c47"),
                               "LuxSnoopPrecompile", false)
-# Preferences.@set_preferences!(UUID("b2108857-7c20-44ae-9111-449ecde12c47"),
-#                               "LuxPrecompileComponentArrays", false)
 ```
 
 If `LuxSnoopPrecompile` is set to `false`, then `Lux` will not use `SnoopPrecompile.jl`:
@@ -66,20 +64,10 @@ julia> @time_imports using Lux
     119.0 ms  Lux 6.41% compilation time
 ```
 
-The other option is to just disable compilation of `ComponentArrays.jl` codepaths. This is
-desirable if you are not planning to use Lux with any of the SciML Packages. This can be
-done by setting `LuxPrecompileComponentArrays` to `false`:
+If you have `LuxSnoopPrecompile` set to `true`:
 
 ```julia-repl
 julia> @time_imports using Lux
 
     3366.4 ms  Lux 0.22% compilation time
-```
-
-If you have both the `LuxSnoopPrecompile` and `LuxPrecompileComponentArrays` set to `true`:
-
-```julia-repl
-julia> @time_imports using Lux
-
-    5738.5 ms  Lux 0.13% compilation time
 ```

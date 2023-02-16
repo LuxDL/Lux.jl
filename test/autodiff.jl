@@ -11,7 +11,7 @@ Random.seed!(rng, 0)
     x = randn(rng, Float32, 3, 2)
     ps, st = Lux.setup(rng, c)
 
-    ps = ps |> Lux.ComponentArray
+    ps = ps |> ComponentArray
 
     gs_r = ReverseDiff.gradient(ps -> sum(first(Lux.apply(c, x, ps, st))), ps)
     gs_z = Zygote.gradient(ps -> sum(first(Lux.apply(c, x, ps, st))), ps)[1]

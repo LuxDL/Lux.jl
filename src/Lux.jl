@@ -12,15 +12,11 @@ using Random, Statistics, LinearAlgebra, SparseArrays
 using Functors, Setfield
 import Adapt: adapt, adapt_storage
 # Arrays
-using FillArrays, ComponentArrays
+using FillArrays
 # Automatic Differentiation
 using ChainRulesCore, Zygote
-# Optional Dependency
-using Requires
 # Docstrings
 using Markdown
-# Optimisers + ComponentArrays
-using Optimisers
 
 # LuxCore
 using LuxCore
@@ -48,17 +44,21 @@ include("layers/display.jl")
 # AutoDiff
 include("autodiff.jl")
 
-# Flux to Lux
+# Extensions
 if !isdefined(Base, :get_extension)
     using Requires
 end
 
 function __init__()
     @static if !isdefined(Base, :get_extension)
+        # Handling ComponentArrays
+        @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin
+            include("../ext/LuxComponentArraysExt.jl")
+        end
+
+        # Flux InterOp
         @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-            @require Optimisers="3bd65402-5787-11e9-1adc-39752487f4e2" begin
-                include("../ext/Flux2LuxExt.jl")
-            end
+            include("../ext/LuxFluxTransformExt.jl")
         end
     end
 end
@@ -91,5 +91,16 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
+
+# Extension Exports: Flux
+function transform end
+
+struct FluxLayer{L, RE, I} <: Lux.AbstractExplicitLayer
+    layer::L
+    re::RE
+    init_parameters::I
+end
+
+export transform, FluxLayer
 
 end

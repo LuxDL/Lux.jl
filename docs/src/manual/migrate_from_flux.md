@@ -174,6 +174,11 @@ implemented soon. If you **really** need those functionality check out the next 
 
 We don't recommend this method, but here is a way to compose Flux with Lux.
 
+!!! tip
+
+    Starting `v0.4.37`, if you have `using Flux` in your code, Lux will automatically
+    provide a function `transform` that can convert Flux layers to Lux layers
+
 ```julia
 using Lux, NNlib, Random, Optimisers
 import Flux

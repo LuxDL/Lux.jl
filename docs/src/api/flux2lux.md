@@ -2,8 +2,8 @@
 CurrentModule = Lux
 ```
 
-Accessing these functions require manually loading `Flux` and `Optimisers`, i.e.,
-`using Flux, Optimisers` must be present somewhere in the code for these to be used.
+Accessing these functions require manually loading `Flux`, i.e., `using Flux` must be
+present somewhere in the code for these to be used.
 
 ## Functions
 
