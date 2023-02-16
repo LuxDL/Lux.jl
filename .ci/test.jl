@@ -10,19 +10,13 @@ function _dev_pkg(path)
 end
 
 groups = if GROUP == "All"
-    ["Lux", "Boltz", "LuxLib", "Flux2Lux", "LuxCore"]
+    ["Lux", "Boltz", "LuxLib", "LuxCore"]
 else
     [GROUP]
 end
 
 cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib"), _get_lib_path("LuxCore")],
                           "Boltz" => [
-                              _get_lib_path("LuxLib"),
-                              _get_lib_path("LuxCore"),
-                              dirname(@__DIR__),
-                              _get_lib_path("Flux2Lux"),
-                          ],
-                          "Flux2Lux" => [
                               _get_lib_path("LuxLib"),
                               _get_lib_path("LuxCore"),
                               dirname(@__DIR__),

@@ -47,9 +47,20 @@ include("nnlib.jl")
 include("layers/display.jl")
 # AutoDiff
 include("autodiff.jl")
+
 # Flux to Lux
+if !isdefined(Base, :get_extension)
+    using Requires
+end
+
 function __init__()
-    @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" include("transform.jl")
+    @static if !isdefined(Base, :get_extension)
+        @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
+            @require Optimisers="3bd65402-5787-11e9-1adc-39752487f4e2" begin
+                include("../ext/Flux2LuxExt.jl")
+            end
+        end
+    end
 end
 
 # Experimental

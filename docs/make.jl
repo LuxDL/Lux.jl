@@ -1,4 +1,6 @@
-using Documenter, DocumenterMarkdown, Flux2Lux, LuxCore, Lux, LuxLib, Pkg
+using Documenter, DocumenterMarkdown, LuxCore, Lux, LuxLib, Pkg
+
+import Flux, Optimisers  # Load weak dependencies
 
 function _setup_subdir_pkgs_index_file(subpkg)
     src_file = joinpath(dirname(@__DIR__), "lib", subpkg, "README.md")
@@ -8,7 +10,7 @@ function _setup_subdir_pkgs_index_file(subpkg)
     return
 end
 
-_setup_subdir_pkgs_index_file.(["Boltz", "LuxLib", "Flux2Lux", "LuxCore"])
+_setup_subdir_pkgs_index_file.(["Boltz", "LuxLib", "LuxCore"])
 
 deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/Lux.jl.git")

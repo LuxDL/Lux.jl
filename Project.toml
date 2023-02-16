@@ -25,12 +25,20 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+[weakdeps]
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+
+[extensions]
+Flux2LuxExt = ["Flux", "Optimisers"]
+
 [compat]
 Adapt = "3"
 CUDA = "3"
 ChainRulesCore = "1"
 ComponentArrays = "0.13"
 FillArrays = "0.13"
+Flux = "0.13"
 Functors = "0.2, 0.3, 0.4"
 LuxCore = "0.1"
 LuxLib = "0.1.7"
