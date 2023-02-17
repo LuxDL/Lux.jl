@@ -52,18 +52,6 @@ ts = [ones(2 * M); zeros(2 * M)]
 
 ## Plot data points
 
-# with_theme(theme_web()) do
-#     fig = Figure()
-#     ax = Axis(fig[1, 1]; xlabel="x", ylabel="y")
-
-#     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-#     s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange, strokecolor=:black,
-#                  strokewidth=1)
-
-#     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
-
-#     return fig
-# end
 function plot_data()
     x1 = first.(xt1s)
     y1 = last.(xt1s)
