@@ -28,7 +28,9 @@ using SafeTestsets, Test
     end
 
     @testset "Extensions" begin
-        # CA tests are already included in the other tests
+        # Most CA tests are already included in the other tests
+        @time @safetestset "ComponentArrays" begin include("ext/LuxComponentArraysExt.jl") end
+
         @time @safetestset "Flux" begin include("ext/LuxFluxTransformExt.jl") end
     end
 end

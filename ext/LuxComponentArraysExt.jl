@@ -3,6 +3,7 @@ module LuxComponentArraysExt
 isdefined(Base, :get_extension) ? (using ComponentArrays) : (using ..ComponentArrays)
 
 using Functors, Lux, Optimisers, Zygote
+import ChainRulesCore as CRC
 
 @inline function Lux._getproperty(x::ComponentArray, ::Val{prop}) where {prop}
     return prop in propertynames(x) ? getproperty(x, prop) : nothing
@@ -37,5 +38,10 @@ Lux._merge(nt1::NamedTuple, nt2::ComponentArray) = merge(nt1, NamedTuple(nt2))
 
 # Parameter Sharing
 Lux._parameter_structure(ps::ComponentArray) = Lux._parameter_structure(NamedTuple(ps))
+
+# CRC + CA Temporary Patch -- Needs to be upstreamed
+function CRC.rrule(::Type{ComponentArray}, nt::NamedTuple)
+    return ComponentArray(nt), Δ -> (CRC.NoTangent(), NamedTuple(Δ))
+end
 
 end
