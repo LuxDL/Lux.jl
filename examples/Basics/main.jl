@@ -181,7 +181,7 @@ end
 # efficient computationally than a VJP, and, conversely, a JVP is more efficient when the
 # Jacobian matrix is a tall matrix.
 
-using ForwardDiff, Zygote, AbstractDifferentiation
+using ComponentArrays, ForwardDiff, Zygote, AbstractDifferentiation
 
 # ### Gradients
 
@@ -252,7 +252,7 @@ Random.seed!(rng, 0)
 
 # Let us initialize the parameters and states (in this case it is empty) for the model.
 ps, st = Lux.setup(rng, model)
-ps = ps |> Lux.ComponentArray
+ps = ps |> ComponentArray
 
 # Set problem dimensions.
 n_samples = 20

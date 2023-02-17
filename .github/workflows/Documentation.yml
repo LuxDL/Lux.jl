@@ -45,7 +45,7 @@ jobs:
           julia --code-coverage=user --project=docs/ --color=yes docs/make.jl
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,lib/Boltz/src,lib/LuxLib/src
+          directories: src,lib/Boltz/src,lib/LuxLib/src,ext
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info

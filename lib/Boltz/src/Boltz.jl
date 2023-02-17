@@ -7,10 +7,11 @@ using Artifacts, JLD2, LazyArtifacts
 
 # TODO(@avik-pal): We want to have generic Lux implementaions for Metalhead models
 # We can automatically convert several Metalhead.jl models to Lux
-using Flux2Lux, Metalhead
+using Metalhead
+import Flux
 
 # Mark certain parts of layers as non-differentiable
-import ChainRulesCore
+import ChainRulesCore as CRC
 
 # Utility Functions
 include("utils.jl")

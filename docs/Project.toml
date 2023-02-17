@@ -1,7 +1,7 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 DocumenterMarkdown = "997ab1e6-3595-5248-9280-8efb232c3433"
-Flux2Lux = "ab51a4a6-c8c3-4b1f-af31-4b52a21037df"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"

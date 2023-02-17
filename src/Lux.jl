@@ -15,6 +15,7 @@ import Adapt: adapt, adapt_storage
 using FillArrays
 # Automatic Differentiation
 using ChainRulesCore, Zygote
+import ChainRulesCore as CRC
 # Docstrings
 using Markdown
 
@@ -52,14 +53,10 @@ end
 function __init__()
     @static if !isdefined(Base, :get_extension)
         # Handling ComponentArrays
-        @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin
-            include("../ext/LuxComponentArraysExt.jl")
-        end
+        @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin include("../ext/LuxComponentArraysExt.jl") end
 
         # Flux InterOp
-        @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-            include("../ext/LuxFluxTransformExt.jl")
-        end
+        @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin include("../ext/LuxFluxTransformExt.jl") end
     end
 end
 

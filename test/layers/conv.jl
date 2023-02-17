@@ -458,14 +458,20 @@ end
     display(layer)
     ps, st = Lux.setup(rng, layer)
     run_JET_tests(layer, y, ps, st; opt_broken=true)
-    @inferred layer(y, ps, st)
+    @static if VERSION >= v"1.7"
+        # Inference broken in v1.6
+        @inferred layer(y, ps, st)
+    end
     x_hat1 = layer(y, ps, st)[1]
 
     layer = ConvTranspose((3, 3), 1 => 1; use_bias=false)
     display(layer)
     ps, st = Lux.setup(rng, layer)
     run_JET_tests(layer, y, ps, st; opt_broken=true)
-    @inferred layer(y, ps, st)
+    @static if VERSION >= v"1.7"
+        # Inference broken in v1.6
+        @inferred layer(y, ps, st)
+    end
     x_hat2 = layer(y, ps, st)[1]
 
     @test size(x_hat1) == size(x_hat2) == size(x)
@@ -475,7 +481,10 @@ end
     ps, st = Lux.setup(rng, layer)
     x = rand(Float32, 5, 5, 1, 1)
     run_JET_tests(layer, x, ps, st; opt_broken=true)
-    @inferred layer(x, ps, st)
+    @static if VERSION >= v"1.7"
+        # Inference broken in v1.6
+        @inferred layer(x, ps, st)
+    end
     test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1.0f-3,
                                   rtol=1.0f-3)
 
@@ -484,7 +493,10 @@ end
     display(layer)
     ps, st = Lux.setup(rng, layer)
     run_JET_tests(layer, x, ps, st; opt_broken=true)
-    @inferred layer(x, ps, st)
+    @static if VERSION >= v"1.7"
+        # Inference broken in v1.6
+        @inferred layer(x, ps, st)
+    end
     test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps; atol=1.0f-3,
                                   rtol=1.0f-3)
 
