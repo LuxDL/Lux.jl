@@ -23,6 +23,7 @@ CrossCor
 ## Dropout Layers
 
 ```@docs
+AlphaDropout
 Dropout
 VariationalHiddenDropout
 ```
@@ -74,6 +75,7 @@ WrappedFunction
 ```@docs
 BatchNorm
 GroupNorm
+InstanceNorm
 LayerNorm
 WeightNorm
 ```
