@@ -1,7 +1,7 @@
 name = "Boltz"
 uuid = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -21,7 +21,7 @@ CUDA = "3"
 ChainRulesCore = "1.15"
 JLD2 = "0.4"
 Flux = "0.13"
-Lux = "0.4.26"
+Lux = "0.4.26 - 0.4.37"  # Needed till we update CUDA to v4
 Metalhead = "0.7"
 NNlib = "0.8"
 julia = "1.6"
