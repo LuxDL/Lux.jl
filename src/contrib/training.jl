@@ -2,8 +2,8 @@ module Training
 
 # NOTE(@avik-pal): In the long term this will be pulled out into its own package but
 # currently all the dependencies are met by Lux itself.
-import ..Lux
-import Optimisers, Random, Setfield, Zygote
+using ..Lux
+using Optimisers, Random, Setfield
 
 """
     TrainState
@@ -124,15 +124,6 @@ Vector-Jacobian Product using Zygote.
 struct ZygoteVJP <: AbstractVJP end
 
 backend(::ZygoteVJP) = :Zygote
-
-function compute_gradients(::ZygoteVJP, objective_function::Function, data, ts::TrainState)
-    (loss, st, stats), back = Zygote.pullback(ps -> objective_function(ts.model, ps,
-                                                                       ts.states, data),
-                                              ts.parameters)
-    grads = back((one(loss), nothing, nothing))[1]
-    Setfield.@set! ts.states = st
-    return grads, loss, stats, ts
-end
 
 """
     EnzymeVJP <: AbstractVJP
