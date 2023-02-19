@@ -89,7 +89,7 @@ end
             CUDA.@time y = _f(x, scale, bias)
 
             @inferred groupnorm(x, scale, bias; groups, epsilon)
-            run_JET_tests(_f, x, scale, bias; opt_broken=true, call_broken=true)
+            run_JET_tests(_f, x, scale, bias; opt_broken=true)
             @test y isa CuArray{T, 4}
             @test size(y) == sz
 
@@ -176,7 +176,7 @@ end
 
             @inferred groupnorm(x, scale, bias, rm, rv; groups, epsilon, training,
                                 momentum=T(0.9))
-            run_JET_tests(_f, x, scale, bias, rm, rv; opt_broken=true, call_broken=true)
+            run_JET_tests(_f, x, scale, bias, rm, rv; opt_broken=true)
             @test y isa CuArray{T, 4}
             @test size(y) == sz
             @test size(nt.running_mean) == (groups,)

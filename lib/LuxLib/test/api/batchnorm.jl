@@ -92,7 +92,7 @@ end
             CUDA.@time y, nt = _f(x, scale, bias, rm, rv)
 
             @inferred batchnorm(x, scale, bias, rm, rv; epsilon, training, momentum=T(0.9))
-            run_JET_tests(_f, x, scale, bias, rm, rv; call_broken=true)
+            run_JET_tests(_f, x, scale, bias, rm, rv)
             @test y isa CuArray{T, length(sz)}
             @test size(y) == sz
             if rm !== nothing

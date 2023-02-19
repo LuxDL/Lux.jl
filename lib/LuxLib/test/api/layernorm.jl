@@ -85,7 +85,7 @@ end
                 @test isapprox(std(y; dims), 1; atol=1e-1, rtol=1e-1)
             end
 
-            run_JET_tests(_f, x, scale, bias; call_broken=true)
+            run_JET_tests(_f, x, scale, bias)
 
             # if T != Float16 # FDM is not ideal with Float16 values
             #     if affine_shape === nothing
