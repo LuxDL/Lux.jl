@@ -2,7 +2,7 @@ module Lux
 
 # Accelerator Support
 using CUDA
-using CUDA.CUDNN
+using cuDNN
 # Neural Network Backend
 using NNlib
 import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
