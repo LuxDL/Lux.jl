@@ -2,7 +2,7 @@ module LuxComponentArraysExt
 
 isdefined(Base, :get_extension) ? (using ComponentArrays) : (using ..ComponentArrays)
 
-using Functors, Lux, Optimisers, Zygote
+using Functors, Lux, Optimisers
 import ChainRulesCore as CRC
 
 @inline function Lux._getproperty(x::ComponentArray, ::Val{prop}) where {prop}
@@ -12,11 +12,6 @@ end
 function Functors.functor(::Type{<:ComponentArray}, c)
     return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
            ComponentArray
-end
-
-# Zygote Fixes
-function Zygote.accum(x::ComponentArray, ys::ComponentArray...)
-    return ComponentArray(Zygote.accum(getdata(x), getdata.(ys)...), getaxes(x))
 end
 
 # Optimisers Fixes

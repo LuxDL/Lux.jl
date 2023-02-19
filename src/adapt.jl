@@ -4,12 +4,10 @@ struct LuxCPUAdaptor <: LuxDeviceAdaptor end
 struct LuxCUDAAdaptor <: LuxDeviceAdaptor end
 
 adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
-adapt_storage(::LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
 function adapt_storage(::LuxCPUAdaptor,
-                       x::Union{AbstractRange, Zygote.OneElement,
-                                SparseArrays.AbstractSparseArray})
+                       x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
     return x
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)

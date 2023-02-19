@@ -11,7 +11,7 @@ using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 using Functors, Setfield
 import Adapt: adapt, adapt_storage
 # Automatic Differentiation
-using ChainRulesCore, Zygote
+using ChainRulesCore
 import ChainRulesCore as CRC
 
 # LuxCore
@@ -57,21 +57,23 @@ end
 function __init__()
     @static if !isdefined(Base, :get_extension)
         # Handling ComponentArrays
-        @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin include("../ext/LuxComponentArraysExt.jl") end
+        @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin
+            include("../ext/LuxComponentArraysExt.jl")
+            # This definitely needs to be upstreamed
+            @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/LuxComponentArraysExt.jl") end
+        end
 
         # Flux InterOp
         @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin include("../ext/LuxFluxTransformExt.jl") end
 
         # FillArrays
         @require FillArrays="1a297f60-69ca-5386-bcde-b61e274b549b" begin include("../ext/LuxFillArraysExt.jl") end
+
+        # Automatic Differentiation
+        ## Zygote InterOp
+        @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/LuxZygoteExt.jl") end
     end
 end
-
-# Snoop Precompile
-import SnoopPrecompile
-import Preferences
-
-SnoopPrecompile.@precompile_all_calls begin include("precompile.jl") end
 
 # Data Transfer
 export cpu, gpu
