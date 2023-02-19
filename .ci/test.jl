@@ -19,7 +19,7 @@ cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib"), _get_lib_path("LuxC
                           "Boltz" => [
                               _get_lib_path("LuxLib"),
                               _get_lib_path("LuxCore"),
-                              dirname(@__DIR__),
+                              # dirname(@__DIR__),
                           ], "LuxLib" => [], "LuxCore" => [])
 
 const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "true") ==
