@@ -1,23 +1,18 @@
 module Lux
 
 # Accelerator Support
-using CUDA
-using cuDNN
+using CUDA, cuDNN
 # Neural Network Backend
 using NNlib
 import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
 # Julia StdLibs
-using Random, Statistics, LinearAlgebra, SparseArrays
+using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation
 using Functors, Setfield
 import Adapt: adapt, adapt_storage
-# Arrays
-using FillArrays
 # Automatic Differentiation
 using ChainRulesCore, Zygote
 import ChainRulesCore as CRC
-# Docstrings
-using Markdown
 
 # LuxCore
 using LuxCore
@@ -45,6 +40,15 @@ include("layers/display.jl")
 # AutoDiff
 include("autodiff.jl")
 
+# Experimental
+include("contrib/map.jl")
+include("contrib/training.jl")
+include("contrib/freeze.jl")
+include("contrib/share_parameters.jl")
+
+# Deprecations
+include("deprecated.jl")
+
 # Extensions
 if !isdefined(Base, :get_extension)
     using Requires
@@ -57,17 +61,11 @@ function __init__()
 
         # Flux InterOp
         @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin include("../ext/LuxFluxTransformExt.jl") end
+
+        # FillArrays
+        @require FillArrays="1a297f60-69ca-5386-bcde-b61e274b549b" begin include("../ext/LuxFillArraysExt.jl") end
     end
 end
-
-# Experimental
-include("contrib/map.jl")
-include("contrib/training.jl")
-include("contrib/freeze.jl")
-include("contrib/share_parameters.jl")
-
-# Deprecations
-include("deprecated.jl")
 
 # Snoop Precompile
 import SnoopPrecompile
