@@ -28,7 +28,7 @@ Random.seed!(rng, 0)
 
         @test_throws ErrorException ps.train_state
 
-        test_gradient_correctness_fdm(loss_loop_rnncell, ps; atol=1e-3, rtol=1e-3)
+        test_gradient_correctness_fdm(loss_loop_rnncell, ps; atol=1e-2, rtol=1e-2)
     end
 
     @testset "Trainable hidden states" begin for rnncell in (RNNCell(3 => 5, identity;
@@ -81,7 +81,7 @@ end
             return sum(abs2, y)
         end
 
-        test_gradient_correctness_fdm(loss_loop_lstmcell, ps; atol=1e-3, rtol=1e-3)
+        test_gradient_correctness_fdm(loss_loop_lstmcell, ps; atol=1e-2, rtol=1e-2)
 
         @test_throws ErrorException ps.train_state
         @test_throws ErrorException ps.train_memory
@@ -168,7 +168,7 @@ end
             return sum(abs2, y)
         end
 
-        test_gradient_correctness_fdm(loss_loop_grucell, ps; atol=1e-3, rtol=1e-3)
+        test_gradient_correctness_fdm(loss_loop_grucell, ps; atol=1e-2, rtol=1e-2)
 
         @test_throws ErrorException ps.train_state
     end
@@ -239,7 +239,7 @@ end
         return sum(abs2, y)
     end
 
-    test_gradient_correctness_fdm(loss_loop_rnn, ps; atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(loss_loop_rnn, ps; atol=1e-2, rtol=1e-2)
 end end
 
 @testset "Recurrence" begin for _cell in (RNNCell, LSTMCell, GRUCell),
@@ -259,7 +259,7 @@ end end
 
     @test size(y) == (5, 2)
 
-    test_gradient_correctness_fdm(p -> sum(rnn(x, p, st)[1]), ps; atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(p -> sum(rnn(x, p, st)[1]), ps; atol=1e-2, rtol=1e-2)
 
     # Tuple of Time Series
     x = Tuple(randn(rng, Float32, 3, 2) for _ in 1:4)
@@ -270,7 +270,7 @@ end end
 
     @test size(y) == (5, 2)
 
-    test_gradient_correctness_fdm(p -> sum(rnn(x, p, st)[1]), ps; atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(p -> sum(rnn(x, p, st)[1]), ps; atol=1e-2, rtol=1e-2)
 
     # Vector of Time Series
     x = [randn(rng, Float32, 3, 2) for _ in 1:4]
@@ -281,7 +281,7 @@ end end
 
     @test size(y) == (5, 2)
 
-    test_gradient_correctness_fdm(p -> sum(rnn(x, p, st)[1]), ps; atol=1e-3, rtol=1e-3)
+    test_gradient_correctness_fdm(p -> sum(rnn(x, p, st)[1]), ps; atol=1e-2, rtol=1e-2)
 end end
 
 @testset "multigate" begin

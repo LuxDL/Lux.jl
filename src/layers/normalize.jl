@@ -469,7 +469,7 @@ function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol
     return WeightNorm{which_params, typeof(layer), typeof(dims)}(layer, dims)
 end
 
-@inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims=dims))
+@inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
 @inline function _norm_except(x::AbstractArray{T, N};
                               dims::Union{Int, Tuple}=N) where {T, N}
     return _norm(x; dims=_get_norm_except_dims(N, dims))

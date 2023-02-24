@@ -1,4 +1,5 @@
-using ComponentArrays, FiniteDifferences, Lux, Optimisers, Random, Test, Zygote
+using ComponentArrays, FiniteDifferences, Lux, Optimisers, Random, Test
+import Tracker, Zygote
 
 try
     using JET
@@ -36,18 +37,28 @@ end
 
 Base.isapprox(::Nothing, v::AbstractArray; kwargs...) = length(v) == 0
 Base.isapprox(v::AbstractArray, ::Nothing; kwargs...) = length(v) == 0
+Base.isapprox(v::NamedTuple, ::Nothing; kwargs...) = length(v) == 0
+Base.isapprox(::Nothing, v::NamedTuple; kwargs...) = length(v) == 0
+Base.isapprox(v::Tuple, ::Nothing; kwargs...) = length(v) == 0
+Base.isapprox(::Nothing, v::Tuple; kwargs...) = length(v) == 0
+Base.isapprox(x::AbstractArray, y::NamedTuple; kwargs...) = length(x) == 0 && length(y) == 0
+Base.isapprox(x::NamedTuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y) == 0
+Base.isapprox(x::AbstractArray, y::Tuple; kwargs...) = length(x) == 0 && length(y) == 0
+Base.isapprox(x::Tuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y) == 0
 
-# Test the gradients generated using AD against the gradients generated using Finite Differences
 _named_tuple(x::ComponentArray) = NamedTuple(x)
 _named_tuple(x) = x
 
+# Test the gradients generated using AD against the gradients generated using Finite Differences
 function test_gradient_correctness_fdm(f::Function, args...; kwargs...)
-    gs_ad = Zygote.gradient(f, args...)
+    gs_ad_zygote = Zygote.gradient(f, args...)
+    gs_ad_tracker = Tracker.gradient(f, args...)
     gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(5, 1), f,
                                     ComponentArray.(args)...)
     gs_fdm = _named_tuple.(gs_fdm)
-    for (g_ad, g_fdm) in zip(gs_ad, gs_fdm)
-        @test isapprox(g_ad, g_fdm; kwargs...)
+    for (g_ad_zygote, g_ad_tracker, g_fdm) in zip(gs_ad_zygote, gs_ad_tracker, gs_fdm)
+        @test isapprox(g_ad_zygote, g_fdm; kwargs...)
+        @test isapprox(Tracker.data(g_ad_tracker), g_ad_zygote; kwargs...)
     end
 end
 

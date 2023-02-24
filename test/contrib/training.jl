@@ -46,11 +46,14 @@ function test_abstract_vjp_interface()
 
     # Gradient Correctness should be tested in `test/autodiff.jl` and other parts of the
     # testing codebase. Here we only test that the API works.
-    grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(Lux.Training.ZygoteVJP(),
-                                                                 _loss_function, x, tstate)
-    tstate_ = @test_nowarn Lux.Training.apply_gradients(tstate, grads)
-    @test tstate_.step == 1
-    @test tstate != tstate_
+    for vjp_rule in (Lux.Training.ZygoteVJP(), Lux.Training.TrackerVJP())
+        grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(vjp_rule,
+                                                                     _loss_function, x,
+                                                                     tstate)
+        tstate_ = @test_nowarn Lux.Training.apply_gradients(tstate, grads)
+        @test tstate_.step == 1
+        @test tstate != tstate_
+    end
 
     return nothing
 end
