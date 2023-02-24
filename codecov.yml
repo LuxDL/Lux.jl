@@ -11,12 +11,14 @@ flag_management:
     - name: Lux
       paths: 
       - src/**
+      - ext/**
     - name: Boltz
       paths: 
       - lib/Boltz/src/**
     - name: LuxLib
       paths: 
       - lib/LuxLib/src/**
+      - lib/LuxLib/ext/**
     - name: LuxCore
       paths:
       - lib/LuxCore/src/**

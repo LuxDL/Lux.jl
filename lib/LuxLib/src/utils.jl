@@ -24,9 +24,9 @@ CRC.@non_differentiable _get_device(::Any)
 function _assert_same_device(args...)
     devs = _get_device(args)
     if !all(devs .== (first(devs),))
-        throw(ArgumentError("All arguments must be on the same device. This error is " *
-                            "encountered if you are calling a function with a mix of CPU " *
-                            "and GPU arrays."))
+        throw(ArgumentError("All arguments must be on the same device. This error is
+                             encountered if you are calling a function with a mix of CPU
+                             and GPU arrays."))
     end
     return
 end

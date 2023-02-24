@@ -407,7 +407,7 @@ with `B` the Bilinear layer.
   - A 2-Tuple containing
 
       + `x` must be an AbstractArray with `size(x, 1) == in1_dims`
-      + `y` must be an AbstractArray with `size(x, 1) == in2_dims`
+      + `y` must be an AbstractArray with `size(y, 1) == in2_dims`
 
   - If the input is an AbstractArray, then `x = y`
 

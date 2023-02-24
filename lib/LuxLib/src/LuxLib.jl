@@ -1,8 +1,8 @@
 module LuxLib
 
-using ChainRulesCore, CUDA, CUDAKernels, KernelAbstractions, Markdown, NNlib, NNlibCUDA,
-      Random, Statistics
+using ChainRulesCore, Markdown, NNlib, Random, Statistics
 import ChainRulesCore as CRC
+using CUDA, CUDAKernels, KernelAbstractions, NNlibCUDA  # CUDA Support
 
 # Extensions
 if !isdefined(Base, :get_extension)
@@ -13,6 +13,9 @@ function __init__()
     @static if !isdefined(Base, :get_extension)
         # Handling ForwardDiff
         @require ForwardDiff="f6369f11-7733-5829-9624-2563aa707210" begin include("../ext/LuxLibForwardDiffExt.jl") end
+
+        # Handling Tracker
+        @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxLibTrackerExt.jl") end
     end
 end
 

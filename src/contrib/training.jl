@@ -112,8 +112,8 @@ A 4-Tuple containing:
 """
 function compute_gradients(t::T, objective_function::Function, data,
                            ts::TrainState) where {T <: AbstractVJP}
-    throw(ArgumentError("Support for AD backend $(backend(t)) has not been implemented " *
-                        "yet!!!"))
+    throw(ArgumentError("Support for AD backend $(backend(t)) has not been implemented
+                         yet!!!"))
 end
 
 """
@@ -142,5 +142,23 @@ Vector-Jacobian Product using Yota.
 struct YotaVJP <: AbstractVJP end
 
 backend(::YotaVJP) = :Yota
+
+"""
+    ReverseDiffVJP <: AbstractVJP
+
+Vector-Jacobian Product using ReverseDiff.
+"""
+struct ReverseDiffVJP <: AbstractVJP end
+
+backend(::ReverseDiffVJP) = :ReverseDiff
+
+"""
+    TrackerVJP <: AbstractVJP
+
+Vector-Jacobian Product using Tracker.
+"""
+struct TrackerVJP <: AbstractVJP end
+
+backend(::TrackerVJP) = :Tracker
 
 end
