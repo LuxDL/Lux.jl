@@ -44,17 +44,6 @@ end
 end
 
 # Base.repeat
-Base.repeat(x::TrackedArray; kwargs...) = track(Base.repeat, x; kwargs...)
-
-@grad function Base.repeat(x; kwargs...)
-    y, pullback_function = CRC.rrule(Base.repeat, data(x); kwargs...)
-    function repeat_pullback(Δ)
-        _, Δx = pullback_function(Δ)
-        return nobacksies(:repeat, CRC.unthunk(Δx))
-    end
-    return y, repeat_pullback
-end
-
 Base.repeat(x::TrackedArray, counts...) = track(Base.repeat, x, counts...)
 
 @grad function Base.repeat(x, counts...)
