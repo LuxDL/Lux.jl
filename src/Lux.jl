@@ -13,6 +13,8 @@ import Adapt: adapt, adapt_storage
 # Automatic Differentiation
 using ChainRulesCore
 import ChainRulesCore as CRC
+# Smaller Stacktraces -- Till we have better solution in Base
+using TruncatedStacktraces
 
 # LuxCore
 using LuxCore
@@ -33,12 +35,10 @@ include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
 include("layers/recurrent.jl")
-# Neural Network Backend
-include("nnlib.jl")
 # Pretty Printing
 include("layers/display.jl")
 # AutoDiff
-include("autodiff.jl")
+include("chainrules.jl")
 
 # Experimental
 include("contrib/map.jl")
