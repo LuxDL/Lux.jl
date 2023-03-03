@@ -2,7 +2,8 @@ module LuxComponentArraysExt
 
 isdefined(Base, :get_extension) ? (using ComponentArrays) : (using ..ComponentArrays)
 
-using Functors, Lux, Optimisers, TruncatedStacktraces
+using Functors, Lux, Optimisers
+import TruncatedStacktraces
 import ChainRulesCore as CRC
 
 @inline function Lux._getproperty(x::ComponentArray, ::Val{prop}) where {prop}

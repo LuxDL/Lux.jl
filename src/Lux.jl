@@ -14,7 +14,8 @@ import Adapt: adapt, adapt_storage
 using ChainRulesCore
 import ChainRulesCore as CRC
 # Smaller Stacktraces -- Till we have better solution in Base
-using TruncatedStacktraces
+import TruncatedStacktraces
+import MacroTools # Generate the truncated stacktraces functions
 
 # LuxCore
 using LuxCore
@@ -37,6 +38,7 @@ include("layers/dropout.jl")
 include("layers/recurrent.jl")
 # Pretty Printing
 include("layers/display.jl")
+include("stacktraces.jl")
 # AutoDiff
 include("chainrules.jl")
 
