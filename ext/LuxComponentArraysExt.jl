@@ -3,7 +3,7 @@ module LuxComponentArraysExt
 isdefined(Base, :get_extension) ? (using ComponentArrays) : (using ..ComponentArrays)
 
 using Functors, Lux, Optimisers
-import TruncatedStacktraces
+import TruncatedStacktraces: @truncate_stacktrace
 import ChainRulesCore as CRC
 
 @inline function Lux._getproperty(x::ComponentArray, ::Val{prop}) where {prop}
@@ -51,12 +51,6 @@ function CRC.rrule(::Type{ComponentArray}, nt::NamedTuple)
 end
 
 # Definitely needs an upstream :P
-function Base.show(io::IO, t::Type{<:ComponentArray{T, N, A, Axes}}) where {T, N, A, Axes}
-    if TruncatedStacktraces.VERBOSE[]
-        print(io, "ComponentArray{$T, $N, $A, $Axes}")
-    else
-        print(io, "ComponentArray{$T, ...}")
-    end
-end
+@truncate_stacktrace ComponentArray 1
 
 end

@@ -15,7 +15,7 @@ using ChainRulesCore
 import ChainRulesCore as CRC
 # Smaller Stacktraces -- Till we have better solution in Base
 import TruncatedStacktraces
-import MacroTools # Generate the truncated stacktraces functions
+import TruncatedStacktraces: @truncate_stacktrace
 
 # LuxCore
 using LuxCore
