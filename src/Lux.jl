@@ -59,8 +59,9 @@ function __init__()
         # Handling ComponentArrays
         @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin
             include("../ext/LuxComponentArraysExt.jl")
-            # This definitely needs to be upstreamed
-            @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/LuxComponentArraysExt.jl") end
+            # These definitely needs to be upstreamed
+            @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxComponentArraysTrackerExt.jl") end
+            @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/LuxComponentArraysZygoteExt.jl") end
         end
 
         # Flux InterOp
