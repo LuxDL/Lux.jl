@@ -4,13 +4,17 @@ isdefined(Base, :get_extension) ? (import Flux) : (import ..Flux)
 
 using Lux, Random, Optimisers
 import Lux: transform, FluxLayer
+import TruncatedStacktraces
 
 struct FluxModelConversionError <: Exception
     msg::String
 end
 
 function Base.showerror(io::IO, e::FluxModelConversionError)
-    return print(io, "FluxModelConversionError(", e.msg, ")")
+    print(io, "FluxModelConversionError(", e.msg, ")")
+    if !TruncatedStacktraces.VERBOSE[]
+        println(io, TruncatedStacktraces.VERBOSE_MSG)
+    end
 end
 
 """
@@ -269,7 +273,7 @@ function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::
     out_dims, in_dims = size(l.Wi)
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux use a " *
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a " *
                                            "`reset!` mechanism which hasn't been " *
                                            "extensively tested with `FluxLayer`. Rewrite " *
                                            "the model manually to use `RNNCell`."))
@@ -288,7 +292,7 @@ function transform(l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve:
     out_dims = _out_dims ÷ 4
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux use a " *
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a " *
                                            "`reset!` mechanism which hasn't been " *
                                            "extensively tested with `FluxLayer`. Rewrite " *
                                            "the model manually to use `LSTMCell`."))
@@ -309,7 +313,7 @@ function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::
     out_dims = _out_dims ÷ 3
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux use a " *
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a " *
                                            "`reset!` mechanism which hasn't been " *
                                            "extensively tested with `FluxLayer`. Rewrite " *
                                            "the model manually to use `GRUCell`."))

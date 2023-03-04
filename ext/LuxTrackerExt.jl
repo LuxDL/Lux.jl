@@ -15,7 +15,7 @@ Tracker.extract_grad!(t::Tuple) = map(Tracker.extract_grad!, t)
 Tracker.data(nt::NamedTuple) = fmap(Tracker.data, nt)
 Tracker.data(t::Tuple) = map(Tracker.data, t)
 
-# Weightnorm Patch
+# Weight Norm Patch
 @inline Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
 
 # Lux.Training

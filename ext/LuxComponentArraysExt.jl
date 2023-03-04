@@ -3,6 +3,7 @@ module LuxComponentArraysExt
 isdefined(Base, :get_extension) ? (using ComponentArrays) : (using ..ComponentArrays)
 
 using Functors, Lux, Optimisers
+import TruncatedStacktraces: @truncate_stacktrace
 import ChainRulesCore as CRC
 
 @inline function Lux._getproperty(x::ComponentArray, ::Val{prop}) where {prop}
@@ -36,7 +37,20 @@ Lux._parameter_structure(ps::ComponentArray) = Lux._parameter_structure(NamedTup
 
 # CRC + CA Temporary Patch -- Needs to be upstreamed
 function CRC.rrule(::Type{ComponentArray}, nt::NamedTuple)
-    return ComponentArray(nt), Δ -> (CRC.NoTangent(), NamedTuple(Δ))
+    res = ComponentArray(nt)
+    function CA_NT_pullback(Δ::AbstractArray)
+        if length(Δ) == length(res)
+            return (CRC.NoTangent(), NamedTuple(ComponentArray(vec(Δ), getaxes(res))))
+        end
+        error("Got pullback input of shape $(size(Δ)) & type $(typeof(Δ)) for output " *
+              "of shape $(size(res)) & type $(typeof(res))")
+        return nothing
+    end
+    CA_NT_pullback(Δ::ComponentArray) = (@show Δ; (CRC.NoTangent(), NamedTuple(Δ)))
+    return res, CA_NT_pullback
 end
+
+# Definitely needs an upstream :P
+@truncate_stacktrace ComponentArray 1
 
 end

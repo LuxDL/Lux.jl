@@ -174,10 +174,8 @@ function Base.show(io::IO, d::Dense{use_bias}) where {use_bias}
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; init_weight=glorot_uniform,
-               init_bias=zeros32, use_bias::Bool=true, bias::Union{Missing, Bool}=missing)
-    return Dense(first(mapping), last(mapping), activation; init_weight, init_bias,
-                 use_bias, bias)
+function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; kwargs...)
+    return Dense(first(mapping), last(mapping), activation; kwargs...)
 end
 
 function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
@@ -337,10 +335,12 @@ function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
                  typeof(init_bias)}(activation, dims, init_weight, init_bias)
 end
 
-function Scale(s1::Integer, s23::Integer...; _act=identity, kw...)
-    return Scale(tuple(s1, s23...), _act; kw...)
+function Scale(s1::Integer, s23::Integer...; _act=identity, kwargs...)
+    return Scale(tuple(s1, s23...), _act; kwargs...)
 end
-Scale(size_act...; kw...) = Scale(size_act[1:(end - 1)]...; _act=size_act[end], kw...)
+function Scale(size_act...; kwargs...)
+    return Scale(size_act[1:(end - 1)]...; _act=size_act[end], kwargs...)
+end
 
 function initialparameters(rng::AbstractRNG, d::Scale{use_bias}) where {use_bias}
     if use_bias

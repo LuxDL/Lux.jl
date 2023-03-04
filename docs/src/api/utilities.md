@@ -33,6 +33,12 @@ Lux.multigate
 Lux.replicate
 ```
 
+## Truncated Stacktraces
+
+```docs
+Lux.disable_stacktrace_truncation!
+```
+
 ## Index
 
 ```@index
