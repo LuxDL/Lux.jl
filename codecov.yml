@@ -22,3 +22,9 @@ flag_management:
     - name: LuxCore
       paths:
       - lib/LuxCore/src/**
+    - name: LuxCUDA
+      paths:
+      - lib/LuxCUDA/src/**
+    - name: LuxAMDGPU
+      paths:
+      - lib/LuxAMDGPU/src/**
