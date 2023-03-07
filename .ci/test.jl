@@ -10,7 +10,7 @@ function _dev_pkg(path)
 end
 
 groups = if GROUP == "All"
-    ["Lux", "Boltz", "LuxLib", "LuxCore"]
+    ["Lux", "Boltz", "LuxLib", "LuxCore", "LuxCUDA", "LuxAMDGPU"]
 else
     [GROUP]
 end
@@ -20,7 +20,8 @@ cross_dependencies = Dict("Lux" => [_get_lib_path("LuxLib"), _get_lib_path("LuxC
                               _get_lib_path("LuxLib"),
                               _get_lib_path("LuxCore"),
                               # dirname(@__DIR__),
-                          ], "LuxLib" => [], "LuxCore" => [])
+                          ], "LuxLib" => [], "LuxCore" => [], "LuxCUDA" => [],
+                          "LuxAMDGPU" => [])
 
 const OVERRIDE_INTER_DEPENDENCIES = get(ENV, "OVERRIDE_INTER_DEPENDENCIES", "true") ==
                                     "true"

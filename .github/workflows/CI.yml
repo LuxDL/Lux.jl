@@ -22,6 +22,8 @@ jobs:
           - Boltz # Prebuilt Models using Lux
           - LuxLib # Backend of Lux
           - LuxCore # Avoid the heavy Lux Dependency
+          - LuxCUDA # Just test installation
+          - LuxAMDGPU # Just test installation
         version:
           - "1.7"
           - "1.8"
@@ -39,7 +41,7 @@ jobs:
           OVERRIDE_INTER_DEPENDENCIES: "false"
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/LuxCore/src,ext
+          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/LuxCore/src,ext,lib/LuxLib/ext,lib/LuxCUDA,lib/LuxAMDGPU
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info

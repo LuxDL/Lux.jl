@@ -1,0 +1,15 @@
+name = "LuxAMDGPU"
+uuid = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
+authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
+version = "0.1.0"
+
+[deps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
+ROCKernels = "7eb9e9f0-4bd3-4c4c-8bef-26bd9629d9b9"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+
+[compat]
+AMDGPU = "0.4"
+ROCKernels = "0.3"
+Reexport = "1"
+julia = "1.7"
