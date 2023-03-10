@@ -106,7 +106,7 @@ end
 
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
     rng = _replicate(rng)
-    noise = rand!(rng, similar(x))
+    noise = rand!(rng, similar(x, _dropout_fptype(x)))
     return (A .* ifelse.(noise .> p, x, α) .+ B), rng
 end
 

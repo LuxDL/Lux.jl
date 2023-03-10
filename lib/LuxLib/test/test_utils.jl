@@ -1,5 +1,5 @@
 using CUDA, FiniteDifferences, LuxLib, Test
-using Tracker, Zygote  # AD Packages
+using ReverseDiff, Tracker, Zygote  # AD Packages
 
 const LUXLIB_TESTING_MODE = get(ENV, "LUXLIB_TESTING_MODE", :all)
 
@@ -62,12 +62,19 @@ end
 
 # Test the gradients generated using AD against the gradients generated using Finite
 # Differences
+# Currently this is called exclusively on CPU. So we can simply use ReverseDiff.
+# However this function has evolved to be more general and can be used to test GPU autodiff.
 function test_gradient_correctness_fdm(f::Function, args...; kwargs...)
     gs_ad_zygote = Zygote.gradient(f, args...)
     gs_ad_tracker = Tracker.gradient(f, args...)
+    gs_ad_reversediff = ReverseDiff.gradient(f, args)
     gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
-    for (g_ad_zygote, g_ad_tracker, g_fdm) in zip(gs_ad_zygote, gs_ad_tracker, gs_fdm)
+    for (g_ad_zygote, g_ad_tracker, g_ad_reverse_diff, g_fdm) in zip(gs_ad_zygote,
+                                                                     gs_ad_tracker,
+                                                                     gs_ad_reversediff,
+                                                                     gs_fdm)
         @test isapprox(g_ad_zygote, g_fdm; kwargs...)
         @test isapprox(Tracker.data(g_ad_tracker), g_ad_zygote; kwargs...)
+        @test isapprox(ReverseDiff.value(g_ad_reverse_diff), g_ad_zygote; kwargs...)
     end
 end
