@@ -17,22 +17,22 @@ Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
-[weakdeps]
-ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
-
-[extensions]
-LuxLibForwardDiffExt = "ForwardDiff"
-LuxLibTrackerExt = "Tracker"
-
 [compat]
 CUDA = "3, 4"
 CUDAKernels = "0.3, 0.4"
 ChainRulesCore = "1"
 ForwardDiff = "0.10"
-KernelAbstractions = "0.7, 0.8"
+KernelAbstractions = "0.7, 0.8, 0.9"
 NNlib = "0.8"
 NNlibCUDA = "0.2"
 Requires = "1"
 Tracker = "0.2"
 julia = "1.6"
+
+[extensions]
+LuxLibForwardDiffExt = "ForwardDiff"
+LuxLibTrackerExt = "Tracker"
+
+[weakdeps]
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
