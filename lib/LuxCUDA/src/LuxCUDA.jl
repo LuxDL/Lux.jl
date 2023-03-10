@@ -2,9 +2,6 @@ module LuxCUDA
 
 using Reexport
 
-@reexport using CUDA
-@reexport using CUDAKernels
-@reexport using NNlibCUDA
-@reexport using cuDNN
+@reexport using CUDA, CUDA.CUDAKernels, NNlibCUDA, cuDNN
 
 end

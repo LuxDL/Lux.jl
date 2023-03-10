@@ -2,7 +2,6 @@ module LuxAMDGPU
 
 using Reexport
 
-@reexport using AMDGPU
-@reexport using ROCKernels
+@reexport using AMDGPU, AMDGPU.ROCKernels
 
 end
