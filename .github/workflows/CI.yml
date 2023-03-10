@@ -25,8 +25,8 @@ jobs:
           - LuxCUDA # Just test installation
           - LuxAMDGPU # Just test installation
         version:
+          - "1"
           - "1.7"
-          - "1.8"
           - "~1.9.0-0"
     steps:
       - uses: actions/checkout@v3
