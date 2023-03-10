@@ -61,7 +61,7 @@ function LuxLib._copy_autodiff_barrier(x::Union{TrackedArray, TrackedReal})
     return LuxLib._copy_autodiff_barrier(data(x))
 end
 
-LuxLib._get_device(x::TrackedArray) = LuxLib._get_device(data(x))
+LuxLib._get_backend(x::TrackedArray) = LuxLib._get_backend(data(x))
 
 # api/batchnorm.jl
 _TR_BN = Union{TrackedArray{<:Any, <:Any, <:CuArray{<:_CUDNN_BATCHNORM_FLOAT, 2}},

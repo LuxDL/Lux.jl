@@ -25,9 +25,9 @@ jobs:
           - LuxCUDA # Just test installation
           - LuxAMDGPU # Just test installation
         version:
-          - "1.7"
-          - "1.8"
-          - "~1.9.0-0"
+          - "1" # Latest Stable Release
+          - "1.6" # LTS Release
+          - "~1.9.0-0" # Upcoming Release
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1

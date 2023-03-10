@@ -1,7 +1,6 @@
 # Launch Heuristics
 _linear_threads_groupnorm(::CPU) = Threads.nthreads()
-_linear_threads_groupnorm(::CUDADevice) = (16, 16)
-_linear_threads_groupnorm(::GPU) = 256
+_linear_threads_groupnorm(::GPU) = (16, 16)
 
 _GROUPNORM_IMPL_FLOAT = Union{Float32, Float64}
 
@@ -66,7 +65,7 @@ end
     _scale = similar(X, (C, N))
     _bias = similar(X, (C, N))
 
-    device = get_device(X)
+    device = KA.get_backend(X)
 
     n = _linear_threads_groupnorm(device)
     compute_fixed_params! = _compute_fused_params_kernel!(device, n, size(_scale))
@@ -86,7 +85,7 @@ end
     W, H, C, N = size(X)
     K = div(C, G)
     WxH = W * H
-    device = get_device(X)
+    device = KA.get_backend(X)
     n = _linear_threads_groupnorm(device)
 
     dbias = reshape(sum(dY; dims=(1, 2)), (1, 1, K, G, N))

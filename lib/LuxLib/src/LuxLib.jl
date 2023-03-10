@@ -2,7 +2,11 @@ module LuxLib
 
 using ChainRulesCore, Markdown, NNlib, Random, Statistics
 import ChainRulesCore as CRC
-using CUDA, CUDAKernels, KernelAbstractions, NNlibCUDA  # CUDA Support
+
+using KernelAbstractions
+import KernelAbstractions as KA
+
+using CUDA, NNlibCUDA  # CUDA Support
 
 # Extensions
 if !isdefined(Base, :get_extension)
@@ -34,6 +38,7 @@ include("api/groupnorm.jl")
 include("api/instancenorm.jl")
 include("api/layernorm.jl")
 
+# Exports
 export batchnorm, groupnorm, instancenorm, layernorm
 export alpha_dropout, dropout
 
