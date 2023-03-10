@@ -133,7 +133,7 @@ end
 @grad function LuxLib.groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
                                 bias::AbstractVector{T}; groups::Int,
                                 epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
-    LuxLib._assert_same_device(data(x), data(scale), data(bias))
+    LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of
                              channels (N - 1 dim of the input array)."))
