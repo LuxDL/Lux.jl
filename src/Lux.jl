@@ -64,6 +64,7 @@ function __init__()
             # These definitely needs to be upstreamed
             @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxComponentArraysTrackerExt.jl") end
             @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/LuxComponentArraysZygoteExt.jl") end
+            @require ReverseDiff="37e2e3b7-166d-5795-8a7a-e32c996b4267" begin include("../ext/LuxComponentArraysReverseDiffExt.jl") end
         end
 
         # Flux InterOp
@@ -75,7 +76,6 @@ function __init__()
         # Automatic Differentiation
         ## Zygote InterOp
         @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/LuxZygoteExt.jl") end
-
         ## Tracker InterOp
         @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxTrackerExt.jl") end
     end

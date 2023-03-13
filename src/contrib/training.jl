@@ -144,15 +144,6 @@ struct YotaVJP <: AbstractVJP end
 backend(::YotaVJP) = :Yota
 
 """
-    ReverseDiffVJP <: AbstractVJP
-
-Vector-Jacobian Product using ReverseDiff.
-"""
-struct ReverseDiffVJP <: AbstractVJP end
-
-backend(::ReverseDiffVJP) = :ReverseDiff
-
-"""
     TrackerVJP <: AbstractVJP
 
 Vector-Jacobian Product using Tracker.

@@ -15,7 +15,7 @@ Random.seed!(rng, 0)
         @test layer(x, ps, st)[1] == x
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+                                      rtol=1.0f-3, reversediff_broken=true)
     end
 
     @testset "concat size" begin
@@ -41,7 +41,7 @@ end
         @test layer(x, ps, st)[1] == x
         run_JET_tests(layer, x, ps, st)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+                                      rtol=1.0f-3, reversediff_broken=true)
     end
 
     @testset "concat size" begin
