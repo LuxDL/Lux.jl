@@ -39,10 +39,10 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
 LuxComponentArraysTrackerExt = ["ComponentArrays", "Tracker"]
+LuxComponentArraysReverseDiffExt = ["ComponentArrays", "ReverseDiff"]
 LuxComponentArraysZygoteExt = ["ComponentArrays", "Zygote"]
 LuxFillArraysExt = "FillArrays"
 LuxFluxTransformExt = "Flux"
-LuxReverseDiffExt = "ReverseDiff"
 LuxTrackerExt = "Tracker"
 LuxZygoteExt = "Zygote"
 
