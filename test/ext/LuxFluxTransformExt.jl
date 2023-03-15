@@ -82,7 +82,7 @@ using Lux, Random, Test
     @testset "Linear" begin
         @testset "Dense" begin for model in [
             Flux.Dense(2 => 4),
-            Flux.Dense(2 => 4; bias=false),
+            Flux.Dense(2 => 4; use_bias=false),
         ]
             x = randn(Float32, 2, 4)
 
@@ -97,7 +97,7 @@ using Lux, Random, Test
             @test size(model_lux(x, ps, st)[1]) == size(model(x))
         end end
 
-        @testset "Scale" begin for model in [Flux.Scale(2), Flux.Scale(2; bias=false)]
+        @testset "Scale" begin for model in [Flux.Scale(2), Flux.Scale(2; use_bias=false)]
             x = randn(Float32, 2, 4)
 
             model_lux = transform(model; preserve_ps_st=true)
@@ -113,7 +113,7 @@ using Lux, Random, Test
 
         @testset "Bilinear" begin for model in [
             Flux.Bilinear((2, 3) => 5),
-            Flux.Bilinear((2, 3) => 5; bias=false),
+            Flux.Bilinear((2, 3) => 5; use_bias=false),
         ]
             x = randn(Float32, 2, 4)
             y = randn(Float32, 3, 4)

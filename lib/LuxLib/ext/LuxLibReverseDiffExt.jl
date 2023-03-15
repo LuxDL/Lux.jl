@@ -7,9 +7,9 @@ if isdefined(Base, :get_extension)
                         special_forward_exec!, @grad_from_chainrules
 else
     using ..ReverseDiff
-    import ReverseDiff: SpecialInstruction, TrackedArray, TrackedReal, decrement_deriv!,
-                        increment_deriv!, track, value, special_reverse_exec!,
-                        special_forward_exec!, @grad_from_chainrules
+    import ..ReverseDiff: SpecialInstruction, TrackedArray, TrackedReal, decrement_deriv!,
+                          increment_deriv!, track, value, special_reverse_exec!,
+                          special_forward_exec!, @grad_from_chainrules
 end
 using ChainRulesCore, LuxLib, NNlib
 import ChainRulesCore as CRC

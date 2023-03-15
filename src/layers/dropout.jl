@@ -53,7 +53,7 @@ function AlphaDropout(p::T) where {T <: Real}
 end
 
 function (d::AlphaDropout)(x, ps, st::NamedTuple)
-    y, rng = LuxLib.alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
+    y, rng = alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
     return y, (; rng, st.training)
 end
 
@@ -110,7 +110,7 @@ function Dropout(p; dims=:)
 end
 
 function (d::Dropout)(x, ps, st::NamedTuple)
-    y, _, rng = LuxLib.dropout(st.rng, x, d.p, st.training; invp=d.q, d.dims)
+    y, _, rng = dropout(st.rng, x, d.p, st.training; invp=d.q, d.dims)
     return y, merge(st, (; rng))
 end
 

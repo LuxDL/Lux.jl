@@ -27,8 +27,6 @@ end
 
 include("utils.jl")
 
-include("deprecated.jl")
-
 # Low-Level Implementations
 include("impl/groupnorm.jl")
 include("impl/normalization.jl")

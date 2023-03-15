@@ -16,8 +16,6 @@ using SafeTestsets, Test
         @time @safetestset "Dropout" begin include("layers/dropout.jl") end
     end
 
-    @time @safetestset "NNlib" begin include("nnlib.jl") end
-
     @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
 
     @testset "Experimental" begin

@@ -191,8 +191,8 @@ end
     (y1, y2), _ = layer(x, ps, st)
     @test size(y1) == (10, 1)
     @test size(y2) == (10, 1)
-    @test y1 == layer.layers.layer_1(x, ps.layer_1, st.layer_1)[1]
-    @test y2 == layer.layers.layer_2(x, ps.layer_2, st.layer_2)[1]
+    @test y1 == layer.layers.layer_1(x, ps.layers.layer_1, st.layers.layer_1)[1]
+    @test y2 == layer.layers.layer_2(x, ps.layers.layer_2, st.layers.layer_2)[1]
     run_JET_tests(layer, x, ps, st)
     test_gradient_correctness_fdm((x, ps) -> sum(sum, layer(x, ps, st)[1]), x, ps;
                                   atol=1.0f-3, rtol=1.0f-3)
@@ -204,8 +204,8 @@ end
     (y1, y2), _ = layer(x, ps, st)
     @test size(y1) == (10, 1)
     @test size(y2) == (10, 1)
-    @test y1 == layer.layers.d1(x, ps.d1, st.d1)[1]
-    @test y2 == layer.layers.d2(x, ps.d2, st.d2)[1]
+    @test y1 == layer.layers.d1(x, ps.layers.d1, st.layers.d1)[1]
+    @test y2 == layer.layers.d2(x, ps.layers.d2, st.layers.d2)[1]
     run_JET_tests(layer, x, ps, st)
     test_gradient_correctness_fdm((x, ps) -> sum(sum, layer(x, ps, st)[1]), x, ps;
                                   atol=1.0f-3, rtol=1.0f-3)

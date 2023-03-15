@@ -9,9 +9,9 @@ else
     get_device(x::Array) = CPU()
     get_device(x::SubArray) = CPU()
     function get_device(x)
-        throw(ArgumentError("get_device not implemented for $(typeof(x)). This is an" *
-                            "undesirable codepath. Please use julia 1.7+ for more " *
-                            "meaningful error messages using KA.jl."))
+        throw(ArgumentError("""`get_device` not implemented for $(typeof(x)). This is an
+                               undesirable codepath. Please use julia 1.7+ for more
+                               meaningful error messages using KA.jl."""))
     end
 end
 
@@ -24,9 +24,9 @@ CRC.@non_differentiable _get_device(::Any)
 function _assert_same_device(args...)
     devs = _get_device(args)
     if !all(devs .== (first(devs),))
-        throw(ArgumentError("All arguments must be on the same device. This error is
-                             encountered if you are calling a function with a mix of CPU
-                             and GPU arrays."))
+        throw(ArgumentError("""All arguments must be on the same device. This error is
+                               encountered if you are calling a function with a mix of CPU
+                               and GPU arrays."""))
     end
     return
 end

@@ -1,10 +1,11 @@
 module Lux
 
+using Reexport
+
 # Accelerator Support
 using CUDA, cuDNN
 # Neural Network Backend
-using NNlib
-import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
+@reexport using NNlib, LuxLib
 # Julia StdLibs
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation
@@ -48,9 +49,6 @@ include("contrib/training.jl")
 include("contrib/freeze.jl")
 include("contrib/share_parameters.jl")
 
-# Deprecations
-include("deprecated.jl")
-
 # Extensions
 if !isdefined(Base, :get_extension)
     using Requires
@@ -91,7 +89,7 @@ export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMe
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
-export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
+export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
 

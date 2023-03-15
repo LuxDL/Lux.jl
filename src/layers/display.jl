@@ -109,14 +109,11 @@ function _big_finale(io::IO, m)
     printstyled(io, " "^08, "# Total: "; color=:light_black)
     println(io, pars, " parameters,")
     printstyled(io, " "^10, "#        plus "; color=:light_black)
-    print(io, nonparam, " states, ")
-    printstyled(io, "summarysize "; color=:light_black)
-    print(io, bytes, ".")
+    print(io, nonparam, " states.")
     return
 end
 
 # utility functions
-
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end

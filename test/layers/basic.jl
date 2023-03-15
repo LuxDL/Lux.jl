@@ -67,18 +67,6 @@ Random.seed!(rng, 0)
         test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
                                       rtol=1.0f-3)
     end
-
-    @testset "ActivationFunction" begin
-        layer = ActivationFunction(tanh)
-        display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, 6, 4, 3, 2)
-
-        @test layer(x, ps, st)[1] == tanh.(x)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
-    end
 end
 
 @testset "Dense" begin
@@ -134,16 +122,9 @@ end
         end == [10 20; 10 20]
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight=ones, bias=false)
+            layer = Dense(10, 2, identity; init_weight=ones, use_bias=false)
             first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
         end == [10 20; 10 20]
-    end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated Dense(10, 100, relu; bias=false)
-        @test_deprecated Dense(10, 100, relu; bias=true)
-        @test_throws ArgumentError Dense(10, 100, relu; bias=false, use_bias=false)
     end
 end
 
@@ -195,16 +176,9 @@ end
         end == [2.0 3.0; 4.0 5.0]
 
         @test begin
-            layer = Scale(2, tanh; bias=false, init_weight=zeros)
+            layer = Scale(2, tanh; use_bias=false, init_weight=zeros)
             first(Lux.apply(layer, [1 2; 3 4], Lux.setup(rng, layer)...))
         end == zeros(2, 2)
-    end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated Scale(10, 100, relu; bias=false)
-        @test_deprecated Scale(10, 100, relu; bias=true)
-        @test_throws ArgumentError Scale(10, 100, relu; bias=false, use_bias=false)
     end
 end
 

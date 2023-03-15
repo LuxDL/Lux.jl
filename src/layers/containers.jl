@@ -125,7 +125,8 @@ end
 Parallel(connection; kwargs...) = Parallel(connection, (; kwargs...))
 
 function (m::Parallel)(x, ps, st::NamedTuple)
-    return applyparallel(m.layers, m.connection, x, ps, st)
+    y, st_ = applyparallel(m.layers, m.connection, x, ps.layers, st.layers)
+    return y, (; layers=st_)
 end
 
 @generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T, ps,
@@ -217,7 +218,8 @@ end
 BranchLayer(; kwargs...) = BranchLayer((; kwargs...))
 
 function (m::BranchLayer)(x, ps, st::NamedTuple)
-    return applybranching(m.layers, x, ps, st)
+    y, st_ = applybranching(m.layers, x, ps.layers, st.layers)
+    return y, (; layers=st_)
 end
 
 @generated function applybranching(layers::NamedTuple{names}, x, ps,
@@ -309,7 +311,8 @@ end
 PairwiseFusion(connection; kwargs...) = PairwiseFusion(connection, (; kwargs...))
 
 function (m::PairwiseFusion)(x, ps, st::NamedTuple)
-    return applypairwisefusion(m.layers, m.connection, x, ps, st)
+    y, st_ = applypairwisefusion(m.layers, m.connection, x, ps.layers, st.layers)
+    return y, (; layers=st_)
 end
 
 @generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T, ps,
@@ -454,7 +457,8 @@ end
 _flatten_model(x) = x
 
 function (c::Chain)(x, ps, st::NamedTuple)
-    return applychain(c.layers, x, ps, st)
+    y, st_ = applychain(c.layers, x, ps.layers, st.layers)
+    return y, (; layers=st_)
 end
 
 @generated function applychain(layers::NamedTuple{fields}, x, ps,
@@ -541,7 +545,10 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
 
 # NOTE(@avik-pal): Calling `applyparallel` with broadcasted `max` is slower than this
 #                  implementation.
-(m::Maxout)(x, ps, st::NamedTuple) = applymaxout(m.layers, x, ps, st)
+function (m::Maxout)(x, ps, st::NamedTuple)
+    y, st_ = applymaxout(m.layers, x, ps.layers, st.layers)
+    return y, (; layers=st_)
+end
 
 @generated function applymaxout(layers::NamedTuple{fields}, x, ps,
                                 st::NamedTuple{fields}) where {fields}

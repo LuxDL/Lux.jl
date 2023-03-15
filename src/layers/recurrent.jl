@@ -57,11 +57,11 @@ end
 end
 
 function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    (out, carry), st = Lux.apply(r.cell, first(x), ps, st)
+    (out, carry), st_ = Lux.apply(r.cell, first(x), ps.cell, st.cell)
     for x_ in x[(begin + 1):end]
-        (out, carry), st = Lux.apply(r.cell, (x_, carry), ps, st)
+        (out, carry), st_ = Lux.apply(r.cell, (x_, carry), ps.cell, st_)
     end
-    return out, st
+    return out, (; cell=st_)
 end
 
 # FIXME: Weird Hack
@@ -69,17 +69,17 @@ _generate_init_recurrence(out, carry, st) = (typeof(out)[out], carry, st)
 ∇_generate_init_recurrence((Δout, Δcarry, Δst)) = (first(Δout), Δcarry, Δst)
 
 function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    (out_, carry), st = Lux.apply(r.cell, first(x), ps, st)
+    (out_, carry), st_ = Lux.apply(r.cell, first(x), ps.cell, st.cell)
 
-    init = _generate_init_recurrence(out_, carry, st)
+    init = _generate_init_recurrence(out_, carry, st_)
 
     function recurrence_op(input, (outputs, carry, state))
-        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
+        (out, carry), state = Lux.apply(r.cell, (input, carry), ps.cell, state)
         return vcat(outputs, typeof(out)[out]), carry, state
     end
 
     results = foldr(recurrence_op, x[(begin + 1):end]; init)
-    return first(results), last(results)
+    return first(results), (; cell=last(results))
 end
 
 """
@@ -130,7 +130,7 @@ function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)
 end
 
 function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
-    (out, carry), st_ = applyrecurrentcell(r.cell, x, ps, st.cell, st.carry)
+    (out, carry), st_ = applyrecurrentcell(r.cell, x, ps.cell, st.cell, st.carry)
     return out, (; cell=st_, carry)
 end
 
@@ -197,20 +197,8 @@ struct RNNCell{use_bias, train_state, A, B, W, S} <: AbstractExplicitLayer
 end
 
 function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
-                 use_bias::Bool=true, bias::Union{Missing, Bool}=missing,
-                 train_state::Bool=false, init_bias=zeros32, init_weight=glorot_uniform,
-                 init_state=ones32)
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `RNNCell` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.", :RNNCell)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
-    end
-
+                 use_bias::Bool=true, train_state::Bool=false, init_bias=zeros32,
+                 init_weight=glorot_uniform, init_state=ones32)
     return RNNCell{use_bias, train_state, typeof(activation), typeof(init_bias),
                    typeof(init_weight), typeof(init_state)}(activation, in_dims, out_dims,
                                                             init_bias, init_weight,

@@ -1,3 +1,7 @@
+# LuxLib implementation is much more generic. Extend `NNlib.dropout` for now. We can make
+# a PR to NNlib.jl later.
+import NNlib: dropout
+
 @doc doc"""
     dropout(rng::AbstractRNG, x, p, ::Val{training}; dims, invp=inv(p))
     dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}; dims,

@@ -53,13 +53,6 @@ Random.seed!(rng, 0)
         gs = back(one(l))[1]
         @test !isnothing(gs.hidden_state)
     end end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated RNNCell(3 => 5, relu; bias=false)
-        @test_deprecated RNNCell(3 => 5, relu; bias=true)
-        @test_throws ArgumentError RNNCell(3 => 5, relu; bias=false, use_bias=false)
-    end
 end
 
 @testset "LSTMCell" begin

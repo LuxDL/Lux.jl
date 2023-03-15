@@ -23,8 +23,8 @@ function _groupnorm_generic_fallback(x, scale, bias, running_mean, running_var, 
     N = ndims(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
     x_, xmean, xvar = LuxLib._normalization(x_reshaped, running_mean, running_var, scale,
-                                            bias, collect(1:(N - 1)), training, momentum,
-                                            epsilon)
+                                            bias, Val(Tuple(collect(1:(N - 1)))), training,
+                                            momentum, epsilon)
 
     return reshape(x_, sz)
 end

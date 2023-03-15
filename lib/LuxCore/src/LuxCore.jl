@@ -40,9 +40,10 @@ abstract type AbstractExplicitLayer end
 Generate the initial parameters of the layer `l`.
 """
 initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-function initialparameters(rng::AbstractRNG, l::NamedTuple)
+function initialparameters(rng::AbstractRNG, l::Union{NamedTuple, Tuple})
     return map(Base.Fix1(initialparameters, rng), l)
 end
+initialparameters(::AbstractRNG, ::Nothing) = NamedTuple()
 
 """
     initialstates(rng::AbstractRNG, l)
@@ -50,7 +51,10 @@ end
 Generate the initial states of the layer `l`.
 """
 initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
+function initialstates(rng::AbstractRNG, l::Union{NamedTuple, Tuple})
+    return map(Base.Fix1(initialstates, rng), l)
+end
+initialstates(::AbstractRNG, ::Nothing) = NamedTuple()
 
 """
     parameterlength(l)
@@ -124,13 +128,11 @@ abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer en
 
 function initialparameters(rng::AbstractRNG,
                            l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG,
                        l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 

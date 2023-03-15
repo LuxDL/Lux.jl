@@ -61,7 +61,6 @@ Scale
 ## Misc. Helper Layers
 
 ```@docs
-ActivationFunction
 FlattenLayer
 Maxout
 NoOpLayer
