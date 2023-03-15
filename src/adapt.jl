@@ -12,7 +12,6 @@ function adapt_storage(::LuxCPUAdaptor,
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
 adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
-# TODO(@avik-pal): SparseArrays
 function adapt_storage(::LuxCPUAdaptor, x::CUDA.CUSPARSE.AbstractCuSparseMatrix)
     return adapt(Array, x)
 end

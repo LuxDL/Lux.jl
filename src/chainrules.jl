@@ -47,6 +47,10 @@ function CRC.rrule(::typeof(copy), x)
     return copy(x), copy_pullback
 end
 
+function CRC.rrule(::typeof(_eachslice), x, d)
+    return _eachslice(x, d), Δ -> (NoTangent(), ∇_eachslice(Δ, x, d), NoTangent())
+end
+
 # Adapt Interface
 function CRC.rrule(::Type{Array}, x::CUDA.CuArray)
     return Array(x), d -> (NoTangent(), CUDA.cu(d))
@@ -74,4 +78,10 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
         return (NoTangent(), dx, NoTangent(), NoTangent())
     end
     return multigate(x, c), multigate_pullback
+end
+
+# layers/recurrent.jl
+function CRC.rrule(::typeof(_generate_init_recurrence), out, carry, state)
+    result = _generate_init_recurrence(out, carry, state)
+    return result, Δ -> (NoTangent(), ∇_generate_init_recurrence(Δ)...)
 end

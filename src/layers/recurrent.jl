@@ -1,7 +1,7 @@
 # TODO(@avik-pal): We can add another subtype `AbstractRecurrentCell` in the type hierarchy
 #                  to make it safer to compose these cells with `Recurrence`
 """
-    Recurrence(cell)
+    Recurrence(cell; return_sequence::Bool = false)
 
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
@@ -16,6 +16,11 @@ automatically operate over a sequence of inputs.
 
   - `cell`: A recurrent cell. See [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref),
     for how the inputs/outputs of a recurrent cell must be structured.
+
+## Keyword Arguments
+
+  - `return_sequence`: If `true` returns the entire sequence of outputs, else returns only
+    the last output. Defaults to `false`.
 
 ## Inputs
 
@@ -39,31 +44,42 @@ automatically operate over a sequence of inputs.
 
   - Same as `cell`.
 """
-struct Recurrence{C <: AbstractExplicitLayer} <: AbstractExplicitContainerLayer{(:cell,)}
+struct Recurrence{R, C <: AbstractExplicitLayer} <: AbstractExplicitContainerLayer{(:cell,)}
     cell::C
+end
+
+function Recurrence(cell; return_sequence::Bool=false)
+    return Recurrence{return_sequence, typeof(cell)}(cell)
 end
 
 @inline function (r::Recurrence)(x::A, ps, st::NamedTuple) where {A <: AbstractArray}
     return Lux.apply(r, _eachslice(x, Val(ndims(x) - 1)), ps, st)
 end
 
-# Non-ideal dispatch since we can't unroll the loop easily while the code is exactly same
-# as NTuple
-function (r::Recurrence)(x::AbstractVector, ps, st::NamedTuple)
-    (out, carry), st = r.cell(first(x), ps, st)
-    for x_ in x[2:end]
-        (out, carry), st = r.cell((x_, carry), ps, st)
+function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+    (out, carry), st = Lux.apply(r.cell, first(x), ps, st)
+    for x_ in x[(begin + 1):end]
+        (out, carry), st = Lux.apply(r.cell, (x_, carry), ps, st)
     end
     return out, st
 end
 
-@generated function (r::Recurrence)(x::NTuple{N}, ps, st::NamedTuple) where {N}
-    quote
-        (out, carry), st = r.cell(x[1], ps, st)
-        Base.Cartesian.@nexprs $(N - 1) i->((out, carry), st) = r.cell((x[i + 1], carry),
-                                                                       ps, st)
-        return out, st
+# FIXME: Weird Hack
+_generate_init_recurrence(out, carry, st) = (typeof(out)[out], carry, st)
+∇_generate_init_recurrence((Δout, Δcarry, Δst)) = (first(Δout), Δcarry, Δst)
+
+function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+    (out_, carry), st = Lux.apply(r.cell, first(x), ps, st)
+
+    init = _generate_init_recurrence(out_, carry, st)
+
+    function recurrence_op(input, (outputs, carry, state))
+        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
+        return vcat(outputs, typeof(out)[out]), carry, state
     end
+
+    results = foldr(recurrence_op, x[(begin + 1):end]; init)
+    return first(results), last(results)
 end
 
 """
@@ -118,8 +134,10 @@ function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
     return out, (; cell=st_, carry)
 end
 
-applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, carry) = l((x, carry), ps, st)
-applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, ::Nothing) = l(x, ps, st)
+function applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, carry)
+    return Lux.apply(l, (x, carry), ps, st)
+end
+applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, ::Nothing) = Lux.apply(l, x, ps, st)
 
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true,
