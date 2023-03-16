@@ -3,8 +3,6 @@ abstract type AbstractNormalizationLayer{affine, track_stats} <: AbstractExplici
 @inline _affine(l::AbstractNormalizationLayer{A, T}) where {A, T} = A
 @inline _track_stats(l::AbstractNormalizationLayer{A, T}) where {A, T} = T
 
-initialstates(::AbstractRNG, ::AbstractNormalizationLayer) = (; training=Val(true))
-
 @doc doc"""
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
               affine=true, track_stats=true, epsilon=1f-5, momentum=0.1f0,
@@ -192,17 +190,6 @@ end
 
   - `affine=false` - Empty `NamedTuple()`
 
-## States
-
-  - Statistics if `track_stats=false`
-
-      + `running_mean`: nothing
-      + `running_var`: nothing
-
-  - `training`: Used to check if training/inference mode
-
-Use [`Lux.testmode`](@ref) during inference.
-
 ## Example
 
 ```julia
@@ -211,7 +198,8 @@ m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(1
 
 !!! warning
 
-    GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
+    GroupNorm doesn't have CUDNN support. The GPU fallback is optimized only for certain
+    cases. See the documentation for `LuxLib.groupnorm`.
 
 See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
@@ -249,16 +237,8 @@ parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 statelength(l::GroupNorm) = (_track_stats(l) ? 2 * l.groups : 0) + 1
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-                         _getproperty(st, Val(:running_mean)),
-                         _getproperty(st, Val(:running_var)); GN.groups, GN.epsilon,
-                         st.training)
-
-    if _track_stats(GN)
-        @set! st.running_mean = stats.running_mean
-        @set! st.running_var = stats.running_var
-    end
-
+    y = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); GN.groups,
+                  GN.epsilon)
     return GN.activation.(y), st
 end
 
@@ -363,6 +343,8 @@ function initialparameters(rng::AbstractRNG, l::InstanceNorm)
         return (scale=nothing, bias=nothing)
     end
 end
+
+initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
 
 parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 

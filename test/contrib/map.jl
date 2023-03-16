@@ -8,7 +8,7 @@ rng = Random.default_rng()
 ps, st = Lux.setup(rng, c)
 
 function zero_dense_params(l, ps, st, name)
-    if l isa Dense && occursin("model.chain", name)
+    if l isa Dense && occursin("model.layers.chain.layers", name)
         @set! ps.weight = zero.(ps.weight)
         @set! ps.bias = zero.(ps.bias)
     end
@@ -25,7 +25,7 @@ c_, ps_, st_ = Lux.layer_map(zero_dense_params, c, ps, st)
 @test ps_.layers.dense_3.bias == zeros(1, 1)
 
 function zero_dense_params(l, ps, st, name)
-    if l isa Dense && occursin("c.chain", name)
+    if l isa Dense && occursin("c.layers.chain.layers", name)
         @set! ps.weight = zero.(ps.weight)
         @set! ps.bias = zero.(ps.bias)
     end

@@ -355,14 +355,14 @@ function transform(l::Flux.GroupNorm; preserve_ps_st::Bool=false,
     end
     if preserve_ps_st
         if l.affine
-            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ, l.momentum,
+            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ,
                              init_bias=(args...) -> copy(l.β),
                              init_scale=(args...) -> copy(l.γ))
         else
-            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ, l.momentum)
+            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
         end
     end
-    return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ, l.momentum)
+    return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
 end
 
 const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
