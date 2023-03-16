@@ -10,8 +10,7 @@ model = Chain(; d1=Dense(2 => 4, tanh), d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 
 
 ps, st = Lux.setup(rng, model)
 
-sharing = (("d2.l2", "d1"), ("d3", "d2.l1"))
-
+sharing = (("layers.d2.layers.l2", "layers.d1"), ("layers.d3", "layers.d2.layers.l1"))
 ps_1 = Lux.share_parameters(ps, sharing)
 
 @test ps_1.d2.l2.weight === ps_1.d1.weight
@@ -40,7 +39,8 @@ ps_3 = Lux.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 @test ps_3.d3.bias === ps_new_2.bias === ps_3.d2.l1.bias
 
 # Input Checks
-non_disjoint_sharing = (("d2.l2", "d1"), ("d1", "d2.l1"))
+non_disjoint_sharing = (("layers.d2.layers.l2", "layers.d1"),
+                        ("layers.d1", "layers.d2.layers.l1"))
 @test_throws ArgumentError Lux.share_parameters(ps, non_disjoint_sharing)
 @test_throws ArgumentError Lux.share_parameters(ps, sharing, (ps_new_1,))
 

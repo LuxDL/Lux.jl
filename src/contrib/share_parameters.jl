@@ -29,7 +29,8 @@ model = Chain(; d1=Dense(2 => 4, tanh), d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 
 ps, st = Lux.setup(Xoshiro(0), model)
 
 # share parameters of (d1 and d3.l1) and (d3.l2 and d2)
-ps = Lux.share_parameters(ps, (("d3.l2", "d1"), ("d2", "d3.l1")))
+ps = Lux.share_parameters(ps, (("layers.d3.layers.l2", "layers.d1"),
+                               ("layers.d2", "layers.d3.layers.l1")))
 ```
 """
 function share_parameters(ps, sharing)
@@ -58,12 +59,14 @@ function _safe_update_parameter(ps, lens, new_ps)
     new_ps_st = _parameter_structure(new_ps)
     ps_st = _parameter_structure(get(ps, lens))
     if new_ps_st != ps_st
-        msg = "The structure of the new parameters must be the same as the " *
-              "old parameters for lens $(lens)!!! The new parameters have a structure: " *
-              "$new_ps_st while the old parameters have a structure: $ps_st."
-        msg = msg *
-              " This could potentially be caused since `_parameter_structure` is not" *
-              " appropriately defined for type $(typeof(new_ps))."
+        msg = """
+        The structure of the new parameters must be the same as the old parameters for lens
+        $(lens)!!! The new parameters have a structure:  $new_ps_st while the old parameters
+        have a structure: $ps_st.
+
+        This could potentially be caused since `_parameter_structure` is not appropriately
+        defined for type $(typeof(new_ps))."""
+
         throw(ArgumentError(msg))
     end
     return Setfield.set(ps, lens, new_ps)

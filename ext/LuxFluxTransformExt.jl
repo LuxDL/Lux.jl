@@ -349,22 +349,20 @@ end
 
 function transform(l::Flux.GroupNorm; preserve_ps_st::Bool=false,
                    force_preserve::Bool=false)
+    if l.track_stats
+        @warn """`Lux.GroupNorm` doesn't support `track_stats`. Returning `FluxLayer`""" maxlog=1
+        return FluxLayer(l)
+    end
     if preserve_ps_st
-        if l.track_stats
-            force_preserve && return FluxLayer(l)
-            @warn """Preserving the state of `Flux.GroupNorm` is currently not supported.
-                     Ignoring the state.""" maxlog=1
-        end
         if l.affine
-            return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
-                             l.momentum, init_bias=(args...) -> copy(l.β),
+            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ, l.momentum,
+                             init_bias=(args...) -> copy(l.β),
                              init_scale=(args...) -> copy(l.γ))
         else
-            return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
-                             l.momentum)
+            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ, l.momentum)
         end
     end
-    return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
+    return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ, l.momentum)
 end
 
 const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}

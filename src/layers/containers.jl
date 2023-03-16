@@ -60,7 +60,7 @@ function initialstates(rng::AbstractRNG,
 end
 
 function (skip::SkipConnection)(x, ps, st::NamedTuple)
-    mx, st = Lux.apply(skip.layers, x, ps, st)
+    mx, st = Lux.apply(skip.layers, x, ps.layers, st.layers)
     return skip.connection(mx, x), st
 end
 

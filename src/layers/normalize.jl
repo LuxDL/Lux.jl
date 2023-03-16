@@ -276,7 +276,6 @@ function Base.show(io::IO, l::GroupNorm)
     print(io, "GroupNorm($(l.chs), $(l.groups)")
     (l.activation == identity) || print(io, ", $(l.activation)")
     print(io, ", affine=$(_affine(l))")
-    print(io, ", track_stats=$(_track_stats(l))")
     return print(io, ")")
 end
 
