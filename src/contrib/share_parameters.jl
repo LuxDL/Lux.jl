@@ -29,8 +29,9 @@ model = Chain(; d1=Dense(2 => 4, tanh), d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 
 ps, st = Lux.setup(Xoshiro(0), model)
 
 # share parameters of (d1 and d3.l1) and (d3.l2 and d2)
-ps = Lux.share_parameters(ps, (("layers.d3.layers.l2", "layers.d1"),
-                               ("layers.d2", "layers.d3.layers.l1")))
+ps = Lux.share_parameters(ps,
+                          (("layers.d3.layers.l2", "layers.d1"),
+                           ("layers.d2", "layers.d3.layers.l1")))
 ```
 """
 function share_parameters(ps, sharing)
