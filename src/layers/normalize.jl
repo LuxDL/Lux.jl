@@ -3,6 +3,8 @@ abstract type AbstractNormalizationLayer{affine, track_stats} <: AbstractExplici
 @inline _affine(l::AbstractNormalizationLayer{A, T}) where {A, T} = A
 @inline _track_stats(l::AbstractNormalizationLayer{A, T}) where {A, T} = T
 
+initialstates(::AbstractRNG, ::AbstractNormalizationLayer) = (; training=Val(true))
+
 @doc doc"""
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
               affine=true, track_stats=true, epsilon=1f-5, momentum=0.1f0,
@@ -122,11 +124,10 @@ parameterlength(l::BatchNorm) = _affine(l) ? (l.chs * 2) : 0
 statelength(l::BatchNorm) = (_track_stats(l) ? 2 * l.chs : 0) + 1
 
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = LuxLib.batchnorm(x, _getproperty(ps, Val(:scale)),
-                                _getproperty(ps, Val(:bias)),
-                                _getproperty(st, Val(:running_mean)),
-                                _getproperty(st, Val(:running_var)); BN.momentum,
-                                BN.epsilon, st.training)
+    y, stats = batchnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+                         _getproperty(st, Val(:running_mean)),
+                         _getproperty(st, Val(:running_var)); BN.momentum, BN.epsilon,
+                         st.training)
 
     if _track_stats(BN)
         @set! st.running_mean = stats.running_mean
@@ -147,7 +148,7 @@ end
 """
     GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
               init_scale=ones32, affine=true, track_stats=true, epsilon=1f-5,
-              momentum=0.1f0, allow_fast_activation::Bool=true)
+              allow_fast_activation::Bool=true)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
 
@@ -218,7 +219,6 @@ See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 struct GroupNorm{affine, F1, F2, F3, N} <: AbstractNormalizationLayer{affine, false}
     activation::F1
     epsilon::N
-    momentum::N
     chs::Int
     init_bias::F2
     init_scale::F3
@@ -232,8 +232,8 @@ function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     return GroupNorm{affine, typeof(activation), typeof(init_bias), typeof(init_scale),
-                     typeof(epsilon)}(activation, epsilon, momentum, chs, init_bias,
-                                      init_scale, groups)
+                     typeof(epsilon)}(activation, epsilon, chs, init_bias, init_scale,
+                                      groups)
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm)
@@ -244,25 +244,15 @@ function initialparameters(rng::AbstractRNG, l::GroupNorm)
     end
 end
 
-function initialstates(rng::AbstractRNG, l::GroupNorm)
-    if _track_stats(l)
-        return (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups),
-                training=Val(true))
-    else
-        return (; training=Val(true))
-    end
-end
-
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 statelength(l::GroupNorm) = (_track_stats(l) ? 2 * l.groups : 0) + 1
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = LuxLib.groupnorm(x, _getproperty(ps, Val(:scale)),
-                                _getproperty(ps, Val(:bias)),
-                                _getproperty(st, Val(:running_mean)),
-                                _getproperty(st, Val(:running_var)); GN.groups, GN.epsilon,
-                                GN.momentum, st.training)
+    y, stats = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+                         _getproperty(st, Val(:running_mean)),
+                         _getproperty(st, Val(:running_var)); GN.groups, GN.epsilon,
+                         st.training)
 
     if _track_stats(GN)
         @set! st.running_mean = stats.running_mean
@@ -374,13 +364,11 @@ function initialparameters(rng::AbstractRNG, l::InstanceNorm)
     end
 end
 
-initialstates(rng::AbstractRNG, l::InstanceNorm) = (; training=Val(true))
-
 parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = LuxLib.instancenorm(x, _getproperty(ps, Val(:scale)),
-                                   _getproperty(ps, Val(:bias)); IN.epsilon, st.training)
+    y, stats = instancenorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias));
+                            IN.epsilon, st.training)
 
     return IN.activation.(y), st
 end
@@ -598,8 +586,8 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = l.activation.(LuxLib.layernorm(x, _getproperty(ps, Val(:scale)),
-                                       _getproperty(ps, Val(:bias)); l.dims, l.epsilon))
+    y = l.activation.(layernorm(x, _getproperty(ps, Val(:scale)),
+                                _getproperty(ps, Val(:bias)); l.dims, l.epsilon))
     return y, st
 end
 

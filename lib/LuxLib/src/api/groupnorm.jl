@@ -77,7 +77,7 @@ end
 
 function groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
                    bias::AbstractVector{T}, ::Nothing, ::Nothing; groups::Int,
-                   epsilon::Real, momentum=0.9f0,
+                   epsilon::Real,
                    training::Val=Val(true)) where {T <: _GROUPNORM_IMPL_FLOAT}
     return groupnorm(x, scale, bias; groups, epsilon),
            (running_mean=nothing, running_var=nothing)
