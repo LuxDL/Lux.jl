@@ -22,6 +22,10 @@ function __init__()
         @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxLibTrackerExt.jl") end
         ## Handling ReverseDiff
         @require ReverseDiff="37e2e3b7-166d-5795-8a7a-e32c996b4267" begin include("../ext/LuxLibReverseDiffExt.jl") end
+
+        # Accelerator Support
+        ## AMDGPU
+        @require LuxAMDGPU="83120cb1-ca15-4f04-bf3b-6967d2e6b60b" begin include("../ext/LuxLibAMDGPUExt.jl") end
     end
 end
 

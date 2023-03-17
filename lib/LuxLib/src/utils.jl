@@ -9,9 +9,9 @@ else
     get_device(x::Array) = CPU()
     get_device(x::SubArray) = CPU()
     function get_device(x)
-        throw(ArgumentError("get_device not implemented for $(typeof(x)). This is an" *
-                            "undesirable codepath. Please use julia 1.7+ for more " *
-                            "meaningful error messages using KA.jl."))
+        throw(ArgumentError("""get_device not implemented for $(typeof(x)). This is
+                               undesirable codepath. Please use julia 1.7+ for more
+                               meaningful error messages using KA.jl."""))
     end
 end
 
