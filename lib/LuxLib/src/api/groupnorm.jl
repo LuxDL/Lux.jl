@@ -64,12 +64,12 @@ function groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
                    epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
     _assert_same_device(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
-                            "channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("""Length of `scale` and `bias` must be equal to the number of
+                               channels (N - 1 dim of the input array)."""))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
-                            "number of groups $groups."))
+        throw(ArgumentError("""Number of channels $(size(x, 3)) must be divisible by the
+                               number of groups $groups."""))
     end
 
     return first(_groupnorm(x, groups, scale, bias, T(epsilon)))
@@ -99,12 +99,12 @@ function groupnorm(x::AbstractArray{<:Real, N},
                    momentum::Real, training::Val, epsilon::Real) where {N}
     _assert_same_device(x, scale, bias, running_mean, running_var)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
-                            "channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("""Length of `scale` and `bias` must be equal to the number of
+                               channels (N - 1 dim of the input array)."""))
     end
     if size(x, N - 1) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
-                            "number of groups $groups."))
+        throw(ArgumentError("""Number of channels $(size(x, 3)) must be divisible by the
+                               number of groups $groups."""))
     end
 
     sz = size(x)
@@ -126,12 +126,12 @@ function CRC.rrule(::typeof(groupnorm), x::AbstractArray{T, 4}, scale::AbstractV
                    epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
     _assert_same_device(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
-                            "channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("""Length of `scale` and `bias` must be equal to the number of
+                               channels (N - 1 dim of the input array)."""))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
-                            "number of groups $groups."))
+        throw(ArgumentError("""Number of channels $(size(x, 3)) must be divisible by the
+                               number of groups $groups."""))
     end
 
     y, mu, rsig = _groupnorm(x, groups, scale, bias, epsilon)

@@ -57,7 +57,6 @@ _copy_autodiff_barrier(::Nothing) = nothing
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
 
 _replicate(rng::AbstractRNG) = copy(rng)
-_replicate(rng::CUDA.RNG) = deepcopy(rng)
 
 CRC.@non_differentiable _replicate(::Any)
 

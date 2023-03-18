@@ -8,9 +8,9 @@ else
     import ..Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector,
                       TrackedReal
 end
-using CUDA, NNlibCUDA
+using LuxCUDA  # TODO: Remove in v0.2 with a LuxLibTrackerCUDAExt
 using NNlib, LuxLib
-using LuxLib: _CUDNN_BATCHNORM_FLOAT, _GROUPNORM_IMPL_FLOAT
+using LuxLib: _GROUPNORM_IMPL_FLOAT
 import ChainRulesCore as CRC
 
 # NNlib: batched_mul
@@ -64,6 +64,8 @@ end
 LuxLib._get_device(x::TrackedArray) = LuxLib._get_device(data(x))
 
 # api/batchnorm.jl
+_CUDNN_BATCHNORM_FLOAT = Union{Float32, Float64}
+
 _TR_BN = Union{TrackedArray{<:Any, <:Any, <:CuArray{<:_CUDNN_BATCHNORM_FLOAT, 2}},
                TrackedArray{<:Any, <:Any, <:CuArray{<:_CUDNN_BATCHNORM_FLOAT, 4}},
                TrackedArray{<:Any, <:Any, <:CuArray{<:_CUDNN_BATCHNORM_FLOAT, 5}}}

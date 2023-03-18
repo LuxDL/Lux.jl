@@ -23,34 +23,39 @@ end
     calls = []
     if !training
         if R == Nothing
-            push!(calls, :(batchmean = mean(x; dims=reduce_dims)))
-            push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
+            push!(calls, quote
+                      batchmean = mean(x; dims=reduce_dims)
+                      batchvar = _var(x, Val(false), batchmean, r)
+                  end)
         else
             push!(calls, :((batchmean, batchvar) = (running_mean, running_var)))
         end
     else
-        push!(calls, :(batchmean = mean(x; dims=reduce_dims)))
-        push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
+        push!(calls, quote
+                  batchmean = mean(x; dims=reduce_dims)
+                  batchvar = _var(x, Val(false), batchmean, r)
+              end)
 
         if R != Nothing
             push!(calls,
-                  :(_stats = _update_normalization_statistics(x, running_mean, running_var,
-                                                              batchmean, batchvar, momentum,
-                                                              r)))
-            push!(calls, :((running_mean, running_var) = _stats))
+                  quote
+                      _stats = _update_normalization_statistics(x, running_mean,
+                                                                running_var, batchmean,
+                                                                batchvar, momentum, r)
+                      (running_mean, running_var) = _stats
+                  end)
         end
     end
     push!(calls, :(return ((batchmean, batchvar), (running_mean, running_var))))
     return Expr(:block, calls...)
 end
 
-@generated function _affine_normalize(x::AbstractArray, xmean::ST, xvar::ST, scale::A,
-                                      bias::A, epsilon::Real) where {ST, A}
-    if A != Nothing
-        return :(return scale .* (x .- xmean) ./ sqrt.(xvar .+ epsilon) .+ bias)
-    else
-        return :(return (x .- xmean) ./ sqrt.(xvar .+ epsilon))
-    end
+function _affine_normalize(x::AbstractArray, xmean, xvar, ::Nothing, bias, epsilon)
+    return (x .- xmean) ./ sqrt.(xvar .+ epsilon)
+end
+
+function _affine_normalize(x::AbstractArray, xmean, xvar, scale, bias, epsilon)
+    return scale .* (x .- xmean) ./ sqrt.(xvar .+ epsilon) .+ bias
 end
 
 function _normalization_impl(x::AbstractArray, running_mean::R, running_var::R, scale::A,

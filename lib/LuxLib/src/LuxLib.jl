@@ -6,8 +6,6 @@ import ChainRulesCore as CRC
 using KernelAbstractions
 import KernelAbstractions as KA
 
-using CUDA, CUDAKernels, NNlibCUDA  # CUDA Support
-
 # Extensions
 if !isdefined(Base, :get_extension)
     using Requires
@@ -26,6 +24,8 @@ function __init__()
         # Accelerator Support
         ## AMDGPU
         @require LuxAMDGPU="83120cb1-ca15-4f04-bf3b-6967d2e6b60b" begin include("../ext/LuxLibAMDGPUExt.jl") end
+        ## Handling CUDA (TODO: Add in v0.2)
+        # @require LuxCUDA="d0bbae9a-e099-4d5b-a835-1c6931763bda" begin include("../ext/LuxLibCUDAExt.jl") end
     end
 end
 
@@ -43,6 +43,11 @@ include("api/dropout.jl")
 include("api/groupnorm.jl")
 include("api/instancenorm.jl")
 include("api/layernorm.jl")
+
+# TODO: Remove in v0.2
+using LuxCUDA
+include("../ext/LuxLibCUDAExt.jl")
+using .LuxLibCUDAExt
 
 export batchnorm, groupnorm, instancenorm, layernorm
 export alpha_dropout, dropout

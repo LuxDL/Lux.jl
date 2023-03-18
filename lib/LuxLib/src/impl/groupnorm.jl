@@ -1,6 +1,5 @@
 # Launch Heuristics
 _linear_threads_groupnorm(::CPU) = Threads.nthreads()
-_linear_threads_groupnorm(::CUDADevice) = (16, 16)
 _linear_threads_groupnorm(::GPU) = 256
 
 _GROUPNORM_IMPL_FLOAT = Union{Float32, Float64}
