@@ -1,8 +1,3 @@
-abstract type LuxDeviceAdaptor end
-
-struct LuxCPUAdaptor <: LuxDeviceAdaptor end
-struct LuxCUDAAdaptor <: LuxDeviceAdaptor end
-
 adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
