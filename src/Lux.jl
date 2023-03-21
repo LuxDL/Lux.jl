@@ -1,14 +1,15 @@
 module Lux
 
 # Preferences -- Defaults are set using Preferences
-using Preferences, UUIDs
+using Preferences
+using Base: PkgId, UUID
 # Accelerator Support -- Weak dependency from v0.5
 using LuxCUDA
 # Neural Network Backend
 using NNlib
 import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
 # Julia StdLibs
-using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
+using LinearAlgebra, Markdown, Random, Statistics
 # Parameter Manipulation
 using Functors, Setfield
 import Adapt: adapt, adapt_storage
@@ -31,7 +32,6 @@ const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 include("utils.jl")
 # Data Transfer Utilities / Accelerators
 include("device.jl")
-include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -82,9 +82,6 @@ function __init__()
         ## Tracker InterOp
         @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxTrackerExt.jl") end
     end
-
-    # Select GPU Backend
-    return GPU_BACKEND[] = _select_default_gpu_backend()
 end
 
 # Data Transfer
