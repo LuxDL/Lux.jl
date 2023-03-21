@@ -1,0 +1,62 @@
+name: Downstream
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+jobs:
+  test:
+    name: ${{ matrix.package.repo }}/${{ matrix.package.group }}
+    runs-on: ${{ matrix.os }}
+    env:
+      GROUP: ${{ matrix.package.group }}
+    strategy:
+      fail-fast: false
+      matrix:
+        julia-version: ["1"]
+        os: [ubuntu-latest]
+        package:
+          - { user: LuxDL, repo: Lux.jl, group: AMDGPU }
+    if: contains(github.event.pull_request.labels.*.name, 'run downstream test')
+    steps:
+      - uses: actions/checkout@v3
+      - uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.julia-version }}
+          arch: x64
+      - uses: julia-actions/julia-buildpkg@v1
+      - name: Clone Downstream
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
+          path: downstream
+      - name: Load this and run the downstream tests
+        shell: julia --code-coverage=user --color=yes --project=downstream {0}
+        run: |
+          using Pkg
+          try
+            # force it to use this PR's version of the package
+            Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
+            Pkg.update()
+            Pkg.test()  # resolver may fail with test time deps
+          catch err
+            err isa Pkg.Resolve.ResolverError || rethrow()
+            # If we can't resolve that means this is incompatible by SemVer and this is fine
+            # It means we marked this as a breaking change, so we don't need to worry about
+            # Mistakenly introducing a breaking change, as we have intentionally made one
+            @info "Not compatible with this release. No problem." exception=err
+            exit(0)  # Exit immediately, as a success
+          end
+      - uses: julia-actions/julia-processcoverage@v1
+        with:
+          directories: src,ext
+      - uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info

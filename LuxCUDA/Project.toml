@@ -1,0 +1,19 @@
+name = "LuxCUDA"
+uuid = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
+authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
+version = "0.1.1"
+
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+CUDAKernels = "72cfdca4-0801-4ab0-bf6a-d52aa10adc57"
+NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
+
+[compat]
+CUDA = "3, 4"
+CUDAKernels = "0.4"
+NNlibCUDA = "0.2"
+Reexport = "1"
+cuDNN = "1"
+julia = "1.7"
