@@ -1,5 +1,5 @@
-using ComponentArrays, FiniteDifferences, Lux, Optimisers, Random, Test
-import Tracker, Zygote
+using ComponentArrays, FiniteDifferences, Functors, Lux, Optimisers, Random, Test
+import ReverseDiff, Tracker, Zygote
 
 try
     using JET
@@ -50,15 +50,35 @@ _named_tuple(x::ComponentArray) = NamedTuple(x)
 _named_tuple(x) = x
 
 # Test the gradients generated using AD against the gradients generated using Finite Differences
-function test_gradient_correctness_fdm(f::Function, args...; kwargs...)
+function test_gradient_correctness_fdm(f::Function, args...; reversediff_broken=false,
+                                       kwargs...)
     gs_ad_zygote = Zygote.gradient(f, args...)
+
     gs_ad_tracker = Tracker.gradient(f, args...)
-    gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(5, 1), f,
-                                    ComponentArray.(args)...)
-    gs_fdm = _named_tuple.(gs_fdm)
-    for (g_ad_zygote, g_ad_tracker, g_fdm) in zip(gs_ad_zygote, gs_ad_tracker, gs_fdm)
+
+    # ReverseDiff requires AbstractArray inputs
+    if any(!Base.Fix2(isa, AbstractArray), args)
+        rdiff_skipped = true
+        gs_ad_rdiff = fmap(zero, args)
+    else
+        rdiff_skipped = false
+        gs_ad_rdiff = _named_tuple.(ReverseDiff.gradient(f, ComponentArray.(args)))
+    end
+
+    gs_fdm = _named_tuple.(FiniteDifferences.grad(FiniteDifferences.central_fdm(5, 1), f,
+                                                  ComponentArray.(args)...))
+
+    for (g_ad_zygote, g_ad_tracker, g_ad_rdiff, g_fdm) in zip(gs_ad_zygote, gs_ad_tracker,
+                                                              gs_ad_rdiff, gs_fdm)
         @test isapprox(g_ad_zygote, g_fdm; kwargs...)
         @test isapprox(Tracker.data(g_ad_tracker), g_ad_zygote; kwargs...)
+        if !rdiff_skipped
+            if reversediff_broken
+                @test_broken isapprox(g_ad_rdiff, g_ad_zygote; kwargs...)
+            else
+                @test isapprox(g_ad_rdiff, g_ad_zygote; kwargs...)
+            end
+        end
     end
 end
 

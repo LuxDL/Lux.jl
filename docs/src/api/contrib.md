@@ -25,7 +25,6 @@ basic building blocks which can be seamlessly composed to create complex trainin
 Lux.Training.AbstractVJP
 Lux.Training.backend
 Lux.Training.EnzymeVJP
-Lux.Training.ReverseDiffVJP
 Lux.Training.TrackerVJP
 Lux.Training.YotaVJP
 Lux.Training.ZygoteVJP

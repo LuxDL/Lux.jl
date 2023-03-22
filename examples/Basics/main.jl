@@ -181,7 +181,8 @@ end
 # efficient computationally than a VJP, and, conversely, a JVP is more efficient when the
 # Jacobian matrix is a tall matrix.
 
-using ComponentArrays, ForwardDiff, Zygote, AbstractDifferentiation
+using ComponentArrays, ForwardDiff, Zygote
+import AbstractDifferentiation as AD
 
 # ### Gradients
 

@@ -217,8 +217,24 @@ end
     end
 end
 
-@inline function _eachslice(x::T, ::Val{dims}) where {T <: AbstractArray, dims}
+@inline function _eachslice(x::AbstractArray, ::Val{dims}) where {dims}
     return [selectdim(x, dims, i) for i in axes(x, dims)]
+end
+
+function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
+    Δs = CRC.unthunk(Δ_raw)
+    i1 = findfirst(Δ -> Δ isa AbstractArray, Δs)
+    i1 === nothing && zero.(x)  # all slices are Zero!
+    Δ = similar(x)
+    for i in axes(x, dims)
+        Δi = selectdim(Δ, dims, i)
+        if Δi isa CRC.AbstractZero
+            fill!(Δi, 0)
+        else
+            copyto!(Δi, Δs[i])
+        end
+    end
+    return CRC.ProjectTo(x)(Δ)
 end
 
 # Backend Integration

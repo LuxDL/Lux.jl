@@ -15,11 +15,13 @@ end
 
 function __init__()
     @static if !isdefined(Base, :get_extension)
-        # Handling ForwardDiff
+        # Handling AD Packages
+        ## Handling ForwardDiff
         @require ForwardDiff="f6369f11-7733-5829-9624-2563aa707210" begin include("../ext/LuxLibForwardDiffExt.jl") end
-
-        # Handling Tracker
+        ## Handling Tracker
         @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/LuxLibTrackerExt.jl") end
+        ## Handling ReverseDiff
+        @require ReverseDiff="37e2e3b7-166d-5795-8a7a-e32c996b4267" begin include("../ext/LuxLibReverseDiffExt.jl") end
     end
 end
 
