@@ -23,7 +23,8 @@ jobs:
         julia-version: ["1"]
         os: [ubuntu-latest]
         package:
-          - { user: LuxDL, repo: Lux.jl, group: AMDGPU }
+          - { user: LuxDL, repo: Lux.jl, group: CUDA }
+          - { user: LuxDL, repo: LuxLib.jl, group: CUDA }
     if: contains(github.event.pull_request.labels.*.name, 'run downstream test')
     steps:
       - uses: actions/checkout@v3
