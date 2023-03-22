@@ -3,8 +3,6 @@ module Lux
 # Preferences -- Defaults are set using Preferences
 using Preferences
 using Base: PkgId, UUID
-# Accelerator Support -- Weak dependency from v0.5
-using LuxCUDA
 # Neural Network Backend
 using NNlib
 import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
@@ -53,6 +51,10 @@ include("contrib/share_parameters.jl")
 
 # Deprecations
 include("deprecated.jl")
+
+# Accelerator Support -- Weak dependency from v0.5
+include("../ext/LuxCUDAExt.jl")
+using .LuxCUDAExt
 
 # Extensions
 if !isdefined(Base, :get_extension)

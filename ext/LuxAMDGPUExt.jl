@@ -2,8 +2,7 @@ module LuxAMDGPUExt
 
 isdefined(Base, :get_extension) ? (using LuxAMDGPU) : (using ..LuxAMDGPU)
 using Adapt, ChainRulesCore, Functors, Lux, Random
-using Lux: GPU_BACKEND, LuxAMDGPUAdaptor, LuxAutoDetectGPUAdaptor, LuxCUDAAdaptor,
-           LuxNoGPUDetectedAdaptor
+using Lux: GPU_BACKEND, LuxAMDGPUAdaptor
 import Adapt: adapt, adapt_storage
 import ChainRulesCore as CRC
 

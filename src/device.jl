@@ -29,15 +29,15 @@ supported_gpu_backends() = map(_get_device_name, GPU_BACKENDS)
 function _get_first_functional_gpu_backend(fail::Bool=false)
     for backend in GPU_BACKENDS
         if haskey(Base.loaded_modules, backend.pkgid)
-            @debug "Trying backend: $(backend.name)."
+            @debug "Trying backend: $(_get_device_name(backend))."
             if getproperty(Base.loaded_modules[backend.pkgid], :functional)()
-                @debug "Using GPU backend: $(backend.name)."
+                @debug "Using GPU backend: $(_get_device_name(backend))."
                 return backend
             end
-            @debug "GPU backend: $(backend.name) is not functional."
+            @debug "GPU backend: $(_get_device_name(backend)) is not functional."
         else
             @debug """
-            Trigger package for backend ($(backend.name)): $((backend.pkgid)) not loaded."""
+            Trigger package for backend ($(_get_device_name(backend))): $((backend.pkgid)) not loaded."""
         end
     end
 
@@ -163,12 +163,6 @@ _isbitsarray(x) = false
 
 _isleaf(::AbstractRNG) = true
 _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
-
-# adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
-# adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
-# function adapt_storage(::LuxCPUAdaptor, x::CUDA.CUSPARSE.AbstractCuSparseMatrix)
-#     return adapt(Array, x)
-# end
 
 adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)

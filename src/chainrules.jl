@@ -51,19 +51,19 @@ function CRC.rrule(::typeof(_eachslice), x, d)
 end
 
 # Adapt Interface
-function CRC.rrule(::Type{Array}, x::CUDA.CuArray)
-    return Array(x), d -> (NoTangent(), CUDA.cu(d))
-end
+# function CRC.rrule(::Type{Array}, x::CUDA.CuArray)
+#     return Array(x), d -> (NoTangent(), CUDA.cu(d))
+# end
 
-function CRC.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
-    return adapt_storage(to, x),
-           d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
-end
+# function CRC.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
+#     return adapt_storage(to, x),
+#            d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
+# end
 
-function CRC.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
-    return adapt_storage(to, x),
-           d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
-end
+# function CRC.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
+#     return adapt_storage(to, x),
+#            d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
+# end
 
 # RNN Helpers
 ## Taken from https://github.com/FluxML/Flux.jl/blob/1f82da4bfa051c809f7f3ce7dd7aeb43be515b14/src/layers/recurrent.jl#L9
