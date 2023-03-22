@@ -126,14 +126,12 @@ function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
-                          groups=c.groups)
+    cdims = _conv_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return c.activation.(_conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
-                          groups=c.groups)
+    cdims = _conv_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return c.activation.(_conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
@@ -634,14 +632,12 @@ function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::CrossCor{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation);
-                          F=true)
+    cdims = _crosscor_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return c.activation.(_conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::CrossCor{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation);
-                          F=true)
+    cdims = _crosscor_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return c.activation.(_conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
