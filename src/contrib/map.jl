@@ -82,20 +82,27 @@ end
 Lux.layer_map(zero_dense_params, c, ps, st)
 ```
 """
-function layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
-                   name::String="model")
+function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
     l_c, l_re = Functors.functor(l)
     ps_c, ps_re = Functors.functor(ps)
     st_c, st_re = Functors.functor(st)
 
     length(l_c) == 0 && return f(l, ps, st, name)
 
-    l_c_ = __fix_tuple_functor(l_c, ps_c)
-    ks = keys(l_c_)
+    @assert fieldnames(typeof(st_c)) == fieldnames(typeof(ps_c))
+
+    if length(l_c) == 1 && fieldnames(typeof(l_c)) != fieldnames(typeof(ps_c))
+        # This will be fixed with a breaking change in v0.5
+        __correct_luxcore_inconsistency = true
+        ps_c = NamedTuple{fieldnames(typeof(l_c))}((ps_c,))
+        st_c = NamedTuple{fieldnames(typeof(l_c))}((st_c,))
+    else
+        __correct_luxcore_inconsistency = false
+    end
 
     l_c_new, ps_c_new, st_c_new = [], [], []
-    for k in ks
-        l_c_new_, ps_c_new_, st_c_new_ = layer_map(f, getproperty(l_c_, k),
+    for k in keys(l_c)
+        l_c_new_, ps_c_new_, st_c_new_ = layer_map(f, getproperty(l_c, k),
                                                    getproperty(ps_c, k),
                                                    getproperty(st_c, k),
                                                    join((name, k), "."))
@@ -103,12 +110,12 @@ function layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
         push!(ps_c_new, k => ps_c_new_)
         push!(st_c_new, k => st_c_new_)
     end
-    l_c_new = (; l_c_new...)
-    l_c_new = l_c isa Tuple ? (l_c_new,) : l_c_new
 
-    l_new = l_re(l_c_new)
-    ps_new = ps_re((; ps_c_new...))
-    st_new = st_re((; st_c_new...))
+    l_new = l_re((; l_c_new...))
+    ps_new, st_new = __correct_luxcore_inconsistency ?
+                     (ps_re((; last(first(ps_c_new))...)),
+                      st_re((; last(first(st_c_new))...))) :
+                     (ps_re((; ps_c_new...)), st_re((; st_c_new...)))
 
     return l_new, ps_new, st_new
 end
