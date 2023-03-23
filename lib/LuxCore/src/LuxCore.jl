@@ -43,6 +43,7 @@ initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 function initialparameters(rng::AbstractRNG, l::NamedTuple)
     return map(Base.Fix1(initialparameters, rng), l)
 end
+initialparameters(::AbstractRNG, ::Nothing) = NamedTuple()
 
 """
     initialstates(rng::AbstractRNG, l)
@@ -51,6 +52,7 @@ Generate the initial states of the layer `l`.
 """
 initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
+initialstates(::AbstractRNG, ::Nothing) = NamedTuple()
 
 """
     parameterlength(l)
@@ -143,20 +145,15 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
 end
 
 # Make AbstractExplicit Layers Functor Compatible
-function Functors.functor(::Type{<:AbstractExplicitContainerLayer}, x)
-    layers = _get_layers(x)
-    _children = getproperty.((x,), layers)
+function Functors.functor(::Type{<:AbstractExplicitContainerLayer{layers}},
+                          x) where {layers}
+    _children = NamedTuple{layers}(getproperty.((x,), layers))
     function layer_reconstructor(z)
-        l = x
-        for (child, name) in zip(z, layers)
-            l = Setfield.set(l, Setfield.PropertyLens{name}(), child)
-        end
-        return l
+        return reduce((l, (c, n)) -> set(l, Setfield.PropertyLens{n}(), c), zip(z, layers);
+                      init=x)
     end
     return _children, layer_reconstructor
 end
-
-_get_layers(::AbstractExplicitContainerLayer{layers}) where {layers} = layers
 
 # Test Mode
 """
