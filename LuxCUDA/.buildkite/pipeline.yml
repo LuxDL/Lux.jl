@@ -18,7 +18,7 @@ steps:
       setup:
         julia:
           - "1"
-          - "1.7"
+          - "1.6"
           - "1.9-nightly"
           - "nightly"
       adjustments:
