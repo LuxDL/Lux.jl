@@ -126,4 +126,3 @@ nav:
   - "Development Documentation":
       - "Style Guide": "devdocs/style_guide.md"
       - "Layer Implementation": "devdocs/layer_implementation.md"
-      - "Sub Packages": "devdocs/subpackages.md"

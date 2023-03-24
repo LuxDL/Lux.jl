@@ -17,31 +17,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group:
-          - Lux # Core Framework
-          - Boltz # Prebuilt Models using Lux
-          - LuxLib # Backend of Lux
-          - LuxCore # Avoid the heavy Lux Dependency
-          - LuxCUDA # Just test installation
-          - LuxAMDGPU # Just test installation
         version:
+          - "1"
           - "1.7"
-          - "1.8"
           - "~1.9.0-0"
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
         with:
           version: ${{ matrix.version }}
-      - name: Run Tests
-        run: julia --color=yes .ci/test.jl
+      - uses: actions/cache@v3
         env:
-          COVERAGE: "true"
-          GROUP: ${{ matrix.group }}
-          OVERRIDE_INTER_DEPENDENCIES: "false"
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,lib/Boltz/src,lib/LuxLib/src,lib/LuxCore/src,ext,lib/LuxLib/ext,lib/LuxCUDA,lib/LuxAMDGPU
+          directories: src,ext
       - uses: codecov/codecov-action@v3
         with:
           files: lcov.info
