@@ -9,13 +9,30 @@ function disable_stacktrace_truncation!(; disable::Bool=true)
     return TruncatedStacktraces.VERBOSE[] = disable
 end
 
-# NamedTuple -- Lux uses them quite frequenty (states) making the error messages too verbose
-function Base.show(io::IO, t::Type{<:NamedTuple{fields, fTypes}}) where {fields, fTypes}
-    if TruncatedStacktraces.VERBOSE[]
-        invoke(show, Tuple{IO, Type}, io, t)
-    else
-        fields_truncated = length(fields) > 2 ? "($(fields[1]),$(fields[2]),…)" : fields
-        print(io, "NamedTuple{$fields_truncated,…}")
+# NamedTuple / Tuples -- Lux uses them quite frequenty (states) making the error messages
+# too verbose
+@static if !TruncatedStacktraces.DISABLE
+    function Base.show(io::IO, t::Type{<:Tuple})
+        if TruncatedStacktraces.VERBOSE[]
+            invoke(show, Tuple{IO, Type}, io, t)
+        else
+            fields = t.parameters
+            fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
+                               (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
+                                (length(fields) == 1 ? "$(fields[1])" : ""))
+            print(io, "Tuple{$fields_truncated}")
+        end
+    end
+
+    function Base.show(io::IO, t::Type{<:NamedTuple{fields}}) where {fields}
+        if TruncatedStacktraces.VERBOSE[]
+            invoke(show, Tuple{IO, Type}, io, t)
+        else
+            fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
+                               (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
+                                (length(fields) == 1 ? "$(fields[1])" : ""))
+            print(io, "NamedTuple{($fields_truncated),…}")
+        end
     end
 end
 
