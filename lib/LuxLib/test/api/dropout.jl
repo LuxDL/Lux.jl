@@ -38,7 +38,7 @@ rng = MersenneTwister(0)
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
@@ -103,7 +103,7 @@ end
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
@@ -212,7 +212,7 @@ end
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 

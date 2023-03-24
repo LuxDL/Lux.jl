@@ -62,7 +62,7 @@ _istraining(::Val{training}) where {training} = training
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),

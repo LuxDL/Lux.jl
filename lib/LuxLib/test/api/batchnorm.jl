@@ -64,7 +64,7 @@ end
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float32, Float64),
             sz in ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),
