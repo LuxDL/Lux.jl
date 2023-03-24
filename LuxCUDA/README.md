@@ -5,7 +5,7 @@
 [![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](http://lux.csail.mit.edu/stable/)
 
 [![CI](https://github.com/LuxDL/LuxCUDA.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/LuxDL/LuxCUDA.jl/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/github/LuxDL/LuxCUDA.jl/branch/main/graph/badge.svg?token=1ZY0A2NPEM)](https://codecov.io/github/LuxDL/LuxCUDA.jl)
+[![codecov](https://codecov.io/gh/LuxDL/LuxCUDA.jl/branch/main/graph/badge.svg?token=1ZY0A2NPEM)](https://codecov.io/gh/LuxDL/LuxCUDA.jl)
 [![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/LuxCUDA)](https://pkgs.genieframework.com?packages=LuxCUDA)
 
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
