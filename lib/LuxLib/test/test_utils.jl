@@ -1,7 +1,7 @@
 using CUDA, FiniteDifferences, LuxLib, Test
 using ReverseDiff, Tracker, Zygote  # AD Packages
 
-const LUXLIB_TESTING_MODE = get(ENV, "LUXLIB_TESTING_MODE", :all)
+const GROUP = get(ENV, "GROUP", "All")
 
 try
     using JET
@@ -11,13 +11,9 @@ catch
     global test_opt(args...; kwargs...) = nothing
 end
 
-function cpu_testing()
-    return LUXLIB_TESTING_MODE == :all || LUXLIB_TESTING_MODE == :cpu
-end
-
-function gpu_testing()
-    return (LUXLIB_TESTING_MODE == :all || LUXLIB_TESTING_MODE == :gpu) && has_cuda()
-end
+cpu_testing() = GROUP == "All" || GROUP == "CPU"
+cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && has_cuda()
+amdgpu_testing() = GROUP == "All" || GROUP == "AMDGPU"
 
 function Base.isapprox(x, y; kwargs...)
     @warn "`isapprox` is not defined for ($(typeof(x)), $(typeof(y))). Using `==` instead."

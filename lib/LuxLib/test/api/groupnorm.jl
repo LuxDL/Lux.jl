@@ -69,7 +69,7 @@ end
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float32, Float64),
             sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
             groups in (2, 3)
@@ -152,7 +152,7 @@ end
         end
     end
 
-    if gpu_testing()
+    if cuda_testing()
         for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (8, 8, 6, 2), (16, 16, 12, 2)),
             groups in (2, 3),
