@@ -62,7 +62,7 @@ interface.
 function groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
                    bias::AbstractVector{T}; groups::Int,
                    epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
-    _assert_same_device(x, scale, bias)
+    _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
                             "channels (N - 1 dim of the input array)."))
@@ -97,7 +97,7 @@ function groupnorm(x::AbstractArray{<:Real, N},
                    running_mean::Union{Nothing, AbstractVector{<:Real}},
                    running_var::Union{Nothing, AbstractVector{<:Real}}; groups::Int,
                    momentum::Real, training::Val, epsilon::Real) where {N}
-    _assert_same_device(x, scale, bias, running_mean, running_var)
+    _assert_same_backend(x, scale, bias, running_mean, running_var)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
                             "channels (N - 1 dim of the input array)."))
@@ -124,7 +124,7 @@ end
 function CRC.rrule(::typeof(groupnorm), x::AbstractArray{T, 4}, scale::AbstractVector{T},
                    bias::AbstractVector{T}; groups::Int,
                    epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
-    _assert_same_device(x, scale, bias)
+    _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
                             "channels (N - 1 dim of the input array)."))

@@ -1,7 +1,27 @@
-using CUDA, FiniteDifferences, LuxLib, Test
+using FiniteDifferences, LuxLib, Test
+using LuxCUDA  # CUDA Support
 using ReverseDiff, Tracker, Zygote  # AD Packages
 
 const GROUP = get(ENV, "GROUP", "All")
+
+cpu_testing() = GROUP == "All" || GROUP == "CPU"
+cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && LuxCUDA.functional()
+amdgpu_testing() = (GROUP == "All" || GROUP == "AMDGPU") # && LuxAMDGPU.functional()
+
+const MODES = begin
+    # Mode, Array Type, GPU?
+    cpu_mode = ("CPU", Array, false)
+    cuda_mode = ("CUDA", CuArray, true)
+
+    if GROUP == "All"
+        [cpu_mode, cuda_mode]
+    else
+        modes = []
+        cpu_testing() && push!(modes, cpu_mode)
+        cuda_testing() && push!(modes, cuda_mode)
+        modes
+    end
+end
 
 try
     using JET
@@ -10,10 +30,6 @@ catch
     global test_call(args...; kwargs...) = nothing
     global test_opt(args...; kwargs...) = nothing
 end
-
-cpu_testing() = GROUP == "All" || GROUP == "CPU"
-cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && has_cuda()
-amdgpu_testing() = GROUP == "All" || GROUP == "AMDGPU"
 
 function Base.isapprox(x, y; kwargs...)
     @warn "`isapprox` is not defined for ($(typeof(x)), $(typeof(y))). Using `==` instead."
@@ -57,20 +73,21 @@ function run_JET_tests(f, args...; call_broken=false, opt_broken=false, kwargs..
 end
 
 # Test the gradients generated using AD against the gradients generated using Finite
-# Differences
-# Currently this is called exclusively on CPU. So we can simply use ReverseDiff.
-# However this function has evolved to be more general and can be used to test GPU autodiff.
-function test_gradient_correctness_fdm(f::Function, args...; kwargs...)
+# Differences.
+function test_gradient_correctness(f::Function, args...; gpu_testing::Bool=false,
+                                   skip_fdm::Bool=false, kwargs...)
     gs_ad_zygote = Zygote.gradient(f, args...)
     gs_ad_tracker = Tracker.gradient(f, args...)
-    gs_ad_reversediff = ReverseDiff.gradient(f, args)
-    gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
-    for (g_ad_zygote, g_ad_tracker, g_ad_reverse_diff, g_fdm) in zip(gs_ad_zygote,
-                                                                     gs_ad_tracker,
-                                                                     gs_ad_reversediff,
-                                                                     gs_fdm)
-        @test isapprox(g_ad_zygote, g_fdm; kwargs...)
-        @test isapprox(Tracker.data(g_ad_tracker), g_ad_zygote; kwargs...)
-        @test isapprox(ReverseDiff.value(g_ad_reverse_diff), g_ad_zygote; kwargs...)
+    gs_ad_reversediff = gpu_testing ? nothing : ReverseDiff.gradient(f, args)
+    gs_fdm = gpu_testing || skip_fdm ? nothing :
+             FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
+    for idx in 1:length(gs_ad_zygote)
+        @test isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx]; kwargs...)
+        if !gpu_testing
+            !skip_fdm && @test isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+            @test isapprox(ReverseDiff.value(gs_ad_reversediff[idx]), gs_ad_zygote[idx];
+                           kwargs...)
+        end
     end
+    return
 end

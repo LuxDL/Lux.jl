@@ -6,7 +6,7 @@ import ChainRulesCore as CRC
 using KernelAbstractions
 import KernelAbstractions as KA
 
-using CUDA, CUDAKernels, NNlibCUDA  # CUDA Support
+using LuxCUDA  # CUDA Support
 
 # Extensions
 if !isdefined(Base, :get_extension)
