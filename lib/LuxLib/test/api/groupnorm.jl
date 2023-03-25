@@ -1,4 +1,4 @@
-using CUDA, Test, Zygote
+using LuxCUDA, Test, Zygote
 using LuxLib
 
 include("../test_utils.jl")

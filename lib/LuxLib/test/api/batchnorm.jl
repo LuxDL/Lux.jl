@@ -1,4 +1,4 @@
-using CUDA, Random, Test
+using LuxCUDA, Random, Test
 using LuxLib
 
 include("../test_utils.jl")
@@ -30,6 +30,8 @@ end
 
         epsilon = T(1e-5)
         x, scale, bias, rm, rv = _setup_batchnorm(aType, T, sz; track_stats, affine)
+
+        y, nt = batchnorm(x, scale, bias, rm, rv; epsilon, training, momentum=T(0.9))
 
         @inferred batchnorm(x, scale, bias, rm, rv; epsilon, training, momentum=T(0.9))
         run_JET_tests(_f, x, scale, bias, rm, rv)

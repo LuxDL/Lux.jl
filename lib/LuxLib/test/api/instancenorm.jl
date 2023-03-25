@@ -25,6 +25,8 @@ _istraining(::Val{training}) where {training} = training
         epsilon = T(1e-5)
         x, scale, bias = _setup_instancenorm(aType, T, sz; affine)
 
+        y, nt = instancenorm(x, scale, bias; epsilon, training)
+
         @inferred instancenorm(x, scale, bias; epsilon, training)
         run_JET_tests(_f, x, scale, bias)
         @test y isa aType{T, length(sz)}
