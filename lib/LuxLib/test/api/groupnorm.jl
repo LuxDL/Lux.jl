@@ -41,6 +41,9 @@ end
 
         y = _f(x, scale, bias)
 
+        gs_x, gs_scale, gs_bias = Zygote.gradient((args...) -> sum(_f(args...)), x, scale,
+                                                  bias)
+
         @inferred groupnorm(x, scale, bias; groups, epsilon)
         run_JET_tests(_f, x, scale, bias; opt_broken=true)
         @test y isa aType{T, 4}
@@ -52,6 +55,9 @@ end
 
         y_ = __f(x, scale, bias)
 
+        gs_x_, gs_scale_, gs_bias_ = Zygote.gradient((args...) -> sum(__f(args...)), x,
+                                                     scale, bias)
+
         # The KA implementation reorders operations manually for maximal
         # performance. Hence equality cannot be guaranteed.
         @test isapprox(y, y_; atol=1.0f-3, rtol=1.0f-3)
@@ -59,8 +65,8 @@ end
         @test isapprox(gs_scale, gs_scale_; atol=1.0f-3, rtol=1.0f-3)
         @test isapprox(gs_bias, gs_bias_; atol=1.0f-3, rtol=1.0f-3)
 
-        test_gradient_correctness(_f, x, scale, bias; gpu_testing=on_gpu, atol=1.0f-3,
-                                  rtol=1.0f-3)
+        test_gradient_correctness((args...) -> sum(_f(args...)), x, scale, bias;
+                                  gpu_testing=on_gpu, atol=1.0f-3, rtol=1.0f-3)
     end
 end end
 

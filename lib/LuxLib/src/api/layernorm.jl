@@ -31,10 +31,8 @@ Normalized Array of same size as `x`.
 """
 function layernorm(x::AbstractArray{<:Real, N}, scale::AbstractArray{<:Real, N},
                    bias::AbstractArray{<:Real, N}; dims, epsilon) where {N}
-    _mean = mean(x; dims)
-    _rstd = 1 ./ (std(x; dims, mean=_mean, corrected=false) .+ epsilon)
-
-    return scale .* (x .- _mean) .* _rstd .+ bias
+    x_norm = layernorm(x, nothing, nothing; dims, epsilon)
+    return scale .* x_norm .+ bias
 end
 
 function layernorm(x::AbstractArray, ::Nothing, ::Nothing; dims, epsilon)

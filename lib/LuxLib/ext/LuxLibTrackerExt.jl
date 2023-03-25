@@ -81,16 +81,16 @@ function LuxLib.batchnorm(x::_TR_BN, scale::Union{_TR_BN_VEC, Nothing},
     return x_, (; running_mean=rm, running_var=rv)
 end
 
-for RM in (:TrackedVector, :AbstractVector),
-    RV in (:TrackedVector, :AbstractVector),
+for RM in (:TrackedVector, :Nothing, :AbstractVector),
+    RV in (:TrackedVector, :Nothing, :AbstractVector),
     S in (:TrackedVector, :Nothing, :AbstractVector),
     B in (:TrackedVector, :Nothing, :AbstractVector),
     XT in (:TrackedArray, :AbstractArray)
 
-    RM == :AbstractVector &&
-        RV == :AbstractVector &&
-        (S == :AbstractVector || S == Nothing) &&
-        (B == :AbstractVector || B == Nothing) &&
+    (RM == :AbstractVector || RM == :Nothing) &&
+        (RV == :AbstractVector || RV == :Nothing) &&
+        (S == :AbstractVector || S == :Nothing) &&
+        (B == :AbstractVector || B == :Nothing) &&
         XT == :AbstractArray &&
         continue
 
