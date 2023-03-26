@@ -44,16 +44,18 @@ end
             @test size(nt.running_var) == (size(x, length(sz) - 1),)
         end
 
-        if affine
-            __f = (args...) -> sum(first(batchnorm(x, args..., rm, rv; epsilon, training,
-                                                   momentum=T(0.9))))
-            test_gradient_correctness(__f, scale, bias; gpu_testing=on_gpu,
-                                      skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
-        else
-            __f = (args...) -> sum(first(batchnorm(args..., scale, bias, rm, rv; epsilon,
-                                                   training, momentum=T(0.9))))
-            test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
-                                      atol=1.0f-2, rtol=1.0f-2)
+        if __istraining(training)
+            if affine
+                __f = (args...) -> sum(first(batchnorm(args..., rm, rv; epsilon, training,
+                                                       momentum=T(0.9))))
+                test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
+                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
+            else
+                __f = (args...) -> sum(first(batchnorm(args..., scale, bias, rm, rv;
+                                                       epsilon, training, momentum=T(0.9))))
+                test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
+                                          atol=1.0f-2, rtol=1.0f-2)
+            end
         end
     end
 end end

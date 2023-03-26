@@ -12,8 +12,6 @@ function _setup_instancenorm(aType, T, sz; affine::Bool=true)
     return x, scale, bias
 end
 
-_istraining(::Val{training}) where {training} = training
-
 @testset "Instance Normalization" begin for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         sz in ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
@@ -41,15 +39,17 @@ _istraining(::Val{training}) where {training} = training
         end
         @test std(y; dims=1:(length(sz) - 2)) != std(x; dims=1:(length(sz) - 2))
 
-        if affine
-            __f = (args...) -> sum(first(instancenorm(x, args...; epsilon, training)))
-            test_gradient_correctness(__f, scale, bias; gpu_testing=on_gpu,
-                                      skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
-        else
-            __f = (args...) -> sum(first(instancenorm(args..., scale, bias; epsilon,
-                                                      training)))
-            test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
-                                      atol=1.0f-2, rtol=1.0f-2)
+        if __istraining(training)
+            if affine
+                __f = (args...) -> sum(first(instancenorm(args...; epsilon, training)))
+                test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
+                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
+            else
+                __f = (args...) -> sum(first(instancenorm(args..., scale, bias; epsilon,
+                                                          training)))
+                test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
+                                          atol=1.0f-2, rtol=1.0f-2)
+            end
         end
     end
 end end

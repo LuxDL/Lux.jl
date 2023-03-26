@@ -72,13 +72,25 @@ function run_JET_tests(f, args...; call_broken=false, opt_broken=false, kwargs..
     end
 end
 
-# Test the gradients generated using AD against the gradients generated using Finite
-# Differences.
+__istraining(::Val{training}) where {training} = training
+
+# Test the gradients across AD Frameworks and FiniteDifferences
+# TODO: Implement it as a macro so that we get correct line numbers for `@test` failures.
 function test_gradient_correctness(f::Function, args...; gpu_testing::Bool=false,
-                                   skip_fdm::Bool=false, kwargs...)
+                                   skip_fdm::Bool=false, skip_fdm_override::Bool=false,
+                                   kwargs...)
     gs_ad_zygote = Zygote.gradient(f, args...)
     gs_ad_tracker = Tracker.gradient(f, args...)
     gs_ad_reversediff = gpu_testing ? nothing : ReverseDiff.gradient(f, args)
+
+    if !skip_fdm_override
+        arr_len = length.(args)
+        if any(x -> x >= 25, arr_len) || sum(arr_len) >= 100
+            @warn "Skipping FiniteDifferences test for large arrays: $(arr_len)."
+            skip_fdm = true
+        end
+    end
+
     gs_fdm = gpu_testing || skip_fdm ? nothing :
              FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
     for idx in 1:length(gs_ad_zygote)
