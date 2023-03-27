@@ -47,7 +47,10 @@ end
 @generated function _affine_normalize(x::AbstractArray, xmean::ST, xvar::ST, scale::A,
                                       bias::A, epsilon::Real) where {ST, A}
     if A != Nothing
-        return :(return scale .* (x .- xmean) ./ sqrt.(xvar .+ epsilon) .+ bias)
+        return quote
+            x_norm = (x .- xmean) ./ sqrt.(xvar .+ epsilon)
+            return scale .* x_norm .+ bias
+        end
     else
         return :(return (x .- xmean) ./ sqrt.(xvar .+ epsilon))
     end

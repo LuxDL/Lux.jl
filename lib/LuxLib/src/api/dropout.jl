@@ -107,7 +107,10 @@ end
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
     rng = _replicate(rng)
     noise = rand!(rng, similar(x, _dropout_fptype(x)))
-    return (A .* ifelse.(noise .> p, x, α) .+ B), rng
+    # NOTE(@avik-pal): Combining the last 2 lines causes a compilation error for Tracker
+    #                  on GPU
+    y = ifelse.(noise .> p, x, α)
+    return (A .* y .+ B), rng
 end
 
 alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B) = (x, rng)

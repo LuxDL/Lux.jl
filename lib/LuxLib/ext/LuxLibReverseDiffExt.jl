@@ -27,7 +27,7 @@ end
 @grad_from_chainrules LuxLib._copy_autodiff_barrier(x::TrackedArray)
 @grad_from_chainrules LuxLib._copy_autodiff_barrier(x::TrackedReal)
 
-LuxLib._get_device(x::TrackedArray) = LuxLib._get_device(value(x))
+LuxLib._get_backend(x::TrackedArray) = LuxLib._get_backend(value(x))
 
 # api/dropout.jl
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(value(x))

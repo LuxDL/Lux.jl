@@ -1,7 +1,27 @@
-using CUDA, FiniteDifferences, LuxLib, Test
+using FiniteDifferences, LuxLib, Test
+using LuxCUDA  # CUDA Support
 using ReverseDiff, Tracker, Zygote  # AD Packages
 
 const GROUP = get(ENV, "GROUP", "All")
+
+cpu_testing() = GROUP == "All" || GROUP == "CPU"
+cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && LuxCUDA.functional()
+amdgpu_testing() = (GROUP == "All" || GROUP == "AMDGPU") # && LuxAMDGPU.functional()
+
+const MODES = begin
+    # Mode, Array Type, GPU?
+    cpu_mode = ("CPU", Array, false)
+    cuda_mode = ("CUDA", CuArray, true)
+
+    if GROUP == "All"
+        [cpu_mode, cuda_mode]
+    else
+        modes = []
+        cpu_testing() && push!(modes, cpu_mode)
+        cuda_testing() && push!(modes, cuda_mode)
+        modes
+    end
+end
 
 try
     using JET
@@ -10,10 +30,6 @@ catch
     global test_call(args...; kwargs...) = nothing
     global test_opt(args...; kwargs...) = nothing
 end
-
-cpu_testing() = GROUP == "All" || GROUP == "CPU"
-cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && has_cuda()
-amdgpu_testing() = GROUP == "All" || GROUP == "AMDGPU"
 
 function Base.isapprox(x, y; kwargs...)
     @warn "`isapprox` is not defined for ($(typeof(x)), $(typeof(y))). Using `==` instead."
@@ -56,21 +72,56 @@ function run_JET_tests(f, args...; call_broken=false, opt_broken=false, kwargs..
     end
 end
 
-# Test the gradients generated using AD against the gradients generated using Finite
-# Differences
-# Currently this is called exclusively on CPU. So we can simply use ReverseDiff.
-# However this function has evolved to be more general and can be used to test GPU autodiff.
-function test_gradient_correctness_fdm(f::Function, args...; kwargs...)
+__istraining(::Val{training}) where {training} = training
+
+# Test the gradients across AD Frameworks and FiniteDifferences
+# TODO: Implement it as a macro so that we get correct line numbers for `@test` failures.
+function test_gradient_correctness(f::Function, args...; gpu_testing::Bool=false,
+                                   skip_fdm::Bool=false, skip_fdm_override::Bool=false,
+                                   soft_fail::Bool=false, kwargs...)
     gs_ad_zygote = Zygote.gradient(f, args...)
     gs_ad_tracker = Tracker.gradient(f, args...)
-    gs_ad_reversediff = ReverseDiff.gradient(f, args)
-    gs_fdm = FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
-    for (g_ad_zygote, g_ad_tracker, g_ad_reverse_diff, g_fdm) in zip(gs_ad_zygote,
-                                                                     gs_ad_tracker,
-                                                                     gs_ad_reversediff,
-                                                                     gs_fdm)
-        @test isapprox(g_ad_zygote, g_fdm; kwargs...)
-        @test isapprox(Tracker.data(g_ad_tracker), g_ad_zygote; kwargs...)
-        @test isapprox(ReverseDiff.value(g_ad_reverse_diff), g_ad_zygote; kwargs...)
+    gs_ad_reversediff = gpu_testing ? nothing : ReverseDiff.gradient(f, args)
+
+    if !skip_fdm_override
+        arr_len = length.(args)
+        if any(x -> x >= 25, arr_len) || sum(arr_len) >= 100
+            @warn "Skipping FiniteDifferences test for large arrays: $(arr_len)."
+            skip_fdm = true
+        end
     end
+
+    gs_fdm = gpu_testing || skip_fdm ? nothing :
+             FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
+    for idx in 1:length(gs_ad_zygote)
+        _c1 = isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx]; kwargs...)
+        if soft_fail && !_c1
+            @test_broken isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx];
+                                  kwargs...)
+        else
+            @test isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx]; kwargs...)
+        end
+
+        if !gpu_testing
+            if !skip_fdm
+                _c2 = isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+                if soft_fail && !_c2
+                    @test_broken isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+                else
+                    @test isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+                end
+            end
+
+            _c3 = isapprox(ReverseDiff.value(gs_ad_reversediff[idx]), gs_ad_zygote[idx];
+                           kwargs...)
+            if soft_fail && !_c3
+                @test_broken isapprox(ReverseDiff.value(gs_ad_reversediff[idx]),
+                                      gs_ad_zygote[idx]; kwargs...)
+            else
+                @test isapprox(ReverseDiff.value(gs_ad_reversediff[idx]), gs_ad_zygote[idx];
+                               kwargs...)
+            end
+        end
+    end
+    return
 end

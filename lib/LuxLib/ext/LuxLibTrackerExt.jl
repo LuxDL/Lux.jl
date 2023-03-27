@@ -8,7 +8,7 @@ else
     import ..Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector,
                       TrackedReal
 end
-using CUDA, NNlibCUDA
+using LuxCUDA
 using NNlib, LuxLib
 using LuxLib: _CUDNN_BATCHNORM_FLOAT, _GROUPNORM_IMPL_FLOAT
 import ChainRulesCore as CRC
@@ -61,7 +61,7 @@ function LuxLib._copy_autodiff_barrier(x::Union{TrackedArray, TrackedReal})
     return LuxLib._copy_autodiff_barrier(data(x))
 end
 
-LuxLib._get_device(x::TrackedArray) = LuxLib._get_device(data(x))
+LuxLib._get_backend(x::TrackedArray) = LuxLib._get_backend(data(x))
 
 # api/batchnorm.jl
 _TR_BN = Union{TrackedArray{<:Any, <:Any, <:CuArray{<:_CUDNN_BATCHNORM_FLOAT, 2}},
@@ -81,16 +81,16 @@ function LuxLib.batchnorm(x::_TR_BN, scale::Union{_TR_BN_VEC, Nothing},
     return x_, (; running_mean=rm, running_var=rv)
 end
 
-for RM in (:TrackedVector, :AbstractVector),
-    RV in (:TrackedVector, :AbstractVector),
+for RM in (:TrackedVector, :Nothing, :AbstractVector),
+    RV in (:TrackedVector, :Nothing, :AbstractVector),
     S in (:TrackedVector, :Nothing, :AbstractVector),
     B in (:TrackedVector, :Nothing, :AbstractVector),
     XT in (:TrackedArray, :AbstractArray)
 
-    RM == :AbstractVector &&
-        RV == :AbstractVector &&
-        (S == :AbstractVector || S == Nothing) &&
-        (B == :AbstractVector || B == Nothing) &&
+    (RM == :AbstractVector || RM == :Nothing) &&
+        (RV == :AbstractVector || RV == :Nothing) &&
+        (S == :AbstractVector || S == :Nothing) &&
+        (B == :AbstractVector || B == :Nothing) &&
         XT == :AbstractArray &&
         continue
 
@@ -133,7 +133,7 @@ end
 @grad function LuxLib.groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
                                 bias::AbstractVector{T}; groups::Int,
                                 epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
-    LuxLib._assert_same_device(data(x), data(scale), data(bias))
+    LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of
                              channels (N - 1 dim of the input array)."))
