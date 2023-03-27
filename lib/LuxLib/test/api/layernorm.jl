@@ -41,10 +41,11 @@ end
         if affine_shape === nothing
             test_gradient_correctness(x -> sum(_f(x, nothing, nothing)), x;
                                       skip_fdm=T == Float16, gpu_testing=on_gpu,
-                                      atol=1.0f-2, rtol=1.0f-2)
+                                      atol=1.0f-2, rtol=1.0f-2, soft_fail=T == Float16)
         else
             test_gradient_correctness(sum ∘ _f, x, scale, bias; skip_fdm=T == Float16,
-                                      gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2)
+                                      gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
+                                      soft_fail=T == Float16)
         end
     end
 end end

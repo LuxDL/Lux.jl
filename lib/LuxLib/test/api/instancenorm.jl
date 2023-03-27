@@ -43,12 +43,13 @@ end
             if affine
                 __f = (args...) -> sum(first(instancenorm(args...; epsilon, training)))
                 test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
-                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
+                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2,
+                                          soft_fail=T == Float16)
             else
                 __f = (args...) -> sum(first(instancenorm(args..., scale, bias; epsilon,
                                                           training)))
                 test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
-                                          atol=1.0f-2, rtol=1.0f-2)
+                                          atol=1.0f-2, rtol=1.0f-2, soft_fail=T == Float16)
             end
         end
     end

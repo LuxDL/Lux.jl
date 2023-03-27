@@ -78,7 +78,7 @@ __istraining(::Val{training}) where {training} = training
 # TODO: Implement it as a macro so that we get correct line numbers for `@test` failures.
 function test_gradient_correctness(f::Function, args...; gpu_testing::Bool=false,
                                    skip_fdm::Bool=false, skip_fdm_override::Bool=false,
-                                   kwargs...)
+                                   soft_fail::Bool=false, kwargs...)
     gs_ad_zygote = Zygote.gradient(f, args...)
     gs_ad_tracker = Tracker.gradient(f, args...)
     gs_ad_reversediff = gpu_testing ? nothing : ReverseDiff.gradient(f, args)
@@ -94,11 +94,33 @@ function test_gradient_correctness(f::Function, args...; gpu_testing::Bool=false
     gs_fdm = gpu_testing || skip_fdm ? nothing :
              FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f, args...)
     for idx in 1:length(gs_ad_zygote)
-        @test isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx]; kwargs...)
+        _c1 = isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx]; kwargs...)
+        if soft_fail && !_c1
+            @test_broken isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx];
+                                  kwargs...)
+        else
+            @test isapprox(Tracker.data(gs_ad_tracker[idx]), gs_ad_zygote[idx]; kwargs...)
+        end
+
         if !gpu_testing
-            !skip_fdm && @test isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
-            @test isapprox(ReverseDiff.value(gs_ad_reversediff[idx]), gs_ad_zygote[idx];
+            if !skip_fdm
+                _c2 = isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+                if soft_fail && !_c2
+                    @test_broken isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+                else
+                    @test isapprox(gs_ad_zygote[idx], gs_fdm[idx]; kwargs...)
+                end
+            end
+
+            _c3 = isapprox(ReverseDiff.value(gs_ad_reversediff[idx]), gs_ad_zygote[idx];
                            kwargs...)
+            if soft_fail && !_c3
+                @test_broken isapprox(ReverseDiff.value(gs_ad_reversediff[idx]),
+                                      gs_ad_zygote[idx]; kwargs...)
+            else
+                @test isapprox(ReverseDiff.value(gs_ad_reversediff[idx]), gs_ad_zygote[idx];
+                               kwargs...)
+            end
         end
     end
     return

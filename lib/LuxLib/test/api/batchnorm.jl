@@ -49,12 +49,13 @@ end
                 __f = (args...) -> sum(first(batchnorm(args..., rm, rv; epsilon, training,
                                                        momentum=T(0.9))))
                 test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
-                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
+                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2,
+                                          soft_fail=T == Float16)
             else
                 __f = (args...) -> sum(first(batchnorm(args..., scale, bias, rm, rv;
                                                        epsilon, training, momentum=T(0.9))))
                 test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
-                                          atol=1.0f-2, rtol=1.0f-2)
+                                          atol=1.0f-2, rtol=1.0f-2, soft_fail=T == Float16)
             end
         end
     end

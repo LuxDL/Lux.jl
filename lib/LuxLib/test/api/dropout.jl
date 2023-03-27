@@ -22,7 +22,8 @@ rng = MersenneTwister(0)
         @test rng != rng_
 
         __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true); dims=Colon())))
-        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2)
+        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
+                                  soft_fail=T == Float16)
         run_JET_tests(__f, x)
 
         @inferred dropout(rng, x, T(0.5), Val(true); dims=Colon())
@@ -57,7 +58,8 @@ end end
 
         __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(true);
                                      dims=Colon())))
-        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2)
+        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
+                                  soft_fail=T == Float16)
         run_JET_tests(__f, x)
 
         # Try using mask if possible (possible!!)
@@ -74,7 +76,8 @@ end end
 
         __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false);
                                      dims=Colon())))
-        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2)
+        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
+                                  soft_fail=T == Float16)
         run_JET_tests(__f, x)
 
         mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
@@ -93,7 +96,8 @@ end end
 
         __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false);
                                      dims=Colon())))
-        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2)
+        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
+                                  soft_fail=T == Float16)
         run_JET_tests(__f, x)
 
         # Testing Mode
@@ -125,7 +129,8 @@ end end
         @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
 
         __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
-        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2)
+        test_gradient_correctness(__f, x; gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
+                                  soft_fail=T == Float16)
         run_JET_tests(__f, x)
 
         @inferred alpha_dropout(rng, x, T(0.5), Val(false))

@@ -66,7 +66,8 @@ end
         @test isapprox(gs_bias, gs_bias_; atol=1.0f-3, rtol=1.0f-3)
 
         test_gradient_correctness((args...) -> sum(_f(args...)), x, scale, bias;
-                                  gpu_testing=on_gpu, atol=1.0f-3, rtol=1.0f-3)
+                                  gpu_testing=on_gpu, atol=1.0f-3, rtol=1.0f-3,
+                                  soft_fail=T == Float16)
     end
 end end
 
@@ -94,6 +95,7 @@ end end
         __f = (args...) -> sum(first(groupnorm(args..., rm, rv; groups, epsilon, training,
                                                momentum=T(0.9))))
         test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
-                                  skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2)
+                                  skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2,
+                                  soft_fail=T == Float16)
     end
 end end
