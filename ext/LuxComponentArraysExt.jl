@@ -31,6 +31,14 @@ end
 # Freezing
 Lux._merge(nt1::ComponentArray, nt2::NamedTuple) = merge(NamedTuple(nt1), nt2)
 Lux._merge(nt1::NamedTuple, nt2::ComponentArray) = merge(nt1, NamedTuple(nt2))
+function Lux._merge(p::AbstractArray, ca::ComponentArray)
+    @assert length(p) == 0
+    return ca
+end
+function Lux._merge(ca::ComponentArray, p::AbstractArray)
+    @assert length(p) == 0
+    return ca
+end
 
 # Parameter Sharing
 Lux._parameter_structure(ps::ComponentArray) = Lux._parameter_structure(NamedTuple(ps))
