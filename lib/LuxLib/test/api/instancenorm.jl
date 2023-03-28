@@ -26,30 +26,24 @@ end
         y, nt = instancenorm(x, scale, bias; epsilon, training)
 
         @inferred instancenorm(x, scale, bias; epsilon, training)
-        run_JET_tests(_f, x, scale, bias)
+        @jet _f(x, scale, bias)
         @test y isa aType{T, length(sz)}
         @test size(y) == sz
 
         _target_std = ones(ntuple(_ -> 1, length(sz) - 2)..., size(x)[(end - 1):end]...)
-        if length(sz) != 3
-            @test isapprox(std(Array(y); dims=1:(length(sz) - 2)), _target_std; atol=0.2)
-        else
-            @test_broken isapprox(std(Array(y); dims=1:(length(sz) - 2)), _target_std;
-                                  atol=0.2)
-        end
+        @eval @test check_approx(std(Array($y); dims=1:($(length(sz) - 2))), $_target_std;
+                                 atol=0.2, rtol=0.2)
         @test std(y; dims=1:(length(sz) - 2)) != std(x; dims=1:(length(sz) - 2))
 
         if __istraining(training)
+            fp16 = T == Float16
             if affine
                 __f = (args...) -> sum(first(instancenorm(args...; epsilon, training)))
-                test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
-                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2,
-                                          soft_fail=T == Float16)
+                @eval @test_gradients $__f $x $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             else
                 __f = (args...) -> sum(first(instancenorm(args..., scale, bias; epsilon,
                                                           training)))
-                test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
-                                          atol=1.0f-2, rtol=1.0f-2, soft_fail=T == Float16)
+                @eval @test_gradients $__f $x soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             end
         end
     end
