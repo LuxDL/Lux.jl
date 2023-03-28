@@ -114,9 +114,9 @@ function initialparameters(rng::AbstractRNG, c::Conv{N, use_bias}) where {N, use
     weight = _convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight,
                          groups=c.groups)
     if use_bias
-        return (weight=weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
+        return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
     else
-        return (weight=weight,)
+        return (; weight)
     end
 end
 
@@ -128,13 +128,13 @@ end
 @inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
                           groups=c.groups)
-    return c.activation.(_conv(x, ps.weight, cdims)), st
+    return __apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
                           groups=c.groups)
-    return c.activation.(_conv(x, ps.weight, cdims) .+ ps.bias), st
+    return __apply_activation(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -623,9 +623,9 @@ end
 function initialparameters(rng::AbstractRNG, c::CrossCor{N, use_bias}) where {N, use_bias}
     weight = _convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight)
     if use_bias
-        return (weight=weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
+        return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
     else
-        return (weight=weight,)
+        return (; weight)
     end
 end
 
@@ -642,7 +642,7 @@ end
 @inline function (c::CrossCor{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation);
                           F=true)
-    return c.activation.(_conv(x, ps.weight, cdims) .+ ps.bias), st
+    return __apply_activation(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::CrossCor)
@@ -750,9 +750,9 @@ function initialparameters(rng::AbstractRNG,
     weight = _convfilter(rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight,
                          c.groups)
     if use_bias
-        return (weight=weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
+        return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
     else
-        return (weight=weight,)
+        return (; weight)
     end
 end
 
@@ -771,7 +771,8 @@ end
 @inline function (c::ConvTranspose{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = _conv_transpose_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation,
                                  c.groups)
-    return c.activation.(_conv_transpose(x, ps.weight, cdims) .+ ps.bias), st
+    return __apply_activation(c.activation,
+                              _conv_transpose(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::ConvTranspose)
