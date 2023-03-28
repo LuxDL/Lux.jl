@@ -165,10 +165,13 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
                              tracker_broken::Bool=false, reverse_diff_broken::Bool=false,
                              forward_diff_broken::Bool=false,
                              # Others passed to `check_approx`
-                             kwargs...)
-    orig_expr = QuoteNode(Expr(:macrocall,
-                               GlobalRef(@__MODULE__, Symbol("@test_gradients")),
-                               __source__, f, args...))
+                             atol::Real=0, rtol::Real=atol > 0 ? 0 : √eps(typeof(atol)),
+                             nans::Bool=false, kwargs...)
+    orig_exprs = map(x -> QuoteNode(Expr(:macrocall,
+                                         GlobalRef(@__MODULE__,
+                                                   Symbol("@test_gradients{$x}")),
+                                         __source__, f, args...)),
+                     ("Tracker", "ReverseDiff", "ForwardDiff", "FiniteDifferences"))
     len = length(args)
     __source__ = QuoteNode(__source__)
     return quote
@@ -189,9 +192,9 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
         arr_len = length.(filter(Base.Fix2(isa, AbstractArray), tuple($(esc.(args)...))))
         large_arrays = any(x -> x >= $large_array_length, arr_len) ||
                        sum(arr_len) >= $max_total_array_size
-        # if large_arrays
-        #     @debug "Large arrays detected. Skipping some tests based on keyword arguments."
-        # end
+        if large_arrays
+            @debug "Large arrays detected. Skipping some tests based on keyword arguments."
+        end
 
         gs_fdiff = __gradient(_fdiff_gradient, $(esc(f)), $(esc.(args)...);
                               skip=$skip_forward_diff ||
@@ -208,25 +211,24 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
                                          $gpu_testing)
 
         for idx in 1:($len)
-            __test_gradient_pair_check($__source__, $orig_expr, gs_zygote[idx],
+            __test_gradient_pair_check($__source__, $(orig_exprs[1]), gs_zygote[idx],
                                        gs_tracker[idx], "Zygote", "Tracker";
                                        broken=$tracker_broken, soft_fail=$soft_fail,
-                                       $(kwargs...))
-            __test_gradient_pair_check($__source__, $orig_expr, gs_zygote[idx],
+                                       atol=$atol, rtol=$rtol, nans=$nans)
+            __test_gradient_pair_check($__source__, $(orig_exprs[2]), gs_zygote[idx],
                                        gs_rdiff[idx], "Zygote", "ReverseDiff";
                                        broken=$reverse_diff_broken, soft_fail=$soft_fail,
-                                       $(kwargs...))
-            __test_gradient_pair_check($__source__, $orig_expr, gs_zygote[idx],
+                                       atol=$atol, rtol=$rtol, nans=$nans)
+            __test_gradient_pair_check($__source__, $(orig_exprs[3]), gs_zygote[idx],
                                        gs_fdiff[idx], "Zygote", "ForwardDiff";
                                        broken=$forward_diff_broken, soft_fail=$soft_fail,
-                                       $(kwargs...))
-            __test_gradient_pair_check($__source__, $orig_expr, gs_zygote[idx],
+                                       atol=$atol, rtol=$rtol, nans=$nans)
+            __test_gradient_pair_check($__source__, $(orig_exprs[4]), gs_zygote[idx],
                                        gs_finite_diff[idx], "Zygote", "FiniteDifferences";
                                        broken=$finite_differences_broken,
-                                       soft_fail=$soft_fail, $(kwargs...))
+                                       soft_fail=$soft_fail, atol=$atol, rtol=$rtol,
+                                       nans=$nans)
         end
-
-        return nothing
     end
 end
 
@@ -269,7 +271,7 @@ end
 _rdiff_gradient(f, args...) = _named_tuple.(ReverseDiff.gradient(f, ComponentArray.(args)))
 
 function _fdiff_gradient(f, args...)
-    length(args) == 1 && return ForwardDiff.gradient(f, args[1])
+    length(args) == 1 && return (ForwardDiff.gradient(f, args[1]),)
     N = length(args)
     __f(x::ComponentArray) = f([getproperty(x, Symbol("input_$i")) for i in 1:N]...)
     ca = ComponentArray(NamedTuple{ntuple(i -> Symbol("input_$i"), N)}(args))
@@ -277,7 +279,7 @@ function _fdiff_gradient(f, args...)
 end
 
 function _finitedifferences_gradient(f, args...)
-    return _named_tuple.(FiniteDifferences.grad(FiniteDifferences.central_fdm(8, 1), f,
+    return _named_tuple.(FiniteDifferences.grad(FiniteDifferences.central_fdm(3, 1), f,
                                                 ComponentArray.(args)...))
 end
 
