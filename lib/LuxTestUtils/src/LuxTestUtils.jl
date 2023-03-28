@@ -44,9 +44,13 @@ All additional arguments will be forwarded to `@JET.test_call` and `@JET.test_op
 ## Example
 
 ```julia
-@jet sum([1, 2, 3]) target_modules=(Base, Core)
+using LuxTestUtils
 
-@jet sum(1, 1) target_modules=(Base, Core) opt_broken=true
+@testset "Showcase JET Testing" begin
+    @jet sum([1, 2, 3]) target_modules=(Base, Core)
+
+    @jet sum(1, 1) target_modules=(Base, Core) opt_broken=true
+end
 ```
 """
 macro jet(expr, args...)
@@ -91,7 +95,7 @@ end
 struct GradientComputationSkipped end
 
 @generated function check_approx(x::X, y::Y; kwargs...) where {X, Y}
-    X == GradientComputationSkipped || Y == GradientComputationSkipped && return :(true)
+    (X == GradientComputationSkipped || Y == GradientComputationSkipped) && return :(true)
     hasmethod(isapprox, (X, Y)) && return :(isapprox(x, y; kwargs...))
     return quote
         @warn "No `isapprox` method found for types $(X) and $(Y). Using `==` instead."
@@ -134,7 +138,60 @@ check_approx(x::Tuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y
 """
     @test_gradients f args... [kwargs...]
 
-TODO: Write docs
+Compare the gradients computed by Zygote.jl (Reverse Mode AD) against:
+
+  - Tracker.jl (Reverse Mode AD)
+  - ReverseDiff.jl (Reverse Mode AD)
+  - ForwardDiff.jl (Forward Mode AD)
+  - FiniteDifferences.jl (Finite Differences)
+
+!!! tip
+
+    This function is completely compatible with Test.jl
+
+## Arguments
+
+  - `f`: The function to test.
+  - `args...`: Inputs to `f` wrt which the gradients are computed.
+
+## Keyword Arguments
+
+  - `gpu_testing`: Disables ForwardDiff, ReverseDiff and FiniteDifferences tests. (Default:
+    `false`)
+  - `soft_fail`: If `true`, the test will not fail if any of the gradients are incorrect,
+    instead it will show up as broken. (Default: `false`)
+  - `skip_(tracker|reverse_diff|forward_diff|finite_differences)`: Skip the
+    corresponding gradient computation and check. (Default: `false`)
+  - `large_arrays_skip_(forward_diff|finite_differences)`: Skip the corresponding gradient
+    computation and check for large arrays. (Forward Mode and Finite Differences are not
+    efficient for large arrays.) (Default: `true`)
+  - `large_array_length`: The length of the array above which the gradient computation is
+    considered large. (Default: 25)
+  - `max_total_array_size`: Treat as large array if the total size of all arrays is greater
+    than this value. (Default: 100)
+  - `(tracker|reverse_diff|forward_diff|finite_differences)_broken`: Mark the corresponding
+    gradient test as broken. (Default: `false`)
+
+## Keyword Arguments for `check_approx`
+
+  - `atol`: Absolute tolerance for gradient comparisons. (Default: `0.0`)
+  - `rtol`: Relative tolerance for gradient comparisons.
+    (Default: `atol > 0 ? 0.0 : √eps(typeof(atol))`)
+  - `nans`: Whether or not NaNs are considered equal. (Default: `false`)
+
+## Example
+
+```julia
+using LuxTestUtils
+
+x = randn(10)
+
+@testset "Showcase Gradient Testing" begin
+    @test_gradients sum abs2 x
+
+    @test_gradients prod x
+end
+```
 """
 macro test_gradients(all_args...)
     args, kwargs = [], Pair{Symbol, Any}[]
@@ -165,7 +222,7 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
                              tracker_broken::Bool=false, reverse_diff_broken::Bool=false,
                              forward_diff_broken::Bool=false,
                              # Others passed to `check_approx`
-                             atol::Real=0, rtol::Real=atol > 0 ? 0 : √eps(typeof(atol)),
+                             atol::Real=0.0, rtol::Real=atol > 0 ? 0.0 : √eps(typeof(atol)),
                              nans::Bool=false, kwargs...)
     orig_exprs = map(x -> QuoteNode(Expr(:macrocall,
                                          GlobalRef(@__MODULE__,
@@ -178,16 +235,11 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
         gs_zygote = __gradient(Zygote.gradient, $(esc(f)), $(esc.(args)...);
                                skip=$skip_zygote)
 
-        any_non_array_input = any(!Base.Fix2(isa, AbstractArray), tuple($(esc.(args)...)))
-
         gs_tracker = __gradient(Base.Fix1(broadcast, Tracker.data) ∘ Tracker.gradient,
-                                $(esc(f)), $(esc.(args)...);
-                                skip=$skip_tracker || any_non_array_input)
+                                $(esc(f)), $(esc.(args)...); skip=$skip_tracker)
 
         gs_rdiff = __gradient(_rdiff_gradient, $(esc(f)), $(esc.(args)...);
-                              skip=$skip_reverse_diff ||
-                                   any_non_array_input ||
-                                   $gpu_testing)
+                              skip=$skip_reverse_diff || $gpu_testing)
 
         arr_len = length.(filter(Base.Fix2(isa, AbstractArray), tuple($(esc.(args)...))))
         large_arrays = any(x -> x >= $large_array_length, arr_len) ||
@@ -198,17 +250,15 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
 
         gs_fdiff = __gradient(_fdiff_gradient, $(esc(f)), $(esc.(args)...);
                               skip=$skip_forward_diff ||
-                                   (large_arrays && $large_arrays_skip_forward_diff) ||
-                                   any_non_array_input ||
-                                   $gpu_testing)
+                                   $gpu_testing ||
+                                   (large_arrays && $large_arrays_skip_forward_diff))
 
         gs_finite_diff = __gradient(_finitedifferences_gradient, $(esc(f)),
                                     $(esc.(args)...);
                                     skip=$skip_finite_differences ||
+                                         $gpu_testing ||
                                          (large_arrays &&
-                                          $large_arrays_skip_finite_differences) ||
-                                         any_non_array_input ||
-                                         $gpu_testing)
+                                          $large_arrays_skip_finite_differences))
 
         for idx in 1:($len)
             __test_gradient_pair_check($__source__, $(orig_exprs[1]), gs_zygote[idx],
@@ -264,8 +314,21 @@ function __test_gradient_pair_check(__source__, orig_expr, v1, v2, name1, name2;
 end
 
 function __gradient(gradient_function, f, args...; skip::Bool)
-    return skip ? ntuple(_ -> GradientComputationSkipped(), length(args)) :
-           gradient_function(f, args...)
+    if skip
+        return ntuple(_ -> GradientComputationSkipped(), length(args))
+    else
+        aa_inputs = [map(Base.Fix2(isa, AbstractArray), args)...]
+        __aa_input_idx = cumsum(aa_inputs)
+        sum(aa_inputs) == length(args) && return gradient_function(f, args...)
+        function __f(inputs...)
+            updated_inputs = ntuple(i -> aa_inputs[i] ? inputs[__aa_input_idx[i]] : args[i],
+                                    length(args))
+            return f(updated_inputs...)
+        end
+        gs = gradient_function(__f, [args...][aa_inputs]...)
+        return ntuple(i -> aa_inputs[i] ? gs[__aa_input_idx[i]] :
+                           GradientComputationSkipped(), length(args))
+    end
 end
 
 _rdiff_gradient(f, args...) = _named_tuple.(ReverseDiff.gradient(f, ComponentArray.(args)))
@@ -289,6 +352,11 @@ function __fdiff_compatible_function(f, ::Val{N}) where {N}
     function __fdiff_compatible_function_closure(x::ComponentArray)
         return f([getproperty(x, Symbol("input_$i")) for i in 1:N]...)
     end
+end
+
+function __f_all_abstract_array_input(f, inputs, is_aa)
+    function __f(args...) end
+    return __f, inputs[is_aa]
 end
 
 _named_tuple(x::ComponentArray) = NamedTuple(x)
