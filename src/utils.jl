@@ -237,6 +237,10 @@ function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
     return CRC.ProjectTo(x)(Δ)
 end
 
+# Activation Function
+@inline __apply_activation(::typeof(identity), x) = x
+@inline __apply_activation(f, x) = f.(x)
+
 # Backend Integration
 ## Convolution
 @inline _conv(x, weight, cdims) = conv(x, weight, cdims)

@@ -133,7 +133,7 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         @set! st.running_var = stats.running_var
     end
 
-    return BN.activation.(y), st
+    return __apply_activation(BN.activation, y), st
 end
 
 function Base.show(io::IO, l::BatchNorm)
@@ -296,7 +296,7 @@ function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
         @set! st.running_var = stats.running_var
     end
 
-    return GN.activation.(y), st
+    return __apply_activation(GN.activation, y), st
 end
 
 function Base.show(io::IO, l::GroupNorm)
@@ -410,7 +410,7 @@ function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     y, stats = LuxLib.instancenorm(x, _getproperty(ps, Val(:scale)),
                                    _getproperty(ps, Val(:bias)); IN.epsilon, st.training)
 
-    return IN.activation.(y), st
+    return __apply_activation(IN.activation, y), st
 end
 
 function Base.show(io::IO, l::InstanceNorm)
@@ -626,9 +626,9 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = l.activation.(LuxLib.layernorm(x, _getproperty(ps, Val(:scale)),
-                                       _getproperty(ps, Val(:bias)); l.dims, l.epsilon))
-    return y, st
+    y = LuxLib.layernorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias));
+                         l.dims, l.epsilon)
+    return __apply_activation(l.activation, y), st
 end
 
 function Base.show(io::IO, l::LayerNorm)
