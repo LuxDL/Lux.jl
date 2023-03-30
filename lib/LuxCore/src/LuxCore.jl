@@ -120,7 +120,7 @@ Users implementing their custom layer can extend the same functions as in
 
     Advanced structure manipulation of these layers post construction is possible via
     `Functors.fmap`. For a more flexible interface, we recommend using the experimental
-    feature [`Lux.@layer_map`](@ref).
+    feature `Lux.@layer_map`.
 """
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
