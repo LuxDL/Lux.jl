@@ -2,7 +2,7 @@ module LuxFillArraysExt
 
 isdefined(Base, :get_extension) ? (using FillArrays) : (using ..FillArrays)
 
-using Adapt, CUDA, Lux
+using Adapt, LuxCUDA, Lux
 
 Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(collect(x))
 

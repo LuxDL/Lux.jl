@@ -2,7 +2,7 @@ module LuxZygoteExt
 
 isdefined(Base, :get_extension) ? (using Zygote) : (using ..Zygote)
 
-using Adapt, CUDA, Lux, Setfield
+using Adapt, LuxCUDA, Lux, Setfield
 
 Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 
