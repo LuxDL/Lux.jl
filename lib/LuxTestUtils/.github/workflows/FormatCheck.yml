@@ -3,7 +3,7 @@ name: FormatCheck
 on:
   push:
     branches:
-      - 'main'
+      - 'master'
       - 'release-'
     tags: ['*']
   pull_request:
