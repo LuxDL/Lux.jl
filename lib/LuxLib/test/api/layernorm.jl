@@ -26,7 +26,7 @@ end
         x, scale, bias = _setup_layernorm(aType, T, x_shape, affine_shape)
 
         @inferred _f(x, scale, bias)
-        run_JET_tests(_f, x, scale, bias)
+        @jet _f(x, scale, bias)
 
         y = _f(x, scale, bias)
 
@@ -34,18 +34,17 @@ end
         @test size(y) == x_shape
 
         if affine_shape === nothing
-            @test isapprox(mean(y; dims), 0; atol=1e-3, rtol=1e-3)
-            @test isapprox(std(y; dims), 1; atol=1e-1, rtol=1e-1)
+            @test check_approx(mean(y; dims), 0; atol=1e-3, rtol=1e-3)
+            @test check_approx(std(y; dims), 1; atol=1e-1, rtol=1e-1)
         end
 
+        fp16 = T == Float16
         if affine_shape === nothing
-            test_gradient_correctness(x -> sum(_f(x, nothing, nothing)), x;
-                                      skip_fdm=T == Float16, gpu_testing=on_gpu,
-                                      atol=1.0f-2, rtol=1.0f-2, soft_fail=T == Float16)
+            __f = x -> sum(_f(x, nothing, nothing))
+            @eval @test_gradients $__f $x soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
         else
-            test_gradient_correctness(sum ∘ _f, x, scale, bias; skip_fdm=T == Float16,
-                                      gpu_testing=on_gpu, atol=1.0f-2, rtol=1.0f-2,
-                                      soft_fail=T == Float16)
+            __f = sum ∘ _f
+            @eval @test_gradients $__f $x $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
         end
     end
 end end

@@ -45,7 +45,7 @@ end
                                                   bias)
 
         @inferred groupnorm(x, scale, bias; groups, epsilon)
-        run_JET_tests(_f, x, scale, bias; opt_broken=true)
+        @jet _f(x, scale, bias) opt_broken=true
         @test y isa aType{T, 4}
         @test size(y) == sz
 
@@ -60,14 +60,14 @@ end
 
         # The KA implementation reorders operations manually for maximal
         # performance. Hence equality cannot be guaranteed.
-        @test isapprox(y, y_; atol=1.0f-3, rtol=1.0f-3)
-        @test isapprox(gs_x, gs_x_; atol=1.0f-3, rtol=1.0f-3)
-        @test isapprox(gs_scale, gs_scale_; atol=1.0f-3, rtol=1.0f-3)
-        @test isapprox(gs_bias, gs_bias_; atol=1.0f-3, rtol=1.0f-3)
+        @test check_approx(y, y_; atol=1.0f-3, rtol=1.0f-3)
+        @test check_approx(gs_x, gs_x_; atol=1.0f-3, rtol=1.0f-3)
+        @test check_approx(gs_scale, gs_scale_; atol=1.0f-3, rtol=1.0f-3)
+        @test check_approx(gs_bias, gs_bias_; atol=1.0f-3, rtol=1.0f-3)
 
-        test_gradient_correctness((args...) -> sum(_f(args...)), x, scale, bias;
-                                  gpu_testing=on_gpu, atol=1.0f-3, rtol=1.0f-3,
-                                  soft_fail=T == Float16)
+        fp16 = T == Float16
+        __f = sum ∘ _f
+        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=1.0f-3 rtol=1.0f-3 soft_fail=$fp16
     end
 end end
 
@@ -85,17 +85,16 @@ end end
 
         @inferred groupnorm(x, scale, bias, rm, rv; groups, epsilon, training,
                             momentum=T(0.9))
-        run_JET_tests(_f, x, scale, bias, rm, rv; opt_broken=true)
+        @jet _f(x, scale, bias, rm, rv) opt_broken=true
 
         @test y isa aType{T, 4}
         @test size(y) == sz
         @test size(nt.running_mean) == (groups,)
         @test size(nt.running_var) == (groups,)
 
+        fp16 = T == Float16
         __f = (args...) -> sum(first(groupnorm(args..., rm, rv; groups, epsilon, training,
                                                momentum=T(0.9))))
-        test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
-                                  skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2,
-                                  soft_fail=T == Float16)
+        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16
     end
 end end

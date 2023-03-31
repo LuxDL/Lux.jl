@@ -34,7 +34,8 @@ end
         y, nt = batchnorm(x, scale, bias, rm, rv; epsilon, training, momentum=T(0.9))
 
         @inferred batchnorm(x, scale, bias, rm, rv; epsilon, training, momentum=T(0.9))
-        run_JET_tests(_f, x, scale, bias, rm, rv)
+
+        @jet _f(x, scale, bias, rm, rv)
 
         @test y isa aType{T, length(sz)}
         @test size(y) == sz
@@ -45,17 +46,16 @@ end
         end
 
         if __istraining(training)
+            fp16 = T == Float16
             if affine
                 __f = (args...) -> sum(first(batchnorm(args..., rm, rv; epsilon, training,
                                                        momentum=T(0.9))))
-                test_gradient_correctness(__f, x, scale, bias; gpu_testing=on_gpu,
-                                          skip_fdm=T == Float16, atol=1.0f-2, rtol=1.0f-2,
-                                          soft_fail=T == Float16)
+                @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
             else
                 __f = (args...) -> sum(first(batchnorm(args..., scale, bias, rm, rv;
                                                        epsilon, training, momentum=T(0.9))))
-                test_gradient_correctness(__f, x; gpu_testing=on_gpu, skip_fdm=T == Float16,
-                                          atol=1.0f-2, rtol=1.0f-2, soft_fail=T == Float16)
+
+                @eval @test_gradients $__f $x gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
             end
         end
     end
