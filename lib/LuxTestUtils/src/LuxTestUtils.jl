@@ -287,31 +287,34 @@ function __test_gradient_pair_check(__source__, orig_expr, v1, v2, name1, name2;
     match = check_approx(v1, v2; kwargs...)
     test_type = Symbol("@test_gradients{$name1, $name2}")
 
-    if !soft_fail
-        if broken
-            if !match
-                test_res = Test.Broken(test_type, orig_expr)
-            else
-                test_res = Test.Error(test_type, orig_expr, nothing, nothing, __source__)
-            end
-        else
-            if match
-                test_res = Test.Pass(test_type, orig_expr, nothing, nothing, __source__)
-            else
-                test_res = Test.Fail(test_type, orig_expr, nothing, nothing, nothing,
-                                     __source__)
-            end
-        end
-    else
-        if match
-            test_res = Test.Pass(test_type, orig_expr, nothing, nothing, __source__)
-        else
-            test_res = Test.Broken(test_type, orig_expr)
-        end
-    end
+    test_func = soft_fail ? (match ? __test_pass : __test_broken) :
+                (broken ? (match ? __test_error : __test_broken) :
+                 (match ? __test_pass : __test_fail))
 
-    return Test.record(Test.get_testset(), test_res)
+    return Test.record(Test.get_testset(), test_func(test_type, orig_expr, __source__))
 end
+
+function __test_pass(test_type, orig_expr, source)
+    @static if VERSION >= v"1.7"
+        return Test.Pass(test_type, orig_expr, nothing, nothing, source)
+    else
+        return Test.Pass(test_type, orig_expr, nothing, nothing)
+    end
+end
+
+function __test_fail(test_type, orig_expr, source)
+    @static if VERSION >= v"1.7"
+        return Test.Fail(test_type, orig_expr, nothing, nothing, nothing, source)
+    else
+        return Test.Fail(test_type, orig_expr, nothing, nothing, source)
+    end
+end
+
+function __test_error(test_type, orig_expr, source)
+    return Test.Error(test_type, orig_expr, nothing, nothing, source)
+end
+
+__test_broken(test_type, orig_expr, source) = Test.Broken(test_type, orig_expr)
 
 function __gradient(gradient_function, f, args...; skip::Bool)
     if skip
