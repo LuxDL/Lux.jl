@@ -304,7 +304,7 @@ end
 
 function __test_fail(test_type, orig_expr, source)
     @static if VERSION >= v"1.9.0-rc1"
-        return Test.Fail(test_type, orig_expr, nothing, nothing, nothing, source)
+        return Test.Fail(test_type, orig_expr, nothing, nothing, nothing, source, false)
     else
         return Test.Fail(test_type, orig_expr, nothing, nothing, source)
     end
