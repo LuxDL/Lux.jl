@@ -24,10 +24,13 @@ end
         end
     end
 
-    function Base.show(io::IO, t::Type{<:NamedTuple{fields}}) where {fields}
-        if TruncatedStacktraces.VERBOSE[]
+    function Base.show(io::IO, t::Type{<:NamedTuple})
+        if (TruncatedStacktraces.VERBOSE[] ||
+            !hasfield(t, :parameters) ||
+            length(t.parameters) == 0)
             invoke(show, Tuple{IO, Type}, io, t)
         else
+            fields = first(t.parameters)
             fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
                                (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
                                 (length(fields) == 1 ? "$(fields[1])" : ""))
