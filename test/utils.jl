@@ -1,4 +1,4 @@
-using Lux, ComponentArrays, CUDA, Functors, ReverseDiff, Random, Optimisers, Zygote, Test
+using Lux, ComponentArrays, LuxCUDA, Functors, Random, Optimisers, Zygote, Test
 using Statistics: std
 
 include("test_utils.jl")
@@ -19,15 +19,10 @@ Random.seed!(rng, 0)
     @test Lux._nfan(4, 5, 6) == 4 .* (5, 6)
 end
 
-@testset "replicate" begin
-    @test randn(rng, 10, 2) != randn(rng, 10, 2)
-    @test randn(Lux.replicate(rng), 10, 2) == randn(Lux.replicate(rng), 10, 2)
-
-    if CUDA.functional()
-        curng = CUDA.RNG()
-        @test randn(curng, 10, 2) != randn(curng, 10, 2)
-        @test randn(Lux.replicate(curng), 10, 2) == randn(Lux.replicate(curng), 10, 2)
-    end
+@testset "$mode: replicate" for (mode, aType, device, ongpu) in MODES
+    _rng = get_default_rng(mode)
+    @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
+    @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
 end
 
 @testset "kaiming" begin
@@ -62,21 +57,19 @@ end
 
     @test x1 == x[1:5, :]
     @test x2 == x[6:10, :]
-    @inferred Lux.multigate(x, Val(2))
 
-    run_JET_tests(Lux.multigate, x, Val(2))
+    @jet Lux.multigate(x, Val(2))
 
     x = randn(rng, 10)
     x1, x2 = Lux.multigate(x, Val(2))
 
     @test x1 == x[1:5]
     @test x2 == x[6:10]
-    @inferred Lux.multigate(x, Val(2))
 
-    run_JET_tests(Lux.multigate, x, Val(2))
+    @jet Lux.multigate(x, Val(2))
 end
 
-@testset "ComponentArrays" begin
+@testset "$mode: ComponentArrays" for (mode, aType, device, ongpu) in MODES
     ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
     p_flat, re = Optimisers.destructure(ps)
     ps_c = ComponentArray(ps)
@@ -100,29 +93,17 @@ end
     println()
 
     # Optimisers
-    opt = Optimisers.ADAM(0.001f0)
+    opt = Adam(0.001f0)
+    ps_c = ps_c |> device
     st_opt = Optimisers.setup(opt, ps_c)
 
     @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
     @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
-
-    if CUDA.functional()
-        ps_c = ps_c |> gpu
-        st_opt = Optimisers.setup(opt, ps_c)
-
-        @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
-        @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
-    end
 end
 
-@testset "_init_hidden_state" begin
+@testset "$mode: _init_hidden_state" for (mode, aType, device, ongpu) in MODES
     rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
     x = randn(rng, Float32, 3, 2, 2)
-    @test Lux._init_hidden_state(rng, rnn, view(x, :, 1, :)) == zeros(Float32, 5, 2)
-
-    if CUDA.functional()
-        x = x |> gpu
-        @test Lux._init_hidden_state(rng, rnn, view(x, :, 1, :)) ==
-              CUDA.zeros(Float32, 5, 2)
-    end
+    @test Lux._init_hidden_state(rng, rnn, view(device(x), :, 1, :)) ==
+          aType(zeros(Float32, 5, 2))
 end

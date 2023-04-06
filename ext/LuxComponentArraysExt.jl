@@ -54,7 +54,7 @@ function CRC.rrule(::Type{ComponentArray}, nt::NamedTuple)
               "of shape $(size(res)) & type $(typeof(res))")
         return nothing
     end
-    CA_NT_pullback(Δ::ComponentArray) = (@show Δ; (CRC.NoTangent(), NamedTuple(Δ)))
+    CA_NT_pullback(Δ::ComponentArray) = CRC.NoTangent(), NamedTuple(Δ)
     return res, CA_NT_pullback
 end
 

@@ -1,9 +1,9 @@
 using Lux, Functors, Random, Test
+import LuxCUDA
+import LuxCUDA.CUDA
 
-import CUDA
-
-if CUDA.functional()
-    using CUDA  # exports CuArray, etc
+if LuxCUDA.functional()
+    using LuxCUDA.CUDA  # exports CuArray, etc
     @info "starting CUDA tests"
 else
     @info "CUDA not functional, testing via JLArrays"

@@ -2,50 +2,49 @@ using Lux, Optimisers, Random, Test
 
 include("../test_utils.jl")
 
-function _get_TrainState()
-    rng = MersenneTwister(0)
-
-    model = Lux.Dense(3, 2)
-    opt = Optimisers.Adam(0.01f0)
-
-    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt)
-
-    x = randn(Lux.replicate(rng), Float32, (3, 1))
-
-    return rng, tstate, model, opt, x
-end
-
 function _loss_function(model, ps, st, data)
     y, st = model(data, ps, st)
     return sum(y), st, ()
 end
 
-function test_TrainState_constructor()
-    rng, tstate, model, opt, _ = _get_TrainState()
+@testset "$mode: TrainState" for (mode, aType, device, ongpu) in MODES
+    rng = MersenneTwister(0)
 
-    ps, st = Lux.setup(Lux.replicate(rng), model)
+    model = Dense(3, 2)
+    opt = Adam(0.01f0)
+
+    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt;
+                                     transform_variables=device)
+
+    x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
+
+    ps, st = Lux.setup(Lux.replicate(rng), model) .|> device
     opt_st = Optimisers.setup(opt, tstate.parameters)
 
-    @test tstate.model == model
-    @test tstate.parameters == ps
-    @test tstate.states == st
-    @test isapprox(tstate.optimizer_state, opt_st)
+    @test check_approx(tstate.model, model)
+    @test check_approx(tstate.parameters, ps)
+    @test check_approx(tstate.states, st)
+    @test check_approx(tstate.optimizer_state, opt_st)
     @test tstate.step == 0
-
-    return nothing
 end
 
-function test_abstract_vjp_interface()
-    _, tstate, _, _, x = _get_TrainState()
+@testset "$mode: AbstractVJP" for (mode, aType, device, ongpu) in MODES
+    rng = MersenneTwister(0)
 
-    @testset "NotImplemented" begin for vjp_rule in (Lux.Training.EnzymeVJP(),
-                                                     Lux.Training.YotaVJP())
+    model = Dense(3, 2)
+    opt = Adam(0.01f0)
+
+    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt;
+                                     transform_variables=device)
+
+    x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
+
+    @testset "NotImplemented $(string(vjp_rule))" for vjp_rule in (Lux.Training.EnzymeVJP(),
+                                                                   Lux.Training.YotaVJP())
         @test_throws ArgumentError Lux.Training.compute_gradients(vjp_rule, _loss_function,
                                                                   x, tstate)
-    end end
+    end
 
-    # Gradient Correctness should be tested in `test/autodiff.jl` and other parts of the
-    # testing codebase. Here we only test that the API works.
     for vjp_rule in (Lux.Training.ZygoteVJP(), Lux.Training.TrackerVJP())
         grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(vjp_rule,
                                                                      _loss_function, x,
@@ -54,9 +53,4 @@ function test_abstract_vjp_interface()
         @test tstate_.step == 1
         @test tstate != tstate_
     end
-
-    return nothing
 end
-
-@testset "TrainState" begin test_TrainState_constructor() end
-@testset "AbstractVJP" begin test_abstract_vjp_interface() end
