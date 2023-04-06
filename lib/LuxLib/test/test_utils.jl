@@ -13,14 +13,10 @@ const MODES = begin
     cpu_mode = ("CPU", Array, false)
     cuda_mode = ("CUDA", CuArray, true)
 
-    if GROUP == "All"
-        [cpu_mode, cuda_mode]
-    else
-        modes = []
-        cpu_testing() && push!(modes, cpu_mode)
-        cuda_testing() && push!(modes, cuda_mode)
-        modes
-    end
+    modes = []
+    cpu_testing() && push!(modes, cpu_mode)
+    cuda_testing() && push!(modes, cuda_mode)
+    modes
 end
 
 __istraining(::Val{training}) where {training} = training
