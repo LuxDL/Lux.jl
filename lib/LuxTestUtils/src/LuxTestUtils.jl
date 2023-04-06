@@ -114,13 +114,13 @@ function check_approx(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
                       kwargs...) where {fields}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
     _check_approx(t::Tuple{Nothing, Nothing}) = true
-    return all(_checkapprox, zip(values(nt1), values(nt2)))
+    return all(_check_approx, zip(values(nt1), values(nt2)))
 end
 
 function check_approx(t1::NTuple{N, T}, t2::NTuple{N, T}; kwargs...) where {N, T}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
     _check_approx(t::Tuple{Nothing, Nothing}) = true
-    return all(_checkapprox, zip(t1, t2))
+    return all(_check_approx, zip(t1, t2))
 end
 
 check_approx(::Nothing, v::AbstractArray; kwargs...) = length(v) == 0
