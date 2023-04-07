@@ -135,13 +135,16 @@ flowchart LR
 If you found this library to be useful in academic work, then please cite:
 
 ```bibtex
-@software{pal2022lux,
-    author = {Pal, Avik},
-    title = {{L}ux: Explicit Parameterization of Deep Neural Networks in Julia},
-    year = {2022},
-    publisher = {GitHub},
-    journal = {GitHub repository},
-    howpublished = {\url{https://github.com/avik-pal/Lux.jl/}}
+@software{pal2023lux,
+  author       = {Pal, Avik},
+  title        = {{Lux: Explicit Parameterization of Deep Neural Networks in Julia}},
+  month        = April,
+  year         = 2023,
+  note         = {If you use this software, please cite it as below.},
+  publisher    = {Zenodo},
+  version      = {v0.4.50},
+  doi          = {10.5281/zenodo.7808904},
+  url          = {https://doi.org/10.5281/zenodo.7808904}
 }
 ```
 
