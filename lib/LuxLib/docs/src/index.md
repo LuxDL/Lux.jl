@@ -14,21 +14,24 @@
 
 Backend for [Lux.jl](http://lux.csail.mit.edu/stable).
 
-## Tutorials
+```@meta
+CurrentModule = LuxLib
+```
 
-This is a developer-facing project and most users **should not** depend on it directly. As
-such, we don't have tutorials for this package. Instead, we recommend you check out the
-[Lux tutorials](http://lux.csail.mit.edu/stable/).
+## API Reference
 
-## What's the distinction from NNlib.jl?
+### Dropout
 
-Think of this package as a temporary location for functionalities that will move into
-NNlib.jl. At the moment, this is supposed to be a heavier dependency than NNlib.jl, and
-it makes no attempt to separate code across different architectures.
+```@docs
+alpha_dropout
+dropout
+```
 
-## Changelog
+### Normalization
 
-### Updating from v0.1 to v0.2
-
-Support for `CUDA` has been moved to a weak dependency. If you want to use `CUDA`, you need
-to install and load `LuxCUDA` as `using LuxCUDA` or `import LuxCUDA`.
+```@docs
+batchnorm
+groupnorm
+instancenorm
+layernorm
+```
