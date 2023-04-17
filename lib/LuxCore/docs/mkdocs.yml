@@ -38,7 +38,7 @@ extra:
 site_name: LuxCore.jl
 site_description: Documentation for LuxCore.jl
 site_author: Avik Pal
-site_url: https://lux.csail.mit.edu/luxcore/
+site_url: https://luxdl.github.io/LuxCore.jl/
 
 repo_url: https://github.com/LuxDL/LuxCore.jl
 repo_name: LuxDL/LuxCore.jl

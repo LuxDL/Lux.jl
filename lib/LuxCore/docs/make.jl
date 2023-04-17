@@ -3,7 +3,7 @@ using Documenter, DocumenterMarkdown, LuxCore
 deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/LuxDL/LuxCore.jl.git")
 
-makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
+makedocs(; sitename="LuxCore", authors="Avik Pal et al.", clean=true, doctest=true,
          modules=[LuxCore],
          strict=[:doctest, :linkcheck, :parse_error, :example_block, :missing_docs],
          checkdocs=:all, format=Markdown(), draft=false, build=joinpath(@__DIR__, "docs"))
