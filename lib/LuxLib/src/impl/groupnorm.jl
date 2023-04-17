@@ -2,8 +2,6 @@
 _linear_threads_groupnorm(::CPU) = Threads.nthreads()
 _linear_threads_groupnorm(::GPU) = 256
 
-_GROUPNORM_IMPL_FLOAT = Union{Float32, Float64}
-
 # Low-Level Kernels
 ## Original Implementation: https://github.com/pytorch/pytorch/blob/master/caffe2/operators/group_norm_op.cu
 @kernel function _compute_fused_params_kernel!(scale, bias, @Const(C), @Const(K),
@@ -52,8 +50,8 @@ end
 end
 
 # High-Level Function (Not User Facing)
-@inbounds function _groupnorm(X::AbstractArray{T, 4}, G::Int, gamma::AbstractVector{T},
-                              beta::AbstractVector{T}, epsilon::T) where {T}
+@inbounds function _groupnorm(X::AA{T, 4}, G::Int, gamma::AV{T}, beta::AV{T},
+                              epsilon::T) where {T}
     W, H, C, N = size(X)
     K = div(C, G)
 
@@ -80,10 +78,8 @@ end
     return Y, mu, rsig
 end
 
-@inbounds function _dgroupnorm(dY::AbstractArray{T, 4}, Y::AbstractArray{T, 4},
-                               X::AbstractArray{T, 4}, G::Int, gamma::AbstractVector{T},
-                               beta::AbstractVector{T}, mu::AbstractArray{T, 5},
-                               rsig::AbstractArray{T, 5}) where {T}
+@inbounds function _dgroupnorm(dY::AA{T, 4}, Y::AA{T, 4}, X::AA{T, 4}, G::Int, gamma::AV{T},
+                               beta::AV{T}, mu::AA{T, 5}, rsig::AA{T, 5}) where {T}
     W, H, C, N = size(X)
     K = div(C, G)
     WxH = W * H

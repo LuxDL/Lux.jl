@@ -1,3 +1,11 @@
+# Shorthand Types
+const AA = AbstractArray
+const AV = AbstractVector
+const NOrAVR = Union{Nothing, AbstractVector{<:Real}}
+const FP_32_64 = Union{Float32, Float64}
+const ∂∅ = NoTangent()
+
+# Utilities
 _div_idx(idx, n) = div(idx - 1, n) + 1
 _mod_idx(idx, n) = mod(idx - 1, n) + 1
 
@@ -43,7 +51,6 @@ _copy_autodiff_barrier(::Nothing) = nothing
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
 
 _replicate(rng::AbstractRNG) = copy(rng)
-_replicate(rng::CUDA.RNG) = deepcopy(rng)
 
 CRC.@non_differentiable _replicate(::Any)
 
@@ -52,3 +59,7 @@ CRC.@non_differentiable _replicate(::Any)
 function _var(x, ::Val{corrected}, _mean, ::Val{dims}) where {corrected, dims}
     return sum((x .- _mean) .^ 2; dims) ./ (prod(Base.Fix1(size, x), dims) - corrected)
 end
+
+# Meta Programming Utilities
+__is_tracked(x) = x == :TrackedArray || x == :TrackedVector
+__is_tracked(args...) = any(__is_tracked, args)

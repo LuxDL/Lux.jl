@@ -38,38 +38,17 @@ fallback is used which is not highly optimized.
     training by reducing internal covariate shift." International conference on machine
     learning. PMLR, 2015.
 """
-function batchnorm(x::AbstractArray{<:Real, N},
-                   scale::Union{AbstractVector{<:Real}, Nothing},
-                   bias::Union{AbstractVector{<:Real}, Nothing},
-                   running_mean::Union{AbstractVector{<:Real}, Nothing},
-                   running_var::Union{AbstractVector{<:Real}, Nothing}; momentum::Real,
-                   training::Val, epsilon::Real) where {N}
+function batchnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::NOrAVR,
+                   running_var::NOrAVR; momentum::Real, training::Val,
+                   epsilon::Real) where {N}
     x_, xm, xv = _normalization(x, running_mean, running_var, scale, bias,
                                 _get_batchnorm_reduce_dims(x), training, momentum, epsilon)
 
     return x_, (; running_mean=xm, running_var=xv)
 end
 
-@generated function _get_batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
+@generated function _get_batchnorm_reduce_dims(::AA{T, N}) where {T, N}
     return :($(Val(Tuple(collect([1:(N - 2); N])))))
-end
-
-_CUDNN_BATCHNORM_FLOAT = Union{Float32, Float64}
-
-_CUDNN_BATCHNORM_ARRAY_TYPE = Union{CuArray{<:_CUDNN_BATCHNORM_FLOAT, 2},
-                                    CuArray{<:_CUDNN_BATCHNORM_FLOAT, 4},
-                                    CuArray{<:_CUDNN_BATCHNORM_FLOAT, 5}}
-
-function batchnorm(x::_CUDNN_BATCHNORM_ARRAY_TYPE,
-                   scale::Union{CuVector{<:_CUDNN_BATCHNORM_FLOAT}, Nothing},
-                   bias::Union{CuVector{<:_CUDNN_BATCHNORM_FLOAT}, Nothing},
-                   running_mean::Union{CuVector{<:_CUDNN_BATCHNORM_FLOAT}, Nothing},
-                   running_var::Union{CuVector{<:_CUDNN_BATCHNORM_FLOAT}, Nothing};
-                   momentum::Real, training::Val, epsilon::Real)
-    rm, rv = _get_batchnorm_statistics(x, running_mean, running_var, training)
-
-    x_ = _batchnorm_cudnn!(rm, rv, scale, bias, x, momentum, epsilon, training)
-    return x_, (; running_mean=rm, running_var=rv)
 end
 
 function _get_batchnorm_statistics(x, running_mean, running_var,
@@ -87,20 +66,4 @@ function _get_batchnorm_statistics(x, running_mean, running_var,
     return rm, rv
 end
 
-function _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum, eps,
-                           ::Val{training}) where {training}
-    return NNlibCUDA.batchnorm(scale, bias, x, running_mean, running_var, momentum; eps,
-                               training)
-end
-
-function CRC.rrule(::typeof(_batchnorm_cudnn!), running_mean, running_var, scale, bias, x,
-                   momentum, epsilon, t::Val{training}) where {training}
-    y = _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum, epsilon, t)
-    function _batchnorm_cudnn!_pullback(dy)
-        dg, db, dx = NNlibCUDA.∇batchnorm(scale, bias, x, unthunk(dy), running_mean,
-                                          running_var, momentum; eps=epsilon, training)
-        return (NoTangent(), NoTangent(), NoTangent(), dg, db, dx, NoTangent(), NoTangent(),
-                NoTangent())
-    end
-    return y, _batchnorm_cudnn!_pullback
-end
+function _batchnorm_cudnn! end
