@@ -17,19 +17,18 @@ function _update_normalization_statistics(x::AbstractArray{<:Real, N},
 end
 
 @generated function _get_batch_statistics(x::AbstractArray, running_mean::R, running_var::R,
-                                          r::Val{reduce_dims}, ::Val{training},
-                                          momentum::Real,
-                                          epsilon::Real) where {R, reduce_dims, training}
+                                          r::Val{rdims}, ::Val{training}, momentum::Real,
+                                          epsilon::Real) where {R, rdims, training}
     calls = []
     if !training
         if R == Nothing
-            push!(calls, :(batchmean = mean(x; dims=reduce_dims)))
+            push!(calls, :(batchmean = mean(x; dims=rdims)))
             push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
         else
             push!(calls, :((batchmean, batchvar) = (running_mean, running_var)))
         end
     else
-        push!(calls, :(batchmean = mean(x; dims=reduce_dims)))
+        push!(calls, :(batchmean = mean(x; dims=rdims)))
         push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
 
         if R != Nothing

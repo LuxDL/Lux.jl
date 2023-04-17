@@ -15,8 +15,8 @@ statistics.
   - `x`: Input to be Normalized
   - `scale`: Scale factor (``\gamma``) (can be `nothing`)
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
-  - `running_mean`: Running mean of the inputs. Must be an `AbstractVector` or `nothing`.
-  - `running_var`: Running variance of the inputs. Must be an `AbstractVector` or `nothing`.
+  - `running_mean`: Running mean of the inputs. Must be an `AV` or `nothing`.
+  - `running_var`: Running variance of the inputs. Must be an `AV` or `nothing`.
 
 ## Keyword Arguments
 
@@ -59,52 +59,42 @@ interface.
 [1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
     on computer vision (ECCV). 2018.
 """
-function groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
-                   bias::AbstractVector{T}; groups::Int,
-                   epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
+function groupnorm(x::AA{T, 4}, scale::AV{T}, bias::AV{T}; groups::Int,
+                   epsilon::Real) where {T <: FP_32_64}
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
-                            "channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
-                            "number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
     return first(_groupnorm(x, groups, scale, bias, T(epsilon)))
 end
 
-function groupnorm(x::AbstractArray{T, 4}, scale::AbstractVector{T},
-                   bias::AbstractVector{T}, ::Nothing, ::Nothing; groups::Int,
-                   epsilon::Real, momentum=0.9f0,
-                   training::Val=Val(true)) where {T <: _GROUPNORM_IMPL_FLOAT}
+function groupnorm(x::AA{T, 4}, scale::AV{T}, bias::AV{T}, ::Nothing, ::Nothing;
+                   groups::Int, epsilon::Real, momentum=0.9f0,
+                   training::Val=Val(true)) where {T <: FP_32_64}
     return groupnorm(x, scale, bias; groups, epsilon),
            (running_mean=nothing, running_var=nothing)
 end
 
 # For any reason if the fast path is not possible, then we use the fallback implementation
-function groupnorm(x::AbstractArray, scale::AbstractVector, bias::AbstractVector;
-                   groups::Int, epsilon::Real)
+function groupnorm(x::AA, scale::AV, bias::AV; groups::Int, epsilon::Real)
     return groupnorm(x, scale, bias, nothing, nothing; groups, epsilon,
                      momentum=eltype(x)(0.9), training=Val(true))[1]
 end
 
 # Slow Fallback (without custom Pullback Implementation)
-function groupnorm(x::AbstractArray{<:Real, N},
-                   scale::Union{Nothing, AbstractVector{<:Real}},
-                   bias::Union{Nothing, AbstractVector{<:Real}},
-                   running_mean::Union{Nothing, AbstractVector{<:Real}},
-                   running_var::Union{Nothing, AbstractVector{<:Real}}; groups::Int,
-                   momentum::Real, training::Val, epsilon::Real) where {N}
+function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::NOrAVR,
+                   running_var::NOrAVR; groups::Int, momentum::Real, training::Val,
+                   epsilon::Real) where {N}
     _assert_same_backend(x, scale, bias, running_mean, running_var)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
-                            "channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
     end
     if size(x, N - 1) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
-                            "number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
     sz = size(x)
@@ -116,28 +106,25 @@ function groupnorm(x::AbstractArray{<:Real, N},
     return reshape(x_, sz), (; running_mean=xmean, running_var=xvar)
 end
 
-@generated function _get_groupnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
+@generated function _get_groupnorm_reduce_dims(::AA{T, N}) where {T, N}
     return :($(Val(Tuple(collect(1:(N - 1))))))
 end
 
 # Custom Pullbacks
-function CRC.rrule(::typeof(groupnorm), x::AbstractArray{T, 4}, scale::AbstractVector{T},
-                   bias::AbstractVector{T}; groups::Int,
-                   epsilon::Real) where {T <: _GROUPNORM_IMPL_FLOAT}
+function CRC.rrule(::typeof(groupnorm), x::AA{T, 4}, scale::AV{T}, bias::AV{T}; groups::Int,
+                   epsilon::Real) where {T <: FP_32_64}
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of " *
-                            "channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the " *
-                            "number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
     y, mu, rsig = _groupnorm(x, groups, scale, bias, epsilon)
     function groupnorm_pullback(dy)
         dx, dscale, dbias = _dgroupnorm(dy, y, x, groups, scale, bias, mu, rsig)
-        return NoTangent(), dx, dscale, dbias
+        return ∂∅, dx, dscale, dbias
     end
     return y, groupnorm_pullback
 end

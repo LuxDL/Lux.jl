@@ -13,7 +13,7 @@ else
 end
 using ChainRulesCore, LuxLib, NNlib
 import ChainRulesCore as CRC
-import LuxLib: groupnorm, _GROUPNORM_IMPL_FLOAT
+import LuxLib: AA, __is_tracked
 
 # Patches: Needs upstreaming
 @inline function increment_deriv!(t::Union{TrackedArray, TrackedReal}, ::NoTangent, i)
@@ -35,10 +35,10 @@ LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(value(x))
 # Patch Conv for ReverseDiff
 # NOTE: @grad_from_chainrules was not working for ConvDims!
 for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
-    xType in (:TrackedArray, :AbstractArray),
-    wType in (:TrackedArray, :AbstractArray)
+    xType in (:AbstractArray, :TrackedArray),
+    wType in (:AbstractArray, :TrackedArray)
 
-    xType == :AbstractArray && wType == :AbstractArray && continue
+    __is_tracked(xType, wType) || continue
 
     @eval begin
         function NNlib.$(func)(x::$(xType), w::$(wType), cdims::ConvDims; kwargs...)
