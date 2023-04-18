@@ -2,11 +2,11 @@
 
 ## Which function should participate in dispatch?
 
-  * Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient, since it requires the user to define a new method for every layer type.
+* Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient, since it requires the user to define a new method for every layer type.
 
-  * `(::AbstractExplicitLayer)(x::MyInputType, ps, st::NamedTuple)` doesn't work.
+* `(::AbstractExplicitLayer)(x::MyInputType, ps, st::NamedTuple)` doesn't work.
 
-  * Instead, we need to define the dispatch on `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
+* Instead, we need to define the dispatch on `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
 
 ## Concrete Example
 
@@ -54,7 +54,7 @@ happens.
 
 ### Dispatching on Custom Input Types
 
-  * Create a Custom Layer storing the time.
+* Create a Custom Layer storing the time.
 
 ```@example dispatch
 struct ArrayAndTime{A <: AbstractArray, T <: Real}
@@ -63,8 +63,7 @@ struct ArrayAndTime{A <: AbstractArray, T <: Real}
 end
 ```
 
-  * Define the dispatch on
-    `Lux.apply(::AbstractExplicitLayer, x::ArrayAndTime, ps, st::NamedTuple)`.
+* Define the dispatch on `Lux.apply(::AbstractExplicitLayer, x::ArrayAndTime, ps, st::NamedTuple)`.
 
 ```@example dispatch
 function Lux.apply(layer::Lux.AbstractExplicitLayer, x::ArrayAndTime, ps, st::NamedTuple)
@@ -78,7 +77,7 @@ function Lux.apply(layer::TDChain, x::ArrayAndTime, ps, st::NamedTuple)
 end
 ```
 
-  * Run the model.
+* Run the model.
 
 ```@example dispatch
 xt = ArrayAndTime(x, 10.0f0)

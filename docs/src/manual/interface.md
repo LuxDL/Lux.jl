@@ -122,7 +122,7 @@ Lux.apply(l, x, ps, st) # or `l(x, ps, st)`
 
 If your layer comprises of other Lux layers, then it is a `Container Layer`. Note that you
 could treat it as a [`Singular Layer`](#singular-layer), and it is still fine. FWIW, if you
-cannot subtype your layer with [`Lux.AbstractExplicitContainerLayer`](@ref) then you
+cannot subtype your layer with `Lux.AbstractExplicitContainerLayer` then you
 should go down the [`Singular Layer`](#singular-layer) route. But subtyping allows us to
 bypass some of these common definitions. Let us now define a layer, which is basically a
 composition of two linear layers.

@@ -8,7 +8,7 @@ to address these problems in the respective frameworks would be too disruptive f
 Here comes in `Lux`: a neural network framework built completely using pure functions to make
 it both compiler and autodiff friendly.
 
-# Design Principles
+## Design Principles
 
 * **Layers must be immutable** -- cannot store any parameter/state but rather store the
   information to construct them
@@ -18,7 +18,7 @@ it both compiler and autodiff friendly.
   stochastic functions. Randomness must be controlled using `rng`s passed in the state.
 * **Easily extensible**
 
-# Why use Lux over Flux?
+## Why use Lux over Flux?
 
 * **Neural Networks for SciML**: For SciML Applications (Neural ODEs, Deep Equilibrium
   Models) solvers typically expect a monolithic parameter vector. Flux enables this via its
@@ -42,8 +42,7 @@ it both compiler and autodiff friendly.
   Without this separation, it is much harder to pass such parameters
   around without mutations which AD systems don't like.
 
-
-# Why not use Lux?
+## Why not use Lux?
 
 * **Small Neural Networks on CPU** -- Lux is developed for training large neural networks.
   For smaller architectures, we recommend using

@@ -1,5 +1,13 @@
+# Utilities
+
 ```@meta
 CurrentModule = Lux
+```
+
+## Index
+
+```@index
+Pages = ["utilities.md"]
 ```
 
 ## Data Transfer
@@ -37,10 +45,4 @@ Lux.replicate
 
 ```docs
 Lux.disable_stacktrace_truncation!
-```
-
-## Index
-
-```@index
-Pages = ["utilities.md"]
 ```
