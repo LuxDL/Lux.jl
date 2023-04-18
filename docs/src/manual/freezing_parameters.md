@@ -71,7 +71,6 @@ would be `<model>.layer_2.layer_1`.
 Instead of freezing all the parameters, we can simple specify `(:weight,)` to freeze only
 the `weight` parameter while training the `bias` parameter.
 
-
 ```@raw html
 === "Freezing some parameters of a layer"
 

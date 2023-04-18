@@ -1,3 +1,5 @@
+# Experimental Features
+
 ```@meta
 CurrentModule = Lux
 ```
@@ -10,6 +12,12 @@ All features listed on this page are **experimental** which means:
   3. Expect edge-cases and report them. It will help us move these features out of
      experimental sooner.
   4. None of the features are exported.
+
+## Index
+
+```@index
+Pages = ["contrib.md"]
+```
 
 ## Training
 
@@ -69,10 +77,4 @@ Lux.@layer_map
 
 ```@docs
 Lux.share_parameters
-```
-
-## Index
-
-```@index
-Pages = ["contrib.md"]
 ```

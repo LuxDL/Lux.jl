@@ -505,7 +505,7 @@ end
 Pixel shuffling layer with upscale factor `r`. Usually used for generating higher
 resolution images while upscaling them.
 
-See [`NNlib.pixel_shuffle`](@ref) for more details.
+See `NNlib.pixel_shuffle` for more details.
 
 PixelShuffle is not a Layer, rather it returns a [`WrappedFunction`](@ref) with the
 function set to `Base.Fix2(pixel_shuffle, r)`
