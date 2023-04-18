@@ -20,6 +20,12 @@ CurrentModule = LuxLib
 
 ## API Reference
 
+### Index
+
+```@index
+Pages = ["index.md"]
+```
+
 ### Dropout
 
 ```@docs
