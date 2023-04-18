@@ -1,7 +1,11 @@
 module LuxLib
 
-using ChainRulesCore, Markdown, NNlib, Random, Statistics
+using Reexport
+
+using ChainRulesCore, Markdown, Random, Statistics
 import ChainRulesCore as CRC
+
+@reexport using NNlib
 
 using KernelAbstractions
 import KernelAbstractions as KA
