@@ -47,7 +47,7 @@ end
 
 # We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the
 # parameters and states are automatically populated and we don't have to define
-# [`Lux.initialparameters`](@ref) and [`Lux.initialstates`](@ref).
+# `Lux.initialparameters` and `Lux.initialstates`.
 
 # To understand more about container layers, please look at
 # [Container Layer](http://lux.csail.mit.edu/stable/manual/interface/#container-layer).

@@ -1,4 +1,4 @@
-using Documenter, DocumenterMarkdown, LuxCore, Lux, LuxLib, Pkg
+using Documenter, DocumenterMarkdown, Lux, Pkg
 
 import Flux  # Load weak dependencies
 
@@ -6,7 +6,7 @@ deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/Lux.jl.git")
 
 makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
-         modules=[Lux, LuxLib, LuxCore],
+         modules=[Lux],
          strict=[:doctest, :linkcheck, :parse_error, :example_block, :missing_docs],
          checkdocs=:all, format=Markdown(), draft=false, build=joinpath(@__DIR__, "docs"))
 

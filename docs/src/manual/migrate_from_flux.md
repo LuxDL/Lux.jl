@@ -48,12 +48,11 @@ should be implemented. A summary of the differences would be:
 * Flux stores everything in a single struct and relies on `Functors.@functor` and
   `Flux.trainable` to distinguish between trainable and non-trainable parameters.
 
-* Lux relies on the user to define [`Lux.initialparameters`](@ref) and
-  [`Lux.initialstates`](@ref) to distinguish between trainable parameters (called
-  "parameters") and non-trainable parameters (called "states"). Additionally Lux layers
-  define the model architecture, hence device transfer utilities like [`gpu`](@ref),
-  [`cpu`](@ref), etc. cannot be applied on Lux layers, instead they need to be applied on
-  the parameters and states.
+* Lux relies on the user to define `Lux.initialparameters` and `Lux.initialstates` to
+  distinguish between trainable parameters (called "parameters") and non-trainable
+  parameters (called "states"). Additionally Lux layers define the model architecture, hence
+  device transfer utilities like [`gpu`](@ref), [`cpu`](@ref), etc. cannot be applied on Lux
+  layers, instead they need to be applied on the parameters and states.
 
 Let's work through a concrete example to demonstrate this. We will implement a very simple
 layer that computes ``A \times B \times x`` where ``A`` is not trainable and ``B`` is
@@ -156,7 +155,7 @@ Flux supports a mode called `:auto` which automatically decides if the user is t
 model or running inference. This is the default mode for `Flux.BatchNorm`, `Flux.GroupNorm`,
 `Flux.Dropout`, etc. Lux doesn't support this mode (specifically to keep code simple and
 do exactly what the user wants), hence our default mode is `training`. This can be changed
-using [`Lux.testmode`](@ref).
+using `Lux.testmode`.
 
 ## Can't access functions like `relu`, `sigmoid`, etc?
 

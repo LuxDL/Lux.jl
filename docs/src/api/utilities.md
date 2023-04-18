@@ -43,6 +43,6 @@ Lux.replicate
 
 ## Truncated Stacktraces
 
-```docs
+```@docs
 Lux.disable_stacktrace_truncation!
 ```

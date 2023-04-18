@@ -68,7 +68,7 @@ end
 _generate_init_recurrence(out, carry, st) = (typeof(out)[out], carry, st)
 ∇_generate_init_recurrence((Δout, Δcarry, Δst)) = (first(Δout), Δcarry, Δst)
 
-function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+@views function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
     (out_, carry), st = Lux.apply(r.cell, first(x), ps, st)
 
     init = _generate_init_recurrence(out_, carry, st)
@@ -524,15 +524,15 @@ Gated Recurrent Unit (GRU) Cell
 ## Parameters
 
   - `weight_i`: Concatenated Weights to map from input space
-                ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
+                ``\\left\\\{ W_{ir}, W_{iz}, W_{in} \\right\\\}``.
   - `weight_h`: Concatenated Weights to map from hidden space
-                ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
-  - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`)
+                ``\\left\\\{ W_{hr}, W_{hz}, W_{hn} \\right\\\}``.
+  - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`).
   - `bias_h`: Concatenated Bias vector for the hidden space
-              ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}`` (not present if
-              `use_bias=false`)
+              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}`` (not present if
+              `use_bias=false`).
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
-              ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
+              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}``.
 
 ## States
 

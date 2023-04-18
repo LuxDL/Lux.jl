@@ -24,7 +24,7 @@ First let's set the expectations straight.
 ### Singular Layer
 
 If the layer doesn't contain any other Lux layer, then it is a `Singular Layer`. This means
-it should optionally subtype [`Lux.AbstractExplicitLayer`](@ref) but mandatorily define
+it should optionally subtype `Lux.AbstractExplicitLayer` but mandatorily define
 all the necessary functions mentioned in the docstrings. Consider a simplified version of
 [`Dense`](@ref) called `Linear`.
 
@@ -70,8 +70,8 @@ end
 Lux.initialstates(::AbstractRNG, ::Linear) = NamedTuple()
 ```
 
-You could also implement [`Lux.parameterlength`](@ref) and [`Lux.statelength`](@ref) to
-prevent wasteful reconstruction of the parameters and states.
+You could also implement `Lux.parameterlength` and `Lux.statelength` to prevent wasteful
+reconstruction of the parameters and states.
 
 ```@example layer_interface
 # This works
