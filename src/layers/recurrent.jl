@@ -73,12 +73,12 @@ _generate_init_recurrence(out, carry, st) = (typeof(out)[out], carry, st)
 
     init = _generate_init_recurrence(out_, carry, st)
 
-    function recurrence_op(input, (outputs, carry, state))
+    function recurrence_op((outputs, carry, state), input)
         (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, typeof(out)[out]), carry, state
     end
 
-    results = foldr(recurrence_op, x[(begin + 1):end]; init)
+    results = foldl(recurrence_op, x[(begin + 1):end]; init)
     return first(results), last(results)
 end
 
