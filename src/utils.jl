@@ -277,3 +277,14 @@ end
     pad = 0
     return PoolDims(x, k; padding=pad, stride=stride)
 end
+
+## Foldl with init
+"""
+    foldl_init(op, x)
+    foldl_init(op, x, init)
+
+Exactly same as `foldl(op, x; init)` in the forward pass. But, gives gradients wrt `init`
+in the backward pass.
+"""
+@inline foldl_init(op, x) = foldl_init(op, x, nothing)
+@inline foldl_init(op, x, init) = foldl(op, x; init)

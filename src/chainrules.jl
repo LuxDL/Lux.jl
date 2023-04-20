@@ -80,8 +80,36 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
     return multigate(x, c), multigate_pullback
 end
 
-# layers/recurrent.jl
-function CRC.rrule(::typeof(_generate_init_recurrence), out, carry, state)
-    result = _generate_init_recurrence(out, carry, state)
-    return result, Δ -> (NoTangent(), ∇_generate_init_recurrence(Δ)...)
+# foldl_init
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G, x::Tuple,
+                   init) where {G}
+    x_arr = [x...]
+    y, ∇foldl_init_internal = CRC.rrule_via_ad(cfg, foldl_init, op, x_arr, init)
+    function ∇foldl_init(Δ)
+        ∂foldl_init, ∂op, ∂x, ∂init = ∇foldl_init_internal(Δ)
+        ∂x = Tuple(∂x)
+        return ∂foldl_init, ∂op, ∂x, ∂init
+    end
+    return y, ∇foldl_init
+end
+
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G,
+                   x::AbstractArray, init) where {G}
+    list, start = x, init
+    hobbits = Vector{Any}(undef, length(list))  # Unfornately Zygote needs this
+    accumulate!(hobbits, list; init=(start, nothing)) do (a, _), b
+        return CRC.rrule_via_ad(cfg, op, a, b)
+    end
+    y = first(last(hobbits))
+    ax = axes(x)
+    project = ProjectTo(x)
+    function ∇foldl_init(Δ)
+        trio = accumulate(reverse(hobbits); init=(0, Δ, 0)) do (_, dc, _), (_, back)
+            return back(dc)
+        end
+        ∂op = sum(first, trio)
+        ∂x = map(last, reverse(trio))
+        return NoTangent(), ∂op, project(reshape(∂x, ax)), trio[end][2]
+    end
+    return y, ∇foldl_init
 end

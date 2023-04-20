@@ -36,6 +36,7 @@ Lux.zeros32
 Lux.applyactivation
 Lux.elementwise_add
 Lux.elementwise_mul
+Lux.foldl_init
 Lux.istraining
 Lux.multigate
 Lux.replicate
