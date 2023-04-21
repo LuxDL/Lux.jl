@@ -64,21 +64,16 @@ function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedT
     return out, st
 end
 
-# FIXME: Weird Hack
-_generate_init_recurrence(out, carry, st) = (typeof(out)[out], carry, st)
-∇_generate_init_recurrence((Δout, Δcarry, Δst)) = (first(Δout), Δcarry, Δst)
-
 @views function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    (out_, carry), st = Lux.apply(r.cell, first(x), ps, st)
-
-    init = _generate_init_recurrence(out_, carry, st)
-
-    function recurrence_op(input, (outputs, carry, state))
-        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
-        return vcat(outputs, typeof(out)[out]), carry, state
+    function __recurrence_op(::Nothing, input)
+        (out, carry), state = Lux.apply(r.cell, input, ps, st)
+        return [out], carry, state
     end
-
-    results = foldr(recurrence_op, x[(begin + 1):end]; init)
+    function __recurrence_op((outputs, carry, state), input)
+        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
+        return vcat(outputs, [out]), carry, state
+    end
+    results = foldl_init(__recurrence_op, x)
     return first(results), last(results)
 end
 
