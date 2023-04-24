@@ -67,7 +67,7 @@ slice and normalises the input accordingly.
       + `running_var`: nothing
   - `training`: Used to check if training/inference mode
 
-Use [`Lux.testmode`](@ref) during inference.
+Use `Lux.testmode` during inference.
 
 ## Example
 
@@ -209,7 +209,7 @@ end
       + `running_var`: nothing
   - `training`: Used to check if training/inference mode
 
-Use [`Lux.testmode`](@ref) during inference.
+Use `Lux.testmode` during inference.
 
 ## Example
 
@@ -358,7 +358,7 @@ accordingly.
 
   - `training`: Used to check if training/inference mode
 
-Use [`Lux.testmode`](@ref) during inference.
+Use `Lux.testmode` during inference.
 
 ## Example
 

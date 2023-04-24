@@ -64,21 +64,16 @@ function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedT
     return out, st
 end
 
-# FIXME: Weird Hack
-_generate_init_recurrence(out, carry, st) = (typeof(out)[out], carry, st)
-∇_generate_init_recurrence((Δout, Δcarry, Δst)) = (first(Δout), Δcarry, Δst)
-
-function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    (out_, carry), st = Lux.apply(r.cell, first(x), ps, st)
-
-    init = _generate_init_recurrence(out_, carry, st)
-
-    function recurrence_op(input, (outputs, carry, state))
-        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
-        return vcat(outputs, typeof(out)[out]), carry, state
+@views function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+    function __recurrence_op(::Nothing, input)
+        (out, carry), state = Lux.apply(r.cell, input, ps, st)
+        return [out], carry, state
     end
-
-    results = foldr(recurrence_op, x[(begin + 1):end]; init)
+    function __recurrence_op((outputs, carry, state), input)
+        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
+        return vcat(outputs, [out]), carry, state
+    end
+    results = foldl_init(__recurrence_op, x)
     return first(results), last(results)
 end
 
@@ -524,15 +519,15 @@ Gated Recurrent Unit (GRU) Cell
 ## Parameters
 
   - `weight_i`: Concatenated Weights to map from input space
-                ``\\left\\{ W_{ir}, W_{iz}, W_{in} \\right\\}``.
+                ``\\left\\\{ W_{ir}, W_{iz}, W_{in} \\right\\\}``.
   - `weight_h`: Concatenated Weights to map from hidden space
-                ``\\left\\{ W_{hr}, W_{hz}, W_{hn} \\right\\}``
-  - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`)
+                ``\\left\\\{ W_{hr}, W_{hz}, W_{hn} \\right\\\}``.
+  - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`).
   - `bias_h`: Concatenated Bias vector for the hidden space
-              ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}`` (not present if
-              `use_bias=false`)
+              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}`` (not present if
+              `use_bias=false`).
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
-              ``\\left\\{ b_{hr}, b_{hz}, b_{hn} \\right\\}``
+              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}``.
 
 ## States
 

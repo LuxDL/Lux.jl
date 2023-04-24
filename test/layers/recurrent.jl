@@ -277,6 +277,49 @@ end
             @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
         end
     end
+
+@testset "$mode: Recurrence" for (mode, aType, device, ongpu) in MODES
+    for _cell in (RNNCell, LSTMCell, GRUCell),
+        use_bias in (true, false),
+        train_state in (true, false)
+
+        cell = _cell(3 => 5; use_bias, train_state)
+        rnn = Recurrence(cell)
+        rnn_seq = Recurrence(cell; return_sequence=true)
+        display(rnn)
+
+        # Batched Time Series
+        for x in (randn(rng, Float32, 3, 4, 2),
+                  Tuple(randn(rng, Float32, 3, 2) for _ in 1:4),
+                  [randn(rng, Float32, 3, 2) for _ in 1:4])
+            x = x |> aType
+            ps, st = Lux.setup(rng, rnn) .|> device
+            y, st_ = rnn(x, ps, st)
+            y_, st__ = rnn_seq(x, ps, st)
+            
+            @jet rnn(x, ps, st)
+            @jet rnn_seq(x, ps, st)
+
+            @test size(y) == (5, 2)
+            @test length(y_) == 4
+            @test all(x -> size(x) == (5, 2), y_)
+            
+            __f = p -> sum(first(rnn(x, p, st)))
+            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+            
+            __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
+            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+        end
+    end
+
+    # Ordering Check: https://github.com/LuxDL/Lux.jl/issues/302
+    encoder = Recurrence(RNNCell(1 => 1, identity; init_weight=ones, init_state=zeros,
+                                 init_bias=zeros); return_sequence=true)
+    ps, st = Lux.setup(rng, encoder)
+    m2 = reshape([0.5, 0.0, 0.7, 0.8], 1, :, 1)
+    res, _ = encoder(m2, ps, st)
+
+    @test vec(reduce(vcat, res)) ≈ [0.5, 0.5, 1.2, 2.0]
 end
 
 @testset "multigate" begin

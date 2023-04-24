@@ -253,7 +253,7 @@ x1 → layer1 → y1 ↘
 
   - `connection`: Takes 2 inputs and combines them
 
-  - `layers`: [`AbstractExplicitLayer`](@ref)s. Layers can be specified in two formats:
+  - `layers`: `AbstractExplicitLayer`s. Layers can be specified in two formats:
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.

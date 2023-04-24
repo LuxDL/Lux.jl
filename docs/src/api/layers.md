@@ -1,5 +1,13 @@
+# Layers
+
 ```@meta
 CurrentModule = Lux
+```
+
+## Index
+
+```@index
+Pages = ["layers.md"]
 ```
 
 ## Containers
@@ -85,10 +93,4 @@ WeightNorm
 ```@docs
 PixelShuffle
 Upsample
-```
-
-## Index
-
-```@index
-Pages = ["layers.md"]
 ```

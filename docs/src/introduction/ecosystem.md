@@ -10,39 +10,35 @@
 
 As you might have noticed we don't do much apart from Neural Networks. All other parts of the DL training/evaluation pipeline should be offloaded to:
 
-
 ### Automatic Differentiation
 
 - [Zygote.jl](https://github.com/FluxML/Zygote.jl) -- Currently the default and recommended AD library
-- [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) -- Experimental Support (but will most likely become the future default)
+- [Tracker.jl](https://github.com/FluxML/Tracker.jl) -- Well tested and robust AD library (might fail on edge cases)
+- [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) -- (Very) Experimental Support
 - [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) -- For forward mode AD support
-- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) -- Tape based reverse mode AD (mostly untested)
-
+- [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) -- Tape based reverse mode AD (might fail on edge cases and doesn't work on GPU)
 
 ### Data Manipulation and Loading
 
--  [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/)
--  [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/)
--  [Images.jl](https://juliaimages.org/stable/)
--  [DataAugmentation.jl](https://lorenzoh.github.io/DataAugmentation.jl/dev/README.md.html)
-
+- [Augmentor.jl](https://evizero.github.io/Augmentor.jl/stable/)
+- [DataLoaders.jl](https://lorenzoh.github.io/DataLoaders.jl/docs/dev/)
+- [Images.jl](https://juliaimages.org/stable/)
+- [DataAugmentation.jl](https://lorenzoh.github.io/DataAugmentation.jl/dev/README.md.html)
 
 ### Distributed DataParallel Training
 
 - [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl)
 
-
 ### Neural Network Primitives
 
 - [NNlib.jl](https://fluxml.ai/Flux.jl/stable/models/nnlib/)
+- [LuxLib.jl](https://luxdl.github.io/LuxLib.jl/dev/)
 
-
-### Optimisation 
+### Optimization 
 
 - [Optimisers.jl](https://github.com/FluxML/Optimisers.jl)
 - [ParameterSchedulers.jl](https://darsnack.github.io/ParameterSchedulers.jl/dev/README.html)
 - [Optimization.jl](http://optimization.sciml.ai/stable/)
-
 
 ### Parameter Manipulation
 
@@ -54,12 +50,11 @@ As you might have noticed we don't do much apart from Neural Networks. All other
 - [Serialization.jl](https://docs.julialang.org/en/v1/stdlib/Serialization/)
 - [JLD2.jl](https://github.com/JuliaIO/JLD2.jl)
 
-
 ### Testing Utilities
 
 - [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl) -- Finite Differencing. Useful for testing gradient correctness
 - [JET.jl](https://aviatesk.github.io/JET.jl/dev/)
-
+- [LuxTestUtils.jl](https://github.com/LuxDL/LuxTestUtils.jl)
 
 ### Training Visualization & Logging
 

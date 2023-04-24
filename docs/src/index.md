@@ -14,7 +14,7 @@
 
 Welcome to the documentation of Lux!
 
-# What is Lux?
+## What is Lux?
 
 `Lux` is a julia deep learning framework which decouples models and parameterization using
 deeply nested named tuples.
@@ -23,7 +23,7 @@ deeply nested named tuples.
 - No more implicit parameterization.
 - Compiler and AD-friendly Neural Networks
 
-# Installation Guide
+## Installation Guide
 
 Install [julia v1.6 or above](https://julialang.org/downloads/).
 
@@ -32,13 +32,13 @@ using Pkg
 Pkg.add("Lux")
 ```
 
-# Resources to Get Started
+## Resources to Get Started
 
-* Go through the [Quickstart Example](#quickstart).
-* Read the introductory tutorials on
+- Go through the [Quickstart Example](#quickstart).
+- Read the introductory tutorials on
   [julia](https://jump.dev/JuMP.jl/stable/tutorials/getting_started/getting_started_with_julia/#Getting-started-with-Julia)
   and [Lux](introduction/overview.md)
-* Go through the examples sorted based on their complexity in the documentation
+- Go through the examples sorted based on their complexity in the documentation
 
 !!! tip
     For usage related questions, please use
@@ -48,11 +48,10 @@ Pkg.add("Lux")
     [github issues](https://github.com/avik-pal/Lux.jl/issues) or even better send in a
     [pull request](https://github.com/avik-pal/Lux.jl/pulls).
 
-# Quickstart
+## Quickstart
 
 !!! tip
     You need to install `Optimisers` and `Zygote` if not done already.
-
     `Pkg.add(["Optimisers", "Zygote"])`
 
 ```julia
@@ -98,35 +97,38 @@ st_opt = Optimisers.setup(Optimisers.ADAM(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
-# How the documentation is structured
+## How the documentation is structured
 
 Having a high-level overview of how this documentation is structured will help you know
 where to look for certain things.
 
-* `Introduction` -- Talks about why we wrote Lux and has pointers to frameworks in the
+- `Introduction` -- Talks about why we wrote Lux and has pointers to frameworks in the
   extended julia ecosystem which might help users to get started with deep learning
-* `Tutorials` -- Contain tutorials of varying complexity. These contain worked examples of
+- `Tutorials` -- Contain tutorials of varying complexity. These contain worked examples of
   solving problems with Lux. Start here if you are new to Lux, or you have a particular
   problem class you want to model.
-* `Manual` -- Contains guides to some common problems encountered by users.
-* `API Reference` -- Contains a complete list of the functions you can use in Lux. Look here
+- `Manual` -- Contains guides to some common problems encountered by users.
+- `API Reference` -- Contains a complete list of the functions you can use in Lux. Look here
   if you want to know how to use a particular function.
-* `Development Documentation` -- Contains information for people contributing to Lux
+- `Development Documentation` -- Contains information for people contributing to Lux
   development or writing Lux extensions. Don't worry about this section if you are using Lux
   to formulate and solve problems as a user.
 
-# Citation
+## Citation
 
 If you found this library to be useful in academic work, then please cite:
 
 ```bibtex
-@misc{pal2022lux,
-    author = {Pal, Avik},
-    title = {Lux: Explicit Parameterization of Deep Neural Networks in Julia},
-    year = {2022},
-    publisher = {GitHub},
-    journal = {GitHub repository},
-    howpublished = {\url{https://github.com/avik-pal/Lux.jl/}}
+@software{pal2023lux,
+  author       = {Pal, Avik},
+  title        = {{Lux: Explicit Parameterization of Deep Neural Networks in Julia}},
+  month        = April,
+  year         = 2023,
+  note         = {If you use this software, please cite it as below.},
+  publisher    = {Zenodo},
+  version      = {v0.4.50},
+  doi          = {10.5281/zenodo.7808904},
+  url          = {https://doi.org/10.5281/zenodo.7808904}
 }
 ```
 
