@@ -38,12 +38,8 @@ end
         if __istraining(training)
             fp16 = T == Float16
             if affine
-                __f = (args...) -> sum(first(instancenorm(args...; epsilon, training)))
-                @eval @test_gradients $__f $x $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
-            else
-                __f = (args...) -> sum(first(instancenorm(args..., scale, bias; epsilon,
-                                                          training)))
-                @eval @test_gradients $__f $x soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                __f = (args...) -> sum(first(instancenorm(x, args...; epsilon, training)))
+                @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             end
         end
     end

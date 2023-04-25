@@ -29,7 +29,7 @@ function _groupnorm_generic_fallback(x, scale, bias, running_mean, running_var, 
     return reshape(x_, sz)
 end
 
-@testset "GroupNorm KernelAbstractions" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: GroupNorm KernelAbstractions" for (mode, aType, on_gpu) in MODES
     for T in (Float32, Float64),
         sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
         groups in (2, 3)
@@ -66,12 +66,12 @@ end
         @test check_approx(gs_bias, gs_bias_; atol=1.0f-3, rtol=1.0f-3)
 
         fp16 = T == Float16
-        __f = sum ∘ _f
-        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=1.0f-3 rtol=1.0f-3 soft_fail=$fp16
+        __f = (args...) -> sum(groupnorm(x, args...; groups, epsilon))
+        @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-3 rtol=1.0f-3 soft_fail=$fp16
     end
-end end
+end
 
-@testset "GroupNorm Generic Fallback" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: GroupNorm Generic Fallback" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         sz in ((4, 4, 6, 2), (8, 8, 6, 2), (16, 16, 12, 2)),
         groups in (2, 3),
@@ -93,8 +93,8 @@ end end
         @test size(nt.running_var) == (groups,)
 
         fp16 = T == Float16
-        __f = (args...) -> sum(first(groupnorm(args..., rm, rv; groups, epsilon, training,
-                                               momentum=T(0.9))))
-        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16
+        __f = (args...) -> sum(first(groupnorm(x, args..., rm, rv; groups, epsilon,
+                                               training, momentum=T(0.9))))
+        @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16
     end
-end end
+end

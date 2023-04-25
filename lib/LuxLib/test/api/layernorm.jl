@@ -39,12 +39,9 @@ end
         end
 
         fp16 = T == Float16
-        if affine_shape === nothing
-            __f = x -> sum(_f(x, nothing, nothing))
-            @eval @test_gradients $__f $x soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
-        else
-            __f = sum ∘ _f
-            @eval @test_gradients $__f $x $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+        if affine_shape !== nothing
+            __f = (args...) -> sum(_f(x, args...))
+            @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
         end
     end
 end
