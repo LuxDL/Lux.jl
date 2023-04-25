@@ -1,8 +1,8 @@
-using LuxLib, ForwardDiff, Random, Test
+using LuxLib, ForwardDiff, Test
 
 include("../test_utils.jl")
 
-rng = MersenneTwister(0)
+rng = get_stable_rng(12345)
 
 @testset "dropout" begin if cpu_testing()
     x = randn(rng, Float32, 10, 2)

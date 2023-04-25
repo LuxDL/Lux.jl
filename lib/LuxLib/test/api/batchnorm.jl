@@ -1,9 +1,9 @@
-using LuxCUDA, Random, Test
+using LuxCUDA, Test
 using LuxLib
 
 include("../test_utils.jl")
 
-rng = MersenneTwister(0)
+rng = get_stable_rng(12345)
 
 function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = randn(T, sz) |> aType
@@ -19,7 +19,7 @@ function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
     end
 end
 
-@testset "Batch Normalization" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: Batch Normalization" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         sz in ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
         training in (Val(true), Val(false)),
@@ -48,15 +48,10 @@ end
         if __istraining(training)
             fp16 = T == Float16
             if affine
-                __f = (args...) -> sum(first(batchnorm(args..., rm, rv; epsilon, training,
-                                                       momentum=T(0.9))))
-                @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
-            else
-                __f = (args...) -> sum(first(batchnorm(args..., scale, bias, rm, rv;
-                                                       epsilon, training, momentum=T(0.9))))
-
-                @eval @test_gradients $__f $x gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
+                __f = (args...) -> sum(first(batchnorm(x, args..., rm, rv; epsilon,
+                                                       training, momentum=T(0.9))))
+                @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
             end
         end
     end
-end end
+end

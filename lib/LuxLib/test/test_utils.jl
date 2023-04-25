@@ -1,4 +1,4 @@
-using LuxLib, LuxTestUtils, Test, Zygote
+using LuxLib, LuxTestUtils, StableRNGs, Test, Zygote
 using LuxCUDA  # CUDA Support
 using LuxTestUtils: @jet, @test_gradients, check_approx
 
@@ -18,5 +18,7 @@ const MODES = begin
     cuda_testing() && push!(modes, cuda_mode)
     modes
 end
+
+get_stable_rng(seed=12345) = StableRNG(seed)
 
 __istraining(::Val{training}) where {training} = training

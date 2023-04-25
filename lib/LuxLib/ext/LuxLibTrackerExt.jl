@@ -50,7 +50,7 @@ Base.repeat(x::TrackedArray, counts...) = track(Base.repeat, x, counts...)
     y, pullback_function = CRC.rrule(Base.repeat, data(x), counts...)
     function repeat_pullback(Δ)
         _, res... = pullback_function(Δ)
-        return nobacksies(:repeat, map(isequal(∂∅) ? nothing : CRC.unthunk(x), res))
+        return nobacksies(:repeat, map(x -> x == ∂∅ ? nothing : CRC.unthunk(x), res))
     end
     return y, repeat_pullback
 end

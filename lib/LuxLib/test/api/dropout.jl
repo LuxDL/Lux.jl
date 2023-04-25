@@ -1,11 +1,11 @@
-using LuxCUDA, Random, Statistics, Test
+using LuxCUDA, Statistics, Test
 using LuxLib
 
 include("../test_utils.jl")
 
-rng = MersenneTwister(0)
+rng = get_stable_rng(12345)
 
-@testset "Dropout" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: Dropout" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
@@ -36,9 +36,9 @@ rng = MersenneTwister(0)
         @test rng == rng_
         @test y == x
     end
-end end
+end
 
-@testset "Dropout with Preset Mask" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: Dropout with Preset Mask" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
@@ -115,9 +115,9 @@ end end
         @test mask_ == mask
         @test rng == rng_
     end
-end end
+end
 
-@testset "Alpha Dropout" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: Alpha Dropout" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
@@ -147,4 +147,4 @@ end end
         @test rng == rng_
         @test y == x
     end
-end end
+end
