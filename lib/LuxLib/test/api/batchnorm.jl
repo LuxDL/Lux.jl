@@ -1,9 +1,9 @@
-using LuxCUDA, Random, Test
+using LuxCUDA, Test
 using LuxLib
 
 include("../test_utils.jl")
 
-rng = MersenneTwister(0)
+rng = get_stable_rng(12345)
 
 function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = randn(T, sz) |> aType
@@ -19,7 +19,7 @@ function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
     end
 end
 
-@testset "Batch Normalization" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: Batch Normalization" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         sz in ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
         training in (Val(true), Val(false)),
@@ -59,4 +59,4 @@ end
             end
         end
     end
-end end
+end

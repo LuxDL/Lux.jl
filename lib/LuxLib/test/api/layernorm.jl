@@ -14,7 +14,7 @@ function _setup_layernorm(aType, T, x_size, affine_shape)
     end
 end
 
-@testset "LayerNorm" begin for (mode, aType, on_gpu) in MODES
+@testset "$mode: LayerNorm" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
         affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3]))
@@ -47,4 +47,4 @@ end
             @eval @test_gradients $__f $x $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
         end
     end
-end end
+end

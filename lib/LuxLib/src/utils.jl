@@ -10,17 +10,29 @@ _div_idx(idx, n) = div(idx - 1, n) + 1
 _mod_idx(idx, n) = mod(idx - 1, n) + 1
 
 _get_backend(::Nothing) = nothing
-_get_backend(d) = hasmethod(KA.get_backend, (typeof(d),)) ? KA.get_backend(d) : nothing
-_get_backend(t::Tuple) = filter(!isnothing, _get_backend.(t))
+function _get_backend(d)
+    return hasmethod(KA.get_backend, (typeof(d),)) ? KA.get_backend(d) : nothing
+end
+_get_backend(t::Tuple) = _get_backend.(t)
+
+function __check_all_same_or_nothing(x::Union{AbstractVector, Tuple})
+    for i in 1:length(x)
+        x[i] === nothing && continue
+        for j in (i + 1):length(x)
+            x[j] === nothing && continue
+            x[i] != x[j] && return false
+        end
+    end
+    return true
+end
 
 CRC.@non_differentiable _get_backend(::Any)
 
-function _assert_same_backend(args...)
-    devs = _get_backend(args)
-    if !all(devs .== (first(devs),))
-        throw(ArgumentError("""All arguments must be on the same backend. This error is
-                               encountered if you are calling a function with a mix of CPU
-                               and GPU arrays."""))
+_assert_same_backend(args...) = _assert_same_backend([args...])
+function _assert_same_backend(xs)
+    devs = _get_backend.(xs)
+    if !__check_all_same_or_nothing(devs)
+        throw(ArgumentError("All arguments must be on the same backend. This error is encountered if you are calling a function with a mix of CPU and GPU arrays."))
     end
     return
 end
