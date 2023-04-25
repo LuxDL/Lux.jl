@@ -123,6 +123,13 @@ function check_approx(t1::NTuple{N, T}, t2::NTuple{N, T}; kwargs...) where {N, T
     return all(_check_approx, zip(t1, t2))
 end
 
+function check_approx(ca::ComponentArray, nt::NamedTuple; kwargs...)
+    return check_approx(NamedTuple(ca), nt; kwargs...)
+end
+function check_approx(nt::NamedTuple, ca::ComponentArray; kwargs...)
+    return check_approx(nt, NamedTuple(ca); kwargs...)
+end
+
 check_approx(::Nothing, v::AbstractArray; kwargs...) = length(v) == 0
 check_approx(v::AbstractArray, ::Nothing; kwargs...) = length(v) == 0
 check_approx(v::NamedTuple, ::Nothing; kwargs...) = length(v) == 0
@@ -241,9 +248,10 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
         gs_rdiff = __gradient(_rdiff_gradient, $(esc(f)), $(esc.(args)...);
                               skip=$skip_reverse_diff || $gpu_testing)
 
-        arr_len = length.(filter(Base.Fix2(isa, AbstractArray), tuple($(esc.(args)...))))
-        large_arrays = any(x -> x >= $large_array_length, arr_len) ||
-                       sum(arr_len) >= $max_total_array_size
+        arr_len = length.(filter(Base.Fix2(isa, AbstractArray) ∘ __correct_arguments,
+                                 tuple($(esc.(args)...))))
+        large_arrays = any(x -> x ≥ $large_array_length, arr_len) ||
+                       sum(arr_len) ≥ $max_total_array_size
         if large_arrays
             @debug "Large arrays detected. Skipping some tests based on keyword arguments."
         end
@@ -316,20 +324,38 @@ end
 
 __test_broken(test_type, orig_expr, source) = Test.Broken(test_type, orig_expr)
 
+__correct_arguments(x::AbstractArray) = x
+__correct_arguments(x::NamedTuple) = ComponentArray(x)
+__correct_arguments(x) = x
+
+__uncorrect_arguments(x::ComponentArray, ::NamedTuple, z::ComponentArray) = NamedTuple(x)
+function __uncorrect_arguments(x::AbstractArray, nt::NamedTuple, z::ComponentArray)
+    return __uncorrect_arguments(ComponentArray(vec(x), getaxes(z)), nt, z)
+end
+__uncorrect_arguments(x, y, z) = x
+
 function __gradient(gradient_function, f, args...; skip::Bool)
     if skip
         return ntuple(_ -> GradientComputationSkipped(), length(args))
     else
-        aa_inputs = [map(Base.Fix2(isa, AbstractArray), args)...]
+        corrected_args = map(__correct_arguments, args)
+        aa_inputs = [map(Base.Fix2(isa, AbstractArray), corrected_args)...]
         __aa_input_idx = cumsum(aa_inputs)
-        sum(aa_inputs) == length(args) && return gradient_function(f, args...)
+        if sum(aa_inputs) == length(args)
+            gs = gradient_function(f, corrected_args...)
+            return ntuple(i -> __uncorrect_arguments(gs[i], args[i], corrected_args[i]),
+                          length(args))
+        end
         function __f(inputs...)
             updated_inputs = ntuple(i -> aa_inputs[i] ? inputs[__aa_input_idx[i]] : args[i],
                                     length(args))
             return f(updated_inputs...)
         end
-        gs = gradient_function(__f, [args...][aa_inputs]...)
-        return ntuple(i -> aa_inputs[i] ? gs[__aa_input_idx[i]] :
+        gs = gradient_function(__f, [corrected_args...][aa_inputs]...)
+        return ntuple(i -> aa_inputs[i] ?
+                           __uncorrect_arguments(gs[__aa_input_idx[i]],
+                                                 args[__aa_input_idx[i]],
+                                                 corrected_args[__aa_input_idx[i]]) :
                            GradientComputationSkipped(), length(args))
     end
 end
