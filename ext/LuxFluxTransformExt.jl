@@ -95,13 +95,10 @@ m2(x, ps, st)
 ```
 """
 function transform(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
-    @warn """Transformation for type $T not implemented. Using `FluxLayer` as
-             a fallback.""" maxlog=1
+    @warn "Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
 
     if !preserve_ps_st
-        @warn """`FluxLayer` uses the parameters and states of the `layer`. It is not
-                 possible to NOT preserve the parameters and states. Ignoring this keyword
-                 argument.""" maxlog=1
+        @warn "`FluxLayer` uses the parameters and states of the `layer`. It is not possible to NOT preserve the parameters and states. Ignoring this keyword argument." maxlog=1
     end
 
     return FluxLayer(l)
@@ -168,8 +165,7 @@ function transform(l::Flux.Parallel; kwargs...)
 end
 
 function transform(l::Flux.PairwiseFusion; kwargs...)
-    @warn """Flux.PairwiseFusion and Lux.PairwiseFusion are semantically different. Using
-             `FluxLayer` as a fallback.""" maxlog=1
+    @warn "Flux.PairwiseFusion and Lux.PairwiseFusion are semantically different. Using `FluxLayer` as a fallback." maxlog=1
     return FluxLayer(l)
 end
 
@@ -252,8 +248,7 @@ end
 transform(l::Flux.Dropout; kwargs...) = Dropout(l.p; l.dims)
 
 function transform(l::Flux.LayerNorm; kwargs...)
-    @warn """Flux.LayerNorm and Lux.LayerNorm are semantically different specifications.
-             Using `FluxLayer` as a fallback.""" maxlog=1
+    @warn "Flux.LayerNorm and Lux.LayerNorm are semantically different specifications. Using `FluxLayer` as a fallback." maxlog=1
     return FluxLayer(l)
 end
 
@@ -273,13 +268,9 @@ function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::
     out_dims, in_dims = size(l.Wi)
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a " *
-                                           "`reset!` mechanism which hasn't been " *
-                                           "extensively tested with `FluxLayer`. Rewrite " *
-                                           "the model manually to use `RNNCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
         end
-        @warn """Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux
-                 and hence not supported. Ignoring these parameters.""" maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
         return RNNCell(in_dims => out_dims, l.σ; init_bias=(args...) -> copy(l.b),
                        init_state=(args...) -> copy(l.state0))
     else
@@ -292,13 +283,9 @@ function transform(l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve:
     out_dims = _out_dims ÷ 4
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a " *
-                                           "`reset!` mechanism which hasn't been " *
-                                           "extensively tested with `FluxLayer`. Rewrite " *
-                                           "the model manually to use `LSTMCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `LSTMCell`."))
         end
-        @warn """Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux
-                 and hence not supported. Ignoring these parameters.""" maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(4))
         _s, _m = copy.(l.state0)
         return LSTMCell(in_dims => out_dims; init_bias=_const_return_anon_function.(bs),
@@ -313,13 +300,9 @@ function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::
     out_dims = _out_dims ÷ 3
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a " *
-                                           "`reset!` mechanism which hasn't been " *
-                                           "extensively tested with `FluxLayer`. Rewrite " *
-                                           "the model manually to use `GRUCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `GRUCell`."))
         end
-        @warn """Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux
-                 and hence not supported. Ignoring these parameters.""" maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(3))
         return GRUCell(in_dims => out_dims; init_bias=_const_return_anon_function.(bs),
                        init_state=(args...) -> copy(l.state0))
@@ -333,8 +316,7 @@ function transform(l::Flux.BatchNorm; preserve_ps_st::Bool=false,
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
-            @warn """Preserving the state of `Flux.BatchNorm` is currently not supported.
-                     Ignoring the state.""" maxlog=1
+            @warn "Preserving the state of `Flux.BatchNorm` is currently not supported. Ignoring the state." maxlog=1
         end
         if l.affine
             return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum,
@@ -352,8 +334,7 @@ function transform(l::Flux.GroupNorm; preserve_ps_st::Bool=false,
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
-            @warn """Preserving the state of `Flux.GroupNorm` is currently not supported.
-                     Ignoring the state.""" maxlog=1
+            @warn "Preserving the state of `Flux.GroupNorm` is currently not supported. Ignoring the state." maxlog=1
         end
         if l.affine
             return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,

@@ -2,8 +2,7 @@ using Lux, NNlib, Random, Test, Zygote
 
 include("../test_utils.jl")
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = get_stable_rng(12345)
 
 @testset "$mode: SkipConnection" for (mode, aType, device, ongpu) in MODES
     @testset "zero sum" begin

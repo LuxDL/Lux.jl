@@ -1,9 +1,8 @@
-using ComponentArrays, Lux, Random, Test
+using ComponentArrays, Lux, Test
 
 include("../test_utils.jl")
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = get_stable_rng(12345)
 
 @testset "$mode: All Parameters Freezing" for (mode, aType, device, ongpu) in MODES
     @testset "NamedTuple" begin
@@ -22,6 +21,7 @@ Random.seed!(rng, 0)
 
         @jet fd(x, ps, st)
         __f = (x, ps) -> sum(first(fd(x, ps, st)))
+
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 
@@ -34,8 +34,8 @@ Random.seed!(rng, 0)
         @test m(x, ps, st)[1] == m(x, ps_c, st)[1]
 
         @jet m(x, ps_c, st)
-        # __f = (x, ps) -> sum(first(m(x, ps, st)))
-        # @eval @test_gradients $__f $x $ps_c atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_tracker=true
+        __f = (x, ps) -> sum(first(m(x, ps, st)))
+        @eval @test_gradients $__f $x $ps_c atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 end
 

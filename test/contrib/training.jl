@@ -8,7 +8,7 @@ function _loss_function(model, ps, st, data)
 end
 
 @testset "$mode: TrainState" for (mode, aType, device, ongpu) in MODES
-    rng = MersenneTwister(0)
+    rng = get_stable_rng(12345)
 
     model = Dense(3, 2)
     opt = Adam(0.01f0)
@@ -29,7 +29,7 @@ end
 end
 
 @testset "$mode: AbstractVJP" for (mode, aType, device, ongpu) in MODES
-    rng = MersenneTwister(0)
+    rng = get_stable_rng(12345)
 
     model = Dense(3, 2)
     opt = Adam(0.01f0)

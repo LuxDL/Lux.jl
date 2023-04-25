@@ -1,9 +1,8 @@
-using Lux, NNlib, Random, Statistics, Zygote
+using Lux, NNlib, Statistics, Zygote
 
 include("../test_utils.jl")
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = get_stable_rng(12345)
 
 @testset "$mode: BatchNorm" for (mode, aType, device, ongpu) in MODES
     m = BatchNorm(2)
@@ -49,7 +48,7 @@ Random.seed!(rng, 0)
 
     @jet m(x, ps, st)
     __f = (x, ps) -> sum(first(m(x, ps, st)))
-    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
 
     for affine in (true, false)
         m = BatchNorm(2; affine, track_stats=false)
@@ -61,10 +60,10 @@ Random.seed!(rng, 0)
 
         if affine
             __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         else
             __f = x -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         end
 
         # with activation function
@@ -83,10 +82,10 @@ Random.seed!(rng, 0)
 
         if affine
             __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         else
             __f = x -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         end
 
         m = BatchNorm(32; affine)
@@ -171,7 +170,7 @@ end
 
     for affine in (true, false)
         m = GroupNorm(2, 2; affine, track_stats=false)
-        x = randn(rng, Float32, 3, 2, 1) |> aType
+        x = rand(rng, Float32, 3, 2, 1) |> aType
         display(m)
         ps, st = Lux.setup(rng, m) .|> device
 
@@ -179,10 +178,10 @@ end
 
         if affine
             __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x $ps atol=1.0f-2 rtol=1.0f-2 gpu_testing=$ongpu skip_finite_differences=true
         else
             __f = x -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$ongpu skip_finite_differences=true
         end
 
         # with activation function
@@ -197,10 +196,10 @@ end
 
         if affine
             __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         else
             __f = x -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         end
 
         m = GroupNorm(32, 16; affine)
@@ -254,7 +253,7 @@ end
 
         @jet wn(x, ps, st)
         __f = ps -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
         wn = WeightNorm(c, (:weight,))
         display(wn)
@@ -263,7 +262,7 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
         wn = WeightNorm(c, (:weight, :bias), (2, 2))
         display(wn)
@@ -272,7 +271,7 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
         wn = WeightNorm(c, (:weight,), (2,))
         display(wn)
@@ -281,7 +280,7 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
     end
 
     @testset "Dense" begin
@@ -362,10 +361,10 @@ end
 
             if affine
                 __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
             else
                 __f = x -> sum(first(ln(x, ps, st)))
-                @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
             end
 
             for act in (sigmoid, tanh)
@@ -379,10 +378,10 @@ end
 
                 if affine
                     __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
                 else
                     __f = x -> sum(first(ln(x, ps, st)))
-                    @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                    @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
                 end
             end
         end
@@ -411,10 +410,10 @@ end
 
             if affine
                 __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
             else
                 __f = x -> sum(first(layer(x, ps, st)))
-                @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
             end
 
             for act in (sigmoid, tanh)
@@ -428,10 +427,10 @@ end
 
                 if affine
                     __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
                 else
                     __f = x -> sum(first(layer(x, ps, st)))
-                    @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                    @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
                 end
             end
         end

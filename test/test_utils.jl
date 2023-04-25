@@ -1,4 +1,4 @@
-using Lux, LuxCore, LuxLib, LuxTestUtils, Test, Zygote
+using Lux, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test, Zygote
 using LuxCUDA  # CUDA Support
 using LuxTestUtils: @jet, @test_gradients, check_approx
 
@@ -29,3 +29,5 @@ function get_default_rng(mode::String)
         error("Unknown mode: $mode")
     end
 end
+
+get_stable_rng(seed=12345) = StableRNG(seed)

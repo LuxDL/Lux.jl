@@ -1,10 +1,9 @@
-using Lux, ComponentArrays, LuxCUDA, Functors, Random, Optimisers, Zygote, Test
+using Lux, ComponentArrays, LuxCUDA, Functors, Optimisers, Zygote, Test
 using Statistics: std
 
 include("test_utils.jl")
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = get_stable_rng(12345)
 
 @testset "_nfan" begin
     # Fallback
@@ -51,8 +50,8 @@ end
     @test_throws MethodError Lux.istraining((training=true,))
 end
 
-@testset "multigate" begin
-    x = randn(rng, 10, 1)
+@testset "$mode: multigate" for (mode, aType, device, ongpu) in MODES
+    x = randn(rng, 10, 1) |> aType
     x1, x2 = Lux.multigate(x, Val(2))
 
     @test x1 == x[1:5, :]
@@ -60,13 +59,24 @@ end
 
     @jet Lux.multigate(x, Val(2))
 
-    x = randn(rng, 10)
+    x = randn(rng, 10) |> aType
     x1, x2 = Lux.multigate(x, Val(2))
 
     @test x1 == x[1:5]
     @test x2 == x[6:10]
 
     @jet Lux.multigate(x, Val(2))
+
+    x = rand(6, 5) |> aType
+    res, (dx,) = Zygote.withgradient(x) do x
+        x1, _, x3 = Lux.multigate(x, Val(3))
+        return sum(x1) + sum(x3 .* 2)
+    end
+
+    @jet Lux.multigate(x, Val(3))
+
+    @test res == sum(x[1:2, :]) + 2sum(x[5:6, :])
+    @test dx == [ones(2, 5); zeros(2, 5); fill(2, 2, 5)]
 end
 
 @testset "$mode: ComponentArrays" for (mode, aType, device, ongpu) in MODES

@@ -2,9 +2,9 @@ using Lux, Random, Test
 
 include("test_utils.jl")
 
+rng = get_stable_rng(12345)
+
 @testset "$mode: Elementwise Operation Dispatches" for (mode, aType, device, ongpu) in MODES
-    rng = Random.default_rng()
-    Random.seed!(rng, 0)
     custom_activation(x) = abs(x)
 
     for T in [Float64, Float32, ComplexF64, ComplexF32]

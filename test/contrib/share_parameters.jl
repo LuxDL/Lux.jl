@@ -1,9 +1,8 @@
-using ComponentArrays, Lux, Random, Test
+using ComponentArrays, Lux, Test
 
 include("../test_utils.jl")
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = get_stable_rng(12345)
 
 @testset "$mode" for (mode, aType, device, ongpu) in MODES
     model = Chain(; d1=Dense(2 => 4, tanh), d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)),

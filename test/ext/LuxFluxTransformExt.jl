@@ -1,5 +1,5 @@
 import Flux
-using Lux, Random, Test
+using Lux, Test
 
 fdevice(::typeof(cpu)) = Flux.cpu
 fdevice(::typeof(gpu)) = Flux.gpu
@@ -13,12 +13,12 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (1, 1)
         end
@@ -28,12 +28,12 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (5, 1)
         end
@@ -43,12 +43,12 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (2, 1)
         end
@@ -59,12 +59,12 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (2, 1)
         end
@@ -75,12 +75,12 @@ include("../test_utils.jl")
             x = (rand(Float32, 2, 1), rand(Float32, 2, 1)) .|> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test all(model(x) .≈ model_lux(x, ps, st)[1])
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test all(size.(model_lux(x, ps, st)[1]) .== ((2, 1),))
         end
@@ -94,12 +94,12 @@ include("../test_utils.jl")
             x = randn(Float32, 2, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == size(model(x))
         end end
@@ -111,12 +111,12 @@ include("../test_utils.jl")
             x = randn(Float32, 2, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == size(model(x))
         end end
@@ -129,12 +129,12 @@ include("../test_utils.jl")
             y = randn(Float32, 3, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x, y) ≈ model_lux((x, y), ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux((x, y), ps, st)[1]) == size(model(x, y))
         end end
@@ -144,12 +144,12 @@ include("../test_utils.jl")
             x = rand(1:16, 2, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (4, 2, 4)
         end
@@ -161,7 +161,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
@@ -169,7 +169,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -179,7 +179,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
@@ -187,7 +187,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -197,7 +197,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
@@ -206,7 +206,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -218,7 +218,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -228,7 +228,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -238,7 +238,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -248,7 +248,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -258,7 +258,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -268,7 +268,7 @@ include("../test_utils.jl")
             x = rand(Float32, 6, 6, 1, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -280,7 +280,7 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 2, 2, 1) |> aType
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (10, 10, 2, 1)
             @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -291,7 +291,7 @@ include("../test_utils.jl")
             x = randn(Float32, 2, 2, 4, 1) |> aType
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1]) == (4, 4, 1, 1)
             @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -306,7 +306,7 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 4) |> aType
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
         end
@@ -316,7 +316,7 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 4) |> aType
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
         end
@@ -326,7 +326,7 @@ include("../test_utils.jl")
             x = rand(Float32, 2, 4) |> aType
 
             model_lux = transform(model)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
         end
@@ -338,7 +338,7 @@ include("../test_utils.jl")
             x = randn(Float32, 2, 4) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
             st = Lux.testmode(st)
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -348,7 +348,7 @@ include("../test_utils.jl")
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model; preserve_ps_st=true, force_preserve=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
             st = Lux.testmode(st)
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -359,13 +359,13 @@ include("../test_utils.jl")
             x = randn(Float32, 2, 2, 4, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
             st = Lux.testmode(st)
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
 
             model_lux = transform(model; preserve_ps_st=true, force_preserve=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
             st = Lux.testmode(st)
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -376,7 +376,7 @@ include("../test_utils.jl")
             x = randn(Float32, 4, 4, 4, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
             st = Lux.testmode(st)
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -387,7 +387,7 @@ include("../test_utils.jl")
             x = randn(Float32, 4, 4, 4, 1) |> aType
 
             model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(Random.default_rng(), model_lux) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
             @test model(x) ≈ model_lux(x, ps, st)[1]
         end
@@ -398,12 +398,12 @@ include("../test_utils.jl")
             model = transform(Flux.Dropout(0.5f0))
 
             x = randn(Float32, 2, 4) |> aType
-            ps, st = Lux.setup(Random.default_rng(), model) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
 
             @test size(model(x, ps, st)[1]) == size(x)
 
             x = randn(Float32, 2, 3, 4) |> aType
-            ps, st = Lux.setup(Random.default_rng(), model) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
 
             @test size(model(x, ps, st)[1]) == size(x)
         end
@@ -412,12 +412,12 @@ include("../test_utils.jl")
             model = transform(Flux.AlphaDropout(0.5))
 
             x = randn(Float32, 2, 4) |> aType
-            ps, st = Lux.setup(Random.default_rng(), model) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
 
             @test size(model(x, ps, st)[1]) == size(x)
 
             x = randn(Float32, 2, 4, 3) |> aType
-            ps, st = Lux.setup(Random.default_rng(), model) .|> device
+            ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
 
             @test size(model(x, ps, st)[1]) == size(x)
         end
@@ -437,7 +437,7 @@ include("../test_utils.jl")
         x = randn(10) |> aType
 
         c_lux = transform(c)
-        ps, st = Lux.setup(Random.default_rng(), c_lux) .|> device
+        ps, st = Lux.setup(get_stable_rng(12345), c_lux) .|> device
 
         @test c(x) ≈ c_lux(x, ps, st)[1]
     end

@@ -86,16 +86,6 @@ function initialstates(rng::AbstractRNG, l::FrozenLayer{which_params}) where {wh
     return (frozen_params=(; ps_frozen...), states=st)
 end
 
-_merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
-function _merge(p::AbstractArray, nt::NamedTuple)
-    @assert length(p) == 0
-    return nt
-end
-function _merge(nt::NamedTuple, p::AbstractArray)
-    @assert length(p) == 0
-    return nt
-end
-
 function (f::FrozenLayer)(x, ps, st::NamedTuple)
     y, st_ = f.layer(x, _merge(ps, st.frozen_params), st.states)
     st = merge(st, (; states=st_))

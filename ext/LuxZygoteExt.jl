@@ -1,8 +1,15 @@
 module LuxZygoteExt
 
-isdefined(Base, :get_extension) ? (using Zygote) : (using ..Zygote)
+if isdefined(Base, :get_extension)
+    using Zygote
+    using Zygote: Pullback
+else
+    using ..Zygote
+    using ..Zygote: Pullback
+end
 
 using Adapt, LuxCUDA, Lux, Setfield
+using TruncatedStacktraces: @truncate_stacktrace
 
 Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 
@@ -18,5 +25,7 @@ function Lux.Training.compute_gradients(::Lux.Training.ZygoteVJP,
     @set! ts.states = st
     return grads, loss, stats, ts
 end
+
+@truncate_stacktrace Pullback 1
 
 end
