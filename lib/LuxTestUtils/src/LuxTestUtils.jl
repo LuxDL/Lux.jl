@@ -6,6 +6,61 @@ using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
 
 const JET_TARGET_MODULES = @load_preference("target_modules", nothing)
 
+### Device Functionalities: REMOVE once moved out of Lux into a separate package
+using Adapt, CUDA, cuDNN, Functors, Random, SparseArrays
+import Adapt: adapt_storage
+
+const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
+
+abstract type LuxTestUtilsDeviceAdaptor end
+
+struct LuxTestUtilsCPUAdaptor <: LuxTestUtilsDeviceAdaptor end
+struct LuxTestUtilsCUDAAdaptor <: LuxTestUtilsDeviceAdaptor end
+
+adapt_storage(::LuxTestUtilsCUDAAdaptor, x) = CUDA.cu(x)
+adapt_storage(::LuxTestUtilsCUDAAdaptor, rng::AbstractRNG) = rng
+
+function adapt_storage(::LuxTestUtilsCPUAdaptor,
+                       x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
+    return x
+end
+adapt_storage(::LuxTestUtilsCPUAdaptor, x::AbstractArray) = adapt(Array, x)
+adapt_storage(::LuxTestUtilsCPUAdaptor, rng::AbstractRNG) = rng
+function adapt_storage(::LuxTestUtilsCPUAdaptor, x::CUDA.CUSPARSE.AbstractCuSparseMatrix)
+    return adapt(Array, x)
+end
+
+_isbitsarray(::AbstractArray{<:Number}) = true
+_isbitsarray(::AbstractArray{T}) where {T} = isbitstype(T)
+_isbitsarray(x) = false
+
+_isleaf(::AbstractRNG) = true
+_isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
+
+cpu(x) = fmap(x -> adapt(LuxTestUtilsCPUAdaptor(), x), x)
+
+function gpu(x)
+    check_use_cuda()
+    return use_cuda[] ? fmap(x -> adapt(LuxTestUtilsCUDAAdaptor(), x), x; exclude=_isleaf) :
+           x
+end
+
+function check_use_cuda()
+    if use_cuda[] === nothing
+        use_cuda[] = CUDA.functional()
+        if use_cuda[] && !cuDNN.has_cudnn()
+            @warn """CUDA.jl found cuda, but did not find libcudnn. Some functionality
+                     will not be available."""
+        end
+        if !(use_cuda[])
+            @info """The GPU function is being called but the GPU is not accessible.
+                     Defaulting back to the CPU. (No action is required if you want
+                     to run on the CPU).""" maxlog=1
+        end
+    end
+end
+### REMOVE once moved out of Lux into a separate package
+
 # JET Testing
 try
     using JET
@@ -96,10 +151,10 @@ struct GradientComputationSkipped end
 
 @generated function check_approx(x::X, y::Y; kwargs...) where {X, Y}
     (X == GradientComputationSkipped || Y == GradientComputationSkipped) && return :(true)
-    hasmethod(isapprox, (X, Y)) && return :(isapprox(x, y; kwargs...))
+    hasmethod(isapprox, (X, Y)) && return :(isapprox(cpu(x), cpu(y); kwargs...))
     return quote
         @warn "No `isapprox` method found for types $(X) and $(Y). Using `==` instead."
-        return x == y
+        return cpu(x) == cpu(y)
     end
 end
 
@@ -244,9 +299,12 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
 
         gs_tracker = __gradient(Base.Fix1(broadcast, Tracker.data) ∘ Tracker.gradient,
                                 $(esc(f)), $(esc.(args)...); skip=$skip_tracker)
+        tracker_broken = $(tracker_broken && !skip_tracker)
 
+        skip_reverse_diff = $(skip_reverse_diff || gpu_testing)
         gs_rdiff = __gradient(_rdiff_gradient, $(esc(f)), $(esc.(args)...);
-                              skip=$skip_reverse_diff || $gpu_testing)
+                              skip=skip_reverse_diff)
+        reverse_diff_broken = $reverse_diff_broken && !skip_reverse_diff
 
         arr_len = length.(filter(Base.Fix2(isa, AbstractArray) ∘ __correct_arguments,
                                  tuple($(esc.(args)...))))
@@ -256,34 +314,36 @@ function test_gradients_expr(__module__, __source__, f, args...; gpu_testing::Bo
             @debug "Large arrays detected. Skipping some tests based on keyword arguments."
         end
 
+        skip_forward_diff = $skip_forward_diff ||
+                            $gpu_testing ||
+                            (large_arrays && $large_arrays_skip_forward_diff)
         gs_fdiff = __gradient(_fdiff_gradient, $(esc(f)), $(esc.(args)...);
-                              skip=$skip_forward_diff ||
-                                   $gpu_testing ||
-                                   (large_arrays && $large_arrays_skip_forward_diff))
+                              skip=skip_forward_diff)
+        forward_diff_broken = $forward_diff_broken && !skip_forward_diff
 
+        skip_finite_differences = $skip_finite_differences ||
+                                  $gpu_testing ||
+                                  (large_arrays && $large_arrays_skip_finite_differences)
         gs_finite_diff = __gradient(_finitedifferences_gradient, $(esc(f)),
-                                    $(esc.(args)...);
-                                    skip=$skip_finite_differences ||
-                                         $gpu_testing ||
-                                         (large_arrays &&
-                                          $large_arrays_skip_finite_differences))
+                                    $(esc.(args)...); skip=skip_finite_differences)
+        finite_differences_broken = $finite_differences_broken && !skip_finite_differences
 
         for idx in 1:($len)
             __test_gradient_pair_check($__source__, $(orig_exprs[1]), gs_zygote[idx],
                                        gs_tracker[idx], "Zygote", "Tracker";
-                                       broken=$tracker_broken, soft_fail=$soft_fail,
+                                       broken=tracker_broken, soft_fail=$soft_fail,
                                        atol=$atol, rtol=$rtol, nans=$nans)
             __test_gradient_pair_check($__source__, $(orig_exprs[2]), gs_zygote[idx],
                                        gs_rdiff[idx], "Zygote", "ReverseDiff";
-                                       broken=$reverse_diff_broken, soft_fail=$soft_fail,
+                                       broken=reverse_diff_broken, soft_fail=$soft_fail,
                                        atol=$atol, rtol=$rtol, nans=$nans)
             __test_gradient_pair_check($__source__, $(orig_exprs[3]), gs_zygote[idx],
                                        gs_fdiff[idx], "Zygote", "ForwardDiff";
-                                       broken=$forward_diff_broken, soft_fail=$soft_fail,
+                                       broken=forward_diff_broken, soft_fail=$soft_fail,
                                        atol=$atol, rtol=$rtol, nans=$nans)
             __test_gradient_pair_check($__source__, $(orig_exprs[4]), gs_zygote[idx],
                                        gs_finite_diff[idx], "Zygote", "FiniteDifferences";
-                                       broken=$finite_differences_broken,
+                                       broken=finite_differences_broken,
                                        soft_fail=$soft_fail, atol=$atol, rtol=$rtol,
                                        nans=$nans)
         end
@@ -325,7 +385,12 @@ end
 __test_broken(test_type, orig_expr, source) = Test.Broken(test_type, orig_expr)
 
 __correct_arguments(x::AbstractArray) = x
-__correct_arguments(x::NamedTuple) = ComponentArray(x)
+function __correct_arguments(x::NamedTuple)
+    xc = cpu(x)
+    ca = ComponentArray(xc)
+    # Hacky check to see if there are any non-CPU arrays in the NamedTuple
+    return typeof(xc) == typeof(x) ? ca : gpu(ca)
+end
 __correct_arguments(x) = x
 
 __uncorrect_arguments(x::ComponentArray, ::NamedTuple, z::ComponentArray) = NamedTuple(x)
@@ -360,7 +425,7 @@ function __gradient(gradient_function, f, args...; skip::Bool)
     end
 end
 
-_rdiff_gradient(f, args...) = _named_tuple.(ReverseDiff.gradient(f, ComponentArray.(args)))
+_rdiff_gradient(f, args...) = _named_tuple.(ReverseDiff.gradient(f, args))
 
 function _fdiff_gradient(f, args...)
     length(args) == 1 && return (ForwardDiff.gradient(f, args[1]),)
@@ -372,7 +437,7 @@ end
 
 function _finitedifferences_gradient(f, args...)
     return _named_tuple.(FiniteDifferences.grad(FiniteDifferences.central_fdm(3, 1), f,
-                                                ComponentArray.(args)...))
+                                                args...))
 end
 
 function __fdiff_compatible_function(f, ::Val{N}) where {N}
@@ -381,11 +446,6 @@ function __fdiff_compatible_function(f, ::Val{N}) where {N}
     function __fdiff_compatible_function_closure(x::ComponentArray)
         return f([getproperty(x, Symbol("input_$i")) for i in 1:N]...)
     end
-end
-
-function __f_all_abstract_array_input(f, inputs, is_aa)
-    function __f(args...) end
-    return __f, inputs[is_aa]
 end
 
 _named_tuple(x::ComponentArray) = NamedTuple(x)
