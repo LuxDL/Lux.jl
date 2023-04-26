@@ -55,6 +55,20 @@ Base.repeat(x::TrackedArray, counts...) = track(Base.repeat, x, counts...)
     return y, repeat_pullback
 end
 
+# Base.selectdim
+Base.selectdim(x::TrackedArray, d::Integer, i) = Tracker.track(selectdim, x, d, i)
+
+@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
+    x_ = data(x)
+    y = selectdim(x_, d, i)
+    function ∇selectdim(Δ)
+        ∂x = zero(x_)
+        selectdim(∂x, d, i) .= Tracker.data(Δ)
+        return ∂x, nothing, nothing
+    end
+    return y, ∇selectdim
+end
+
 # utils.jl
 function LuxLib._copy_autodiff_barrier(x::Union{TrackedArray, TrackedReal})
     return LuxLib._copy_autodiff_barrier(data(x))

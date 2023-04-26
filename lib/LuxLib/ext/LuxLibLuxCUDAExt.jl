@@ -3,7 +3,7 @@ module LuxLibLuxCUDAExt
 isdefined(Base, :get_extension) ? (using LuxCUDA) : (using ..LuxCUDA)
 using LuxLib
 import ChainRulesCore as CRC
-import LuxLib: _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅
+import LuxLib: batchnorm, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅
 
 # utils.jl
 LuxLib._replicate(rng::CUDA.RNG) = deepcopy(rng)
@@ -32,12 +32,12 @@ end
 function CRC.rrule(::typeof(_batchnorm_cudnn!), running_mean, running_var, scale, bias, x,
                    momentum, epsilon, t::Val{training}) where {training}
     y = _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum, epsilon, t)
-    function _batchnorm_cudnn!_pullback(dy)
-        dg, db, dx = NNlibCUDA.∇batchnorm(scale, bias, x, unthunk(dy), running_mean,
+    function ∇_batchnorm_cudnn!(Δ)
+        ∂g, ∂b, ∂x = NNlibCUDA.∇batchnorm(scale, bias, x, CRC.unthunk(Δ), running_mean,
                                           running_var, momentum; eps=epsilon, training)
-        return (∂∅, ∂∅, ∂∅, dg, db, dx, ∂∅, ∂∅, ∂∅)
+        return (∂∅, ∂∅, ∂∅, ∂g, ∂b, ∂x, ∂∅, ∂∅, ∂∅)
     end
-    return y, _batchnorm_cudnn!_pullback
+    return y, ∇_batchnorm_cudnn!
 end
 
 end
