@@ -18,7 +18,8 @@ import LuxLib: AA, AV, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, �
 const TR_CUDNN_BN_ARRAY_TYPE = Union{TrackedArray{<:Any, <:Any, <:CuArray{<:FP_32_64, 2}},
                                      TrackedArray{<:Any, <:Any, <:CuArray{<:FP_32_64, 4}},
                                      TrackedArray{<:Any, <:Any, <:CuArray{<:FP_32_64, 5}}}
-const TR_BNParamType = Union{Nothing, TrackedArray{<:Any, <:Any, <:CuVector{<:FP_32_64}}}
+const TR_BNParamType = Union{Nothing, TrackedArray{<:Any, <:Any, <:CuVector{<:FP_32_64}},
+                             CuVector{<:FP_32_64}}
 
 function LuxLib.batchnorm(x::TR_CUDNN_BN_ARRAY_TYPE, scale::TR_BNParamType,
                           bias::TR_BNParamType, running_mean::TR_BNParamType,
@@ -49,13 +50,13 @@ end
                                         eps, training)
     y = _batchnorm_cudnn!(data(running_mean), data(running_var), data(scale), data(bias),
                           data(x), momentum, eps, training)
-    function _batchnorm_cudnn!_pullback(dy)
-        dg, db, dx = NNlibCUDA.∇batchnorm(data(scale), data(bias), data(x), dy,
+    function ∇_batchnorm_cudnn!(Δ)
+        ∂g, ∂b, ∂x = NNlibCUDA.∇batchnorm(data(scale), data(bias), data(x), Δ,
                                           data(running_mean), data(running_var), momentum;
                                           eps, training)
-        return (nothing, nothing, dg, db, dx, nothing, nothing, nothing)
+        return (nothing, nothing, ∂g, ∂b, ∂x, nothing, nothing, nothing)
     end
-    return y, _batchnorm_cudnn!_pullback
+    return y, ∇_batchnorm_cudnn!
 end
 
 end
