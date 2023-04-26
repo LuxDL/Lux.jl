@@ -311,8 +311,9 @@ end
     end
 
     @testset "complex alternatives" begin
-        layer = Maxout(WrappedFunction(x -> aType([0.5; 0.1]) * x),
-                       WrappedFunction(x -> aType([0.2; 0.7]) * x))
+        A = aType([0.5 0.1]')
+        B = aType([0.2 0.7]')
+        layer = Maxout(WrappedFunction(x -> A * x), WrappedFunction(x -> B * x))
         display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
         x = [3.0 2.0] |> aType

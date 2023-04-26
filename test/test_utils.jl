@@ -2,6 +2,8 @@ using Lux, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test, Zygote
 using LuxCUDA  # CUDA Support
 using LuxTestUtils: @jet, @test_gradients, check_approx
 
+CUDA.allowscalar(false)
+
 const GROUP = get(ENV, "GROUP", "All")
 
 cpu_testing() = GROUP == "All" || GROUP == "CPU"

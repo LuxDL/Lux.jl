@@ -1,7 +1,7 @@
 module LuxTrackerExt
 
 isdefined(Base, :get_extension) ? (using Tracker) : (using ..Tracker)
-using Functors, Lux, Setfield
+using ChainRulesCore, Functors, Lux, Setfield
 
 # Type Piracy: Need to upstream
 Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)
@@ -17,6 +17,10 @@ Tracker.data(t::Tuple) = map(Tracker.data, t)
 
 # Weight Norm Patch
 @inline Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
+
+# multigate chain rules
+@inline Lux._gate(x::TrackedVector, h::Int, n::Int) = x[Lux._gate(h, n)]
+@inline Lux._gate(x::TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
 
 # Lux.Training
 function Lux.Training.compute_gradients(::Lux.Training.TrackerVJP,

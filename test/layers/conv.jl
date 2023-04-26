@@ -1,9 +1,8 @@
-using Lux, NNlib, Random, Test, Zygote
-
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+using Lux, NNlib, Test, Zygote
 
 include("../test_utils.jl")
+
+rng = get_stable_rng(12345)
 
 @testset "$mode: Pooling" for (mode, aType, device, ongpu) in MODES
     x = randn(rng, Float32, 10, 10, 3, 2) |> aType
@@ -147,9 +146,9 @@ end
         @jet layer(x, ps, st)
     end
 
-    @testset "Variable BitWidth Parameters" begin
-        # https://github.com/FluxML/Flux.jl/issues/1421
-        layer = Conv((5, 5), 10 => 20, identity; init_weight=Base.randn,
+    @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
+        layer = Conv((5, 5), 10 => 20, identity;
+                     init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
                      init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
         display(layer)
         ps, st = Lux.setup(rng, layer)
@@ -211,7 +210,7 @@ end
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-        layer = Conv(k, 1 => 1; pad=Lux.SamePad(), dilation=k .÷ 2)
+        layer = Conv(k, 1 => 1; pad=Lux.SamePad(), dilation=max.(k .÷ 2, 1))
         display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
@@ -233,7 +232,7 @@ end
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 
-    @testset "Conv with non quadratic window #700" begin
+    @testset "Conv with non quadratic window FluxML/Flux.jl#700" begin
         x = zeros(Float32, 7, 7, 1, 1)
         x[4, 4, 1, 1] = 1
         x = x |> aType
@@ -416,9 +415,9 @@ end
         @jet layer(x, ps, st)
     end
 
-    @testset "Variable BitWidth Parameters" begin
-        # https://github.com/FluxML/Flux.jl/issues/1421
-        layer = CrossCor((5, 5), 10 => 20, identity; init_weight=Base.randn,
+    @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
+        layer = CrossCor((5, 5), 10 => 20, identity;
+                         init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
                          init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
         display(layer)
         ps, st = Lux.setup(rng, layer)
@@ -439,7 +438,7 @@ end
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
 
-        layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), dilation=k .÷ 2)
+        layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), dilation=max.(k .÷ 2, 1))
         display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 

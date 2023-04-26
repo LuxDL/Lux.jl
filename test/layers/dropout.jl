@@ -36,7 +36,8 @@ end
         layer = AlphaDropout(p)
         display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
-        x = randn(Float32, 5, 2) |> aType
+        # GPU compilation for mixed types fail atm
+        x = randn(typeof(p), 5, 2) |> aType
 
         x_, st_ = layer(x, ps, st)
         x__, st__ = layer(x, ps, st)

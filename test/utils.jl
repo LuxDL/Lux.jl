@@ -68,15 +68,18 @@ end
     @jet Lux.multigate(x, Val(2))
 
     x = rand(6, 5) |> aType
-    res, (dx,) = Zygote.withgradient(x) do x
+    __f = x -> begin
         x1, _, x3 = Lux.multigate(x, Val(3))
         return sum(x1) + sum(x3 .* 2)
     end
+    res, (dx,) = Zygote.withgradient(__f, x)
 
     @jet Lux.multigate(x, Val(3))
 
     @test res == sum(x[1:2, :]) + 2sum(x[5:6, :])
-    @test dx == [ones(2, 5); zeros(2, 5); fill(2, 2, 5)]
+    @test dx == aType([ones(2, 5); zeros(2, 5); fill(2, 2, 5)])
+
+    @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 end
 
 @testset "$mode: ComponentArrays" for (mode, aType, device, ongpu) in MODES

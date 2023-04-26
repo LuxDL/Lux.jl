@@ -27,8 +27,10 @@ rng = get_stable_rng(12345)
 
     @testset "ComponentArray" begin
         m = Chain(Lux.freeze(Dense(1 => 3, tanh)), Dense(3 => 1))
-        ps, st = Lux.setup(rng, m) .|> device
-        ps_c = ComponentVector(ps)
+        ps, st = Lux.setup(rng, m)
+        st = st |> device
+        ps_c = ComponentVector(ps) |> device
+        ps = ps |> device
         x = randn(rng, Float32, 1, 2) |> aType
 
         @test m(x, ps, st)[1] == m(x, ps_c, st)[1]

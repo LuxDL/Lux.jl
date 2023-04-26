@@ -42,7 +42,7 @@ rng = get_stable_rng(12345)
                        0.1 .* var(Array(x); dims=2, corrected=false) .* (3 / 2) .+
                        0.9 .* [1.0, 1.0])
 
-    st_ = Lux.testmode(st_)
+    st_ = Lux.testmode(st_) |> device
     x_ = m(x, ps, st_)[1] |> cpu
     @test check_approx(x_[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
@@ -91,7 +91,7 @@ rng = get_stable_rng(12345)
         m = BatchNorm(32; affine)
         x = randn(Float32, 416, 416, 32, 1) |> aType
         display(m)
-        ps, st = Lux.setup(rng, m)
+        ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
         m(x, ps, st)
         @test (@allocated m(x, ps, st)) < 100_000_000
