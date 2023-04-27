@@ -40,6 +40,12 @@ function Lux._merge(ca::ComponentArray, p::AbstractArray)
     return ca
 end
 
+# Empty NamedTuple: Hack to avoid breaking precompilation
+function ComponentArrays.ComponentArray(data::Vector{Any}, axes::Tuple{FlatAxis})
+    length(data) == 0 && return ComponentArray(Float32[], axes)
+    return ComponentArray{Any, 1, typeof(data), typeof(axes)}(data, axes)
+end
+
 # Parameter Sharing
 Lux._parameter_structure(ps::ComponentArray) = Lux._parameter_structure(NamedTuple(ps))
 
@@ -54,7 +60,7 @@ function CRC.rrule(::Type{ComponentArray}, nt::NamedTuple)
               "of shape $(size(res)) & type $(typeof(res))")
         return nothing
     end
-    CA_NT_pullback(Δ::ComponentArray) = (CRC.NoTangent(), NamedTuple(Δ))
+    CA_NT_pullback(Δ::ComponentArray) = CRC.NoTangent(), NamedTuple(Δ)
     return res, CA_NT_pullback
 end
 

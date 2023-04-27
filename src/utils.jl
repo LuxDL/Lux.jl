@@ -198,7 +198,10 @@ end
 
 Split up `x` into `N` equally sized chunks (along dimension `1`).
 """
-@inline multigate(x::AbstractArray, ::Val{N}) where {N} = _gate.((x,), size(x, 1) ÷ N, 1:N)
+@inline function multigate(x::AbstractArray, ::Val{N}) where {N}
+    # return map(i -> _gate(x, size(x, 1) ÷ N, i), 1:N)
+    return ntuple(i -> _gate(x, size(x, 1) ÷ N, i), N)
+end
 
 # Val utilities
 get_known(::Val{T}) where {T} = T
@@ -288,3 +291,14 @@ in the backward pass.
 """
 @inline foldl_init(op, x) = foldl_init(op, x, nothing)
 @inline foldl_init(op, x, init) = foldl(op, x; init)
+
+# Merging Exotic Types
+_merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
+function _merge(p::AbstractArray, nt::NamedTuple)
+    @assert length(p) == 0
+    return nt
+end
+function _merge(nt::NamedTuple, p::AbstractArray)
+    @assert length(p) == 0
+    return nt
+end

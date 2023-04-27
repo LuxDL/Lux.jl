@@ -2,96 +2,101 @@ using Lux, NNlib, Random, Test
 
 include("../test_utils.jl")
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = get_stable_rng(12345)
 
-@testset "Miscellaneous Layers" begin
+@testset "$mode: Miscellaneous Layers" for (mode, aType, device, ongpu) in MODES
     @testset "Reshape Layer" begin
         layer = ReshapeLayer((2, 3))
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, 6, 3)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, 6, 3) |> aType
 
         @test size(layer(x, ps, st)[1]) == (2, 3, 3)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
 
     @testset "Flatten Layer" begin
         layer = FlattenLayer()
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, 6, 3, 2)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, 6, 3, 2) |> aType
 
         @test size(layer(x, ps, st)[1]) == (18, 2)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
 
     @testset "NoOpLayer" begin
         layer = NoOpLayer()
         display(layer)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
         x = (x=2, b=5) # Something totally arbitrary
 
         @test layer(x, ps, st)[1] == x
-        run_JET_tests(layer, x, ps, st)
 
-        x = randn(rng, 6, 3)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+        @jet layer(x, ps, st)
+
+        x = randn(rng, 6, 3) |> aType
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
 
     @testset "SelectDim Layer" begin
         layer = SelectDim(3, 1)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, 6, 4, 3, 2)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, 6, 4, 3, 2) |> aType
 
         @test size(layer(x, ps, st)[1]) == (6, 4, 2)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
 
     @testset "WrappedFunction" begin
         layer = WrappedFunction(x -> x .* x)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, 6, 4, 3, 2)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, 6, 4, 3, 2) |> aType
 
         @test layer(x, ps, st)[1] == x .* x
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
 
     @testset "ActivationFunction" begin
         layer = ActivationFunction(tanh)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, 6, 4, 3, 2)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, 6, 4, 3, 2) |> aType
 
         @test layer(x, ps, st)[1] == tanh.(x)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                      rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
 end
 
-@testset "Dense" begin
+@testset "$mode: Dense" for (mode, aType, device, ongpu) in MODES
     @testset "constructors" begin
         layer = Dense(10, 100)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test size(ps.weight) == (100, 10)
         @test size(ps.bias) == (100, 1)
         @test layer.activation == identity
 
         layer = Dense(10, 100, relu; use_bias=false)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test !haskey(ps, :bias)
         @test layer.activation == relu
@@ -115,28 +120,30 @@ end
     @testset "zeros" begin
         @test begin
             layer = Dense(10, 1, identity; init_weight=ones)
-            first(Lux.apply(layer, ones(10, 1), Lux.setup(rng, layer)...))
-        end == 10 * ones(1, 1)
+            first(Lux.apply(layer, ones(10, 1) |> aType, device.(Lux.setup(rng, layer))...))
+        end == 10 * aType(ones(1, 1))
 
         @test begin
             layer = Dense(10, 1, identity; init_weight=ones)
-            first(Lux.apply(layer, ones(10, 2), Lux.setup(rng, layer)...))
-        end == 10 * ones(1, 2)
+            first(Lux.apply(layer, ones(10, 2) |> aType, device.(Lux.setup(rng, layer))...))
+        end == 10 * aType(ones(1, 2))
 
         @test begin
             layer = Dense(10, 2, identity; init_weight=ones)
-            first(Lux.apply(layer, ones(10, 1), Lux.setup(rng, layer)...))
-        end == 10 * ones(2, 1)
+            first(Lux.apply(layer, ones(10, 1) |> aType, device.(Lux.setup(rng, layer))...))
+        end == 10 * aType(ones(2, 1))
 
         @test begin
             layer = Dense(10, 2, identity; init_weight=ones)
-            first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
-        end == [10 20; 10 20]
+            first(Lux.apply(layer, aType([ones(10, 1) 2 * ones(10, 1)]),
+                            device.(Lux.setup(rng, layer))...))
+        end == aType([10 20; 10 20])
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight=ones, bias=false)
-            first(Lux.apply(layer, [ones(10, 1) 2 * ones(10, 1)], Lux.setup(rng, layer)...))
-        end == [10 20; 10 20]
+            layer = Dense(10, 2, identity; init_weight=ones, use_bias=false)
+            first(Lux.apply(layer, aType([ones(10, 1) 2 * ones(10, 1)]),
+                            device.(Lux.setup(rng, layer))...))
+        end == aType([10 20; 10 20])
     end
 
     # Deprecated Functionality (Remove in v0.5)
@@ -147,17 +154,17 @@ end
     end
 end
 
-@testset "Scale" begin
+@testset "$mode: Scale" for (mode, aType, device, ongpu) in MODES
     @testset "constructors" begin
         layer = Scale(10, 100)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test size(ps.weight) == (10, 100)
         @test size(ps.bias) == (10, 100)
         @test layer.activation == identity
 
         layer = Scale(10, 100, relu; use_bias=false)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test !haskey(ps, :bias)
         @test layer.activation == relu
@@ -172,32 +179,32 @@ end
 
     @testset "dimensions" begin
         layer = Scale(10, 5)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
-        @test size(first(Lux.apply(layer, randn(10), ps, st))) == (10, 5)
-        @test size(first(Lux.apply(layer, randn(10, 5, 2), ps, st))) == (10, 5, 2)
+        @test size(first(Lux.apply(layer, randn(10) |> aType, ps, st))) == (10, 5)
+        @test size(first(Lux.apply(layer, randn(10, 5, 2) |> aType, ps, st))) == (10, 5, 2)
     end
 
     @testset "zeros" begin
         @test begin
             layer = Scale(10, 1, identity; init_weight=ones)
-            first(Lux.apply(layer, ones(10, 1), Lux.setup(rng, layer)...))
-        end == ones(10, 1)
+            first(Lux.apply(layer, ones(10, 1) |> aType, device.(Lux.setup(rng, layer))...))
+        end == aType(ones(10, 1))
 
         @test begin
             layer = Scale(10, 1, identity; init_weight=ones)
-            first(Lux.apply(layer, ones(10, 2), Lux.setup(rng, layer)...))
-        end == ones(10, 2)
+            first(Lux.apply(layer, ones(10, 2) |> aType, device.(Lux.setup(rng, layer))...))
+        end == aType(ones(10, 2))
 
         @test begin
             layer = Scale(2, identity; init_weight=ones, init_bias=ones)
-            first(Lux.apply(layer, [1 2; 3 4], Lux.setup(rng, layer)...))
-        end == [2.0 3.0; 4.0 5.0]
+            first(Lux.apply(layer, [1 2; 3 4] |> aType, device.(Lux.setup(rng, layer))...))
+        end == aType([2.0 3.0; 4.0 5.0])
 
         @test begin
             layer = Scale(2, tanh; bias=false, init_weight=zeros)
-            first(Lux.apply(layer, [1 2; 3 4], Lux.setup(rng, layer)...))
-        end == zeros(2, 2)
+            first(Lux.apply(layer, [1 2; 3 4] |> aType, device.(Lux.setup(rng, layer))...))
+        end == aType(zeros(2, 2))
     end
 
     # Deprecated Functionality (Remove in v0.5)
@@ -208,7 +215,7 @@ end
     end
 end
 
-@testset "Bilinear" begin
+@testset "$mode: Bilinear" for (mode, aType, device, ongpu) in MODES
     @testset "SkipConnection recombinator" begin
         d = Dense(2 => 2)
         display(d)
@@ -216,14 +223,14 @@ end
         display(b)
         layer = SkipConnection(d, b)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, Float32, 2, 1)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, Float32, 2, 1) |> aType
 
         @test size(layer(x, ps, st)[1]) == (3, 1)
-        @inferred layer(x, ps, st)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol=1.0f-3, rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = (x, ps) -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         d = Dense(2 => 2)
         display(d)
@@ -231,61 +238,61 @@ end
         display(b)
         layer = SkipConnection(d, b)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
-        x = randn(rng, Float32, 2, 1)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, Float32, 2, 1) |> aType
 
         @test size(layer(x, ps, st)[1]) == (3, 1)
-        @inferred layer(x, ps, st)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol=1.0f-3, rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = (x, ps) -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 
     @testset "Two-streams zero sum" begin
-        x = zeros(Float32, 2, 1)
-        y = zeros(Float32, 1, 1)
+        x = zeros(Float32, 2, 1) |> aType
+        y = zeros(Float32, 1, 1) |> aType
         layer = Bilinear((2, 1) => 3)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test size(layer((x, y), ps, st)[1]) == (3, 1)
         @test sum(abs2, layer((x, y), ps, st)[1]) == 0.0f0
-        @inferred layer((x, y), ps, st)
-        run_JET_tests(layer, (x, y), ps, st)
-        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), (x, y), ps;
-                                      atol=1.0f-3, rtol=1.0f-3)
+
+        @jet layer((x, y), ps, st)
+        __f = (x, y, ps) -> sum(first(layer((x, y), ps, st)))
+        @eval @test_gradients $__f $x $y $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 
     @testset "Inner interactions" begin
-        x = randn(Float32, 2, 1)
+        x = randn(Float32, 2, 1) |> aType
         layer = Bilinear((2, 2) => 3)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test size(layer(x, ps, st)[1]) == (3, 1)
-        @inferred layer(x, ps, st)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol=1.0f-3, rtol=1.0f-3)
 
-        x = randn(Float32, 2, 1)
+        @jet layer(x, ps, st)
+        __f = (x, ps) -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+
+        x = randn(Float32, 2, 1) |> aType
         layer = Bilinear(2 => 3)
         display(layer)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) .|> device
 
         @test size(layer(x, ps, st)[1]) == (3, 1)
-        @inferred layer(x, ps, st)
-        run_JET_tests(layer, x, ps, st)
-        test_gradient_correctness_fdm((x, ps) -> sum(layer(x, ps, st)[1]), x, ps;
-                                      atol=1.0f-3, rtol=1.0f-3)
+
+        @jet layer(x, ps, st)
+        __f = (x, ps) -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 end
 
-@testset "Embedding" begin
+@testset "$mode: Embedding" for (mode, aType, device, ongpu) in MODES
     vocab_size, embed_size = 10, 4
     layer = Embedding(vocab_size => embed_size)
     display(layer)
-    ps, st = Lux.setup(rng, layer)
+    ps, st = Lux.setup(rng, layer) .|> device
 
     @test size(ps.weight) == (embed_size, vocab_size)
 
@@ -293,26 +300,20 @@ end
     y, st_ = layer(x, ps, st)
     @test size(layer(x, ps, st)[1]) == (embed_size,)
     @test y == ps.weight[:, x]
-    @inferred layer(x, ps, st)
-    run_JET_tests(layer, x, ps, st)
-    test_gradient_correctness_fdm(ps -> sum(layer(x, ps, st)[1]), ps; atol=1.0f-3,
-                                  rtol=1.0f-3)
 
-    x = rand(1:vocab_size, 3)
+    @jet layer(x, ps, st)
+
+    x = rand(1:vocab_size, 3) |> aType
     y, st_ = layer(x, ps, st)
-    @test y isa Matrix{Float32}
+    @test y isa aType{Float32}
     @test y == ps.weight[:, x]
-    @inferred layer(x, ps, st)
-    run_JET_tests(layer, x, ps, st)
-    test_gradient_correctness_fdm(ps -> sum(layer(x, ps, st)[1]), ps; atol=1.0f-3,
-                                  rtol=1.0f-3)
 
-    x = rand(1:vocab_size, 3, 4)
+    @jet layer(x, ps, st)
+
+    x = rand(1:vocab_size, 3, 4) |> aType
     y, st_ = layer(x, ps, st)
-    @test y isa Array{Float32, 3}
+    @test y isa aType{Float32, 3}
     @test size(y) == (embed_size, 3, 4)
-    @inferred layer(x, ps, st)
-    run_JET_tests(layer, x, ps, st)
-    test_gradient_correctness_fdm(ps -> sum(layer(x, ps, st)[1]), ps; atol=1.0f-3,
-                                  rtol=1.0f-3)
+
+    @jet layer(x, ps, st)
 end

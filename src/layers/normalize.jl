@@ -487,10 +487,7 @@ function initialparameters(rng::AbstractRNG,
         v = ps_layer[k]
         if k in which_params
             if all(iszero, v)
-                msg = ("Parameter $(k) is completely zero. This will result in NaN " *
-                       "gradients. Either remove this parameter from `which_params` or " *
-                       "modify the initialization in the actual layer. Typically this is " *
-                       "controlled using the `init_$(k)` keyword argument.")
+                msg = ("Parameter $(k) is completely zero. This will result in NaN gradients. Either remove this parameter from `which_params` or modify the initialization in the actual layer. Typically this is controlled using the `init_$(k)` keyword argument.")
                 # FIXME(@avik-pal): This is not really an ArgumentError
                 throw(ArgumentError(msg))
             end
@@ -510,7 +507,7 @@ initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 function (wn::WeightNorm)(x, ps, st::NamedTuple)
     _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
-    return Lux.apply(wn.layer, x, merge(_ps, ps.unnormalized), st)
+    return Lux.apply(wn.layer, x, _merge(_ps, ps.unnormalized), st)
 end
 
 @inbounds @generated function _get_normalized_parameters(::WeightNorm{which_params},

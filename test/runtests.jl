@@ -18,8 +18,6 @@ using SafeTestsets, Test
 
     @time @safetestset "NNlib" begin include("nnlib.jl") end
 
-    @time @safetestset "Automatic Differentiation" begin include("autodiff.jl") end
-
     @testset "Experimental" begin
         @time @safetestset "Map" begin include("contrib/map.jl") end
         @time @safetestset "Training" begin include("contrib/training.jl") end

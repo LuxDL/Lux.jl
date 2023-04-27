@@ -1,7 +1,8 @@
-using Functors, Lux, Random, Test
+using Functors, Lux, Test
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+include("test_utils.jl")
+
+rng = get_stable_rng(12345)
 
 @testset "AbstractExplicitLayer Interface" begin
     # Deprecated Functionality (Remove in v0.5)

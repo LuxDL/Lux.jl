@@ -1,7 +1,8 @@
-using ComponentArrays, Lux, Random, Test, Zygote
+using ComponentArrays, Lux, Test, Zygote
 
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+include("../test_utils.jl")
+
+rng = get_stable_rng(12345)
 
 @testset "LuxComponentArraysExt" begin
     # Ref: https://github.com/avik-pal/Lux.jl/issues/243

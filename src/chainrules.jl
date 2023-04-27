@@ -75,7 +75,7 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
             dyᵢ isa AbstractZero && return
             @. dxᵢ += dyᵢ
         end
-        return (NoTangent(), dx, NoTangent(), NoTangent())
+        return (NoTangent(), dx, NoTangent())
     end
     return multigate(x, c), multigate_pullback
 end

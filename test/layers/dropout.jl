@@ -5,84 +5,92 @@ include("../test_utils.jl")
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-@testset "Dropout" begin for p in (0.5f0, 0.5)
-    layer = Dropout(p)
-    display(layer)
-    ps, st = Lux.setup(rng, layer)
-    x = randn(Float32, 5, 2)
+@testset "$mode: Dropout" for (mode, aType, device, ongpu) in MODES
+    for p in (0.5f0, 0.5)
+        layer = Dropout(p)
+        display(layer)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(Float32, 5, 2) |> aType
 
-    x_, st_ = layer(x, ps, st)
-    x__, st__ = layer(x, ps, st)
-    x___, st___ = layer(x_, ps, st_)
+        x_, st_ = layer(x, ps, st)
+        x__, st__ = layer(x, ps, st)
+        x___, st___ = layer(x_, ps, st_)
 
-    @test st_.rng != st.rng
-    @test st_.rng == st__.rng
-    @test x_ == x__
-    @test x_ != x___
+        @test st_.rng != st.rng
+        @test st_.rng == st__.rng
+        @test x_ == x__
+        @test x_ != x___
 
-    run_JET_tests(layer, x, ps, st)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                  rtol=1.0f-3)
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-    st = Lux.testmode(st)
+        st = Lux.testmode(st)
 
-    @test first(layer(x, ps, st)) == x
-end end
+        @test first(layer(x, ps, st)) == x
+    end
+end
 
-@testset "AlphaDropout" begin for p in (0.5f0, 0.5)
-    layer = AlphaDropout(p)
-    display(layer)
-    ps, st = Lux.setup(rng, layer)
-    x = randn(Float32, 5, 2)
+@testset "$mode: AlphaDropout" for (mode, aType, device, ongpu) in MODES
+    for p in (0.5f0, 0.5)
+        layer = AlphaDropout(p)
+        display(layer)
+        ps, st = Lux.setup(rng, layer) .|> device
+        # GPU compilation for mixed types fail atm
+        x = randn(typeof(p), 5, 2) |> aType
 
-    x_, st_ = layer(x, ps, st)
-    x__, st__ = layer(x, ps, st)
-    x___, st___ = layer(x_, ps, st_)
+        x_, st_ = layer(x, ps, st)
+        x__, st__ = layer(x, ps, st)
+        x___, st___ = layer(x_, ps, st_)
 
-    @test st_.rng != st.rng
-    @test st_.rng == st__.rng
-    @test x_ == x__
-    @test x_ != x___
+        @test st_.rng != st.rng
+        @test st_.rng == st__.rng
+        @test x_ == x__
+        @test x_ != x___
 
-    run_JET_tests(layer, x, ps, st)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                  rtol=1.0f-3)
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-    st = Lux.testmode(st)
+        st = Lux.testmode(st)
 
-    @test first(layer(x, ps, st)) == x
-end end
+        @test first(layer(x, ps, st)) == x
+    end
+end
 
-@testset "VariationalHiddenDropout" begin for p in (0.5f0, 0.5)
-    layer = VariationalHiddenDropout(p)
-    display(layer)
-    ps, st = Lux.setup(rng, layer)
-    x = randn(Float32, 5, 2)
+@testset "$mode: VariationalHiddenDropout" for (mode, aType, device, ongpu) in MODES
+    for p in (0.5f0, 0.5)
+        layer = VariationalHiddenDropout(p)
+        display(layer)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(Float32, 5, 2) |> aType
 
-    x_, st_ = layer(x, ps, st)
-    x__, st__ = layer(x, ps, st)
-    x___, st___ = layer(x_, ps, st_)
+        x_, st_ = layer(x, ps, st)
+        x__, st__ = layer(x, ps, st)
+        x___, st___ = layer(x_, ps, st_)
 
-    @test st_.rng != st.rng
-    @test st_.rng == st__.rng
-    @test st_.mask == st__.mask
-    @test x_ == x__
-    @test x_ != x___
+        @test st_.rng != st.rng
+        @test st_.rng == st__.rng
+        @test st_.mask == st__.mask
+        @test x_ == x__
+        @test x_ != x___
 
-    run_JET_tests(layer, x, ps, st)
-    run_JET_tests(layer, x, ps, st_)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st)[1]), x; atol=1.0f-3,
-                                  rtol=1.0f-3)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st_)[1]), x; atol=1.0f-3,
-                                  rtol=1.0f-3)
+        @jet layer(x, ps, st)
+        __f = x -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-    st__ = Lux.update_state(st_, :update_mask, Val(true))
-    x___, st___ = layer(x, ps, st__)
+        @jet layer(x, ps, st_)
+        __f = x -> sum(first(layer(x, ps, st_)))
+        @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-    @test st___.mask != st__.mask
-    @test x___ != x_
+        st__ = Lux.update_state(st_, :update_mask, Val(true))
+        x___, st___ = layer(x, ps, st__)
 
-    run_JET_tests(layer, x, ps, st__)
-    test_gradient_correctness_fdm(x -> sum(layer(x, ps, st__)[1]), x; atol=1.0f-3,
-                                  rtol=1.0f-3)
-end end
+        @test st___.mask != st__.mask
+        @test x___ != x_
+
+        @jet layer(x, ps, st__)
+        __f = x -> sum(first(layer(x, ps, st__)))
+        @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+    end
+end
