@@ -6,8 +6,11 @@ using Functors, Lux, Optimisers
 import TruncatedStacktraces: @truncate_stacktrace
 import ChainRulesCore as CRC
 
-@inline function Lux._getproperty(x::ComponentArray, ::Val{prop}) where {prop}
-    return prop in propertynames(x) ? getproperty(x, prop) : nothing
+@generated function Lux._getproperty(x::ComponentArray{T, N, A, Tuple{Ax}},
+                                     ::Val{v}) where {v, T, N, A,
+                                                      Ax <: ComponentArrays.AbstractAxis}
+    names = propertynames(ComponentArrays.indexmap(Ax))
+    return v ∈ names ? :(x.$v) : :(nothing)
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)

@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.4.52"
+version = "0.4.53"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -43,7 +43,7 @@ LuxZygoteExt = "Zygote"
 Adapt = "3"
 ChainRulesCore = "1"
 ComponentArrays = "0.13"
-FillArrays = "0.13"
+FillArrays = "0.13, 1"
 Flux = "0.13"
 Functors = "0.2, 0.3, 0.4"
 LuxCUDA = "0.1"

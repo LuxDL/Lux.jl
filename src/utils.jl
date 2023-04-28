@@ -213,11 +213,12 @@ end
 
 # If doesn't have a property, return nothing
 @generated function _getproperty(x::NamedTuple{names}, ::Val{v}) where {names, v}
-    if v in names
-        return :(x.$v)
-    else
-        return :(nothing)
-    end
+    return v ∈ names ? :(x.$v) : :(nothing)
+end
+
+## Slow-fallback
+@inline function _getproperty(x, ::Val{v}) where {v}
+    return v ∈ propertynames(x) ? getproperty(x, v) : nothing
 end
 
 @inline function _eachslice(x::AbstractArray, ::Val{dims}) where {dims}
