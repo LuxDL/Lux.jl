@@ -199,7 +199,6 @@ end
 Split up `x` into `N` equally sized chunks (along dimension `1`).
 """
 @inline function multigate(x::AbstractArray, ::Val{N}) where {N}
-    # return map(i -> _gate(x, size(x, 1) ÷ N, i), 1:N)
     return ntuple(i -> _gate(x, size(x, 1) ÷ N, i), N)
 end
 
