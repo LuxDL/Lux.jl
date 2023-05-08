@@ -482,7 +482,7 @@ Gated Recurrent Unit (GRU) Cell
 \begin{align}
   r &= \sigma(W_{ir} \times x + W_{hr} \times h_{prev} + b_{hr})\\
   z &= \sigma(W_{iz} \times x + W_{hz} \times h_{prev} + b_{hz})\\
-  n &= \sigma(W_{in} \times x + b_{in} + r \cdot (W_{hn} \times h_{prev} + b_{hn}))\\
+  n &= \tanh(W_{in} \times x + b_{in} + r \cdot (W_{hn} \times h_{prev} + b_{hn}))\\
   h_{new} &= (1 - z) \cdot n + z \cdot h_{prev}
 \end{align}
 ```
