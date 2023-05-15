@@ -171,8 +171,8 @@ end
 #
 # *Slight Detour*: We have had several questions regarding if we will be considering any
 # other AD system for the reverse-diff backend. For now we will stick to Zygote.jl, however
-# once [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) has support for custom rules and
-# we have tested Lux extensively with it, we will make the switch.
+# once we have tested Lux extensively with [Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl),
+# we will make the switch.
 
 # Even though, theoretically, a VJP (Vector-Jacobian product - reverse autodiff) and a JVP
 # (Jacobian-Vector product - forward-mode autodiff) are similar—they compute a product of a
