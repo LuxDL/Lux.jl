@@ -1,7 +1,7 @@
 # # MNIST Classification using Neural ODEs
 
 # To understand Neural ODEs, users should look up
-# [these lecture notes](https://book.sciml.ai/notes/11/). We recommend users to directly use
+# [these lecture notes](https://book.sciml.ai/notes/11-Differentiable_Programming_and_Neural_Differential_Equations/). We recommend users to directly use
 # [DiffEqFlux.jl](https://docs.sciml.ai/DiffEqFlux/stable/), instead of implementing
 # Neural ODEs from scratch.
 
