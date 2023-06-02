@@ -87,57 +87,63 @@ include("../test_utils.jl")
     end
 
     @testset "Linear" begin
-        @testset "Dense" begin for model in [
-            Flux.Dense(2 => 4) |> fdevice(device),
-            Flux.Dense(2 => 4; bias=false) |> fdevice(device),
-        ]
-            x = randn(Float32, 2, 4) |> aType
+        @testset "Dense" begin
+            for model in [
+                Flux.Dense(2 => 4) |> fdevice(device),
+                Flux.Dense(2 => 4; bias=false) |> fdevice(device),
+            ]
+                x = randn(Float32, 2, 4) |> aType
 
-            model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                model_lux = transform(model; preserve_ps_st=true)
+                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
-            @test model(x) ≈ model_lux(x, ps, st)[1]
+                @test model(x) ≈ model_lux(x, ps, st)[1]
 
-            model_lux = transform(model)
-            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                model_lux = transform(model)
+                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
-            @test size(model_lux(x, ps, st)[1]) == size(model(x))
-        end end
+                @test size(model_lux(x, ps, st)[1]) == size(model(x))
+            end
+        end
 
-        @testset "Scale" begin for model in [
-            Flux.Scale(2) |> fdevice(device),
-            Flux.Scale(2; bias=false) |> fdevice(device),
-        ]
-            x = randn(Float32, 2, 4) |> aType
+        @testset "Scale" begin
+            for model in [
+                Flux.Scale(2) |> fdevice(device),
+                Flux.Scale(2; bias=false) |> fdevice(device),
+            ]
+                x = randn(Float32, 2, 4) |> aType
 
-            model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                model_lux = transform(model; preserve_ps_st=true)
+                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
-            @test model(x) ≈ model_lux(x, ps, st)[1]
+                @test model(x) ≈ model_lux(x, ps, st)[1]
 
-            model_lux = transform(model)
-            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                model_lux = transform(model)
+                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
-            @test size(model_lux(x, ps, st)[1]) == size(model(x))
-        end end
+                @test size(model_lux(x, ps, st)[1]) == size(model(x))
+            end
+        end
 
-        @testset "Bilinear" begin for model in [
-            Flux.Bilinear((2, 3) => 5) |> fdevice(device),
-            Flux.Bilinear((2, 3) => 5; bias=false) |> fdevice(device),
-        ]
-            x = randn(Float32, 2, 4) |> aType
-            y = randn(Float32, 3, 4) |> aType
+        @testset "Bilinear" begin
+            for model in [
+                Flux.Bilinear((2, 3) => 5) |> fdevice(device),
+                Flux.Bilinear((2, 3) => 5; bias=false) |> fdevice(device),
+            ]
+                x = randn(Float32, 2, 4) |> aType
+                y = randn(Float32, 3, 4) |> aType
 
-            model_lux = transform(model; preserve_ps_st=true)
-            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                model_lux = transform(model; preserve_ps_st=true)
+                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
-            @test model(x, y) ≈ model_lux((x, y), ps, st)[1]
+                @test model(x, y) ≈ model_lux((x, y), ps, st)[1]
 
-            model_lux = transform(model)
-            ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                model_lux = transform(model)
+                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
-            @test size(model_lux((x, y), ps, st)[1]) == size(model(x, y))
-        end end
+                @test size(model_lux((x, y), ps, st)[1]) == size(model(x, y))
+            end
+        end
 
         @testset "Embedding" begin
             model = Flux.Embedding(16 => 4) |> fdevice(device)
