@@ -25,6 +25,9 @@ steps:
           - "nightly"
       adjustments:
         - with:
+            julia: "1"
+          soft_fail: true
+        - with:
             julia: "nightly"
           soft_fail: true
 
@@ -50,6 +53,7 @@ steps:
         Pkg.instantiate()
         println("+++ :julia: Building documentation")
 
+        Pkg.activate("docs")
         include("docs/tutorials.jl")
         include("docs/make.jl")'
     agents:
