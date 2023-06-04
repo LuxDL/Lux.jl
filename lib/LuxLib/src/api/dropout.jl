@@ -38,26 +38,48 @@ function dropout(rng::AbstractRNG, x::AA, p::T, ::Val{true}; dims, invp::T=inv(p
     return (x .* ignore_derivatives(mask), mask, rng)
 end
 
-function dropout(rng::AbstractRNG, x::AA, p::T, ::Val{false}; dims,
-                 invp::T=inv(p)) where {T}
+function dropout(rng::AbstractRNG,
+    x::AA,
+    p::T,
+    ::Val{false};
+    dims,
+    invp::T=inv(p)) where {T}
     return (x, x, rng)
 end
 
-function dropout(rng::AbstractRNG, x::AA, mask::AA, p::T, t::Val, ::Val{true}; dims,
-                 invp::T=inv(p)) where {T}
+function dropout(rng::AbstractRNG,
+    x::AA,
+    mask::AA,
+    p::T,
+    t::Val,
+    ::Val{true};
+    dims,
+    invp::T=inv(p)) where {T}
     return dropout(rng, x, p, t; dims, invp)
 end
 
-function dropout(rng::AbstractRNG, x::AA{T1, N}, mask::AA{T2, N}, p::T, ::Val{true},
-                 ::Val{false}; dims, invp::T=inv(p)) where {T, T1, T2, N}
+function dropout(rng::AbstractRNG,
+    x::AA{T1, N},
+    mask::AA{T2, N},
+    p::T,
+    ::Val{true},
+    ::Val{false};
+    dims,
+    invp::T=inv(p)) where {T, T1, T2, N}
     if size(x) != size(mask)
         return dropout(rng, x, p, Val(true); dims, invp)
     end
     return x .* ignore_derivatives(mask), mask, rng
 end
 
-function dropout(rng::AbstractRNG, x::AA{T1, N}, mask::AA{T2, N}, p::T, ::Val{false},
-                 ::Val{false}; dims, invp::T=inv(p)) where {T, T1, T2, N}
+function dropout(rng::AbstractRNG,
+    x::AA{T1, N},
+    mask::AA{T2, N},
+    p::T,
+    ::Val{false},
+    ::Val{false};
+    dims,
+    invp::T=inv(p)) where {T, T1, T2, N}
     return (x, mask, rng)
 end
 

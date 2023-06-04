@@ -59,8 +59,11 @@ interface.
 [1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
     on computer vision (ECCV). 2018.
 """
-function groupnorm(x::AA{T, 4}, scale::AV{T}, bias::AV{T}; groups::Int,
-                   epsilon::Real) where {T <: FP_32_64}
+function groupnorm(x::AA{T, 4},
+    scale::AV{T},
+    bias::AV{T};
+    groups::Int,
+    epsilon::Real) where {T <: FP_32_64}
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -72,23 +75,42 @@ function groupnorm(x::AA{T, 4}, scale::AV{T}, bias::AV{T}; groups::Int,
     return first(_groupnorm(x, groups, scale, bias, T(epsilon)))
 end
 
-function groupnorm(x::AA{T, 4}, scale::AV{T}, bias::AV{T}, ::Nothing, ::Nothing;
-                   groups::Int, epsilon::Real, momentum=0.9f0,
-                   training::Val=Val(true)) where {T <: FP_32_64}
+function groupnorm(x::AA{T, 4},
+    scale::AV{T},
+    bias::AV{T},
+    ::Nothing,
+    ::Nothing;
+    groups::Int,
+    epsilon::Real,
+    momentum=0.9f0,
+    training::Val=Val(true)) where {T <: FP_32_64}
     return groupnorm(x, scale, bias; groups, epsilon),
-           (running_mean=nothing, running_var=nothing)
+    (running_mean=nothing, running_var=nothing)
 end
 
 # For any reason if the fast path is not possible, then we use the fallback implementation
 function groupnorm(x::AA, scale::AV, bias::AV; groups::Int, epsilon::Real)
-    return groupnorm(x, scale, bias, nothing, nothing; groups, epsilon,
-                     momentum=eltype(x)(0.9), training=Val(true))[1]
+    return groupnorm(x,
+        scale,
+        bias,
+        nothing,
+        nothing;
+        groups,
+        epsilon,
+        momentum=eltype(x)(0.9),
+        training=Val(true))[1]
 end
 
 # Slow Fallback (without custom Pullback Implementation)
-function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::NOrAVR,
-                   running_var::NOrAVR; groups::Int, momentum::Real, training::Val,
-                   epsilon::Real) where {N}
+function groupnorm(x::AA{<:Real, N},
+    scale::NOrAVR,
+    bias::NOrAVR,
+    running_mean::NOrAVR,
+    running_var::NOrAVR;
+    groups::Int,
+    momentum::Real,
+    training::Val,
+    epsilon::Real) where {N}
     _assert_same_backend(x, scale, bias, running_mean, running_var)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -99,9 +121,15 @@ function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::
 
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
-    x_, xmean, xvar = _normalization(x_reshaped, running_mean, running_var, scale, bias,
-                                     _get_groupnorm_reduce_dims(x), training, momentum,
-                                     epsilon)
+    x_, xmean, xvar = _normalization(x_reshaped,
+        running_mean,
+        running_var,
+        scale,
+        bias,
+        _get_groupnorm_reduce_dims(x),
+        training,
+        momentum,
+        epsilon)
 
     return reshape(x_, sz), (; running_mean=xmean, running_var=xvar)
 end
@@ -111,8 +139,12 @@ end
 end
 
 # Custom Pullbacks
-function CRC.rrule(::typeof(groupnorm), x::AA{T, 4}, scale::AV{T}, bias::AV{T}; groups::Int,
-                   epsilon::Real) where {T <: FP_32_64}
+function CRC.rrule(::typeof(groupnorm),
+    x::AA{T, 4},
+    scale::AV{T},
+    bias::AV{T};
+    groups::Int,
+    epsilon::Real) where {T <: FP_32_64}
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))

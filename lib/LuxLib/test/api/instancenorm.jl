@@ -31,8 +31,10 @@ end
         @test size(y) == sz
 
         _target_std = ones(ntuple(_ -> 1, length(sz) - 2)..., size(x)[(end - 1):end]...)
-        @eval @test check_approx(std(Array($y); dims=1:($(length(sz) - 2))), $_target_std;
-                                 atol=0.2, rtol=0.2)
+        @eval @test check_approx(std(Array($y); dims=1:($(length(sz) - 2))),
+            $_target_std;
+            atol=0.2,
+            rtol=0.2)
         @test std(y; dims=1:(length(sz) - 2)) != std(x; dims=1:(length(sz) - 2))
 
         if __istraining(training)

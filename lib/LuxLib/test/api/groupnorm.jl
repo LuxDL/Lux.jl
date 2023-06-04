@@ -17,14 +17,27 @@ function _setup_groupnorm(aType, T, sz, groups; track_stats::Bool)
     end
 end
 
-function _groupnorm_generic_fallback(x, scale, bias, running_mean, running_var, training,
-                                     momentum, epsilon, groups)
+function _groupnorm_generic_fallback(x,
+    scale,
+    bias,
+    running_mean,
+    running_var,
+    training,
+    momentum,
+    epsilon,
+    groups)
     sz = size(x)
     N = ndims(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
-    x_, xmean, xvar = LuxLib._normalization(x_reshaped, running_mean, running_var, scale,
-                                            bias, Val(Tuple(collect(1:(N - 1)))), training,
-                                            momentum, epsilon)
+    x_, xmean, xvar = LuxLib._normalization(x_reshaped,
+        running_mean,
+        running_var,
+        scale,
+        bias,
+        Val(Tuple(collect(1:(N - 1)))),
+        training,
+        momentum,
+        epsilon)
 
     return reshape(x_, sz)
 end
@@ -41,8 +54,10 @@ end
 
         y = _f(x, scale, bias)
 
-        gs_x, gs_scale, gs_bias = Zygote.gradient((args...) -> sum(_f(args...)), x, scale,
-                                                  bias)
+        gs_x, gs_scale, gs_bias = Zygote.gradient((args...) -> sum(_f(args...)),
+            x,
+            scale,
+            bias)
 
         @inferred groupnorm(x, scale, bias; groups, epsilon)
         @jet _f(x, scale, bias) opt_broken=true
@@ -50,13 +65,20 @@ end
         @test size(y) == sz
 
         # Use the generic implementation to compare against
-        __f = (args...) -> _groupnorm_generic_fallback(args..., nothing, nothing, Val(true),
-                                                       T(0.9), epsilon, groups)
+        __f = (args...) -> _groupnorm_generic_fallback(args...,
+            nothing,
+            nothing,
+            Val(true),
+            T(0.9),
+            epsilon,
+            groups)
 
         y_ = __f(x, scale, bias)
 
-        gs_x_, gs_scale_, gs_bias_ = Zygote.gradient((args...) -> sum(__f(args...)), x,
-                                                     scale, bias)
+        gs_x_, gs_scale_, gs_bias_ = Zygote.gradient((args...) -> sum(__f(args...)),
+            x,
+            scale,
+            bias)
 
         # The KA implementation reorders operations manually for maximal
         # performance. Hence equality cannot be guaranteed.
@@ -83,8 +105,15 @@ end
         x, scale, bias, rm, rv = _setup_groupnorm(aType, T, sz, groups; track_stats=true)
         y, nt = _f(x, scale, bias, rm, rv)
 
-        @inferred groupnorm(x, scale, bias, rm, rv; groups, epsilon, training,
-                            momentum=T(0.9))
+        @inferred groupnorm(x,
+            scale,
+            bias,
+            rm,
+            rv;
+            groups,
+            epsilon,
+            training,
+            momentum=T(0.9))
         @jet _f(x, scale, bias, rm, rv)
 
         @test y isa aType{T, 4}
@@ -93,8 +122,14 @@ end
         @test size(nt.running_var) == (groups,)
 
         fp16 = T == Float16
-        __f = (args...) -> sum(first(groupnorm(x, args..., rm, rv; groups, epsilon,
-                                               training, momentum=T(0.9))))
+        __f = (args...) -> sum(first(groupnorm(x,
+            args...,
+            rm,
+            rv;
+            groups,
+            epsilon,
+            training,
+            momentum=T(0.9))))
         @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16
     end
 end

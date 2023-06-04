@@ -4,9 +4,14 @@ _linear_threads_groupnorm(::GPU) = 256
 
 # Low-Level Kernels
 ## Original Implementation: https://github.com/pytorch/pytorch/blob/master/caffe2/operators/group_norm_op.cu
-@kernel function _compute_fused_params_kernel!(scale, bias, @Const(C), @Const(K),
-                                               @Const(mu), @Const(rsig), @Const(gamma),
-                                               @Const(beta))
+@kernel function _compute_fused_params_kernel!(scale,
+    bias,
+    @Const(C),
+    @Const(K),
+    @Const(mu),
+    @Const(rsig),
+    @Const(gamma),
+    @Const(beta))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
@@ -16,15 +21,21 @@ _linear_threads_groupnorm(::GPU) = 256
     @inbounds bias[idx] = beta[c] - mu[ng] * scale_val
 end
 
-@kernel function _groupnorm_forward_kernel!(Y, @Const(WxH), @Const(X), @Const(scale),
-                                            @Const(bias))
+@kernel function _groupnorm_forward_kernel!(Y,
+    @Const(WxH),
+    @Const(X),
+    @Const(scale),
+    @Const(bias))
     idx = @index(Global)
     nc = _div_idx(idx, WxH)
     @inbounds Y[idx] = X[idx] * scale[nc] + bias[nc]
 end
 
-@kernel function _groupnorm_dy_dscale_kernel!(dY_dscale, @Const(C), @Const(K), @Const(rsig),
-                                              @Const(gamma))
+@kernel function _groupnorm_dy_dscale_kernel!(dY_dscale,
+    @Const(C),
+    @Const(K),
+    @Const(rsig),
+    @Const(gamma))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
@@ -32,17 +43,27 @@ end
     @inbounds dY_dscale[idx] = gamma[c] * rsig[ng]
 end
 
-@kernel function _groupnorm_xscale_and_bias_kernel!(X_scale, bias, @Const(alpha),
-                                                    @Const(mu), @Const(rsig),
-                                                    @Const(ds_sum), @Const(db_sum))
+@kernel function _groupnorm_xscale_and_bias_kernel!(X_scale,
+    bias,
+    @Const(alpha),
+    @Const(mu),
+    @Const(rsig),
+    @Const(ds_sum),
+    @Const(db_sum))
     idx = @index(Global)
     @inbounds x = (db_sum[idx] * mu[idx] - ds_sum[idx]) * (rsig[idx]^3) * alpha
     @inbounds X_scale[idx] = x
     @inbounds bias[idx] = -(x * mu[idx] + db_sum[idx] * rsig[idx] * alpha)
 end
 
-@kernel function _groupnorm_dx_kernel!(dX, @Const(WxH), @Const(K), @Const(dY_dscale),
-                                       @Const(dY), @Const(X_scale), @Const(X), @Const(bias))
+@kernel function _groupnorm_dx_kernel!(dX,
+    @Const(WxH),
+    @Const(K),
+    @Const(dY_dscale),
+    @Const(dY),
+    @Const(X_scale),
+    @Const(X),
+    @Const(bias))
     idx = @index(Global)
     nc = _div_idx(idx, WxH)
     ng = _div_idx(nc, K)
@@ -50,8 +71,11 @@ end
 end
 
 # High-Level Function (Not User Facing)
-@inbounds function _groupnorm(X::AA{T, 4}, G::Int, gamma::AV{T}, beta::AV{T},
-                              epsilon::T) where {T}
+@inbounds function _groupnorm(X::AA{T, 4},
+    G::Int,
+    gamma::AV{T},
+    beta::AV{T},
+    epsilon::T) where {T}
     W, H, C, N = size(X)
     K = div(C, G)
 
@@ -78,8 +102,14 @@ end
     return Y, mu, rsig
 end
 
-@inbounds function _dgroupnorm(dY::AA{T, 4}, Y::AA{T, 4}, X::AA{T, 4}, G::Int, gamma::AV{T},
-                               beta::AV{T}, mu::AA{T, 5}, rsig::AA{T, 5}) where {T}
+@inbounds function _dgroupnorm(dY::AA{T, 4},
+    Y::AA{T, 4},
+    X::AA{T, 4},
+    G::Int,
+    gamma::AV{T},
+    beta::AV{T},
+    mu::AA{T, 5},
+    rsig::AA{T, 5}) where {T}
     W, H, C, N = size(X)
     K = div(C, G)
     WxH = W * H
@@ -101,10 +131,17 @@ end
     X_scale = similar(X, (G, N))
     bias = similar(X, (G, N))
 
-    groupnorm_xscale_and_bias! = _groupnorm_xscale_and_bias_kernel!(backend, n,
-                                                                    size(X_scale))
-    groupnorm_xscale_and_bias!(X_scale, bias, T(1 / (K * WxH)), mu, rsig, ds_sum, db_sum;
-                               ndrange=size(X_scale))
+    groupnorm_xscale_and_bias! = _groupnorm_xscale_and_bias_kernel!(backend,
+        n,
+        size(X_scale))
+    groupnorm_xscale_and_bias!(X_scale,
+        bias,
+        T(1 / (K * WxH)),
+        mu,
+        rsig,
+        ds_sum,
+        db_sum;
+        ndrange=size(X_scale))
     KA.synchronize(backend)
 
     dX = similar(X)
