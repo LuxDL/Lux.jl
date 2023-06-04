@@ -9,8 +9,16 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CUDA, SciMLSensitivity, NNlib, Optimisers, OrdinaryDiffEq, Random,
-      Statistics, Zygote, OneHotArrays
+using ComponentArrays,
+    CUDA,
+    SciMLSensitivity,
+    NNlib,
+    Optimisers,
+    OrdinaryDiffEq,
+    Random,
+    Statistics,
+    Zygote,
+    OneHotArrays
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
@@ -29,10 +37,10 @@ function loadmnist(batchsize, train_split)
     (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
 
     return (
-            ## Use DataLoader to automatically minibatch and shuffle the data
-            DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
-            ## Don't shuffle the test data
-            DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false))
+        ## Use DataLoader to automatically minibatch and shuffle the data
+        DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
+        ## Don't shuffle the test data
+        DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false))
 end
 
 # ## Define the Neural ODE Layer
@@ -48,9 +56,11 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
     kwargs::K
 end
 
-function NeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(),
-                   sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-                   tspan=(0.0f0, 1.0f0), kwargs...)
+function NeuralODE(model::Lux.AbstractExplicitLayer;
+    solver=Tsit5(),
+    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
+    tspan=(0.0f0, 1.0f0),
+    kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 
@@ -71,11 +81,15 @@ diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 # ## Create and Initialize the Neural ODE Layer
 function create_model()
     ## Construct the Neural ODE Model
-    model = Chain(FlattenLayer(), Dense(784, 20, tanh),
-                  NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh),
-                                  Dense(10, 20, tanh)); save_everystep=false, reltol=1.0f-3,
-                            abstol=1.0f-3, save_start=false), diffeqsol_to_array,
-                  Dense(20, 10))
+    model = Chain(FlattenLayer(),
+        Dense(784, 20, tanh),
+        NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh), Dense(10, 20, tanh));
+            save_everystep=false,
+            reltol=1.0f-3,
+            abstol=1.0f-3,
+            save_start=false),
+        diffeqsol_to_array,
+        Dense(20, 10))
 
     rng = Random.default_rng()
     Random.seed!(rng, 0)
@@ -120,7 +134,7 @@ function train()
 
     ### Warmup the Model
     img, lab = gpu(train_dataloader.data[1][:, :, :, 1:1]),
-               gpu(train_dataloader.data[2][:, 1:1])
+    gpu(train_dataloader.data[2][:, 1:1])
     loss(img, lab, model, ps, st)
     (l, _), back = pullback(p -> loss(img, lab, model, p, st), ps)
     back((one(l), nothing))

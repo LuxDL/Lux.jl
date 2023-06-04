@@ -62,8 +62,9 @@ rng = get_stable_rng(12345)
 # end
 
 @testset "$mode: LSTMCell" for (mode, aType, device, ongpu) in MODES
-    for lstmcell in (LSTMCell(3 => 5), LSTMCell(3 => 5; use_bias=true),
-                     LSTMCell(3 => 5; use_bias=false))
+    for lstmcell in (LSTMCell(3 => 5),
+        LSTMCell(3 => 5; use_bias=true),
+        LSTMCell(3 => 5; use_bias=false))
         display(lstmcell)
         ps, st = Lux.setup(rng, lstmcell) .|> device
         x = randn(rng, Float32, 3, 2) |> aType
@@ -149,8 +150,9 @@ rng = get_stable_rng(12345)
 end
 
 @testset "$mode: GRUCell" for (mode, aType, device, ongpu) in MODES
-    for grucell in (GRUCell(3 => 5), GRUCell(3 => 5; use_bias=true),
-                    GRUCell(3 => 5; use_bias=false))
+    for grucell in (GRUCell(3 => 5),
+        GRUCell(3 => 5; use_bias=true),
+        GRUCell(3 => 5; use_bias=false))
         display(grucell)
         ps, st = Lux.setup(rng, grucell) .|> device
         x = randn(rng, Float32, 3, 2) |> aType
@@ -255,8 +257,8 @@ end
 
         # Batched Time Series
         for x in (randn(rng, Float32, 3, 4, 2) |> aType,
-                  Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
-                  [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
+            Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
+            [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
             ps, st = Lux.setup(rng, rnn) .|> device
             y, st_ = rnn(x, ps, st)
             y_, st__ = rnn_seq(x, ps, st)
@@ -277,8 +279,12 @@ end
     end
 
     # Ordering Check: https://github.com/LuxDL/Lux.jl/issues/302
-    encoder = Recurrence(RNNCell(1 => 1, identity; init_weight=ones, init_state=zeros,
-                                 init_bias=zeros); return_sequence=true)
+    encoder = Recurrence(RNNCell(1 => 1,
+            identity;
+            init_weight=ones,
+            init_state=zeros,
+            init_bias=zeros);
+        return_sequence=true)
     ps, st = Lux.setup(rng, encoder) .|> device
     m2 = reshape([0.5, 0.0, 0.7, 0.8], 1, :, 1) |> aType
     res, _ = encoder(m2, ps, st)

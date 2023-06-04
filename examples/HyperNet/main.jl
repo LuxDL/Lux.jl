@@ -2,8 +2,17 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CUDA, MLDatasets, MLUtils, NNlib, OneHotArrays, Optimisers, Random,
-      Setfield, Statistics, Zygote
+using ComponentArrays,
+    CUDA,
+    MLDatasets,
+    MLUtils,
+    NNlib,
+    OneHotArrays,
+    Optimisers,
+    Random,
+    Setfield,
+    Statistics,
+    Zygote
 CUDA.allowscalar(false)
 
 # ## Loading Datasets
@@ -15,7 +24,7 @@ function _load_dataset(dset, n_train::Int, n_eval::Int, batchsize::Int)
     x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
 
     return (DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
-            DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false))
+        DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false))
 end
 
 function load_datasets(n_train=1024, n_eval=32, batchsize=256)
@@ -56,8 +65,9 @@ end
 function create_model()
     ## Doesn't need to be a MLP can have any Lux Layer
     core_network = Chain(FlattenLayer(), Dense(784, 256, relu), Dense(256, 10))
-    weight_generator = Chain(Embedding(2 => 32), Dense(32, 64, relu),
-                             Dense(64, Lux.parameterlength(core_network)))
+    weight_generator = Chain(Embedding(2 => 32),
+        Dense(32, 64, relu),
+        Dense(64, Lux.parameterlength(core_network)))
 
     model = HyperNet(weight_generator, core_network)
 
@@ -103,7 +113,7 @@ function train()
 
     ### Warmup the Model
     img, lab = gpu(dataloaders[1][1].data[1][:, :, :, 1:1]),
-               gpu(dataloaders[1][1].data[2][:, 1:1])
+    gpu(dataloaders[1][1].data[2][:, 1:1])
     loss(1, img, lab, model, ps, st)
     (l, _), back = pullback(p -> loss(1, img, lab, model, p, st), ps)
     back((one(l), nothing))
@@ -125,9 +135,9 @@ function train()
             ttime = time() - stime
 
             train_acc = round(accuracy(model, ps, st, train_dataloader, data_idx) * 100;
-                              digits=2)
+                digits=2)
             test_acc = round(accuracy(model, ps, st, test_dataloader, data_idx) * 100;
-                             digits=2)
+                digits=2)
 
             data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
@@ -139,7 +149,7 @@ function train()
     for data_idx in 1:2
         train_dataloader, test_dataloader = dataloaders[data_idx]
         train_acc = round(accuracy(model, ps, st, train_dataloader, data_idx) * 100;
-                          digits=2)
+            digits=2)
         test_acc = round(accuracy(model, ps, st, test_dataloader, data_idx) * 100; digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"

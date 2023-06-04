@@ -6,8 +6,11 @@ CUDA.allowscalar(false)
 
 if LuxCUDA.functional()
     @testset "Device Transfer" begin
-        ps = (a=(c=zeros(10, 1), d=1), b=ones(10, 1), e=:c, d="string",
-              rng=get_stable_rng(12345))
+        ps = (a=(c=zeros(10, 1), d=1),
+            b=ones(10, 1),
+            e=:c,
+            d="string",
+            rng=get_stable_rng(12345))
 
         ps_gpu = ps |> gpu
         @test ps_gpu.a.c isa CuArray

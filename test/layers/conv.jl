@@ -65,7 +65,7 @@ rng = get_stable_rng(12345)
     @jet layer(x, ps, st)
 
     @testset "$ltype SamePad windowsize $k" for ltype in (MeanPool, MaxPool),
-                                                k in ((1,), (2,), (3,), (4, 5), (6, 7, 8))
+        k in ((1,), (2,), (3,), (4, 5), (6, 7, 8))
 
         x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
 
@@ -147,9 +147,11 @@ end
     end
 
     @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
-        layer = Conv((5, 5), 10 => 20, identity;
-                     init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
-                     init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
+        layer = Conv((5, 5),
+            10 => 20,
+            identity;
+            init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
+            init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
         display(layer)
         ps, st = Lux.setup(rng, layer)
         @test ps.weight isa aType{Float64, 4}
@@ -416,9 +418,11 @@ end
     end
 
     @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
-        layer = CrossCor((5, 5), 10 => 20, identity;
-                         init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
-                         init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
+        layer = CrossCor((5, 5),
+            10 => 20,
+            identity;
+            init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
+            init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
         display(layer)
         ps, st = Lux.setup(rng, layer)
         @test ps.weight isa aType{Float64, 4}

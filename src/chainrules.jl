@@ -17,8 +17,7 @@ CRC.@non_differentiable _calc_padding(::Any...)
 function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) where {F1, F2}
     y = merge(nt1, nt2)
     function merge_pullback(dy)
-        dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1))
-                           for f1 in F1))
+        dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1)) for f1 in F1))
         dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
         return (NoTangent(), dnt1, dnt2)
     end
@@ -58,12 +57,12 @@ end
 
 function CRC.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
     return adapt_storage(to, x),
-           d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
+    d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
 end
 
 function CRC.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
     return adapt_storage(to, x),
-           d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
+    d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
 end
 
 # RNN Helpers
@@ -81,8 +80,11 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
 end
 
 # foldl_init
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G, x::Tuple,
-                   init) where {G}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
+    ::typeof(foldl_init),
+    op::G,
+    x::Tuple,
+    init) where {G}
     x_arr = [x...]
     y, ∇foldl_init_internal = CRC.rrule_via_ad(cfg, foldl_init, op, x_arr, init)
     function ∇foldl_init(Δ)
@@ -93,8 +95,11 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::
     return y, ∇foldl_init
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G,
-                   x::AbstractArray, init) where {G}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
+    ::typeof(foldl_init),
+    op::G,
+    x::AbstractArray,
+    init) where {G}
     list, start = x, init
     hobbits = Vector{Any}(undef, length(list))  # Unfornately Zygote needs this
     accumulate!(hobbits, list; init=(start, nothing)) do (a, _), b

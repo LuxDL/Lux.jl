@@ -8,8 +8,10 @@ using Setfield
 # Note: Julia/Lux assume image batch of WHCN ordering
 
 # Embed noise variances to embedding
-function sinusoidal_embedding(x::AbstractArray{T, 4}, min_freq::T, max_freq::T,
-                              embedding_dims::Int) where {T <: AbstractFloat}
+function sinusoidal_embedding(x::AbstractArray{T, 4},
+    min_freq::T,
+    max_freq::T,
+    embedding_dims::Int) where {T <: AbstractFloat}
     if size(x)[1:3] != (1, 1, 1)
         throw(DimensionMismatch("Input shape must be (1, 1, 1, batch)"))
     end
@@ -43,11 +45,11 @@ function residual_block(in_channels::Int, out_channels::Int)
     end
 
     return Chain(first_layer,
-                 SkipConnection(Chain(BatchNorm(out_channels; affine=false, momentum=0.99),
-                                      Conv((3, 3), out_channels => out_channels; stride=1,
-                                           pad=(1, 1)), swish,
-                                      Conv((3, 3), out_channels => out_channels; stride=1,
-                                           pad=(1, 1))), +))
+        SkipConnection(Chain(BatchNorm(out_channels; affine=false, momentum=0.99),
+                Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1)),
+                swish,
+                Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1))),
+            +))
 end
 
 # Downsampling block of UNet
@@ -69,13 +71,15 @@ function DownBlock(in_channels::Int, out_channels::Int, block_depth::Int)
     return DownBlock(residual_blocks, maxpool)
 end
 
-function (db::DownBlock)(x::AbstractArray{T, 4}, ps,
-                         st::NamedTuple) where {T <: AbstractFloat}
+function (db::DownBlock)(x::AbstractArray{T, 4},
+    ps,
+    st::NamedTuple) where {T <: AbstractFloat}
     skips = () # accumulate intermediate outputs
     for i in 1:length(db.residual_blocks)
         layer_name = Symbol(:layer_, i)
-        x, new_st = db.residual_blocks[i](x, ps.residual_blocks[layer_name],
-                                          st.residual_blocks[layer_name])
+        x, new_st = db.residual_blocks[i](x,
+            ps.residual_blocks[layer_name],
+            st.residual_blocks[layer_name])
         # Don't use push! on vector because it invokes Zygote error
         skips = (skips..., x)
         @set! st.residual_blocks[layer_name] = new_st
@@ -102,15 +106,17 @@ function UpBlock(in_channels::Int, out_channels::Int, block_depth::Int)
     return UpBlock(residual_blocks, upsample)
 end
 
-function (up::UpBlock)(x::Tuple{AbstractArray{T, 4}, NTuple{N, AbstractArray{T, 4}}}, ps,
-                       st::NamedTuple) where {T <: AbstractFloat, N}
+function (up::UpBlock)(x::Tuple{AbstractArray{T, 4}, NTuple{N, AbstractArray{T, 4}}},
+    ps,
+    st::NamedTuple) where {T <: AbstractFloat, N}
     x, skips = x
     x, _ = up.upsample(x, ps.upsample, st.upsample)
     for i in 1:length(up.residual_blocks)
         layer_name = Symbol(:layer_, i)
         x = cat(x, skips[end - i + 1]; dims=3) # cat on channel
-        x, new_st = up.residual_blocks[i](x, ps.residual_blocks[layer_name],
-                                          st.residual_blocks[layer_name])
+        x, new_st = up.residual_blocks[i](x,
+            ps.residual_blocks[layer_name],
+            st.residual_blocks[layer_name])
         @set! st.residual_blocks[layer_name] = new_st
     end
 
@@ -119,9 +125,12 @@ end
 
 # UNet
 # It takes as input images array and returns the array of the same size.
-struct UNet <:
-       Lux.AbstractExplicitContainerLayer{(:upsample, :conv_in, :conv_out, :down_blocks,
-                                           :residual_blocks, :up_blocks)}
+struct UNet <: Lux.AbstractExplicitContainerLayer{(:upsample,
+    :conv_in,
+    :conv_out,
+    :down_blocks,
+    :residual_blocks,
+    :up_blocks)}
     upsample::Upsample
     conv_in::Conv
     conv_out::Conv
@@ -131,8 +140,12 @@ struct UNet <:
     noise_embedding::Function
 end
 
-function UNet(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128], block_depth=2,
-              min_freq=1.0f0, max_freq=1000.0f0, embedding_dims=32)
+function UNet(image_size::Tuple{Int, Int};
+    channels=[32, 64, 96, 128],
+    block_depth=2,
+    min_freq=1.0f0,
+    max_freq=1000.0f0,
+    embedding_dims=32)
     upsample = Upsample(:nearest; size=image_size)
     conv_in = Conv((1, 1), 3 => channels[1])
     conv_out = Conv((1, 1), channels[1] => 3; init_weight=Lux.zeros32)
@@ -160,12 +173,18 @@ function UNet(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128], block_dep
                  for i in 1:(length(channels) - 1)]
     up_blocks = Chain(up_blocks...)
 
-    return UNet(upsample, conv_in, conv_out, down_blocks, residual_blocks, up_blocks,
-                noise_embedding)
+    return UNet(upsample,
+        conv_in,
+        conv_out,
+        down_blocks,
+        residual_blocks,
+        up_blocks,
+        noise_embedding)
 end
 
-function (unet::UNet)(x::Tuple{AbstractArray{T, 4}, AbstractArray{T, 4}}, ps,
-                      st::NamedTuple) where {T <: AbstractFloat}
+function (unet::UNet)(x::Tuple{AbstractArray{T, 4}, AbstractArray{T, 4}},
+    ps,
+    st::NamedTuple) where {T <: AbstractFloat}
     noisy_images, noise_variances = x
     @assert size(noise_variances)[1:3] == (1, 1, 1)
     @assert size(noisy_images, 4) == size(noise_variances, 4)
@@ -188,8 +207,9 @@ function (unet::UNet)(x::Tuple{AbstractArray{T, 4}, AbstractArray{T, 4}}, ps,
     skips_at_each_stage = ()
     for i in 1:length(unet.down_blocks)
         layer_name = Symbol(:layer_, i)
-        (x, skips), new_st = unet.down_blocks[i](x, ps.down_blocks[layer_name],
-                                                 st.down_blocks[layer_name])
+        (x, skips), new_st = unet.down_blocks[i](x,
+            ps.down_blocks[layer_name],
+            st.down_blocks[layer_name])
         @set! st.down_blocks[layer_name] = new_st
         skips_at_each_stage = (skips_at_each_stage..., skips)
     end
@@ -200,7 +220,8 @@ function (unet::UNet)(x::Tuple{AbstractArray{T, 4}, AbstractArray{T, 4}}, ps,
     for i in 1:length(unet.up_blocks)
         layer_name = Symbol(:layer_, i)
         x, new_st = unet.up_blocks[i]((x, skips_at_each_stage[end - i + 1]),
-                                      ps.up_blocks[layer_name], st.up_blocks[layer_name])
+            ps.up_blocks[layer_name],
+            st.up_blocks[layer_name])
         @set! st.up_blocks[layer_name] = new_st
     end
 
@@ -221,23 +242,33 @@ struct DenoisingDiffusionImplicitModel{T <: AbstractFloat} <:
 end
 
 function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
-                                         channels=[32, 64, 96, 128], block_depth=2,
-                                         min_freq=1.0f0, max_freq=1000.0f0,
-                                         embedding_dims=32, min_signal_rate=0.02f0,
-                                         max_signal_rate=0.95f0)
-    unet = UNet(image_size; channels=channels, block_depth=block_depth, min_freq=min_freq,
-                max_freq=max_freq, embedding_dims=embedding_dims)
+    channels=[32, 64, 96, 128],
+    block_depth=2,
+    min_freq=1.0f0,
+    max_freq=1000.0f0,
+    embedding_dims=32,
+    min_signal_rate=0.02f0,
+    max_signal_rate=0.95f0)
+    unet = UNet(image_size;
+        channels=channels,
+        block_depth=block_depth,
+        min_freq=min_freq,
+        max_freq=max_freq,
+        embedding_dims=embedding_dims)
     batchnorm = BatchNorm(3; affine=false, momentum=0.99, track_stats=true)
 
-    return DenoisingDiffusionImplicitModel(unet, batchnorm, min_signal_rate,
-                                           max_signal_rate)
+    return DenoisingDiffusionImplicitModel(unet,
+        batchnorm,
+        min_signal_rate,
+        max_signal_rate)
 end
 
-function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{AbstractArray{T, 4},
-                                                             AbstractRNG}, ps,
-                                                    st::NamedTuple) where {
-                                                                           T <:
-                                                                           AbstractFloat}
+function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{
+        AbstractArray{T, 4},
+        AbstractRNG,
+    },
+    ps,
+    st::NamedTuple) where {T <: AbstractFloat}
     images, rng = x
     images, new_st = ddim.batchnorm(images, ps.batchnorm, st.batchnorm)
     @set! st.batchnorm = new_st
@@ -245,21 +276,27 @@ function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{AbstractArray{T, 4}
     noises = randn(rng, eltype(images), size(images)...) |> gpu
 
     diffusion_times = rand(rng, eltype(images), 1, 1, 1, size(images, 4)) |> gpu
-    noise_rates, signal_rates = diffusion_schedules(diffusion_times, ddim.min_signal_rate,
-                                                    ddim.max_signal_rate)
+    noise_rates, signal_rates = diffusion_schedules(diffusion_times,
+        ddim.min_signal_rate,
+        ddim.max_signal_rate)
 
     noisy_images = signal_rates .* images + noise_rates .* noises
 
-    (pred_noises, pred_images), st = denoise(ddim, noisy_images, noise_rates, signal_rates,
-                                             ps, st)
+    (pred_noises, pred_images), st = denoise(ddim,
+        noisy_images,
+        noise_rates,
+        signal_rates,
+        ps,
+        st)
 
     return (noises, images, pred_noises, pred_images), st
 end
 
 # Generates noise with variable magnitude depending on time.
 # Noise is at minimum at t=0, and maximum at t=1.
-function diffusion_schedules(diffusion_times::AbstractArray{T, 4}, min_signal_rate::T,
-                             max_signal_rate::T) where {T <: AbstractFloat}
+function diffusion_schedules(diffusion_times::AbstractArray{T, 4},
+    min_signal_rate::T,
+    max_signal_rate::T) where {T <: AbstractFloat}
     start_angle = acos(max_signal_rate)
     end_angle = acos(min_signal_rate)
 
@@ -273,9 +310,11 @@ function diffusion_schedules(diffusion_times::AbstractArray{T, 4}, min_signal_ra
 end
 
 function denoise(ddim::DenoisingDiffusionImplicitModel{T},
-                 noisy_images::AbstractArray{T, 4}, noise_rates::AbstractArray{T, 4},
-                 signal_rates::AbstractArray{T, 4}, ps,
-                 st::NamedTuple) where {T <: AbstractFloat}
+    noisy_images::AbstractArray{T, 4},
+    noise_rates::AbstractArray{T, 4},
+    signal_rates::AbstractArray{T, 4},
+    ps,
+    st::NamedTuple) where {T <: AbstractFloat}
     pred_noises, new_st = ddim.unet((noisy_images, noise_rates .^ 2), ps.unet, st.unet)
     @set! st.unet = new_st
 
@@ -285,8 +324,11 @@ function denoise(ddim::DenoisingDiffusionImplicitModel{T},
 end
 
 function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
-                           initial_noise::AbstractArray{T, 4}, diffusion_steps::Int, ps,
-                           st::NamedTuple; save_each_step=false) where {T <: AbstractFloat}
+    initial_noise::AbstractArray{T, 4},
+    diffusion_steps::Int,
+    ps,
+    st::NamedTuple;
+    save_each_step=false) where {T <: AbstractFloat}
     num_images = size(initial_noise, 4)
     step_size = convert(T, 1.0) / diffusion_steps
 
@@ -303,16 +345,20 @@ function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
         diffusion_times = ones(T, 1, 1, 1, num_images) .- step_size * step |> gpu
 
         noise_rates, signal_rates = diffusion_schedules(diffusion_times,
-                                                        ddim.min_signal_rate,
-                                                        ddim.max_signal_rate)
+            ddim.min_signal_rate,
+            ddim.max_signal_rate)
 
-        (pred_noises, pred_images), _ = denoise(ddim, noisy_images, noise_rates,
-                                                signal_rates, ps, st)
+        (pred_noises, pred_images), _ = denoise(ddim,
+            noisy_images,
+            noise_rates,
+            signal_rates,
+            ps,
+            st)
 
         next_diffusion_times = diffusion_times .- step_size
         next_noise_rates, next_signal_rates = diffusion_schedules(next_diffusion_times,
-                                                                  ddim.min_signal_rate,
-                                                                  ddim.max_signal_rate)
+            ddim.min_signal_rate,
+            ddim.max_signal_rate)
 
         # see Eq. (12) in 2010.02502 with sigma=0
         next_noisy_images = next_signal_rates .* pred_images +
@@ -326,21 +372,29 @@ function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
     return pred_images, images_each_step
 end
 
-function denormalize(ddim::DenoisingDiffusionImplicitModel{T}, x::AbstractArray{T, 4},
-                     st) where {T <: AbstractFloat}
+function denormalize(ddim::DenoisingDiffusionImplicitModel{T},
+    x::AbstractArray{T, 4},
+    st) where {T <: AbstractFloat}
     mean = reshape(st.running_mean, 1, 1, 3, 1)
     var = reshape(st.running_var, 1, 1, 3, 1)
     std = sqrt.(var .+ ddim.batchnorm.epsilon)
     return std .* x .+ mean
 end
 
-function generate(ddim::DenoisingDiffusionImplicitModel{T}, rng::AbstractRNG,
-                  image_shape::Tuple{Int, Int, Int, Int}, diffusion_steps::Int, ps,
-                  st::NamedTuple; save_each_step=false) where {T}
+function generate(ddim::DenoisingDiffusionImplicitModel{T},
+    rng::AbstractRNG,
+    image_shape::Tuple{Int, Int, Int, Int},
+    diffusion_steps::Int,
+    ps,
+    st::NamedTuple;
+    save_each_step=false) where {T}
     initial_noise = randn(rng, T, image_shape...) |> gpu
-    generated_images, images_each_step = reverse_diffusion(ddim, initial_noise,
-                                                           diffusion_steps, ps, st;
-                                                           save_each_step=save_each_step)
+    generated_images, images_each_step = reverse_diffusion(ddim,
+        initial_noise,
+        diffusion_steps,
+        ps,
+        st;
+        save_each_step=save_each_step)
     generated_images = denormalize(ddim, generated_images, st.batchnorm)
     clamp!(generated_images, 0.0f0, 1.0f0)
 

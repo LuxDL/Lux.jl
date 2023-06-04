@@ -207,8 +207,10 @@ Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
 c = contour!(x1_range, x2_range, Z)
 current_axis(fig).title = "Iteration 1"
 
-CairoMakie.record(fig, joinpath(@__DIR__, "animationbayesiannn.mp4"), 1:5:n_end;
-                  framerate=60) do i
+CairoMakie.record(fig,
+    joinpath(@__DIR__, "animationbayesiannn.mp4"),
+    1:5:n_end;
+    framerate=60) do i
     Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
     c[3] = Z
     return current_axis(fig).title = "Iteration $i"

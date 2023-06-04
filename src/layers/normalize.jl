@@ -92,13 +92,29 @@ struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
     init_scale::F3
 end
 
-function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=ones32,
-                   affine::Bool=true, track_stats::Bool=true, epsilon=1.0f-5,
-                   momentum=0.1f0, allow_fast_activation::Bool=true)
+function BatchNorm(chs::Int,
+    activation=identity;
+    init_bias=zeros32,
+    init_scale=ones32,
+    affine::Bool=true,
+    track_stats::Bool=true,
+    epsilon=1.0f-5,
+    momentum=0.1f0,
+    allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return BatchNorm{affine, track_stats, typeof(activation), typeof(init_bias),
-                     typeof(init_scale), typeof(epsilon)}(activation, epsilon, momentum,
-                                                          chs, init_bias, init_scale)
+    return BatchNorm{
+        affine,
+        track_stats,
+        typeof(activation),
+        typeof(init_bias),
+        typeof(init_scale),
+        typeof(epsilon),
+    }(activation,
+        epsilon,
+        momentum,
+        chs,
+        init_bias,
+        init_scale)
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm)
@@ -111,8 +127,9 @@ end
 
 function initialstates(rng::AbstractRNG, l::BatchNorm)
     if _track_stats(l)
-        return (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs),
-                training=Val(true))
+        return (running_mean=zeros32(rng, l.chs),
+            running_var=ones32(rng, l.chs),
+            training=Val(true))
     else
         return (; training=Val(true))
     end
@@ -122,11 +139,14 @@ parameterlength(l::BatchNorm) = _affine(l) ? (l.chs * 2) : 0
 statelength(l::BatchNorm) = (_track_stats(l) ? 2 * l.chs : 0) + 1
 
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = LuxLib.batchnorm(x, _getproperty(ps, Val(:scale)),
-                                _getproperty(ps, Val(:bias)),
-                                _getproperty(st, Val(:running_mean)),
-                                _getproperty(st, Val(:running_var)); BN.momentum,
-                                BN.epsilon, st.training)
+    y, stats = LuxLib.batchnorm(x,
+        _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias)),
+        _getproperty(st, Val(:running_mean)),
+        _getproperty(st, Val(:running_var));
+        BN.momentum,
+        BN.epsilon,
+        st.training)
 
     if _track_stats(BN)
         @set! st.running_mean = stats.running_mean
@@ -235,32 +255,51 @@ struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
     groups::Int
 end
 
-function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-                   init_scale=ones32, affine=true, track_stats=missing, epsilon=1.0f-5,
-                   momentum=missing, allow_fast_activation::Bool=true)
+function GroupNorm(chs::Integer,
+    groups::Integer,
+    activation=identity;
+    init_bias=zeros32,
+    init_scale=ones32,
+    affine=true,
+    track_stats=missing,
+    epsilon=1.0f-5,
+    momentum=missing,
+    allow_fast_activation::Bool=true)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     # Deprecated Functionality (Remove in v0.5)
     if !ismissing(momentum)
         Base.depwarn("`momentum` for `GroupNorm` has been deprecated and will be removed " *
-                     "in v0.5", :GroupNorm)
+                     "in v0.5",
+            :GroupNorm)
     else
         momentum = 0.1f0
     end
     if !ismissing(track_stats)
         if track_stats
             Base.depwarn("`track_stats` for `GroupNorm` has been deprecated and will be " *
-                         "removed in v0.5", :GroupNorm)
+                         "removed in v0.5",
+                :GroupNorm)
         end
     else
         track_stats = true
     end
 
-    return GroupNorm{affine, track_stats, typeof(activation), typeof(init_bias),
-                     typeof(init_scale), typeof(epsilon)}(activation, epsilon, momentum,
-                                                          chs, init_bias, init_scale,
-                                                          groups)
+    return GroupNorm{
+        affine,
+        track_stats,
+        typeof(activation),
+        typeof(init_bias),
+        typeof(init_scale),
+        typeof(epsilon),
+    }(activation,
+        epsilon,
+        momentum,
+        chs,
+        init_bias,
+        init_scale,
+        groups)
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm)
@@ -273,8 +312,9 @@ end
 
 function initialstates(rng::AbstractRNG, l::GroupNorm)
     if _track_stats(l)
-        return (running_mean=zeros32(rng, l.groups), running_var=ones32(rng, l.groups),
-                training=Val(true))
+        return (running_mean=zeros32(rng, l.groups),
+            running_var=ones32(rng, l.groups),
+            training=Val(true))
     else
         return (; training=Val(true))
     end
@@ -285,11 +325,15 @@ parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 statelength(l::GroupNorm) = (_track_stats(l) ? 2 * l.groups : 0) + 1
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = LuxLib.groupnorm(x, _getproperty(ps, Val(:scale)),
-                                _getproperty(ps, Val(:bias)),
-                                _getproperty(st, Val(:running_mean)),
-                                _getproperty(st, Val(:running_var)); GN.groups, GN.epsilon,
-                                GN.momentum, st.training)
+    y, stats = LuxLib.groupnorm(x,
+        _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias)),
+        _getproperty(st, Val(:running_mean)),
+        _getproperty(st, Val(:running_var));
+        GN.groups,
+        GN.epsilon,
+        GN.momentum,
+        st.training)
 
     if _track_stats(GN)
         @set! st.running_mean = stats.running_mean
@@ -385,13 +429,26 @@ struct InstanceNorm{affine, F1, F2, F3, N} <: AbstractNormalizationLayer{affine,
     init_scale::F3
 end
 
-function InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32,
-                      init_scale=ones32, affine=true, epsilon=1.0f-5,
-                      allow_fast_activation::Bool=true)
+function InstanceNorm(chs::Integer,
+    activation=identity;
+    init_bias=zeros32,
+    init_scale=ones32,
+    affine=true,
+    epsilon=1.0f-5,
+    allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return InstanceNorm{affine, typeof(activation), typeof(init_bias), typeof(init_scale),
-                        typeof(epsilon)}(activation, epsilon, chs, init_bias, init_scale)
+    return InstanceNorm{
+        affine,
+        typeof(activation),
+        typeof(init_bias),
+        typeof(init_scale),
+        typeof(epsilon),
+    }(activation,
+        epsilon,
+        chs,
+        init_bias,
+        init_scale)
 end
 
 function initialparameters(rng::AbstractRNG, l::InstanceNorm)
@@ -407,8 +464,11 @@ initialstates(rng::AbstractRNG, l::InstanceNorm) = (; training=Val(true))
 parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = LuxLib.instancenorm(x, _getproperty(ps, Val(:scale)),
-                                   _getproperty(ps, Val(:bias)); IN.epsilon, st.training)
+    y, stats = LuxLib.instancenorm(x,
+        _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias));
+        IN.epsilon,
+        st.training)
 
     return __apply_activation(IN.activation, y), st
 end
@@ -464,21 +524,22 @@ struct WeightNorm{which_params, L <: AbstractExplicitLayer, D} <: AbstractExplic
     dims::D
 end
 
-function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
-                    dims::Union{Tuple, Nothing}=nothing) where {N}
+function WeightNorm(layer::AbstractExplicitLayer,
+    which_params::NTuple{N, Symbol},
+    dims::Union{Tuple, Nothing}=nothing) where {N}
     return WeightNorm{which_params, typeof(layer), typeof(dims)}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
 @inline function _norm_except(x::AbstractArray{T, N};
-                              dims::Union{Int, Tuple}=N) where {T, N}
+    dims::Union{Int, Tuple}=N) where {T, N}
     return _norm(x; dims=_get_norm_except_dims(N, dims))
 end
 @inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
 @inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> !(i in dims), 1:N)
 
 function initialparameters(rng::AbstractRNG,
-                           wn::WeightNorm{which_params}) where {which_params}
+    wn::WeightNorm{which_params}) where {which_params}
     ps_layer = initialparameters(rng, wn.layer)
     ps_normalized = []
     ps_unnormalized = []
@@ -511,8 +572,8 @@ function (wn::WeightNorm)(x, ps, st::NamedTuple)
 end
 
 @inbounds @generated function _get_normalized_parameters(::WeightNorm{which_params},
-                                                         dims::T,
-                                                         ps) where {T, which_params}
+    dims::T,
+    ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
     g_parameter_names = Symbol.(parameter_names .* "_g")
@@ -529,13 +590,13 @@ end
     calls = []
     for i in 1:length(parameter_names)
         push!(calls,
-              :($(normalized_params_symbol[i]) = ps.$(v_parameter_names[i]) .*
-                                                 (ps.$(g_parameter_names[i]) ./
-                                                  ($(get_norm_except_invoke(i)) .+
-                                                   eps(eltype(ps.$(v_parameter_names[i])))))))
+            :($(normalized_params_symbol[i]) = ps.$(v_parameter_names[i]) .*
+                                               (ps.$(g_parameter_names[i]) ./
+                                                ($(get_norm_except_invoke(i)) .+
+                                                 eps(eltype(ps.$(v_parameter_names[i])))))))
     end
     push!(calls,
-          :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...)))))
+        :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...)))))
 
     return Expr(:block, calls...)
 end
@@ -604,27 +665,46 @@ struct LayerNorm{affine, F1, N, T, F2, F3, D} <: AbstractNormalizationLayer{affi
     dims::D
 end
 
-function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f-5,
-                   dims=Colon(), affine::Bool=true, init_bias=zeros32, init_scale=ones32,
-                   allow_fast_activation::Bool=true) where {N, T}
+function LayerNorm(shape::NTuple{N, <:Int},
+    activation=identity;
+    epsilon::T=1.0f-5,
+    dims=Colon(),
+    affine::Bool=true,
+    init_bias=zeros32,
+    init_scale=ones32,
+    allow_fast_activation::Bool=true) where {N, T}
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return LayerNorm{affine, typeof(activation), N, T, typeof(init_bias),
-                     typeof(init_scale), typeof(dims)}(shape, activation, epsilon,
-                                                       init_bias, init_scale, dims)
+    return LayerNorm{
+        affine,
+        typeof(activation),
+        N,
+        T,
+        typeof(init_bias),
+        typeof(init_scale),
+        typeof(dims),
+    }(shape,
+        activation,
+        epsilon,
+        init_bias,
+        init_scale,
+        dims)
 end
 
 function initialparameters(rng::AbstractRNG, ln::LayerNorm)
     if _affine(ln)
         return (bias=ln.init_bias(rng, ln.shape..., 1),
-                scale=ln.init_scale(rng, ln.shape..., 1))
+            scale=ln.init_scale(rng, ln.shape..., 1))
     else
         return NamedTuple()
     end
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = LuxLib.layernorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias));
-                         l.dims, l.epsilon)
+    y = LuxLib.layernorm(x,
+        _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias));
+        l.dims,
+        l.epsilon)
     return __apply_activation(l.activation, y), st
 end
 

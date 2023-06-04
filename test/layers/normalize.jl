@@ -7,7 +7,7 @@ rng = get_stable_rng(12345)
 @testset "$mode: BatchNorm" for (mode, aType, device, ongpu) in MODES
     m = BatchNorm(2)
     x = [1.0f0 3.0f0 5.0f0
-         2.0f0 4.0f0 6.0f0] |> aType
+        2.0f0 4.0f0 6.0f0] |> aType
     display(m)
     ps, st = Lux.setup(rng, m) .|> device
 
@@ -39,8 +39,7 @@ rng = get_stable_rng(12345)
     #  1.3
     #  1.3
     @test check_approx(st_.running_var,
-                       0.1 .* var(Array(x); dims=2, corrected=false) .* (3 / 2) .+
-                       0.9 .* [1.0, 1.0])
+        0.1 .* var(Array(x); dims=2, corrected=false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0])
 
     st_ = Lux.testmode(st_) |> device
     x_ = m(x, ps, st_)[1] |> cpu
@@ -69,14 +68,14 @@ rng = get_stable_rng(12345)
         # with activation function
         m = BatchNorm(2, sigmoid; affine)
         x = [1.0f0 3.0f0 5.0f0
-             2.0f0 4.0f0 6.0f0] |> aType
+            2.0f0 4.0f0 6.0f0] |> aType
         display(m)
         ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
         @test check_approx(y,
-                           sigmoid.((x .- st_.running_mean) ./
-                                    sqrt.(st_.running_var .+ m.epsilon)), atol=1.0e-7)
+            sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon)),
+            atol=1.0e-7)
 
         @jet m(x, ps, st)
 
@@ -396,8 +395,9 @@ end
 end
 
 @testset "$mode: InstanceNorm" for (mode, aType, device, ongpu) in MODES
-    for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
-              randn(rng, Float32, 3, 3, 3, 3, 2))
+    for x in (randn(rng, Float32, 3, 3, 3, 2),
+        randn(rng, Float32, 3, 3, 2),
+        randn(rng, Float32, 3, 3, 3, 3, 2))
         x = x |> aType
         for affine in (true, false)
             layer = InstanceNorm(3; affine)

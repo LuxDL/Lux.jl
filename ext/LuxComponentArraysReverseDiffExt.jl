@@ -10,8 +10,13 @@ end
 
 using Lux
 
-const TCA{V, D, N, DA, A, Ax} = ReverseDiff.TrackedArray{V, D, N,
-                                                         ComponentArray{V, N, A, Ax}, DA}
+const TCA{V, D, N, DA, A, Ax} = ReverseDiff.TrackedArray{
+    V,
+    D,
+    N,
+    ComponentArray{V, N, A, Ax},
+    DA,
+}
 
 @inline function Lux._getproperty(x::TCA, ::Val{prop}) where {prop}
     return prop in propertynames(ReverseDiff.value(x)) ? getproperty(x, prop) : nothing

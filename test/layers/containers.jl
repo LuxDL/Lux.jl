@@ -98,8 +98,10 @@ end
     @testset "connection is called once" begin
         CNT = Ref(0)
         f_cnt = (x...) -> (CNT[] += 1; +(x...))
-        layer = Parallel(f_cnt, WrappedFunction(sin), WrappedFunction(cos),
-                         WrappedFunction(tan))
+        layer = Parallel(f_cnt,
+            WrappedFunction(sin),
+            WrappedFunction(cos),
+            WrappedFunction(tan))
         ps, st = Lux.setup(rng, layer) .|> device
         Lux.apply(layer, 1, ps, st)
         @test CNT[] == 1
@@ -129,11 +131,11 @@ end
         ip2 = Input(rand(Float32, 3, 3) |> aType)
 
         @test check_approx(par(ip, ps, st)[1],
-                           par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
-                           par.layers[2](ip.x, ps.layer_2, st.layer_2)[1])
+            par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
+            par.layers[2](ip.x, ps.layer_2, st.layer_2)[1])
         @test check_approx(par((ip, ip2), ps, st)[1],
-                           par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
-                           par.layers[2](ip2.x, ps.layer_2, st.layer_2)[1])
+            par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
+            par.layers[2](ip2.x, ps.layer_2, st.layer_2)[1])
         gs = Zygote.gradient((p, x...) -> sum(par(x, p, st)[1]), ps, ip, ip2)
         gs_reg = Zygote.gradient(ps, ip, ip2) do p, x, y
             return sum(par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
@@ -178,14 +180,18 @@ end
     __f = (x, ps) -> sum(first(layer(x, ps, st)))
     @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-    layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1), WrappedFunction(x -> x .+ 2),
-                           WrappedFunction(x -> x .^ 3))
+    layer = PairwiseFusion(vcat,
+        WrappedFunction(x -> x .+ 1),
+        WrappedFunction(x -> x .+ 2),
+        WrappedFunction(x -> x .^ 3))
     display(layer)
     ps, st = Lux.setup(rng, layer) .|> device
     @test layer((2, 10, 20, 40), ps, st)[1] == [125, 1728, 8000, 40]
 
-    layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1), WrappedFunction(x -> x .+ 2),
-                           WrappedFunction(x -> x .^ 3))
+    layer = PairwiseFusion(vcat,
+        WrappedFunction(x -> x .+ 1),
+        WrappedFunction(x -> x .+ 2),
+        WrappedFunction(x -> x .^ 3))
     display(layer)
     ps, st = Lux.setup(rng, layer) .|> device
     @test layer(7, ps, st)[1] == [1000, 729, 343, 7]
@@ -280,9 +286,12 @@ end
     __f = (x, ps) -> sum(first(layer(x, ps, st)))
     @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-    @test_throws ArgumentError Chain(; l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
-                                     d21=Dense(2 => 1), d2=Dense(2 => 1),
-                                     disable_optimizations=false)
+    @test_throws ArgumentError Chain(;
+        l1=Dense(10 => 5, sigmoid),
+        d52=Dense(5 => 2, tanh),
+        d21=Dense(2 => 1),
+        d2=Dense(2 => 1),
+        disable_optimizations=false)
 end
 
 @testset "$mode: Maxout" for (mode, aType, device, ongpu) in MODES

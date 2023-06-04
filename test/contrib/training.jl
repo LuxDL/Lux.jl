@@ -13,8 +13,10 @@ end
     model = Dense(3, 2)
     opt = Adam(0.01f0)
 
-    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt;
-                                     transform_variables=device)
+    tstate = Lux.Training.TrainState(Lux.replicate(rng),
+        model,
+        opt;
+        transform_variables=device)
 
     x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
@@ -34,21 +36,26 @@ end
     model = Dense(3, 2)
     opt = Adam(0.01f0)
 
-    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt;
-                                     transform_variables=device)
+    tstate = Lux.Training.TrainState(Lux.replicate(rng),
+        model,
+        opt;
+        transform_variables=device)
 
     x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
     @testset "NotImplemented $(string(vjp_rule))" for vjp_rule in (Lux.Training.EnzymeVJP(),
-                                                                   Lux.Training.YotaVJP())
-        @test_throws ArgumentError Lux.Training.compute_gradients(vjp_rule, _loss_function,
-                                                                  x, tstate)
+        Lux.Training.YotaVJP())
+        @test_throws ArgumentError Lux.Training.compute_gradients(vjp_rule,
+            _loss_function,
+            x,
+            tstate)
     end
 
     for vjp_rule in (Lux.Training.ZygoteVJP(), Lux.Training.TrackerVJP())
         grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(vjp_rule,
-                                                                     _loss_function, x,
-                                                                     tstate)
+            _loss_function,
+            x,
+            tstate)
         tstate_ = @test_nowarn Lux.Training.apply_gradients(tstate, grads)
         @test tstate_.step == 1
         @test tstate != tstate_
