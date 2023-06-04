@@ -125,13 +125,13 @@ Users implementing their custom layer can extend the same functions as in
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
 function initialparameters(rng::AbstractRNG,
-                           l::AbstractExplicitContainerLayer{layers}) where {layers}
+    l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG,
-                       l::AbstractExplicitContainerLayer{layers}) where {layers}
+    l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
@@ -146,11 +146,12 @@ end
 
 # Make AbstractExplicit Layers Functor Compatible
 function Functors.functor(::Type{<:AbstractExplicitContainerLayer{layers}},
-                          x) where {layers}
+    x) where {layers}
     _children = NamedTuple{layers}(getproperty.((x,), layers))
     function layer_reconstructor(z)
-        return reduce((l, (c, n)) -> set(l, Setfield.PropertyLens{n}(), c), zip(z, layers);
-                      init=x)
+        return reduce((l, (c, n)) -> set(l, Setfield.PropertyLens{n}(), c),
+            zip(z, layers);
+            init=x)
     end
     return _children, layer_reconstructor
 end
@@ -175,8 +176,10 @@ trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
 Recursively update all occurances of the `key` in the state `st` with the `value`.
 """
-function update_state(st::NamedTuple, key::Symbol, value;
-                      layer_check=_default_layer_check(key))
+function update_state(st::NamedTuple,
+    key::Symbol,
+    value;
+    layer_check=_default_layer_check(key))
     function _update_state(st, key::Symbol, value)
         return Setfield.set(st, Setfield.PropertyLens{key}(), value)
     end
