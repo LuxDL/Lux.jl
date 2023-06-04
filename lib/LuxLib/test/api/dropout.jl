@@ -57,8 +57,13 @@ end
         @test rng != rng_
         @test mask != mask_
 
-        __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(true);
-                                     dims=Colon())))
+        __f = x -> sum(first(dropout(rng,
+            x,
+            mask,
+            T(0.5),
+            Val(true),
+            Val(true);
+            dims=Colon())))
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
@@ -76,8 +81,13 @@ end
         @test rng == rng_
         @test mask == mask_
 
-        __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false);
-                                     dims=Colon())))
+        __f = x -> sum(first(dropout(rng,
+            x,
+            mask,
+            T(0.5),
+            Val(true),
+            Val(false);
+            dims=Colon())))
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
@@ -97,8 +107,13 @@ end
         @test rng != rng_
         @test mask != mask_
 
-        __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false);
-                                     dims=Colon())))
+        __f = x -> sum(first(dropout(rng,
+            x,
+            mask,
+            T(0.5),
+            Val(true),
+            Val(false);
+            dims=Colon())))
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu

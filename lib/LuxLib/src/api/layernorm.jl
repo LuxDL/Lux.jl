@@ -29,8 +29,11 @@ Normalized Array of same size as `x`.
 [1] Ba, Jimmy Lei, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer normalization." arXiv
     preprint arXiv:1607.06450 (2016).
 """
-function layernorm(x::AA{<:Real, N}, scale::AA{<:Real, N}, bias::AA{<:Real, N}; dims,
-                   epsilon) where {N}
+function layernorm(x::AA{<:Real, N},
+    scale::AA{<:Real, N},
+    bias::AA{<:Real, N};
+    dims,
+    epsilon) where {N}
     x_norm = layernorm(x, nothing, nothing; dims, epsilon)
     return scale .* x_norm .+ bias
 end

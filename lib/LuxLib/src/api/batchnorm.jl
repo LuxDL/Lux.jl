@@ -38,11 +38,23 @@ fallback is used which is not highly optimized.
     training by reducing internal covariate shift." International conference on machine
     learning. PMLR, 2015.
 """
-function batchnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::NOrAVR,
-                   running_var::NOrAVR; momentum::Real, training::Val,
-                   epsilon::Real) where {N}
-    x_, xm, xv = _normalization(x, running_mean, running_var, scale, bias,
-                                _get_batchnorm_reduce_dims(x), training, momentum, epsilon)
+function batchnorm(x::AA{<:Real, N},
+    scale::NOrAVR,
+    bias::NOrAVR,
+    running_mean::NOrAVR,
+    running_var::NOrAVR;
+    momentum::Real,
+    training::Val,
+    epsilon::Real) where {N}
+    x_, xm, xv = _normalization(x,
+        running_mean,
+        running_var,
+        scale,
+        bias,
+        _get_batchnorm_reduce_dims(x),
+        training,
+        momentum,
+        epsilon)
 
     return x_, (; running_mean=xm, running_var=xv)
 end
@@ -51,8 +63,10 @@ end
     return :($(Val(Tuple(collect([1:(N - 2); N])))))
 end
 
-function _get_batchnorm_statistics(x, running_mean, running_var,
-                                   ::Val{training}) where {training}
+function _get_batchnorm_statistics(x,
+    running_mean,
+    running_var,
+    ::Val{training}) where {training}
     if training
         # NNlibCUDA silently updates running_mean and running_var. Copying them!
         rm = _copy_autodiff_barrier(running_mean)

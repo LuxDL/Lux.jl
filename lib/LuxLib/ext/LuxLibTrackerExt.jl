@@ -5,12 +5,12 @@ if isdefined(Base, :get_extension)
     import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
 else
     using ..Tracker
-    import ..Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector,
-                      TrackedReal
+    import ..Tracker: @grad,
+        data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
 end
 using NNlib, LuxLib
-import LuxLib: AA, AV, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅,
-               __is_tracked
+import LuxLib: AA,
+    AV, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅, __is_tracked
 import ChainRulesCore as CRC
 
 # NNlib: batched_mul
@@ -86,14 +86,20 @@ for T1 in (:TrackedArray, :AbstractArray),
 
     __is_tracked(T1, T2, T3) || continue
 
-    @eval function LuxLib.groupnorm(x::$T1{T, 4}, scale::$T2{T}, bias::$T3{T}; groups::Int,
-                                    epsilon::Real) where {T <: FP_32_64}
+    @eval function LuxLib.groupnorm(x::$T1{T, 4},
+        scale::$T2{T},
+        bias::$T3{T};
+        groups::Int,
+        epsilon::Real) where {T <: FP_32_64}
         return track(LuxLib.groupnorm, x, scale, bias; groups, epsilon)
     end
 end
 
-@grad function LuxLib.groupnorm(x::AA{T, 4}, scale::AV{T}, bias::AV{T}; groups::Int,
-                                epsilon::Real) where {T <: FP_32_64}
+@grad function LuxLib.groupnorm(x::AA{T, 4},
+    scale::AV{T},
+    bias::AV{T};
+    groups::Int,
+    epsilon::Real) where {T <: FP_32_64}
     LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -104,8 +110,14 @@ end
 
     y, mu, rsig = LuxLib._groupnorm(data(x), groups, data(scale), data(bias), epsilon)
     function groupnorm_pullback(dy)
-        dx, dscale, dbias = LuxLib._dgroupnorm(dy, y, data(x), groups, data(scale),
-                                               data(bias), mu, rsig)
+        dx, dscale, dbias = LuxLib._dgroupnorm(dy,
+            y,
+            data(x),
+            groups,
+            data(scale),
+            data(bias),
+            mu,
+            rsig)
         return nobacksies(:groupnorm, (dx, dscale, dbias))
     end
     return y, groupnorm_pullback
