@@ -2,8 +2,10 @@ using Documenter, DocumenterMarkdown, Lux, Pkg
 
 import Flux  # Load weak dependencies
 
+using PythonCall, CondaPkg, Pkg  # Load mkdocs dependencies
+
 deployconfig = Documenter.auto_detect_deploy_system()
-Documenter.post_status(deployconfig; type="pending", repo="github.com/avik-pal/Lux.jl.git")
+Documenter.post_status(deployconfig; type="pending", repo="github.com/LuxDL/Lux.jl.git")
 
 makedocs(;
     sitename="Lux",
@@ -17,19 +19,18 @@ makedocs(;
     draft=false,
     build=joinpath(@__DIR__, "docs"))
 
+Pkg.activate(@__DIR__)
+
+CondaPkg.withenv() do
+    current_dir = pwd()
+    cd(@__DIR__)
+    run(`mkdocs build`)
+    cd(current_dir)
+    return
+end
+
 deploydocs(;
-    repo="github.com/avik-pal/Lux.jl.git",
+    repo="github.com/LuxDL/Lux.jl.git",
     push_preview=true,
-    deps=Deps.pip("mkdocs",
-        "pygments",
-        "python-markdown-math",
-        "mkdocs-material",
-        "pymdown-extensions",
-        "mkdocstrings",
-        "mknotebooks",
-        "pytkdocs_tweaks",
-        "mkdocs_include_exclude_files",
-        "jinja2"),
-    make=() -> run(`mkdocs build`),
     target="site",
     devbranch="main")

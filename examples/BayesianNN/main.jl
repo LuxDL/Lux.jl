@@ -136,19 +136,19 @@ end
 
 ## Perform inference.
 N = 5000
-ch = sample(bayes_nn(hcat(xs...), ts), HMC(0.05, 4), N)
+ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4), N)
 
-# Now we extract the parameter samples from the sampled chain as theta (this is of size
+# Now we extract the parameter samples from the sampled chain as θ (this is of size
 # `5000 x 20` where `5000` is the number of iterations and `20` is the number of
 # parameters). We'll use these primarily to determine how good our model's classifier is.
 
 ## Extract all weight and bias parameters.
-theta = MCMCChains.group(ch, :parameters).value;
+θ = MCMCChains.group(ch, :parameters).value;
 
 # ## Prediction Visualization
 
-## A helper to run the nn through data `x` using parameters `theta`
-nn_forward(x, theta) = nn(x, vector_to_parameters(theta, ps), st)[1]
+## A helper to run the nn through data `x` using parameters `θ`
+nn_forward(x, θ) = first(nn(x, vector_to_parameters(θ, ps), st))
 
 ## Plot the data we have.
 fig = plot_data()
@@ -162,22 +162,20 @@ i = i.I[1]
 ## Plot the posterior distribution with a contour plot
 x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
-Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
+Z = [nn_forward([x1, x2], θ[i, :])[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
 fig
 
 # The contour plot above shows that the MAP method is not too bad at classifying our data.
 # Now we can visualize our predictions.
 
-# $p(\tilde{x} | X, \alpha) = \int_{\theta} p(\tilde{x} | \theta) p(\theta | X, \alpha) \approx \sum_{\theta \sim p(\theta | X, \alpha)}f_{\theta}(\tilde{x})$
+# $p(\tilde{x} | X, \alpha) = \int_{\θ} p(\tilde{x} | \θ) p(\θ | X, \alpha) \approx \sum_{\θ \sim p(\θ | X, \alpha)}f_{\θ}(\tilde{x})$
 
 # The `nn_predict` function takes the average predicted value from a network parameterized
 # by weights drawn from the MCMC chain.
 
 ## Return the average predicted value across multiple weights.
-function nn_predict(x, theta, num)
-    return mean([nn_forward(x, view(theta, i, :))[1] for i in 1:10:num])
-end
+nn_predict(x, θ, num) = mean([first(nn_forward(x, view(θ, i, :))) for i in 1:10:num])
 
 # Next, we use the `nn_predict` function to predict the value at a sample of points where
 # the x1 and x2 coordinates range between -6 and 6. As we can see below, we still have a
@@ -191,7 +189,7 @@ fig = plot_data()
 n_end = 1500
 x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
-Z = [nn_predict([x1, x2], theta, n_end)[1] for x1 in x1_range, x2 in x2_range]
+Z = [nn_predict([x1, x2], θ, n_end)[1] for x1 in x1_range, x2 in x2_range]
 contour!(x1_range, x2_range, Z)
 fig
 
@@ -203,17 +201,12 @@ fig
 n_end = 1000
 
 fig = plot_data()
-Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
+Z = [first(nn_forward([x1, x2], θ[1, :])) for x1 in x1_range, x2 in x2_range]
 c = contour!(x1_range, x2_range, Z)
-current_axis(fig).title = "Iteration 1"
+fig
 
-CairoMakie.record(fig,
-    joinpath(@__DIR__, "animationbayesiannn.mp4"),
-    1:5:n_end;
-    framerate=60) do i
-    Z = [nn_forward([x1, x2], theta[i, :])[1] for x1 in x1_range, x2 in x2_range]
-    c[3] = Z
-    return current_axis(fig).title = "Iteration $i"
-end
-
-# <video controls> <source src="../animationbayesiannn.mp4" type="video/mp4"> </video>
+# Plotting the Final contour
+fig = plot_data()
+Z = [first(nn_forward([x1, x2], θ[n_end, :])) for x1 in x1_range, x2 in x2_range]
+c = contour!(x1_range, x2_range, Z)
+fig
