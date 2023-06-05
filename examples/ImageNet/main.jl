@@ -45,7 +45,7 @@ function construct(rng::Random.AbstractRNG, cfg::ModelConfig, ecfg::ExperimentCo
 
     if !ecfg.train.evaluate
         (l, _, _), back = Zygote.pullback(p -> logitcrossentropyloss(x__, y__, model, p, st),
-                                          ps)
+            ps)
         back((one(l), nothing, nothing))
         should_log() && println("$(now()) ==> backward pass warmup completed")
     end
@@ -80,14 +80,16 @@ function construct(cfg::OptimizerConfig)
     end
 
     if cfg.scheduler.name == "cosine"
-        scheduler = CosineAnnealSchedule(cfg.learning_rate, cfg.learning_rate / 100,
-                                         cfg.scheduler.cycle_length;
-                                         dampen=cfg.scheduler.damp_factor)
+        scheduler = CosineAnnealSchedule(cfg.learning_rate,
+            cfg.learning_rate / 100,
+            cfg.scheduler.cycle_length;
+            dampen=cfg.scheduler.damp_factor)
     elseif cfg.scheduler.name == "constant"
         scheduler = ConstantSchedule(cfg.learning_rate)
     elseif cfg.scheduler.name == "step"
-        scheduler = Step(cfg.learning_rate, cfg.scheduler.lr_step_decay,
-                         cfg.scheduler.lr_step)
+        scheduler = Step(cfg.learning_rate,
+            cfg.scheduler.lr_step_decay,
+            cfg.scheduler.lr_step)
     else
         throw(ArgumentError("unknown value for `lr_scheduler` = $(cfg.scheduler.name). " *
                             "Supported options are: `constant`, `step` and `cosine`."))
@@ -112,8 +114,8 @@ function validate(val_loader, model, ps, st, step, total_steps)
     top5 = AverageMeter("Acc@5", "6.2f")
 
     progress = ProgressMeter(total_steps,
-                             (batch_time, data_time, forward_time, losses, top1, top5),
-                             "Val:")
+        (batch_time, data_time, forward_time, losses, top1, top5),
+        "Val:")
 
     st_ = Lux.testmode(st)
     t = time()
@@ -215,8 +217,15 @@ function main(cfg::ExperimentConfig)
     top5 = AverageMeter("Acc@5", "6.2f")
 
     progress = ProgressMeter(cfg.train.total_steps,
-                             (batch_time, data_time, forward_time, backward_time,
-                              optimize_time, losses, top1, top5), "Train: ")
+        (batch_time,
+            data_time,
+            forward_time,
+            backward_time,
+            optimize_time,
+            losses,
+            top1,
+            top5),
+        "Train: ")
 
     st = Lux.trainmode(st)
 
@@ -232,7 +241,7 @@ function main(cfg::ExperimentConfig)
 
         # Gradients and Update
         (loss, st, stats), back = Zygote.pullback(p -> loss_function(model, p, st, (x, y)),
-                                                  ps)
+            ps)
         t_forward, t = time() - t, time()
         gs = back((one(loss) / total_workers(), nothing, nothing))[1]
         t_backward, t = time() - t, time()
@@ -266,11 +275,14 @@ function main(cfg::ExperimentConfig)
             is_best = acc1 > best_acc1
             best_acc1 = max(acc1, best_acc1)
 
-            save_state = (ps=ps |> cpu, st=st |> cpu, opt_state=fmap(cpu, opt_state),
-                          step=step)
+            save_state = (ps=ps |> cpu,
+                st=st |> cpu,
+                opt_state=fmap(cpu, opt_state),
+                step=step)
             if should_log()
-                save_checkpoint(save_state; is_best,
-                                filename=joinpath(ckpt_dir, "model_$(step).jlso"))
+                save_checkpoint(save_state;
+                    is_best,
+                    filename=joinpath(ckpt_dir, "model_$(step).jlso"))
             end
         end
 

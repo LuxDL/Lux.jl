@@ -93,8 +93,11 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
         printstyled(io, "# ", underscorise(paramlength), " parameters"; color=:light_black)
         nonparam = statelength(layer)
         if nonparam > 0
-            printstyled(io, ", plus ", underscorise(nonparam),
-                        indent == 0 ? " non-trainable" : ""; color=:light_black)
+            printstyled(io,
+                ", plus ",
+                underscorise(nonparam),
+                indent == 0 ? " non-trainable" : "";
+                color=:light_black)
         end
     end
     return indent == 0 || println(io)

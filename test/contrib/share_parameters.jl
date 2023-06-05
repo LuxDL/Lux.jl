@@ -5,8 +5,10 @@ include("../test_utils.jl")
 rng = get_stable_rng(12345)
 
 @testset "$mode" for (mode, aType, device, ongpu) in MODES
-    model = Chain(; d1=Dense(2 => 4, tanh), d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)),
-                  d3=Dense(4 => 2))
+    model = Chain(;
+        d1=Dense(2 => 4, tanh),
+        d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)),
+        d3=Dense(4 => 2))
 
     ps, st = Lux.setup(rng, model) .|> device
 

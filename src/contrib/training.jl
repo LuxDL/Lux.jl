@@ -42,9 +42,10 @@ Constructor for `TrainState`.
 
 `TrainState` object.
 """
-function TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
-                    optimizer::Optimisers.AbstractRule;
-                    transform_variables::Function=Lux.cpu)
+function TrainState(rng::Random.AbstractRNG,
+    model::Lux.AbstractExplicitLayer,
+    optimizer::Optimisers.AbstractRule;
+    transform_variables::Function=Lux.cpu)
     ps, st = Lux.setup(rng, model) .|> transform_variables
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(model, ps, st, st_opt, 0)
@@ -65,8 +66,9 @@ Update the parameters stored in `ts` using the gradients `grads`.
 Updated `TrainState` object.
 """
 function apply_gradients(ts::TrainState, grads)
-    optimizer_state, parameters = Optimisers.update(ts.optimizer_state, ts.parameters,
-                                                    grads)
+    optimizer_state, parameters = Optimisers.update(ts.optimizer_state,
+        ts.parameters,
+        grads)
     return TrainState(ts.model, parameters, ts.states, optimizer_state, ts.step + 1)
 end
 
@@ -110,8 +112,10 @@ A 4-Tuple containing:
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
 """
-function compute_gradients(t::T, objective_function::Function, data,
-                           ts::TrainState) where {T <: AbstractVJP}
+function compute_gradients(t::T,
+    objective_function::Function,
+    data,
+    ts::TrainState) where {T <: AbstractVJP}
     throw(ArgumentError("Support for AD backend $(backend(t)) has not been implemented
                          yet!!!"))
 end

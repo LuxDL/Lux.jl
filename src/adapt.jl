@@ -7,7 +7,7 @@ adapt_storage(::LuxCUDAAdaptor, x) = CUDA.cu(x)
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 
 function adapt_storage(::LuxCPUAdaptor,
-                       x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
+    x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
     return x
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)

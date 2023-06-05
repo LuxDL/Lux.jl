@@ -197,9 +197,9 @@ v = randn(rng, Float32, 4)
 
 println("Actual Gradient: ", ∇f(v))
 println("Computed Gradient via Reverse Mode AD (Zygote): ",
-        AD.gradient(AD.ZygoteBackend(), f, v)[1])
+    AD.gradient(AD.ZygoteBackend(), f, v)[1])
 println("Computed Gradient via Forward Mode AD (ForwardDiff): ",
-        AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
+    AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
 
 # Note that `AD.gradient` will only work for scalar valued outputs.
 
@@ -297,6 +297,6 @@ for i in 1:100
     opt_state, ps = Optimisers.update(opt_state, ps, gs)
     if i % 10 == 1 || i == 100
         println("Loss Value after $i iterations: ",
-                mse(model, ps, st, x_samples, y_samples))
+            mse(model, ps, st, x_samples, y_samples))
     end
 end

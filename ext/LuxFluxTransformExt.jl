@@ -119,9 +119,11 @@ end
 function transform(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
-        return Dense(in_dims => out_dims, l.σ; init_weight=(args...) -> copy(l.weight),
-                     init_bias=(args...) -> reshape(copy(l.bias), out_dims, 1),
-                     use_bias=!(l.bias isa Bool))
+        return Dense(in_dims => out_dims,
+            l.σ;
+            init_weight=(args...) -> copy(l.weight),
+            init_bias=(args...) -> reshape(copy(l.bias), out_dims, 1),
+            use_bias=!(l.bias isa Bool))
     else
         return Dense(in_dims => out_dims, l.σ; use_bias=!(l.bias isa Bool))
     end
@@ -129,8 +131,11 @@ end
 
 function transform(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
-        return Scale(size(l.scale), l.σ; init_weight=(args...) -> copy(l.scale),
-                     init_bias=(args...) -> copy(l.bias), use_bias=!(l.bias isa Bool))
+        return Scale(size(l.scale),
+            l.σ;
+            init_weight=(args...) -> copy(l.scale),
+            init_bias=(args...) -> copy(l.bias),
+            use_bias=!(l.bias isa Bool))
     else
         return Scale(size(l.scale), l.σ; use_bias=!(l.bias isa Bool))
     end
@@ -147,8 +152,11 @@ end
 function transform(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
     out, in1, in2 = size(l.weight)
     if preserve_ps_st
-        return Bilinear((in1, in2) => out, l.σ; init_weight=(args...) -> copy(l.weight),
-                        init_bias=(args...) -> copy(l.bias), use_bias=!(l.bias isa Bool))
+        return Bilinear((in1, in2) => out,
+            l.σ;
+            init_weight=(args...) -> copy(l.weight),
+            init_bias=(args...) -> copy(l.bias),
+            use_bias=!(l.bias isa Bool))
     else
         return Bilinear((in1, in2) => out, l.σ; use_bias=!(l.bias isa Bool))
     end
@@ -185,12 +193,25 @@ function transform(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
         _bias = reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
-        return Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation, groups,
-                    use_bias=!(l.bias isa Bool), init_weight=(args...) -> copy(l.weight),
-                    init_bias=(args...) -> _bias)
+        return Conv(k,
+            in_chs * groups => out_chs,
+            l.σ;
+            l.stride,
+            pad,
+            l.dilation,
+            groups,
+            use_bias=!(l.bias isa Bool),
+            init_weight=(args...) -> copy(l.weight),
+            init_bias=(args...) -> _bias)
     else
-        return Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation, groups,
-                    use_bias=!(l.bias isa Bool))
+        return Conv(k,
+            in_chs * groups => out_chs,
+            l.σ;
+            l.stride,
+            pad,
+            l.dilation,
+            groups,
+            use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -201,13 +222,25 @@ function transform(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
         _bias = reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
-        return ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
-                             groups, use_bias=!(l.bias isa Bool),
-                             init_weight=(args...) -> copy(l.weight),
-                             init_bias=(args...) -> _bias)
+        return ConvTranspose(k,
+            in_chs * groups => out_chs,
+            l.σ;
+            l.stride,
+            pad,
+            l.dilation,
+            groups,
+            use_bias=!(l.bias isa Bool),
+            init_weight=(args...) -> copy(l.weight),
+            init_bias=(args...) -> _bias)
     else
-        return ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
-                             groups, use_bias=!(l.bias isa Bool))
+        return ConvTranspose(k,
+            in_chs * groups => out_chs,
+            l.σ;
+            l.stride,
+            pad,
+            l.dilation,
+            groups,
+            use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -217,13 +250,23 @@ function transform(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
         _bias = reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
-        return CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
-                        use_bias=!(l.bias isa Bool),
-                        init_weight=(args...) -> copy(l.weight),
-                        init_bias=(args...) -> _bias)
+        return CrossCor(k,
+            in_chs => out_chs,
+            l.σ;
+            l.stride,
+            pad,
+            l.dilation,
+            use_bias=!(l.bias isa Bool),
+            init_weight=(args...) -> copy(l.weight),
+            init_bias=(args...) -> _bias)
     else
-        return CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
-                        use_bias=!(l.bias isa Bool))
+        return CrossCor(k,
+            in_chs => out_chs,
+            l.σ;
+            l.stride,
+            pad,
+            l.dilation,
+            use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -271,8 +314,10 @@ function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::
             throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
-        return RNNCell(in_dims => out_dims, l.σ; init_bias=(args...) -> copy(l.b),
-                       init_state=(args...) -> copy(l.state0))
+        return RNNCell(in_dims => out_dims,
+            l.σ;
+            init_bias=(args...) -> copy(l.b),
+            init_state=(args...) -> copy(l.state0))
     else
         return RNNCell(in_dims => out_dims, l.σ)
     end
@@ -288,8 +333,10 @@ function transform(l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve:
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(4))
         _s, _m = copy.(l.state0)
-        return LSTMCell(in_dims => out_dims; init_bias=_const_return_anon_function.(bs),
-                        init_state=(args...) -> _s, init_memory=(args...) -> _m)
+        return LSTMCell(in_dims => out_dims;
+            init_bias=_const_return_anon_function.(bs),
+            init_state=(args...) -> _s,
+            init_memory=(args...) -> _m)
     else
         return LSTMCell(in_dims => out_dims)
     end
@@ -304,24 +351,31 @@ function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(3))
-        return GRUCell(in_dims => out_dims; init_bias=_const_return_anon_function.(bs),
-                       init_state=(args...) -> copy(l.state0))
+        return GRUCell(in_dims => out_dims;
+            init_bias=_const_return_anon_function.(bs),
+            init_state=(args...) -> copy(l.state0))
     else
         return GRUCell(in_dims => out_dims)
     end
 end
 
-function transform(l::Flux.BatchNorm; preserve_ps_st::Bool=false,
-                   force_preserve::Bool=false)
+function transform(l::Flux.BatchNorm;
+    preserve_ps_st::Bool=false,
+    force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
             @warn "Preserving the state of `Flux.BatchNorm` is currently not supported. Ignoring the state." maxlog=1
         end
         if l.affine
-            return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum,
-                             init_bias=(args...) -> copy(l.β),
-                             init_scale=(args...) -> copy(l.γ))
+            return BatchNorm(l.chs,
+                l.λ;
+                l.affine,
+                l.track_stats,
+                epsilon=l.ϵ,
+                l.momentum,
+                init_bias=(args...) -> copy(l.β),
+                init_scale=(args...) -> copy(l.γ))
         else
             return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
         end
@@ -329,20 +383,32 @@ function transform(l::Flux.BatchNorm; preserve_ps_st::Bool=false,
     return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
 end
 
-function transform(l::Flux.GroupNorm; preserve_ps_st::Bool=false,
-                   force_preserve::Bool=false)
+function transform(l::Flux.GroupNorm;
+    preserve_ps_st::Bool=false,
+    force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
             @warn "Preserving the state of `Flux.GroupNorm` is currently not supported. Ignoring the state." maxlog=1
         end
         if l.affine
-            return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
-                             l.momentum, init_bias=(args...) -> copy(l.β),
-                             init_scale=(args...) -> copy(l.γ))
+            return GroupNorm(l.chs,
+                l.G,
+                l.λ;
+                l.affine,
+                l.track_stats,
+                epsilon=l.ϵ,
+                l.momentum,
+                init_bias=(args...) -> copy(l.β),
+                init_scale=(args...) -> copy(l.γ))
         else
-            return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
-                             l.momentum)
+            return GroupNorm(l.chs,
+                l.G,
+                l.λ;
+                l.affine,
+                l.track_stats,
+                epsilon=l.ϵ,
+                l.momentum)
         end
     end
     return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)

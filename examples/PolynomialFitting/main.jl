@@ -30,8 +30,13 @@ with_theme(theme_web()) do
     ax = Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange, strokecolor=:black,
-                 strokewidth=1)
+    s = scatter!(ax,
+        x[1, :],
+        y[1, :];
+        markersize=8,
+        color=:orange,
+        strokecolor=:black,
+        strokewidth=1)
 
     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
 
@@ -72,12 +77,16 @@ vjp_rule = Lux.Training.ZygoteVJP()
 
 # Finally the training loop.
 
-function main(tstate::Lux.Training.TrainState, vjp::Lux.Training.AbstractVJP, data::Tuple,
-              epochs::Int)
+function main(tstate::Lux.Training.TrainState,
+    vjp::Lux.Training.AbstractVJP,
+    data::Tuple,
+    epochs::Int)
     data = data .|> gpu
     for epoch in 1:epochs
-        grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp, loss_function,
-                                                                    data, tstate)
+        grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,
+            loss_function,
+            data,
+            tstate)
         @info epoch=epoch loss=loss
         tstate = Lux.Training.apply_gradients(tstate, grads)
     end
@@ -94,10 +103,20 @@ with_theme(theme_web()) do
     ax = Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange, strokecolor=:black,
-                  strokewidth=1)
-    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8, color=:green, strokecolor=:black,
-                  strokewidth=1)
+    s1 = scatter!(ax,
+        x[1, :],
+        y[1, :];
+        markersize=8,
+        color=:orange,
+        strokecolor=:black,
+        strokewidth=1)
+    s2 = scatter!(ax,
+        x[1, :],
+        y_pred[1, :];
+        markersize=8,
+        color=:green,
+        strokecolor=:black,
+        strokewidth=1)
 
     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
 

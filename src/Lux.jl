@@ -19,9 +19,17 @@ import TruncatedStacktraces: @truncate_stacktrace
 
 # LuxCore
 using LuxCore
-import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
-                initialstates, parameterlength, statelength, update_state, trainmode,
-                testmode, setup, apply
+import LuxCore: AbstractExplicitLayer,
+    AbstractExplicitContainerLayer,
+    initialparameters,
+    initialstates,
+    parameterlength,
+    statelength,
+    update_state,
+    trainmode,
+    testmode,
+    setup,
+    apply
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
@@ -100,8 +108,17 @@ export cpu, gpu
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
-export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
-       AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
+export Conv,
+    ConvTranspose,
+    CrossCor,
+    MaxPool,
+    MeanPool,
+    GlobalMaxPool,
+    GlobalMeanPool,
+    AdaptiveMaxPool,
+    AdaptiveMeanPool,
+    Upsample,
+    PixelShuffle
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
