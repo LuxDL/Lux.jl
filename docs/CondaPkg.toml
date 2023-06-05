@@ -1,0 +1,11 @@
+[pip.deps]
+jinja2 = ""
+mkdocs = ""
+pygments = ""
+python-markdown-math = ""
+mknotebooks = ""
+pytkdocs-tweaks = ""
+mkdocs-include-exclude-files = ""
+mkdocs-material = ""
+pymdown-extensions = ""
+mkdocstrings = ""
