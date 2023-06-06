@@ -39,6 +39,7 @@ LuxCore.AbstractExplicitContainerLayer
 
 ```@docs
 LuxCore.apply
+LuxCore.display_name
 LuxCore.setup
 ```
 

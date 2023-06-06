@@ -100,11 +100,20 @@ function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
     return model(x, ps, st)
 end
 
-function Base.show(io::IO, x::AbstractExplicitLayer)
-    __t = rsplit(string(Base.typename(typeof(x)).wrapper), "."; limit=2)
-    T = length(__t) == 2 ? __t[2] : __t[1]
-    return print(io, "$T()")
+"""
+    display_name(layer::AbstractExplicitLayer)
+
+Printed Name of the `layer`. If the `layer` has a field `name` that is used, else the type
+name is used.
+"""
+@generated function display_name(l::L) where {L <: AbstractExplicitLayer}
+    hasfield(L, :name) &&
+        return :(ifelse(l.name === nothing, $(string(nameof(L))), string(l.name)))
+    return :($(string(nameof(L))))
 end
+display_name(::T) where {T} = string(nameof(T))
+
+Base.show(io::IO, x::AbstractExplicitLayer) = print(io, "$(display_name(x))()")
 
 # Abstract Container Layers
 """
