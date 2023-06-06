@@ -35,141 +35,164 @@ function (c::Chain2)(x, ps, st)
     return y, (; layer1=st1, layer2=st2)
 end
 
-@testset "AbstractExplicitLayer Interface" begin
-    @testset "Custom Layer" begin
-        model = Dense(5, 6)
+@testset "LuxCore.jl Tests" begin
+    @testset "AbstractExplicitLayer Interface" begin
+        @testset "Custom Layer" begin
+            model = Dense(5, 6)
+            x = randn(rng, Float32, 5)
+            ps, st = LuxCore.setup(rng, model)
+
+            @test LuxCore.parameterlength(ps) == LuxCore.parameterlength(model)
+            @test LuxCore.statelength(st) == LuxCore.statelength(model)
+
+            @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
+
+            @test_nowarn println(model)
+        end
+
+        @testset "Default Fallbacks" begin
+            struct NoParamStateLayer <: LuxCore.AbstractExplicitLayer end
+
+            layer = NoParamStateLayer()
+            @test LuxCore.initialparameters(rng, layer) == NamedTuple()
+            @test LuxCore.initialstates(rng, layer) == NamedTuple()
+
+            @test LuxCore.parameterlength(zeros(10, 2)) == 20
+            @test LuxCore.statelength(zeros(10, 2)) == 20
+            @test LuxCore.statelength(Val(true)) == 1
+            @test LuxCore.statelength((zeros(10), zeros(5, 2))) == 20
+            @test LuxCore.statelength((layer_1=zeros(10), layer_2=zeros(5, 2))) == 20
+
+            @test LuxCore.initialparameters(rng, NamedTuple()) == NamedTuple()
+            @test_throws MethodError LuxCore.initialparameters(rng, ())
+            @test LuxCore.initialparameters(rng, nothing) == NamedTuple()
+
+            @test LuxCore.initialstates(rng, NamedTuple()) == NamedTuple()
+            @test_throws MethodError LuxCore.initialstates(rng, ())
+            @test LuxCore.initialstates(rng, nothing) == NamedTuple()
+        end
+    end
+
+    @testset "AbstractExplicitContainerLayer Interface" begin
+        model = Chain((; layer_1=Dense(5, 5), layer_2=Dense(5, 6)))
         x = randn(rng, Float32, 5)
         ps, st = LuxCore.setup(rng, model)
 
-        @test LuxCore.parameterlength(ps) == LuxCore.parameterlength(model)
-        @test LuxCore.statelength(st) == LuxCore.statelength(model)
+        @test LuxCore.parameterlength(ps) ==
+              LuxCore.parameterlength(model) ==
+              LuxCore.parameterlength(model.layers[1]) +
+              LuxCore.parameterlength(model.layers[2])
+        @test LuxCore.statelength(st) ==
+              LuxCore.statelength(model) ==
+              LuxCore.statelength(model.layers[1]) + LuxCore.statelength(model.layers[2])
+
+        @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
+
+        @test_nowarn println(model)
+
+        model = Chain2(Dense(5, 5), Dense(5, 6))
+        x = randn(rng, Float32, 5)
+        ps, st = LuxCore.setup(rng, model)
+
+        @test LuxCore.parameterlength(ps) ==
+              LuxCore.parameterlength(model) ==
+              LuxCore.parameterlength(model.layer1) + LuxCore.parameterlength(model.layer2)
+        @test LuxCore.statelength(st) ==
+              LuxCore.statelength(model) ==
+              LuxCore.statelength(model.layer1) + LuxCore.statelength(model.layer2)
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
         @test_nowarn println(model)
     end
 
-    @testset "Default Fallbacks" begin
-        struct NoParamStateLayer <: LuxCore.AbstractExplicitLayer end
+    @testset "update_state API" begin
+        st = (layer_1=(training=Val(true), val=1),
+            layer_2=(layer_1=(val=2,), layer_2=(training=Val(true),)))
 
-        layer = NoParamStateLayer()
-        @test LuxCore.initialparameters(rng, layer) == NamedTuple()
-        @test LuxCore.initialstates(rng, layer) == NamedTuple()
+        st_ = LuxCore.testmode(st)
 
-        @test LuxCore.parameterlength(zeros(10, 2)) == 20
-        @test LuxCore.statelength(zeros(10, 2)) == 20
-        @test LuxCore.statelength(Val(true)) == 1
-        @test LuxCore.statelength((zeros(10), zeros(5, 2))) == 20
-        @test LuxCore.statelength((layer_1=zeros(10), layer_2=zeros(5, 2))) == 20
+        @test st_.layer_1.training == Val(false) &&
+              st_.layer_2.layer_2.training == Val(false) &&
+              st_.layer_1.val == st.layer_1.val &&
+              st_.layer_2.layer_1.val == st.layer_2.layer_1.val
 
-        @test LuxCore.initialparameters(rng, NamedTuple()) == NamedTuple()
-        @test_throws MethodError LuxCore.initialparameters(rng, ())
-        @test LuxCore.initialparameters(rng, nothing) == NamedTuple()
+        st = st_
+        st_ = LuxCore.trainmode(st)
 
-        @test LuxCore.initialstates(rng, NamedTuple()) == NamedTuple()
-        @test_throws MethodError LuxCore.initialstates(rng, ())
-        @test LuxCore.initialstates(rng, nothing) == NamedTuple()
-    end
-end
+        @test st_.layer_1.training == Val(true) &&
+              st_.layer_2.layer_2.training == Val(true) &&
+              st_.layer_1.val == st.layer_1.val &&
+              st_.layer_2.layer_1.val == st.layer_2.layer_1.val
 
-@testset "AbstractExplicitContainerLayer Interface" begin
-    model = Chain((; layer_1=Dense(5, 5), layer_2=Dense(5, 6)))
-    x = randn(rng, Float32, 5)
-    ps, st = LuxCore.setup(rng, model)
-
-    @test LuxCore.parameterlength(ps) ==
-          LuxCore.parameterlength(model) ==
-          LuxCore.parameterlength(model.layers[1]) +
-          LuxCore.parameterlength(model.layers[2])
-    @test LuxCore.statelength(st) ==
-          LuxCore.statelength(model) ==
-          LuxCore.statelength(model.layers[1]) + LuxCore.statelength(model.layers[2])
-
-    @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
-
-    @test_nowarn println(model)
-
-    model = Chain2(Dense(5, 5), Dense(5, 6))
-    x = randn(rng, Float32, 5)
-    ps, st = LuxCore.setup(rng, model)
-
-    @test LuxCore.parameterlength(ps) ==
-          LuxCore.parameterlength(model) ==
-          LuxCore.parameterlength(model.layer1) + LuxCore.parameterlength(model.layer2)
-    @test LuxCore.statelength(st) ==
-          LuxCore.statelength(model) ==
-          LuxCore.statelength(model.layer1) + LuxCore.statelength(model.layer2)
-
-    @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
-
-    @test_nowarn println(model)
-end
-
-@testset "update_state API" begin
-    st = (layer_1=(training=Val(true), val=1),
-          layer_2=(layer_1=(val=2,), layer_2=(training=Val(true),)))
-
-    st_ = LuxCore.testmode(st)
-
-    @test st_.layer_1.training == Val(false) &&
-          st_.layer_2.layer_2.training == Val(false) &&
-          st_.layer_1.val == st.layer_1.val &&
-          st_.layer_2.layer_1.val == st.layer_2.layer_1.val
-
-    st = st_
-    st_ = LuxCore.trainmode(st)
-
-    @test st_.layer_1.training == Val(true) &&
-          st_.layer_2.layer_2.training == Val(true) &&
-          st_.layer_1.val == st.layer_1.val &&
-          st_.layer_2.layer_1.val == st.layer_2.layer_1.val
-
-    st_ = LuxCore.update_state(st, :val, -1)
-    @test st_.layer_1.training == st.layer_1.training &&
-          st_.layer_2.layer_2.training == st.layer_2.layer_2.training &&
-          st_.layer_1.val == -1 &&
-          st_.layer_2.layer_1.val == -1
-end
-
-@testset "Functor Compatibilty" begin
-    @testset "Basic Usage" begin
-        model = Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
-
-        children, reconstructor = Functors.functor(model)
-
-        @test children isa NamedTuple
-        @test fieldnames(typeof(children)) == (:layers,)
-        @test children.layers isa NamedTuple
-        @test fieldnames(typeof(children.layers)) == (:layer_1, :layer_2)
-        @test children.layers.layer_1 isa Dense
-        @test children.layers.layer_2 isa Dense
-        @test children.layers.layer_1.in == 5
-        @test children.layers.layer_1.out == 10
-        @test children.layers.layer_2.in == 10
-        @test children.layers.layer_2.out == 5
-
-        new_model = reconstructor((; layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))))
-
-        @test new_model isa Chain
-        @test new_model.layers.layer_1.in == 10
-        @test new_model.layers.layer_1.out == 5
-        @test new_model.layers.layer_2.in == 5
-        @test new_model.layers.layer_2.out == 10
+        st_ = LuxCore.update_state(st, :val, -1)
+        @test st_.layer_1.training == st.layer_1.training &&
+              st_.layer_2.layer_2.training == st.layer_2.layer_2.training &&
+              st_.layer_1.val == -1 &&
+              st_.layer_2.layer_1.val == -1
     end
 
-    @testset "Method Ambiguity" begin
-        # Needed if defining a layer that works with both Flux and Lux -- See DiffEqFlux.jl
-        # See https://github.com/SciML/DiffEqFlux.jl/pull/750#issuecomment-1373874944
+    @testset "Functor Compatibilty" begin
+        @testset "Basic Usage" begin
+            model = Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
 
-        struct CustomLayer{M, P} <: LuxCore.AbstractExplicitContainerLayer{(:model,)}
-            model::M
-            p::P
+            children, reconstructor = Functors.functor(model)
+
+            @test children isa NamedTuple
+            @test fieldnames(typeof(children)) == (:layers,)
+            @test children.layers isa NamedTuple
+            @test fieldnames(typeof(children.layers)) == (:layer_1, :layer_2)
+            @test children.layers.layer_1 isa Dense
+            @test children.layers.layer_2 isa Dense
+            @test children.layers.layer_1.in == 5
+            @test children.layers.layer_1.out == 10
+            @test children.layers.layer_2.in == 10
+            @test children.layers.layer_2.out == 5
+
+            new_model = reconstructor((;
+                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))))
+
+            @test new_model isa Chain
+            @test new_model.layers.layer_1.in == 10
+            @test new_model.layers.layer_1.out == 5
+            @test new_model.layers.layer_2.in == 5
+            @test new_model.layers.layer_2.out == 10
         end
 
-        @functor CustomLayer (p,)
+        @testset "Method Ambiguity" begin
+            # Needed if defining a layer that works with both Flux and Lux -- See DiffEqFlux.jl
+            # See https://github.com/SciML/DiffEqFlux.jl/pull/750#issuecomment-1373874944
 
-        l = CustomLayer(x -> x, nothing)  # Dummy Struct
+            struct CustomLayer{M, P} <: LuxCore.AbstractExplicitContainerLayer{(:model,)}
+                model::M
+                p::P
+            end
 
-        @test_nowarn Optimisers.trainable(l)
+            @functor CustomLayer (p,)
+
+            l = CustomLayer(x -> x, nothing)  # Dummy Struct
+
+            @test_nowarn Optimisers.trainable(l)
+        end
+    end
+
+    @testset "Display Name" begin
+        struct StructWithoutName <: LuxCore.AbstractExplicitLayer end
+
+        model = StructWithoutName()
+
+        @test LuxCore.display_name(model) == "StructWithoutName"
+
+        struct StructWithName{N} <: LuxCore.AbstractExplicitLayer
+            name::N
+        end
+
+        model = StructWithName("Test")
+
+        @test LuxCore.display_name(model) == "Test"
+
+        model = StructWithName(nothing)
+
+        @test LuxCore.display_name(model) == "StructWithName"
     end
 end
