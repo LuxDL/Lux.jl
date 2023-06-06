@@ -1,5 +1,4 @@
-using LuxCUDA, Statistics, Test
-using LuxLib
+using Statistics, Test, LuxLib
 
 include("../test_utils.jl")
 
@@ -145,6 +144,7 @@ end
         @test y isa aType{T, length(x_shape)}
         @test size(y) == x_shape
         @test rng != rng_
+
         @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
 
         __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))

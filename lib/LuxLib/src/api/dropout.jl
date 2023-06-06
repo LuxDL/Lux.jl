@@ -66,9 +66,7 @@ function dropout(rng::AbstractRNG,
     ::Val{false};
     dims,
     invp::T=inv(p)) where {T, T1, T2, N}
-    if size(x) != size(mask)
-        return dropout(rng, x, p, Val(true); dims, invp)
-    end
+    size(x) != size(mask) && return dropout(rng, x, p, Val(true); dims, invp)
     return x .* ignore_derivatives(mask), mask, rng
 end
 
