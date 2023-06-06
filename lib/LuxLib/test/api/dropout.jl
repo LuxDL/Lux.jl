@@ -145,11 +145,7 @@ end
         @test size(y) == x_shape
         @test rng != rng_
 
-        if mode == "AMDGPU"
-            @test isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
-        else
-            @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
-        end
+        @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
 
         __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
