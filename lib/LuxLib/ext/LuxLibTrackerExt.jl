@@ -102,12 +102,10 @@ end
     epsilon::Real) where {T <: FP_32_64}
     LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
-                             channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
-                             number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
     y, mu, rsig = LuxLib._groupnorm(data(x), groups, data(scale), data(bias), epsilon)
