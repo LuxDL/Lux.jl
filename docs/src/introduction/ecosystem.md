@@ -2,7 +2,7 @@
 
 ## Frameworks extending Lux
 
-- [Boltz.jl](https://github.com/avik-pal/Lux.jl/tree/main/lib/Boltz) -- Prebuilt deep learning models for image classification tasks
+- [Boltz.jl](https://github.com/LuxDL/Boltz.jl) -- Prebuilt deep learning models for image classification tasks
 - [DeepEquilibriumNetworks.jl](https://github.com/SciML/DeepEquilibriumNetworks.jl) -- Continuous and Discrete Deep Equilibrium Networks
 - [DiffEqFlux.jl](https://github.com/SciML/DiffEqFlux.jl) -- Neural Differential Equations, Continuous Normalizing Flows, etc.
 
