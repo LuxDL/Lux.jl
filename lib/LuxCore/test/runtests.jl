@@ -162,7 +162,6 @@ end
         @testset "Method Ambiguity" begin
             # Needed if defining a layer that works with both Flux and Lux -- See DiffEqFlux.jl
             # See https://github.com/SciML/DiffEqFlux.jl/pull/750#issuecomment-1373874944
-
             struct CustomLayer{M, P} <: LuxCore.AbstractExplicitContainerLayer{(:model,)}
                 model::M
                 p::P
