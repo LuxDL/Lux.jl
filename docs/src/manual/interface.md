@@ -167,7 +167,7 @@ Lux.apply(model, x, ps, st) # or `model(x, ps, st)`
 ## Parameter Interface
 
 We accept any parameter type as long as we can fetch the parameters using
-`getproperty(obj, :parameter_name)`. This allows us to simulaneously support `NamedTuple`s
+`getproperty(obj, :parameter_name)`. This allows us to simultaneously support `NamedTuple`s
 and `ComponentArray`s. Let us go through a concrete example of what it means. Consider
 [`Dense`](@ref) which expects two parameters named `weight` and `bias`.
 
@@ -189,7 +189,7 @@ x = randn(rng, Float32, 2, 1)
 println("Result with `NamedTuple` parameters: ", first(d(x, ps_default, st)))
 ```
 
-Let, us define a custom paramter type with fields `myweight` and `mybias` but if we try to
+Let, us define a custom parameter type with fields `myweight` and `mybias` but if we try to
 access `weight` we get back `myweight`, similar for `bias`.
 
 !!! warning

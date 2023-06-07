@@ -87,7 +87,7 @@ model(xt, ps, st)[1]
 
 ### Using the same input for non-TD models
 
-Writing proper dispatch means we can simple replace the `TDChain` with a `Chain` (of course
+Writing proper dispatch means we can simply replace the `TDChain` with a `Chain` (of course
 with dimension corrections) and the pipeline still works.
 
 ```@example dispatch
