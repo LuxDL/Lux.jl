@@ -266,27 +266,17 @@ end
 const _RNNCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
 function (rnn::RNNCell{true})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
-    h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias)
-    return (h_new, (h_new,)), st
-end
-
-function (rnn::RNNCell{true, TS, typeof(identity)})((x, (hidden_state,))::_RNNCellInputType,
-    ps,
-    st::NamedTuple) where {TS}
     h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
-    return (h_new, (h_new,)), st
+    return (__apply_activation(rnn.activation, h_new),
+        (__apply_activation(rnn.activation, h_new),)),
+    st
 end
 
 function (rnn::RNNCell{false})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
-    h_new = rnn.activation.(ps.weight_ih * x .+ ps.weight_hh * hidden_state)
-    return (h_new, (h_new,)), st
-end
-
-function (rnn::RNNCell{false, TS, typeof(identity)})((x, (hs,))::_RNNCellInputType,
-    ps,
-    st::NamedTuple) where {TS}
-    h_new = ps.weight_ih * x .+ ps.weight_hh * hs
-    return (h_new, (h_new,)), st
+    h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
+    return (__apply_activation(rnn.activation, h_new),
+        (__apply_activation(rnn.activation, h_new),)),
+    st
 end
 
 function Base.show(io::IO, r::RNNCell{use_bias, TS}) where {use_bias, TS}

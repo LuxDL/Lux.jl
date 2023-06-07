@@ -95,7 +95,7 @@ vision_. 2015.
 """
 function kaiming_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0)
     bound = Float32(√3.0f0 * gain / sqrt(first(_nfan(dims...))))
-    return (rand(rng, Float32, dims...) .- 0.5f0) .* 2*bound
+    return (rand(rng, Float32, dims...) .- 0.5f0) .* 2 * bound
 end
 
 """
