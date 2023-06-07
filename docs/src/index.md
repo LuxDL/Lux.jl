@@ -45,8 +45,8 @@ Pkg.add("Lux")
     [Github Discussions](https://github.com/avik-pal/Lux.jl/discussions) or
     [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/)
     which allows questions and answers to be indexed. To report bugs use
-    [github issues](https://github.com/avik-pal/Lux.jl/issues) or even better send in a
-    [pull request](https://github.com/avik-pal/Lux.jl/pulls).
+    [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a
+    [pull request](https://github.com/LuxDL/Lux.jl/pulls).
 
 ## Quickstart
 
@@ -132,4 +132,4 @@ If you found this library to be useful in academic work, then please cite:
 }
 ```
 
-Also consider starring [our github repo](https://github.com/avik-pal/Lux.jl/)
+Also consider starring [our github repo](https://github.com/LuxDL/Lux.jl)
