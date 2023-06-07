@@ -29,9 +29,12 @@ import LuxCore: AbstractExplicitLayer,
     trainmode,
     testmode,
     setup,
-    apply
+    apply,
+    display_name
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
+
+const NAME_TYPE = Union{Nothing, String, Symbol}
 
 # Utilities
 include("utils.jl")

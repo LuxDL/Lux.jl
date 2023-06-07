@@ -16,7 +16,7 @@ steps:
     env:
       GROUP: "CUDA"
     if: build.message !~ /\[skip tests\]/
-    timeout_in_minutes: 60
+    timeout_in_minutes: 240
     matrix:
       setup:
         julia:

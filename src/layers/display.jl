@@ -16,7 +16,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     elseif all(_show_leaflike, children)
         _layer_show(io, obj, indent, name)
     else
-        println(io, " "^indent, isnothing(name) ? "" : "$name = ", nameof(typeof(obj)), pre)
+        println(io, " "^indent, isnothing(name) ? "" : "$name = ", display_name(obj), pre)
         if obj isa Chain{<:NamedTuple}
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
@@ -112,9 +112,7 @@ function _big_finale(io::IO, m)
     printstyled(io, " "^08, "# Total: "; color=:light_black)
     println(io, pars, " parameters,")
     printstyled(io, " "^10, "#        plus "; color=:light_black)
-    print(io, nonparam, " states, ")
-    printstyled(io, "summarysize "; color=:light_black)
-    print(io, bytes, ".")
+    print(io, nonparam, " states.")
     return
 end
 

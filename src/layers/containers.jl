@@ -1,6 +1,6 @@
 
 """
-    SkipConnection(layer, connection)
+    SkipConnection(layer, connection; name=nothing)
 
 Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers
 and a shortcut connection linking the block's input to the output through a user-supplied
@@ -17,6 +17,10 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
       + A 2-argument function that takes `layer(input)` and the input OR
       + An AbstractExplicitLayer that takes `(layer(input), input)` as input
+
+## Keyword Arguments
+
+  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -41,10 +45,14 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-struct SkipConnection{T <: AbstractExplicitLayer, F} <:
-       AbstractExplicitContainerLayer{(:layers,)}
+struct SkipConnection{T, F, N <: NAME_TYPE} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
     connection::F
+    name::N
+end
+
+function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
+    return SkipConnection(layers, connection, name)
 end
 
 function initialparameters(rng::AbstractRNG,
@@ -73,8 +81,8 @@ function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer}
 end
 
 """
-    Parallel(connection, layers...)
-    Parallel(connection; layers...)
+    Parallel(connection, layers...; name=nothing)
+    Parallel(connection; name=nothing, layers...)
 
 Create a layer which passes an input to each path in `layers`, before reducing the output
 with `connection`.
@@ -89,6 +97,10 @@ with `connection`.
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
+
+## Keyword Arguments
+
+  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -113,21 +125,23 @@ with `connection`.
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
-struct Parallel{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Parallel{F, T <: NamedTuple, N <: NAME_TYPE} <:
+       AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
+    name::N
 end
 
-function Parallel(connection, layers...)
+function Parallel(connection, layers...; name::NAME_TYPE=nothing)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return Parallel(connection, NamedTuple{names}(layers))
+    return Parallel(connection, NamedTuple{names}(layers), name)
 end
 
-Parallel(connection; kwargs...) = Parallel(connection, (; kwargs...))
-
-function (m::Parallel)(x, ps, st::NamedTuple)
-    return applyparallel(m.layers, m.connection, x, ps, st)
+function Parallel(connection; name::NAME_TYPE=nothing, kwargs...)
+    return Parallel(connection, (; kwargs...), name)
 end
+
+(m::Parallel)(x, ps, st::NamedTuple) = applyparallel(m.layers, m.connection, x, ps, st)
 
 @generated function applyparallel(layers::NamedTuple{names},
     connection::C,
@@ -158,7 +172,7 @@ Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
 
 """
     BranchLayer(layers...)
-    BranchLayer(; layers...)
+    BranchLayer(; name=nothing, layers...)
 
 Takes an input `x` and passes it through all the `layers` and returns a tuple of the
 outputs.
@@ -169,6 +183,10 @@ outputs.
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
+
+## Keyword Arguments
+
+  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -208,16 +226,18 @@ An easy way to replicate an input to an NTuple is to do
 l = BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
 ```
 """
-struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct BranchLayer{T <: NamedTuple, N <: NAME_TYPE} <:
+       AbstractExplicitContainerLayer{(:layers,)}
     layers::T
+    name::N
 end
 
-function BranchLayer(layers...)
+function BranchLayer(layers...; name::NAME_TYPE=nothing)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return BranchLayer(NamedTuple{names}(layers))
+    return BranchLayer(NamedTuple{names}(layers), name)
 end
 
-BranchLayer(; kwargs...) = BranchLayer((; kwargs...))
+BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), name)
 
 function (m::BranchLayer)(x, ps, st::NamedTuple)
     return applybranching(m.layers, x, ps, st)
@@ -244,8 +264,8 @@ end
 Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 
 """
-    PairwiseFusion(connection, layers...)
-    PairwiseFusion(connection; layers...)
+    PairwiseFusion(connection, layers...; name=nothing)
+    PairwiseFusion(connection; name=nothing, layers...)
 
 ```
 x1 → layer1 → y1 ↘
@@ -262,6 +282,10 @@ x1 → layer1 → y1 ↘
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
+
+## Keyword Arguments
+
+  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -301,17 +325,21 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
-struct PairwiseFusion{F, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct PairwiseFusion{F, T <: NamedTuple, N <: NAME_TYPE} <:
+       AbstractExplicitContainerLayer{(:layers,)}
     connection::F
     layers::T
+    name::N
 end
 
-function PairwiseFusion(connection, layers...)
+function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
     names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return PairwiseFusion(connection, NamedTuple{names}(layers))
+    return PairwiseFusion(connection, NamedTuple{names}(layers), name)
 end
 
-PairwiseFusion(connection; kwargs...) = PairwiseFusion(connection, (; kwargs...))
+function PairwiseFusion(connection; name::NAME_TYPE=nothing, kwargs...)
+    return PairwiseFusion(connection, (; kwargs...), name)
+end
 
 function (m::PairwiseFusion)(x, ps, st::NamedTuple)
     return applypairwisefusion(m.layers, m.connection, x, ps, st)
@@ -342,8 +370,8 @@ end
 Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
 
 """
-    Chain(layers...; disable_optimizations::Bool = false)
-    Chain(; layers..., disable_optimizations::Bool = false)
+    Chain(layers...; name=nothing, disable_optimizations::Bool = false)
+    Chain(; layers..., name=nothing, disable_optimizations::Bool = false)
 
 Collects multiple layers / functions to be called in sequence on a given input.
 
@@ -357,6 +385,7 @@ Collects multiple layers / functions to be called in sequence on a given input.
 ## Keyword Arguments
 
   - `disable_optimizations`: Prevents any structural optimization
+  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -403,33 +432,31 @@ keyword argument `disable_optimizations`.
 c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
 ```
 """
-struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Chain{T <: NamedTuple, N <: NAME_TYPE} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
+    name::N
+end
 
-    function Chain(xs...; disable_optimizations::Bool=false)
-        xs = disable_optimizations ? xs : _flatten_model(xs)
-        length(xs) == 0 && return NoOpLayer()
-        length(xs) == 1 && return first(xs)
-        names = ntuple(i -> Symbol("layer_$i"), length(xs))
-        layers = NamedTuple{names}(xs)
-        return new{typeof(layers)}(layers)
-    end
+function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false)
+    xs = disable_optimizations ? xs : _flatten_model(xs)
+    length(xs) == 0 && return NoOpLayer()
+    length(xs) == 1 && return first(xs)
+    names = ntuple(i -> Symbol("layer_$i"), length(xs))
+    layers = NamedTuple{names}(xs)
+    return Chain(layers, name)
+end
 
-    function Chain(xs::AbstractVector; disable_optimizations::Bool=false)
-        return Chain(xs...; disable_optimizations)
-    end
+Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
 
-    function Chain(nt::NamedTuple; disable_optimizations::Bool=true)
-        if !disable_optimizations
-            throw(ArgumentError("Chain(::NamedTuple) is not compatible with" *
-                                " disable_optimizations=true"))
-        end
-        return new{typeof(nt)}(nt)
+function Chain(nt::NamedTuple; disable_optimizations::Bool=true, name::NAME_TYPE=nothing)
+    if !disable_optimizations
+        throw(ArgumentError("Chain(::NamedTuple) is not compatible with disable_optimizations=true"))
     end
+    return Chain(nt, name)
+end
 
-    function Chain(; disable_optimizations::Bool=true, kwargs...)
-        return Chain((; kwargs...); disable_optimizations)
-    end
+function Chain(; disable_optimizations::Bool=true, name::NAME_TYPE=nothing, kwargs...)
+    return Chain((; kwargs...); disable_optimizations, name)
 end
 
 function _flatten_model(layers::Union{AbstractVector, Tuple})
@@ -461,9 +488,7 @@ end
 
 _flatten_model(x) = x
 
-function (c::Chain)(x, ps, st::NamedTuple)
-    return applychain(c.layers, x, ps, st)
-end
+(c::Chain)(x, ps, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
 @generated function applychain(layers::NamedTuple{fields},
     x,
