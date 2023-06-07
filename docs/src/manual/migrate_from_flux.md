@@ -1,6 +1,6 @@
 # Migrating from Flux to Lux
 
-For the core library layers like [`Dense`](@ref), [`Conv`](@ref), etc. we have intentionlly
+For the core library layers like [`Dense`](@ref), [`Conv`](@ref), etc. we have intentionally
 kept the API very similar to Flux. In most cases, replacing `using Flux` with `using Lux`
 should be enough to get you started. We cover the additional changes that you will have to
 make in the following example.
@@ -50,7 +50,7 @@ should be implemented. A summary of the differences would be:
 
 * Lux relies on the user to define `Lux.initialparameters` and `Lux.initialstates` to
   distinguish between trainable parameters (called "parameters") and non-trainable
-  parameters (called "states"). Additionally Lux layers define the model architecture, hence
+  parameters (called "states"). Additionally, Lux layers define the model architecture, hence
   device transfer utilities like [`gpu`](@ref), [`cpu`](@ref), etc. cannot be applied on Lux
   layers, instead they need to be applied on the parameters and states.
 
@@ -142,7 +142,7 @@ Now let us run the model.
     ```
 ```
 
-To reiterate some of the important points:
+To reiterate some important points:
 
 * Don't store mutables like Arrays inside a Lux Layer.
 * Parameters and States should be constructured inside the respective `initial*` functions.

@@ -22,7 +22,7 @@ We do have automatic formatter, which opens PR after fixing common style issues,
 - Keyword Arguments must be separated using a semicolon `;`
 - Functions must use `return`. Returning the last value is quite ambiguous -- did the author
   actually want it returned?
-- Format docstrings as you would format regular code. If the docstring constains LaTeX in
+- Format docstrings as you would format regular code. If the docstring contains LaTeX in
   multiple lines, use `math` block.
 - No avoiding multiply symbol -- so `2x` is invalid instead do it like other languages
   `2 * x`.
@@ -85,7 +85,7 @@ away those optimizations (these can be tested via `Zygote.@code_ir`).
 ## Deprecation
 
 Deprecations should be handled according to SemVer recommendations, i.e. there should be
-atleast one version where we throw a deprecation warning. This ensures users know how to
+at least one version where we throw a deprecation warning. This ensures users know how to
 modify their code for upcoming releases.
 
 [This blog](https://invenia.github.io/blog/2022/06/17/deprecating-in-julia/) details the
