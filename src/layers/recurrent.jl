@@ -1,5 +1,4 @@
-# TODO(@avik-pal): We can add another subtype `AbstractRecurrentCell` in the type hierarchy
-#                  to make it safer to compose these cells with `Recurrence`
+abstract type AbstractRecurrentCell{use_bias, train_state} <: AbstractExplicitLayer end
 """
     Recurrence(cell; return_sequence::Bool = false)
 
@@ -44,7 +43,7 @@ automatically operate over a sequence of inputs.
 
   - Same as `cell`.
 """
-struct Recurrence{R, C <: AbstractExplicitLayer} <: AbstractExplicitContainerLayer{(:cell,)}
+struct Recurrence{R, C <: AbstractRecurrentCell} <: AbstractExplicitContainerLayer{(:cell,)}
     cell::C
 end
 
@@ -115,9 +114,9 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
       + `cell`: Same as `cell`.
       + `carry`: The carry state of the `cell`.
 """
-struct StatefulRecurrentCell{C <: AbstractExplicitLayer} <:
-       AbstractExplicitContainerLayer{(:cell,)}
-    cell::C
+struct StatefulRecurrentCell{C <: AbstractRecurrentCell} <:
+    AbstractExplicitContainerLayer{(:cell,)}
+ cell::C
 end
 
 function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)
@@ -129,10 +128,10 @@ function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
     return out, (; cell=st_, carry)
 end
 
-function applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, carry)
+function applyrecurrentcell(l::AbstractRecurrentCell{use_bias, train_state}, x, ps, st, carry) where {use_bias, train_state}
     return Lux.apply(l, (x, carry), ps, st)
 end
-applyrecurrentcell(l::AbstractExplicitLayer, x, ps, st, ::Nothing) = Lux.apply(l, x, ps, st)
+applyrecurrentcell(l::AbstractRecurrentCell{use_bias, train_state}, x, ps, st, ::Nothing) where {use_bias, train_state} = Lux.apply(l, x, ps, st)
 
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true,
@@ -182,7 +181,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct RNNCell{use_bias, train_state, A, B, W, S} <: AbstractExplicitLayer
+struct RNNCell{use_bias, train_state, A, B, W, S} <: AbstractRecurrentCell{use_bias, train_state}
     activation::A
     in_dims::Int
     out_dims::Int
@@ -360,7 +359,7 @@ Long Short-Term (LSTM) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct LSTMCell{use_bias, train_state, train_memory, B, W, S, M} <: AbstractExplicitLayer
+struct LSTMCell{use_bias, train_state, train_memory, B, W, S, M} <: AbstractRecurrentCell{use_bias, train_state}
     in_dims::Int
     out_dims::Int
     init_bias::B
@@ -559,7 +558,7 @@ Gated Recurrent Unit (GRU) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct GRUCell{use_bias, train_state, B, W, S} <: AbstractExplicitLayer
+struct GRUCell{use_bias, train_state, B, W, S} <: AbstractRecurrentCell{use_bias, train_state}
     in_dims::Int
     out_dims::Int
     init_bias::B
