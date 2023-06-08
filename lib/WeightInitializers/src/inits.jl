@@ -11,15 +11,7 @@ function _default_rng()
         return MersenneTwister(1234)
     end
 end
-  
-"""
-    default_rng_value()
-  
-Create an instance of the default RNG depending on Julia's version.
-  - Julia version is < 1.7: `MersenneTwister(1234)`
-  - Julia version is >= 1.7: `Xoshiro(1234)`
-"""
-_default_rng
+
 
 """
     zeros32(rng::AbstractRNG, size...) = zeros(Float32, size...)
