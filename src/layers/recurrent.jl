@@ -128,18 +128,11 @@ function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
     return out, (; cell=st_, carry)
 end
 
-function applyrecurrentcell(l::AbstractRecurrentCell{use_bias, train_state},
-    x,
-    ps,
-    st,
-    carry) where {use_bias, train_state}
+function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, carry)
     return Lux.apply(l, (x, carry), ps, st)
 end
-function applyrecurrentcell(l::AbstractRecurrentCell{use_bias, train_state},
-    x,
-    ps,
-    st,
-    ::Nothing) where {use_bias, train_state}
+
+function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing)
     return Lux.apply(l, x, ps, st)
 end
 
