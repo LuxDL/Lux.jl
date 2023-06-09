@@ -6,7 +6,6 @@
 Creates a copy of the `rng` state depending on its type.
 """
 replicate(rng::AbstractRNG) = copy(rng)
-replicate(rng::CUDA.RNG) = deepcopy(rng)
 
 # Training Check
 """
@@ -66,12 +65,6 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
     return rnn.init_state(rng, rnn.out_dims, size(x, 2))
-end
-
-@inline function _init_hidden_state(rng::AbstractRNG,
-    rnn,
-    x::Union{CUDA.StridedSubCuArray, CuArray})
-    return CuArray(rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
 @inline function _init_trainable_hidden_state(hidden_state::AbstractVector,
@@ -134,15 +127,7 @@ end
 ## Convolution
 @inline _conv(x, weight, cdims) = conv(x, weight, cdims)
 
-@inline function _conv(x::SubArray{T, N, <:CuArray}, weight, cdims) where {T, N}
-    return conv(copy(x), weight, cdims)
-end
-
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
-
-@inline function _conv_transpose(x::SubArray{T, N, <:CuArray}, weight, cdims) where {T, N}
-    return ∇conv_data(copy(x), weight, cdims)
-end
 
 function _conv_transpose_dims(x::AbstractArray,
     weight::AbstractArray;

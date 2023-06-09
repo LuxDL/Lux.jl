@@ -1,6 +1,6 @@
 using Functors: functor
 
-"""
+@doc doc"""
     @layer_map func layer ps st
 
 See the documentation of [`Lux.layer_map`](@ref) for more details. This macro eliminates
@@ -37,7 +37,7 @@ macro layer_map(f, l, ps, st)
     end
 end
 
-"""
+@doc doc"""
     layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
               name::String="model")
 
