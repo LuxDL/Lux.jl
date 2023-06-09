@@ -12,7 +12,6 @@ function _default_rng()
     end
 end
 
-
 """
     zeros32(rng::AbstractRNG, size...) = zeros(Float32, size...)
 
@@ -67,7 +66,9 @@ function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
 end
 glorot_uniform(dims::Integer...; kw...) = glorot_uniform(_default_rng(), dims...; kwargs...)
-glorot_uniform(rng::AbstractRNG=_default_rng(); init_kwargs...) = (dims...; kwargs...) -> glorot_uniform(rng, dims...; init_kwargs..., kwargs...)
+function glorot_uniform(rng::AbstractRNG=_default_rng(); init_kwargs...)
+    return (dims...; kwargs...) -> glorot_uniform(rng, dims...; init_kwargs..., kwargs...)
+end
 
 """
     glorot_normal(rng::AbstractRNG, size...; gain = 1)
@@ -86,9 +87,12 @@ function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     std = Float32(gain) * sqrt(2.0f0 / sum(_nfan(dims...)))
     return randn(rng, Float32, dims...) .* std
 end
-glorot_normal(dims::Integer...; kwargs...) = glorot_normal(_default_rng(), dims...; kwargs...)
-glorot_normal(rng::AbstractRNG=_default_rng(); init_kwargs...) = (dims...; kwargs...) -> glorot_normal(rng, dims...; init_kwargs..., kwargs...)
-
+function glorot_normal(dims::Integer...; kwargs...)
+    return glorot_normal(_default_rng(), dims...; kwargs...)
+end
+function glorot_normal(rng::AbstractRNG=_default_rng(); init_kwargs...)
+    return (dims...; kwargs...) -> glorot_normal(rng, dims...; init_kwargs..., kwargs...)
+end
 
 """
     kaiming_uniform(rng::AbstractRNG, size...; gain = √2f0)
@@ -106,9 +110,12 @@ function kaiming_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0
     bound = Float32(√3.0f0 * gain / sqrt(first(_nfan(dims...))))
     return (rand(rng, Float32, dims...) .- 0.5f0) .* 2 * bound
 end
-kaiming_uniform(dims::Integer...; kwargs...) = kaiming_uniform(_default_rng(), dims...; kwargs...)
-kaiming_uniform(rng::AbstractRNG=_default_rng(); init_kwargs...) = (dims...; kwargs...) -> kaiming_uniform(rng, dims...; init_kwargs..., kwargs...)
-
+function kaiming_uniform(dims::Integer...; kwargs...)
+    return kaiming_uniform(_default_rng(), dims...; kwargs...)
+end
+function kaiming_uniform(rng::AbstractRNG=_default_rng(); init_kwargs...)
+    return (dims...; kwargs...) -> kaiming_uniform(rng, dims...; init_kwargs..., kwargs...)
+end
 
 """
     kaiming_normal(rng::AbstractRNG, size...; gain = √2f0)
@@ -127,5 +134,9 @@ function kaiming_normal(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0)
     return randn(rng, Float32, dims...) .* std
 end
 
-kaiming_normal(dims::Integer...; kwargs...) = kaiming_normal(_default_rng(), dims...; kwargs...)
-kaiming_normal(rng::AbstractRNG; init_kwargs...) = (dims...; kwargs...) -> kaiming_normal(rng, dims...; init_kwargs..., kwargs...)
+function kaiming_normal(dims::Integer...; kwargs...)
+    return kaiming_normal(_default_rng(), dims...; kwargs...)
+end
+function kaiming_normal(rng::AbstractRNG; init_kwargs...)
+    return (dims...; kwargs...) -> kaiming_normal(rng, dims...; init_kwargs..., kwargs...)
+end
