@@ -1,7 +1,7 @@
 module Lux
 
-# Accelerator Support
-using LuxCUDA
+# Compile-Time User Choices
+using Preferences
 # Neural Network Backend
 using NNlib
 import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
@@ -39,12 +39,14 @@ import WeightInitializers: randn32,
 import WeightInitializers: _nfan
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
+const ACCELERATOR_STATE_CHANGED = Ref{Bool}(false)
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
 # Utilities
 include("utils.jl")
 # Data Transfer Utilities
+include("device.jl")
 include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
@@ -75,7 +77,7 @@ function __init__()
 end
 
 # Data Transfer
-export cpu, gpu
+export cpu, gpu, get_cpu_device, get_gpu_device
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
@@ -100,7 +102,7 @@ export SamePad
 # Extension Exports: Flux
 function transform end
 
-struct FluxLayer{L, RE, I} <: Lux.AbstractExplicitLayer
+struct FluxLayer{L, RE, I} <: AbstractExplicitLayer
     layer::L
     re::RE
     init_parameters::I

@@ -1,8 +1,6 @@
 module LuxFillArraysExt
 
-using Adapt, LuxCUDA, Lux, FillArrays
-
-Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(collect(x))
+using Adapt, Lux, FillArrays
 
 Adapt.adapt_storage(::Lux.LuxCPUAdaptor, x::FillArrays.AbstractFill) = x
 
