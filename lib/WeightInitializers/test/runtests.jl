@@ -35,10 +35,14 @@ end
     cl = init(rng)
     # Sizes
     @test size(cl(3)) == (3,)
+    @test size(cl(rng, 3)) == (3,)
     @test size(cl(3, 4)) == (3, 4)
+    @test size(cl(rng, 3, 4)) == (3, 4)
     @test size(cl(3, 4, 5)) == (3, 4, 5)
+    @test size(cl(rng, 3, 4, 5)) == (3, 4, 5)
     # Type
     @test eltype(cl(4, 2)) == Float32
+    @test eltype(cl(rng, 4, 2)) == Float32
 end
 
 @testset "kaiming" begin
