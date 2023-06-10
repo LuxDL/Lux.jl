@@ -1,8 +1,8 @@
-using WeightInitializers, Test, SafeTestsets, StableRNGs
+using WeightInitializers, Test, SafeTestsets, StableRNGs, Statistics
 
 const rng = StableRNG(12345)
 
-@testset "inits: $init" for init in [
+@testset "Sizes and Types: $init" for init in [
     zeros32,
     ones32,
     rand32,
@@ -12,18 +12,33 @@ const rng = StableRNG(12345)
     glorot_uniform,
     glorot_normal,
 ]
-    #sizes
+    # Sizes
     @test size(init(3)) == (3,)
-    @test size(rng, init(3)) == (3,)
+    @test size(init(rng, 3)) == (3,)
     @test size(init(3, 4)) == (3, 4)
     @test size(init(rng, 3, 4)) == (3, 4)
     @test size(init(3, 4, 5)) == (3, 4, 5)
     @test size(init(rng, 3, 4, 5)) == (3, 4, 5)
-    #type
+    # Type
     @test eltype(init(rng, 4, 2)) == Float32
     @test eltype(init(4, 2)) == Float32
-    #closure #TODO @MartinuzzFrancesco
+end
+
+@testset "Closure: $init" for init in [
+    rand32,
+    randn32,
+    kaiming_uniform,
+    kaiming_normal,
+    glorot_uniform,
+    glorot_normal,
+]
     cl = init(rng)
+    # Sizes
+    @test size(cl(3)) == (3,)
+    @test size(cl(3, 4)) == (3, 4)
+    @test size(cl(3, 4, 5)) == (3, 4, 5)
+    # Type
+    @test eltype(cl(4, 2)) == Float32
 end
 
 @testset "kaiming" begin
@@ -49,7 +64,7 @@ end
     # variance ≈ 2/(fan_in + fan_out)
     for dims in [(1000,), (100, 100), (100, 400), (2, 3, 32, 64), (2, 3, 4, 32, 64)]
         v = init(dims...)
-        fan_in, fan_out = nfan(dims...)
+        fan_in, fan_out = WeightInitializers._nfan(dims...)
         σ2 = 2 / (fan_in + fan_out)
         @test 0.9σ2 < var(v) < 1.1σ2
     end
