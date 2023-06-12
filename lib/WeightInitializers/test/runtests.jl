@@ -11,6 +11,7 @@ const rng = StableRNG(12345)
     kaiming_normal,
     glorot_uniform,
     glorot_normal,
+    truncated_normal,
 ]
     # Sizes
     @test size(init(3)) == (3,)
@@ -31,6 +32,7 @@ end
     kaiming_normal,
     glorot_uniform,
     glorot_normal,
+    truncated_normal,
 ]
     cl = init(rng)
     # Sizes

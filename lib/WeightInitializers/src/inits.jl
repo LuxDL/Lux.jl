@@ -191,3 +191,41 @@ function kaiming_normal(; init_kwargs...)
         init_kwargs...,
         kwargs...)
 end
+
+"""
+    truncated_normal([rng = default_rng_value()], size...; mean = 0, std = 1, lo = -2, hi = 2)
+
+Return an `Array{Float32}` of the given `size` where each element is drawn from a truncated normal distribution.
+The numbers are distributed like `filter(x -> lo<=x<=hi, mean .+ std .* randn(100))`.
+"""
+function truncated_normal(rng::AbstractRNG, dims::Integer...; mean=0, std=1, lo=-2, hi=2)
+    norm_cdf(x) = 0.5 * (1 + erf(x / √2))
+    if (mean < lo - 2 * std) || (mean > hi + 2 * std)
+        @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." maxlog=1
+    end
+    l = norm_cdf((lo - mean) / std)
+    u = norm_cdf((hi - mean) / std)
+    xs = rand(rng, Float32, dims...)
+    broadcast!(xs, xs) do x
+        x = x * 2(u - l) + (2l - 1)
+        x = erfinv(x)
+        return x = clamp(x * std * √2 + mean, lo, hi)
+    end
+    return xs
+end
+
+function truncated_normal(dims::Integer...; kwargs...)
+    return truncated_normal(_default_rng(), dims...; kwargs...)
+end
+function truncated_normal(rng::AbstractRNG; init_kwargs...)
+    return (rng, dims...; kwargs...) -> truncated_normal(rng,
+        dims...;
+        init_kwargs...,
+        kwargs...)
+end
+function truncated_normal(; init_kwargs...)
+    return (dims...; kwargs...) -> truncated_normal(_default_rng(),
+        dims...;
+        init_kwargs...,
+        kwargs...)
+end

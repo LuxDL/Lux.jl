@@ -9,4 +9,5 @@ glorot_normal
 glorot_uniform
 kaiming_normal
 kaiming_uniform
+truncated_normal
 ```
