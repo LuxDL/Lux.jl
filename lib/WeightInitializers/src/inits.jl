@@ -3,6 +3,7 @@
 @inline _nfan(n_out, n_in) = n_in, n_out # In case of Dense kernels: arranged as matrices
 @inline _nfan(dims::Tuple) = _nfan(dims...)
 @inline _nfan(dims...) = prod(dims[1:(end - 2)]) .* (dims[end - 1], dims[end]) # In case of convolution kernels
+norm_cdf(x::T) where {T} = T(0.5) * (1 + erf(x / √2))
 
 function _default_rng()
     @static if VERSION >= v"1.7"
@@ -37,8 +38,6 @@ given `size`.
 """
 randn32(rng::AbstractRNG, dims...) = randn(rng, Float32, dims...)
 randn32(dims...) = randn32(_default_rng(), dims...)
-randn32(rng::AbstractRNG) = (rng, dims...) -> randn32(rng, dims...)
-randn32() = (dims...,) -> randn32(_default_rng(), dims...)
 
 """
     rand32(rng::AbstractRNG, size...) = rand(rng, Float32, size...)
@@ -48,8 +47,6 @@ Return an `Array{Float32}` of random numbers from a uniform distribution of the 
 """
 rand32(rng::AbstractRNG, dims...) = rand(rng, Float32, dims...)
 rand32(dims...) = rand32(_default_rng(), dims...)
-rand32(rng::AbstractRNG) = (rng, dims...) -> rand32(rng, dims...)
-rand32() = (dims...,) -> rand32(_default_rng(), dims...)
 
 """
     glorot_uniform(rng::AbstractRNG, size...; gain = 1)
@@ -74,18 +71,8 @@ function glorot_uniform(dims::Integer...; kwargs...)
     return glorot_uniform(_default_rng(), dims...; kwargs...)
 end
 
-function glorot_uniform(rng::AbstractRNG; init_kwargs...)
-    return (rng, dims...; kwargs...) -> glorot_uniform(rng,
-        dims...;
-        init_kwargs...,
-        kwargs...)
-end
-
-function glorot_uniform(; init_kwargs...)
-    return (dims...; kwargs...) -> glorot_uniform(_default_rng(),
-        dims...;
-        init_kwargs...,
-        kwargs...)
+function glorot_uniform(; kwargs...)
+    return glorot_uniform $ (; kwargs...)
 end
 
 """
@@ -110,19 +97,10 @@ function glorot_normal(dims::Integer...; kwargs...)
     return glorot_normal(_default_rng(), dims...; kwargs...)
 end
 
-function glorot_normal(rng::AbstractRNG; init_kwargs...)
-    return (rng, dims...; kwargs...) -> glorot_normal(rng,
-        dims...;
-        init_kwargs...,
-        kwargs...)
+function glorot_normal(rng::AbstractRNG; kwargs...)
+    return glorot_normal $ (; kwargs...)
 end
 
-function glorot_normal(; init_kwargs...)
-    return (dims...; kwargs...) -> glorot_normal(_default_rng(),
-        dims...;
-        init_kwargs...,
-        kwargs...)
-end
 """
     kaiming_uniform(rng::AbstractRNG, size...; gain = √2f0)
 
@@ -144,19 +122,10 @@ function kaiming_uniform(dims::Integer...; kwargs...)
     return kaiming_uniform(_default_rng(), dims...; kwargs...)
 end
 
-function kaiming_uniform(rng::AbstractRNG; init_kwargs...)
-    return (rng, dims...; kwargs...) -> kaiming_uniform(rng,
-        dims...;
-        init_kwargs...,
-        kwargs...)
+function kaiming_uniform(rng::AbstractRNG; kwargs...)
+    return kaiming_uniform $ (; kwargs...)
 end
 
-function kaiming_uniform(; init_kwargs...)
-    return (dims...; kwargs...) -> kaiming_uniform(_default_rng(),
-        dims...;
-        init_kwargs...,
-        kwargs...)
-end
 """
     kaiming_normal(rng::AbstractRNG, size...; gain = √2f0)
 
@@ -178,18 +147,8 @@ function kaiming_normal(dims::Integer...; kwargs...)
     return kaiming_normal(_default_rng(), dims...; kwargs...)
 end
 
-function kaiming_normal(rng::AbstractRNG; init_kwargs...)
-    return (rng, dims...; kwargs...) -> kaiming_normal(rng,
-        dims...;
-        init_kwargs...,
-        kwargs...)
-end
-
-function kaiming_normal(; init_kwargs...)
-    return (dims...; kwargs...) -> kaiming_normal(_default_rng(),
-        dims...;
-        init_kwargs...,
-        kwargs...)
+function kaiming_normal(rng::AbstractRNG; kwargs...)
+    return kaiming_normal $ (; kwargs...)
 end
 
 """
@@ -199,7 +158,6 @@ Return an `Array{Float32}` of the given `size` where each element is drawn from 
 The numbers are distributed like `filter(x -> lo<=x<=hi, mean .+ std .* randn(100))`.
 """
 function truncated_normal(rng::AbstractRNG, dims::Integer...; mean=0, std=1, lo=-2, hi=2)
-    norm_cdf(x) = 0.5 * (1 + erf(x / √2))
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." maxlog=1
     end
@@ -223,9 +181,6 @@ function truncated_normal(rng::AbstractRNG; init_kwargs...)
         init_kwargs...,
         kwargs...)
 end
-function truncated_normal(; init_kwargs...)
-    return (dims...; kwargs...) -> truncated_normal(_default_rng(),
-        dims...;
-        init_kwargs...,
-        kwargs...)
+function truncated_normal(; kwargs...)
+    return truncated_normal $ (; kwargs...)
 end

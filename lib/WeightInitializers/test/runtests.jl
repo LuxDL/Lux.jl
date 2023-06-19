@@ -2,6 +2,19 @@ using WeightInitializers, Test, SafeTestsets, StableRNGs, Statistics
 
 const rng = StableRNG(12345)
 
+@testset "_nfan" begin
+    # Fallback
+    @test WeightInitializers._nfan() == (1, 1)
+    # Vector
+    @test WeightInitializers._nfan(4) == (1, 4)
+    # Matrix
+    @test WeightInitializers._nfan(4, 5) == (5, 4)
+    # Tuple
+    @test WeightInitializers._nfan((4, 5, 6)) == WeightInitializers._nfan(4, 5, 6)
+    # Convolution
+    @test WeightInitializers._nfan(4, 5, 6) == 4 .* (5, 6)
+end
+
 @testset "Sizes and Types: $init" for init in [
     zeros32,
     ones32,
@@ -26,15 +39,13 @@ const rng = StableRNG(12345)
 end
 
 @testset "Closure: $init" for init in [
-    rand32,
-    randn32,
     kaiming_uniform,
     kaiming_normal,
     glorot_uniform,
     glorot_normal,
     truncated_normal,
 ]
-    cl = init(rng)
+    cl = init(;)
     # Sizes
     @test size(cl(3)) == (3,)
     @test size(cl(rng, 3)) == (3,)

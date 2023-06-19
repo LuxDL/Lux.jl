@@ -1,4 +1,6 @@
 module WeightInitializers
+
+using PartialFunctions
 using Random
 using SpecialFunctions
 using Statistics
