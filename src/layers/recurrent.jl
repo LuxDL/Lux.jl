@@ -177,7 +177,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `weight_ih`: Maps the input to the hidden state.
   - `weight_hh`: Maps the hidden state to the hidden state.
-  - `bias`: Bias vector (not present if `bias=false`)
+  - `bias`: Bias vector (not present if `use_bias=false`)
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
 
 ## States
@@ -197,23 +197,10 @@ end
 function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int},
     activation=tanh;
     use_bias::Bool=true,
-    bias::Union{Missing, Bool}=missing,
     train_state::Bool=false,
     init_bias=zeros32,
     init_weight=glorot_uniform,
     init_state=ones32)
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `RNNCell` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.",
-            :RNNCell)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
-    end
-
     return RNNCell{
         use_bias,
         train_state,

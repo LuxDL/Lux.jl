@@ -153,13 +153,6 @@ end
                 device.(Lux.setup(rng, layer))...))
         end == aType([10 20; 10 20])
     end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated Dense(10, 100, relu; bias=false)
-        @test_deprecated Dense(10, 100, relu; bias=true)
-        @test_throws ArgumentError Dense(10, 100, relu; bias=false, use_bias=false)
-    end
 end
 
 @testset "$mode: Scale" for (mode, aType, device, ongpu) in MODES
@@ -221,13 +214,6 @@ end
                 [1 2; 3 4] |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == aType(zeros(2, 2))
-    end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated Scale(10, 100, relu; bias=false)
-        @test_deprecated Scale(10, 100, relu; bias=true)
-        @test_throws ArgumentError Scale(10, 100, relu; bias=false, use_bias=false)
     end
 end
 

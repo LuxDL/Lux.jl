@@ -34,10 +34,6 @@ using SafeTestsets, Test
         end
     end
 
-    @time @safetestset "NNlib" begin
-        include("nnlib.jl")
-    end
-
     @testset "Experimental" begin
         @time @safetestset "Map" begin
             include("contrib/map.jl")

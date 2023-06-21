@@ -3,8 +3,7 @@ module Lux
 # Compile-Time User Choices
 using Preferences
 # Neural Network Backend
-using NNlib
-import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
+using LuxLib
 # Julia StdLibs
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation
@@ -94,7 +93,7 @@ export Conv,
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
-export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
+export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
 

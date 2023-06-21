@@ -221,10 +221,6 @@ end
         layer = GroupNorm(10, 2, tanh; allow_fast_activation=false)
         @test layer.activation == tanh
     end
-
-    # Deprecated Functionality (remove in v0.5)
-    @test_deprecated GroupNorm(4, 2; track_stats=true)
-    @test_deprecated GroupNorm(4, 2; track_stats=false, momentum=0.3f0)
 end
 
 @testset "$mode: WeightNorm" for (mode, aType, device, ongpu) in MODES

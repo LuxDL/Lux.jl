@@ -4,62 +4,56 @@ include("../test_utils.jl")
 
 rng = get_stable_rng(12345)
 
-# @testset "$mode: RNNCell" for (mode, aType, device, ongpu) in MODES
-#     for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
-#                     RNNCell(3 => 5, tanh; use_bias=false),
-#                     RNNCell(3 => 5, identity; use_bias=false),
-#                     RNNCell(3 => 5, identity; use_bias=false, train_state=false))
-#         display(rnncell)
-#         ps, st = Lux.setup(rng, rnncell) .|> device
-#         x = randn(rng, Float32, 3, 2) |> aType
-#         (y, carry), st_ = Lux.apply(rnncell, x, ps, st)
+@testset "$mode: RNNCell" for (mode, aType, device, ongpu) in MODES
+    for rnncell in (RNNCell(3 => 5, identity),
+        RNNCell(3 => 5, tanh),
+        RNNCell(3 => 5, tanh; use_bias=false),
+        RNNCell(3 => 5, identity; use_bias=false),
+        RNNCell(3 => 5, identity; use_bias=false, train_state=false))
+        display(rnncell)
+        ps, st = Lux.setup(rng, rnncell) .|> device
+        x = randn(rng, Float32, 3, 2) |> aType
+        (y, carry), st_ = Lux.apply(rnncell, x, ps, st)
 
-#         @jet rnncell(x, ps, st)
-#         @jet rnncell((x, carry), ps, st)
+        @jet rnncell(x, ps, st)
+        @jet rnncell((x, carry), ps, st)
 
-#         function loss_loop_rnncell(p)
-#             (y, carry), st_ = rnncell(x, p, st)
-#             for i in 1:10
-#                 (y, carry), st_ = rnncell((x, carry), p, st_)
-#             end
-#             return sum(abs2, y)
-#         end
+        function loss_loop_rnncell(p)
+            (y, carry), st_ = rnncell(x, p, st)
+            for i in 1:10
+                (y, carry), st_ = rnncell((x, carry), p, st_)
+            end
+            return sum(abs2, y)
+        end
 
-#         @test_throws ErrorException ps.train_state
+        @test_throws ErrorException ps.train_state
 
-#         @eval @test_gradients $loss_loop_rnncell $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-#     end
+        @eval @test_gradients $loss_loop_rnncell $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+    end
 
-#     @testset "Trainable hidden states" begin for rnncell in (RNNCell(3 => 5, identity;
-#                                                                      use_bias=false,
-#                                                                      train_state=true),
-#                                                              RNNCell(3 => 5, identity;
-#                                                                      use_bias=true,
-#                                                                      train_state=true))
-#         rnn_no_trainable_state = RNNCell(3 => 5, identity; use_bias=false,
-#                                          train_state=false)
-#         x = randn(rng, Float32, 3, 2) |> aType
-#         _ps, _st = Lux.setup(rng, rnn_no_trainable_state) .|> device
-#         (_y, _carry), _ = Lux.apply(rnn_no_trainable_state, x, _ps, _st)
+    @testset "Trainable hidden states" begin
+        for rnncell in (RNNCell(3 => 5, identity; use_bias=false, train_state=true),
+            RNNCell(3 => 5, identity; use_bias=true, train_state=true))
+            rnn_no_trainable_state = RNNCell(3 => 5,
+                identity;
+                use_bias=false,
+                train_state=false)
+            x = randn(rng, Float32, 3, 2) |> aType
+            _ps, _st = Lux.setup(rng, rnn_no_trainable_state) .|> device
+            (_y, _carry), _ = Lux.apply(rnn_no_trainable_state, x, _ps, _st)
 
-#         rnncell = RNNCell(3 => 5, identity; use_bias=false, train_state=true)
-#         ps, st = Lux.setup(rng, rnncell) .|> device
-#         ps = merge(_ps, (hidden_state=ps.hidden_state,))
-#         (y, carry), _ = Lux.apply(rnncell, x, ps, st)
-#         @test carry == _carry
+            rnncell = RNNCell(3 => 5, identity; use_bias=false, train_state=true)
+            ps, st = Lux.setup(rng, rnncell) .|> device
+            ps = merge(_ps, (hidden_state=ps.hidden_state,))
+            (y, carry), _ = Lux.apply(rnncell, x, ps, st)
+            @test carry == _carry
 
-#         l, back = Zygote.pullback(p -> sum(abs2, 0 .- rnncell(x, p, st)[1][1]), ps)
-#         gs = back(one(l))[1]
-#         @test !isnothing(gs.hidden_state)
-#     end end
-
-#     # Deprecated Functionality (Remove in v0.5)
-#     @testset "Deprecations" begin
-#         @test_deprecated RNNCell(3 => 5, relu; bias=false)
-#         @test_deprecated RNNCell(3 => 5, relu; bias=true)
-#         @test_throws ArgumentError RNNCell(3 => 5, relu; bias=false, use_bias=false)
-#     end
-# end
+            l, back = Zygote.pullback(p -> sum(abs2, 0 .- rnncell(x, p, st)[1][1]), ps)
+            gs = back(one(l))[1]
+            @test !isnothing(gs.hidden_state)
+        end
+    end
+end
 
 @testset "$mode: LSTMCell" for (mode, aType, device, ongpu) in MODES
     for lstmcell in (LSTMCell(3 => 5),
