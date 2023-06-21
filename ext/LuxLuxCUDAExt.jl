@@ -1,7 +1,9 @@
 module LuxLuxCUDAExt
 
 isdefined(Base, :get_extension) ? (using LuxCUDA) : (using ..LuxCUDA)
-using Lux, LuxLib, Random
+using ChainRulesCore, Lux, LuxLib, Random
+import Adapt: adapt_storage, adapt
+import ChainRulesCore as CRC
 
 function __init__()
     Lux.ACCELERATOR_STATE_CHANGED[] = true
@@ -27,6 +29,29 @@ end
     return ∇conv_data(copy(x), weight, cdims)
 end
 
-# adapt.jl
+# Device Transfer
+## To GPU
+adapt_storage(::Lux.LuxCUDAAdaptor, x) = cu(x)
+adapt_storage(::Lux.LuxCUDAAdaptor, rng::AbstractRNG) = rng
+
+## To CPU
+adapt_storage(::Lux.LuxCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix) = adapt(Array, x)
+
+## Chain Rules
+CRC.rrule(::Type{Array}, x::CuArray) = Array(x), Δ -> (NoTangent(), cu(Δ))
+
+function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
+    function ∇adapt_storage(Δ)
+        return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxCUDAAdaptor(), Δ))
+    end
+    return adapt_storage(to, x), ∇adapt_storage
+end
+
+function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCUDAAdaptor, x::Array)
+    function ∇adapt_storage(Δ)
+        return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxCPUAdaptor(), Δ))
+    end
+    return adapt_storage(to, x), ∇adapt_storage
+end
 
 end
