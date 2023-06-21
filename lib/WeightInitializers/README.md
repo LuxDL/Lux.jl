@@ -58,18 +58,20 @@ weights = weights_cl(2, 5)
 
 The package is meant to be working with deep learning
 libraries such as F/Lux. All the methods take as input the chosen `rng` type and the dimension for the array.
+
 ```julia
 weights = init(rng, dims...)
 ```
 
 The `rng` is optional, if not specified a default one will be used.
+
 ```julia
 weights = init(dims...)
 ```
 
 If there is the need to use keyword arguments the methods can be called with just the `rng` (optionally)
-and the keywords to get in return a function behaving like the
-two examples above.
+and the keywords to get in return a function behaving like the two examples above.
+
 ```julia
 weights_init = init(rng; kwargs...)
 weights = weights_init(rng, dims...)

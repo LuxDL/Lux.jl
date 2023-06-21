@@ -1,34 +1,16 @@
-@inline _nfan() = 1, 1 # fan_in, fan_out
-@inline _nfan(n) = 1, n # A vector is treated as a n×1 matrix
-@inline _nfan(n_out, n_in) = n_in, n_out # In case of Dense kernels: arranged as matrices
-@inline _nfan(dims::Tuple) = _nfan(dims...)
-@inline _nfan(dims...) = prod(dims[1:(end - 2)]) .* (dims[end - 1], dims[end]) # In case of convolution kernels
-norm_cdf(x::T) where {T} = T(0.5) * (1 + erf(x / √2))
-
-function _default_rng()
-    @static if VERSION >= v"1.7"
-        return Xoshiro(1234)
-    else
-        return MersenneTwister(1234)
-    end
-end
-
 """
-    zeros32(rng::AbstractRNG, size...) = zeros(Float32, size...)
+    zeros32(::AbstractRNG, size...) = zeros(Float32, size...)
 
 Return an `Array{Float32}` of zeros of the given `size`. (`rng` is ignored)
 """
-zeros32(rng::AbstractRNG, dims...) = zeros(rng, Float32, dims...)
-zeros32(dims...) = zeros32(_default_rng(), dims...)
-Base.zeros(rng::AbstractRNG, dims...) = zeros(dims...)
+zeros32(::AbstractRNG, dims...) = zeros(Float32, dims...)
+
 """
-    ones32(rng::AbstractRNG, size...) = ones(Float32, size...)
+    ones32(::AbstractRNG, size...) = ones(Float32, size...)
 
 Return an `Array{Float32}` of ones of the given `size`. (`rng` is ignored)
 """
-ones32(rng::AbstractRNG, dims...) = ones(rng, Float32, dims...)
-ones32(dims...) = ones32(_default_rng(), dims...)
-Base.ones(rng::AbstractRNG, dims...) = ones(dims...)
+ones32(::AbstractRNG, dims...) = ones(Float32, dims...)
 
 """
     randn32(rng::AbstractRNG, size...) = randn(rng, Float32, size...)
@@ -37,7 +19,6 @@ Return an `Array{Float32}` of random numbers from a standard normal distribution
 given `size`.
 """
 randn32(rng::AbstractRNG, dims...) = randn(rng, Float32, dims...)
-randn32(dims...) = randn32(_default_rng(), dims...)
 
 """
     rand32(rng::AbstractRNG, size...) = rand(rng, Float32, size...)
@@ -46,7 +27,6 @@ Return an `Array{Float32}` of random numbers from a uniform distribution of the 
 `size`.
 """
 rand32(rng::AbstractRNG, dims...) = rand(rng, Float32, dims...)
-rand32(dims...) = rand32(_default_rng(), dims...)
 
 """
     glorot_uniform(rng::AbstractRNG, size...; gain = 1)
@@ -67,14 +47,6 @@ function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
 end
 
-function glorot_uniform(dims::Integer...; kwargs...)
-    return glorot_uniform(_default_rng(), dims...; kwargs...)
-end
-
-function glorot_uniform(; kwargs...)
-    return glorot_uniform $ (; kwargs...)
-end
-
 """
     glorot_normal(rng::AbstractRNG, size...; gain = 1)
 
@@ -91,14 +63,6 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     std = Float32(gain) * sqrt(2.0f0 / sum(_nfan(dims...)))
     return randn(rng, Float32, dims...) .* std
-end
-
-function glorot_normal(dims::Integer...; kwargs...)
-    return glorot_normal(_default_rng(), dims...; kwargs...)
-end
-
-function glorot_normal(rng::AbstractRNG; kwargs...)
-    return glorot_normal $ (; kwargs...)
 end
 
 """
@@ -118,14 +82,6 @@ function kaiming_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0
     return (rand(rng, Float32, dims...) .- 0.5f0) .* 2 * bound
 end
 
-function kaiming_uniform(dims::Integer...; kwargs...)
-    return kaiming_uniform(_default_rng(), dims...; kwargs...)
-end
-
-function kaiming_uniform(rng::AbstractRNG; kwargs...)
-    return kaiming_uniform $ (; kwargs...)
-end
-
 """
     kaiming_normal(rng::AbstractRNG, size...; gain = √2f0)
 
@@ -143,14 +99,6 @@ function kaiming_normal(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0)
     return randn(rng, Float32, dims...) .* std
 end
 
-function kaiming_normal(dims::Integer...; kwargs...)
-    return kaiming_normal(_default_rng(), dims...; kwargs...)
-end
-
-function kaiming_normal(rng::AbstractRNG; kwargs...)
-    return kaiming_normal $ (; kwargs...)
-end
-
 """
     truncated_normal([rng = default_rng_value()], size...; mean = 0, std = 1, lo = -2, hi = 2)
 
@@ -161,8 +109,8 @@ function truncated_normal(rng::AbstractRNG, dims::Integer...; mean=0, std=1, lo=
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." maxlog=1
     end
-    l = norm_cdf((lo - mean) / std)
-    u = norm_cdf((hi - mean) / std)
+    l = _norm_cdf((lo - mean) / std)
+    u = _norm_cdf((hi - mean) / std)
     xs = rand(rng, Float32, dims...)
     broadcast!(xs, xs) do x
         x = x * 2(u - l) + (2l - 1)
@@ -172,15 +120,21 @@ function truncated_normal(rng::AbstractRNG, dims::Integer...; mean=0, std=1, lo=
     return xs
 end
 
-function truncated_normal(dims::Integer...; kwargs...)
-    return truncated_normal(_default_rng(), dims...; kwargs...)
-end
-function truncated_normal(rng::AbstractRNG; init_kwargs...)
-    return (rng, dims...; kwargs...) -> truncated_normal(rng,
-        dims...;
-        init_kwargs...,
-        kwargs...)
-end
-function truncated_normal(; kwargs...)
-    return truncated_normal $ (; kwargs...)
+# Default Fallbacks for all functions
+for initializer in (:zeros32,
+    :ones32,
+    :randn32,
+    :rand32,
+    :glorot_uniform,
+    :glorot_normal,
+    :kaiming_uniform,
+    :kaiming_normal,
+    :truncated_normal)
+    @eval function ($initializer)(dims::Integer...; kwargs...)
+        return $initializer(_default_rng(), dims...; kwargs...)
+    end
+    @eval function ($initializer)(rng::AbstractRNG; kwargs...)
+        return _partial_apply($initializer, (rng, (; kwargs...)))
+    end
+    @eval ($initializer)(; kwargs...) = _partial_apply($initializer, (; kwargs...))
 end
