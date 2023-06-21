@@ -29,9 +29,5 @@ if LuxCUDA.functional()
         @test ps_cpu.e == ps.e
         @test ps_cpu.d == ps.d
         @test ps_cpu.rng == ps.rng
-
-        # Deprecated Functionality (Remove in v0.5)
-        @test_deprecated cpu(Dense(10, 10))
-        @test_deprecated gpu(Dense(10, 10))
     end
 end

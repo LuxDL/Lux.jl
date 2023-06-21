@@ -188,22 +188,8 @@ function Dense(in_dims::Int,
     init_weight=glorot_uniform,
     init_bias=zeros32,
     use_bias::Bool=true,
-    bias::Union{Missing, Bool}=missing,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `Dense` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.",
-            :Dense)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
-    end
-
     dtype = (use_bias, typeof(activation), typeof(init_weight), typeof(init_bias))
     return Dense{dtype...}(activation, in_dims, out_dims, init_weight, init_bias)
 end
@@ -310,22 +296,8 @@ function Scale(dims::Tuple{Vararg{Integer}},
     init_weight=glorot_uniform,
     init_bias=zeros32,
     use_bias::Bool=true,
-    bias::Union{Missing, Bool}=missing,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `Scale` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.",
-            :Scale)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
-    end
-
     return Scale{
         use_bias,
         typeof(activation),

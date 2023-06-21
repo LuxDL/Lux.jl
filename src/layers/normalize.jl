@@ -166,8 +166,8 @@ end
 
 """
     GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-              init_scale=ones32, affine=true, track_stats=true, epsilon=1f-5,
-              momentum=0.1f0, allow_fast_activation::Bool=true)
+              init_scale=ones32, affine=true, epsilon=1f-5,
+              allow_fast_activation::Bool=true)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
 
@@ -182,13 +182,8 @@ end
 
 ## Keyword Arguments
 
-  - If `track_stats=true`, accumulates mean and variance statistics in training phase that
-    will be used to renormalize the input in test phase. **(This feature has been
-    deprecated and will be removed in v0.5)**
-
   - `epsilon`: a value added to the denominator for numerical stability
-  - `momentum`:  the value used for the `running_mean` and `running_var` computation **(This
-    feature has been deprecated and will be removed in v0.5)**
+
   - `allow_fast_activation`: If `true`, then certain activations can be approximated with
     a faster version. The new activation function will be given by
     `NNlib.fast_act(activation)`
@@ -218,15 +213,6 @@ end
 
 ## States
 
-  - Statistics if `track_stats=true` **(DEPRECATED)**
-
-      + `running_mean`: Running mean of shape `(groups,)`
-      + `running_var`: Running variance of shape `(groups,)`
-
-  - Statistics if `track_stats=false`
-
-      + `running_mean`: nothing
-      + `running_var`: nothing
   - `training`: Used to check if training/inference mode
 
 Use `Lux.testmode` during inference.
@@ -244,11 +230,9 @@ m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(1
 See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
 """
-struct GroupNorm{affine, track_stats, F1, F2, F3, N} <:
-       AbstractNormalizationLayer{affine, track_stats}
+struct GroupNorm{affine, F1, F2, F3, N} <: AbstractNormalizationLayer{affine, false}
     activation::F1
     epsilon::N
-    momentum::N
     chs::Int
     init_bias::F2
     init_scale::F3
@@ -261,41 +245,19 @@ function GroupNorm(chs::Integer,
     init_bias=zeros32,
     init_scale=ones32,
     affine=true,
-    track_stats=missing,
     epsilon=1.0f-5,
-    momentum=missing,
     allow_fast_activation::Bool=true)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(momentum)
-        Base.depwarn("`momentum` for `GroupNorm` has been deprecated and will be removed " *
-                     "in v0.5",
-            :GroupNorm)
-    else
-        momentum = 0.1f0
-    end
-    if !ismissing(track_stats)
-        if track_stats
-            Base.depwarn("`track_stats` for `GroupNorm` has been deprecated and will be " *
-                         "removed in v0.5",
-                :GroupNorm)
-        end
-    else
-        track_stats = true
-    end
-
     return GroupNorm{
         affine,
-        track_stats,
         typeof(activation),
         typeof(init_bias),
         typeof(init_scale),
         typeof(epsilon),
     }(activation,
         epsilon,
-        momentum,
         chs,
         init_bias,
         init_scale,
@@ -303,22 +265,10 @@ function GroupNorm(chs::Integer,
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm)
-    if _affine(l)
-        return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
-    else
-        return (scale=nothing, bias=nothing)
-    end
+    return _affine(l) ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) : (;)
 end
 
-function initialstates(rng::AbstractRNG, l::GroupNorm)
-    if _track_stats(l)
-        return (running_mean=zeros32(rng, l.groups),
-            running_var=ones32(rng, l.groups),
-            training=Val(true))
-    else
-        return (; training=Val(true))
-    end
-end
+initialstates(rng::AbstractRNG, l::GroupNorm) = (; training=Val(true))
 
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
@@ -335,11 +285,6 @@ function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
         GN.momentum,
         st.training)
 
-    if _track_stats(GN)
-        @set! st.running_mean = stats.running_mean
-        @set! st.running_var = stats.running_var
-    end
-
     return __apply_activation(GN.activation, y), st
 end
 
@@ -347,7 +292,6 @@ function Base.show(io::IO, l::GroupNorm)
     print(io, "GroupNorm($(l.chs), $(l.groups)")
     (l.activation == identity) || print(io, ", $(l.activation)")
     print(io, ", affine=$(_affine(l))")
-    print(io, ", track_stats=$(_track_stats(l))")
     return print(io, ")")
 end
 

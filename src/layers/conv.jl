@@ -93,22 +93,8 @@ function Conv(k::NTuple{N, Integer},
     pad=0,
     dilation=1,
     groups=1,
-    use_bias::Bool=true,
     bias::Union{Missing, Bool}=missing,
     allow_fast_activation::Bool=true) where {N}
-
-    # Deprecated Functionality (Remove in v0.5)
-    if !ismissing(bias)
-        Base.depwarn("`bias` argument to `Conv` has been deprecated and will be removed" *
-                     " in v0.5. Use `use_bias` kwarg instead.",
-            :Conv)
-        if !use_bias
-            throw(ArgumentError("Both `bias` and `use_bias` are set. Please only use " *
-                                "the `use_bias` keyword argument."))
-        end
-        use_bias = bias
-    end
-
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
