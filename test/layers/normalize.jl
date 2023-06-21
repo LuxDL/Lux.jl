@@ -18,7 +18,7 @@ rng = get_stable_rng(12345)
     @test ps.scale == [1, 1] |> aType  # init_scale(2)
 
     y, st_ = pullback(m, x, ps, st)[1]
-    st_ = st_ |> cpu
+    st_ = st_ |> LuxCPUDevice()
     @test check_approx(Array(y), [-1.22474 0 1.22474; -1.22474 0 1.22474]; atol=1.0e-5)
     # julia> x
     #  2×3 Array{Float64,2}:
@@ -42,7 +42,7 @@ rng = get_stable_rng(12345)
         0.1 .* var(Array(x); dims=2, corrected=false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0])
 
     st_ = Lux.testmode(st_) |> device
-    x_ = m(x, ps, st_)[1] |> cpu
+    x_ = m(x, ps, st_)[1] |> LuxCPUDevice()
     @test check_approx(x_[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
     @jet m(x, ps, st)

@@ -93,7 +93,7 @@ function Conv(k::NTuple{N, Integer},
     pad=0,
     dilation=1,
     groups=1,
-    bias::Union{Missing, Bool}=missing,
+    use_bias::Bool=true,
     allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
@@ -779,7 +779,6 @@ function ConvTranspose(k::NTuple{N, Integer},
     dilation=1,
     use_bias::Bool=true,
     groups=1,
-    bias::Union{Missing, Bool}=missing,
     allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)

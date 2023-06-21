@@ -12,7 +12,7 @@ if LuxCUDA.functional()
             d="string",
             rng=get_stable_rng(12345))
 
-        ps_gpu = ps |> gpu
+        ps_gpu = ps |> LuxCUDADevice()
         @test ps_gpu.a.c isa CuArray
         @test ps_gpu.b isa CuArray
         @test ps_gpu.a.d == ps.a.d
@@ -20,7 +20,7 @@ if LuxCUDA.functional()
         @test ps_gpu.d == ps.d
         @test ps_gpu.rng == ps.rng
 
-        ps_cpu = ps_gpu |> cpu
+        ps_cpu = ps_gpu |> LuxCPUDevice()
         @test ps_cpu.a.c isa Array
         @test ps_cpu.b isa Array
         @test ps_cpu.a.c == ps.a.c

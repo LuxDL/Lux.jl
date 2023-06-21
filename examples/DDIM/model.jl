@@ -1,10 +1,6 @@
-# DDIM implementation follwoing https://keras.io/examples/generative/ddim/
+# DDIM implementation following https://keras.io/examples/generative/ddim/
 
-using Lux
-using Random
-using CUDA
-using NNlib
-using Setfield
+using Lux, Random, LuxCUDA, LuxAMDGPU, NNlib, Setfield
 # Note: Julia/Lux assume image batch of WHCN ordering
 
 # Embed noise variances to embedding
@@ -16,6 +12,8 @@ function sinusoidal_embedding(x::AbstractArray{T, 4},
         throw(DimensionMismatch("Input shape must be (1, 1, 1, batch)"))
     end
 
+    dev = gpu_device()
+
     # define frequencies
     # LinRange requires @adjoint when used with Zygote
     # Instead we manually implement range.
@@ -23,7 +21,7 @@ function sinusoidal_embedding(x::AbstractArray{T, 4},
     upper = log(max_freq)
     n = div(embedding_dims, 2)
     d = (upper - lower) / (n - 1)
-    freqs = exp.(lower:d:upper) |> gpu
+    freqs = exp.(lower:d:upper) |> dev
     @assert length(freqs) == div(embedding_dims, 2)
     @assert size(freqs) == (div(embedding_dims, 2),)
 
@@ -273,9 +271,11 @@ function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{
     images, new_st = ddim.batchnorm(images, ps.batchnorm, st.batchnorm)
     @set! st.batchnorm = new_st
 
-    noises = randn(rng, eltype(images), size(images)...) |> gpu
+    dev = gpu_device()
 
-    diffusion_times = rand(rng, eltype(images), 1, 1, 1, size(images, 4)) |> gpu
+    noises = randn(rng, eltype(images), size(images)...) |> dev
+
+    diffusion_times = rand(rng, eltype(images), 1, 1, 1, size(images, 4)) |> dev
     noise_rates, signal_rates = diffusion_schedules(diffusion_times,
         ddim.min_signal_rate,
         ddim.max_signal_rate)
@@ -329,6 +329,7 @@ function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
     ps,
     st::NamedTuple;
     save_each_step=false) where {T <: AbstractFloat}
+    dev = gpu_device()
     num_images = size(initial_noise, 4)
     step_size = convert(T, 1.0) / diffusion_steps
 
@@ -342,7 +343,7 @@ function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
         noisy_images = next_noisy_images
 
         # We start t = 1, and gradually decreases to t=0
-        diffusion_times = ones(T, 1, 1, 1, num_images) .- step_size * step |> gpu
+        diffusion_times = ones(T, 1, 1, 1, num_images) .- step_size * step |> dev
 
         noise_rates, signal_rates = diffusion_schedules(diffusion_times,
             ddim.min_signal_rate,
@@ -388,7 +389,8 @@ function generate(ddim::DenoisingDiffusionImplicitModel{T},
     ps,
     st::NamedTuple;
     save_each_step=false) where {T}
-    initial_noise = randn(rng, T, image_shape...) |> gpu
+    dev = gpu_device()
+    initial_noise = randn(rng, T, image_shape...) |> dev
     generated_images, images_each_step = reverse_diffusion(ddim,
         initial_noise,
         diffusion_steps,

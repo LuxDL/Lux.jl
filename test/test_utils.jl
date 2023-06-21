@@ -12,8 +12,8 @@ amdgpu_testing() = (GROUP == "All" || GROUP == "AMDGPU") # && LuxAMDGPU.function
 
 const MODES = begin
     # Mode, Array Type, Device Function, GPU?
-    cpu_mode = ("CPU", Array, cpu, false)
-    cuda_mode = ("CUDA", CuArray, gpu, true)
+    cpu_mode = ("CPU", Array, LuxCPUDevice(), false)
+    cuda_mode = ("CUDA", CuArray, LuxCUDADevice(), true)
 
     modes = []
     cpu_testing() && push!(modes, cpu_mode)

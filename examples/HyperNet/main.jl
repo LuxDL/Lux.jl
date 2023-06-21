@@ -3,7 +3,8 @@ using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 using ComponentArrays,
-    CUDA,
+    LuxAMDGPU,
+    LuxCUDA,
     MLDatasets,
     MLUtils,
     NNlib,
@@ -74,7 +75,7 @@ function create_model()
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
-    ps, st = Lux.setup(rng, model) .|> gpu
+    ps, st = Lux.setup(rng, model) .|> gpu_device()
 
     return model, ps, st
 end
@@ -90,11 +91,13 @@ end
 function accuracy(model, ps, st, dataloader, data_idx)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
+    dev = gpu_device()
+    cpu_dev = cpu_device()
     for (x, y) in dataloader
-        x = x |> gpu
-        y = y |> gpu
-        target_class = onecold(cpu(y))
-        predicted_class = onecold(cpu(model((data_idx, x), ps, st)[1]))
+        x = x |> dev
+        y = y |> dev
+        target_class = onecold(cpu_dev(y))
+        predicted_class = onecold(cpu_dev(model((data_idx, x), ps, st)[1]))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -111,9 +114,11 @@ function train()
     opt = Adam(0.001f0)
     st_opt = Optimisers.setup(opt, ps)
 
+    dev = gpu_device()
+
     ### Warmup the Model
-    img, lab = gpu(dataloaders[1][1].data[1][:, :, :, 1:1]),
-    gpu(dataloaders[1][1].data[2][:, 1:1])
+    img, lab = dev(dataloaders[1][1].data[1][:, :, :, 1:1]),
+    dev(dataloaders[1][1].data[2][:, 1:1])
     loss(1, img, lab, model, ps, st)
     (l, _), back = pullback(p -> loss(1, img, lab, model, p, st), ps)
     back((one(l), nothing))
@@ -126,8 +131,8 @@ function train()
 
             stime = time()
             for (x, y) in train_dataloader
-                x = x |> gpu
-                y = y |> gpu
+                x = x |> dev
+                y = y |> dev
                 (l, st), back = pullback(p -> loss(data_idx, x, y, model, p, st), ps)
                 gs = back((one(l), nothing))[1]
                 st_opt, ps = Optimisers.update(st_opt, ps, gs)

@@ -82,7 +82,9 @@ end
 
 function save_checkpoint(ps, st, opt_st, output_dir, epoch)
     path = joinpath(output_dir, @sprintf("checkpoint_%.4d.bson", epoch))
-    return bson(path, Dict(:ps => cpu(ps), :st => cpu(st), :opt_st => cpu(opt_st)))
+    cpu_dev = cpu_device()
+    return bson(path,
+        Dict(:ps => cpu_dev(ps), :st => cpu_dev(st), :opt_st => cpu_dev(opt_st)))
 end
 
 function save_as_png(images::AbstractArray{T, 4},
@@ -138,6 +140,8 @@ end
         shuffle=true)
 
     println("Preparing DDIM.")
+    dev = gpu_device()
+
     ddim = DenoisingDiffusionImplicitModel((image_size, image_size);
         channels=channels,
         block_depth=block_depth,
@@ -146,11 +150,11 @@ end
         embedding_dims=embedding_dims,
         min_signal_rate=min_signal_rate,
         max_signal_rate=max_signal_rate)
-    ps, st = Lux.setup(rng, ddim) .|> gpu
+    ps, st = Lux.setup(rng, ddim) .|> dev
 
     println("Set optimizer.")
     opt = AdamW(learning_rate, (9.0f-1, 9.99f-1), weight_decay)
-    opt_st = Optimisers.setup(opt, ps) |> gpu
+    opt_st = Optimisers.setup(opt, ps) |> dev
 
     rng_gen = Random.MersenneTwister()
     Random.seed!(rng_gen, 0)
@@ -162,7 +166,7 @@ end
 
         st = Lux.trainmode(st)
         for images in iter
-            images = images |> gpu
+            images = images |> dev
             loss, ps, st, opt_st = train_step(ddim, images, rng, ps, st, opt_st)
             push!(losses, loss)
             set_description(iter, "Epoch: $(epoch) Loss: $(mean(losses))")
@@ -175,7 +179,7 @@ end
             val_diffusion_steps,
             ps,
             st)
-        generated_images = generated_images |> cpu
+        generated_images = generated_images |> cpu_device()
         save_as_png(generated_images, image_dir, epoch)
         if epoch % checkpoint_interval == 0
             save_checkpoint(ps, st, opt_st, ckpt_dir, epoch)

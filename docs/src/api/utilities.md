@@ -10,9 +10,12 @@ CurrentModule = Lux
 Pages = ["utilities.md"]
 ```
 
-## Data Transfer
+## Device Management / Data Transfer
 
 ```@docs
+Lux.cpu_device
+Lux.gpu_device
+Lux.supported_gpu_backends
 Lux.cpu
 Lux.gpu
 ```
@@ -36,9 +39,6 @@ Lux.zeros32
 ## Miscellaneous Utilities
 
 ```@docs
-Lux.applyactivation
-Lux.elementwise_add
-Lux.elementwise_mul
 Lux.foldl_init
 Lux.istraining
 Lux.multigate

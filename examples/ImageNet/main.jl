@@ -3,7 +3,8 @@
 using Augmentor                                         # Image Augmentation
 using Boltz                                             # Computer Vision Models
 using Configurations                                    # Experiment Configurations
-using CUDA                                              # GPUs <3
+using LuxAMDGPU                                         # AMDGPUs <3
+using LuxCUDA                                           # NVIDIA GPUs <3
 using Dates                                             # Printing current time
 using FluxMPI                                           # Distibuted Training
 using FLoops
@@ -13,7 +14,7 @@ using JLSO                                              # Serialization
 using Images                                            # Image Processing
 using Lux                                               # Neural Network Framework
 using MLUtils                                           # DataLoaders
-using NNlib                                             # Neural Network Backend
+using LuxLib                                            # Neural Network Backend
 using OneHotArrays                                      # One Hot Arrays
 using Optimisers                                        # Collection of Gradient Based Optimisers
 using Random                                            # Make things less Random
@@ -32,13 +33,14 @@ include("utils.jl")
 # DataLoading
 include("data.jl")
 
-function construct(rng::Random.AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
+function construct(rng::AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
     model, ps, st = getfield(Boltz, Symbol(cfg.name))(Symbol(cfg.arch); cfg.pretrained)
-    ps, st = (ps, st) .|> gpu
+    dev = gpu_device()
+    ps, st = (ps, st) .|> dev
 
     # Warmup for compilation
-    x__ = randn(rng, Float32, 224, 224, 3, 1) |> gpu
-    y__ = onehotbatch([1], 1:1000) |> gpu
+    x__ = randn(rng, Float32, 224, 224, 3, 1) |> dev
+    y__ = onehotbatch([1], 1:1000) |> dev
     should_log() && println("$(now()) ==> staring `$(cfg.arch)` warmup...")
     model(x__, ps, st)
     should_log() && println("$(now()) ==> forward pass warmup completed")
@@ -60,8 +62,7 @@ function construct(rng::Random.AbstractRNG, cfg::ModelConfig, ecfg::ExperimentCo
 end
 
 function construct(cfg::OptimizerConfig)
-    if cfg.name == "adam"
-        opt = Adam(cfg.learning_rate)
+    if cfg.name == "adam" + opt = Adam(cfg.learning_rate)
     elseif cfg.name == "sgd"
         if cfg.nesterov
             opt = Nesterov(cfg.learning_rate, cfg.momentum)
@@ -113,6 +114,9 @@ function validate(val_loader, model, ps, st, step, total_steps)
     top1 = AverageMeter("Acc@1", "6.2f")
     top5 = AverageMeter("Acc@5", "6.2f")
 
+    dev = gpu_device()
+    cpu_dev = cpu_device()
+
     progress = ProgressMeter(total_steps,
         (batch_time, data_time, forward_time, losses, top1, top5),
         "Val:")
@@ -120,8 +124,8 @@ function validate(val_loader, model, ps, st, step, total_steps)
     st_ = Lux.testmode(st)
     t = time()
     for (i, (x, y)) in enumerate(val_loader)
-        x = x |> gpu
-        y = y |> gpu
+        x = x |> dev
+        y = y |> dev
         t_data, t = time() - t, time()
 
         bsize = size(x, ndims(x))
@@ -132,7 +136,7 @@ function validate(val_loader, model, ps, st, step, total_steps)
         t_forward = time() - t
 
         # Metrics
-        acc1, acc5 = accuracy(cpu(y_pred), cpu(y), (1, 5))
+        acc1, acc5 = accuracy(cpu_dev(y_pred), cpu_dev(y), (1, 5))
         top1(acc1, bsize)
         top5(acc5, bsize)
         losses(loss, bsize)
@@ -153,6 +157,8 @@ end
 # Main Function
 function main(cfg::ExperimentConfig)
     best_acc1 = 0
+    dev = gpu_device()
+    cpu_dev = cpu_device()
 
     # Seeding
     rng = get_prng(cfg.seed)
@@ -192,9 +198,9 @@ function main(cfg::ExperimentConfig)
 
     ckpt = load_checkpoint(rpath)
     if !isnothing(ckpt)
-        ps = ckpt.ps |> gpu
-        st = ckpt.st |> gpu
-        opt_state = fmap(gpu, ckpt.opt_state)
+        ps = ckpt.ps |> dev
+        st = ckpt.st |> dev
+        opt_state = fmap(dev, ckpt.opt_state)
         initial_step = ckpt.step
         should_log() && println("$(now()) ==> training started from $initial_step")
     else
@@ -233,8 +239,8 @@ function main(cfg::ExperimentConfig)
         # Train Step
         t = time()
         (x, y), ds_train_state = iterate(ds_train, ds_train_state)
-        x = x |> gpu
-        y = y |> gpu
+        x = x |> dev
+        y = y |> dev
         t_data = time() - t
 
         bsize = size(x, ndims(x))
@@ -252,7 +258,7 @@ function main(cfg::ExperimentConfig)
         t_opt = time() - t
 
         # Metrics
-        acc1, acc5 = accuracy(cpu(stats.y_pred), cpu(y), (1, 5))
+        acc1, acc5 = accuracy(cpu_dev(stats.y_pred), cpu_dev(y), (1, 5))
         top1(acc1, bsize)
         top5(acc5, bsize)
         losses(loss, bsize)
@@ -275,9 +281,9 @@ function main(cfg::ExperimentConfig)
             is_best = acc1 > best_acc1
             best_acc1 = max(acc1, best_acc1)
 
-            save_state = (ps=ps |> cpu,
-                st=st |> cpu,
-                opt_state=fmap(cpu, opt_state),
+            save_state = (ps=ps |> cpu_dev,
+                st=st |> cpu_dev,
+                opt_state=fmap(cpu_dev, opt_state),
                 step=step)
             if should_log()
                 save_checkpoint(save_state;

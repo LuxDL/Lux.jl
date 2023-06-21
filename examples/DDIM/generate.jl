@@ -1,13 +1,14 @@
-using Lux
-using Random
-using Images
-using Optimisers
-using ProgressBars
-using CUDA
-using BSON
-using Plots
-using Comonicon
-using Printf
+using Lux,
+    Random,
+    Images,
+    Optimisers,
+    ProgressBars,
+    LuxCUDA,
+    LuxAMDGPU,
+    BSON,
+    Plots,
+    Comonicon,
+    Printf
 
 # https://discourse.julialang.org/t/deactivate-plot-display-to-avoid-need-for-x-server/19359
 ENV["GKSwstype"] = "nul"
@@ -72,7 +73,9 @@ end
         min_signal_rate=min_signal_rate,
         max_signal_rate=max_signal_rate)
 
-    ps, st, _ = load_checkpoint(checkpoint) .|> gpu
+    device = gpu_device()
+
+    ps, st, _ = load_checkpoint(checkpoint) .|> device
 
     println("Generate images.")
     st = Lux.testmode(st)
@@ -84,7 +87,7 @@ end
         st;
         save_each_step=true)
 
-    images_each_step = images_each_step |> cpu
+    images_each_step = images_each_step |> cpu_device()
 
     println("Save diffusion as GIF.")
     return save_as_gif(images_each_step, output_dir)
