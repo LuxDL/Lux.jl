@@ -28,7 +28,7 @@ Random.seed!(rng, 12345)
 # Let's visualize the dataset
 with_theme(theme_web()) do
     fig = Figure()
-    ax = Axis(fig[1, 1]; xlabel="x", ylabel="y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
     s = scatter!(ax,
@@ -104,7 +104,7 @@ y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.s
 
 with_theme(theme_web()) do
     fig = Figure()
-    ax = Axis(fig[1, 1]; xlabel="x", ylabel="y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
     s1 = scatter!(ax,
