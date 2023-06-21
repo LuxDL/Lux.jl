@@ -1,34 +1,18 @@
-@inline _nfan() = 1, 1 # fan_in, fan_out
-@inline _nfan(n) = 1, n # A vector is treated as a n×1 matrix
-@inline _nfan(n_out, n_in) = n_in, n_out # In case of Dense kernels: arranged as matrices
-@inline _nfan(dims::Tuple) = _nfan(dims...)
-@inline _nfan(dims...) = prod(dims[1:(end - 2)]) .* (dims[end - 1], dims[end]) # In case of convolution kernels
-norm_cdf(x::T) where {T} = T(0.5) * (1 + erf(x / √2))
-
-function _default_rng()
-    @static if VERSION >= v"1.7"
-        return Xoshiro(1234)
-    else
-        return MersenneTwister(1234)
-    end
-end
-
 """
     zeros32(rng::AbstractRNG, size...) = zeros(Float32, size...)
 
 Return an `Array{Float32}` of zeros of the given `size`. (`rng` is ignored)
 """
-zeros32(rng::AbstractRNG, dims...) = zeros(rng, Float32, dims...)
+zeros32(::AbstractRNG, dims...) = zeros(Float32, dims...)
 zeros32(dims...) = zeros32(_default_rng(), dims...)
-Base.zeros(rng::AbstractRNG, dims...) = zeros(dims...)
+
 """
     ones32(rng::AbstractRNG, size...) = ones(Float32, size...)
 
 Return an `Array{Float32}` of ones of the given `size`. (`rng` is ignored)
 """
-ones32(rng::AbstractRNG, dims...) = ones(rng, Float32, dims...)
+ones32(::AbstractRNG, dims...) = ones(Float32, dims...)
 ones32(dims...) = ones32(_default_rng(), dims...)
-Base.ones(rng::AbstractRNG, dims...) = ones(dims...)
 
 """
     randn32(rng::AbstractRNG, size...) = randn(rng, Float32, size...)
@@ -161,8 +145,8 @@ function truncated_normal(rng::AbstractRNG, dims::Integer...; mean=0, std=1, lo=
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." maxlog=1
     end
-    l = norm_cdf((lo - mean) / std)
-    u = norm_cdf((hi - mean) / std)
+    l = _norm_cdf((lo - mean) / std)
+    u = _norm_cdf((hi - mean) / std)
     xs = rand(rng, Float32, dims...)
     broadcast!(xs, xs) do x
         x = x * 2(u - l) + (2l - 1)
