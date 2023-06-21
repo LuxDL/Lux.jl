@@ -47,7 +47,6 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 include("utils.jl")
 # Data Transfer Utilities
 include("device.jl")
-include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
