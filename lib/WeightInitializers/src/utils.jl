@@ -12,3 +12,6 @@ function _default_rng()
         return MersenneTwister(1234)
     end
 end
+
+# This is needed if using `PartialFunctions.$` inside @eval block
+_partial_apply(fn, inp) = fn$inp

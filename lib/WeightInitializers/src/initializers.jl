@@ -1,18 +1,16 @@
 """
-    zeros32(rng::AbstractRNG, size...) = zeros(Float32, size...)
+    zeros32(::AbstractRNG, size...) = zeros(Float32, size...)
 
 Return an `Array{Float32}` of zeros of the given `size`. (`rng` is ignored)
 """
 zeros32(::AbstractRNG, dims...) = zeros(Float32, dims...)
-zeros32(dims...) = zeros32(_default_rng(), dims...)
 
 """
-    ones32(rng::AbstractRNG, size...) = ones(Float32, size...)
+    ones32(::AbstractRNG, size...) = ones(Float32, size...)
 
 Return an `Array{Float32}` of ones of the given `size`. (`rng` is ignored)
 """
 ones32(::AbstractRNG, dims...) = ones(Float32, dims...)
-ones32(dims...) = ones32(_default_rng(), dims...)
 
 """
     randn32(rng::AbstractRNG, size...) = randn(rng, Float32, size...)
@@ -21,7 +19,6 @@ Return an `Array{Float32}` of random numbers from a standard normal distribution
 given `size`.
 """
 randn32(rng::AbstractRNG, dims...) = randn(rng, Float32, dims...)
-randn32(dims...) = randn32(_default_rng(), dims...)
 
 """
     rand32(rng::AbstractRNG, size...) = rand(rng, Float32, size...)
@@ -30,7 +27,6 @@ Return an `Array{Float32}` of random numbers from a uniform distribution of the 
 `size`.
 """
 rand32(rng::AbstractRNG, dims...) = rand(rng, Float32, dims...)
-rand32(dims...) = rand32(_default_rng(), dims...)
 
 """
     glorot_uniform(rng::AbstractRNG, size...; gain = 1)
@@ -51,14 +47,6 @@ function glorot_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     return (rand(rng, Float32, dims...) .- 0.5f0) .* scale
 end
 
-function glorot_uniform(dims::Integer...; kwargs...)
-    return glorot_uniform(_default_rng(), dims...; kwargs...)
-end
-
-function glorot_uniform(; kwargs...)
-    return glorot_uniform $ (; kwargs...)
-end
-
 """
     glorot_normal(rng::AbstractRNG, size...; gain = 1)
 
@@ -75,14 +63,6 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(rng::AbstractRNG, dims::Integer...; gain::Real=1)
     std = Float32(gain) * sqrt(2.0f0 / sum(_nfan(dims...)))
     return randn(rng, Float32, dims...) .* std
-end
-
-function glorot_normal(dims::Integer...; kwargs...)
-    return glorot_normal(_default_rng(), dims...; kwargs...)
-end
-
-function glorot_normal(rng::AbstractRNG; kwargs...)
-    return glorot_normal $ (; kwargs...)
 end
 
 """
@@ -102,14 +82,6 @@ function kaiming_uniform(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0
     return (rand(rng, Float32, dims...) .- 0.5f0) .* 2 * bound
 end
 
-function kaiming_uniform(dims::Integer...; kwargs...)
-    return kaiming_uniform(_default_rng(), dims...; kwargs...)
-end
-
-function kaiming_uniform(rng::AbstractRNG; kwargs...)
-    return kaiming_uniform $ (; kwargs...)
-end
-
 """
     kaiming_normal(rng::AbstractRNG, size...; gain = √2f0)
 
@@ -125,14 +97,6 @@ vision_. 2015.
 function kaiming_normal(rng::AbstractRNG, dims::Integer...; gain::Real=√2.0f0)
     std = Float32(gain / sqrt(first(_nfan(dims...))))
     return randn(rng, Float32, dims...) .* std
-end
-
-function kaiming_normal(dims::Integer...; kwargs...)
-    return kaiming_normal(_default_rng(), dims...; kwargs...)
-end
-
-function kaiming_normal(rng::AbstractRNG; kwargs...)
-    return kaiming_normal $ (; kwargs...)
 end
 
 """
@@ -156,15 +120,21 @@ function truncated_normal(rng::AbstractRNG, dims::Integer...; mean=0, std=1, lo=
     return xs
 end
 
-function truncated_normal(dims::Integer...; kwargs...)
-    return truncated_normal(_default_rng(), dims...; kwargs...)
-end
-function truncated_normal(rng::AbstractRNG; init_kwargs...)
-    return (rng, dims...; kwargs...) -> truncated_normal(rng,
-        dims...;
-        init_kwargs...,
-        kwargs...)
-end
-function truncated_normal(; kwargs...)
-    return truncated_normal $ (; kwargs...)
+# Default Fallbacks for all functions
+for initializer in (:zeros32,
+    :ones32,
+    :randn32,
+    :rand32,
+    :glorot_uniform,
+    :glorot_normal,
+    :kaiming_uniform,
+    :kaiming_normal,
+    :truncated_normal)
+    @eval function ($initializer)(dims::Integer...; kwargs...)
+        return $initializer(_default_rng(), dims...; kwargs...)
+    end
+    @eval function ($initializer)(rng::AbstractRNG; kwargs...)
+        return _partial_apply($initializer, (rng, (; kwargs...)))
+    end
+    @eval ($initializer)(; kwargs...) = _partial_apply($initializer, (; kwargs...))
 end
