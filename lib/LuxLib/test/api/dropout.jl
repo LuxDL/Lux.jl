@@ -24,7 +24,7 @@ rng = get_stable_rng(12345)
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
-        @jet __f(x)
+        @jet sum(first(dropout(rng, x, T(0.5), Val(true); dims=Colon())))
 
         @inferred dropout(rng, x, T(0.5), Val(true); dims=Colon())
 
@@ -66,7 +66,7 @@ end
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
-        @jet __f(x)
+        @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(true); dims=Colon())))
 
         # Try using mask if possible (possible!!)
         @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())
@@ -90,7 +90,7 @@ end
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
-        @jet __f(x)
+        @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())))
 
         mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
 
@@ -116,7 +116,7 @@ end
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
-        @jet __f(x)
+        @jet sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())))
 
         # Testing Mode
         @inferred dropout(rng, x, mask, T(0.5), Val(false), Val(false); dims=Colon())
@@ -151,7 +151,7 @@ end
 
         fp16 = T == Float16
         @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
-        @jet __f(x)
+        @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
         @inferred alpha_dropout(rng, x, T(0.5), Val(false))
 

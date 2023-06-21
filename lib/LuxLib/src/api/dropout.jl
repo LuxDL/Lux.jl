@@ -1,7 +1,7 @@
 @doc doc"""
-    dropout(rng::AbstractRNG, x, p, ::Val{training}; dims, invp=inv(p))
-    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}; dims,
-            invp=inv(p))
+    dropout(rng::AbstractRNG, x, p, ::Val{training}, invp; dims)
+    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}, invp;
+            dims)
 
 Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [1].
 
@@ -15,6 +15,7 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
     `dims`. Else, `x` is returned
   - `Val(update_mask)`: If `true` then the mask is generated and used. Else, the `mask`
     provided is directly used
+  - `invp`: Inverse of the probability
 
 ## Keyword Arguments
 
@@ -32,19 +33,16 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
 [1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
     overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
-function dropout(rng::AbstractRNG, x::AA, p::T, ::Val{true}; dims, invp::T=inv(p)) where {T}
+function dropout(rng::AbstractRNG, x::AA, p::T, ::Val{true}, invp::T; dims) where {T}
     rng = _replicate(rng)
     mask = _generate_dropout_mask(rng, x, p, invp; dims)
     return (x .* ignore_derivatives(mask), mask, rng)
 end
 
-function dropout(rng::AbstractRNG,
-    x::AA,
-    p::T,
-    ::Val{false};
-    dims,
-    invp::T=inv(p)) where {T}
-    return (x, x, rng)
+dropout(rng::AbstractRNG, x::AA, p::T, ::Val{false}, ::T; dims) where {T} = (x, x, rng)
+
+function dropout(rng::AbstractRNG, x::AA, p::T, t::Val; dims, invp::T=inv(p)) where {T}
+    return dropout(rng, x, p, t, invp; dims)
 end
 
 function dropout(rng::AbstractRNG,
@@ -52,9 +50,9 @@ function dropout(rng::AbstractRNG,
     mask::AA,
     p::T,
     t::Val,
-    ::Val{true};
-    dims,
-    invp::T=inv(p)) where {T}
+    ::Val{true},
+    invp::T;
+    dims) where {T}
     return dropout(rng, x, p, t; dims, invp)
 end
 
@@ -63,9 +61,9 @@ function dropout(rng::AbstractRNG,
     mask::AA{T2, N},
     p::T,
     ::Val{true},
-    ::Val{false};
-    dims,
-    invp::T=inv(p)) where {T, T1, T2, N}
+    ::Val{false},
+    invp::T;
+    dims) where {T, T1, T2, N}
     size(x) != size(mask) && return dropout(rng, x, p, Val(true); dims, invp)
     return x .* ignore_derivatives(mask), mask, rng
 end
@@ -75,10 +73,21 @@ function dropout(rng::AbstractRNG,
     mask::AA{T2, N},
     p::T,
     ::Val{false},
-    ::Val{false};
+    ::Val{false},
+    invp::T;
+    dims) where {T, T1, T2, N}
+    return (x, mask, rng)
+end
+
+function dropout(rng::AbstractRNG,
+    x::AA{T1, N},
+    mask::AA{T2, N},
+    p::T,
+    t::Val,
+    um::Val;
     dims,
     invp::T=inv(p)) where {T, T1, T2, N}
-    return (x, mask, rng)
+    return dropout(rng, x, mask, p, t, um, invp; dims)
 end
 
 @doc doc"""
@@ -139,7 +148,7 @@ alpha_dropout(rng::AbstractRNG, x::AA, p, ::Val{false}, α, A, B) = (x, rng)
     return tuple((i in dims ? si : 1 for (i, si) in enumerate(size(s)))...)
 end
 
-@inline _dropout_kernel(y, p, invp) = y > p ? invp : oftype(y, 0)
+@inline _dropout_kernel(y, p, invp) = ifelse(y > p, invp, oftype(y, 0))
 
 @inline _dropout_fptype(x) = float(real(eltype(x)))
 
