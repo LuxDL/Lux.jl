@@ -10,9 +10,9 @@ using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 using ComponentArrays,
-    CUDA,
     SciMLSensitivity,
-    NNlib,
+    LuxAMDGPU,
+    LuxCUDA,
     Optimisers,
     OrdinaryDiffEq,
     Random,
@@ -74,7 +74,12 @@ function (n::NeuralODE)(x, ps, st)
 end
 
 function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:CuArray}}) where {T, N}
-    return dropdims(gpu(x); dims=3)
+    dev = gpu_device()
+    return dropdims(dev(x); dims=3)
+end
+function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:ROCArray}}) where {T, N}
+    dev = gpu_device()
+    return dropdims(dev(x); dims=3)
 end
 diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
 
@@ -95,8 +100,9 @@ function create_model()
     Random.seed!(rng, 0)
 
     ps, st = Lux.setup(rng, model)
-    ps = ComponentArray(ps) |> gpu
-    st = st |> gpu
+    dev = gpu_device()
+    ps = ComponentArray(ps) |> dev
+    st = st |> dev
 
     return model, ps, st
 end
@@ -113,9 +119,10 @@ function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
     iterator = CUDA.functional() ? CuIterator(dataloader) : dataloader
+    cpu_dev = cpu_device()
     for (x, y) in iterator
-        target_class = onecold(cpu(y))
-        predicted_class = onecold(cpu(model(x, ps, st)[1]))
+        target_class = onecold(cpu_dev(y))
+        predicted_class = onecold(cpu_dev(first(model(x, ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -132,9 +139,11 @@ function train()
     opt = Optimisers.ADAM(0.001f0)
     st_opt = Optimisers.setup(opt, ps)
 
+    dev = gpu_device()
+
     ### Warmup the Model
-    img, lab = gpu(train_dataloader.data[1][:, :, :, 1:1]),
-    gpu(train_dataloader.data[2][:, 1:1])
+    img, lab = dev(train_dataloader.data[1][:, :, :, 1:1]),
+    dev(train_dataloader.data[2][:, 1:1])
     loss(img, lab, model, ps, st)
     (l, _), back = pullback(p -> loss(img, lab, model, p, st), ps)
     back((one(l), nothing))
@@ -143,8 +152,9 @@ function train()
     nepochs = 9
     for epoch in 1:nepochs
         stime = time()
-        iterator = CUDA.functional() ? CuIterator(train_dataloader) : train_dataloader
-        for (x, y) in iterator
+        for (x, y) in train_dataloader
+            x = dev(x)
+            y = dev(y)
             (l, st), back = pullback(p -> loss(x, y, model, p, st), ps)
             ### We need to add `nothing`s equal to the number of returned values - 1
             gs = back((one(l), nothing))[1]

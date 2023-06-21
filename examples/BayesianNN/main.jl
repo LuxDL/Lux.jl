@@ -13,7 +13,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using Turing, CairoMakie, Random, ReverseDiff, NNlib, Functors, MakiePublication
+using Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication
 
 ## Hide sampling progress
 Turing.setprogress!(false);

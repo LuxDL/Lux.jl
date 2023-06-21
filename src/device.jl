@@ -50,7 +50,7 @@ Return a tuple of supported GPU backends.
 supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
 """
-    get_gpu_device(; force_gpu_usage::Bool=false) -> AbstractLuxDevice()
+    gpu_device(; force_gpu_usage::Bool=false) -> AbstractLuxDevice()
 
 Selects GPU device based on the following criteria:
 
@@ -60,10 +60,10 @@ Selects GPU device based on the following criteria:
        backends in the order specified by `supported_gpu_backends()` and select the first
        functional backend.
     3. If no GPU device is functional and  force_gpu_usage` is `false`, then
-       `get_cpu_device()` is invoked.
+       `cpu_device()` is invoked.
     4. If nothing works, an error is thrown.
 """
-function get_gpu_device(; force_gpu_usage::Bool=false)::AbstractLuxDevice
+function gpu_device(; force_gpu_usage::Bool=false)::AbstractLuxDevice
     if !ACCELERATOR_STATE_CHANGED[]
         if GPU_DEVICE[] !== nothing
             force_gpu_usage &&
@@ -113,15 +113,15 @@ function _get_gpu_device_impl(; force_gpu_usage::Bool)
         end
     end
 
-    force_gpu_usage ? throw(LuxDeviceSelectionException()) : return get_cpu_device()
+    force_gpu_usage ? throw(LuxDeviceSelectionException()) : return cpu_device()
 end
 
 """
-    get_cpu_device() -> LuxCPUDevice()
+    cpu_device() -> LuxCPUDevice()
 
 Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 """
-@inline get_cpu_device() = LuxCPUDevice()
+@inline cpu_device() = LuxCPUDevice()
 
 (::LuxCPUDevice)(x) = fmap(x -> adapt(LuxCPUAdaptor(), x), x; exclude=_isleaf)
 (::LuxCUDADevice)(x) = fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf)

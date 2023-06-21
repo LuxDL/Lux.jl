@@ -71,19 +71,6 @@ rng = get_stable_rng(12345)
         __f = x -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
-
-    @testset "ActivationFunction" begin
-        layer = ActivationFunction(tanh)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
-        x = randn(rng, 6, 4, 3, 2) |> aType
-
-        @test layer(x, ps, st)[1] == tanh.(x)
-
-        @jet layer(x, ps, st)
-        __f = x -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
-    end
 end
 
 @testset "$mode: Dense" for (mode, aType, device, ongpu) in MODES
@@ -209,7 +196,7 @@ end
         end == aType([2.0 3.0; 4.0 5.0])
 
         @test begin
-            layer = Scale(2, tanh; bias=false, init_weight=zeros)
+            layer = Scale(2, tanh; use_bias=false, init_weight=zeros)
             first(Lux.apply(layer,
                 [1 2; 3 4] |> aType,
                 device.(Lux.setup(rng, layer))...))

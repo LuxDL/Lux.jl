@@ -34,7 +34,7 @@ rng = get_stable_rng(12345)
     @test ps_2.d3.bias == ps_new_2.bias == ps_2.d2.l1.bias
 
     # Mix in ComponentArray
-    ps_new_ca_1 = ComponentArray(ps_new_1 |> cpu) |> device
+    ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> device
 
     ps_3 = Lux.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 
@@ -56,7 +56,7 @@ rng = get_stable_rng(12345)
 
     @test_throws ArgumentError Lux.share_parameters(ps, sharing, (ps_new_1, ps_new_2))
 
-    ps_new_ca_1 = ComponentArray(ps_new_1 |> cpu) |> device
+    ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> device
 
     @test_throws ArgumentError Lux.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 end

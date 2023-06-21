@@ -63,6 +63,7 @@ Pkg.add("Lux")
 
 ```julia
 using Lux, Random, Optimisers, Zygote
+# using LuxCUDA, LuxAMDGPU # Optional packages for GPU support
 ```
 
 We take randomness very seriously
@@ -85,11 +86,14 @@ Models don't hold parameters and states so initialize them. From there on, we ju
 standard AD and Optimisers API.
 
 ```julia
+# Get the device determined by Lux
+device = gpu_device()
+
 # Parameter and State Variables
-ps, st = Lux.setup(rng, model) .|> gpu
+ps, st = Lux.setup(rng, model) .|> device
 
 # Dummy Input
-x = rand(rng, Float32, 128, 2) |> gpu
+x = rand(rng, Float32, 128, 2) |> device
 
 # Run the model
 y, st = Lux.apply(model, x, ps, st)

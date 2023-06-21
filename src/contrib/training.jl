@@ -25,8 +25,10 @@ struct TrainState{Ps, St, Ost, M}
 end
 
 """
-    TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
-               optimizer::Optimisers.AbstractRule; transform_variables::Function=Lux.cpu)
+    TrainState(rng::Random.AbstractRNG,
+        model::Lux.AbstractExplicitLayer,
+        optimizer::Optimisers.AbstractRule;
+        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
 
 Constructor for `TrainState`.
 
@@ -36,7 +38,7 @@ Constructor for `TrainState`.
   - `model`: `Lux` model.
   - `optimizer`: Optimizer from `Optimisers.jl`.
   - `transform_variables`: Function to transform the variables of the model. Typically used
-    to transfer variables to `gpu`/`cpu`.
+    to transfer variables to GPU / CPU.
 
 ## Returns
 
@@ -45,7 +47,7 @@ Constructor for `TrainState`.
 function TrainState(rng::Random.AbstractRNG,
     model::Lux.AbstractExplicitLayer,
     optimizer::Optimisers.AbstractRule;
-    transform_variables::Function=Lux.cpu)
+    transform_variables::Union{Function, Lux.AbstractLuxDevice}=gpu_device())
     ps, st = Lux.setup(rng, model) .|> transform_variables
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(model, ps, st, st_opt, 0)

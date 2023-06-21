@@ -1,9 +1,9 @@
 module Lux
 
-# Compile-Time User Choices
-using Preferences
+# Some core imports
+using Preferences, Reexport
 # Neural Network Backend
-using LuxLib
+@reexport using LuxLib
 # Julia StdLibs
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation
@@ -17,7 +17,7 @@ import TruncatedStacktraces
 import TruncatedStacktraces: @truncate_stacktrace
 
 # LuxCore
-using LuxCore
+@reexport using LuxCore
 import LuxCore: AbstractExplicitLayer,
     AbstractExplicitContainerLayer,
     initialparameters,
@@ -75,7 +75,7 @@ function __init__()
 end
 
 # Data Transfer
-export cpu, gpu, get_cpu_device, get_gpu_device
+export cpu, gpu, cpu_device, gpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale

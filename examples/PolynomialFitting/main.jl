@@ -7,7 +7,8 @@
 using Lux
 import Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using NNlib, Optimisers, Random, Statistics, Zygote, CairoMakie, MakiePublication
+using LuxAMDGPU,
+    LuxCUDA, Optimisers, Random, Statistics, Zygote, CairoMakie, MakiePublication
 
 # ## Dataset
 
@@ -69,7 +70,7 @@ end
 # First we will create a [`Lux.Training.TrainState`](@ref) which is essentially a
 # convenience wrapper over parameters, states and optimizer states.
 
-tstate = Lux.Training.TrainState(rng, model, opt; transform_variables=gpu)
+tstate = Lux.Training.TrainState(rng, model, opt)
 
 # Now we will use Zygote for our AD requirements.
 
@@ -81,7 +82,7 @@ function main(tstate::Lux.Training.TrainState,
     vjp::Lux.Training.AbstractVJP,
     data::Tuple,
     epochs::Int)
-    data = data .|> gpu
+    data = data .|> gpu_device()
     for epoch in 1:epochs
         grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,
             loss_function,
@@ -93,8 +94,11 @@ function main(tstate::Lux.Training.TrainState,
     return tstate
 end
 
+dev_cpu = cpu_device()
+dev_gpu = gpu_device()
+
 tstate = main(tstate, vjp_rule, (x, y), 250)
-y_pred = cpu(Lux.apply(tstate.model, gpu(x), tstate.parameters, tstate.states)[1])
+y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])
 
 # Let's plot the results
 
