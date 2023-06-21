@@ -1,4 +1,4 @@
-using Lux, NNlib, Random, Test, Zygote
+using Lux, Random, Test, Zygote
 
 include("../test_utils.jl")
 
