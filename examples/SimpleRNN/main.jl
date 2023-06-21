@@ -11,7 +11,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, Zygote, NNlib, Random, Statistics
+using LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, Zygote, Random, Statistics
 
 # ## Dataset
 

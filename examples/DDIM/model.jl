@@ -1,6 +1,6 @@
 # DDIM implementation following https://keras.io/examples/generative/ddim/
 
-using Lux, Random, LuxCUDA, LuxAMDGPU, NNlib, Setfield
+using Lux, Random, LuxCUDA, LuxAMDGPU, Setfield
 # Note: Julia/Lux assume image batch of WHCN ordering
 
 # Embed noise variances to embedding
