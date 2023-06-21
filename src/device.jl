@@ -1,6 +1,6 @@
 import Base: PkgId, UUID
 
-abstract type AbstractLuxDevice end
+abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
 
 struct LuxCPUDevice <: AbstractLuxDevice end

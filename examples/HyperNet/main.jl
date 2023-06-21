@@ -48,7 +48,7 @@ function Lux.initialparameters(rng::AbstractRNG, h::HyperNet)
     return (weight_generator=Lux.initialparameters(rng, h.weight_generator),)
 end
 
-function (hn::HyperNet)(x, ps, st::NamedTuple) where {T <: Tuple}
+function (hn::HyperNet)(x, ps, st::NamedTuple)
     ps_new, st_ = hn.weight_generator(x, ps.weight_generator, st.weight_generator)
     @set! st.weight_generator = st_
     return ComponentArray(vec(ps_new), hn.ca_axes), st
