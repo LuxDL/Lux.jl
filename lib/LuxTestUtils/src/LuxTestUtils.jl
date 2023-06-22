@@ -7,18 +7,23 @@ using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
 const JET_TARGET_MODULES = @load_preference("target_modules", nothing)
 
 ### Device Functionalities: REMOVE once moved out of Lux into a separate package
-using Adapt, CUDA, cuDNN, Functors, Random, SparseArrays
+using Adapt, AMDGPU, CUDA, cuDNN, Functors, Random, SparseArrays
 import Adapt: adapt_storage
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
+const use_amdgpu = Ref{Union{Nothing, Bool}}(nothing)
 
 abstract type LuxTestUtilsDeviceAdaptor end
 
 struct LuxTestUtilsCPUAdaptor <: LuxTestUtilsDeviceAdaptor end
 struct LuxTestUtilsCUDAAdaptor <: LuxTestUtilsDeviceAdaptor end
+struct LuxTestUtilsAMDGPUAdaptor <: LuxTestUtilsDeviceAdaptor end
 
-adapt_storage(::LuxTestUtilsCUDAAdaptor, x) = CUDA.cu(x)
+adapt_storage(::LuxTestUtilsCUDAAdaptor, x) = cu(x)
 adapt_storage(::LuxTestUtilsCUDAAdaptor, rng::AbstractRNG) = rng
+
+adapt_storage(::LuxTestUtilsAMDGPUAdaptor, x) = roc(x)
+adapt_storage(::LuxTestUtilsAMDGPUAdaptor, rng::AbstractRNG) = rng
 
 function adapt_storage(::LuxTestUtilsCPUAdaptor,
     x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
@@ -26,7 +31,7 @@ function adapt_storage(::LuxTestUtilsCPUAdaptor,
 end
 adapt_storage(::LuxTestUtilsCPUAdaptor, x::AbstractArray) = adapt(Array, x)
 adapt_storage(::LuxTestUtilsCPUAdaptor, rng::AbstractRNG) = rng
-function adapt_storage(::LuxTestUtilsCPUAdaptor, x::CUDA.CUSPARSE.AbstractCuSparseMatrix)
+function adapt_storage(::LuxTestUtilsCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix)
     return adapt(Array, x)
 end
 
@@ -39,10 +44,16 @@ _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
 
 cpu(x) = fmap(x -> adapt(LuxTestUtilsCPUAdaptor(), x), x)
 
-function gpu(x)
+function cuda_gpu(x)
     check_use_cuda()
     return use_cuda[] ? fmap(x -> adapt(LuxTestUtilsCUDAAdaptor(), x), x; exclude=_isleaf) :
            x
+end
+
+function amdgpu_gpu(x)
+    check_use_amdgpu()
+    return use_amdgpu[] ?
+           fmap(x -> adapt(LuxTestUtilsAMDGPUAdaptor(), x), x; exclude=_isleaf) : x
 end
 
 function check_use_cuda()
@@ -53,6 +64,21 @@ function check_use_cuda()
                      will not be available."""
         end
         if !(use_cuda[])
+            @info """The GPU function is being called but the GPU is not accessible.
+                     Defaulting back to the CPU. (No action is required if you want
+                     to run on the CPU).""" maxlog=1
+        end
+    end
+end
+
+function check_use_amdgpu()
+    if use_amdgpu[] === nothing
+        use_amdgpu[] = AMDGPU.functional()
+        if use_amdgpu[] && !AMDGPU.functional(:MIOpen)
+            @warn "MIOpen is not functional in AMDGPU.jl, some functionality will not be \
+                   available." maxlog=1
+        end
+        if !(use_amdgpu[])
             @info """The GPU function is being called but the GPU is not accessible.
                      Defaulting back to the CPU. (No action is required if you want
                      to run on the CPU).""" maxlog=1
@@ -451,7 +477,11 @@ function __correct_arguments(x::NamedTuple)
     xc = cpu(x)
     ca = ComponentArray(xc)
     # Hacky check to see if there are any non-CPU arrays in the NamedTuple
-    return typeof(xc) == typeof(x) ? ca : gpu(ca)
+    typeof(xc) == typeof(x) && return ca
+
+    ca_cuda = cuda_gpu(ca)
+    typeof(ca_cuda) == typeof(x) && return ca_cuda
+    return amdgpu_gpu(ca)
 end
 __correct_arguments(x) = x
 
