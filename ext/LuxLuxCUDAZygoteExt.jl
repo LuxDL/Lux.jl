@@ -10,6 +10,6 @@ end
 
 using Adapt, Lux
 
-Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
+Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::Zygote.OneElement) = cu(collect(x))
 
 end

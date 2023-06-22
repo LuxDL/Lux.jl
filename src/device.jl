@@ -54,14 +54,14 @@ supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
 Selects GPU device based on the following criteria:
 
-    1. If `gpu_backend` preference is set and the backend is functional on the system, then
-       that device is selected.
-    2. Otherwise, an automatic selection algorithm is used. We go over possible device
-       backends in the order specified by `supported_gpu_backends()` and select the first
-       functional backend.
-    3. If no GPU device is functional and  force_gpu_usage` is `false`, then
-       `cpu_device()` is invoked.
-    4. If nothing works, an error is thrown.
+1. If `gpu_backend` preference is set and the backend is functional on the system, then
+   that device is selected.
+2. Otherwise, an automatic selection algorithm is used. We go over possible device
+   backends in the order specified by `supported_gpu_backends()` and select the first
+   functional backend.
+3. If no GPU device is functional and  force_gpu_usage` is `false`, then
+   `cpu_device()` is invoked.
+4. If nothing works, an error is thrown.
 """
 function gpu_device(; force_gpu_usage::Bool=false)::AbstractLuxDevice
     if !ACCELERATOR_STATE_CHANGED[]
@@ -95,7 +95,19 @@ function _get_gpu_device_impl(; force_gpu_usage::Bool)
             """ maxlog=1
         else
             @debug "Using GPU backend set in preferences: $backend."
-            return GPU_DEVICES[idx]
+            device = GPU_DEVICES[idx]
+            if !haskey(Base.loaded_modules, device.pkgid)
+                @warn """Trying to use backend: $(_get_device_name(device)) but the trigger package $(device.pkgid) is not loaded.
+                    Ignoring the Preferences backend!!!
+                    Please load the package and call this function again to respect the Preferences backend.""" maxlog=1
+            else
+                if getproperty(Base.loaded_modules[dev.pkgid], :functional)()
+                    @debug "Using GPU backend: $(_get_device_name(dev))."
+                    return dev
+                else
+                    @warn "GPU backend: $(_get_device_name(device)) set via Preferences.jl is not functional. Defaulting to automatic GPU Backend selection." maxlog=1
+                end
+            end
         end
     end
 
@@ -113,7 +125,15 @@ function _get_gpu_device_impl(; force_gpu_usage::Bool)
         end
     end
 
-    force_gpu_usage ? throw(LuxDeviceSelectionException()) : return cpu_device()
+    if force_gpu_usage
+        throw(LuxDeviceSelectionException())
+    else
+        @warn """No functional GPU backend found! Defaulting to CPU.
+
+                 1. If no GPU is available, nothing needs to be done.
+                 2. If GPU is available, load the corresponding trigger package.""" maxlog=1
+        return cpu_device()
+    end
 end
 
 """

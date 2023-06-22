@@ -10,6 +10,6 @@ end
 
 using Adapt, Lux
 
-Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::FillArrays.AbstractFill) = CUDA.cu(collect(x))
+Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::FillArrays.AbstractFill) = cu(collect(x))
 
 end
