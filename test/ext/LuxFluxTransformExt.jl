@@ -2,7 +2,7 @@ import Flux
 using Lux, Test
 
 fdevice(::typeof(LuxCPUDevice)) = Flux.cpu
-fdevice(::typeof(LuxGPUDevice)) = Flux.gpu
+fdevice(::typeof(LuxCUDADevice)) = Flux.gpu
 
 include("../test_utils.jl")
 

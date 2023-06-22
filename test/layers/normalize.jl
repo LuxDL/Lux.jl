@@ -110,7 +110,7 @@ end
     # begin tests
     squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
-    m = GroupNorm(4, 2; track_stats=true)
+    m = GroupNorm(4, 2)
     sizes = (3, 4, 2)
     x = reshape(collect(1:prod(sizes)), sizes) |> aType
 
@@ -168,7 +168,7 @@ end
     @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
     for affine in (true, false)
-        m = GroupNorm(2, 2; affine, track_stats=false)
+        m = GroupNorm(2, 2; affine)
         x = rand(rng, Float32, 3, 2, 1) |> aType
         display(m)
         ps, st = Lux.setup(rng, m) .|> device
