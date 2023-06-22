@@ -2,7 +2,8 @@ import Flux
 using Lux, Test
 
 fdevice(::typeof(LuxCPUDevice)) = Flux.cpu
-fdevice(::typeof(LuxCUDADevice)) = Flux.gpu
+fdevice(::typeof(LuxCUDADevice)) = Base.Fix1(Flux.gpu, Flux.FluxCUDAAdaptor())
+fdevice(::typeof(LuxAMDGPUDevice)) = Base.Fix1(Flux.gpu, Flux.FluxAMDGPUAdaptor())
 
 include("../test_utils.jl")
 

@@ -13,17 +13,15 @@ end
 # utils.jl
 Lux.replicate(rng::CUDA.RNG) = deepcopy(rng)
 
-@inline function Lux._init_hidden_state(rng::AbstractRNG,
-    rnn,
-    x::Union{CUDA.StridedSubCuArray, CuArray})
+@inline function Lux._init_hidden_state(rng::AbstractRNG, rnn, x::CUDA.AnyCuArray)
     return CuArray(rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
-@inline function Lux._conv(x::SubArray{T, N, <:CuArray}, weight, cdims) where {T, N}
+@inline function Lux._conv(x::SubArray{T, N, <:CUDA.AnyCuArray}, weight, cdims) where {T, N}
     return conv(copy(x), weight, cdims)
 end
 
-@inline function Lux._conv_transpose(x::SubArray{T, N, <:CuArray},
+@inline function Lux._conv_transpose(x::SubArray{T, N, <:CUDA.AnyCuArray},
     weight,
     cdims) where {T, N}
     return ∇conv_data(copy(x), weight, cdims)
@@ -40,7 +38,7 @@ adapt_storage(::Lux.LuxCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix) = adapt(A
 ## Chain Rules
 CRC.rrule(::Type{Array}, x::CuArray) = Array(x), Δ -> (NoTangent(), cu(Δ))
 
-function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
+function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCPUAdaptor, x::CUDA.AnyCuArray)
     function ∇adapt_storage(Δ)
         return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxCUDAAdaptor(), Δ))
     end

@@ -1,4 +1,4 @@
-using Lux, ComponentArrays, LuxCUDA, Functors, Optimisers, Zygote, Test
+using Lux, ComponentArrays, Functors, Optimisers, Zygote, Test
 using Statistics: std
 
 include("test_utils.jl")
