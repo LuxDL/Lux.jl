@@ -8,7 +8,6 @@ using Preferences, Reexport
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation
 using Functors, Setfield
-import Adapt: adapt, adapt_storage
 # Automatic Differentiation
 using ChainRulesCore
 import ChainRulesCore as CRC
@@ -31,6 +30,7 @@ import LuxCore: AbstractExplicitLayer,
     apply,
     display_name
 
+<<<<<<< HEAD
 # Standard Weight Initializations
 using WeightInitializers
 import WeightInitializers: randn32,
@@ -39,13 +39,16 @@ import WeightInitializers: _nfan
 
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 const ACCELERATOR_STATE_CHANGED = Ref{Bool}(false)
+=======
+# Device Management
+@reexport using LuxDeviceUtils
+import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
+>>>>>>> 8ededd4 (Proper AMDGPU Support + Testing)
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
 # Utilities
 include("utils.jl")
-# Data Transfer Utilities
-include("device.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -74,9 +77,8 @@ function __init__()
     @require_extensions
 end
 
-# Data Transfer
-export cpu, gpu, cpu_device, gpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
 # Layers
+export cpu, gpu
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
 export Conv,
@@ -97,8 +99,10 @@ export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
 
-# Extension Exports: Flux
+# Extension functions
 function transform end
+
+_maybe_flip_conv_weight(x) = copy(x)
 
 struct FluxLayer{L, RE, I} <: AbstractExplicitLayer
     layer::L

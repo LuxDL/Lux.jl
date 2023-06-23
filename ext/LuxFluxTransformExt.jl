@@ -245,10 +245,6 @@ function transform(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
             init_weight=__copy_anonymous_closure(copy(l.weight)),
             init_bias=__copy_anonymous_closure(_bias))
     else
-        return ConvTranspose(k,
-            in_chs * groups => out_chs,
-            l.σ;
-            l.stride,
             pad,
             l.dilation,
             groups,
@@ -407,19 +403,12 @@ function transform(l::Flux.GroupNorm;
                 l.G,
                 l.λ;
                 l.affine,
-                l.track_stats,
                 epsilon=l.ϵ,
                 l.momentum,
                 init_bias=__copy_anonymous_closure(copy(l.β)),
                 init_scale=__copy_anonymous_closure(copy(l.γ)))
         else
-            return GroupNorm(l.chs,
-                l.G,
-                l.λ;
-                l.affine,
-                l.track_stats,
-                epsilon=l.ϵ,
-                l.momentum)
+            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
         end
     end
     return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)

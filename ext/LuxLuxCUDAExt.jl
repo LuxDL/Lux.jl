@@ -2,13 +2,7 @@ module LuxLuxCUDAExt
 
 isdefined(Base, :get_extension) ? (using LuxCUDA) : (using ..LuxCUDA)
 using ChainRulesCore, Lux, LuxLib, Random
-import Adapt: adapt_storage, adapt
 import ChainRulesCore as CRC
-
-function __init__()
-    Lux.ACCELERATOR_STATE_CHANGED[] = true
-    return
-end
 
 # utils.jl
 Lux.replicate(rng::CUDA.RNG) = deepcopy(rng)
@@ -25,31 +19,6 @@ end
     weight,
     cdims) where {T, N}
     return ∇conv_data(copy(x), weight, cdims)
-end
-
-# Device Transfer
-## To GPU
-adapt_storage(::Lux.LuxCUDAAdaptor, x) = cu(x)
-adapt_storage(::Lux.LuxCUDAAdaptor, rng::AbstractRNG) = rng
-
-## To CPU
-adapt_storage(::Lux.LuxCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix) = adapt(Array, x)
-
-## Chain Rules
-CRC.rrule(::Type{Array}, x::CuArray) = Array(x), Δ -> (NoTangent(), cu(Δ))
-
-function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCPUAdaptor, x::CUDA.AnyCuArray)
-    function ∇adapt_storage(Δ)
-        return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxCUDAAdaptor(), Δ))
-    end
-    return adapt_storage(to, x), ∇adapt_storage
-end
-
-function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCUDAAdaptor, x::Array)
-    function ∇adapt_storage(Δ)
-        return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxCPUAdaptor(), Δ))
-    end
-    return adapt_storage(to, x), ∇adapt_storage
 end
 
 end

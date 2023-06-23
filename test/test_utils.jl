@@ -38,3 +38,13 @@ function get_default_rng(mode::String)
 end
 
 get_stable_rng(seed=12345) = StableRNG(seed)
+
+# AMDGPU Specifics
+function _rocRAND_functional()
+    try
+        AMDGPU.rocRAND.default_rng()
+        return true
+    catch
+        return false
+    end
+end

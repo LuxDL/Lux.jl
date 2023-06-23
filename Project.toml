@@ -4,11 +4,11 @@ authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "0.5.0-DEV"
 
 [deps]
-Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
+LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
 LuxLib = "82251201-b29d-42c6-8e01-566dec8acb11"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
@@ -37,19 +37,13 @@ LuxComponentArraysExt = "ComponentArrays"
 LuxComponentArraysReverseDiffExt = ["ComponentArrays", "ReverseDiff"]
 LuxComponentArraysTrackerExt = ["ComponentArrays", "Tracker"]
 LuxComponentArraysZygoteExt = ["ComponentArrays", "Zygote"]
-LuxFillArraysExt = "FillArrays"
 LuxFluxTransformExt = "Flux"
 LuxLuxAMDGPUExt = "LuxAMDGPU"
-LuxLuxAMDGPUFillArraysExt = ["LuxAMDGPU", "FillArrays"]
-LuxLuxAMDGPUZygoteExt = ["LuxAMDGPU", "Zygote"]
 LuxLuxCUDAExt = "LuxCUDA"
-LuxLuxCUDAFillArraysExt = ["LuxCUDA", "FillArrays"]
-LuxLuxCUDAZygoteExt = ["LuxCUDA", "Zygote"]
 LuxTrackerExt = "Tracker"
 LuxZygoteExt = "Zygote"
 
 [compat]
-Adapt = "3"
 ChainRulesCore = "1"
 ComponentArrays = "0.13"
 FillArrays = "0.13, 1"
@@ -58,6 +52,7 @@ Functors = "0.2, 0.3, 0.4"
 LuxAMDGPU = "0.1"
 LuxCUDA = "0.1"
 LuxCore = "0.1.4"
+LuxDeviceUtils = "0.1"
 LuxLib = "0.2"
 Optimisers = "0.2"
 PackageExtensionCompat = "1"

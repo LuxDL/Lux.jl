@@ -278,11 +278,11 @@ function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     y, stats = LuxLib.groupnorm(x,
         _getproperty(ps, Val(:scale)),
         _getproperty(ps, Val(:bias)),
-        _getproperty(st, Val(:running_mean)),
-        _getproperty(st, Val(:running_var));
+        nothing,
+        nothing;
         GN.groups,
         GN.epsilon,
-        GN.momentum,
+        momentum=0.9f0, ## unused
         st.training)
 
     return __apply_activation(GN.activation, y), st
