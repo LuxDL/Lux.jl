@@ -1,6 +1,6 @@
 module LuxTestUtils
 
-using ComponentArrays, Optimisers, Preferences, LuxDeviceUtils, Test
+using ComponentArrays, Optimisers, Preferences, LuxCore, LuxDeviceUtils, Test
 using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
 # TODO: Yota, Enzyme
 
@@ -110,6 +110,11 @@ struct GradientComputationSkipped end
     end
 end
 
+function check_approx(x::LuxCore.AbstractExplicitLayer,
+    y::LuxCore.AbstractExplicitLayer;
+    kwargs...)
+    return x == y
+end
 check_approx(x::Tuple, y::Tuple; kwargs...) = all(check_approx.(x, y; kwargs...))
 
 function check_approx(x::Optimisers.Leaf, y::Optimisers.Leaf; kwargs...)
