@@ -21,8 +21,13 @@ end
 
 @testset "$mode: replicate" for (mode, aType, device, ongpu) in MODES
     _rng = get_default_rng(mode)
-    @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
-    @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
+    if mode == "AMDGPU" && !_rocRAND_functional()
+        @test_broken randn(_rng, 10, 2) != randn(_rng, 10, 2)
+        @test_broken randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
+    else
+        @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
+        @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
+    end
 end
 
 # Deprecated remove in v0.5
@@ -71,15 +76,15 @@ end
 
     x = rand(6, 5) |> aType
     __f = x -> begin
-        x1, _, x3 = Lux.multigate(x, Val(3))
-        return sum(x1) + sum(x3 .* 2)
+        x1, x2, x3 = Lux.multigate(x, Val(3))
+        return sum(x1) + sum(x3 .+ x2 .^ 2)
     end
     res, (dx,) = Zygote.withgradient(__f, x)
 
     @jet Lux.multigate(x, Val(3))
 
-    @test res == sum(x[1:2, :]) + 2sum(x[5:6, :])
-    @test dx == aType([ones(2, 5); zeros(2, 5); fill(2, 2, 5)])
+    @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
+    @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])
 
     @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 end

@@ -2,13 +2,7 @@ module LuxLuxAMDGPUExt
 
 isdefined(Base, :get_extension) ? (using LuxAMDGPU) : (using ..LuxAMDGPU)
 using ChainRulesCore, Lux, LuxLib, Random
-import Adapt: adapt_storage, adapt
 import ChainRulesCore as CRC
-
-function __init__()
-    Lux.ACCELERATOR_STATE_CHANGED[] = true
-    return
-end
 
 # utils.jl
 Lux.replicate(rng::AMDGPU.rocRAND.RNG) = deepcopy(rng)
@@ -29,26 +23,15 @@ end
     return ∇conv_data(copy(x), weight, cdims)
 end
 
-# Device Transfer
-## To GPU
-adapt_storage(::Lux.LuxAMDGPUAdaptor, x) = roc(x)
-adapt_storage(::Lux.LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
-
-## Chain Rules
-CRC.rrule(::Type{Array}, x::ROCArray) = Array(x), Δ -> (NoTangent(), roc(Δ))
-
-function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxCPUAdaptor, x::AMDGPU.AnyROCArray)
-    function ∇adapt_storage(Δ)
-        return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxAMDGPUAdaptor(), Δ))
-    end
-    return adapt_storage(to, x), ∇adapt_storage
+@inline function Lux._eachslice(x::AMDGPU.AnyROCArray, ::Val{dims}) where {dims}
+    # FIXME: This is not efficient but AMDGPU doesn't deal with views well
+    return [copy(selectdim(x, dims, i)) for i in axes(x, dims)]
 end
 
-function CRC.rrule(::typeof(adapt_storage), to::Lux.LuxAMDGPUAdaptor, x::Array)
-    function ∇adapt_storage(Δ)
-        return (NoTangent(), NoTangent(), adapt_storage(Lux.LuxCPUAdaptor(), Δ))
-    end
-    return adapt_storage(to, x), ∇adapt_storage
+# Flux modifies Conv weights while mapping to AMD GPU
+function Lux._maybe_flip_conv_weight(x::AMDGPU.AnyROCArray)
+    # This is a very rare operatio, hence we dont mind allowing scalar operations
+    return AMDGPU.@allowscalar reverse(x; dims=ntuple(identity, ndims(x) - 2))
 end
 
 end

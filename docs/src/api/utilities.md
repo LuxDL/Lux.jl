@@ -13,12 +13,12 @@ Pages = ["utilities.md"]
 ## Device Management / Data Transfer
 
 ```@docs
-Lux.cpu_device
-Lux.gpu_device
-Lux.supported_gpu_backends
 Lux.cpu
 Lux.gpu
 ```
+
+!!! note
+    For detailed API documentation on Data Transfer check out the [LuxDeviceUtils.jl](https://luxdl.github.io/LuxDeviceUtils.jl/dev)
 
 ## Initialization
 

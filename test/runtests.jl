@@ -9,10 +9,6 @@ using SafeTestsets, Test
         include("core.jl")
     end
 
-    @time @safetestset "Adapt" begin
-        include("adapt.jl")
-    end
-
     @testset "Layers" begin
         @time @safetestset "Basic" begin
             include("layers/basic.jl")
