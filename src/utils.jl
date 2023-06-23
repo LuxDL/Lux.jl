@@ -41,11 +41,11 @@ _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(
 # Padding
 struct SamePad end
 
-function _calc_padding(pad, k::NTuple{N, T}, dilation, stride) where {T, N}
+function _calc_padding(pad, k::NTuple{N}, dilation, stride) where {N}
     return _expand(Val(2 * N), pad)
 end
 
-function _calc_padding(::SamePad, k::NTuple{N, T}, dilation, stride) where {N, T}
+function _calc_padding(::SamePad, k::NTuple, dilation, stride)
     # Ref: "A guide to convolution arithmetic for deep learning"
     # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
     k_eff = @. k + (k - 1) * (dilation - 1)
