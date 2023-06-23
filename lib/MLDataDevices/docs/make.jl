@@ -1,7 +1,9 @@
 using Documenter, DocumenterMarkdown, LuxDeviceUtils
 
 deployconfig = Documenter.auto_detect_deploy_system()
-Documenter.post_status(deployconfig; type="pending", repo="github.com/LuxDL/LuxDeviceUtils.jl.git")
+Documenter.post_status(deployconfig;
+    type="pending",
+    repo="github.com/LuxDL/LuxDeviceUtils.jl.git")
 
 makedocs(;
     sitename="LuxDeviceUtils",
