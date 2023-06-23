@@ -30,20 +30,11 @@ import LuxCore: AbstractExplicitLayer,
     apply,
     display_name
 
-<<<<<<< HEAD
-# Standard Weight Initializations
-using WeightInitializers
-import WeightInitializers: randn32,
-    rand32, ones32, zeros32, glorot_uniform, glorot_normal, kaiming_normal, kaiming_uniform
-import WeightInitializers: _nfan
-
-const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 const ACCELERATOR_STATE_CHANGED = Ref{Bool}(false)
-=======
+
 # Device Management
-@reexport using LuxDeviceUtils
+@reexport using LuxDeviceUtils, WeightInitializers
 import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
->>>>>>> 8ededd4 (Proper AMDGPU Support + Testing)
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
