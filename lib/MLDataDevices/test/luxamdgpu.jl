@@ -2,11 +2,15 @@ using LuxDeviceUtils, Random
 
 @testset "CPU Fallback" begin
     @test cpu_device() isa LuxCPUDevice
-    @test gpu_device() isa LuxCPUDevice
-    @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
-        force_gpu_usage=true)
+    # There is interference from the LuxCUDA tests
+    @test gpu_device() isa LuxCPUDevice || gpu_device() isa LuxCUDADevice
+    if gpu_device() isa LuxCPUDevice
+        @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+            force_gpu_usage=true)
+    end
 end
 
+using LuxCUDA # Interference from LuxCUDA tests
 using LuxAMDGPU
 
 @testset "Loaded Trigger Package" begin
@@ -18,9 +22,12 @@ using LuxAMDGPU
         @test gpu_device(; force_gpu_usage=true) isa LuxAMDGPUDevice
     else
         @info "LuxAMDGPU is NOT functional"
-        @test gpu_device() isa LuxCPUDevice
-        @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
-            force_gpu_usage=true)
+        @test gpu_device() isa LuxCPUDevice || gpu_device() isa LuxCUDADevice
+        # There is interference from the LuxCUDA tests
+        if gpu_device() isa LuxCPUDevice
+            @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+                force_gpu_usage=true)
+        end
     end
     @test !LuxDeviceUtils.ACCELERATOR_STATE_CHANGED[]
 end
@@ -37,7 +44,7 @@ using FillArrays, Zygote  # Extensions
         farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = LuxAMDGPU.functional() ? ROCArray : Array
+    aType = LuxAMDGPU.functional() ? ROCArray : (device isa LuxCUDADevice ? CuArray : Array)
 
     ps_xpu = ps |> device
     @test ps_xpu.a.c isa aType
@@ -50,6 +57,9 @@ using FillArrays, Zygote  # Extensions
     if LuxAMDGPU.functional()
         @test ps_xpu.one_elem isa ROCArray
         @test ps_xpu.farray isa ROCArray
+    elseif device isa LuxCUDADevice
+        @test ps_xpu.one_elem isa CuArray
+        @test ps_xpu.farray isa CuArray
     else
         @test ps_xpu.one_elem isa Zygote.OneElement
         @test ps_xpu.farray isa Fill
@@ -65,7 +75,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.d == ps.d
     @test ps_cpu.rng == ps.rng
 
-    if LuxAMDGPU.functional()
+    if LuxAMDGPU.functional() || device isa LuxCUDADevice
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
