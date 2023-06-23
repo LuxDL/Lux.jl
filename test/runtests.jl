@@ -55,4 +55,8 @@ using SafeTestsets, Test
             include("ext/LuxFluxTransformExt.jl")
         end
     end
+
+    @time @safetestset "Aqua Tests" begin
+        include("aqua.jl")
+    end
 end
