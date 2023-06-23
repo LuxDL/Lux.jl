@@ -1,0 +1,63 @@
+steps:
+  - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "{{matrix.julia}}"
+      - JuliaCI/julia-test#v1:
+          test_args: "--quickfail"
+      - JuliaCI/julia-coverage#v1:
+          codecov: true
+          dirs:
+            - src
+            - ext
+    agents:
+      queue: "juliagpu"
+      cuda: "*"
+    env:
+      GROUP: "CUDA"
+    if: build.message !~ /\[skip tests\]/
+    timeout_in_minutes: 60
+    matrix:
+      setup:
+        julia:
+          - "1"
+          - "nightly"
+      adjustments:
+        - with:
+            julia: "nightly"
+          soft_fail: true
+
+  - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "{{matrix.julia}}"
+      - JuliaCI/julia-test#v1:
+          test_args: "--quickfail"
+      - JuliaCI/julia-coverage#v1:
+          codecov: true
+          dirs:
+            - src
+            - ext
+    env:
+      JULIA_AMDGPU_CORE_MUST_LOAD: "1"
+      JULIA_AMDGPU_HIP_MUST_LOAD: "1"
+      JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
+      GROUP: "AMDGPU"
+    agents:
+      queue: "juliagpu"
+      rocm: "*"
+      rocmgpu: "*"
+    if: build.message !~ /\[skip tests\]/
+    timeout_in_minutes: 60
+    matrix:
+      setup:
+        julia:
+          - "1"
+          - "nightly"
+      adjustments:
+        - with:
+            julia: "nightly"
+          soft_fail: true
+
+env:
+  SECRET_CODECOV_TOKEN: "XiQca3XDkJesuEeTkH5zFOrX0zmyXN03NkySFjZFeC37wDqmA6vHlbhDa3XOA4T8b6cNvo4boO72gXlnVkZyPRHVFWPOr338fxAi6Eif7k5TuN44pl2A+DoNZYqM1XyxW8+BR1+zgh1U7wf3PadN5eTtWlZsXUy1ULH8DPaPgqenv9McU3VjsGtaRWQlYplOKZNuVo5HMIdliwWK7eb0ij7QBB4QZNoVAMonXtGE3Q9X2rqMxRky5QmkuaC0RWOdMCAoPe13pj/c1GYSNHXugGiUFDzgyjX/IsK07N+ApzKkqHFp4LEPddhQCD+KU+seMnxl9DHiAOejnrbs1oVXiw==;U2FsdGVkX1/+LzYYK1HvRFpGBhtRqBz4QcrLLtwM2aoMZBDwHsz0VSO3RN4aciB988iEP2xLn24LFtZ4wNS1xg=="

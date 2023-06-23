@@ -13,3 +13,29 @@
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
 `LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across devices. Most users should directly use [Lux.jl](https://lux.csail.mit.edu/stable) instead.
+
+```@meta
+CurrentModule = LuxDeviceUtils
+```
+
+## API Reference
+
+### Index
+
+```@index
+Pages = ["index.md"]
+```
+
+### Preferences
+
+```@docs
+gpu_backend!
+```
+
+### Data Transfer
+
+```@docs
+cpu_device
+gpu_device
+supported_gpu_backends
+```

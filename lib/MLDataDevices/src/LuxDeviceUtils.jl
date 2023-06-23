@@ -38,7 +38,7 @@ end
 
 ## -----------
 
-export gpu_backend!
+export gpu_backend!, supported_gpu_backends
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor
 
