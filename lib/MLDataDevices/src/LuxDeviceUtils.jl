@@ -230,8 +230,12 @@ Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 (::LuxCUDADevice)(x) = fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf)
 (::LuxAMDGPUDevice)(x) = fmap(x -> adapt(LuxAMDGPUAdaptor(), x), x; exclude=_isleaf)
 
-function (::AbstractLuxDevice)(::LuxCore.AbstractExplicitLayer)
-    throw(ArgumentError("Lux layers are stateless and hence don't participate in device transfers. Apply this function on the parameters and states generated using `Lux.setup`."))
+for dev in (LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice)
+    @eval begin
+        function (::$dev)(::LuxCore.AbstractExplicitLayer)
+            throw(ArgumentError("Lux layers are stateless and hence don't participate in device transfers. Apply this function on the parameters and states generated using `Lux.setup`."))
+        end
+    end
 end
 
 # Adapt Interface
