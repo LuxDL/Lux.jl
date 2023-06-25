@@ -498,7 +498,7 @@ function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray},
     x_reshaped = reshape(x, d_x, :)
     y_reshaped = reshape(y, d_y, :)
 
-    z = b((x_reshaped, y_reshaped), ps, st)
+    z, st = b((x_reshaped, y_reshaped), ps, st)
 
     return reshape(z, d_z, sz[2:end]...), st
 end
