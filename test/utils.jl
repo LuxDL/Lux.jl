@@ -5,6 +5,7 @@ include("test_utils.jl")
 
 rng = get_stable_rng(12345)
 
+# Deprecated remove in v0.5
 @testset "_nfan" begin
     # Fallback
     @test Lux._nfan() == (1, 1)
@@ -24,6 +25,7 @@ end
     @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
 end
 
+# Deprecated remove in v0.5
 @testset "kaiming" begin
     # kaiming_uniform should yield a kernel in range [-sqrt(6/n_out), sqrt(6/n_out)]
     # and kaiming_normal should yield a kernel with stddev ~= sqrt(2/n_out)
