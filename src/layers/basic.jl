@@ -484,9 +484,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     end
 end
 
-function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray},
-    ps,
-    st::NamedTuple)
+function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)
     if size(x)[2:end] != size(y)[2:end]
         throw(DimensionMismatch("data arrays must agree on batch dimensions, " *
                                 "got sizes $(size(x)), and $(size(y))"))
