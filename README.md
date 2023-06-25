@@ -1,4 +1,9 @@
-# Lux 🔥
+<p align="center">
+    <img width="400px" src="docs/src/assets/lux-logo.svg#gh-light-mode-only"/>
+    <img width="400px" src="docs/src/assets/lux-logo-dark.svg#gh-dark-mode-only"/>
+</p>
+
+<div align="center">
 
 [![Join the chat at https://julialang.zulipchat.com #machine-learning](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/machine-learning)
 [![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://lux.csail.mit.edu/dev/)
@@ -11,6 +16,8 @@
 
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
+
+</div>
 
 The 🔥 Deep Learning Framework
 
