@@ -462,7 +462,7 @@ function parameterlength(b::Bilinear{use_bias}) where {use_bias}
 end
 statelength(b::Bilinear) = 0
 
-function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractArray, <:AbstractArray},
+function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat},
     ps,
     st::NamedTuple) where {use_bias}
     d_z, d_x, d_y = size(ps.weight)
@@ -482,6 +482,25 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractArray, <:AbstractArray}
     else
         return __apply_activation(b.activation, Wyx), st
     end
+end
+
+function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray},
+    ps,
+    st::NamedTuple)
+    if size(x)[2:end] != size(y)[2:end]
+        throw(DimensionMismatch("data arrays must agree on batch dimensions, " *
+                                "got sizes $(size(x)), and $(size(y))"))
+    end
+
+    sz = size(x)
+    d_z, d_x, d_y = size(ps.weight)
+
+    x_reshaped = reshape(x, d_x, :)
+    y_reshaped = reshape(y, d_y, :)
+
+    z, st = b((x_reshaped, y_reshaped), ps, st)
+
+    return reshape(z, d_z, sz[2:end]...), st
 end
 
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)

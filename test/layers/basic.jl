@@ -262,6 +262,21 @@ end
         @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+
+        d = Dense(2 => 3)
+        display(d)
+        b = Bilinear((3, 2) => 5)
+        display(b)
+        layer = SkipConnection(d, b)
+        display(layer)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = randn(rng, Float32, 2, 7, 11) |> aType
+
+        @test size(layer(x, ps, st)[1]) == (5, 7, 11)
+
+        @jet layer(x, ps, st)
+        __f = (x, ps) -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 
     @testset "Two-streams zero sum" begin
