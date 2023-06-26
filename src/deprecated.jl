@@ -208,3 +208,18 @@ Performs BatchNorm/GroupNorm based on input configuration
         momentum,
         epsilon))
 end
+
+# Weight Initialization
+function Base.zeros(rng::AbstractRNG, args...; kwargs...)
+    Base.depwarn("`zeros(rng, args...; kwargs...)` has been deprecated and will be removed" *
+                 " in v0.5. Use `zeros(args...; kwargs...)` instead.",
+        :zeros)
+    return zeros(args...; kwargs...)
+end
+
+function Base.ones(rng::AbstractRNG, args...; kwargs...)
+    Base.depwarn("`ones(rng, args...; kwargs...)` has been deprecated and will be removed" *
+                 " in v0.5. Use `ones(args...; kwargs...)` instead.",
+        :ones)
+    return ones(args...; kwargs...)
+end
