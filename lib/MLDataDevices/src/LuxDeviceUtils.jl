@@ -4,32 +4,10 @@ using Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
 import Base: PkgId, UUID
 
-## -----------
-## Extensions
-if !isdefined(Base, :get_extension)
-    using Requires
-end
-
+using PackageExtensionCompat
 function __init__()
-    @static if !isdefined(Base, :get_extension)
-        @require FillArrays="1a297f60-69ca-5386-bcde-b61e274b549b" begin
-            include("../ext/LuxDeviceUtilsFillArraysExt.jl")
-        end
-
-        @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin
-            include("../ext/LuxDeviceUtilsZygoteExt.jl")
-        end
-
-        # Accelerators: CUDA Support
-        @require LuxCUDA="d0bbae9a-e099-4d5b-a835-1c6931763bda" begin
-            include("../ext/LuxDeviceUtilsLuxCUDAExt.jl")
-        end
-
-        # NOTE: AMDGPU & Metal Support is only available on Julia 1.9+
-    end
+    @require_extensions
 end
-
-## -----------
 
 export gpu_backend!, supported_gpu_backends
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice

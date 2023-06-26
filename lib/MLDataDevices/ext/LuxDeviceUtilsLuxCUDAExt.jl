@@ -1,7 +1,6 @@
 module LuxDeviceUtilsLuxCUDAExt
 
-isdefined(Base, :get_extension) ? (using LuxCUDA) : (using ..LuxCUDA)
-using ChainRulesCore, LuxDeviceUtils, Random
+using ChainRulesCore, LuxCUDA, LuxDeviceUtils, Random
 import Adapt: adapt_storage, adapt
 import ChainRulesCore as CRC
 

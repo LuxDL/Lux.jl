@@ -1,8 +1,6 @@
 module LuxDeviceUtilsFillArraysExt
 
-isdefined(Base, :get_extension) ? (using FillArrays) : (using ..FillArrays)
-
-using Adapt, LuxDeviceUtils
+using Adapt, FillArrays, LuxDeviceUtils
 
 Adapt.adapt_structure(::LuxCPUAdaptor, x::FillArrays.AbstractFill) = x
 
