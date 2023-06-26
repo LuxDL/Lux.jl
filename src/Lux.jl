@@ -69,47 +69,9 @@ include("contrib/share_parameters.jl")
 include("deprecated.jl")
 
 # Extensions
-if !isdefined(Base, :get_extension)
-    using Requires
-end
-
+using PackageExtensionCompat
 function __init__()
-    @static if !isdefined(Base, :get_extension)
-        # Handling ComponentArrays
-        @require ComponentArrays="b0b7db55-cfe3-40fc-9ded-d10e2dbeff66" begin
-            include("../ext/LuxComponentArraysExt.jl")
-            # These definitely needs to be upstreamed
-            @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
-                include("../ext/LuxComponentArraysTrackerExt.jl")
-            end
-            @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin
-                include("../ext/LuxComponentArraysZygoteExt.jl")
-            end
-            @require ReverseDiff="37e2e3b7-166d-5795-8a7a-e32c996b4267" begin
-                include("../ext/LuxComponentArraysReverseDiffExt.jl")
-            end
-        end
-
-        # Flux InterOp
-        @require Flux="587475ba-b771-5e3f-ad9e-33799f191a9c" begin
-            include("../ext/LuxFluxTransformExt.jl")
-        end
-
-        # FillArrays
-        @require FillArrays="1a297f60-69ca-5386-bcde-b61e274b549b" begin
-            include("../ext/LuxFillArraysExt.jl")
-        end
-
-        # Automatic Differentiation
-        ## Zygote InterOp
-        @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin
-            include("../ext/LuxZygoteExt.jl")
-        end
-        ## Tracker InterOp
-        @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
-            include("../ext/LuxTrackerExt.jl")
-        end
-    end
+    @require_extensions
 end
 
 # Data Transfer

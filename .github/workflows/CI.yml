@@ -3,9 +3,11 @@ on:
   pull_request:
     branches:
       - main
+      - lux0.4-dev
   push:
     branches:
       - main
+      - lux0.4-dev
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
