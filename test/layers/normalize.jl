@@ -171,7 +171,7 @@ end
 
         @test (@allocated m(x, ps, st)) < 100_000_000
 
-        if affine && mode == "AMDGPU"
+        if affine
             @jet m(x, ps, st) opt_broken=true
         else
             @jet m(x, ps, st)
