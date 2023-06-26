@@ -1,5 +1,10 @@
 using SafeTestsets, Test
 
+if VERSION ≥ v"1.9"
+    using Pkg
+    Pkg.add("LuxAMDGPU")
+end
+
 @testset "Lux.jl" begin
     @time @safetestset "Utils" begin
         include("utils.jl")

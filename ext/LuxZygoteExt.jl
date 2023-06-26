@@ -1,6 +1,6 @@
 module LuxZygoteExt
 
-using Adapt, Lux, Setfield, Zygote
+using Lux, Setfield, Zygote
 using TruncatedStacktraces: @truncate_stacktrace
 using Zygote: Pullback
 
