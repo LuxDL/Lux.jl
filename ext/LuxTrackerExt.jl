@@ -1,7 +1,6 @@
 module LuxTrackerExt
 
-isdefined(Base, :get_extension) ? (using Tracker) : (using ..Tracker)
-using ChainRulesCore, Functors, Lux, Setfield
+using ChainRulesCore, Functors, Lux, Setfield, Tracker
 
 # Type Piracy: Need to upstream
 Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)

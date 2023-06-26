@@ -1,6 +1,6 @@
 module LuxFluxTransformExt
 
-isdefined(Base, :get_extension) ? (import Flux) : (import ..Flux)
+import Flux
 
 using Lux, Random, Optimisers
 import Lux: transform, FluxLayer

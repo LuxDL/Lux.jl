@@ -1,15 +1,8 @@
 module LuxZygoteExt
 
-if isdefined(Base, :get_extension)
-    using Zygote
-    using Zygote: Pullback
-else
-    using ..Zygote
-    using ..Zygote: Pullback
-end
-
-using Adapt, LuxCUDA, Lux, Setfield
+using Adapt, LuxCUDA, Lux, Setfield, Zygote
 using TruncatedStacktraces: @truncate_stacktrace
+using Zygote: Pullback
 
 Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
 

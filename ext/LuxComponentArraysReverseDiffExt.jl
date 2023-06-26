@@ -1,14 +1,6 @@
 module LuxComponentArraysReverseDiffExt
 
-if isdefined(Base, :get_extension)
-    using ComponentArrays
-    using ReverseDiff
-else
-    using ..ComponentArrays
-    using ..ReverseDiff
-end
-
-using Lux
+using ComponentArrays, ReverseDiff, Lux
 
 const TCA{V, D, N, DA, A, Ax} = ReverseDiff.TrackedArray{
     V,

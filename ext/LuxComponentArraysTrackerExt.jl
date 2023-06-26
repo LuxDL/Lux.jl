@@ -1,12 +1,6 @@
 module LuxComponentArraysTrackerExt
 
-if isdefined(Base, :get_extension)
-    using ComponentArrays
-    using Tracker
-else
-    using ..ComponentArrays
-    using ..Tracker
-end
+using ComponentArrays, Tracker
 
 function Tracker.param(ca::ComponentArray)
     x = getdata(ca)
