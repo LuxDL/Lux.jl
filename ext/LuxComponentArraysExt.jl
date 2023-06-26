@@ -1,8 +1,6 @@
 module LuxComponentArraysExt
 
-isdefined(Base, :get_extension) ? (using ComponentArrays) : (using ..ComponentArrays)
-
-using Functors, Lux, Optimisers
+using ComponentArrays, Functors, Lux, Optimisers
 import TruncatedStacktraces: @truncate_stacktrace
 import ChainRulesCore as CRC
 
