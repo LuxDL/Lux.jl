@@ -30,6 +30,9 @@ Lux.randn32
 Lux.zeros32
 ```
 
+!!! note
+    For detailed API documentation on Initialization check out the [WeightInitializers.jl](https://luxdl.github.io/WeightInitializers.jl/dev)
+
 ## Miscellaneous Utilities
 
 ```@docs

@@ -32,6 +32,12 @@ import LuxCore: AbstractExplicitLayer,
     apply,
     display_name
 
+# Standard Weight Initializations
+using WeightInitializers
+import WeightInitializers: randn32,
+    rand32, ones32, zeros32, glorot_uniform, glorot_normal, kaiming_normal, kaiming_uniform
+import WeightInitializers: _nfan
+
 const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
