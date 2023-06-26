@@ -1,16 +1,7 @@
 module LuxLibLuxCUDATrackerExt
 
-if isdefined(Base, :get_extension)
-    using Tracker
-    import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
-    using LuxCUDA
-else
-    using ..Tracker
-    import ..Tracker: @grad,
-        data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
-    using ..LuxCUDA
-end
-using NNlib, LuxLib
+using NNlib, LuxCUDA, LuxLib, Tracker
+import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
 import LuxLib: AA,
     AV, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅, __is_tracked
 

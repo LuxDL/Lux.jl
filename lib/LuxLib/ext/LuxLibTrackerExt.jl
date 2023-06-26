@@ -1,17 +1,10 @@
 module LuxLibTrackerExt
 
-if isdefined(Base, :get_extension)
-    using Tracker
-    import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
-else
-    using ..Tracker
-    import ..Tracker: @grad,
-        data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
-end
-using NNlib, LuxLib
+using NNlib, LuxLib, Tracker
 import LuxLib: AA,
     AV, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅, __is_tracked
 import ChainRulesCore as CRC
+import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
 
 # NNlib: batched_mul
 for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
