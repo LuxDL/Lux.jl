@@ -224,12 +224,12 @@ struct LuxCUDAAdaptor <: AbstractLuxDeviceAdaptor end
 struct LuxAMDGPUAdaptor <: AbstractLuxDeviceAdaptor end
 struct LuxMetalAdaptor <: AbstractLuxDeviceAdaptor end
 
-function adapt_storage(::LuxCPUAdaptor,
+function adapt_structure(::LuxCPUAdaptor,
     x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
     return x
 end
-adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
-adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
+adapt_structure(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
+adapt_structure(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 
 _isbitsarray(::AbstractArray{<:Number}) = true
 _isbitsarray(::AbstractArray{T}) where {T} = isbitstype(T)
