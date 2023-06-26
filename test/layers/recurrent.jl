@@ -280,9 +280,9 @@ end
     # Ordering Check: https://github.com/LuxDL/Lux.jl/issues/302
     encoder = Recurrence(RNNCell(1 => 1,
             identity;
-            init_weight=ones,
-            init_state=zeros,
-            init_bias=zeros);
+            init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
+            init_state=(rng, args...; kwargs...) -> zeros(args...; kwargs...),
+            init_bias=(rng, args...; kwargs...) -> zeros(args...; kwargs...));
         return_sequence=true)
     ps, st = Lux.setup(rng, encoder) .|> device
     m2 = reshape([0.5, 0.0, 0.7, 0.8], 1, :, 1) |> aType

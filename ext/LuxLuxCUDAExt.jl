@@ -1,7 +1,6 @@
 module LuxLuxCUDAExt
 
-isdefined(Base, :get_extension) ? (using LuxCUDA) : (using ..LuxCUDA)
-using ChainRulesCore, Lux, LuxLib, Random
+using ChainRulesCore, Lux, LuxCUDA, LuxLib, Random
 import ChainRulesCore as CRC
 
 # utils.jl
