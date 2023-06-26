@@ -20,27 +20,20 @@ function __init__()
             include("../ext/LuxDeviceUtilsZygoteExt.jl")
         end
 
-        # Accelerators
-        ## CUDA Support
+        # Accelerators: CUDA Support
         @require LuxCUDA="d0bbae9a-e099-4d5b-a835-1c6931763bda" begin
             include("../ext/LuxDeviceUtilsLuxCUDAExt.jl")
-            @require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin
-                include("../ext/LuxDeviceUtilsLuxCUDAZygoteExt.jl")
-            end
-            @require FillArrays="1a297f60-69ca-5386-bcde-b61e274b549b" begin
-                include("../ext/LuxDeviceUtilsLuxCUDAFillArraysExt.jl")
-            end
         end
 
-        # NOTE: AMDGPU Support is only available on Julia 1.9+
+        # NOTE: AMDGPU & Metal Support is only available on Julia 1.9+
     end
 end
 
 ## -----------
 
 export gpu_backend!, supported_gpu_backends
-export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
-export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor
+export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
+export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
 
 const ACCELERATOR_STATE_CHANGED = Ref{Bool}(false)
 
@@ -57,6 +50,11 @@ end
 Base.@kwdef struct LuxAMDGPUDevice <: AbstractLuxGPUDevice
     name::String = "AMDGPU"
     pkgid::PkgId = PkgId(UUID("83120cb1-ca15-4f04-bf3b-6967d2e6b60b"), "LuxAMDGPU")
+end
+
+Base.@kwdef struct LuxMetalDevice <: AbstractLuxGPUDevice
+    name::String = "Metal"
+    pkgid::PkgId = PkgId(UUID("dde4c033-4e86-420c-a63e-0dd931031962"), "Metal")
 end
 
 struct LuxDeviceSelectionException <: Exception end
@@ -77,7 +75,8 @@ end
            :(PkgId(UUID("b2108857-7c20-44ae-9111-449ecde12c47"), "Lux"))
 end
 
-const GPU_DEVICES = (LuxCUDADevice(), LuxAMDGPUDevice())  # Order is important here
+# Order is important here
+const GPU_DEVICES = (LuxCUDADevice(), LuxAMDGPUDevice(), LuxMetalDevice())
 
 const GPU_DEVICE = Ref{Union{Nothing, AbstractLuxDevice}}(nothing)
 
@@ -229,8 +228,9 @@ Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 (::LuxCPUDevice)(x) = fmap(x -> adapt(LuxCPUAdaptor(), x), x; exclude=_isleaf)
 (::LuxCUDADevice)(x) = fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf)
 (::LuxAMDGPUDevice)(x) = fmap(x -> adapt(LuxAMDGPUAdaptor(), x), x; exclude=_isleaf)
+(::LuxMetalDevice)(x) = fmap(x -> adapt(LuxMetalAdaptor(), x), x; exclude=_isleaf)
 
-for dev in (LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice)
+for dev in (LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice)
     @eval begin
         function (::$dev)(::LuxCore.AbstractExplicitLayer)
             throw(ArgumentError("Lux layers are stateless and hence don't participate in device transfers. Apply this function on the parameters and states generated using `Lux.setup`."))
@@ -244,6 +244,7 @@ abstract type AbstractLuxDeviceAdaptor end
 struct LuxCPUAdaptor <: AbstractLuxDeviceAdaptor end
 struct LuxCUDAAdaptor <: AbstractLuxDeviceAdaptor end
 struct LuxAMDGPUAdaptor <: AbstractLuxDeviceAdaptor end
+struct LuxMetalAdaptor <: AbstractLuxDeviceAdaptor end
 
 function adapt_storage(::LuxCPUAdaptor,
     x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
