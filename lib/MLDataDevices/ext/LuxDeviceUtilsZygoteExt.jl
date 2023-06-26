@@ -1,8 +1,6 @@
 module LuxDeviceUtilsZygoteExt
 
-isdefined(Base, :get_extension) ? (using Zygote) : (using ..Zygote)
-
-using Adapt, LuxDeviceUtils
+using Adapt, LuxDeviceUtils, Zygote
 
 Adapt.adapt_structure(::LuxCPUAdaptor, x::Zygote.OneElement) = x
 
