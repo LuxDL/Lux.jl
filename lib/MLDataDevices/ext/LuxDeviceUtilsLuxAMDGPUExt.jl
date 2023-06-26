@@ -1,7 +1,6 @@
 module LuxDeviceUtilsLuxAMDGPUExt
 
-isdefined(Base, :get_extension) ? (using LuxAMDGPU) : (using ..LuxAMDGPU)
-using ChainRulesCore, LuxDeviceUtils, Random
+using ChainRulesCore, LuxAMDGPU, LuxDeviceUtils, Random
 import Adapt: adapt_storage, adapt
 import ChainRulesCore as CRC
 
