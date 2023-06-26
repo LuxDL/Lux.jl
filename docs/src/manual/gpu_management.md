@@ -54,7 +54,7 @@ x_cpu = randn(Float32, 3, 2)
 if LuxCUDA.functional()
     gdev = LuxCUDADevice()
     x_gpu = x_cpu |> gdev
-elseif
+elseif LuxAMDGPU.functional()
     gdev = LuxAMDGPUDevice()
     x_gpu = x_cpu |> gdev
 else

@@ -109,8 +109,6 @@ nav:
       - "GPU Management": "manual/gpu_management.md"
   - "API Reference":
       - "Layers": "api/layers.md"
-      - "Functional": "api/functional.md"
-      - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
       - "Flux & Lux InterOp": "api/flux2lux.md"
       - "Experimental": "api/contrib.md"
