@@ -1,7 +1,6 @@
 module LuxLuxAMDGPUExt
 
-isdefined(Base, :get_extension) ? (using LuxAMDGPU) : (using ..LuxAMDGPU)
-using ChainRulesCore, Lux, LuxLib, Random
+using ChainRulesCore, Lux, LuxAMDGPU, LuxLib, Random
 import ChainRulesCore as CRC
 
 # utils.jl

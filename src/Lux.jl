@@ -30,8 +30,6 @@ import LuxCore: AbstractExplicitLayer,
     apply,
     display_name
 
-const ACCELERATOR_STATE_CHANGED = Ref{Bool}(false)
-
 # Device Management
 @reexport using LuxDeviceUtils, WeightInitializers
 import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
