@@ -1,12 +1,8 @@
 module LuxZygoteExt
 
-using Adapt, LuxCUDA, Lux, Setfield, Zygote
+using Lux, Setfield, Zygote
 using TruncatedStacktraces: @truncate_stacktrace
 using Zygote: Pullback
-
-Adapt.adapt_storage(::Lux.LuxCUDAAdaptor, x::Zygote.OneElement) = CUDA.cu(collect(x))
-
-Adapt.adapt_storage(::Lux.LuxCPUAdaptor, x::Zygote.OneElement) = x
 
 function Lux.Training.compute_gradients(::Lux.Training.ZygoteVJP,
     objective_function::Function,

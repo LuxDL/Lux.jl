@@ -11,7 +11,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using MLUtils, Optimisers, Zygote, NNlib, Random, Statistics
+using LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, Zygote, Random, Statistics
 
 # ## Dataset
 
@@ -138,12 +138,18 @@ function main()
     Random.seed!(rng, 0)
     ps, st = Lux.setup(rng, model)
 
+    dev = gpu_device()
+    ps = ps |> dev
+    st = st |> dev
+
     ## Create the optimiser
     opt_state = create_optimiser(ps)
 
     for epoch in 1:25
         ## Train the model
         for (x, y) in train_loader
+            x = x |> dev
+            y = y |> dev
             (loss, y_pred, st), back = pullback(p -> compute_loss(x, y, model, p, st), ps)
             gs = back((one(loss), nothing, nothing))[1]
             opt_state, ps = Optimisers.update(opt_state, ps, gs)
@@ -154,6 +160,8 @@ function main()
         ## Validate the model
         st_ = Lux.testmode(st)
         for (x, y) in val_loader
+            x = x |> dev
+            y = y |> dev
             (loss, y_pred, st_) = compute_loss(x, y, model, ps, st_)
             acc = accuracy(y_pred, y)
             println("Validation: Loss $loss Accuracy $acc")

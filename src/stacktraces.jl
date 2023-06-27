@@ -13,7 +13,9 @@ end
 # too verbose
 @static if !TruncatedStacktraces.DISABLE
     function Base.show(io::IO, t::Type{<:Tuple})
-        if TruncatedStacktraces.VERBOSE[]
+        if (TruncatedStacktraces.VERBOSE[] ||
+            !hasfield(t, :parameters) ||
+            length(t.parameters) == 0)
             invoke(show, Tuple{IO, Type}, io, t)
         else
             fields = t.parameters

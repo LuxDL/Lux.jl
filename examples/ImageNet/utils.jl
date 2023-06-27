@@ -187,16 +187,9 @@ end
 get_loggable_values(meter::ProgressMeter) = getproperty.(meter.meters, :average)
 
 # Optimisers State
-function Lux.cpu(l::Optimisers.Leaf)
-    @set! l.state = cpu(l.state)
+function (dev::Lux.AbstractLuxDevice)(l::Optimisers.Leaf)
+    @set! l.state = dev(l.state)
     return l
 end
 
-function Lux.gpu(l::Optimisers.Leaf)
-    @set! l.state = gpu(l.state)
-    return l
-end
-
-function logitcrossentropy(y_pred, y; dims=1)
-    return mean(-sum(y .* logsoftmax(y_pred; dims=dims); dims=dims))
-end
+logitcrossentropy(y_pred, y; dims=1) = mean(-sum(y .* logsoftmax(y_pred; dims); dims))

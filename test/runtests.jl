@@ -1,5 +1,10 @@
 using SafeTestsets, Test
 
+if VERSION ≥ v"1.9"
+    using Pkg
+    Pkg.add("LuxAMDGPU")
+end
+
 @testset "Lux.jl" begin
     @time @safetestset "Utils" begin
         include("utils.jl")
@@ -7,10 +12,6 @@ using SafeTestsets, Test
 
     @time @safetestset "Core" begin
         include("core.jl")
-    end
-
-    @time @safetestset "Adapt" begin
-        include("adapt.jl")
     end
 
     @testset "Layers" begin
@@ -32,10 +33,6 @@ using SafeTestsets, Test
         @time @safetestset "Dropout" begin
             include("layers/dropout.jl")
         end
-    end
-
-    @time @safetestset "NNlib" begin
-        include("nnlib.jl")
     end
 
     @testset "Experimental" begin
@@ -62,5 +59,9 @@ using SafeTestsets, Test
         @time @safetestset "Flux" begin
             include("ext/LuxFluxTransformExt.jl")
         end
+    end
+
+    @time @safetestset "Aqua Tests" begin
+        include("aqua.jl")
     end
 end

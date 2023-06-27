@@ -201,7 +201,7 @@ function transform(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
             l.dilation,
             groups,
             use_bias=!(l.bias isa Bool),
-            init_weight=(args...) -> copy(l.weight),
+            init_weight=(args...) -> Lux._maybe_flip_conv_weight(l.weight),
             init_bias=(args...) -> _bias)
     else
         return Conv(k,
@@ -230,7 +230,7 @@ function transform(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
             l.dilation,
             groups,
             use_bias=!(l.bias isa Bool),
-            init_weight=(args...) -> copy(l.weight),
+            init_weight=(args...) -> Lux._maybe_flip_conv_weight(l.weight),
             init_bias=(args...) -> _bias)
     else
         return ConvTranspose(k,
@@ -396,19 +396,11 @@ function transform(l::Flux.GroupNorm;
                 l.G,
                 l.λ;
                 l.affine,
-                l.track_stats,
                 epsilon=l.ϵ,
-                l.momentum,
                 init_bias=(args...) -> copy(l.β),
                 init_scale=(args...) -> copy(l.γ))
         else
-            return GroupNorm(l.chs,
-                l.G,
-                l.λ;
-                l.affine,
-                l.track_stats,
-                epsilon=l.ϵ,
-                l.momentum)
+            return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
         end
     end
     return GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)

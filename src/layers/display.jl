@@ -60,9 +60,10 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
 end
 
 _show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
+_show_leaflike(::Tuple{}) = false       # Prevents method ambiguity
 _show_leaflike(x::AbstractExplicitLayer) = false
-_show_leaflike(::Tuple{Vararg{<:Number}}) = true         # e.g. stride of Conv
-_show_leaflike(::Tuple{Vararg{<:AbstractArray}}) = true  # e.g. parameters of LSTMcell
+_show_leaflike(::Tuple{Vararg{Number}}) = true         # e.g. stride of Conv
+_show_leaflike(::Tuple{Vararg{AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
 function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
     return NamedTuple{names}(getfield.((l,), names))

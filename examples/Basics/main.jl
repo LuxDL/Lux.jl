@@ -102,8 +102,9 @@ W * x
 # ### CUDA Arrays
 
 # CUDA functionality is provided separately by the
-# [CUDA.jl package](https://github.com/JuliaGPU/CUDA.jl). If you have a GPU and CUDA
-# available, `Lux` will automatically build the required CUDA dependencies using `CUDA.jl`.
+# [CUDA.jl package](https://github.com/JuliaGPU/CUDA.jl). If you have a GPU and LuxCUDA
+# is installed, Lux will provide CUDA capabilities. For additional details on backends
+# see the manual section.
 
 # You can manually add `CUDA`. Once CUDA is loaded you can move any array to the GPU with
 # the `cu` function (or the `gpu` function exported by `Lux``), and it supports all of the

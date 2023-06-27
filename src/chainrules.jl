@@ -5,7 +5,7 @@ CRC.@non_differentiable glorot_normal(::Any...)
 CRC.@non_differentiable glorot_uniform(::Any...)
 CRC.@non_differentiable kaiming_normal(::Any...)
 CRC.@non_differentiable kaiming_uniform(::Any...)
-CRC.@non_differentiable check_use_cuda()
+# CRC.@non_differentiable check_use_cuda()
 CRC.@non_differentiable istraining(::Any)
 CRC.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 CRC.@non_differentiable _affine(::Any)
@@ -48,21 +48,6 @@ end
 
 function CRC.rrule(::typeof(_eachslice), x, d)
     return _eachslice(x, d), Δ -> (NoTangent(), ∇_eachslice(Δ, x, d), NoTangent())
-end
-
-# Adapt Interface
-function CRC.rrule(::Type{Array}, x::CUDA.CuArray)
-    return Array(x), d -> (NoTangent(), CUDA.cu(d))
-end
-
-function CRC.rrule(::typeof(adapt_storage), to::LuxCPUAdaptor, x::CUDA.AbstractGPUArray)
-    return adapt_storage(to, x),
-    d -> (NoTangent(), NoTangent(), adapt_storage(LuxCUDAAdaptor(), d))
-end
-
-function CRC.rrule(::typeof(adapt_storage), to::LuxCUDAAdaptor, x::Array)
-    return adapt_storage(to, x),
-    d -> (NoTangent(), NoTangent(), adapt_storage(LuxCPUAdaptor(), d))
 end
 
 # RNN Helpers

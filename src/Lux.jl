@@ -1,15 +1,13 @@
 module Lux
 
-# Accelerator Support
-using LuxCUDA
+# Some core imports
+using Preferences, Reexport
 # Neural Network Backend
-using NNlib
-import LuxLib  ## In v0.5 we can starting `using`. For v0.4, there will be naming conflicts
+@reexport using LuxLib
 # Julia StdLibs
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation
 using Functors, Setfield
-import Adapt: adapt, adapt_storage
 # Automatic Differentiation
 using ChainRulesCore
 import ChainRulesCore as CRC
@@ -18,7 +16,7 @@ import TruncatedStacktraces
 import TruncatedStacktraces: @truncate_stacktrace
 
 # LuxCore
-using LuxCore
+@reexport using LuxCore
 import LuxCore: AbstractExplicitLayer,
     AbstractExplicitContainerLayer,
     initialparameters,
@@ -32,20 +30,14 @@ import LuxCore: AbstractExplicitLayer,
     apply,
     display_name
 
-# Standard Weight Initializations
-using WeightInitializers
-import WeightInitializers: randn32,
-    rand32, ones32, zeros32, glorot_uniform, glorot_normal, kaiming_normal, kaiming_uniform
-import WeightInitializers: _nfan
-
-const use_cuda = Ref{Union{Nothing, Bool}}(nothing)
+# Device Management
+@reexport using LuxDeviceUtils, WeightInitializers
+import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
 # Utilities
 include("utils.jl")
-# Data Transfer Utilities
-include("adapt.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -74,9 +66,8 @@ function __init__()
     @require_extensions
 end
 
-# Data Transfer
-export cpu, gpu
 # Layers
+export cpu, gpu
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
 export Conv,
@@ -93,14 +84,16 @@ export Conv,
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
-export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ActivationFunction
+export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
 
-# Extension Exports: Flux
+# Extension functions
 function transform end
 
-struct FluxLayer{L, RE, I} <: Lux.AbstractExplicitLayer
+_maybe_flip_conv_weight(x) = copy(x)
+
+struct FluxLayer{L, RE, I} <: AbstractExplicitLayer
     layer::L
     re::RE
     init_parameters::I

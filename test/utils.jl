@@ -1,46 +1,19 @@
-using Lux, ComponentArrays, LuxCUDA, Functors, Optimisers, Zygote, Test
+using Lux, ComponentArrays, Functors, Optimisers, Zygote, Test
 using Statistics: std
 
 include("test_utils.jl")
 
 rng = get_stable_rng(12345)
 
-# Deprecated remove in v0.5
-@testset "_nfan" begin
-    # Fallback
-    @test Lux._nfan() == (1, 1)
-    # Vector
-    @test Lux._nfan(4) == (1, 4)
-    # Matrix
-    @test Lux._nfan(4, 5) == (5, 4)
-    # Tuple
-    @test Lux._nfan((4, 5, 6)) == Lux._nfan(4, 5, 6)
-    # Convolution
-    @test Lux._nfan(4, 5, 6) == 4 .* (5, 6)
-end
-
 @testset "$mode: replicate" for (mode, aType, device, ongpu) in MODES
     _rng = get_default_rng(mode)
-    @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
-    @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
-end
-
-# Deprecated remove in v0.5
-@testset "kaiming" begin
-    # kaiming_uniform should yield a kernel in range [-sqrt(6/n_out), sqrt(6/n_out)]
-    # and kaiming_normal should yield a kernel with stddev ~= sqrt(2/n_out)
-    for (n_in, n_out) in [(100, 100), (100, 400)]
-        v = Lux.kaiming_uniform(rng, n_in, n_out)
-        σ2 = sqrt(6 / n_out)
-        @test -1σ2 < minimum(v) < -0.9σ2
-        @test 0.9σ2 < maximum(v) < 1σ2
-
-        v = Lux.kaiming_normal(rng, n_in, n_out)
-        σ2 = sqrt(2 / n_out)
-        @test 0.9σ2 < std(v) < 1.1σ2
+    if mode == "AMDGPU" && !_rocRAND_functional()
+        @test_broken randn(_rng, 10, 2) != randn(_rng, 10, 2)
+        @test_broken randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
+    else
+        @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
+        @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
     end
-    @test eltype(Lux.kaiming_uniform(rng, 3, 4; gain=1.5)) == Float32
-    @test eltype(Lux.kaiming_normal(rng, 3, 4; gain=1.5)) == Float32
 end
 
 @testset "istraining" begin
@@ -71,15 +44,15 @@ end
 
     x = rand(6, 5) |> aType
     __f = x -> begin
-        x1, _, x3 = Lux.multigate(x, Val(3))
-        return sum(x1) + sum(x3 .* 2)
+        x1, x2, x3 = Lux.multigate(x, Val(3))
+        return sum(x1) + sum(x3 .+ x2 .^ 2)
     end
     res, (dx,) = Zygote.withgradient(__f, x)
 
     @jet Lux.multigate(x, Val(3))
 
-    @test res == sum(x[1:2, :]) + 2sum(x[5:6, :])
-    @test dx == aType([ones(2, 5); zeros(2, 5); fill(2, 2, 5)])
+    @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
+    @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])
 
     @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 end

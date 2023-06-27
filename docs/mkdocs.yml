@@ -106,10 +106,9 @@ nav:
       - "Migrating from Flux to Lux": "manual/migrate_from_flux.md"
       - "Freezing Model Parameters": "manual/freezing_parameters.md"
       - "Dispatch on Custom Inputs": "manual/dispatch_custom_inputs.md"
+      - "GPU Management": "manual/gpu_management.md"
   - "API Reference":
       - "Layers": "api/layers.md"
-      - "Functional": "api/functional.md"
-      - "Core": "api/core.md"
       - "Utilities": "api/utilities.md"
       - "Flux & Lux InterOp": "api/flux2lux.md"
       - "Experimental": "api/contrib.md"

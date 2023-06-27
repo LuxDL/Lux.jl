@@ -1,4 +1,4 @@
-using Lux, NNlib, Random, Test
+using Lux, Random, Test
 
 include("../test_utils.jl")
 
@@ -71,19 +71,6 @@ rng = get_stable_rng(12345)
         __f = x -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
     end
-
-    @testset "ActivationFunction" begin
-        layer = ActivationFunction(tanh)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
-        x = randn(rng, 6, 4, 3, 2) |> aType
-
-        @test layer(x, ps, st)[1] == tanh.(x)
-
-        @jet layer(x, ps, st)
-        __f = x -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
-    end
 end
 
 @testset "$mode: Dense" for (mode, aType, device, ongpu) in MODES
@@ -119,46 +106,55 @@ end
 
     @testset "zeros" begin
         @test begin
-            layer = Dense(10, 1, identity; init_weight=ones)
+            layer = Dense(10,
+                1,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 ones(10, 1) |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == 10 * aType(ones(1, 1))
 
         @test begin
-            layer = Dense(10, 1, identity; init_weight=ones)
+            layer = Dense(10,
+                1,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 ones(10, 2) |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == 10 * aType(ones(1, 2))
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight=ones)
+            layer = Dense(10,
+                2,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 ones(10, 1) |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == 10 * aType(ones(2, 1))
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight=ones)
+            layer = Dense(10,
+                2,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 aType([ones(10, 1) 2 * ones(10, 1)]),
                 device.(Lux.setup(rng, layer))...))
         end == aType([10 20; 10 20])
 
         @test begin
-            layer = Dense(10, 2, identity; init_weight=ones, use_bias=false)
+            layer = Dense(10,
+                2,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
+                use_bias=false)
             first(Lux.apply(layer,
                 aType([ones(10, 1) 2 * ones(10, 1)]),
                 device.(Lux.setup(rng, layer))...))
         end == aType([10 20; 10 20])
-    end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated Dense(10, 100, relu; bias=false)
-        @test_deprecated Dense(10, 100, relu; bias=true)
-        @test_throws ArgumentError Dense(10, 100, relu; bias=false, use_bias=false)
     end
 end
 
@@ -195,39 +191,44 @@ end
 
     @testset "zeros" begin
         @test begin
-            layer = Scale(10, 1, identity; init_weight=ones)
+            layer = Scale(10,
+                1,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 ones(10, 1) |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == aType(ones(10, 1))
 
         @test begin
-            layer = Scale(10, 1, identity; init_weight=ones)
+            layer = Scale(10,
+                1,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 ones(10, 2) |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == aType(ones(10, 2))
 
         @test begin
-            layer = Scale(2, identity; init_weight=ones, init_bias=ones)
+            layer = Scale(2,
+                identity;
+                init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
+                init_bias=(rng, args...; kwargs...) -> ones(args...; kwargs...))
             first(Lux.apply(layer,
                 [1 2; 3 4] |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == aType([2.0 3.0; 4.0 5.0])
 
         @test begin
-            layer = Scale(2, tanh; bias=false, init_weight=zeros)
+            layer = Scale(2,
+                tanh;
+                use_bias=false,
+                init_weight=(rng, args...; kwargs...) -> zeros(args...; kwargs...))
             first(Lux.apply(layer,
                 [1 2; 3 4] |> aType,
                 device.(Lux.setup(rng, layer))...))
         end == aType(zeros(2, 2))
-    end
-
-    # Deprecated Functionality (Remove in v0.5)
-    @testset "Deprecations" begin
-        @test_deprecated Scale(10, 100, relu; bias=false)
-        @test_deprecated Scale(10, 100, relu; bias=true)
-        @test_throws ArgumentError Scale(10, 100, relu; bias=false, use_bias=false)
     end
 end
 
