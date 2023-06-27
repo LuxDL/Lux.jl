@@ -29,7 +29,7 @@ x_cpu = randn(Float32, 3, 2)
    1. If no GPU is available, it returns a `LuxCPUDevice` object.
    2. If a LocalPreferences file is present, then the backend specified in the file is used. To set a backend, use `Lux.gpu_backend!(<backend_name>)`.
       1. If the trigger package corresponding to the device is not loaded, then a warning is displayed.
-    3. If no LocalPreferences file is present, then the first working GPU with loaded trigger package is used.
+      2. If no LocalPreferences file is present, then the first working GPU with loaded trigger package is used.
 
 
 ```@example gpu_management
