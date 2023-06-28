@@ -79,20 +79,20 @@ for T1 in (:TrackedArray, :AbstractArray),
 
     __is_tracked(T1, T2, T3) || continue
 
-    @eval function LuxLib.groupnorm(x::$T1{T, 4},
-        scale::$T2{T},
-        bias::$T3{T};
+    @eval function LuxLib.groupnorm(x::$T1{<:FP_32_64, 4},
+        scale::$T2{<:FP_32_64},
+        bias::$T3{<:FP_32_64};
         groups::Int,
-        epsilon::Real) where {T <: FP_32_64}
+        epsilon::Real)
         return track(LuxLib.groupnorm, x, scale, bias; groups, epsilon)
     end
 end
 
-@grad function LuxLib.groupnorm(x::AA{T, 4},
-    scale::AV{T},
-    bias::AV{T};
+@grad function LuxLib.groupnorm(x::AA{<:FP_32_64, 4},
+    scale::AV{<:FP_32_64},
+    bias::AV{<:FP_32_64};
     groups::Int,
-    epsilon::Real) where {T <: FP_32_64}
+    epsilon::Real)
     LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -101,19 +101,19 @@ end
         throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
-    y, mu, rsig = LuxLib._groupnorm(data(x), groups, data(scale), data(bias), epsilon)
-    function groupnorm_pullback(dy)
-        dx, dscale, dbias = LuxLib._dgroupnorm(dy,
+    y, μ, σ⁻¹ = LuxLib._groupnorm(data(x), groups, data(scale), data(bias), epsilon)
+    function ∇groupnorm(Δ)
+        dx, dscale, dbias = LuxLib._dgroupnorm(Δ,
             y,
             data(x),
             groups,
             data(scale),
             data(bias),
-            mu,
-            rsig)
+            μ,
+            σ⁻¹)
         return nobacksies(:groupnorm, (dx, dscale, dbias))
     end
-    return y, groupnorm_pullback
+    return y, ∇groupnorm
 end
 
 end

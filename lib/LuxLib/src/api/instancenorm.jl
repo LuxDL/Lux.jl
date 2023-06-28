@@ -42,7 +42,7 @@ function instancenorm(x::AA{<:Real, N},
         bias,
         _get_instancenorm_reduce_dims(x),
         training,
-        zero(eltype(x)),
+        nothing,
         epsilon)
 
     return x_, (; running_mean=xm, running_var=xv)
