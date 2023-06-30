@@ -10,7 +10,7 @@ end
 using Metal
 
 @testset "Loaded Trigger Package" begin
-    @test Lux.GPU_BACKEND[] === nothing
+    @test LuxDeviceUtils.GPU_DEVICE[] === nothing
 
     if Metal.functional()
         @info "Metal is functional"
@@ -22,7 +22,7 @@ using Metal
         @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
             force_gpu_usage=true)
     end
-    @test Lux.GPU_BACKEND[] !== nothing
+    @test LuxDeviceUtils.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
