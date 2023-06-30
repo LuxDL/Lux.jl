@@ -5,13 +5,15 @@ CRC.@non_differentiable glorot_normal(::Any...)
 CRC.@non_differentiable glorot_uniform(::Any...)
 CRC.@non_differentiable kaiming_normal(::Any...)
 CRC.@non_differentiable kaiming_uniform(::Any...)
-# CRC.@non_differentiable check_use_cuda()
 CRC.@non_differentiable istraining(::Any)
 CRC.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 CRC.@non_differentiable _affine(::Any)
 CRC.@non_differentiable _track_stats(::Any)
 CRC.@non_differentiable _conv_transpose_dims(::Any...)
 CRC.@non_differentiable _calc_padding(::Any...)
+## Type Piracy: Needs upstreaming
+## This is needed for fixing NamedTuple nested differentiation
+CRC.@non_differentiable fieldcount(::Any)
 
 # Utilities
 function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) where {F1, F2}
