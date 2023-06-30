@@ -64,4 +64,8 @@ end
     @time @safetestset "Aqua Tests" begin
         include("aqua.jl")
     end
+
+    @time @safetestset "Miscellaneous Tests" begin
+        include("misc.jl")
+    end
 end
