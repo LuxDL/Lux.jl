@@ -8,17 +8,17 @@ _linear_threads_groupnorm(::GPU) = 256
     bias,
     @Const(C),
     @Const(K),
-    @Const(mu),
-    @Const(rsig),
-    @Const(gamma),
-    @Const(beta))
+    @Const(μ),
+    @Const(σ⁻¹),
+    @Const(γ),
+    @Const(β))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
 
-    @inbounds scale_val = gamma[c] * rsig[ng]
+    @inbounds scale_val = γ[c] * σ⁻¹[ng]
     @inbounds scale[idx] = scale_val
-    @inbounds bias[idx] = beta[c] - mu[ng] * scale_val
+    @inbounds bias[idx] = β[c] - μ[ng] * scale_val
 end
 
 @kernel function _groupnorm_forward_kernel!(Y,
@@ -34,26 +34,26 @@ end
 @kernel function _groupnorm_dy_dscale_kernel!(dY_dscale,
     @Const(C),
     @Const(K),
-    @Const(rsig),
-    @Const(gamma))
+    @Const(σ⁻¹),
+    @Const(γ))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
 
-    @inbounds dY_dscale[idx] = gamma[c] * rsig[ng]
+    @inbounds dY_dscale[idx] = γ[c] * σ⁻¹[ng]
 end
 
 @kernel function _groupnorm_xscale_and_bias_kernel!(X_scale,
     bias,
     @Const(alpha),
-    @Const(mu),
-    @Const(rsig),
+    @Const(μ),
+    @Const(σ⁻¹),
     @Const(ds_sum),
     @Const(db_sum))
     idx = @index(Global)
-    @inbounds x = (db_sum[idx] * mu[idx] - ds_sum[idx]) * (rsig[idx]^3) * alpha
+    @inbounds x = (db_sum[idx] * μ[idx] - ds_sum[idx]) * (σ⁻¹[idx]^3) * alpha
     @inbounds X_scale[idx] = x
-    @inbounds bias[idx] = -(x * mu[idx] + db_sum[idx] * rsig[idx] * alpha)
+    @inbounds bias[idx] = -(x * μ[idx] + db_sum[idx] * σ⁻¹[idx] * alpha)
 end
 
 @kernel function _groupnorm_dx_kernel!(dX,
@@ -71,21 +71,18 @@ end
 end
 
 # High-Level Function (Not User Facing)
-@inbounds function _groupnorm(X::AA{T, 4},
-    G::Int,
-    gamma::AV{T},
-    beta::AV{T},
-    epsilon::T) where {T}
+@inbounds function _groupnorm(X::AA4D, G::Int, γ::AV, β::AV, ϵ)
     W, H, C, N = size(X)
     K = div(C, G)
 
     X_reshaped = reshape(X, (W, H, K, G, N))
-    Y = similar(X)
-    mu = mean(X_reshaped; dims=(1, 2, 3))
-    rsig = 1 ./ (std(X_reshaped; mean=mu, dims=(1, 2, 3), corrected=false) .+ epsilon)
+    μ = mean(X_reshaped; dims=(1, 2, 3))
+    σ⁻¹ = 1 ./ (std(X_reshaped; mean=μ, dims=(1, 2, 3), corrected=false) .+ ϵ)
 
-    _scale = similar(X, (C, N))
-    _bias = similar(X, (C, N))
+    T = promote_type(eltype(μ), eltype(σ⁻¹), eltype(γ), eltype(β))
+    _scale = similar(X, T, (C, N))
+    _bias = similar(X, T, (C, N))
+    Y = similar(X, T)
 
     backend = KA.get_backend(X)
 
@@ -93,23 +90,23 @@ end
     compute_fixed_params! = _compute_fused_params_kernel!(backend, n, size(_scale))
     groupnorm_forward! = _groupnorm_forward_kernel!(backend, n, size(X))
 
-    compute_fixed_params!(_scale, _bias, C, K, mu, rsig, gamma, beta; ndrange=size(_scale))
+    compute_fixed_params!(_scale, _bias, C, K, μ, σ⁻¹, γ, β; ndrange=size(_scale))
     KA.synchronize(backend)
 
     groupnorm_forward!(Y, W * H, X, _scale, _bias; ndrange=size(Y))
     KA.synchronize(backend)
 
-    return Y, mu, rsig
+    return Y, μ, σ⁻¹
 end
 
-@inbounds function _dgroupnorm(dY::AA{T, 4},
-    Y::AA{T, 4},
-    X::AA{T, 4},
+@inbounds function _∇groupnorm(dY::AA4D,
+    Y::AA4D,
+    X::AA4D,
     G::Int,
-    gamma::AV{T},
-    beta::AV{T},
-    mu::AA{T, 5},
-    rsig::AA{T, 5}) where {T}
+    γ::AV,
+    β::AV,
+    μ::AA5D,
+    σ⁻¹::AA5D)
     W, H, C, N = size(X)
     K = div(C, G)
     WxH = W * H
@@ -119,17 +116,18 @@ end
     dbias = reshape(sum(dY; dims=(1, 2)), (1, 1, K, G, N))
     dscale = reshape(sum(X .* dY; dims=(1, 2)), (1, 1, K, G, N))
 
-    dY_dscale = similar(X, (C, N))
+    dY_dscale = similar(X, promote_type(eltype(σ⁻¹), eltype(γ)), (C, N))
     groupnorm_dy_dscale! = _groupnorm_dy_dscale_kernel!(backend, n, size(dY_dscale))
-    groupnorm_dy_dscale!(dY_dscale, C, K, rsig, gamma; ndrange=size(dY_dscale))
+    groupnorm_dy_dscale!(dY_dscale, C, K, σ⁻¹, γ; ndrange=size(dY_dscale))
 
-    gamma_ = reshape(gamma, (1, 1, K, G, 1))
-    db_sum = sum(gamma_ .* dbias; dims=3)
-    ds_sum = sum(gamma_ .* dscale; dims=3)
+    γ_ = reshape(γ, (1, 1, K, G, 1))
+    db_sum = sum(γ_ .* dbias; dims=3)
+    ds_sum = sum(γ_ .* dscale; dims=3)
     KA.synchronize(backend)
 
-    X_scale = similar(X, (G, N))
-    bias = similar(X, (G, N))
+    T = promote_type(eltype(μ), eltype(σ⁻¹), eltype(ds_sum), eltype(db_sum))
+    X_scale = similar(X, T, (G, N))
+    bias = similar(X, T, (G, N))
 
     groupnorm_xscale_and_bias! = _groupnorm_xscale_and_bias_kernel!(backend,
         n,
@@ -137,8 +135,8 @@ end
     groupnorm_xscale_and_bias!(X_scale,
         bias,
         T(1 / (K * WxH)),
-        mu,
-        rsig,
+        μ,
+        σ⁻¹,
         ds_sum,
         db_sum;
         ndrange=size(X_scale))
@@ -147,9 +145,9 @@ end
     dX = similar(X)
     groupnorm_dx! = _groupnorm_dx_kernel!(backend, n, size(dX))
     groupnorm_dx!(dX, WxH, K, dY_dscale, dY, X_scale, X, bias; ndrange=size(dX))
-    dgamma = vec(sum((-dbias .* mu .+ dscale) .* rsig; dims=5))
-    dbeta = vec(sum(dbias; dims=5))
+    dγ = vec(sum((-dbias .* μ .+ dscale) .* σ⁻¹; dims=5))
+    dβ = vec(sum(dbias; dims=5))
     KA.synchronize(backend)
 
-    return dX, dgamma, dbeta
+    return dX, dγ, dβ
 end

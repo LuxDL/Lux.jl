@@ -21,8 +21,7 @@ end
     running_var::R,
     r::Val{rdims},
     ::Val{training},
-    momentum::Real,
-    epsilon::Real) where {R, rdims, training}
+    momentum::Union{Real, Nothing}) where {R, rdims, training}
     calls = []
     if !training
         if R == Nothing
@@ -74,15 +73,9 @@ function _normalization_impl(x::AbstractArray,
     bias::A,
     r::Val{reduce_dims},
     training::Val,
-    momentum::Real,
+    momentum::Union{Real, Nothing},
     epsilon::Real) where {R, A, reduce_dims}
-    _stats = _get_batch_statistics(x,
-        running_mean,
-        running_var,
-        r,
-        training,
-        momentum,
-        epsilon)
+    _stats = _get_batch_statistics(x, running_mean, running_var, r, training, momentum)
     (batchmean, batchvar), (running_mean, running_var) = _stats
     x_norm = _affine_normalize(x, batchmean, batchvar, scale, bias, epsilon)
     return (x_norm, running_mean, running_var)
@@ -95,7 +88,7 @@ function _normalization(x::AbstractArray,
     bias::Union{AbstractVector, Nothing},
     reduce_dims::Val,
     training::Val,
-    momentum::Real,
+    momentum::Union{Real, Nothing},
     epsilon::Real)
     rm_ = _reshape_into_proper_shape(running_mean, x)
     rv_ = _reshape_into_proper_shape(running_var, x)

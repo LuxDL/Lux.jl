@@ -1,6 +1,10 @@
 # Shorthand Types
 const AA = AbstractArray
 const AV = AbstractVector
+const AM = AbstractMatrix
+const AA3D = AbstractArray{T, 3} where {T}
+const AA4D = AbstractArray{T, 4} where {T}
+const AA5D = AbstractArray{T, 5} where {T}
 const NOrAVR = Union{Nothing, AbstractVector{<:Real}}
 const FP_32_64 = Union{Float32, Float64}
 const ∂∅ = NoTangent()

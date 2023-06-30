@@ -28,6 +28,10 @@ it makes no attempt to separate code across different architectures.
 
 ## Changelog
 
+### Updating from v0.2 to v0.3
+
+`groupnorm` with statistics tracking support has been removed.
+
 ### Updating from v0.1 to v0.2
 
 Support for `CUDA` has been moved to a weak dependency. If you want to use `CUDA`, you need
