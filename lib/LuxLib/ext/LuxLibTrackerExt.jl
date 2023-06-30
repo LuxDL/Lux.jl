@@ -103,7 +103,7 @@ end
 
     y, μ, σ⁻¹ = LuxLib._groupnorm(data(x), groups, data(scale), data(bias), epsilon)
     function ∇groupnorm(Δ)
-        dx, dscale, dbias = LuxLib._dgroupnorm(Δ,
+        dx, dscale, dbias = LuxLib._∇groupnorm(Δ,
             y,
             data(x),
             groups,

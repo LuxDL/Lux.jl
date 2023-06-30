@@ -107,7 +107,7 @@ function CRC.rrule(::typeof(groupnorm),
 
     y, μ, σ⁻¹ = _groupnorm(x, groups, scale, bias, epsilon)
     function ∇groupnorm(Δ)
-        dx, dscale, dbias = _dgroupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
+        dx, dscale, dbias = _∇groupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
         return ∂∅, dx, dscale, dbias
     end
     return y, ∇groupnorm

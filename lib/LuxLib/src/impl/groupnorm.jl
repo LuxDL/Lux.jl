@@ -99,7 +99,7 @@ end
     return Y, μ, σ⁻¹
 end
 
-@inbounds function _dgroupnorm(dY::AA4D,
+@inbounds function _∇groupnorm(dY::AA4D,
     Y::AA4D,
     X::AA4D,
     G::Int,
@@ -116,7 +116,7 @@ end
     dbias = reshape(sum(dY; dims=(1, 2)), (1, 1, K, G, N))
     dscale = reshape(sum(X .* dY; dims=(1, 2)), (1, 1, K, G, N))
 
-    dY_dscale = similar(X, promote_type(typeof(σ⁻¹), typeof(γ)), (C, N))
+    dY_dscale = similar(X, promote_type(eltype(σ⁻¹), eltype(γ)), (C, N))
     groupnorm_dy_dscale! = _groupnorm_dy_dscale_kernel!(backend, n, size(dY_dscale))
     groupnorm_dy_dscale!(dY_dscale, C, K, σ⁻¹, γ; ndrange=size(dY_dscale))
 
@@ -125,7 +125,7 @@ end
     ds_sum = sum(γ_ .* dscale; dims=3)
     KA.synchronize(backend)
 
-    T = promote_type(eltype(μ), eltype(σ⁻¹), eltype(ds_sum), eltype(ds_bias))
+    T = promote_type(eltype(μ), eltype(σ⁻¹), eltype(ds_sum), eltype(db_sum))
     X_scale = similar(X, T, (G, N))
     bias = similar(X, T, (G, N))
 

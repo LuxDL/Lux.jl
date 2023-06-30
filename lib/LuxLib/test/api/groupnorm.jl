@@ -43,7 +43,7 @@ end
 
         @inferred groupnorm(x, scale, bias; groups, epsilon)
         @jet _f(x, scale, bias) opt_broken=true
-        @test y isa aType{T, 4}
+        @test y isa aType{T, length(sz)}
         @test size(y) == sz
 
         # Use the generic implementation to compare against
@@ -80,11 +80,11 @@ end
         @inferred groupnorm(x, scale, bias; groups, epsilon)
         @jet _f(x, scale, bias)
 
-        @test y isa aType{T, 4}
+        @test y isa aType{T, length(sz)}
         @test size(y) == sz
 
         fp16 = T == Float16
-        __f = (args...) -> sum(first(groupnorm(x, args...; groups, epsilon)))
+        __f = (args...) -> sum(groupnorm(x, args...; groups, epsilon))
         @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16
     end
 end
