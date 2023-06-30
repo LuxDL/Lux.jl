@@ -4,10 +4,7 @@ using ChainRulesCore, LuxCUDA, LuxDeviceUtils, Random
 import Adapt: adapt_storage, adapt
 import ChainRulesCore as CRC
 
-function __init__()
-    LuxDeviceUtils.ACCELERATOR_STATE_CHANGED[] = true
-    return
-end
+__init__() = reset_gpu_device!()
 
 # Device Transfer
 ## To GPU

@@ -1,4 +1,4 @@
-using SafeTestsets, Test, Pkg
+using Aqua, SafeTestsets, Test, Pkg
 using LuxCore, LuxDeviceUtils
 
 const GROUP = get(ENV, "GROUP", "CUDA")
@@ -40,5 +40,9 @@ end
                 include("metal.jl")
             end
         end
+    end
+
+    @testset "Aqua Tests" begin
+        Aqua.test_all(LuxDeviceUtils; piracy=false)
     end
 end
