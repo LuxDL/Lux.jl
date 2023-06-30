@@ -1,6 +1,6 @@
 module LuxDeviceUtils
 
-using Functors, LuxCore, Preferences, Random, SparseArrays
+using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
 import Base: PkgId, UUID
 
@@ -9,11 +9,9 @@ function __init__()
     @require_extensions
 end
 
-export gpu_backend!, supported_gpu_backends
+export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
-
-const ACCELERATOR_STATE_CHANGED = Ref{Bool}(false)
 
 abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
@@ -59,6 +57,16 @@ const GPU_DEVICES = (LuxCUDADevice(), LuxAMDGPUDevice(), LuxMetalDevice())
 const GPU_DEVICE = Ref{Union{Nothing, AbstractLuxDevice}}(nothing)
 
 """
+    reset_gpu_device!()
+
+Resets the selected GPU device. This is useful when automatic GPU selection needs to be
+run again.
+"""
+function reset_gpu_device!()
+    return GPU_DEVICE[] = nothing
+end
+
+"""
     supported_gpu_backends() -> Tuple{String, ...}
 
 Return a tuple of supported GPU backends.
@@ -85,17 +93,14 @@ Selects GPU device based on the following criteria:
  4. If nothing works, an error is thrown.
 """
 function gpu_device(; force_gpu_usage::Bool=false)::AbstractLuxDevice
-    if !ACCELERATOR_STATE_CHANGED[]
-        if GPU_DEVICE[] !== nothing
-            force_gpu_usage &&
-                !(GPU_DEVICE[] isa AbstractLuxGPUDevice) &&
-                throw(LuxDeviceSelectionException())
-            return GPU_DEVICE[]
-        end
+    if GPU_DEVICE[] !== nothing
+        force_gpu_usage &&
+            !(GPU_DEVICE[] isa AbstractLuxGPUDevice) &&
+            throw(LuxDeviceSelectionException())
+        return GPU_DEVICE[]
     end
 
     device = _get_gpu_device(; force_gpu_usage)
-    ACCELERATOR_STATE_CHANGED[] = false
     GPU_DEVICE[] = device
 
     return device

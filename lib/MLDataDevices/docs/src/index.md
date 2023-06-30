@@ -37,5 +37,11 @@ gpu_backend!
 ```@docs
 cpu_device
 gpu_device
+```
+
+### Miscellaneous
+
+```@docs
+reset_gpu_device!
 supported_gpu_backends
 ```
