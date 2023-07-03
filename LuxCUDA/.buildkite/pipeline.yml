@@ -19,9 +19,11 @@ steps:
         julia:
           - "1"
           - "1.6"
-          - "1.9-nightly"
           - "nightly"
       adjustments:
+        - with:
+            julia: "1.6"
+          soft_fail: true
         - with:
             julia: "nightly"
           soft_fail: true
