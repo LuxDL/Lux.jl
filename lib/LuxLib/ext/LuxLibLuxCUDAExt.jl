@@ -38,14 +38,8 @@ function _batchnorm_cudnn!(running_mean,
     momentum,
     eps,
     ::Val{training}) where {training}
-    return NNlibCUDA.batchnorm(scale,
-        bias,
-        x,
-        running_mean,
-        running_var,
-        momentum;
-        eps,
-        training)
+    __batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.batchnorm : NNlib.batchnorm
+    return __batchnorm(scale, bias, x, running_mean, running_var, momentum; eps, training)
 end
 
 function CRC.rrule(::typeof(_batchnorm_cudnn!),
@@ -59,7 +53,9 @@ function CRC.rrule(::typeof(_batchnorm_cudnn!),
     t::Val{training}) where {training}
     y = _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum, epsilon, t)
     function ∇_batchnorm_cudnn!(Δ)
-        ∂g, ∂b, ∂x = NNlibCUDA.∇batchnorm(scale,
+        __∇batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.∇batchnorm :
+                               NNlib.∇batchnorm
+        ∂g, ∂b, ∂x = __∇batchnorm(scale,
             bias,
             x,
             CRC.unthunk(Δ),

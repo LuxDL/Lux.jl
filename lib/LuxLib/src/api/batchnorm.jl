@@ -68,7 +68,7 @@ function _get_batchnorm_statistics(x,
     running_var,
     ::Val{training}) where {training}
     if training
-        # NNlibCUDA silently updates running_mean and running_var. Copying them!
+        # NNlib silently updates running_mean and running_var. Copying them!
         rm = _copy_autodiff_barrier(running_mean)
         rv = _copy_autodiff_barrier(running_var)
     else

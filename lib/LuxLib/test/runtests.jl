@@ -1,5 +1,10 @@
 using SafeTestsets, Test
 
+@static if VERSION ≥ v"1.9"
+    using Pkg
+    Pkg.add("LuxAMDGPU")
+end
+
 @testset "LuxLib" begin
     @time @safetestset "Dropout" begin
         include("api/dropout.jl")
@@ -24,7 +29,9 @@ using SafeTestsets, Test
         include("ext/LuxLibForwardDiffExt.jl")
     end
 
-    @time @safetestset "Aqua Tests" begin
-        include("aqua.jl")
+    if VERSION ≥ v"1.9"
+        @time @safetestset "Aqua Tests" begin
+            include("aqua.jl")
+        end
     end
 end
