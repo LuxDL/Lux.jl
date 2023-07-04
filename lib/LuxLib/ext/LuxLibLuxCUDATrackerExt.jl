@@ -76,7 +76,8 @@ end
         eps,
         training)
     function ∇_batchnorm_cudnn!(Δ)
-        __∇batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.∇batchnorm : NNlib.∇batchnorm
+        __∇batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.∇batchnorm :
+                               NNlib.∇batchnorm
         ∂g, ∂b, ∂x = __∇batchnorm(data(scale),
             data(bias),
             data(x),
