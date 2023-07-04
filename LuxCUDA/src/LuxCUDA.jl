@@ -2,7 +2,7 @@ module LuxCUDA
 
 using Reexport
 
-@reexport using CUDA, CUDA.CUDAKernels, cuDNN, NNlibCUDA
+@reexport using CUDA, CUDA.CUDAKernels, cuDNN
 
 const USE_CUDA_GPU = Ref{Union{Nothing, Bool}}(nothing)
 
