@@ -404,7 +404,6 @@ function transform(l::Flux.GroupNorm;
                 l.λ;
                 l.affine,
                 epsilon=l.ϵ,
-                l.momentum,
                 init_bias=__copy_anonymous_closure(copy(l.β)),
                 init_scale=__copy_anonymous_closure(copy(l.γ)))
         else
