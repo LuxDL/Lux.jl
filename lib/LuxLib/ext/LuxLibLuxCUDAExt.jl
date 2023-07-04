@@ -1,6 +1,7 @@
 module LuxLibLuxCUDAExt
 
-using LuxCUDA, LuxLib
+isdefined(Base, :get_extension) ? (using LuxCUDA) : (using ..LuxCUDA)
+using LuxLib
 import ChainRulesCore as CRC
 import LuxLib: batchnorm, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅
 
