@@ -1,7 +1,5 @@
 using Documenter, DocumenterMarkdown, Lux, Pkg
 
-import Flux  # Load weak dependencies
-
 using PythonCall, CondaPkg, Pkg  # Load mkdocs dependencies
 
 deployconfig = Documenter.auto_detect_deploy_system()
