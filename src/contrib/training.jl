@@ -2,7 +2,7 @@ module Training
 
 # NOTE(@avik-pal): In the long term this will be pulled out into its own package but
 # currently all the dependencies are met by Lux itself.
-using ..Lux
+using ..Lux, ..LuxDeviceUtils
 using Optimisers, Random, Setfield
 
 """
