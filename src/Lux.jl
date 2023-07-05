@@ -61,6 +61,7 @@ include("contrib/share_parameters.jl")
 include("deprecated.jl")
 
 # Extensions
+include("extensions.jl")
 using PackageExtensionCompat
 function __init__()
     @require_extensions
@@ -87,17 +88,6 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad
-
-# Extension functions
-function transform end
-
-_maybe_flip_conv_weight(x) = copy(x)
-
-struct FluxLayer{L, RE, I} <: AbstractExplicitLayer
-    layer::L
-    re::RE
-    init_parameters::I
-end
 
 export transform, FluxLayer
 
