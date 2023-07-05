@@ -1,8 +1,10 @@
 using SafeTestsets, Test
 
-if VERSION ≥ v"1.9"
+const GROUP = get(ENV, "GROUP", "All")
+
+@static if VERSION ≥ v"1.9"
     using Pkg
-    Pkg.add("LuxAMDGPU")
+    (GROUP == "CPU" || GROUP == "AMDGPU") && Pkg.add("LuxAMDGPU")
 end
 
 @testset "Lux.jl" begin
