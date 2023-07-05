@@ -107,7 +107,6 @@ rng = get_stable_rng(12345)
 end
 
 @testset "$mode: GroupNorm" for (mode, aType, device, ongpu) in MODES
-    # begin tests
     squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
     m = GroupNorm(4, 2)
@@ -231,7 +230,10 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
+        if VERSION ≥ v"1.9"
+            # Illegal Instruction Error on v"1.6"
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
+        end
 
         wn = WeightNorm(c, (:weight,), (2,))
         display(wn)
@@ -240,7 +242,10 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
+        if VERSION ≥ v"1.9"
+            # Illegal Instruction Error on v"1.6"
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
+        end
     end
 
     @testset "Dense" begin
@@ -271,7 +276,10 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        if VERSION ≥ v"1.9"
+            # Illegal Instruction Error on v"1.6"
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        end
 
         wn = WeightNorm(d, (:weight,), (2,))
         display(wn)
@@ -280,7 +288,10 @@ end
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        if VERSION ≥ v"1.9"
+            # Illegal Instruction Error on v"1.6"
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        end
     end
 
     # See https://github.com/avik-pal/Lux.jl/issues/95

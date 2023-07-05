@@ -1,3 +1,6 @@
+using Pkg
+Pkg.add("Flux")  # Flux pulls down several package versions
+
 import Flux
 using Lux, Test
 

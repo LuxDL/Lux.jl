@@ -43,7 +43,7 @@ end
 function AlphaDropout(p::T) where {T <: Real}
     @assert 0 ≤ p ≤ 1
     iszero(p) && return NoOpLayer()
-    isone(p) && WrappedLayer(Base.Fix1(broadcast, zero))
+    isone(p) && WrappedFunction(Base.Fix1(broadcast, zero))
 
     alpha = T(-1.7580993408473766)
     scale = T(inv(sqrt((1 - p) * (1 + p * alpha^2))))

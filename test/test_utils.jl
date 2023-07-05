@@ -2,13 +2,15 @@ using Lux, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test, Zygote
 using LuxCUDA
 using LuxTestUtils: @jet, @test_gradients, check_approx
 
+const GROUP = get(ENV, "GROUP", "All")
+
 @static if VERSION ≥ v"1.9"
-    using LuxAMDGPU
+    if GROUP == "CPU" || GROUP == "AMDGPU"
+        using LuxAMDGPU
+    end
 end
 
 CUDA.allowscalar(false)
-
-const GROUP = get(ENV, "GROUP", "All")
 
 cpu_testing() = GROUP == "All" || GROUP == "CPU"
 cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && LuxCUDA.functional()
@@ -25,7 +27,11 @@ const MODES = begin
     cpu_mode = ("CPU", Array, LuxCPUDevice(), false)
     cuda_mode = ("CUDA", CuArray, LuxCUDADevice(), true)
     amdgpu_mode = @static if VERSION ≥ v"1.9"
-        ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true)
+        if GROUP == "CPU" || GROUP == "AMDGPU"
+            ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true)
+        else
+            nothing
+        end
     else
         nothing
     end

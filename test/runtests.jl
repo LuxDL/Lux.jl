@@ -1,8 +1,10 @@
 using SafeTestsets, Test
 
-if VERSION ≥ v"1.9"
+const GROUP = get(ENV, "GROUP", "All")
+
+@static if VERSION ≥ v"1.9"
     using Pkg
-    Pkg.add("LuxAMDGPU")
+    (GROUP == "CPU" || GROUP == "AMDGPU") && Pkg.add("LuxAMDGPU")
 end
 
 @testset "Lux.jl" begin
@@ -50,6 +52,16 @@ end
         end
     end
 
+    if VERSION ≥ v"1.9"
+        @time @safetestset "Aqua Tests" begin
+            include("aqua.jl")
+        end
+    end
+
+    @time @safetestset "Miscellaneous Tests" begin
+        include("misc.jl")
+    end
+
     @testset "Extensions" begin
         # Most CA tests are already included in the other tests
         @time @safetestset "ComponentArrays" begin
@@ -59,13 +71,5 @@ end
         @time @safetestset "Flux" begin
             include("ext/LuxFluxTransformExt.jl")
         end
-    end
-
-    @time @safetestset "Aqua Tests" begin
-        include("aqua.jl")
-    end
-
-    @time @safetestset "Miscellaneous Tests" begin
-        include("misc.jl")
     end
 end
