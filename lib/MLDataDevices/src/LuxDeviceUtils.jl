@@ -3,6 +3,7 @@ module LuxDeviceUtils
 using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
 import Base: PkgId, UUID
+import TruncatedStacktraces
 
 using PackageExtensionCompat
 function __init__()
@@ -32,6 +33,8 @@ Base.@kwdef struct LuxMetalDevice <: AbstractLuxGPUDevice
     name::String = "Metal"
     pkgid::PkgId = PkgId(UUID("dde4c033-4e86-420c-a63e-0dd931031962"), "Metal")
 end
+
+Base.show(io::IO, dev::AbstractLuxDevice) = print(io, nameof(dev))
 
 struct LuxDeviceSelectionException <: Exception end
 
@@ -127,9 +130,9 @@ function _get_gpu_device(; force_gpu_usage::Bool)
                     Ignoring the Preferences backend!!!
                     Please load the package and call this function again to respect the Preferences backend.""" maxlog=1
             else
-                if getproperty(Base.loaded_modules[dev.pkgid], :functional)()
-                    @debug "Using GPU backend: $(_get_device_name(dev))."
-                    return dev
+                if getproperty(Base.loaded_modules[device.pkgid], :functional)()
+                    @debug "Using GPU backend: $(_get_device_name(device))."
+                    return device
                 else
                     @warn "GPU backend: $(_get_device_name(device)) set via Preferences.jl is not functional. Defaulting to automatic GPU Backend selection." maxlog=1
                 end

@@ -42,7 +42,9 @@ end
         end
     end
 
-    @testset "Aqua Tests" begin
-        Aqua.test_all(LuxDeviceUtils; piracy=false)
+    if VERSION ≥ v"1.9"
+        @testset "Aqua Tests" begin
+            Aqua.test_all(LuxDeviceUtils; piracy=false)
+        end
     end
 end
