@@ -52,6 +52,16 @@ end
         end
     end
 
+    if VERSION ≥ v"1.9"
+        @time @safetestset "Aqua Tests" begin
+            include("aqua.jl")
+        end
+    end
+
+    @time @safetestset "Miscellaneous Tests" begin
+        include("misc.jl")
+    end
+
     @testset "Extensions" begin
         # Most CA tests are already included in the other tests
         @time @safetestset "ComponentArrays" begin
@@ -61,15 +71,5 @@ end
         @time @safetestset "Flux" begin
             include("ext/LuxFluxTransformExt.jl")
         end
-    end
-
-    if VERSION ≥ v"1.9"
-        @time @safetestset "Aqua Tests" begin
-            include("aqua.jl")
-        end
-    end
-
-    @time @safetestset "Miscellaneous Tests" begin
-        include("misc.jl")
     end
 end
