@@ -472,7 +472,7 @@ end
     return _norm(x; dims=_get_norm_except_dims(N, dims))
 end
 @inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
-@inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> !(i in dims), 1:N)
+@inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
 
 function initialparameters(rng::AbstractRNG,
     wn::WeightNorm{which_params}) where {which_params}
@@ -538,7 +538,7 @@ end
 end
 
 function Base.show(io::IO, w::WeightNorm{which_params}) where {which_params}
-    return print(io, "WeightNorm{", which_params, "}(", w.layer, ")")
+    return print(io, "WeightNorm{", which_params, "}(", w.layer, ", dims = ", w.dims, ")")
 end
 
 @doc doc"""

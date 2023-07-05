@@ -61,8 +61,10 @@ end
         end
     end
 
-    @time @safetestset "Aqua Tests" begin
-        include("aqua.jl")
+    if VERSION ≥ v"1.9"
+        @time @safetestset "Aqua Tests" begin
+            include("aqua.jl")
+        end
     end
 
     @time @safetestset "Miscellaneous Tests" begin

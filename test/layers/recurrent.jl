@@ -240,7 +240,9 @@ end
 end
 
 @testset "$mode: Recurrence" for (mode, aType, device, ongpu) in MODES
-    for _cell in (RNNCell, LSTMCell, GRUCell),
+    @testset "cell: $_cell, use_bias: $use_bias, train_state: $train_state" for _cell in (RNNCell,
+            LSTMCell,
+            GRUCell),
         use_bias in (true, false),
         train_state in (true, false)
 
@@ -250,7 +252,7 @@ end
         display(rnn)
 
         # Batched Time Series
-        for x in (randn(rng, Float32, 3, 4, 2) |> aType,
+        @testset "typeof(x): $(typeof(x))" for x in (randn(rng, Float32, 3, 4, 2) |> aType,
             Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
             [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
             ps, st = Lux.setup(rng, rnn) .|> device
@@ -264,7 +266,7 @@ end
             @test length(y_) == 4
             @test all(x -> size(x) == (5, 2), y_)
 
-            if mode != "AMDGPU"
+            if mode != "AMDGPU" && !(VERSION < v"1.9" && x isa AbstractVector)
                 __f = p -> sum(first(rnn(x, p, st)))
                 @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 

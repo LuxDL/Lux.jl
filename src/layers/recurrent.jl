@@ -51,7 +51,7 @@ function Recurrence(cell; return_sequence::Bool=false)
     return Recurrence{return_sequence, typeof(cell)}(cell)
 end
 
-@inline function (r::Recurrence)(x::A, ps, st::NamedTuple) where {A <: AbstractArray}
+@inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
     return Lux.apply(r, _eachslice(x, Val(ndims(x) - 1)), ps, st)
 end
 
