@@ -69,7 +69,7 @@ function Recurrence(cell;
 end
 
 _eachslice(x::AbstractArray, ::TimeLastIndex) = _eachslice(x, Val(ndims(x)))
-_eachslice(x::AbstractArray, ::BatchLastIndex) = _eachslice(x, Val(ndims(x)))
+_eachslice(x::AbstractArray, ::BatchLastIndex) = _eachslice(x, Val(ndims(x) - 1))
 
 @inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
     return Lux.apply(r, _eachslice(x, r.ordering), ps, st)
