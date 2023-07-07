@@ -49,7 +49,6 @@ steps:
       GROUP: "AMDGPU"
     agents:
       queue: "juliagpu"
-      julia_1.9: "1"
       rocm: "*"
       rocmgpu: "*"
     if: build.message !~ /\[skip tests\]/

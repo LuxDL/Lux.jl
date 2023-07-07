@@ -1,7 +1,7 @@
 module Lux
 
 # Some core imports
-using Preferences, Reexport
+using Reexport
 # Neural Network Backend
 @reexport using LuxLib
 # Julia StdLibs
