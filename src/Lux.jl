@@ -87,7 +87,7 @@ export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
-export SamePad
+export SamePad, TimeLastIndex, BatchLastIndex
 
 export transform, FluxLayer
 

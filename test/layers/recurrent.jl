@@ -240,41 +240,50 @@ end
 end
 
 @testset "$mode: Recurrence" for (mode, aType, device, ongpu) in MODES
-    @testset "cell: $_cell, use_bias: $use_bias, train_state: $train_state" for _cell in (RNNCell,
-            LSTMCell,
-            GRUCell),
-        use_bias in (true, false),
-        train_state in (true, false)
+    @testset "ordering: $ordering" for ordering in (BatchLastIndex(), TimeLastIndex())
+        @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
+            @testset "use_bias: $use_bias, train_state: $train_state" for use_bias in (true,
+                    false),
+                train_state in (true, false)
 
-        cell = _cell(3 => 5; use_bias, train_state)
-        rnn = Recurrence(cell)
-        rnn_seq = Recurrence(cell; return_sequence=true)
-        display(rnn)
+                cell = _cell(3 => 5; use_bias, train_state)
+                rnn = Recurrence(cell; ordering)
+                rnn_seq = Recurrence(cell; ordering, return_sequence=true)
+                display(rnn)
 
-        # Batched Time Series
-        @testset "typeof(x): $(typeof(x))" for x in (randn(rng, Float32, 3, 4, 2) |> aType,
-            Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
-            [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
-            ps, st = Lux.setup(rng, rnn) .|> device
-            y, st_ = rnn(x, ps, st)
-            y_, st__ = rnn_seq(x, ps, st)
+                # Batched Time Series
+                @testset "typeof(x): $(typeof(x))" for x in (randn(rng, Float32, 3, 4, 2) |>
+                                                             aType,
+                    Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
+                    [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
+                    # Fix data ordering for testing
+                    if ordering isa TimeLastIndex && x isa AbstractArray && ndims(x) ≥ 2
+                        x = permutedims(x,
+                            (ntuple(identity, ndims(x) - 2)..., ndims(x), ndims(x) - 1))
+                    end
 
-            @jet rnn(x, ps, st)
-            @jet rnn_seq(x, ps, st)
+                    ps, st = Lux.setup(rng, rnn) .|> device
+                    y, st_ = rnn(x, ps, st)
+                    y_, st__ = rnn_seq(x, ps, st)
 
-            @test size(y) == (5, 2)
-            @test length(y_) == 4
-            @test all(x -> size(x) == (5, 2), y_)
+                    @jet rnn(x, ps, st)
+                    @jet rnn_seq(x, ps, st)
 
-            if mode != "AMDGPU" && !(VERSION < v"1.9" && x isa AbstractVector)
-                __f = p -> sum(first(rnn(x, p, st)))
-                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+                    @test size(y) == (5, 2)
+                    @test length(y_) == 4
+                    @test all(x -> size(x) == (5, 2), y_)
 
-                __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
-            else
-                # This is just added as a stub to remember about this broken test
-                @test_broken 1 + 1 == 1
+                    if mode != "AMDGPU" && !(VERSION < v"1.9" && x isa AbstractVector)
+                        __f = p -> sum(first(rnn(x, p, st)))
+                        @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+
+                        __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
+                        @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+                    else
+                        # This is just added as a stub to remember about this broken test
+                        @test_broken 1 + 1 == 1
+                    end
+                end
             end
         end
     end
