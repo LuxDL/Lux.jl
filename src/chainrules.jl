@@ -48,7 +48,7 @@ function CRC.rrule(::typeof(copy), x)
     return copy(x), copy_pullback
 end
 
-function CRC.rrule(::typeof(_eachslice), x, d)
+function CRC.rrule(::typeof(_eachslice), x, d::Val)
     return _eachslice(x, d), Δ -> (NoTangent(), ∇_eachslice(Δ, x, d), NoTangent())
 end
 

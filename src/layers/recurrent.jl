@@ -1,6 +1,14 @@
 abstract type AbstractRecurrentCell{use_bias, train_state} <: AbstractExplicitLayer end
+
+abstract type AbstractTimeSeriesDataBatchOrdering end
+
+struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
+struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
+
 """
-    Recurrence(cell; return_sequence::Bool = false)
+    Recurrence(cell;
+        ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
+        return_sequence::Bool=false)
 
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
@@ -20,6 +28,8 @@ automatically operate over a sequence of inputs.
 
   - `return_sequence`: If `true` returns the entire sequence of outputs, else returns only
     the last output. Defaults to `false`.
+  - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
+    `BatchLastIndex()`. Alternatively can be set to `TimeLastIndex()`.
 
 ## Inputs
 
@@ -43,16 +53,26 @@ automatically operate over a sequence of inputs.
 
   - Same as `cell`.
 """
-struct Recurrence{R, C <: AbstractRecurrentCell} <: AbstractExplicitContainerLayer{(:cell,)}
+struct Recurrence{
+    R,
+    C <: AbstractRecurrentCell,
+    O <: AbstractTimeSeriesDataBatchOrdering,
+} <: AbstractExplicitContainerLayer{(:cell,)}
     cell::C
+    ordering::O
 end
 
-function Recurrence(cell; return_sequence::Bool=false)
-    return Recurrence{return_sequence, typeof(cell)}(cell)
+function Recurrence(cell;
+    ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
+    return_sequence::Bool=false)
+    return Recurrence{return_sequence, typeof(cell), typeof(ordering)}(cell, ordering)
 end
+
+_eachslice(x::AbstractArray, ::TimeLastIndex) = _eachslice(x, Val(ndims(x)))
+_eachslice(x::AbstractArray, ::BatchLastIndex) = _eachslice(x, Val(ndims(x) - 1))
 
 @inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
-    return Lux.apply(r, _eachslice(x, Val(ndims(x) - 1)), ps, st)
+    return Lux.apply(r, _eachslice(x, r.ordering), ps, st)
 end
 
 function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
