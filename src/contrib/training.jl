@@ -3,7 +3,7 @@ module Training
 # NOTE(@avik-pal): In the long term this will be pulled out into its own package but
 # currently all the dependencies are met by Lux itself.
 using ..Lux, ..LuxDeviceUtils
-using Optimisers, Random, Setfield
+using ConcreteStructs, Optimisers, Random, Setfield
 
 """
     TrainState
@@ -16,11 +16,11 @@ Training State containing:
   - `optimizer_state`: Optimizer State.
   - `step`: Number of updates of the parameters made.
 """
-struct TrainState{Ps, St, Ost, M}
-    model::M
-    parameters::Ps
-    states::St
-    optimizer_state::Ost
+@concrete struct TrainState
+    model
+    parameters
+    states
+    optimizer_state
     step::Int
 end
 

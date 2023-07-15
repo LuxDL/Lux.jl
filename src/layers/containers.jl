@@ -1,4 +1,3 @@
-
 """
     SkipConnection(layer, connection; name=nothing)
 
@@ -45,9 +44,10 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-struct SkipConnection{T, F, N <: NAME_TYPE} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
-    connection::F
+@concrete struct SkipConnection{N <: NAME_TYPE} <:
+                 AbstractExplicitContainerLayer{(:layers,)}
+    layers
+    connection
     name::N
 end
 
@@ -125,9 +125,9 @@ with `connection`.
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
-struct Parallel{F, T <: NamedTuple, N <: NAME_TYPE} <:
-       AbstractExplicitContainerLayer{(:layers,)}
-    connection::F
+@concrete struct Parallel{T <: NamedTuple, N <: NAME_TYPE} <:
+                 AbstractExplicitContainerLayer{(:layers,)}
+    connection
     layers::T
     name::N
 end
@@ -325,9 +325,9 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
-struct PairwiseFusion{F, T <: NamedTuple, N <: NAME_TYPE} <:
-       AbstractExplicitContainerLayer{(:layers,)}
-    connection::F
+@concrete struct PairwiseFusion{T <: NamedTuple, N <: NAME_TYPE} <:
+                 AbstractExplicitContainerLayer{(:layers,)}
+    connection
     layers::T
     name::N
 end

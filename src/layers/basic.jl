@@ -70,19 +70,14 @@ Return a view of all the data of the input `x` where the index for dimension `di
 """
 struct SelectDim{dim, index} <: AbstractExplicitLayer end
 
-SelectDim(dim, index) = SelectDim{Val(dim), Val(index)}()
+SelectDim(dim, index) = SelectDim{dim, index}()
 
 @inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
-    return selectdim(x, get_known(dim), get_known(index)), st
+    return selectdim(x, dim, index), st
 end
 
 function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
-    return print(io,
-        "SelectDim(dim = ",
-        get_known(dim),
-        ", index = ",
-        get_known(index),
-        ")")
+    return print(io, "SelectDim(dim = ", dim, ", index = ", index, ")")
 end
 
 """
@@ -116,8 +111,8 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-struct WrappedFunction{F} <: AbstractExplicitLayer
-    func::F
+@concrete struct WrappedFunction <: AbstractExplicitLayer
+    func
 end
 
 (wf::WrappedFunction)(x, ps, st::NamedTuple) = wf.func(x), st
@@ -163,12 +158,12 @@ Create a traditional fully connected layer, whose forward pass is given by:
   - `weight`: Weight Matrix of size `(out_dims, in_dims)`
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
-struct Dense{use_bias, F1, F2, F3} <: AbstractExplicitLayer
-    activation::F1
+@concrete struct Dense{use_bias} <: AbstractExplicitLayer
+    activation
     in_dims::Int
     out_dims::Int
-    init_weight::F2
-    init_bias::F3
+    init_weight
+    init_bias
 end
 
 function Base.show(io::IO, d::Dense{use_bias}) where {use_bias}
@@ -190,8 +185,7 @@ function Dense(in_dims::Int,
     use_bias::Bool=true,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    dtype = (use_bias, typeof(activation), typeof(init_weight), typeof(init_bias))
-    return Dense{dtype...}(activation, in_dims, out_dims, init_weight, init_bias)
+    return Dense{use_bias}(activation, in_dims, out_dims, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias}
@@ -278,11 +272,11 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
 
     `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
-struct Scale{use_bias, F1, D, F2, F3} <: AbstractExplicitLayer
-    activation::F1
-    dims::D
-    init_weight::F2
-    init_bias::F3
+@concrete struct Scale{use_bias} <: AbstractExplicitLayer
+    activation
+    dims
+    init_weight
+    init_bias
 end
 
 function Base.show(io::IO, d::Scale)
@@ -298,16 +292,7 @@ function Scale(dims::Tuple{Vararg{Integer}},
     use_bias::Bool=true,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return Scale{
-        use_bias,
-        typeof(activation),
-        typeof(dims),
-        typeof(init_weight),
-        typeof(init_bias),
-    }(activation,
-        dims,
-        init_weight,
-        init_bias)
+    return Scale{use_bias}(activation, dims, init_weight, init_bias)
 end
 
 function Scale(s1::Integer, s23::Integer...; _act=identity, kwargs...)
@@ -388,13 +373,13 @@ with `B` the Bilinear layer.
   - `weight`: Weight Matrix of size `(out_dims, in1_dims, in2_dims)`
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
-struct Bilinear{use_bias, F1, F2, F3} <: AbstractExplicitLayer
-    activation::F1
+@concrete struct Bilinear{use_bias} <: AbstractExplicitLayer
+    activation
     in1_dims::Int
     in2_dims::Int
     out_dims::Int
-    init_weight::F2
-    init_bias::F3
+    init_weight
+    init_bias
 end
 
 function Base.show(io::IO, b::Bilinear{use_bias}) where {use_bias}
@@ -411,8 +396,7 @@ function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:Integer},
     use_bias::Bool=true,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    _types = (use_bias, typeof(activation), typeof(init_weight), typeof(init_bias))
-    return Bilinear{_types...}(activation, in1_dims, in2_dims, out, init_weight, init_bias)
+    return Bilinear{use_bias}(activation, in1_dims, in2_dims, out, init_weight, init_bias)
 end
 function Bilinear((in12_dims, out)::Pair{<:Integer, <:Integer},
     activation=identity;
@@ -509,14 +493,14 @@ This layer is often used to store word embeddings and retrieve them using indice
     input, an N + 1 dimensional output is returned.
   - Empty `NamedTuple()`
 """
-struct Embedding{F} <: AbstractExplicitLayer
+@concrete struct Embedding <: AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
-    init_weight::F
+    init_weight
+end
 
-    function Embedding((in_dims, out_dims)::Pair{<:Integer, <:Integer}; init_weight=randn32)
-        return new{typeof(init_weight)}(in_dims, out_dims, init_weight)
-    end
+function Embedding((in_dims, out_dims)::Pair{<:Integer, <:Integer}; init_weight=randn32)
+    return Embedding(in_dims, out_dims, init_weight)
 end
 
 function initialparameters(rng::AbstractRNG, e::Embedding)

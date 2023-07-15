@@ -6,8 +6,8 @@ using Reexport
 @reexport using LuxLib
 # Julia StdLibs
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
-# Parameter Manipulation
-using Functors, Setfield
+# Parameter Manipulation / Clean Code
+using ConcreteStructs, Functors, Setfield
 # Automatic Differentiation
 using ChainRulesCore
 import ChainRulesCore as CRC

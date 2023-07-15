@@ -4,7 +4,7 @@ const GROUP = get(ENV, "GROUP", "All")
 
 @static if VERSION ≥ v"1.9"
     using Pkg
-    (GROUP == "CPU" || GROUP == "AMDGPU") && Pkg.add("LuxAMDGPU")
+    (GROUP == "All" || GROUP == "AMDGPU") && Pkg.add("LuxAMDGPU")
 end
 
 @testset "Lux.jl" begin
