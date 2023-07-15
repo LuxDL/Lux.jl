@@ -610,11 +610,7 @@ end
     ps, st = Lux.setup(rng, layer) .|> device
 
     @jet layer(x, ps, st) opt_broken=true
-    if mode != "AMDGPU"
-        @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
-    else
-        @test_broken size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
-    end
+    @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
     @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
 
     x = randn(Float32, 10, 11, 12, 3, 2) |> aType
@@ -623,11 +619,7 @@ end
     ps, st = Lux.setup(rng, layer) .|> device
 
     @jet layer(x, ps, st) opt_broken=true
-    if mode != "AMDGPU"
-        @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
-    else
-        @test_broken size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
-    end
+    @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
     @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
 
     @test occursin("groups=2", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))

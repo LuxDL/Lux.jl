@@ -44,9 +44,9 @@ LuxZygoteExt = "Zygote"
 
 [compat]
 ChainRulesCore = "1"
-ComponentArrays = "0.13"
+ComponentArrays = "0.13, 0.14"
 FillArrays = "0.13, 1"
-Flux = "0.13"
+Flux = "0.13, 0.14"
 Functors = "0.2, 0.3, 0.4"
 LuxAMDGPU = "0.1"
 LuxCUDA = "0.2, 0.3"
