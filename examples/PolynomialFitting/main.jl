@@ -74,14 +74,11 @@ tstate = Lux.Training.TrainState(rng, model, opt)
 
 # Now we will use Zygote for our AD requirements.
 
-vjp_rule = Lux.Training.ZygoteVJP()
+vjp_rule = Lux.Training.AutoZygote()
 
 # Finally the training loop.
 
-function main(tstate::Lux.Training.TrainState,
-    vjp::Lux.Training.AbstractVJP,
-    data::Tuple,
-    epochs::Int)
+function main(tstate::Lux.Training.TrainState, vjp, data, epochs)
     data = data .|> gpu_device()
     for epoch in 1:epochs
         grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,

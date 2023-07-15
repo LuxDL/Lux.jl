@@ -1,10 +1,10 @@
 module LuxZygoteExt
 
-using Lux, Setfield, Zygote
+using ADTypes, Lux, Setfield, Zygote
 using TruncatedStacktraces: @truncate_stacktrace
 using Zygote: Pullback
 
-function Lux.Training.compute_gradients(::Lux.Training.ZygoteVJP,
+function Lux.Training.compute_gradients(::AutoZygote,
     objective_function::Function,
     data,
     ts::Lux.Training.TrainState)

@@ -3,6 +3,8 @@ module Training
 # NOTE(@avik-pal): In the long term this will be pulled out into its own package but
 # currently all the dependencies are met by Lux itself.
 using ..Lux, ..LuxDeviceUtils
+using Reexport
+@reexport using ADTypes
 using ConcreteStructs, Optimisers, Random, Setfield
 
 """
@@ -74,31 +76,16 @@ function apply_gradients(ts::TrainState, grads)
     return TrainState(ts.model, parameters, ts.states, optimizer_state, ts.step + 1)
 end
 
-# VJPs
 """
-    AbstractVJP
-
-Base Type for all Vector-Jacobian Product Backends.
-"""
-abstract type AbstractVJP end
-
-"""
-    backend(::AbstractVJP)
-
-Package used to compute the VJP.
-"""
-function backend(::T) where {T <: AbstractVJP}
-    throw(ArgumentError("`backend` function must be defined for type $T"))
-end
-
-"""
-    compute_gradients(vjp::AbstractVJP, objective_function::Function, data, ts::TrainState)
+    compute_gradients(ad::ADTypes.AbstractADType, objective_function::Function, data,
+        ts::TrainState)
 
 Compute the gradients of the objective function wrt parameters stored in `ts`.
 
 ## Arguments
 
-  - `vjp`: Backend used to compute the gradients. See [`AbstractVJP`](@ref).
+  - `ad`: Backend (from [ADTypes.jl](https://github.com/SciML/ADTypes.jl)) used to compute
+    the gradients.
   - `objective_function`: Objective function. The function must take 4 inputs -- model,
     parameters, states and data. The function must return 3 values -- loss, updated_state,
     and any computed statistics.
@@ -117,45 +104,8 @@ A 4-Tuple containing:
 function compute_gradients(t::T,
     objective_function::Function,
     data,
-    ts::TrainState) where {T <: AbstractVJP}
-    throw(ArgumentError("Support for AD backend $(backend(t)) has not been implemented
-                         yet!!!"))
+    ts::TrainState) where {T <: ADTypes.AbstractADType}
+    throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
 end
-
-"""
-    ZygoteVJP <: AbstractVJP
-
-Vector-Jacobian Product using Zygote.
-"""
-struct ZygoteVJP <: AbstractVJP end
-
-backend(::ZygoteVJP) = :Zygote
-
-"""
-    EnzymeVJP <: AbstractVJP
-
-Vector-Jacobian Product using Enzyme.
-"""
-struct EnzymeVJP <: AbstractVJP end
-
-backend(::EnzymeVJP) = :Enzyme
-
-"""
-    YotaVJP <: AbstractVJP
-
-Vector-Jacobian Product using Yota.
-"""
-struct YotaVJP <: AbstractVJP end
-
-backend(::YotaVJP) = :Yota
-
-"""
-    TrackerVJP <: AbstractVJP
-
-Vector-Jacobian Product using Tracker.
-"""
-struct TrackerVJP <: AbstractVJP end
-
-backend(::TrackerVJP) = :Tracker
 
 end
