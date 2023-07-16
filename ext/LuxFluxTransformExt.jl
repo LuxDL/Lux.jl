@@ -250,7 +250,7 @@ transform(::typeof(Flux.flatten); kwargs...) = FlattenLayer()
 transform(l::Flux.PixelShuffle; kwargs...) = PixelShuffle(l.r)
 
 function transform(l::Flux.Upsample{mode}; kwargs...) where {mode}
-    return Upsample{mode, typeof(l.scale), typeof(l.size)}(l.scale, l.size)
+    return Upsample(mode; l.scale, l.size)
 end
 
 function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)

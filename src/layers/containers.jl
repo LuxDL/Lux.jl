@@ -56,13 +56,13 @@ function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
 end
 
 function initialparameters(rng::AbstractRNG,
-    l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
     return (layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection))
 end
 
 function initialstates(rng::AbstractRNG,
-    l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
     return (layers=initialstates(rng, l.layers),
         connection=initialstates(rng, l.connection))
 end
@@ -72,9 +72,9 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
     return skip.connection(mx, x), st
 end
 
-function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(x,
+function (skip::SkipConnection{N, <:AbstractExplicitLayer, <:AbstractExplicitLayer})(x,
     ps,
-    st::NamedTuple)
+    st::NamedTuple) where {N}
     mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
     return y, (layers=st1, connection=st2)

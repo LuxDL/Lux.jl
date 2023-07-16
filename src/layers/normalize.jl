@@ -102,7 +102,7 @@ function BatchNorm(chs::Int,
     momentum=0.1f0,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return BatchNorm{affine, track_stats, typeof(epsilon)}(activation,
+    return BatchNorm{affine, track_stats}(activation,
         epsilon,
         momentum,
         chs,
@@ -436,7 +436,7 @@ end
 function WeightNorm(layer::AbstractExplicitLayer,
     which_params::NTuple{N, Symbol},
     dims::Union{Tuple, Nothing}=nothing) where {N}
-    return WeightNorm{which_params, typeof(layer)}(layer, dims)
+    return WeightNorm{which_params}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
