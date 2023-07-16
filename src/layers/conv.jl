@@ -71,8 +71,8 @@ O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] 
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-struct Conv{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer
-    activation::F1
+@concrete struct Conv{N, use_bias, M} <: AbstractExplicitLayer
+    activation
     in_chs::Int
     out_chs::Int
     kernel_size::NTuple{N, Int}
@@ -80,8 +80,8 @@ struct Conv{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer
     pad::NTuple{M, Int}
     dilation::NTuple{N, Int}
     groups::Int
-    init_weight::F2
-    init_bias::F3
+    init_weight
+    init_bias
 end
 
 function Conv(k::NTuple{N, Integer},
@@ -100,14 +100,7 @@ function Conv(k::NTuple{N, Integer},
     pad = _calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return Conv{
-        N,
-        use_bias,
-        length(pad),
-        typeof(activation),
-        typeof(init_weight),
-        typeof(init_bias),
-    }(activation,
+    return Conv{N, use_bias, length(pad)}(activation,
         first(ch),
         last(ch),
         k,
@@ -353,9 +346,9 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
   - Upsampled Input of size `size` or of size `(I_1 x scale[1], ..., I_N x scale[N], C, N)`
   - Empty `NamedTuple()`
 """
-struct Upsample{mode, S, T} <: AbstractExplicitLayer
-    scale::S
-    size::T
+@concrete struct Upsample{mode} <: AbstractExplicitLayer
+    scale
+    size
 end
 
 function Upsample(mode::Symbol=:nearest; scale=nothing, size=nothing)
@@ -364,7 +357,7 @@ function Upsample(mode::Symbol=:nearest; scale=nothing, size=nothing)
     if !xor(isnothing(scale), isnothing(size))
         throw(ArgumentError("Either scale or size should be specified (but not both)."))
     end
-    return Upsample{mode, typeof(scale), typeof(size)}(scale, size)
+    return Upsample{mode}(scale, size)
 end
 
 Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
@@ -420,9 +413,7 @@ See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 """
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
-function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
-    return maximum(x; dims=1:(ndims(x) - 2)), st
-end
+(g::GlobalMaxPool)(x, ps, st::NamedTuple) = maximum(x; dims=1:(ndims(x) - 2)), st
 
 """
     GlobalMeanPool()
@@ -443,9 +434,7 @@ See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 """
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
-function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
-    return mean(x; dims=1:(ndims(x) - 2)), st
-end
+(g::GlobalMeanPool)(x, ps, st::NamedTuple) = mean(x; dims=1:(ndims(x) - 2)), st
 
 """
     AdaptiveMaxPool(out::NTuple)
@@ -614,16 +603,16 @@ O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] 
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-struct CrossCor{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer
-    activation::F1
+@concrete struct CrossCor{N, use_bias, M} <: AbstractExplicitLayer
+    activation
     in_chs::Int
     out_chs::Int
     kernel_size::NTuple{N, Int}
     stride::NTuple{N, Int}
     pad::NTuple{M, Int}
     dilation::NTuple{N, Int}
-    init_weight::F2
-    init_bias::F3
+    init_weight
+    init_bias
 end
 
 function CrossCor(k::NTuple{N, Integer},
@@ -641,14 +630,7 @@ function CrossCor(k::NTuple{N, Integer},
     pad = _calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return CrossCor{
-        N,
-        use_bias,
-        length(pad),
-        typeof(activation),
-        typeof(init_weight),
-        typeof(init_bias),
-    }(activation,
+    return CrossCor{N, use_bias, length(pad)}(activation,
         first(ch),
         last(ch),
         k,
@@ -756,8 +738,8 @@ Standard convolutional transpose layer.
   - `weight`: Convolution Transpose kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-struct ConvTranspose{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer
-    activation::F1
+@concrete struct ConvTranspose{N, use_bias, M} <: AbstractExplicitLayer
+    activation
     in_chs::Int
     out_chs::Int
     kernel_size::NTuple{N, Int}
@@ -765,8 +747,8 @@ struct ConvTranspose{N, use_bias, M, F1, F2, F3} <: AbstractExplicitLayer
     pad::NTuple{M, Int}
     dilation::NTuple{N, Int}
     groups::Int
-    init_weight::F2
-    init_bias::F3
+    init_weight
+    init_bias
 end
 
 function ConvTranspose(k::NTuple{N, Integer},
@@ -785,14 +767,7 @@ function ConvTranspose(k::NTuple{N, Integer},
     pad = _calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return ConvTranspose{
-        N,
-        use_bias,
-        length(pad),
-        typeof(activation),
-        typeof(init_weight),
-        typeof(init_bias),
-    }(activation,
+    return ConvTranspose{N, use_bias, length(pad)}(activation,
         first(ch),
         last(ch),
         k,

@@ -82,14 +82,14 @@ m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
 """
-struct BatchNorm{affine, track_stats, F1, F2, F3, N} <:
-       AbstractNormalizationLayer{affine, track_stats}
-    activation::F1
+@concrete struct BatchNorm{affine, track_stats, N} <:
+                 AbstractNormalizationLayer{affine, track_stats}
+    activation
     epsilon::N
     momentum::N
     chs::Int
-    init_bias::F2
-    init_scale::F3
+    init_bias
+    init_scale
 end
 
 function BatchNorm(chs::Int,
@@ -102,14 +102,7 @@ function BatchNorm(chs::Int,
     momentum=0.1f0,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return BatchNorm{
-        affine,
-        track_stats,
-        typeof(activation),
-        typeof(init_bias),
-        typeof(init_scale),
-        typeof(epsilon),
-    }(activation,
+    return BatchNorm{affine, track_stats}(activation,
         epsilon,
         momentum,
         chs,
@@ -230,12 +223,12 @@ m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(1
 See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
 """
-struct GroupNorm{affine, F1, F2, F3, N} <: AbstractNormalizationLayer{affine, false}
-    activation::F1
-    epsilon::N
+@concrete struct GroupNorm{affine} <: AbstractNormalizationLayer{affine, false}
+    activation
+    epsilon
     chs::Int
-    init_bias::F2
-    init_scale::F3
+    init_bias
+    init_scale
     groups::Int
 end
 
@@ -250,18 +243,7 @@ function GroupNorm(chs::Integer,
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return GroupNorm{
-        affine,
-        typeof(activation),
-        typeof(init_bias),
-        typeof(init_scale),
-        typeof(epsilon),
-    }(activation,
-        epsilon,
-        chs,
-        init_bias,
-        init_scale,
-        groups)
+    return GroupNorm{affine}(activation, epsilon, chs, init_bias, init_scale, groups)
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm)
@@ -357,12 +339,12 @@ m = Chain(Dense(784 => 64), InstanceNorm(64, relu), Dense(64 => 10), InstanceNor
 
 See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`WeightNorm`](@ref)
 """
-struct InstanceNorm{affine, F1, F2, F3, N} <: AbstractNormalizationLayer{affine, false}
-    activation::F1
-    epsilon::N
+@concrete struct InstanceNorm{affine} <: AbstractNormalizationLayer{affine, false}
+    activation
+    epsilon
     chs::Int
-    init_bias::F2
-    init_scale::F3
+    init_bias
+    init_scale
 end
 
 function InstanceNorm(chs::Integer,
@@ -374,17 +356,7 @@ function InstanceNorm(chs::Integer,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return InstanceNorm{
-        affine,
-        typeof(activation),
-        typeof(init_bias),
-        typeof(init_scale),
-        typeof(epsilon),
-    }(activation,
-        epsilon,
-        chs,
-        init_bias,
-        init_scale)
+    return InstanceNorm{affine}(activation, epsilon, chs, init_bias, init_scale)
 end
 
 function initialparameters(rng::AbstractRNG, l::InstanceNorm)
@@ -455,15 +427,16 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
 
   - Same as that of `layer`
 """
-struct WeightNorm{which_params, L <: AbstractExplicitLayer, D} <: AbstractExplicitLayer
+@concrete struct WeightNorm{which_params, L <: AbstractExplicitLayer} <:
+                 AbstractExplicitLayer
     layer::L
-    dims::D
+    dims
 end
 
 function WeightNorm(layer::AbstractExplicitLayer,
     which_params::NTuple{N, Symbol},
     dims::Union{Tuple, Nothing}=nothing) where {N}
-    return WeightNorm{which_params, typeof(layer), typeof(dims)}(layer, dims)
+    return WeightNorm{which_params}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
@@ -592,13 +565,13 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
       + `bias`: Bias of shape `(shape..., 1)`
       + `scale`: Scale of shape `(shape..., 1)`
 """
-struct LayerNorm{affine, F1, N, T, F2, F3, D} <: AbstractNormalizationLayer{affine, false}
+@concrete struct LayerNorm{affine, N} <: AbstractNormalizationLayer{affine, false}
     shape::NTuple{N, Int}
-    activation::F1
-    epsilon::T
-    init_bias::F2
-    init_scale::F3
-    dims::D
+    activation
+    epsilon
+    init_bias
+    init_scale
+    dims
 end
 
 function LayerNorm(shape::NTuple{N, <:Int},
@@ -610,20 +583,7 @@ function LayerNorm(shape::NTuple{N, <:Int},
     init_scale=ones32,
     allow_fast_activation::Bool=true) where {N, T}
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return LayerNorm{
-        affine,
-        typeof(activation),
-        N,
-        T,
-        typeof(init_bias),
-        typeof(init_scale),
-        typeof(dims),
-    }(shape,
-        activation,
-        epsilon,
-        init_bias,
-        init_scale,
-        dims)
+    return LayerNorm{affine, N}(shape, activation, epsilon, init_bias, init_scale, dims)
 end
 
 function initialparameters(rng::AbstractRNG, ln::LayerNorm)

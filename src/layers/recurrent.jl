@@ -204,14 +204,14 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct RNNCell{use_bias, train_state, A, B, W, S} <:
-       AbstractRecurrentCell{use_bias, train_state}
-    activation::A
+@concrete struct RNNCell{use_bias, train_state} <:
+                 AbstractRecurrentCell{use_bias, train_state}
+    activation
     in_dims::Int
     out_dims::Int
-    init_bias::B
-    init_weight::W
-    init_state::S
+    init_bias
+    init_weight
+    init_state
 end
 
 function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int},
@@ -221,14 +221,7 @@ function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int},
     init_bias=zeros32,
     init_weight=glorot_uniform,
     init_state=ones32)
-    return RNNCell{
-        use_bias,
-        train_state,
-        typeof(activation),
-        typeof(init_bias),
-        typeof(init_weight),
-        typeof(init_state),
-    }(activation,
+    return RNNCell{use_bias, train_state}(activation,
         in_dims,
         out_dims,
         init_bias,
@@ -370,14 +363,14 @@ Long Short-Term (LSTM) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct LSTMCell{use_bias, train_state, train_memory, B, W, S, M} <:
-       AbstractRecurrentCell{use_bias, train_state}
+@concrete struct LSTMCell{use_bias, train_state, train_memory} <:
+                 AbstractRecurrentCell{use_bias, train_state}
     in_dims::Int
     out_dims::Int
-    init_bias::B
-    init_weight::W
-    init_state::S
-    init_memory::M
+    init_bias
+    init_weight
+    init_state
+    init_memory
 end
 
 function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
@@ -391,14 +384,7 @@ function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
     init_bias::NTuple{4, Function}=(zeros32, zeros32, ones32, zeros32),
     init_state::Function=zeros32,
     init_memory::Function=zeros32)
-    tfields = (use_bias,
-        train_state,
-        train_memory,
-        typeof(init_bias),
-        typeof(init_weight),
-        typeof(init_state),
-        typeof(init_memory))
-    return LSTMCell{tfields...}(in_dims,
+    return LSTMCell{use_bias, train_state, train_memory}(in_dims,
         out_dims,
         init_bias,
         init_weight,
@@ -570,13 +556,13 @@ Gated Recurrent Unit (GRU) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-struct GRUCell{use_bias, train_state, B, W, S} <:
-       AbstractRecurrentCell{use_bias, train_state}
+@concrete struct GRUCell{use_bias, train_state} <:
+                 AbstractRecurrentCell{use_bias, train_state}
     in_dims::Int
     out_dims::Int
-    init_bias::B
-    init_weight::W
-    init_state::S
+    init_bias
+    init_weight
+    init_state
 end
 
 function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
@@ -585,13 +571,7 @@ function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
     init_weight::NTuple{3, Function}=(glorot_uniform, glorot_uniform, glorot_uniform),
     init_bias::NTuple{3, Function}=(zeros32, zeros32, zeros32),
     init_state::Function=zeros32)
-    return GRUCell{
-        use_bias,
-        train_state,
-        typeof(init_bias),
-        typeof(init_weight),
-        typeof(init_state),
-    }(in_dims,
+    return GRUCell{use_bias, train_state}(in_dims,
         out_dims,
         init_bias,
         init_weight,
@@ -604,7 +584,7 @@ function initialparameters(rng::AbstractRNG,
                      for init_weight in gru.init_weight]...)
     weight_h = vcat([init_weight(rng, gru.out_dims, gru.out_dims)
                      for init_weight in gru.init_weight]...)
-    ps = (weight_i=weight_i, weight_h=weight_h)
+    ps = (; weight_i, weight_h)
     if use_bias
         bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
         bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)

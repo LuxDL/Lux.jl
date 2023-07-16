@@ -73,8 +73,8 @@ function _get_children(p::Parallel)
 end
 _get_children(s::SkipConnection) = (s.layers, s.connection)
 _get_children(s::WeightNorm) = (s.layer,)
-_get_children(::Any) = ()
 _get_children(nt::NamedTuple) = nt
+_get_children(::Any) = ()
 
 function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
     if !get(io, :compact, false)

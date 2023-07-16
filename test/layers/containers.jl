@@ -116,7 +116,7 @@ end
     # Ref https://github.com/FluxML/Flux.jl/issues/1673
     @testset "Input domain" begin
         struct Input
-            x::Any
+            x
         end
 
         struct L1 <: Lux.AbstractExplicitLayer end

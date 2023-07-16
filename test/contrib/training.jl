@@ -1,4 +1,4 @@
-using Lux, Optimisers, Random, Test
+using ADTypes, Lux, Optimisers, Random, Test
 
 include("../test_utils.jl")
 
@@ -30,7 +30,7 @@ end
     @test tstate.step == 0
 end
 
-@testset "$mode: AbstractVJP" for (mode, aType, device, ongpu) in MODES
+@testset "$mode: AbstractADTypes" for (mode, aType, device, ongpu) in MODES
     rng = get_stable_rng(12345)
 
     model = Dense(3, 2)
@@ -43,16 +43,15 @@ end
 
     x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
-    @testset "NotImplemented $(string(vjp_rule))" for vjp_rule in (Lux.Training.EnzymeVJP(),
-        Lux.Training.YotaVJP())
-        @test_throws ArgumentError Lux.Training.compute_gradients(vjp_rule,
+    @testset "NotImplemented $(string(ad))" for ad in (AutoEnzyme(), AutoReverseDiff())
+        @test_throws ArgumentError Lux.Training.compute_gradients(ad,
             _loss_function,
             x,
             tstate)
     end
 
-    for vjp_rule in (Lux.Training.ZygoteVJP(), Lux.Training.TrackerVJP())
-        grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(vjp_rule,
+    for ad in (AutoZygote(), AutoTracker())
+        grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(ad,
             _loss_function,
             x,
             tstate)

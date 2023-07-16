@@ -21,35 +21,16 @@ Pages = ["contrib.md"]
 
 ## Training
 
-!!! note
-    This module will be moved into a separate package in the near future.
-
 Helper Functions making it easier to train `Lux.jl` models.
 
 Lux.Training is meant to be simple and provide extremely basic functionality. We provide
 basic building blocks which can be seamlessly composed to create complex training pipelines.
 
 ```@docs
-Lux.Training.AbstractVJP
-Lux.Training.backend
-Lux.Training.EnzymeVJP
-Lux.Training.TrackerVJP
-Lux.Training.YotaVJP
-Lux.Training.ZygoteVJP
 Lux.Training.TrainState
 Lux.Training.compute_gradients
 Lux.Training.apply_gradients
 ```
-
-### Why VJP rules ?
-
-In the long term, the goal is to just use
-[AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl/)?
-directly. However, there are current refactors being planned (See
-[this issue](https://github.com/EnzymeAD/Enzyme.jl/issues/349#issuecomment-1144514285)).
-Once the package is stable and we have the necessary backend support, we will be dropping
-the VJP rules in this module.
-
 
 ## Parameter Freezing
 
