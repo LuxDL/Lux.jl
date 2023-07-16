@@ -1,4 +1,3 @@
-
 """
     SkipConnection(layer, connection; name=nothing)
 
@@ -45,9 +44,10 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-struct SkipConnection{T, F, N <: NAME_TYPE} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
-    connection::F
+@concrete struct SkipConnection{N <: NAME_TYPE} <:
+                 AbstractExplicitContainerLayer{(:layers,)}
+    layers
+    connection
     name::N
 end
 
@@ -56,13 +56,13 @@ function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
 end
 
 function initialparameters(rng::AbstractRNG,
-    l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
     return (layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection))
 end
 
 function initialstates(rng::AbstractRNG,
-    l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+    l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
     return (layers=initialstates(rng, l.layers),
         connection=initialstates(rng, l.connection))
 end
@@ -72,9 +72,9 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
     return skip.connection(mx, x), st
 end
 
-function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(x,
+function (skip::SkipConnection{N, <:AbstractExplicitLayer, <:AbstractExplicitLayer})(x,
     ps,
-    st::NamedTuple)
+    st::NamedTuple) where {N}
     mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
     return y, (layers=st1, connection=st2)
@@ -125,9 +125,9 @@ with `connection`.
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
-struct Parallel{F, T <: NamedTuple, N <: NAME_TYPE} <:
-       AbstractExplicitContainerLayer{(:layers,)}
-    connection::F
+@concrete struct Parallel{T <: NamedTuple, N <: NAME_TYPE} <:
+                 AbstractExplicitContainerLayer{(:layers,)}
+    connection
     layers::T
     name::N
 end
@@ -325,9 +325,9 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
-struct PairwiseFusion{F, T <: NamedTuple, N <: NAME_TYPE} <:
-       AbstractExplicitContainerLayer{(:layers,)}
-    connection::F
+@concrete struct PairwiseFusion{T <: NamedTuple, N <: NAME_TYPE} <:
+                 AbstractExplicitContainerLayer{(:layers,)}
+    connection
     layers::T
     name::N
 end

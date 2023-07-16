@@ -117,7 +117,7 @@ end
 
 # Tracking
 Base.@kwdef mutable struct AverageMeter
-    fmtstr::Any
+    fmtstr
     val::Float64 = 0.0
     sum::Float64 = 0.0
     count::Int = 0
@@ -158,7 +158,7 @@ end
 
 # ProgressMeter
 struct ProgressMeter{N}
-    batch_fmtstr::Any
+    batch_fmtstr
     meters::NTuple{N, AverageMeter}
 end
 

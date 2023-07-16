@@ -5,7 +5,7 @@ using LuxTestUtils: @jet, @test_gradients, check_approx
 const GROUP = get(ENV, "GROUP", "All")
 
 @static if VERSION ≥ v"1.9"
-    if GROUP == "CPU" || GROUP == "AMDGPU"
+    if GROUP == "All" || GROUP == "AMDGPU"
         using LuxAMDGPU
     end
 end
@@ -27,7 +27,7 @@ const MODES = begin
     cpu_mode = ("CPU", Array, LuxCPUDevice(), false)
     cuda_mode = ("CUDA", CuArray, LuxCUDADevice(), true)
     amdgpu_mode = @static if VERSION ≥ v"1.9"
-        if GROUP == "CPU" || GROUP == "AMDGPU"
+        if GROUP == "All" || GROUP == "AMDGPU"
             ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true)
         else
             nothing

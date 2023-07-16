@@ -43,7 +43,7 @@ end
 function AlphaDropout(p::T) where {T <: Real}
     @assert 0 ≤ p ≤ 1
     iszero(p) && return NoOpLayer()
-    isone(p) && WrappedFunction(Base.Fix1(broadcast, zero))
+    isone(p) && return WrappedFunction(Base.Fix1(broadcast, zero))
 
     alpha = T(-1.7580993408473766)
     scale = T(inv(sqrt((1 - p) * (1 + p * alpha^2))))
@@ -92,10 +92,10 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 
 See also [`AlphaDropout`](@ref), [`VariationalHiddenDropout`](@ref)
 """
-struct Dropout{T, D} <: AbstractExplicitLayer
+@concrete struct Dropout{T} <: AbstractExplicitLayer
     p::T
     q::T
-    dims::D
+    dims
 end
 
 function initialstates(rng::AbstractRNG, ::Dropout)
@@ -157,10 +157,10 @@ Call [`Lux.testmode`](@ref) to switch to test mode.
 
 See also [`AlphaDropout`](@ref), [`Dropout`](@ref)
 """
-struct VariationalHiddenDropout{T, D} <: AbstractExplicitLayer
+@concrete struct VariationalHiddenDropout{T} <: AbstractExplicitLayer
     p::T
     q::T
-    dims::D
+    dims
 end
 
 function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)

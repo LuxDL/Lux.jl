@@ -1,6 +1,6 @@
 module LuxTrackerExt
 
-using ChainRulesCore, Functors, Lux, Setfield, Tracker
+using ADTypes, ChainRulesCore, Functors, Lux, Setfield, Tracker
 
 # Type Piracy: Need to upstream
 Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)
@@ -22,7 +22,7 @@ Tracker.data(t::Tuple) = map(Tracker.data, t)
 @inline Lux._gate(x::TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
 
 # Lux.Training
-function Lux.Training.compute_gradients(::Lux.Training.TrackerVJP,
+function Lux.Training.compute_gradients(::AutoTracker,
     objective_function::Function,
     data,
     ts::Lux.Training.TrainState)

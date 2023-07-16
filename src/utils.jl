@@ -82,7 +82,7 @@ Split up `x` into `N` equally sized chunks (along dimension `1`).
 end
 
 # Val utilities
-get_known(::Val{T}) where {T} = T
+__unwrap_val(::Val{T}) where {T} = T
 
 # Indexing into NamedTuple
 function _index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}

@@ -435,8 +435,8 @@ include("../test_utils.jl")
 
     @testset "Custom Layer" begin
         struct CustomFluxLayer
-            weight::Any
-            bias::Any
+            weight
+            bias
         end
 
         Flux.@functor CustomFluxLayer

@@ -1,10 +1,10 @@
 # DataLoading
 struct ImageDataset
-    image_files::Any
-    labels::Any
-    mapping::Any
-    augmentation_pipeline::Any
-    normalization_parameters::Any
+    image_files
+    labels
+    mapping
+    augmentation_pipeline
+    normalization_parameters
 end
 
 function ImageDataset(folder::String, augmentation_pipeline, normalization_parameters)
