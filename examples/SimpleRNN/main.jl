@@ -11,7 +11,7 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, Zygote, Random, Statistics
+using LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
 
 # ## Dataset
 
@@ -167,6 +167,20 @@ function main()
             println("Validation: Loss $loss Accuracy $acc")
         end
     end
+
+    return (ps, st) |> cpu_device()
 end
 
-main()
+ps_trained, st_trained = main()
+
+# ## Saving the Model
+
+# We can save the model using JLD2 (and any other serialization library of your choice)
+# Note that we transfer the model to CPU before saving. Additionally, we recommend that
+# you don't save the model
+
+@save "trained_model.jld2" {compress = true} ps_trained st_trained
+
+# Let's try loading the model
+
+@load "trained_model.jld2" ps_trained st_trained
