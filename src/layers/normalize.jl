@@ -530,9 +530,11 @@ y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
 
 where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
-> As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
-> `affine::Bool=true` as the default. Now the doc reflects the code, so please check
-> whether your assumptions about the default (if made) were invalid.
+!!! note
+
+    As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
+    `affine::Bool=true` as the default. Now the doc reflects the code, so please check
+    whether your assumptions about the default (if made) were invalid.
 
 ## Arguments
 
