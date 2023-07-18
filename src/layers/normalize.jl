@@ -516,7 +516,7 @@ end
 
 @doc doc"""
     LayerNorm(shape::NTuple{N, Int}, activation=identity; epsilon=1f-5, dims=Colon(),
-              affine::Bool=false, init_bias=zeros32, init_scale=ones32,)
+              affine::Bool=true, init_bias=zeros32, init_scale=ones32,)
 
 Computes mean and standard deviation over the whole input array, and uses these to
 normalize the whole array. Optionally applies an elementwise affine transformation
@@ -529,6 +529,10 @@ y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
 ```
 
 where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
+
+> As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
+> `affine::Bool=true` as the default. Now the doc reflects the code, so please check
+> whether your assumptions about the default (if made) were invalid.
 
 ## Arguments
 
