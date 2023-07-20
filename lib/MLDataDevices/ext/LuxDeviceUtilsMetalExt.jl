@@ -8,7 +8,7 @@ __init__() = reset_gpu_device!()
 
 # Device Transfer
 ## To GPU
-adapt_storage(::LuxMetalAdaptor, x) = adapt_storage(Metal.MtlArrayAdaptor(), x)
+adapt_storage(::LuxMetalAdaptor, x) = mtl(x)
 adapt_storage(::LuxMetalAdaptor, rng::AbstractRNG) = rng
 
 ## Chain Rules
