@@ -3,7 +3,7 @@
 # This is a quick intro to [Lux](https://github.com/avik-pal/:ux.jl) loosely based on:
 # 
 # 1. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
-# 2. [Flux's tutorial](https://fluxml.ai/tutorials/2020/09/15/deep-learning-flux.html).
+# 2. [Flux's tutorial](https://fluxml.ai/Flux.jl/stable/tutorials/2020-09-15-deep-learning-flux/).
 # 3. [Flax's tutorial](https://flax.readthedocs.io/en/latest/notebooks/jax_for_the_impatient.html).
 #
 # It introduces basic Julia programming, as well `Zygote`, a source-to-source automatic
