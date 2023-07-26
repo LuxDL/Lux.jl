@@ -2,8 +2,6 @@ module LuxDeviceUtils
 
 using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
-import Base: PkgId, UUID
-import TruncatedStacktraces
 
 using PackageExtensionCompat
 function __init__()
@@ -17,41 +15,33 @@ export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
 abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
 
+__is_functional(::AbstractLuxDevice) = false
+__is_loaded(::AbstractLuxDevice) = false
+
 struct LuxCPUDevice <: AbstractLuxDevice end
+struct LuxCUDADevice <: AbstractLuxGPUDevice end
+struct LuxAMDGPUDevice <: AbstractLuxGPUDevice end
+struct LuxMetalDevice <: AbstractLuxGPUDevice end
 
-Base.@kwdef struct LuxCUDADevice <: AbstractLuxGPUDevice
-    name::String = "CUDA"
-    pkgid::PkgId = PkgId(UUID("d0bbae9a-e099-4d5b-a835-1c6931763bda"), "LuxCUDA")
-end
+__is_functional(::LuxCPUDevice) = true
+__is_loaded(::LuxCPUDevice) = true
 
-Base.@kwdef struct LuxAMDGPUDevice <: AbstractLuxGPUDevice
-    name::String = "AMDGPU"
-    pkgid::PkgId = PkgId(UUID("83120cb1-ca15-4f04-bf3b-6967d2e6b60b"), "LuxAMDGPU")
-end
+_get_device_name(::LuxCPUDevice) = "CPU"
+_get_device_name(::LuxCUDADevice) = "CUDA"
+_get_device_name(::LuxAMDGPUDevice) = "AMDGPU"
+_get_device_name(::LuxMetalDevice) = "Metal"
 
-Base.@kwdef struct LuxMetalDevice <: AbstractLuxGPUDevice
-    name::String = "Metal"
-    pkgid::PkgId = PkgId(UUID("dde4c033-4e86-420c-a63e-0dd931031962"), "Metal")
-end
+_get_triggerpkg_name(::LuxCPUDevice) = ""
+_get_triggerpkg_name(::LuxCUDADevice) = "LuxCUDA"
+_get_triggerpkg_name(::LuxAMDGPUDevice) = "LuxAMDGPU"
+_get_triggerpkg_name(::LuxMetalDevice) = "Metal"
 
 Base.show(io::IO, dev::AbstractLuxDevice) = print(io, nameof(dev))
 
 struct LuxDeviceSelectionException <: Exception end
 
 function Base.showerror(io::IO, e::LuxDeviceSelectionException)
-    print(io, "LuxDeviceSelectionException(No functional GPU device found!!)")
-    if !TruncatedStacktraces.VERBOSE[]
-        println(io, TruncatedStacktraces.VERBOSE_MSG)
-    end
-end
-
-@generated function _get_device_name(t::T) where {T <: AbstractLuxDevice}
-    return hasfield(T, :name) ? :(t.name) : :("")
-end
-
-@generated function _get_trigger_pkgid(t::T) where {T <: AbstractLuxDevice}
-    return hasfield(T, :pkgid) ? :(t.pkgid) :
-           :(PkgId(UUID("b2108857-7c20-44ae-9111-449ecde12c47"), "Lux"))
+    return print(io, "LuxDeviceSelectionException(No functional GPU device found!!)")
 end
 
 # Order is important here
@@ -125,16 +115,17 @@ function _get_gpu_device(; force_gpu_usage::Bool)
         else
             @debug "Using GPU backend set in preferences: $backend."
             device = GPU_DEVICES[idx]
-            if !haskey(Base.loaded_modules, device.pkgid)
+            if !__is_loaded(device)
                 @warn """Trying to use backend: $(_get_device_name(device)) but the trigger package $(device.pkgid) is not loaded.
                     Ignoring the Preferences backend!!!
                     Please load the package and call this function again to respect the Preferences backend.""" maxlog=1
             else
-                if getproperty(Base.loaded_modules[device.pkgid], :functional)()
+                if __is_functional(device)
                     @debug "Using GPU backend: $(_get_device_name(device))."
                     return device
                 else
-                    @warn "GPU backend: $(_get_device_name(device)) set via Preferences.jl is not functional. Defaulting to automatic GPU Backend selection." maxlog=1
+                    @warn "GPU backend: $(_get_device_name(device)) set via Preferences.jl is not functional.
+                        Defaulting to automatic GPU Backend selection." maxlog=1
                 end
             end
         end
@@ -142,15 +133,15 @@ function _get_gpu_device(; force_gpu_usage::Bool)
 
     @debug "Running automatic GPU backend selection..."
     for device in GPU_DEVICES
-        if haskey(Base.loaded_modules, device.pkgid)
+        if __is_loaded(device)
             @debug "Trying backend: $(_get_device_name(device))."
-            if getproperty(Base.loaded_modules[device.pkgid], :functional)()
+            if __is_functional(device)
                 @debug "Using GPU backend: $(_get_device_name(device))."
                 return device
             end
             @debug "GPU backend: $(_get_device_name(device)) is not functional."
         else
-            @debug "Trigger package for backend ($(_get_device_name(device))): $((device.pkgid)) not loaded."
+            @debug "Trigger package for backend ($(_get_device_name(device))): $(_get_trigger_pkgname(device)) not loaded."
         end
     end
 

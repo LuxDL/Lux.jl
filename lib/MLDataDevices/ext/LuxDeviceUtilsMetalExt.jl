@@ -6,6 +6,9 @@ import ChainRulesCore as CRC
 
 __init__() = reset_gpu_device!()
 
+LuxDeviceUtils.__is_loaded(::LuxMetalDevice) = true
+LuxDeviceUtils.__is_functional(::LuxMetalDevice) = Metal.functional()
+
 # Device Transfer
 ## To GPU
 adapt_storage(::LuxMetalAdaptor, x) = mtl(x)
