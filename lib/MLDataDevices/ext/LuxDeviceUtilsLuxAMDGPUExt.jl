@@ -6,6 +6,9 @@ import ChainRulesCore as CRC
 
 __init__() = reset_gpu_device!()
 
+LuxDeviceUtils.__is_loaded(::LuxAMDGPUDevice) = true
+LuxDeviceUtils.__is_functional(::LuxAMDGPUDevice) = LuxAMDGPU.functional()
+
 # Device Transfer
 ## To GPU
 adapt_storage(::LuxAMDGPUAdaptor, x) = roc(x)
