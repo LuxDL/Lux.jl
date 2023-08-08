@@ -47,64 +47,13 @@ LuxLib._get_backend(x::TrackedArray) = LuxLib._get_backend(value(x))
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(value(x))
 
 # Patch Conv for ReverseDiff
-# NOTE: @grad_from_chainrules was not working for ConvDims!
 for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
-    xType in (:AbstractArray, :TrackedArray),
-    wType in (:AbstractArray, :TrackedArray)
+    xType in (:AbstractArray, :TrackedArray), wType in (:AbstractArray, :TrackedArray)
 
     __is_tracked(xType, wType) || continue
 
-    @eval begin
-        function NNlib.$(func)(x::$(xType), w::$(wType), cdims::ConvDims; kwargs...)
-            return track(NNlib.$(func), x, w, cdims; kwargs...)
-        end
-
-        function ReverseDiff.track(::typeof(NNlib.$(func)),
-            x::$(xType),
-            w::$(wType),
-            cdims::ConvDims;
-            kwargs...)
-            tape = ReverseDiff.tape(x, w, cdims)
-            output_value, back = CRC.rrule(NNlib.$(func),
-                value(x),
-                value(w),
-                cdims;
-                kwargs...)
-            output = track(output_value, tape)
-            function closure(cls_args...; cls_kwargs...)
-                return CRC.rrule(NNlib.$(func), value(x), value(w), cdims; kwargs...)
-            end
-            ReverseDiff.record!(tape,
-                SpecialInstruction,
-                NNlib.$(func),
-                (x, w, cdims),
-                output,
-                (back, closure, kwargs))
-            return output
-        end
-
-        function special_reverse_exec!(instr::SpecialInstruction{
-            typeof(NNlib.$(func)),
-            <:Tuple{$(xType), $(wType), ConvDims},
-        })
-            back_output = instr.cache[1](ReverseDiff.deriv(instr.output))
-            input_derivs = back_output[2:end]
-            ReverseDiff._add_to_deriv!.(instr.input, input_derivs)
-            ReverseDiff.unseed!(instr.output)
-            return nothing
-        end
-
-        function special_forward_exec!(instr::SpecialInstruction{
-            typeof(NNlib.$(func)),
-            <:Tuple{$(xType), $(wType), ConvDims},
-        })
-            ReverseDiff.pull_value!.(instr.input)
-            out_value = instr.cache[2](ReverseDiff.value.(instr.input)...;
-                instr.cache[3]...)
-            ReverseDiff.value!(instr.output, out_value)
-            return nothing
-        end
-    end
+    @eval @grad_from_chainrules NNlib.$(func)(x::$(xType), w::$(wType), cdims::ConvDims;
+        kwargs...)
 end
 
 end
