@@ -45,7 +45,7 @@ end
         __∇batchnorm = @static if @isdefined(NNlibCUDA)
             NNlibCUDA.∇batchnorm
         else
-            !hasproperty(NNlib, :∇batchnorm) &&
+            !isdefined(NNlib, :∇batchnorm) &&
                 throw(LuxLib.OutdatedNNlibDependencyException(:∇batchnorm))
             NNlib.∇batchnorm
         end
