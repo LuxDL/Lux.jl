@@ -85,8 +85,12 @@ end
         eps,
         training)
     function ∇_batchnorm_cudnn!(Δ)
-        __∇batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.∇batchnorm :
-                               NNlib.∇batchnorm
+        __∇batchnorm = @static if @isdefined(NNlibCUDA)
+            NNlibCUDA.∇batchnorm
+        else
+            !hasproperty(NNlib, :∇batchnorm) && throw(LuxLib.OutdatedNNlibDependencyException(:∇batchnorm))
+            NNlib.∇batchnorm
+        end
         ∂g, ∂b, ∂x = __∇batchnorm(data(scale),
             data(bias),
             data(x),

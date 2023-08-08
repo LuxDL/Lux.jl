@@ -39,7 +39,12 @@ function _batchnorm_cudnn!(running_mean,
     momentum,
     eps,
     ::Val{training}) where {training}
-    __batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.batchnorm : NNlib.batchnorm
+    __batchnorm = @static if @isdefined(NNlibCUDA)
+        NNlibCUDA.batchnorm
+    else
+        !hasproperty(NNlib, :batchnorm) && throw(LuxLib.OutdatedNNlibDependencyException(:batchnorm))
+        NNlib.batchnorm
+    end
     return __batchnorm(scale, bias, x, running_mean, running_var, momentum; eps, training)
 end
 
@@ -54,8 +59,12 @@ function CRC.rrule(::typeof(_batchnorm_cudnn!),
     t::Val{training}) where {training}
     y = _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum, epsilon, t)
     function ∇_batchnorm_cudnn!(Δ)
-        __∇batchnorm = @static @isdefined(NNlibCUDA) ? NNlibCUDA.∇batchnorm :
-                               NNlib.∇batchnorm
+        __∇batchnorm = @static if @isdefined(NNlibCUDA)
+            NNlibCUDA.∇batchnorm
+        else
+            !hasproperty(NNlib, :∇batchnorm) && throw(LuxLib.OutdatedNNlibDependencyException(:∇batchnorm))
+            NNlib.∇batchnorm
+        end
         ∂g, ∂b, ∂x = __∇batchnorm(scale,
             bias,
             x,
