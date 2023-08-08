@@ -79,3 +79,22 @@ end
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
+
+# Exception Types
+struct OutdatedNNlibDependencyException{F} <: Exception
+    func::F
+end
+
+function Base.showerror(io::IO, ex::OutdatedNNlibDependencyException)
+    msg = """
+    The version of NNlib installed doesn't have the function $(ex.func) implemented. This is
+    likely caused by an outdated NNlib dependency.
+
+    In most cases, this is probably due to `NNlibCUDA` being installed simultaneously. Please
+    remove that dependency (most likely via something holding `Flux.jl` back).
+
+    Another (less recommended) option is to pin `LuxCUDA` to an older version that uses
+    `NNlibCUDA` (i.e. `julia> ] pin LuxCUDA@0.2`)."""
+    print(io, "OutdatedNNlibDependencyException: ")
+    return println(io, "$msg")
+end

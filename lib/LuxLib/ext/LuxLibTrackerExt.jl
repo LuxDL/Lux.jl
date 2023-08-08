@@ -1,17 +1,10 @@
 module LuxLibTrackerExt
 
-if isdefined(Base, :get_extension)
-    using Tracker
-    import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
-else
-    using ..Tracker
-    import ..Tracker: @grad,
-        data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
-end
-using LuxLib
+using LuxLib, Tracker
+import ChainRulesCore as CRC
 import LuxLib: AA,
     AV, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅, __is_tracked
-import ChainRulesCore as CRC
+import Tracker: @grad, data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
 
 # NNlib: batched_mul
 for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
@@ -80,26 +73,19 @@ LuxLib._get_backend(x::TrackedArray) = LuxLib._get_backend(data(x))
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(data(x))
 
 # api/groupnorm.jl
-for T1 in (:TrackedArray, :AbstractArray),
-    T2 in (:TrackedVector, :AbstractVector),
+for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedVector, :AbstractVector),
     T3 in (:TrackedVector, :AbstractVector)
 
     __is_tracked(T1, T2, T3) || continue
 
-    @eval function LuxLib.groupnorm(x::$T1{<:FP_32_64, 4},
-        scale::$T2{<:FP_32_64},
-        bias::$T3{<:FP_32_64};
-        groups::Int,
-        epsilon::Real)
+    @eval function LuxLib.groupnorm(x::$T1{<:FP_32_64, 4}, scale::$T2{<:FP_32_64},
+        bias::$T3{<:FP_32_64}; groups::Int, epsilon::Real)
         return track(LuxLib.groupnorm, x, scale, bias; groups, epsilon)
     end
 end
 
-@grad function LuxLib.groupnorm(x::AA{<:FP_32_64, 4},
-    scale::AV{<:FP_32_64},
-    bias::AV{<:FP_32_64};
-    groups::Int,
-    epsilon::Real)
+@grad function LuxLib.groupnorm(x::AA{<:FP_32_64, 4}, scale::AV{<:FP_32_64},
+    bias::AV{<:FP_32_64}; groups::Int, epsilon::Real)
     LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -110,14 +96,8 @@ end
 
     y, μ, σ⁻¹ = LuxLib._groupnorm(data(x), groups, data(scale), data(bias), epsilon)
     function ∇groupnorm(Δ)
-        dx, dscale, dbias = LuxLib._∇groupnorm(Δ,
-            y,
-            data(x),
-            groups,
-            data(scale),
-            data(bias),
-            μ,
-            σ⁻¹)
+        dx, dscale, dbias = LuxLib._∇groupnorm(Δ, y, data(x), groups, data(scale),
+            data(bias), μ, σ⁻¹)
         return nobacksies(:groupnorm, (dx, dscale, dbias))
     end
     return y, ∇groupnorm

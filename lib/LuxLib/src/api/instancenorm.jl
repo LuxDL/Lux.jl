@@ -28,22 +28,12 @@ mean and variance.
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
-function instancenorm(x::AA{<:Real, N},
-    scale::NOrAVR,
-    bias::NOrAVR;
-    training::Val,
+function instancenorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; training::Val,
     epsilon::Real) where {N}
     _test_valid_instancenorm_arguments(x)
 
-    x_, xm, xv = _normalization(x,
-        nothing,
-        nothing,
-        scale,
-        bias,
-        _get_instancenorm_reduce_dims(x),
-        training,
-        nothing,
-        epsilon)
+    x_, xm, xv = _normalization(x, nothing, nothing, scale, bias,
+        _get_instancenorm_reduce_dims(x), training, nothing, epsilon)
 
     return x_, (; running_mean=xm, running_var=xv)
 end

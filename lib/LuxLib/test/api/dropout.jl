@@ -56,12 +56,7 @@ end
         @test rng != rng_
         @test mask != mask_
 
-        __f = x -> sum(first(dropout(rng,
-            x,
-            mask,
-            T(0.5),
-            Val(true),
-            Val(true);
+        __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(true);
             dims=Colon())))
 
         fp16 = T == Float16
@@ -80,12 +75,7 @@ end
         @test rng == rng_
         @test mask == mask_
 
-        __f = x -> sum(first(dropout(rng,
-            x,
-            mask,
-            T(0.5),
-            Val(true),
-            Val(false);
+        __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false);
             dims=Colon())))
 
         fp16 = T == Float16
@@ -106,12 +96,7 @@ end
         @test rng != rng_
         @test mask != mask_
 
-        __f = x -> sum(first(dropout(rng,
-            x,
-            mask,
-            T(0.5),
-            Val(true),
-            Val(false);
+        __f = x -> sum(first(dropout(rng, x, mask, T(0.5), Val(true), Val(false);
             dims=Colon())))
 
         fp16 = T == Float16
