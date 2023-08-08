@@ -14,7 +14,7 @@ the ImageNet dataset.
 ## Training
 
 To train a model, run `main.jl` with the necessary parameters. See
-[Boltz documentation](http://lux.csail.mit.edu/stable/lib/Boltz/) for the model
+[Boltz documentation](https://luxdl.github.io/Boltz.jl/stable/) for the model
 configuration.
 
 ```bash
