@@ -18,34 +18,32 @@ CRC.@non_differentiable fieldcount(::Any)
 # Utilities
 function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) where {F1, F2}
     y = merge(nt1, nt2)
-    function merge_pullback(dy)
+    function ∇merge(dy)
         dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1)) for f1 in F1))
         dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
         return (NoTangent(), dnt1, dnt2)
     end
-    function merge_pullback(dy::Union{NoTangent, ZeroTangent})
+    function ∇merge(dy::Union{NoTangent, ZeroTangent})
         return (NoTangent(), NoTangent(), NoTangent())
     end
-    return y, merge_pullback
+    return y, ∇merge
 end
 
 function CRC.rrule(::typeof(vec), x::AbstractMatrix)
     y = vec(x)
-    vec_pullback(dy) = NoTangent(), reshape(dy, size(x))
-    return y, vec_pullback
+    ∇vec(dy) = (NoTangent(), reshape(dy, size(x)))
+    return y, ∇vec
 end
 
 function CRC.rrule(::typeof(collect), v::Vector)
     y = collect(v)
-    function collect_pullback(dy)
-        return NoTangent(), dy
-    end
-    return y, collect_pullback
+    ∇collect(dy) = (NoTangent(), dy)
+    return y, ∇collect
 end
 
 function CRC.rrule(::typeof(copy), x)
-    copy_pullback(dy) = (NoTangent(), dy)
-    return copy(x), copy_pullback
+    ∇copy(dy) = (NoTangent(), dy)
+    return copy(x), ∇copy
 end
 
 function CRC.rrule(::typeof(_eachslice), x, d::Val)
@@ -67,10 +65,7 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
 end
 
 # foldl_init
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
-    ::typeof(foldl_init),
-    op::G,
-    x::Tuple,
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G, x::Tuple,
     init) where {G}
     x_arr = [x...]
     y, ∇foldl_init_internal = CRC.rrule_via_ad(cfg, foldl_init, op, x_arr, init)
@@ -82,11 +77,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
     return y, ∇foldl_init
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
-    ::typeof(foldl_init),
-    op::G,
-    x::AbstractArray,
-    init) where {G}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G,
+    x::AbstractArray, init) where {G}
     list, start = x, init
     hobbits = Vector{Any}(undef, length(list))  # Unfornately Zygote needs this
     accumulate!(hobbits, list; init=(start, nothing)) do (a, _), b

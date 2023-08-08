@@ -14,8 +14,7 @@ end
     return conv(copy(x), weight, cdims)
 end
 
-@inline function Lux._conv_transpose(x::SubArray{T, N, <:CUDA.AnyCuArray},
-    weight,
+@inline function Lux._conv_transpose(x::SubArray{T, N, <:CUDA.AnyCuArray}, weight,
     cdims) where {T, N}
     return ∇conv_data(copy(x), weight, cdims)
 end

@@ -72,8 +72,7 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
     return skip.connection(mx, x), st
 end
 
-function (skip::SkipConnection{N, <:AbstractExplicitLayer, <:AbstractExplicitLayer})(x,
-    ps,
+function (skip::SkipConnection{N, <:AbstractExplicitLayer, <:AbstractExplicitLayer})(x, ps,
     st::NamedTuple) where {N}
     mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
@@ -143,10 +142,7 @@ end
 
 (m::Parallel)(x, ps, st::NamedTuple) = applyparallel(m.layers, m.connection, x, ps, st)
 
-@generated function applyparallel(layers::NamedTuple{names},
-    connection::C,
-    x::T,
-    ps,
+@generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T, ps,
     st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
@@ -155,9 +151,7 @@ end
     calls = []
     append!(calls,
         [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
-                $(getinput(i)),
-                ps.$(names[i]),
-                st.$(names[i]))) for i in 1:N])
+            $(getinput(i)), ps.$(names[i]), st.$(names[i]))) for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     if C == Nothing
         push!(calls, :($(y_symbols[N + 1]) = tuple($(Tuple(y_symbols[1:N])...))))
@@ -243,19 +237,15 @@ function (m::BranchLayer)(x, ps, st::NamedTuple)
     return applybranching(m.layers, x, ps, st)
 end
 
-@generated function applybranching(layers::NamedTuple{names},
-    x,
-    ps,
+@generated function applybranching(layers::NamedTuple{names}, x, ps,
     st::NamedTuple) where {names}
     N = length(names)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
-                x,
-                ps.$(names[i]),
-                st.$(names[i]))) for i in 1:N])
+        [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]), x,
+            ps.$(names[i]), st.$(names[i]))) for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
     return Expr(:block, calls...)
@@ -345,10 +335,7 @@ function (m::PairwiseFusion)(x, ps, st::NamedTuple)
     return applypairwisefusion(m.layers, m.connection, x, ps, st)
 end
 
-@generated function applypairwisefusion(layers::NamedTuple{names},
-    connection::C,
-    x::T,
-    ps,
+@generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T, ps,
     st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
@@ -357,10 +344,8 @@ end
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
     append!(calls,
         [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(names[i]),
-                $(y_symbols[N + 1]),
-                ps.$(names[i]),
-                st.$(names[i]));
-            $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
+            $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
+        $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
          for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(y_symbols[N + 1]), st))
@@ -490,17 +475,13 @@ _flatten_model(x) = x
 
 (c::Chain)(x, ps, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
-@generated function applychain(layers::NamedTuple{fields},
-    x,
-    ps,
+@generated function applychain(layers::NamedTuple{fields}, x, ps,
     st::NamedTuple{fields}) where {fields}
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
     calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = Lux.apply(layers.$(fields[i]),
-            $(x_symbols[i]),
-            ps.$(fields[i]),
-            st.$(fields[i]))) for i in 1:N]
+        $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i]))) for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return $(x_symbols[N + 1]), st))
     return Expr(:block, calls...)
@@ -577,17 +558,13 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
 #                  implementation.
 (m::Maxout)(x, ps, st::NamedTuple) = applymaxout(m.layers, x, ps, st)
 
-@generated function applymaxout(layers::NamedTuple{fields},
-    x,
-    ps,
+@generated function applymaxout(layers::NamedTuple{fields}, x, ps,
     st::NamedTuple{fields}) where {fields}
     N = length(fields)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(fields[i]),
-            x,
-            ps.$(fields[i]),
-            st.$(fields[i]))) for i in 1:N]
+    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(layers.$(fields[i]), x,
+        ps.$(fields[i]), st.$(fields[i]))) for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(res = max.($(Tuple(y_symbols)...))))
     push!(calls, :(return res, st))

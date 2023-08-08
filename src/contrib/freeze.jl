@@ -117,9 +117,7 @@ end
 Construct a [`Lux.FrozenLayer`](@ref) for `l` with the current parameters and states. If
 `which_params` is nothing, then all parameters are frozen.
 """
-function freeze(l::AbstractExplicitLayer,
-    ps,
-    st::NamedTuple,
+function freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
     which_params::Union{Tuple, Nothing}=nothing)
     fl = freeze(l, which_params)
     ps_frozen = []

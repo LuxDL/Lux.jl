@@ -5,16 +5,9 @@ using PythonCall, CondaPkg, Pkg  # Load mkdocs dependencies
 deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/LuxDL/Lux.jl.git")
 
-makedocs(;
-    sitename="Lux",
-    authors="Avik Pal et al.",
-    clean=true,
-    doctest=true,
-    modules=[Lux],
+makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
+    modules=[Lux], checkdocs=:all, format=Markdown(), draft=false,
     strict=[:doctest, :linkcheck, :parse_error, :example_block, :missing_docs],
-    checkdocs=:all,
-    format=Markdown(),
-    draft=false,
     build=joinpath(@__DIR__, "docs"))
 
 Pkg.activate(@__DIR__)
@@ -27,8 +20,5 @@ CondaPkg.withenv() do
     return
 end
 
-deploydocs(;
-    repo="github.com/LuxDL/Lux.jl.git",
-    push_preview=true,
-    target="site",
+deploydocs(; repo="github.com/LuxDL/Lux.jl.git", push_preview=true, target="site",
     devbranch="main")

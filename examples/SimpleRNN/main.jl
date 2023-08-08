@@ -28,9 +28,9 @@ function get_dataloaders(; dataset_size=1000, sequence_length=50)
     clockwise_spirals = [reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
                          for d in data[1:(dataset_size ÷ 2)]]
     anticlockwise_spirals = [reshape(d[1][:, (sequence_length + 1):end],
-            :,
-            sequence_length,
-            1) for d in data[((dataset_size ÷ 2) + 1):end]]
+        :,
+        sequence_length,
+        1) for d in data[((dataset_size ÷ 2) + 1):end]]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     ## Split the dataset
     (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8, shuffle=true)
