@@ -202,10 +202,9 @@ statelength(d::Dense) = 0
 end
 
 @inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
+    x_reshaped = reshape(x, size(x, 1), :)
     return (reshape(__apply_activation(d.activation, ps.weight * x_reshaped), d.out_dims,
-            sz[2:end]...), st)
+            size(x)[2:end]...), st)
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
@@ -217,7 +216,7 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
-    x_reshaped = reshape(x, sz[1], :)
+    x_reshaped = reshape(x, size(x, 1), :)
     return (reshape(__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
             d.out_dims, size(x)[2:end]...), st)
 end
@@ -428,7 +427,6 @@ function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::
                                 "got sizes $(size(x)), and $(size(y))"))
     end
 
-    sz = size(x)
     d_z, d_x, d_y = size(ps.weight)
 
     x_reshaped = reshape(x, d_x, :)
@@ -436,7 +434,7 @@ function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::
 
     z, st = b((x_reshaped, y_reshaped), ps, st)
 
-    return reshape(z, d_z, sz[2:end]...), st
+    return reshape(z, d_z, size(x)[2:end]...), st
 end
 
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
