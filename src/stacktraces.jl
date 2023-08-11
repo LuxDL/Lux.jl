@@ -11,18 +11,22 @@ end
 
 # NamedTuple / Tuples -- Lux uses them quite frequenty (states) making the error messages
 # too verbose
-@static if !TruncatedStacktraces.DISABLE
+@static if VERSION ≤ v"1.9" && !TruncatedStacktraces.DISABLE
     function Base.show(io::IO, t::Type{<:Tuple})
         if (TruncatedStacktraces.VERBOSE[] ||
             !hasfield(t, :parameters) ||
             length(t.parameters) == 0)
             invoke(show, Tuple{IO, Type}, io, t)
         else
-            fields = t.parameters
-            fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
-                               (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
-                                (length(fields) == 1 ? "$(fields[1])" : ""))
-            print(io, "Tuple{$fields_truncated}")
+            try
+                fields = t.parameters
+                fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
+                                   (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
+                                    (length(fields) == 1 ? "$(fields[1])" : ""))
+                print(io, "Tuple{$fields_truncated}")
+            catch
+                invoke(show, Tuple{IO, Type}, io, t)
+            end
         end
     end
 
@@ -32,11 +36,15 @@ end
             length(t.parameters) == 0)
             invoke(show, Tuple{IO, Type}, io, t)
         else
-            fields = first(t.parameters)
-            fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
-                               (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
-                                (length(fields) == 1 ? "$(fields[1])" : ""))
-            print(io, "NamedTuple{($fields_truncated),…}")
+            try
+                fields = first(t.parameters)
+                fields_truncated = length(fields) > 2 ? "$(fields[1]),$(fields[2]),…" :
+                                   (length(fields) == 2 ? "$(fields[1]),$(fields[2])" :
+                                    (length(fields) == 1 ? "$(fields[1])" : ""))
+                print(io, "NamedTuple{($fields_truncated),…}")
+            catch
+                invoke(show, Tuple{IO, Type}, io, t)
+            end
         end
     end
 end

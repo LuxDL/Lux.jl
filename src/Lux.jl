@@ -17,18 +17,9 @@ import TruncatedStacktraces: @truncate_stacktrace
 
 # LuxCore
 @reexport using LuxCore
-import LuxCore: AbstractExplicitLayer,
-    AbstractExplicitContainerLayer,
-    initialparameters,
-    initialstates,
-    parameterlength,
-    statelength,
-    update_state,
-    trainmode,
-    testmode,
-    setup,
-    apply,
-    display_name
+import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
+    initialstates, parameterlength, statelength, update_state, trainmode, testmode, setup,
+    apply, display_name
 
 # Device Management
 @reexport using LuxDeviceUtils, WeightInitializers
@@ -71,17 +62,8 @@ end
 export cpu, gpu
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
 export Bilinear, Dense, Embedding, Scale
-export Conv,
-    ConvTranspose,
-    CrossCor,
-    MaxPool,
-    MeanPool,
-    GlobalMaxPool,
-    GlobalMeanPool,
-    AdaptiveMaxPool,
-    AdaptiveMeanPool,
-    Upsample,
-    PixelShuffle
+export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
+    AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm

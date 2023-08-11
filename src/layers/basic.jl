@@ -177,13 +177,8 @@ function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; kwargs...)
     return Dense(first(mapping), last(mapping), activation; kwargs...)
 end
 
-function Dense(in_dims::Int,
-    out_dims::Int,
-    activation=identity;
-    init_weight=glorot_uniform,
-    init_bias=zeros32,
-    use_bias::Bool=true,
-    allow_fast_activation::Bool=true)
+function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
+    init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Dense{use_bias}(activation, in_dims, out_dims, init_weight, init_bias)
 end
@@ -207,12 +202,9 @@ statelength(d::Dense) = 0
 end
 
 @inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
-    return reshape(__apply_activation(d.activation, ps.weight * x_reshaped),
-        d.out_dims,
-        sz[2:end]...),
-    st
+    x_reshaped = reshape(x, size(x, 1), :)
+    return (reshape(__apply_activation(d.activation, ps.weight * x_reshaped), d.out_dims,
+            size(x)[2:end]...), st)
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
@@ -224,12 +216,9 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
-    sz = size(x)
-    x_reshaped = reshape(x, sz[1], :)
+    x_reshaped = reshape(x, size(x, 1), :)
     return (reshape(__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
-            d.out_dims,
-            sz[2:end]...),
-        st)
+            d.out_dims, size(x)[2:end]...), st)
 end
 
 """
@@ -285,11 +274,8 @@ function Base.show(io::IO, d::Scale)
     return print(io, ")")
 end
 
-function Scale(dims::Tuple{Vararg{Integer}},
-    activation=identity;
-    init_weight=glorot_uniform,
-    init_bias=zeros32,
-    use_bias::Bool=true,
+function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
+    init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Scale{use_bias}(activation, dims, init_weight, init_bias)
@@ -390,16 +376,12 @@ function Base.show(io::IO, b::Bilinear{use_bias}) where {use_bias}
 end
 
 function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:Integer},
-    activation=identity;
-    init_weight=glorot_uniform,
-    init_bias=zeros32,
-    use_bias::Bool=true,
+    activation=identity; init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
     allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Bilinear{use_bias}(activation, in1_dims, in2_dims, out, init_weight, init_bias)
 end
-function Bilinear((in12_dims, out)::Pair{<:Integer, <:Integer},
-    activation=identity;
+function Bilinear((in12_dims, out)::Pair{<:Integer, <:Integer}, activation=identity;
     kwargs...)
     return Bilinear((in12_dims, in12_dims) => out, activation; kwargs...)
 end
@@ -418,8 +400,7 @@ function parameterlength(b::Bilinear{use_bias}) where {use_bias}
 end
 statelength(b::Bilinear) = 0
 
-function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat},
-    ps,
+function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat}, ps,
     st::NamedTuple) where {use_bias}
     d_z, d_x, d_y = size(ps.weight)
     if d_x != size(x, 1) || d_y != size(y, 1)
@@ -446,7 +427,6 @@ function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::
                                 "got sizes $(size(x)), and $(size(y))"))
     end
 
-    sz = size(x)
     d_z, d_x, d_y = size(ps.weight)
 
     x_reshaped = reshape(x, d_x, :)
@@ -454,7 +434,7 @@ function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::
 
     z, st = b((x_reshaped, y_reshaped), ps, st)
 
-    return reshape(z, d_z, sz[2:end]...), st
+    return reshape(z, d_z, size(x)[2:end]...), st
 end
 
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)

@@ -21,11 +21,8 @@ Method undefined if `st.training` is not of type `Val`.
 @inline istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.training)
 
 # Convolution
-function _convfilter(rng::AbstractRNG,
-    filter::NTuple{N, Integer},
-    ch::Pair{<:Integer, <:Integer};
-    init=glorot_uniform,
-    groups=1) where {N}
+function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
+    ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
     cin, cout = ch
     @assert cin % groups==0 "Input channel dimension must be divisible by groups."
     @assert cout % groups==0 "Output channel dimension must be divisible by groups."
@@ -129,12 +126,8 @@ end
 
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
 
-function _conv_transpose_dims(x::AbstractArray,
-    weight::AbstractArray;
-    padding,
-    stride,
-    dilation,
-    groups)
+function _conv_transpose_dims(x::AbstractArray, weight::AbstractArray; padding, stride,
+    dilation, groups)
     # Calculate size of "input", from ∇conv_data()'s perspective...
     combined_pad = (padding[1:2:end] .+ padding[2:2:end])
     I = (size(x)[1:(end - 2)] .- 1) .* stride .+ 1 .+
@@ -143,11 +136,7 @@ function _conv_transpose_dims(x::AbstractArray,
     batch_size = size(x)[end]
     # Create DenseConvDims() that looks like the corresponding conv()
     w_size = size(weight)
-    return DenseConvDims((I..., C_in, batch_size),
-        w_size;
-        stride,
-        padding,
-        dilation,
+    return DenseConvDims((I..., C_in, batch_size), w_size; stride, padding, dilation,
         groups)
 end
 

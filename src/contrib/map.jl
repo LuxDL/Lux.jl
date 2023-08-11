@@ -92,7 +92,6 @@ function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
     @assert fieldnames(typeof(st_c)) == fieldnames(typeof(ps_c))
 
     if length(l_c) == 1 && fieldnames(typeof(l_c)) != fieldnames(typeof(ps_c))
-        # This will be fixed with a breaking change in v0.5
         __correct_luxcore_inconsistency = true
         ps_c = NamedTuple{fieldnames(typeof(l_c))}((ps_c,))
         st_c = NamedTuple{fieldnames(typeof(l_c))}((st_c,))

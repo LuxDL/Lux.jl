@@ -27,8 +27,7 @@ Training State containing:
 end
 
 """
-    TrainState(rng::Random.AbstractRNG,
-        model::Lux.AbstractExplicitLayer,
+    TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
         optimizer::Optimisers.AbstractRule;
         transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
 
@@ -46,8 +45,7 @@ Constructor for `TrainState`.
 
 `TrainState` object.
 """
-function TrainState(rng::Random.AbstractRNG,
-    model::Lux.AbstractExplicitLayer,
+function TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
     optimizer::Optimisers.AbstractRule;
     transform_variables::Union{Function, Lux.AbstractLuxDevice}=gpu_device())
     ps, st = Lux.setup(rng, model) .|> transform_variables
@@ -70,8 +68,7 @@ Update the parameters stored in `ts` using the gradients `grads`.
 Updated `TrainState` object.
 """
 function apply_gradients(ts::TrainState, grads)
-    optimizer_state, parameters = Optimisers.update(ts.optimizer_state,
-        ts.parameters,
+    optimizer_state, parameters = Optimisers.update(ts.optimizer_state, ts.parameters,
         grads)
     return TrainState(ts.model, parameters, ts.states, optimizer_state, ts.step + 1)
 end
