@@ -68,6 +68,11 @@ Return a tuple of supported GPU backends.
 
     This is not the list of functional backends on the system, but rather backends which
     `Lux.jl` supports.
+
+!!! warning
+
+    `Metal.jl` support is **extremely** experimental and most things are not expected to
+    work.
 """
 supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
@@ -87,8 +92,7 @@ Selects GPU device based on the following criteria:
 """
 function gpu_device(; force_gpu_usage::Bool=false)::AbstractLuxDevice
     if GPU_DEVICE[] !== nothing
-        force_gpu_usage &&
-            !(GPU_DEVICE[] isa AbstractLuxGPUDevice) &&
+        force_gpu_usage && !(GPU_DEVICE[] isa AbstractLuxGPUDevice) &&
             throw(LuxDeviceSelectionException())
         return GPU_DEVICE[]
     end
@@ -202,10 +206,10 @@ Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 """
 @inline cpu_device() = LuxCPUDevice()
 
-(::LuxCPUDevice)(x) = fmap(x -> adapt(LuxCPUAdaptor(), x), x; exclude=_isleaf)
-(::LuxCUDADevice)(x) = fmap(x -> adapt(LuxCUDAAdaptor(), x), x; exclude=_isleaf)
-(::LuxAMDGPUDevice)(x) = fmap(x -> adapt(LuxAMDGPUAdaptor(), x), x; exclude=_isleaf)
-(::LuxMetalDevice)(x) = fmap(x -> adapt(LuxMetalAdaptor(), x), x; exclude=_isleaf)
+(::LuxCPUDevice)(x) = fmap(Base.Fix1(adapt, LuxCPUAdaptor()), x; exclude=_isleaf)
+(::LuxCUDADevice)(x) = fmap(Base.Fix1(adapt, LuxCUDAAdaptor()), x; exclude=_isleaf)
+(::LuxAMDGPUDevice)(x) = fmap(Base.Fix1(adapt, LuxAMDGPUAdaptor()), x; exclude=_isleaf)
+(::LuxMetalDevice)(x) = fmap(Base.Fix1(adapt, LuxMetalAdaptor()), x; exclude=_isleaf)
 
 for dev in (LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice)
     @eval begin

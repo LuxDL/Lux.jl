@@ -47,4 +47,10 @@ end
             Aqua.test_all(LuxDeviceUtils; piracy=false)
         end
     end
+
+    @testset "Others" begin
+        @safetestset "Component Arrays" begin
+            include("component_arrays.jl")
+        end
+    end
 end
