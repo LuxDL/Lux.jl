@@ -28,10 +28,12 @@ end
 
 end
 
-macro layer_map(args...; kwargs...)
+macro layer_map(f, l, ps, st)
     Base.depwarn("`Lux.@layer_map` has been deprecated in favor of `Lux.Experimental.@layer_map`",
         Symbol("@layer_map"))
-    return Experimental.@layer_map(args...; kwargs...)
+    quote
+        Experimental.layer_map($(esc(f)), $(esc(l)), $(esc(ps)), $(esc(st)), $(string(l)))
+    end
 end
 
 for f in (:layer_map, :share_parameters, :FrozenLayer, :freeze, :unfreeze)
