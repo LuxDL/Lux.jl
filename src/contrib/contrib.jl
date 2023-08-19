@@ -18,7 +18,7 @@ using ..Experimental, Reexport
 @reexport using ADTypes
 
 for f in (:TrainState, :apply_gradients, :compute_gradients)
-    msg = "`Lux.Training.$(f)` has been deprecated in favor of  `Lux.Experimental.$(f)`"
+    msg = "`Lux.Training.$(f)` has been deprecated in favor of `Lux.Experimental.$(f)`"
     @eval begin
         function $(f)(args...; kwargs...)
             Base.depwarn($(msg), Symbol($(f)))
@@ -38,7 +38,7 @@ macro layer_map(f, l, ps, st)
 end
 
 for f in (:layer_map, :share_parameters, :FrozenLayer, :freeze, :unfreeze)
-    msg = "`Lux.$(f)` has been deprecated in favor of  `Lux.Experimental.$(f)`"
+    msg = "`Lux.$(f)` has been deprecated in favor of `Lux.Experimental.$(f)`"
     @eval begin
         $(f)(args...; kwargs...) = begin
             Base.depwarn($(msg), Symbol($(f)))
