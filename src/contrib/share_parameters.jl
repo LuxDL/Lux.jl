@@ -1,3 +1,5 @@
+using Functors
+
 """
     share_parameters(ps, sharing)
     share_parameters(ps, sharing, new_parameters)

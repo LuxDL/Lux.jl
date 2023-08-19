@@ -1,3 +1,4 @@
+using Markdown
 using Functors: functor
 
 @doc doc"""
@@ -83,9 +84,9 @@ Lux.layer_map(zero_dense_params, c, ps, st)
 ```
 """
 function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
-    l_c, l_re = Functors.functor(l)
-    ps_c, ps_re = Functors.functor(ps)
-    st_c, st_re = Functors.functor(st)
+    l_c, l_re = functor(l)
+    ps_c, ps_re = functor(ps)
+    st_c, st_re = functor(st)
 
     length(l_c) == 0 && return f(l, ps, st, name)
 
@@ -101,11 +102,8 @@ function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
 
     l_c_new, ps_c_new, st_c_new = [], [], []
     for k in keys(l_c)
-        l_c_new_, ps_c_new_, st_c_new_ = layer_map(f,
-            getproperty(l_c, k),
-            getproperty(ps_c, k),
-            getproperty(st_c, k),
-            join((name, k), "."))
+        l_c_new_, ps_c_new_, st_c_new_ = layer_map(f, getproperty(l_c, k),
+            getproperty(ps_c, k), getproperty(st_c, k), join((name, k), "."))
         push!(l_c_new, k => l_c_new_)
         push!(ps_c_new, k => ps_c_new_)
         push!(st_c_new, k => st_c_new_)
@@ -125,4 +123,4 @@ function __fix_tuple_functor(x::Tuple, ::NamedTuple{names}) where {names}
     @assert length(x)==length(names) "length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
     return NamedTuple{names}(x)
 end
-__fix_tuple_functor(x, y) = x
+__fix_tuple_functor(x, _) = x

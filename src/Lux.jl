@@ -43,10 +43,7 @@ include("stacktraces.jl")
 include("chainrules.jl")
 
 # Experimental
-include("contrib/map.jl")
-include("contrib/training.jl")
-include("contrib/freeze.jl")
-include("contrib/share_parameters.jl")
+include("contrib/contrib.jl")
 
 # Deprecations
 include("deprecated.jl")

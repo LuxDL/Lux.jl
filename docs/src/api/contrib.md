@@ -13,6 +13,10 @@ All features listed on this page are **experimental** which means:
      experimental sooner.
   4. None of the features are exported.
 
+!!! note
+    Starting v"0.5.2" all Experimental features need to be accessed via `Lux.Experimental.<feature>`.
+    Direct access via `Lux.<feature>` will be removed in v"0.6".
+
 ## Index
 
 ```@index
@@ -27,9 +31,9 @@ Lux.Training is meant to be simple and provide extremely basic functionality. We
 basic building blocks which can be seamlessly composed to create complex training pipelines.
 
 ```@docs
-Lux.Training.TrainState
-Lux.Training.compute_gradients
-Lux.Training.apply_gradients
+Lux.Experimental.TrainState
+Lux.Experimental.compute_gradients
+Lux.Experimental.apply_gradients
 ```
 
 ## Parameter Freezing
@@ -39,23 +43,22 @@ Lux.Training.apply_gradients
     [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
 
 ```@docs
-Lux.FrozenLayer
-Lux.freeze
-Lux.unfreeze
+Lux.Experimental.FrozenLayer
+Lux.Experimental.freeze
+Lux.Experimental.unfreeze
 ```
 
 For detailed usage example look at the [manual page](../manual/freezing_parameters.md).
 
-
 ## Map over Layer
 
 ```@docs
-Lux.layer_map
-Lux.@layer_map
+Lux.Experimental.layer_map
+Lux.Experimental.@layer_map
 ```
 
 ## Tied Parameters
 
 ```@docs
-Lux.share_parameters
+Lux.Experimental.share_parameters
 ```

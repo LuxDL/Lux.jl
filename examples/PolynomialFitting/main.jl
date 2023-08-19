@@ -78,7 +78,7 @@ vjp_rule = Lux.Training.AutoZygote()
 
 # Finally the training loop.
 
-function main(tstate::Lux.Training.TrainState, vjp, data, epochs)
+function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
     data = data .|> gpu_device()
     for epoch in 1:epochs
         grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,
