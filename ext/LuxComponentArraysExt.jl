@@ -56,7 +56,9 @@ function ComponentArrays.ComponentArray(data::Vector{Any}, axes::Tuple{FlatAxis}
 end
 
 # Parameter Sharing
-Lux._parameter_structure(ps::ComponentArray) = Lux._parameter_structure(NamedTuple(ps))
+function Lux.Experimental._parameter_structure(ps::ComponentArray)
+    return Lux.Experimental._parameter_structure(NamedTuple(ps))
+end
 
 # CRC + CA Temporary Patch -- Needs to be upstreamed
 function CRC.rrule(::Type{ComponentArray}, nt::NamedTuple)

@@ -84,9 +84,9 @@ Lux.layer_map(zero_dense_params, c, ps, st)
 ```
 """
 function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
-    l_c, l_re = Functors.functor(l)
-    ps_c, ps_re = Functors.functor(ps)
-    st_c, st_re = Functors.functor(st)
+    l_c, l_re = functor(l)
+    ps_c, ps_re = functor(ps)
+    st_c, st_re = functor(st)
 
     length(l_c) == 0 && return f(l, ps, st, name)
 
