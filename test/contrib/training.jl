@@ -13,9 +13,7 @@ end
     model = Dense(3, 2)
     opt = Adam(0.01f0)
 
-    tstate = Lux.Training.TrainState(Lux.replicate(rng),
-        model,
-        opt;
+    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt;
         transform_variables=device)
 
     x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
@@ -36,26 +34,20 @@ end
     model = Dense(3, 2)
     opt = Adam(0.01f0)
 
-    tstate = Lux.Training.TrainState(Lux.replicate(rng),
-        model,
-        opt;
+    tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt;
         transform_variables=device)
 
     x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
     @testset "NotImplemented $(string(ad))" for ad in (AutoEnzyme(), AutoReverseDiff())
-        @test_throws ArgumentError Lux.Training.compute_gradients(ad,
-            _loss_function,
-            x,
+        @test_throws ArgumentError Lux.Training.compute_gradients(ad, _loss_function, x,
             tstate)
     end
 
     for ad in (AutoZygote(), AutoTracker())
-        grads, _, _, _ = @test_nowarn Lux.Training.compute_gradients(ad,
-            _loss_function,
-            x,
-            tstate)
-        tstate_ = @test_nowarn Lux.Training.apply_gradients(tstate, grads)
+        grads, _, _, _ = @test_nowarn Lux.Experimental.compute_gradients(ad, _loss_function,
+            x, tstate)
+        tstate_ = @test_nowarn Lux.Experimental.apply_gradients(tstate, grads)
         @test tstate_.step == 1
         @test tstate != tstate_
     end

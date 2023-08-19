@@ -22,7 +22,7 @@ Tracker.data(t::Tuple) = map(Tracker.data, t)
 @inline Lux._gate(x::TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
 
 # Lux.Training
-function Lux.Training.compute_gradients(::AutoTracker, objective_function::Function, data,
+function Lux.Experimental.compute_gradients(::AutoTracker, objective_function::Function, data,
     ts::Lux.Experimental.TrainState)
     ps_tracked = fmap(param, ts.parameters)
     loss, st, stats = objective_function(ts.model, ps_tracked, ts.states, data)

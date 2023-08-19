@@ -2,6 +2,7 @@ module Experimental
 
 using ..Lux, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
+import ..Lux: _merge, initialstates, initialparameters
 
 include("map.jl")
 include("training.jl")
@@ -17,11 +18,11 @@ using ..Experimental, Reexport
 @reexport using ADTypes
 
 for f in (:TrainState, :apply_gradients, :compute_gradients)
-    msg = "`Lux.Training.$(f)` has been deprecated in favor of  `Lux.Experimental.Training.$(f)`"
+    msg = "`Lux.Training.$(f)` has been deprecated in favor of  `Lux.Experimental.$(f)`"
     @eval begin
         function $(f)(args...; kwargs...)
             Base.depwarn($(msg), Symbol($(f)))
-            return Experimental.Training.$(f)(args...; kwargs...)
+            return Experimental.$(f)(args...; kwargs...)
         end
     end
 end
