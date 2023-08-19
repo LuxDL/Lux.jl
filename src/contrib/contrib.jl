@@ -20,7 +20,7 @@ for f in (:TrainState, :apply_gradients, :compute_gradients)
     msg = "`Lux.Training.$(f)` has been deprecated in favor of  `Lux.Experimental.Training.$(f)`"
     @eval begin
         function $(f)(args...; kwargs...)
-            Base.depwarn($(msg), $(f))
+            Base.depwarn($(msg), Symbol($(f)))
             return Experimental.Training.$(f)(args...; kwargs...)
         end
     end
@@ -40,7 +40,7 @@ for f in (:layer_map, :share_parameters, :FrozenLayer, :freeze, :unfreeze)
     msg = "`Lux.$(f)` has been deprecated in favor of  `Lux.Experimental.$(f)`"
     @eval begin
         $(f)(args...; kwargs...) = begin
-            Base.depwarn($(msg), $(f))
+            Base.depwarn($(msg), Symbol($(f)))
             return Experimental.$(f)(args...; kwargs...)
         end
     end
