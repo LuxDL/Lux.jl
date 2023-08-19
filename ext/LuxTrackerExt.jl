@@ -23,7 +23,7 @@ Tracker.data(t::Tuple) = map(Tracker.data, t)
 
 # Lux.Training
 function Lux.Training.compute_gradients(::AutoTracker, objective_function::Function, data,
-    ts::Lux.Training.TrainState)
+    ts::Lux.Experimental.TrainState)
     ps_tracked = fmap(param, ts.parameters)
     loss, st, stats = objective_function(ts.model, ps_tracked, ts.states, data)
     back!(loss)

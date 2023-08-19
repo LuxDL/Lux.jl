@@ -13,6 +13,10 @@ All features listed on this page are **experimental** which means:
      experimental sooner.
   4. None of the features are exported.
 
+!!! note
+    Starting v"0.5.2" all Experimental features need to be accessed via `Lux.Experimental.<feature>`.
+    Direct access via `Lux.<feature>` will be removed in v"0.6".
+
 ## Index
 
 ```@index

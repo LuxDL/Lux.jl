@@ -1,11 +1,4 @@
-module Training
-
-# NOTE(@avik-pal): In the long term this will be pulled out into its own package but
-# currently all the dependencies are met by Lux itself.
-using ..Lux, ..LuxDeviceUtils
-using Reexport
-@reexport using ADTypes
-using ConcreteStructs, Optimisers, Random, Setfield
+using ADTypes, ConcreteStructs, Optimisers, Random, Setfield
 
 """
     TrainState
@@ -68,9 +61,8 @@ Update the parameters stored in `ts` using the gradients `grads`.
 Updated `TrainState` object.
 """
 function apply_gradients(ts::TrainState, grads)
-    optimizer_state, parameters = Optimisers.update(ts.optimizer_state, ts.parameters,
-        grads)
-    return TrainState(ts.model, parameters, ts.states, optimizer_state, ts.step + 1)
+    optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
+    return TrainState(ts.model, ps, ts.states, optimizer_state, ts.step + 1)
 end
 
 """
@@ -98,11 +90,7 @@ A 4-Tuple containing:
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
 """
-function compute_gradients(t::T,
-    objective_function::Function,
-    data,
-    ts::TrainState) where {T <: ADTypes.AbstractADType}
+function compute_gradients(::T, ::Function, _,
+    ::TrainState) where {T <: ADTypes.AbstractADType}
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
-end
-
 end
