@@ -65,6 +65,8 @@ steps:
 
   - label: "Documentation"
     plugins:
+      - sv-oss/node-n#v0.1.2:
+          node-version: lts
       - JuliaCI/julia#v1:
           version: "1"
       - JuliaCI/julia-coverage#v1:
@@ -80,9 +82,9 @@ steps:
         Pkg.activate("docs")
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
-        Pkg.activate("examples")
-        Pkg.develop(PackageSpec(path=pwd()))
-        Pkg.instantiate()
+        # Pkg.activate("examples")
+        # Pkg.develop(PackageSpec(path=pwd()))
+        # Pkg.instantiate()
         println("+++ :julia: Building documentation")
 
         Pkg.activate("docs")
