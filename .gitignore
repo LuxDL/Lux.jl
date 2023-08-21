@@ -16,3 +16,13 @@ ext_compat
 
 # PythonCall.jl
 .CondaPkg
+
+.vitepress/dist
+.vitepress/cache
+node_modules
+.vscode
+package-lock.json
+docs/page/generated
+docs/page/.vitepress/dist
+docs/page/.vitepress/cache
+docs/src/tutorials

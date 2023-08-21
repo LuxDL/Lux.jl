@@ -169,7 +169,7 @@ fig
 # The contour plot above shows that the MAP method is not too bad at classifying our data.
 # Now we can visualize our predictions.
 
-# $p(\tilde{x} | X, \alpha) = \int_{\θ} p(\tilde{x} | \θ) p(\θ | X, \alpha) \approx \sum_{\θ \sim p(\θ | X, \alpha)}f_{\θ}(\tilde{x})$
+# $p(\tilde{x} | X, \alpha) = \int_{\theta} p(\tilde{x} | \theta) p(\theta | X, \alpha) \approx \sum_{\theta \sim p(\theta | X, \alpha)}f_{\theta}(\tilde{x})$
 
 # The `nn_predict` function takes the average predicted value from a network parameterized
 # by weights drawn from the MCMC chain.

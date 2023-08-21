@@ -4,8 +4,9 @@ using Functors: functor
 @doc doc"""
     @layer_map func layer ps st
 
-See the documentation of [`Lux.layer_map`](@ref) for more details. This macro eliminates
-the need to the set the layer name, and uses the variable name as the starting point.
+See the documentation of [`Lux.Experimental.layer_map`](@ref) for more details. This macro
+eliminates the need to the set the layer name, and uses the variable name as the starting
+point.
 
 ## Example
 
@@ -53,10 +54,12 @@ the function on all of them together.
   - Must return a tuple of 3 elements -- `AbstractExplicitLayer`, new parameters and the new
     states.
 
-!!! tip
+:::tip
 
-    We recommend using the macro `Lux.@layer_map` instead of this function. It automatically
-    sets the `name` of the layer to be the variable name.
+We recommend using the macro `Lux.@layer_map` instead of this function. It automatically
+sets the `name` of the layer to be the variable name.
+
+:::
 
 ## Example
 

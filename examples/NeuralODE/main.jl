@@ -9,16 +9,8 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays,
-    SciMLSensitivity,
-    LuxAMDGPU,
-    LuxCUDA,
-    Optimisers,
-    OrdinaryDiffEq,
-    Random,
-    Statistics,
-    Zygote,
-    OneHotArrays
+using ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
+    OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
@@ -89,10 +81,7 @@ function create_model()
     model = Chain(FlattenLayer(),
         Dense(784, 20, tanh),
         NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh), Dense(10, 20, tanh));
-            save_everystep=false,
-            reltol=1.0f-3,
-            abstol=1.0f-3,
-            save_start=false),
+            save_everystep=false, reltol=1.0f-3, abstol=1.0f-3, save_start=false),
         diffeqsol_to_array,
         Dense(20, 10))
 

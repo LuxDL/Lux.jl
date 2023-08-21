@@ -31,13 +31,8 @@ with_theme(theme_web()) do
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s = scatter!(ax,
-        x[1, :],
-        y[1, :];
-        markersize=8,
-        color=:orange,
-        strokecolor=:black,
-        strokewidth=1)
+    s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
+        strokecolor=:black, strokewidth=1)
 
     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
 
@@ -67,7 +62,7 @@ end
 
 # ## Training
 
-# First we will create a [`Lux.Training.TrainState`](@ref) which is essentially a
+# First we will create a [`Lux.Experimental.TrainState`](@ref) which is essentially a
 # convenience wrapper over parameters, states and optimizer states.
 
 tstate = Lux.Training.TrainState(rng, model, opt)
@@ -82,9 +77,7 @@ function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
     data = data .|> gpu_device()
     for epoch in 1:epochs
         grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,
-            loss_function,
-            data,
-            tstate)
+            loss_function, data, tstate)
         @info epoch=epoch loss=loss
         tstate = Lux.Training.apply_gradients(tstate, grads)
     end
@@ -104,20 +97,10 @@ with_theme(theme_web()) do
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s1 = scatter!(ax,
-        x[1, :],
-        y[1, :];
-        markersize=8,
-        color=:orange,
-        strokecolor=:black,
-        strokewidth=1)
-    s2 = scatter!(ax,
-        x[1, :],
-        y_pred[1, :];
-        markersize=8,
-        color=:green,
-        strokecolor=:black,
-        strokewidth=1)
+    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
+        strokecolor=:black, strokewidth=1)
+    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8, color=:green,
+        strokecolor=:black, strokewidth=1)
 
     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
 

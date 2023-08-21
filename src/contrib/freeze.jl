@@ -3,16 +3,20 @@
 
 Freeze the parameters with name `which_params` of the layer `l`.
 
-!!! tip
+:::tip
 
-    It is always recommended to use the [`Lux.freeze`](@ref) function instead of directly
-    using the `FrozenLayer` constructor.
+It is always recommended to use the [`Lux.Experimental.freeze`](@ref) function instead of directly
+using the `FrozenLayer` constructor.
 
-!!! warning
+:::
 
-    There are no checks for `which_params`. For example, if the original layer has
-    parameters named `(:weight, :bias)``, and `which_params`is set to`(:myweight,)`
-    then none of the parameters are frozen and no error is thrown.
+:::warning
+
+There are no checks for `which_params`. For example, if the original layer has
+parameters named `(:weight, :bias)``, and `which_params`is set to`(:myweight,)`
+then none of the parameters are frozen and no error is thrown.
+
+:::
 
 ## Arguments
 
@@ -46,10 +50,10 @@ parameter types, users need to implement `Lux._merge(::CustomParamType, ::NamedT
 ## Example
 
 ```julia
-m = Lux.FrozenLayer(Dense(2 => 2), (:weight,))
+m = Lux.Experimental.FrozenLayer(Dense(2 => 2), (:weight,))
 ```
 
-See also [`Lux.freeze`](@ref), [`Lux.unfreeze`](@ref).
+See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).
 """
 struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicitLayer
     layer::L
@@ -114,8 +118,8 @@ end
     freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
            which_params::Union{Tuple, Nothing} = nothing)
 
-Construct a [`Lux.FrozenLayer`](@ref) for `l` with the current parameters and states. If
-`which_params` is nothing, then all parameters are frozen.
+Construct a [`Lux.Experimental.FrozenLayer`](@ref) for `l` with the current parameters and
+states. If `which_params` is nothing, then all parameters are frozen.
 """
 function freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
     which_params::Union{Tuple, Nothing}=nothing)
@@ -144,7 +148,7 @@ unfreeze(l::FrozenLayer) = l.layer
 """
     unfreeze(l::FrozenLayer, ps, st::NamedTuple)
 
-Unwraps a [`Lux.FrozenLayer`](@ref) `l` with the current parameters and states.
+Unwraps a [`Lux.Experimental.FrozenLayer`](@ref) `l` with the current parameters and states.
 """
 function unfreeze(fl::AbstractExplicitLayer, ps, st::NamedTuple)
     return unfreeze(fl), merge(ps, st.frozen_params), st.states

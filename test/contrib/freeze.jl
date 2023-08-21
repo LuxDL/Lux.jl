@@ -9,7 +9,7 @@ rng = get_stable_rng(12345)
         d = Dense(5 => 5)
         psd, std = Lux.setup(rng, d) .|> device
 
-        fd, ps, st = Lux.freeze(d, psd, std, nothing)
+        fd, ps, st = Lux.Experimental.freeze(d, psd, std, nothing)
         @test length(keys(ps)) == 0
         @test length(keys(st)) == 2
         @test sort([keys(st)...]) == [:frozen_params, :states]
@@ -26,7 +26,7 @@ rng = get_stable_rng(12345)
     end
 
     @testset "ComponentArray" begin
-        m = Chain(Lux.freeze(Dense(1 => 3, tanh)), Dense(3 => 1))
+        m = Chain(Lux.Experimental.freeze(Dense(1 => 3, tanh)), Dense(3 => 1))
         ps, st = Lux.setup(rng, m)
         st = st |> device
         ps_c = ComponentVector(ps) |> device
@@ -45,7 +45,7 @@ end
     d = Dense(5 => 5)
     psd, std = Lux.setup(rng, d) .|> device
 
-    fd, ps, st = Lux.freeze(d, psd, std, (:weight,))
+    fd, ps, st = Lux.Experimental.freeze(d, psd, std, (:weight,))
     @test length(keys(ps)) == 1
     @test length(keys(st)) == 2
     @test sort([keys(st)...]) == [:frozen_params, :states]

@@ -13,11 +13,13 @@ struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
 
-!!! warning
+:::warning
 
-    This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
-    rather allows operating on an entire sequence of inputs at once. See
-    [`StatefulRecurrentCell`](@ref) for functionality similar to [`Flux.Recur`](@ref).
+This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
+rather allows operating on an entire sequence of inputs at once. See
+[`StatefulRecurrentCell`](@ref) for functionality similar to `Flux.Recur`.
+
+:::
 
 ## Arguments
 
@@ -99,9 +101,11 @@ end
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) and
 makes it stateful.
 
-!!! tip
+:::tip
 
-    This is very similar to `Flux.Recur`
+This is very similar to `Flux.Recur`
+
+:::
 
 To avoid undefined behavior, once the processing of a single sequence of data is complete,
 update the state with `Lux.update_state(st, :carry, nothing)`.
@@ -335,9 +339,9 @@ Long Short-Term (LSTM) Cell
 ## Parameters
 
   - `weight_i`: Concatenated Weights to map from input space
-                ``\left\{ W_{ii}, W_{if}, W_{ig}, W_{io} \right\}``.
+                ``\{ W_{ii}, W_{if}, W_{ig}, W_{io} \}``.
   - `weight_h`: Concatenated Weights to map from hidden space
-                ``\left\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \right\}``
+                ``\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \}``
   - `bias`: Bias vector (not present if `use_bias=false`)
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
   - `memory`: Initial memory vector (not present if `train_memory=false`)

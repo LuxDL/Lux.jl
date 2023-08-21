@@ -1,24 +1,27 @@
-using Documenter, DocumenterMarkdown, Lux, Pkg
+include("./DocumenterVitepress/DocumenterVitepress.jl")
+using .DocumenterVitepress
 
-using PythonCall, CondaPkg, Pkg  # Load mkdocs dependencies
+using Documenter, Pkg
+using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
+using LuxTestUtils, LuxDeviceUtils
+using LuxAMDGPU, LuxCUDA
 
 deployconfig = Documenter.auto_detect_deploy_system()
 Documenter.post_status(deployconfig; type="pending", repo="github.com/LuxDL/Lux.jl.git")
 
 makedocs(; sitename="Lux", authors="Avik Pal et al.", clean=true, doctest=true,
-    modules=[Lux], checkdocs=:all, format=Markdown(), draft=false,
-    strict=[:doctest, :linkcheck, :parse_error, :example_block, :missing_docs],
-    build=joinpath(@__DIR__, "docs"))
+    modules=[Lux, LuxCore, LuxLib, WeightInitializers, Boltz, LuxTestUtils, LuxDeviceUtils,
+        LuxAMDGPU, LuxCUDA], checkdocs=:all, format=DocumenterVitepress.MarkdownVitepress(),
+    draft=false, strict=[:doctest, :linkcheck, :parse_error, :example_block, :missing_docs],
+    source="src", build=joinpath(@__DIR__, "page/generated"))
 
-Pkg.activate(@__DIR__)
+using NodeJS
 
-CondaPkg.withenv() do
-    current_dir = pwd()
-    cd(@__DIR__)
-    run(`mkdocs build`)
-    cd(current_dir)
-    return
+node_dir = joinpath(@__DIR__, "page")
+cd(node_dir) do
+    run(`$(npm_cmd()) install .`)
+    run(`$(npm_cmd()) run docs:build`)
 end
 
-deploydocs(; repo="github.com/LuxDL/Lux.jl.git", push_preview=true, target="site",
-    devbranch="main")
+deploydocs(; repo="github.com/LuxDL/Lux.jl.git", push_preview=true,
+    target="page/.vitepress/dist", devbranch="main")

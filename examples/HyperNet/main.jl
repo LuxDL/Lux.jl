@@ -2,17 +2,8 @@
 using Lux
 using Pkg #hide
 Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays,
-    LuxAMDGPU,
-    LuxCUDA,
-    MLDatasets,
-    MLUtils,
-    OneHotArrays,
-    Optimisers,
-    Random,
-    Setfield,
-    Statistics,
-    Zygote
+using ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
+    Optimisers, Random, Setfield, Statistics, Zygote
 CUDA.allowscalar(false)
 
 # ## Loading Datasets
