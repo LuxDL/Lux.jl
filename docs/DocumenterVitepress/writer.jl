@@ -66,17 +66,17 @@ end
 
 function render(io::IO, mime::MIME"text/plain", node::Documents.DocsNode, page, doc)
     # Docstring header based on the name of the binding and it's category.
-    println(io, "<div style='border-width:1px; border-style:solid; border-color:black; padding: 1em; border-radius: 25px;'>")
+    println(io,
+        "<div style='border-width:1px; border-style:solid; border-color:black; padding: 1em; border-radius: 25px;'>")
     anchor = "<a id='$(node.anchor.id)' href='#$(node.anchor.id)'>#</a>"
     header = "&nbsp;<b><u>$(node.object.binding)</u></b> &mdash; <i>$(Utilities.doccat(node.object))</i>."
     println(io, anchor, header, "\n\n")
     # Body. May contain several concatenated docstrings.
     renderdoc(io, mime, node.docstr, page, doc)
-    println(io, "</div>\n<br>")
+    return println(io, "</div>\n<br>")
 end
 
 function renderdoc(io::IO, mime::MIME"text/plain", md::MarkdownStdlib.MD, page, doc)
-
     if haskey(md.meta, :results)
         # The `:results` field contains a vector of `Docs.DocStr` objects associated with
         # each markdown object. The `DocStr` contains data such as file and line info that
@@ -195,7 +195,7 @@ end
 function render(io::IO, ::MIME"text/plain", other, page, doc)
     println(io)
     linkfix = ".md#"
-    println(io, replace(MarkdownStdlib.plain(other), linkfix => "#"))
+    return println(io, replace(MarkdownStdlib.plain(other), linkfix => "#"))
 end
 
 render(io::IO, ::MIME"text/plain", str::AbstractString, page, doc) = print(io, str)
