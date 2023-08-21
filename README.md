@@ -1,6 +1,6 @@
 <p align="center">
-    <img width="400px" src="docs/src/assets/lux-logo.svg#gh-light-mode-only"/>
-    <img width="400px" src="docs/src/assets/lux-logo-dark.svg#gh-dark-mode-only"/>
+    <img width="400px" src="assets/lux-logo.svg#gh-light-mode-only"/>
+    <img width="400px" src="assets/lux-logo-dark.svg#gh-dark-mode-only"/>
 </p>
 
 <div align="center">
