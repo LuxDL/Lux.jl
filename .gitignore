@@ -25,4 +25,6 @@ package-lock.json
 docs/page/generated
 docs/page/.vitepress/dist
 docs/page/.vitepress/cache
-docs/src/tutorials
+docs/src/tutorials/beginner
+docs/src/tutorials/intermediate
+docs/src/tutorials/advanced

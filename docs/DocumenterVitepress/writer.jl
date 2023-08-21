@@ -205,7 +205,7 @@ render(io::IO, ::MIME"text/plain", str::AbstractString, page, doc) = print(io, s
 render(io::IO, ::MIME"text/plain", node::Documents.MetaNode, page, doc) = println(io, "\n")
 
 function render(io::IO, ::MIME"text/plain", raw::Documents.RawNode, page, doc)
-    return raw.name === :html ? println(io, "\n", raw.text, "\n") : nothing
+    return raw.name === :html ? println(io, raw.text, "\n") : nothing
 end
 
 ## Markdown Utilities.

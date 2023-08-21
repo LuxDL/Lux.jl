@@ -1,18 +1,20 @@
 # Quickstart
 
 :::tip PRE-REQUISITES
+
 You need to install `Optimisers` and `Zygote` if not done already.
 `Pkg.add(["Optimisers", "Zygote"])`
+
 :::
 
-```julia
+```@example quickstart
 using Lux, Random, Optimisers, Zygote
 # using LuxCUDA, LuxAMDGPU, Metal # Optional packages for GPU support
 ```
 
 We take randomness very seriously
 
-```julia
+```@example quickstart
 # Seeding
 rng = Random.default_rng()
 Random.seed!(rng, 0)
@@ -20,7 +22,7 @@ Random.seed!(rng, 0)
 
 Build the model
 
-```julia
+```@example quickstart
 # Construct the layer
 model = Chain(BatchNorm(128), Dense(128, 256, tanh), BatchNorm(256),
     Chain(Dense(256, 1, tanh), Dense(1, 10)))
@@ -29,7 +31,7 @@ model = Chain(BatchNorm(128), Dense(128, 256, tanh), BatchNorm(256),
 Models don't hold parameters and states so initialize them. From there on, we just use our
 standard AD and Optimisers API.
 
-```julia
+```@example quickstart
 # Get the device determined by Lux
 device = gpu_device()
 

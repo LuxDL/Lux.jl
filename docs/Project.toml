@@ -10,7 +10,6 @@ LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
 LuxLib = "82251201-b29d-42c6-8e01-566dec8acb11"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
-NodeJS = "2bd173c7-0d6d-553b-b6af-13a54713934c"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 
