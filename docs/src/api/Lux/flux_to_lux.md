@@ -10,7 +10,7 @@ present somewhere in the code for these to be used.
 ## Index
 
 ```@index
-Pages = ["flux2lux.md"]
+Pages = ["flux_to_lux.md"]
 ```
 
 ## Functions

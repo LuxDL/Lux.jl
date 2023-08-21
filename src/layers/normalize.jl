@@ -75,9 +75,11 @@ Use `Lux.testmode` during inference.
 m = Chain(Dense(784 => 64), BatchNorm(64, relu), Dense(64 => 10), BatchNorm(10))
 ```
 
-!!! warning
-    
-    Passing a batch size of 1, during training will result in NaNs.
+:::warning
+
+Passing a batch size of 1, during training will result in NaNs.
+
+:::
 
 See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
@@ -200,9 +202,11 @@ Use `Lux.testmode` during inference.
 m = Chain(Dense(784 => 64), GroupNorm(64, 4, relu), Dense(64 => 10), GroupNorm(10, 5))
 ```
 
-!!! warning
+:::warning
 
-    GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
+GroupNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
+
+:::
 
 See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
@@ -307,9 +311,11 @@ m = Chain(Dense(784 => 64), InstanceNorm(64, relu), Dense(64 => 10), InstanceNor
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 
-!!! warning
-    
-    InstanceNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
+:::warning
+
+InstanceNorm doesn't have CUDNN support. The GPU fallback is not very efficient.
+
+:::
 
 See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`WeightNorm`](@ref)
 """
@@ -493,11 +499,13 @@ y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
 
 where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
-!!! note
+:::warning
 
-    As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
-    `affine::Bool=true` as the default. Now the doc reflects the code, so please check
-    whether your assumptions about the default (if made) were invalid.
+As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
+`affine::Bool=true` as the default. Now the doc reflects the code, so please check
+whether your assumptions about the default (if made) were invalid.
+
+:::
 
 ## Arguments
 

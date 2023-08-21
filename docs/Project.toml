@@ -1,12 +1,17 @@
 [deps]
-CondaPkg = "992eb4ea-22a4-4c89-a5bb-47a3300528ab"
+ANSIColoredPrinters = "a4c015fc-c6ff-483c-b24f-f7ea428134e9"
+Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-DocumenterMarkdown = "997ab1e6-3595-5248-9280-8efb232c3433"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
-Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
+LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
+LuxLib = "82251201-b29d-42c6-8e01-566dec8acb11"
+LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
+
+[compat]
+Documenter = "0.27"

@@ -51,6 +51,4 @@ it both compiler and autodiff friendly.
 * **Lux won't magically speed up your code (yet)** -- Lux shares the same backend with Flux
   and so if your primary desire to shift is driven by performance, you will be disappointed.
 
-* **Special Architecture Support** -- Unfortunately, we currently don't support Cloud TPUs
-  and even AMD GPUs are not well tested. (We do plan to support these in the nearish
-  future)
+* **XLA Support** -- Lux doesn't compile to XLA which means no TPU support unfortunately.

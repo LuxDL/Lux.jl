@@ -2,11 +2,13 @@
 
 ## Which function should participate in dispatch?
 
-* Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient, since it requires the user to define a new method for every layer type.
+* Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient,
+  since it requires the user to define a new method for every layer type.
 
 * `(::AbstractExplicitLayer)(x::MyInputType, ps, st::NamedTuple)` doesn't work.
 
-* Instead, we need to define the dispatch on `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
+* Instead, we need to define the dispatch on
+  `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
 
 ## Concrete Example
 
@@ -46,13 +48,14 @@ rng = MersenneTwister(0)
 ps, st = Lux.setup(rng, model)
 x = randn(rng, Float32, 3, 2)
 
-# model(x, ps, st)
+try
+    model(x, ps, st)
+catch e
+    Base.showerror(stdout, e)
+end
 ```
 
-The last line is commented out, since it will not work. Try uncommenting it and see what
-happens.
-
-### Dispatching on Custom Input Types
+### Writing the Correct Dispatch Rules
 
 * Create a Custom Layer storing the time.
 
@@ -85,7 +88,7 @@ xt = ArrayAndTime(x, 10.0f0)
 model(xt, ps, st)[1]
 ```
 
-### Using the same input for non-TD models
+### Using the Same Input for Non-TD Models
 
 Writing proper dispatch means we can simply replace the `TDChain` with a `Chain` (of course
 with dimension corrections) and the pipeline still works.

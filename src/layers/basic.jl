@@ -256,10 +256,6 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
 
   - `weight`: Weight Array of size `(dims...)`
   - `bias`: Bias of size `(dims...)`
-
-!!! compat "Lux 0.4.3"
-
-    `Scale` with multiple dimensions requires at least Lux 0.4.3.
 """
 @concrete struct Scale{use_bias} <: AbstractExplicitLayer
     activation
@@ -447,9 +443,11 @@ A lookup table that stores embeddings of dimension `out_dims` for a vocabulary o
 
 This layer is often used to store word embeddings and retrieve them using indices.
 
-!!! warning
+:::warning
 
-    Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
+Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
+
+:::
 
 ## Arguments
 
