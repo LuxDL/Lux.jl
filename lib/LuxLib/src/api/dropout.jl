@@ -66,7 +66,7 @@ function dropout(rng::AbstractRNG, x::AA{T1, N}, mask::AA{T2, N}, p::T, t::Val, 
     return dropout(rng, x, mask, p, t, um, invp; dims)
 end
 
-@doc doc"""
+"""
     alpha_dropout(rng::AbstractRNG, x, p, ::Val{training})
     alpha_dropout(rng::AbstractRNG, x, p, ::Val{training}, α, A, B)
 
@@ -81,7 +81,7 @@ for a fixed dropout probability.
   - `p`: Probability of an element to be dropped out
   - `Val(training)`: If `true` then dropout is applied on `x` with probability `p`. Else,
     `x` is returned
-  - `α`: -1.7580993408473766. Computed at limit x tends to infinity, `selu(x) = -λβ = α`
+  - `α`: `-1.7580993408473766`. Computed at limit x tends to infinity, `selu(x) = -λβ = α`
   - `A`: Scaling factor for the mean
   - `B`: Scaling factor for the variance
 
@@ -93,7 +93,7 @@ for a fixed dropout probability.
 ## References
 
 [1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
-    information processing systems 30 (2017).
+information processing systems 30 (2017).
 """
 function alpha_dropout(rng::AbstractRNG, x::AA{T}, p, t::Val{true}) where {T}
     α = T(-1.7580993408473766)

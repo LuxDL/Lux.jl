@@ -30,6 +30,7 @@ steps:
         - with:
             julia: "nightly"
           soft_fail: true
+
   - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
     plugins:
       - JuliaCI/julia#v1:

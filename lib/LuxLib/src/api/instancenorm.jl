@@ -4,7 +4,7 @@
 Instance Normalization. For details see [1].
 
 Instance Normalization computes the mean and variance for each
-``D_1 \times ... \times D_{N - 2} \times 1 \times 1``` input slice and normalises the input
+``D_1 \times ... \times D_{N - 2} \times 1 \times 1`` input slice and normalises the input
 accordingly.
 
 ## Arguments

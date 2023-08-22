@@ -67,15 +67,8 @@ function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; groups::Int,
 
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
-    x_ = first(_normalization(x_reshaped,
-        nothing,
-        nothing,
-        scale,
-        bias,
-        _get_groupnorm_reduce_dims(x),
-        Val(false),
-        nothing,
-        epsilon))
+    x_ = first(_normalization(x_reshaped, nothing, nothing, scale, bias,
+        _get_groupnorm_reduce_dims(x), Val(false), nothing, epsilon))
 
     return reshape(x_, sz)
 end
