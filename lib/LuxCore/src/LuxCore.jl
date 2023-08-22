@@ -1,5 +1,6 @@
 module LuxCore
 
+using DocStringExtensions
 using Functors, Random, Setfield
 
 function _default_rng()
@@ -11,7 +12,7 @@ function _default_rng()
 end
 
 """
-    AbstractExplicitLayer
+$(TYPEDEF)
 
 Abstract Type for all Lux Layers
 
@@ -35,7 +36,7 @@ See also [`AbstractExplicitContainerLayer`](@ref)
 abstract type AbstractExplicitLayer end
 
 """
-    initialparameters(rng::AbstractRNG, l)
+$(TYPEDSIGNATURES)
 
 Generate the initial parameters of the layer `l`.
 """
@@ -46,7 +47,7 @@ end
 initialparameters(::AbstractRNG, ::Nothing) = NamedTuple()
 
 """
-    initialstates(rng::AbstractRNG, l)
+$(TYPEDSIGNATURES)
 
 Generate the initial states of the layer `l`.
 """
@@ -55,7 +56,7 @@ initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rn
 initialstates(::AbstractRNG, ::Nothing) = NamedTuple()
 
 """
-    parameterlength(l)
+$(TYPEDSIGNATURES)
 
 Return the total number of parameters of the layer `l`.
 """
@@ -68,7 +69,7 @@ end
 parameterlength(a::AbstractArray) = length(a)
 
 """
-    statelength(l)
+$(TYPEDSIGNATURES)
 
 Return the total number of states of the layer `l`.
 """
@@ -78,21 +79,23 @@ statelength(a::AbstractArray) = length(a)
 statelength(x::Union{Number, Symbol, Val, <:AbstractRNG}) = 1
 
 """
-    setup(rng::AbstractRNG, l::AbstractExplicitLayer)
+$(TYPEDSIGNATURES)
 
 Shorthand for getting the parameters and states of the layer `l`. Is equivalent to
 `(initialparameters(rng, l), initialstates(rng, l))`.
 
-!!! warning
+::: warning
 
-    This function is not pure, it mutates `rng`.
+This function is not pure, it mutates `rng`.
+
+:::
 """
 function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
     return (initialparameters(rng, l), initialstates(rng, l))
 end
 
 """
-    apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
+$(TYPEDSIGNATURES)
 
 Simply calls `model(x, ps, st)`
 """
@@ -117,7 +120,7 @@ Base.show(io::IO, x::AbstractExplicitLayer) = print(io, "$(display_name(x))()")
 
 # Abstract Container Layers
 """
-    AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer
+$(TYPEDEF)
 
 Abstract Container Type for certain Lux Layers. `layers` is a tuple containing fieldnames
 for the layer, and constructs the parameters and states using those.
@@ -125,11 +128,13 @@ for the layer, and constructs the parameters and states using those.
 Users implementing their custom layer can extend the same functions as in
 [`AbstractExplicitLayer`](@ref).
 
-!!! tip
+::: tip
 
-    Advanced structure manipulation of these layers post construction is possible via
-    `Functors.fmap`. For a more flexible interface, we recommend using the experimental
-    feature `Lux.@layer_map`.
+Advanced structure manipulation of these layers post construction is possible via
+`Functors.fmap`. For a more flexible interface, we recommend using the experimental
+feature [`Lux.Experimental.@layer_map`](@ref).
+
+:::
 """
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
@@ -158,8 +163,7 @@ function Functors.functor(::Type{<:AbstractExplicitContainerLayer{layers}},
     x) where {layers}
     _children = NamedTuple{layers}(getproperty.((x,), layers))
     function layer_reconstructor(z)
-        return reduce((l, (c, n)) -> set(l, Setfield.PropertyLens{n}(), c),
-            zip(z, layers);
+        return reduce((l, (c, n)) -> set(l, Setfield.PropertyLens{n}(), c), zip(z, layers);
             init=x)
     end
     return _children, layer_reconstructor
@@ -167,27 +171,25 @@ end
 
 # Test Mode
 """
-    testmode(st::NamedTuple)
+$(TYPEDSIGNATURES)
 
 Make all occurances of `training` in state `st` -- `Val(false)`.
 """
 testmode(st::NamedTuple) = update_state(st, :training, Val(false))
 
 """
-    trainmode(st::NamedTuple)
+$(TYPEDSIGNATURES)
 
 Make all occurances of `training` in state `st` -- `Val(true)`.
 """
 trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
 """
-    update_state(st::NamedTuple, key::Symbol, value; layer_check=_default_layer_check(key))
+$(TYPEDSIGNATURES)
 
 Recursively update all occurances of the `key` in the state `st` with the `value`.
 """
-function update_state(st::NamedTuple,
-    key::Symbol,
-    value;
+function update_state(st::NamedTuple, key::Symbol, value;
     layer_check=_default_layer_check(key))
     function _update_state(st, key::Symbol, value)
         return Setfield.set(st, Setfield.PropertyLens{key}(), value)
