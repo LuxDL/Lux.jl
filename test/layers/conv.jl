@@ -162,6 +162,30 @@ end
         layer = Conv((2, 2), 2 => 9; groups=2)
         display(layer)
         @test_throws AssertionError Lux.setup(rng, layer)
+
+        @testset "Segfault Test LuxDL/Lux.jl#386" begin
+            layer = Conv((5,), 32 => 32, tanh; groups=32)
+            display(layer)
+            x = rand(rng, Float32, 16, 32, 1) |> aType
+            ps, st = Lux.setup(rng, layer) .|> device
+
+            broken = false
+            try
+                layer(x, ps, st)
+                broken = false
+            catch
+                @warn "$mode Test broken for $layer"
+                broken = true
+            end
+
+            if !broken
+                @jet layer(x, ps, st)
+                __f = (x, ps) -> sum(first(layer(x, ps, st)))
+                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            else
+                @test_broken !broken
+            end
+        end
     end
 
     @testset "Asymmetric Padding" begin
