@@ -28,6 +28,10 @@ const rng = StableRNG(12345)
         # Type
         @test eltype(init(rng, 4, 2)) == Float32
         @test eltype(init(4, 2)) == Float32
+        # RNG Closure
+        cl = init(rng)
+        @test typeof(cl(3)) == Array{Float32, 1}
+        @test typeof(cl(3, 5)) == Array{Float32, 2}
     end
 
     @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
@@ -90,5 +94,9 @@ const rng = StableRNG(12345)
             @test 0.9σ2 < var(v) < 1.1σ2
         end
         @test eltype(init(3, 4; gain=1.5)) == Float32
+    end
+
+    @testset "Warning: truncated_normal" begin
+        @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." truncated_normal(2; mean=-5.0f0)
     end
 end
