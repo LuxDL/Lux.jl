@@ -16,17 +16,8 @@ const rng = StableRNG(12345)
         @test WeightInitializers._nfan(4, 5, 6) == 4 .* (5, 6)
     end
 
-    @testset "Sizes and Types: $init" for init in [
-        zeros32,
-        ones32,
-        rand32,
-        randn32,
-        kaiming_uniform,
-        kaiming_normal,
-        glorot_uniform,
-        glorot_normal,
-        truncated_normal,
-    ]
+    @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
+        kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal, truncated_normal]
         # Sizes
         @test size(init(3)) == (3,)
         @test size(init(rng, 3)) == (3,)
@@ -39,13 +30,17 @@ const rng = StableRNG(12345)
         @test eltype(init(4, 2)) == Float32
     end
 
-    @testset "Closure: $init" for init in [
-        kaiming_uniform,
-        kaiming_normal,
-        glorot_uniform,
-        glorot_normal,
-        truncated_normal,
-    ]
+    @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
+            glorot_uniform, glorot_normal, truncated_normal], T in (Float16, Float32,
+            Float64, BigFloat)
+        @test typeof(init(T, 3)) == Array{T, 1}
+        @test typeof(init(rng, T, 3)) == Array{T, 1}
+        @test typeof(init(T, 3, 5)) == Array{T, 2}
+        @test typeof(init(rng, T, 3, 5)) == Array{T, 2}
+    end
+
+    @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal, glorot_uniform,
+        glorot_normal, truncated_normal]
         cl = init(;)
         # Sizes
         @test size(cl(3)) == (3,)
@@ -73,8 +68,8 @@ const rng = StableRNG(12345)
             @test 0.9σ2 < std(v) < 1.1σ2
         end
         # Type
-        @test eltype(kaiming_uniform(rng, 3, 4; gain=1.5)) == Float32
-        @test eltype(kaiming_normal(rng, 3, 4; gain=1.5)) == Float32
+        @test eltype(kaiming_uniform(rng, 3, 4; gain=1.5f0)) == Float32
+        @test eltype(kaiming_normal(rng, 3, 4; gain=1.5f0)) == Float32
     end
 
     @testset "glorot: $init" for init in [glorot_uniform, glorot_normal]
