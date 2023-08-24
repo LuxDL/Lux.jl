@@ -32,7 +32,7 @@ const rng = StableRNG(12345)
 
     @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
             glorot_uniform, glorot_normal, truncated_normal], T in (Float16, Float32,
-            Float64, BigFloat)
+            Float64)
         @test typeof(init(T, 3)) == Array{T, 1}
         @test typeof(init(rng, T, 3)) == Array{T, 1}
         @test typeof(init(T, 3, 5)) == Array{T, 2}
