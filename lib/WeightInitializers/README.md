@@ -1,8 +1,8 @@
 # WeightInitializers
 
 [![Join the chat at https://julialang.zulipchat.com #machine-learning](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/machine-learning)
-[![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://luxdl.github.io/WeightInitializers.jl/dev)
-[![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://luxdl.github.io/WeightInitializers.jl/stable)
+[![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://lux.csail.mit.edu/dev/api/WeightInitializers/)
+[![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://lux.csail.mit.edu/stable/api/WeightInitializers/)
 
 [![CI](https://github.com/LuxDL/WeightInitializers.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/LuxDL/WeightInitializers.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/LuxDL/WeightInitializers.jl/branch/main/graph/badge.svg?token=1ZY0A2NPEM)](https://codecov.io/gh/LuxDL/WeightInitializers.jl)
@@ -14,18 +14,15 @@
 This package is a light dependency providing common weight initialization schemes for deep learning models.
 
 ## Example
+
 These code snippets are just provided to give a high level overview
 of the functionalities of the package.
-Please refer to the [stable documentation](https://luxdl.github.io/WeightInitializers.jl/stable) for mode information
-about the package. The
-[under development documentation](https://luxdl.github.io/WeightInitializers.jl/dev) 
-provides information on features not yet released.
 
 ```julia
 using WeightInitializers, Random
 
 # Fixing rng
-rng = Random.MersenneTwister(42)
+rng = MersenneTwister(42)
 
 # Explicit rng call
 weights = kaiming_normal(rng, 2, 5)
