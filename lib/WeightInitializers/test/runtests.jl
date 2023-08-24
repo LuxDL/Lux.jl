@@ -37,6 +37,14 @@ const rng = StableRNG(12345)
         @test typeof(init(rng, T, 3)) == Array{T, 1}
         @test typeof(init(T, 3, 5)) == Array{T, 2}
         @test typeof(init(rng, T, 3, 5)) == Array{T, 2}
+
+        cl = init(rng)
+        @test typeof(cl(T, 3)) == Array{T, 1}
+        @test typeof(cl(T, 3, 5)) == Array{T, 2}
+
+        cl = init(rng, T)
+        @test typeof(cl(3)) == Array{T, 1}
+        @test typeof(cl(3, 5)) == Array{T, 2}
     end
 
     @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal, glorot_uniform,
