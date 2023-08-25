@@ -48,11 +48,8 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
     kwargs::K
 end
 
-function NeuralODE(model::Lux.AbstractExplicitLayer;
-    solver=Tsit5(),
-    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-    tspan=(0.0f0, 1.0f0),
-    kwargs...)
+function NeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0),
+    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 

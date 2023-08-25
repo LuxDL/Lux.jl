@@ -1,3 +1,5 @@
+# # Training a HyperNetwork on MNIST and FashionMNIST
+
 # ## Package Imports
 using Lux
 using Pkg #hide

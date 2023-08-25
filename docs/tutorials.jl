@@ -5,11 +5,10 @@ OUTPUT = joinpath(@__DIR__, "src", "tutorials")
 
 BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl", "SimpleRNN/main.jl"]
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
-ADVANCED_TUTORIALS = []
+ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl"]
 
 for (d, paths) in (("beginner", BEGINNER_TUTORIALS),
-    ("intermediate", INTERMEDIATE_TUTORIALS),
-    ("advanced", ADVANCED_TUTORIALS))
+    ("intermediate", INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIALS))
     for p in paths
         Literate.markdown(get_example_path(p), joinpath(OUTPUT, d, dirname(p));
             documenter=true)
