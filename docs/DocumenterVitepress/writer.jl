@@ -52,7 +52,7 @@ function render(io::IO, mime::MIME"text/plain", vec::Vector, page, doc)
 end
 
 function render(io::IO, mime::MIME"text/plain", anchor::Anchors.Anchor, page, doc)
-    println(io, "\n<a id='", lstrip(only(anchor.object.text), '#'), "'></a>")
+    println(io, "\n<a id='", lstrip(Anchors.fragment(anchor), '#'), "'></a>")
     return render(io, mime, anchor.object, page, doc)
 end
 
