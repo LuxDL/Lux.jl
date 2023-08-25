@@ -48,11 +48,8 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
     kwargs::K
 end
 
-function NeuralODE(model::Lux.AbstractExplicitLayer;
-    solver=Tsit5(),
-    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-    tspan=(0.0f0, 1.0f0),
-    kwargs...)
+function NeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0),
+    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 
@@ -65,15 +62,7 @@ function (n::NeuralODE)(x, ps, st)
     return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
 end
 
-function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:CuArray}}) where {T, N}
-    dev = gpu_device()
-    return dropdims(dev(x); dims=3)
-end
-function diffeqsol_to_array(x::ODESolution{T, N, <:AbstractVector{<:ROCArray}}) where {T, N}
-    dev = gpu_device()
-    return dropdims(dev(x); dims=3)
-end
-diffeqsol_to_array(x::ODESolution) = dropdims(Array(x); dims=3)
+diffeqsol_to_array(x::ODESolution) = last(x)
 
 # ## Create and Initialize the Neural ODE Layer
 function create_model()
