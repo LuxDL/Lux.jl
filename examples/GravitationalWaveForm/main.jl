@@ -336,7 +336,7 @@ end
 # Finally let us visualize the results
 
 prob_nn = ODEProblem(ODE_model, u0, tspan, res.u)
-soln_nn = Array(solve(prob_nn, RK4(); u0, p=params, saveat=tsteps, dt, adaptive=false))
+soln_nn = Array(solve(prob_nn, RK4(); u0, p=res.u, saveat=tsteps, dt, adaptive=false))
 waveform_nn_trained = first(compute_waveform(dt_data, soln_nn, mass_ratio,
     ode_model_params))
 
