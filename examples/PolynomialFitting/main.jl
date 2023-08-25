@@ -78,7 +78,7 @@ function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
     for epoch in 1:epochs
         grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,
             loss_function, data, tstate)
-        @info epoch=epoch loss=loss
+        println("Epoch: $(epoch) || Loss: $(loss)")
         tstate = Lux.Training.apply_gradients(tstate, grads)
     end
     return tstate

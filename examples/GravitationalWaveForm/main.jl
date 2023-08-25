@@ -136,7 +136,7 @@ function h_22_quadrupole_two_body(dt, orbit1, mass1, orbit2, mass2)
 end
 
 function h_22_strain_two_body(dt::T, orbit1, mass1, orbit2, mass2) where {T}
-    # compute (2,2) mode strain from orbits of BH 1 of mass1 and BH2 of mass 2
+    ## compute (2,2) mode strain from orbits of BH 1 of mass1 and BH2 of mass 2
 
     @assert abs(mass1 + mass2 - 1.0)<1e-12 "Masses do not sum to unity"
 
@@ -189,7 +189,7 @@ function RelativisticOrbitModel(u, (p, M, e), t)
 end
 
 mass_ratio = 0.0         # test particle
-u0 = Float64[π, 0.0]    # initial conditions
+u0 = Float64[π, 0.0]     # initial conditions
 datasize = 250
 tspan = (0.0f0, 6.0f4)   # timespace for GW waveform
 tsteps = range(tspan[1], tspan[2]; length=datasize)  # time at each timestep
@@ -249,8 +249,8 @@ function ODE_model(u, nn_params, t)
     χ, ϕ = u
     p, M, e = ode_model_params
 
-    # In this example we know that `st` is am empty NamedTuple hence we can safely ignore
-    # it, however, in general, we should use `st` to store the state of the neural network.
+    ## In this example we know that `st` is am empty NamedTuple hence we can safely ignore
+    ## it, however, in general, we should use `st` to store the state of the neural network.
     y = 1 .+ first(nn([first(u)], nn_params, st))
 
     numer = (1 + e * cos(χ))^2
@@ -304,7 +304,7 @@ const losses = Float64[]
 
 function callback(θ, l, pred_waveform)
     push!(losses, l)
-    @info "Training" iter=length(losses) loss=l
+    println("Training || Iteration: $(length(losses)) || Loss: $(l)")
     return false
 end
 
