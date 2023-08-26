@@ -10,10 +10,13 @@
 # libraries.
 
 ## Import libraries
-using Lux
 using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
+using Lux, Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication
 
 ## Hide sampling progress
 Turing.setprogress!(false);

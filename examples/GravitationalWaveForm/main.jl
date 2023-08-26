@@ -6,10 +6,13 @@
 # [Keith et. al. 2021](https://arxiv.org/abs/2102.12695) which originally used Flux.jl
 
 # ## Package Imports
-using Lux
 using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, CSV, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq,
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
+using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq,
     Optimization, OptimizationOptimJL, Random, SciMLSensitivity
 using CairoMakie, MakiePublication
 CUDA.allowscalar(false)

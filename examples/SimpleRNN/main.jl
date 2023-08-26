@@ -8,10 +8,13 @@
 # 3. Training using Optimisers.jl and Zygote.jl.
 
 # ## Package Imports
-using Lux
-using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
+import Pkg #hide
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
+using Lux, LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
 
 # ## Dataset
 
@@ -27,10 +30,8 @@ function get_dataloaders(; dataset_size=1000, sequence_length=50)
     labels = vcat(repeat([0.0f0], dataset_size ÷ 2), repeat([1.0f0], dataset_size ÷ 2))
     clockwise_spirals = [reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
                          for d in data[1:(dataset_size ÷ 2)]]
-    anticlockwise_spirals = [reshape(d[1][:, (sequence_length + 1):end],
-        :,
-        sequence_length,
-        1) for d in data[((dataset_size ÷ 2) + 1):end]]
+    anticlockwise_spirals = [reshape(d[1][:, (sequence_length + 1):end], :,
+        sequence_length, 1) for d in data[((dataset_size ÷ 2) + 1):end]]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     ## Split the dataset
     (x_train, y_train), (x_val, y_val) = splitobs((x_data, labels); at=0.8, shuffle=true)

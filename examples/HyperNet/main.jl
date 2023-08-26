@@ -1,10 +1,13 @@
 # # Training a HyperNetwork on MNIST and FashionMNIST
 
 # ## Package Imports
-using Lux
 using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
+using Lux, ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
     Optimisers, Random, Setfield, Statistics, Zygote
 CUDA.allowscalar(false)
 

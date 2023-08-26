@@ -4,11 +4,14 @@
 # polynomial.
 
 # ## Package Imports
-using Lux
 import Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using LuxAMDGPU,
-    LuxCUDA, Optimisers, Random, Statistics, Zygote, CairoMakie, MakiePublication
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
+using Lux, LuxAMDGPU, LuxCUDA, Optimisers, Random, Statistics, Zygote
+using CairoMakie, MakiePublication
 
 # ## Dataset
 

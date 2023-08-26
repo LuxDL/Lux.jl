@@ -10,9 +10,13 @@
 # differentiation (AD) framework in Julia. We'll use these tools to build a very simple
 # neural network. Let's start with importing `Lux.jl`
 
+import Pkg #hide
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
 using Lux, Random
-using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 
 # Now let us control the randomness in our code using proper Pseudo Random Number
 # Generator (PRNG)

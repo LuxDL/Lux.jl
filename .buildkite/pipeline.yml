@@ -80,9 +80,6 @@ steps:
         Pkg.activate("docs")
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
-        Pkg.activate("examples")
-        Pkg.develop(PackageSpec(path=pwd()))
-        Pkg.instantiate()
         println("+++ :julia: Building documentation")
 
         Pkg.activate("docs")

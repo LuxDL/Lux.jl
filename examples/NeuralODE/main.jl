@@ -6,10 +6,13 @@
 # Neural ODEs from scratch.
 
 # ## Package Imports
-using Lux
 using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
-using ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
+__DIR = @__DIR__ #hide
+Pkg.activate(__DIR) #hide
+Pkg.instantiate() #hide
+Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.precompile() #hide
+using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
     OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs

@@ -1,0 +1,17 @@
+[deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
+MakiePublication = "dde8697e-0d61-460d-88dd-856f66710dd1"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+Turing = "fce5fe82-541a-59a6-adf8-730c64b5f9a0"
+
+[compat]
+CairoMakie = "0.9, 0.10"
+Functors = "0.2, 0.3, 0.4"
+Lux = "0.5"
+MakiePublication = "0.3"
+ReverseDiff = "1"
+Turing = "0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28"
+Zygote = "0.6"
