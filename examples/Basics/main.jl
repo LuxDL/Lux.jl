@@ -1,6 +1,6 @@
 # # Julia & Lux for the Uninitiated
 
-# This is a quick intro to [Lux](https://github.com/avik-pal/:ux.jl) loosely based on:
+# This is a quick intro to [Lux](https://github.com/avik-pal/Lux.jl) loosely based on:
 # 
 # 1. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
 # 2. [Flux's tutorial](https://fluxml.ai/Flux.jl/stable/tutorials/2020-09-15-deep-learning-flux/).

@@ -13,12 +13,13 @@ BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl", "SimpleRNN/
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
 ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl"]
 
-for (d, paths) in (("beginner", BEGINNER_TUTORIALS),
-    ("intermediate", INTERMEDIATE_TUTORIALS), ("advanced", ADVANCED_TUTORIALS))
-    for (i, p) in enumerate(paths)
+withenv("JULIA_DEBUG" => "Literate") do
+    for (d, paths) in (("beginner", BEGINNER_TUTORIALS),
+            ("intermediate", INTERMEDIATE_TUTORIALS),
+            ("advanced", ADVANCED_TUTORIALS)), (i, p) in enumerate(paths)
         name = "$(i)_$(first(rsplit(p, "/")))"
         p_ = get_example_path(p)
-        Literate.markdown(p_, joinpath(OUTPUT, d); documenter=true, name,
+        Literate.markdown(p_, joinpath(OUTPUT, d); execute=true, name, documenter=true,
             preprocess=Base.Fix1(preprocess, p_))
     end
 end

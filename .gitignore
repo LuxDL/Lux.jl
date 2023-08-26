@@ -28,3 +28,4 @@ docs/page/.vitepress/cache
 docs/src/tutorials/beginner
 docs/src/tutorials/intermediate
 docs/src/tutorials/advanced
+*.log
