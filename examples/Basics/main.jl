@@ -1,6 +1,6 @@
 # # Julia & Lux for the Uninitiated
 
-# This is a quick intro to [Lux](https://github.com/avik-pal/:ux.jl) loosely based on:
+# This is a quick intro to [Lux](https://github.com/avik-pal/Lux.jl) loosely based on:
 # 
 # 1. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
 # 2. [Flux's tutorial](https://fluxml.ai/Flux.jl/stable/tutorials/2020-09-15-deep-learning-flux/).
@@ -10,9 +10,15 @@
 # differentiation (AD) framework in Julia. We'll use these tools to build a very simple
 # neural network. Let's start with importing `Lux.jl`
 
+import Pkg #hide
+__DIR = @__DIR__ #hide
+pkg_io = open(joinpath(__DIR, "pkg.log"), "w") #hide
+Pkg.activate(__DIR; io=pkg_io) #hide
+Pkg.instantiate(; io=pkg_io) #hide
+Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
+Pkg.precompile(; io=pkg_io) #hide
+close(pkg_io) #hide
 using Lux, Random
-using Pkg #hide
-Pkg.activate(joinpath(dirname(pathof(Lux)), "..", "examples")) #hide
 
 # Now let us control the randomness in our code using proper Pseudo Random Number
 # Generator (PRNG)
