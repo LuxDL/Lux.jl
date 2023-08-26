@@ -10,7 +10,7 @@ Users requiring CUDA support should install `LuxCUDA` and load it alongside `Lux
 ## Index
 
 ```@index
-Pages = ["index.md"]
+Pages = ["LuxCUDA.md"]
 ```
 
 ## API Reference

@@ -10,7 +10,7 @@ learning models.
 ## Index
 
 ```@index
-Pages = ["index.md"]
+Pages = ["WeightInitializers.md"]
 ```
 
 ## API Reference

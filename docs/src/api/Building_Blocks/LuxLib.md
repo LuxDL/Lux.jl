@@ -9,7 +9,7 @@ CurrentModule = LuxLib
 ## Index
 
 ```@index
-Pages = ["index.md"]
+Pages = ["LuxLib.md"]
 ```
 
 ## Dropout

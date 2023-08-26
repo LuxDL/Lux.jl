@@ -18,7 +18,7 @@ of Lux.jl models.
 ## Index
 
 ```@index
-Pages = ["index.md"]
+Pages = ["LuxTestUtils.md"]
 ```
 
 ## Testing using JET.jl
