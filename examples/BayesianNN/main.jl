@@ -14,7 +14,7 @@ using Pkg #hide
 __DIR = @__DIR__ #hide
 Pkg.activate(__DIR) #hide
 Pkg.instantiate() #hide
-Pkg,develop(path=joinpath(__DIR, "..", "..")) #hide
+Pkg.develop(; path=joinpath(__DIR, "..", "..")) #hide
 Pkg.precompile() #hide
 using Lux, Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication
 
