@@ -121,8 +121,8 @@ function render(io::IO, ::MIME"text/plain", contents::Documents.ContentsNode, pa
         link = MarkdownStdlib.Link(header.text, url)
         level = Utilities.header_level(header)
         print(io, "    "^(level - 1), "- ")
-        MarkdownStdlib.plaininline(io, link)
-        println(io)
+        linkfix = ".md#"
+        println(io, replace(MarkdownStdlib.plaininline(link), linkfix => "#"))
     end
     return println(io)
 end
