@@ -1,16 +1,16 @@
+```@meta
+CurrentModule = LuxDeviceUtils
+```
+
 # LuxDeviceUtils
 
 `LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across
 devices. Most users should directly use Lux.jl instead.
 
-```@meta
-CurrentModule = LuxDeviceUtils
-```
-
 ## Index
 
 ```@index
-Pages = ["index.md"]
+Pages = ["LuxDeviceUtils.md"]
 ```
 
 ## Preferences

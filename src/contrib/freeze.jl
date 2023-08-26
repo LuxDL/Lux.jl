@@ -13,7 +13,7 @@ using the `FrozenLayer` constructor.
 :::warning
 
 There are no checks for `which_params`. For example, if the original layer has
-parameters named `(:weight, :bias)``, and `which_params`is set to`(:myweight,)`
+parameters named `(:weight, :bias)`, and `which_params`is set to`(:myweight,)`
 then none of the parameters are frozen and no error is thrown.
 
 :::

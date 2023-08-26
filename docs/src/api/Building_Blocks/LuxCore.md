@@ -12,7 +12,7 @@ exported via `Lux.jl`).
 ## Index
 
 ```@index
-Pages = ["index.md"]
+Pages = ["LuxCore.md"]
 ```
 
 ## Abstract Types
