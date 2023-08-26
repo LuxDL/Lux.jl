@@ -64,15 +64,18 @@ end
 
 Return a tuple of supported GPU backends.
 
-!!! warning
+::: warning
 
-    This is not the list of functional backends on the system, but rather backends which
-    `Lux.jl` supports.
+This is not the list of functional backends on the system, but rather backends which
+`Lux.jl` supports.
 
-!!! warning
+:::
 
-    `Metal.jl` support is **extremely** experimental and most things are not expected to
-    work.
+::: danger
+
+`Metal.jl` support is **extremely** experimental and most things are not expected to work.
+
+:::
 """
 supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
