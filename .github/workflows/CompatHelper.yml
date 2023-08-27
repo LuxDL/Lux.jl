@@ -28,9 +28,10 @@ jobs:
         run: |
           import CompatHelper
           subdirs = [""]
-          append!(subdirs, filter(p -> isdir(joinpath("examples", p)), readdir("examples")))
+          append!(subdirs, joinpath.(("examples",), filter(p -> isdir(joinpath("examples", p)), readdir("examples"))))
           CompatHelper.main(; subdirs)
         shell: julia --color=yes {0}
+        working-directory: "./"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COMPATHELPER_PRIV: ${{ secrets.DOCUMENTER_KEY }}
