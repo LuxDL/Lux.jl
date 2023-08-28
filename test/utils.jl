@@ -95,3 +95,29 @@ end
     @test Lux._init_hidden_state(rng, rnn, view(device(x), :, 1, :)) ==
           aType(zeros(Float32, 5, 2))
 end
+
+@testset "$mode: FP Conversions" for (mode, aType, device, ongpu) in MODES
+    model = Chain(Dense(1 => 16, relu),
+        Chain(Dense(16 => 1), Dense(1 => 1)),
+        BatchNorm(1);
+        disable_optimizations=true)
+
+    for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
+        ps, st = Lux.setup(rng, model) |> device |> f
+
+        @test eltype(ps.layer_1.weight) == ftype
+        @test eltype(ps.layer_1.bias) == ftype
+        @test eltype(ps.layer_2.layer_1.weight) == ftype
+        @test eltype(ps.layer_2.layer_1.bias) == ftype
+        @test eltype(ps.layer_2.layer_2.weight) == ftype
+        @test eltype(ps.layer_2.layer_2.bias) == ftype
+        @test eltype(ps.layer_3.scale) == ftype
+        @test eltype(ps.layer_3.bias) == ftype
+        @test st.layer_1 == NamedTuple()
+        @test st.layer_2.layer_1 == NamedTuple()
+        @test st.layer_2.layer_2 == NamedTuple()
+        @test eltype(st.layer_3.running_mean) == ftype
+        @test eltype(st.layer_3.running_var) == ftype
+        @test typeof(st.layer_3.training) == Val{true}
+    end
+end

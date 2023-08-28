@@ -7,7 +7,7 @@ using Reexport
 # Julia StdLibs
 using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
 # Parameter Manipulation / Clean Code
-using ConcreteStructs, Functors, Setfield
+using Adapt, ConcreteStructs, Functors, Setfield
 # Automatic Differentiation
 using ChainRulesCore
 import ChainRulesCore as CRC
@@ -67,6 +67,8 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
+
+export f16, f32, f64
 
 export transform, FluxLayer
 
