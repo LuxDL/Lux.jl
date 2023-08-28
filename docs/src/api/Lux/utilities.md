@@ -42,6 +42,17 @@ Lux.multigate
 Lux.replicate
 ```
 
+## Updating Floating Point Precision
+
+By default, Lux uses Float32 for all parameters and states. To update the precision
+simply pass the parameters / states / arrays into one of the following functions.
+
+```@docs
+Lux.f16
+Lux.f32
+Lux.f64
+```
+
 ## Truncated Stacktraces
 
 ```@docs
