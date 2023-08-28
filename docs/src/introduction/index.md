@@ -48,8 +48,7 @@ Build the model
 
 ```@example quickstart
 # Construct the layer
-model = Chain(BatchNorm(128), Dense(128, 256, tanh), BatchNorm(256),
-    Chain(Dense(256, 1, tanh), Dense(1, 10)))
+model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 1, tanh), Dense(1, 10)))
 ```
 
 Models don't hold parameters and states so initialize them. From there on, we just use our
