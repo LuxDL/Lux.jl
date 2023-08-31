@@ -58,3 +58,17 @@ end
 
 See now we know that `model.layers.layer_2.layers.layer_2` is the problematic layer. Let us
 fix that layer and see what happens:
+
+```julia
+model = Chain(Dense(1 => 16, relu),
+    Chain(Dense(16 => 3),  // [!code --]
+    Chain(Dense(16 => 1),  // [!code ++]
+        Dense(1 => 1)),
+    BatchNorm(1); disable_optimizations=true)
+```
+
+
+```@example manual_debugging
+model_fixed = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)),
+    BatchNorm(1); disable_optimizations=true)
+```
