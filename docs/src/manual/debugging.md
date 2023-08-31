@@ -67,8 +67,11 @@ model = Chain(Dense(1 => 16, relu),
     BatchNorm(1); disable_optimizations=true)
 ```
 
-
 ```@example manual_debugging
-model_fixed = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)),
+model_fixed = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
     BatchNorm(1); disable_optimizations=true)
+
+ps, st = Lux.setup(rng, model_fixed)
+
+model_fixed(x, ps, st)
 ```
