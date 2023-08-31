@@ -19,5 +19,5 @@ withenv("JULIA_DEBUG" => "Literate") do
         task = Threads.@spawn run(cm)
         push!(tasks, task)
     end
-    wait.(tasks)
+    return wait.(tasks)
 end

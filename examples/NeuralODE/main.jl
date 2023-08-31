@@ -101,11 +101,11 @@ end
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
-    iterator = CUDA.functional() ? CuIterator(dataloader) : dataloader
     cpu_dev = cpu_device()
-    for (x, y) in iterator
-        target_class = onecold(cpu_dev(y))
-        predicted_class = onecold(cpu_dev(first(model(x, ps, st))))
+    gpu_dev = gpu_device()
+    for (x, y) in dataloader
+        target_class = onecold(y)
+        predicted_class = onecold(cpu_dev(first(model(gpu_dev(x), ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
