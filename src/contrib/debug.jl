@@ -38,6 +38,13 @@ If `nan_check` is enabled and NaNs are detected then a `DomainError` is thrown. 
 `error_check` is enabled, then any errors in the layer are thrown with useful information to
 track where the error originates.
 
+::: warning
+
+`nan_check` for the backward mode only works with ChainRules Compatible Reverse Mode AD
+Tools currently.
+
+:::
+
 See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 """
 @concrete struct DebugLayer{NaNCheck, ErrorCheck} <:
@@ -126,13 +133,21 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
                     color=:red, bold=true)
                 rethrow()
             end
-            NC && __any_nan(gs) && throw(DomainError(gs,
-                "NaNs detected in pullback output for $(layer) at location $(location)!"))
+            if NC
+                for g in gs
+                    __any_nan(g) && throw(DomainError(g,
+                        "NaNs detected in pullback output for $(layer) at location $(location)!"))
+                end
+            end
             return (gs..., CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
         else
             gs = ∇__debug_layer_internal(Δ)
-            NC && __any_nan(gs) && throw(DomainError(gs,
-                "NaNs detected in pullback output for $(layer) at location $(location)!"))
+            if NC
+                for g in gs
+                    __any_nan(g) && throw(DomainError(g,
+                        "NaNs detected in pullback output for $(layer) at location $(location)!"))
+                end
+            end
             return (gs..., CRC.NoTangent(), CRC.NoTangent(),
                 CRC.NoTangent())
         end
