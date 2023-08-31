@@ -11,6 +11,7 @@ CRC.@non_differentiable _affine(::Any)
 CRC.@non_differentiable _track_stats(::Any)
 CRC.@non_differentiable _conv_transpose_dims(::Any...)
 CRC.@non_differentiable _calc_padding(::Any...)
+CRC.@non_differentiable Base.printstyled(::Any...)
 ## Type Piracy: Needs upstreaming
 ## This is needed for fixing NamedTuple nested differentiation
 CRC.@non_differentiable fieldcount(::Any)
