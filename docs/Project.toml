@@ -1,6 +1,7 @@
 [deps]
 ANSIColoredPrinters = "a4c015fc-c6ff-483c-b24f-f7ea428134e9"
 Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
