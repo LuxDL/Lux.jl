@@ -12,6 +12,7 @@ include("training.jl")
 include("freeze.jl")
 include("share_parameters.jl")
 include("debug.jl")
+include("stateful.jl")
 
 end
 
