@@ -3,12 +3,13 @@ function _update_normalization_statistics(x::AA{<:Real, N}, running_mean::AA{<:R
     running_var::AA{<:Real, N}, batchmean::AA{<:Real, N}, batchvar::AA{<:Real, N},
     momentum::Real, ::Val{reduce_dims}) where {N, reduce_dims}
     m = eltype(x)(prod(Base.Fix1(size, x), reduce_dims))
+    m_ = m / (m - one(m))
     if last(reduce_dims) != N
         batchmean = mean(batchmean; dims=N)
         batchvar = mean(batchvar; dims=N)
     end
     running_mean = @. (1 - momentum) * running_mean + momentum * batchmean
-    running_var = @. (1 - momentum) * running_var + momentum * batchvar * (m / (m - one(m)))
+    running_var = @. (1 - momentum) * running_var + momentum * batchvar * m_
     return (running_mean, running_var)
 end
 
