@@ -205,7 +205,7 @@ fig
 fig = plot_data()
 Z = [first(nn_forward([x1, x2], θ[1, :])) for x1 in x1_range, x2 in x2_range]
 c = contour!(x1_range, x2_range, Z)
-record(fig, joinpath(__DIR, "results.gif"), 1:1000:size(θ, 1)) do i
+record(fig, "results.gif", 1:250:size(θ, 1)) do i
     fig.current_axis[].title = "Iteration: $i"
     Z = [first(nn_forward([x1, x2], θ[i, :])) for x1 in x1_range, x2 in x2_range]
     c[3] = Z
