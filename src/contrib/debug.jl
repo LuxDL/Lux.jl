@@ -83,9 +83,10 @@ CRC.@non_differentiable __any_nan(::Any)
 
 function __debug_layer(::Val{NC}, ::Val{EC}, layer, x, ps, st,
     location::String) where {NC, EC}
-    Base.printstyled("Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))\n";
-        color=:green, bold=true)
-    Base.printstyled("Running Layer: $(layer) at location $(location)!\n"; color=:yellow)
+    CRC.ignore_derivatives() do
+        @info "Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))"
+        @info "Running Layer: $(layer) at location $(location)!"
+    end
     if NC ∈ (:both, :forward)
         __any_nan(x) && throw(DomainError(x,
             "NaNs detected in input to layer $(layer) at location $(location)"))
@@ -95,8 +96,9 @@ function __debug_layer(::Val{NC}, ::Val{EC}, layer, x, ps, st,
             "NaNs detected in states of layer $(layer) at location $(location)"))
     end
     y, st_ = __debug_layer_internal(layer, x, ps, st, location, EC, NC ∈ (:both, :backward))
-    Base.printstyled("Output Type: $(typeof(y)) | Output Structure: $(fmap(__size, y))\n";
-        color=:green, bold=true)
+    CRC.ignore_derivatives() do
+        @info "Output Type: $(typeof(y)) | Output Structure: $(fmap(__size, y))"
+    end
     return y, st_
 end
 
@@ -108,8 +110,7 @@ function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
             y, st_ = apply(layer, x, ps, st)
             return y, st_
         catch e
-            Base.printstyled("Layer $(layer) failed!! This layer is present at location $(location)\n";
-                color=:red, bold=true)
+            @error "Layer $(layer) failed!! This layer is present at location $(location)"
             rethrow()
         end
     else
@@ -129,8 +130,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             try
                 gs = ∇__debug_layer_internal(Δ)
             catch e
-                Base.printstyled("Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)\n";
-                    color=:red, bold=true)
+                @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)"
                 rethrow()
             end
             if NC

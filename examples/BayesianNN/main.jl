@@ -18,7 +18,7 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication, VideoIO
+using Lux, Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication
 
 ## Hide sampling progress
 Turing.setprogress!(false);
@@ -212,4 +212,4 @@ record(fig, joinpath(__DIR, "results.gif"), 1:1000:size(θ, 1)) do i
     return fig
 end
 
-VideoIO.load(joinpath(__DIR, "results.gif"))
+# ![](results.gif)

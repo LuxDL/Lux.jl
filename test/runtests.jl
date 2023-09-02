@@ -50,6 +50,9 @@ end
         @time @safetestset "Shared Parameters" begin
             include("contrib/share_parameters.jl")
         end
+        @time @safetestset "Debugging Tools" begin
+            include("contrib/debug.jl")
+        end
     end
 
     if VERSION ≥ v"1.9"
