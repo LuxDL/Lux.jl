@@ -53,6 +53,9 @@ end
         @time @safetestset "Debugging Tools" begin
             include("contrib/debug.jl")
         end
+        @time @safetestset "Stateful Layers" begin
+            include("contrib/stateful.jl")
+        end
     end
 
     if VERSION ≥ v"1.9"

@@ -15,7 +15,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
-    OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays
+    OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
