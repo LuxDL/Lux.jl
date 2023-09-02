@@ -63,6 +63,15 @@ Lux.Experimental.layer_map
 Lux.Experimental.@layer_map
 ```
 
+## Debugging Functionality
+
+Model not working properly! Here are some functionalities to help you debug you Lux model.
+
+```@docs
+Lux.Experimental.@debug_mode
+Lux.Experimental.DebugLayer
+```
+
 ## Tied Parameters
 
 ```@docs

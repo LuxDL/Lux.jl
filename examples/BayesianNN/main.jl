@@ -200,18 +200,16 @@ fig
 
 # Suppose we are interested in how the predictive power of our Bayesian neural network
 # evolved between samples. In that case, the following graph displays an animation of the
-# contour plot generated from the network weights in samples 1 to 1,000.
-
-## Number of iterations to plot.
-n_end = 1000
+# contour plot generated from the network weights in samples 1 to 5,000.
 
 fig = plot_data()
 Z = [first(nn_forward([x1, x2], θ[1, :])) for x1 in x1_range, x2 in x2_range]
 c = contour!(x1_range, x2_range, Z)
-fig
+record(fig, joinpath(__DIR, "results.gif"), 1:1000:size(θ, 1)) do i
+    fig.current_axis[].title = "Iteration: $i"
+    Z = [first(nn_forward([x1, x2], θ[i, :])) for x1 in x1_range, x2 in x2_range]
+    c[3] = Z
+    return fig
+end
 
-# Plotting the Final contour
-fig = plot_data()
-Z = [first(nn_forward([x1, x2], θ[n_end, :])) for x1 in x1_range, x2 in x2_range]
-c = contour!(x1_range, x2_range, Z)
-fig
+# ![](results.gif)

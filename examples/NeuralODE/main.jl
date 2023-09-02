@@ -35,9 +35,9 @@ function loadmnist(batchsize, train_split)
 
     return (
         ## Use DataLoader to automatically minibatch and shuffle the data
-        DataLoader(collect.((x_train, y_train)); batchsize=batchsize, shuffle=true),
+        DataLoader(collect.((x_train, y_train)); batchsize, shuffle=true),
         ## Don't shuffle the test data
-        DataLoader(collect.((x_test, y_test)); batchsize=batchsize, shuffle=false))
+        DataLoader(collect.((x_test, y_test)); batchsize, shuffle=false))
 end
 
 # ## Define the Neural ODE Layer
@@ -67,7 +67,7 @@ function (n::NeuralODE)(x, ps, st)
     return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
 end
 
-diffeqsol_to_array(x::ODESolution) = last(x)
+diffeqsol_to_array(x::ODESolution) = last(x.u)
 
 # ## Create and Initialize the Neural ODE Layer
 function create_model()
@@ -101,11 +101,11 @@ end
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
-    iterator = CUDA.functional() ? CuIterator(dataloader) : dataloader
     cpu_dev = cpu_device()
-    for (x, y) in iterator
-        target_class = onecold(cpu_dev(y))
-        predicted_class = onecold(cpu_dev(first(model(x, ps, st))))
+    gpu_dev = gpu_device()
+    for (x, y) in dataloader
+        target_class = onecold(y)
+        predicted_class = onecold(cpu_dev(first(model(gpu_dev(x), ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -119,7 +119,7 @@ function train()
     ## Training
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
 
-    opt = Optimisers.ADAM(0.001f0)
+    opt = Adam(0.001f0)
     st_opt = Optimisers.setup(opt, ps)
 
     dev = gpu_device()

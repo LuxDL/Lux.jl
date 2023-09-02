@@ -2,12 +2,16 @@ module Experimental
 
 using ..Lux, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
-import ..Lux: _merge, initialstates, initialparameters
+import ..Lux: _merge, initialstates, initialparameters, apply
+import ChainRulesCore as CRC
+import ConcreteStructs: @concrete
+import Functors: fmap
 
 include("map.jl")
 include("training.jl")
 include("freeze.jl")
 include("share_parameters.jl")
+include("debug.jl")
 
 end
 
