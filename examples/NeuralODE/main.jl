@@ -191,7 +191,7 @@ model, ps, st = create_model(NeuralODE)
 
 model_stateful, ps_stateful, st_stateful = create_model(StatefulNeuralODE)
 
-x = gpu_device()(ones(Float32, 28, 28, 1, 3))
+x = gpu_device()(ones(Float32, 28, 28, 1, 3));
 
 # NeuralODE is not type stable due to the boxing of `st`
 
