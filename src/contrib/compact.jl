@@ -101,7 +101,7 @@ printout, which gives a verbatim representation of the code used to construct th
 
 ```julia
 model = @compact(w=rand(3), name="Linear(3 => 1)") do x
-    sum(w .* x)
+    return sum(w .* x)
 end
 
 println(model)  # "Linear(3 => 1)()"
@@ -230,25 +230,6 @@ function initialstates(::AbstractRNG, v::ValueStorage)
     return NamedTuple([n => fn() for (n, fn) in pairs(v.st_init_fns)])
 end
 
-# Fallback: Maybe move this to LuxCore
-Lux.statelength(x) = 1
-
-function Lux.initialparameters(rng::AbstractRNG, x)
-    if _has_lux_layer(x)
-        return fmap(Base.Fix1(initialparameters, rng), x)
-    else
-        throw(MethodError(initialparameters, (rng, x)))
-    end
-end
-
-function Lux.initialstates(rng::AbstractRNG, x)
-    if _has_lux_layer(x)
-        return fmap(Base.Fix1(initialstates, rng), x)
-    else
-        throw(MethodError(initialstates, (rng, x)))
-    end
-end
-
 @concrete struct CompactLuxLayer <:
                  AbstractExplicitContainerLayer{(:layers, :value_storage)}
     f
@@ -268,25 +249,6 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
     return (; initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...)
 end
 
-_has_lux_layer(x::AbstractExplicitLayer) = true
-function _has_lux_layer(x)
-    lux_layer = Ref(false)
-    function __check_lux_layer(x)
-        x isa AbstractExplicitLayer && (lux_layer[] = true)
-        return x
-    end
-    fmap(__check_lux_layer, x)
-    return lux_layer[]
-end
-function _has_non_lux_layer(x)
-    non_lux_layer = Ref(false)
-    function __check_non_lux_layer(x)
-        x isa AbstractExplicitLayer || (non_lux_layer[] = true)
-        return x
-    end
-    fmap(__check_non_lux_layer, x)
-    return non_lux_layer[]
-end
 function __try_make_lux_layer(x)
     function __maybe_convert_layer(l)
         l isa AbstractExplicitLayer && return l
@@ -302,9 +264,11 @@ function CompactLuxLayer(f::Function, name::NAME_TYPE, str::Tuple, setup_str::Na
     for (name, val) in pairs(kws)
         if val isa AbstractExplicitLayer
             push!(layers, name => val)
-        elseif _has_lux_layer(val)
+        elseif LuxCore.contains_lux_layer(val)
+            # FIXME: This might lead to incorrect constructions? If the function is a closure over the provided keyword arguments?
             val = __try_make_lux_layer(val)
-            if _has_non_lux_layer(val)
+            if LuxCore.check_fmap_condition(!Base.Fix2(isa, AbstractExplicitLayer),
+                nothing, val)
                 throw(LuxCompactModelParsingException("A container `$(name) = $(val)` is found which combines Lux layers with non-Lux layers. This is not supported."))
             end
             push!(layers, name => val)

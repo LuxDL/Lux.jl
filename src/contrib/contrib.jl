@@ -1,6 +1,6 @@
 module Experimental
 
-using ..Lux, LuxDeviceUtils, Random
+using ..Lux, LuxCore, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 import ..Lux: _merge, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
 import ChainRulesCore as CRC
