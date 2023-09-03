@@ -2,10 +2,11 @@ module Experimental
 
 using ..Lux, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
-import ..Lux: _merge, initialstates, initialparameters, apply
+import ..Lux: _merge, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
 import ChainRulesCore as CRC
 import ConcreteStructs: @concrete
 import Functors: fmap
+import TruncatedStacktraces
 
 include("map.jl")
 include("training.jl")

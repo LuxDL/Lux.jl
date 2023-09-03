@@ -94,11 +94,8 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
         printstyled(io, "# ", underscorise(paramlength), " parameters"; color=:light_black)
         nonparam = statelength(layer)
         if nonparam > 0
-            printstyled(io,
-                ", plus ",
-                underscorise(nonparam),
-                indent == 0 ? " non-trainable" : "";
-                color=:light_black)
+            printstyled(io, ", plus ", underscorise(nonparam),
+                indent == 0 ? " non-trainable" : ""; color=:light_black)
         end
     end
     return indent == 0 || println(io)
@@ -108,7 +105,6 @@ function _big_finale(io::IO, m)
     paramlength = parameterlength(m)
     nonparamlength = statelength(m)
     pars = underscorise(paramlength)
-    bytes = Base.format_bytes(Base.summarysize(m))
     nonparam = underscorise(nonparamlength)
     printstyled(io, " "^08, "# Total: "; color=:light_black)
     println(io, pars, " parameters,")
@@ -122,9 +118,3 @@ end
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end
-
-_any(f, xs::AbstractArray{<:Number}) = any(f, xs)
-_any(f, xs) = any(x -> _any(f, x), xs)
-_any(f, x::Number) = f(x)
-
-_all(f, xs) = !_any(!f, xs)
