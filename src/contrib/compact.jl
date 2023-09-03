@@ -116,6 +116,22 @@ If your input function `f` is type-stable but the generated model is not type st
 should be treated as a bug. We will appreciate issues if you find such cases.
 
 :::
+
+:::danger ComponentArrays Support
+
+The parameter structure generated for these models might not be compatible with
+ComponentArrays.jl especially when passing layers as a Tuple or Vector. Refactor your code
+to use NamedTuples instead for proper support. Proper support for this is planned in the
+near future.
+
+:::
+
+:::warning Parameter Count
+
+Array Parameter don't print the number of parameters on the side. However, they do account
+for the total number of parameters printed at the bottom.
+
+:::
 """
 macro compact(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
@@ -265,6 +281,7 @@ function CompactLuxLayer(f::Function, name::NAME_TYPE, str::Tuple, setup_str::Na
         if val isa AbstractExplicitLayer
             push!(layers, name => val)
         elseif LuxCore.contains_lux_layer(val)
+            # TODO: Rearrange Tuple and Vectors to NamedTuples for proper CA.jl support
             # FIXME: This might lead to incorrect constructions? If the function is a closure over the provided keyword arguments?
             val = __try_make_lux_layer(val)
             if LuxCore.check_fmap_condition(!Base.Fix2(isa, AbstractExplicitLayer),
@@ -286,13 +303,20 @@ function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
     return y, st_
 end
 
+# Shortcut for potential chain rules bug?
+function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
+    y = m.f(m.layers, x, ps, st)
+    return y, st
+end
+
 # Pretty printing the layer code
 function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
     setup_strings = obj.setup_strings
     local_name = obj.name
     layer, input, block = obj.strings
     if local_name !== nothing && local_name != ""
-        layer = local_name
+        Lux._layer_show(io, obj, indent, name)
+        return
     end
     pre, post = ("(", ")")
     println(io, " "^indent, isnothing(name) ? "" : "$name = ", layer, pre)
@@ -317,7 +341,7 @@ function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing
         print(io, " ", block_to_print)
     end
     if indent == 0
-        Lux._big_finale(io, obj)
+        Lux._big_finale(io, obj, 7)
     else
         println(io, ",")
     end

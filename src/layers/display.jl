@@ -102,12 +102,12 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
     return
 end
 
-function _big_finale(io::IO, m)
+function _big_finale(io::IO, m, len=8)
     paramlength = parameterlength(m)
     nonparamlength = statelength(m)
     pars = underscorise(paramlength)
     nonparam = underscorise(nonparamlength)
-    printstyled(io, " "^08, "# Total: "; color=:light_black)
+    printstyled(io, " "^len, "# Total: "; color=:light_black)
     println(io, pars, " parameters,")
     printstyled(io, " "^10, "#        plus "; color=:light_black)
     print(io, nonparam, " states.")
