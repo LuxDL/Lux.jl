@@ -1,18 +1,15 @@
 module LuxCore
 
-using DocStringExtensions
 using Functors, Random, Setfield
 
 function _default_rng()
-    @static if VERSION >= v"1.7"
-        return Xoshiro(1234)
-    else
-        return MersenneTwister(1234)
-    end
+    rng = Random.default_rng()
+    Random.seed!(rng, 1234)
+    return rng
 end
 
 """
-$(TYPEDEF)
+    abstract type AbstractExplicitLayer
 
 Abstract Type for all Lux Layers
 
@@ -36,7 +33,7 @@ See also [`AbstractExplicitContainerLayer`](@ref)
 abstract type AbstractExplicitLayer end
 
 """
-$(TYPEDSIGNATURES)
+    initialparameters(rng::AbstractRNG, layer)
 
 Generate the initial parameters of the layer `l`.
 """
@@ -45,18 +42,36 @@ function initialparameters(rng::AbstractRNG, l::NamedTuple)
     return map(Base.Fix1(initialparameters, rng), l)
 end
 initialparameters(::AbstractRNG, ::Nothing) = NamedTuple()
+function initialparameters(rng::AbstractRNG, l::Union{Tuple, AbstractArray})
+    any(Base.Fix2(isa, AbstractExplicitLayer), l) &&
+        return map(Base.Fix1(initialparameters, rng), l)
+    throw(MethodError(initialparameters, (rng, l)))
+end
+function initialparameters(rng::AbstractRNG, l)
+    contains_lux_layer(l) && return fmap(Base.Fix1(initialparameters, rng), l)
+    throw(MethodError(initialparameters, (rng, l)))
+end
 
 """
-$(TYPEDSIGNATURES)
+    initialstates(rng::AbstractRNG, layer)
 
 Generate the initial states of the layer `l`.
 """
 initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
 initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
 initialstates(::AbstractRNG, ::Nothing) = NamedTuple()
+function initialstates(rng::AbstractRNG, l::Union{Tuple, AbstractArray})
+    any(Base.Fix2(isa, AbstractExplicitLayer), l) &&
+        return map(Base.Fix1(initialstates, rng), l)
+    throw(MethodError(initialstates, (rng, l)))
+end
+function initialstates(rng::AbstractRNG, l)
+    contains_lux_layer(l) && return fmap(Base.Fix1(initialstates, rng), l)
+    throw(MethodError(initialstates, (rng, l)))
+end
 
 """
-$(TYPEDSIGNATURES)
+    parameterlength(layer)
 
 Return the total number of parameters of the layer `l`.
 """
@@ -69,17 +84,17 @@ end
 parameterlength(a::AbstractArray) = length(a)
 
 """
-$(TYPEDSIGNATURES)
+    statelength(layer)
 
 Return the total number of states of the layer `l`.
 """
 statelength(l::AbstractExplicitLayer) = statelength(initialstates(_default_rng(), l))
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
-statelength(x::Union{Number, Symbol, Val, <:AbstractRNG}) = 1
+statelength(::Any) = 1
 
 """
-$(TYPEDSIGNATURES)
+    setup(rng::AbstractRNG, layer)
 
 Shorthand for getting the parameters and states of the layer `l`. Is equivalent to
 `(initialparameters(rng, l), initialstates(rng, l))`.
@@ -90,18 +105,14 @@ This function is not pure, it mutates `rng`.
 
 :::
 """
-function setup(rng::AbstractRNG, l::AbstractExplicitLayer)
-    return (initialparameters(rng, l), initialstates(rng, l))
-end
+setup(rng::AbstractRNG, l) = (initialparameters(rng, l), initialstates(rng, l))
 
 """
-$(TYPEDSIGNATURES)
+    apply(model, x, ps, st)
 
 Simply calls `model(x, ps, st)`
 """
-function apply(model::AbstractExplicitLayer, x, ps, st::NamedTuple)
-    return model(x, ps, st)
-end
+apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 """
     display_name(layer::AbstractExplicitLayer)
@@ -120,7 +131,7 @@ Base.show(io::IO, x::AbstractExplicitLayer) = print(io, "$(display_name(x))()")
 
 # Abstract Container Layers
 """
-$(TYPEDEF)
+    abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer
 
 Abstract Container Type for certain Lux Layers. `layers` is a tuple containing fieldnames
 for the layer, and constructs the parameters and states using those.
@@ -171,21 +182,22 @@ end
 
 # Test Mode
 """
-$(TYPEDSIGNATURES)
+    testmode(st::NamedTuple)
 
 Make all occurances of `training` in state `st` -- `Val(false)`.
 """
 testmode(st::NamedTuple) = update_state(st, :training, Val(false))
 
 """
-$(TYPEDSIGNATURES)
+    trainmode(st::NamedTuple)
 
 Make all occurances of `training` in state `st` -- `Val(true)`.
 """
 trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
 """
-$(TYPEDSIGNATURES)
+    update_state(st::NamedTuple, key::Symbol, value;
+        layer_check=_default_layer_check(key))
 
 Recursively update all occurances of the `key` in the state `st` with the `value`.
 """
@@ -200,6 +212,44 @@ end
 function _default_layer_check(key)
     _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
     return _default_layer_check_closure
+end
+
+"""
+    contains_lux_layer(l) -> Bool
+
+Check if the structure `l` is a Lux AbstractExplicitLayer or a container of such a layer.
+"""
+function contains_lux_layer(l)
+    return check_fmap_condition(Base.Fix2(isa, AbstractExplicitLayer),
+        AbstractExplicitLayer, l)
+end
+
+"""
+    check_fmap_condition(cond, tmatch, x) -> Bool
+
+`fmap`s into the structure `x` and see if `cond` is statisfied for any of the leaf
+elements.
+
+## Arguments
+
+    * `cond` - A function that takes a single argument and returns a `Bool`.
+    * `tmatch` - A shortcut to check if `x` is of type `tmatch`. Can be disabled by passing
+      `nothing`.
+    * `x` - The structure to check.
+
+## Returns
+
+A Boolean Value
+"""
+function check_fmap_condition(cond, tmatch, x)
+    tmatch !== nothing && x isa tmatch && return true
+    matched = Ref(false)
+    function __check(l)
+        cond(l) && (matched[] = true)
+        return l
+    end
+    fmap(__check, x)
+    return matched[]
 end
 
 end

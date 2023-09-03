@@ -194,4 +194,40 @@ end
 
         @test LuxCore.display_name(model) == "StructWithName"
     end
+
+    @testset "initialparameter/initialstate for Default Containers" begin
+        models1 = [Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
+            Chain2(Dense(5, 10), Dense(10, 5)), [Dense(5, 10), Dense(10, 5)]]
+        models2 = [Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
+            Chain2(Dense(5, 10), Dense(10, 5)), (Dense(5, 10), Dense(10, 5))]
+
+        for models in (models1, models2)
+            ps, st = LuxCore.setup(rng, models)
+            @test length(ps) == length(models)
+            @test length(st) == length(models)
+            @test typeof(ps[1]) == typeof(LuxCore.initialparameters(rng, models[1]))
+            @test typeof(ps[2]) == typeof(LuxCore.initialparameters(rng, models[2]))
+            @test typeof(ps[3][1]) == typeof(LuxCore.initialparameters(rng, models[3][1]))
+            @test typeof(ps[3][2]) == typeof(LuxCore.initialparameters(rng, models[3][2]))
+            @test typeof(st[1]) == typeof(LuxCore.initialstates(rng, models[1]))
+            @test typeof(st[2]) == typeof(LuxCore.initialstates(rng, models[2]))
+            @test typeof(st[3][1]) == typeof(LuxCore.initialstates(rng, models[3][1]))
+            @test typeof(st[3][2]) == typeof(LuxCore.initialstates(rng, models[3][2]))
+        end
+    end
+
+    @testset "Convenience Checks" begin
+        models1 = [Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
+            Chain2(Dense(5, 10), Dense(10, 5)), [Dense(5, 10), Dense(10, 5)]]
+
+        @test LuxCore.contains_lux_layer(models1)
+
+        models2 = [1, 2, 3, 4]
+
+        @test !LuxCore.contains_lux_layer(models2)
+
+        models3 = [1, 2, 3, (; a=Dense(5, 10), b=Dense(10, 5))]
+
+        @test LuxCore.contains_lux_layer(models3)
+    end
 end
