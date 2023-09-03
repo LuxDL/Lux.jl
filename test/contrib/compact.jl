@@ -1,4 +1,4 @@
-using ComponentArrays, Lux, Test
+using Lux, Test
 
 include("../test_utils.jl")
 

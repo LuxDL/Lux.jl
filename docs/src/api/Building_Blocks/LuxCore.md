@@ -22,6 +22,8 @@ LuxCore.AbstractExplicitContainerLayer
 
 ```@docs
 LuxCore.apply
+LuxCore.check_fmap_condition
+LuxCore.contains_lux_layer
 LuxCore.display_name
 LuxCore.setup
 ```
