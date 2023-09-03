@@ -17,16 +17,105 @@ end
     @compact(kw...) do x
         ...
     end
+    @compact(forward::Function; name=nothing, parameters...)
 
-## Example
+Creates a layer by specifying some `parameters`, in the form of keywords, and (usually as a
+`do` block) a function for the forward pass. You may think of `@compact` as a specialized
+`let` block creating local variables that are trainable in Lux. Declared variable names may
+be used within the body of the `forward` function. Note that unlike typical Lux models, the
+forward function doesn't need to explicitly manage states.
+
+Here is a linear model:
 
 ```julia
-using Lux
+using Lux, Random
+import Lux.Experimental: @compact
 
-Lux.Experimental.@compact(; d₁=Dense(2 => 5, relu), d₂=Dense(5 => 2)) do x
-    return d₂(d₁(x))
+r = @compact(w=rand(3)) do x
+    return w .* x
+end
+ps, st = Lux.setup(Xoshiro(0), r)
+r([1, 1, 1], ps, st)  # x is set to [1, 1, 1].
+```
+
+Here is a linear model with bias and activation:
+
+```julia
+d_in = 5
+d_out = 7
+d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
+    y = W * x
+    return act.(y .+ b)
+end
+ps, st = Lux.setup(Xoshiro(0), d)
+d(ones(5, 10), ps, st) # 7×10 Matrix as output.
+
+ps_dense = (; weight=ps.W, bias=ps.b)
+first(d([1, 2, 3, 4, 5], ps, st)) ≈
+first(Dense(d_in => d_out, relu)([1, 2, 3, 4, 5], ps_dense, NamedTuple())) # Equivalent to a dense layer
+```
+
+Finally, here is a simple MLP:
+
+```julia
+n_in = 1
+n_out = 1
+nlayers = 3
+
+model = @compact(w1=Dense(n_in, 128),
+    w2=[Dense(128, 128) for i in 1:nlayers],
+    w3=Dense(128, n_out),
+    act=relu) do x
+    embed = act(w1(x))
+    for w in w2
+        embed = act(w(embed))
+    end
+    out = w3(embed)
+    return out
+end
+
+ps, st = Lux.setup(Xoshiro(0), model)
+
+model(randn(n_in, 32), ps, st)  # 1×32 Matrix as output.
+```
+
+We can train this model just like any Lux model:
+
+```julia
+using Optimisers, Zygote
+
+x_data = collect(-2.0f0:0.1f0:2.0f0)'
+y_data = 2 .* x_data .- x_data .^ 3
+optim = Optimisers.setup(Adam(), ps)
+
+for epoch in 1:1000
+    loss, gs = Zygote.withgradient(ps -> sum(abs2, first(model(x_data, ps, st)) .- y_data),
+        ps)
+    @show epoch, loss
+    Optimisers.update!(optim, ps, gs[1])
 end
 ```
+
+You may also specify a `name` for the model, which will be used instead of the default
+printout, which gives a verbatim representation of the code used to construct the model:
+
+```julia
+model = @compact(w=rand(3), name="Linear(3 => 1)") do x
+    sum(w .* x)
+end
+
+println(model)  # "Linear(3 => 1)()"
+```
+
+This can be useful when using `@compact` to hierarchically construct complex models to be
+used inside a `Chain`.
+
+:::tip Type Stability
+
+If your input function `f` is type-stable but the generated model is not type stable, it
+should be treated as a bug. We will appreciate issues if you find such cases.
+
+:::
 """
 macro compact(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
@@ -106,7 +195,7 @@ function supportself(fex::Expr, vars)
     calls = []
     for var in vars
         push!(calls,
-            :($var = Lux.Experimental.__maybe_stateful_layer(Lux._getproperty($self,
+            :($var = Lux.Experimental.__maybe_make_stateful(Lux._getproperty($self,
                     $(Val(var))), Lux._getproperty($ps, $(Val(var))),
                 Lux._getproperty($st, $(Val(var))))))
     end
@@ -115,9 +204,6 @@ function supportself(fex::Expr, vars)
     sdef[:args] = args
     return combinedef(sdef)
 end
-
-__maybe_stateful_layer(layer, ps, st) = StatefulLuxLayer(layer, ps, st)
-__maybe_stateful_layer(::Nothing, ps, st) = ps === nothing ? st : ps
 
 @concrete struct ValueStorage <: AbstractExplicitLayer
     ps_init_fns
@@ -144,6 +230,25 @@ function initialstates(::AbstractRNG, v::ValueStorage)
     return NamedTuple([n => fn() for (n, fn) in pairs(v.st_init_fns)])
 end
 
+# Fallback: Maybe move this to LuxCore
+Lux.statelength(x) = 1
+
+function Lux.initialparameters(rng::AbstractRNG, x)
+    if _has_lux_layer(x)
+        return fmap(Base.Fix1(initialparameters, rng), x)
+    else
+        throw(MethodError(initialparameters, (rng, x)))
+    end
+end
+
+function Lux.initialstates(rng::AbstractRNG, x)
+    if _has_lux_layer(x)
+        return fmap(Base.Fix1(initialstates, rng), x)
+    else
+        throw(MethodError(initialstates, (rng, x)))
+    end
+end
+
 @concrete struct CompactLuxLayer <:
                  AbstractExplicitContainerLayer{(:layers, :value_storage)}
     f
@@ -163,11 +268,49 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
     return (; initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...)
 end
 
+_has_lux_layer(x::AbstractExplicitLayer) = true
+function _has_lux_layer(x)
+    lux_layer = Ref(false)
+    function __check_lux_layer(x)
+        x isa AbstractExplicitLayer && (lux_layer[] = true)
+        return x
+    end
+    fmap(__check_lux_layer, x)
+    return lux_layer[]
+end
+function _has_non_lux_layer(x)
+    non_lux_layer = Ref(false)
+    function __check_non_lux_layer(x)
+        x isa AbstractExplicitLayer || (non_lux_layer[] = true)
+        return x
+    end
+    fmap(__check_non_lux_layer, x)
+    return non_lux_layer[]
+end
+function __try_make_lux_layer(x)
+    function __maybe_convert_layer(l)
+        l isa AbstractExplicitLayer && return l
+        l isa Function && return WrappedFunction(l)
+        return l
+    end
+    return fmap(__maybe_convert_layer, x)
+end
+
 function CompactLuxLayer(f::Function, name::NAME_TYPE, str::Tuple, setup_str::NamedTuple;
     kws...)
     layers, others = [], []
     for (name, val) in pairs(kws)
-        push!(val isa AbstractExplicitLayer ? layers : others, name => val)
+        if val isa AbstractExplicitLayer
+            push!(layers, name => val)
+        elseif _has_lux_layer(val)
+            val = __try_make_lux_layer(val)
+            if _has_non_lux_layer(val)
+                throw(LuxCompactModelParsingException("A container `$(name) = $(val)` is found which combines Lux layers with non-Lux layers. This is not supported."))
+            end
+            push!(layers, name => val)
+        else
+            push!(others, name => val)
+        end
     end
     return CompactLuxLayer(f, name, str, setup_str, NamedTuple((; layers...)),
         ValueStorage(; others...))
@@ -179,4 +322,40 @@ function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
     return y, st_
 end
 
-# TODO: Pretty printing the layer code
+# Pretty printing the layer code
+function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
+    setup_strings = obj.setup_strings
+    local_name = obj.name
+    layer, input, block = obj.strings
+    if local_name !== nothing && local_name != ""
+        layer = local_name
+    end
+    pre, post = ("(", ")")
+    println(io, " "^indent, isnothing(name) ? "" : "$name = ", layer, pre)
+    for (k, v) in pairs(setup_strings)
+        val = _getproperty(obj.layers, Val(k))
+        if val === nothing
+            println(io, " "^(indent + 4), "$k = $v,")
+        else
+            Lux._big_show(io, val, indent + 4, k)
+        end
+    end
+    if indent == 0  # i.e. this is the outermost container
+        print(io, rpad(post, 1))
+    else
+        print(io, " "^indent, post)
+    end
+    input != "" && print(io, " do ", input)
+    if block != ""
+        block_to_print = block[6:end]
+        # Increase indentation of block according to `indent`:
+        block_to_print = replace(block_to_print, r"\n" => "\n" * " "^(indent))
+        print(io, " ", block_to_print)
+    end
+    if indent == 0
+        Lux._big_finale(io, obj)
+    else
+        println(io, ",")
+    end
+    return
+end

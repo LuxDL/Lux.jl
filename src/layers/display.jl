@@ -98,7 +98,8 @@ function _layer_show(io::IO, layer, indent::Int=0, name=nothing)
                 indent == 0 ? " non-trainable" : ""; color=:light_black)
         end
     end
-    return indent == 0 || println(io)
+    indent == 0 || println(io)
+    return
 end
 
 function _big_finale(io::IO, m)

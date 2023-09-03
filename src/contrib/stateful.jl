@@ -48,3 +48,15 @@ function (s::StatefulLuxLayer)(x, p=s.ps)
     s.st = st
     return y
 end
+
+function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
+    return StatefulLuxLayer(layer, ps, st)
+end
+__maybe_make_stateful(::Nothing, ps, st) = ps === nothing ? st : ps
+function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
+    return [__maybe_make_stateful(m, p, s) for (m, p, s) in zip(model, ps, st)]
+end
+function __maybe_make_stateful(model, ps, st)
+    __f(l, p, s, _) = (__maybe_make_stateful(l, p, s), p, s)
+    return first(layer_map(__f, model, ps, st))
+end

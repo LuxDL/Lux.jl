@@ -86,10 +86,10 @@ end
 Lux.layer_map(zero_dense_params, c, ps, st)
 ```
 """
-function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
-    l_c, l_re = functor(l)
-    ps_c, ps_re = functor(ps)
-    st_c, st_re = functor(st)
+function layer_map(f::Function, l, ps, st, name::String="model")
+    l_c, l_re = __consistent_functor(l)
+    ps_c, ps_re = __consistent_functor(ps)
+    st_c, st_re = __consistent_functor(st)
 
     length(l_c) == 0 && return f(l, ps, st, name)
 
@@ -119,6 +119,17 @@ function layer_map(f::Function, l, ps, st::NamedTuple, name::String="model")
                      (ps_re((; ps_c_new...)), st_re((; st_c_new...)))
 
     return l_new, ps_new, st_new
+end
+
+function __consistent_functor(x)
+    c, re = functor(x)
+    c isa NamedTuple && return (c, re)
+    c_fixed = NamedTuple{Tuple(collect(Symbol.(1:(length(c)))))}(c)
+    function re_updated(y::NamedTuple)
+        c isa AbstractVector && return re([values(y)...])
+        return re(values(y))
+    end
+    return (c_fixed, re_updated)
 end
 
 function __fix_tuple_functor(x::Tuple, ::NamedTuple{names}) where {names}
