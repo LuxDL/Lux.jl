@@ -24,7 +24,8 @@ have the same type as `st`.
 ## Arguments
 
   - `model`: A Lux layer
-  - `ps`: The parameters of the layer
+  - `ps`: The parameters of the layer. This can be set to `nothing`, if the user provides
+    the parameters on function call
   - `st`: The state of the layer
 
 ## Inputs
