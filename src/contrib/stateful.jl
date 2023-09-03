@@ -54,9 +54,9 @@ function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
 end
 __maybe_make_stateful(::Nothing, ps, st) = ps === nothing ? st : ps
 function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
-    return [__maybe_make_stateful(m, p, s) for (m, p, s) in zip(model, ps, st)]
+    return [__maybe_make_stateful(model[i], ps[i], st[i]) for i in eachindex(model)]
 end
-function __maybe_make_stateful(model, ps, st)
-    __f(l, p, s, _) = (__maybe_make_stateful(l, p, s), p, s)
-    return first(layer_map(__f, model, ps, st))
+function __maybe_make_stateful(model::NamedTuple{fields}, ps, st) where {fields}
+    return NamedTuple{fields}([__maybe_make_stateful(getproperty(model, f),
+        getproperty(ps, f), getproperty(st, f)) for f in fields])
 end

@@ -117,15 +117,6 @@ should be treated as a bug. We will appreciate issues if you find such cases.
 
 :::
 
-:::danger ComponentArrays Support
-
-The parameter structure generated for these models might not be compatible with
-ComponentArrays.jl especially when passing layers as a Tuple or Vector. Refactor your code
-to use NamedTuples instead for proper support. Proper support for this is planned in the
-near future.
-
-:::
-
 :::warning Parameter Count
 
 Array Parameter don't print the number of parameters on the side. However, they do account
@@ -265,6 +256,9 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
     return (; initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...)
 end
 
+function __try_make_lux_layer(x::Union{AbstractVector, Tuple})
+    return __try_make_lux_layer(NamedTuple{Tuple(Symbol.(1:length(x)))}(x))
+end
 function __try_make_lux_layer(x)
     function __maybe_convert_layer(l)
         l isa AbstractExplicitLayer && return l

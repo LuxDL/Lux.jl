@@ -1,4 +1,4 @@
-using Lux, Test
+using ComponentArrays, Lux, Test
 import Lux.Experimental: @compact
 
 include("../test_utils.jl")
@@ -97,9 +97,9 @@ end
             w2=[Dense(128, 128) for i in 1:nlayers],
             w3=Dense(128, n_out),
             act=relu) do x
-            embed = act(w1(x))
+            embed = act.(w1(x))
             for w in w2
-                embed = act(w(embed))
+                embed = act.(w(embed))
             end
             out = w3(embed)
             return out
@@ -121,13 +121,15 @@ end
 
         @test size(first(model(x, ps, st))) == (1, 32)
 
+        ps2 = ps |> cpu_device() |> ComponentArray |> device
+
+        @test size(first(model(x, ps2, st))) == (1, 32)
+
         @jet model(x, ps, st)
 
-        #= Component Arrays not yet supported
         __f = (x, ps) -> sum(first(model(x, ps, st)))
 
         @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
-        =#
     end
 
     @testset "String Representations" begin
