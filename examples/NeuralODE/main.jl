@@ -15,7 +15,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
-    OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays
+    OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
@@ -70,11 +70,11 @@ end
 diffeqsol_to_array(x::ODESolution) = last(x.u)
 
 # ## Create and Initialize the Neural ODE Layer
-function create_model()
+function create_model(model_fn=NeuralODE)
     ## Construct the Neural ODE Model
     model = Chain(FlattenLayer(),
         Dense(784, 20, tanh),
-        NeuralODE(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh), Dense(10, 20, tanh));
+        model_fn(Chain(Dense(20, 10, tanh), Dense(10, 10, tanh), Dense(10, 20, tanh));
             save_everystep=false, reltol=1.0f-3, abstol=1.0f-3, save_start=false),
         diffeqsol_to_array,
         Dense(20, 10))
@@ -113,8 +113,8 @@ function accuracy(model, ps, st, dataloader)
 end
 
 # ## Training
-function train()
-    model, ps, st = create_model()
+function train(model_function)
+    model, ps, st = create_model(model_function)
 
     ## Training
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
@@ -151,4 +151,55 @@ function train()
     end
 end
 
-train()
+train(NeuralODE)
+
+# ## Alternate Implementation using Stateful Layer
+
+# Starting `v0.5.5`, Lux provides a `Lux.Experimental.StatefulLuxLayer` which can be used
+# to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276).
+struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
+       Lux.AbstractExplicitContainerLayer{(:model,)}
+    model::M
+    solver::So
+    sensealg::Se
+    tspan::T
+    kwargs::K
+end
+
+function StatefulNeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(),
+    tspan=(0.0f0, 1.0f0), sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
+    kwargs...)
+    return StatefulNeuralODE(model, solver, sensealg, tspan, kwargs)
+end
+
+function (n::StatefulNeuralODE)(x, ps, st)
+    st_model = Lux.Experimental.StatefulLuxLayer(n.model, ps, st)
+    dudt(u, p, t) = st_model(u, p)
+    prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
+    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st_model.st
+end
+
+# ## Train the new Stateful Neural ODE
+train(StatefulNeuralODE)
+
+# We might not see a significant difference in the training time, but let us investigate
+# the type stabilities of the layers.
+
+# ## Type Stability
+
+model, ps, st = create_model(NeuralODE)
+
+model_stateful, ps_stateful, st_stateful = create_model(StatefulNeuralODE)
+
+x = gpu_device()(ones(Float32, 28, 28, 1, 3));
+
+# NeuralODE is not type stable due to the boxing of `st`
+
+@code_warntype model(x, ps, st)
+
+# We avoid the problem entirely by using `StatefulNeuralODE`
+
+@code_warntype model_stateful(x, ps_stateful, st_stateful)
+
+# Note, that we still recommend using this layer internally and not exposing this as the
+# default API to the users.

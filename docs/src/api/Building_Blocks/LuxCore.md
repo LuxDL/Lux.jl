@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = LuxCore
-```
-
 # LuxCore
 
 `LuxCore.jl` defines the abstract layers for Lux. Allows users to be compatible with the
@@ -26,6 +22,8 @@ LuxCore.AbstractExplicitContainerLayer
 
 ```@docs
 LuxCore.apply
+LuxCore.check_fmap_condition
+LuxCore.contains_lux_layer
 LuxCore.display_name
 LuxCore.setup
 ```

@@ -53,6 +53,10 @@ end
         @time @safetestset "Debugging Tools" begin
             include("contrib/debug.jl")
         end
+        @time @safetestset "Stateful & Compact Layers" begin
+            # Tests for StatefulLuxLayer is embedded into @compact tests
+            include("contrib/compact.jl")
+        end
     end
 
     if VERSION ≥ v"1.9"

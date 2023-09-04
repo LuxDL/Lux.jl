@@ -73,7 +73,7 @@ steps:
             - src
             - ext
     command: |
-      julia --project --code-coverage=user --color=yes --threads=auto -e '
+      julia --project --code-coverage=user --color=yes --threads=3 -e '
         println("--- :julia: Instantiating project")
         using Pkg
         Pkg.instantiate()

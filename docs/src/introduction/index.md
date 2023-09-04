@@ -77,6 +77,59 @@ st_opt = Optimisers.setup(Adam(0.0001f0), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
+## Defining Custom Layers
+
+```@example custom_compact
+using Lux, Random, Optimisers, Zygote
+# using LuxCUDA, LuxAMDGPU, Metal # Optional packages for GPU support
+import Lux.Experimental: @compact
+```
+
+We will define a custom MLP using the `@compact` macro. The macro takes in a list of
+parameters, layers and states, and a function defining the forward pass of the neural
+network.
+
+```@example custom_compact
+n_in = 1
+n_out = 1
+nlayers = 3
+
+model = @compact(w1=Dense(n_in, 128),
+    w2=[Dense(128, 128) for i in 1:nlayers],
+    w3=Dense(128, n_out),
+    act=relu) do x
+    embed = act(w1(x))
+    for w in w2
+        embed = act(w(embed))
+    end
+    out = w3(embed)
+    return out
+end
+```
+
+We can initialize the model and train it with the same code as before!
+
+```@example custom_compact
+ps, st = Lux.setup(Xoshiro(0), model)
+
+model(randn(n_in, 32), ps, st)  # 1×32 Matrix as output.
+
+x_data = collect(-2.0f0:0.1f0:2.0f0)'
+y_data = 2 .* x_data .- x_data .^ 3
+st_opt = Optimisers.setup(Adam(), ps)
+
+for epoch in 1:1000
+    global st  # Put this in a function in real use-cases
+    (loss, st), pb = Zygote.pullback(ps) do p
+        y, st_ = model(x_data, p, st)
+        return sum(abs2, y .- y_data), st_
+    end
+    gs = only(pb((one(loss), nothing)))
+    epoch % 100 == 1 && println("Epoch: $(epoch) | Loss: $(loss)")
+    Optimisers.update!(st_opt, ps, gs)
+end
+```
+
 ## Additional Packages
 
 `LuxDL` hosts various packages that provide additional functionality for Lux.jl. All
