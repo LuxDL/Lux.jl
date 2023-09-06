@@ -222,7 +222,7 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
             return _isbitsarray(x) ? fn(x) : map(fn, x)
         end
         (::$(ldev))(x::Tuple) = map(Base.Fix1(adapt, $(ladaptor)()), x)
-        (::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}($(ldev)(values(x)))
+        (dev::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(dev(values(x)))
         function (::$(ldev))(x)
             _isleaf(x) && return adapt($(ladaptor)(), x)
             return fmap(Base.Fix1(adapt, $(ladaptor)()), x; exclude=_isleaf)
