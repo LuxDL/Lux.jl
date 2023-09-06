@@ -28,7 +28,7 @@ or julia version is < 1.7, then the macro will be a no-op.
 
 All additional arguments will be forwarded to `@JET.test_call` and `@JET.test_opt`.
 
-::: note
+:::tip
 
 Instead of specifying `target_modules` with every call, you can set preferences for
 `target_modules` using `Preferences.jl`. For example, to set `target_modules` to
@@ -159,9 +159,11 @@ Compare the gradients computed by Zygote.jl (Reverse Mode AD) against:
   - ForwardDiff.jl (Forward Mode AD)
   - FiniteDifferences.jl (Finite Differences)
 
-!!! tip
+:::tip
 
-    This function is completely compatible with Test.jl
+This function is completely compatible with Test.jl
+
+:::
 
 ## Arguments
 
