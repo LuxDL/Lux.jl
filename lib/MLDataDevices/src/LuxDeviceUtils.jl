@@ -209,14 +209,25 @@ Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 """
 @inline cpu_device() = LuxCPUDevice()
 
-(::LuxCPUDevice)(x) = fmap(Base.Fix1(adapt, LuxCPUAdaptor()), x; exclude=_isleaf)
-(::LuxCUDADevice)(x) = fmap(Base.Fix1(adapt, LuxCUDAAdaptor()), x; exclude=_isleaf)
-(::LuxAMDGPUDevice)(x) = fmap(Base.Fix1(adapt, LuxAMDGPUAdaptor()), x; exclude=_isleaf)
-(::LuxMetalDevice)(x) = fmap(Base.Fix1(adapt, LuxMetalAdaptor()), x; exclude=_isleaf)
-
-for dev in (LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice)
+# Dispatches for Different Data Structures
+# Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
+# For all other types we rely on fmap which means we lose type stability.
+# For Lux, typically models only has these 3 datastructures so we should be mostly fine.
+for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
+    ldev = Symbol("Lux$(dev)Device")
+    ladaptor = Symbol("Lux$(dev)Adaptor")
     @eval begin
-        function (::$dev)(::LuxCore.AbstractExplicitLayer)
+        function (::$(ldev))(x::AbstractArray)
+            fn = Base.Fix1(adapt, $(ladaptor)())
+            return _isbitsarray(x) ? fn(x) : map(fn, x)
+        end
+        (::$(ldev))(x::Tuple) = map(Base.Fix1(adapt, $(ladaptor)()), x)
+        (dev::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(dev(values(x)))
+        function (::$(ldev))(x)
+            _isleaf(x) && return adapt($(ladaptor)(), x)
+            return fmap(Base.Fix1(adapt, $(ladaptor)()), x; exclude=_isleaf)
+        end
+        function (::$(ldev))(::LuxCore.AbstractExplicitLayer)
             throw(ArgumentError("Lux layers are stateless and hence don't participate in device transfers. Apply this function on the parameters and states generated using `Lux.setup`."))
         end
     end
