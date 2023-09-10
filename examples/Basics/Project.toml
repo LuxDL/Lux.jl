@@ -10,7 +10,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 AbstractDifferentiation = "0.4, 0.5"
-ComponentArrays = "0.13, 0.14"
+ComponentArrays = "0.13, 0.14, 0.15"
 ForwardDiff = "0.10"
 Lux = "0.5"
 LuxCUDA = "0.2, 0.3"
