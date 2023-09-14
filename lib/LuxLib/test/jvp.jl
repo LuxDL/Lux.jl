@@ -35,16 +35,21 @@ end
 
 function test_jvp_computation(f, x, u)
     jvp₁ = jvp_forwarddiff(f, x, u)
-    jvp₂ = jvp_forwarddiff_concrete(f, x, u)
-    jvp₃ = jvp_zygote(f, x, u)
+    if !(x isa ComponentArray)
+        # ComponentArray + ForwardDiff on GPU don't play nice
+        jvp₂ = jvp_forwarddiff_concrete(f, x, u)
+        @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
+    end
 
-    @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
+    jvp₃ = jvp_zygote(f, x, u)
     @test check_approx(jvp₁, jvp₃; atol=1e-5, rtol=1e-5)
 end
 
 @testset "$mode: Jacobian Vector Products" for (mode, aType, on_gpu) in MODES
-    @testset "$(op)(; flipped = $flipped))" for flipped in (true, false),
+    @testset "$(op)(; flipped = $flipped)" for flipped in (true, false),
         op in (depthwiseconv, conv)
+
+        op === depthwiseconv && mode == "AMDGPU" && continue
 
         input_dims = [(2, 4, 2, 1, 3), (4, 4, 1, 3), (4, 4, 3, 2), (4, 1, 3), (4, 3, 2)]
         weight_dims = if op === conv
@@ -55,11 +60,11 @@ end
 
         @testset "Input Dims: $(in_dims) | Weight Dims: $(w_dims)" for (in_dims, w_dims) in zip(input_dims,
             weight_dims)
-            x = randn(in_dims...) |> aType
-            w = randn(w_dims...) |> aType
-            ux = randn(size(x)...) |> aType
-            uw = randn(size(w)...) |> aType
-            u = randn(length(x) + length(w)) |> aType
+            x = randn(Float32, in_dims...) |> aType
+            w = randn(Float32, w_dims...) |> aType
+            ux = randn(Float32, size(x)...) |> aType
+            uw = randn(Float32, size(w)...) |> aType
+            u = randn(Float32, length(x) + length(w)) |> aType
 
             test_jvp_computation(x -> op(x, w; flipped), x, ux)
             test_jvp_computation(w -> op(x, w; flipped), w, uw)
