@@ -49,7 +49,7 @@ end
     @testset "$(op)(; flipped = $flipped)" for flipped in (true, false),
         op in (depthwiseconv, conv)
 
-        op === depthwiseconv && mode == "AMDGPU" && continue
+        op === depthwiseconv && on_gpu && continue
 
         input_dims = [(2, 4, 2, 1, 3), (4, 4, 1, 3), (4, 4, 3, 2), (4, 1, 3), (4, 3, 2)]
         weight_dims = if op === conv
