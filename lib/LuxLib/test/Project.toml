@@ -1,6 +1,7 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"

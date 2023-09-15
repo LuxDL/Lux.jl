@@ -29,6 +29,10 @@ end
         include("ext/LuxLibForwardDiffExt.jl")
     end
 
+    @time @safetestset "Efficient Jacobian-Vector-Products" begin
+        include("jvp.jl")
+    end
+
     if VERSION ≥ v"1.9"
         @time @safetestset "Aqua Tests" begin
             include("aqua.jl")
