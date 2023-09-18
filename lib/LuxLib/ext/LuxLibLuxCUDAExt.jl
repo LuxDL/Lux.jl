@@ -8,7 +8,6 @@ import LuxLib: batchnorm, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64
 LuxLib._replicate(rng::CUDA.RNG) = deepcopy(rng)
 
 # api/batchnorm.jl
-
 const CUDNN_BN_ARRAY_TYPE = Union{CuArray{<:FP_32_64, 2}, CuArray{<:FP_32_64, 4},
     CuArray{<:FP_32_64, 5}}
 const BNParamType = Union{Nothing, CuVector{<:FP_32_64}}

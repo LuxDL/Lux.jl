@@ -98,3 +98,13 @@ function Base.showerror(io::IO, ex::OutdatedNNlibDependencyException)
     print(io, "OutdatedNNlibDependencyException: ")
     return println(io, "$msg")
 end
+
+# Droping ForwardDiff Gradients
+function _drop_forwarddiff_partials end
+
+_drop_forwarddiff_partials(x::AbstractArray) = x
+_drop_forwarddiff_partials(::Nothing) = nothing
+_drop_forwarddiff_partials(x::Tuple) = _drop_forwarddiff_partials.(x)
+function _drop_forwarddiff_partials(x::NamedTuple{N}) where {N}
+    return NamedTuple{N}(map(_drop_forwarddiff_partials, values(x)))
+end
