@@ -33,16 +33,16 @@ function jvp_zygote(f, x, u)
     return Jₓ * vec(u)
 end
 
-function test_jvp_computation(f, x, u)
+function test_jvp_computation(f, x, u, on_gpu)
     jvp₁ = jvp_forwarddiff(f, x, u)
-    if !(x isa ComponentArray)
+    if !(x isa ComponentArray && on_gpu)
         # ComponentArray + ForwardDiff on GPU don't play nice
         jvp₂ = jvp_forwarddiff_concrete(f, x, u)
         @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
-    end
 
-    jvp₃ = jvp_zygote(f, x, u)
-    @test check_approx(jvp₁, jvp₃; atol=1e-5, rtol=1e-5)
+        jvp₃ = jvp_zygote(f, x, u)
+        @test check_approx(jvp₁, jvp₃; atol=1e-5, rtol=1e-5)
+    end
 end
 
 @testset "$mode: Jacobian Vector Products" for (mode, aType, on_gpu) in MODES
@@ -66,9 +66,10 @@ end
             uw = randn(Float32, size(w)...) |> aType
             u = randn(Float32, length(x) + length(w)) |> aType
 
-            test_jvp_computation(x -> op(x, w; flipped), x, ux)
-            test_jvp_computation(w -> op(x, w; flipped), w, uw)
-            test_jvp_computation(xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u)
+            test_jvp_computation(x -> op(x, w; flipped), x, ux, on_gpu)
+            test_jvp_computation(w -> op(x, w; flipped), w, uw, on_gpu)
+            test_jvp_computation(xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u,
+                on_gpu)
         end
     end
 end

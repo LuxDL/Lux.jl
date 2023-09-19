@@ -42,8 +42,9 @@ function batchnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::
     running_var::NOrAVR; momentum::Real, training::Val, epsilon::Real) where {N}
     x_, xm, xv = _normalization(x, running_mean, running_var, scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon)
-
-    return x_, (; running_mean=xm, running_var=xv)
+    stats = (; running_mean=_drop_forwarddiff_partials(xm),
+        running_var=_drop_forwarddiff_partials(xv))
+    return (x_, stats)
 end
 
 @generated function _get_batchnorm_reduce_dims(::AA{T, N}) where {T, N}

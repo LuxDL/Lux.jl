@@ -62,4 +62,8 @@ for op in [:conv, :depthwiseconv]
     end
 end
 
+function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:Dual})
+    return ForwardDiff.value.(x)
+end
+
 end
