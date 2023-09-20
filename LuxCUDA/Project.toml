@@ -1,7 +1,7 @@
 name = "LuxCUDA"
 uuid = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
