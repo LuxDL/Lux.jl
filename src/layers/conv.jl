@@ -373,7 +373,7 @@ end
 """
     GlobalMaxPool()
 
-Global Mean Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output,
+Global Max Pooling layer. Transforms (w,h,c,b)-shaped input into (1,1,c,b)-shaped output,
 by performing max pooling on the complete (w,h)-shaped feature maps.
 
 ## Inputs
