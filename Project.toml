@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.6"
+version = "0.5.7"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -38,8 +38,6 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [extensions]
 LuxComponentArraysExt = "ComponentArrays"
 LuxComponentArraysReverseDiffExt = ["ComponentArrays", "ReverseDiff"]
-LuxComponentArraysTrackerExt = ["ComponentArrays", "Tracker"]
-LuxComponentArraysZygoteExt = ["ComponentArrays", "Zygote"]
 LuxFluxTransformExt = "Flux"
 LuxLuxAMDGPUExt = "LuxAMDGPU"
 LuxLuxCUDAExt = "LuxCUDA"
@@ -50,7 +48,7 @@ LuxZygoteExt = "Zygote"
 ADTypes = "0.1, 0.2"
 Adapt = "3"
 ChainRulesCore = "1"
-ComponentArrays = "0.13, 0.14, 0.15"
+ComponentArrays = "0.15.2"
 ConcreteStructs = "0.2"
 FillArrays = "0.13, 1"
 Flux = "0.13, 0.14"
