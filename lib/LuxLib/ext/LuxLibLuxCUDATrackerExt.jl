@@ -39,8 +39,8 @@ end
 
 @grad function LuxLib._batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum,
     eps, training)
-    y = _batchnorm_cudnn!(data(running_mean), data(running_var), data(scale), data(bias),
-        data(x), momentum, eps, training)
+    y, xmean, xivar = _batchnorm_cudnn!(data(running_mean), data(running_var), data(scale),
+        data(bias), data(x), momentum, eps, training)
     function ∇_batchnorm_cudnn!(Δ)
         __∇batchnorm = @static if @isdefined(NNlibCUDA)
             NNlibCUDA.∇batchnorm
@@ -49,11 +49,11 @@ end
                 throw(LuxLib.OutdatedNNlibDependencyException(:∇batchnorm))
             NNlib.∇batchnorm
         end
-        ∂g, ∂b, ∂x = __∇batchnorm(data(scale), data(bias), data(x), Δ, data(running_mean),
-            data(running_var), momentum; eps, training)
+        ∂g, ∂b, ∂x = __∇batchnorm(data(scale), data(bias), data(x), first(Δ),
+            data(running_mean), data(running_var), momentum; eps, training)
         return (nothing, nothing, ∂g, ∂b, ∂x, nothing, nothing, nothing)
     end
-    return y, ∇_batchnorm_cudnn!
+    return (y, xmean, xivar), ∇_batchnorm_cudnn!
 end
 
 end

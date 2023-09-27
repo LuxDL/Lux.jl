@@ -6,6 +6,7 @@ const AA3D = AbstractArray{T, 3} where {T}
 const AA4D = AbstractArray{T, 4} where {T}
 const AA5D = AbstractArray{T, 5} where {T}
 const NOrAVR = Union{Nothing, AbstractVector{<:Real}}
+const NOrAVF = Union{Nothing, AbstractVector{<:AbstractFloat}}
 const FP_32_64 = Union{Float32, Float64}
 const ∂∅ = NoTangent()
 
@@ -73,7 +74,7 @@ CRC.@non_differentiable _replicate(::Any)
 # Var Implementation
 ## Using the default version from Statistics causes issues with Tracker.jl
 function _var(x, ::Val{corrected}, _mean, ::Val{dims}) where {corrected, dims}
-    return sum((x .- _mean) .^ 2; dims) ./ (prod(Base.Fix1(size, x), dims) - corrected)
+    return sum(abs2, x .- _mean; dims) ./ (prod(Base.Fix1(size, x), dims) - corrected)
 end
 
 # Meta Programming Utilities
@@ -108,3 +109,5 @@ _drop_forwarddiff_partials(x::Tuple) = _drop_forwarddiff_partials.(x)
 function _drop_forwarddiff_partials(x::NamedTuple{N}) where {N}
     return NamedTuple{N}(map(_drop_forwarddiff_partials, values(x)))
 end
+
+_unwrap_val(::Val{T}) where {T} = T

@@ -1,10 +1,11 @@
 module LuxLibForwardDiffExt
 
-using ForwardDiff, LuxLib
+using ForwardDiff, LuxLib, Statistics
 import ForwardDiff: Dual
+import LuxLib: AA
 
 # dropout
-function LuxLib._dropout_fptype(x::AbstractArray{<:Dual})
+function LuxLib._dropout_fptype(x::AA{<:Dual})
     return ForwardDiff.valtype(eltype(x))
 end
 
@@ -14,8 +15,8 @@ end
 for op in [:conv, :depthwiseconv]
     op! = Symbol("$(op)!")
 
-    @eval function NNlib.$(op)(x::AbstractArray{<:Dual{Tag, V, P}, N},
-        w::AbstractArray{<:Real, N}, cdims::ConvDims; kwargs...) where {N, Tag, V, P}
+    @eval function NNlib.$(op)(x::AA{<:Dual{Tag, V, P}, N},
+        w::AA{<:Real, N}, cdims::ConvDims; kwargs...) where {N, Tag, V, P}
         x_ = ForwardDiff.value.(x)
 
         y = $(op)(x_, w, cdims; kwargs...)
@@ -25,8 +26,7 @@ for op in [:conv, :depthwiseconv]
             dys...)
     end
 
-    @eval function NNlib.$(op)(x::AbstractArray{<:Real, N},
-        w::AbstractArray{<:Dual{Tag, V, P}, N},
+    @eval function NNlib.$(op)(x::AA{<:Real, N}, w::AA{<:Dual{Tag, V, P}, N},
         cdims::ConvDims; kwargs...) where {N, Tag, V, P}
         w_ = ForwardDiff.value.(w)
 
@@ -37,9 +37,8 @@ for op in [:conv, :depthwiseconv]
             dys...)
     end
 
-    @eval function NNlib.$(op)(x::AbstractArray{<:Dual{Tag, Vₓ, P}, N},
-        w::AbstractArray{<:Dual{Tag, Vₚ, P}, N}, cdims::ConvDims;
-        kwargs...) where {N, Tag, Vₓ, Vₚ, P}
+    @eval function NNlib.$(op)(x::AA{<:Dual{Tag, Vₓ, P}, N},
+        w::AA{<:Dual{Tag, Vₚ, P}, N}, cdims::ConvDims; kwargs...) where {N, Tag, Vₓ, Vₚ, P}
         x_ = ForwardDiff.value.(x)
         w_ = ForwardDiff.value.(w)
 
@@ -62,7 +61,7 @@ for op in [:conv, :depthwiseconv]
     end
 end
 
-function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:Dual})
+function LuxLib._drop_forwarddiff_partials(x::AA{<:Dual})
     return ForwardDiff.value.(x)
 end
 
