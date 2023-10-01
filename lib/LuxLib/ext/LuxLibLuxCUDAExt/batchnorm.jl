@@ -35,10 +35,31 @@ function batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray
     return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
 end
 
+function batchnorm_cudnn(g::DenseCuArray{T₁}, b::DenseCuArray{T₂},
+    x::Union{DenseCuArray{T₃, 4}, DenseCuArray{T₄, 5}}, running_μ, running_σ², args...;
+    kwargs...) where {T₁ <: FP_32_64, T₂ <: FP_32_64, T₃ <: FP_32_64, T₄ <: FP_32_64}
+    @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the
+        highest precision type. Avoid this code-path if possible" maxlog=1
+    Tₓ = eltype(x)
+    Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
+    Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
+    T = promote_type(T₁, T₂, Tₓ, Tᵣₘ, Tᵣᵥ)
+    ĝ = T != T₁ ? T.(g) : g
+    b̂ = T != T₂ ? T.(b) : b
+    x̂ = T != Tₓ ? T.(x) : x
+    running_μ̂ = running_μ !== nothing && T != Tᵣₘ ? T.(running_μ) : running_μ
+    running_σ̂² = running_σ² === nothing && T != Tᵣᵥ ? T.(running_σ²) : running_σ²
+
+    y, xmean, xivar = batchnorm_cudnn(ĝ, b̂, x̂, running_μ̂, running_σ̂², args...;
+        kwargs...)
+
+    return (Tₓ != eltype(y) ? Tₓ.(y) : y, xmean, xivar)
+end
+
 function batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
-    x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, args...;
+    x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, running_μ, running_σ², args...;
     kwargs...) where {T <: FP_32_64}
-    return batchnorm_cudnn!(similar(x), g, b, x, args...; kwargs...)
+    return batchnorm_cudnn!(similar(x), g, b, x, running_μ, running_σ², args...; kwargs...)
 end
 
 function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArray{T},
@@ -102,6 +123,28 @@ function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuAr
         reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)), running_μ, running_σ², args...;
         kwargs...)
     return (∂g, ∂b, dropdims(∂x; dims=(1, 2)))
+end
+
+function ∇batchnorm_cudnn(g::DenseCuArray{T₁}, b::DenseCuArray{T₂},
+    x::DenseCuArray{Tₓ}, ∂y::DenseCuArray{T₅}, running_μ, running_σ², args...;
+    kwargs...) where {T₁ <: FP_32_64, T₂ <: FP_32_64, Tₓ <: FP_32_64, T₅ <: FP_32_64}
+    @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the
+        highest precision type. Avoid this code-path if possible" maxlog=1
+    Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
+    Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
+    T = promote_type(T₁, T₂, Tₓ, Tᵣₘ, Tᵣᵥ, T₅)
+    ĝ = T != T₁ ? T.(g) : g
+    b̂ = T != T₂ ? T.(b) : b
+    x̂ = T != Tₓ ? T.(x) : x
+    ∂ŷ = T != T₅ ? T.(∂y) : ∂y
+    running_μ̂ = running_μ !== nothing && T != Tᵣₘ ? T.(running_μ) : running_μ
+    running_σ̂² = running_σ² !== nothing && T != Tᵣᵥ ? T.(running_σ²) : running_σ²
+
+    ∂g, ∂b, ∂x = ∇batchnorm_cudnn(ĝ, b̂, x̂, ∂ŷ, running_μ̂, running_σ̂², args...;
+        kwargs...)
+
+    return (T₁ != eltype(∂g) ? T₁.(∂g) : ∂g, T₂ != eltype(∂b) ? T₂.(∂b) : ∂b,
+        Tₓ != eltype(∂x) ? Tₓ.(∂x) : ∂x)
 end
 
 function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T},
