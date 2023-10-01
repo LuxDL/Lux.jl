@@ -20,19 +20,19 @@ function batchnorm_cudnn(γ::Nothing, β::Nothing, x::DenseCuArray, args...; kwa
     g = fill!(similar(x, affine_sz), one(eltype(x)))
     b = fill!(similar(x, affine_sz), zero(eltype(x)))
 
-    y = batchnorm_cudnn(g, b, x, args...; kwargs...)
+    y, xμ, xσ⁻² = batchnorm_cudnn(g, b, x, args...; kwargs...)
 
     CUDA.unsafe_free!(g)
     CUDA.unsafe_free!(b)
 
-    return y
+    return y, xμ, xσ⁻²
 end
 
 function batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
     args...; kwargs...) where {T <: FP_32_64}
     x = reshape(x, 1, 1, size(x, 1), size(x, 2))
-    y = batchnorm_cudnn(g, b, x, args...; kwargs...)
-    return dropdims(y; dims=(1, 2))
+    y, xμ, xσ⁻² = batchnorm_cudnn(g, b, x, args...; kwargs...)
+    return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
 end
 
 function batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
@@ -78,4 +78,64 @@ function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArra
 
         return y, CU_NULL, CU_NULL
     end
+end
+
+function ∇batchnorm_cudnn(g::Nothing, b::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
+    running_μ, running_σ², args...; kwargs...)
+    affine_sz = _wsize(x)
+    g = fill!(similar(x, affine_sz), 1)
+    b = fill!(similar(x, affine_sz), 0)
+
+    ∂g, ∂b, ∂x = ∇batchnorm_cudnn(g, b, x, ∂y, running_μ, running_σ², args...; kwargs...)
+
+    CUDA.unsafe_free!(g)
+    CUDA.unsafe_free!(b)
+    CUDA.unsafe_free!(∂g)
+    CUDA.unsafe_free!(∂b)
+
+    return (nothing, nothing, ∂x)
+end
+
+function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
+    ∂y::DenseCuArray{T, 2}, running_μ, running_σ², args...; kwargs...) where {T <: FP_32_64}
+    ∂g, ∂b, ∂x = ∇batchnorm_cudnn(g, b, reshape(x, 1, 1, size(x, 1), size(x, 2)),
+        reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)), running_μ, running_σ², args...;
+        kwargs...)
+    return (∂g, ∂b, dropdims(∂x; dims=(1, 2)))
+end
+
+function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T},
+    ∂y::DenseCuArray{T}, running_μ, running_σ², args...; kwargs...) where {T <: FP_32_64}
+    ∂g = similar(g)
+    ∂b = similar(b)
+    ∂x = similar(x)
+    cudnnBNBackward!(∂g, g, ∂b, ∂x, x, ∂y, running_μ, running_σ², args...; kwargs...)
+    return (∂g, ∂b, ∂x)
+end
+
+function cudnnBNBackward!(∂g::DenseCuArray{T}, g::DenseCuArray{T}, ∂b::DenseCuArray{T},
+    ∂x::DenseCuArray{T}, x::DenseCuArray{T}, ∂y::DenseCuArray{T}, running_μ, running_σ²,
+    xmean, xivar; α=T(1), β=T(0), ϵ=T(1e-5), ∂α=T(1), ∂β=T(0)) where {T <: FP_32_64}
+    if running_μ === nothing && running_σ² === nothing
+        running_μ = CU_NULL
+        running_σ² = CU_NULL
+    end
+
+    xd = cudnnTensorDescriptor(x)
+    ∂yd = cudnnTensorDescriptor(∂y)
+    ∂xd = cudnnTensorDescriptor(∂x)
+    gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(_wsize(x))),
+        dim4(_wsize(x), Val(CUDNN_TENSOR_NCHW)))
+
+    xmean = xmean === nothing ? CU_NULL : xmean
+    xivar = xivar === nothing ? CU_NULL : xivar
+
+    if ϵ < CUDNN_BN_MIN_EPSILON
+        @warn "eps $eps is too small for CuDNN, setting to CUDNN_BN_MIN_EPSILON=$CUDNN_BN_MIN_EPSILON"
+        ϵ = CUDNN_BN_MIN_EPSILON
+    end
+
+    return cudnnBatchNormalizationBackward(handle(), CUDNN_BATCHNORM_SPATIAL,
+        scalingParameter(T, α), scalingParameter(T, β), scalingParameter(T, ∂α),
+        scalingParameter(T, ∂β), xd, x, ∂yd, ∂y, ∂xd, ∂x, gd, g, ∂g, ∂b, ϵ, xmean, xivar)
 end

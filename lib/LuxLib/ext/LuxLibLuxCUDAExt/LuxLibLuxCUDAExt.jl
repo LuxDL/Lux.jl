@@ -2,7 +2,8 @@ module LuxLibLuxCUDAExt
 
 using LuxCUDA, LuxLib
 import ChainRulesCore as CRC
-import LuxLib: batchnorm, _batchnorm_cudnn!, _get_batchnorm_statistics, FP_32_64, ∂∅
+import LuxLib: batchnorm, batchnorm_cudnn, ∇batchnorm_cudnn, _get_batchnorm_statistics,
+    FP_32_64, ∂∅
 
 include("batchnorm.jl")
 
@@ -19,33 +20,27 @@ function batchnorm(x::CUDNN_BN_ARRAY_TYPE, scale::BNParamType, bias::BNParamType
     epsilon::Real)
     rm, rv = _get_batchnorm_statistics(x, running_mean, running_var, training)
 
-    x_ = first(_batchnorm_cudnn!(rm, rv, scale, bias, x, momentum, epsilon, training))
+    x_ = first(batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training))
     return x_, (; running_mean=rm, running_var=rv)
 end
 
-function _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum, eps,
+function batchnorm_cudnn(running_mean, running_var, scale, bias, x, momentum, eps,
     training)
     return batchnorm_cudnn(scale, bias, x, running_mean, running_var, momentum,
         training; ϵ=eps)
 end
 
-function CRC.rrule(::typeof(_batchnorm_cudnn!), running_mean, running_var, scale, bias, x,
+function CRC.rrule(::typeof(batchnorm_cudnn), running_mean, running_var, scale, bias, x,
     momentum, epsilon, t::Val{training}) where {training}
-    y, xmean, xivar = _batchnorm_cudnn!(running_mean, running_var, scale, bias, x, momentum,
+    y, xmean, xivar = batchnorm_cudnn(running_mean, running_var, scale, bias, x, momentum,
         epsilon, t)
-    function ∇_batchnorm_cudnn!(Δ)
-        __∇batchnorm = @static if @isdefined(NNlibCUDA)
-            NNlibCUDA.∇batchnorm
-        else
-            !isdefined(NNlib, :∇batchnorm) &&
-                throw(LuxLib.OutdatedNNlibDependencyException(:∇batchnorm))
-            NNlib.∇batchnorm
-        end
-        ∂g, ∂b, ∂x = __∇batchnorm(scale, bias, x, CRC.unthunk(first(Δ)), running_mean,
-            running_var, momentum; eps=epsilon, training)
+    function ∇batchnorm_cudnn_internal(Δ)
+        ∂y = CRC.unthunk(first(Δ))
+        ∂g, ∂b, ∂x = ∇batchnorm_cudnn(scale, bias, x, ∂y, running_mean, running_var, xmean,
+            xivar; ϵ=epsilon)
         return (∂∅, ∂∅, ∂∅, ∂g, ∂b, ∂x, ∂∅, ∂∅, ∂∅)
     end
-    return (y, xmean, xivar), ∇_batchnorm_cudnn!
+    return (y, xmean, xivar), ∇batchnorm_cudnn_internal
 end
 
 end

@@ -66,4 +66,5 @@ function _get_batchnorm_statistics(x, running_mean, running_var, ::Val{T}) where
     return rm, rv
 end
 
-function _batchnorm_cudnn! end
+function batchnorm_cudnn end
+function ∇batchnorm_cudnn end
