@@ -60,10 +60,9 @@ function _normalization_impl(x::AA, running_mean::R, running_var::R, scale::A,
     return (x_norm, running_mean, running_var)
 end
 
-function _normalization(x::AA, running_mean::NOrAVR,
-    running_var::NOrAVR, scale::NOrAVR,
-    bias::NOrAVR, reduce_dims::Val, training::Val,
-    momentum::Union{Real, Nothing}, epsilon::Real)
+function _normalization(x::AA, running_mean::NOrAVR, running_var::NOrAVR, scale::NOrAVR,
+    bias::NOrAVR, reduce_dims::Val, training::Val, momentum::Union{Real, Nothing},
+    epsilon::Real)
     rm_ = _reshape_into_proper_shape(running_mean, x)
     rv_ = _reshape_into_proper_shape(running_var, x)
     s_ = _reshape_into_proper_shape(scale, x)

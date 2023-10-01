@@ -1,17 +1,17 @@
 module LuxLib
 
-using Reexport
+import PrecompileTools
 
-using ChainRulesCore, Markdown, Random, Statistics
-import ChainRulesCore as CRC
+PrecompileTools.@recompile_invalidations begin
+    using ChainRulesCore, KernelAbstractions, Markdown, NNlib, PackageExtensionCompat,
+        Random, Reexport, Statistics
+end
 
 @reexport using NNlib
-
-using KernelAbstractions
+import ChainRulesCore as CRC
 import KernelAbstractions as KA
 
 # Extensions
-using PackageExtensionCompat
 function __init__()
     @require_extensions
 end
