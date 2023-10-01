@@ -18,7 +18,7 @@ function LuxLib.batchnorm(x::TR_CUDNN_BN_ARRAY_TYPE, scale::TR_BNParamType,
     momentum::Real, training::Val, epsilon::Real)
     rm, rv = _get_batchnorm_statistics(x, running_mean, running_var, training)
 
-    x_ = batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training)
+    x_ = batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training)[1]
     return x_, (; running_mean=rm, running_var=rv)
 end
 
