@@ -68,7 +68,7 @@ Look in the [examples](/examples/) directory for self-contained usage examples. 
 
 ## Ecosystem
 
-Checkout our [Ecosystem](http://lux.csail.mit.edu/dev/introduction/ecosystem/) page for more details. 
+Checkout our [Ecosystem](http://lux.csail.mit.edu/dev/ecosystem/) page for more details. 
 
 ## Getting Help
 
