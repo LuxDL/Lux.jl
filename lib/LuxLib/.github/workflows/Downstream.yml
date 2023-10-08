@@ -23,9 +23,8 @@ jobs:
         julia-version: ["1"]
         os: [ubuntu-latest]
         package:
-          - { user: LuxDL, repo: Lux.jl, group: All }
-          - { user: LuxDL, repo: Boltz.jl, group: All }
-    if: contains(github.event.pull_request.labels.*.name, 'run downstream test')
+          - { user: LuxDL, repo: Lux.jl, group: CPU }
+          - { user: LuxDL, repo: Boltz.jl, group: CPU }
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1

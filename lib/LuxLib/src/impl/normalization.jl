@@ -20,13 +20,13 @@ end
     if !training
         if R == Nothing
             push!(calls, :(batchmean = mean(x; dims=rdims)))
-            push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
+            push!(calls, :(batchvar = var(x; corrected=false, mean=batchmean, dims=rdims)))
         else
             push!(calls, :((batchmean, batchvar) = (running_mean, running_var)))
         end
     else
         push!(calls, :(batchmean = mean(x; dims=rdims)))
-        push!(calls, :(batchvar = _var(x, Val(false), batchmean, r)))
+        push!(calls, :(batchvar = var(x; corrected=false, mean=batchmean, dims=rdims)))
 
         if R != Nothing
             push!(calls,
