@@ -4,6 +4,7 @@
 [![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://lux.csail.mit.edu/dev/api/)
 [![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://lux.csail.mit.edu/stable/api/)
 
+[![Build status](https://badge.buildkite.com/702f7908a08898971896c9bf5aae03e8e419bcbc44c5544237.svg?branch=main)](https://buildkite.com/julialang/luxcore-dot-jl)
 [![CI](https://github.com/LuxDL/LuxCore.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/LuxDL/LuxCore.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/LuxDL/LuxCore.jl/branch/main/graph/badge.svg?token=1ZY0A2NPEM)](https://codecov.io/gh/LuxDL/LuxCore.jl)
 [![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/LuxCore)](https://pkgs.genieframework.com?packages=LuxCore)
