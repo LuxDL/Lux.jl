@@ -28,7 +28,6 @@ jobs:
           - { user: SciML, repo: DeepEquilibriumNetworks.jl, group: All }
           - { user: SciML, repo: NeuralPDE.jl, group: All }
           - { user: LuxDL, repo: Boltz.jl, group: All }
-    if: contains(github.event.pull_request.labels.*.name, 'run downstream test')
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
