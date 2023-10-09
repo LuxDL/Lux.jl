@@ -71,12 +71,6 @@ _replicate(rng::AbstractRNG) = copy(rng)
 
 CRC.@non_differentiable _replicate(::Any)
 
-# Var Implementation
-## Using the default version from Statistics causes issues with Tracker.jl
-function _var(x, ::Val{corrected}, _mean, ::Val{dims}) where {corrected, dims}
-    return sum(abs2, x .- _mean; dims) ./ (prod(Base.Fix1(size, x), dims) - corrected)
-end
-
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
