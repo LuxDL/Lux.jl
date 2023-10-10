@@ -49,9 +49,14 @@ steps:
             using Pkg
 
             repo = ENV["DOWNSTREAM_TEST_REPO"]
+            if contains(repo, "#")
+              repo, group = split(repo, "#")
+            else
+              group = "CUDA"
+            end
 
             println("--- :julia: Instantiating project")
-            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0) do
+            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group) do
               Pkg.instantiate()
 
               try
@@ -70,7 +75,6 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         env:
-          GROUP: "CUDA"
           DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
         if: build.message !~ /\[skip tests\]/ || build.message !~ /\[skip downstream\]/
         timeout_in_minutes: 240
@@ -81,6 +85,7 @@ steps:
               - "1"
             repo:
               - "Boltz"
+              - "NeuralPDE#GPU"
           adjustments:
             - with:
                 julia: "1.6"
@@ -136,9 +141,14 @@ steps:
             using Pkg
 
             repo = ENV["DOWNSTREAM_TEST_REPO"]
+            if contains(repo, "#")
+              repo, group = split(repo, "#")
+            else
+              group = "AMDGPU"
+            end
 
             println("--- :julia: Instantiating project")
-            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0) do
+            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group) do
               Pkg.instantiate()
 
               try
@@ -158,7 +168,6 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         env:
-          GROUP: "AMDGPU"
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
