@@ -37,6 +37,9 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
     end
 end
 
+__make_nothing(x) = x
+__make_nothing(::CuPtr{Nothing}) = 0
+
 @grad function LuxLib.batchnorm_cudnn(running_mean, running_var, scale, bias, x, momentum,
     eps, training)
     y, xmean, xivar = batchnorm_cudnn(data(running_mean), data(running_var), data(scale),
@@ -47,7 +50,7 @@ end
             data(running_mean), data(running_var), xmean, xivar; ϵ=eps)
         return (nothing, nothing, ∂g, ∂b, ∂x, nothing, nothing, nothing)
     end
-    return (y, xmean, xivar), ∇batchnorm_cudnn_internal
+    return (y, __make_nothing(xmean), __make_nothing(xivar)), ∇batchnorm_cudnn_internal
 end
 
 end
