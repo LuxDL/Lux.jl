@@ -90,6 +90,9 @@ steps:
             - with:
                 julia: "1.6"
               soft_fail: true
+            - with:
+                repo: "NeuralPDE#GPU"
+              soft_fail: true
 
   - group: ":julia: AMD GPU"
     steps:
