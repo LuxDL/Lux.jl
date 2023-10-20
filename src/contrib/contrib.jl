@@ -18,6 +18,17 @@ include("compact.jl")
 
 end
 
+# Chain Rules for Certain Layers
+## Only needed when the parameters are `nothing`
+function CRC.rrule(::Type{<:Experimental.StatefulLuxLayer},
+    model::AbstractExplicitLayer, ::Nothing, st)
+    slayer = Experimental.StatefulLuxLayer(model, nothing, st)
+    function ∇StatefulLuxLayer(Δ::Union{CRC.ZeroTangent, CRC.NoTangent})
+        return (NoTangent(), NoTangent(), NoTangent(), NoTangent())
+    end
+    return slayer, ∇StatefulLuxLayer
+end
+
 # Deprecations for v0.6
 module Training
 
