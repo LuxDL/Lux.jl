@@ -2,7 +2,8 @@ module Experimental
 
 using ..Lux, LuxCore, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
-import ..Lux: _merge, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
+import ..Lux: _merge,
+    _pairs, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
 import ChainRulesCore as CRC
 import ConcreteStructs: @concrete
 import Functors: fmap
@@ -16,6 +17,17 @@ include("debug.jl")
 include("stateful.jl")
 include("compact.jl")
 
+end
+
+# Chain Rules for Certain Layers
+## Only needed when the parameters are `nothing`
+function CRC.rrule(::Type{<:Experimental.StatefulLuxLayer},
+    model::AbstractExplicitLayer, ::Nothing, st)
+    slayer = Experimental.StatefulLuxLayer(model, nothing, st)
+    function ∇StatefulLuxLayer(Δ::Union{CRC.ZeroTangent, CRC.NoTangent})
+        return (NoTangent(), NoTangent(), NoTangent(), NoTangent())
+    end
+    return slayer, ∇StatefulLuxLayer
 end
 
 # Deprecations for v0.6

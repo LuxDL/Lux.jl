@@ -172,8 +172,7 @@ end
 # ## Automatic Differentiation
 
 # Julia has quite a few (maybe too many) AD tools. For the purpose of this tutorial, we will
-# use [AbstractDifferentiation.jl](https://github.com/JuliaDiff/AbstractDifferentiation.jl)
-# which provides a uniform API across multiple AD backends. For the backends we will use:
+# use:
 #
 # 1. [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) -- For Jacobian-Vector
 #    Product (JVP)
@@ -192,7 +191,6 @@ end
 # Jacobian matrix is a tall matrix.
 
 using ComponentArrays, ForwardDiff, Zygote
-import AbstractDifferentiation as AD
 
 # ### Gradients
 
@@ -206,10 +204,8 @@ v = randn(rng, Float32, 4)
 # Let's use AbstractDifferentiation and Zygote to compute the gradients.
 
 println("Actual Gradient: ", ∇f(v))
-println("Computed Gradient via Reverse Mode AD (Zygote): ",
-    AD.gradient(AD.ZygoteBackend(), f, v)[1])
-println("Computed Gradient via Forward Mode AD (ForwardDiff): ",
-    AD.gradient(AD.ForwardDiffBackend(), f, v)[1])
+println("Computed Gradient via Reverse Mode AD (Zygote): ", only(Zygote.gradient(f, v)))
+println("Computed Gradient via Forward Mode AD (ForwardDiff): ", ForwardDiff.gradient(f, v))
 
 # Note that `AD.gradient` will only work for scalar valued outputs.
 
@@ -223,9 +219,33 @@ f(x) = x .* x ./ 2
 x = randn(rng, Float32, 5)
 v = ones(Float32, 5)
 
-# Construct the pushforward function.
+# Construct the pushforward function. We will write out the function here but in
+# practice we recommend using [SparseDiffTools.auto_jacvec](https://docs.sciml.ai/SparseDiffTools/stable/#Jacobian-Vector-and-Hessian-Vector-Products)!
 
-pf_f = AD.value_and_pushforward_function(AD.ForwardDiffBackend(), f, x)
+# First we need to create a Tag for ForwardDiff. It is enough to know that this is something
+# that you must do. For more details, see the [ForwardDiff Documentation](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Custom-tags-and-tag-checking)!
+struct TestTag end
+
+# Going in the details of what is function is doing is beyond the scope of this tutorial.
+# But in short, it is constructing a new Dual Vector with the partials set to the input
+# to the pushforward function. When this is propagated through the original function
+# we get the value and the jvp
+function pushforward_forwarddiff(f, x)
+    T = eltype(x)
+    function pushforward(v)
+        v_ = reshape(v, axes(x))
+        y = ForwardDiff.Dual{
+            ForwardDiff.Tag{TestTag, T},
+            T,
+            1,
+        }.(x, ForwardDiff.Partials.(tuple.(v_)))
+        res = vec(f(y))
+        return ForwardDiff.value.(res), vec(ForwardDiff.partials.(res, 1))
+    end
+    return pushforward
+end
+
+pf_f = pushforward_forwarddiff(f, x)
 
 # Compute the jvp.
 
@@ -237,11 +257,11 @@ println("JVP: ", jvp[1])
 
 # Using the same function and inputs, let us compute the VJP.
 
-pb_f = AD.value_and_pullback_function(AD.ZygoteBackend(), f, x)
+val, pb_f = Zygote.pullback(f, x)
 
 # Compute the vjp.
 
-val, vjp = pb_f(v)
+vjp = only(pb_f(v))
 println("Computed Value: f(", x, ") = ", val)
 println("VJP: ", vjp[1])
 
