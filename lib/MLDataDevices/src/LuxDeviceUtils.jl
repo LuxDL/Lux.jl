@@ -158,7 +158,10 @@ function _get_gpu_device(; force_gpu_usage::Bool)
         @warn """No functional GPU backend found! Defaulting to CPU.
 
                  1. If no GPU is available, nothing needs to be done.
-                 2. If GPU is available, load the corresponding trigger package.""" maxlog=1
+                 2. If GPU is available, load the corresponding trigger package.
+                     a. LuxCUDA.jl for NVIDIA CUDA Support!
+                     b. LuxAMDGPU.jl for AMD GPU ROCM Support!
+                     c. Metal.jl for Apple Metal GPU Support!""" maxlog=1
         return cpu_device()
     end
 end
