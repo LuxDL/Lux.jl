@@ -49,6 +49,12 @@ function Lux._merge(ca::ComponentArray, p::AbstractArray)
     return ca
 end
 
+function Lux._pairs(ca::ComponentArray)
+    pnames = propertynames(ca)
+    vals = NamedTuple{pnames}(getproperty.((ca,), pnames))
+    return Iterators.Pairs(vals, pnames)
+end
+
 # Empty NamedTuple: Hack to avoid breaking precompilation
 function ComponentArrays.ComponentArray(data::Vector{Any}, axes::Tuple{FlatAxis})
     length(data) == 0 && return ComponentArray(Float32[], axes)

@@ -126,7 +126,7 @@ function freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
     fl = freeze(l, which_params)
     ps_frozen = []
     ps_trainable = []
-    for (k, v) in pairs(ps)
+    for (k, v) in _pairs(ps)
         if which_params === nothing || k in which_params
             push!(ps_frozen, k => v)
         else

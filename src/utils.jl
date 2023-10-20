@@ -197,3 +197,7 @@ for (fname, ftype) in zip((:f16, :f32, :f64), (Float16, Float32, Float64))
         $(fname)(m) = (LuxEltypeAdaptor{$ftype}())(m)
     end
 end
+
+# Used in freezing
+## Extend for custom types
+@inline _pairs(x) = pairs(x)

@@ -39,6 +39,28 @@ rng = get_stable_rng(12345)
         __f = (x, ps) -> sum(first(m(x, ps, st)))
         @eval @test_gradients $__f $x $ps_c atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
+
+    @testset "LuxDL/Lux.jl#427" begin
+        m = Dense(1 => 1)
+        ps, st = Lux.setup(rng, m)
+        st = st |> device
+        ps_c = ComponentVector(ps) |> device
+        ps = ps |> device
+
+        fd, psf, stf = Lux.Experimental.freeze(m, ps, st)
+
+        @test fd isa Lux.Experimental.FrozenLayer
+        @test psf isa NamedTuple{}
+        @test sort([keys(stf)...]) == [:frozen_params, :states]
+        @test sort([keys(stf.frozen_params)...]) == [:bias, :weight]
+
+        fd, psf, stf = Lux.Experimental.freeze(m, ps_c, st)
+
+        @test fd isa Lux.Experimental.FrozenLayer
+        @test psf isa NamedTuple{}
+        @test sort([keys(stf)...]) == [:frozen_params, :states]
+        @test sort([keys(stf.frozen_params)...]) == [:bias, :weight]
+    end
 end
 
 @testset "$mode: Partial Freezing" for (mode, aType, device, ongpu) in MODES
