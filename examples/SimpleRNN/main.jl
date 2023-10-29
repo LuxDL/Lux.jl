@@ -76,8 +76,7 @@ end
 
 # Now we need to define the behavior of the Classifier when it is invoked.
 
-function (s::SpiralClassifier)(x::AbstractArray{T, 3},
-    ps::NamedTuple,
+function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
     st::NamedTuple) where {T}
     ## First we will have to run the sequence through the LSTM Cell
     ## The first call to LSTM Cell will create the initial hidden state
@@ -153,8 +152,8 @@ function main()
         for (x, y) in train_loader
             x = x |> dev
             y = y |> dev
-            (loss, y_pred, st), back = pullback(p -> compute_loss(x, y, model, p, st), ps)
-            gs = back((one(loss), nothing, nothing))[1]
+            (loss, y_pred, st), back = pullback(compute_loss, x, y, model, ps, st)
+            gs = back((one(loss), nothing, nothing))[4]
             opt_state, ps = Optimisers.update(opt_state, ps, gs)
 
             println("Epoch [$epoch]: Loss $loss")
