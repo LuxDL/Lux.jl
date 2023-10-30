@@ -45,7 +45,8 @@ perform cross-correlation in their convolution layers
       + the singleton `SamePad()`, to calculate padding such that
         `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
         dimension.
-      + Periodic padding can achieved by pre-empting the layer with a `WrappedFunction(x->NNlib.circular_pad(x,N_pad; dims=pad_dims))`
+      + Periodic padding can achieved by pre-empting the layer with a
+        `WrappedFunction(x -> NNlib.circular_pad(x, N_pad; dims=pad_dims))`
 
   - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a
               convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
