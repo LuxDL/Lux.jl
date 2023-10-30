@@ -44,7 +44,7 @@ feedforward neural networks." _Proceedings of the thirteenth international confe
 artificial intelligence and statistics_. 2010.
 """
 function glorot_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-    gain::Real=1) where {T <: Real}
+        gain::Real=1) where {T <: Real}
     scale = T(gain) * sqrt(T(24) / sum(_nfan(dims...)))
     return (rand(rng, T, dims...) .- T(1 // 2)) .* scale
 end
@@ -64,7 +64,7 @@ feedforward neural networks." _Proceedings of the thirteenth international confe
 artificial intelligence and statistics_. 2010.
 """
 function glorot_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-    gain::Real=1) where {T <: Real}
+        gain::Real=1) where {T <: Real}
     std = T(gain) * sqrt(T(2) / sum(_nfan(dims...)))
     return randn(rng, T, dims...) .* std
 end
@@ -83,7 +83,7 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-    gain::Real=√T(2)) where {T <: Real}
+        gain::Real=√T(2)) where {T <: Real}
     bound = √T(3) * gain / sqrt(T(first(_nfan(dims...))))
     return (rand(rng, T, dims...) .- T(1 // 2)) .* 2 * bound
 end
@@ -102,7 +102,7 @@ imagenet classification." _Proceedings of the IEEE international conference on c
 vision_. 2015.
 """
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-    gain::Real=√T(2)) where {T <: Real}
+        gain::Real=√T(2)) where {T <: Real}
     std = gain / sqrt(T(first(_nfan(dims...))))
     return randn(rng, T, dims...) .* std
 end
@@ -116,7 +116,7 @@ distribution. The numbers are distributed like
 `filter(x -> lo ≤ x ≤ hi, mean .+ std .* randn(100))`.
 """
 function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(0),
-    std=T(1), lo=-T(2), hi=T(2)) where {T <: Real}
+        std=T(1), lo=-T(2), hi=T(2)) where {T <: Real}
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." maxlog=1
     end
