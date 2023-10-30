@@ -11,12 +11,12 @@ Lux.replicate(rng::AMDGPU.rocRAND.RNG) = deepcopy(rng)
 end
 
 @inline function Lux._conv(x::SubArray{T, N, <:AMDGPU.AnyROCArray}, weight,
-    cdims) where {T, N}
+        cdims) where {T, N}
     return conv(copy(x), weight, cdims)
 end
 
 @inline function Lux._conv_transpose(x::SubArray{T, N, <:AMDGPU.AnyROCArray}, weight,
-    cdims) where {T, N}
+        cdims) where {T, N}
     return ∇conv_data(copy(x), weight, cdims)
 end
 

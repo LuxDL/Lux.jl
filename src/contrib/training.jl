@@ -39,8 +39,8 @@ Constructor for `TrainState`.
 `TrainState` object.
 """
 function TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
-    optimizer::Optimisers.AbstractRule;
-    transform_variables::Union{Function, Lux.AbstractLuxDevice}=gpu_device())
+        optimizer::Optimisers.AbstractRule;
+        transform_variables::Union{Function, Lux.AbstractLuxDevice}=gpu_device())
     ps, st = Lux.setup(rng, model) .|> transform_variables
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(model, ps, st, st_opt, 0)

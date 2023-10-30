@@ -54,7 +54,7 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
 end
 
 function NeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0),
-    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
+        sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
     return NeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 
@@ -75,7 +75,7 @@ end
 
 # ## Create and Initialize the Neural ODE Layer
 function create_model(model_fn=NeuralODE; dev=gpu_device(), use_named_tuple::Bool=false,
-    sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()))
+        sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()))
     ## Construct the Neural ODE Model
     model = Chain(FlattenLayer(),
         Dense(784 => 20, tanh),
@@ -185,8 +185,8 @@ struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
 end
 
 function StatefulNeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(),
-    tspan=(0.0f0, 1.0f0), sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-    kwargs...)
+        tspan=(0.0f0, 1.0f0), sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
+        kwargs...)
     return StatefulNeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 

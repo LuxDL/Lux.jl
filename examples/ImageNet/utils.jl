@@ -76,10 +76,10 @@ struct CosineAnnealSchedule{restart, T, S <: Integer}
     period::S
 
     function CosineAnnealSchedule(lambda_0,
-        lambda_1,
-        period;
-        restart::Bool=true,
-        dampen=1.0f0)
+            lambda_1,
+            period;
+            restart::Bool=true,
+            dampen=1.0f0)
         range = abs(lambda_0 - lambda_1)
         offset = min(lambda_0, lambda_1)
         return new{restart, typeof(range), typeof(period)}(range, offset, dampen, period)

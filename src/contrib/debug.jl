@@ -54,7 +54,7 @@ See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 end
 
 function DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
-    error_check::Bool=true, location::String="")
+        error_check::Bool=true, location::String="")
     @assert nan_check ∈ (:both, :forward, :backward, :none)
     return DebugLayer{nan_check, error_check}(layer, location)
 end
@@ -82,7 +82,7 @@ end
 CRC.@non_differentiable __any_nan(::Any)
 
 function __debug_layer(::Val{NC}, ::Val{EC}, layer, x, ps, st,
-    location::String) where {NC, EC}
+        location::String) where {NC, EC}
     CRC.ignore_derivatives() do
         @info "Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))"
         @info "Running Layer: $(layer) at location $(location)!"
@@ -119,7 +119,7 @@ function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-    ::typeof(__debug_layer_internal), layer, x, ps, st, location, EC, NC)
+        ::typeof(__debug_layer_internal), layer, x, ps, st, location, EC, NC)
     result, ∇__debug_layer_internal = CRC.rrule_via_ad(cfg, apply, layer, x, ps, st)
     function ∇__debug_layer_internal_with_checks(Δ)
         if NC

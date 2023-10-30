@@ -88,8 +88,9 @@ O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] 
 end
 
 function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
-    init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
-    use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
+        init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
+        groups=1,
+        use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
@@ -592,8 +593,8 @@ O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] 
 end
 
 function CrossCor(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer},
-    activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0,
-    dilation=1, use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0,
+        dilation=1, use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
@@ -714,8 +715,9 @@ Standard convolutional transpose layer.
 end
 
 function ConvTranspose(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer},
-    activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0,
-    dilation=1, use_bias::Bool=true, groups=1, allow_fast_activation::Bool=true) where {N}
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0,
+        dilation=1, use_bias::Bool=true, groups=1,
+        allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
@@ -726,7 +728,7 @@ function ConvTranspose(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer},
 end
 
 function initialparameters(rng::AbstractRNG,
-    c::ConvTranspose{N, use_bias}) where {N, use_bias}
+        c::ConvTranspose{N, use_bias}) where {N, use_bias}
     weight = _convfilter(rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight,
         c.groups)
     if use_bias
@@ -742,7 +744,7 @@ function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::ConvTranspose{N, false})(x::AbstractArray, ps,
-    st::NamedTuple) where {N}
+        st::NamedTuple) where {N}
     cdims = _conv_transpose_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation,
         c.groups)
     return __apply_activation(c.activation, _conv_transpose(x, ps.weight, cdims)), st

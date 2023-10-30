@@ -21,7 +21,7 @@ function load_checkpoint(path)
 end
 
 function save_as_gif(images_each_step::Vector{<:AbstractArray{T, 4}},
-    output_dir) where {T <: AbstractFloat}
+        output_dir) where {T <: AbstractFloat}
     num_images = size(images_each_step[1], 4)
 
     for image_id in ProgressBar(1:num_images)
@@ -40,19 +40,19 @@ function save_as_gif(image_id::Int, images, output_dir)
 end
 
 @main function main(;
-    checkpoint::String,
-    image_size::Int=64,
-    num_images::Int=10,
-    diffusion_steps::Int=80,
-    output_dir::String="output/generate",
-    # model hyper params
-    channels::Vector{Int}=[32, 64, 96, 128],
-    block_depth::Int=2,
-    min_freq::Float32=1.0f0,
-    max_freq::Float32=1000.0f0,
-    embedding_dims::Int=32,
-    min_signal_rate::Float32=0.02f0,
-    max_signal_rate::Float32=0.95f0)
+        checkpoint::String,
+        image_size::Int=64,
+        num_images::Int=10,
+        diffusion_steps::Int=80,
+        output_dir::String="output/generate",
+        # model hyper params
+        channels::Vector{Int}=[32, 64, 96, 128],
+        block_depth::Int=2,
+        min_freq::Float32=1.0f0,
+        max_freq::Float32=1000.0f0,
+        embedding_dims::Int=32,
+        min_signal_rate::Float32=0.02f0,
+        max_signal_rate::Float32=0.95f0)
     rng = Random.MersenneTwister()
     Random.seed!(rng, 1234)
 
