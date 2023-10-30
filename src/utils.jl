@@ -22,7 +22,7 @@ Method undefined if `st.training` is not of type `Val`.
 
 # Convolution
 function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
-    ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
+        ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
     cin, cout = ch
     @assert cin % groups==0 "Input channel dimension must be divisible by groups."
     @assert cout % groups==0 "Output channel dimension must be divisible by groups."
@@ -65,7 +65,7 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 end
 
 @inline function _init_trainable_hidden_state(hidden_state::AbstractVector,
-    x::AbstractMatrix)
+        x::AbstractMatrix)
     return repeat(hidden_state, 1, size(x, 2))
 end
 
@@ -127,7 +127,7 @@ end
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
 
 function _conv_transpose_dims(x::AbstractArray, weight::AbstractArray; padding, stride,
-    dilation, groups)
+        dilation, groups)
     # Calculate size of "input", from ∇conv_data()'s perspective...
     combined_pad = (padding[1:2:end] .+ padding[2:2:end])
     I = (size(x)[1:(end - 2)] .- 1) .* stride .+ 1 .+
@@ -177,12 +177,12 @@ struct LuxEltypeAdaptor{T} end
 (l::LuxEltypeAdaptor)(x) = fmap(adapt(l), x)
 
 function Adapt.adapt_storage(::LuxEltypeAdaptor{T},
-    x::AbstractArray{<:AbstractFloat}) where {T <: AbstractFloat}
+        x::AbstractArray{<:AbstractFloat}) where {T <: AbstractFloat}
     return convert(AbstractArray{T}, x)
 end
 
 function Adapt.adapt_storage(::LuxEltypeAdaptor{T},
-    x::AbstractArray{<:Complex{<:AbstractFloat}}) where {T <: AbstractFloat}
+        x::AbstractArray{<:Complex{<:AbstractFloat}}) where {T <: AbstractFloat}
     return convert(AbstractArray{Complex{T}}, x)
 end
 

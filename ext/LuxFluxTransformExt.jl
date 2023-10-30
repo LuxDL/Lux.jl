@@ -261,8 +261,8 @@ function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::
 end
 
 function transform(l::Flux.BatchNorm;
-    preserve_ps_st::Bool=false,
-    force_preserve::Bool=false)
+        preserve_ps_st::Bool=false,
+        force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
@@ -280,8 +280,8 @@ function transform(l::Flux.BatchNorm;
 end
 
 function transform(l::Flux.GroupNorm;
-    preserve_ps_st::Bool=false,
-    force_preserve::Bool=false)
+        preserve_ps_st::Bool=false,
+        force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)

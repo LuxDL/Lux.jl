@@ -77,7 +77,7 @@ end
 # Now we need to define the behavior of the Classifier when it is invoked.
 
 function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
-    st::NamedTuple) where {T}
+        st::NamedTuple) where {T}
     ## First we will have to run the sequence through the LSTM Cell
     ## The first call to LSTM Cell will create the initial hidden state
     ## See that the parameters and states are automatically populated into a field called

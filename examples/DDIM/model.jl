@@ -5,9 +5,9 @@ using Lux, Random, LuxCUDA, LuxAMDGPU, Setfield
 
 # Embed noise variances to embedding
 function sinusoidal_embedding(x::AbstractArray{T, 4},
-    min_freq::T,
-    max_freq::T,
-    embedding_dims::Int) where {T <: AbstractFloat}
+        min_freq::T,
+        max_freq::T,
+        embedding_dims::Int) where {T <: AbstractFloat}
     if size(x)[1:3] != (1, 1, 1)
         throw(DimensionMismatch("Input shape must be (1, 1, 1, batch)"))
     end
@@ -70,8 +70,8 @@ function DownBlock(in_channels::Int, out_channels::Int, block_depth::Int)
 end
 
 function (db::DownBlock)(x::AbstractArray{T, 4},
-    ps,
-    st::NamedTuple) where {T <: AbstractFloat}
+        ps,
+        st::NamedTuple) where {T <: AbstractFloat}
     skips = () # accumulate intermediate outputs
     for i in 1:length(db.residual_blocks)
         layer_name = Symbol(:layer_, i)
@@ -105,8 +105,8 @@ function UpBlock(in_channels::Int, out_channels::Int, block_depth::Int)
 end
 
 function (up::UpBlock)(x::Tuple{AbstractArray{T, 4}, NTuple{N, AbstractArray{T, 4}}},
-    ps,
-    st::NamedTuple) where {T <: AbstractFloat, N}
+        ps,
+        st::NamedTuple) where {T <: AbstractFloat, N}
     x, skips = x
     x, _ = up.upsample(x, ps.upsample, st.upsample)
     for i in 1:length(up.residual_blocks)
@@ -139,11 +139,11 @@ struct UNet <: Lux.AbstractExplicitContainerLayer{(:upsample,
 end
 
 function UNet(image_size::Tuple{Int, Int};
-    channels=[32, 64, 96, 128],
-    block_depth=2,
-    min_freq=1.0f0,
-    max_freq=1000.0f0,
-    embedding_dims=32)
+        channels=[32, 64, 96, 128],
+        block_depth=2,
+        min_freq=1.0f0,
+        max_freq=1000.0f0,
+        embedding_dims=32)
     upsample = Upsample(:nearest; size=image_size)
     conv_in = Conv((1, 1), 3 => channels[1])
     conv_out = Conv((1, 1), channels[1] => 3; init_weight=Lux.zeros32)
@@ -181,8 +181,8 @@ function UNet(image_size::Tuple{Int, Int};
 end
 
 function (unet::UNet)(x::Tuple{AbstractArray{T, 4}, AbstractArray{T, 4}},
-    ps,
-    st::NamedTuple) where {T <: AbstractFloat}
+        ps,
+        st::NamedTuple) where {T <: AbstractFloat}
     noisy_images, noise_variances = x
     @assert size(noise_variances)[1:3] == (1, 1, 1)
     @assert size(noisy_images, 4) == size(noise_variances, 4)
@@ -240,13 +240,13 @@ struct DenoisingDiffusionImplicitModel{T <: AbstractFloat} <:
 end
 
 function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
-    channels=[32, 64, 96, 128],
-    block_depth=2,
-    min_freq=1.0f0,
-    max_freq=1000.0f0,
-    embedding_dims=32,
-    min_signal_rate=0.02f0,
-    max_signal_rate=0.95f0)
+        channels=[32, 64, 96, 128],
+        block_depth=2,
+        min_freq=1.0f0,
+        max_freq=1000.0f0,
+        embedding_dims=32,
+        min_signal_rate=0.02f0,
+        max_signal_rate=0.95f0)
     unet = UNet(image_size;
         channels=channels,
         block_depth=block_depth,
@@ -262,11 +262,11 @@ function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
 end
 
 function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{
-        AbstractArray{T, 4},
-        AbstractRNG,
-    },
-    ps,
-    st::NamedTuple) where {T <: AbstractFloat}
+            AbstractArray{T, 4},
+            AbstractRNG,
+        },
+        ps,
+        st::NamedTuple) where {T <: AbstractFloat}
     images, rng = x
     images, new_st = ddim.batchnorm(images, ps.batchnorm, st.batchnorm)
     @set! st.batchnorm = new_st
@@ -295,8 +295,8 @@ end
 # Generates noise with variable magnitude depending on time.
 # Noise is at minimum at t=0, and maximum at t=1.
 function diffusion_schedules(diffusion_times::AbstractArray{T, 4},
-    min_signal_rate::T,
-    max_signal_rate::T) where {T <: AbstractFloat}
+        min_signal_rate::T,
+        max_signal_rate::T) where {T <: AbstractFloat}
     start_angle = acos(max_signal_rate)
     end_angle = acos(min_signal_rate)
 
@@ -310,11 +310,11 @@ function diffusion_schedules(diffusion_times::AbstractArray{T, 4},
 end
 
 function denoise(ddim::DenoisingDiffusionImplicitModel{T},
-    noisy_images::AbstractArray{T, 4},
-    noise_rates::AbstractArray{T, 4},
-    signal_rates::AbstractArray{T, 4},
-    ps,
-    st::NamedTuple) where {T <: AbstractFloat}
+        noisy_images::AbstractArray{T, 4},
+        noise_rates::AbstractArray{T, 4},
+        signal_rates::AbstractArray{T, 4},
+        ps,
+        st::NamedTuple) where {T <: AbstractFloat}
     pred_noises, new_st = ddim.unet((noisy_images, noise_rates .^ 2), ps.unet, st.unet)
     @set! st.unet = new_st
 
@@ -324,11 +324,11 @@ function denoise(ddim::DenoisingDiffusionImplicitModel{T},
 end
 
 function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
-    initial_noise::AbstractArray{T, 4},
-    diffusion_steps::Int,
-    ps,
-    st::NamedTuple;
-    save_each_step=false) where {T <: AbstractFloat}
+        initial_noise::AbstractArray{T, 4},
+        diffusion_steps::Int,
+        ps,
+        st::NamedTuple;
+        save_each_step=false) where {T <: AbstractFloat}
     dev = gpu_device()
     num_images = size(initial_noise, 4)
     step_size = convert(T, 1.0) / diffusion_steps
@@ -374,8 +374,8 @@ function reverse_diffusion(ddim::DenoisingDiffusionImplicitModel{T},
 end
 
 function denormalize(ddim::DenoisingDiffusionImplicitModel{T},
-    x::AbstractArray{T, 4},
-    st) where {T <: AbstractFloat}
+        x::AbstractArray{T, 4},
+        st) where {T <: AbstractFloat}
     mean = reshape(st.running_mean, 1, 1, 3, 1)
     var = reshape(st.running_var, 1, 1, 3, 1)
     std = sqrt.(var .+ ddim.batchnorm.epsilon)
@@ -383,12 +383,12 @@ function denormalize(ddim::DenoisingDiffusionImplicitModel{T},
 end
 
 function generate(ddim::DenoisingDiffusionImplicitModel{T},
-    rng::AbstractRNG,
-    image_shape::Tuple{Int, Int, Int, Int},
-    diffusion_steps::Int,
-    ps,
-    st::NamedTuple;
-    save_each_step=false) where {T}
+        rng::AbstractRNG,
+        image_shape::Tuple{Int, Int, Int, Int},
+        diffusion_steps::Int,
+        ps,
+        st::NamedTuple;
+        save_each_step=false) where {T}
     dev = gpu_device()
     initial_noise = randn(rng, T, image_shape...) |> dev
     generated_images, images_each_step = reverse_diffusion(ddim,

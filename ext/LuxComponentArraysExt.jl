@@ -5,7 +5,7 @@ import TruncatedStacktraces: @truncate_stacktrace
 import ChainRulesCore as CRC
 
 @generated function Lux._getproperty(x::ComponentArray{T, N, A, Tuple{Ax}},
-    ::Val{v}) where {v, T, N, A, Ax <: ComponentArrays.AbstractAxis}
+        ::Val{v}) where {v, T, N, A, Ax <: ComponentArrays.AbstractAxis}
     names = propertynames(ComponentArrays.indexmap(Ax))
     # PkgExtCompat: Messes up code generation for :(x.$v) --> x.$v
     if v ∈ names

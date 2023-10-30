@@ -56,13 +56,13 @@ function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
 end
 
 function initialparameters(rng::AbstractRNG,
-    l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
+        l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
     return (layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection))
 end
 
 function initialstates(rng::AbstractRNG,
-    l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
+        l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
     return (layers=initialstates(rng, l.layers),
         connection=initialstates(rng, l.connection))
 end
@@ -73,7 +73,7 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
 end
 
 function (skip::SkipConnection{N, <:AbstractExplicitLayer, <:AbstractExplicitLayer})(x, ps,
-    st::NamedTuple) where {N}
+        st::NamedTuple) where {N}
     mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
     return y, (layers=st1, connection=st2)
@@ -143,7 +143,7 @@ end
 (m::Parallel)(x, ps, st::NamedTuple) = applyparallel(m.layers, m.connection, x, ps, st)
 
 @generated function applyparallel(layers::NamedTuple{names}, connection::C, x::T, ps,
-    st::NamedTuple) where {names, C, T}
+        st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
@@ -240,7 +240,7 @@ function (m::BranchLayer)(x, ps, st::NamedTuple)
 end
 
 @generated function applybranching(layers::NamedTuple{names}, x, ps,
-    st::NamedTuple) where {names}
+        st::NamedTuple) where {names}
     N = length(names)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
@@ -338,7 +338,7 @@ function (m::PairwiseFusion)(x, ps, st::NamedTuple)
 end
 
 @generated function applypairwisefusion(layers::NamedTuple{names}, connection::C, x::T, ps,
-    st::NamedTuple) where {names, C, T}
+        st::NamedTuple) where {names, C, T}
     N = length(names)
     y_symbols = [gensym() for _ in 1:(N + 1)]
     st_symbols = [gensym() for _ in 1:N]
@@ -478,7 +478,7 @@ _flatten_model(x) = x
 (c::Chain)(x, ps, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
 @generated function applychain(layers::NamedTuple{fields}, x, ps,
-    st::NamedTuple{fields}) where {fields}
+        st::NamedTuple{fields}) where {fields}
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
@@ -561,7 +561,7 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
 (m::Maxout)(x, ps, st::NamedTuple) = applymaxout(m.layers, x, ps, st)
 
 @generated function applymaxout(layers::NamedTuple{fields}, x, ps,
-    st::NamedTuple{fields}) where {fields}
+        st::NamedTuple{fields}) where {fields}
     N = length(fields)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]

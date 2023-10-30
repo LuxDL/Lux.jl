@@ -95,8 +95,8 @@ See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 end
 
 function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=ones32,
-    affine::Bool=true, track_stats::Bool=true, epsilon=1.0f-5, momentum=0.1f0,
-    allow_fast_activation::Bool=true)
+        affine::Bool=true, track_stats::Bool=true, epsilon=1.0f-5, momentum=0.1f0,
+        allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return BatchNorm{affine, track_stats}(activation, epsilon, momentum, chs, init_bias,
         init_scale)
@@ -221,7 +221,7 @@ See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 end
 
 function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-    init_scale=ones32, affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
+        init_scale=ones32, affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
     @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
@@ -328,7 +328,7 @@ See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`Weight
 end
 
 function InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32,
-    init_scale=ones32, affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
+        init_scale=ones32, affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return InstanceNorm{affine}(activation, epsilon, chs, init_bias, init_scale)
 end
@@ -404,21 +404,21 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
 end
 
 function WeightNorm(layer::AbstractExplicitLayer,
-    which_params::NTuple{N, Symbol},
-    dims::Union{Tuple, Nothing}=nothing) where {N}
+        which_params::NTuple{N, Symbol},
+        dims::Union{Tuple, Nothing}=nothing) where {N}
     return WeightNorm{which_params}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
 @inline function _norm_except(x::AbstractArray{T, N};
-    dims::Union{Int, Tuple}=N) where {T, N}
+        dims::Union{Int, Tuple}=N) where {T, N}
     return _norm(x; dims=_get_norm_except_dims(N, dims))
 end
 @inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
 @inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
 
 function initialparameters(rng::AbstractRNG,
-    wn::WeightNorm{which_params}) where {which_params}
+        wn::WeightNorm{which_params}) where {which_params}
     ps_layer = initialparameters(rng, wn.layer)
     ps_normalized = []
     ps_unnormalized = []
@@ -451,7 +451,7 @@ function (wn::WeightNorm)(x, ps, st::NamedTuple)
 end
 
 @inbounds @generated function _get_normalized_parameters(::WeightNorm{which_params},
-    dims::T, ps) where {T, which_params}
+        dims::T, ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
     g_parameter_names = Symbol.(parameter_names .* "_g")
@@ -552,8 +552,8 @@ whether your assumptions about the default (if made) were invalid.
 end
 
 function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f-5,
-    dims=Colon(), affine::Bool=true, init_bias=zeros32, init_scale=ones32,
-    allow_fast_activation::Bool=true) where {N, T}
+        dims=Colon(), affine::Bool=true, init_bias=zeros32, init_scale=ones32,
+        allow_fast_activation::Bool=true) where {N, T}
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return LayerNorm{affine, N}(shape, activation, epsilon, init_bias, init_scale, dims)
 end

@@ -269,7 +269,7 @@ function __try_make_lux_layer(x)
 end
 
 function CompactLuxLayer(f::Function, name::NAME_TYPE, str::Tuple, setup_str::NamedTuple;
-    kws...)
+        kws...)
     layers, others = [], []
     for (name, val) in pairs(kws)
         if val isa AbstractExplicitLayer

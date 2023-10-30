@@ -178,7 +178,7 @@ function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; kwargs...)
 end
 
 function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
-    init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
+        init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Dense{use_bias}(activation, in_dims, out_dims, init_weight, init_bias)
 end
@@ -271,8 +271,8 @@ function Base.show(io::IO, d::Scale)
 end
 
 function Scale(dims::Tuple{Vararg{Integer}}, activation=identity;
-    init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
-    allow_fast_activation::Bool=true)
+        init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
+        allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Scale{use_bias}(activation, dims, init_weight, init_bias)
 end
@@ -372,13 +372,14 @@ function Base.show(io::IO, b::Bilinear{use_bias}) where {use_bias}
 end
 
 function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:Integer},
-    activation=identity; init_weight=glorot_uniform, init_bias=zeros32, use_bias::Bool=true,
-    allow_fast_activation::Bool=true)
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+        use_bias::Bool=true,
+        allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Bilinear{use_bias}(activation, in1_dims, in2_dims, out, init_weight, init_bias)
 end
 function Bilinear((in12_dims, out)::Pair{<:Integer, <:Integer}, activation=identity;
-    kwargs...)
+        kwargs...)
     return Bilinear((in12_dims, in12_dims) => out, activation; kwargs...)
 end
 
@@ -397,7 +398,7 @@ end
 statelength(b::Bilinear) = 0
 
 function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat}, ps,
-    st::NamedTuple) where {use_bias}
+        st::NamedTuple) where {use_bias}
     d_z, d_x, d_y = size(ps.weight)
     if d_x != size(x, 1) || d_y != size(y, 1)
         throw(DimensionMismatch("number of rows in data must match `ps.weight`"))

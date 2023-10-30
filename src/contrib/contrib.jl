@@ -22,7 +22,7 @@ end
 # Chain Rules for Certain Layers
 ## Only needed when the parameters are `nothing`
 function CRC.rrule(::Type{<:Experimental.StatefulLuxLayer},
-    model::AbstractExplicitLayer, ::Nothing, st)
+        model::AbstractExplicitLayer, ::Nothing, st)
     slayer = Experimental.StatefulLuxLayer(model, nothing, st)
     function ∇StatefulLuxLayer(Δ::Union{CRC.ZeroTangent, CRC.NoTangent})
         return (NoTangent(), NoTangent(), NoTangent(), NoTangent())
