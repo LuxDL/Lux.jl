@@ -107,7 +107,7 @@ struct GradientComputationSkipped end
 end
 
 function check_approx(x::LuxCore.AbstractExplicitLayer, y::LuxCore.AbstractExplicitLayer;
-    kwargs...)
+        kwargs...)
     return x == y
 end
 check_approx(x::Tuple, y::Tuple; kwargs...) = all(check_approx.(x, y; kwargs...))
@@ -118,7 +118,7 @@ function check_approx(x::Optimisers.Leaf, y::Optimisers.Leaf; kwargs...)
 end
 
 function check_approx(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
-    kwargs...) where {fields}
+        kwargs...) where {fields}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
     _check_approx(t::Tuple{Nothing, Nothing}) = true
     return all(_check_approx, zip(values(nt1), values(nt2)))
@@ -224,29 +224,29 @@ macro test_gradients(all_args...)
 end
 
 function test_gradients_expr(__module__, __source__, f, args...;
-    gpu_testing::Bool=false,
-    soft_fail::Bool=false,
-    # Skip Gradient Computation
-    skip_finite_differences::Bool=false,
-    skip_forward_diff::Bool=false,
-    skip_zygote::Bool=false,
-    skip_tracker::Bool=false,
-    skip_reverse_diff::Bool=false,
-    # Skip Large Arrays
-    large_arrays_skip_finite_differences::Bool=true,
-    large_arrays_skip_forward_diff::Bool=true,
-    large_array_length::Int=25,
-    max_total_array_size::Int=100,
-    # Broken Tests
-    finite_differences_broken::Bool=false,
-    tracker_broken::Bool=false,
-    reverse_diff_broken::Bool=false,
-    forward_diff_broken::Bool=false,
-    # Others passed to `check_approx`
-    atol::Real=0.0,
-    rtol::Real=atol > 0 ? 0.0 : √eps(typeof(atol)),
-    nans::Bool=false,
-    kwargs...)
+        gpu_testing::Bool=false,
+        soft_fail::Bool=false,
+        # Skip Gradient Computation
+        skip_finite_differences::Bool=false,
+        skip_forward_diff::Bool=false,
+        skip_zygote::Bool=false,
+        skip_tracker::Bool=false,
+        skip_reverse_diff::Bool=false,
+        # Skip Large Arrays
+        large_arrays_skip_finite_differences::Bool=true,
+        large_arrays_skip_forward_diff::Bool=true,
+        large_array_length::Int=25,
+        max_total_array_size::Int=100,
+        # Broken Tests
+        finite_differences_broken::Bool=false,
+        tracker_broken::Bool=false,
+        reverse_diff_broken::Bool=false,
+        forward_diff_broken::Bool=false,
+        # Others passed to `check_approx`
+        atol::Real=0.0,
+        rtol::Real=atol > 0 ? 0.0 : √eps(typeof(atol)),
+        nans::Bool=false,
+        kwargs...)
     orig_exprs = map(x -> QuoteNode(Expr(:macrocall,
             GlobalRef(@__MODULE__, Symbol("@test_gradients{$x}")), __source__, f, args...)),
         ("Tracker", "ReverseDiff", "ForwardDiff", "FiniteDifferences"))
@@ -304,7 +304,7 @@ function test_gradients_expr(__module__, __source__, f, args...;
 end
 
 function __test_gradient_pair_check(__source__, orig_expr, v1, v2, name1, name2;
-    broken::Bool=false, soft_fail::Bool=false, kwargs...)
+        broken::Bool=false, soft_fail::Bool=false, kwargs...)
     match = check_approx(v1, v2; kwargs...)
     test_type = Symbol("@test_gradients{$name1, $name2}")
 
