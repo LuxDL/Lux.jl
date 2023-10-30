@@ -29,15 +29,15 @@ function batchnorm_cudnn(γ::Nothing, β::Nothing, x::DenseCuArray, args...; kwa
 end
 
 function batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
-    args...; kwargs...) where {T <: FP_32_64}
+        args...; kwargs...) where {T <: FP_32_64}
     x = reshape(x, 1, 1, size(x, 1), size(x, 2))
     y, xμ, xσ⁻² = batchnorm_cudnn(g, b, x, args...; kwargs...)
     return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
 end
 
 function batchnorm_cudnn(g::DenseCuArray{T₁}, b::DenseCuArray{T₂},
-    x::Union{DenseCuArray{T₃, 4}, DenseCuArray{T₄, 5}}, running_μ, running_σ², args...;
-    kwargs...) where {T₁ <: FP_32_64, T₂ <: FP_32_64, T₃ <: FP_32_64, T₄ <: FP_32_64}
+        x::Union{DenseCuArray{T₃, 4}, DenseCuArray{T₄, 5}}, running_μ, running_σ², args...;
+        kwargs...) where {T₁ <: FP_32_64, T₂ <: FP_32_64, T₃ <: FP_32_64, T₄ <: FP_32_64}
     @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the
         highest precision type. Avoid this code-path if possible" maxlog=1
     Tₓ = eltype(x)
@@ -57,14 +57,14 @@ function batchnorm_cudnn(g::DenseCuArray{T₁}, b::DenseCuArray{T₂},
 end
 
 function batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
-    x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, running_μ, running_σ², args...;
-    kwargs...) where {T <: FP_32_64}
+        x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, running_μ, running_σ², args...;
+        kwargs...) where {T <: FP_32_64}
     return batchnorm_cudnn!(similar(x), g, b, x, running_μ, running_σ², args...; kwargs...)
 end
 
 function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArray{T},
-    x::DenseCuArray{T}, running_μ, running_σ², momentum, ::Val{training};
-    α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: FP_32_64, training}
+        x::DenseCuArray{T}, running_μ, running_σ², momentum, ::Val{training};
+        α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: FP_32_64, training}
     dims = _wsize(x)
     if ϵ < CUDNN_BN_MIN_EPSILON
         @warn "eps $eps is too small for CuDNN, setting to CUDNN_BN_MIN_EPSILON=$CUDNN_BN_MIN_EPSILON"
@@ -102,7 +102,7 @@ function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArra
 end
 
 function ∇batchnorm_cudnn(g::Nothing, b::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
-    running_μ, running_σ², args...; kwargs...)
+        running_μ, running_σ², args...; kwargs...)
     affine_sz = _wsize(x)
     g = fill!(similar(x, affine_sz), 1)
     b = fill!(similar(x, affine_sz), 0)
@@ -118,7 +118,8 @@ function ∇batchnorm_cudnn(g::Nothing, b::Nothing, x::DenseCuArray, ∂y::Dense
 end
 
 function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
-    ∂y::DenseCuArray{T, 2}, running_μ, running_σ², args...; kwargs...) where {T <: FP_32_64}
+        ∂y::DenseCuArray{T, 2}, running_μ, running_σ², args...;
+        kwargs...) where {T <: FP_32_64}
     ∂g, ∂b, ∂x = ∇batchnorm_cudnn(g, b, reshape(x, 1, 1, size(x, 1), size(x, 2)),
         reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)), running_μ, running_σ², args...;
         kwargs...)
@@ -126,8 +127,8 @@ function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuAr
 end
 
 function ∇batchnorm_cudnn(g::DenseCuArray{T₁}, b::DenseCuArray{T₂},
-    x::DenseCuArray{Tₓ}, ∂y::DenseCuArray{T₅}, running_μ, running_σ², args...;
-    kwargs...) where {T₁ <: FP_32_64, T₂ <: FP_32_64, Tₓ <: FP_32_64, T₅ <: FP_32_64}
+        x::DenseCuArray{Tₓ}, ∂y::DenseCuArray{T₅}, running_μ, running_σ², args...;
+        kwargs...) where {T₁ <: FP_32_64, T₂ <: FP_32_64, Tₓ <: FP_32_64, T₅ <: FP_32_64}
     @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the
         highest precision type. Avoid this code-path if possible" maxlog=1
     Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
@@ -148,7 +149,8 @@ function ∇batchnorm_cudnn(g::DenseCuArray{T₁}, b::DenseCuArray{T₂},
 end
 
 function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T},
-    ∂y::DenseCuArray{T}, running_μ, running_σ², args...; kwargs...) where {T <: FP_32_64}
+        ∂y::DenseCuArray{T}, running_μ, running_σ², args...;
+        kwargs...) where {T <: FP_32_64}
     ∂g = similar(g)
     ∂b = similar(b)
     ∂x = similar(x)
@@ -157,8 +159,8 @@ function ∇batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuAr
 end
 
 function cudnnBNBackward!(∂g::DenseCuArray{T}, g::DenseCuArray{T}, ∂b::DenseCuArray{T},
-    ∂x::DenseCuArray{T}, x::DenseCuArray{T}, ∂y::DenseCuArray{T}, running_μ, running_σ²,
-    xmean, xivar; α=T(1), β=T(0), ϵ=T(1e-5), ∂α=T(1), ∂β=T(0)) where {T <: FP_32_64}
+        ∂x::DenseCuArray{T}, x::DenseCuArray{T}, ∂y::DenseCuArray{T}, running_μ, running_σ²,
+        xmean, xivar; α=T(1), β=T(0), ϵ=T(1e-5), ∂α=T(1), ∂β=T(0)) where {T <: FP_32_64}
     if running_μ === nothing && running_σ² === nothing
         running_μ = CU_NULL
         running_σ² = CU_NULL

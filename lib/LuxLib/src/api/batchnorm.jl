@@ -39,7 +39,7 @@ fallback is used which is not highly optimized.
     learning. PMLR, 2015.
 """
 function batchnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::NOrAVR,
-    running_var::NOrAVR; momentum::Real, training::Val, epsilon::Real) where {N}
+        running_var::NOrAVR; momentum::Real, training::Val, epsilon::Real) where {N}
     x_, xm, xv = _normalization(x, _drop_forwarddiff_partials(running_mean),
         _drop_forwarddiff_partials(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon)

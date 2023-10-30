@@ -1,7 +1,7 @@
 # Generic Normalization Implementation
 function _update_normalization_statistics(x::AA{<:Real, N}, running_mean::AA{<:Real, N},
-    running_var::AA{<:Real, N}, batchmean::AA{<:Real, N}, batchvar::AA{<:Real, N},
-    momentum::Real, ::Val{reduce_dims}) where {N, reduce_dims}
+        running_var::AA{<:Real, N}, batchmean::AA{<:Real, N}, batchvar::AA{<:Real, N},
+        momentum::Real, ::Val{reduce_dims}) where {N, reduce_dims}
     m = eltype(x)(prod(Base.Fix1(size, x), reduce_dims))
     m_ = m / (m - one(m))
     if last(reduce_dims) != N
@@ -14,8 +14,8 @@ function _update_normalization_statistics(x::AA{<:Real, N}, running_mean::AA{<:R
 end
 
 @generated function _get_batch_statistics(x::AA, running_mean::R, running_var::R,
-    r::Val{rdims}, ::Val{training},
-    momentum::Union{Real, Nothing}) where {R, rdims, training}
+        r::Val{rdims}, ::Val{training},
+        momentum::Union{Real, Nothing}) where {R, rdims, training}
     calls = []
     if !training
         if R == Nothing
@@ -40,7 +40,7 @@ end
 end
 
 @generated function _affine_normalize(x::AA, xmean::ST, xvar::ST, scale::A,
-    bias::A, epsilon::Real) where {ST, A}
+        bias::A, epsilon::Real) where {ST, A}
     if A != Nothing
         return quote
             x_norm = (x .- xmean) ./ sqrt.(xvar .+ epsilon)
@@ -52,8 +52,8 @@ end
 end
 
 function _normalization_impl(x::AA, running_mean::R, running_var::R, scale::A,
-    bias::A, r::Val{reduce_dims}, training::Val, momentum::Union{Real, Nothing},
-    epsilon::Real) where {R, A, reduce_dims}
+        bias::A, r::Val{reduce_dims}, training::Val, momentum::Union{Real, Nothing},
+        epsilon::Real) where {R, A, reduce_dims}
     _stats = _get_batch_statistics(x, running_mean, running_var, r, training, momentum)
     (batchmean, batchvar), (running_mean, running_var) = _stats
     x_norm = _affine_normalize(x, batchmean, batchvar, scale, bias, epsilon)
@@ -61,8 +61,8 @@ function _normalization_impl(x::AA, running_mean::R, running_var::R, scale::A,
 end
 
 function _normalization(x::AA, running_mean::NOrAVR, running_var::NOrAVR, scale::NOrAVR,
-    bias::NOrAVR, reduce_dims::Val, training::Val, momentum::Union{Real, Nothing},
-    epsilon::Real)
+        bias::NOrAVR, reduce_dims::Val, training::Val, momentum::Union{Real, Nothing},
+        epsilon::Real)
     rm_ = _reshape_into_proper_shape(running_mean, x)
     rv_ = _reshape_into_proper_shape(running_var, x)
     s_ = _reshape_into_proper_shape(scale, x)
