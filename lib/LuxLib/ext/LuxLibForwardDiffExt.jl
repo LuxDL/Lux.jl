@@ -16,7 +16,7 @@ for op in [:conv, :depthwiseconv]
     op! = Symbol("$(op)!")
 
     @eval function NNlib.$(op)(x::AA{<:Dual{Tag, V, P}, N},
-        w::AA{<:Real, N}, cdims::ConvDims; kwargs...) where {N, Tag, V, P}
+            w::AA{<:Real, N}, cdims::ConvDims; kwargs...) where {N, Tag, V, P}
         x_ = ForwardDiff.value.(x)
 
         y = $(op)(x_, w, cdims; kwargs...)
@@ -27,7 +27,7 @@ for op in [:conv, :depthwiseconv]
     end
 
     @eval function NNlib.$(op)(x::AA{<:Real, N}, w::AA{<:Dual{Tag, V, P}, N},
-        cdims::ConvDims; kwargs...) where {N, Tag, V, P}
+            cdims::ConvDims; kwargs...) where {N, Tag, V, P}
         w_ = ForwardDiff.value.(w)
 
         y = $(op)(x, w_, cdims; kwargs...)
@@ -38,7 +38,8 @@ for op in [:conv, :depthwiseconv]
     end
 
     @eval function NNlib.$(op)(x::AA{<:Dual{Tag, Vₓ, P}, N},
-        w::AA{<:Dual{Tag, Vₚ, P}, N}, cdims::ConvDims; kwargs...) where {N, Tag, Vₓ, Vₚ, P}
+            w::AA{<:Dual{Tag, Vₚ, P}, N}, cdims::ConvDims;
+            kwargs...) where {N, Tag, Vₓ, Vₚ, P}
         x_ = ForwardDiff.value.(x)
         w_ = ForwardDiff.value.(w)
 

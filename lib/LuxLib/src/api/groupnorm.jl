@@ -42,7 +42,7 @@ interface.
     on computer vision (ECCV). 2018.
 """
 function groupnorm(x::AA{<:FP_32_64, 4}, scale::AV{<:FP_32_64}, bias::AV{<:FP_32_64};
-    groups::Int, epsilon::Real)
+        groups::Int, epsilon::Real)
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -56,7 +56,7 @@ end
 
 # Slow Fallback (without custom Pullback Implementation)
 function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; groups::Int,
-    epsilon::Real) where {N}
+        epsilon::Real) where {N}
     _assert_same_backend(x, scale, bias)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
@@ -79,7 +79,7 @@ end
 
 # Custom Pullbacks
 function CRC.rrule(::typeof(groupnorm), x::AA{<:FP_32_64, 4}, scale::AV{<:FP_32_64},
-    bias::AV{<:FP_32_64}; groups::Int, epsilon::Real)
+        bias::AV{<:FP_32_64}; groups::Int, epsilon::Real)
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))

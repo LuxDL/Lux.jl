@@ -5,7 +5,7 @@ _linear_threads_groupnorm(::GPU) = 256
 # Low-Level Kernels
 ## Original Implementation: https://github.com/pytorch/pytorch/blob/master/caffe2/operators/group_norm_op.cu
 @kernel function _compute_fused_params_kernel!(scale, bias, @Const(C), @Const(K), @Const(μ),
-    @Const(σ⁻¹), @Const(γ), @Const(β))
+        @Const(σ⁻¹), @Const(γ), @Const(β))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
@@ -16,14 +16,14 @@ _linear_threads_groupnorm(::GPU) = 256
 end
 
 @kernel function _groupnorm_forward_kernel!(Y, @Const(WxH), @Const(X), @Const(scale),
-    @Const(bias))
+        @Const(bias))
     idx = @index(Global)
     nc = _div_idx(idx, WxH)
     @inbounds Y[idx] = X[idx] * scale[nc] + bias[nc]
 end
 
 @kernel function _groupnorm_dy_dscale_kernel!(dY_dscale, @Const(C), @Const(K), @Const(σ⁻¹),
-    @Const(γ))
+        @Const(γ))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
@@ -32,7 +32,7 @@ end
 end
 
 @kernel function _groupnorm_xscale_and_bias_kernel!(X_scale, bias, @Const(alpha), @Const(μ),
-    @Const(σ⁻¹), @Const(ds_sum), @Const(db_sum))
+        @Const(σ⁻¹), @Const(ds_sum), @Const(db_sum))
     idx = @index(Global)
     @inbounds x = (db_sum[idx] * μ[idx] - ds_sum[idx]) * (σ⁻¹[idx]^3) * alpha
     @inbounds X_scale[idx] = x
@@ -40,7 +40,7 @@ end
 end
 
 @kernel function _groupnorm_dx_kernel!(dX, @Const(WxH), @Const(K), @Const(dY_dscale),
-    @Const(dY), @Const(X_scale), @Const(X), @Const(bias))
+        @Const(dY), @Const(X_scale), @Const(X), @Const(bias))
     idx = @index(Global)
     nc = _div_idx(idx, WxH)
     ng = _div_idx(nc, K)
@@ -77,7 +77,7 @@ end
 end
 
 @inbounds function _∇groupnorm(dY::AA4D, Y::AA4D, X::AA4D, G::Int, γ::AV, β::AV, μ::AA5D,
-    σ⁻¹::AA5D)
+        σ⁻¹::AA5D)
     W, H, C, N = size(X)
     K = div(C, G)
     WxH = W * H

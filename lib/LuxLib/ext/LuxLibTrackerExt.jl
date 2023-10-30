@@ -78,13 +78,13 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedVector, :AbstractVecto
     __is_tracked(T1, T2, T3) || continue
 
     @eval function LuxLib.groupnorm(x::$T1{<:FP_32_64, 4}, scale::$T2{<:FP_32_64},
-        bias::$T3{<:FP_32_64}; groups::Int, epsilon::Real)
+            bias::$T3{<:FP_32_64}; groups::Int, epsilon::Real)
         return track(LuxLib.groupnorm, x, scale, bias; groups, epsilon)
     end
 end
 
 @grad function LuxLib.groupnorm(x::AA{<:FP_32_64, 4}, scale::AV{<:FP_32_64},
-    bias::AV{<:FP_32_64}; groups::Int, epsilon::Real)
+        bias::AV{<:FP_32_64}; groups::Int, epsilon::Real)
     LuxLib._assert_same_backend(data(x), data(scale), data(bias))
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))

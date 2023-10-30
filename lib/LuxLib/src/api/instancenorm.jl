@@ -29,7 +29,7 @@ mean and variance.
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
 function instancenorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; training::Val,
-    epsilon::Real) where {N}
+        epsilon::Real) where {N}
     _test_valid_instancenorm_arguments(x)
 
     x_, xm, xv = _normalization(x, nothing, nothing, scale, bias,
