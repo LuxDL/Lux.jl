@@ -245,7 +245,7 @@ struct LuxAMDGPUAdaptor <: AbstractLuxDeviceAdaptor end
 struct LuxMetalAdaptor <: AbstractLuxDeviceAdaptor end
 
 function adapt_storage(::LuxCPUAdaptor,
-    x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
+        x::Union{AbstractRange, SparseArrays.AbstractSparseArray})
     return x
 end
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
