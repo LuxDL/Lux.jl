@@ -64,7 +64,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
 ## Examples
 
-Look in the [examples](/examples/) directory for self-contained usage examples. The [documentation](https://lux.csail.mit.edu/dev) has examples sorted into proper categories.
+Look in the [examples](/examples/) directory for self-contained usage examples. The [documentation](https://lux.csail.mit.edu) has examples sorted into proper categories.
 
 ## Ecosystem
 
