@@ -2,6 +2,11 @@ using WeightInitializers, Test, SafeTestsets, Statistics
 using StableRNGs, Random, CUDA
 
 @testset "WeightInitializers.jl Tests" begin
+    rngs_arrtypes = [
+        (StableRNG(12345), Array), (Random.default_rng(), Array),
+        (CUDA.default_rng(), CuArray), (CURAND.default_rng(), CuArray),
+    ]
+
     @testset "_nfan" begin
         # Fallback
         @test WeightInitializers._nfan() == (1, 1)
@@ -14,9 +19,7 @@ using StableRNGs, Random, CUDA
         # Convolution
         @test WeightInitializers._nfan(4, 5, 6) == 4 .* (5, 6)
     end
-    @testset "rng = $(typeof(rng))" for rng in [StableRNG(12345), Random.default_rng(),
-        CUDA.default_rng(), CURAND.default_rng(),
-    ]
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
             kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal, truncated_normal,
         ]
@@ -32,31 +35,35 @@ using StableRNGs, Random, CUDA
             @test eltype(init(4, 2)) == Float32
             # RNG Closure
             cl = init(rng)
-            @test cl(3) isa AbstractArray{Float32, 1}
-            @test cl(3, 5) isa AbstractArray{Float32, 2}
+            @test cl(3) isa arrtype{Float32, 1} broken=(init == zeros32 ||
+                                                        init == ones32) && !(arrtype <:
+                                                         Array)
+            @test cl(3, 5) isa arrtype{Float32, 2} broken=(init == zeros32 ||
+                                                           init == ones32) && !(arrtype <:
+                                                            Array)
         end
 
         @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
                 glorot_uniform, glorot_normal, truncated_normal], T in (Float16, Float32,
                 Float64)
-            @test init(T, 3) isa AbstractArray{T, 1}
-            @test init(rng, T, 3) isa AbstractArray{T, 1} broken=T <: Float16 &&
-                                                                 rng isa CUDA.CURAND.RNG
-            @test init(T, 3, 5) isa AbstractArray{T, 2}
-            @test init(rng, T, 3, 5) isa AbstractArray{T, 2} broken=T <: Float16 &&
-                                                                    rng isa CUDA.CURAND.RNG
+            @test init(T, 3) isa Array{T, 1}
+            @test init(rng, T, 3) isa arrtype{T, 1} broken=T <: Float16 &&
+                                                           rng isa CUDA.CURAND.RNG
+            @test init(T, 3, 5) isa Array{T, 2}
+            @test init(rng, T, 3, 5) isa arrtype{T, 2} broken=T <: Float16 &&
+                                                              rng isa CUDA.CURAND.RNG
 
             cl = init(rng)
-            @test cl(T, 3) isa AbstractArray{T, 1} broken=T <: Float16 &&
-                                                          rng isa CUDA.CURAND.RNG
-            @test cl(T, 3, 5) isa AbstractArray{T, 2} broken=T <: Float16 &&
-                                                             rng isa CUDA.CURAND.RNG
+            @test cl(T, 3) isa arrtype{T, 1} broken=T <: Float16 &&
+                                                    rng isa CUDA.CURAND.RNG
+            @test cl(T, 3, 5) isa arrtype{T, 2} broken=T <: Float16 &&
+                                                       rng isa CUDA.CURAND.RNG
 
             cl = init(rng, T)
-            @test cl(3) isa AbstractArray{T, 1} broken=T <: Float16 &&
-                                                       rng isa CUDA.CURAND.RNG
-            @test cl(3, 5) isa AbstractArray{T, 2} broken=T <: Float16 &&
-                                                          rng isa CUDA.CURAND.RNG
+            @test cl(3) isa arrtype{T, 1} broken=T <: Float16 &&
+                                                 rng isa CUDA.CURAND.RNG
+            @test cl(3, 5) isa arrtype{T, 2} broken=T <: Float16 &&
+                                                    rng isa CUDA.CURAND.RNG
         end
 
         @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal,
