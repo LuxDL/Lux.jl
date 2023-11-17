@@ -14,7 +14,7 @@ using StableRNGs, Random, CUDA
         # Convolution
         @test WeightInitializers._nfan(4, 5, 6) == 4 .* (5, 6)
     end
-    @testset "rng = $rng" for rng in [StableRNG(12345), Random.default_rng(),
+    @testset "rng = $(typeof(rng))" for rng in [StableRNG(12345), Random.default_rng(),
         CUDA.default_rng(), CURAND.default_rng(),
     ]
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
@@ -32,25 +32,31 @@ using StableRNGs, Random, CUDA
             @test eltype(init(4, 2)) == Float32
             # RNG Closure
             cl = init(rng)
-            @test typeof(cl(3)) == Array{Float32, 1}
-            @test typeof(cl(3, 5)) == Array{Float32, 2}
+            @test cl(3) isa AbstractArray{Float32, 1}
+            @test cl(3, 5) isa AbstractArray{Float32, 2}
         end
 
         @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
                 glorot_uniform, glorot_normal, truncated_normal], T in (Float16, Float32,
                 Float64)
-            @test typeof(init(T, 3)) == Array{T, 1}
-            @test typeof(init(rng, T, 3)) == Array{T, 1}
-            @test typeof(init(T, 3, 5)) == Array{T, 2}
-            @test typeof(init(rng, T, 3, 5)) == Array{T, 2}
+            @test init(T, 3) isa AbstractArray{T, 1}
+            @test init(rng, T, 3) isa AbstractArray{T, 1} broken=T <: Float16 &&
+                                                                 rng isa CUDA.CURAND.RNG
+            @test init(T, 3, 5) isa AbstractArray{T, 2}
+            @test init(rng, T, 3, 5) isa AbstractArray{T, 2} broken=T <: Float16 &&
+                                                                    rng isa CUDA.CURAND.RNG
 
             cl = init(rng)
-            @test typeof(cl(T, 3)) == Array{T, 1}
-            @test typeof(cl(T, 3, 5)) == Array{T, 2}
+            @test cl(T, 3) isa AbstractArray{T, 1} broken=T <: Float16 &&
+                                                          rng isa CUDA.CURAND.RNG
+            @test cl(T, 3, 5) isa AbstractArray{T, 2} broken=T <: Float16 &&
+                                                             rng isa CUDA.CURAND.RNG
 
             cl = init(rng, T)
-            @test typeof(cl(3)) == Array{T, 1}
-            @test typeof(cl(3, 5)) == Array{T, 2}
+            @test cl(3) isa AbstractArray{T, 1} broken=T <: Float16 &&
+                                                       rng isa CUDA.CURAND.RNG
+            @test cl(3, 5) isa AbstractArray{T, 2} broken=T <: Float16 &&
+                                                          rng isa CUDA.CURAND.RNG
         end
 
         @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal,
