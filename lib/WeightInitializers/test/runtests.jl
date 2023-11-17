@@ -35,12 +35,8 @@ using StableRNGs, Random, CUDA
             @test eltype(init(4, 2)) == Float32
             # RNG Closure
             cl = init(rng)
-            @test cl(3) isa arrtype{Float32, 1} broken=(init == zeros32 ||
-                                                        init == ones32) && !(arrtype <:
-                                                         Array)
-            @test cl(3, 5) isa arrtype{Float32, 2} broken=(init == zeros32 ||
-                                                           init == ones32) && !(arrtype <:
-                                                            Array)
+            @test cl(3) isa arrtype{Float32, 1}
+            @test cl(3, 5) isa arrtype{Float32, 2}
         end
 
         @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
