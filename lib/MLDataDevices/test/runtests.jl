@@ -44,7 +44,7 @@ end
 
     if VERSION ≥ v"1.9"
         @testset "Aqua Tests" begin
-            Aqua.test_all(LuxDeviceUtils; piracy=false)
+            Aqua.test_all(LuxDeviceUtils; piracies=false)
         end
     end
 
