@@ -1,4 +1,4 @@
-module CUDAExtWI
+module WeightInitializersCUDAExt
 
 using WeightInitializers, CUDA
 

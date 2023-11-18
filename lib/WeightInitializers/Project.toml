@@ -13,7 +13,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [extensions]
-CUDAExtWI = "CUDA"
+WeightInitializersCUDAExt = "CUDA"
 
 [compat]
 PartialFunctions = "1"
