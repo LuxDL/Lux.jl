@@ -1,7 +1,7 @@
 using Aqua, ChainRulesCore, Lux, Test
 
 @testset "All Tests (except Ambiguity & Piracy)" begin
-    Aqua.test_all(Lux; ambiguities=false, piracy=false)
+    Aqua.test_all(Lux; ambiguities=false, piracies=false)
 end
 
 @testset "Ambiguity Tests" begin
