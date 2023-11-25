@@ -1,13 +1,19 @@
 name = "WeightInitializers"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 PartialFunctions = "570af359-4316-4cb7-8c74-252c00c2016b"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+
+[extensions]
+WeightInitializersCUDAExt = "CUDA"
 
 [compat]
 PartialFunctions = "1"

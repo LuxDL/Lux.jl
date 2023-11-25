@@ -1,4 +1,34 @@
 steps:
+  - group: ":julia: CUDA GPU"
+    steps:
+      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-test#v1:
+              test_args: "--quickfail"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - src
+                - ext
+        agents:
+          queue: "juliagpu"
+          cuda: "*"
+        env:
+          GROUP: "CUDA"
+        if: build.message !~ /\[skip tests\]/
+        timeout_in_minutes: 240
+        matrix:
+          setup:
+            julia:
+              - "1"
+              - "1.6"
+          adjustments:
+            - with:
+                julia: "1.6"
+              soft_fail: true
+
   # Downstream CUDA Tests
   - group: ":telescope: Downstream CUDA"
     steps:
