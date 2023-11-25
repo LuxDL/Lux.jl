@@ -1,11 +1,19 @@
 using WeightInitializers, Test, SafeTestsets, Statistics
 using StableRNGs, Random, CUDA
 
+const GROUP = get(ENV, "GROUP", "All")
+
 @testset "WeightInitializers.jl Tests" begin
-    rngs_arrtypes = [
-        (StableRNG(12345), Array), (Random.default_rng(), Array),
-        (CUDA.default_rng(), CuArray), (CURAND.default_rng(), CuArray),
-    ]
+    rngs_arrtypes = []
+
+    if GROUP == "All" || GROUP == "CPU"
+        append!(rngs_arrtypes, [(StableRNG(12345), Array), (Random.default_rng(), Array)])
+    end
+
+    if GROUP == "All" || GROUP == "CUDA"
+        append!(rngs_arrtypes,
+            [(CUDA.default_rng(), CuArray), (CURAND.default_rng(), CuArray)])
+    end
 
     @testset "_nfan" begin
         # Fallback
@@ -19,6 +27,7 @@ using StableRNGs, Random, CUDA
         # Convolution
         @test WeightInitializers._nfan(4, 5, 6) == 4 .* (5, 6)
     end
+
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
             kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal, truncated_normal,
@@ -75,10 +84,6 @@ using StableRNGs, Random, CUDA
             # Type
             @test eltype(cl(4, 2)) == Float32
             @test eltype(cl(rng, 4, 2)) == Float32
-        end
-
-        if !(rng isa StableRNGs.LehmerRNG)
-            continue
         end
 
         @testset "kaiming" begin
