@@ -221,6 +221,16 @@ end
             d.out_dims, size(x)[2:end]...), st)
 end
 
+# Inplace Interface
+@inline function (d::Dense{true})(y::AbstractMatrix, buffer, x::AbstractMatrix, ps,
+        st::NamedTuple)
+    W, b = ps.weight, ps.bias
+    @. y = b
+    mul!(y, W, x, true, true)
+    @. y = d.activation(y)
+    return y, st
+end
+
 """
     Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
 
