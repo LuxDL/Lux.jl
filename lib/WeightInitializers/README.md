@@ -12,12 +12,13 @@
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
-This package is a light dependency providing common weight initialization schemes for deep learning models.
+This package is a light dependency providing common weight initialization schemes for deep
+learning models.
 
 ## Example
 
-These code snippets are just provided to give a high level overview
-of the functionalities of the package.
+These code snippets are just provided to give a high level overview of the functionalities
+of the package.
 
 ```julia
 using WeightInitializers, Random
@@ -54,8 +55,8 @@ weights = weights_cl(2, 5)
 
 ## API
 
-The package is meant to be working with deep learning
-libraries such as F/Lux. All the methods take as input the chosen `rng` type and the dimension for the array.
+The package is meant to be working with deep learning libraries such as F/Lux. All the
+methods take as input the chosen `rng` type and the dimension for the AbstractArray.
 
 ```julia
 weights = init(rng, dims...)
@@ -67,8 +68,9 @@ The `rng` is optional, if not specified a default one will be used.
 weights = init(dims...)
 ```
 
-If there is the need to use keyword arguments the methods can be called with just the `rng` (optionally)
-and the keywords to get in return a function behaving like the two examples above.
+If there is the need to use keyword arguments the methods can be called with just the `rng`
+(optionally) and the keywords to get in return a function behaving like the two examples
+above.
 
 ```julia
 weights_init = init(rng; kwargs...)
