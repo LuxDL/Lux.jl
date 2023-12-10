@@ -14,4 +14,31 @@ function _default_rng()
 end
 
 # This is needed if using `PartialFunctions.$` inside @eval block
-_partial_apply(fn, inp) = fn$inp
+__partial_apply(fn, inp) = fn$inp
+
+const NAME_TO_DIST = Dict(:zeros => "an AbstractArray of zeros",
+    :ones => "an AbstractArray of ones",
+    :randn => "random numbers from a standard normal distribution",
+    :rand => "random numbers from a uniform distribution")
+const NUM_TO_FPOINT = Dict(Symbol(16) => Float16, Symbol(32) => Float32,
+    Symbol(64) => Float64, :C16 => ComplexF16, :C32 => ComplexF32, :C64 => ComplexF64)
+
+@inline function __funcname(fname::String)
+    fp = fname[(end - 2):end]
+    if Symbol(fp) in keys(NUM_TO_FPOINT)
+        return fname[1:(end - 3)], fp
+    else
+        return fname[1:(end - 2)], fname[(end - 1):end]
+    end
+end
+
+@inline function __generic_docstring(fname::String)
+    funcname, fp = __funcname(fname)
+    name = NAME_TO_DIST[Symbol(funcname)]
+    dist_type = NUM_TO_FPOINT[Symbol(fp)]
+    return """
+        $fname([::AbstractRNG=_default_rng()], size...; kwargs...) -> AbstractArray{$(dist_type), length(size)}
+
+    Return an `AbstractArray{$(dist_type)}` of the given `size` containing $(name).
+    """
+end

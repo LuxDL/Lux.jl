@@ -1,18 +1,20 @@
 using WeightInitializers, Test, SafeTestsets, Statistics
 using StableRNGs, Random, CUDA
 
+CUDA.allowscalar(false)
+
 const GROUP = get(ENV, "GROUP", "All")
 
 @testset "WeightInitializers.jl Tests" begin
     rngs_arrtypes = []
 
     if GROUP == "All" || GROUP == "CPU"
-        append!(rngs_arrtypes, [(StableRNG(12345), Array), (Random.default_rng(), Array)])
+        append!(rngs_arrtypes,
+            [(StableRNG(12345), AbstractArray), (Random.default_rng(), AbstractArray)])
     end
 
     if GROUP == "All" || GROUP == "CUDA"
-        append!(rngs_arrtypes,
-            [(CUDA.default_rng(), CuArray), (CURAND.default_rng(), CuArray)])
+        append!(rngs_arrtypes, [(CUDA.default_rng(), CuArray)])
     end
 
     @testset "_nfan" begin
@@ -48,27 +50,49 @@ const GROUP = get(ENV, "GROUP", "All")
             @test cl(3, 5) isa arrtype{Float32, 2}
         end
 
-        @testset "Array Type: $init $T" for init in [kaiming_uniform, kaiming_normal,
+        @testset "Sizes and Types: $init" for (init, fp) in [(zeros16, Float16),
+            (zerosC16, ComplexF16), (zeros32, Float32), (zerosC32, ComplexF32),
+            (zeros64, Float64), (zerosC64, ComplexF64), (ones16, Float16),
+            (onesC16, ComplexF16), (ones32, Float32), (onesC32, ComplexF32),
+            (ones64, Float64), (onesC64, ComplexF64), (rand16, Float16),
+            (randC16, ComplexF16), (rand32, Float32), (randC32, ComplexF32),
+            (rand64, Float64), (randC64, ComplexF64), (randn16, Float16),
+            (randnC16, ComplexF16), (randn32, Float32), (randnC32, ComplexF32),
+            (randn64, Float64), (randnC64, ComplexF64)]
+            # Sizes
+            @test size(init(3)) == (3,)
+            @test size(init(rng, 3)) == (3,)
+            @test size(init(3, 4)) == (3, 4)
+            @test size(init(rng, 3, 4)) == (3, 4)
+            @test size(init(3, 4, 5)) == (3, 4, 5)
+            @test size(init(rng, 3, 4, 5)) == (3, 4, 5)
+            # Type
+            @test eltype(init(rng, 4, 2)) == fp
+            @test eltype(init(4, 2)) == fp
+            # RNG Closure
+            cl = init(rng)
+            @test cl(3) isa arrtype{fp, 1}
+            @test cl(3, 5) isa arrtype{fp, 2}
+        end
+
+        @testset "AbstractArray Type: $init $T" for init in [kaiming_uniform,
+                kaiming_normal,
                 glorot_uniform, glorot_normal, truncated_normal], T in (Float16, Float32,
-                Float64)
-            @test init(T, 3) isa Array{T, 1}
-            @test init(rng, T, 3) isa arrtype{T, 1} broken=T <: Float16 &&
-                                                           rng isa CUDA.CURAND.RNG
-            @test init(T, 3, 5) isa Array{T, 2}
-            @test init(rng, T, 3, 5) isa arrtype{T, 2} broken=T <: Float16 &&
-                                                              rng isa CUDA.CURAND.RNG
+                Float64, ComplexF16, ComplexF32, ComplexF64)
+            init === truncated_normal && !(T <: Real) && continue
+
+            @test init(T, 3) isa AbstractArray{T, 1}
+            @test init(rng, T, 3) isa arrtype{T, 1}
+            @test init(T, 3, 5) isa AbstractArray{T, 2}
+            @test init(rng, T, 3, 5) isa arrtype{T, 2}
 
             cl = init(rng)
-            @test cl(T, 3) isa arrtype{T, 1} broken=T <: Float16 &&
-                                                    rng isa CUDA.CURAND.RNG
-            @test cl(T, 3, 5) isa arrtype{T, 2} broken=T <: Float16 &&
-                                                       rng isa CUDA.CURAND.RNG
+            @test cl(T, 3) isa arrtype{T, 1}
+            @test cl(T, 3, 5) isa arrtype{T, 2}
 
             cl = init(rng, T)
-            @test cl(3) isa arrtype{T, 1} broken=T <: Float16 &&
-                                                 rng isa CUDA.CURAND.RNG
-            @test cl(3, 5) isa arrtype{T, 2} broken=T <: Float16 &&
-                                                    rng isa CUDA.CURAND.RNG
+            @test cl(3) isa arrtype{T, 1}
+            @test cl(3, 5) isa arrtype{T, 2}
         end
 
         @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal,
