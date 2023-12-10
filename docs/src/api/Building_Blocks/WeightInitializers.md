@@ -15,14 +15,41 @@ Pages = ["WeightInitializers.md"]
 
 ## API Reference
 
+### Main Functions
+
 ```@docs
-zeros32
-ones32
-rand32
-randn32
 glorot_normal
 glorot_uniform
 kaiming_normal
 kaiming_uniform
 truncated_normal
+```
+
+### Commonly Used Wrappers
+
+```@docs
+zeros16
+ones16
+rand16
+randn16
+zeros32
+ones32
+rand32
+randn32
+zeros64
+ones64
+rand64
+randn64
+zerosC16
+onesC16
+randC16
+randnC16
+zerosC32
+onesC32
+randC32
+randnC32
+zerosC64
+onesC64
+randC64
+randnC64
 ```

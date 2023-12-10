@@ -32,6 +32,21 @@ weights_cl = kaiming_normal(; gain=1.0)
 weights = weights_cl(2, 5)
 ```
 
+To generate weights directly on GPU, pass in a `CUDA.RNG`. (Note that this is currently
+implemented only for NVIDIA GPUs)
+
+```@example weight-init
+using LuxCUDA
+
+weights = kaiming_normal(CUDA.default_rng(), 2, 5)
+```
+
+You can also generate Complex Numbers:
+
+```@example weight-init
+weights = kaiming_normal(CUDA.default_rng(), ComplexF32, 2, 5)
+```
+
 ## Quick examples
 
 The package is meant to be working with deep learning libraries such as (F)Lux. All the
