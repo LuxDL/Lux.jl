@@ -15,6 +15,9 @@ import ChainRulesCore as CRC
 import TruncatedStacktraces
 import TruncatedStacktraces: @truncate_stacktrace
 
+# Bumper Allocation
+using Bumper
+
 # LuxCore
 @reexport using LuxCore
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
