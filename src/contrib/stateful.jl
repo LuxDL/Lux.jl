@@ -49,14 +49,14 @@ function (s::StatefulLuxLayer)(x, p=s.ps)
     return y
 end
 
-function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
+@inline function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
     return StatefulLuxLayer(layer, ps, st)
 end
-__maybe_make_stateful(::Nothing, ps, st) = ps === nothing ? st : ps
-function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
-    return [__maybe_make_stateful(model[i], ps[i], st[i]) for i in eachindex(model)]
+@inline __maybe_make_stateful(::Nothing, ps, st) = ps === nothing ? st : ps
+@inline function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
+    return map(i -> __maybe_make_stateful(model[i], ps[i], st[i]), eachindex(model))
 end
-function __maybe_make_stateful(model::NamedTuple{fields}, ps, st) where {fields}
-    return NamedTuple{fields}([__maybe_make_stateful(getproperty(model, f),
-        getproperty(ps, f), getproperty(st, f)) for f in fields])
+@inline function __maybe_make_stateful(model::NamedTuple{fields}, ps, st) where {fields}
+    return NamedTuple{fields}(map(f -> __maybe_make_stateful(getproperty(model, f),
+            getproperty(ps, f), getproperty(st, f)), fields))
 end
