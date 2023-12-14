@@ -57,7 +57,7 @@ end
 
 # Layers
 export cpu, gpu
-export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout
+export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
     AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
