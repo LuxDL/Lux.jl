@@ -17,13 +17,22 @@ end
     @compact(kw...) do x
         ...
     end
-    @compact(forward::Function; name=nothing, parameters...)
+    @compact(forward::Function; name=nothing, dispatch=nothing, parameters...)
 
 Creates a layer by specifying some `parameters`, in the form of keywords, and (usually as a
 `do` block) a function for the forward pass. You may think of `@compact` as a specialized
 `let` block creating local variables that are trainable in Lux. Declared variable names may
 be used within the body of the `forward` function. Note that unlike typical Lux models, the
 forward function doesn't need to explicitly manage states.
+
+## Reserved Kwargs:
+
+ 1. `name`: The name of the layer.
+ 2. `dispatch`: The constructed layer has the type
+    `Lux.Experimental.CompactLuxLayer{dispatch}` which can be used for custom dispatches.
+    Based on how Julia Types work, this must be a `isbits` type.
+
+## Examples
 
 Here is a linear model:
 
@@ -170,6 +179,21 @@ macro compact(_exs...)
         kwexs = (kwexs[1:(name_idx - 1)]..., kwexs[(name_idx + 1):end]...)
     end
 
+    # check if user has provided a custom dispatch
+    dispatch_idx = findfirst(ex -> ex.args[1] == :dispatch, kwexs)
+    dispatch = nothing
+    if dispatch_idx !== nothing && kwexs[dispatch_idx].args[2] !== nothing
+        if length(kwexs) == 1
+            throw(LuxCompactModelParsingException("expects keyword arguments"))
+        end
+        dispatch = kwexs[dispatch_idx].args[2]
+        # remove dispatch from kwexs (a tuple)
+        kwexs = (kwexs[1:(dispatch_idx - 1)]..., kwexs[(dispatch_idx + 1):end]...)
+    end
+    if !isbits(dispatch)
+        throw(LuxCompactModelParsingException("`dispatch = $(dispatch)` is not a isbits type"))
+    end
+
     # make strings
     layer = "@compact"
     setup = NamedTuple(map(ex -> Symbol(string(ex.args[1])) => string(ex.args[2]), kwexs))
@@ -186,7 +210,7 @@ macro compact(_exs...)
     fex = supportself(fex, vars)
 
     # assemble
-    return esc(:($CompactLuxLayer($fex, $name, ($layer, $input, $block), $setup;
+    return esc(:($CompactLuxLayer{$dispatch}($fex, $name, ($layer, $input, $block), $setup;
         $(kwexs...))))
 end
 
@@ -206,7 +230,7 @@ function supportself(fex::Expr, vars)
                     $(Val(var))), Lux._getproperty($ps, $(Val(var))),
                 Lux._getproperty($st, $(Val(var))))))
     end
-    body = Expr(:block, calls..., sdef[:body])
+    body = Expr(:let, Expr(:block, calls...), sdef[:body])
     sdef[:body] = body
     sdef[:args] = args
     return combinedef(sdef)
@@ -237,7 +261,7 @@ function initialstates(::AbstractRNG, v::ValueStorage)
     return NamedTuple([n => fn() for (n, fn) in pairs(v.st_init_fns)])
 end
 
-@concrete struct CompactLuxLayer <:
+@concrete struct CompactLuxLayer{dispatch} <:
                  AbstractExplicitContainerLayer{(:layers, :value_storage)}
     f
     name::NAME_TYPE
@@ -268,8 +292,8 @@ function __try_make_lux_layer(x)
     return fmap(__maybe_convert_layer, x)
 end
 
-function CompactLuxLayer(f::Function, name::NAME_TYPE, str::Tuple, setup_str::NamedTuple;
-        kws...)
+function CompactLuxLayer{dispatch}(f::Function, name::NAME_TYPE, str::Tuple,
+        setup_str::NamedTuple; kws...) where {dispatch}
     layers, others = [], []
     for (name, val) in pairs(kws)
         if val isa AbstractExplicitLayer
@@ -287,7 +311,7 @@ function CompactLuxLayer(f::Function, name::NAME_TYPE, str::Tuple, setup_str::Na
             push!(others, name => val)
         end
     end
-    return CompactLuxLayer(f, name, str, setup_str, NamedTuple((; layers...)),
+    return CompactLuxLayer{dispatch}(f, name, str, setup_str, NamedTuple((; layers...)),
         ValueStorage(; others...))
 end
 
