@@ -349,3 +349,24 @@ end
         @eval @test_gradients $__f $x $ps atol=1.0f-1 rtol=1.0f-1 gpu_testing=$ongpu
     end
 end
+
+@testset "$mode: Repeated" for (mode, aType, device, ongpu) in MODES
+    LAYERS = [Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)), Dense(2 => 2),
+        Parallel(+, Dense(2 => 2), Dense(2 => 2))]
+    REPEATS = [Val(4), Val(4), Val(4), Val(4)]
+    INJECTION = [Val(false), Val(true), Val(false), Val(true)]
+
+    @testset "repeats = $(repeats); input_injection = $(input_injection)" for (layer, repeats, input_injection) in zip(LAYERS,
+        REPEATS, INJECTION)
+        layer = RepeatedLayer(layer; repeats, input_injection)
+        display(layer)
+        ps, st = Lux.setup(rng, layer) .|> device
+        x = rand(rng, Float32, 2, 12) |> aType
+
+        @test size(layer(x, ps, st)[1]) == (2, 12)
+
+        @jet layer(x, ps, st)
+        __f = (x, ps) -> sum(first(layer(x, ps, st)))
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+    end
+end

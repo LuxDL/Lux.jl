@@ -18,6 +18,7 @@ Chain
 PairwiseFusion
 Parallel
 SkipConnection
+RepeatedLayer
 ```
 
 ## Convolutional Layers

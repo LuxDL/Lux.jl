@@ -574,3 +574,90 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
 end
 
 Base.keys(m::Maxout) = Base.keys(getfield(m, :layers))
+
+"""
+    RepeatedLayer(model; repeats::Val = Val(10), input_injection::Val = Val(false))
+
+Iteratively applies `model` for `repeats` number of times. The initial input is passed
+into the model repeatedly if `input_injection = Val(true)`. This layer unrolls the
+computation, however, semantically this is same as:
+
+ 1. `input_injection = Val(false)`
+
+```julia
+res = x
+for i in 1:repeats
+    res, st = model(res, ps, st)
+end
+```
+
+ 2. `input_injection = Val(true)`
+
+```julia
+res = x
+for i in 1:repeats
+    res, st = model((res, x), ps, st)
+end
+```
+
+It is expected that `repeats` will be a reasonable number below `20`, beyond that compile
+times for gradients might be unreasonably high.
+
+## Arguments
+
+  - `model` must be an `AbstractExplicitLayer`
+
+## Keyword Arguments
+
+  - `repeats`: Number of times to apply the model
+  - `input_injection`: If `true`, then the input is passed to the model along with the
+    output
+
+## Inputs
+
+  - `x`: Input as described above
+
+## Returns
+
+  - Output is computed by as described above
+  - Updated state of the `model`
+
+## Parameters
+
+  - Parameters of `model`
+
+## States
+
+  - State of `model`
+"""
+struct RepeatedLayer{N, IJ, M <: AbstractExplicitLayer} <:
+       AbstractExplicitContainerLayer{(:model,)}
+    model::M
+end
+
+function LuxCore.display_name(model::RepeatedLayer{N, IJ}) where {N, IJ}
+    return "RepeatedLayer{repeats = $N, input_injection = $IJ}"
+end
+
+function RepeatedLayer(model::AbstractExplicitLayer; repeats::Val{N}=Val(10),
+        input_injection::Val{IJ}=Val(false)) where {N, IJ}
+    return RepeatedLayer{N, IJ, typeof(model)}(model)
+end
+
+(m::RepeatedLayer)(x, ps, st) = repeatedlayer(m, m.model, x, ps, st)
+
+@generated function repeatedlayer(::RepeatedLayer{N, IJ}, model, x, ps, st) where {N, IJ}
+    sts = ntuple(_ -> gensym("st"), N)
+    xs = ntuple(_ -> gensym("x"), N + IJ)
+    calls = []
+    IJ && push!(calls, :($(xs[1]) = x))
+    for i in 1:N
+        push!(calls,
+            :(($(xs[i + IJ]), $(sts[i])) = Lux.apply(model, $(IJ ? :(($(xs[i]), x)) : :x),
+                ps, $(i == 1 ? :st : sts[i - 1]))))
+    end
+    return quote
+        $(calls...)
+        return $(last(xs)), $(last(sts))
+    end
+end
