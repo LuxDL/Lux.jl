@@ -1,4 +1,5 @@
 using MacroTools
+import ConstructionBase: constructorof
 
 # This functionality is based off of the implementation in Fluxperimental.jl
 # https://github.com/FluxML/Fluxperimental.jl/blob/cc0e36fdd542cc6028bc69449645dc0390dd980b/src/compact.jl
@@ -30,7 +31,6 @@ forward function doesn't need to explicitly manage states.
  1. `name`: The name of the layer.
  2. `dispatch`: The constructed layer has the type
     `Lux.Experimental.CompactLuxLayer{dispatch}` which can be used for custom dispatches.
-    Based on how Julia Types work, this must be a `isbits` type.
 
 ## Examples
 
@@ -190,9 +190,6 @@ macro compact(_exs...)
         # remove dispatch from kwexs (a tuple)
         kwexs = (kwexs[1:(dispatch_idx - 1)]..., kwexs[(dispatch_idx + 1):end]...)
     end
-    if !isbits(dispatch)
-        throw(LuxCompactModelParsingException("`dispatch = $(dispatch)` is not a isbits type"))
-    end
 
     # make strings
     layer = "@compact"
@@ -269,6 +266,10 @@ end
     setup_strings
     layers
     value_storage
+end
+
+function constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
+    return CompactLuxLayer{dispatch}
 end
 
 function initialparameters(rng::AbstractRNG, m::CompactLuxLayer)

@@ -1,13 +1,14 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.12"
+version = "0.5.13"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
+ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
@@ -53,6 +54,7 @@ ChainRules = "1"
 ChainRulesCore = "1"
 ComponentArrays = "0.15.2"
 ConcreteStructs = "0.2"
+ConstructionBase = "1.5"
 FillArrays = "0.13, 1"
 Flux = "0.13, 0.14"
 Functors = "0.2, 0.3, 0.4"
