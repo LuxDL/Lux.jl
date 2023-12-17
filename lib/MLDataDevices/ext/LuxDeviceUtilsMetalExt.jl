@@ -9,10 +9,21 @@ __init__() = reset_gpu_device!()
 LuxDeviceUtils.__is_loaded(::LuxMetalDevice) = true
 LuxDeviceUtils.__is_functional(::LuxMetalDevice) = Metal.functional()
 
+__default_rng() = Metal.GPUArrays.default_rng(MtlArray)
+
 # Device Transfer
 ## To GPU
 adapt_storage(::LuxMetalAdaptor, x) = mtl(x)
 adapt_storage(::LuxMetalAdaptor, rng::AbstractRNG) = rng
+
+@static if VERSION ≥ v"1.9-"
+    adapt_storage(::LuxMetalAdaptor, rng::Random.TaskLocalRNG) = __default_rng()
+else
+    adapt_storage(::LuxMetalAdaptor, rng::Random.MersenneTwister) = __default_rng()
+end
+
+## Is this a correct thing to do?
+adapt_storage(::LuxCPUAdaptor, rng::Metal.GPUArrays.RNG) = Random.default_rng()
 
 ## Chain Rules
 CRC.rrule(::Type{Array}, x::MtlArray) = Array(x), Δ -> (NoTangent(), MtlArray(Δ))
