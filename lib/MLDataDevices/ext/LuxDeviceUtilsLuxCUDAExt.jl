@@ -13,6 +13,10 @@ LuxDeviceUtils.__is_functional(::LuxCUDADevice) = LuxCUDA.functional()
 ## To GPU
 adapt_storage(::LuxCUDAAdaptor, x) = cu(x)
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
+adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG) = CUDA.default_rng()
+
+## Is this a correct thing to do?
+adapt_storage(::LuxCPUAdaptor, rng::CUDA.RNG) = Random.default_rng()
 
 ## To CPU
 adapt_storage(::LuxCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix) = adapt(Array, x)

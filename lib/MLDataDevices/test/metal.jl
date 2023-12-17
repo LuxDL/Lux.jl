@@ -28,16 +28,13 @@ end
 using FillArrays, Zygote  # Extensions
 
 @testset "Data Transfer" begin
-    ps = (a=(c=zeros(10, 1), d=1),
-        b=ones(10, 1),
-        e=:c,
-        d="string",
-        rng=Random.default_rng(),
-        one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)),
-        farray=Fill(1.0f0, (2, 3)))
+    ps = (a=(c=zeros(10, 1), d=1), b=ones(10, 1), e=:c, d="string",
+        rng_default=Random.default_rng(), rng=MersenneTwister(),
+        one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
     aType = Metal.functional() ? MtlArray : Array
+    rngType = Metal.functional() ? Metal.GPUArrays.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test ps_xpu.a.c isa aType
@@ -45,6 +42,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.a.d == ps.a.d
     @test ps_xpu.e == ps.e
     @test ps_xpu.d == ps.d
+    @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
     if Metal.functional()
@@ -63,6 +61,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.a.d == ps.a.d
     @test ps_cpu.e == ps.e
     @test ps_cpu.d == ps.d
+    @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
     if Metal.functional()

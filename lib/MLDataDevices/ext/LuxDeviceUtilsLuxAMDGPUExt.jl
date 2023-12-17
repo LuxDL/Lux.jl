@@ -13,6 +13,10 @@ LuxDeviceUtils.__is_functional(::LuxAMDGPUDevice) = LuxAMDGPU.functional()
 ## To GPU
 adapt_storage(::LuxAMDGPUAdaptor, x) = roc(x)
 adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
+adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocRAND.RNG()
+
+## Is this a correct thing to do?
+adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()
 
 ## Chain Rules
 CRC.rrule(::Type{Array}, x::ROCArray) = Array(x), Δ -> (NoTangent(), roc(Δ))

@@ -3,11 +3,6 @@ module LuxDeviceUtils
 using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
 
-using PackageExtensionCompat
-function __init__()
-    @require_extensions
-end
-
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
