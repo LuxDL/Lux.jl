@@ -3,24 +3,6 @@ using LuxCore, LuxDeviceUtils
 
 const GROUP = get(ENV, "GROUP", "CUDA")
 
-@info "Installing Accelerator Packages..."
-
-GROUP == "CUDA" && Pkg.add("LuxCUDA")
-
-@static if VERSION ≥ v"1.9"
-    GROUP == "AMDGPU" && Pkg.add("LuxAMDGPU")
-
-    GROUP == "Metal" && Pkg.add("Metal")
-else
-    if GROUP != "CUDA"
-        @warn "AMDGPU and Metal are only available on Julia 1.9+"
-    end
-end
-
-@info "Installed Accelerator Packages!"
-
-@info "Starting Tests..."
-
 @testset "LuxDeviceUtils Tests" begin
     if GROUP == "CUDA"
         @safetestset "CUDA" begin
@@ -28,27 +10,22 @@ end
         end
     end
 
-    @static if VERSION ≥ v"1.9"
-        if GROUP == "AMDGPU"
-            @safetestset "CUDA" begin
-                include("amdgpu.jl")
-            end
-        end
-
-        if GROUP == "Metal"
-            @safetestset "Metal" begin
-                include("metal.jl")
-            end
+    if GROUP == "AMDGPU"
+        @safetestset "CUDA" begin
+            include("amdgpu.jl")
         end
     end
 
-    if VERSION ≥ v"1.9"
-        @testset "Aqua Tests" begin
-            Aqua.test_all(LuxDeviceUtils; piracies=false)
+    if GROUP == "Metal"
+        @safetestset "Metal" begin
+            include("metal.jl")
         end
     end
 
     @testset "Others" begin
+        @testset "Aqua Tests" begin
+            Aqua.test_all(LuxDeviceUtils)
+        end
         @safetestset "Component Arrays" begin
             include("component_arrays.jl")
         end

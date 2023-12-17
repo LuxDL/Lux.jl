@@ -13,12 +13,7 @@ LuxDeviceUtils.__is_functional(::LuxAMDGPUDevice) = LuxAMDGPU.functional()
 ## To GPU
 adapt_storage(::LuxAMDGPUAdaptor, x) = roc(x)
 adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
-
-@static if VERSION ≥ v"1.9-"
-    adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocRAND.RNG()
-else
-    adapt_storage(::LuxAMDGPUAdaptor, rng::Random.MersenneTwister) = AMDGPU.rocRAND.RNG()
-end
+adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocRAND.RNG()
 
 ## Is this a correct thing to do?
 adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()

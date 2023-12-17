@@ -15,12 +15,7 @@ __default_rng() = Metal.GPUArrays.default_rng(MtlArray)
 ## To GPU
 adapt_storage(::LuxMetalAdaptor, x) = mtl(x)
 adapt_storage(::LuxMetalAdaptor, rng::AbstractRNG) = rng
-
-@static if VERSION ≥ v"1.9-"
-    adapt_storage(::LuxMetalAdaptor, rng::Random.TaskLocalRNG) = __default_rng()
-else
-    adapt_storage(::LuxMetalAdaptor, rng::Random.MersenneTwister) = __default_rng()
-end
+adapt_storage(::LuxMetalAdaptor, rng::Random.TaskLocalRNG) = __default_rng()
 
 ## Is this a correct thing to do?
 adapt_storage(::LuxCPUAdaptor, rng::Metal.GPUArrays.RNG) = Random.default_rng()
