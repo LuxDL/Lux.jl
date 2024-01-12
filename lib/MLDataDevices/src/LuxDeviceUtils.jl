@@ -4,6 +4,7 @@ using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
 
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
+export device_default_rng
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
 
@@ -207,6 +208,22 @@ Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 """
 @inline cpu_device() = LuxCPUDevice()
 
+"""
+    device_default_rng(::AbstractLuxDevice)
+
+Returns the default RNG for the device. This can be used to directly generate parameters
+and states on the device using
+[WeightInitializers.jl](https://github.com/LuxDL/WeightInitializers.jl).
+"""
+function device_default_rng(D::AbstractLuxDevice)
+    error("""`device_default_rng` not implemented for $(typeof(D)). This is either because:
+
+    1. The default RNG for this device is not known / officially provided.
+    2. The trigger package for the device is not loaded.
+    """)
+end
+device_default_rng(::LuxCPUDevice) = Random.default_rng()
+
 # Dispatches for Different Data Structures
 # Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
 # For all other types we rely on fmap which means we lose type stability.
@@ -215,12 +232,12 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
     ldev = Symbol("Lux$(dev)Device")
     ladaptor = Symbol("Lux$(dev)Adaptor")
     @eval begin
-        function (::$(ldev))(x::AbstractArray)
+        function (D::$(ldev))(x::AbstractArray)
             fn = Base.Fix1(adapt, $(ladaptor)())
-            return _isbitsarray(x) ? fn(x) : map(fn, x)
+            return _isbitsarray(x) ? fn(x) : map(D, x)
         end
-        (::$(ldev))(x::Tuple) = map(Base.Fix1(adapt, $(ladaptor)()), x)
-        (dev::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(dev(values(x)))
+        (D::$(ldev))(x::Tuple) = map(D, x)
+        (D::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(D(values(x)))
         function (::$(ldev))(x)
             _isleaf(x) && return adapt($(ladaptor)(), x)
             return fmap(Base.Fix1(adapt, $(ladaptor)()), x; exclude=_isleaf)

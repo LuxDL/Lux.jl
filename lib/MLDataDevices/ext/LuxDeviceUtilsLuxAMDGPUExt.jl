@@ -9,13 +9,15 @@ __init__() = reset_gpu_device!()
 LuxDeviceUtils.__is_loaded(::LuxAMDGPUDevice) = true
 LuxDeviceUtils.__is_functional(::LuxAMDGPUDevice) = LuxAMDGPU.functional()
 
+# Default RNG
+device_default_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
+
 # Device Transfer
 ## To GPU
 adapt_storage(::LuxAMDGPUAdaptor, x) = roc(x)
 adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
-adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocRAND.RNG()
+adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocrand_rng()
 
-## Is this a correct thing to do?
 adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()
 
 ## Chain Rules

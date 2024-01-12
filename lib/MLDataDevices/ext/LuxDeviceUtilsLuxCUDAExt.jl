@@ -9,13 +9,15 @@ __init__() = reset_gpu_device!()
 LuxDeviceUtils.__is_loaded(::LuxCUDADevice) = true
 LuxDeviceUtils.__is_functional(::LuxCUDADevice) = LuxCUDA.functional()
 
+# Default RNG
+device_default_rng(::LuxCUDADevice) = CUDA.default_rng()
+
 # Device Transfer
 ## To GPU
 adapt_storage(::LuxCUDAAdaptor, x) = cu(x)
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG) = CUDA.default_rng()
 
-## Is this a correct thing to do?
 adapt_storage(::LuxCPUAdaptor, rng::CUDA.RNG) = Random.default_rng()
 
 ## To CPU
