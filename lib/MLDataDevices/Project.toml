@@ -1,7 +1,7 @@
 name = "LuxDeviceUtils"
 uuid = "34f89e08-e1d5-43b4-8944-0b49ac560553"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.12"
+version = "0.1.13"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -14,16 +14,20 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
+GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [extensions]
 LuxDeviceUtilsFillArraysExt = "FillArrays"
+LuxDeviceUtilsGPUArraysExt = "GPUArrays"
 LuxDeviceUtilsLuxAMDGPUExt = "LuxAMDGPU"
 LuxDeviceUtilsLuxCUDAExt = "LuxCUDA"
-LuxDeviceUtilsMetalExt = "Metal"
+LuxDeviceUtilsMetalGPUArraysExt = ["GPUArrays", "Metal"]
+LuxDeviceUtilsRecursiveArrayToolsExt = "RecursiveArrayTools"
 LuxDeviceUtilsZygoteExt = "Zygote"
 
 [compat]
@@ -31,19 +35,23 @@ Adapt = "3, 4"
 ChainRulesCore = "1"
 FillArrays = "0.13, 1"
 Functors = "0.2, 0.3, 0.4"
+GPUArrays = "9, 10"
 LuxAMDGPU = "0.1, 0.2"
 LuxCUDA = "0.2, 0.3"
 LuxCore = "0.1.4"
 Metal = "0.4, 0.5"
 Preferences = "1"
 Random = "<0.0.1, 1"
+RecursiveArrayTools = "3"
 SparseArrays = "<0.0.1, 1"
 Zygote = "0.6"
 julia = "1.9"
 
 [extras]
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
+GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
