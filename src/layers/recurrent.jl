@@ -55,7 +55,7 @@ rather allows operating on an entire sequence of inputs at once. See
 
   - Same as `cell`.
 """
-struct Recurrence{R, C <: AbstractRecurrentCell,
+struct Recurrence{R, C,
     O <: AbstractTimeSeriesDataBatchOrdering} <: AbstractExplicitContainerLayer{(:cell,)}
     cell::C
     ordering::O
@@ -89,15 +89,20 @@ function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedT
 end
 
 @views function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    function __recurrence_op(::Nothing, input)
-        (out, carry), state = Lux.apply(r.cell, input, ps, st)
-        return [out], carry, state
+    if length(x) == 1
+        (out, carry), st = Lux.apply(r.cell, first(x), ps, st)
+        return map(_ -> out, x), st  # Preserve structure
     end
-    function __recurrence_op((outputs, carry, state), input)
+    function __recurrence_op(input, input_2)
+        (out, carry), state = Lux.apply(r.cell, input, ps, st)
+        (out_2, carry_2), state = Lux.apply(r.cell, (input_2, carry), ps, state)
+        return [out_2, out], carry, state
+    end
+    function __recurrence_op((outputs, carry, state)::Tuple, input)
         (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
     end
-    results = foldl_init(__recurrence_op, x)
+    results = foldl(__recurrence_op, x)
     return first(results), last(results)
 end
 
@@ -141,8 +146,7 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
       + `cell`: Same as `cell`.
       + `carry`: The carry state of the `cell`.
 """
-struct StatefulRecurrentCell{C <: AbstractRecurrentCell} <:
-       AbstractExplicitContainerLayer{(:cell,)}
+struct StatefulRecurrentCell{C} <: AbstractExplicitContainerLayer{(:cell,)}
     cell::C
 end
 
@@ -368,9 +372,7 @@ end
 
 function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int}; use_bias::Bool=true,
         train_state::Bool=false, train_memory::Bool=false,
-        init_weight::NTuple{4, Function}=(glorot_uniform,
-            glorot_uniform,
-            glorot_uniform,
+        init_weight::NTuple{4, Function}=(glorot_uniform, glorot_uniform, glorot_uniform,
             glorot_uniform),
         init_bias::NTuple{4, Function}=(zeros32, zeros32, ones32, zeros32),
         init_state::Function=zeros32, init_memory::Function=zeros32)

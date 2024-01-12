@@ -41,7 +41,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, Zygote, Random, Statistics,
-    DataDeps, OneHotArrays, Functors
+    DataDeps, OneHotArrays, Functors, StatsBase
 
 # ## Hyperparameters
 
@@ -52,8 +52,8 @@ using Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, Zygote, Random, Statistics,
 Base.@kwdef mutable struct HyperParameters
     cell_type::CellType = LSTM
     lr::Float64 = 1e-2          # Learning rate
-    seqlen::Int = 50            # Length of batch sequences
-    batchsize::Int = 64         # Number of sequences in each batch
+    seqlen::Int = 32            # Length of batch sequences
+    batchsize::Int = 32         # Number of sequences in each batch
     epochs::Int = 3             # Number of epochs
     testpercent::Float64 = 0.05 # Percent of corpus examples to use for testing
 end
@@ -118,8 +118,8 @@ function build_model(args::HyperParameters, N::Int)
     end
     return Chain(Recurrence(cell(N => 128); return_sequence=true),
         Recurrence(cell(128 => 128); return_sequence=true),
-        WrappedFunction(stack),
-        Dense(128 => N))
+        x -> stack(x; dims=2), Dense(128 => N),
+        x -> unstack(x; dims=2))
 end
 
 # The size of the input and output layers is the same as the size of the alphabet.
@@ -136,7 +136,7 @@ end
 
 function compute_loss(x, y, model, ps, st)
     y_pred, st = model(x, ps, st)
-    return mean(logitcrossentropy, zip(unstack(y_pred; dims=3), y)), y_pred, st
+    return sum(logitcrossentropy, zip(y_pred, y)), y_pred, st
 end
 
 function train(; kwargs...)
@@ -145,88 +145,106 @@ function train(; kwargs...)
 
     ## Select the correct device
     device = gpu_device()
+    rng = Xoshiro(0)
 
     ## Get Data
     Xs, Ys, N, alphabet = getdata(args)
 
     ## Shuffle and create a train/test split
     L = length(Xs)
-    perm = shuffle(1:length(Xs))
+    perm = shuffle(rng, 1:length(Xs))
     trsplit = floor(Int, (1 - args.testpercent) * L)
 
     trainX, trainY = Xs[perm[1:trsplit]], Ys[perm[1:trsplit]]
     testX, testY = Xs[perm[(trsplit + 1):end]], Ys[perm[(trsplit + 1):end]]
 
-    # ## Move all data to the correct device
-    # trainX = fmap(x -> device(float.(x)), trainX)
-    # trainY = fmap(x -> device(float.(x)), trainY)
-    # testX = fmap(x -> device(float.(x)), testX)
-    # testY = fmap(x -> device(float.(x)), testY)
-
     ## Constructing Model
     model = build_model(args, N)
-    ps, st = Lux.setup(Xoshiro(0), model) |> device
+    ps, st = Lux.setup(rng, model) |> device
 
     ## Training
-    opt = Optimisers.ADAM(args.lr)
+    opt = Adam(args.lr)
     opt_state = Optimisers.setup(opt, ps)
 
     for epoch in 1:(args.epochs)
-        for (x, y) in zip(trainX, trainY)
+        for (i, (x, y)) in enumerate(zip(trainX, trainY))
             x = fmap(x -> device(float(x)), x)
             y = fmap(device, y)
             (loss, y_pred, st), back = pullback(compute_loss, x, y, model, ps, st)
-            gs = back((one(loss), nothing, nothing))[4]
-            opt_state, ps = Optimisers.update(opt_state, ps, gs)
-
-            println("Epoch [$epoch]: Loss $loss")
+            if !isnan(loss)
+                gs = back((one(loss), nothing, nothing))[4]
+                Optimisers.update!(opt_state, ps, gs)
+                if i % 250 == 0
+                    println("Epoch [$epoch]: Iteration [$(i)/$(length(trainX))] Loss $loss")
+                end
+            else
+                error("Iteration [$(i)/$(length(trainX))] has NaNs")
+            end
         end
 
         ## Show loss-per-character over the test set
-        # @show sum(loss.(Ref(model), testX, testY)) /
-        #       (args.batchsz * args.seqlen * length(testX))
+        test_loss = 0.0f0
+        st_ = Lux.testmode(st)
+        for (x, y) in zip(testX, testY)
+            x = fmap(x -> device(float(x)), x)
+            y = fmap(device, y)
+            test_loss += compute_loss(x, y, model, ps, st_)[1]
+        end
+        println("Epoch [$epoch]: Test Loss: ",
+            test_loss / (length(testX) * args.seqlen * args.batchsize))
     end
 
-    return model, alphabet
+    return model, ps, st, alphabet
 end
 
-# # The function `train` performs the following tasks:
+# The function `train` performs the following tasks:
 
-# # * Calls the function `getdata` to obtain the train and test data as well as the alphabet and its size.
-# # * Calls the function `build_model` to create the RNN.
-# # * Defines the loss function. For this type of neural network, we use the [logitcrossentropy](https://fluxml.ai/Flux.jl/stable/models/losses/#Flux.Losses.logitcrossentropy)
-# # loss function. Notice that it is important that we call the function [reset!](https://fluxml.ai/Flux.jl/stable/models/layers/#Flux.reset!)
-# # before computing the loss so that it resets the hidden state of a recurrent layer back to its original value
-# # * Sets the [ADAM optimiser](https://fluxml.ai/Flux.jl/stable/training/optimisers/#Flux.Optimise.RADAM) with the learning rate *lr* we defined above.
-# # * Creates a [callback](https://fluxml.ai/Flux.jl/stable/training/training/#Callbacks) *evalcb* so that you can observe the training process (print the loss value).
-# # * Runs the training loop using [Flux’s train!](https://fluxml.ai/Flux.jl/stable/training/training/#Flux.Optimise.train!).
+# * Calls the function `getdata` to obtain the train and test data as well as the alphabet
+#   and its size.
+# * Calls the function `build_model` to create the RNN.
+# * Defines the loss function. For this type of neural network, we use the logitcrossentropy
+#   loss function. Notice that it is important that we call the function reset! before
+#   computing the loss so that it resets the hidden state of a recurrent layer back to its
+#   original value
+# * Sets the AdamW optimizer with the learning rate *lr* we defined above.
+# * Runs the training loop using Optimisers and Zygote.
 
-# # ## Test the model
+# ## Test the model
 
-# # We define the function `sample_data` to test the model.
-# # It generates samples of text with the alphabet that the function `getdata` computed.
-# # Notice that it obtains the model’s prediction by calling the
-# # [softmax function](https://fluxml.ai/Flux.jl/stable/models/nnlib/#Softmax)
-# # to get the probability distribution of the output and then it chooses randomly the prediction.
+# We define the function `sample_data` to test the model.
+# It generates samples of text with the alphabet that the function `getdata` computed.
+# Notice that it obtains the model’s prediction by calling the softmax function
+# to get the probability distribution of the output and then it chooses randomly the prediction.
 
-# function sample_data(m, alphabet, len; seed = "")
-#     m = cpu(m)
-#     Flux.reset!(m)
-#     buf = IOBuffer()
-#     if seed == ""
-#         seed = string(rand(alphabet))
-#     end
-#     write(buf, seed)
-#     c = wsample(alphabet, softmax([m(onehot(c, alphabet)) for c in collect(seed)][end]))
-#     for i = 1:len
-#         write(buf, c)
-#         c = wsample(alphabet, softmax(m(onehot(c, alphabet))))
-#     end
-#     return String(take!(buf))
-# end
+function sample_data(m, alphabet, len, ps, st; seed="")
+    cdev = cpu_device()
+    model = Lux.Experimental.StatefulLuxLayer(m, ps |> cdev, st |> cdev)
+    buf = IOBuffer()
+    seed == "" && (seed = string(rand(alphabet)))
+    write(buf, seed)
+    c = StatsBase.wsample(alphabet,
+        softmax(model([float.(onehotbatch(collect(seed), alphabet))])[end])[:, 1])
+    for i in 1:len
+        write(buf, c)
+        c = StatsBase.wsample(alphabet,
+            softmax(model([float.(onehotbatch([c], alphabet))])[end])[:, 1])
+    end
+    return String(take!(buf))
+end
 
-# # Finally, to run this example we call the functions `train` and `sample_data`:
+# Finally, to run this example we call the functions `train` and `sample_data`:
 
-# cd(@__DIR__)
-# m, alphabet = train()
-# sample_data(m, alphabet, 1000) |> println
+# First let's try an RNN
+
+model_rnn, ps_rnn, st_rnn, alphabet = train(; cell_type=RNN)
+sample_data(model_rnn, alphabet, 1000, ps_rnn, st_rnn)
+
+# Now let's try an LSTM
+
+model_lstm, ps_lstm, st_lstm, alphabet = train(; cell_type=LSTM)
+sample_data(model_lstm, alphabet, 1000, ps_lstm, st_lstm)
+
+# Finally let's try a GRU
+
+model_gru, ps_gru, st_gru, alphabet = train(; cell_type=GRU)
+sample_data(model_gru, alphabet, 1000, ps_gru, st_gru)
