@@ -10,7 +10,7 @@ LuxDeviceUtils.__is_loaded(::LuxMetalDevice) = true
 LuxDeviceUtils.__is_functional(::LuxMetalDevice) = Metal.functional()
 
 # Default RNG
-device_default_rng(::LuxMetalDevice) = GPUArrays.default_rng(MtlArray)
+LuxDeviceUtils.default_device_rng(::LuxMetalDevice) = GPUArrays.default_rng(MtlArray)
 
 # Device Transfer
 ## To GPU

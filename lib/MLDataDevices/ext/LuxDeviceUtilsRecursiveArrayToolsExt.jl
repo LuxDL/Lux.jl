@@ -14,5 +14,4 @@ function Adapt.adapt_structure(to::LuxDeviceUtils.AbstractLuxDeviceAdaptor,
     return DiffEqArray(map(Base.Fix1(adapt, to), x.u), x.t)
 end
 
-
 end

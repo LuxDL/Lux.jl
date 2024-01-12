@@ -4,7 +4,7 @@ using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
 import Adapt: adapt, adapt_storage
 
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
-export device_default_rng
+export default_device_rng
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
 
@@ -209,20 +209,20 @@ Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
 @inline cpu_device() = LuxCPUDevice()
 
 """
-    device_default_rng(::AbstractLuxDevice)
+    default_device_rng(::AbstractLuxDevice)
 
 Returns the default RNG for the device. This can be used to directly generate parameters
 and states on the device using
 [WeightInitializers.jl](https://github.com/LuxDL/WeightInitializers.jl).
 """
-function device_default_rng(D::AbstractLuxDevice)
-    error("""`device_default_rng` not implemented for $(typeof(D)). This is either because:
+function default_device_rng(D::AbstractLuxDevice)
+    return error("""`default_device_rng` not implemented for $(typeof(D)). This is either because:
 
-    1. The default RNG for this device is not known / officially provided.
-    2. The trigger package for the device is not loaded.
-    """)
+           1. The default RNG for this device is not known / officially provided.
+           2. The trigger package for the device is not loaded.
+           """)
 end
-device_default_rng(::LuxCPUDevice) = Random.default_rng()
+default_device_rng(::LuxCPUDevice) = Random.default_rng()
 
 # Dispatches for Different Data Structures
 # Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability

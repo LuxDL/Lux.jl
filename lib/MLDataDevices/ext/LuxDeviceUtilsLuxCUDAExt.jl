@@ -10,7 +10,7 @@ LuxDeviceUtils.__is_loaded(::LuxCUDADevice) = true
 LuxDeviceUtils.__is_functional(::LuxCUDADevice) = LuxCUDA.functional()
 
 # Default RNG
-device_default_rng(::LuxCUDADevice) = CUDA.default_rng()
+LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
 
 # Device Transfer
 ## To GPU

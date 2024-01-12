@@ -10,7 +10,7 @@ LuxDeviceUtils.__is_loaded(::LuxAMDGPUDevice) = true
 LuxDeviceUtils.__is_functional(::LuxAMDGPUDevice) = LuxAMDGPU.functional()
 
 # Default RNG
-device_default_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
+LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
 
 # Device Transfer
 ## To GPU
