@@ -61,6 +61,12 @@ struct Recurrence{R, C <: AbstractRecurrentCell,
     ordering::O
 end
 
+constructorof(::Type{<:Recurrence{R}}) where {R} = Recurrence{R}
+
+function Recurrence{R}(cell, ordering::AbstractTimeSeriesDataBatchOrdering) where {R}
+    return Recurrence{R, typeof(cell), typeof(ordering)}(cell, ordering)
+end
+
 function Recurrence(cell;
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
         return_sequence::Bool=false)
@@ -324,7 +330,7 @@ Long Short-Term (LSTM) Cell
              to `true`, `train_memory` is set to `true` - Repeats the hidden state and
              memory vectors from the parameters to match the shape of  `x` and proceeds to
              Case 2.
-  - Case 2: Tuple `(x, (h, c))` is provided, then the output and a tuple containing the 
+  - Case 2: Tuple `(x, (h, c))` is provided, then the output and a tuple containing the
             updated hidden state and memory is returned.
 
 ## Returns
@@ -495,11 +501,11 @@ Gated Recurrent Unit (GRU) Cell
   - Case 1b: Only a single input `x` of shape `(in_dims, batch_size)`, `train_state` is set
              to `true` - Repeats `hidden_state` from parameters to match the shape of `x`
              and proceeds to Case 2.
-  - Case 2: Tuple `(x, (h, ))` is provided, then the output and a tuple containing the 
+  - Case 2: Tuple `(x, (h, ))` is provided, then the output and a tuple containing the
             updated hidden state is returned.
 
 ## Returns
-  
+
   - Tuple containing
 
       + Output ``h_{new}`` of shape `(out_dims, batch_size)`
@@ -510,15 +516,15 @@ Gated Recurrent Unit (GRU) Cell
 ## Parameters
 
   - `weight_i`: Concatenated Weights to map from input space
-                ``\\left\\\{ W_{ir}, W_{iz}, W_{in} \\right\\\}``.
+                ``\{ W_{ir}, W_{iz}, W_{in} \}``.
   - `weight_h`: Concatenated Weights to map from hidden space
-                ``\\left\\\{ W_{hr}, W_{hz}, W_{hn} \\right\\\}``.
+                ``\{ W_{hr}, W_{hz}, W_{hn} \}``.
   - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`).
   - `bias_h`: Concatenated Bias vector for the hidden space
-              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}`` (not present if
+              ``\{ b_{hr}, b_{hz}, b_{hn} \}`` (not present if
               `use_bias=false`).
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
-              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}``.
+              ``\{ b_{hr}, b_{hz}, b_{hn} \}``.
 
 ## States
 

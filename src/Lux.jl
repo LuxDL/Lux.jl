@@ -25,6 +25,8 @@ import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialpa
 @reexport using LuxDeviceUtils, WeightInitializers
 import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
 
+import ConstructionBase: constructorof
+
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
 # Utilities

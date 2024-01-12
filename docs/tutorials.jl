@@ -1,11 +1,12 @@
 using Literate
 
-preprocess(path, str) = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
+# preprocess(path, str) = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
 
 get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 OUTPUT = joinpath(@__DIR__, "src", "tutorials")
 
-BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl", "SimpleRNN/main.jl"]
+BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl", "SimpleRNN/main.jl",
+    "CharRNN/main.jl"]
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
 ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl"]
 
