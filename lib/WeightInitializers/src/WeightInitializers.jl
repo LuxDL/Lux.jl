@@ -1,6 +1,7 @@
 module WeightInitializers
 
 import PrecompileTools: @recompile_invalidations
+using PartialFunctions, Random, SpecialFunctions, Statistics, LinearAlgebra
 
 @recompile_invalidations begin
     using ChainRulesCore, PartialFunctions, Random, SpecialFunctions, Statistics
@@ -25,5 +26,6 @@ export zerosC64, onesC64, randC64, randnC64, zerosC32, onesC32, randC32, randnC3
 export glorot_normal, glorot_uniform
 export kaiming_normal, kaiming_uniform
 export truncated_normal
+export orthogonal
 
 end

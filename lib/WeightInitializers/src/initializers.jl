@@ -122,9 +122,43 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
     return xs
 end
 
+"""
+    orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...; gain = 1) where {T <: Real} -> AbstractArray{T, length(dims)}
+    orthogonal(rng::AbstractRNG; kw...) -> Function
+
+Return an `AbstractArray{T}` of the given dimensions (`dims`) which is a (semi) orthogonal matrix, as described in [^Saxe14]
+
+The function constructs an orthogonal or semi-orthogonal matrix depending on the specified dimensions. For two dimensions, it returns a matrix where `dims = (rows, cols)`. For more than two dimensions, it computes an orthogonal matrix of size `prod(dims[1:(end - 1)])` by `dims[end]` before reshaping it to the original dimensions.
+
+Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
+
+# Arguments
+
+  - `rng::AbstractRNG`: Random number generator.
+  - `T::Type{<:Real}`: The type of the elements in the array.
+  - `dims::Integer...`: The dimensions of the array.
+  - `gain::Number`: Scaling factor for the elements of the orthogonal matrix.
+
+# References
+
+[^Saxe14] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of learning in deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
+"""
+function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
+        gain::Number=1) where {T <: Real}
+    @assert length(dims) > 1 "Creating vectors (length(dims) == 1) is not allowed"
+    rows, cols = dims
+    if rows < cols
+        return permutedims(orthogonal(rng, T, cols, rows; gain))
+    end
+    mat = randn(rng, T, rows, cols)
+    Q, R = LinearAlgebra.qr(mat)
+    mat .= Array(Q) * sign.(LinearAlgebra.Diagonal(R)) .* T(gain)
+    return mat
+end
+
 # Default Fallbacks for all functions
 for initializer in (:glorot_uniform, :glorot_normal, :kaiming_uniform, :kaiming_normal,
-    :truncated_normal)
+    :truncated_normal, :orthogonal)
     NType = ifelse(initializer === :truncated_normal, Real, Number)
     @eval function ($initializer)(dims::Integer...; kwargs...)
         return $initializer(_default_rng(), Float32, dims...; kwargs...)
