@@ -27,5 +27,7 @@ export glorot_normal, glorot_uniform
 export kaiming_normal, kaiming_uniform
 export truncated_normal
 export orthogonal
+export sparse_init
+export identity_init
 
 end

@@ -1,5 +1,6 @@
-using Aqua, WeightInitializers, Test, Statistics
-using StableRNGs, Random, CUDA
+using Aqua
+using WeightInitializers, Test, SafeTestsets, Statistics
+using StableRNGs, Random, CUDA, LinearAlgebra
 
 CUDA.allowscalar(false)
 
@@ -33,7 +34,7 @@ const GROUP = get(ENV, "GROUP", "All")
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
             kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal,
-            truncated_normal, orthogonal,
+            truncated_normal, identity_init,
         ]
             # Sizes
             @test size(init(3)) == (3,)
@@ -78,7 +79,7 @@ const GROUP = get(ENV, "GROUP", "All")
 
         @testset "AbstractArray Type: $init $T" for init in [kaiming_uniform,
                 kaiming_normal,
-                glorot_uniform, glorot_normal, truncated_normal, orthogonal], T in (Float16, Float32,
+                glorot_uniform, glorot_normal, truncated_normal, identity_init], T in (Float16, Float32,
                 Float64, ComplexF16, ComplexF32, ComplexF64)
 
             init === truncated_normal && !(T <: Real) && continue
@@ -98,16 +99,11 @@ const GROUP = get(ENV, "GROUP", "All")
         end
 
         @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal,
-            glorot_uniform, glorot_normal, truncated_normal, orthogonal]
+            glorot_uniform, glorot_normal, truncated_normal, identity_init]
             cl = init(;)
             # Sizes
-            if init == orthogonal
-                @test_throws AssertionError cl(3)
-                @test_throws AssertionError cl(rng, 3)
-            else
-                @test size(cl(3)) == (3,)
-                @test size(cl(rng, 3)) == (3,)
-            end
+            @test size(cl(3)) == (3,)
+            @test size(cl(rng, 3)) == (3,)
             @test size(cl(3, 4)) == (3, 4)
             @test size(cl(rng, 3, 4)) == (3, 4)
             @test size(cl(3, 4, 5)) == (3, 4, 5)
@@ -146,7 +142,7 @@ const GROUP = get(ENV, "GROUP", "All")
             end
             @test eltype(init(3, 4; gain=1.5)) == Float32
         end
-        
+
         @testset "orthogonal" begin
             # A matrix of dim = (m,n) with m > n should produce a QR decomposition. In the other case, the transpose should be taken to compute the QR decomposition.
             for (rows, cols) in [(5, 3), (3, 5)]
