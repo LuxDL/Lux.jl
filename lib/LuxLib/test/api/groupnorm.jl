@@ -1,5 +1,4 @@
-using LuxCUDA, Test
-using LuxLib
+using LuxLib, Test
 
 include("../test_utils.jl")
 
@@ -21,8 +20,8 @@ function _groupnorm_generic_fallback(x, scale, bias, epsilon, groups)
 end
 
 @testset "$mode: GroupNorm KernelAbstractions" for (mode, aType, on_gpu) in MODES
-    @testset "eltype $T, size $sz, ngroups $groups" for T in (Float32, Float64),
-        sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
+    @testset "eltype $T, size $sz, ngroups $groups" for T in (Float32,
+            Float64), sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
         groups in (2, 3)
 
         _f = (args...) -> groupnorm(args...; groups, epsilon)
@@ -35,7 +34,8 @@ end
         gs_x, gs_scale, gs_bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
 
         @inferred groupnorm(x, scale, bias; groups, epsilon)
-        @jet _f(x, scale, bias) opt_broken=true
+        # @jet _f(x, scale, bias)  # test_call throws exception
+        LuxTestUtils.JET.@test_opt target_modules=(LuxLib,) _f(x, scale, bias)
         @test y isa aType{T, length(sz)}
         @test size(y) == sz
 
@@ -60,8 +60,8 @@ end
 end
 
 @testset "$mode: GroupNorm Generic Fallback" for (mode, aType, on_gpu) in MODES
-    @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16, Float32, Float64),
-        sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),
+    @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16,
+            Float32, Float64), sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),
         groups in (2, 3)
 
         _f = (args...) -> groupnorm(args...; groups, epsilon)

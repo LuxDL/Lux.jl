@@ -1,5 +1,4 @@
-using LuxCUDA, Statistics, Test
-using LuxLib
+using LuxLib, Statistics, Test
 
 include("../test_utils.jl")
 

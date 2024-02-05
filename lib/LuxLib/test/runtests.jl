@@ -1,34 +1,18 @@
-using SafeTestsets, Test
+using SafeTestsets, Test, TestSetExtensions
 
-@testset "LuxLib" begin
-    @time @safetestset "Dropout" begin
-        include("api/dropout.jl")
-    end
+@testset ExtendedTestSet "LuxLib" begin
+    @safetestset "Dropout" include("api/dropout.jl")
 
     @testset "Normalization" begin
-        @time @safetestset "BatchNorm" begin
-            include("api/batchnorm.jl")
-        end
-        @time @safetestset "GroupNorm" begin
-            include("api/groupnorm.jl")
-        end
-        @time @safetestset "InstanceNorm" begin
-            include("api/instancenorm.jl")
-        end
-        @time @safetestset "LayerNorm" begin
-            include("api/layernorm.jl")
-        end
+        @safetestset "BatchNorm" include("api/batchnorm.jl")
+        @safetestset "GroupNorm" include("api/groupnorm.jl")
+        @safetestset "InstanceNorm" include("api/instancenorm.jl")
+        @safetestset "LayerNorm" include("api/layernorm.jl")
     end
 
-    @time @safetestset "ForwardDiff Extension" begin
-        include("ext/LuxLibForwardDiffExt.jl")
-    end
+    @safetestset "ForwardDiff Extension" include("ext/LuxLibForwardDiffExt.jl")
 
-    @time @safetestset "Efficient Jacobian-Vector-Products" begin
-        include("jvp.jl")
-    end
+    @safetestset "Efficient Jacobian-Vector-Products" include("jvp.jl")
 
-    @time @safetestset "Aqua Tests" begin
-        include("aqua.jl")
-    end
+    @safetestset "Aqua Tests" include("aqua.jl")
 end
