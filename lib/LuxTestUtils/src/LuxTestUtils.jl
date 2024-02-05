@@ -10,10 +10,14 @@ const JET_TARGET_MODULES = @load_preference("target_modules", nothing)
 try
     using JET
     global JET_TESTING_ENABLED = true
+
+    import JET: JETTestFailure, get_reports
 catch
     @warn "JET not not precompiling. All JET tests will be skipped!!" maxlog=1
     global JET_TESTING_ENABLED = false
 end
+
+import Test: Error, Broken, Pass, Fail, get_testset
 
 """
     @jet f(args...) call_broken=false opt_broken=false
@@ -56,7 +60,7 @@ end
 ```
 """
 macro jet(expr, args...)
-    @static if VERSION >= v"1.7" && JET_TESTING_ENABLED
+    if JET_TESTING_ENABLED
         all_args, call_extras, opt_extras = [], [], []
         target_modules_set = false
         for kwexpr in args
@@ -316,19 +320,11 @@ function __test_gradient_pair_check(__source__, orig_expr, v1, v2, name1, name2;
 end
 
 function __test_pass(test_type, orig_expr, source)
-    @static if VERSION >= v"1.7"
-        return Test.Pass(test_type, orig_expr, nothing, nothing, source)
-    else
-        return Test.Pass(test_type, orig_expr, nothing, nothing)
-    end
+    return Test.Pass(test_type, orig_expr, nothing, nothing, source)
 end
 
 function __test_fail(test_type, orig_expr, source)
-    @static if VERSION >= v"1.9.0-rc1"
-        return Test.Fail(test_type, orig_expr, nothing, nothing, nothing, source, false)
-    else
-        return Test.Fail(test_type, orig_expr, nothing, nothing, source)
-    end
+    return Test.Fail(test_type, orig_expr, nothing, nothing, nothing, source, false)
 end
 
 function __test_error(test_type, orig_expr, source)
