@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.3.8"
+version = "0.3.9"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
@@ -32,9 +32,11 @@ ChainRulesCore = "1"
 ForwardDiff = "0.10"
 KernelAbstractions = "0.9"
 LuxCUDA = "0.2, 0.3"
+Markdown = "<0.0.1, 1"
 NNlib = "0.8, 0.9"
 PackageExtensionCompat = "1"
 PrecompileTools = "1"
+Random = "<0.0.1, 1"
 Reexport = "1"
 ReverseDiff = "1"
 Statistics = "1"
