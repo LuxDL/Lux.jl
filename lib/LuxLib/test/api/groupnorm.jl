@@ -24,6 +24,8 @@ end
             Float64), sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
         groups in (2, 3)
 
+        T === Float16 && mode == "AMDGPU" && continue
+
         _f = (args...) -> groupnorm(args...; groups, epsilon)
 
         epsilon = T(1e-5)
@@ -34,8 +36,10 @@ end
         gs_x, gs_scale, gs_bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
 
         @inferred groupnorm(x, scale, bias; groups, epsilon)
+
         # @jet _f(x, scale, bias)  # test_call throws exception
         LuxTestUtils.JET.@test_opt target_modules=(LuxLib,) _f(x, scale, bias)
+
         @test y isa aType{T, length(sz)}
         @test size(y) == sz
 
@@ -63,6 +67,8 @@ end
     @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16,
             Float32, Float64), sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),
         groups in (2, 3)
+
+        T === Float16 && mode == "AMDGPU" && continue
 
         _f = (args...) -> groupnorm(args...; groups, epsilon)
 

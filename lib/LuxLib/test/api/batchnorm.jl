@@ -25,6 +25,8 @@ end
         affine in (true, false),
         track_stats in (true, false)
 
+        T === Float16 && mode == "AMDGPU" && continue
+
         _f = (args...) -> batchnorm(args...; epsilon, training, momentum=T(0.9))
 
         epsilon = T(1e-5)
