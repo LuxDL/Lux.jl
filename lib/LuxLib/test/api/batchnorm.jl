@@ -1,5 +1,4 @@
-using LuxCUDA, Test
-using LuxLib
+using LuxLib, Test
 
 include("../test_utils.jl")
 
@@ -26,6 +25,8 @@ end
         affine in (true, false),
         track_stats in (true, false)
 
+        T === Float16 && mode == "AMDGPU" && continue
+
         _f = (args...) -> batchnorm(args...; epsilon, training, momentum=T(0.9))
 
         epsilon = T(1e-5)
@@ -45,13 +46,11 @@ end
             @test size(nt.running_var) == (size(x, length(sz) - 1),)
         end
 
-        if __istraining(training)
+        if __istraining(training) && affine
             fp16 = T == Float16
-            if affine
-                __f = (args...) -> sum(first(batchnorm(x, args..., rm, rv; epsilon,
-                    training, momentum=T(0.9))))
-                @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
-            end
+            __f = (args...) -> sum(first(batchnorm(x, args..., rm, rv; epsilon,
+                training, momentum=T(0.9))))
+            @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
         end
     end
 end

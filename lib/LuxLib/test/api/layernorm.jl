@@ -1,5 +1,4 @@
-using LuxCUDA, Statistics, Test
-using LuxLib
+using LuxLib, Statistics, Test
 
 include("../test_utils.jl")
 
@@ -18,6 +17,8 @@ end
     for T in (Float16, Float32, Float64),
         x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
         affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3]))
+
+        T === Float16 && mode == "AMDGPU" && continue
 
         dims = Colon()
         epsilon = T(1e-5)

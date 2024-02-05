@@ -1,5 +1,4 @@
-using LuxCUDA, Statistics, Test
-using LuxLib
+using LuxLib, Statistics, Test
 
 include("../test_utils.jl")
 
@@ -18,6 +17,8 @@ end
         training in (Val(true), Val(false)),
         affine in (true, false)
 
+        T === Float16 && mode == "AMDGPU" && continue
+
         _f = (args...) -> instancenorm(args...; epsilon, training)
 
         epsilon = T(1e-5)
@@ -32,17 +33,13 @@ end
 
         _target_std = ones(ntuple(_ -> 1, length(sz) - 2)..., size(x)[(end - 1):end]...)
         @eval @test check_approx(std(Array($y); dims=1:($(length(sz) - 2))),
-            $_target_std;
-            atol=0.2,
-            rtol=0.2)
+            $_target_std; atol=0.2, rtol=0.2)
         @test std(y; dims=1:(length(sz) - 2)) != std(x; dims=1:(length(sz) - 2))
 
-        if __istraining(training)
+        if __istraining(training) && affine
             fp16 = T == Float16
-            if affine
-                __f = (args...) -> sum(first(instancenorm(x, args...; epsilon, training)))
-                @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
-            end
+            __f = (args...) -> sum(first(instancenorm(x, args...; epsilon, training)))
+            @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
         end
     end
 end

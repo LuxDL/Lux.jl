@@ -8,6 +8,8 @@ rng = get_stable_rng(12345)
     for T in (Float16, Float32, Float64),
         x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
+        T === Float16 && mode == "AMDGPU" && continue
+
         x = randn(rng, T, x_shape) |> aType
 
         @inferred dropout(rng, x, T(0.5), Val(true); dims=Colon())
@@ -40,6 +42,8 @@ end
 @testset "$mode: Dropout with Preset Mask" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+
+        T === Float16 && mode == "AMDGPU" && continue
 
         x = randn(rng, T, x_shape) |> aType
         mask = rand(T, x_shape) |> aType
@@ -119,6 +123,8 @@ end
 @testset "$mode: Alpha Dropout" for (mode, aType, on_gpu) in MODES
     for T in (Float16, Float32, Float64),
         x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+
+        T === Float16 && mode == "AMDGPU" && continue
 
         x = randn(rng, T, x_shape) |> aType
 

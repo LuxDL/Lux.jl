@@ -1,7 +1,3 @@
-# Launch Heuristics
-_linear_threads_groupnorm(::CPU) = Threads.nthreads()
-_linear_threads_groupnorm(::GPU) = 256
-
 # Low-Level Kernels
 ## Original Implementation: https://github.com/pytorch/pytorch/blob/master/caffe2/operators/group_norm_op.cu
 @kernel function _compute_fused_params_kernel!(scale, bias, @Const(C), @Const(K), @Const(μ),
@@ -63,9 +59,8 @@ end
 
     backend = KA.get_backend(X)
 
-    n = _linear_threads_groupnorm(backend)
-    compute_fixed_params! = _compute_fused_params_kernel!(backend, n, size(_scale))
-    groupnorm_forward! = _groupnorm_forward_kernel!(backend, n, size(X))
+    compute_fixed_params! = _compute_fused_params_kernel!(backend)
+    groupnorm_forward! = _groupnorm_forward_kernel!(backend)
 
     compute_fixed_params!(_scale, _bias, C, K, μ, σ⁻¹, γ, β; ndrange=size(_scale))
     KA.synchronize(backend)
@@ -82,13 +77,12 @@ end
     K = div(C, G)
     WxH = W * H
     backend = KA.get_backend(X)
-    n = _linear_threads_groupnorm(backend)
 
     dbias = reshape(sum(dY; dims=(1, 2)), (1, 1, K, G, N))
     dscale = reshape(sum(X .* dY; dims=(1, 2)), (1, 1, K, G, N))
 
     dY_dscale = similar(X, promote_type(eltype(σ⁻¹), eltype(γ)), (C, N))
-    groupnorm_dy_dscale! = _groupnorm_dy_dscale_kernel!(backend, n, size(dY_dscale))
+    groupnorm_dy_dscale! = _groupnorm_dy_dscale_kernel!(backend)
     groupnorm_dy_dscale!(dY_dscale, C, K, σ⁻¹, γ; ndrange=size(dY_dscale))
 
     γ_ = reshape(γ, (1, 1, K, G, 1))
@@ -100,14 +94,13 @@ end
     X_scale = similar(X, T, (G, N))
     bias = similar(X, T, (G, N))
 
-    groupnorm_xscale_and_bias! = _groupnorm_xscale_and_bias_kernel!(backend, n,
-        size(X_scale))
+    groupnorm_xscale_and_bias! = _groupnorm_xscale_and_bias_kernel!(backend)
     groupnorm_xscale_and_bias!(X_scale, bias, T(1 / (K * WxH)), μ, σ⁻¹, ds_sum, db_sum;
         ndrange=size(X_scale))
     KA.synchronize(backend)
 
     dX = similar(X)
-    groupnorm_dx! = _groupnorm_dx_kernel!(backend, n, size(dX))
+    groupnorm_dx! = _groupnorm_dx_kernel!(backend)
     groupnorm_dx!(dX, WxH, K, dY_dscale, dY, X_scale, X, bias; ndrange=size(dX))
     dγ = vec(sum((-dbias .* μ .+ dscale) .* σ⁻¹; dims=5))
     dβ = vec(sum(dbias; dims=5))

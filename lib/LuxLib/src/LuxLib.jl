@@ -3,18 +3,12 @@ module LuxLib
 import PrecompileTools
 
 PrecompileTools.@recompile_invalidations begin
-    using ChainRulesCore, KernelAbstractions, Markdown, NNlib, PackageExtensionCompat,
-        Random, Reexport, Statistics
+    using ChainRulesCore, KernelAbstractions, Markdown, NNlib, Random, Reexport, Statistics
 end
 
 @reexport using NNlib
 import ChainRulesCore as CRC
 import KernelAbstractions as KA
-
-# Extensions
-function __init__()
-    @require_extensions
-end
 
 include("utils.jl")
 
