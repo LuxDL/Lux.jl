@@ -1,29 +1,31 @@
 module Lux
 
-# Some core imports
-using Reexport
-# Neural Network Backend
-@reexport using LuxLib
-# Julia StdLibs
-using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
-# Parameter Manipulation / Clean Code
-using Adapt, ConcreteStructs, Functors, Setfield
-# Automatic Differentiation
-using ChainRulesCore
-import ChainRulesCore as CRC
-# Smaller Stacktraces -- Till we have better solution in Base
-import TruncatedStacktraces
+import PrecompileTools
+
+PrecompileTools.@recompile_invalidations begin
+    # Some core imports
+    using Reexport
+    # Lux Packages
+    using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
+    # Julia StdLibs
+    using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
+    # Parameter Manipulation / Clean Code
+    using Adapt, ConcreteStructs, Functors, Setfield
+    # Automatic Differentiation
+    using ChainRulesCore
+    # Smaller Stacktraces -- Till we have better solution in Base
+    import TruncatedStacktraces
+end
+
 import TruncatedStacktraces: @truncate_stacktrace
 
-# LuxCore
-@reexport using LuxCore
+@reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
+
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
     initialstates, parameterlength, statelength, update_state, trainmode, testmode, setup,
     apply, display_name
-
-# Device Management
-@reexport using LuxDeviceUtils, WeightInitializers
 import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
+import ChainRulesCore as CRC
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
@@ -50,10 +52,6 @@ include("deprecated.jl")
 
 # Extensions
 include("extensions.jl")
-using PackageExtensionCompat
-function __init__()
-    @require_extensions
-end
 
 # Layers
 export cpu, gpu

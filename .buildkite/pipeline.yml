@@ -23,12 +23,8 @@ steps:
           setup:
             julia:
               - "1"
-              - "1.6"
               - "nightly"
           adjustments:
-            - with:
-                julia: "1.6"
-              soft_fail: true
             - with:
                 julia: "nightly"
               soft_fail: true
@@ -81,15 +77,11 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.6"
               - "1"
             repo:
               - "Boltz"
               - "NeuralPDE#GPU"
           adjustments:
-            - with:
-                julia: "1.6"
-              soft_fail: true
             - with:
                 repo: "NeuralPDE#GPU"
               soft_fail: true
