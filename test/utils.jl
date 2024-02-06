@@ -77,7 +77,7 @@ end
     @test ps_c_re(ps_c_f) == ps_c
 
     # Empty ComponentArray test
-    @test_nowarn display(ComponentArray(NamedTuple()))
+    @test_nowarn __display(ComponentArray(NamedTuple()))
     println()
 
     # Optimisers
@@ -97,10 +97,8 @@ end
 end
 
 @testset "$mode: FP Conversions" for (mode, aType, device, ongpu) in MODES
-    model = Chain(Dense(1 => 16, relu),
-        Chain(Dense(16 => 1), Dense(1 => 1)),
-        BatchNorm(1);
-        disable_optimizations=true)
+    model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
+        BatchNorm(1); disable_optimizations=true)
 
     for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
         ps, st = Lux.setup(rng, model) |> device |> f

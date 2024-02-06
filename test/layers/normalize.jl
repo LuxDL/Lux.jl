@@ -8,7 +8,7 @@ rng = get_stable_rng(12345)
     m = BatchNorm(2)
     x = [1.0f0 3.0f0 5.0f0
         2.0f0 4.0f0 6.0f0] |> aType
-    display(m)
+    __display(m)
     ps, st = Lux.setup(rng, m) .|> device
 
     @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -52,7 +52,7 @@ rng = get_stable_rng(12345)
     for affine in (true, false)
         m = BatchNorm(2; affine, track_stats=false)
         x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0] |> aType
-        display(m)
+        __display(m)
         ps, st = Lux.setup(rng, m) .|> device
 
         @jet m(x, ps, st)
@@ -69,7 +69,7 @@ rng = get_stable_rng(12345)
         m = BatchNorm(2, sigmoid; affine)
         x = [1.0f0 3.0f0 5.0f0
             2.0f0 4.0f0 6.0f0] |> aType
-        display(m)
+        __display(m)
         ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
@@ -89,7 +89,7 @@ rng = get_stable_rng(12345)
 
         m = BatchNorm(32; affine)
         x = randn(Float32, 416, 416, 32, 1) |> aType
-        display(m)
+        __display(m)
         ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
         m(x, ps, st)
@@ -113,7 +113,7 @@ end
     sizes = (3, 4, 2)
     x = reshape(collect(1:prod(sizes)), sizes) |> aType
 
-    display(m)
+    __display(m)
     x = Float32.(x)
     ps, st = Lux.setup(rng, m) .|> device
     @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -130,7 +130,7 @@ end
     @testset "affine: $affine" for affine in (true, false)
         m = GroupNorm(2, 2; affine)
         x = rand(rng, Float32, 3, 2, 1) |> aType
-        display(m)
+        __display(m)
         ps, st = Lux.setup(rng, m) .|> device
 
         @jet m(x, ps, st)
@@ -146,7 +146,7 @@ end
         # with activation function
         m = GroupNorm(2, 2, sigmoid; affine)
         x = randn(rng, Float32, 3, 2, 1) |> aType
-        display(m)
+        __display(m)
         ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
         y, st_ = m(x, ps, st)
@@ -163,7 +163,7 @@ end
 
         m = GroupNorm(32, 16; affine)
         x = randn(rng, Float32, 416, 416, 32, 1) |> aType
-        display(m)
+        __display(m)
         ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
         m(x, ps, st)
@@ -171,7 +171,7 @@ end
         @test (@allocated m(x, ps, st)) < 100_000_000
 
         if affine
-            @jet m(x, ps, st) opt_broken=true
+            LuxTestUtils.JET.@test_opt target_modules=(LuxLib,) m(x, ps, st)
         else
             @jet m(x, ps, st)
         end
@@ -206,7 +206,7 @@ end
         c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(c, (:weight, :bias))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
@@ -215,7 +215,7 @@ end
         @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
         wn = WeightNorm(c, (:weight,))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
@@ -224,35 +224,29 @@ end
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
         wn = WeightNorm(c, (:weight, :bias), (2, 2))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        if VERSION ≥ v"1.9"
-            # Illegal Instruction Error on v"1.6"
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
-        end
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
         wn = WeightNorm(c, (:weight,), (2,))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        if VERSION ≥ v"1.9"
-            # Illegal Instruction Error on v"1.6"
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
-        end
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
     end
 
     @testset "Dense" begin
         d = Dense(3 => 3; init_bias=Lux.ones32)
 
         wn = WeightNorm(d, (:weight, :bias))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 1) |> aType
 
@@ -261,7 +255,7 @@ end
         @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         wn = WeightNorm(d, (:weight,))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 1) |> aType
 
@@ -270,28 +264,22 @@ end
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         wn = WeightNorm(d, (:weight, :bias), (2, 2))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 1) |> aType
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        if VERSION ≥ v"1.9"
-            # Illegal Instruction Error on v"1.6"
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-        end
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         wn = WeightNorm(d, (:weight,), (2,))
-        display(wn)
+        __display(wn)
         ps, st = Lux.setup(rng, wn) .|> device
         x = randn(rng, Float32, 3, 1) |> aType
 
         @jet wn(x, ps, st)
         __f = (x, ps) -> sum(first(wn(x, ps, st)))
-        if VERSION ≥ v"1.9"
-            # Illegal Instruction Error on v"1.6"
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-        end
+        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
     end
 
     # See https://github.com/avik-pal/Lux.jl/issues/95
@@ -320,7 +308,7 @@ end
     for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
         for affine in (true, false)
             ln = LayerNorm(bshape; affine)
-            display(ln)
+            __display(ln)
             ps, st = Lux.setup(rng, ln) .|> device
 
             y, st_ = ln(x, ps, st)
@@ -340,7 +328,7 @@ end
 
             for act in (sigmoid, tanh)
                 ln = LayerNorm(bshape, act; affine)
-                display(ln)
+                __display(ln)
                 ps, st = Lux.setup(rng, ln) .|> device
 
                 y, st_ = ln(x, ps, st)
@@ -373,7 +361,7 @@ end
         x = x |> aType
         for affine in (true, false)
             layer = InstanceNorm(3; affine)
-            display(layer)
+            __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
 
             y, st_ = layer(x, ps, st)
@@ -390,7 +378,7 @@ end
 
             for act in (sigmoid, tanh)
                 layer = InstanceNorm(3, act; affine)
-                display(layer)
+                __display(layer)
                 ps, st = Lux.setup(rng, layer) .|> device
 
                 y, st_ = layer(x, ps, st)

@@ -201,3 +201,5 @@ end
 # Used in freezing
 ## Extend for custom types
 @inline _pairs(x) = pairs(x)
+
+@inline __value(x) = x

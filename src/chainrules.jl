@@ -30,23 +30,6 @@ function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) wh
     return y, ∇merge
 end
 
-function CRC.rrule(::typeof(vec), x::AbstractMatrix)
-    y = vec(x)
-    ∇vec(dy) = (NoTangent(), reshape(dy, size(x)))
-    return y, ∇vec
-end
-
-function CRC.rrule(::typeof(collect), v::Vector)
-    y = collect(v)
-    ∇collect(dy) = (NoTangent(), dy)
-    return y, ∇collect
-end
-
-function CRC.rrule(::typeof(copy), x)
-    ∇copy(dy) = (NoTangent(), dy)
-    return copy(x), ∇copy
-end
-
 function CRC.rrule(::typeof(_eachslice), x, d::Val)
     return _eachslice(x, d), Δ -> (NoTangent(), ∇_eachslice(Δ, x, d), NoTangent())
 end

@@ -1,82 +1,38 @@
-using SafeTestsets, Test
+using SafeTestsets, Test, TestSetExtensions
 
 const GROUP = get(ENV, "GROUP", "All")
 
-@static if VERSION ≥ v"1.9"
-    using Pkg
-    (GROUP == "All" || GROUP == "AMDGPU") && Pkg.add("LuxAMDGPU")
-end
+@testset ExtendedTestSet "Lux.jl" begin
+    @safetestset "Utils" include("utils.jl")
 
-@testset "Lux.jl" begin
-    @time @safetestset "Utils" begin
-        include("utils.jl")
-    end
-
-    @time @safetestset "Core" begin
-        include("core.jl")
-    end
+    @safetestset "Core" include("core.jl")
 
     @testset "Layers" begin
-        @time @safetestset "Basic" begin
-            include("layers/basic.jl")
-        end
-        @time @safetestset "Containers" begin
-            include("layers/containers.jl")
-        end
-        @time @safetestset "Convolution" begin
-            include("layers/conv.jl")
-        end
-        @time @safetestset "Normalization" begin
-            include("layers/normalize.jl")
-        end
-        @time @safetestset "Recurrent" begin
-            include("layers/recurrent.jl")
-        end
-        @time @safetestset "Dropout" begin
-            include("layers/dropout.jl")
-        end
+        @safetestset "Basic" include("layers/basic.jl")
+        @safetestset "Containers" include("layers/containers.jl")
+        @safetestset "Convolution" include("layers/conv.jl")
+        @safetestset "Normalization" include("layers/normalize.jl")
+        @safetestset "Recurrent" include("layers/recurrent.jl")
+        @safetestset "Dropout" include("layers/dropout.jl")
     end
 
     @testset "Experimental" begin
-        @time @safetestset "Map" begin
-            include("contrib/map.jl")
-        end
-        @time @safetestset "Training" begin
-            include("contrib/training.jl")
-        end
-        @time @safetestset "Freeze" begin
-            include("contrib/freeze.jl")
-        end
-        @time @safetestset "Shared Parameters" begin
-            include("contrib/share_parameters.jl")
-        end
-        @time @safetestset "Debugging Tools" begin
-            include("contrib/debug.jl")
-        end
-        @time @safetestset "Stateful & Compact Layers" begin
-            # Tests for StatefulLuxLayer is embedded into @compact tests
-            include("contrib/compact.jl")
-        end
+        @safetestset "Map" include("contrib/map.jl")
+        @safetestset "Training" include("contrib/training.jl")
+        @safetestset "Freeze" include("contrib/freeze.jl")
+        @safetestset "Shared Parameters" include("contrib/share_parameters.jl")
+        @safetestset "Debugging Tools" include("contrib/debug.jl")
+        # Tests for StatefulLuxLayer is embedded into @compact tests
+        @safetestset "Stateful & Compact Layers" include("contrib/compact.jl")
     end
 
-    if VERSION ≥ v"1.9"
-        @time @safetestset "Aqua Tests" begin
-            include("aqua.jl")
-        end
-    end
+    @safetestset "Aqua Tests" include("aqua.jl")
 
-    @time @safetestset "Miscellaneous Tests" begin
-        include("misc.jl")
-    end
+    @safetestset "Miscellaneous Tests" include("misc.jl")
 
     @testset "Extensions" begin
         # Most CA tests are already included in the other tests
-        @time @safetestset "ComponentArrays" begin
-            include("ext/LuxComponentArraysExt.jl")
-        end
-
-        @time @safetestset "Flux" begin
-            include("ext/LuxFluxTransformExt.jl")
-        end
+        @safetestset "ComponentArrays" include("ext/LuxComponentArraysExt.jl")
+        @safetestset "Flux" include("ext/LuxFluxTransformExt.jl")
     end
 end

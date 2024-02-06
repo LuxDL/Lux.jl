@@ -34,7 +34,7 @@ end
     rng = get_stable_rng(12345)
     ps, st = Lux.setup(rng, c) .|> device
 
-    c_, ps_, st_ = Lux.layer_map(zero_dense_params_1, c, ps, st)
+    c_, ps_, st_ = Lux.Experimental.layer_map(zero_dense_params_1, c, ps, st)
 
     @test all(iszero, ps_.chain.dense_1.weight)
     @test all(iszero, ps_.chain.dense_1.bias)
@@ -43,7 +43,7 @@ end
     @test !all(iszero, ps_.dense_3.weight)
     @test all(iszero, ps_.dense_3.bias)
 
-    c_, ps_, st_ = Lux.@layer_map zero_dense_params_2 c ps st
+    c_, ps_, st_ = Lux.Experimental.@layer_map zero_dense_params_2 c ps st
 
     @test all(iszero, ps_.chain.dense_1.weight)
     @test all(iszero, ps_.chain.dense_1.bias)
@@ -62,7 +62,7 @@ end
 
     ps, st = Lux.setup(rng, l) .|> device
 
-    l_, ps_, st_ = Lux.@layer_map zero_dense_params_3 l ps st
+    l_, ps_, st_ = Lux.Experimental.@layer_map zero_dense_params_3 l ps st
 
     @test all(iszero, ps_.dense.weight)
     @test all(iszero, ps_.dense.bias)

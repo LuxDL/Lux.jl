@@ -7,28 +7,20 @@ import ChainRulesCore as CRC
 @generated function Lux._getproperty(x::ComponentArray{T, N, A, Tuple{Ax}},
         ::Val{v}) where {v, T, N, A, Ax <: ComponentArrays.AbstractAxis}
     names = propertynames(ComponentArrays.indexmap(Ax))
-    # PkgExtCompat: Messes up code generation for :(x.$v) --> x.$v
-    if v ∈ names
-        return quote
-            x.$v
-        end
-    else
-        return quote
-            nothing
-        end
-    end
+    return v ∈ names ? :(x.$v) : :(nothing)
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)
-    return NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
-    ComponentArray
+    return (NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
+        ComponentArray)
 end
 
 # Optimisers Fixes
 Optimisers.setup(opt::AbstractRule, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
 
 function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
+    gs_flat = Lux.__value(getdata(gs))
+    tree, ps_new = Optimisers.update(tree, getdata(ps), gs_flat)
     return tree, ComponentArray(ps_new, getaxes(ps))
 end
 
