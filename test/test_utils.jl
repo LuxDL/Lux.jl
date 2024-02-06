@@ -51,5 +51,5 @@ end
 
 function __display(args...)
     println()
-    display(args...)
+    return display(args...)
 end

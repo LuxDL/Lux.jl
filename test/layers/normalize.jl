@@ -171,7 +171,7 @@ end
         @test (@allocated m(x, ps, st)) < 100_000_000
 
         if affine
-            @jet m(x, ps, st) opt_broken=true
+            LuxTestUtils.JET.@test_opt target_modules=(LuxLib,) m(x, ps, st)
         else
             @jet m(x, ps, st)
         end
