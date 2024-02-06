@@ -14,7 +14,7 @@ rng = get_stable_rng(12345)
 
     sharing = (("d2.l2", "d1"), ("d3", "d2.l1"))
 
-    ps_1 = Lux.share_parameters(ps, sharing)
+    ps_1 = Lux.Experimental.share_parameters(ps, sharing)
 
     @test ps_1.d2.l2.weight == ps_1.d1.weight
     @test ps_1.d2.l2.bias == ps_1.d1.bias
@@ -26,7 +26,7 @@ rng = get_stable_rng(12345)
     ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2, 1)) |>
                device
 
-    ps_2 = Lux.share_parameters(ps, sharing, (ps_new_1, ps_new_2))
+    ps_2 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_1, ps_new_2))
 
     @test ps_2.d2.l2.weight == ps_new_1.weight == ps_2.d1.weight
     @test ps_2.d2.l2.bias == ps_new_1.bias == ps_2.d1.bias
@@ -36,7 +36,7 @@ rng = get_stable_rng(12345)
     # Mix in ComponentArray
     ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> device
 
-    ps_3 = Lux.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
+    ps_3 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 
     @test ps_3.d2.l2.weight == ps_new_ca_1.weight == ps_3.d1.weight
     @test ps_3.d2.l2.bias == ps_new_ca_1.bias == ps_3.d1.bias
@@ -45,8 +45,8 @@ rng = get_stable_rng(12345)
 
     # Input Checks
     non_disjoint_sharing = (("d2.l2", "d1"), ("d1", "d2.l1"))
-    @test_throws ArgumentError Lux.share_parameters(ps, non_disjoint_sharing)
-    @test_throws ArgumentError Lux.share_parameters(ps, sharing, (ps_new_1,))
+    @test_throws ArgumentError Lux.Experimental.share_parameters(ps, non_disjoint_sharing)
+    @test_throws ArgumentError Lux.Experimental.share_parameters(ps, sharing, (ps_new_1,))
 
     # Parameter Structure Mismatch
     ps_new_1 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 4, 1)) |>
@@ -54,9 +54,11 @@ rng = get_stable_rng(12345)
     ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2, 1)) |>
                device
 
-    @test_throws ArgumentError Lux.share_parameters(ps, sharing, (ps_new_1, ps_new_2))
+    @test_throws ArgumentError Lux.Experimental.share_parameters(ps, sharing,
+        (ps_new_1, ps_new_2))
 
     ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> device
 
-    @test_throws ArgumentError Lux.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
+    @test_throws ArgumentError Lux.Experimental.share_parameters(ps, sharing,
+        (ps_new_ca_1, ps_new_2))
 end

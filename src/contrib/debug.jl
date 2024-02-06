@@ -102,6 +102,7 @@ function __debug_layer(::Val{NC}, ::Val{EC}, layer, x, ps, st,
     return y, st_
 end
 
+__size(x::AbstractArray) = size(x)
 @generated __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? :(size(x)) : :(nothing)
 
 function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
