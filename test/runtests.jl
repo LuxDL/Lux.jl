@@ -10,7 +10,7 @@ const GROUP = get(ENV, "GROUP", "All")
     @testset "Layers" begin
         @safetestset "Basic" include("layers/basic.jl")
         @safetestset "Containers" include("layers/containers.jl")
-        @safetestset "Convolution"include("layers/conv.jl")
+        @safetestset "Convolution" include("layers/conv.jl")
         @safetestset "Normalization" include("layers/normalize.jl")
         @safetestset "Recurrent" include("layers/recurrent.jl")
         @safetestset "Dropout" include("layers/dropout.jl")

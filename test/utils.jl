@@ -77,7 +77,7 @@ end
     @test ps_c_re(ps_c_f) == ps_c
 
     # Empty ComponentArray test
-    @test_nowarn display(ComponentArray(NamedTuple()))
+    @test_nowarn __display(ComponentArray(NamedTuple()))
     println()
 
     # Optimisers

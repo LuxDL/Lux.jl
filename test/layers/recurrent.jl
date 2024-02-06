@@ -10,7 +10,7 @@ rng = get_stable_rng(12345)
         RNNCell(3 => 5, tanh; use_bias=false),
         RNNCell(3 => 5, identity; use_bias=false),
         RNNCell(3 => 5, identity; use_bias=false, train_state=false))
-        display(rnncell)
+        __display(rnncell)
         ps, st = Lux.setup(rng, rnncell) .|> device
         x = randn(rng, Float32, 3, 2) |> aType
         (y, carry), st_ = Lux.apply(rnncell, x, ps, st)
@@ -59,7 +59,7 @@ end
     for lstmcell in (LSTMCell(3 => 5),
         LSTMCell(3 => 5; use_bias=true),
         LSTMCell(3 => 5; use_bias=false))
-        display(lstmcell)
+        __display(lstmcell)
         ps, st = Lux.setup(rng, lstmcell) .|> device
         x = randn(rng, Float32, 3, 2) |> aType
         (y, carry), st_ = Lux.apply(lstmcell, x, ps, st)
@@ -147,7 +147,7 @@ end
     for grucell in (GRUCell(3 => 5),
         GRUCell(3 => 5; use_bias=true),
         GRUCell(3 => 5; use_bias=false))
-        display(grucell)
+        __display(grucell)
         ps, st = Lux.setup(rng, grucell) .|> device
         x = randn(rng, Float32, 3, 2) |> aType
         (y, carry), st_ = Lux.apply(grucell, x, ps, st)
@@ -211,7 +211,7 @@ end
 
         cell = _cell(3 => 5; use_bias, train_state)
         rnn = StatefulRecurrentCell(cell)
-        display(rnn)
+        __display(rnn)
         x = randn(rng, Float32, 3, 2) |> aType
         ps, st = Lux.setup(rng, rnn) .|> device
 
@@ -249,7 +249,7 @@ end
                 cell = _cell(3 => 5; use_bias, train_state)
                 rnn = Recurrence(cell; ordering)
                 rnn_seq = Recurrence(cell; ordering, return_sequence=true)
-                display(rnn)
+                __display(rnn)
 
                 # Batched Time Series
                 @testset "typeof(x): $(typeof(x))" for x in (randn(rng, Float32, 3, 4, 2) |>

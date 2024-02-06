@@ -8,7 +8,7 @@ Random.seed!(rng, 0)
 @testset "$mode: Dropout" for (mode, aType, device, ongpu) in MODES
     for p in (0.5f0, 0.5)
         layer = Dropout(p)
-        display(layer)
+        __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
         x = randn(Float32, 5, 2) |> aType
 
@@ -34,7 +34,7 @@ end
 @testset "$mode: AlphaDropout" for (mode, aType, device, ongpu) in MODES
     for p in (0.5f0, 0.5)
         layer = AlphaDropout(p)
-        display(layer)
+        __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
         # GPU compilation for mixed types fail atm
         x = randn(typeof(p), 5, 2) |> aType
@@ -61,7 +61,7 @@ end
 @testset "$mode: VariationalHiddenDropout" for (mode, aType, device, ongpu) in MODES
     for p in (0.5f0, 0.5)
         layer = VariationalHiddenDropout(p)
-        display(layer)
+        __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
         x = randn(Float32, 5, 2) |> aType
 
