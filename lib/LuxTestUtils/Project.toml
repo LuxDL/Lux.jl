@@ -1,7 +1,7 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
 authors = ["Avik Pal <avikpal@mit.edu>"]
-version = "0.1.14"
+version = "0.1.15"
 
 [deps]
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
