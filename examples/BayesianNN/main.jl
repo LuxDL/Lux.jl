@@ -18,13 +18,13 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, Turing, CairoMakie, Random, ReverseDiff, Functors, MakiePublication
+using Lux, Turing, CairoMakie, Random, Tracker, Functors, MakiePublication, LinearAlgebra
 
-## Hide sampling progress
-Turing.setprogress!(false);
+## Sampling progress
+Turing.setprogress!(true);
 
 ## Use reverse_diff due to the number of parameters in neural networks
-Turing.setadbackend(:reversediff)
+Turing.setadbackend(:tracker)
 
 # ## Generating data
 
@@ -126,7 +126,7 @@ end
 
     ## Sample the parameters
     nparameters = Lux.parameterlength(nn)
-    parameters ~ MvNormal(zeros(nparameters), sig .* ones(nparameters))
+    parameters ~ MvNormal(zeros(nparameters), Diagonal(abs2.(sig .* ones(nparameters))))
 
     ## Forward NN to make predictions
     preds, st = nn(xs, vector_to_parameters(parameters, ps), st)

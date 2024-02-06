@@ -202,9 +202,4 @@ end
 ## Extend for custom types
 @inline _pairs(x) = pairs(x)
 
-"""
-    __value(x)
-
-Unwrap `x` if it is a `ReverseDiff.TrackedReal` or similar types.
-"""
 @inline __value(x) = x
