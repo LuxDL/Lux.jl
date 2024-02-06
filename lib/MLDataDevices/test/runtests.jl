@@ -1,33 +1,24 @@
-using Aqua, SafeTestsets, Test, Pkg
+using Aqua, SafeTestsets, Test, TestSetExtensions, Pkg
 using LuxCore, LuxDeviceUtils
 
-const GROUP = get(ENV, "GROUP", "CUDA")
+const GROUP = get(ENV, "GROUP", "NONE")
 
-@testset "LuxDeviceUtils Tests" begin
-    if GROUP == "CUDA"
-        @safetestset "CUDA" begin
-            include("cuda.jl")
-        end
+@testset ExtendedTestSet "LuxDeviceUtils Tests" begin
+    if GROUP == "CUDA" || GROUP == "ALL"
+        @safetestset "CUDA" include("cuda.jl")
     end
 
-    if GROUP == "AMDGPU"
-        @safetestset "CUDA" begin
-            include("amdgpu.jl")
-        end
+    if GROUP == "AMDGPU" || GROUP == "ALL"
+        @safetestset "AMDGPU" include("amdgpu.jl")
     end
 
-    if GROUP == "Metal"
-        @safetestset "Metal" begin
-            include("metal.jl")
-        end
+    if GROUP == "Metal" || GROUP == "ALL"
+        @safetestset "Metal" include("metal.jl")
     end
 
     @testset "Others" begin
-        @testset "Aqua Tests" begin
-            Aqua.test_all(LuxDeviceUtils)
-        end
-        @safetestset "Component Arrays" begin
-            include("component_arrays.jl")
-        end
+        @testset "Aqua Tests" Aqua.test_all(LuxDeviceUtils)
+
+        @safetestset "Component Arrays" include("component_arrays.jl")
     end
 end

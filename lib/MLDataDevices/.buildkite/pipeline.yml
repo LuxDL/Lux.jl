@@ -23,11 +23,6 @@ steps:
           setup:
             julia:
               - "1"
-              - "nightly"
-          adjustments:
-            - with:
-                julia: "nightly"
-              soft_fail: true
 
   - group: ":telescope: Downstream CUDA"
     steps:
@@ -106,11 +101,6 @@ steps:
           setup:
             julia:
               - "1"
-              - "nightly"
-          adjustments:
-            - with:
-                julia: "nightly"
-              soft_fail: true
 
   - group: ":telescope: Downstream AMD GPU"
     steps:
@@ -173,11 +163,11 @@ steps:
               version: "{{matrix.julia}}"
           - JuliaCI/julia-test#v1:
               test_args: "--quickfail"
-          - JuliaCI/julia-coverage#v1:
-              codecov: true
-              dirs:
-                - src
-                - ext
+          # - JuliaCI/julia-coverage#v1:
+          #     codecov: true
+          #     dirs:
+          #       - src
+          #       - ext
         agents:
           queue: "juliaecosystem"
           os: "macos"
@@ -190,11 +180,6 @@ steps:
           setup:
             julia:
               - "1"
-              - "nightly"
-          adjustments:
-            - with:
-                julia: "nightly"
-              soft_fail: true
 
 env:
   SECRET_CODECOV_TOKEN: "PxSr3Y7vdbiwaoX51uGykPsogxmP1IOBt5Z8TwP9GqDxIrvFocEVV2DR4Bebee12G/HYvXtQTyYXH49DpzlsfJ7ri1GQZxd9WRr+aM1DDYmzfDCfpadp4hMoJ5NQvmc/PzeGrNWOOaewaLTUP1eEaG4suygZN0lc5q9BCchIJeqoklGms5DVt/HtfTmwoD/s4wGoIJINi4RoFgnCAkzSh11hTAkyjVerfBGWEi/8E6+WBq3UKwaW4HnT02wG9qFnD4XkHpIpjMxJTpdBn5ufKI+QoJ7qJHlwqgDCtsOCblApccLTjH/BnTahNoSb/b0wdS/cblOTrtdPGzZ5UvmQ4Q==;U2FsdGVkX1/Ji2Nqeq3tqTYCBik6iXILP+rriPRqj/qxhFu4vBWWT3UnlfqDzj6oVdXyuKt0+5e+x33x2S0mBw=="
