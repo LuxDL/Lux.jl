@@ -46,6 +46,7 @@ LuxFluxTransformExt = "Flux"
 LuxLuxAMDGPUExt = "LuxAMDGPU"
 LuxLuxCUDAExt = "LuxCUDA"
 LuxMetalExt = "Metal"
+LuxReverseDiffExt = "ReverseDiff"
 LuxTrackerExt = "Tracker"
 LuxZygoteExt = "Zygote"
 

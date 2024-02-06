@@ -3,34 +3,28 @@ module Lux
 import PrecompileTools
 
 PrecompileTools.@recompile_invalidations begin
-    # Some core imports
     using Reexport
-    # Lux Packages
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
-    # Julia StdLibs
     using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
-    # Parameter Manipulation / Clean Code
     using Adapt, ConcreteStructs, Functors, Setfield
-    # Automatic Differentiation
     using ChainRulesCore
-    # Smaller Stacktraces -- Till we have better solution in Base
-    import TruncatedStacktraces
-end
+    import TruncatedStacktraces: @truncate_stacktrace
 
-import TruncatedStacktraces: @truncate_stacktrace
+    import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
+        initialparameters, initialstates, parameterlength, statelength, update_state,
+        trainmode, testmode, setup, apply, display_name
+    import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
+end
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 
-import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
-    initialstates, parameterlength, statelength, update_state, trainmode, testmode, setup,
-    apply, display_name
-import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
-import ChainRulesCore as CRC
+const CRC = ChainRulesCore
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
 # Utilities
 include("utils.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -38,9 +32,11 @@ include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
 include("layers/recurrent.jl")
+
 # Pretty Printing
 include("layers/display.jl")
 include("stacktraces.jl")
+
 # AutoDiff
 include("chainrules.jl")
 

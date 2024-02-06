@@ -19,7 +19,8 @@ end
 Optimisers.setup(opt::AbstractRule, ps::ComponentArray) = Optimisers.setup(opt, getdata(ps))
 
 function Optimisers.update(tree, ps::ComponentArray, gs::ComponentArray)
-    tree, ps_new = Optimisers.update(tree, getdata(ps), getdata(gs))
+    gs_flat = Lux.__value(getdata(gs))
+    tree, ps_new = Optimisers.update(tree, getdata(ps), gs_flat)
     return tree, ComponentArray(ps_new, getaxes(ps))
 end
 

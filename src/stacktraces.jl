@@ -6,7 +6,11 @@ An easy way to update `TruncatedStacktraces.VERBOSE` without having to load it m
 Effectively does `TruncatedStacktraces.VERBOSE[] = disable`
 """
 function disable_stacktrace_truncation!(; disable::Bool=true)
-    return TruncatedStacktraces.VERBOSE[] = disable
+    @static if VERSION ≥ v"1.10-"
+        @warn "`disable_stacktrace_truncation!` is not needed anymore, as stacktraces are truncated by default." maxlog=1
+    else
+        return TruncatedStacktraces.VERBOSE[] = disable
+    end
 end
 
 # NamedTuple / Tuples -- Lux uses them quite frequenty (states) making the error messages
