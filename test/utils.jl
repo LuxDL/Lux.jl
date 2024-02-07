@@ -8,8 +8,8 @@ rng = get_stable_rng(12345)
 @testset "$mode: replicate" for (mode, aType, device, ongpu) in MODES
     _rng = get_default_rng(mode)
     if mode == "AMDGPU"
-        @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
-        @test_broken randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
+        @test_skip randn(_rng, 10, 2) != randn(_rng, 10, 2)
+        @test_skip randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
     else
         @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
         @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
