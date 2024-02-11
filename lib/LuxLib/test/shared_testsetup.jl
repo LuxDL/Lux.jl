@@ -1,8 +1,9 @@
-using LuxLib, LuxTestUtils, StableRNGs, Test, Zygote
-using LuxCUDA, LuxAMDGPU
-using LuxTestUtils: @jet, @test_gradients, check_approx
+@testsetup module SharedTestSetup
+import Reexport: @reexport
 
-CUDA.allowscalar(false)
+using LuxLib, LuxCUDA, LuxAMDGPU
+@reexport using LuxTestUtils, StableRNGs, Test, Zygote
+import LuxTestUtils: @jet, @test_gradients, check_approx
 
 const GROUP = get(ENV, "GROUP", "All")
 
@@ -26,3 +27,7 @@ end
 get_stable_rng(seed=12345) = StableRNG(seed)
 
 __istraining(::Val{training}) where {training} = training
+
+export cpu_testing, cuda_testing, amdgpu_testing, MODES, get_stable_rng, __istraining,
+       check_approx, @jet, @test_gradients
+end

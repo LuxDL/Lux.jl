@@ -23,7 +23,7 @@ include("api/groupnorm.jl")
 include("api/instancenorm.jl")
 include("api/layernorm.jl")
 
-export batchnorm, groupnorm, instancenorm, layernorm
-export alpha_dropout, dropout
+export batchnorm, groupnorm, instancenorm, layernorm,
+       alpha_dropout, dropout
 
 end

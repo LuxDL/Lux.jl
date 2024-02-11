@@ -2,9 +2,9 @@ module LuxLibLuxCUDATrackerExt
 
 using LuxCUDA, LuxLib, Tracker
 import Tracker: @grad,
-    data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
+                data, nobacksies, track, TrackedArray, TrackedVector, TrackedReal
 import LuxLib: AA, AV, batchnorm_cudnn, ∇batchnorm_cudnn, _get_batchnorm_statistics,
-    FP_32_64, ∂∅, __is_tracked
+               FP_32_64, ∂∅, __is_tracked
 
 # api/batchnorm.jl
 const TR_CUDNN_BN_ARRAY_TYPE = Union{TrackedArray{<:Any, <:Any, <:CuArray{<:FP_32_64, 2}},
