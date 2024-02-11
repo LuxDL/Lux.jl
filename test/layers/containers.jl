@@ -356,7 +356,8 @@ end
     REPEATS = [Val(4), Val(4), Val(4), Val(4)]
     INJECTION = [Val(false), Val(true), Val(false), Val(true)]
 
-    @testset "repeats = $(repeats); input_injection = $(input_injection)" for (layer, repeats, input_injection) in zip(LAYERS,
+    @testset "repeats = $(repeats); input_injection = $(input_injection)" for (layer, repeats, input_injection) in zip(
+        LAYERS,
         REPEATS, INJECTION)
         layer = RepeatedLayer(layer; repeats, input_injection)
         __display(layer)

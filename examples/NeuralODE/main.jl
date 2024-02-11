@@ -15,7 +15,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
-    OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils
+      OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 CUDA.allowscalar(false)
@@ -79,7 +79,8 @@ function create_model(model_fn=NeuralODE; dev=gpu_device(), use_named_tuple::Boo
     ## Construct the Neural ODE Model
     model = Chain(FlattenLayer(),
         Dense(784 => 20, tanh),
-        model_fn(Chain(Dense(20 => 10, tanh), Dense(10 => 10, tanh), Dense(10 => 20, tanh));
+        model_fn(
+            Chain(Dense(20 => 10, tanh), Dense(10 => 10, tanh), Dense(10 => 20, tanh));
             save_everystep=false, reltol=1.0f-3, abstol=1.0f-3, save_start=false,
             sensealg),
         Base.Fix1(diffeqsol_to_array, 20),

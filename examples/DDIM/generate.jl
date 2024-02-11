@@ -1,14 +1,14 @@
 using Lux,
-    Random,
-    Images,
-    Optimisers,
-    ProgressBars,
-    LuxCUDA,
-    LuxAMDGPU,
-    BSON,
-    Plots,
-    Comonicon,
-    Printf
+      Random,
+      Images,
+      Optimisers,
+      ProgressBars,
+      LuxCUDA,
+      LuxAMDGPU,
+      BSON,
+      Plots,
+      Comonicon,
+      Printf
 
 # https://discourse.julialang.org/t/deactivate-plot-display-to-avoid-need-for-x-server/19359
 ENV["GKSwstype"] = "nul"

@@ -15,7 +15,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq,
-    Optimization, OptimizationOptimJL, Random, SciMLSensitivity
+      Optimization, OptimizationOptimJL, Random, SciMLSensitivity
 using CairoMakie, MakiePublication
 CUDA.allowscalar(false)
 

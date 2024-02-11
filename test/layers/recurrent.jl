@@ -242,7 +242,8 @@ end
 @testset "$mode: Recurrence" for (mode, aType, device, ongpu) in MODES
     @testset "ordering: $ordering" for ordering in (BatchLastIndex(), TimeLastIndex())
         @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
-            @testset "use_bias: $use_bias, train_state: $train_state" for use_bias in (true,
+            @testset "use_bias: $use_bias, train_state: $train_state" for use_bias in (
+                    true,
                     false),
                 train_state in (true, false)
 
@@ -252,8 +253,9 @@ end
                 __display(rnn)
 
                 # Batched Time Series
-                @testset "typeof(x): $(typeof(x))" for x in (randn(rng, Float32, 3, 4, 2) |>
-                                                             aType,
+                @testset "typeof(x): $(typeof(x))" for x in (
+                    randn(rng, Float32, 3, 4, 2) |>
+                    aType,
                     Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
                     [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
                     # Fix data ordering for testing
@@ -289,7 +291,8 @@ end
     end
 
     # Ordering Check: https://github.com/LuxDL/Lux.jl/issues/302
-    encoder = Recurrence(RNNCell(1 => 1,
+    encoder = Recurrence(
+        RNNCell(1 => 1,
             identity;
             init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
             init_state=(rng, args...; kwargs...) -> zeros(args...; kwargs...),

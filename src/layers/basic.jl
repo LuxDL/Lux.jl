@@ -177,7 +177,8 @@ function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; kwargs...)
     return Dense(first(mapping), last(mapping), activation; kwargs...)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
+function Dense(
+        in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
         init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return Dense{use_bias}(activation, in_dims, out_dims, init_weight, init_bias)
@@ -203,8 +204,10 @@ end
 
 @inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
     x_reshaped = reshape(x, size(x, 1), :)
-    return (reshape(__apply_activation(d.activation, ps.weight * x_reshaped), d.out_dims,
-            size(x)[2:end]...), st)
+    return (
+        reshape(__apply_activation(d.activation, ps.weight * x_reshaped), d.out_dims,
+            size(x)[2:end]...),
+        st)
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
@@ -217,8 +220,10 @@ end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
     x_reshaped = reshape(x, size(x, 1), :)
-    return (reshape(__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
-            d.out_dims, size(x)[2:end]...), st)
+    return (
+        reshape(__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
+            d.out_dims, size(x)[2:end]...),
+        st)
 end
 
 """

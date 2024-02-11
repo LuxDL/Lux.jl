@@ -20,7 +20,8 @@ CRC.@non_differentiable fieldcount(::Any)
 function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) where {F1, F2}
     y = merge(nt1, nt2)
     function ∇merge(dy)
-        dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1)) for f1 in F1))
+        dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1))
+        for f1 in F1))
         dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
         return (NoTangent(), dnt1, dnt2)
     end
@@ -49,7 +50,8 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
 end
 
 # foldl_init
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G, x::Tuple,
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G, x::Tuple,
         init) where {G}
     x_arr = [x...]
     y, ∇foldl_init_internal = CRC.rrule_via_ad(cfg, foldl_init, op, x_arr, init)

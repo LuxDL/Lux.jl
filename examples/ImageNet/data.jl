@@ -45,7 +45,7 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
             "n04596742_4225.JPEG",
             "n07583066_647.JPEG",
             "n13037406_4650.JPEG",
-            "n02105855_2933.JPEG",
+            "n02105855_2933.JPEG"
         ]
         remove_files = joinpath.((folder,),
             joinpath.(first.(rsplit.(remove_files, "_", limit=2)), remove_files))

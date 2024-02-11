@@ -6,7 +6,8 @@ using Zygote: Pullback
 
 function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::Function,
         data, ts::Lux.Experimental.TrainState)
-    (loss, st, stats), back = Zygote.pullback(ps -> objective_function(ts.model, ps,
+    (loss, st, stats), back = Zygote.pullback(
+        ps -> objective_function(ts.model, ps,
             ts.states, data), ts.parameters)
     grads = back((one(loss), nothing, nothing))[1]
     @set! ts.states = st

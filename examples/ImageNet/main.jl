@@ -46,7 +46,8 @@ function construct(rng::AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
     should_log() && println("$(now()) ==> forward pass warmup completed")
 
     if !ecfg.train.evaluate
-        (l, _, _), back = Zygote.pullback(p -> logitcrossentropyloss(x__, y__, model, p, st),
+        (l, _, _), back = Zygote.pullback(
+            p -> logitcrossentropyloss(x__, y__, model, p, st),
             ps)
         back((one(l), nothing, nothing))
         should_log() && println("$(now()) ==> backward pass warmup completed")

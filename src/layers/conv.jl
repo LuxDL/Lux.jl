@@ -118,13 +118,15 @@ function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
+    cdims = DenseConvDims(
+        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
         groups=c.groups)
     return __apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
+    cdims = DenseConvDims(
+        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
         groups=c.groups)
     return __apply_activation(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
@@ -759,8 +761,10 @@ end
         padding=c.pad,
         c.dilation,
         c.groups)
-    return (__apply_activation(c.activation,
-            _conv_transpose(x, ps.weight, cdims) .+ ps.bias), st)
+    return (
+        __apply_activation(c.activation,
+            _conv_transpose(x, ps.weight, cdims) .+ ps.bias),
+        st)
 end
 
 function Base.show(io::IO, l::ConvTranspose)

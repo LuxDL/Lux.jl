@@ -10,7 +10,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
-    Optimisers, Random, Setfield, Statistics, Zygote
+      Optimisers, Random, Setfield, Statistics, Zygote
 CUDA.allowscalar(false)
 
 # ## Loading Datasets
@@ -21,7 +21,8 @@ function _load_dataset(dset, n_train::Int, n_eval::Int, batchsize::Int)
     imgs, labels = dset(:test)[1:n_eval]
     x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
 
-    return (DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
+    return (
+        DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
         DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false))
 end
 
