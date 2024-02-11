@@ -251,7 +251,8 @@ function test_gradients_expr(__module__, __source__, f, args...;
         rtol::Real=atol > 0 ? 0.0 : √eps(typeof(atol)),
         nans::Bool=false,
         kwargs...)
-    orig_exprs = map(x -> QuoteNode(Expr(:macrocall,
+    orig_exprs = map(
+        x -> QuoteNode(Expr(:macrocall,
             GlobalRef(@__MODULE__, Symbol("@test_gradients{$x}")), __source__, f, args...)),
         ("Tracker", "ReverseDiff", "ForwardDiff", "FiniteDifferences"))
     len = length(args)
@@ -269,8 +270,9 @@ function test_gradients_expr(__module__, __source__, f, args...;
             skip=skip_reverse_diff)
         reverse_diff_broken = $reverse_diff_broken && !skip_reverse_diff
 
-        arr_len = length.(filter(Base.Fix2(isa, AbstractArray) ∘
-                                 Base.Fix1(__correct_arguments, identity),
+        arr_len = length.(filter(
+            Base.Fix2(isa, AbstractArray) ∘
+            Base.Fix1(__correct_arguments, identity),
             tuple($(esc.(args)...))))
         large_arrays = any(x -> x ≥ $large_array_length, arr_len) ||
                        sum(arr_len) ≥ $max_total_array_size
@@ -365,13 +367,15 @@ function __gradient(gradient_function::F, f, args...; skip::Bool) where {F}
                 length(args))
         end
         function __f(inputs...)
-            updated_inputs = ntuple(i -> aa_inputs[i] ? inputs[__aa_input_idx[i]] : args[i],
+            updated_inputs = ntuple(
+                i -> aa_inputs[i] ? inputs[__aa_input_idx[i]] : args[i],
                 length(args))
             return f(updated_inputs...)
         end
         gs = gradient_function(__f, [corrected_args...][aa_inputs]...)
-        return ntuple(i -> aa_inputs[i] ?
-                           __uncorrect_arguments(gs[__aa_input_idx[i]],
+        return ntuple(
+            i -> aa_inputs[i] ?
+                 __uncorrect_arguments(gs[__aa_input_idx[i]],
                 args[__aa_input_idx[i]],
                 corrected_args[__aa_input_idx[i]]) : GradientComputationSkipped(),
             length(args))
