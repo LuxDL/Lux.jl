@@ -32,7 +32,7 @@ const GROUP = get(ENV, "GROUP", "All")
 
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
-            kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal, truncated_normal,
+            kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal, truncated_normal
         ]
             # Sizes
             @test size(init(3)) == (3,)
@@ -77,8 +77,10 @@ const GROUP = get(ENV, "GROUP", "All")
 
         @testset "AbstractArray Type: $init $T" for init in [kaiming_uniform,
                 kaiming_normal,
-                glorot_uniform, glorot_normal, truncated_normal], T in (Float16, Float32,
+                glorot_uniform, glorot_normal, truncated_normal],
+            T in (Float16, Float32,
                 Float64, ComplexF16, ComplexF32, ComplexF64)
+
             init === truncated_normal && !(T <: Real) && continue
 
             @test init(T, 3) isa AbstractArray{T, 1}
@@ -143,7 +145,8 @@ const GROUP = get(ENV, "GROUP", "All")
 
     @static if VERSION ≥ v"1.9"
         @testset "Warning: truncated_normal" begin
-            @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." truncated_normal(2;
+            @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." truncated_normal(
+                2;
                 mean=-5.0f0)
         end
     end
