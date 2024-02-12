@@ -20,11 +20,6 @@ steps:
           setup:
             julia:
               - "1"
-              - "nightly"
-          adjustments:
-            - with:
-                julia: "nightly"
-              soft_fail: true
 
   # Downstream CUDA Tests
   - group: ":telescope: Downstream CUDA"
@@ -77,4 +72,6 @@ steps:
               - "LuxLib"
 
 env:
+  RETESTITEMS_NWORKERS: 4
+  RETESTITEMS_NWORKER_THREADS: 2
   SECRET_CODECOV_TOKEN: "TTwLG9F33tgVgZHK68A3ReRNBt0sWOMAOlPv4kwqwlbWumO6dmz5Narsc889M89nkGFF18d4N/uDWlrm6yIvBX8KSv84vtDOmV5h4d1r6TDVTumibJsFUnTLUkMfbSxw/Bk/q9DKwkYzb1MsNYFJ+zvx9WHnTBd1TiCOLYIRoqxH3aiipe2Auv1sLHJXsxfOvLyrqmcZC+h9OHbVhvFKgrlXbDqONNhWEX4tkzplhIddi60GwFv9xQe7sXpNNmI3Dz/s7BI5XzOxQwKziWOhfsXHreuyby8/Jl/ncpytQkSYRwOw0u8EKNIzeGTCDhfV1EfeuyCq6BfzwSxSFoe8Dw==;U2FsdGVkX1/amMWov97QY23CDLskhDds8btz5Rh9tunCe2Ky8oocTu/5cOy13GjRfAFlQapr78KQrX67dJm/0g=="
