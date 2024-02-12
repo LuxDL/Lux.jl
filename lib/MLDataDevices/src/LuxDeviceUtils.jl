@@ -1,7 +1,11 @@
 module LuxDeviceUtils
 
-using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
-import Adapt: adapt, adapt_storage
+import PrecompileTools: @recompile_invalidations
+
+@recompile_invalidations begin
+    using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
+    import Adapt: adapt, adapt_storage
+end
 
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
@@ -243,7 +247,9 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
             return fmap(Base.Fix1(adapt, $(ladaptor)()), x; exclude=_isleaf)
         end
         function (::$(ldev))(NN::LuxCore.AbstractExplicitLayer)
-            @warn "Lux layers are stateless and hence don't participate in device transfers. Apply this function on the parameters and states generated using `Lux.setup`." maxlog=1
+            @warn "Lux layers are stateless and hence don't participate in device \
+                transfers. Apply this function on the parameters and states generated \
+                using `Lux.setup`." maxlog=1
             return NN
         end
     end

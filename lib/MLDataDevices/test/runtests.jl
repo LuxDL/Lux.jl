@@ -1,5 +1,4 @@
-using Aqua, SafeTestsets, Test, TestSetExtensions, Pkg
-using LuxCore, LuxDeviceUtils
+using Aqua, SafeTestsets, Test, LuxDeviceUtils, TestSetExtensions
 
 const GROUP = get(ENV, "GROUP", "NONE")
 
