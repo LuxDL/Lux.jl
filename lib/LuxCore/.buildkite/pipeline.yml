@@ -43,15 +43,10 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.6"
               - "1"
             repo:
               - "Lux"
               - "Boltz"
-          adjustments:
-            - with:
-                julia: "1.6"
-              soft_fail: true
 
   # Downstream AMDGPU Tests
   - group: ":telescope: Downstream AMD GPU"
@@ -107,5 +102,7 @@ steps:
               - "Boltz"
 
 env:
+  RETESTITEMS_NWORKERS: 4
+  RETESTITEMS_NWORKER_THREADS: 2
   SECRET_CODECOV_TOKEN: "Kd5OoJmg0QG6UN1FXKiafA3WtSj7jOeC6dwD62AQrunXKZp9G8jifFJiHKN2kqfulE7Q3h+Fr2wo6ToIbF8yWVN0qya/VY90QVvVkBpr0KKW9ocIhGghHzeXRwlPk3p6Ws0dc52o6XMr6axps7bv8joKzMblrAbCBs9KZ1YSL+8rQKal5VolQtBV8Nz2DL7V4xqIhxHE9HoJq7Mi9hFaDEtU4DsxjlpNJbwnsLHx+qEK3TORK8RfM5UEDxhObkd2m7xPK0xdUSKGNK7dsJlnkPPlLwNVKYLQou960YiuLJhsXNDl/cnBEP5UX9hVzqzdyYzwwXg69G0Om7XTJVDO9A==;U2FsdGVkX1+0o0cndEEUKum97YC5iNiXqWqKD49nU3XJvdFh0eZn7oQA6eGwFpTWm2sJMvFIroKZ0PHrew9mCQ=="
 

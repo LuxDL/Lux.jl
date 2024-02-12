@@ -1,7 +1,7 @@
 name = "LuxCore"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.6"
+version = "0.1.7"
 
 [deps]
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
@@ -9,6 +9,20 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [compat]
-Functors = "0.2, 0.3, 0.4"
-Setfield = "0.8, 1"
-julia = "1.6"
+Aqua = "0.8"
+Functors = "0.4"
+Optimisers = "0.3"
+Random = "1.9"
+Setfield = "1"
+Test = "1.9"
+julia = "1.9"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "Functors", "Optimisers", "Random", "Test"]
