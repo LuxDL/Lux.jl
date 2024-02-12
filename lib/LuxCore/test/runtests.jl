@@ -1,4 +1,4 @@
-using Functors, LuxCore, Optimisers, Random, Test
+using Aqua, Functors, LuxCore, Optimisers, Random, Test
 
 rng = LuxCore._default_rng()
 
@@ -229,5 +229,9 @@ end
         models3 = [1, 2, 3, (; a=Dense(5, 10), b=Dense(10, 5))]
 
         @test LuxCore.contains_lux_layer(models3)
+    end
+
+    @testset "Aqua: Quality Assurance" begin
+        Aqua.test_all(LuxCore)
     end
 end
