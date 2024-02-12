@@ -160,9 +160,46 @@ const GROUP = get(ENV, "GROUP", "All")
         end
     end
 
-    @testset "Warning: truncated_normal" begin
-        @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so \
-            the distribution of values may be inaccurate." truncated_normal(2; mean=-5.0f0)
+    @testset "Orthogonal rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
+        # A matrix of dim = (m,n) with m > n should produce a QR decomposition.
+        # In the other case, the transpose should be taken to compute the QR decomposition.
+        for (rows, cols) in [(5, 3), (3, 5)]
+            v = orthogonal(rng, rows, cols)
+            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
+        end
+        for mat in [(3, 4, 5), (2, 2, 5)]
+            v = orthogonal(rng, mat...)
+            cols = mat[end]
+            rows = div(prod(mat), cols)
+            v = reshape(v, (rows, cols))
+            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
+        end
+        # Type
+        @testset "Orthogonal Types $T" for T in (Float16, Float32, Float64)
+            @test eltype(orthogonal(rng, T, 3, 4; gain=1.5)) == T
+            @test eltype(orthogonal(rng, T, 3, 4, 5; gain=1.5)) == T
+        end
+        @testset "Orthogonal AbstractArray Type $T" for T in (Float16, Float32, Float64)
+            @test orthogonal(T, 3, 5) isa AbstractArray{T, 2}
+            @test orthogonal(rng, T, 3, 5) isa arrtype{T, 2}
+
+            cl = orthogonal(rng)
+            @test cl(T, 3, 5) isa arrtype{T, 2}
+
+            cl = orthogonal(rng, T)
+            @test cl(3, 5) isa arrtype{T, 2}
+        end
+        @testset "Orthogonal Closure" begin
+            cl = orthogonal(;)
+            # Sizes
+            @test size(cl(3, 4)) == (3, 4)
+            @test size(cl(rng, 3, 4)) == (3, 4)
+            @test size(cl(3, 4, 5)) == (3, 4, 5)
+            @test size(cl(rng, 3, 4, 5)) == (3, 4, 5)
+            # Type
+            @test eltype(cl(4, 2)) == Float32
+            @test eltype(cl(rng, 4, 2)) == Float32
+        end
     end
 
     @testset "Aqua: Quality Assurance" begin

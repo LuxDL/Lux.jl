@@ -1,7 +1,7 @@
 module WeightInitializersCUDAExt
 
 using WeightInitializers, CUDA
-import WeightInitializers: __partial_apply, NUM_TO_FPOINT, identity_init, sparse_init
+import WeightInitializers: __partial_apply, NUM_TO_FPOINT, identity_init, sparse_init, orthogonal
 
 const AbstractCuRNG = Union{CUDA.RNG, CURAND.RNG}
 
@@ -18,6 +18,33 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros)
         return __partial_apply($name, (rng, (; kwargs...)))
     end
 end
+
+function orthogonal(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
+        gain::Number=T(1.0)) where {T <: Number}
+   @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
+
+    if length(dims) == 2
+        rows, cols = dims
+    else
+        rows = prod(dims[1:(end - 1)])
+        cols = dims[end]
+    end
+
+    if rows < cols
+        return CUDA.permutedims(orthogonal(rng, T, cols, rows; gain))
+    end
+
+    mat = randn(rng, T, rows, cols)
+    Q, R = CUDA.qr(mat)
+    mat .= Q * sign.(CUDA.diag(R)) .* T(gain)
+
+    if length(dims) > 2
+        return CUDA.reshape(mat, dims)
+    else
+        return mat
+    end
+end
+
 
 function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
