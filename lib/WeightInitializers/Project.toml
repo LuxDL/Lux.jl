@@ -1,11 +1,11 @@
 name = "WeightInitializers"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.3"
+version = "0.1.4"
 
 [deps]
-PackageExtensionCompat = "65ce6f38-6b18-4e1d-a461-8949797d7930"
 PartialFunctions = "570af359-4316-4cb7-8c74-252c00c2016b"
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -17,13 +17,24 @@ CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 WeightInitializersCUDAExt = "CUDA"
 
 [compat]
-CUDA = "4, 5"
-PackageExtensionCompat = "1"
-PartialFunctions = "1"
-Random = "<0.0.1, 1"
+Aqua = "0.8"
+CUDA = "5"
+PartialFunctions = "1.2"
+PrecompileTools = "1.2"
+Random = "1.9"
 SpecialFunctions = "2"
-Statistics = "<0.01, 1"
-julia = "1.6"
+StableRNGs = "1"
+Statistics = "1.9"
+Test = "1.9"
+julia = "1.9"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "Test", "StableRNGs", "Random", "Statistics", "CUDA"]

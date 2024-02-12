@@ -1,10 +1,9 @@
 module WeightInitializers
 
-using PartialFunctions, Random, SpecialFunctions, Statistics
+import PrecompileTools: @recompile_invalidations
 
-import PackageExtensionCompat: @require_extensions
-function __init__()
-    @require_extensions
+@recompile_invalidations begin
+    using PartialFunctions, Random, SpecialFunctions, Statistics
 end
 
 include("utils.jl")
