@@ -43,7 +43,8 @@ function residual_block(in_channels::Int, out_channels::Int)
     end
 
     return Chain(first_layer,
-        SkipConnection(Chain(BatchNorm(out_channels; affine=false, momentum=0.99),
+        SkipConnection(
+            Chain(BatchNorm(out_channels; affine=false, momentum=0.99),
                 Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1)),
                 swish,
                 Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1))),
@@ -261,9 +262,10 @@ function DenoisingDiffusionImplicitModel(image_size::Tuple{Int, Int};
         max_signal_rate)
 end
 
-function (ddim::DenoisingDiffusionImplicitModel{T})(x::Tuple{
+function (ddim::DenoisingDiffusionImplicitModel{T})(
+        x::Tuple{
             AbstractArray{T, 4},
-            AbstractRNG,
+            AbstractRNG
         },
         ps,
         st::NamedTuple) where {T <: AbstractFloat}

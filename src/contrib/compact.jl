@@ -52,7 +52,7 @@ Here is a linear model with bias and activation:
 ```julia
 d_in = 5
 d_out = 7
-d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
+d = @compact(W=randn(d_out, d_in), b=zeros(d_out),act=relu) do x
     y = W * x
     return act.(y .+ b)
 end
@@ -223,7 +223,8 @@ function supportself(fex::Expr, vars)
     calls = []
     for var in vars
         push!(calls,
-            :($var = Lux.Experimental.__maybe_make_stateful(Lux._getproperty($self,
+            :($var = Lux.Experimental.__maybe_make_stateful(
+                Lux._getproperty($self,
                     $(Val(var))), Lux._getproperty($ps, $(Val(var))),
                 Lux._getproperty($st, $(Val(var))))))
     end

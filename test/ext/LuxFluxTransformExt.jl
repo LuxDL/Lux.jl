@@ -91,7 +91,7 @@ include("../test_utils.jl")
         @testset "Dense" begin
             for model in [
                 Flux.Dense(2 => 4) |> fdevice(device),
-                Flux.Dense(2 => 4; bias=false) |> fdevice(device),
+                Flux.Dense(2 => 4; bias=false) |> fdevice(device)
             ]
                 x = randn(Float32, 2, 4) |> aType
 
@@ -110,7 +110,7 @@ include("../test_utils.jl")
         @testset "Scale" begin
             for model in [
                 Flux.Scale(2) |> fdevice(device),
-                Flux.Scale(2; bias=false) |> fdevice(device),
+                Flux.Scale(2; bias=false) |> fdevice(device)
             ]
                 x = randn(Float32, 2, 4) |> aType
 
@@ -129,7 +129,7 @@ include("../test_utils.jl")
         @testset "Bilinear" begin
             for model in [
                 Flux.Bilinear((2, 3) => 5) |> fdevice(device),
-                Flux.Bilinear((2, 3) => 5; bias=false) |> fdevice(device),
+                Flux.Bilinear((2, 3) => 5; bias=false) |> fdevice(device)
             ]
                 x = randn(Float32, 2, 4) |> aType
                 y = randn(Float32, 3, 4) |> aType

@@ -3,7 +3,7 @@ module Experimental
 using ..Lux, LuxCore, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 import ..Lux: _merge,
-    _pairs, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
+              _pairs, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
 import ChainRulesCore as CRC
 import ConcreteStructs: @concrete
 import Functors: fmap
@@ -49,7 +49,8 @@ end
 end
 
 macro layer_map(f, l, ps, st)
-    Base.depwarn("`Lux.@layer_map` has been deprecated in favor of `Lux.Experimental.@layer_map`",
+    Base.depwarn(
+        "`Lux.@layer_map` has been deprecated in favor of `Lux.Experimental.@layer_map`",
         Symbol("@layer_map"))
     quote
         Experimental.layer_map($(esc(f)), $(esc(l)), $(esc(ps)), $(esc(st)), $(string(l)))

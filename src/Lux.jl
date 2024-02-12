@@ -11,8 +11,9 @@ PrecompileTools.@recompile_invalidations begin
     import TruncatedStacktraces: @truncate_stacktrace
 
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
-        initialparameters, initialstates, parameterlength, statelength, update_state,
-        trainmode, testmode, setup, apply, display_name
+                    initialparameters, initialstates, parameterlength, statelength,
+                    update_state,
+                    trainmode, testmode, setup, apply, display_name
     import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
 end
 
@@ -54,7 +55,7 @@ export cpu, gpu
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
-    AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
+       AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm

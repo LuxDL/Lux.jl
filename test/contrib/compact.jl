@@ -48,7 +48,7 @@ end
     @testset "Linear Layer with Activation" begin
         d_in = 5
         d_out = 7
-        d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
+        d = @compact(W=randn(d_out, d_in), b=zeros(d_out),act=relu) do x
             y = W * x
             return act.(y .+ b)
         end
@@ -236,7 +236,7 @@ end
         _a = 3
         _b = 4
         c = 5
-        model = @compact(a=_a; b=_b, c) do x
+        model = @compact(a=_a; b=_b,c) do x
             return a + b * x + c * x^2
         end
         ps, st = Lux.setup(rng, model) |> device
@@ -244,7 +244,7 @@ end
     end
 
     @testset "Keyword Arguments with Anonymous Function" begin
-        model = @test_nowarn @compact(x->x + a + b; a=1, b=2)
+        model = @test_nowarn @compact(x->x + a + b; a=1,b=2)
         ps, st = Lux.setup(rng, model) |> device
         @test first(model(3, ps, st)) == 1 + 2 + 3
         expected_string = """@compact(

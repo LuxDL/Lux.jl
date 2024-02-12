@@ -235,7 +235,8 @@ end
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); GN.groups,
+    y = groupnorm(
+        x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); GN.groups,
         GN.epsilon)
     return __apply_activation(GN.activation, y), st
 end

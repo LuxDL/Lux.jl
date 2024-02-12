@@ -7,7 +7,7 @@ rng = get_stable_rng(12345)
 @testset "$mode: BatchNorm" for (mode, aType, device, ongpu) in MODES
     m = BatchNorm(2)
     x = [1.0f0 3.0f0 5.0f0
-        2.0f0 4.0f0 6.0f0] |> aType
+         2.0f0 4.0f0 6.0f0] |> aType
     __display(m)
     ps, st = Lux.setup(rng, m) .|> device
 
@@ -68,7 +68,7 @@ rng = get_stable_rng(12345)
         # with activation function
         m = BatchNorm(2, sigmoid; affine)
         x = [1.0f0 3.0f0 5.0f0
-            2.0f0 4.0f0 6.0f0] |> aType
+             2.0f0 4.0f0 6.0f0] |> aType
         __display(m)
         ps, st = Lux.setup(rng, m) .|> device
         st = Lux.testmode(st)
