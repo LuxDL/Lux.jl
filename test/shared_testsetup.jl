@@ -1,6 +1,10 @@
-using Lux, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test, Zygote
-using LuxCUDA, LuxAMDGPU
-using LuxTestUtils: @jet, @test_gradients, check_approx
+@testsetup module SharedTestSetup
+import Reexport: @reexport
+
+using Lux, LuxCUDA, LuxAMDGPU
+@reexport using ComponentArrays,
+                LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test, Zygote, Statistics
+import LuxTestUtils: @jet, @test_gradients, check_approx
 
 const GROUP = get(ENV, "GROUP", "All")
 
@@ -26,30 +30,28 @@ end
 
 # Some Helper Functions
 function get_default_rng(mode::String)
-    if mode == "CPU"
-        return copy(default_device_rng(LuxCPUDevice()))
-    elseif mode == "CUDA"
-        return deepcopy(default_device_rng(LuxCUDADevice()))
-    elseif mode == "AMDGPU"
-        return deepcopy(default_device_rng(LuxAMDGPUDevice()))
-    else
-        error("Unknown mode: $mode")
-    end
+    dev = mode == "CPU" ? LuxCPUDevice() :
+          mode == "CUDA" ? LuxCUDADevice() : mode == "AMDGPU" ? LuxAMDGPUDevice() : nothing
+    rng = default_device_rng(dev)
+    return rng isa TaskLocalRNG ? copy(rng) : deepcopy(rng)
 end
 
 get_stable_rng(seed=12345) = StableRNG(seed)
 
+__display(args...) = (println(); display(args...))
+
 # AMDGPU Specifics
 function _rocRAND_functional()
     try
-        default_device_rng(LuxAMDGPUDevice())
+        get_default_rng("AMDGPU")
         return true
     catch
         return false
     end
 end
 
-function __display(args...)
-    println()
-    return display(args...)
+export @jet, @test_gradients, check_approx
+export GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
+       get_stable_rng, __display, _rocRAND_functional
+
 end

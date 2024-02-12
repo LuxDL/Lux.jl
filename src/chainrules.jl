@@ -21,9 +21,7 @@ function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) wh
         dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
         return (NoTangent(), dnt1, dnt2)
     end
-    function ∇merge(dy::Union{NoTangent, ZeroTangent})
-        return (NoTangent(), NoTangent(), NoTangent())
-    end
+    ∇merge(::Union{NoTangent, ZeroTangent}) = (NoTangent(), NoTangent(), NoTangent())
     return y, ∇merge
 end
 

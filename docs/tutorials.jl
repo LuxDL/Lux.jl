@@ -2,8 +2,8 @@ using Distributed
 
 addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1")))
 
-@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(
-    Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
+@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(Int,
+    get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
 @info "Lux Tutorial Build Running tutorials with $(LUX_DOCUMENTATION_NWORKERS) workers."
 @everywhere const CUDA_MEMORY_LIMIT = 100 ÷ LUX_DOCUMENTATION_NWORKERS
 
@@ -26,12 +26,13 @@ TUTORIALS = [collect(Iterators.product(["beginner"], BEGINNER_TUTORIALS))...,
 pmap(enumerate(TUTORIALS)) do (i, (d, p))
     println("Running tutorial $(i): $(p) on worker $(myid())")
     withenv("JULIA_DEBUG" => "Literate",
-        "JULIA_CUDA_SOFT_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%") do
+        "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%") do
         name = "$(i)_$(first(rsplit(p, "/")))"
         p_ = get_example_path(p)
         OUTPUT = joinpath(@__DIR__, "src", "tutorials")
-        return Literate.markdown(
-            p_, joinpath(OUTPUT, d); execute=true, name, documenter=true,
-            preprocess=Base.Fix1(preprocess, p_))
+        res = Literate.markdown(p_, joinpath(OUTPUT, d); execute=true, name,
+            documenter=true, preprocess=Base.Fix1(preprocess, p_))
+        GC.gc(true)
+        return @isdefined(CUDA) && CUDA.reclaim()
     end
 end

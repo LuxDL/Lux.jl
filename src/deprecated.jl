@@ -11,9 +11,8 @@ This function has been deprecated. Use [`cpu_device`](@ref) instead.
 :::
 """
 function cpu(x)
-    Base.depwarn(
-        "`cpu` has been deprecated and will be removed in v0.6. Use `cpu_device` instead.",
-        :cpu)
+    Base.depwarn("`cpu` has been deprecated and will be removed in v0.6. Use \
+        `cpu_device` instead.", :cpu)
     return (cpu_device())(x)
 end
 
@@ -30,10 +29,11 @@ inside performance critical code will cause massive slowdowns due to type infere
 :::
 """
 function gpu(x)
-    @warn "Using `gpu` inside performance critical code will cause massive slowdowns due to type inference failure. Please update your code to use `gpu_device` API." maxlog=1
+    @warn "Using `gpu` inside performance critical code will cause massive slowdowns due \
+        to type inference failure. Please update your code to use `gpu_device` \
+        API." maxlog=1
 
-    Base.depwarn(
-        "`gpu` has been deprecated and will be removed in v0.6. Use `gpu_device` instead.",
-        :gpu)
+    Base.depwarn("`gpu` has been deprecated and will be removed in v0.6. Use \
+        `gpu_device` instead.", :gpu)
     return (gpu_device())(x)
 end
