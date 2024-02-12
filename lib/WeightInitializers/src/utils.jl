@@ -37,7 +37,8 @@ end
     name = NAME_TO_DIST[Symbol(funcname)]
     dist_type = NUM_TO_FPOINT[Symbol(fp)]
     return """
-        $fname([::AbstractRNG=_default_rng()], size...; kwargs...) -> AbstractArray{$(dist_type), length(size)}
+        $fname([::AbstractRNG=_default_rng()], size...;
+            kwargs...) -> AbstractArray{$(dist_type), length(size)}
 
     Return an `AbstractArray{$(dist_type)}` of the given `size` containing $(name).
     """

@@ -23,11 +23,6 @@ steps:
           setup:
             julia:
               - "1"
-              - "1.6"
-          adjustments:
-            - with:
-                julia: "1.6"
-              soft_fail: true
 
   # Downstream CUDA Tests
   - group: ":telescope: Downstream CUDA"
@@ -73,15 +68,10 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.6"
               - "1"
             repo:
               - "Lux"
               - "Boltz"
-          adjustments:
-            - with:
-                julia: "1.6"
-              soft_fail: true
 
   # Downstream AMDGPU Tests
   - group: ":telescope: Downstream AMD GPU"
@@ -137,6 +127,8 @@ steps:
               - "Boltz"
 
 env:
+  RETESTITEMS_NWORKERS: 4
+  RETESTITEMS_NWORKER_THREADS: 2
   SECRET_CODECOV_TOKEN: "DpNKbuKYRX40vpyJCfTvQmxwls1hlCUWiZX4pnsukt9E8u4pf0WUcIroRv2UDDbGYjuk5izmZ9yAhZZhiGMhjFF/TIji3JiYe1sXWdfSrNk0N2+CNoXo+CIi3JvS7mB+YAIUTEi2Xph+L7R0d+It079PEispqVv4bdRuqgSbY7Rn3NSsoV1cB8uUaVFBJH4EewC6Hceg80QW7q+CBru+QECudKbAWnRVLoizRsgzIld+gTUqsI1PhR+vSpD+AfZzhVxmff55ttVcMUFGnL3w4L74qoLVPET52/GPLCOi3RLGSzBJjebSBqqKOwesT9xJ4yaZ21AEzyeOm86YRc2WYg==;U2FsdGVkX1/eBwyJ7Of++vKyAWDSBvSdJeiKmVmlaVKFU5CHejM+sDlSZWH/WmoBatLcqH+eUVEGXC+oWl5riw=="
 
 
