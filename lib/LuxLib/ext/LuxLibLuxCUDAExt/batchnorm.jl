@@ -1,8 +1,9 @@
 using LuxCUDA
 using .cuDNN: CUDNN_BN_MIN_EPSILON, cudnnBatchNormalizationBackward,
-    cudnnBatchNormalizationForwardInference, CUDNN_BATCHNORM_SPATIAL,
-    cudnnBatchNormalizationForwardTraining, cudnnTensorDescriptor, CUDNN_TENSOR_NCHW,
-    cudnnDataType, dim4, scalingParameter, handle
+              cudnnBatchNormalizationForwardInference, CUDNN_BATCHNORM_SPATIAL,
+              cudnnBatchNormalizationForwardTraining, cudnnTensorDescriptor,
+              CUDNN_TENSOR_NCHW,
+              cudnnDataType, dim4, scalingParameter, handle
 import LuxLib: FP_32_64
 
 # NOTE: This can be upstreamed to LuxCUDA once we drop support for v1.6
@@ -169,7 +170,8 @@ function cudnnBNBackward!(∂g::DenseCuArray{T}, g::DenseCuArray{T}, ∂b::Dense
     xd = cudnnTensorDescriptor(x)
     ∂yd = cudnnTensorDescriptor(∂y)
     ∂xd = cudnnTensorDescriptor(∂x)
-    gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(_wsize(x))),
+    gd = cudnnTensorDescriptor(
+        CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(_wsize(x))),
         dim4(_wsize(x), Val(CUDNN_TENSOR_NCHW)))
 
     xmean = xmean === nothing ? CU_NULL : xmean
