@@ -1,8 +1,11 @@
 using Distributed
 
-const LUX_DOCUMENTATION_NWORKERS = parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
+addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1")))
+
+@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(
+    Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
 @info "Lux Tutorial Build Running tutorials with $(LUX_DOCUMENTATION_NWORKERS) workers."
-addprocs(LUX_DOCUMENTATION_NWORKERS)
+@everywhere const CUDA_MEMORY_LIMIT = 100 ÷ LUX_DOCUMENTATION_NWORKERS
 
 @everywhere using Literate
 
@@ -22,7 +25,8 @@ TUTORIALS = [collect(Iterators.product(["beginner"], BEGINNER_TUTORIALS))...,
 
 pmap(enumerate(TUTORIALS)) do (i, (d, p))
     println("Running tutorial $(i): $(p) on worker $(myid())")
-    withenv("JULIA_DEBUG" => "Literate") do
+    withenv("JULIA_DEBUG" => "Literate",
+        "JULIA_CUDA_SOFT_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%") do
         name = "$(i)_$(first(rsplit(p, "/")))"
         p_ = get_example_path(p)
         OUTPUT = joinpath(@__DIR__, "src", "tutorials")
