@@ -127,6 +127,21 @@ Simply calls `model(x, ps, st)`
 apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 """
+    stateless_apply(model, x, ps, st)
+
+Calls `apply` and only returns the first argument.
+"""
+function stateless_apply(model::AbstractExplicitLayer, x, ps, st)
+    first(apply(model, x, ps, st))
+end
+
+function stateless_apply(model, x, ps, st)
+    u, st = apply(model, x, ps, st)
+    @assert isempty(st) "Model is not stateless. Use `apply` instead."
+    return u
+end
+
+"""
     display_name(layer::AbstractExplicitLayer)
 
 Printed Name of the `layer`. If the `layer` has a field `name` that is used, else the type
