@@ -1,10 +1,8 @@
-using Functors, Lux, Test
+@testitem "Functors Compatibility" setup=[SharedTestSetup] begin
+    using Functors
 
-include("test_utils.jl")
+    rng = get_stable_rng(12345)
 
-rng = get_stable_rng(12345)
-
-@testset "Functors Compatibility" begin
     c = Parallel(+;
         chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
         dense_3=Dense(5 => 1))
