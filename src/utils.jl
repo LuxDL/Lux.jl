@@ -1,11 +1,10 @@
 # PRNG Handling
 """
     replicate(rng::AbstractRNG)
-    replicate(rng::CUDA.RNG)
 
 Creates a copy of the `rng` state depending on its type.
 """
-replicate(rng::AbstractRNG) = copy(rng)
+replicate(rng::AbstractRNG) = deepcopy(rng)
 
 # Training Check
 """
@@ -61,7 +60,8 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
-    return rnn.init_state(rng, rnn.out_dims, size(x, 2))
+    return convert(ArrayInterface.parameterless_type(parent(x)),
+        rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
 @inline function _init_trainable_hidden_state(hidden_state::AbstractVector,
@@ -99,6 +99,12 @@ end
 @inline function _eachslice(x::AbstractArray, ::Val{dims}) where {dims}
     return [selectdim(x, dims, i) for i in axes(x, dims)]
 end
+@inline function _eachslice(x::GPUArraysCore.AnyGPUArray, ::Val{dims}) where {dims}
+    return [__unview(selectdim(x, dims, i)) for i in axes(x, dims)]
+end
+
+@inline __unview(x::SubArray) = copy(x)
+@inline __unview(x) = x
 
 function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
     Δs = CRC.unthunk(Δ_raw)
@@ -123,8 +129,15 @@ end
 # Backend Integration
 ## Convolution
 @inline _conv(x, weight, cdims) = conv(x, weight, cdims)
+@inline function _conv(x::SubArray{T, N, <:AbstractArray}, weight, cdims) where {T, N}
+    return _conv(copy(x), weight, cdims)
+end
 
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
+@inline function _conv_transpose(x::SubArray{T, N, <:GPUArraysCore.AnyGPUArray}, weight,
+        cdims) where {T, N}
+    return _conv_transpose(copy(x), weight, cdims)
+end
 
 function _conv_transpose_dims(x::AbstractArray, weight::AbstractArray; padding, stride,
         dilation, groups)

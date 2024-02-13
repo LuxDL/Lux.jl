@@ -1,10 +1,6 @@
 # Non Differentiable Functions
 CRC.@non_differentiable replicate(::Any)
 CRC.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
-CRC.@non_differentiable glorot_normal(::Any...)
-CRC.@non_differentiable glorot_uniform(::Any...)
-CRC.@non_differentiable kaiming_normal(::Any...)
-CRC.@non_differentiable kaiming_uniform(::Any...)
 CRC.@non_differentiable istraining(::Any)
 CRC.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 CRC.@non_differentiable _affine(::Any)

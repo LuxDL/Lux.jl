@@ -125,7 +125,7 @@ accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
 # Finally lets create an optimiser given the model parameters.
 
 function create_optimiser(ps)
-    opt = Optimisers.ADAM(0.01f0)
+    opt = Optimisers.Adam(0.01f0)
     return Optimisers.setup(opt, ps)
 end
 

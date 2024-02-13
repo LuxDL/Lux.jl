@@ -27,11 +27,11 @@ end
 # Some Helper Functions
 function get_default_rng(mode::String)
     if mode == "CPU"
-        return Random.default_rng()
+        return copy(default_device_rng(LuxCPUDevice()))
     elseif mode == "CUDA"
-        return CUDA.RNG()
+        return deepcopy(default_device_rng(LuxCUDADevice()))
     elseif mode == "AMDGPU"
-        return AMDGPU.rocRAND.RNG()
+        return deepcopy(default_device_rng(LuxAMDGPUDevice()))
     else
         error("Unknown mode: $mode")
     end
@@ -42,7 +42,7 @@ get_stable_rng(seed=12345) = StableRNG(seed)
 # AMDGPU Specifics
 function _rocRAND_functional()
     try
-        AMDGPU.rocRAND.RNG()
+        default_device_rng(LuxAMDGPUDevice())
         return true
     catch
         return false

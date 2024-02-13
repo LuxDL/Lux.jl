@@ -8,6 +8,7 @@ PrecompileTools.@recompile_invalidations begin
     using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
     using Adapt, ConcreteStructs, Functors, Setfield
     using ChainRulesCore
+    using ArrayInterface, GPUArraysCore
     import TruncatedStacktraces: @truncate_stacktrace
 
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
