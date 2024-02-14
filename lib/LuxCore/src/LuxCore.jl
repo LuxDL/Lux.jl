@@ -94,6 +94,20 @@ statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
 
 """
+    inputsize(layer)
+
+Return the input size of the layer.
+"""
+function inputsize end
+
+"""
+    outputsize(layer)
+
+Return the output size of the layer.
+"""
+function outputsize end
+
+"""
     setup(rng::AbstractRNG, layer)
 
 Shorthand for getting the parameters and states of the layer `l`. Is equivalent to
