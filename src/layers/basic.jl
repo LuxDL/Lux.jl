@@ -199,7 +199,6 @@ function parameterlength(d::Dense{use_bias}) where {use_bias}
 end
 statelength(d::Dense) = 0
 
-inputsize(d::Dense) = (d.in_dims,)
 outputsize(d::Dense) = (d.out_dims,)
 
 @inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
@@ -304,7 +303,6 @@ end
 parameterlength(d::Scale{use_bias}) where {use_bias} = (1 + use_bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
-inputsize(d::Scale) = d.dims
 outputsize(d::Scale) = d.dims
 
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
@@ -511,5 +509,4 @@ function Base.show(io::IO, e::Embedding)
     return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
 end
 
-inputsize(e::Embedding) = (e.in_dims,)
 outputsize(e::Embedding) = (e.out_dims,)

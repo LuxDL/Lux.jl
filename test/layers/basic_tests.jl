@@ -9,6 +9,7 @@
             x = randn(rng, 6, 3) |> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 3, 3)
+            @test Lux.outputsize(layer) == (2, 3)
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
@@ -103,6 +104,8 @@ end
 
             @test size(first(Lux.apply(layer, randn(10), ps, st))) == (5,)
             @test size(first(Lux.apply(layer, randn(10, 2), ps, st))) == (5, 2)
+
+            @test LuxCore.outputsize(layer) == (5,)
         end
 
         @testset "zeros" begin
@@ -178,6 +181,8 @@ end
             @test size(first(Lux.apply(layer, randn(10) |> aType, ps, st))) == (10, 5)
             @test size(first(Lux.apply(layer, randn(10, 5, 2) |> aType, ps, st))) ==
                   (10, 5, 2)
+
+            @test LuxCore.outputsize(layer) == (10, 5)
         end
 
         @testset "zeros" begin
@@ -274,6 +279,8 @@ end
             @test size(layer((x, y), ps, st)[1]) == (3, 1)
             @test sum(abs2, layer((x, y), ps, st)[1]) == 0.0f0
 
+            @test LuxCore.outputsize(layer) == (3,)
+
             @jet layer((x, y), ps, st)
             __f = (x, y, ps) -> sum(first(layer((x, y), ps, st)))
             @eval @test_gradients $__f $x $y $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
@@ -315,6 +322,8 @@ end
         ps, st = Lux.setup(rng, layer) .|> device
 
         @test size(ps.weight) == (embed_size, vocab_size)
+
+        @test LuxCore.outputsize(layer) == (4,)
 
         x = rand(1:vocab_size, 1)[1]
         y, st_ = layer(x, ps, st)
