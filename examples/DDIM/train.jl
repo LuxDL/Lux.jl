@@ -93,7 +93,7 @@ function save_as_png(images::AbstractArray{T, 4},
     for i in axes(images, 4)
         img = @view images[:, :, :, i]
         img = colorview(RGB, permutedims(img, (3, 1, 2)))
-        save(joinpath(output_dir, @sprintf("img_%.3d_epoch_%.4d.png", i,epoch)), img)
+        save(joinpath(output_dir, @sprintf("img_%.3d_epoch_%.4d.png", i, epoch)), img)
     end
 end
 
