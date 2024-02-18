@@ -5,12 +5,14 @@ import PrecompileTools: @recompile_invalidations
 @recompile_invalidations begin
     using ChainRulesCore, Functors, LuxCore, Preferences, Random, SparseArrays
     import Adapt: adapt, adapt_storage
+    import ChainRulesCore as CRC
 end
 
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
 export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
+export get_device
 
 abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
@@ -255,6 +257,15 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
     end
 end
 
+# Query Device from Array
+"""
+    get_device(x::AbstractArray) -> AbstractLuxDevice
+
+Returns the device of the array `x`. Trigger Packages must be loaded for this to return the
+correct device.
+"""
+get_device(x::AbstractArray) = LuxCPUDevice()
+
 # Adapt Interface
 abstract type AbstractLuxDeviceAdaptor end
 
@@ -276,5 +287,14 @@ _isbitsarray(x) = false
 
 _isleaf(::AbstractRNG) = true
 _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
+
+# Chain Rules Core
+function CRC.rrule(::typeof(adapt_storage), to::AbstractLuxDeviceAdaptor, x::AbstractArray)
+    function ∇adapt_storage(Δ)
+        dev = get_device(x)
+        return (NoTangent(), NoTangent(), dev(Δ))
+    end
+    return adapt_storage(to, x), ∇adapt_storage
+end
 
 end
