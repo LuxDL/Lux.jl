@@ -235,10 +235,7 @@ function pushforward_forwarddiff(f, x)
     function pushforward(v)
         v_ = reshape(v, axes(x))
         y = ForwardDiff.Dual{
-            ForwardDiff.Tag{TestTag, T},
-            T,
-            1
-        }.(x, ForwardDiff.Partials.(tuple.(v_)))
+            ForwardDiff.Tag{TestTag, T}, T, 1}.(x, ForwardDiff.Partials.(tuple.(v_)))
         res = vec(f(y))
         return ForwardDiff.value.(res), vec(ForwardDiff.partials.(res, 1))
     end
@@ -326,7 +323,7 @@ for i in 1:100
     ## Update model parameters
     opt_state, ps = Optimisers.update(opt_state, ps, gs)
     if i % 10 == 1 || i == 100
-        println("Loss Value after $i iterations: ",
-            mse(model, ps, st, x_samples, y_samples))
+        println(
+            "Loss Value after $i iterations: ", mse(model, ps, st, x_samples, y_samples))
     end
 end

@@ -25,10 +25,8 @@ Updated Parameters having the same structure as `ps`.
 ## Example
 
 ```julia
-model = Chain(;
-    d1=Dense(2 => 4, tanh),
-    d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)),
-    d2=Dense(4 => 2))
+model = Chain(; d1=Dense(2 => 4, tanh),
+    d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)), d2=Dense(4 => 2))
 
 ps, st = Lux.setup(Xoshiro(0), model)
 
@@ -87,6 +85,6 @@ function _assert_disjoint_sharing_list(sharing)
 end
 
 function _construct_lens(x::String)
-    return foldr(Setfield.ComposedLens,
-        map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, ".")))
+    return foldr(
+        Setfield.ComposedLens, map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, ".")))
 end

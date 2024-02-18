@@ -38,8 +38,8 @@
 
         model_fixed_debug = Lux.Experimental.@debug_mode model_fixed
 
-        @test_logs min_level=Logging.Error Zygote.gradient(sum ∘ first ∘ model_fixed_debug,
-            x, ps, st)
+        @test_logs min_level=Logging.Error Zygote.gradient(
+            sum ∘ first ∘ model_fixed_debug, x, ps, st)
     end
 end
 
@@ -106,10 +106,7 @@ end
         @test_logs min_level=Logging.Error model_debug(x, ps, st)
 
         @test_throws DomainError only(Zygote.gradient(
-            ps -> sum(first(model_debug(x,
-                ps,
-                st))),
-            ps))
+            ps -> sum(first(model_debug(x, ps, st))), ps))
 
         model_debug2 = Lux.Experimental.@debug_mode model nan_check=:forward
 
@@ -129,10 +126,7 @@ end
         @test_logs min_level=Logging.Error model_debug3(x, ps, st)
 
         @test_throws DomainError only(Zygote.gradient(
-            ps -> sum(first(model_debug3(x,
-                ps,
-                st))),
-            ps))
+            ps -> sum(first(model_debug3(x, ps, st))), ps))
 
         model_debug4 = Lux.Experimental.@debug_mode model nan_check=:none
 

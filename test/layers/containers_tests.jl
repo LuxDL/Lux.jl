@@ -100,10 +100,8 @@ end
         @testset "connection is called once" begin
             CNT = Ref(0)
             f_cnt = (x...) -> (CNT[] += 1; +(x...))
-            layer = Parallel(f_cnt,
-                WrappedFunction(sin),
-                WrappedFunction(cos),
-                WrappedFunction(tan))
+            layer = Parallel(
+                f_cnt, WrappedFunction(sin), WrappedFunction(cos), WrappedFunction(tan))
             ps, st = Lux.setup(rng, layer) .|> device
             Lux.apply(layer, 1, ps, st)
             @test CNT[] == 1
@@ -186,18 +184,14 @@ end
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
-        layer = PairwiseFusion(vcat,
-            WrappedFunction(x -> x .+ 1),
-            WrappedFunction(x -> x .+ 2),
-            WrappedFunction(x -> x .^ 3))
+        layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
+            WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
         @test layer((2, 10, 20, 40), ps, st)[1] == [125, 1728, 8000, 40]
 
-        layer = PairwiseFusion(vcat,
-            WrappedFunction(x -> x .+ 1),
-            WrappedFunction(x -> x .+ 2),
-            WrappedFunction(x -> x .^ 3))
+        layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
+            WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
         @test layer(7, ps, st)[1] == [1000, 729, 343, 7]
@@ -305,11 +299,8 @@ end
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         @test_throws ArgumentError Chain(;
-            l1=Dense(10 => 5, sigmoid),
-            d52=Dense(5 => 2, tanh),
-            d21=Dense(2 => 1),
-            d2=Dense(2 => 1),
-            disable_optimizations=false)
+            l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
+            d21=Dense(2 => 1), d2=Dense(2 => 1), disable_optimizations=false)
     end
 end
 
@@ -329,8 +320,8 @@ end
         end
 
         @testset "simple alternatives" begin
-            layer = Maxout(NoOpLayer(), WrappedFunction(x -> 2x),
-                WrappedFunction(x -> 0.5x))
+            layer = Maxout(
+                NoOpLayer(), WrappedFunction(x -> 2x), WrappedFunction(x -> 0.5x))
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = Float32.(collect(1:40)) |> aType
@@ -379,14 +370,13 @@ end
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        LAYERS = [Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)), Dense(2 => 2),
-            Parallel(+, Dense(2 => 2), Dense(2 => 2))]
+        LAYERS = [Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)),
+            Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2))]
         REPEATS = [Val(4), Val(4), Val(4), Val(4)]
         INJECTION = [Val(false), Val(true), Val(false), Val(true)]
 
         @testset "repeats = $(repeats); input_injection = $(input_injection)" for (layer, repeats, input_injection) in zip(
-            LAYERS,
-            REPEATS, INJECTION)
+            LAYERS, REPEATS, INJECTION)
             layer = RepeatedLayer(layer; repeats, input_injection)
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device

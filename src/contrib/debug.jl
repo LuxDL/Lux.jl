@@ -81,19 +81,19 @@ end
 
 CRC.@non_differentiable __any_nan(::Any)
 
-function __debug_layer(::Val{NC}, ::Val{EC}, layer, x, ps, st,
-        location::String) where {NC, EC}
+function __debug_layer(
+        ::Val{NC}, ::Val{EC}, layer, x, ps, st, location::String) where {NC, EC}
     CRC.ignore_derivatives() do
         @info "Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))"
         @info "Running Layer: $(layer) at location $(location)!"
     end
     if NC ∈ (:both, :forward)
-        __any_nan(x) && throw(DomainError(x,
-            "NaNs detected in input to layer $(layer) at location $(location)"))
+        __any_nan(x) && throw(DomainError(
+            x, "NaNs detected in input to layer $(layer) at location $(location)"))
         __any_nan(ps) && throw(DomainError(ps,
             "NaNs detected in parameters of layer $(layer) at location $(location)"))
-        __any_nan(st) && throw(DomainError(st,
-            "NaNs detected in states of layer $(layer) at location $(location)"))
+        __any_nan(st) && throw(DomainError(
+            st, "NaNs detected in states of layer $(layer) at location $(location)"))
     end
     y, st_ = __debug_layer_internal(layer, x, ps, st, location, EC, NC ∈ (:both, :backward))
     CRC.ignore_derivatives() do
@@ -149,8 +149,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
                         "NaNs detected in pullback output for $(layer) at location $(location)!"))
                 end
             end
-            return (gs..., CRC.NoTangent(), CRC.NoTangent(),
-                CRC.NoTangent())
+            return (gs..., CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
         end
     end
     return result, ∇__debug_layer_internal_with_checks

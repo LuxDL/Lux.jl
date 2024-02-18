@@ -14,8 +14,8 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq,
-      Optimization, OptimizationOptimJL, Random, SciMLSensitivity
+using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq, Optimization,
+      OptimizationOptimJL, Random, SciMLSensitivity
 using CairoMakie, MakiePublication
 CUDA.allowscalar(false)
 
@@ -321,8 +321,8 @@ end
 adtype = Optimization.AutoZygote()
 optf = Optimization.OptimizationFunction((x, p) -> loss(x), adtype)
 optprob = Optimization.OptimizationProblem(optf, params)
-res = Optimization.solve(optprob,
-    BFGS(; initial_stepnorm=0.01, linesearch=LineSearches.BackTracking());
+res = Optimization.solve(
+    optprob, BFGS(; initial_stepnorm=0.01, linesearch=LineSearches.BackTracking());
     callback, maxiters=1000)
 
 # ## Visualizing the Results
@@ -342,8 +342,8 @@ end
 
 prob_nn = ODEProblem(ODE_model, u0, tspan, res.u)
 soln_nn = Array(solve(prob_nn, RK4(); u0, p=res.u, saveat=tsteps, dt, adaptive=false))
-waveform_nn_trained = first(compute_waveform(dt_data, soln_nn, mass_ratio,
-    ode_model_params))
+waveform_nn_trained = first(compute_waveform(
+    dt_data, soln_nn, mass_ratio, ode_model_params))
 
 fig = with_theme(theme_web()) do
     fig = Figure()
@@ -356,8 +356,8 @@ fig = with_theme(theme_web()) do
     s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle, markeralpha=0.25, alpha=0.5)
 
     l3 = lines!(ax, tsteps, waveform_nn_trained; linewidth=2, alpha=0.75)
-    s3 = scatter!(ax, tsteps, waveform_nn_trained; markershape=:circle, markeralpha=0.25,
-        alpha=0.5)
+    s3 = scatter!(
+        ax, tsteps, waveform_nn_trained; markershape=:circle, markeralpha=0.25, alpha=0.5)
 
     axislegend(ax, [[l1, s1], [l2, s2], [l3, s3]],
         ["Waveform Data", "Waveform Neural Net (Untrained)", "Waveform Neural Net"];

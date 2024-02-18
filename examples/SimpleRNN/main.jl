@@ -32,8 +32,8 @@ function get_dataloaders(; dataset_size=1000, sequence_length=50)
     labels = vcat(repeat([0.0f0], dataset_size ÷ 2), repeat([1.0f0], dataset_size ÷ 2))
     clockwise_spirals = [reshape(d[1][:, 1:sequence_length], :, sequence_length, 1)
                          for d in data[1:(dataset_size ÷ 2)]]
-    anticlockwise_spirals = [reshape(d[1][:, (sequence_length + 1):end], :,
-                                 sequence_length, 1)
+    anticlockwise_spirals = [reshape(
+                                 d[1][:, (sequence_length + 1):end], :, sequence_length, 1)
                              for d in data[((dataset_size ÷ 2) + 1):end]]
     x_data = Float32.(cat(clockwise_spirals..., anticlockwise_spirals...; dims=3))
     ## Split the dataset
@@ -68,8 +68,8 @@ end
 # [`Lux.Dense`](@ref).
 
 function SpiralClassifier(in_dims, hidden_dims, out_dims)
-    return SpiralClassifier(LSTMCell(in_dims => hidden_dims),
-        Dense(hidden_dims => out_dims, sigmoid))
+    return SpiralClassifier(
+        LSTMCell(in_dims => hidden_dims), Dense(hidden_dims => out_dims, sigmoid))
 end
 
 # We can use default Lux blocks -- `Recurrence(LSTMCell(in_dims => hidden_dims)` -- instead
@@ -77,8 +77,8 @@ end
 
 # Now we need to define the behavior of the Classifier when it is invoked.
 
-function (s::SpiralClassifier)(x::AbstractArray{T, 3}, ps::NamedTuple,
-        st::NamedTuple) where {T}
+function (s::SpiralClassifier)(
+        x::AbstractArray{T, 3}, ps::NamedTuple, st::NamedTuple) where {T}
     ## First we will have to run the sequence through the LSTM Cell
     ## The first call to LSTM Cell will create the initial hidden state
     ## See that the parameters and states are automatically populated into a field called

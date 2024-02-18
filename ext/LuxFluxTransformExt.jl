@@ -63,8 +63,8 @@ function transform(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
         bias = l.bias isa Bool ? nothing : reshape(copy(l.bias), out_dims, 1)
-        return Dense(in_dims => out_dims, l.σ;
-            init_weight=__copy_anonymous_closure(copy(l.weight)),
+        return Dense(
+            in_dims => out_dims, l.σ; init_weight=__copy_anonymous_closure(copy(l.weight)),
             init_bias=__copy_anonymous_closure(bias), use_bias=!(l.bias isa Bool))
     else
         return Dense(in_dims => out_dims, l.σ; use_bias=!(l.bias isa Bool))
@@ -73,8 +73,8 @@ end
 
 function transform(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
-        return Scale(size(l.scale), l.σ;
-            init_weight=__copy_anonymous_closure(copy(l.scale)),
+        return Scale(
+            size(l.scale), l.σ; init_weight=__copy_anonymous_closure(copy(l.scale)),
             init_bias=__copy_anonymous_closure(copy(l.bias)), use_bias=!(l.bias isa Bool))
     else
         return Scale(size(l.scale), l.σ; use_bias=!(l.bias isa Bool))
@@ -92,8 +92,8 @@ end
 function transform(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
     out, in1, in2 = size(l.weight)
     if preserve_ps_st
-        return Bilinear((in1, in2) => out, l.σ;
-            init_weight=__copy_anonymous_closure(copy(l.weight)),
+        return Bilinear(
+            (in1, in2) => out, l.σ; init_weight=__copy_anonymous_closure(copy(l.weight)),
             init_bias=__copy_anonymous_closure(copy(l.bias)), use_bias=!(l.bias isa Bool))
     else
         return Bilinear((in1, in2) => out, l.σ; use_bias=!(l.bias isa Bool))
@@ -118,8 +118,8 @@ end
 function transform(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
-        return Embedding(in_dims => out_dims;
-            init_weight=__copy_anonymous_closure(copy(l.weight)))
+        return Embedding(
+            in_dims => out_dims; init_weight=__copy_anonymous_closure(copy(l.weight)))
     else
         return Embedding(in_dims => out_dims)
     end
@@ -137,8 +137,8 @@ function transform(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
             init_weight=__copy_anonymous_closure(Lux._maybe_flip_conv_weight(l.weight)),
             init_bias=__copy_anonymous_closure(_bias), use_bias=!(l.bias isa Bool))
     else
-        return Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation, groups,
-            use_bias=!(l.bias isa Bool))
+        return Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
+            l.dilation, groups, use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -150,13 +150,13 @@ function transform(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing :
                 reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
-        return ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
-            groups, use_bias=!(l.bias isa Bool),
+        return ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
+            l.dilation, groups, use_bias=!(l.bias isa Bool),
             init_weight=__copy_anonymous_closure(Lux._maybe_flip_conv_weight(l.weight)),
             init_bias=__copy_anonymous_closure(_bias))
     else
-        return ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
-            groups, use_bias=!(l.bias isa Bool))
+        return ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
+            l.dilation, groups, use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -171,8 +171,8 @@ function transform(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
             init_weight=__copy_anonymous_closure(copy(l.weight)),
             init_bias=__copy_anonymous_closure(_bias), use_bias=!(l.bias isa Bool))
     else
-        return CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
-            use_bias=!(l.bias isa Bool))
+        return CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad,
+            l.dilation, use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -218,8 +218,8 @@ function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::
             throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
-        return RNNCell(in_dims => out_dims, l.σ;
-            init_bias=__copy_anonymous_closure(copy(l.b)),
+        return RNNCell(
+            in_dims => out_dims, l.σ; init_bias=__copy_anonymous_closure(copy(l.b)),
             init_state=__copy_anonymous_closure(copy(l.state0)))
     else
         return RNNCell(in_dims => out_dims, l.σ)
@@ -260,17 +260,16 @@ function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::
     end
 end
 
-function transform(l::Flux.BatchNorm;
-        preserve_ps_st::Bool=false,
-        force_preserve::Bool=false)
+function transform(
+        l::Flux.BatchNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
             @warn "Preserving the state of `Flux.BatchNorm` is currently not supported. Ignoring the state." maxlog=1
         end
         if l.affine
-            return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum,
-                init_bias=__copy_anonymous_closure(copy(l.β)),
+            return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
+                l.momentum, init_bias=__copy_anonymous_closure(copy(l.β)),
                 init_scale=__copy_anonymous_closure(copy(l.γ)))
         else
             return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
@@ -279,9 +278,8 @@ function transform(l::Flux.BatchNorm;
     return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
 end
 
-function transform(l::Flux.GroupNorm;
-        preserve_ps_st::Bool=false,
-        force_preserve::Bool=false)
+function transform(
+        l::Flux.GroupNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)

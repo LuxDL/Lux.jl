@@ -11,8 +11,8 @@ import ChainRulesCore as CRC
 end
 
 function Functors.functor(::Type{<:ComponentArray}, c)
-    return (NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))),
-        ComponentArray)
+    return (
+        NamedTuple{propertynames(c)}(getproperty.((c,), propertynames(c))), ComponentArray)
 end
 
 # Optimisers Fixes

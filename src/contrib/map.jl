@@ -105,8 +105,9 @@ function layer_map(f::Function, l, ps, st, name::String="model")
 
     l_c_new, ps_c_new, st_c_new = [], [], []
     for k in keys(l_c)
-        l_c_new_, ps_c_new_, st_c_new_ = layer_map(f, getproperty(l_c, k),
-            getproperty(ps_c, k), getproperty(st_c, k), join((name, k), "."))
+        l_c_new_, ps_c_new_, st_c_new_ = layer_map(
+            f, getproperty(l_c, k), getproperty(ps_c, k),
+            getproperty(st_c, k), join((name, k), "."))
         push!(l_c_new, k => l_c_new_)
         push!(ps_c_new, k => ps_c_new_)
         push!(st_c_new, k => st_c_new_)
@@ -114,8 +115,8 @@ function layer_map(f::Function, l, ps, st, name::String="model")
 
     l_new = l_re((; l_c_new...))
     ps_new, st_new = __correct_luxcore_inconsistency ?
-                     (ps_re((; last(first(ps_c_new))...)),
-        st_re((; last(first(st_c_new))...))) :
+                     (
+        ps_re((; last(first(ps_c_new))...)), st_re((; last(first(st_c_new))...))) :
                      (ps_re((; ps_c_new...)), st_re((; st_c_new...)))
 
     return l_new, ps_new, st_new

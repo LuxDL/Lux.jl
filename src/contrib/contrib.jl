@@ -2,8 +2,8 @@ module Experimental
 
 using ..Lux, LuxCore, LuxDeviceUtils, Random
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
-import ..Lux: _merge,
-              _pairs, initialstates, initialparameters, apply, NAME_TYPE, _getproperty
+import ..Lux: _merge, _pairs, initialstates, initialparameters, apply, NAME_TYPE,
+              _getproperty
 import ChainRulesCore as CRC
 import ConcreteStructs: @concrete
 import Functors: fmap

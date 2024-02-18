@@ -2,8 +2,8 @@ using Distributed
 
 addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1")))
 
-@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(Int,
-    get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
+@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(
+    Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
 @info "Lux Tutorial Build Running tutorials with $(LUX_DOCUMENTATION_NWORKERS) workers."
 @everywhere const CUDA_MEMORY_LIMIT = 100 ÷ LUX_DOCUMENTATION_NWORKERS
 

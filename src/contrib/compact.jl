@@ -52,7 +52,7 @@ Here is a linear model with bias and activation:
 ```julia
 d_in = 5
 d_out = 7
-d = @compact(W=randn(d_out, d_in), b=zeros(d_out),act=relu) do x
+d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
     y = W * x
     return act.(y .+ b)
 end
@@ -72,9 +72,7 @@ n_out = 1
 nlayers = 3
 
 model = @compact(w1=Dense(n_in, 128),
-    w2=[Dense(128, 128) for i in 1:nlayers],
-    w3=Dense(128, n_out),
-    act=relu) do x
+    w2=[Dense(128, 128) for i in 1:nlayers], w3=Dense(128, n_out), act=relu) do x
     embed = act(w1(x))
     for w in w2
         embed = act(w(embed))
@@ -98,8 +96,8 @@ y_data = 2 .* x_data .- x_data .^ 3
 optim = Optimisers.setup(Adam(), ps)
 
 for epoch in 1:1000
-    loss, gs = Zygote.withgradient(ps -> sum(abs2, first(model(x_data, ps, st)) .- y_data),
-        ps)
+    loss, gs = Zygote.withgradient(
+        ps -> sum(abs2, first(model(x_data, ps, st)) .- y_data), ps)
     @show epoch, loss
     Optimisers.update!(optim, ps, gs[1])
 end
@@ -207,8 +205,8 @@ macro compact(_exs...)
     fex = supportself(fex, vars)
 
     # assemble
-    return esc(:($CompactLuxLayer{$dispatch}($fex, $name, ($layer, $input, $block), $setup;
-        $(kwexs...))))
+    return esc(:($CompactLuxLayer{$dispatch}(
+        $fex, $name, ($layer, $input, $block), $setup; $(kwexs...))))
 end
 
 function supportself(fex::Expr, vars)
@@ -224,9 +222,8 @@ function supportself(fex::Expr, vars)
     for var in vars
         push!(calls,
             :($var = Lux.Experimental.__maybe_make_stateful(
-                Lux._getproperty($self,
-                    $(Val(var))), Lux._getproperty($ps, $(Val(var))),
-                Lux._getproperty($st, $(Val(var))))))
+                Lux._getproperty($self, $(Val(var))),
+                Lux._getproperty($ps, $(Val(var))), Lux._getproperty($st, $(Val(var))))))
     end
     body = Expr(:let, Expr(:block, calls...), sdef[:body])
     sdef[:body] = body
@@ -274,8 +271,8 @@ function constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
 end
 
 function initialparameters(rng::AbstractRNG, m::CompactLuxLayer)
-    return (; initialparameters(rng, m.layers)...,
-        initialparameters(rng, m.value_storage)...)
+    return (;
+        initialparameters(rng, m.layers)..., initialparameters(rng, m.value_storage)...)
 end
 
 function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
@@ -304,8 +301,8 @@ function CompactLuxLayer{dispatch}(f::Function, name::NAME_TYPE, str::Tuple,
             # TODO: Rearrange Tuple and Vectors to NamedTuples for proper CA.jl support
             # FIXME: This might lead to incorrect constructions? If the function is a closure over the provided keyword arguments?
             val = __try_make_lux_layer(val)
-            if LuxCore.check_fmap_condition(!Base.Fix2(isa, AbstractExplicitLayer),
-                nothing, val)
+            if LuxCore.check_fmap_condition(
+                !Base.Fix2(isa, AbstractExplicitLayer), nothing, val)
                 throw(LuxCompactModelParsingException("A container `$(name) = $(val)` is found which combines Lux layers with non-Lux layers. This is not supported."))
             end
             push!(layers, name => val)
@@ -313,8 +310,8 @@ function CompactLuxLayer{dispatch}(f::Function, name::NAME_TYPE, str::Tuple,
             push!(others, name => val)
         end
     end
-    return CompactLuxLayer{dispatch}(f, name, str, setup_str, NamedTuple((; layers...)),
-        ValueStorage(; others...))
+    return CompactLuxLayer{dispatch}(
+        f, name, str, setup_str, NamedTuple((; layers...)), ValueStorage(; others...))
 end
 
 function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}

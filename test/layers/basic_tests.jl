@@ -109,32 +109,28 @@ end
             @test begin
                 layer = Dense(10, 1, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer,
-                    ones(10, 1) |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, ones(10, 1) |> aType, device.(Lux.setup(rng, layer))...))
             end == 10 * aType(ones(1, 1))
 
             @test begin
                 layer = Dense(10, 1, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer,
-                    ones(10, 2) |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, ones(10, 2) |> aType, device.(Lux.setup(rng, layer))...))
             end == 10 * aType(ones(1, 2))
 
             @test begin
                 layer = Dense(10, 2, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer,
-                    ones(10, 1) |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, ones(10, 1) |> aType, device.(Lux.setup(rng, layer))...))
             end == 10 * aType(ones(2, 1))
 
             @test begin
                 layer = Dense(10, 2, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer,
-                    aType([ones(10, 1) 2 * ones(10, 1)]),
+                first(Lux.apply(layer, aType([ones(10, 1) 2 * ones(10, 1)]),
                     device.(Lux.setup(rng, layer))...))
             end == aType([10 20; 10 20])
 
@@ -142,8 +138,7 @@ end
                 layer = Dense(10, 2, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
                     use_bias=false)
-                first(Lux.apply(layer,
-                    aType([ones(10, 1) 2 * ones(10, 1)]),
+                first(Lux.apply(layer, aType([ones(10, 1) 2 * ones(10, 1)]),
                     device.(Lux.setup(rng, layer))...))
             end == aType([10 20; 10 20])
         end
@@ -189,32 +184,30 @@ end
             @test begin
                 layer = Scale(10, 1, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer,
-                    ones(10, 1) |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, ones(10, 1) |> aType, device.(Lux.setup(rng, layer))...))
             end == aType(ones(10, 1))
 
             @test begin
                 layer = Scale(10, 1, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer, ones(10, 2) |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, ones(10, 2) |> aType, device.(Lux.setup(rng, layer))...))
             end == aType(ones(10, 2))
 
             @test begin
                 layer = Scale(2, identity;
                     init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
                     init_bias=(rng, args...; kwargs...) -> ones(args...; kwargs...))
-                first(Lux.apply(layer,
-                    [1 2; 3 4] |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, [1 2; 3 4] |> aType, device.(Lux.setup(rng, layer))...))
             end == aType([2.0 3.0; 4.0 5.0])
 
             @test begin
                 layer = Scale(2, tanh; use_bias=false,
                     init_weight=(rng, args...; kwargs...) -> zeros(args...; kwargs...))
-                first(Lux.apply(layer, [1 2; 3 4] |> aType,
-                    device.(Lux.setup(rng, layer))...))
+                first(Lux.apply(
+                    layer, [1 2; 3 4] |> aType, device.(Lux.setup(rng, layer))...))
             end == aType(zeros(2, 2))
         end
     end

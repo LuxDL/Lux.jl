@@ -3,8 +3,7 @@
 
     rng = get_stable_rng(12345)
 
-    c = Parallel(+;
-        chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
+    c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
         dense_3=Dense(5 => 1))
 
     @test_nowarn fmap(println, c)
