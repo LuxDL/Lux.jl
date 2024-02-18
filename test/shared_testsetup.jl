@@ -2,8 +2,8 @@
 import Reexport: @reexport
 
 using Lux, LuxCUDA, LuxAMDGPU
-@reexport using ComponentArrays,
-                LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test, Zygote, Statistics
+@reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
+                Zygote, Statistics
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
 const GROUP = get(ENV, "GROUP", "All")

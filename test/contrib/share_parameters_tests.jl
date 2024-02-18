@@ -2,10 +2,8 @@
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        model = Chain(;
-            d1=Dense(2 => 4, tanh),
-            d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)),
-            d3=Dense(4 => 2))
+        model = Chain(; d1=Dense(2 => 4, tanh),
+            d2=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)), d3=Dense(4 => 2))
 
         ps, st = Lux.setup(rng, model) .|> device
 
@@ -42,10 +40,10 @@
 
         # Input Checks
         non_disjoint_sharing = (("d2.l2", "d1"), ("d1", "d2.l1"))
-        @test_throws ArgumentError Lux.Experimental.share_parameters(ps,
-            non_disjoint_sharing)
-        @test_throws ArgumentError Lux.Experimental.share_parameters(ps, sharing,
-            (ps_new_1,))
+        @test_throws ArgumentError Lux.Experimental.share_parameters(
+            ps, non_disjoint_sharing)
+        @test_throws ArgumentError Lux.Experimental.share_parameters(
+            ps, sharing, (ps_new_1,))
 
         # Parameter Structure Mismatch
         ps_new_1 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 4, 1)) |>
@@ -53,12 +51,12 @@
         ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2, 1)) |>
                    device
 
-        @test_throws ArgumentError Lux.Experimental.share_parameters(ps, sharing,
-            (ps_new_1, ps_new_2))
+        @test_throws ArgumentError Lux.Experimental.share_parameters(
+            ps, sharing, (ps_new_1, ps_new_2))
 
         ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> device
 
-        @test_throws ArgumentError Lux.Experimental.share_parameters(ps, sharing,
-            (ps_new_ca_1, ps_new_2))
+        @test_throws ArgumentError Lux.Experimental.share_parameters(
+            ps, sharing, (ps_new_ca_1, ps_new_2))
     end
 end

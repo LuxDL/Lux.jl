@@ -8,8 +8,7 @@ import Markdown
 end
 const MarkdownStdlib = _Markdown.Markdown
 
-struct MarkdownVitepress <: Documenter.Writer
-end
+struct MarkdownVitepress <: Documenter.Writer end
 
 # return the same file with the extension changed to .md
 mdext(f) = string(splitext(f)[1], ".md")
@@ -155,31 +154,27 @@ function render(io::IO, mime::MIME"text/plain", d::Dict{MIME, Any}, page, doc)
     elseif haskey(d, MIME"image/png"())
         write(joinpath(dirname(page.build), "$(filename).png"),
             base64decode(d[MIME"image/png"()]))
-        println(io,
-            """
-    ![]($(filename).png)
-    """)
+        println(io, """
+            ![]($(filename).png)
+            """)
     elseif haskey(d, MIME"image/webp"())
         write(joinpath(dirname(page.build), "$(filename).webp"),
             base64decode(d[MIME"image/webp"()]))
-        println(io,
-            """
-    ![]($(filename).webp)
-    """)
+        println(io, """
+            ![]($(filename).webp)
+            """)
     elseif haskey(d, MIME"image/jpeg"())
         write(joinpath(dirname(page.build), "$(filename).jpeg"),
             base64decode(d[MIME"image/jpeg"()]))
-        println(io,
-            """
-    ![]($(filename).jpeg)
-    """)
+        println(io, """
+            ![]($(filename).jpeg)
+            """)
     elseif haskey(d, MIME"image/gif"())
         write(joinpath(dirname(page.build), "$(filename).gif"),
             base64decode(d[MIME"image/gif"()]))
-        println(io,
-            """
-    ![]($(filename).gif)
-    """)
+        println(io, """
+            ![]($(filename).gif)
+            """)
     elseif haskey(d, MIME"text/plain"())
         text = d[MIME"text/plain"()]
         out = repr(MIME"text/plain"(), ANSIColoredPrinters.PlainTextPrinter(IOBuffer(text)))

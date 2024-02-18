@@ -211,9 +211,7 @@ end
         end
 
         @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
-            layer = Conv((5, 5),
-                10 => 20,
-                identity;
+            layer = Conv((5, 5), 10 => 20, identity;
                 init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
                 init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
             __display(layer)
@@ -266,9 +264,8 @@ end
         @testset "Conv SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3), (1, 2, 3))
             x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
 
-            @testset "Kwargs: $kwarg" for kwarg in ((; stride=1),
-                (; dilation=max.(k .÷ 2, 1), stride=1),
-                (; stride=3))
+            @testset "Kwargs: $kwarg" for kwarg in (
+                (; stride=1), (; dilation=max.(k .÷ 2, 1), stride=1), (; stride=3))
                 layer = Conv(k, 1 => 1; pad=Lux.SamePad(), kwarg...)
                 __display(layer)
                 ps, st = Lux.setup(rng, layer) .|> device
@@ -486,9 +483,7 @@ end
         end
 
         @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
-            layer = CrossCor((5, 5),
-                10 => 20,
-                identity;
+            layer = CrossCor((5, 5), 10 => 20, identity;
                 init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
                 init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
             __display(layer)
@@ -497,13 +492,12 @@ end
             @test ps.bias isa aType{Float16, 4}
         end
 
-        @testset "CrossCor SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3),
-            (1, 2, 3))
+        @testset "CrossCor SamePad kernelsize $k" for k in (
+            (1,), (2,), (3,), (2, 3), (1, 2, 3))
             x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
 
-            @testset "Kwargs: $kwarg" for kwarg in ((; stride=1),
-                (; dilation=max.(k .÷ 2, 1), stride=1),
-                (; stride=3))
+            @testset "Kwargs: $kwarg" for kwarg in (
+                (; stride=1), (; dilation=max.(k .÷ 2, 1), stride=1), (; stride=3))
                 layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), kwarg...)
                 __display(layer)
                 ps, st = Lux.setup(rng, layer) .|> device

@@ -1,14 +1,5 @@
-using Lux,
-      Random,
-      Images,
-      Optimisers,
-      ProgressBars,
-      LuxCUDA,
-      LuxAMDGPU,
-      BSON,
-      Plots,
-      Comonicon,
-      Printf
+using Lux, Random, Images, Optimisers, ProgressBars, LuxCUDA, LuxAMDGPU, BSON, Plots,
+      Comonicon, Printf
 
 # https://discourse.julialang.org/t/deactivate-plot-display-to-avoid-need-for-x-server/19359
 ENV["GKSwstype"] = "nul"
@@ -39,20 +30,12 @@ function save_as_gif(image_id::Int, images, output_dir)
     return gif(anim, outpath; fps=10)
 end
 
-@main function main(;
-        checkpoint::String,
-        image_size::Int=64,
-        num_images::Int=10,
-        diffusion_steps::Int=80,
-        output_dir::String="output/generate",
+@main function main(; checkpoint::String, image_size::Int=64, num_images::Int=10,
+        diffusion_steps::Int=80, output_dir::String="output/generate",
         # model hyper params
-        channels::Vector{Int}=[32, 64, 96, 128],
-        block_depth::Int=2,
-        min_freq::Float32=1.0f0,
-        max_freq::Float32=1000.0f0,
-        embedding_dims::Int=32,
-        min_signal_rate::Float32=0.02f0,
-        max_signal_rate::Float32=0.95f0)
+        channels::Vector{Int}=[32, 64, 96, 128], block_depth::Int=2, min_freq::Float32=1.0f0,
+        max_freq::Float32=1000.0f0, embedding_dims::Int=32,
+        min_signal_rate::Float32=0.02f0, max_signal_rate::Float32=0.95f0)
     rng = Random.MersenneTwister()
     Random.seed!(rng, 1234)
 
@@ -64,14 +47,10 @@ end
         println("GPU is not available.")
     end
 
-    ddim = DenoisingDiffusionImplicitModel((image_size, image_size);
-        channels=channels,
-        block_depth=block_depth,
-        min_freq=min_freq,
-        max_freq=max_freq,
-        embedding_dims=embedding_dims,
-        min_signal_rate=min_signal_rate,
-        max_signal_rate=max_signal_rate)
+    ddim = DenoisingDiffusionImplicitModel(
+        (image_size, image_size); channels=channels, block_depth=block_depth,
+        min_freq=min_freq, max_freq=max_freq, embedding_dims=embedding_dims,
+        min_signal_rate=min_signal_rate, max_signal_rate=max_signal_rate)
 
     device = gpu_device()
 
@@ -79,13 +58,8 @@ end
 
     println("Generate images.")
     st = Lux.testmode(st)
-    _, images_each_step = generate(ddim,
-        rng,
-        (image_size, image_size, 3, num_images),
-        diffusion_steps,
-        ps,
-        st;
-        save_each_step=true)
+    _, images_each_step = generate(ddim, rng, (image_size, image_size, 3, num_images),
+        diffusion_steps, ps, st; save_each_step=true)
 
     images_each_step = images_each_step |> cpu_device()
 

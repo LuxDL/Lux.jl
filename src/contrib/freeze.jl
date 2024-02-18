@@ -58,8 +58,8 @@ See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).
 struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicitLayer
     layer::L
 
-    function FrozenLayer(l::AbstractExplicitLayer,
-            which_params::Union{Tuple, Nothing}=nothing)
+    function FrozenLayer(
+            l::AbstractExplicitLayer, which_params::Union{Tuple, Nothing}=nothing)
         if which_params !== nothing && length(which_params) == 0
             @warn "Layer `FrozenLayer($l, (,))` is same as `l`, returning `l`."
             return l
@@ -68,8 +68,8 @@ struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicit
     end
 end
 
-function initialparameters(rng::AbstractRNG,
-        l::FrozenLayer{which_params}) where {which_params}
+function initialparameters(
+        rng::AbstractRNG, l::FrozenLayer{which_params}) where {which_params}
     ps = initialparameters(rng, l.layer)
     ps_trainable = []
     for (k, v) in pairs(ps)

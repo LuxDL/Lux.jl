@@ -44,9 +44,8 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
 end
 
 # foldl_init
-function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G, x::Tuple,
-        init) where {G}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
+        ::typeof(foldl_init), op::G, x::Tuple, init) where {G}
     x_arr = [x...]
     y, ∇foldl_init_internal = CRC.rrule_via_ad(cfg, foldl_init, op, x_arr, init)
     function ∇foldl_init(Δ)
@@ -57,8 +56,8 @@ function CRC.rrule(
     return y, ∇foldl_init
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init), op::G,
-        x::AbstractArray, init) where {G}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init),
+        op::G, x::AbstractArray, init) where {G}
     list, start = x, init
     hobbits = Vector{Any}(undef, length(list))  # Unfornately Zygote needs this
     accumulate!(hobbits, list; init=(start, nothing)) do (a, _), b

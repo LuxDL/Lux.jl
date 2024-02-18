@@ -21,8 +21,7 @@ function _load_dataset(dset, n_train::Int, n_eval::Int, batchsize::Int)
     imgs, labels = dset(:test)[1:n_eval]
     x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
 
-    return (
-        DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
+    return (DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
         DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false))
 end
 
@@ -64,8 +63,7 @@ end
 function create_model()
     ## Doesn't need to be a MLP can have any Lux Layer
     core_network = Chain(FlattenLayer(), Dense(784, 256, relu), Dense(256, 10))
-    weight_generator = Chain(Embedding(2 => 32),
-        Dense(32, 64, relu),
+    weight_generator = Chain(Embedding(2 => 32), Dense(32, 64, relu),
         Dense(64, Lux.parameterlength(core_network)))
 
     model = HyperNet(weight_generator, core_network)
@@ -137,10 +135,10 @@ function train()
             end
             ttime = time() - stime
 
-            train_acc = round(accuracy(model, ps, st, train_dataloader, data_idx) * 100;
-                digits=2)
-            test_acc = round(accuracy(model, ps, st, test_dataloader, data_idx) * 100;
-                digits=2)
+            train_acc = round(
+                accuracy(model, ps, st, train_dataloader, data_idx) * 100; digits=2)
+            test_acc = round(
+                accuracy(model, ps, st, test_dataloader, data_idx) * 100; digits=2)
 
             data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
@@ -151,8 +149,8 @@ function train()
 
     for data_idx in 1:2
         train_dataloader, test_dataloader = dataloaders[data_idx]
-        train_acc = round(accuracy(model, ps, st, train_dataloader, data_idx) * 100;
-            digits=2)
+        train_acc = round(
+            accuracy(model, ps, st, train_dataloader, data_idx) * 100; digits=2)
         test_acc = round(accuracy(model, ps, st, test_dataloader, data_idx) * 100; digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"

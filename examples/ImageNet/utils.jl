@@ -30,9 +30,8 @@ function accuracy(ŷ, y, topk=(1,))
     accuracies = Vector{Float32}(undef, length(topk))
 
     for (i, k) in enumerate(topk)
-        accuracies[i] = sum(map((a, b) -> sum(view(a, 1:k) .== b),
-            pred_labels,
-            true_labels))
+        accuracies[i] = sum(map(
+            (a, b) -> sum(view(a, 1:k) .== b), pred_labels, true_labels))
     end
 
     return accuracies .* 100 ./ size(y, ndims(y))
@@ -75,11 +74,8 @@ struct CosineAnnealSchedule{restart, T, S <: Integer}
     dampen::T
     period::S
 
-    function CosineAnnealSchedule(lambda_0,
-            lambda_1,
-            period;
-            restart::Bool=true,
-            dampen=1.0f0)
+    function CosineAnnealSchedule(
+            lambda_0, lambda_1, period; restart::Bool=true, dampen=1.0f0)
         range = abs(lambda_0 - lambda_1)
         offset = min(lambda_0, lambda_1)
         return new{restart, typeof(range), typeof(period)}(range, offset, dampen, period)

@@ -58,7 +58,7 @@ end
 end
 @inline function __maybe_make_stateful(model::NamedTuple{fields}, ps, st) where {fields}
     return NamedTuple{fields}(map(
-        f -> __maybe_make_stateful(getproperty(model, f),
-            getproperty(ps, f), getproperty(st, f)),
+        f -> __maybe_make_stateful(
+            getproperty(model, f), getproperty(ps, f), getproperty(st, f)),
         fields))
 end

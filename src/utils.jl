@@ -64,8 +64,8 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
         rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
 
-@inline function _init_trainable_hidden_state(hidden_state::AbstractVector,
-        x::AbstractMatrix)
+@inline function _init_trainable_hidden_state(
+        hidden_state::AbstractVector, x::AbstractMatrix)
     return repeat(hidden_state, 1, size(x, 2))
 end
 
@@ -134,13 +134,13 @@ end
 end
 
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
-@inline function _conv_transpose(x::SubArray{T, N, <:GPUArraysCore.AnyGPUArray}, weight,
-        cdims) where {T, N}
+@inline function _conv_transpose(
+        x::SubArray{T, N, <:GPUArraysCore.AnyGPUArray}, weight, cdims) where {T, N}
     return _conv_transpose(copy(x), weight, cdims)
 end
 
-function _conv_transpose_dims(x::AbstractArray, weight::AbstractArray; padding, stride,
-        dilation, groups)
+function _conv_transpose_dims(
+        x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
     # Calculate size of "input", from ∇conv_data()'s perspective...
     combined_pad = (padding[1:2:end] .+ padding[2:2:end])
     I = (size(x)[1:(end - 2)] .- 1) .* stride .+ 1 .+
@@ -149,8 +149,8 @@ function _conv_transpose_dims(x::AbstractArray, weight::AbstractArray; padding, 
     batch_size = size(x)[end]
     # Create DenseConvDims() that looks like the corresponding conv()
     w_size = size(weight)
-    return DenseConvDims((I..., C_in, batch_size), w_size; stride, padding, dilation,
-        groups)
+    return DenseConvDims(
+        (I..., C_in, batch_size), w_size; stride, padding, dilation, groups)
 end
 
 ## Adaptive Pooling
@@ -189,8 +189,8 @@ struct LuxEltypeAdaptor{T} end
 
 (l::LuxEltypeAdaptor)(x) = fmap(adapt(l), x)
 
-function Adapt.adapt_storage(::LuxEltypeAdaptor{T},
-        x::AbstractArray{<:AbstractFloat}) where {T <: AbstractFloat}
+function Adapt.adapt_storage(
+        ::LuxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}) where {T <: AbstractFloat}
     return convert(AbstractArray{T}, x)
 end
 

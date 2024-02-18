@@ -3,8 +3,7 @@
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        for rnncell in (RNNCell(3 => 5, identity),
-            RNNCell(3 => 5, tanh),
+        for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
             RNNCell(3 => 5, tanh; use_bias=false),
             RNNCell(3 => 5, identity; use_bias=false),
             RNNCell(3 => 5, identity; use_bias=false, train_state=false))
@@ -32,10 +31,8 @@
         @testset "Trainable hidden states" begin
             for rnncell in (RNNCell(3 => 5, identity; use_bias=false, train_state=true),
                 RNNCell(3 => 5, identity; use_bias=true, train_state=true))
-                rnn_no_trainable_state = RNNCell(3 => 5,
-                    identity;
-                    use_bias=false,
-                    train_state=false)
+                rnn_no_trainable_state = RNNCell(
+                    3 => 5, identity; use_bias=false, train_state=false)
                 x = randn(rng, Float32, 3, 2) |> aType
                 _ps, _st = Lux.setup(rng, rnn_no_trainable_state) .|> device
                 (_y, _carry), _ = Lux.apply(rnn_no_trainable_state, x, _ps, _st)
@@ -58,8 +55,7 @@ end
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        for lstmcell in (LSTMCell(3 => 5),
-            LSTMCell(3 => 5; use_bias=true),
+        for lstmcell in (LSTMCell(3 => 5), LSTMCell(3 => 5; use_bias=true),
             LSTMCell(3 => 5; use_bias=false))
             __display(lstmcell)
             ps, st = Lux.setup(rng, lstmcell) .|> device
@@ -150,8 +146,7 @@ end
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        for grucell in (GRUCell(3 => 5),
-            GRUCell(3 => 5; use_bias=true),
+        for grucell in (GRUCell(3 => 5), GRUCell(3 => 5; use_bias=true),
             GRUCell(3 => 5; use_bias=false))
             __display(grucell)
             ps, st = Lux.setup(rng, grucell) .|> device
@@ -201,8 +196,8 @@ end
 
             gru = GRUCell(3 => 5; use_bias=true, train_state=true)
             ps, st = Lux.setup(rng, gru) .|> device
-            ps = merge(_ps,
-                (bias_h=ps.bias_h, bias_i=ps.bias_i, hidden_state=ps.hidden_state))
+            ps = merge(
+                _ps, (bias_h=ps.bias_h, bias_i=ps.bias_i, hidden_state=ps.hidden_state))
             (y, carry), _ = Lux.apply(gru, x, ps, st)
             @test carry == _carry
             l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
@@ -258,8 +253,7 @@ end
         @testset "ordering: $ordering" for ordering in (BatchLastIndex(), TimeLastIndex())
             @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
                 @testset "use_bias: $use_bias, train_state: $train_state" for use_bias in (
-                        true,
-                        false),
+                        true, false),
                     train_state in (true, false)
 
                     cell = _cell(3 => 5; use_bias, train_state)
@@ -269,12 +263,7 @@ end
 
                     # Batched Time Series
                     @testset "typeof(x): $(typeof(x))" for x in (
-                        randn(rng,
-                            Float32,
-                            3,
-                            4,
-                            2) |>
-                        aType,
+                        randn(rng, Float32, 3, 4, 2) |> aType,
                         Tuple(randn(rng, Float32, 3, 2) for _ in 1:4) .|> aType,
                         [randn(rng, Float32, 3, 2) for _ in 1:4] .|> aType)
                         # Fix data ordering for testing
@@ -311,8 +300,7 @@ end
 
         # Ordering Check: https://github.com/LuxDL/Lux.jl/issues/302
         encoder = Recurrence(
-            RNNCell(1 => 1,
-                identity;
+            RNNCell(1 => 1, identity;
                 init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
                 init_state=(rng, args...; kwargs...) -> zeros(args...; kwargs...),
                 init_bias=(rng, args...; kwargs...) -> zeros(args...; kwargs...));

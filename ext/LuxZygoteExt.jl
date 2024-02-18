@@ -4,11 +4,10 @@ using ADTypes, Lux, Setfield, Zygote
 using TruncatedStacktraces: @truncate_stacktrace
 using Zygote: Pullback
 
-function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::Function,
-        data, ts::Lux.Experimental.TrainState)
+function Lux.Experimental.compute_gradients(
+        ::AutoZygote, objective_function::Function, data, ts::Lux.Experimental.TrainState)
     (loss, st, stats), back = Zygote.pullback(
-        ps -> objective_function(ts.model, ps,
-            ts.states, data), ts.parameters)
+        ps -> objective_function(ts.model, ps, ts.states, data), ts.parameters)
     grads = back((one(loss), nothing, nothing))[1]
     @set! ts.states = st
     return grads, loss, stats, ts

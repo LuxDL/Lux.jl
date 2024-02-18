@@ -70,8 +70,8 @@
             ps, st = Lux.setup(rng, m) .|> device
             st = Lux.testmode(st)
             y, st_ = m(x, ps, st)
-            @test check_approx(y,
-                sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon)),
+            @test check_approx(
+                y, sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon)),
                 atol=1.0e-7)
 
             @jet m(x, ps, st)
@@ -368,8 +368,7 @@ end
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        for x in (randn(rng, Float32, 3, 3, 3, 2),
-            randn(rng, Float32, 3, 3, 2),
+        for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
             randn(rng, Float32, 3, 3, 3, 3, 2))
             x = x |> aType
             for affine in (true, false)

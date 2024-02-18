@@ -81,8 +81,8 @@ vjp_rule = Lux.Training.AutoZygote()
 function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
     data = data .|> gpu_device()
     for epoch in 1:epochs
-        grads, loss, stats, tstate = Lux.Training.compute_gradients(vjp,
-            loss_function, data, tstate)
+        grads, loss, stats, tstate = Lux.Training.compute_gradients(
+            vjp, loss_function, data, tstate)
         println("Epoch: $(epoch) || Loss: $(loss)")
         tstate = Lux.Training.apply_gradients(tstate, grads)
     end
@@ -104,8 +104,8 @@ with_theme(theme_web()) do
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
     s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
         strokecolor=:black, strokewidth=1)
-    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8, color=:green,
-        strokecolor=:black, strokewidth=1)
+    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8,
+        color=:green, strokecolor=:black, strokewidth=1)
 
     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
 

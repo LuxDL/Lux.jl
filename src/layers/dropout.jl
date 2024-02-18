@@ -176,14 +176,8 @@ end
 
 function (d::VariationalHiddenDropout)(x, ps, st::NamedTuple)
     _mask = st.mask === nothing ? x : st.mask
-    y, mask, rng = dropout(st.rng,
-        x,
-        _mask,
-        d.p,
-        st.training,
-        st.update_mask;
-        invp=d.q,
-        d.dims)
+    y, mask, rng = dropout(
+        st.rng, x, _mask, d.p, st.training, st.update_mask; invp=d.q, d.dims)
     return y, merge(st, (; mask, rng, update_mask=Val(false)))
 end
 

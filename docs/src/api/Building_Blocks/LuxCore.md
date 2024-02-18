@@ -44,3 +44,10 @@ LuxCore.testmode
 LuxCore.trainmode
 LuxCore.update_state
 ```
+
+## Layer size
+
+```@docs
+LuxCore.inputsize
+LuxCore.outputsize
+```

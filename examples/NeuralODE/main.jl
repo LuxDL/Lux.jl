@@ -79,10 +79,9 @@ function create_model(model_fn=NeuralODE; dev=gpu_device(), use_named_tuple::Boo
     ## Construct the Neural ODE Model
     model = Chain(FlattenLayer(),
         Dense(784 => 20, tanh),
-        model_fn(
-            Chain(Dense(20 => 10, tanh), Dense(10 => 10, tanh), Dense(10 => 20, tanh));
-            save_everystep=false, reltol=1.0f-3, abstol=1.0f-3, save_start=false,
-            sensealg),
+        model_fn(Chain(Dense(20 => 10, tanh), Dense(10 => 10, tanh), Dense(10 => 20, tanh));
+            save_everystep=false, reltol=1.0f-3,
+            abstol=1.0f-3, save_start=false, sensealg),
         Base.Fix1(diffeqsol_to_array, 20),
         Dense(20 => 10))
 
@@ -185,9 +184,9 @@ struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
     kwargs::K
 end
 
-function StatefulNeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(),
-        tspan=(0.0f0, 1.0f0), sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()),
-        kwargs...)
+function StatefulNeuralODE(
+        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0),
+        sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
     return StatefulNeuralODE(model, solver, sensealg, tspan, kwargs)
 end
 

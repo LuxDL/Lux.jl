@@ -94,12 +94,12 @@ See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
     init_scale
 end
 
-function BatchNorm(chs::Int, activation=identity; init_bias=zeros32, init_scale=ones32,
-        affine::Bool=true, track_stats::Bool=true, epsilon=1.0f-5, momentum=0.1f0,
-        allow_fast_activation::Bool=true)
+function BatchNorm(chs::Int, activation=identity; init_bias=zeros32,
+        init_scale=ones32, affine::Bool=true, track_stats::Bool=true,
+        epsilon=1.0f-5, momentum=0.1f0, allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return BatchNorm{affine, track_stats}(activation, epsilon, momentum, chs, init_bias,
-        init_scale)
+    return BatchNorm{affine, track_stats}(
+        activation, epsilon, momentum, chs, init_bias, init_scale)
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm)
@@ -112,8 +112,8 @@ end
 
 function initialstates(rng::AbstractRNG, l::BatchNorm)
     if _track_stats(l)
-        return (running_mean=zeros32(rng, l.chs), running_var=ones32(rng, l.chs),
-            training=Val(true))
+        return (running_mean=zeros32(rng, l.chs),
+            running_var=ones32(rng, l.chs), training=Val(true))
     else
         return (; training=Val(true))
     end
@@ -124,8 +124,8 @@ statelength(l::BatchNorm) = (_track_stats(l) ? 2 * l.chs : 0) + 1
 
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     y, stats = batchnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var));
-        BN.momentum, BN.epsilon, st.training)
+        _getproperty(st, Val(:running_mean)),
+        _getproperty(st, Val(:running_var)); BN.momentum, BN.epsilon, st.training)
 
     if _track_stats(BN)
         @set! st.running_mean = stats.running_mean
@@ -235,9 +235,8 @@ end
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = groupnorm(
-        x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); GN.groups,
-        GN.epsilon)
+    y = groupnorm(x, _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias)); GN.groups, GN.epsilon)
     return __apply_activation(GN.activation, y), st
 end
 
@@ -328,8 +327,9 @@ See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`Weight
     init_scale
 end
 
-function InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
+function InstanceNorm(
+        chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
+        affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return InstanceNorm{affine}(activation, epsilon, chs, init_bias, init_scale)
 end
@@ -347,8 +347,8 @@ initialstates(rng::AbstractRNG, l::InstanceNorm) = (; training=Val(true))
 parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = instancenorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias));
-        IN.epsilon, st.training)
+    y, stats = instancenorm(x, _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias)); IN.epsilon, st.training)
     return __apply_activation(IN.activation, y), st
 end
 
@@ -404,22 +404,21 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
     dims
 end
 
-function WeightNorm(layer::AbstractExplicitLayer,
-        which_params::NTuple{N, Symbol},
+function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
         dims::Union{Tuple, Nothing}=nothing) where {N}
     return WeightNorm{which_params}(layer, dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
-@inline function _norm_except(x::AbstractArray{T, N};
-        dims::Union{Int, Tuple}=N) where {T, N}
+@inline function _norm_except(
+        x::AbstractArray{T, N}; dims::Union{Int, Tuple}=N) where {T, N}
     return _norm(x; dims=_get_norm_except_dims(N, dims))
 end
 @inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
 @inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
 
-function initialparameters(rng::AbstractRNG,
-        wn::WeightNorm{which_params}) where {which_params}
+function initialparameters(
+        rng::AbstractRNG, wn::WeightNorm{which_params}) where {which_params}
     ps_layer = initialparameters(rng, wn.layer)
     ps_normalized = []
     ps_unnormalized = []
@@ -451,8 +450,8 @@ function (wn::WeightNorm)(x, ps, st::NamedTuple)
     return Lux.apply(wn.layer, x, _merge(_ps, ps.unnormalized), st)
 end
 
-@inbounds @generated function _get_normalized_parameters(::WeightNorm{which_params},
-        dims::T, ps) where {T, which_params}
+@inbounds @generated function _get_normalized_parameters(
+        ::WeightNorm{which_params}, dims::T, ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
     g_parameter_names = Symbol.(parameter_names .* "_g")
@@ -553,8 +552,8 @@ whether your assumptions about the default (if made) were invalid.
 end
 
 function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f-5,
-        dims=Colon(), affine::Bool=true, init_bias=zeros32, init_scale=ones32,
-        allow_fast_activation::Bool=true) where {N, T}
+        dims=Colon(), affine::Bool=true, init_bias=zeros32,
+        init_scale=ones32, allow_fast_activation::Bool=true) where {N, T}
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     return LayerNorm{affine, N}(shape, activation, epsilon, init_bias, init_scale, dims)
 end
@@ -569,8 +568,8 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = layernorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); l.dims,
-        l.epsilon)
+    y = layernorm(
+        x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); l.dims, l.epsilon)
     return __apply_activation(l.activation, y), st
 end
 

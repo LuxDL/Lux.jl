@@ -47,7 +47,7 @@
         @testset "Linear Layer with Activation" begin
             d_in = 5
             d_out = 7
-            d = @compact(W=randn(d_out, d_in), b=zeros(d_out),act=relu) do x
+            d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
                 y = W * x
                 return act.(y .+ b)
             end
@@ -92,10 +92,8 @@
             n_out = 1
             nlayers = 3
 
-            model = @compact(w1=Dense(n_in, 128),
-                w2=[Dense(128, 128) for i in 1:nlayers],
-                w3=Dense(128, n_out),
-                act=relu) do x
+            model = @compact(w1=Dense(n_in, 128), w2=[Dense(128, 128) for i in 1:nlayers],
+                w3=Dense(128, n_out), act=relu) do x
                 embed = act.(w1(x))
                 for w in w2
                     embed = act.(w(embed))
@@ -195,9 +193,7 @@
         @testset "Hierarchy with Inner Model Named" begin
             model = @compact(w1=@compact(w1=randn(32, 32), name="Model(32)") do x
                     return w1 * x
-                end,
-                w2=randn(32, 32),
-                w3=randn(32),) do x
+                end, w2=randn(32, 32), w3=randn(32),) do x
                 return w2 * w1(x)
             end
             expected_string = """@compact(
@@ -214,10 +210,7 @@
         @testset "Hierarchy with Outer Model Named" begin
             model = @compact(w1=@compact(w1=randn(32, 32)) do x
                     return w1 * x
-                end,
-                w2=randn(32, 32),
-                w3=randn(32),
-                name="Model(32)") do x
+                end, w2=randn(32, 32), w3=randn(32), name="Model(32)") do x
                 return w2 * w1(x)
             end
             expected_string = """Model(32)()         # 2_080 parameters"""
@@ -235,7 +228,7 @@
             _a = 3
             _b = 4
             c = 5
-            model = @compact(a=_a; b=_b,c) do x
+            model = @compact(a=_a; b=_b, c) do x
                 return a + b * x + c * x^2
             end
             ps, st = Lux.setup(rng, model) |> device
@@ -243,7 +236,7 @@
         end
 
         @testset "Keyword Arguments with Anonymous Function" begin
-            model = @test_nowarn @compact(x->x + a + b; a=1,b=2)
+            model = @test_nowarn @compact(x->x + a + b; a=1, b=2)
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(3, ps, st)) == 1 + 2 + 3
             expected_string = """@compact(

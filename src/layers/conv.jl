@@ -91,20 +91,19 @@ end
 
 function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
         init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
-        groups=1,
-        use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
+        groups=1, use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return Conv{N, use_bias, length(pad)}(activation, first(ch), last(ch), k, stride, pad,
-        dilation, groups, init_weight, init_bias)
+    return Conv{N, use_bias, length(pad)}(activation, first(ch), last(ch), k, stride,
+        pad, dilation, groups, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, c::Conv{N, use_bias}) where {N, use_bias}
-    weight = _convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight,
-        groups=c.groups)
+    weight = _convfilter(
+        rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
     if use_bias
         return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
     else
@@ -119,15 +118,13 @@ end
 
 @inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(
-        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
-        groups=c.groups)
+        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
     return __apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(
-        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation,
-        groups=c.groups)
+        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
     return __apply_activation(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
@@ -596,16 +593,17 @@ O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] 
     init_bias
 end
 
-function CrossCor(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0,
-        dilation=1, use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
+function CrossCor(
+        k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
+        init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
+        use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return CrossCor{N, use_bias, length(pad)}(activation, first(ch), last(ch), k, stride,
-        pad, dilation, init_weight, init_bias)
+    return CrossCor{N, use_bias, length(pad)}(
+        activation, first(ch), last(ch), k, stride, pad, dilation, init_weight, init_bias)
 end
 
 function initialparameters(rng::AbstractRNG, c::CrossCor{N, use_bias}) where {N, use_bias}
@@ -622,14 +620,14 @@ function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::CrossCor{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation);
-        F=true)
+    cdims = DenseConvDims(
+        DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return __apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::CrossCor{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation);
-        F=true)
+    cdims = DenseConvDims(
+        DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return __apply_activation(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
@@ -718,23 +716,24 @@ Standard convolutional transpose layer.
     init_bias
 end
 
-function ConvTranspose(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0,
-        dilation=1, use_bias::Bool=true, groups=1,
-        allow_fast_activation::Bool=true) where {N}
+function ConvTranspose(
+        k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
+        init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
+        use_bias::Bool=true, groups=1, allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
     pad = _calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
-    return ConvTranspose{N, use_bias, length(pad)}(activation, first(ch), last(ch), k,
-        stride, pad, dilation, groups, init_weight, init_bias)
+    return ConvTranspose{N, use_bias, length(pad)}(
+        activation, first(ch), last(ch), k, stride,
+        pad, dilation, groups, init_weight, init_bias)
 end
 
-function initialparameters(rng::AbstractRNG,
-        c::ConvTranspose{N, use_bias}) where {N, use_bias}
-    weight = _convfilter(rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight,
-        c.groups)
+function initialparameters(
+        rng::AbstractRNG, c::ConvTranspose{N, use_bias}) where {N, use_bias}
+    weight = _convfilter(
+        rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
     if use_bias
         return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
     else
@@ -747,23 +746,18 @@ function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
            (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::ConvTranspose{N, false})(x::AbstractArray, ps,
-        st::NamedTuple) where {N}
-    cdims = _conv_transpose_dims(x, ps.weight; c.stride, padding=c.pad, c.dilation,
-        c.groups)
+@inline function (c::ConvTranspose{N, false})(
+        x::AbstractArray, ps, st::NamedTuple) where {N}
+    cdims = _conv_transpose_dims(
+        x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return __apply_activation(c.activation, _conv_transpose(x, ps.weight, cdims)), st
 end
 
 @inline function (c::ConvTranspose{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = _conv_transpose_dims(x,
-        ps.weight;
-        c.stride,
-        padding=c.pad,
-        c.dilation,
-        c.groups)
+    cdims = _conv_transpose_dims(
+        x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
-        __apply_activation(c.activation,
-            _conv_transpose(x, ps.weight, cdims) .+ ps.bias),
+        __apply_activation(c.activation, _conv_transpose(x, ps.weight, cdims) .+ ps.bias),
         st)
 end
 

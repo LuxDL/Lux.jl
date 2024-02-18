@@ -36,14 +36,14 @@ end
         model = Dense(3, 2)
         opt = Adam(0.01f0)
 
-        tstate = Lux.Experimental.TrainState(Lux.replicate(rng), model, opt;
-            transform_variables=device)
+        tstate = Lux.Experimental.TrainState(
+            Lux.replicate(rng), model, opt; transform_variables=device)
 
         x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
         for ad in (AutoZygote(), AutoTracker())
-            grads, _, _, _ = Lux.Experimental.compute_gradients(ad, _loss_function,
-                x, tstate)
+            grads, _, _, _ = Lux.Experimental.compute_gradients(
+                ad, _loss_function, x, tstate)
             tstate_ = Lux.Experimental.apply_gradients(tstate, grads)
             @test tstate_.step == 1
             @test tstate != tstate_
