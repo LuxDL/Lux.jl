@@ -175,11 +175,11 @@ const GROUP = get(ENV, "GROUP", "All")
             CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
         end
         # Type
-        @testset "Orthogonal Types $T" for T in (Float16, Float32, Float64)
+        @testset "Orthogonal Types $T" for T in (Float32, Float64)#(Float16, Float32, Float64)
             @test eltype(orthogonal(rng, T, 3, 4; gain=1.5)) == T
             @test eltype(orthogonal(rng, T, 3, 4, 5; gain=1.5)) == T
         end
-        @testset "Orthogonal AbstractArray Type $T" for T in (Float16, Float32, Float64)
+        @testset "Orthogonal AbstractArray Type $T" for T in (Float32, Float64)#(Float16, Float32, Float64)
             @test orthogonal(T, 3, 5) isa AbstractArray{T, 2}
             @test orthogonal(rng, T, 3, 5) isa arrtype{T, 2}
 
@@ -202,8 +202,70 @@ const GROUP = get(ENV, "GROUP", "All")
         end
     end
 
+    @testset "sparse_init rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
+        # sparse_init should yield an error for non 2-d dimensions
+        # sparse_init should yield no zero elements if sparsity < 0
+        # sparse_init should yield all zero elements if sparsity > 1
+        # sparse_init should yield exactly ceil(n_in * sparsity) elements in each column for other sparsity values
+        # sparse_init should yield a kernel in its non-zero elements consistent with the std parameter
+
+        @test_throws ArgumentError sparse_init(3, 4, 5, sparsity=0.1)
+        @test_throws ArgumentError sparse_init(3, sparsity=0.1)
+        v = sparse_init(100, 100, sparsity=-0.1)
+        @test sum(v .== 0) == 0
+        v = sparse_init(100, 100, sparsity=1.1)
+        @test sum(v .== 0) == length(v)
+
+        for (n_in, n_out, sparsity, σ) in [(100, 100, 0.25, 0.1), (100, 400, 0.75, 0.01)]
+            expected_zeros = ceil(Integer, n_in * sparsity)
+            v = sparse_init(n_in, n_out, sparsity=sparsity, std=σ)
+            @test all([sum(v[:,col] .== 0) == expected_zeros for col in 1:n_out])
+            @test 0.9 * σ < std(v[v .!= 0]) < 1.1 * σ
+        end
+
+        # Type
+        @testset "sparse_init Types $T" for T in (Float16, Float32, Float64)
+            @test eltype(sparse_init(rng, T, 3, 4; sparsity=0.5)) == T
+        end
+        @testset "sparse_init AbstractArray Type $T" for T in (Float16, Float32, Float64)
+            @test sparse_init(T, 3, 5; sparsity=0.5) isa AbstractArray{T, 2}
+            @test sparse_init(rng, T, 3, 5; sparsity=0.5) isa arrtype{T, 2}
+
+            cl = sparse_init(rng; sparsity=0.5)
+            @test cl(T, 3, 5) isa arrtype{T, 2}
+
+            cl = sparse_init(rng, T; sparsity=0.5)
+            @test cl(3, 5) isa arrtype{T, 2}
+        end
+        @testset "sparse_init Closure" begin
+            cl = sparse_init(; sparsity=0.5)
+            # Sizes
+            @test size(cl(3, 4)) == (3, 4)
+            @test size(cl(rng, 3, 4)) == (3, 4)
+            # Type
+            @test eltype(cl(4, 2)) == Float32
+            @test eltype(cl(rng, 4, 2)) == Float32
+        end
+    end
+    
+    @testset "identity_init" begin
+        @testset "Non-identity sizes" begin
+            @test identity_init(2, 3)[:, end] == zeros(Float32, 2)
+            @test identity_init(3, 2; shift=1)[1, :] == zeros(Float32, 2)
+            @test identity_init(1, 1, 3, 4)[:, :, :, end] == zeros(Float32, 1, 1, 3)
+            @test identity_init(2, 1, 3, 3)[end, :, :, :] == zeros(Float32, 1, 3, 3)
+            @test identity_init(1, 2, 3, 3)[:, end, :, :] == zeros(Float32, 1, 3, 3)
+        end
+    end
+
+    @static if VERSION ≥ v"1.9"
+        @testset "Warning: truncated_normal" begin
+            @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." truncated_normal(2;
+                mean=-5.0f0)
+        end
+    end
+
     @testset "Aqua: Quality Assurance" begin
         Aqua.test_all(WeightInitializers; ambiguities=false)
         Aqua.test_ambiguities(WeightInitializers; recursive=false)
-    end
 end

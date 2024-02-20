@@ -1,6 +1,7 @@
 module WeightInitializersCUDAExt
 
 using WeightInitializers, CUDA
+using Random
 import WeightInitializers: __partial_apply, NUM_TO_FPOINT, identity_init, sparse_init, orthogonal
 
 const AbstractCuRNG = Union{CUDA.RNG, CURAND.RNG}
@@ -19,30 +20,20 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros)
     end
 end
 
-function orthogonal(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
-        gain::Number=T(1.0)) where {T <: Number}
-   @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
 
-    if length(dims) == 2
-        rows, cols = dims
-    else
-        rows = prod(dims[1:(end - 1)])
-        cols = dims[end]
+function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
+    sparsity::Number, std::Number=T(0.01)) where {T <: Number}
+    if length(dims) != 2
+        throw(ArgumentError("Only 2-dimensional outputs are supported for sparse initialization."))
     end
 
-    if rows < cols
-        return CUDA.permutedims(orthogonal(rng, T, cols, rows; gain))
-    end
+    rows, cols = dims
+    prop_zero = min(1.0, sparsity)
+    num_zeros = ceil(Integer, prop_zero * rows)
+    sparse_array = randn(rng, T, dims...) .* std
+    sparse_array[1:num_zeros, :] .= CUDA.zero(T)
 
-    mat = randn(rng, T, rows, cols)
-    Q, R = CUDA.qr(mat)
-    mat .= Q * sign.(CUDA.diag(R)) .* T(gain)
-
-    if length(dims) > 2
-        return CUDA.reshape(mat, dims)
-    else
-        return mat
-    end
+    return CUDA.@allowscalar mapslices(shuffle, sparse_array, dims=1)
 end
 
 
@@ -70,25 +61,6 @@ function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         end
         return CUDA.circshift(weights, (ntuple(d -> 0, length(dims) - 2)..., shift, shift))
     end
-end
-
-function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
-        sparsity::Number, std::Number=T(0.01)) where {T <: Number}
-    if length(dims) != 2
-        throw(ArgumentError("Only 2-dimensional outputs are supported for sparse initialization."))
-    end
-
-    rows, cols = dims
-    prop_zero = min(1.0, sparsity)
-    num_zeros = ceil(Integer, prop_zero * rows)
-    sparse_array = randn(rng, T, dims...) .* std
-    sparse_array[1:num_zeros, :] .= CUDA.zero(T)
-
-    for col in 1:cols
-        sparse_array[:, col] = CUDA.shuffle(rng, sparse_array[:, col])
-    end
-
-    return sparse_array
 end
 
 for initializer in (:sparse_init, :identity_init)

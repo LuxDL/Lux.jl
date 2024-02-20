@@ -160,8 +160,8 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     end
 
     mat = randn(rng, T, rows, cols)
-    Q, R = LinearAlgebra.qr(mat)
-    mat .= Array(Q) * sign.(LinearAlgebra.Diagonal(R)) .* T(gain)
+    Q, R = qr(mat)
+    mat .= Q * sign.(Diagonal(R)) .* T(gain)
 
     if length(dims) > 2
         return reshape(mat, dims)
@@ -222,12 +222,7 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     num_zeros = ceil(Integer, prop_zero * rows)
     sparse_array = randn(rng, T, dims...) .* std
     sparse_array[1:num_zeros, :] .= zero(T)
-
-    for col in 1:cols
-        sparse_array[:, col] = shuffle(rng, sparse_array[:, col])
-    end
-
-    return sparse_array
+    return mapslices(shuffle, sparse_array, dims=1)
 end
 
 """
