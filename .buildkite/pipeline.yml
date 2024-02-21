@@ -101,7 +101,7 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         if: build.message !~ /\[skip tests\]/
-        timeout_in_minutes: 240
+        timeout_in_minutes: 60
         matrix:
           setup:
             julia:
@@ -155,7 +155,7 @@ steps:
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
           DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
         if: build.message !~ /\[skip tests\]/ || build.message !~ /\[skip downstream\]/
-        timeout_in_minutes: 240
+        timeout_in_minutes: 60
         matrix:
           setup:
             julia:
