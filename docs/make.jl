@@ -1,7 +1,4 @@
-include("./DocumenterVitepress/DocumenterVitepress.jl")
-using .DocumenterVitepress
-
-using Documenter, Pkg
+using Documenter, DocumenterVitepress, Pkg
 using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
 using LuxTestUtils, LuxDeviceUtils
 using LuxAMDGPU, LuxCUDA
@@ -15,10 +12,9 @@ makedocs(; sitename="Lux",
     doctest=true,
     modules=[Lux, LuxCore, LuxLib, WeightInitializers, Boltz,
         LuxTestUtils, LuxDeviceUtils, LuxAMDGPU, LuxCUDA],
-    checkdocs=:all,
+    linkcheck = true,
     format=DocumenterVitepress.MarkdownVitepress(),
     draft=false,
-    strict=[:doctest, :linkcheck, :parse_error, :example_block, :missing_docs],
     source="src",
     build=joinpath(@__DIR__, "build"))
 
