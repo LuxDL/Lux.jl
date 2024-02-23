@@ -132,7 +132,7 @@ apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 Calls `apply` and only returns the first argument.
 """
 function stateless_apply(model::AbstractExplicitLayer, x, ps, st)
-    first(apply(model, x, ps, st))
+    return first(apply(model, x, ps, st))
 end
 
 function stateless_apply(model, x, ps, st)
