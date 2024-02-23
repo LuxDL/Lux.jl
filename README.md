@@ -72,8 +72,7 @@ Checkout our [Ecosystem](http://lux.csail.mit.edu/dev/ecosystem/) page for more 
 
 ## Getting Help
 
-For usage related questions, please use [Github Discussions](https://github.com/LuxDL/Lux.jl/discussions) or [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a [pull request](https://github.com/LuxDL/Lux.jl/pulls).
-
+For usage related questions, please use [Github Discussions](https://github.com/LuxDL/Lux.jl/discussions) or [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/24/) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a [pull request](https://github.com/LuxDL/Lux.jl/pulls).
 
 ## Package Ecosystem Structure
 

@@ -40,7 +40,7 @@ architecture cannot change.
 ::: tip
 
 For people coming from Flux.jl background this might be weird. We recommend checking out
-[the Flux to Lux migration guide](migrate_from_flux) first before proceeding.
+[the Flux to Lux migration guide](@ref migrate-from-flux) first before proceeding.
 
 :::
 
