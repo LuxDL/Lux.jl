@@ -20,6 +20,8 @@ struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N, Int}
 end
 
+outputsize(r::ReshapeLayer) = r.dims
+
 @inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(x, r.dims..., size(x, ndims(x))), st
 end
@@ -197,6 +199,8 @@ function parameterlength(d::Dense{use_bias}) where {use_bias}
 end
 statelength(d::Dense) = 0
 
+outputsize(d::Dense) = (d.out_dims,)
+
 @inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
     return __apply_activation(d.activation, ps.weight * x), st
 end
@@ -299,6 +303,8 @@ end
 parameterlength(d::Scale{use_bias}) where {use_bias} = (1 + use_bias) * prod(d.dims)
 statelength(d::Scale) = 0
 
+outputsize(d::Scale) = d.dims
+
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
     return __apply_activation(d.activation, ps.weight .* x .+ ps.bias), st
 end
@@ -400,6 +406,8 @@ function parameterlength(b::Bilinear{use_bias}) where {use_bias}
 end
 statelength(b::Bilinear) = 0
 
+outputsize(b::Bilinear) = (b.out_dims,)
+
 function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat},
         ps, st::NamedTuple) where {use_bias}
     d_z, d_x, d_y = size(ps.weight)
@@ -500,3 +508,5 @@ end
 function Base.show(io::IO, e::Embedding)
     return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
 end
+
+outputsize(e::Embedding) = (e.out_dims,)
