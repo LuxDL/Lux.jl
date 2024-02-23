@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Lux
+```
+
 # LuxCore
 
 `LuxCore.jl` defines the abstract layers for Lux. Allows users to be compatible with the
