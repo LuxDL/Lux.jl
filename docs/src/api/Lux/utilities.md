@@ -17,21 +17,17 @@ Lux.cpu
 Lux.gpu
 ```
 
-:::warning
+!!! warning
 
-For detailed API documentation on Data Transfer check out the
-[LuxDeviceUtils.jl](@ref LuxDeviceUtils-API)
-
-:::
+    For detailed API documentation on Data Transfer check out the
+    [LuxDeviceUtils.jl](@ref LuxDeviceUtils-API)
 
 ## Weight Initialization
 
-:::warning
+!!! warning
 
-For API documentation on Initialization check out the
-[WeightInitializers.jl](@ref WeightInitializers-API)
-
-:::
+    For API documentation on Initialization check out the
+    [WeightInitializers.jl](@ref WeightInitializers-API)
 
 ## Miscellaneous Utilities
 

@@ -463,11 +463,9 @@ A lookup table that stores embeddings of dimension `out_dims` for a vocabulary o
 
 This layer is often used to store word embeddings and retrieve them using indices.
 
-:::warning
+!!! warning
 
-Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
-
-:::
+    Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
 
 ## Arguments
 

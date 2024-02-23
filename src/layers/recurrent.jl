@@ -26,13 +26,11 @@ struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
 
-:::warning
+!!! warning
 
-This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
-rather allows operating on an entire sequence of inputs at once. See
-[`StatefulRecurrentCell`](@ref) for functionality similar to `Flux.Recur`.
-
-:::
+    This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
+    rather allows operating on an entire sequence of inputs at once. See
+    [`StatefulRecurrentCell`](@ref) for functionality similar to `Flux.Recur`.
 
 ## Arguments
 
@@ -137,11 +135,9 @@ end
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) and
 makes it stateful.
 
-:::tip
+!!! tip
 
-This is very similar to `Flux.Recur`
-
-:::
+    This is very similar to `Flux.Recur`
 
 To avoid undefined behavior, once the processing of a single sequence of data is complete,
 update the state with `Lux.update_state(st, :carry, nothing)`.

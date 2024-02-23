@@ -13,12 +13,11 @@ All features listed on this page are **experimental** which means:
    experimental sooner.
 4. None of the features are exported.
 
-:::warning
+!!! warning
 
-Starting v"0.5.2" all Experimental features need to be accessed via
-`Lux.Experimental.<feature>`. Direct access via `Lux.<feature>` will be removed in v"0.6".
-
-:::
+   Starting v"0.5.2" all Experimental features need to be accessed via
+   `Lux.Experimental.<feature>`. Direct access via `Lux.<feature>` will be removed in
+   v"0.6".
 
 ## Index
 
@@ -41,12 +40,10 @@ Lux.Experimental.apply_gradients
 
 ## Parameter Freezing
 
-:::info
+!!! info
 
-In the long term, this will be supported via
-[Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
-
-:::
+   In the long term, this will be supported via
+   [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
 
 ```@docs
 Lux.Experimental.FrozenLayer

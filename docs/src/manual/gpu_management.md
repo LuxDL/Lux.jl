@@ -1,13 +1,11 @@
 # GPU Management
 
-::: info
+!!! info
 
-Starting from `v0.5`, Lux has transitioned to a new GPU management system. The old system
-using `cpu` and `gpu` functions is still in place but will be removed in `v0.6`. Using the 
-old functions might lead to performance regressions if used inside performance critical 
-code.
-
-:::
+    Starting from `v0.5`, Lux has transitioned to a new GPU management system. The old
+    system using `cpu` and `gpu` functions is still in place but will be removed in `v0.6`.
+    Using the  old functions might lead to performance regressions if used inside
+    performance critical code.
 
 `Lux.jl` can handle multiple GPU backends. Currently, the following backends are supported:
 
@@ -17,11 +15,9 @@ using Lux, LuxCUDA, LuxAMDGPU  # Important to load trigger packages
 supported_gpu_backends()
 ```
 
-::: danger Metal Support
+!!! danger "Metal Support"
 
-Support for Metal GPUs should be considered extremely experimental at this point.
-
-:::
+    Support for Metal GPUs should be considered extremely experimental at this point.
 
 ## Automatic Backend Management (Recommended Approach)
 
