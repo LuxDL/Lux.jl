@@ -113,11 +113,9 @@ function outputsize end
 Shorthand for getting the parameters and states of the layer `l`. Is equivalent to
 `(initialparameters(rng, l), initialstates(rng, l))`.
 
-::: warning
+!!! warning
 
-This function is not pure, it mutates `rng`.
-
-:::
+    This function is not pure, it mutates `rng`.
 """
 setup(rng::AbstractRNG, l) = (initialparameters(rng, l), initialstates(rng, l))
 
@@ -153,13 +151,11 @@ for the layer, and constructs the parameters and states using those.
 Users implementing their custom layer can extend the same functions as in
 [`AbstractExplicitLayer`](@ref).
 
-::: tip
+!!! tip
 
-Advanced structure manipulation of these layers post construction is possible via
-`Functors.fmap`. For a more flexible interface, we recommend using the experimental
-feature [`Lux.Experimental.@layer_map`](@ref).
-
-:::
+    Advanced structure manipulation of these layers post construction is possible via
+    `Functors.fmap`. For a more flexible interface, we recommend using
+    `Lux.Experimental.@layer_map`.
 """
 abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
 
