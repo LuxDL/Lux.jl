@@ -258,11 +258,9 @@ const GROUP = get(ENV, "GROUP", "All")
         end
     end
 
-    @static if VERSION ≥ v"1.9"
-        @testset "Warning: truncated_normal" begin
-            @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate." truncated_normal(2;
-                mean=-5.0f0)
-        end
+    @testset "Warning: truncated_normal" begin
+        @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so \
+            the distribution of values may be inaccurate." truncated_normal(2; mean=-5.0f0)
     end
 
     @testset "Aqua: Quality Assurance" begin
