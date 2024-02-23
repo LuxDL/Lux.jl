@@ -144,9 +144,8 @@ Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 [^Saxe14] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of learning in deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
 """
 function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-    gain::Number=T(1.0)) where {T <: Number}
-
-   @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
+        gain::Number=T(1.0)) where {T <: Number}
+    @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
 
     if length(dims) == 2
         rows, cols = dims
@@ -222,7 +221,7 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     num_zeros = ceil(Integer, prop_zero * rows)
     sparse_array = randn(rng, T, dims...) .* std
     sparse_array[1:num_zeros, :] .= zero(T)
-    return mapslices(shuffle, sparse_array, dims=1)
+    return mapslices(shuffle, sparse_array; dims=1)
 end
 
 """

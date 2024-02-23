@@ -1,5 +1,5 @@
 using Aqua
-using WeightInitializers, Test, SafeTestsets, Statistics
+using WeightInitializers, Test, Statistics
 using StableRNGs, Random, CUDA, LinearAlgebra
 
 CUDA.allowscalar(false)
@@ -34,7 +34,7 @@ const GROUP = get(ENV, "GROUP", "All")
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
             kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal,
-            truncated_normal, identity_init,
+            truncated_normal, identity_init
         ]
             # Sizes
             @test size(init(3)) == (3,)
@@ -79,7 +79,8 @@ const GROUP = get(ENV, "GROUP", "All")
 
         @testset "AbstractArray Type: $init $T" for init in [kaiming_uniform,
                 kaiming_normal,
-                glorot_uniform, glorot_normal, truncated_normal, identity_init], T in (Float16, Float32,
+                glorot_uniform, glorot_normal, truncated_normal, identity_init],
+            T in (Float16, Float32,
                 Float64, ComplexF16, ComplexF32, ComplexF64)
 
             init === truncated_normal && !(T <: Real) && continue
@@ -165,14 +166,16 @@ const GROUP = get(ENV, "GROUP", "All")
         # In the other case, the transpose should be taken to compute the QR decomposition.
         for (rows, cols) in [(5, 3), (3, 5)]
             v = orthogonal(rng, rows, cols)
-            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
+            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
+                              (@test v' * v ≈ I(cols))
         end
         for mat in [(3, 4, 5), (2, 2, 5)]
             v = orthogonal(rng, mat...)
             cols = mat[end]
             rows = div(prod(mat), cols)
             v = reshape(v, (rows, cols))
-            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
+            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
+                              (@test v' * v ≈ I(cols))
         end
         # Type
         @testset "Orthogonal Types $T" for T in (Float32, Float64)#(Float16, Float32, Float64)
@@ -211,15 +214,15 @@ const GROUP = get(ENV, "GROUP", "All")
 
         @test_throws ArgumentError sparse_init(3, 4, 5, sparsity=0.1)
         @test_throws ArgumentError sparse_init(3, sparsity=0.1)
-        v = sparse_init(100, 100, sparsity=-0.1)
+        v = sparse_init(100, 100; sparsity=-0.1)
         @test sum(v .== 0) == 0
-        v = sparse_init(100, 100, sparsity=1.1)
+        v = sparse_init(100, 100; sparsity=1.1)
         @test sum(v .== 0) == length(v)
 
         for (n_in, n_out, sparsity, σ) in [(100, 100, 0.25, 0.1), (100, 400, 0.75, 0.01)]
             expected_zeros = ceil(Integer, n_in * sparsity)
-            v = sparse_init(n_in, n_out, sparsity=sparsity, std=σ)
-            @test all([sum(v[:,col] .== 0) == expected_zeros for col in 1:n_out])
+            v = sparse_init(n_in, n_out; sparsity=sparsity, std=σ)
+            @test all([sum(v[:, col] .== 0) == expected_zeros for col in 1:n_out])
             @test 0.9 * σ < std(v[v .!= 0]) < 1.1 * σ
         end
 
@@ -247,7 +250,7 @@ const GROUP = get(ENV, "GROUP", "All")
             @test eltype(cl(rng, 4, 2)) == Float32
         end
     end
-    
+
     @testset "identity_init" begin
         @testset "Non-identity sizes" begin
             @test identity_init(2, 3)[:, end] == zeros(Float32, 2)
@@ -266,4 +269,5 @@ const GROUP = get(ENV, "GROUP", "All")
     @testset "Aqua: Quality Assurance" begin
         Aqua.test_all(WeightInitializers; ambiguities=false)
         Aqua.test_ambiguities(WeightInitializers; recursive=false)
+    end
 end

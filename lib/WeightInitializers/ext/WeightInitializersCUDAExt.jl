@@ -2,7 +2,8 @@ module WeightInitializersCUDAExt
 
 using WeightInitializers, CUDA
 using Random
-import WeightInitializers: __partial_apply, NUM_TO_FPOINT, identity_init, sparse_init, orthogonal
+import WeightInitializers: __partial_apply, NUM_TO_FPOINT, identity_init, sparse_init,
+                           orthogonal
 
 const AbstractCuRNG = Union{CUDA.RNG, CURAND.RNG}
 
@@ -20,9 +21,8 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros)
     end
 end
 
-
 function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
-    sparsity::Number, std::Number=T(0.01)) where {T <: Number}
+        sparsity::Number, std::Number=T(0.01)) where {T <: Number}
     if length(dims) != 2
         throw(ArgumentError("Only 2-dimensional outputs are supported for sparse initialization."))
     end
@@ -35,7 +35,6 @@ function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
 
     return CUDA.@allowscalar mapslices(shuffle, sparse_array, dims=1)
 end
-
 
 function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
