@@ -54,12 +54,10 @@ the function on all of them together.
   - Must return a tuple of 3 elements -- `AbstractExplicitLayer`, new parameters and the new
     states.
 
-:::tip
+!!! tip
 
-We recommend using the macro `Lux.@layer_map` instead of this function. It automatically
-sets the `name` of the layer to be the variable name.
-
-:::
+    We recommend using the macro `Lux.@layer_map` instead of this function. It automatically
+    sets the `name` of the layer to be the variable name.
 
 ## Example
 

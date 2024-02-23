@@ -15,21 +15,17 @@ Alternatively, you can also do
 import Pkg; Pkg.add("Lux")
 ```
 
-:::tip
+!!! tip
 
-The Julia Compiler is always improving. As such, we recommend using the latest stable
-version of Julia instead of the LTS.
-
-:::
+    The Julia Compiler is always improving. As such, we recommend using the latest stable
+    version of Julia instead of the LTS.
 
 ## Quickstart
 
-:::tip PRE-REQUISITES
+!!! tip "Pre-Requisites"
 
-You need to install `Optimisers` and `Zygote` if not done already.
-`Pkg.add(["Optimisers", "Zygote"])`
-
-:::
+    You need to install `Optimisers` and `Zygote` if not done already.
+    `Pkg.add(["Optimisers", "Zygote"])`
 
 ```@example quickstart
 using Lux, Random, Optimisers, Zygote

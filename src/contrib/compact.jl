@@ -117,19 +117,15 @@ println(model)  # "Linear(3 => 1)()"
 This can be useful when using `@compact` to hierarchically construct complex models to be
 used inside a `Chain`.
 
-:::tip Type Stability
+!!! tip "Type Stability"
 
-If your input function `f` is type-stable but the generated model is not type stable, it
-should be treated as a bug. We will appreciate issues if you find such cases.
+    If your input function `f` is type-stable but the generated model is not type stable, it
+    should be treated as a bug. We will appreciate issues if you find such cases.
 
-:::
+!!! warning "Parameter Count"
 
-:::warning Parameter Count
-
-Array Parameter don't print the number of parameters on the side. However, they do account
-for the total number of parameters printed at the bottom.
-
-:::
+    Array Parameter don't print the number of parameters on the side. However, they do
+    account for the total number of parameters printed at the bottom.
 """
 macro compact(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs

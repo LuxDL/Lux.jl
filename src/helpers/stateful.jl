@@ -1,11 +1,9 @@
 """
     StatefulLuxLayer(model, ps, st; st_fixed_type = Val(true))
 
-::: warning
+!!! warning
 
-This is not a Lux.AbstractExplicitLayer
-
-:::
+    This is not a Lux.AbstractExplicitLayer
 
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 Most users should not be using this version. This comes handy when Lux internally uses

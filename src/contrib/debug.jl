@@ -2,12 +2,10 @@
     DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
         error_check::Bool=true, location::String="")
 
-::: danger
+!!! danger
 
-This layer is only meant to be used for debugging. If used for actual training or inference,
-will lead to extremely bad performance.
-
-:::
+    This layer is only meant to be used for debugging. If used for actual training or
+    inference, will lead to extremely bad performance.
 
 A wrapper over Lux layers that adds checks for NaNs and errors. This is useful for
 debugging.
@@ -38,12 +36,10 @@ If `nan_check` is enabled and NaNs are detected then a `DomainError` is thrown. 
 `error_check` is enabled, then any errors in the layer are thrown with useful information to
 track where the error originates.
 
-::: warning
+!!! warning
 
-`nan_check` for the backward mode only works with ChainRules Compatible Reverse Mode AD
-Tools currently.
-
-:::
+    `nan_check` for the backward mode only works with ChainRules Compatible Reverse Mode AD
+    Tools currently.
 
 See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 """

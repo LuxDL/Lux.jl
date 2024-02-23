@@ -13,12 +13,10 @@ this layer expects as input an array with `ndims(x) == N + 2`, where
 `size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is the
 number of observations in a batch.
 
-:::warning
+!!! warning
 
-Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d)
-perform cross-correlation in their convolution layers
-
-:::
+    Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d)
+    perform cross-correlation in their convolution layers
 
 ## Arguments
 

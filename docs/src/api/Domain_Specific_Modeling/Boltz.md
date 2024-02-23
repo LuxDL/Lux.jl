@@ -58,11 +58,10 @@ Boltz._vgg_convolutional_layers
 
 ## Classification Models: Imported from Metalhead.jl
 
-:::tip
+!!! tip
 
-You need to load `Flux` and `Metalhead` before using these models.
+    You need to load `Flux` and `Metalhead` before using these models.
 
-:::
 
 | MODEL NAME | FUNCTION    | NAME                  | PRETRAINED | TOP 1 ACCURACY (%) | TOP 5 ACCURACY (%) |
 | ---------- | ----------- | --------------------- | :--------: | :----------------: | :----------------: |

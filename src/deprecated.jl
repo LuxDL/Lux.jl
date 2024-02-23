@@ -4,11 +4,9 @@
 
 Transfer `x` to CPU.
 
-::: warning
+!!! warning
 
-This function has been deprecated. Use [`cpu_device`](@ref) instead.
-
-:::
+    This function has been deprecated. Use [`cpu_device`](@ref) instead.
 """
 function cpu(x)
     Base.depwarn("`cpu` has been deprecated and will be removed in v0.6. Use \
@@ -21,12 +19,11 @@ end
 
 Transfer `x` to GPU determined by the backend set using [`Lux.gpu_backend!`](@ref).
 
-:::warning
+!!! warning
 
-This function has been deprecated. Use [`gpu_device`](@ref) instead. Using this function
-inside performance critical code will cause massive slowdowns due to type inference failure.
-
-:::
+    This function has been deprecated. Use [`gpu_device`](@ref) instead. Using this function
+    inside performance critical code will cause massive slowdowns due to type inference
+    failure.
 """
 function gpu(x)
     @warn "Using `gpu` inside performance critical code will cause massive slowdowns due \

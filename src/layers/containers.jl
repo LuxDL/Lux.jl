@@ -203,17 +203,15 @@ outputs.
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 
-:::tip Comparison with Parallel
+!!! tip "Comparison with Parallel"
 
-This is slightly different from [`Parallel(nothing, layers...)`](@ref)
+    This is slightly different from [`Parallel(nothing, layers...)`](@ref)
 
-  - If the input is a tuple, `Parallel` will pass each element individually to each
-    layer.
+      - If the input is a tuple, `Parallel` will pass each element individually to each
+        layer.
 
-  - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N`
-    outputs.
-
-:::
+      - `BranchLayer` essentially assumes 1 input comes in and is branched out into `N`
+        outputs.
 
 ## Example
 

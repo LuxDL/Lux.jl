@@ -4,7 +4,7 @@
 #
 # 1. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
 # 2. [Flux's tutorial](https://fluxml.ai/Flux.jl/stable/tutorials/2020-09-15-deep-learning-flux/).
-# 3. [Jax's tutorial](https://jax.readthedocs.io/en/latest/jax-101/index.html)
+# 3. [Jax's tutorial](https://jax.readthedocs.io/en/latest/jax-101/index.html).
 #
 # It introduces basic Julia programming, as well `Zygote`, a source-to-source automatic
 # differentiation (AD) framework in Julia. We'll use these tools to build a very simple

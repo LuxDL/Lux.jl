@@ -1,10 +1,8 @@
 # [Freezing Model Parameters](@id freezing-model-parameters)
 
-::: warning
+!!! warning
 
-API for freezing parameters should be considered experimental at this point.
-
-:::
+    API for freezing parameters should be considered experimental at this point.
 
 In this manual entry, we will go over how to freeze certain parameters in a model.
 

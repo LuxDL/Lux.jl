@@ -4,12 +4,10 @@
 
 Convert a Flux Model to Lux Model.
 
-:::warning
+!!! warning
 
-`transform` always ingores the `active` field of some of the Flux layers. This is almost
-never going to be supported.
-
-:::
+    `transform` always ingores the `active` field of some of the Flux layers. This is almost
+    never going to be supported.
 
 ## Arguments
 
@@ -52,19 +50,15 @@ _maybe_flip_conv_weight(x) = copy(x)
 Serves as a compatibility layer between Flux and Lux. This uses `Optimisers.destructure`
 API internally.
 
-:::warning
+!!! warning
 
-Lux was written to overcome the limitations of `destructure` + `Flux`. It is recommended
-to rewrite your l in Lux instead of using this layer.
+    Lux was written to overcome the limitations of `destructure` + `Flux`. It is recommended
+    to rewrite your l in Lux instead of using this layer.
 
-:::
+!!! warning
 
-:::warning
-
-Introducing this Layer in your model will lead to type instabilities, given the way
-`Optimisers.destructure` works.
-
-:::
+    Introducing this Layer in your model will lead to type instabilities, given the way
+    `Optimisers.destructure` works.
 
 ## Arguments
 
