@@ -127,7 +127,7 @@ Simply calls `model(x, ps, st)`
 apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 """
-    stateless_apply(model, x, ps, st)
+    stateless_apply(model, x, ps)
 
 Calls `apply` and only returns the first argument.
 """
@@ -186,6 +186,18 @@ end
 
 function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
+end
+
+function stateless_apply(
+        model::AbstractExplicitContainerLayer{layers}, x, ps) where {layers}
+    if length(layers) == 1
+        layer_names = keys(getfield(model, layers[1]))
+    else
+        layer_names = layers
+    end
+    st = NamedTuple{layer_names}(NamedTuple() for _ in layer_names)
+
+    return first(apply(model, x, ps, st))
 end
 
 # Make AbstractExplicit Layers Functor Compatible
