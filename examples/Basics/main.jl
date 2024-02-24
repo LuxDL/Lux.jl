@@ -117,9 +117,13 @@ W * x
 # above operations with the same syntax.
 
 using LuxCUDA
+using LuxAMDGPU
 if LuxCUDA.functional()
     x_cu = cu(rand(5, 3))
     @show x_cu
+elseif LuxAMDGPU.functional() # Similarly, for AMDGPU
+    x_amd = gpu(rand(5, 3))
+    @show x_amd
 end
 
 # ## (Im)mutability

@@ -17,7 +17,9 @@ close(pkg_io) #hide
 using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq, Optimization,
       OptimizationOptimJL, Random, SciMLSensitivity
 using CairoMakie, MakiePublication
+
 CUDA.allowscalar(false)
+AMDGPU.allowscalar(false)
 
 # ## Define some Utility Functions
 
