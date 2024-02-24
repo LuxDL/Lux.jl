@@ -10,16 +10,14 @@ function LuxDeviceUtils.__is_functional(::Union{LuxCUDADevice, Type{<:LuxCUDADev
     return LuxCUDA.functional()
 end
 
-LuxDeviceUtils._get_adaptor(::LuxCUDADevice{Nothing}) = LuxCUDAAdaptor(CUDA.device())
-
-function LuxDeviceUtils._with_device_id(::Type{LuxCUDADevice}, ::Nothing)
-    return LuxCUDADevice(CUDA.device())
+function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, ::Nothing)
+    return LuxCUDADevice(nothing)
 end
-function LuxDeviceUtils._with_device_id(::Type{LuxCUDADevice}, id)
-    old_id = CUDA.device().handle
+function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id)
+    old_dev = CUDA.device()
     CUDA.device!(id)
     device = LuxCUDADevice(CUDA.device())
-    CUDA.device!(old_id)
+    CUDA.device!(old_dev)
     return device
 end
 
@@ -31,7 +29,23 @@ LuxDeviceUtils.get_device(::CUDA.AnyCuArray) = LuxCUDADevice()
 
 # Device Transfer
 ## To GPU
-adapt_storage(::LuxCUDAAdaptor, x) = cu(x)
+adapt_storage(::LuxCUDAAdaptor{Nothing}, x) = cu(x)
+function adapt_storage(to::LuxCUDAAdaptor, x)
+    old_dev = CUDA.device()  # remember the current device
+    if !(x isa CUDA.AnyCuArray)
+        CUDA.device!(to.device)
+        x_new = cu(x)
+        CUDA.device!(old_dev)
+        return x_new
+    elseif CUDA.device(x).handle == to.device.handle
+        return x
+    else
+        CUDA.device!(to.device)
+        x_new = copy(x)
+        CUDA.device!(old_dev)
+        return x_new
+    end
+end
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG) = CUDA.default_rng()
 

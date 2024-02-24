@@ -10,16 +10,14 @@ function LuxDeviceUtils.__is_functional(::Union{LuxAMDGPUDevice, <:Type{LuxAMDGP
     return LuxAMDGPU.functional()
 end
 
-LuxDeviceUtils._get_adaptor(::LuxAMDGPUDevice{Nothing}) = LuxAMDGPUAdaptor(AMDGPU.device())
-
-function LuxDeviceUtils._with_device_id(::Type{LuxAMDGPUDevice}, ::Nothing)
-    return LuxAMDGPUDevice(AMDGPU.device())
+function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, ::Nothing)
+    return LuxAMDGPUDevice(nothing)
 end
-function LuxDeviceUtils._with_device_id(::Type{LuxAMDGPUDevice}, id)
-    old_id = AMDGPU.device_id(AMDGPU.device()) - 1
+function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, id)
+    old_dev = AMDGPU.device()
     AMDGPU.device!(AMDGPU.devices()[id + 1])
     device = LuxAMDGPUDevice(AMDGPU.device())
-    AMDGPU.device!(AMDGPU.devices()[old_id + 1])
+    AMDGPU.device!(old_dev)
     return device
 end
 
@@ -31,7 +29,23 @@ LuxDeviceUtils.get_device(::AMDGPU.AnyROCArray) = LuxAMDGPUDevice()
 
 # Device Transfer
 ## To GPU
-adapt_storage(::LuxAMDGPUAdaptor, x) = roc(x)
+adapt_storage(::LuxAMDGPUAdaptor{Nothing}, x) = roc(x)
+function adapt_storage(to::LuxAMDGPUAdaptor, x)
+    old_dev = AMDGPU.device()  # remember the current device
+    if !(x isa AMDGPU.AnyROCArray)
+        AMDGPU.device!(to.device)
+        x_new = roc(x)
+        AMDGPU.device!(old_dev)
+        return x_new
+    elseif AMDGPU.device_id(AMDGPU.device(x)) == AMDGPU.device_id(to.device)
+        return x
+    else
+        AMDGPU.device!(to.device)
+        x_new = copy(x)
+        AMDGPU.device!(old_dev)
+        return x_new
+    end
+end
 adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
 adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocrand_rng()
 

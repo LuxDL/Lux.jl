@@ -21,29 +21,29 @@ __is_functional(x) = false
 __is_loaded(x) = false
 
 struct LuxCPUDevice <: AbstractLuxDevice end
-@kwdef struct LuxCUDADevice{ID} <: AbstractLuxGPUDevice
-    device_id::ID = nothing
+@kwdef struct LuxCUDADevice{D} <: AbstractLuxGPUDevice
+    device::D = nothing
 end
-@kwdef struct LuxAMDGPUDevice{ID} <: AbstractLuxGPUDevice
-    device_id::ID = nothing
+@kwdef struct LuxAMDGPUDevice{D} <: AbstractLuxGPUDevice
+    device::D = nothing
 end
 struct LuxMetalDevice <: AbstractLuxGPUDevice end
 
-_with_device_id(::Type{LuxCPUDevice}, ::Nothing) = LuxCPUDevice()
-function _with_device_id(::Type{LuxCPUDevice}, device_id)
+_with_device(::Type{LuxCPUDevice}, ::Nothing) = LuxCPUDevice()
+function _with_device(::Type{LuxCPUDevice}, device_id)
     @warn "`device_id` is not applicable for `LuxCPUDevice`." maxlog=1
     return LuxCPUDevice()
 end
 
-_with_device_id(::Type{LuxMetalDevice}, ::Nothing) = LuxMetalDevice()
-function _with_device_id(::Type{LuxMetalDevice}, device_id)
+_with_device(::Type{LuxMetalDevice}, ::Nothing) = LuxMetalDevice()
+function _with_device(::Type{LuxMetalDevice}, device_id)
     @warn "`device_id` is not applicable for `LuxMetalDevice`." maxlog=1
     return LuxMetalDevice()
 end
 
 _get_adaptor(::LuxCPUDevice) = LuxCPUAdaptor()
-_get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device_id)
-_get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device_id)
+_get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device)
+_get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device)
 _get_adaptor(::LuxMetalDevice) = LuxMetalAdaptor()
 
 __is_functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
@@ -119,7 +119,7 @@ function gpu_device(device_id=nothing; force_gpu_usage::Bool=false)::AbstractLux
     end
 
     device_type = _get_gpu_device(; force_gpu_usage)
-    device = _with_device_id(device_type, device_id)
+    device = _with_device(device_type, device_id)
     GPU_DEVICE[] = device
 
     return device
@@ -255,17 +255,18 @@ default_device_rng(::LuxCPUDevice) = Random.default_rng()
 # For Lux, typically models only has these 3 datastructures so we should be mostly fine.
 for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
     ldev = Symbol("Lux$(dev)Device")
-    ladaptor = Symbol("Lux$(dev)Adaptor")
     @eval begin
         function (D::$(ldev))(x::AbstractArray)
-            fn = Base.Fix1(adapt, $(ladaptor)())
+            ladaptor = _get_adaptor(D)
+            fn = Base.Fix1(adapt, ladaptor)
             return _isbitsarray(x) ? fn(x) : map(D, x)
         end
         (D::$(ldev))(x::Tuple) = map(D, x)
         (D::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(D(values(x)))
-        function (::$(ldev))(x)
-            _isleaf(x) && return adapt($(ladaptor)(), x)
-            return fmap(Base.Fix1(adapt, $(ladaptor)()), x; exclude=_isleaf)
+        function (D::$(ldev))(x)
+            ladaptor = _get_adaptor(D)
+            _isleaf(x) && return adapt(ladaptor, x)
+            return fmap(Base.Fix1(adapt, ladaptor), x; exclude=_isleaf)
         end
         function (::$(ldev))(NN::LuxCore.AbstractExplicitLayer)
             @warn "Lux layers are stateless and hence don't participate in device \
@@ -289,11 +290,11 @@ get_device(::AbstractArray) = LuxCPUDevice()
 abstract type AbstractLuxDeviceAdaptor end
 
 struct LuxCPUAdaptor <: AbstractLuxDeviceAdaptor end
-struct LuxCUDAAdaptor{ID} <: AbstractLuxDeviceAdaptor
-    device_id::ID
+struct LuxCUDAAdaptor{D} <: AbstractLuxDeviceAdaptor
+    device::D
 end
-struct LuxAMDGPUAdaptor{ID} <: AbstractLuxDeviceAdaptor
-    device_id::ID
+struct LuxAMDGPUAdaptor{D} <: AbstractLuxDeviceAdaptor
+    device::D
 end
 struct LuxMetalAdaptor <: AbstractLuxDeviceAdaptor end
 
