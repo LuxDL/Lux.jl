@@ -1,7 +1,13 @@
 CUDA.allowscalar(false)
+AMDGPU.allowscalar(false)
 
-# unsafe_free OneHotArrays
-CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
+if LuxCUDA.functional()
+    # unsafe_free OneHotArrays
+    CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
+elseif LuxAMDGPU.functional()
+    # unsafe_free OneHotArrays
+    AMDGPU.unsafe_free!(x::OneHotArray) = AMDGPU.unsafe_free!(x.indices)
+end
 
 # Loss Function
 logitcrossentropyloss(ŷ, y) = mean(-sum(y .* logsoftmax(ŷ; dims=1); dims=1))

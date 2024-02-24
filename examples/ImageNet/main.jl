@@ -2,6 +2,8 @@
 
 using Augmentor                                         # Image Augmentation
 using Boltz                                             # Computer Vision Models
+using Flux                                              # Some Blotz Models need Flux
+using Metalhead                                         # Some Blotz Models need MetalHead
 using Configurations                                    # Experiment Configurations
 using LuxAMDGPU                                         # AMDGPUs <3
 using LuxCUDA                                           # NVIDIA GPUs <3
@@ -62,7 +64,8 @@ function construct(rng::AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
 end
 
 function construct(cfg::OptimizerConfig)
-    if cfg.name == "adam" + opt = Adam(cfg.learning_rate)
+    if cfg.name == "adam"
+        opt = Adam(cfg.learning_rate)
     elseif cfg.name == "sgd"
         if cfg.nesterov
             opt = Nesterov(cfg.learning_rate, cfg.momentum)
