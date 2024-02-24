@@ -10,8 +10,12 @@ function LuxDeviceUtils.__is_functional(::Union{LuxAMDGPUDevice, <:Type{LuxAMDGP
     return LuxAMDGPU.functional()
 end
 
-function LuxDeviceUtils._with_device_id(::Type{LuxAMDGPUDevice}, device_id)
-    id = ifelse(device_id === nothing, 0, device_id)
+LuxDeviceUtils._get_adaptor(::LuxAMDGPUDevice{Nothing}) = LuxAMDGPUAdaptor(AMDGPU.device())
+
+function LuxDeviceUtils._with_device_id(::Type{LuxAMDGPUDevice}, ::Nothing)
+    return LuxAMDGPUDevice(AMDGPU.device())
+end
+function LuxDeviceUtils._with_device_id(::Type{LuxAMDGPUDevice}, id)
     old_id = AMDGPU.device_id(AMDGPU.device()) - 1
     AMDGPU.device!(AMDGPU.devices()[id + 1])
     device = LuxAMDGPUDevice(AMDGPU.device())

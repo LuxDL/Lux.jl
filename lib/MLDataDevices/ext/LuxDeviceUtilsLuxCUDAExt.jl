@@ -10,8 +10,12 @@ function LuxDeviceUtils.__is_functional(::Union{LuxCUDADevice, Type{<:LuxCUDADev
     return LuxCUDA.functional()
 end
 
-function LuxDeviceUtils._with_device_id(::Type{LuxCUDADevice}, device_id)
-    id = ifelse(device_id === nothing, 0, device_id)
+LuxDeviceUtils._get_adaptor(::LuxCUDADevice{Nothing}) = LuxCUDAAdaptor(CUDA.device())
+
+function LuxDeviceUtils._with_device_id(::Type{LuxCUDADevice}, ::Nothing)
+    return LuxCUDADevice(CUDA.device())
+end
+function LuxDeviceUtils._with_device_id(::Type{LuxCUDADevice}, id)
     old_id = CUDA.device().handle
     CUDA.device!(id)
     device = LuxCUDADevice(CUDA.device())

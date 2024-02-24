@@ -41,6 +41,11 @@ function _with_device_id(::Type{LuxMetalDevice}, device_id)
     return LuxMetalDevice()
 end
 
+_get_adaptor(::LuxCPUDevice) = LuxCPUAdaptor()
+_get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device_id)
+_get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device_id)
+_get_adaptor(::LuxMetalDevice) = LuxMetalAdaptor()
+
 __is_functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
 __is_loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
 
@@ -284,8 +289,12 @@ get_device(::AbstractArray) = LuxCPUDevice()
 abstract type AbstractLuxDeviceAdaptor end
 
 struct LuxCPUAdaptor <: AbstractLuxDeviceAdaptor end
-struct LuxCUDAAdaptor <: AbstractLuxDeviceAdaptor end
-struct LuxAMDGPUAdaptor <: AbstractLuxDeviceAdaptor end
+struct LuxCUDAAdaptor{ID} <: AbstractLuxDeviceAdaptor
+    device_id::ID
+end
+struct LuxAMDGPUAdaptor{ID} <: AbstractLuxDeviceAdaptor
+    device_id::ID
+end
 struct LuxMetalAdaptor <: AbstractLuxDeviceAdaptor end
 
 adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
