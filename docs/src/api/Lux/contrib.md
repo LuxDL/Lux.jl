@@ -78,12 +78,6 @@ Lux.Experimental.DebugLayer
 Lux.Experimental.share_parameters
 ```
 
-## Stateful Layer
-
-```@docs
-Lux.Experimental.StatefulLuxLayer
-```
-
 ## Compact Layer API
 
 ```@docs
