@@ -5,8 +5,19 @@ import Adapt: adapt_storage, adapt
 
 __init__() = reset_gpu_device!()
 
-LuxDeviceUtils.__is_loaded(::LuxCUDADevice) = true
-LuxDeviceUtils.__is_functional(::LuxCUDADevice) = LuxCUDA.functional()
+LuxDeviceUtils.__is_loaded(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}}) = true
+function LuxDeviceUtils.__is_functional(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}})
+    return LuxCUDA.functional()
+end
+
+function LuxDeviceUtils._with_device_id(::Type{LuxCUDADevice}, device_id)
+    id = ifelse(device_id === nothing, 0, device_id)
+    old_id = CUDA.device().handle
+    CUDA.device!(id)
+    device = LuxCUDADevice(CUDA.device())
+    CUDA.device!(old_id)
+    return device
+end
 
 # Default RNG
 LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()

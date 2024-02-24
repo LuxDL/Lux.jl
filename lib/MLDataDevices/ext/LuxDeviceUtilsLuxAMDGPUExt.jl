@@ -5,8 +5,19 @@ import Adapt: adapt_storage, adapt
 
 __init__() = reset_gpu_device!()
 
-LuxDeviceUtils.__is_loaded(::LuxAMDGPUDevice) = true
-LuxDeviceUtils.__is_functional(::LuxAMDGPUDevice) = LuxAMDGPU.functional()
+LuxDeviceUtils.__is_loaded(::Union{LuxAMDGPUDevice, <:Type{LuxAMDGPUDevice}}) = true
+function LuxDeviceUtils.__is_functional(::Union{LuxAMDGPUDevice, <:Type{LuxAMDGPUDevice}})
+    return LuxAMDGPU.functional()
+end
+
+function LuxDeviceUtils._with_device_id(::Type{LuxAMDGPUDevice}, device_id)
+    id = ifelse(device_id === nothing, 0, device_id)
+    old_id = AMDGPU.device_id(AMDGPU.device()) - 1
+    AMDGPU.device!(AMDGPU.devices()[id + 1])
+    device = LuxAMDGPUDevice(AMDGPU.device())
+    AMDGPU.device!(AMDGPU.devices()[old_id + 1])
+    return device
+end
 
 # Default RNG
 LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()

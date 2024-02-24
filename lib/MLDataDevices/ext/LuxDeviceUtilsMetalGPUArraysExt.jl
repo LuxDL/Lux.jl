@@ -5,8 +5,10 @@ import Adapt: adapt_storage, adapt
 
 __init__() = reset_gpu_device!()
 
-LuxDeviceUtils.__is_loaded(::LuxMetalDevice) = true
-LuxDeviceUtils.__is_functional(::LuxMetalDevice) = Metal.functional()
+LuxDeviceUtils.__is_loaded(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = true
+function LuxDeviceUtils.__is_functional(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}})
+    return Metal.functional()
+end
 
 # Default RNG
 LuxDeviceUtils.default_device_rng(::LuxMetalDevice) = GPUArrays.default_rng(MtlArray)
