@@ -194,7 +194,7 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
 end
 
 function _getemptystate(l::AbstractExplicitContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return _getemptystate(getfield(l, length(layers)))
+    length(layers) == 1 && return _getemptystate(getfield(l, first(layers)))
     return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
 end
 
