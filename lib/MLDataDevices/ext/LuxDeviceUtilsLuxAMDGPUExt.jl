@@ -13,13 +13,17 @@ end
 function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, ::Nothing)
     return LuxAMDGPUDevice(nothing)
 end
-function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, id)
+function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, id::Int)
+    id > length(AMDGPU.devices()) &&
+        throw(ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"))
     old_dev = AMDGPU.device()
-    AMDGPU.device!(AMDGPU.devices()[id + 1])
+    AMDGPU.device!(AMDGPU.devices()[id])
     device = LuxAMDGPUDevice(AMDGPU.device())
     AMDGPU.device!(old_dev)
     return device
 end
+
+LuxDeviceUtils._get_device_id(dev::LuxAMDGPUDevice) = AMDGPU.device_id(dev.device)
 
 # Default RNG
 LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()

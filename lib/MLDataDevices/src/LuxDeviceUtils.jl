@@ -41,11 +41,6 @@ function _with_device(::Type{LuxMetalDevice}, device_id)
     return LuxMetalDevice()
 end
 
-_get_adaptor(::LuxCPUDevice) = LuxCPUAdaptor()
-_get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device)
-_get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device)
-_get_adaptor(::LuxMetalDevice) = LuxMetalAdaptor()
-
 __is_functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
 __is_loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
 
@@ -58,6 +53,16 @@ _get_triggerpkg_name(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = ""
 _get_triggerpkg_name(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}}) = "LuxCUDA"
 _get_triggerpkg_name(::Union{LuxAMDGPUDevice, Type{<:LuxAMDGPUDevice}}) = "LuxAMDGPU"
 _get_triggerpkg_name(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = "Metal"
+
+_get_adaptor(::LuxCPUDevice) = LuxCPUAdaptor()
+_get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device)
+_get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device)
+_get_adaptor(::LuxMetalDevice) = LuxMetalAdaptor()
+
+_get_device_id(::LuxCPUDevice) = nothing
+_get_device_id(::LuxCUDADevice{Nothing}) = nothing
+_get_device_id(::LuxAMDGPUDevice{Nothing}) = nothing
+_get_device_id(::LuxMetalDevice) = nothing
 
 Base.show(io::IO, dev::AbstractLuxDevice) = print(io, nameof(dev))
 
@@ -98,7 +103,8 @@ Return a tuple of supported GPU backends.
 supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
 """
-    gpu_device(; force_gpu_usage::Bool=false) -> AbstractLuxDevice()
+    gpu_device(device_id::Union{Nothing, Int}=nothing;
+        force_gpu_usage::Bool=false) -> AbstractLuxDevice()
 
 Selects GPU device based on the following criteria:
 
@@ -110,12 +116,40 @@ Selects GPU device based on the following criteria:
  3. If no GPU device is functional and  `force_gpu_usage` is `false`, then `cpu_device()` is
     invoked.
  4. If nothing works, an error is thrown.
+
+## Arguments
+
+  - `device_id::Union{Nothing, Int}`: The device id to select. If `nothing`, then we return
+    the last selected device or if none was selected then we run the autoselection and
+    choose the current device using `CUDA.device()` or `AMDGPU.device()` or similar. If
+    `Int`, then we select the device with the given id. Note that this is `1`-indexed, in
+    contrast to the `0`-indexed `CUDA.jl`. For example, `id = 4` corresponds to
+    `CUDA.device!(3)`.
+
+!!! warning
+
+    `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal` and `CPU`
+    backends, `device_id` is ignored and a warning is printed.
+
+## Keyword Arguments
+
+  - `force_gpu_usage::Bool`: If `true`, then an error is thrown if no functional GPU
+    device is found.
 """
-function gpu_device(device_id=nothing; force_gpu_usage::Bool=false)::AbstractLuxDevice
+function gpu_device(device_id::Union{Nothing, Int}=nothing;
+        force_gpu_usage::Bool=false)::AbstractLuxDevice
+    device_id == 0 && throw(ArgumentError("`device_id` is 1-indexed."))
+
     if GPU_DEVICE[] !== nothing
-        force_gpu_usage && !(GPU_DEVICE[] isa AbstractLuxGPUDevice) &&
-            throw(LuxDeviceSelectionException())
-        return GPU_DEVICE[]
+        dev = GPU_DEVICE[]
+        if device_id === nothing
+            force_gpu_usage && !(dev isa AbstractLuxGPUDevice) &&
+                throw(LuxDeviceSelectionException())
+            return dev
+        else
+            selected_device_id = _get_device_id(dev)
+            selected_device_id !== nothing && selected_device_id == device_id && return dev
+        end
     end
 
     device_type = _get_gpu_device(; force_gpu_usage)

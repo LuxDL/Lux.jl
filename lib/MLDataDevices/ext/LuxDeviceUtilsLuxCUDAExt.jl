@@ -13,13 +13,17 @@ end
 function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, ::Nothing)
     return LuxCUDADevice(nothing)
 end
-function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id)
+function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id::Int)
+    id > length(CUDA.devices()) &&
+        throw(ArgumentError("id = $id > length(CUDA.devices()) = $(length(CUDA.devices()))"))
     old_dev = CUDA.device()
-    CUDA.device!(id)
+    CUDA.device!(id - 1)
     device = LuxCUDADevice(CUDA.device())
     CUDA.device!(old_dev)
     return device
 end
+
+LuxDeviceUtils._get_device_id(dev::LuxCUDADevice) = CUDA.deviceid(dev.device) + 1
 
 # Default RNG
 LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
