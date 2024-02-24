@@ -47,7 +47,7 @@ Here is a linear model with bias and activation:
 ```julia
 d_in = 5
 d_out = 7
-d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
+d = @compact(W=randn(d_out, d_in), b=zeros(d_out),act=relu) do x
     y = W * x
     return act.(y .+ b)
 end
@@ -67,7 +67,7 @@ n_out = 1
 nlayers = 3
 
 model = @compact(w1=Dense(n_in, 128),
-    w2=[Dense(128, 128) for i in 1:nlayers], w3=Dense(128, n_out), act=relu) do x
+    w2=[Dense(128, 128) for i in 1:nlayers], w3=Dense(128, n_out),act=relu) do x
     embed = act(w1(x))
     for w in w2
         embed = act(w(embed))
