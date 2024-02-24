@@ -131,14 +131,8 @@ apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 Calls `apply` and only returns the first argument.
 """
-function stateless_apply(model::AbstractExplicitLayer, x, ps, st)
-    return first(apply(model, x, ps, st))
-end
-
-function stateless_apply(model, x, ps, st)
-    u, st = apply(model, x, ps, st)
-    @assert isempty(st) "Model is not stateless. Use `apply` instead."
-    return u
+function stateless_apply(model::AbstractExplicitLayer, x, ps)
+    return first(apply(model, x, ps, NamedTuple()))
 end
 
 """
