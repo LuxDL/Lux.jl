@@ -70,6 +70,9 @@ function initialstates(rng::AbstractRNG, l)
     throw(MethodError(initialstates, (rng, l)))
 end
 
+getstate(::AbstractExplicitLayer) = NamedTuple()
+getstate(l::NamedTuple) = NamedTuple{keys(l)}(map(getstate, l))
+
 """
     parameterlength(layer)
 
@@ -188,14 +191,14 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
+function getstate(l::AbstractExplicitContainerLayer{layers}) where {layers}
+    length(layers) == 1 && return getstate(getfield(l, layers[1]))
+    return NamedTuple{layers}(getstate.(getfield.((l,), layers)))
+end
+
 function stateless_apply(
         model::AbstractExplicitContainerLayer{layers}, x, ps) where {layers}
-    if length(layers) == 1
-        layer_names = keys(getfield(model, layers[1]))
-    else
-        layer_names = layers
-    end
-    st = NamedTuple{layer_names}(NamedTuple() for _ in layer_names)
+    st = getstate(model)
 
     return first(apply(model, x, ps, st))
 end
