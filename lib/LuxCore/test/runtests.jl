@@ -47,8 +47,8 @@ end
 
             @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
-            @test LuxCore.stateless_apply(model, x, ps, st) ==
-                  first(LuxCore.apply(model, x, ps, st))
+            @test LuxCore.stateless_apply(model, x, ps) ==
+                  first(LuxCore.apply(model, x, ps, NamedTuple()))
 
             @test_nowarn println(model)
         end
@@ -91,8 +91,8 @@ end
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
-        @test LuxCore.stateless_apply(model, x, ps, st) ==
-              first(LuxCore.apply(model, x, ps, st))
+        @test LuxCore.stateless_apply(model, x, ps) ==
+              first(LuxCore.apply(model, x, ps, NamedTuple()))
 
         @test_nowarn println(model)
 
@@ -109,8 +109,8 @@ end
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
-        @test LuxCore.stateless_apply(model, x, ps, st) ==
-              first(LuxCore.apply(model, x, ps, st))
+        @test LuxCore.stateless_apply(model, x, ps) ==
+              first(LuxCore.apply(model, x, ps, NamedTuple()))
 
         @test_nowarn println(model)
     end
