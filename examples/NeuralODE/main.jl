@@ -191,7 +191,7 @@ function StatefulNeuralODE(
 end
 
 function (n::StatefulNeuralODE)(x, ps, st)
-    st_model = Lux.Experimental.StatefulLuxLayer(n.model, ps, st)
+    st_model = Lux.StatefulLuxLayer(n.model, ps, st)
     dudt(u, p, t) = st_model(u, p)
     prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
     return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st_model.st

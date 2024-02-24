@@ -45,6 +45,9 @@ include("chainrules.jl")
 # Experimental
 include("contrib/contrib.jl")
 
+# Helpful Functionalities
+include("helpers/stateful.jl")
+
 # Deprecations
 include("deprecated.jl")
 
@@ -63,6 +66,8 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
+
+export StatefulLuxLayer
 
 export f16, f32, f64
 

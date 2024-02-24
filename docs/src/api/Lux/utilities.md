@@ -53,6 +53,13 @@ Lux.f32
 Lux.f64
 ```
 
+## Stateful Layer
+
+```@docs
+StatefulLuxLayer
+```
+
+
 ## Truncated Stacktraces
 
 ```@docs
