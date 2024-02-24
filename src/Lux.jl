@@ -61,6 +61,9 @@ include("transform/types.jl")
 include("transform/flux.jl")
 include("transform/simplechains.jl")
 
+# Distributed Training
+include("distributed/backend.jl")
+
 # Deprecations
 include("deprecated.jl")
 
@@ -82,5 +85,7 @@ export StatefulLuxLayer
 export f16, f32, f64
 
 export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer, SimpleChainsLayer
+
+export NCCLBackend
 
 end
