@@ -82,7 +82,7 @@ if LuxAMDGPU.functional()
         @test typeof(amdgpu_device.device) <: AMDGPU.HIPDevice
         @test AMDGPU.device_id(amdgpu_device.device) == idx
 
-        ps = ps |> amdgpu_device
+        global ps = ps |> amdgpu_device
         @test ps.weight isa ROCArray
         @test ps.bias isa ROCArray
         @test AMDGPU.device_id(AMDGPU.device(ps.weight)) == idx

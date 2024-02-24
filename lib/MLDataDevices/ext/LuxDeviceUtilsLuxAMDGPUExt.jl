@@ -50,7 +50,9 @@ function adapt_storage(to::LuxAMDGPUAdaptor, x)
         return x_new
     end
 end
+adapt_storage(::LuxAMDGPUAdaptor{Nothing}, rng::AbstractRNG) = rng
 adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
+adapt_storage(::LuxAMDGPUAdaptor{Nothing}, rng::Random.TaskLocalRNG) = AMDGPU.rocrand_rng()
 adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocrand_rng()
 
 adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()

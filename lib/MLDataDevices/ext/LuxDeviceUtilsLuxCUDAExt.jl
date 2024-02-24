@@ -50,7 +50,9 @@ function adapt_storage(to::LuxCUDAAdaptor, x)
         return x_new
     end
 end
+adapt_storage(::LuxCUDAAdaptor{Nothing}, rng::AbstractRNG) = rng
 adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
+adapt_storage(::LuxCUDAAdaptor{Nothing}, rng::Random.TaskLocalRNG) = CUDA.default_rng()
 adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG) = CUDA.default_rng()
 
 adapt_storage(::LuxCPUAdaptor, rng::CUDA.RNG) = Random.default_rng()

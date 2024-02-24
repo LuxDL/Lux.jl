@@ -82,7 +82,7 @@ if LuxCUDA.functional()
         @test typeof(cuda_device.device) <: CUDA.CuDevice
         @test cuda_device.device.handle == (idx - 1)
 
-        ps = ps |> cuda_device
+        global ps = ps |> cuda_device
         @test ps.weight isa CuArray
         @test ps.bias isa CuArray
         @test CUDA.device(ps.weight).handle == idx - 1
