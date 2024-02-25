@@ -73,7 +73,14 @@ end
 
 _parameter_structure(ps::AbstractArray) = size(ps)
 _parameter_structure(::Number) = 1
-_parameter_structure(ps) = fmap(_parameter_structure, ps)
+function _parameter_structure(ps::NamedTuple{F}) where {F}
+    return NamedTuple{F}(map(_parameter_structure, values(ps)))
+end
+function _parameter_structure(ps)
+    hasmethod(__named_tuple, Tuple{typeof(ps)}) &&
+        return _parameter_structure(__named_tuple(ps))
+    return fmap(_parameter_structure, ps)
+end
 
 function _assert_disjoint_sharing_list(sharing)
     for i in 1:length(sharing), j in (i + 1):length(sharing)

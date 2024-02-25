@@ -176,13 +176,23 @@ in the backward pass.
 
 # Merging Exotic Types
 _merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
-function _merge(p::AbstractArray, nt::NamedTuple)
+function _merge(p, nt::NamedTuple)
+    hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(__named_tuple(p), nt)
     @assert length(p) == 0
     return nt
 end
-function _merge(nt::NamedTuple, p::AbstractArray)
+function _merge(nt::NamedTuple, p)
+    hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(nt, __named_tuple(p))
     @assert length(p) == 0
     return nt
+end
+function _merge(x, y)
+    hasmethod(__named_tuple, Tuple{typeof(x)}) && return _merge(__named_tuple(x), y)
+    hasmethod(__named_tuple, Tuple{typeof(y)}) && return _merge(x, __named_tuple(y))
+    length(x) == 0 && return y
+    length(y) == 0 && return x
+    throw(ArgumentError("Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define \
+                         `_merge` method for these types."))
 end
 
 # Utility Functions to Convert Parameter and State Types
@@ -237,6 +247,12 @@ end
 
 # Used in freezing
 ## Extend for custom types
-@inline _pairs(x) = pairs(x)
+@inline function _pairs(x)
+    hasmethod(__named_tuple, Tuple{typeof(x)}) && return pairs(__named_tuple(x))
+    return pairs(x)
+end
 
-@inline __value(x) = x
+__named_tuple(nt::NamedTuple) = nt
+
+# Nondifferentiable hasmethod. Avoiding type-piracy
+@inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
