@@ -47,6 +47,9 @@ end
 
             @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
+            @test LuxCore.stateless_apply(model, x, ps) ==
+                  first(LuxCore.apply(model, x, ps, NamedTuple()))
+
             @test_nowarn println(model)
         end
 
@@ -88,6 +91,9 @@ end
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
+        @test LuxCore.stateless_apply(model, x, ps) ==
+              first(LuxCore.apply(model, x, ps, st))
+
         @test_nowarn println(model)
 
         model = Chain2(Dense(5, 5), Dense(5, 6))
@@ -102,6 +108,9 @@ end
               LuxCore.statelength(model.layer1) + LuxCore.statelength(model.layer2)
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
+
+        @test LuxCore.stateless_apply(model, x, ps) ==
+              first(LuxCore.apply(model, x, ps, st))
 
         @test_nowarn println(model)
     end

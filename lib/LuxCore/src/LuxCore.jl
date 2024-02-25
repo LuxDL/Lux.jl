@@ -70,6 +70,11 @@ function initialstates(rng::AbstractRNG, l)
     throw(MethodError(initialstates, (rng, l)))
 end
 
+_getemptystate(::AbstractExplicitLayer) = NamedTuple()
+function _getemptystate(l::NamedTuple{fields}) where {fields}
+    return NamedTuple{fields}(map(_getemptystate, values(l)))
+end
+
 """
     parameterlength(layer)
 
@@ -127,6 +132,15 @@ Simply calls `model(x, ps, st)`
 apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 """
+    stateless_apply(model, x, ps)
+
+Calls `apply` and only returns the first argument.
+"""
+function stateless_apply(model::AbstractExplicitLayer, x, ps)
+    return first(apply(model, x, ps, _getemptystate(model)))
+end
+
+"""
     display_name(layer::AbstractExplicitLayer)
 
 Printed Name of the `layer`. If the `layer` has a field `name` that is used, else the type
@@ -177,6 +191,11 @@ end
 
 function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
+end
+
+function _getemptystate(l::AbstractExplicitContainerLayer{layers}) where {layers}
+    length(layers) == 1 && return _getemptystate(getfield(l, first(layers)))
+    return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
 end
 
 # Make AbstractExplicit Layers Functor Compatible
