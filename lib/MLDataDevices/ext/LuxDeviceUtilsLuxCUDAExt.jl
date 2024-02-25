@@ -29,7 +29,7 @@ LuxDeviceUtils._get_device_id(dev::LuxCUDADevice) = CUDA.deviceid(dev.device) + 
 LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
 
 # Query Device from Array
-LuxDeviceUtils.get_device(::CUDA.AnyCuArray) = LuxCUDADevice()
+LuxDeviceUtils.get_device(x::CUDA.AnyCuArray) = LuxCUDADevice(CUDA.device(x))
 
 # Device Transfer
 ## To GPU
