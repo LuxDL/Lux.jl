@@ -1,6 +1,5 @@
 CUDA.allowscalar(false)
 
-
 if LuxCUDA.functional()
     # unsafe_free OneHotArrays
     CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
