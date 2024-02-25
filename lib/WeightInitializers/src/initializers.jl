@@ -147,8 +147,8 @@ Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 # References
 
 [^Saxe14] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of
-    learning in deep linear neural networks",
-    ICLR 2014, https://arxiv.org/abs/1312.6120
+learning in deep linear neural networks",
+ICLR 2014, https://arxiv.org/abs/1312.6120
 """
 function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=T(1.0)) where {T <: Number}
@@ -224,8 +224,8 @@ matrix = sparse_init(rng, Float32, 5, 5; sparsity=0.3, std=0.01)
 # References
 
 [^Martens2010] Martens, J, "Deep learning via Hessian-free optimization"
-    _Proceedings of the 27th International Conference on International Conference
-    on Machine Learning_. 2010.
+_Proceedings of the 27th International Conference on International Conference
+on Machine Learning_. 2010.
 """
 function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         sparsity::Number, std::Number=T(0.01)) where {T <: Number}
