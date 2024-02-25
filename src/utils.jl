@@ -248,7 +248,6 @@ end
     return pairs(x)
 end
 
-__named_tuple(nt::NamedTuple) = nt
+@inline __value(x) = x
 
-# Nondifferentiable hasmethod. Avoiding type-piracy
-@inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
+function __set_device! end
