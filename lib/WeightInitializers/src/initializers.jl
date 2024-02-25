@@ -123,12 +123,17 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
 end
 
 """
-    orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...; gain = 1) where {T <: Real} -> AbstractArray{T, length(dims)}
-    orthogonal(rng::AbstractRNG; kw...) -> Function
+    orthogonal([::AbstractRNG=_default_rng()], [T=Float32], dims::Integer...;
+        gain = 1)  -> AbstractArray{T, length(dims)}
 
-Return an `AbstractArray{T}` of the given dimensions (`dims`) which is a (semi) orthogonal matrix, as described in [^Saxe14]
+Return an `AbstractArray{T}` of the given dimensions (`dims`) which is a
+(semi) orthogonal matrix, as described in [^Saxe14]
 
-The function constructs an orthogonal or semi-orthogonal matrix depending on the specified dimensions. For two dimensions, it returns a matrix where `dims = (rows, cols)`. For more than two dimensions, it computes an orthogonal matrix of size `prod(dims[1:(end - 1)])` by `dims[end]` before reshaping it to the original dimensions.
+The function constructs an orthogonal or semi-orthogonal matrix depending on the specified
+dimensions. For two dimensions, it returns a matrix where `dims = (rows, cols)`.
+For more than two dimensions, it computes an orthogonal matrix of
+size `prod(dims[1:(end - 1)])` by `dims[end]` before reshaping it to
+the original dimensions.
 
 Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 
@@ -141,7 +146,9 @@ Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 
 # References
 
-[^Saxe14] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of learning in deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
+[^Saxe14] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of
+    learning in deep linear neural networks",
+    ICLR 2014, https://arxiv.org/abs/1312.6120
 """
 function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=T(1.0)) where {T <: Number}
@@ -170,10 +177,16 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
 end
 
 """
-    sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...; sparsity::Number, std::Number=0.01) where {T <: Number} -> AbstractArray{T}
+    sparse_init([::AbstractRNG=_default_rng()], [T=Float32], dims::Integer...;
+        sparsity::Number, std::Number=0.01) -> AbstractArray{T}
 
-Creates a sparsely initialized weight matrix with a specified proportion of zeroed elements, using random numbers drawn from a normal distribution for the non-zero elements. This method is introduced in [^Martens2010].
-Note: The sparsity parameter controls the proportion of the matrix that will be zeroed. For example, a sparsity of 0.3 means that approximately 30% of the elements will be set to zero. The non-zero elements are distributed according to a normal distribution, scaled by the std parameter.
+Creates a sparsely initialized weight matrix with a specified proportion of zeroed elements,
+using random numbers drawn from a normal distribution for the non-zero elements.
+This method is introduced in [^Martens2010].
+Note: The sparsity parameter controls the proportion of the matrix that will be zeroed.
+For example, a sparsity of 0.3 means that approximately 30% of the elements will be
+set to zero. The non-zero elements are distributed according to a normal distribution,
+scaled by the std parameter.
 
 # Arguments
 
@@ -181,11 +194,13 @@ Note: The sparsity parameter controls the proportion of the matrix that will be 
   - `T::Type{<:Number}`: The numeric type of the elements in the returned array.
   - `dims::Integer...`: The dimensions of the weight matrix to be generated.
   - `sparsity::Number`: The proportion of elements to be zeroed. Must be between 0 and 1.
-  - `std::Number=0.01`: The standard deviation of the normal distribution before applying `gain`.
+  - `std::Number=0.01`: The standard deviation of the normal distribution
+    before applying `gain`.
 
 # Returns
 
-  - `AbstractArray{T}`: A sparsely initialized weight matrix of dimensions `dims` and type `T`.
+  - `AbstractArray{T}`: A sparsely initialized weight matrix of dimensions `dims`
+    and type `T`.
 
 # Examples
 
@@ -208,7 +223,9 @@ matrix = sparse_init(rng, Float32, 5, 5; sparsity=0.3, std=0.01)
 
 # References
 
-[^Martens2010] Martens, J, "Deep learning via Hessian-free optimization" _Proceedings of the 27th International Conference on International Conference on Machine Learning_. 2010.
+[^Martens2010] Martens, J, "Deep learning via Hessian-free optimization"
+    _Proceedings of the 27th International Conference on International Conference
+    on Machine Learning_. 2010.
 """
 function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         sparsity::Number, std::Number=T(0.01)) where {T <: Number}
@@ -225,33 +242,47 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
 end
 
 """
-    identity_init(rng::AbstractRNG, ::Type{T}, size...; gain::Number=1, shift::Union{Integer, Tuple{Integer, Integer}}=0) where {T <: Number} -> AbstractArray{T}
+    identity_init([::AbstractRNG=_default_rng()], [T=Float32], size...; gain::Number=1,
+        shift::Union{Integer, Tuple{Integer, Integer}}=0) -> AbstractArray{T}
 
-Constructs an array that aims to provide an identity mapping when used as parameters in most layers of a neural network. The identity mapping is scaled by the `gain` parameter.
+Constructs an array that aims to provide an identity mapping when used as parameters in
+most layers of a neural network. The identity mapping is scaled by the `gain` parameter.
 
 # Behavior
 
-  - 1D: Returns a `Vector` of zeros (useful for biases in layers where `input_size == output_size`).
-  - 2D: Returns an identity matrix (useful for fully connected layers with equal input and output sizes).
-  - More than 2D: Returns a tensor where the central slice along the last two dimensions is an identity matrix, and the rest are zeros (useful for convolutional layers, simulating an identity convolution).
+  - 1D: Returns a `Vector` of zeros (useful for biases in layers where
+    `input_size == output_size`).
+  - 2D: Returns an identity matrix
+    (useful for fully connected layers with equal input and output sizes).
+  - More than 2D: Returns a tensor where the central slice along the last
+    two dimensions is an identity matrix, and the rest are zeros
+    (useful for convolutional layers, simulating an identity convolution).
 
 # Caveats
 
-  - Not all layers will result in an identity mapping when using this initializer. Exceptions include recurrent and normalization layers.
-  - Layers must have `input_size == output_size` for a perfect identity mapping. In cases where this condition is not met, the function pads extra dimensions with zeros.
-  - For convolutional layers to achieve an identity mapping, kernel sizes must be odd, and appropriate padding must be applied to ensure the output feature maps are the same size as the input feature maps.
+  - Not all layers will result in an identity mapping when using this initializer.
+    Exceptions include recurrent and normalization layers.
+  - Layers must have `input_size == output_size` for a perfect identity mapping.
+    In cases where this condition is not met, the function pads extra dimensions with zeros.
+  - For convolutional layers to achieve an identity mapping, kernel sizes must be odd,
+    and appropriate padding must be applied to ensure the output
+    feature maps are the same size as the input feature maps.
 
 # Arguments
 
-  - `rng::AbstractRNG`: An optional random number generator, included for consistency with other initializers but ignored since the output is deterministic.
+  - `rng::AbstractRNG`: An optional random number generator,
+    included for consistency with other initializers but ignored since the
+    output is deterministic.
   - `T::Type{<:Number}`: The numeric type of the array elements.
   - `size...`: The dimensions of the array to be initialized.
   - `gain::Number=1`: A scaling factor applied to the identity mapping.
-  - `shift::Union{Integer, Tuple{Integer, Integer}}=0`: An integer or a tuple specifying the circular shift applied to the output array.
+  - `shift::Union{Integer, Tuple{Integer, Integer}}=0`: An integer or
+    a tuple specifying the circular shift applied to the output array.
 
 # Returns
 
-  - `AbstractArray{T}`: An array initialized to represent an identity mapping, scaled by `gain` and optionally shifted by `shift`.
+  - `AbstractArray{T}`: An array initialized to represent an identity mapping,
+    scaled by `gain` and optionally shifted by `shift`.
 
 # Examples
 
