@@ -16,7 +16,7 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, LuxAMDGPU, LuxCUDA, Metal, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
+using Lux, LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
 
 # ## Dataset
 
