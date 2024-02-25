@@ -1,5 +1,5 @@
 CUDA.allowscalar(false)
-AMDGPU.allowscalar(false)
+
 
 if LuxCUDA.functional()
     # unsafe_free OneHotArrays

@@ -19,7 +19,6 @@ using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq, Op
 using CairoMakie, MakiePublication
 
 CUDA.allowscalar(false)
-AMDGPU.allowscalar(false)
 
 # ## Define some Utility Functions
 
