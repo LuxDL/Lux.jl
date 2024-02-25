@@ -84,7 +84,7 @@ function (s::SpiralClassifier)(
     ## See that the parameters and states are automatically populated into a field called
     ## `lstm_cell` We use `eachslice` to get the elements in the sequence without copying,
     ## and `Iterators.peel` to split out the first element for LSTM initialization.
-    x_init, x_rest = Iterators.peel(eachslice(x; dims=2))
+    x_init, x_rest = Iterators.peel(Lux._eachslice(x, Val(2)))
     (y, carry), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
     ## Now that we have the hidden state and memory in `carry` we will pass the input and
     ## `carry` jointly
@@ -119,7 +119,7 @@ function compute_loss(x, y, model, ps, st)
     return binarycrossentropy(y_pred, y), y_pred, st
 end
 
-matches(y_pred, y_true) = sum((y_pred .> 0.5) .== y_true)
+matches(y_pred, y_true) = sum((y_pred .> 0.5f0) .== y_true)
 accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
 
 # Finally lets create an optimiser given the model parameters.
