@@ -33,6 +33,8 @@ ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
 NCCL = "3fe64909-d7a1-4096-9b7d-7a0f12cf0f6b"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
@@ -40,13 +42,15 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [extensions]
-LuxCUDANCCLExt = ["CUDA", "NCCL"]
+LuxCUDAMPINCCLExt = ["CUDA", "MPI", "NCCL"]
 LuxChainRulesExt = "ChainRules"
 LuxComponentArraysExt = "ComponentArrays"
 LuxComponentArraysReverseDiffExt = ["ComponentArrays", "ReverseDiff"]
 LuxFluxExt = "Flux"
 LuxLuxAMDGPUExt = "LuxAMDGPU"
 LuxOptimisersExt = "Optimisers"
+LuxLuxCUDAExt = "LuxCUDA"
+LuxMPIExt = "MPI"
 LuxReverseDiffExt = "ReverseDiff"
 LuxSimpleChainsExt = "SimpleChains"
 LuxTrackerExt = "Tracker"

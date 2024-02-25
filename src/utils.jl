@@ -256,3 +256,7 @@ __named_tuple(nt::NamedTuple) = nt
 
 @inline apply_bias_activation(::typeof(identity), x, b) = x .+ b
 @inline apply_bias_activation(f::F, x, b) where {F} = @. f(x + b)
+
+@inline __value(x) = x
+
+function __set_device! end
