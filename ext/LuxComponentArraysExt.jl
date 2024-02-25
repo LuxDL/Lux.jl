@@ -11,4 +11,11 @@ end
 
 Lux.__named_tuple(ca::ComponentArray) = NamedTuple(ca)
 
+# Distributed Functionality
+function DistributedUtils.synchronize!!(
+        backend::Lux.AbstractLuxDistributedBackend, ps::ComponentArray; root::Int=0)
+    ps_synced = DistributedUtils.synchronize!!(backend, getdata(ps); root)
+    return ComponentArray(ps_synced, getaxes(ps))
+end
+
 end
