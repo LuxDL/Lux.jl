@@ -2,6 +2,7 @@ module LuxMPIExt
 
 import Lux: MPIBackend, NCCLBackend, DistributedUtils, __is_extension_loaded, __set_device!,
             __unwrap_val
+import LuxDeviceUtils: AbstractLuxDevice
 import MPI
 
 function DistributedUtils.__initialize(
@@ -30,18 +31,20 @@ function DistributedUtils.__initialize(
     return
 end
 
-DistributedUtils.get_distributed_backend(::Val{:MPI}) = MPIBackend(MPI.COMM_WORLD)
+DistributedUtils.__get_distributed_backend(::Val{:MPI}) = MPIBackend(MPI.COMM_WORLD)
 
 DistributedUtils.local_rank(backend::MPIBackend) = MPI.Comm_rank(backend.comm)
 
 DistributedUtils.total_workers(backend::MPIBackend) = MPI.Comm_size(backend.comm)
 
-function DistributedUtils.bcast!(backend::MPIBackend, sendrecvbuf; root=0)
+function DistributedUtils.__bcast!(
+        backend::MPIBackend, sendrecvbuf, dev::AbstractLuxDevice; root=0)
     MPI.Bcast!(sendrecvbuf, backend.comm; root)
     return sendrecvbuf
 end
 
-function DistributedUtils.bcast!(backend::MPIBackend, sendbuf, recvbuf; root=0)
+function DistributedUtils.__bcast!(
+        backend::MPIBackend, sendbuf, recvbuf, dev::AbstractLuxDevice; root=0)
     MPI.Bcast!(sendbuf, recvbuf, backend.comm; root)
     return recvbuf
 end
