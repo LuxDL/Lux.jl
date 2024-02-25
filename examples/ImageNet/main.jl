@@ -2,8 +2,8 @@
 
 using Augmentor                                         # Image Augmentation
 using Boltz                                             # Computer Vision Models
-import Flux                                              # Some Blotz Models need Flux
-import Metalhead                                         # Some Blotz Models need MetalHead
+import Flux                                             # Some Blotz Models need Flux
+import Metalhead                                        # Some Blotz Models need MetalHead
 using Configurations                                    # Experiment Configurations
 using LuxAMDGPU                                         # AMDGPUs <3
 using LuxCUDA                                           # NVIDIA GPUs <3
