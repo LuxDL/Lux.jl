@@ -101,7 +101,6 @@ statelength(::Any) = 1
 """
     has_static_outputsize(layer)
 
-
 Specify if the `outputsize` can be computed only from the layer definition.
 """
 has_static_outputsize(layer) = hasmethod(outputsize, Tuple{Any})
@@ -121,20 +120,19 @@ __size(x) = fmap(__size, x)
 """
     outputsize(layer, x, rng)
 
-
 Return the output size of the layer. If `outputsize(layer)` is defined, that method
 takes precedence, else we compute the layer output to determine the final size.
 """
 outputsize(layer, x, rng) = outputsize(has_static_outputsize(layer), x, rng)
 
 function outputsize(::Val{true}, x, rng)
-    outputsize(layer)
+    return outputsize(layer)
 end
 
 function outputsize(::Val{false}, x, rng)
     ps, st = Lux.setup(rng, layer)
     y = first(layer(x, ps, st))
-    __size(y)
+    return __size(y)
 end
 
 """
