@@ -242,6 +242,7 @@ end
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (1, 1)
+        @test Lux.outputsize(layer) == (1,)
 
         @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
@@ -267,6 +268,7 @@ end
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (2, 1)
+        @test Lux.outputsize(layer) == (2,)
 
         @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
@@ -280,6 +282,7 @@ end
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (2, 1)
+        @test Lux.outputsize(layer) == (2,)
 
         @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
@@ -293,6 +296,7 @@ end
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (5, 1)
+        @test Lux.outputsize(layer) == (5,)
 
         @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
