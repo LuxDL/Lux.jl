@@ -123,6 +123,7 @@ The fallback implementation of this function assumes the inputs were batched, i.
 if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 `size(A)[1:(end - 1)]`. If this behavior is undesirable, provide a custom
 `outputsize(layer, x, rng)` implementation).
+"""
 function outputsize(layer, x, rng)
     hasmethod(outputsize, Tuple{typeof(layer)}) && return outputsize(layer)
     ps, st = LuxCore.setup(rng, layer)
