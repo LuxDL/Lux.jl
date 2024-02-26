@@ -113,6 +113,11 @@ Return the input size of the layer.
 """
 function inputsize end
 
+__size(x::AbstractArray{T, N}) where {T} = isbitstype(T) ? size(x)[1:(N - 1)] : __size.(x)
+__size(x::Tuple) = __size.(x)
+__size(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(__size.(values(x)))
+__size(x) = fmap(__size, x)
+
 """
     outputsize(layer, x, rng)
 
@@ -129,7 +134,7 @@ end
 function outputsize(::Val{false}, x, rng)
     ps, st = Lux.setup(rng, layer)
     y = first(layer(x, ps, st))
-    size(y)
+    __size(y)
 end
 
 """
