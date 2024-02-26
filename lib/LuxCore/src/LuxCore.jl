@@ -104,7 +104,7 @@ statelength(::Any) = 1
 
 Specify if the `outputsize` can be computed only from the layer definition.
 """
-has_static_outputsize(layer) = Val(false)
+has_static_outputsize(layer) = hasmethod(outputsize, Tuple{Any})
 
 """
     inputsize(layer)
