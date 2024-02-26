@@ -1,10 +1,11 @@
 module DistributedUtils
 
 import ChainRulesCore as CRC
+import ConcreteStructs: @concrete
 import Functors: fmap
 import ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
 import LuxDeviceUtils: get_device, cpu_device
-import Optimisers: Leaf
+import Optimisers: AbstractRule, Leaf, Optimisers
 import Setfield: @set!
 
 const NCCL_Initialized = Ref(false)
@@ -101,12 +102,10 @@ function bcast!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf; root::
     if send_dev === recv_dev
         return __bcast!(backend, sendbuf, recvbuf, send_dev; root)
     else
-        cdev = cpu_device()
-        sendbuf_ = sendbuf |> cdev
-        recvbuf_ = recvbuf |> cdev
-        @warn "`sendbuf` and `recvbuf` are on different devices. Moving them to `CPU`." maxlog=1
-        __bcast!(backend, sendbuf_, recvbuf_, cdev; root)
-        return recvbuf_ |> recv_dev
+        sendbuf_ = sendbuf |> recv_dev
+        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
+        __bcast!(backend, sendbuf_, recvbuf, recv_dev; root)
+        return recvbuf
     end
 end
 
@@ -114,13 +113,68 @@ function __bcast! end
 
 CRC.@non_differentiable bcast!(::Any...)
 
-function allreduce! end
+function avg end
+
+"""
+    allreduce!(backend::AbstractLuxDistributedBackend, sendrecvbuf, op)
+    allreduce!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf, op)
+
+Backend Agnostic API to perform an allreduce operation on the given buffer `sendrecvbuf` or
+`sendbuf` and store the result in `recvbuf`.
+
+`op` allows a special `DistributedUtils.avg` operation that averages the result across all
+workers.
+"""
+function allreduce!(backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F) where {F}
+    return __allreduce!(backend, sendrecvbuf, op, get_device(sendrecvbuf))
+end
+
+function allreduce!(
+        backend::AbstractLuxDistributedBackend, sendbuf, recvbuf, op::F) where {F}
+    send_dev = get_device(sendbuf)
+    recv_dev = get_device(recvbuf)
+    if send_dev === recv_dev
+        return __allreduce!(backend, sendbuf, recvbuf, op, send_dev)
+    else
+        sendbuf_ = sendbuf |> recv_dev
+        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
+        __allreduce!(backend, sendbuf_, recvbuf, op, recv_dev)
+        return recvbuf
+    end
+end
 
 function __allreduce! end
 
 CRC.@non_differentiable allreduce!(::Any...)
 
-function reduce! end
+"""
+    reduce!(backend::AbstractLuxDistributedBackend, sendrecvbuf, op; root::Int=0)
+    reduce!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf, op; root::Int=0)
+
+Backend Agnostic API to perform a reduce operation on the given buffer `sendrecvbuf` or
+`sendbuf` and store the result in `recvbuf`.
+
+`op` allows a special `DistributedUtils.avg` operation that averages the result across all
+workers.
+"""
+function reduce!(
+        backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F; root::Int=0) where {F}
+    return __reduce!(backend, sendrecvbuf, op, get_device(sendrecvbuf); root)
+end
+
+function reduce!(backend::AbstractLuxDistributedBackend,
+        sendbuf, recvbuf, op::F; root::Int=0) where {F}
+    send_dev = get_device(sendbuf)
+    recv_dev = get_device(recvbuf)
+    if send_dev === recv_dev
+        return __reduce!(backend, sendbuf, recvbuf, op, send_dev; root)
+    else
+        sendbuf_ = sendbuf |> recv_dev
+        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
+        __reduce!(backend, sendbuf_, recvbuf, op, recv_dev; root)
+        return recvbuf
+    end
+end
 
 function __reduce! end
 
@@ -171,9 +225,9 @@ end
 with `MLUtils` interface and is used to partition the dataset across the available
 processes.
 """
-struct DistributedDataContainer{D, I}
-    data::D
-    indxs::I
+@concrete struct DistributedDataContainer
+    data
+    idxs
 end
 
 function DistributedDataContainer(backend::AbstractLuxDistributedBackend, data)
@@ -190,5 +244,28 @@ end
 Base.length(ddc::DistributedDataContainer) = length(ddc.idxs)
 
 Base.getindex(ddc::DistributedDataContainer, i) = getindex(ddc.data, ddc.idxs[i])
+
+# Distributed Optimizer
+"""
+    DistributedOptimizer(backend::AbstractLuxDistributedBacked, optimizer)
+
+Wrap the `optimizer` in a `DistributedOptimizer`. Before updating the parameters, this
+averages the gradients across the processes using Allreduce.
+
+## Arguments
+
+  - `optimizer`: An Optimizer compatible with the Optimisers.jl package
+"""
+@concrete struct DistributedOptimizer{B <: AbstractLuxDistributedBackend} <: AbstractRule
+    backend::B
+    opt
+end
+
+function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
+    y_avg = allreduce!(opt.backend, y, avg)
+    return Optimisers.apply!(opt.opt, state, x, y_avg)
+end
+
+Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
 
 end

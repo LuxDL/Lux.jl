@@ -6,6 +6,9 @@ import MPI
 import NCCL
 import Setfield: @set!
 
+# FIXME: Needs an upstream
+NCCL.LibNCCL.ncclRedOp_t(x::NCCL.LibNCCL.ncclRedOp_t) = x
+
 function DistributedUtils.__initialize(
         ::Val{:NCCL}; cuda_devices=nothing, amdgpu_devices=missing)
     DistributedUtils.NCCL_Initialized[] = true
@@ -52,6 +55,54 @@ end
 function DistributedUtils.__bcast!(
         backend::NCCLBackend, sendbuf, recvbuf, dev::AbstractLuxDevice; root=0)
     return DistributedUtils.__bcast!(backend.mpi_backend, sendbuf, recvbuf, dev; root)
+end
+
+function DistributedUtils.__allreduce!(
+        backend::NCCLBackend, sendrecvbuf, op::F, ::LuxCUDADevice) where {F}
+    op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
+    NCCL.Allreduce!(sendrecvbuf, op, backend.comm)
+    return sendrecvbuf
+end
+
+function DistributedUtils.__allreduce!(
+        backend::NCCLBackend, sendrecvbuf, op::F, dev::AbstractLuxDevice) where {F}
+    return DistributedUtils.__allreduce!(backend.mpi_backend, sendrecvbuf, op, dev)
+end
+
+function DistributedUtils.__allreduce!(
+        backend::NCCLBackend, sendbuf, recvbuf, op::F, ::LuxCUDADevice) where {F}
+    op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
+    NCCL.Allreduce!(sendbuf, recvbuf, op, backend.comm)
+    return recvbuf
+end
+
+function DistributedUtils.__allreduce!(
+        backend::NCCLBackend, sendbuf, recvbuf, op::F, dev::AbstractLuxDevice) where {F}
+    return DistributedUtils.__allreduce!(backend.mpi_backend, sendbuf, recvbuf, op, dev)
+end
+
+function DistributedUtils.__reduce!(
+        backend::NCCLBackend, sendrecvbuf, op::F, ::LuxCUDADevice; root::Int) where {F}
+    op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
+    NCCL.Reduce!(sendrecvbuf, op, backend.comm; root)
+    return sendrecvbuf
+end
+
+function DistributedUtils.__reduce!(backend::NCCLBackend, sendrecvbuf, op::F,
+        dev::AbstractLuxDevice; root::Int) where {F}
+    return DistributedUtils.__reduce!(backend.mpi_backend, sendrecvbuf, op, dev; root)
+end
+
+function DistributedUtils.__reduce!(
+        backend::NCCLBackend, sendbuf, recvbuf, op::F, ::LuxCUDADevice; root::Int) where {F}
+    op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
+    NCCL.Reduce!(sendbuf, recvbuf, op, backend.comm; root)
+    return recvbuf
+end
+
+function DistributedUtils.__reduce!(backend::NCCLBackend, sendbuf, recvbuf, op::F,
+        dev::AbstractLuxDevice; root::Int) where {F}
+    return DistributedUtils.__reduce!(backend.mpi_backend, sendbuf, recvbuf, op, dev; root)
 end
 
 end
