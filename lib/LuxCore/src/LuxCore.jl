@@ -120,15 +120,7 @@ Return the output size of the layer. If `outputsize(layer)` is defined, that met
 takes precedence, else we compute the layer output to determine the final size.
 """
 function outputsize(layer, x, rng)
-    has_static_outputsize = hasmethod(outputsize, Tuple{typeof(layer)})
-    return outputsize(Val(has_static_outputsize), layer, x, rng)
-end
-
-function outputsize(::Val{true}, layer, x, rng)
-    return outputsize(layer)
-end
-
-function outputsize(::Val{false}, layer, x, rng)
+    hasmethod(outputsize, Tuple{typeof(layer)}) && return outputsize(layer)
     ps, st = LuxCore.setup(rng, layer)
     y = first(apply(layer, x, ps, st))
     return __size(y)
