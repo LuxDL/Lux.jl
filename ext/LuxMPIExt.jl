@@ -49,4 +49,40 @@ function DistributedUtils.__bcast!(
     return recvbuf
 end
 
+function DistributedUtils.__allreduce!(
+        backend::MPIBackend, sendrecvbuf, op::F, dev::AbstractLuxDevice) where {F}
+    MPI.Allreduce!(sendrecvbuf, op, backend.comm)
+    if op === typeof(DistributedUtils.avg)
+        sendrecvbuf ./= DistributedUtils.total_workers(backend)
+    end
+    return sendrecvbuf
+end
+
+function DistributedUtils.__allreduce!(
+        backend::MPIBackend, sendbuf, recvbuf, op::F, dev::AbstractLuxDevice) where {F}
+    MPI.Allreduce!(sendbuf, recvbuf, op, backend.comm)
+    if op === typeof(DistributedUtils.avg)
+        recvbuf ./= DistributedUtils.total_workers(backend)
+    end
+    return recvbuf
+end
+
+function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
+        dev::AbstractLuxDevice; root::Int) where {F}
+    MPI.Reduce!(sendrecvbuf, op, backend.comm; root)
+    if op === typeof(DistributedUtils.avg)
+        sendrecvbuf ./= DistributedUtils.total_workers(backend)
+    end
+    return sendrecvbuf
+end
+
+function DistributedUtils.__reduce!(backend::MPIBackend, sendbuf, recvbuf, op::F,
+        dev::AbstractLuxDevice; root::Int) where {F}
+    MPI.Reduce!(sendbuf, recvbuf, op, backend.comm; root)
+    if op === typeof(DistributedUtils.avg)
+        recvbuf ./= DistributedUtils.total_workers(backend)
+    end
+    return recvbuf
+end
+
 end
