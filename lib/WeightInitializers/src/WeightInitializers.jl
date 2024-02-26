@@ -3,7 +3,8 @@ module WeightInitializers
 import PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
-    using ChainRulesCore, PartialFunctions, Random, SpecialFunctions, Statistics, LinearAlgebra
+    using ChainRulesCore, PartialFunctions, Random, SpecialFunctions, Statistics,
+          LinearAlgebra
 end
 
 include("utils.jl")
