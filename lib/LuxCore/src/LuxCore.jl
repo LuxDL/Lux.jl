@@ -105,12 +105,31 @@ Return the input size of the layer.
 """
 function inputsize end
 
-"""
-    outputsize(layer)
+__size(x::AbstractVector{T}) where {T} = isbitstype(T) ? size(x) : __size.(x)
+function __size(x::AbstractArray{T, N}) where {T, N}
+    return isbitstype(T) ? size(x)[1:(N - 1)] : __size.(x)
+end
+__size(x::Tuple) = __size.(x)
+__size(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(__size.(values(x)))
+__size(x) = fmap(__size, x)
 
-Return the output size of the layer.
 """
-function outputsize end
+    outputsize(layer, x, rng)
+
+Return the output size of the layer. If `outputsize(layer)` is defined, that method
+takes precedence, else we compute the layer output to determine the final size.
+
+The fallback implementation of this function assumes the inputs were batched, i.e.,
+if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
+`size(A)[1:(end - 1)]`. If this behavior is undesirable, provide a custom
+`outputsize(layer, x, rng)` implementation).
+"""
+function outputsize(layer, x, rng)
+    hasmethod(outputsize, Tuple{typeof(layer)}) && return outputsize(layer)
+    ps, st = LuxCore.setup(rng, layer)
+    y = first(apply(layer, x, ps, st))
+    return __size(y)
+end
 
 """
     setup(rng::AbstractRNG, layer)
