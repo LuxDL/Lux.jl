@@ -50,6 +50,8 @@ end
             @test LuxCore.stateless_apply(model, x, ps) ==
                   first(LuxCore.apply(model, x, ps, NamedTuple()))
 
+            # the layer just passes x along
+            @test LuxCore.outputsize(model, x, rng) == (5,)
             @test_nowarn println(model)
         end
 
@@ -112,6 +114,9 @@ end
         @test LuxCore.stateless_apply(model, x, ps) ==
               first(LuxCore.apply(model, x, ps, st))
 
+        # the layers just pass x along
+        @test LuxCore.outputsize(model, x, rng) == (5,)
+
         @test_nowarn println(model)
     end
 
@@ -166,6 +171,8 @@ end
             @test new_model.layers.layer_1.out == 5
             @test new_model.layers.layer_2.in == 5
             @test new_model.layers.layer_2.out == 10
+
+            @test LuxCore.outputsize(model, rand(5), rng) == (5,)
         end
 
         @testset "Method Ambiguity" begin
