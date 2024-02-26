@@ -99,13 +99,6 @@ statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
 
 """
-    has_static_outputsize(layer)
-
-Specify if the `outputsize` can be computed only from the layer definition.
-"""
-has_static_outputsize(layer) = hasmethod(outputsize, Tuple{Any})
-
-"""
     inputsize(layer)
 
 Return the input size of the layer.
@@ -126,7 +119,10 @@ __size(x) = fmap(__size, x)
 Return the output size of the layer. If `outputsize(layer)` is defined, that method
 takes precedence, else we compute the layer output to determine the final size.
 """
-outputsize(layer, x, rng) = outputsize(Val(has_static_outputsize(layer)), layer, x, rng)
+function outputsize(layer, x, rng)
+    has_static_outputsize = hasmethod(outputsize, Tuple{typeof(layer)})
+    return outputsize(Val(has_static_outputsize), layer, x, rng)
+end
 
 function outputsize(::Val{true}, layer, x, rng)
     return outputsize(layer)
