@@ -117,8 +117,8 @@ function inputsize end
     outputsize(layer, x, rng)
 
 
-Return the output size of the layer. If the output size can be statically determined
-(see [`has_static_outputsize`](@ref)), one can also use `outputsize(layer)` directly.
+Return the output size of the layer. If `outputsize(layer)` is defined, that method
+takes precedence, else we compute the layer output to determine the final size.
 """
 outputsize(layer, x, rng) = outputsize(has_static_outputsize(layer), x, rng)
 
