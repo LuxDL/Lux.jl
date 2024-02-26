@@ -500,6 +500,8 @@ Base.length(c::Chain) = length(c.layers)
 Base.lastindex(c::Chain) = lastindex(c.layers)
 Base.firstindex(c::Chain) = firstindex(c.layers)
 
+outputsize(c::Chain) = outputsize(c.layers[end])
+
 """
     Maxout(layers...)
     Maxout(; layers...)
