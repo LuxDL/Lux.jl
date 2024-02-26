@@ -99,6 +99,14 @@ statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
 
 """
+    has_static_outputsize(layer)
+
+
+Specify if the `outputsize` can be computed only from the layer definition.
+"""
+has_static_outputsize(layer) = Val(false)
+
+"""
     inputsize(layer)
 
 Return the input size of the layer.
@@ -106,11 +114,23 @@ Return the input size of the layer.
 function inputsize end
 
 """
-    outputsize(layer)
+    outputsize(layer, x, rng)
 
-Return the output size of the layer.
+
+Return the output size of the layer. If the output size can be statically determined
+(see [`has_static_outputsize`](@ref)), one can also use `outputsize(layer)` directly.
 """
-function outputsize end
+outputsize(layer, x, rng) = outputsize(has_static_outputsize(layer), x, rng)
+
+function outputsize(::Val{true}, x, rng)
+    outputsize(layer)
+end
+
+function outputsize(::Val{false}, x, rng)
+    ps, st = Lux.setup(rng, layer)
+    y = first(layer(x, ps, st))
+    size(y)
+end
 
 """
     setup(rng::AbstractRNG, layer)
