@@ -280,10 +280,10 @@ elements.
 
 ## Arguments
 
-    * `cond` - A function that takes a single argument and returns a `Bool`.
-    * `tmatch` - A shortcut to check if `x` is of type `tmatch`. Can be disabled by passing
-      `nothing`.
-    * `x` - The structure to check.
+  * `cond` - A function that takes a single argument and returns a `Bool`.
+  * `tmatch` - A shortcut to check if `x` is of type `tmatch`. Can be disabled by passing
+    `nothing`.
+  * `x` - The structure to check.
 
 ## Returns
 
