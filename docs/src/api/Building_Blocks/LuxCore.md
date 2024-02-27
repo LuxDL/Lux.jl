@@ -22,6 +22,7 @@ LuxCore.AbstractExplicitContainerLayer
 
 ```@docs
 LuxCore.apply
+LuxCore.stateless_apply
 LuxCore.check_fmap_condition
 LuxCore.contains_lux_layer
 LuxCore.display_name
@@ -46,6 +47,13 @@ LuxCore.update_state
 ```
 
 ## Layer size
+
+::: warning
+
+These specifications have been added very recently and most layers currently do not
+implement them.
+
+:::
 
 ```@docs
 LuxCore.inputsize

@@ -9,7 +9,7 @@
 :::warning HAVE MORE QUESTIONS?
 
 For usage related questions, please use
-[Github Discussions](https://github.com/avik-pal/Lux.jl/discussions) or
+[Github Discussions](https://github.com/LuxDL/Lux.jl/discussions) or
 [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/)
 which allows questions and answers to be indexed. To report bugs use
 [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a

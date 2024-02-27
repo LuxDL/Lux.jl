@@ -37,11 +37,15 @@ cdev = cpu_device()
 x_cpu = randn(Float32, 3, 2)
 ```
 
-2. [`gpu_device`](@ref): This function performs automatic GPU device selection and returns an object.
+2. [`gpu_device`](@ref): This function performs automatic GPU device selection and returns
+   an object.
    1. If no GPU is available, it returns a `LuxCPUDevice` object.
-   2. If a LocalPreferences file is present, then the backend specified in the file is used. To set a backend, use `Lux.gpu_backend!(<backend_name>)`.
-      1. If the trigger package corresponding to the device is not loaded, then a warning is displayed.
-      2. If no LocalPreferences file is present, then the first working GPU with loaded trigger package is used.
+   2. If a LocalPreferences file is present, then the backend specified in the file is used.
+      To set a backend, use `Lux.gpu_backend!(<backend_name>)`.
+      1. If the trigger package corresponding to the device is not loaded, then a warning is
+         displayed.
+      2. If no LocalPreferences file is present, then the first working GPU with loaded
+         trigger package is used.
 
 
 ```@example gpu_management
@@ -56,7 +60,8 @@ x_gpu = x_cpu |> gdev
 
 ## Manual Backend Management
 
-Automatic Device Selection can be circumvented by directly using `LuxCPUDevice` and `AbstractLuxGPUDevice` objects.
+Automatic Device Selection can be circumvented by directly using `LuxCPUDevice` and
+`AbstractLuxGPUDevice` objects.
 
 ```@example gpu_management
 cdev = LuxCPUDevice()

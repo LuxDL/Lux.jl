@@ -56,7 +56,7 @@ end
 # `Lux.initialparameters` and `Lux.initialstates`.
 
 # To understand more about container layers, please look at
-# [Container Layer](http://lux.csail.mit.edu/stable/manual/interface/#container-layer).
+# [Container Layer](@ref Container-Layer).
 
 struct SpiralClassifier{L, C} <:
        Lux.AbstractExplicitContainerLayer{(:lstm_cell, :classifier)}

@@ -128,7 +128,7 @@ x = randn(rng, Float32, 2, 1)
 Lux.apply(l, x, ps, st) # or `l(x, ps, st)`
 ```
 
-### Container Layer
+### [Container Layer](@id Container-Layer)
 
 If your layer comprises of other Lux layers, then it is a `Container Layer`. Note that you
 could treat it as a [`Singular Layer`](#singular-layer), and it is still fine. FWIW, if you

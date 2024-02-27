@@ -2,7 +2,7 @@
 CurrentModule = LuxDeviceUtils
 ```
 
-# LuxDeviceUtils
+# [LuxDeviceUtils](@id LuxDeviceUtils-API)
 
 `LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across
 devices. Most users should directly use Lux.jl instead.
@@ -31,5 +31,6 @@ gpu_device
 ```@docs
 reset_gpu_device!
 supported_gpu_backends
-LuxDeviceUtils.default_device_rng
+default_device_rng
+get_device
 ```

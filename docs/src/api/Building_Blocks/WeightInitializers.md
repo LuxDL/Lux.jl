@@ -2,7 +2,7 @@
 CurrentModule = WeightInitializers
 ```
 
-# WeightInitializers
+# [WeightInitializers](@id WeightInitializers-API)
 
 This package is a light dependency providing common weight initialization schemes for deep
 learning models.
@@ -20,9 +20,12 @@ Pages = ["WeightInitializers.md"]
 ```@docs
 glorot_normal
 glorot_uniform
+identity_init
 kaiming_normal
 kaiming_uniform
+sparse_init
 truncated_normal
+orthogonal
 ```
 
 ### Commonly Used Wrappers

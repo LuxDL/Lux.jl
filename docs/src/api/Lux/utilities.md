@@ -20,7 +20,7 @@ Lux.gpu
 :::warning
 
 For detailed API documentation on Data Transfer check out the
-[LuxDeviceUtils.jl](../LuxDeviceUtils/)
+[LuxDeviceUtils.jl](@ref WeightInitializers-API)
 
 :::
 
@@ -29,7 +29,7 @@ For detailed API documentation on Data Transfer check out the
 :::warning
 
 For API documentation on Initialization check out the
-[WeightInitializers.jl](../WeightInitializers/)
+[WeightInitializers.jl](@ref WeightInitializers-API)
 
 :::
 

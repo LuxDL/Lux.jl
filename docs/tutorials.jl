@@ -23,6 +23,31 @@ TUTORIALS = [collect(Iterators.product(["beginner"], BEGINNER_TUTORIALS))...,
     collect(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS))...,
     collect(Iterators.product(["advanced"], ADVANCED_TUTORIALS))...]
 
+using Pkg
+
+@info "Installing and Precompiling Tutorial Dependencies"
+
+const cur_project = Pkg.project().path
+const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
+
+mkpath(storage_dir)
+
+foreach(TUTORIALS) do (d, p)
+    p_ = get_example_path(p)
+    name = first(split(p, '/'))
+    pkg_io = open(joinpath(storage_dir, "$(name)_pkg.log"), "w")
+    Pkg.activate(dirname(p_))
+    @info "Logging Pkg Operations to $(name)_pkg.log"
+    Pkg.develop(; path=joinpath(@__DIR__, ".."), io=pkg_io)
+    Pkg.instantiate(; io=pkg_io)
+    Pkg.precompile(; io=pkg_io)
+    Pkg.activate(cur_project; io=pkg_io)
+    close(pkg_io)
+    return
+end
+
+@info "Starting tutorial build"
+
 pmap(enumerate(TUTORIALS)) do (i, (d, p))
     println("Running tutorial $(i): $(p) on worker $(myid())")
     withenv("JULIA_DEBUG" => "Literate",
@@ -33,6 +58,7 @@ pmap(enumerate(TUTORIALS)) do (i, (d, p))
         res = Literate.markdown(p_, joinpath(OUTPUT, d); execute=true, name,
             documenter=true, preprocess=Base.Fix1(preprocess, p_))
         GC.gc(true)
-        return @isdefined(CUDA) && CUDA.reclaim()
+        @isdefined(CUDA) && CUDA.reclaim()
+        return
     end
 end

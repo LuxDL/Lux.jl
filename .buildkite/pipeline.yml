@@ -182,16 +182,25 @@ steps:
         Pkg.activate("docs")
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
-        println("+++ :julia: Building documentation")
+        println("+++ :julia: Building tutorials")
+        Pkg.activate("docs")
+        include("docs/tutorials.jl")'
 
-        Pkg.activate("docs")
-        include("docs/tutorials.jl")
-        Pkg.activate("docs")
+      julia --project --code-coverage=user --color=yes --threads=auto -e '
+        println("--- :julia: Instantiating project")
+        using Pkg
         Pkg.instantiate()
+        Pkg.activate("docs")
+        Pkg.develop(PackageSpec(path=pwd()))
+        Pkg.instantiate()
+        println("+++ :julia: Building documentation")
+        Pkg.activate("docs")
         include("docs/make.jl")'
     agents:
       queue: "juliagpu"
       cuda: "*"
+    artifact_paths:
+      - "tutorial_deps/*"
     env:
       DATADEPS_ALWAYS_ACCEPT: true
       JULIA_DEBUG: "Documenter"
