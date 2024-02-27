@@ -20,9 +20,12 @@ Pages = ["WeightInitializers.md"]
 ```@docs
 glorot_normal
 glorot_uniform
+identity_init
 kaiming_normal
 kaiming_uniform
+sparse_init
 truncated_normal
+orthogonal
 ```
 
 ### Commonly Used Wrappers

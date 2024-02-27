@@ -31,5 +31,6 @@ gpu_device
 ```@docs
 reset_gpu_device!
 supported_gpu_backends
-LuxDeviceUtils.default_device_rng
+default_device_rng
+get_device
 ```
