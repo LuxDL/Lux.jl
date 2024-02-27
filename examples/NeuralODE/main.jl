@@ -18,6 +18,7 @@ using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
       OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
+
 CUDA.allowscalar(false)
 
 # ## Loading MNIST

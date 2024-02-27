@@ -11,6 +11,7 @@ Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
       Optimisers, Random, Setfield, Statistics, Zygote
+
 CUDA.allowscalar(false)
 
 # ## Loading Datasets

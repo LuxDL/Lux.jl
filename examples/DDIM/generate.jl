@@ -41,7 +41,7 @@ end
 
     mkpath(output_dir)
 
-    if CUDA.functional()
+    if LuxCUDA.functional() || LuxAMDGPU.functional()
         println("GPU is available.")
     else
         println("GPU is not available.")
