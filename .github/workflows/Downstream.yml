@@ -15,6 +15,7 @@ jobs:
   test:
     name: ${{ matrix.package.repo }}/${{ matrix.package.group }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     env:
       GROUP: ${{ matrix.package.group }}
     strategy:
