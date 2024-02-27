@@ -72,3 +72,26 @@ using FillArrays, Zygote  # Extensions
         @test ps_cpu.farray isa Fill
     end
 end
+
+if LuxCUDA.functional()
+    ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
+    ps_cpu = deepcopy(ps)
+    cdev = cpu_device()
+    for idx in 1:length(CUDA.devices())
+        cuda_device = gpu_device(idx)
+        @test typeof(cuda_device.device) <: CUDA.CuDevice
+        @test cuda_device.device.handle == (idx - 1)
+
+        global ps = ps |> cuda_device
+        @test ps.weight isa CuArray
+        @test ps.bias isa CuArray
+        @test CUDA.device(ps.weight).handle == idx - 1
+        @test CUDA.device(ps.bias).handle == idx - 1
+        @test isequal(cdev(ps.weight), ps_cpu.weight)
+        @test isequal(cdev(ps.bias), ps_cpu.bias)
+    end
+
+    ps = ps |> cdev
+    @test ps.weight isa Array
+    @test ps.bias isa Array
+end

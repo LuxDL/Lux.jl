@@ -72,3 +72,26 @@ using FillArrays, Zygote  # Extensions
         @test ps_cpu.farray isa Fill
     end
 end
+
+if LuxAMDGPU.functional()
+    ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
+    ps_cpu = deepcopy(ps)
+    cdev = cpu_device()
+    for idx in 1:length(AMDGPU.devices())
+        amdgpu_device = gpu_device(idx)
+        @test typeof(amdgpu_device.device) <: AMDGPU.HIPDevice
+        @test AMDGPU.device_id(amdgpu_device.device) == idx
+
+        global ps = ps |> amdgpu_device
+        @test ps.weight isa ROCArray
+        @test ps.bias isa ROCArray
+        @test AMDGPU.device_id(AMDGPU.device(ps.weight)) == idx
+        @test AMDGPU.device_id(AMDGPU.device(ps.bias)) == idx
+        @test isequal(cdev(ps.weight), ps_cpu.weight)
+        @test isequal(cdev(ps.bias), ps_cpu.bias)
+    end
+
+    ps = ps |> cdev
+    @test ps.weight isa Array
+    @test ps.bias isa Array
+end
