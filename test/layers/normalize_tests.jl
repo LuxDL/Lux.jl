@@ -287,7 +287,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
         end
 
-        # See https://github.com/avik-pal/Lux.jl/issues/95
+        # See https://github.com/LuxDL/Lux.jl/issues/95
         @testset "Normalizing Zero Parameters" begin
             c = Conv((3, 3), 3 => 3)
 

@@ -2,7 +2,7 @@
 CurrentModule = LuxDeviceUtils
 ```
 
-# LuxDeviceUtils
+# [LuxDeviceUtils](@id LuxDeviceUtils-API)
 
 `LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across
 devices. Most users should directly use Lux.jl instead.

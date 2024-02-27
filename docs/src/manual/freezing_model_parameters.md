@@ -1,4 +1,4 @@
-# Freezing Model Parameters
+# [Freezing Model Parameters](@id freezing-model-parameters)
 
 ::: warning
 

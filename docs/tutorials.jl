@@ -33,6 +33,7 @@ pmap(enumerate(TUTORIALS)) do (i, (d, p))
         res = Literate.markdown(p_, joinpath(OUTPUT, d); execute=true, name,
             documenter=true, preprocess=Base.Fix1(preprocess, p_))
         GC.gc(true)
-        return @isdefined(CUDA) && CUDA.reclaim()
+        @isdefined(CUDA) && CUDA.reclaim()
+        return
     end
 end

@@ -1,10 +1,10 @@
 # # Julia & Lux for the Uninitiated
 
-# This is a quick intro to [Lux](https://github.com/avik-pal/Lux.jl) loosely based on:
+# This is a quick intro to [Lux](https://github.com/LuxDL/Lux.jl) loosely based on:
 # 
 # 1. [PyTorch's tutorial](https://pytorch.org/tutorials/beginner/deep_learning_60min_blitz.html).
 # 2. [Flux's tutorial](https://fluxml.ai/Flux.jl/stable/tutorials/2020-09-15-deep-learning-flux/).
-# 3. [Flax's tutorial](https://flax.readthedocs.io/en/latest/notebooks/jax_for_the_impatient.html).
+# 3. [Jax's tutorial](https://jax.readthedocs.io/en/latest/jax-101/index.html)
 #
 # It introduces basic Julia programming, as well `Zygote`, a source-to-source automatic
 # differentiation (AD) framework in Julia. We'll use these tools to build a very simple
@@ -129,7 +129,7 @@ end
 # ## (Im)mutability
 
 # Lux as you might have read is
-# [Immutable by convention](http://lux.csail.mit.edu/dev/introduction/overview/#Design-Principles)
+# [Immutable by convention](https://lux.csail.mit.edu/dev/introduction/overview#design-principles)
 # which means that the core library is built without any form of mutation and all functions
 # are pure. However, we don't enforce it in any form. We do **strongly recommend** that
 # users extending this framework for their respective applications don't mutate their
@@ -216,7 +216,7 @@ println("Computed Gradient via Forward Mode AD (ForwardDiff): ", ForwardDiff.gra
 # ### Jacobian-Vector Product
 
 # I will defer the discussion on forward-mode AD to
-# [https://book.sciml.ai/notes/08/](https://book.sciml.ai/notes/08/). Here let us just look
+# [https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/](https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/). Here let us just look
 # at a mini example on how to use it.
 
 f(x) = x .* x ./ 2

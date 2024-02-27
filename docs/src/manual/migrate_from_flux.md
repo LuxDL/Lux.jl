@@ -1,4 +1,4 @@
-# Migrating from Flux to Lux
+# [Migrating from Flux to Lux](@id migrate-from-flux)
 
 For the core library layers like [`Dense`](@ref), [`Conv`](@ref), etc. we have intentionally
 kept the API very similar to Flux. In most cases, replacing `using Flux` with `using Lux`

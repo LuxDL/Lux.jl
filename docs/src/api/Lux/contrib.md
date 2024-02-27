@@ -15,8 +15,8 @@ All features listed on this page are **experimental** which means:
 
 :::warning
 
-Starting v"0.5.2" all Experimental features need to be accessed via `Lux.Experimental.<feature>`.
-Direct access via `Lux.<feature>` will be removed in v"0.6".
+Starting v"0.5.2" all Experimental features need to be accessed via
+`Lux.Experimental.<feature>`. Direct access via `Lux.<feature>` will be removed in v"0.6".
 
 :::
 
@@ -54,7 +54,7 @@ Lux.Experimental.freeze
 Lux.Experimental.unfreeze
 ```
 
-For detailed usage example look at the [manual page](../../manual/freezing_model_parameters).
+For detailed usage example look at the [manual page](@ref freezing-model-parameters).
 
 ## Map over Layer
 
