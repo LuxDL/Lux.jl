@@ -1,10 +1,11 @@
 name = "WeightInitializers"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PartialFunctions = "570af359-4316-4cb7-8c74-252c00c2016b"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -21,6 +22,7 @@ WeightInitializersCUDAExt = "CUDA"
 Aqua = "0.8"
 CUDA = "5"
 ChainRulesCore = "1.21"
+LinearAlgebra = "1.9"
 PartialFunctions = "1.2"
 PrecompileTools = "1.2"
 Random = "1.9"

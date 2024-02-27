@@ -1,5 +1,6 @@
-using Aqua, WeightInitializers, Test, Statistics
-using StableRNGs, Random, CUDA
+using Aqua
+using WeightInitializers, Test, Statistics
+using StableRNGs, Random, CUDA, LinearAlgebra
 
 CUDA.allowscalar(false)
 
@@ -32,7 +33,8 @@ const GROUP = get(ENV, "GROUP", "All")
 
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
         @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
-            kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal, truncated_normal
+            kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal,
+            truncated_normal, identity_init
         ]
             # Sizes
             @test size(init(3)) == (3,)
@@ -77,7 +79,7 @@ const GROUP = get(ENV, "GROUP", "All")
 
         @testset "AbstractArray Type: $init $T" for init in [kaiming_uniform,
                 kaiming_normal,
-                glorot_uniform, glorot_normal, truncated_normal],
+                glorot_uniform, glorot_normal, truncated_normal, identity_init],
             T in (Float16, Float32,
                 Float64, ComplexF16, ComplexF32, ComplexF64)
 
@@ -98,7 +100,7 @@ const GROUP = get(ENV, "GROUP", "All")
         end
 
         @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal,
-            glorot_uniform, glorot_normal, truncated_normal]
+            glorot_uniform, glorot_normal, truncated_normal, identity_init]
             cl = init(;)
             # Sizes
             @test size(cl(3)) == (3,)
@@ -140,6 +142,122 @@ const GROUP = get(ENV, "GROUP", "All")
                 @test 0.9σ2 < var(v) < 1.1σ2
             end
             @test eltype(init(3, 4; gain=1.5)) == Float32
+        end
+
+        @testset "orthogonal" begin
+            # A matrix of dim = (m,n) with m > n should produce a QR decomposition. In the other case, the transpose should be taken to compute the QR decomposition.
+            for (rows, cols) in [(5, 3), (3, 5)]
+                v = orthogonal(rows, cols)
+                rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
+            end
+            for mat in [(3, 4, 5), (2, 2, 5)]
+                v = orthogonal(mat...)
+                cols = mat[end]
+                rows = div(prod(mat), cols)
+                v = reshape(v, (rows, cols))
+                rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
+            end
+            @test eltype(orthogonal(3, 4; gain=1.5)) == Float32
+        end
+    end
+
+    @testset "Orthogonal rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
+        # A matrix of dim = (m,n) with m > n should produce a QR decomposition.
+        # In the other case, the transpose should be taken to compute the QR decomposition.
+        for (rows, cols) in [(5, 3), (3, 5)]
+            v = orthogonal(rng, rows, cols)
+            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
+                              (@test v' * v ≈ I(cols))
+        end
+        for mat in [(3, 4, 5), (2, 2, 5)]
+            v = orthogonal(rng, mat...)
+            cols = mat[end]
+            rows = div(prod(mat), cols)
+            v = reshape(v, (rows, cols))
+            CUDA.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
+                              (@test v' * v ≈ I(cols))
+        end
+        # Type
+        @testset "Orthogonal Types $T" for T in (Float32, Float64)#(Float16, Float32, Float64)
+            @test eltype(orthogonal(rng, T, 3, 4; gain=1.5)) == T
+            @test eltype(orthogonal(rng, T, 3, 4, 5; gain=1.5)) == T
+        end
+        @testset "Orthogonal AbstractArray Type $T" for T in (Float32, Float64)#(Float16, Float32, Float64)
+            @test orthogonal(T, 3, 5) isa AbstractArray{T, 2}
+            @test orthogonal(rng, T, 3, 5) isa arrtype{T, 2}
+
+            cl = orthogonal(rng)
+            @test cl(T, 3, 5) isa arrtype{T, 2}
+
+            cl = orthogonal(rng, T)
+            @test cl(3, 5) isa arrtype{T, 2}
+        end
+        @testset "Orthogonal Closure" begin
+            cl = orthogonal(;)
+            # Sizes
+            @test size(cl(3, 4)) == (3, 4)
+            @test size(cl(rng, 3, 4)) == (3, 4)
+            @test size(cl(3, 4, 5)) == (3, 4, 5)
+            @test size(cl(rng, 3, 4, 5)) == (3, 4, 5)
+            # Type
+            @test eltype(cl(4, 2)) == Float32
+            @test eltype(cl(rng, 4, 2)) == Float32
+        end
+    end
+
+    @testset "sparse_init rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
+        # sparse_init should yield an error for non 2-d dimensions
+        # sparse_init should yield no zero elements if sparsity < 0
+        # sparse_init should yield all zero elements if sparsity > 1
+        # sparse_init should yield exactly ceil(n_in * sparsity) elements in each column for other sparsity values
+        # sparse_init should yield a kernel in its non-zero elements consistent with the std parameter
+
+        @test_throws ArgumentError sparse_init(3, 4, 5, sparsity=0.1)
+        @test_throws ArgumentError sparse_init(3, sparsity=0.1)
+        v = sparse_init(100, 100; sparsity=-0.1)
+        @test sum(v .== 0) == 0
+        v = sparse_init(100, 100; sparsity=1.1)
+        @test sum(v .== 0) == length(v)
+
+        for (n_in, n_out, sparsity, σ) in [(100, 100, 0.25, 0.1), (100, 400, 0.75, 0.01)]
+            expected_zeros = ceil(Integer, n_in * sparsity)
+            v = sparse_init(n_in, n_out; sparsity=sparsity, std=σ)
+            @test all([sum(v[:, col] .== 0) == expected_zeros for col in 1:n_out])
+            @test 0.9 * σ < std(v[v .!= 0]) < 1.1 * σ
+        end
+
+        # Type
+        @testset "sparse_init Types $T" for T in (Float16, Float32, Float64)
+            @test eltype(sparse_init(rng, T, 3, 4; sparsity=0.5)) == T
+        end
+        @testset "sparse_init AbstractArray Type $T" for T in (Float16, Float32, Float64)
+            @test sparse_init(T, 3, 5; sparsity=0.5) isa AbstractArray{T, 2}
+            @test sparse_init(rng, T, 3, 5; sparsity=0.5) isa arrtype{T, 2}
+
+            cl = sparse_init(rng; sparsity=0.5)
+            @test cl(T, 3, 5) isa arrtype{T, 2}
+
+            cl = sparse_init(rng, T; sparsity=0.5)
+            @test cl(3, 5) isa arrtype{T, 2}
+        end
+        @testset "sparse_init Closure" begin
+            cl = sparse_init(; sparsity=0.5)
+            # Sizes
+            @test size(cl(3, 4)) == (3, 4)
+            @test size(cl(rng, 3, 4)) == (3, 4)
+            # Type
+            @test eltype(cl(4, 2)) == Float32
+            @test eltype(cl(rng, 4, 2)) == Float32
+        end
+    end
+
+    @testset "identity_init" begin
+        @testset "Non-identity sizes" begin
+            @test identity_init(2, 3)[:, end] == zeros(Float32, 2)
+            @test identity_init(3, 2; shift=1)[1, :] == zeros(Float32, 2)
+            @test identity_init(1, 1, 3, 4)[:, :, :, end] == zeros(Float32, 1, 1, 3)
+            @test identity_init(2, 1, 3, 3)[end, :, :, :] == zeros(Float32, 1, 3, 3)
+            @test identity_init(1, 2, 3, 3)[:, end, :, :] == zeros(Float32, 1, 3, 3)
         end
     end
 
