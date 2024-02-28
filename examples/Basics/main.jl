@@ -153,18 +153,19 @@ println("Mutated Array ", x_copy)
 
 # We rely on the Julia StdLib `Random` for managing the randomness in our execution. First,
 # we create an PRNG (pseudorandom number generator) and seed it.
-rng = Random.default_rng() # Creates a Xoshiro PRNG
-Random.seed!(rng, 0)
+rng = Xoshiro(0)     # Creates a Xoshiro PRNG with seed 0
 
 # If we call any function that relies on `rng` and uses it via `randn`, `rand`, etc. `rng`
 # will be mutated. As we have already established we care a lot about immutability, hence we
 # should use `Lux.replicate` on PRNGs before using them.
 
 # First, let us run a random number generator 3 times with the `replicate`d rng.
-
+random_vectors = Vector{Vector{Float64}}(undef, 3)
 for i in 1:3
-    println("Iteration $i ", rand(Lux.replicate(rng), 10))
+    random_vectors[i] = rand(Lux.replicate(rng), 10)
+    println("Iteration $i ", random_vectors[i])
 end
+@assert random_vectors[1] ≈ random_vectors[2] ≈ random_vectors[3]
 
 # As expected we get the same output. We can remove the `replicate` call and we will get
 # different outputs.
