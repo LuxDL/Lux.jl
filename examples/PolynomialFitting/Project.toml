@@ -1,5 +1,6 @@
 [deps]
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
