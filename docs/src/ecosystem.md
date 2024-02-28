@@ -96,14 +96,6 @@ const extends_lux = [
     ]
   },
   {
-    avatar: 'https://github.com/avik-pal.png',
-    name: 'FluxMPI.jl',
-    desc: 'Distributed Data Parallel Training of Deep Neural Networks',
-    links: [
-      { icon: 'github', link: 'https://github.com/avik-pal/FluxMPI.jl' }
-    ]
-  },
-  {
     avatar: 'https://github.com/LuxDL.png',
     name: 'Boltz.jl',
     desc: ' Accelerate your ML research using pre-built Deep Learning Models with Lux',
@@ -112,9 +104,17 @@ const extends_lux = [
     ]
   },
   {
+    avatar: 'https://github.com/JuliaGNI.png',
+    name: 'GeometricMachineLearning.jl',
+    desc: 'Structure Preserving Machine Learning Models in Julia',
+    links: [
+      { icon: 'github', link: 'https://github.com/JuliaGNI/GeometricMachineLearning.jl' }
+    ]
+  },
+  {
     avatar: 'https://as1.ftcdn.net/jpg/01/09/84/42/220_F_109844212_NnLGUrn3RgMHQIuqSiLGlc9d419eK2dX.jpg',
     name: 'Want to Add Your Package?',
-    desc: 'Open a PR in <u><a href="https://github.com/LuxDL/luxdl.github.io">LuxDL/luxdl.github.io</a></u>'
+    desc: 'Open a PR in <u><a href="https://github.com/LuxDL/Lux.jl">LuxDL/Lux.jl</a></u>'
   }
 ];
 
