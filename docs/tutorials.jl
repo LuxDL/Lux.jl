@@ -41,6 +41,7 @@ foreach(TUTORIALS) do (d, p)
     Pkg.develop(; path=joinpath(@__DIR__, ".."), io=pkg_io)
     Pkg.instantiate(; io=pkg_io)
     Pkg.precompile(; io=pkg_io)
+    eval(Meta.parse("using " * join(keys(Pkg.project().dependencies), ", ")))
     Pkg.activate(cur_project; io=pkg_io)
     close(pkg_io)
     return
@@ -56,7 +57,7 @@ pmap(enumerate(TUTORIALS)) do (i, (d, p))
         p_ = get_example_path(p)
         OUTPUT = joinpath(@__DIR__, "src", "tutorials")
         res = Literate.markdown(p_, joinpath(OUTPUT, d); execute=true, name,
-            documenter=true, preprocess=Base.Fix1(preprocess, p_))
+            flavor=Literate.DocumenterFlavor(), preprocess=Base.Fix1(preprocess, p_))
         GC.gc(true)
         @isdefined(CUDA) && CUDA.reclaim()
         return
