@@ -9,10 +9,6 @@ addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1")))
 
 @everywhere using Literate
 
-@everywhere function preprocess(path, str)
-    return replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
-end
-
 @everywhere get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 
 BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl", "SimpleRNN/main.jl"]
@@ -23,11 +19,8 @@ TUTORIALS = [collect(Iterators.product(["beginner"], BEGINNER_TUTORIALS))...,
     collect(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS))...,
     collect(Iterators.product(["advanced"], ADVANCED_TUTORIALS))...]
 
-using Pkg
-
 @info "Installing and Precompiling Tutorial Dependencies"
 
-const cur_project = Pkg.project().path
 const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
 
 mkpath(storage_dir)
@@ -35,15 +28,24 @@ mkpath(storage_dir)
 foreach(TUTORIALS) do (d, p)
     p_ = get_example_path(p)
     name = first(split(p, '/'))
-    pkg_io = open(joinpath(storage_dir, "$(name)_pkg.log"), "w")
-    Pkg.activate(dirname(p_))
-    @info "Logging Pkg Operations to $(name)_pkg.log"
-    Pkg.develop(; path=joinpath(@__DIR__, ".."), io=pkg_io)
-    Pkg.instantiate(; io=pkg_io)
-    Pkg.precompile(; io=pkg_io)
-    eval(Meta.parse("using " * join(keys(Pkg.project().dependencies), ", ")))
-    Pkg.activate(cur_project; io=pkg_io)
-    close(pkg_io)
+
+    pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
+    tutorial_proj = dirname(p_)
+    lux_path = joinpath(@__DIR__, "..")
+
+    withenv("PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path) do
+        cmd = `$(Base.julia_cmd()) --project=$(tutorial_proj) -e \
+               'using Pkg;
+                io=open(ENV["PKG_LOG_PATH"], "w");
+                Pkg.develop(; path=ENV["LUX_PATH"], io);
+                Pkg.instantiate(; io);
+                Pkg.precompile(; io);
+                eval(Meta.parse("using " * join(keys(Pkg.project().dependencies), ", ")));
+                close(io)'`
+        @info "Running Command: $(cmd)"
+        run(cmd)
+        return
+    end
     return
 end
 
@@ -51,15 +53,25 @@ end
 
 pmap(enumerate(TUTORIALS)) do (i, (d, p))
     println("Running tutorial $(i): $(p) on worker $(myid())")
+    OUTPUT = joinpath(@__DIR__, "src", "tutorials")
+    p_ = get_example_path(p)
+    name = "$(i)_$(first(rsplit(p, "/")))"
+    tutorial_proj = dirname(p_)
     withenv("JULIA_DEBUG" => "Literate",
-        "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%") do
-        name = "$(i)_$(first(rsplit(p, "/")))"
-        p_ = get_example_path(p)
-        OUTPUT = joinpath(@__DIR__, "src", "tutorials")
-        res = Literate.markdown(p_, joinpath(OUTPUT, d); execute=true, name,
-            flavor=Literate.DocumenterFlavor(), preprocess=Base.Fix1(preprocess, p_))
-        GC.gc(true)
-        @isdefined(CUDA) && CUDA.reclaim()
+        "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%",
+        "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d),
+        "EXAMPLE_PATH" => p_, "EXAMPLE_NAME" => name) do
+        cmd = `$(Base.julia_cmd()) --project=$(tutorial_proj) -e \
+               'using Literate;
+                function preprocess(path, str)
+                    return replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
+                end;
+                Literate.markdown(ENV["EXAMPLE_PATH"], ENV["OUTPUT_DIRECTORY"];
+                    execute=true, name=ENV["EXAMPLE_NAME"],
+                    flavor=Literate.DocumenterFlavor(),
+                    preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]))'`
+        @info "Running Command: $(cmd)"
+        run(cmd)
         return
     end
 end
