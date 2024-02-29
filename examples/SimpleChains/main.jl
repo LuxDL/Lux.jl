@@ -114,4 +114,6 @@ nothing #hide
 train(simple_chains_model)
 nothing #hide
 
-# On my local machine we see a 3-4x speedup when using SimpleChains.jl.
+# On my local machine we see a 3-4x speedup when using SimpleChains.jl. The conditions of
+# the server this documentation is being built on is not ideal for CPU benchmarking hence,
+# the speedup may not be as significant and even there might be regressions.
