@@ -21,14 +21,14 @@ going to be supported.
     will be printed and a core Lux layer will be returned. Else, it will create a
     [`FluxLayer`](@ref).
 
-# Examples
+## Example
 
 ```julia
 import Flux
 using Adapt, Lux, Metalhead, Random
 
 m = ResNet(18)
-m2 = adapt(FromFluxAdaptor(), m.layers)
+m2 = adapt(FromFluxAdaptor(), m.layers) # or FromFluxAdaptor()(m.layers)
 
 x = randn(Float32, 224, 224, 3, 1);
 
@@ -77,9 +77,9 @@ Introducing this Layer in your model will lead to type instabilities, given the 
 end
 
 """
-    adapt(from::FromFluxAdaptor, L)
+    Adapt.adapt(from::FromFluxAdaptor, L)
 
-Adapt a Flux model to Lux model. See [`FromFluxAdaptor`](@ref) for more details.
+Adapt a Flux model `l` to Lux model. See [`FromFluxAdaptor`](@ref) for more details.
 """
 function Adapt.adapt(from::FromFluxAdaptor, L)
     if Base.get_extension(@__MODULE__, :LuxFluxExt) === nothing
@@ -95,3 +95,14 @@ Base.@deprecate transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=fa
 
 # Extend for AMDGPU in extensions
 @inline _maybe_flip_conv_weight(x) = copy(x)
+
+struct FluxModelConversionError <: Exception
+    msg::String
+end
+
+function Base.showerror(io::IO, e::FluxModelConversionError)
+    print(io, "FluxModelConversionError(", e.msg, ")")
+    if !TruncatedStacktraces.VERBOSE[]
+        println(io, TruncatedStacktraces.VERBOSE_MSG)
+    end
+end

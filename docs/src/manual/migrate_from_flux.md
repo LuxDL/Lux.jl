@@ -154,6 +154,6 @@ using `Lux.testmode`.
 
 ## Can we still use Flux Layers?
 
-If you have `Flux` loaded in your code, you can use the function [`Lux.transform`](@ref) to
-automatically convert your model to `Lux`. Note that in case a native Lux counterpart isn't
-available, we fallback to using `Optimisers.destructure`.
+If you have `Flux` loaded in your code, you can use the function [`FromFluxAdaptor`](@ref)
+to automatically convert your model to `Lux`. Note that in case a native Lux counterpart
+isn't available, we fallback to using `Optimisers.destructure`.

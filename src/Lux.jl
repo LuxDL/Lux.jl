@@ -9,7 +9,7 @@ PrecompileTools.@recompile_invalidations begin
     using Adapt, ConcreteStructs, Functors, Setfield
     using ChainRulesCore
     using ArrayInterface, GPUArraysCore
-    import TruncatedStacktraces: @truncate_stacktrace
+    import TruncatedStacktraces: TruncatedStacktraces, @truncate_stacktrace
 
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
                     initialparameters, initialstates, parameterlength, statelength,
@@ -73,6 +73,6 @@ export StatefulLuxLayer
 
 export f16, f32, f64
 
-export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer
+export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer, SimpleChainsLayer
 
 end

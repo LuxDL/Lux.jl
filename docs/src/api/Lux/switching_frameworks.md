@@ -10,7 +10,7 @@ CurrentModule = Lux
 Pages = ["switching_frameworks.md"]
 ```
 
-## Flux Models to Lux Models
+## [Flux Models to Lux Models](@id flux-to-lux-migrate-api)
 
 `Flux.jl` has been around in the Julia ecosystem for a long time and has a large userbase,
 hence we provide a way to convert `Flux` models to `Lux` models.
@@ -43,7 +43,7 @@ Accessing these functions require manually loading `SimpleChains`, i.e.,
 :::
 
 ```@docs
-Lux.adapt(::ToSimpleChainsAdaptor, l::Lux.AbstractExplicitLayer)
+Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
 ToSimpleChainsAdaptor
 SimpleChainsLayer
 ```

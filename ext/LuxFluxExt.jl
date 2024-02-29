@@ -3,19 +3,7 @@ module LuxFluxExt
 import Flux
 
 using Lux, Random, Optimisers
-import Lux: __from_flux_adaptor, FluxLayer
-import TruncatedStacktraces
-
-struct FluxModelConversionError <: Exception
-    msg::String
-end
-
-function Base.showerror(io::IO, e::FluxModelConversionError)
-    print(io, "FluxModelConversionError(", e.msg, ")")
-    if !TruncatedStacktraces.VERBOSE[]
-        println(io, TruncatedStacktraces.VERBOSE_MSG)
-    end
-end
+import Lux: __from_flux_adaptor, FluxLayer, FluxModelConversionError
 
 __copy_anonymous_closure(x) = (args...) -> x
 
