@@ -4,6 +4,7 @@ using Lux, Random
 import SimpleChains
 import Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
             __fix_input_dims_simplechain
+import Optimisers
 
 function __fix_input_dims_simplechain(layers::Vector, input_dims)
     return SimpleChains.SimpleChain(input_dims, layers...)
@@ -59,7 +60,33 @@ end
 __to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionError(layer))
 
 function Lux.initialparameters(::AbstractRNG, layer::SimpleChainsLayer)
-    return (; params=SimpleChains.init_params(layer.layer))
+    return (; params=Array(SimpleChains.init_params(layer.layer)))
 end
+
+# Some type-piracy for nicer interaction with NNlib
+NNlib.logsoftmax(x::SimpleChains.StrideArray{T, 2}) where {T} = SimpleChains.logsoftmax(x)
+
+function NNlib.logsoftmax!(y::SimpleChains.StrideArray{T1, 2},
+        x::Union{SimpleChains.StrideArray{T2, 2}, SimpleChains.PtrArray{T2, 2}};
+        dims=1) where {T1, T2}
+    @assert dims == 1
+    m = similar(y, SimpleChains.static_size(y, 2))
+    SimpleChains.logsoftmax!(y, m, x)
+    return y
+end
+
+# Nicer Interactions with Optimisers.jl
+# function Optimisers._setup(opt::Optimisers.AbstractRule,
+#         ps::Union{SimpleChains.StrideArray, SimpleChains.PtrArray}; cache)
+#     ℓ = Leaf(rule, init(rule, x))
+#     if isbits(x)
+#       cache[nothing] = nothing  # just to disable the warning
+#       ℓ
+#     else
+#       cache[x] = ℓ
+#     end
+#     error(1)
+#     return Optimisers.setup(opt, ps .- ps)
+# end
 
 end

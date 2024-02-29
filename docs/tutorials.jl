@@ -11,7 +11,8 @@ addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1")))
 
 @everywhere get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 
-BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl", "SimpleRNN/main.jl"]
+BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl",
+    "SimpleRNN/main.jl", "SimpleChains/main.jl"]
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
 ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl"]
 
