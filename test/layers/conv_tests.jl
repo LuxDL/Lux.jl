@@ -660,5 +660,22 @@ end
 
         @test occursin("groups=2", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))
         @test occursin("2 => 4", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))
+
+        @testset "Catch Channel Mismatch Early: LuxDL/Lux.jl#455" begin
+            layer = ConvTranspose((4, 4), 42 => 16; stride=2, pad=1)
+
+            x = randn(Float32, 28, 28, 42, 3) |> aType
+            ps, st = Lux.setup(rng, layer) .|> device
+
+            @test_nowarn layer(x, ps, st)
+
+            x = randn(Float32, 28, 28, 46, 3) |> aType
+
+            @test_throws DimensionMismatch layer(x, ps, st)
+
+            x = randn(Float32, 28, 28, 23, 3) |> aType
+
+            @test_throws DimensionMismatch layer(x, ps, st)
+        end
     end
 end

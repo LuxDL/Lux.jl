@@ -65,6 +65,10 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+    return rnn.init_state(rng, rnn.out_dims, size(x, 2))
+end
+
+@inline function _init_hidden_state(rng::AbstractRNG, rnn, x::GPUArraysCore.AnyGPUMatrix)
     return convert(ArrayInterface.parameterless_type(parent(x)),
         rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end
@@ -151,9 +155,14 @@ function _conv_transpose_dims(
     I = (size(x)[1:(end - 2)] .- 1) .* stride .+ 1 .+
         (size(weight)[1:(end - 2)] .- 1) .* dilation .- combined_pad
     C_in = size(weight)[end - 1] * groups
+    C_out = size(weight)[end]
     batch_size = size(x)[end]
-    # Create DenseConvDims() that looks like the corresponding conv()
     w_size = size(weight)
+    if size(x)[end - 1] != C_out
+        throw(DimensionMismatch("Expected $(C_out) input channels but got \
+                                 $(size(x)[end - 1]) channels."))
+    end
+    # Create DenseConvDims() that looks like the corresponding conv()
     return DenseConvDims(
         (I..., C_in, batch_size), w_size; stride, padding, dilation, groups)
 end

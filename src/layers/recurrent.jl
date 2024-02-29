@@ -1,5 +1,18 @@
 abstract type AbstractRecurrentCell{use_bias, train_state} <: AbstractExplicitLayer end
 
+# Fallback for vector inputs
+function (rnn::AbstractRecurrentCell)(x::AbstractVector, ps, st::NamedTuple)
+    (y, carry), st_ = rnn(reshape(x, :, 1), ps, st)
+    return (vec(y), vec.(carry)), st_
+end
+
+function (rnn::AbstractRecurrentCell)((x, carry), ps, st::NamedTuple)
+    x_ = reshape(x, :, 1)
+    carry_ = map(Base.Fix2(reshape, (:, 1)), carry)
+    (y, carry_new), st_ = rnn((x_, carry_), ps, st)
+    return (vec(y), vec.(carry_new)), st_
+end
+
 abstract type AbstractTimeSeriesDataBatchOrdering end
 
 struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
@@ -54,6 +67,24 @@ rather allows operating on an entire sequence of inputs at once. See
 ## States
 
   - Same as `cell`.
+
+:::tip
+
+Frameworks like Tensorflow have special implementation of
+[`MultiRNNCell`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/MultiRNNCell)
+to handle sequentially composed RNN Cells. In Lux, one can simple stack multiple
+`Recurrence` blocks in a `Chain` to achieve the same.
+
+    Chain(
+        Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
+        Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
+        :
+        x -> stack(x; dims=2)
+    )
+
+For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
+
+:::
 """
 struct Recurrence{
     R, C <: AbstractRecurrentCell, O <: AbstractTimeSeriesDataBatchOrdering} <:
@@ -69,6 +100,11 @@ end
 
 _eachslice(x::AbstractArray, ::TimeLastIndex) = _eachslice(x, Val(ndims(x)))
 _eachslice(x::AbstractArray, ::BatchLastIndex) = _eachslice(x, Val(ndims(x) - 1))
+function _eachslice(x::AbstractMatrix, ::BatchLastIndex)
+    error("`BatchLastIndex` not supported for AbstractMatrix. You probably want to use \
+           `TimeLastIndex`.")
+    return
+end
 
 @inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
     return Lux.apply(r, _eachslice(x, r.ordering), ps, st)

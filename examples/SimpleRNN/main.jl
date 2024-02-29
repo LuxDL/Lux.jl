@@ -175,6 +175,7 @@ function main()
 end
 
 ps_trained, st_trained = main()
+nothing #hide
 
 # ## Saving the Model
 
