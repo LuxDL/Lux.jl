@@ -1,4 +1,4 @@
-# Lux Interface
+# [Lux Interface](@id lux-interface)
 
 :::tip
 

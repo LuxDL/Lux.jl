@@ -1,9 +1,9 @@
-module LuxFluxTransformExt
+module LuxFluxExt
 
 import Flux
 
 using Lux, Random, Optimisers
-import Lux: transform, FluxLayer
+import Lux: __from_flux_adaptor, FluxLayer
 import TruncatedStacktraces
 
 struct FluxModelConversionError <: Exception
@@ -17,13 +17,7 @@ function Base.showerror(io::IO, e::FluxModelConversionError)
     end
 end
 
-# Workaround https://github.com/cjdoris/PackageExtensionCompat.jl/issues/9
-function __copy_anonymous_closure(x)
-    function copy_anonymous_closure(args...)
-        return x
-    end
-    return copy_anonymous_closure
-end
+__copy_anonymous_closure(x) = (args...) -> x
 
 function FluxLayer(l)
     p, re = Optimisers.destructure(l)
@@ -37,20 +31,23 @@ Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
 Base.show(io::IO, l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 
-function transform(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
-    @warn "Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
+function __from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
+    @warn "Transformation for type $T not implemented. Using `FluxLayer` as a \
+           fallback." maxlog=1
 
     if !preserve_ps_st
-        @warn "`FluxLayer` uses the parameters and states of the `layer`. It is not possible to NOT preserve the parameters and states. Ignoring this keyword argument." maxlog=1
+        @warn "`FluxLayer` uses the parameters and states of the `layer`. It is not \
+                possible to NOT preserve the parameters and states. Ignoring this keyword \
+                argument." maxlog=1
     end
 
     return FluxLayer(l)
 end
 
-transform(l::Function; kwargs...) = WrappedFunction(l)
+__from_flux_adaptor(l::Function; kwargs...) = WrappedFunction(l)
 
-function transform(l::Flux.Chain; kwargs...)
-    fn = x -> transform(x; kwargs...)
+function __from_flux_adaptor(l::Flux.Chain; kwargs...)
+    fn = x -> __from_flux_adaptor(x; kwargs...)
     layers = map(fn, l.layers)
     if layers isa NamedTuple
         return Chain(layers; disable_optimizations=true)
@@ -59,7 +56,7 @@ function transform(l::Flux.Chain; kwargs...)
     end
 end
 
-function transform(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
+function __from_flux_adaptor(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
         bias = l.bias isa Bool ? nothing : reshape(copy(l.bias), out_dims, 1)
@@ -71,7 +68,7 @@ function transform(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
     end
 end
 
-function transform(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
+function __from_flux_adaptor(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
         return Scale(
             size(l.scale), l.σ; init_weight=__copy_anonymous_closure(copy(l.scale)),
@@ -81,15 +78,17 @@ function transform(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     end
 end
 
-transform(l::Flux.Maxout; kwargs...) = Maxout(transform.(l.layers; kwargs...)...)
-
-function transform(l::Flux.SkipConnection; kwargs...)
-    connection = l.connection isa Function ? l.connection :
-                 transform(l.connection; kwargs...)
-    return SkipConnection(transform(l.layers; kwargs...), connection)
+function __from_flux_adaptor(l::Flux.Maxout; kwargs...)
+    return Maxout(__from_flux_adaptor.(l.layers; kwargs...)...)
 end
 
-function transform(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
+function __from_flux_adaptor(l::Flux.SkipConnection; kwargs...)
+    connection = l.connection isa Function ? l.connection :
+                 __from_flux_adaptor(l.connection; kwargs...)
+    return SkipConnection(__from_flux_adaptor(l.layers; kwargs...), connection)
+end
+
+function __from_flux_adaptor(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
     out, in1, in2 = size(l.weight)
     if preserve_ps_st
         return Bilinear(
@@ -100,8 +99,8 @@ function transform(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
     end
 end
 
-function transform(l::Flux.Parallel; kwargs...)
-    fn = x -> transform(x; kwargs...)
+function __from_flux_adaptor(l::Flux.Parallel; kwargs...)
+    fn = x -> __from_flux_adaptor(x; kwargs...)
     layers = map(fn, l.layers)
     if layers isa NamedTuple
         return Parallel(l.connection; layers...)
@@ -110,12 +109,13 @@ function transform(l::Flux.Parallel; kwargs...)
     end
 end
 
-function transform(l::Flux.PairwiseFusion; kwargs...)
-    @warn "Flux.PairwiseFusion and Lux.PairwiseFusion are semantically different. Using `FluxLayer` as a fallback." maxlog=1
+function __from_flux_adaptor(l::Flux.PairwiseFusion; kwargs...)
+    @warn "Flux.PairwiseFusion and Lux.PairwiseFusion are semantically different. Using \
+           `FluxLayer` as a fallback." maxlog=1
     return FluxLayer(l)
 end
 
-function transform(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
+function __from_flux_adaptor(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
         return Embedding(
@@ -125,7 +125,7 @@ function transform(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
     end
 end
 
-function transform(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
+function __from_flux_adaptor(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
     k = size(l.weight)[1:(end - 2)]
     in_chs, out_chs = size(l.weight)[(end - 1):end]
     groups = l.groups
@@ -142,7 +142,7 @@ function transform(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
     end
 end
 
-function transform(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
+function __from_flux_adaptor(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
     k = size(l.weight)[1:(end - 2)]
     out_chs, in_chs = size(l.weight)[(end - 1):end]
     groups = l.groups
@@ -160,7 +160,7 @@ function transform(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
     end
 end
 
-function transform(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
+function __from_flux_adaptor(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
     k = size(l.weight)[1:(end - 2)]
     in_chs, out_chs = size(l.weight)[(end - 1):end]
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
@@ -176,48 +176,54 @@ function transform(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
     end
 end
 
-transform(l::Flux.AdaptiveMaxPool; kwargs...) = AdaptiveMaxPool(l.out)
+__from_flux_adaptor(l::Flux.AdaptiveMaxPool; kwargs...) = AdaptiveMaxPool(l.out)
 
-transform(l::Flux.AdaptiveMeanPool; kwargs...) = AdaptiveMeanPool(l.out)
+__from_flux_adaptor(l::Flux.AdaptiveMeanPool; kwargs...) = AdaptiveMeanPool(l.out)
 
-transform(::Flux.GlobalMaxPool; kwargs...) = GlobalMaxPool()
+__from_flux_adaptor(::Flux.GlobalMaxPool; kwargs...) = GlobalMaxPool()
 
-transform(::Flux.GlobalMeanPool; kwargs...) = GlobalMeanPool()
+__from_flux_adaptor(::Flux.GlobalMeanPool; kwargs...) = GlobalMeanPool()
 
-function transform(l::Flux.MaxPool; kwargs...)
+function __from_flux_adaptor(l::Flux.MaxPool; kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     return MaxPool(l.k; l.stride, pad)
 end
 
-function transform(l::Flux.MeanPool; kwargs...)
+function __from_flux_adaptor(l::Flux.MeanPool; kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     return MeanPool(l.k; l.stride, pad)
 end
 
-transform(l::Flux.Dropout; kwargs...) = Dropout(l.p; l.dims)
+__from_flux_adaptor(l::Flux.Dropout; kwargs...) = Dropout(l.p; l.dims)
 
-function transform(l::Flux.LayerNorm; kwargs...)
-    @warn "Flux.LayerNorm and Lux.LayerNorm are semantically different specifications. Using `FluxLayer` as a fallback." maxlog=1
+function __from_flux_adaptor(l::Flux.LayerNorm; kwargs...)
+    @warn "Flux.LayerNorm and Lux.LayerNorm are semantically different specifications. \
+           Using `FluxLayer` as a fallback." maxlog=1
     return FluxLayer(l)
 end
 
-transform(::typeof(identity); kwargs...) = NoOpLayer()
+__from_flux_adaptor(::typeof(identity); kwargs...) = NoOpLayer()
 
-transform(::typeof(Flux.flatten); kwargs...) = FlattenLayer()
+__from_flux_adaptor(::typeof(Flux.flatten); kwargs...) = FlattenLayer()
 
-transform(l::Flux.PixelShuffle; kwargs...) = PixelShuffle(l.r)
+__from_flux_adaptor(l::Flux.PixelShuffle; kwargs...) = PixelShuffle(l.r)
 
-function transform(l::Flux.Upsample{mode}; kwargs...) where {mode}
+function __from_flux_adaptor(l::Flux.Upsample{mode}; kwargs...) where {mode}
     return Upsample(mode; l.scale, l.size)
 end
 
-function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
+function __from_flux_adaptor(
+        l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     out_dims, in_dims = size(l.Wi)
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a \
+                                            `reset!` mechanism which hasn't been \
+                                            extensively tested with `FluxLayer`. Rewrite \
+                                            the model manually to use `RNNCell`."))
         end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux \
+               and hence not supported. Ignoring these parameters." maxlog=1
         return RNNCell(
             in_dims => out_dims, l.σ; init_bias=__copy_anonymous_closure(copy(l.b)),
             init_state=__copy_anonymous_closure(copy(l.state0)))
@@ -226,14 +232,19 @@ function transform(l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::
     end
 end
 
-function transform(l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
+function __from_flux_adaptor(
+        l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     _out_dims, in_dims = size(l.Wi)
     out_dims = _out_dims ÷ 4
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `LSTMCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a
+                                            `reset!` mechanism which hasn't been \
+                                            extensively tested with `FluxLayer`. Rewrite \
+                                            the model manually to use `LSTMCell`."))
         end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux \
+               and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(4))
         _s, _m = copy.(l.state0)
         return LSTMCell(in_dims => out_dims; init_bias=__copy_anonymous_closure.(bs),
@@ -244,14 +255,19 @@ function transform(l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve:
     end
 end
 
-function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
+function __from_flux_adaptor(
+        l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     _out_dims, in_dims = size(l.Wi)
     out_dims = _out_dims ÷ 3
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `GRUCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a \
+                                            `reset!` mechanism which hasn't been \
+                                            extensively tested with `FluxLayer`. Rewrite \
+                                            the model manually to use `GRUCell`."))
         end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux \
+               and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(3))
         return GRUCell(in_dims => out_dims; init_bias=_const_return_anon_function.(bs),
             init_state=__copy_anonymous_closure(copy(l.state0)))
@@ -260,12 +276,13 @@ function transform(l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::
     end
 end
 
-function transform(
+function __from_flux_adaptor(
         l::Flux.BatchNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
-            @warn "Preserving the state of `Flux.BatchNorm` is currently not supported. Ignoring the state." maxlog=1
+            @warn "Preserving the state of `Flux.BatchNorm` is currently not supported. \
+                   Ignoring the state." maxlog=1
         end
         if l.affine
             return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
@@ -278,12 +295,13 @@ function transform(
     return BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
 end
 
-function transform(
+function __from_flux_adaptor(
         l::Flux.GroupNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
             force_preserve && return FluxLayer(l)
-            @warn "Preserving the state of `Flux.GroupNorm` is currently not supported. Ignoring the state." maxlog=1
+            @warn "Preserving the state of `Flux.GroupNorm` is currently not supported. \
+                   Ignoring the state." maxlog=1
         end
         if l.affine
             return GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ,
@@ -298,7 +316,7 @@ end
 
 const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
 
-function transform(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
+function __from_flux_adaptor(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
     throw(FluxModelConversionError("Transformation of type $(T) is not supported."))
 end
 

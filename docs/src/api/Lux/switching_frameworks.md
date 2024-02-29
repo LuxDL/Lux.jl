@@ -1,0 +1,49 @@
+# Switching between Deep Learning Frameworks
+
+```@meta
+CurrentModule = Lux
+```
+
+## Index
+
+```@index
+Pages = ["switching_frameworks.md"]
+```
+
+## Flux Models to Lux Models
+
+`Flux.jl` has been around in the Julia ecosystem for a long time and has a large userbase,
+hence we provide a way to convert `Flux` models to `Lux` models.
+
+:::note
+
+Accessing these functions require manually loading `Flux`, i.e., `using Flux` must be
+present somewhere in the code for these to be used.
+
+:::
+
+```@docs
+Lux.adapt(::FromFluxAdaptor, l)
+FromFluxAdaptor
+FluxLayer
+```
+
+## Lux Models to Simple Chains
+
+`SimpleChains.jl` provides a way to train Small Neural Networks really fast on CPUs.
+See [this blog post](https://julialang.org/blog/2022/04/simple-chains/) for more details.
+This section describes how to convert `Lux` models to `SimpleChains` models while
+preserving the [layer interface](@ref lux-interface).
+
+:::note
+
+Accessing these functions require manually loading `SimpleChains`, i.e.,
+`using SimpleChains` must be present somewhere in the code for these to be used.
+
+:::
+
+```@docs
+Lux.adapt(::ToSimpleChainsAdaptor, l::Lux.AbstractExplicitLayer)
+ToSimpleChainsAdaptor
+SimpleChainsLayer
+```

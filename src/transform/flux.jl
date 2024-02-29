@@ -1,19 +1,14 @@
-# Extension functions
 """
-    transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=false)
+    FromFluxAdaptor(preserve_ps_st::Bool=false, force_preserve::Bool=false)
 
 Convert a Flux Model to Lux Model.
 
 :::warning
 
-`transform` always ingores the `active` field of some of the Flux layers. This is almost
-never going to be supported.
+This always ingores the `active` field of some of the Flux layers. This is almost never
+going to be supported.
 
 :::
-
-## Arguments
-
-  - `l`: Flux l or any generic Julia function / object.
 
 ## Keyword Arguments
 
@@ -30,10 +25,10 @@ never going to be supported.
 
 ```julia
 import Flux
-using Lux, Metalhead, Random
+using Adapt, Lux, Metalhead, Random
 
 m = ResNet(18)
-m2 = transform(m.layers)
+m2 = adapt(FromFluxAdaptor(), m.layers)
 
 x = randn(Float32, 224, 224, 3, 1);
 
@@ -42,9 +37,10 @@ ps, st = Lux.setup(Random.default_rng(), m2);
 m2(x, ps, st)
 ```
 """
-function transform end
-
-_maybe_flip_conv_weight(x) = copy(x)
+@kwdef struct FromFluxAdaptor <: AbstractToLuxAdaptor
+    preserve_ps_st::Bool = false
+    force_preserve::Bool = false
+end
 
 """
     FluxLayer(layer)
@@ -74,8 +70,28 @@ Introducing this Layer in your model will lead to type instabilities, given the 
 
   - `p`: Flattened parameters of the `layer`
 """
-struct FluxLayer{L, RE, I} <: AbstractExplicitLayer
-    layer::L
-    re::RE
-    init_parameters::I
+@concrete struct FluxLayer <: AbstractExplicitLayer
+    layer
+    re
+    init_parameters
 end
+
+"""
+    adapt(from::FromFluxAdaptor, L)
+
+Adapt a Flux model to Lux model. See [`FromFluxAdaptor`](@ref) for more details.
+"""
+function Adapt.adapt(from::FromFluxAdaptor, L)
+    if Base.get_extension(@__MODULE__, :LuxFluxExt) === nothing
+        error("`FromFluxAdaptor` requires Flux.jl to be loaded.")
+    end
+    return __from_flux_adaptor(L; from.preserve_ps_st, from.force_preserve)
+end
+
+function __from_flux_adaptor end
+
+Base.@deprecate transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=false) adapt(
+    FromFluxAdaptor(preserve_ps_st, force_preserve), l)
+
+# Extend for AMDGPU in extensions
+@inline _maybe_flip_conv_weight(x) = copy(x)
