@@ -1,4 +1,4 @@
-@testitem "Lux.transform tests" setup=[SharedTestSetup] begin
+@testitem "FromFluxAdaptor tests" setup=[SharedTestSetup] begin
     import Flux
 
     from_flux = fdevice(::Lux.LuxCPUDevice) = Flux.cpu

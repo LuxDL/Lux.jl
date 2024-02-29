@@ -22,9 +22,10 @@ import SimpleChains: static
 # ## Loading MNIST
 function loadmnist(batchsize, train_split)
     ## Load MNIST
+    N = 2000
     dataset = MNIST(; split=:train)
-    imgs = dataset.features
-    labels_raw = dataset.targets
+    imgs = dataset.features[:, :, 1:N]
+    labels_raw = dataset.targets[1:N]
 
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
@@ -71,11 +72,11 @@ function accuracy(model, ps, st, dataloader)
 end
 
 # ## Define the Training Loop
-function train(model; rng = Xoshiro(0), kwargs...)
+function train(model; rng=Xoshiro(0), kwargs...)
     ps, st = Lux.setup(rng, model)
 
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
-    opt = Adam(3f-4)
+    opt = Adam(3.0f-4)
     st_opt = Optimisers.setup(opt, ps)
 
     ### Warmup the Model

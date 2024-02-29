@@ -1,4 +1,5 @@
 [deps]
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
@@ -9,6 +10,7 @@ SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
+Literate = "2"
 Lux = "0.5.20"
 MLDatasets = "0.7.14"
 OneHotArrays = "0.2.5"

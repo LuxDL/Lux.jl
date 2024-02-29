@@ -175,7 +175,7 @@ steps:
             - src
             - ext
     command: |
-      julia --project --code-coverage=user --color=yes --threads=auto -e '
+      julia --project --code-coverage=user --color=yes --threads=4 -e '
         println("--- :julia: Instantiating project")
         using Pkg
         Pkg.instantiate()
@@ -186,7 +186,7 @@ steps:
         Pkg.activate("docs")
         include("docs/tutorials.jl")'
 
-      julia --project --code-coverage=user --color=yes --threads=auto -e '
+      julia --project --code-coverage=user --color=yes --threads=4 -e '
         println("--- :julia: Instantiating project")
         using Pkg
         Pkg.instantiate()

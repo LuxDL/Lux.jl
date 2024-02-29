@@ -53,8 +53,7 @@ Flattens the passed array into a matrix.
     N = nothing
 end
 
-@inline function (f::FlattenLayer{Int})(
-        x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+@inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     @assert f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
