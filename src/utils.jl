@@ -65,6 +65,10 @@ get_typename(::T) where {T} = Base.typename(T).wrapper
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+    return rnn.init_state(rng, rnn.out_dims, size(x, 2))
+end
+
+@inline function _init_hidden_state(rng::AbstractRNG, rnn, x::GPUArraysCore.AnyGPUMatrix)
     return convert(ArrayInterface.parameterless_type(parent(x)),
         rnn.init_state(rng, rnn.out_dims, size(x, 2)))
 end

@@ -94,6 +94,7 @@ dev_gpu = gpu_device()
 
 tstate = main(tstate, vjp_rule, (x, y), 250)
 y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])
+nothing #hide
 
 # Let's plot the results
 
