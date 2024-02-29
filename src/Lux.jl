@@ -9,7 +9,7 @@ PrecompileTools.@recompile_invalidations begin
     using Adapt, ConcreteStructs, Functors, Setfield
     using ChainRulesCore
     using ArrayInterface, GPUArraysCore
-    import TruncatedStacktraces: @truncate_stacktrace
+    import TruncatedStacktraces: TruncatedStacktraces, @truncate_stacktrace
 
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
                     initialparameters, initialstates, parameterlength, statelength,
@@ -48,11 +48,13 @@ include("contrib/contrib.jl")
 # Helpful Functionalities
 include("helpers/stateful.jl")
 
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
+
 # Deprecations
 include("deprecated.jl")
-
-# Extensions
-include("extensions.jl")
 
 # Layers
 export cpu, gpu
@@ -71,6 +73,6 @@ export StatefulLuxLayer
 
 export f16, f32, f64
 
-export transform, FluxLayer
+export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer, SimpleChainsLayer
 
 end

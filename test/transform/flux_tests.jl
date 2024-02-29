@@ -1,7 +1,7 @@
-@testitem "Lux.transform tests" setup=[SharedTestSetup] begin
+@testitem "FromFluxAdaptor tests" setup=[SharedTestSetup] begin
     import Flux
 
-    fdevice(::Lux.LuxCPUDevice) = Flux.cpu
+    from_flux = fdevice(::Lux.LuxCPUDevice) = Flux.cpu
     fdevice(::Lux.LuxCUDADevice) = Base.Fix1(Flux.gpu, Flux.FluxCUDAAdaptor())
     fdevice(::Lux.LuxAMDGPUDevice) = Base.Fix1(Flux.gpu, Flux.FluxAMDAdaptor())
 

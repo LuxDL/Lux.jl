@@ -31,9 +31,14 @@ function Base.show(io::IO, r::ReshapeLayer)
 end
 
 """
-    FlattenLayer()
+    FlattenLayer(N = nothing)
 
 Flattens the passed array into a matrix.
+
+## Arguments
+
+  - `N`: Flatten the first `N` dimensions of the input array. If `nothing`, then all
+    dimensions (except) are flattened. Note that the batch dimension is never flattened.
 
 ## Inputs
 
@@ -44,9 +49,17 @@ Flattens the passed array into a matrix.
   - AbstractMatrix of size `(:, size(x, ndims(x)))`
   - Empty `NamedTuple()`
 """
-struct FlattenLayer <: AbstractExplicitLayer end
+@kwdef @concrete struct FlattenLayer <: AbstractExplicitLayer
+    N = nothing
+end
 
 @inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+    @assert f.N < N
+    return reshape(x, :, size(x)[(f.N + 1):end]...), st
+end
+
+@inline function (f::FlattenLayer{Nothing})(
+        x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     return reshape(x, :, size(x, N)), st
 end
 
