@@ -17,6 +17,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ComponentArrays = "0.13, 0.14, 0.15"
+Literate = "2"
 Lux = "0.5"
 LuxAMDGPU = "0.1, 0.2"
 LuxCUDA = "0.2, 0.3"
