@@ -2,6 +2,19 @@ module LuxCore
 
 using Functors, Random, Setfield
 
+# PRNG Handling
+"""
+    replicate(rng::AbstractRNG)
+
+Creates a copy of the `rng` state depending on its type.
+"""
+replicate(rng::AbstractRNG) = deepcopy(rng)
+function replicate(rng::Random.TaskLocalRNG)
+    @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same \
+           `TaskLocalRNG`." maxlog=1
+    return deepcopy(rng)
+end
+
 function _default_rng()
     rng = Random.default_rng()
     Random.seed!(rng, 1234)
