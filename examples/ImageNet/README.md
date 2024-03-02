@@ -14,8 +14,8 @@ the ImageNet dataset.
 ## Training
 
 To train a model, run `main.jl` with the necessary parameters. See
-[Boltz documentation](https://luxdl.github.io/Boltz.jl/stable/) for the model
-configuration.
+[Boltz documentation](https://lux.csail.mit.edu/dev/api/Domain_Specific_Modeling/Boltz) for
+the model configuration.
 
 ```bash
 julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
@@ -32,21 +32,9 @@ julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
 
 ## Distributed Data Parallel Training
 
-Setup [MPI.jl](https://juliaparallel.org/MPI.jl/stable/usage/#CUDA-aware-MPI-support)
-preferably with the system MPI. Set `FLUXMPI_DISABLE_CUDAMPI_SUPPORT=true` to disable
-communication via CuArrays (note that this might lead to a very high communication
-bottleneck).
-
-!!! tip "Learning Rate"
-
-    Remember to linearly increase the learning-rate based on the number of processes you are
-    using.
-
-!!! note
-
-    If using CUDA-aware MPI you need to disable the default CUDA allocator by
-    `export JULIA_CUDA_MEMORY_POOL=none`. This might slow down your code slightly but will
-    prevent any sudden segfaults which occur without setting this parameter.
+Setup [MPI.jl](https://juliaparallel.org/MPI.jl/stable/usage/#CUDA-aware-MPI-support).
+If your system has functional NCCL we will use it for all CUDA communications. Otherwise, we
+will use MPI for all communications.
 
 ```bash
 mpiexecjl -np 4 julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
@@ -54,7 +42,6 @@ mpiexecjl -np 4 julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl
   --cfg.dataset.train_batchsize=256 --cfg.dataset.eval_batchsize=256\
   --cfg.optimizer.learning_rate=0.5
 ```
-
 
 ## Usage
 

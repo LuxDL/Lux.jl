@@ -37,6 +37,8 @@ DistributedUtils.local_rank(backend::MPIBackend) = MPI.Comm_rank(backend.comm)
 
 DistributedUtils.total_workers(backend::MPIBackend) = MPI.Comm_size(backend.comm)
 
+# Broadcast
+
 function DistributedUtils.__bcast!(
         backend::MPIBackend, sendrecvbuf, dev::AbstractLuxDevice; root=0)
     MPI.Bcast!(sendrecvbuf, backend.comm; root)
@@ -48,6 +50,8 @@ function DistributedUtils.__bcast!(
     MPI.Bcast!(sendbuf, recvbuf, backend.comm; root)
     return recvbuf
 end
+
+# Allreduce
 
 function DistributedUtils.__allreduce!(
         backend::MPIBackend, sendrecvbuf, op::F, dev::AbstractLuxDevice) where {F}
@@ -66,6 +70,8 @@ function DistributedUtils.__allreduce!(
     end
     return recvbuf
 end
+
+# Reduce
 
 function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
         dev::AbstractLuxDevice; root::Int) where {F}
