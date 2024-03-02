@@ -14,7 +14,7 @@ PrecompileTools.@recompile_invalidations begin
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
                     initialparameters, initialstates, parameterlength, statelength,
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
-                    display_name
+                    display_name, replicate
     import LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice, AbstractLuxDeviceAdaptor
 end
 

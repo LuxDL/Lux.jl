@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.22"
+version = "0.5.23"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -66,7 +66,7 @@ LinearAlgebra = "1.9"
 Logging = "1.9"
 LuxAMDGPU = "0.2.2"
 LuxCUDA = "0.3.2"
-LuxCore = "0.1.11"
+LuxCore = "0.1.12"
 LuxDeviceUtils = "0.1.14"
 LuxLib = "0.3.10"
 LuxTestUtils = "0.1.15"
