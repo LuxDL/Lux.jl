@@ -268,4 +268,9 @@ end
 
 Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
 
+function Optimisers.adjust!(opt::DistributedOptimizer, args...; kwargs...)
+    return DistributedOptimizer(
+        opt.backend, Optimisers.adjust!(opt.opt, args...; kwargs...))
+end
+
 end

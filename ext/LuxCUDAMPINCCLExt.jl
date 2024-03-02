@@ -6,9 +6,6 @@ import MPI
 import NCCL
 import Setfield: @set!
 
-# FIXME: Needs an upstream
-NCCL.LibNCCL.ncclRedOp_t(x::NCCL.LibNCCL.ncclRedOp_t) = x
-
 function DistributedUtils.__initialize(
         ::Val{:NCCL}; cuda_devices=nothing, amdgpu_devices=missing)
     DistributedUtils.NCCL_Initialized[] = true
@@ -35,6 +32,9 @@ DistributedUtils.local_rank(backend::NCCLBackend) = NCCL.rank(backend.comm)
 DistributedUtils.total_workers(backend::NCCLBackend) = NCCL.size(backend.comm)
 
 # For non-CUDA Arrays, fallback to MPI
+
+# Broadcast
+
 function DistributedUtils.__bcast!(
         backend::NCCLBackend, sendrecvbuf, ::LuxCUDADevice; root=0)
     NCCL.Broadcast!(sendrecvbuf, backend.comm; root)
@@ -56,6 +56,8 @@ function DistributedUtils.__bcast!(
         backend::NCCLBackend, sendbuf, recvbuf, dev::AbstractLuxDevice; root=0)
     return DistributedUtils.__bcast!(backend.mpi_backend, sendbuf, recvbuf, dev; root)
 end
+
+# Allreduce
 
 function DistributedUtils.__allreduce!(
         backend::NCCLBackend, sendrecvbuf, op::F, ::LuxCUDADevice) where {F}
@@ -80,6 +82,8 @@ function DistributedUtils.__allreduce!(
         backend::NCCLBackend, sendbuf, recvbuf, op::F, dev::AbstractLuxDevice) where {F}
     return DistributedUtils.__allreduce!(backend.mpi_backend, sendbuf, recvbuf, op, dev)
 end
+
+# Reduce
 
 function DistributedUtils.__reduce!(
         backend::NCCLBackend, sendrecvbuf, op::F, ::LuxCUDADevice; root::Int) where {F}

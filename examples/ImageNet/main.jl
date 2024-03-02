@@ -1,32 +1,28 @@
 # Imagenet training script based on https://github.com/pytorch/examples/blob/main/imagenet/main.py
+using Boltz, Lux, Zygote
+using Augmentor, Configurations, Dates, FileIO, Functors, MLUtils, OneHotArrays, Optimisers,
+      Random, Setfield, SimpleConfig, Statistics
+import FLoops: ThreadedEx
+import Metalhead
+import MPI, NCCL
+using LuxAMDGPU, LuxCUDA
 
-using Augmentor                                         # Image Augmentation
-using Boltz                                             # Computer Vision Models
-import Flux                                             # Some Blotz Models need Flux
-import Metalhead                                        # Some Blotz Models need MetalHead
-using Configurations                                    # Experiment Configurations
-using LuxAMDGPU                                         # AMDGPUs <3
-using LuxCUDA                                           # NVIDIA GPUs <3
-using Dates                                             # Printing current time
-using FluxMPI                                           # Distibuted Training
-using FLoops
-using Formatting                                        # Pretty Printing
-using Functors                                          # Parameter Manipulation
-using JLSO                                              # Serialization
-using Images                                            # Image Processing
-using Lux                                               # Neural Network Framework
-using MLUtils                                           # DataLoaders
-using LuxLib                                            # Neural Network Backend
-using OneHotArrays                                      # One Hot Arrays
-using Optimisers                                        # Collection of Gradient Based Optimisers
-using Random                                            # Make things less Random
-using SimpleConfig                                      # Extends Configurations.jl
-using Setfield                                          # Easy Parameter Manipulation
-using Statistics                                        # Statistics
-using Zygote                                            # Our AD Engine
+using Formatting # TODO: Get rid of this
 
-# Distributed Training
-FluxMPI.Init(; verbose=true)
+# Distributed Training: NCCL for NVIDIA GPUs and MPI for anything else
+if LuxCUDA.functional()
+    DistributedUtils.initialize(Val(:NCCL))
+    backend = DistributedUtils.get_distributed_backend(Val(:NCCL))
+else
+    DistributedUtils.initialize(Val(:MPI))
+    backend = DistributedUtils.get_distributed_backend(Val(:MPI))
+end
+
+const local_rank = DistributedUtils.local_rank(backend)
+const total_workers = DistributedUtils.total_workers(backend)
+
+is_distributed() = total_workers > 1
+should_log() = !is_distributed() || (local_rank == 0)
 
 # Experiment Configuration
 include("config.jl")
@@ -38,7 +34,7 @@ include("data.jl")
 function construct(rng::AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
     model, ps, st = getfield(Boltz, Symbol(cfg.name))(Symbol(cfg.arch); cfg.pretrained)
     dev = gpu_device()
-    ps, st = (ps, st) .|> dev
+    ps, st = (ps, st) |> dev
 
     # Warmup for compilation
     x__ = randn(rng, Float32, 224, 224, 3, 1) |> dev
@@ -55,8 +51,8 @@ function construct(rng::AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
     end
 
     if is_distributed()
-        ps = FluxMPI.synchronize!(ps; root_rank=0)
-        st = FluxMPI.synchronize!(st; root_rank=0)
+        ps = DistributedUtils.synchronize!!(backend, ps)
+        st = DistributedUtils.synchronize!!(backend, st)
         should_log() && println("$(now()) ===> models synced across all ranks")
     end
 
@@ -75,8 +71,8 @@ function construct(cfg::OptimizerConfig)
             opt = Momentum(cfg.learning_rate, cfg.momentum)
         end
     else
-        throw(ArgumentError("unknown value for `optimizer` = $(cfg.optimizer). Supported " *
-                            "options are: `adam` and `sgd`."))
+        throw(ArgumentError("unknown value for `optimizer` = $(cfg.optimizer). Supported \
+                             options are: `adam` and `sgd`."))
     end
 
     if cfg.weight_decay != 0
@@ -92,8 +88,12 @@ function construct(cfg::OptimizerConfig)
         scheduler = Step(
             cfg.learning_rate, cfg.scheduler.lr_step_decay, cfg.scheduler.lr_step)
     else
-        throw(ArgumentError("unknown value for `lr_scheduler` = $(cfg.scheduler.name). " *
-                            "Supported options are: `constant`, `step` and `cosine`."))
+        throw(ArgumentError("unknown value for `lr_scheduler` = $(cfg.scheduler.name). \
+                             Supported options are: `constant`, `step` and `cosine`."))
+    end
+
+    if is_distributed()
+        opt = DistribtedUtils.DistributedOptimizer(backend, opt)
     end
 
     return opt, scheduler
@@ -182,7 +182,7 @@ function main(cfg::ExperimentConfig)
     opt, scheduler = construct(cfg.optimizer)
     opt_state = Optimisers.setup(opt, ps)
     if is_distributed()
-        opt_state = FluxMPI.synchronize!(opt_state)
+        opt_state = DistributedUtils.synchronize!!(backend, opt_state)
         should_log() && println("$(now()) ==> synced optimiser state across all ranks")
     end
 
@@ -190,7 +190,7 @@ function main(cfg::ExperimentConfig)
     ckpt_dir = joinpath(cfg.train.expt_subdir, cfg.train.checkpoint_dir, expt_name)
     log_dir = joinpath(cfg.train.expt_subdir, cfg.train.log_dir, expt_name)
     if cfg.train.resume == ""
-        rpath = joinpath(ckpt_dir, "model_current.jlso")
+        rpath = joinpath(ckpt_dir, "model_current.jld2")
     else
         rpath = cfg.train.resume
     end
@@ -209,8 +209,7 @@ function main(cfg::ExperimentConfig)
     validate(ds_val, model, ps, st, 0, cfg.train.total_steps)
     cfg.train.evaluate && return
 
-    GC.gc(true)
-    CUDA.reclaim()
+    reclaim_all()
 
     batch_time = AverageMeter("Batch Time", "6.3f")
     data_time = AverageMeter("Data Time", "6.3f")
@@ -244,9 +243,6 @@ function main(cfg::ExperimentConfig)
         t_forward, t = time() - t, time()
         gs = back((one(loss) / total_workers(), nothing, nothing))[1]
         t_backward, t = time() - t, time()
-        if is_distributed()
-            gs = FluxMPI.allreduce_gradients(gs)
-        end
         opt_state, ps = Optimisers.update!(opt_state, ps, gs)
         t_opt = time() - t
 
@@ -278,7 +274,7 @@ function main(cfg::ExperimentConfig)
                 opt_state=fmap(cpu_dev, opt_state), step=step)
             if should_log()
                 save_checkpoint(
-                    save_state; is_best, filename=joinpath(ckpt_dir, "model_$(step).jlso"))
+                    save_state; is_best, filename=joinpath(ckpt_dir, "model_$(step).jld2"))
             end
         end
 
