@@ -26,6 +26,7 @@ LuxCore.stateless_apply
 LuxCore.check_fmap_condition
 LuxCore.contains_lux_layer
 LuxCore.display_name
+LuxCore.replicate
 LuxCore.setup
 ```
 

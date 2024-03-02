@@ -39,7 +39,6 @@ For API documentation on Initialization check out the
 Lux.foldl_init
 Lux.istraining
 Lux.multigate
-Lux.replicate
 ```
 
 ## Updating Floating Point Precision
