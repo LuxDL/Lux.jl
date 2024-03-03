@@ -18,12 +18,12 @@ To train a model, run `main.jl` with the necessary parameters. See
 the model configuration.
 
 ```bash
-julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
+julia --project=examples/ImageNet -t auto examples/ImageNet/main.jl\
   --cfg.dataset.data_root=/home/avik-pal/data/ImageNet/\
   --cfg.dataset.train_batchsize=256 --cfg.dataset.eval_batchsize=256\
   --cfg.optimizer.learning_rate=0.5
 
-julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
+julia --project=examples/ImageNet -t auto examples/ImageNet/main.jl\
   --cfg.model.name=alexnet --cfg.model.arch=alexnet\
   --cfg.dataset.data_root=/home/avik-pal/data/ImageNet/\
   --cfg.dataset.train_batchsize=256 --cfg.dataset.eval_batchsize=256\
@@ -32,15 +32,15 @@ julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
 
 ## Distributed Data Parallel Training
 
-Setup [MPI.jl](https://juliaparallel.org/MPI.jl/stable/usage/#CUDA-aware-MPI-support).
+Setup [MPI.jl](https://juliaparallel.org/MPI.jl/).
 If your system has functional NCCL we will use it for all CUDA communications. Otherwise, we
 will use MPI for all communications.
 
 ```bash
-mpiexecjl -np 4 julia --project=examples/ImageNet -t 4 examples/ImageNet/main.jl\
+mpiexecjl -np 4 julia --project=examples/ImageNet -t auto examples/ImageNet/main.jl\
   --cfg.dataset.data_root=/home/avik-pal/data/ImageNet/\
   --cfg.dataset.train_batchsize=256 --cfg.dataset.eval_batchsize=256\
-  --cfg.optimizer.learning_rate=0.5
+  --cfg.optimizer.learning_rate=0.01
 ```
 
 ## Usage

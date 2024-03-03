@@ -17,6 +17,12 @@ struct MPIBackend{C} <: AbstractLuxDistributedBackend
     end
 end
 
+"""
+    NCCLBackend(comm = nothing, mpi_backend = nothing)
+
+Create an NCCL backend for distributed training. Users should not use this function
+directly. Instead use [`DistributedUtils.get_distributed_backend(Val(:NCCL))`](@ref).
+"""
 struct NCCLBackend{C, M <: Union{Nothing, MPIBackend}} <: AbstractLuxDistributedBackend
     comm::C
     mpi_backend::M
@@ -28,3 +34,7 @@ struct NCCLBackend{C, M <: Union{Nothing, MPIBackend}} <: AbstractLuxDistributed
         return new{typeof(comm), typeof(mpi_backend)}(comm, mpi_backend)
     end
 end
+
+# Preferences for GPU-Aware MPI
+const MPI_CUDA_AWARE = @load_preference("LuxDistributedMPICUDAAware", false)
+const MPI_ROCM_AWARE = @load_preference("LuxDistributedMPIROCMAware", false)

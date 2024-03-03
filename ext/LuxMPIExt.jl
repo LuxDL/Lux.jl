@@ -2,7 +2,8 @@ module LuxMPIExt
 
 import Lux: MPIBackend, NCCLBackend, DistributedUtils, __is_extension_loaded, __set_device!,
             __unwrap_val
-import LuxDeviceUtils: AbstractLuxDevice
+import LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, MPI_CUDA_AWARE,
+                       MPI_ROCM_AWARE, cpu_device
 import MPI
 
 function DistributedUtils.__initialize(
@@ -51,6 +52,31 @@ function DistributedUtils.__bcast!(
     return recvbuf
 end
 
+for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
+    if !aware
+        @eval begin
+            function DistributedUtils.__bcast!(
+                    backend::MPIBackend, sendrecvbuf, dev::$dType; root=0)
+                cdev = cpu_device()
+                sendrecvbuf_ = sendrecvbuf |> cdev
+                DistributedUtils.__bcast!(backend, sendrecvbuf_, cdev; root)
+                sendrecvbuf .= dev(sendrecvbuf_)
+                return sendrecvbuf
+            end
+
+            function DistributedUtils.__bcast!(
+                    backend::MPIBackend, sendbuf, recvbuf, dev::$dType; root=0)
+                cdev = cpu_device()
+                sendbuf_ = sendbuf |> cdev
+                recvbuf_ = recvbuf |> cdev
+                DistributedUtils.__bcast!(backend, sendbuf_, recvbuf_, cdev; root)
+                recvbuf .= dev(recvbuf_)
+                return recvbuf
+            end
+        end
+    end
+end
+
 # Allreduce
 
 function DistributedUtils.__allreduce!(
@@ -71,6 +97,31 @@ function DistributedUtils.__allreduce!(
     return recvbuf
 end
 
+for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
+    if !aware
+        @eval begin
+            function DistributedUtils.__allreduce!(
+                    backend::MPIBackend, sendrecvbuf, op::F, dev::$dType) where {F}
+                cdev = cpu_device()
+                sendrecvbuf_ = sendrecvbuf |> cdev
+                DistributedUtils.__allreduce!(backend, sendrecvbuf_, op, cdev)
+                sendrecvbuf .= dev(sendrecvbuf_)
+                return sendrecvbuf
+            end
+
+            function DistributedUtils.__allreduce!(
+                    backend::MPIBackend, sendbuf, recvbuf, op::F, dev::$dType) where {F}
+                cdev = cpu_device()
+                sendbuf_ = sendbuf |> cdev
+                recvbuf_ = recvbuf |> cdev
+                DistributedUtils.__allreduce!(backend, sendbuf_, recvbuf_, op, cdev)
+                recvbuf .= dev(recvbuf_)
+                return recvbuf
+            end
+        end
+    end
+end
+
 # Reduce
 
 function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
@@ -89,6 +140,31 @@ function DistributedUtils.__reduce!(backend::MPIBackend, sendbuf, recvbuf, op::F
         recvbuf ./= DistributedUtils.total_workers(backend)
     end
     return recvbuf
+end
+
+for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
+    if !aware
+        @eval begin
+            function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
+                    dev::$dType; root::Int) where {F}
+                cdev = cpu_device()
+                sendrecvbuf_ = sendrecvbuf |> cdev
+                DistributedUtils.__reduce!(backend, sendrecvbuf_, op, cdev; root)
+                sendrecvbuf .= dev(sendrecvbuf_)
+                return sendrecvbuf
+            end
+
+            function DistributedUtils.__reduce!(backend::MPIBackend, sendbuf, recvbuf,
+                    op::F, dev::$dType; root::Int) where {F}
+                cdev = cpu_device()
+                sendbuf_ = sendbuf |> cdev
+                recvbuf_ = recvbuf |> cdev
+                DistributedUtils.__reduce!(backend, sendbuf_, recvbuf_, op, cdev; root)
+                recvbuf .= dev(recvbuf_)
+                return recvbuf
+            end
+        end
+    end
 end
 
 end
