@@ -1,7 +1,7 @@
 # Imagenet training script based on https://github.com/pytorch/examples/blob/main/imagenet/main.py
 using Boltz, Lux, Zygote
-using Augmentor, Configurations, Dates, FileIO, Functors, MLUtils, OneHotArrays, Optimisers,
-      Random, Setfield, SimpleConfig, Statistics
+using Augmentor, Configurations, Dates, FileIO, Functors, Images, MLUtils, OneHotArrays,
+      Optimisers, Random, Setfield, SimpleConfig, Statistics
 import FLoops: ThreadedEx
 import Metalhead
 import MPI, NCCL
@@ -93,7 +93,7 @@ function construct(cfg::OptimizerConfig)
     end
 
     if is_distributed()
-        opt = DistribtedUtils.DistributedOptimizer(backend, opt)
+        opt = DistributedUtils.DistributedOptimizer(backend, opt)
     end
 
     return opt, scheduler
@@ -241,7 +241,7 @@ function main(cfg::ExperimentConfig)
         (loss, st, stats), back = Zygote.pullback(
             p -> loss_function(model, p, st, (x, y)), ps)
         t_forward, t = time() - t, time()
-        gs = back((one(loss) / total_workers(), nothing, nothing))[1]
+        gs = back((one(loss) / total_workers, nothing, nothing))[1]
         t_backward, t = time() - t, time()
         opt_state, ps = Optimisers.update!(opt_state, ps, gs)
         t_opt = time() - t

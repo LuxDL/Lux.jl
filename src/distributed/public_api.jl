@@ -232,7 +232,7 @@ end
 
 function DistributedDataContainer(backend::AbstractLuxDistributedBackend, data)
     total_size = length(data)
-    split_across = total_length(backend)
+    split_across = total_workers(backend)
     size_per_worker = Int(ceil(total_size / split_across))
 
     partitions = collect(Iterators.partition(1:total_size, size_per_worker))
@@ -268,9 +268,8 @@ end
 
 Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
 
-function Optimisers.adjust!(opt::DistributedOptimizer, args...; kwargs...)
-    return DistributedOptimizer(
-        opt.backend, Optimisers.adjust!(opt.opt, args...; kwargs...))
+function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
+    return DistributedOptimizer(opt.backend, Optimisers._adjust(opt.opt, nt))
 end
 
 end

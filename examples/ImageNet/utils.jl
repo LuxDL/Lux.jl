@@ -70,8 +70,8 @@ function load_checkpoint(fname::String)
         # NOTE(@avik-pal): ispath is failing for symlinks?
         return JLD2[:state]
     catch
-        @warn """$fname could not be loaded. This might be because the file is absent or is
-                corrupt. Proceeding by returning `nothing`."""
+        @warn "$fname could not be loaded. This might be because the file is absent or is \
+               corrupt. Proceeding by returning `nothing`."
         return nothing
     end
 end
@@ -140,7 +140,7 @@ function (meter::AverageMeter)(val, n::Int)
     s = val * n
     if is_distributed()
         v = [s, typeof(val)(n)]
-        v = FluxMPI.MPIExtensions.allreduce!(v, +, FluxMPI.MPI.COMM_WORLD)
+        v = DistributedUtils.allreduce!(backend, v, +)
         s = v[1]
         n = Int(v[2])
     end
