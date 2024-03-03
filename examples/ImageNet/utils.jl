@@ -20,6 +20,7 @@ function reclaim_all()
     GC.gc(true)
     LuxCUDA.functional() && CUDA.reclaim()
     LuxAMDGPU.functional() && AMDGPU.reclaim()
+    return
 end
 
 # Loss Function

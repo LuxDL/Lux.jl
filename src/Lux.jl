@@ -13,6 +13,7 @@ PrecompileTools.@recompile_invalidations begin
     using GPUArraysCore: GPUArraysCore
     using LinearAlgebra: LinearAlgebra
     using Markdown: @doc_str
+    using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport
     using Setfield: Setfield, @set!
