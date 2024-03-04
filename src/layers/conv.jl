@@ -722,7 +722,11 @@ function ConvTranspose(
         use_bias::Bool=true, groups=1, allow_fast_activation::Bool=true) where {N}
     stride = _expand(Val(N), stride)
     dilation = _expand(Val(N), dilation)
-    pad = _calc_padding(pad, k, dilation, stride)
+    pad = if pad isa SamePad
+        _calc_padding(pad, k .- stride .+ 1, dilation, stride)
+    else
+        _calc_padding(pad, k, dilation, stride)
+    end
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     return ConvTranspose{N, use_bias, length(pad)}(

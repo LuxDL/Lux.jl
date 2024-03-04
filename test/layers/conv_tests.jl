@@ -661,6 +661,17 @@ end
         @test occursin("groups=2", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))
         @test occursin("2 => 4", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))
 
+        @testset "SamePad size mismatch LuxDL/Lux.jl#534" begin
+            layer = ConvTranspose((3,), 2 => 1; pad=SamePad(), stride=2)
+            __display(layer)
+            x = ones(Float32, 2, 2, 1) |> aType
+            ps, st = Lux.setup(rng, layer) .|> device
+
+            y = first(layer(x, ps, st))
+            @test size(y) == (4, 1, 1)
+            @jet layer(x, ps, st) opt_broken=true
+        end
+
         @testset "Catch Channel Mismatch Early: LuxDL/Lux.jl#455" begin
             layer = ConvTranspose((4, 4), 42 => 16; stride=2, pad=1)
 
