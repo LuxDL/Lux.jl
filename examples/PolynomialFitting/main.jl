@@ -36,8 +36,8 @@ with_theme(theme_web()) do
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
-        strokecolor=:black, strokewidth=1)
+    s = scatter!(ax, x[1, :], y[1, :]; markersize=8,
+        color=:orange, strokecolor=:black, strokewidth=1)
 
     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
 
@@ -103,8 +103,8 @@ with_theme(theme_web()) do
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
-        strokecolor=:black, strokewidth=1)
+    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8,
+        color=:orange, strokecolor=:black, strokewidth=1)
     s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8,
         color=:green, strokecolor=:black, strokewidth=1)
 
