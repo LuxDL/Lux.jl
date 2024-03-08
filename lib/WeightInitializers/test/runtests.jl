@@ -114,6 +114,20 @@ const GROUP = get(ENV, "GROUP", "All")
             @test eltype(cl(rng, 4, 2)) == Float32
         end
 
+        @testset "Kwargs types" for T in (
+            Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+            if (T <: Real)
+                @test eltype(truncated_normal(T, 2, 5; mean=0, std=1, lo=-2, hi=2)) == T
+                @test eltype(orthogonal(T, 2, 5; gain=1.0)) == T
+            end
+            @test eltype(glorot_uniform(T, 2, 5; gain=1.0)) == T
+            @test eltype(glorot_normal(T, 2, 5; gain=1.0)) == T
+            @test eltype(kaiming_uniform(T, 2, 5; gain=sqrt(2))) == T
+            @test eltype(kaiming_normal(T, 2, 5; gain=sqrt(2))) == T
+            @test eltype(identity_init(T, 2, 5; gain=1.0)) == T
+            @test eltype(sparse_init(T, 2, 5; sparsity=0.5, std=0.01)) == T
+        end
+
         @testset "kaiming" begin
             # kaiming_uniform should yield a kernel in range [-sqrt(6/n_out), sqrt(6/n_out)]
             # and kaiming_normal should yield a kernel with stddev ~= sqrt(2/n_out)
