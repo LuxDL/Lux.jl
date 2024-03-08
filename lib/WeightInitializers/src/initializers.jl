@@ -36,7 +36,8 @@ artificial intelligence and statistics_. 2010.
 """
 function glorot_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=1) where {T <: Number}
-    scale = T(gain) * sqrt(T(24) / sum(_nfan(dims...)))
+    gain = gain isa T ? gain : convert(T, gain)
+    scale = gain * sqrt(T(24) / sum(_nfan(dims...)))
     return (rand(rng, T, dims...) .- T(1 // 2)) .* scale
 end
 
@@ -56,6 +57,7 @@ artificial intelligence and statistics_. 2010.
 """
 function glorot_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=1) where {T <: Number}
+    gain = gain isa T ? gain : convert(T, gain)
     std = T(gain) * sqrt(T(2) / sum(_nfan(dims...)))
     return randn(rng, T, dims...) .* std
 end
@@ -75,6 +77,7 @@ vision_. 2015.
 """
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
+    gain = gain isa T ? gain : convert(T, gain)
     bound = √T(3) * gain / sqrt(T(first(_nfan(dims...))))
     return (rand(rng, T, dims...) .- T(1 // 2)) .* 2 * bound
 end
@@ -94,6 +97,7 @@ vision_. 2015.
 """
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
+    gain = gain isa T ? gain : convert(T, gain)
     std = gain / sqrt(T(first(_nfan(dims...))))
     return randn(rng, T, dims...) .* std
 end
@@ -111,6 +115,10 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate."
     end
+    mean = mean isa T ? mean : convert(T, mean)
+    std = std isa T ? std : convert(T, std)
+    lo = lo isa T ? lo : convert(T, lo)
+    hi = hi isa T ? hi : convert(T, hi)
     l = _norm_cdf((lo - mean) / std)
     u = _norm_cdf((hi - mean) / std)
     xs = rand(rng, T, dims...)
@@ -153,6 +161,7 @@ ICLR 2014, https://arxiv.org/abs/1312.6120
 function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=T(1.0)) where {T <: Number}
     @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
+    gain = gain isa T ? gain : convert(T, gain)
 
     if length(dims) == 2
         rows, cols = dims
@@ -233,6 +242,7 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         throw(ArgumentError("Only 2-dimensional outputs are supported for sparse initialization."))
     end
 
+    std = std isa T ? std : convert(T, std)
     rows, cols = dims
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
@@ -305,6 +315,7 @@ identity_tensor = identity_init(MersenneTwister(123),
 """
 function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
+    gain = gain isa T ? gain : convert(T, gain)
     if length(dims) == 1
         # Bias initialization
         return zeros(T, dims...)
