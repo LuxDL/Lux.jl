@@ -39,7 +39,6 @@ end
 
 function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
-    gain = gain isa T ? gain : convert(T, gain)
     if length(dims) == 1
         # Bias initialization
         return CUDA.zeros(T, dims...)
