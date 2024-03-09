@@ -15,7 +15,8 @@ makedocs(; sitename="Lux",
     linkcheck=true,
     linkcheck_ignore=["https://turing.ml/stable/",
         "https://turing.ml/stable/tutorials/03-bayesian-neural-network/"],
-    format=DocumenterVitepress.MarkdownVitepress(; repo = "github.com/LuxDL/Lux.jl", devbranch = "dev", deploy_url = "lux.csail.mit.edu"),
+    format=DocumenterVitepress.MarkdownVitepress(;
+        repo="github.com/LuxDL/Lux.jl", devbranch="dev", deploy_url="lux.csail.mit.edu"),
     draft=false,
     source="src",
     build=joinpath(@__DIR__, "build"))

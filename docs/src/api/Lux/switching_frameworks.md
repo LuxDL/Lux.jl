@@ -9,12 +9,10 @@ CurrentModule = Lux
 `Flux.jl` has been around in the Julia ecosystem for a long time and has a large userbase,
 hence we provide a way to convert `Flux` models to `Lux` models.
 
-:::tip
+!!! tip
 
-Accessing these functions require manually loading `Flux`, i.e., `using Flux` must be
-present somewhere in the code for these to be used.
-
-:::
+    Accessing these functions require manually loading `Flux`, i.e., `using Flux` must be
+    present somewhere in the code for these to be used.
 
 ```@docs
 Lux.adapt(::FromFluxAdaptor, l)
@@ -29,12 +27,10 @@ See [this blog post](https://julialang.org/blog/2022/04/simple-chains/) for more
 This section describes how to convert `Lux` models to `SimpleChains` models while
 preserving the [layer interface](@ref lux-interface).
 
-:::tip
+!!! tip
 
-Accessing these functions require manually loading `SimpleChains`, i.e.,
-`using SimpleChains` must be present somewhere in the code for these to be used.
-
-:::
+    Accessing these functions require manually loading `SimpleChains`, i.e.,
+    `using SimpleChains` must be present somewhere in the code for these to be used.
 
 ```@docs
 Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
