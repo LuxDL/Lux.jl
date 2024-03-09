@@ -17,26 +17,31 @@ BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl",
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
 ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl"]
 
-TUTORIALS = [collect(Iterators.product(["beginner"], BEGINNER_TUTORIALS))...,
-    collect(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS))...,
-    collect(Iterators.product(["advanced"], ADVANCED_TUTORIALS))...]
-
-@info "Installing and Precompiling Tutorial Dependencies"
+TUTORIALS = [collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
+    collect(enumerate(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS)))...,
+    collect(enumerate(Iterators.product(["advanced"], ADVANCED_TUTORIALS)))...]
 
 const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
-
 mkpath(storage_dir)
 
-try
-    pmap(TUTORIALS) do (d, p)
-        p_ = get_example_path(p)
-        name = first(split(p, '/'))
+@info "Starting tutorial build"
 
-        pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
+try
+    pmap(TUTORIALS) do (i, (d, p))
+        println("Running tutorial $(i): $(p) on worker $(myid())")
+        OUTPUT = joinpath(@__DIR__, "src", "tutorials")
+        p_ = get_example_path(p)
+        name = "$(i)_$(first(rsplit(p, "/")))"
         tutorial_proj = dirname(p_)
+        pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
         lux_path = joinpath(@__DIR__, "..")
 
-        withenv("PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path) do
+        withenv("JULIA_DEBUG" => "Literate",
+            "PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path,
+            "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%",
+            "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d),
+            "EXAMPLE_PATH" => p_, "EXAMPLE_NAME" => name,
+            "JULIA_NUM_THREADS" => Threads.nthreads()) do
             cmd = `$(Base.julia_cmd()) --color=yes --project=$(tutorial_proj) -e \
                 'using Pkg;
                     io=open(ENV["PKG_LOG_PATH"], "w");
@@ -47,28 +52,6 @@ try
                     close(io)'`
             @info "Running Command: $(cmd)"
             run(cmd)
-            return
-        end
-        return
-    end
-catch e
-    rmprocs(workers()...)
-    @error e
-end
-
-@info "Starting tutorial build"
-
-try
-    pmap(enumerate(TUTORIALS)) do (i, (d, p))
-        println("Running tutorial $(i): $(p) on worker $(myid())")
-        OUTPUT = joinpath(@__DIR__, "src", "tutorials")
-        p_ = get_example_path(p)
-        name = "$(i)_$(first(rsplit(p, "/")))"
-        tutorial_proj = dirname(p_)
-        withenv("JULIA_DEBUG" => "Literate",
-            "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%",
-            "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d), "EXAMPLE_PATH" => p_,
-            "EXAMPLE_NAME" => name, "JULIA_NUM_THREADS" => Threads.nthreads()) do
             cmd = `$(Base.julia_cmd()) --color=yes --project=$(tutorial_proj) -e \
                 'using Literate;
                     function preprocess(path, str)
@@ -77,7 +60,7 @@ try
                         return new_str * appendix_code
                     end;
                     Literate.markdown(ENV["EXAMPLE_PATH"], ENV["OUTPUT_DIRECTORY"];
-                        execute=false, name=ENV["EXAMPLE_NAME"],  # FIXME: execute = true
+                        execute=true, name=ENV["EXAMPLE_NAME"],
                         flavor=Literate.DocumenterFlavor(),
                         preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]))'`
             @info "Running Command: $(cmd)"

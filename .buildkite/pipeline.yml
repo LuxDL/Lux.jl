@@ -174,7 +174,14 @@ steps:
           dirs:
             - src
             - ext
+      - sv-oss/node-n#v0.1.2:
+          node-version: v20
     command: |
+      echo "+++ :node: Instantiate NPM"
+      cd docs/
+      npm i
+      cd ..
+
       julia --project --code-coverage=user --color=yes --threads=auto -e '
         println("--- :julia: Instantiating project")
         using Pkg

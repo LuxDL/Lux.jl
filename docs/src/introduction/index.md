@@ -16,11 +16,6 @@ Alternatively, you can also do
 import Pkg; Pkg.add("Lux")
 ```
 
-!!! tip
-
-    The Julia Compiler is always improving. As such, we recommend using the latest stable
-    version of Julia instead of the LTS.
-
 ## Quickstart
 
 !!! tip "Pre-Requisites"

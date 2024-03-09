@@ -10,18 +10,18 @@ hero:
   actions:
     - theme: brand
       text: Tutorials
-      link: /dev/tutorials/
+      link: /tutorials/index
     - theme: alt
       text: Ecosystem
-      link: /dev/ecosystem
+      link: /ecosystem
     - theme: alt
       text: API Reference 📚
-      link: /dev/api/Lux/layers
+      link: /api/Lux/layers
     - theme: alt
       text: View on GitHub
       link: https://github.com/LuxDL/Lux.jl
   image:
-    src: /lux-logo.svg
+    src: /logo.png
     alt: Lux.jl
 
 features:

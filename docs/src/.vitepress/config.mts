@@ -40,11 +40,11 @@ export default defineConfig({
         },
         nav: [
             { text: 'Home', link: '/' },
-            { text: 'Getting Started', link: '/introduction' },
+            { text: 'Getting Started', link: '/introduction/index' },
             { text: 'Ecosystem', link: '/ecosystem' },
-            { text: 'Tutorials', link: '/tutorials' },
+            { text: 'Tutorials', link: '/tutorials/index' },
             { text: 'Manual', link: '/manual/interface' },
-            { text: 'API', link: '/api' }
+            { text: 'API', link: '/api/Lux/layers' }
         ],
 
         sidebar: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
