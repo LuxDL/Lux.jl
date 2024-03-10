@@ -162,7 +162,7 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     end
 
     if rows < cols
-        return permutedims(orthogonal(rng, T, cols, rows; T(gain)))
+        return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
     end
 
     mat = randn(rng, T, rows, cols)
