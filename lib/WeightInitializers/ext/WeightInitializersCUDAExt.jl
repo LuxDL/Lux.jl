@@ -30,7 +30,7 @@ function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
     rows, cols = dims
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
-    sparse_array = randn(rng, T, dims...) .* std
+    sparse_array = randn(rng, T, dims...) .* T(std)
     sparse_array[1:num_zeros, :] .= CUDA.zero(T)
 
     return CUDA.@allowscalar mapslices(shuffle, sparse_array, dims=1)
@@ -46,7 +46,7 @@ function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         rows, cols = dims
         mat = CUDA.zeros(T, rows, cols)
         diag_indices = 1:min(rows, cols)
-        CUDA.fill!(view(mat, diag_indices, diag_indices), gain)
+        CUDA.fill!(view(mat, diag_indices, diag_indices), T(gain))
         return CUDA.circshift(mat, shift)
     else
         # Convolution or more dimensions
@@ -56,7 +56,7 @@ function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         #we should really find a better way to do this
         CUDA.@allowscalar for i in 1:min(nin, nout)
             index = (centers..., i, i)
-            weights[index...] = gain
+            weights[index...] = T(gain)
         end
         return CUDA.circshift(weights, (ntuple(d -> 0, length(dims) - 2)..., shift, shift))
     end

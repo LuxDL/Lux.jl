@@ -75,7 +75,7 @@ vision_. 2015.
 """
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
-    bound = √T(3) * gain / sqrt(T(first(_nfan(dims...))))
+    bound = √T(3) * T(gain) / sqrt(T(first(_nfan(dims...))))
     return (rand(rng, T, dims...) .- T(1 // 2)) .* 2 * bound
 end
 
@@ -94,7 +94,7 @@ vision_. 2015.
 """
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
-    std = gain / sqrt(T(first(_nfan(dims...))))
+    std = T(gain) / sqrt(T(first(_nfan(dims...))))
     return randn(rng, T, dims...) .* std
 end
 
@@ -111,13 +111,13 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate."
     end
-    l = _norm_cdf((lo - mean) / std)
-    u = _norm_cdf((hi - mean) / std)
+    l = _norm_cdf((T(lo) - T(mean)) / T(std))
+    u = _norm_cdf((T(hi) - T(mean)) / T(std))
     xs = rand(rng, T, dims...)
     broadcast!(xs, xs) do x
         x = x * 2(u - l) + (2l - 1)
         x = erfinv(x)
-        return clamp(x * std * √2 + mean, lo, hi)
+        return clamp(x * T(std) * √2 + T(mean), T(lo), T(hi))
     end
     return xs
 end
@@ -162,7 +162,7 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     end
 
     if rows < cols
-        return permutedims(orthogonal(rng, T, cols, rows; gain))
+        return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
     end
 
     mat = randn(rng, T, rows, cols)
@@ -236,7 +236,7 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     rows, cols = dims
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
-    sparse_array = randn(rng, T, dims...) .* std
+    sparse_array = randn(rng, T, dims...) .* T(std)
     sparse_array[1:num_zeros, :] .= zero(T)
     return mapslices(shuffle, sparse_array; dims=1)
 end
@@ -313,7 +313,7 @@ function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         rows, cols = dims
         mat = zeros(T, rows, cols)
         for i in 1:min(rows, cols)
-            mat[i, i] = gain
+            mat[i, i] = T(gain)
         end
         return circshift(mat, shift)
     else
@@ -323,7 +323,7 @@ function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         weights = zeros(T, dims...)
         for i in 1:min(nin, nout)
             index = (centers..., i, i)
-            weights[index...] = gain
+            weights[index...] = T(gain)
         end
         return circshift(weights, (ntuple(d -> 0, length(dims) - 2)..., shift, shift))
     end
