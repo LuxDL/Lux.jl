@@ -138,7 +138,7 @@ end
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform,
-          init_bias=zeros32, bias::Bool=true)
+          init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
 
 Create a traditional fully connected layer, whose forward pass is given by:
 `y = activation.(weight * x .+ bias)`
