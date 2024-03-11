@@ -322,19 +322,25 @@ get_device(::AbstractArray) = LuxCPUDevice()
 
 # Adapt Interface
 abstract type AbstractLuxDeviceAdaptor end
+abstract type AbstractLuxGPUDeviceAdaptor <: AbstractLuxDeviceAdaptor end
 
 struct LuxCPUAdaptor <: AbstractLuxDeviceAdaptor end
-struct LuxCUDAAdaptor{D} <: AbstractLuxDeviceAdaptor
+struct LuxCUDAAdaptor{D} <: AbstractLuxGPUDeviceAdaptor
     device::D
 end
-struct LuxAMDGPUAdaptor{D} <: AbstractLuxDeviceAdaptor
+struct LuxAMDGPUAdaptor{D} <: AbstractLuxGPUDeviceAdaptor
     device::D
 end
-struct LuxMetalAdaptor <: AbstractLuxDeviceAdaptor end
+struct LuxMetalAdaptor <: AbstractLuxGPUDeviceAdaptor end
 
 adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
 adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
 adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
+
+# Prevent Ambiguity
+for T in (LuxAMDGPUAdaptor, LuxCUDAAdaptor, LuxMetalAdaptor)
+    @eval adapt_storage(to::$(T), x::AbstractRange) = adapt(to, collect(x))
+end
 
 _isbitsarray(::AbstractArray{<:Number}) = true
 _isbitsarray(::AbstractArray{T}) where {T} = isbitstype(T)
