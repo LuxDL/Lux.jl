@@ -318,7 +318,16 @@ end
 Returns the device of the array `x`. Trigger Packages must be loaded for this to return the
 correct device.
 """
-get_device(::AbstractArray) = LuxCPUDevice()
+function get_device(x::AbstractArray)
+    if hasmethod(parent, Tuple{typeof(x)})
+        parent_x = parent(x)
+        parent_x === x && return LuxCPUDevice()
+        return get_device(parent_x)
+    end
+    return LuxCPUDevice()
+end
+
+CRC.@non_differentiable get_device(::Any...)
 
 # Adapt Interface
 abstract type AbstractLuxDeviceAdaptor end
