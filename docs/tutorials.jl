@@ -87,5 +87,5 @@ try
     end
 catch e
     rmprocs(workers()...)
-    @error e
+    rethrow(e)
 end

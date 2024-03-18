@@ -1,6 +1,6 @@
 module LuxComponentArraysExt
 
-using ComponentArrays, Functors, Lux, Optimisers
+using Adapt, ComponentArrays, Functors, Lux, Optimisers
 import TruncatedStacktraces: @truncate_stacktrace
 import ChainRulesCore as CRC
 

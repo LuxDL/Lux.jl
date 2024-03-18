@@ -7,7 +7,15 @@ import Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
 import Optimisers
 
 function __fix_input_dims_simplechain(layers::Vector, input_dims)
-    return SimpleChains.SimpleChain(input_dims, layers...)
+    L = Tuple(layers)
+    return SimpleChains.SimpleChain{typeof(input_dims), typeof(L)}(input_dims, L)
+end
+
+function __fix_input_dims_simplechain(layers, input_dims)
+    @warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this \
+           might fail. Please consider using `Chain` directly (potentially with \
+           `disable_optimizations = true`)."
+    return __fix_input_dims_simplechain([layers], input_dims)
 end
 
 __equivalent_simplechains_fn(::typeof(Lux.relu)) = SimpleChains.relu
@@ -74,19 +82,5 @@ function NNlib.logsoftmax!(y::SimpleChains.StrideArray{T1, 2},
     SimpleChains.logsoftmax!(y, m, x)
     return y
 end
-
-# Nicer Interactions with Optimisers.jl
-# function Optimisers._setup(opt::Optimisers.AbstractRule,
-#         ps::Union{SimpleChains.StrideArray, SimpleChains.PtrArray}; cache)
-#     ℓ = Leaf(rule, init(rule, x))
-#     if isbits(x)
-#       cache[nothing] = nothing  # just to disable the warning
-#       ℓ
-#     else
-#       cache[x] = ℓ
-#     end
-#     error(1)
-#     return Optimisers.setup(opt, ps .- ps)
-# end
 
 end
