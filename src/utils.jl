@@ -189,6 +189,9 @@ end
 struct LuxEltypeAdaptor{T} end
 
 (l::LuxEltypeAdaptor)(x) = fmap(adapt(l), x)
+function (l::LuxEltypeAdaptor)(x::AbstractArray{T}) where {T}
+    return isbitstype(T) ? adapt(l, x) : map(adapt(l), x)
+end
 
 function Adapt.adapt_storage(
         ::LuxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}) where {T <: AbstractFloat}

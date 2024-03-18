@@ -21,6 +21,41 @@ TUTORIALS = [collect(Iterators.product(["beginner"], BEGINNER_TUTORIALS))...,
     collect(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS))...,
     collect(Iterators.product(["advanced"], ADVANCED_TUTORIALS))...]
 
+@info "Installing and Precompiling Tutorial Dependencies"
+
+const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
+
+mkpath(storage_dir)
+
+try
+    pmap(TUTORIALS) do (d, p)
+        p_ = get_example_path(p)
+        name = first(split(p, '/'))
+
+        pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
+        tutorial_proj = dirname(p_)
+        lux_path = joinpath(@__DIR__, "..")
+
+        withenv("PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path) do
+            cmd = `$(Base.julia_cmd()) --color=yes --project=$(tutorial_proj) -e \
+                'using Pkg;
+                    io=open(ENV["PKG_LOG_PATH"], "w");
+                    Pkg.develop(; path=ENV["LUX_PATH"], io);
+                    Pkg.instantiate(; io);
+                    Pkg.precompile(; io);
+                    eval(Meta.parse("using " * join(keys(Pkg.project().dependencies), ", ")));
+                    close(io)'`
+            @info "Running Command: $(cmd)"
+            run(cmd)
+            return
+        end
+        return
+    end
+catch e
+    rmprocs(workers()...)
+    @error e
+end
+
 @info "Starting tutorial build"
 
 try
