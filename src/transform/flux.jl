@@ -12,7 +12,7 @@ going to be supported.
 
 ## Keyword Arguments
 
-  - `preserve_ps_st`: Set to `true` to preserve the states and parameters of the l. This
+  - `preserve_ps_st`: Set to `true` to preserve the states and parameters of the layer. This
     attempts the best possible way to preserve the original model. But it might fail. If you
     need to override possible failures, set `force_preserve` to `true`.
 
@@ -51,7 +51,7 @@ API internally.
 :::warning
 
 Lux was written to overcome the limitations of `destructure` + `Flux`. It is recommended
-to rewrite your l in Lux instead of using this layer.
+to rewrite your layer in Lux instead of using this layer.
 
 :::
 
@@ -79,7 +79,7 @@ end
 """
     Adapt.adapt(from::FromFluxAdaptor, L)
 
-Adapt a Flux model `l` to Lux model. See [`FromFluxAdaptor`](@ref) for more details.
+Adapt a Flux model `L` to Lux model. See [`FromFluxAdaptor`](@ref) for more details.
 """
 function Adapt.adapt(from::FromFluxAdaptor, L)
     if Base.get_extension(@__MODULE__, :LuxFluxExt) === nothing
