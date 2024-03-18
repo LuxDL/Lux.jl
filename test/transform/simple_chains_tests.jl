@@ -47,4 +47,21 @@
     gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
+
+    @testset "Single Layer Conversion: LuxDL/Lux.jl#545" begin
+        lux_model = Dense(10 => 5)
+
+        adaptor = ToSimpleChainsAdaptor((static(10),))
+
+        simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly (potentially with `disable_optimizations = true`)." adaptor(lux_model)
+
+        ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
+
+        x = randn(Float32, 10, 3)
+        @test size(first(simple_chains_model(x, ps, st))) == (5, 3)
+
+        gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
+        @test size(gs[1]) == size(x)
+        @test length(gs[2].params) == length(ps.params)
+    end
 end
