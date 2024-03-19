@@ -1,6 +1,7 @@
 module LuxTrackerExt
 
 using ADTypes, ChainRulesCore, Functors, Lux, Setfield, Tracker
+using ArrayInterface: ArrayInterface
 
 # Type Piracy: Need to upstream
 Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)
@@ -30,6 +31,18 @@ function Lux.Experimental.compute_gradients(::AutoTracker, objective_function::F
     @set! ts.states = st
     grads = fmap(Tracker.grad, ps_tracked)
     return grads, loss, stats, ts
+end
+
+# AoS to SoA conversion
+function Lux.apply(
+        m::Lux.AbstractExplicitLayer, x::AbstractArray{<:Tracker.TrackedReal}, ps, st)
+    @warn "Lux.apply(m::Lux.AbstractExplicitLayer, \
+           x::AbstractArray{<:Tracker.TrackedReal}, ps, st) input was corrected to \
+           Lux.apply(m::Lux.AbstractExplicitLayer, x::Tracker.TrackedArray}, ps, st).\n\n\
+           1. If this was not the desired behavior overload the dispatch on `m`.\n\n\
+           2. This might have performance implications. Check which layer was causing this \
+              problem using `Lux.Experimental.@debug_mode`." maxlog=1
+    return Lux.apply(m, ArrayInterface.aos_to_soa(x), ps, st)
 end
 
 end

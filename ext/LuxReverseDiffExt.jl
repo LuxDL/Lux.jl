@@ -1,6 +1,7 @@
 module LuxReverseDiffExt
 
 using ADTypes, Lux, Functors, ReverseDiff, Setfield
+using ArrayInterface: ArrayInterface
 
 Lux.__value(x::AbstractArray{<:ReverseDiff.TrackedReal}) = ReverseDiff.value.(x)
 Lux.__value(x::ReverseDiff.TrackedArray) = ReverseDiff.value(x)
@@ -16,5 +17,21 @@ function Lux.Experimental.compute_gradients(::AutoReverseDiff, objective_functio
     @set! ts.states = st
     return grads, loss, stats, ts
 end
+
+# AoS to SoA conversion
+function Lux.apply(
+        m::Lux.AbstractExplicitLayer, x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st)
+    @warn "Lux.apply(m::Lux.AbstractExplicitLayer, \
+           x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st) input was corrected to \
+           Lux.apply(m::Lux.AbstractExplicitLayer, x::ReverseDiff.TrackedArray}, ps, \
+           st).\n\n\
+           1. If this was not the desired behavior overload the dispatch on `m`.\n\n\
+           2. This might have performance implications. Check which layer was causing this \
+              problem using `Lux.Experimental.@debug_mode`." maxlog=1
+    return Lux.apply(m, reshape(ArrayInterface.aos_to_soa(x), size(x)), ps, st)
+end
+
+## Prevent an infinite loop
+Lux.apply(m::Lux.AbstractExplicitLayer, x::ReverseDiff.TrackedArray, ps, st) = m(x, ps, st)
 
 end
