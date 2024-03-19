@@ -138,7 +138,7 @@ end
 
 ## Perform inference.
 N = 5000
-ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4; adtype = AutoTracker()), N)
+ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4; adtype=AutoTracker()), N)
 
 # Now we extract the parameter samples from the sampled chain as θ (this is of size
 # `5000 x 20` where `5000` is the number of iterations and `20` is the number of
