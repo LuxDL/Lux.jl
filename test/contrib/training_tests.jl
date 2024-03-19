@@ -41,7 +41,9 @@ end
 
         x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
-        for ad in (AutoZygote(), AutoTracker())
+        for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff())
+            ongpu && ad isa AutoReverseDiff && continue
+
             grads, _, _, _ = Lux.Experimental.compute_gradients(
                 ad, _loss_function, x, tstate)
             tstate_ = Lux.Experimental.apply_gradients(tstate, grads)

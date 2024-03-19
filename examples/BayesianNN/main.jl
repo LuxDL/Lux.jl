@@ -23,9 +23,6 @@ using Lux, Turing, CairoMakie, Random, Tracker, Functors, MakiePublication, Line
 ## Sampling progress
 Turing.setprogress!(true);
 
-## Use reverse_diff due to the number of parameters in neural networks
-Turing.setadbackend(:tracker)
-
 # ## Generating data
 
 # Our goal here is to use a Bayesian neural network to classify points in an artificial dataset. The code below generates data points arranged in a box-like pattern and displays a graph of the dataset we'll be working with.
@@ -129,7 +126,7 @@ end
     parameters ~ MvNormal(zeros(nparameters), Diagonal(abs2.(sig .* ones(nparameters))))
 
     ## Forward NN to make predictions
-    preds, st = nn(xs, vector_to_parameters(parameters, ps), st)
+    preds, st = Lux.apply(nn, xs, vector_to_parameters(parameters, ps), st)
 
     ## Observe each prediction.
     for i in 1:length(ts)
@@ -141,7 +138,7 @@ end
 
 ## Perform inference.
 N = 5000
-ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4), N)
+ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4; adtype=AutoTracker()), N)
 
 # Now we extract the parameter samples from the sampled chain as θ (this is of size
 # `5000 x 20` where `5000` is the number of iterations and `20` is the number of
