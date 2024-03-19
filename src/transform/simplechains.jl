@@ -43,8 +43,16 @@ x = randn(Float32, 28, 28, 1, 1)
 simple_chains_model(x, ps, st)
 ```
 """
-@concrete struct ToSimpleChainsAdaptor <: AbstractFromLuxAdaptor
-    input_dims
+struct ToSimpleChainsAdaptor{ID} <: AbstractFromLuxAdaptor
+    input_dims::ID
+
+    function ToSimpleChainsAdaptor(input_dims)
+        input_dims isa Number && (input_dims = (input_dims,))
+        if input_dims isa Tuple{Vararg{Integer}}
+            throw(ArgumentError("`input_dims` must be a Tuple of `static` integers."))
+        end
+        return new{typeof(input_dims)}(input_dims)
+    end
 end
 
 """
