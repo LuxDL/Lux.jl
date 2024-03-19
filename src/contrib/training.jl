@@ -90,7 +90,7 @@ A 4-Tuple containing:
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
 """
-function compute_gradients(ad::ADTypes.AbstractADType, ::Function, _, ::TrainState)
+function compute_gradients(ad::ADTypes.AbstractADType, ::F, _, ::TrainState) where {F}
     return __maybe_implemented_compute_gradients(ad)
 end
 
@@ -98,9 +98,10 @@ function __maybe_implemented_compute_gradients(::T) where {T <: ADTypes.Abstract
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
 end
 
-function __maybe_implemented_compute_gradients(::ADTypes.AutoZygote)
-    throw(ArgumentError("Load `Zygote` with `using Zygote`/`import Zygote` before using this function!"))
-end
-function __maybe_implemented_compute_gradients(::ADTypes.AutoTracker)
-    throw(ArgumentError("Load `Tracker` with `using Tracker`/`import Tracker` before using this function!"))
+for package in (:Zygote, :Tracker, :ReverseDiff)
+    adtype = Symbol(:Auto, package)
+    @eval function __maybe_implemented_compute_gradients(::ADTypes.$(adtype))
+        throw(ArgumentError("Load `$(package)` with `using $(package)`/`import $(package)` \
+                             before using this function!"))
+    end
 end
