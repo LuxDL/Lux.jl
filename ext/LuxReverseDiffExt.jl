@@ -3,9 +3,6 @@ module LuxReverseDiffExt
 using ADTypes, Lux, Functors, ReverseDiff, Setfield
 using ArrayInterface: ArrayInterface
 
-Lux.__value(x::AbstractArray{<:ReverseDiff.TrackedReal}) = ReverseDiff.value.(x)
-Lux.__value(x::ReverseDiff.TrackedArray) = ReverseDiff.value(x)
-
 function Lux.Experimental.compute_gradients(::AutoReverseDiff, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}
     tape = ReverseDiff.InstructionTape()

@@ -68,8 +68,7 @@ struct SimpleChainsModelConversionError <: Exception
 end
 
 function SimpleChainsModelConversionError(layer::AbstractExplicitLayer)
-    return SimpleChainsModelConversionError("Conversion to SimpleChains not supported for \
-                                             $(typeof(layer))")
+    return SimpleChainsModelConversionError(lazy"Conversion to SimpleChains not supported for $(typeof(layer))")
 end
 
 function Base.showerror(io::IO, e::SimpleChainsModelConversionError)
@@ -102,8 +101,7 @@ end
 __apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
 
 function __apply_simple_chain(layer, x, ps, dev)
-    throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
-                         detected as $(dev)."))
+    throw(ArgumentError(lazy"`SimpleChains.jl` only supports CPU operations. Current device detected as $(dev)."))
 end
 
 # Workaround for SimpleChains not being able to handle some input types
