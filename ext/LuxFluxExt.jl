@@ -20,8 +20,7 @@ Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 Base.show(io::IO, l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 
 function __from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
-    @warn "Transformation for type $T not implemented. Using `FluxLayer` as a \
-           fallback." maxlog=1
+    @warn lazy"Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
 
     if !preserve_ps_st
         @warn "`FluxLayer` uses the parameters and states of the `layer`. It is not \
@@ -205,13 +204,9 @@ function __from_flux_adaptor(
     out_dims, in_dims = size(l.Wi)
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a \
-                                            `reset!` mechanism which hasn't been \
-                                            extensively tested with `FluxLayer`. Rewrite \
-                                            the model manually to use `RNNCell`."))
+            throw(FluxModelConversionError(lazy"Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
         end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux \
-               and hence not supported. Ignoring these parameters." maxlog=1
+        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
         return RNNCell(
             in_dims => out_dims, l.σ; init_bias=__copy_anonymous_closure(copy(l.b)),
             init_state=__copy_anonymous_closure(copy(l.state0)))
@@ -226,10 +221,7 @@ function __from_flux_adaptor(
     out_dims = _out_dims ÷ 4
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a
-                                            `reset!` mechanism which hasn't been \
-                                            extensively tested with `FluxLayer`. Rewrite \
-                                            the model manually to use `LSTMCell`."))
+            throw(FluxModelConversionError(lazy"Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `LSTMCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux \
                and hence not supported. Ignoring these parameters." maxlog=1
@@ -249,10 +241,7 @@ function __from_flux_adaptor(
     out_dims = _out_dims ÷ 3
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a \
-                                            `reset!` mechanism which hasn't been \
-                                            extensively tested with `FluxLayer`. Rewrite \
-                                            the model manually to use `GRUCell`."))
+            throw(FluxModelConversionError(lazy"Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `GRUCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux \
                and hence not supported. Ignoring these parameters." maxlog=1
@@ -305,7 +294,7 @@ end
 const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
 
 function __from_flux_adaptor(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
-    throw(FluxModelConversionError("Transformation of type $(T) is not supported."))
+    throw(FluxModelConversionError(lazy"Transformation of type $(T) is not supported."))
 end
 
 end

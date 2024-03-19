@@ -425,11 +425,10 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
         ps, st::NamedTuple) where {use_bias}
     d_z, d_x, d_y = size(ps.weight)
     if d_x != size(x, 1) || d_y != size(y, 1)
-        throw(DimensionMismatch("number of rows in data must match `ps.weight`"))
+        throw(DimensionMismatch(lazy"number of rows in data must match `ps.weight`"))
     end
     if size(x, 2) != size(y, 2)
-        throw(DimensionMismatch("data inputs must agree on batch size, got $(size(x, 2)) " *
-                                "and $(size(y, 2))"))
+        throw(DimensionMismatch(lazy"data inputs must agree on batch size, got $(size(x, 2)) and $(size(y, 2))"))
     end
 
     Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))

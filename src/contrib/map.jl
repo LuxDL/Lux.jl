@@ -135,7 +135,7 @@ end
 
 function __fix_tuple_functor(x::Tuple, ::NamedTuple{names}) where {names}
     length(x) == 1 && length(names) > 1 && first(x) isa NamedTuple && return first(x)
-    @assert length(x)==length(names) "length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
+    @assert length(x)==length(names) lazy"length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
     return NamedTuple{names}(x)
 end
 __fix_tuple_functor(x, _) = x

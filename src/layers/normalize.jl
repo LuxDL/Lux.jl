@@ -427,9 +427,7 @@ function initialparameters(
         v = ps_layer[k]
         if k in which_params
             if all(iszero, v)
-                msg = ("Parameter $(k) is completely zero. This will result in NaN gradients. Either remove this parameter from `which_params` or modify the initialization in the actual layer. Typically this is controlled using the `init_$(k)` keyword argument.")
-                # FIXME(@avik-pal): This is not really an ArgumentError
-                throw(ArgumentError(msg))
+                throw(ArgumentError(lazy"Parameter $(k) is completely zero. This will result in NaN gradients. Either remove this parameter from `which_params` or modify the initialization in the actual layer. Typically this is controlled using the `init_$(k)` keyword argument."))
             end
             dim = wn.dims === nothing ? ndims(v) : wn.dims[i]
             push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v; dims=dim))

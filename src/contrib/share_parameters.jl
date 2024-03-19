@@ -60,33 +60,31 @@ function _safe_update_parameter(ps, lens, new_ps)
     new_ps_st = _parameter_structure(new_ps)
     ps_st = _parameter_structure(get(ps, lens))
     if new_ps_st != ps_st
-        msg = "The structure of the new parameters must be the same as the " *
-              "old parameters for lens $(lens)!!! The new parameters have a structure: " *
-              "$new_ps_st while the old parameters have a structure: $ps_st."
-        msg = msg *
-              " This could potentially be caused since `_parameter_structure` is not" *
-              " appropriately defined for type $(typeof(new_ps))."
+        msg = lazy"The structure of the new parameters must be the same as the old parameters for lens $(lens)!!! The new parameters have a structure: $new_ps_st while the old parameters have a structure: $ps_st. This could potentially be caused since `_parameter_structure` is not appropriately defined for type $(typeof(new_ps))."
         throw(ArgumentError(msg))
     end
     return Setfield.set(ps, lens, new_ps)
 end
 
-_parameter_structure(ps::AbstractArray) = size(ps)
+function _parameter_structure(ps::AbstractArray)
+    Lux._hasmethod(Lux.__named_tuple, Tuple{typeof(ps)}) &&
+        return _parameter_structure(Lux.__named_tuple(ps))
+    return size(ps)
+end
 _parameter_structure(::Number) = 1
 function _parameter_structure(ps::NamedTuple{F}) where {F}
     return NamedTuple{F}(map(_parameter_structure, values(ps)))
 end
 function _parameter_structure(ps)
-    hasmethod(__named_tuple, Tuple{typeof(ps)}) &&
-        return _parameter_structure(__named_tuple(ps))
+    Lux._hasmethod(Lux.__named_tuple, Tuple{typeof(ps)}) &&
+        return _parameter_structure(Lux.__named_tuple(ps))
     return fmap(_parameter_structure, ps)
 end
 
 function _assert_disjoint_sharing_list(sharing)
     for i in 1:length(sharing), j in (i + 1):length(sharing)
         if !isdisjoint(sharing[i], sharing[j])
-            throw(ArgumentError("sharing[$i] ($(sharing[i])) and sharing[$j] " *
-                                "($(sharing[j])) must be disjoint"))
+            throw(ArgumentError(lazy"sharing[$i] ($(sharing[i])) and sharing[$j] ($(sharing[j])) must be disjoint"))
         end
     end
 end

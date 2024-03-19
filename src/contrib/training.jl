@@ -95,13 +95,12 @@ function compute_gradients(ad::ADTypes.AbstractADType, ::F, _, ::TrainState) whe
 end
 
 function __maybe_implemented_compute_gradients(::T) where {T <: ADTypes.AbstractADType}
-    throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
+    throw(ArgumentError(lazy"Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
 end
 
 for package in (:Zygote, :Tracker, :ReverseDiff)
     adtype = Symbol(:Auto, package)
     @eval function __maybe_implemented_compute_gradients(::ADTypes.$(adtype))
-        throw(ArgumentError("Load `$(package)` with `using $(package)`/`import $(package)` \
-                             before using this function!"))
+        throw(ArgumentError(lazy"Load `$(package)` with `using $(package)`/`import $(package)` before using this function!"))
     end
 end

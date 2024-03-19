@@ -146,8 +146,7 @@ function _conv_transpose_dims(
     batch_size = size(x)[end]
     w_size = size(weight)
     if size(x)[end - 1] != C_out
-        throw(DimensionMismatch("Expected $(C_out) input channels but got \
-                                 $(size(x)[end - 1]) channels."))
+        throw(DimensionMismatch(lazy"Expected $(C_out) input channels but got $(size(x)[end - 1]) channels."))
     end
     # Create DenseConvDims() that looks like the corresponding conv()
     return DenseConvDims(
@@ -177,22 +176,21 @@ in the backward pass.
 # Merging Exotic Types
 _merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
 function _merge(p, nt::NamedTuple)
-    hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(__named_tuple(p), nt)
+    _hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(__named_tuple(p), nt)
     @assert length(p) == 0
     return nt
 end
 function _merge(nt::NamedTuple, p)
-    hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(nt, __named_tuple(p))
+    _hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(nt, __named_tuple(p))
     @assert length(p) == 0
     return nt
 end
 function _merge(x, y)
-    hasmethod(__named_tuple, Tuple{typeof(x)}) && return _merge(__named_tuple(x), y)
-    hasmethod(__named_tuple, Tuple{typeof(y)}) && return _merge(x, __named_tuple(y))
+    _hasmethod(__named_tuple, Tuple{typeof(x)}) && return _merge(__named_tuple(x), y)
+    _hasmethod(__named_tuple, Tuple{typeof(y)}) && return _merge(x, __named_tuple(y))
     length(x) == 0 && return y
     length(y) == 0 && return x
-    throw(ArgumentError("Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define \
-                         `_merge` method for these types."))
+    throw(ArgumentError(lazy"Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define `_merge` method for these types."))
 end
 
 # Utility Functions to Convert Parameter and State Types
@@ -227,9 +225,7 @@ end
 
 # Common incorrect usage
 for f in (f16, f32, f64)
-    warn_msg = "$(f) is not meant to be broadcasted like `$(f).(x)` or `x .|> $(f)`, and \
-                this might give unexpected results and could lead to crashes. Directly use \
-                `$(f)` as `$(f)(x)` or `x |> $(f)` instead."
+    warn_msg = lazy"$(f) is not meant to be broadcasted like `$(f).(x)` or `x .|> $(f)`, and this might give unexpected results and could lead to crashes. Directly use `$(f)` as `$(f)(x)` or `x |> $(f)` instead."
     @eval begin
         function Base.Broadcast.broadcasted(::typeof($(f)), arg1)
             @warn $(warn_msg)
@@ -248,7 +244,7 @@ end
 # Used in freezing
 ## Extend for custom types
 @inline function _pairs(x)
-    hasmethod(__named_tuple, Tuple{typeof(x)}) && return pairs(__named_tuple(x))
+    _hasmethod(__named_tuple, Tuple{typeof(x)}) && return pairs(__named_tuple(x))
     return pairs(x)
 end
 

@@ -84,26 +84,26 @@ CRC.@non_differentiable __any_nan(::Any)
 function __debug_layer(
         ::Val{NC}, ::Val{EC}, layer, x, ps, st, location::String) where {NC, EC}
     CRC.ignore_derivatives() do
-        @info "Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))"
-        @info "Running Layer: $(layer) at location $(location)!"
+        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))"
+        @info lazy"Running Layer: $(layer) at location $(location)!"
     end
     if NC ∈ (:both, :forward)
         __any_nan(x) && throw(DomainError(
-            x, "NaNs detected in input to layer $(layer) at location $(location)"))
+            x, lazy"NaNs detected in input to layer $(layer) at location $(location)"))
         __any_nan(ps) && throw(DomainError(ps,
-            "NaNs detected in parameters of layer $(layer) at location $(location)"))
-        __any_nan(st) && throw(DomainError(
-            st, "NaNs detected in states of layer $(layer) at location $(location)"))
+            lazy"NaNs detected in parameters of layer $(layer) at location $(location)"))
+        __any_nan(st) && throw(DomainError(st,
+            lazy"NaNs detected in states of layer $(layer) at location $(location)"))
     end
     y, st_ = __debug_layer_internal(layer, x, ps, st, location, EC, NC ∈ (:both, :backward))
     CRC.ignore_derivatives() do
-        @info "Output Type: $(typeof(y)) | Output Structure: $(fmap(__size, y))"
+        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(fmap(__size, y))"
     end
     return y, st_
 end
 
 __size(x::AbstractArray) = size(x)
-@generated __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? :(size(x)) : :(nothing)
+@generated __size(x::T) where {T} = _hasmethod(size, Tuple{T}) ? :(size(x)) : :(nothing)
 
 function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
     if EC
@@ -111,7 +111,7 @@ function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
             y, st_ = apply(layer, x, ps, st)
             return y, st_
         catch e
-            @error "Layer $(layer) failed!! This layer is present at location $(location)"
+            @error lazy"Layer $(layer) failed!! This layer is present at location $(location)"
             rethrow()
         end
     else
@@ -125,19 +125,19 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     function ∇__debug_layer_internal_with_checks(Δ)
         if NC
             __any_nan(Δ) && throw(DomainError(Δ,
-                "NaNs detected in pullback input for $(layer) at location $(location)!"))
+                lazy"NaNs detected in pullback input for $(layer) at location $(location)!"))
         end
         if EC
             try
                 gs = ∇__debug_layer_internal(Δ)
             catch e
-                @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)"
+                @error lazy"Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)"
                 rethrow()
             end
             if NC
                 for g in gs
                     __any_nan(g) && throw(DomainError(g,
-                        "NaNs detected in pullback output for $(layer) at location $(location)!"))
+                        lazy"NaNs detected in pullback output for $(layer) at location $(location)!"))
                 end
             end
             return (gs..., CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
@@ -146,7 +146,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             if NC
                 for g in gs
                     __any_nan(g) && throw(DomainError(g,
-                        "NaNs detected in pullback output for $(layer) at location $(location)!"))
+                        lazy"NaNs detected in pullback output for $(layer) at location $(location)!"))
                 end
             end
             return (gs..., CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
