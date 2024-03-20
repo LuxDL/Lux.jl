@@ -2,15 +2,20 @@ module LuxFluxExt
 
 import Flux
 
-using Lux, Random, Optimisers
+using Lux, Random
 import Lux: __from_flux_adaptor, FluxLayer, FluxModelConversionError
 
 __copy_anonymous_closure(x) = (args...) -> x
 
 function FluxLayer(l)
-    p, re = Optimisers.destructure(l)
-    p_ = copy(p)
-    return FluxLayer(l, re, () -> p_)
+    if isdefined(Flux, :destructure)
+        p, re = Flux.destructure(l)
+        p_ = copy(p)
+        return FluxLayer(l, re, () -> p_)
+    else
+        error("`Flux.destructure` not found. Please open an issue on LuxDL/Lux.jl with a \
+               MWE")
+    end
 end
 
 Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)

@@ -5,7 +5,7 @@ import PrecompileTools
 PrecompileTools.@recompile_invalidations begin
     using Reexport
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
-    using LinearAlgebra, Markdown, Random, SparseArrays, Statistics
+    using LinearAlgebra, Markdown, Random, Statistics
     using Adapt, ConcreteStructs, Functors, Setfield
     using ChainRulesCore
     using ArrayInterface, GPUArraysCore

@@ -132,7 +132,7 @@ function train()
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
-        @printf "[%3d/%3d] \t %12s \t Time %.2fs \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
+        @printf "[%3d/%3d] \t %12s \t Time %.5fs \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
     end
 
     println()
