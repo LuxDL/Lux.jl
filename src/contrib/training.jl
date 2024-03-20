@@ -1,4 +1,4 @@
-using ADTypes, ConcreteStructs, Optimisers, Random, Setfield
+using ADTypes, ConcreteStructs, Random, Setfield
 
 """
     TrainState
@@ -19,51 +19,7 @@ Training State containing:
     step::Int
 end
 
-"""
-    TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
-        optimizer::Optimisers.AbstractRule;
-        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
-
-Constructor for `TrainState`.
-
-## Arguments
-
-  - `rng`: Random Number Generator.
-  - `model`: `Lux` model.
-  - `optimizer`: Optimizer from `Optimisers.jl`.
-  - `transform_variables`: Function to transform the variables of the model. Typically used
-    to transfer variables to GPU / CPU.
-
-## Returns
-
-`TrainState` object.
-"""
-function TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
-        optimizer::Optimisers.AbstractRule;
-        transform_variables::Union{Function, Lux.AbstractLuxDevice}=gpu_device())
-    ps, st = Lux.setup(rng, model) .|> transform_variables
-    st_opt = Optimisers.setup(optimizer, ps)
-    return TrainState(model, ps, st, st_opt, 0)
-end
-
-"""
-    apply_gradients(ts::TrainState, grads)
-
-Update the parameters stored in `ts` using the gradients `grads`.
-
-## Arguments
-
-  - `ts`: `TrainState` object.
-  - `grads`: Gradients of the loss function wrt `ts.params`.
-
-## Returns
-
-Updated `TrainState` object.
-"""
-function apply_gradients(ts::TrainState, grads)
-    optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
-    return TrainState(ts.model, ps, ts.states, optimizer_state, ts.step + 1)
-end
+function apply_gradients end
 
 """
     compute_gradients(ad::ADTypes.AbstractADType, objective_function::Function, data,

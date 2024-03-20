@@ -15,8 +15,8 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq, Optimization,
-      OptimizationOptimJL, Random, SciMLSensitivity
-using CairoMakie, MakiePublication
+      OptimizationOptimJL, Printf, Random, SciMLSensitivity
+using CairoMakie
 
 CUDA.allowscalar(false)
 
@@ -209,16 +209,17 @@ prob = ODEProblem(RelativisticOrbitModel, u0, tspan, ode_model_params)
 soln = Array(solve(prob, RK4(); saveat=tsteps, dt, adaptive=false))
 waveform = first(compute_waveform(dt_data, soln, mass_ratio, ode_model_params))
 
-fig = with_theme(theme_web()) do
+begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s = scatter!(ax, tsteps, waveform; markershape=:circle, markeralpha=0.25, alpha=0.5)
+    s = scatter!(ax, tsteps, waveform; markershape=:circle,
+        markersize=12, markeralpha=0.25, alpha=0.5)
 
     axislegend(ax, [[l, s]], ["Waveform Data"])
 
-    return fig
+    fig
 end
 
 # ## Defiing a Neural Network Model
@@ -236,12 +237,14 @@ const nn = Chain(Base.Fix1(broadcast, cos),
     Dense(1 => 32, cos; init_weight=truncated_normal(; std=1e-4)),
     Dense(32 => 32, cos; init_weight=truncated_normal(; std=1e-4)),
     Dense(32 => 2; init_weight=truncated_normal(; std=1e-4)))
-ps, st = Lux.setup(MersenneTwister(), nn)
+ps, st = Lux.setup(Xoshiro(), nn)
 
 # Similar to most DL frameworks, Lux defaults to using `Float32`, however, in this case we
 # need Float64
 
 const params = ComponentArray{Float64}(ps)
+
+const nn_model = StatefulLuxLayer(nn, st)
 
 # Now we define a system of odes which describes motion of point like particle with
 # Newtonian physics, uses
@@ -257,7 +260,7 @@ function ODE_model(u, nn_params, t)
 
     ## In this example we know that `st` is am empty NamedTuple hence we can safely ignore
     ## it, however, in general, we should use `st` to store the state of the neural network.
-    y = 1 .+ first(nn([first(u)], nn_params, st))
+    y = 1 .+ nn_model([first(u)], nn_params)
 
     numer = (1 + e * cos(χ))^2
     denom = M * (p^(3 / 2))
@@ -275,20 +278,22 @@ prob_nn = ODEProblem(ODE_model, u0, tspan, params)
 soln_nn = Array(solve(prob_nn, RK4(); u0, p=params, saveat=tsteps, dt, adaptive=false))
 waveform_nn = first(compute_waveform(dt_data, soln_nn, mass_ratio, ode_model_params))
 
-fig = with_theme(theme_web()) do
+begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s1 = scatter!(ax, tsteps, waveform; markershape=:circle, markeralpha=0.25, alpha=0.5)
+    s1 = scatter!(ax, tsteps, waveform; markershape=:circle, markersize=12,
+        markeralpha=0.25, alpha=0.5, strokewidth=2)
 
     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
-    s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle, markeralpha=0.25, alpha=0.5)
+    s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
+        markersize=12, markeralpha=0.25, alpha=0.5, strokewidth=2)
 
     axislegend(ax, [[l1, s1], [l2, s2]],
         ["Waveform Data", "Waveform Neural Net (Untrained)"]; position=:lb)
 
-    return fig
+    fig
 end
 
 # ## Setting Up for Training the Neural Network
@@ -310,7 +315,7 @@ const losses = Float64[]
 
 function callback(θ, l, pred_waveform)
     push!(losses, l)
-    println("Training || Iteration: $(length(losses)) || Loss: $(l)")
+    @printf "Training %10s Iteration: %5d %10s Loss: %.10f\n" "" length(losses) "" l
     return false
 end
 
@@ -330,13 +335,15 @@ res = Optimization.solve(
 
 # Let us now plot the loss over time
 
-fig = with_theme(theme_web()) do
+begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Iteration", ylabel="Loss")
 
-    lines!(ax, losses; linewidth=2, alpha=0.75)
+    lines!(ax, losses; linewidth=4, alpha=0.75)
+    scatter!(ax, 1:length(losses), losses; markershape=:circle,
+        markersize=12, markeralpha=0.25, strokewidth=2)
 
-    return fig
+    fig
 end
 
 # Finally let us visualize the results
@@ -346,23 +353,25 @@ soln_nn = Array(solve(prob_nn, RK4(); u0, p=res.u, saveat=tsteps, dt, adaptive=f
 waveform_nn_trained = first(compute_waveform(
     dt_data, soln_nn, mass_ratio, ode_model_params))
 
-fig = with_theme(theme_web()) do
+begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s1 = scatter!(ax, tsteps, waveform; markershape=:circle, markeralpha=0.25, alpha=0.5)
+    s1 = scatter!(ax, tsteps, waveform; markershape=:circle,
+        markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
 
     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
-    s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle, markeralpha=0.25, alpha=0.5)
+    s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
+        markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
 
     l3 = lines!(ax, tsteps, waveform_nn_trained; linewidth=2, alpha=0.75)
-    s3 = scatter!(
-        ax, tsteps, waveform_nn_trained; markershape=:circle, markeralpha=0.25, alpha=0.5)
+    s3 = scatter!(ax, tsteps, waveform_nn_trained; markershape=:circle,
+        markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
 
     axislegend(ax, [[l1, s1], [l2, s2], [l3, s3]],
         ["Waveform Data", "Waveform Neural Net (Untrained)", "Waveform Neural Net"];
         position=:lb)
 
-    return fig
+    fig
 end

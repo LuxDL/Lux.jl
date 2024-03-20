@@ -4,7 +4,6 @@ using Lux, Random
 import SimpleChains
 import Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
             __fix_input_dims_simplechain
-import Optimisers
 
 function __fix_input_dims_simplechain(layers::Vector, input_dims)
     L = Tuple(layers)

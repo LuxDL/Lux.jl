@@ -9,13 +9,13 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
-      Optimisers, Random, Setfield, Statistics, Zygote
+using Lux, ADTypes, ComponentArrays, LuxAMDGPU, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
+      Optimisers, Printf, Random, Setfield, Statistics, Zygote
 
 CUDA.allowscalar(false)
 
 # ## Loading Datasets
-function _load_dataset(dset, n_train::Int, n_eval::Int, batchsize::Int)
+function load_dataset(::Type{dset}, n_train::Int, n_eval::Int, batchsize::Int) where {dset}
     imgs, labels = dset(:train)[1:n_train]
     x_train, y_train = reshape(imgs, 28, 28, 1, n_train), onehotbatch(labels, 0:9)
 
@@ -27,7 +27,7 @@ function _load_dataset(dset, n_train::Int, n_eval::Int, batchsize::Int)
 end
 
 function load_datasets(n_train=1024, n_eval=32, batchsize=256)
-    return _load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
+    return load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
 end
 
 # ## Implement a HyperNet Layer
@@ -68,31 +68,24 @@ function create_model()
         Dense(64, Lux.parameterlength(core_network)))
 
     model = HyperNet(weight_generator, core_network)
-
-    rng = Random.default_rng()
-    Random.seed!(rng, 0)
-
-    ps, st = Lux.setup(rng, model) .|> gpu_device()
-
-    return model, ps, st
+    return model
 end
 
 # ## Define Utility Functions
 logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
 
-function loss(data_idx, x, y, model, ps, st)
+function loss(model, ps, st, (data_idx, x, y))
     y_pred, st = model((data_idx, x), ps, st)
-    return logitcrossentropy(y_pred, y), st
+    return logitcrossentropy(y_pred, y), st, (;)
 end
 
-function accuracy(model, ps, st, dataloader, data_idx)
+function accuracy(model, ps, st, dataloader, data_idx, gdev=gpu_device())
     total_correct, total = 0, 0
     st = Lux.testmode(st)
-    dev = gpu_device()
     cpu_dev = cpu_device()
     for (x, y) in dataloader
-        x = x |> dev
-        y = y |> dev
+        x = x |> gdev
+        y = y |> gdev
         target_class = onecold(cpu_dev(y))
         predicted_class = onecold(cpu_dev(model((data_idx, x), ps, st)[1]))
         total_correct += sum(target_class .== predicted_class)
@@ -103,61 +96,61 @@ end
 
 # ## Training
 function train()
-    model, ps, st = create_model()
-
-    ## Training
+    model = create_model()
     dataloaders = load_datasets()
-
-    opt = Adam(0.001f0)
-    st_opt = Optimisers.setup(opt, ps)
 
     dev = gpu_device()
 
-    ### Warmup the Model
-    img, lab = dev(dataloaders[1][1].data[1][:, :, :, 1:1]),
-    dev(dataloaders[1][1].data[2][:, 1:1])
-    loss(1, img, lab, model, ps, st)
-    (l, _), back = pullback(p -> loss(1, img, lab, model, p, st), ps)
-    back((one(l), nothing))
+    rng = Xoshiro(0)
+
+    train_state = Lux.Experimental.TrainState(
+        rng, model, Adam(3.0f-4); transform_variables=dev)
 
     ### Lets train the model
-    nepochs = 9
-    for epoch in 1:nepochs
-        for data_idx in 1:2
-            train_dataloader, test_dataloader = dataloaders[data_idx]
+    nepochs = 10
+    for epoch in 1:nepochs, data_idx in 1:2
+        train_dataloader, test_dataloader = dataloaders[data_idx]
 
-            stime = time()
-            for (x, y) in train_dataloader
-                x = x |> dev
-                y = y |> dev
-                (l, st), back = pullback(p -> loss(data_idx, x, y, model, p, st), ps)
-                gs = back((one(l), nothing))[1]
-                st_opt, ps = Optimisers.update(st_opt, ps, gs)
-            end
-            ttime = time() - stime
-
-            train_acc = round(
-                accuracy(model, ps, st, train_dataloader, data_idx) * 100; digits=2)
-            test_acc = round(
-                accuracy(model, ps, st, test_dataloader, data_idx) * 100; digits=2)
-
-            data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
-
-            println("[$epoch/$nepochs] \t $data_name Time $(round(ttime; digits=2))s \t " *
-                    "Training Accuracy: $(train_acc)% \t Test Accuracy: $(test_acc)%")
+        stime = time()
+        for (x, y) in train_dataloader
+            x = x |> dev
+            y = y |> dev
+            (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
+                AutoZygote(), loss, (data_idx, x, y), train_state)
+            train_state = Lux.Experimental.apply_gradients(train_state, gs)
         end
+        ttime = time() - stime
+
+        train_acc = round(
+            accuracy(model, train_state.parameters, train_state.states,
+                train_dataloader, data_idx, dev) * 100;
+            digits=2)
+        test_acc = round(
+            accuracy(model, train_state.parameters, train_state.states,
+                test_dataloader, data_idx, dev) * 100;
+            digits=2)
+
+        data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
+
+        @printf "[%3d/%3d] \t %12s \t Time %.5fs \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
     end
+
+    println()
 
     for data_idx in 1:2
         train_dataloader, test_dataloader = dataloaders[data_idx]
         train_acc = round(
-            accuracy(model, ps, st, train_dataloader, data_idx) * 100; digits=2)
-        test_acc = round(accuracy(model, ps, st, test_dataloader, data_idx) * 100; digits=2)
+            accuracy(model, train_state.parameters, train_state.states,
+                train_dataloader, data_idx, dev) * 100;
+            digits=2)
+        test_acc = round(
+            accuracy(model, train_state.parameters, train_state.states,
+                test_dataloader, data_idx, dev) * 100;
+            digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
-        println("[FINAL] \t $data_name Training Accuracy: $(train_acc)% \t " *
-                "Test Accuracy: $(test_acc)%")
+        @printf "[FINAL] \t %12s \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" data_name train_acc test_acc
     end
 end
 

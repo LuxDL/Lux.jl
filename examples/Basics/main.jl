@@ -206,7 +206,7 @@ f(x) = x' * x / 2
 ∇f(x) = x  # `∇` can be typed as `\nabla<TAB>`
 v = randn(rng, Float32, 4)
 
-# Let's use AbstractDifferentiation and Zygote to compute the gradients.
+# Let's use ForwardDiff and Zygote to compute the gradients.
 
 println("Actual Gradient: ", ∇f(v))
 println("Computed Gradient via Reverse Mode AD (Zygote): ", only(Zygote.gradient(f, v)))
@@ -313,7 +313,10 @@ opt = Optimisers.Descent(0.01f0)
 opt_state = Optimisers.setup(opt, ps)
 
 # Define the loss function
-mse(model, ps, st, X, y) = sum(abs2, model(X, ps, st)[1] .- y)
+function mse(model, ps, st, X, y)
+    y_pred, st_new = model(X, ps, st)
+    return sum(abs2, y_pred .- y), st_new
+end
 mse(weight, bias, X, y) = sum(abs2, weight * X .+ bias .- y)
 loss_function(ps, X, y) = mse(model, ps, st, X, y)
 
@@ -323,12 +326,13 @@ for i in 1:100
     ## In actual code, don't use globals. But here I will simply for the sake of
     ## demonstration
     global ps, st, opt_state
-    ## Compute the gradient
-    gs = gradient(loss_function, ps, x_samples, y_samples)[1]
+    ## Compute the gradient using the pullback API to update the states
+    (loss, st), pb_f = Zygote.pullback(loss_function, ps, x_samples, y_samples)
+    ## We pass nothing as the seed for `st`, since we don't want to propagate any gradient
+    ## for st
+    gs = pb_f((one(loss), nothing))[1]
     ## Update model parameters
-    opt_state, ps = Optimisers.update(opt_state, ps, gs)
-    if i % 10 == 1 || i == 100
-        println(
-            "Loss Value after $i iterations: ", mse(model, ps, st, x_samples, y_samples))
-    end
+    ## `Optimisers.update` can be used if mutation is not desired
+    opt_state, ps = Optimisers.update!(opt_state, ps, gs)
+    (i % 10 == 1 || i == 100) && println(lazy"Loss Value after $i iterations: $loss")
 end

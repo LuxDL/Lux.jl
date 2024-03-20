@@ -15,7 +15,7 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, MLUtils, Optimisers, Zygote, OneHotArrays, Random, Statistics
+using Lux, ADTypes, MLUtils, Optimisers, Zygote, OneHotArrays, Random, Statistics, Printf
 import MLDatasets: MNIST
 import SimpleChains: static
 
@@ -54,9 +54,9 @@ simple_chains_model = adaptor(lux_model)
 # ## Helper Functions
 logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
 
-function loss(x, y, model, ps, st)
+function loss(model, ps, st, (x, y))
     y_pred, st = model(x, ps, st)
-    return logitcrossentropy(y_pred, y), st
+    return logitcrossentropy(y_pred, y), st, (;)
 end
 
 function accuracy(model, ps, st, dataloader)
@@ -73,34 +73,28 @@ end
 
 # ## Define the Training Loop
 function train(model; rng=Xoshiro(0), kwargs...)
-    ps, st = Lux.setup(rng, model)
-
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
-    opt = Adam(3.0f-4)
-    st_opt = Optimisers.setup(opt, ps)
 
-    ### Warmup the Model
-    img = train_dataloader.data[1][:, :, :, 1:1]
-    lab = train_dataloader.data[2][:, 1:1]
-    loss(img, lab, model, ps, st)
-    (l, _), back = pullback(p -> loss(img, lab, model, p, st), ps)
-    back((one(l), nothing))
+    train_state = Lux.Experimental.TrainState(
+        rng, model, Adam(3.0f-4); transform_variables=identity)
 
     ### Lets train the model
-    nepochs = 9
+    nepochs = 10
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
-            (l, st), back = pullback(loss, x, y, model, ps, st)
-            ### We need to add `nothing`s equal to the number of returned values - 1
-            gs = back((one(l), nothing))[4]
-            st_opt, ps = Optimisers.update(st_opt, ps, gs)
+            (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
+                AutoZygote(), loss, (x, y), train_state)
+            train_state = Lux.Experimental.apply_gradients(train_state, gs)
         end
         ttime = time() - stime
 
-        println("[$epoch/$nepochs] \t Time $(round(ttime; digits=2))s \t Training Accuracy: " *
-                "$(round(accuracy(model, ps, st, train_dataloader) * 100; digits=2))% \t " *
-                "Test Accuracy: $(round(accuracy(model, ps, st, test_dataloader) * 100; digits=2))%")
+        tr_acc = accuracy(
+            model, train_state.parameters, train_state.states, train_dataloader) * 100
+        te_acc = accuracy(
+            model, train_state.parameters, train_state.states, test_dataloader) * 100
+
+        @printf "[%2d/%2d] \t Time %.2fs \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" epoch nepochs ttime tr_acc te_acc
     end
 end
 
