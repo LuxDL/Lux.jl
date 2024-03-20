@@ -48,6 +48,10 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
     end
 end
 
+@inline LuxCore.parameterlength(m::StatefulLuxLayer) = LuxCore.parameterlength(m.model)
+@inline LuxCore.statelength(m::StatefulLuxLayer) = LuxCore.statelength(m.model)
+@inline LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
+
 StatefulLuxLayer(model, st; kwargs...) = StatefulLuxLayer(model, nothing, st; kwargs...)
 function StatefulLuxLayer(model, ps, st; st_fixed_type::Val{ST}=Val(true)) where {ST}
     ST && return StatefulLuxLayer{ST}(model, ps, st, nothing)

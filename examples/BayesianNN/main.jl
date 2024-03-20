@@ -18,7 +18,7 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, Turing, CairoMakie, Random, Tracker, Functors, MakiePublication, LinearAlgebra
+using Lux, Turing, CairoMakie, Random, Tracker, Functors, LinearAlgebra
 
 ## Sampling progress
 Turing.setprogress!(true);
@@ -60,15 +60,11 @@ function plot_data()
     x2 = first.(xt0s)
     y2 = last.(xt0s)
 
-    fig = with_theme(theme_web()) do
-        fig = Figure()
-        ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+    fig = Figure()
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-        scatter!(ax, x1, y1; markersize=8, color=:red, strokecolor=:black, strokewidth=1)
-        scatter!(ax, x2, y2; markersize=8, color=:blue, strokecolor=:black, strokewidth=1)
-
-        return fig
-    end
+    scatter!(ax, x1, y1; markersize=16, color=:red, strokecolor=:black, strokewidth=2)
+    scatter!(ax, x2, y2; markersize=16, color=:blue, strokecolor=:black, strokewidth=2)
 
     return fig
 end
@@ -117,19 +113,21 @@ function vector_to_parameters(ps_new::AbstractVector, ps::NamedTuple)
     return fmap(get_ps, ps)
 end
 
+# To interface with external libraries it is often desirable to use the
+# [`StatefulLuxLayer`](@ref) to automatically handle the neural network states.
+const model = StatefulLuxLayer(nn, st)
+
 ## Specify the probabilistic model.
 @model function bayes_nn(xs, ts)
-    global st
-
     ## Sample the parameters
     nparameters = Lux.parameterlength(nn)
     parameters ~ MvNormal(zeros(nparameters), Diagonal(abs2.(sig .* ones(nparameters))))
 
     ## Forward NN to make predictions
-    preds, st = Lux.apply(nn, xs, vector_to_parameters(parameters, ps), st)
+    preds = Lux.apply(model, xs, vector_to_parameters(parameters, ps))
 
     ## Observe each prediction.
-    for i in 1:length(ts)
+    for i in eachindex(ts)
         ts[i] ~ Bernoulli(preds[i])
     end
 end
@@ -150,7 +148,7 @@ ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4; adtype=AutoTracker()), 
 # ## Prediction Visualization
 
 ## A helper to run the nn through data `x` using parameters `θ`
-nn_forward(x, θ) = first(nn(x, vector_to_parameters(θ, ps), st))
+nn_forward(x, θ) = model(x, vector_to_parameters(θ, ps))
 
 ## Plot the data we have.
 fig = plot_data()
@@ -165,7 +163,7 @@ i = i.I[1]
 x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_forward([x1, x2], θ[i, :])[1] for x1 in x1_range, x2 in x2_range]
-contour!(x1_range, x2_range, Z)
+contour!(x1_range, x2_range, Z; linewidth=3, colormap=:seaborn_bright)
 fig
 
 # The contour plot above shows that the MAP method is not too bad at classifying our data.
@@ -192,7 +190,7 @@ n_end = 1500
 x1_range = collect(range(-6; stop=6, length=25))
 x2_range = collect(range(-6; stop=6, length=25))
 Z = [nn_predict([x1, x2], θ, n_end)[1] for x1 in x1_range, x2 in x2_range]
-contour!(x1_range, x2_range, Z)
+contour!(x1_range, x2_range, Z; linewidth=3, colormap=:seaborn_bright)
 fig
 
 # Suppose we are interested in how the predictive power of our Bayesian neural network
@@ -201,7 +199,7 @@ fig
 
 fig = plot_data()
 Z = [first(nn_forward([x1, x2], θ[1, :])) for x1 in x1_range, x2 in x2_range]
-c = contour!(x1_range, x2_range, Z)
+c = contour!(x1_range, x2_range, Z; linewidth=3, colormap=:seaborn_bright)
 record(fig, "results.gif", 1:250:size(θ, 1)) do i
     fig.current_axis[].title = "Iteration: $i"
     Z = [first(nn_forward([x1, x2], θ[i, :])) for x1 in x1_range, x2 in x2_range]
