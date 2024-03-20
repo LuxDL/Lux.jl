@@ -15,7 +15,7 @@ Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
 using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
-      OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils
+      OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 
@@ -45,18 +45,17 @@ end
 #
 # The NeuralODE is a ContainerLayer, which stores a `model`. The parameters and states of
 # the NeuralODE are same as those of the underlying model.
-struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
+struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
        Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
     solver::So
-    sensealg::Se
     tspan::T
     kwargs::K
 end
 
-function NeuralODE(model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0),
-        sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
-    return NeuralODE(model, solver, sensealg, tspan, kwargs)
+function NeuralODE(
+        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+    return NeuralODE(model, solver, tspan, kwargs)
 end
 
 # OrdinaryDiffEq.jl can deal with non-Vector Inputs! However, certain discrete sensitivities
@@ -68,7 +67,7 @@ function (n::NeuralODE)(x, ps, st)
         return vec(u_)
     end
     prob = ODEProblem{false}(ODEFunction{false}(dudt), vec(x), n.tspan, ps)
-    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st
+    return solve(prob, n.solver; n.kwargs...), st
 end
 
 @views diffeqsol_to_array(l::Int, x::ODESolution) = reshape(last(x.u), (l, :))
@@ -149,9 +148,9 @@ function train(model_function; cpu::Bool=false, kwargs...)
         end
         ttime = time() - stime
 
-        println("[$epoch/$nepochs] \t Time $(round(ttime; digits=2))s \t Training Accuracy: " *
-                "$(round(accuracy(model, ps, st, train_dataloader; dev) * 100; digits=2))% \t " *
-                "Test Accuracy: $(round(accuracy(model, ps, st, test_dataloader; dev) * 100; digits=2))%")
+        tr_acc = accuracy(model, ps, st, train_dataloader; dev)
+        te_acc = accuracy(model, ps, st, test_dataloader; dev)
+        @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
     end
 end
 
@@ -176,26 +175,24 @@ train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true)
 
 # Starting `v0.5.5`, Lux provides a `Lux.Experimental.StatefulLuxLayer` which can be used
 # to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276).
-struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, Se, T, K} <:
+struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
        Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
     solver::So
-    sensealg::Se
     tspan::T
     kwargs::K
 end
 
 function StatefulNeuralODE(
-        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0),
-        sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()), kwargs...)
-    return StatefulNeuralODE(model, solver, sensealg, tspan, kwargs)
+        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+    return StatefulNeuralODE(model, solver, tspan, kwargs)
 end
 
 function (n::StatefulNeuralODE)(x, ps, st)
     st_model = Lux.StatefulLuxLayer(n.model, ps, st)
     dudt(u, p, t) = st_model(u, p)
     prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
-    return solve(prob, n.solver; sensealg=n.sensealg, n.kwargs...), st_model.st
+    return solve(prob, n.solver; n.kwargs...), st_model.st
 end
 
 # ## Train the new Stateful Neural ODE

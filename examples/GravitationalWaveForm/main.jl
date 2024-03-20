@@ -283,8 +283,8 @@ begin
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s1 = scatter!(ax, tsteps, waveform; markershape=:circle,
-        markersize=12, markeralpha=0.25, alpha=0.5, strokewidth=2)
+    s1 = scatter!(ax, tsteps, waveform; markershape=:circle, markersize=12,
+        markeralpha=0.25, alpha=0.5, strokewidth=2)
 
     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
     s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
