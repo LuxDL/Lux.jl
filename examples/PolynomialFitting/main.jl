@@ -12,8 +12,8 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, LuxAMDGPU, LuxCUDA, Optimisers, Random, Statistics, Zygote
-using CairoMakie, MakiePublication
+using Lux, ADTypes, LuxAMDGPU, LuxCUDA, Optimisers, Printf, Random, Statistics, Zygote
+using CairoMakie
 
 # ## Dataset
 
@@ -31,17 +31,17 @@ Random.seed!(rng, 12345)
 (x, y) = generate_data(rng)
 
 # Let's visualize the dataset
-with_theme(theme_web()) do
+begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s = scatter!(ax, x[1, :], y[1, :]; markersize=8,
-        color=:orange, strokecolor=:black, strokewidth=1)
+    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3, color=:blue)
+    s = scatter!(ax, x[1, :], y[1, :]; markersize=12, alpha=0.5,
+        color=:orange, strokecolor=:black, strokewidth=2)
 
     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
 
-    return fig
+    fig
 end
 
 # ## Neural Network
@@ -70,11 +70,11 @@ end
 # First we will create a [`Lux.Experimental.TrainState`](@ref) which is essentially a
 # convenience wrapper over parameters, states and optimizer states.
 
-tstate = Lux.Training.TrainState(rng, model, opt)
+tstate = Lux.Experimental.TrainState(rng, model, opt)
 
 # Now we will use Zygote for our AD requirements.
 
-vjp_rule = Lux.Training.AutoZygote()
+vjp_rule = AutoZygote()
 
 # Finally the training loop.
 
@@ -83,7 +83,9 @@ function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
     for epoch in 1:epochs
         grads, loss, stats, tstate = Lux.Training.compute_gradients(
             vjp, loss_function, data, tstate)
-        println("Epoch: $(epoch) || Loss: $(loss)")
+        if epoch % 50 == 1 || epoch == epochs
+            @printf "Epoch: %3d \t Loss: %.5g\n" epoch loss
+        end
         tstate = Lux.Training.apply_gradients(tstate, grads)
     end
     return tstate
@@ -98,17 +100,17 @@ nothing #hide
 
 # Let's plot the results
 
-with_theme(theme_web()) do
+begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
 
     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8,
-        color=:orange, strokecolor=:black, strokewidth=1)
-    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8,
-        color=:green, strokecolor=:black, strokewidth=1)
+    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=12, alpha=0.5,
+        color=:orange, strokecolor=:black, strokewidth=2)
+    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=12, alpha=0.5,
+        color=:green, strokecolor=:black, strokewidth=2)
 
     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
 
-    return fig
+    fig
 end
