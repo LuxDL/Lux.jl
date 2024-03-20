@@ -330,12 +330,9 @@ for i in 1:100
     (loss, st), pb_f = Zygote.pullback(loss_function, ps, x_samples, y_samples)
     ## We pass nothing as the seed for `st`, since we don't want to propagate any gradient
     ## for st
-    gs = pb_f((one(loss), nothing))
+    gs = pb_f((one(loss), nothing))[1]
     ## Update model parameters
     ## `Optimisers.update` can be used if mutation is not desired
     opt_state, ps = Optimisers.update!(opt_state, ps, gs)
-    if i % 10 == 1 || i == 100
-        println(
-            "Loss Value after $i iterations: ", mse(model, ps, st, x_samples, y_samples))
-    end
+    (i % 10 == 1 || i == 100) && println(lazy"Loss Value after $i iterations: $loss")
 end
