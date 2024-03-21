@@ -223,17 +223,17 @@ end
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
-    return fast_apply_activation!!(d.activation, ps.weight * x .+ vec(ps.bias)), st
+    return fast_bias_activation!!(d.activation, ps.weight * x, vec(ps.bias)), st
 end
 
 @inline function (d::Dense{true})(x::AbstractMatrix, ps, st::NamedTuple)
-    return fast_apply_activation!!(d.activation, ps.weight * x .+ ps.bias), st
+    return fast_bias_activation!!(d.activation, ps.weight * x, ps.bias), st
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
     x_reshaped = reshape(x, size(x, 1), :)
     return (
-        reshape(fast_apply_activation!!(d.activation, ps.weight * x_reshaped .+ ps.bias),
+        reshape(fast_bias_activation!!(d.activation, ps.weight * x_reshaped, ps.bias),
             d.out_dims, size(x)[2:end]...),
         st)
 end
@@ -431,15 +431,9 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
     if use_bias
-<<<<<<< HEAD
-        return apply_bias_activation(b.activation, Wyx, ps.bias), st
-    else
-        return apply_activation(b.activation, Wyx), st
-=======
-        return fast_apply_activation!!(b.activation, Wyx .+ ps.bias), st
+        return fast_bias_activation!!(b.activation, Wyx, ps.bias), st
     else
         return fast_apply_activation!!(b.activation, Wyx), st
->>>>>>> 59b1b62 (Add a faster activation path)
     end
 end
 
