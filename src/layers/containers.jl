@@ -489,42 +489,6 @@ _flatten_model(x) = x
     return Expr(:block, calls...)
 end
 
-@inline ∇applychain(Δ, (proj_ps, pb_f)) = ∇applychain(Δ, proj_ps, pb_f)
-
-@generated function ∇applychain(Δ, proj_ps, pb_f::NamedTuple{fields}) where {fields}
-    N = length(fields)
-    ∂st_symbols = [gensym("∂st") for _ in 1:N]
-    ∂x_symbols = vcat([:∂x], [gensym("∂x") for _ in 1:N])
-    ∂ps_symbols = [gensym("∂ps") for _ in 1:N]
-    gs_symbols = vcat(∂x_symbols[2:(end - 1)], [:Δx])
-    calls = [:((Δx, Δst) = (CRC.unthunk(Δ[1]), CRC.unthunk(Δ[2])))]
-    append!(calls,
-        [:((_, _, $(∂x_symbols[i]), $(∂ps_symbols[i]), $(∂st_symbols[i])) = (pb_f.$(fields[i]))((
-             $(gs_symbols[i]), Δst.$(fields[i])))) for i in N:-1:1])
-    push!(calls, :(∂ps = proj_ps(NamedTuple{$fields}((($(∂ps_symbols...),))))))
-    push!(calls, :(∂st = NamedTuple{$fields}((($(∂st_symbols...),)))))
-    push!(calls, :(return NoTangent(), NoTangent(), ∂x, ∂ps, ∂st))
-    return Expr(:block, calls...)
-end
-
-@generated function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(applychain), layers::NamedTuple{fields},
-        x::AbstractArray, ps, st::NamedTuple{fields}) where {fields}
-    N = length(fields)
-    x_symbols = vcat([:x], [gensym("x") for _ in 1:N])
-    st_symbols = [gensym("st") for _ in 1:N]
-    pb_f_symbols = [gensym("pb_f") for _ in 1:N]
-    calls = [:((($(x_symbols[i + 1]), $(st_symbols[i])), $(pb_f_symbols[i])) = CRC.rrule_via_ad(
-                 cfg, Lux.apply, layers.$(fields[i]),
-                 $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i]))) for i in 1:N]
-    push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(pb_f = NamedTuple{$fields}((($(pb_f_symbols...),)))))
-    push!(calls, :(proj_ps = CRC.ProjectTo(ps)))
-    push!(
-        calls, :(return ($(x_symbols[N + 1]), st), Base.Fix2(∇applychain, (proj_ps, pb_f))))
-    return Expr(:block, calls...)
-end
-
 Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
 
 Base.getindex(c::Chain, i::Int) = c.layers[i]
