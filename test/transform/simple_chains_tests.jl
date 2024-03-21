@@ -9,6 +9,14 @@
 
     simple_chains_model = adaptor(lux_model)
 
+    rng = Random.Xoshiro()
+    ps_rng = []
+    for i ∈ 1:2
+        ps, st = Lux.setup(Lux.replicate(rng), simple_chains_model)
+        push!(ps_rng, ps)
+    end
+    @test allequal(ps_rng)
+
     ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
 
     x = randn(Float32, 28, 28, 1, 1)
