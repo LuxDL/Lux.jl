@@ -1,6 +1,8 @@
 # This file temporarily exists here. It will be moved to LuxLib.jl in the future.
 using FastBroadcast: @..
 
+# TODO: Needs Tracker & ReverseDiff rrules
+
 # Adapted from NNlib.jl
 # This just saves typing `only.(only.(` many times:
 @inline function __only_derivative(y, f::F, x) where {F}
@@ -13,8 +15,7 @@ struct NotaNumber <: Real end
 
 @inline fast_apply_activation!!(::typeof(identity), x::AbstractArray) = x
 @inline function fast_apply_activation!!(f::F, x::AbstractArray) where {F}
-    @.. x = f(x)
-    return x
+    return fast_fast_broadcast!!(f, x)
 end
 
 function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_apply_activation!!),
@@ -36,4 +37,67 @@ function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_apply_ac
     end
 
     return CRC.rrule_via_ad(cfg, broadcast, f, x)
+end
+
+# Bias Activation Fused
+function fast_bias_activation!!(f::F, x::AbstractArray, b::AbstractArray) where {F}
+    f === identity && return fast_broadcast!!(+, x, b)
+    return fast_broadcast!!(f ∘ +, x, b)
+end
+
+function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_bias_activation!!),
+        f::F, x::AbstractArray{T, N}, b::AbstractArray) where {F, T, N}
+    # Summing over ndims(x)+1 is a trick to make b_dims type-stable
+    dims = ntuple(d -> ifelse(size(b, d) == 1, d, N + 1), N)
+    ∇bias(dx) = reshape(sum(dx; dims), size(b))
+
+    if f === identity
+        Ω = fast_bias_activation!!(f, x, b)
+        ∇identity_shortcut(Δ) = NoTangent(), NoTangent(), Δ, ∇bias(Δ)
+        return Ω, ∇identity_shortcut
+    end
+
+    if isconcretetype(Core.Compiler._return_type(
+        __only_derivative, Tuple{T, F, NotaNumber}))
+        Ω = fast_bias_activation!!(f, x, b)
+        @inline function ∇fast_bias_activation!!_fast(Δ)
+            ∂x = __only_derivative.(Ω, f, NotaNumber()) .* CRC.unthunk(Δ)
+            return NoTangent(), NoTangent(), ∂x, ∇bias(∂x)
+        end
+        return Ω, ∇fast_bias_activation!!_fast
+    end
+
+    return CRC.rrule_via_ad(cfg, fast_broadcast!!, f ∘ +, x, b)
+end
+
+# FastBroadcast.jl is efficient only for same axes arrays
+@inline fast_broadcast!!(f::F, x) where {F} = fast_fast_broadcast!!(f, x)
+@inline function fast_broadcast!!(f::F, x, ys...) where {F}
+    ax = axes(x)
+    all(x -> axes(x) == ax, x) && return fast_fast_broadcast!!(f, x, ys...)
+    return fast_generic_broadcast!!(f, x, ys...)
+end
+
+## Just use non-mutating version for the broadcast
+function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(fast_broadcast!!), f::F, x, ys...) where {F}
+    return CRC.rrule_via_ad(cfg, broadcast, f, x, ys...)
+end
+
+@inline function fast_fast_broadcast!!(f::F, x, ys...) where {F}
+    ArrayInterface.can_setindex(x) && return @..(x=f(x, ys...))
+    return @..(f(x, ys...))
+end
+
+@inline function fast_generic_broadcast!!(f::F, x, ys...) where {F}
+    if all(ArrayInterface.fast_scalar_indexing, (x, ys...))
+        bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, ys...))
+        ArrayInterface.can_setindex(x) || return copy(bc)
+        @simd ivdep for idx in eachindex(bc)
+            @inbounds x[idx] = bc[idx]
+        end
+        return x
+    end
+    ArrayInterface.can_setindex(x) && return @.(x=f(x, ys...))
+    return @.(f(x, ys...))
 end
