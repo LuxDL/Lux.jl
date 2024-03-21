@@ -36,6 +36,9 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 # Utilities
 include("utils.jl")
 
+# Backend Functionality
+include("fast_broadcast.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
