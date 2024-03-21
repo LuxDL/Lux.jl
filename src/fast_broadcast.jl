@@ -1,8 +1,6 @@
 # This file temporarily exists here. It will be moved to LuxLib.jl in the future.
 using FastBroadcast: @..
 
-# TODO: Needs Tracker & ReverseDiff rrules
-
 # Adapted from NNlib.jl
 # This just saves typing `only.(only.(` many times:
 @inline function __only_derivative(y, f::F, x) where {F}
@@ -29,7 +27,7 @@ function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_apply_ac
     if isconcretetype(Core.Compiler._return_type(
         __only_derivative, Tuple{T, F, NotaNumber}))
         Ω = fast_apply_activation!!(f, x)
-        @inline function ∇fast_apply_activation!!_fast(Δ)
+        ∇fast_apply_activation!!_fast = @closure Δ -> begin
             ∂x = __only_derivative.(Ω, f, NotaNumber()) .* CRC.unthunk(Δ)
             return NoTangent(), NoTangent(), ∂x
         end
@@ -60,7 +58,7 @@ function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_bias_act
     if isconcretetype(Core.Compiler._return_type(
         __only_derivative, Tuple{T, F, NotaNumber}))
         Ω = fast_bias_activation!!(f, x, b)
-        @inline function ∇fast_bias_activation!!_fast(Δ)
+        ∇fast_bias_activation!!_fast = @closure Δ -> begin
             ∂x = __only_derivative.(Ω, f, NotaNumber()) .* CRC.unthunk(Δ)
             return NoTangent(), NoTangent(), ∂x, ∇bias(∂x)
         end
@@ -74,7 +72,7 @@ end
 @inline fast_broadcast!!(f::F, x) where {F} = fast_fast_broadcast!!(f, x)
 @inline function fast_broadcast!!(f::F, x, ys...) where {F}
     ax = axes(x)
-    all(x -> axes(x) == ax, x) && return fast_fast_broadcast!!(f, x, ys...)
+    all(x -> axes(x) == ax, ys) && return fast_fast_broadcast!!(f, x, ys...)
     return fast_generic_broadcast!!(f, x, ys...)
 end
 
