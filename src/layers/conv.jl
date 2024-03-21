@@ -117,13 +117,13 @@ end
 @inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(
         x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
+    return fast_apply_activation!!(c.activation, _conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(
         x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return apply_bias_activation(c.activation, _conv(x, ps.weight, cdims), ps.bias), st
+    return fast_apply_activation!!(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -620,13 +620,13 @@ end
 @inline function (c::CrossCor{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(
         DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
-    return apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
+    return fast_apply_activation!!(c.activation, _conv(x, ps.weight, cdims)), st
 end
 
 @inline function (c::CrossCor{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = DenseConvDims(
         DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
-    return apply_bias_activation(c.activation, _conv(x, ps.weight, cdims), ps.bias), st
+    return fast_apply_activation!!(c.activation, _conv(x, ps.weight, cdims) .+ ps.bias), st
 end
 
 function Base.show(io::IO, l::CrossCor)
@@ -752,14 +752,14 @@ end
         x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = _conv_transpose_dims(
         x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    return apply_activation(c.activation, _conv_transpose(x, ps.weight, cdims)), st
+    return fast_apply_activation!!(c.activation, _conv_transpose(x, ps.weight, cdims)), st
 end
 
 @inline function (c::ConvTranspose{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = _conv_transpose_dims(
         x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
-        apply_bias_activation(c.activation, _conv_transpose(x, ps.weight, cdims), ps.bias),
+        fast_apply_activation!!(c.activation, _conv_transpose(x, ps.weight, cdims) .+ ps.bias),
         st)
 end
 

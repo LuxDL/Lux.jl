@@ -130,7 +130,7 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         @set! st.running_var = stats.running_var
     end
 
-    return apply_activation(BN.activation, y), st
+    return fast_apply_activation!!(BN.activation, y), st
 end
 
 function Base.show(io::IO, l::BatchNorm)
@@ -229,7 +229,7 @@ parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     y = groupnorm(x, _getproperty(ps, Val(:scale)),
         _getproperty(ps, Val(:bias)); GN.groups, GN.epsilon)
-    return apply_activation(GN.activation, y), st
+    return fast_apply_activation!!(GN.activation, y), st
 end
 
 function Base.show(io::IO, l::GroupNorm)
@@ -335,7 +335,7 @@ parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     y, stats = instancenorm(x, _getproperty(ps, Val(:scale)),
         _getproperty(ps, Val(:bias)); IN.epsilon, st.training)
-    return apply_activation(IN.activation, y), st
+    return fast_apply_activation!!(IN.activation, y), st
 end
 
 function Base.show(io::IO, l::InstanceNorm)
@@ -554,7 +554,7 @@ end
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     y = layernorm(
         x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); l.dims, l.epsilon)
-    return apply_activation(l.activation, y), st
+    return fast_apply_activation!!(l.activation, y), st
 end
 
 function Base.show(io::IO, l::LayerNorm)
