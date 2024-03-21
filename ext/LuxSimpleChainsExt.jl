@@ -67,7 +67,7 @@ end
 __to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionError(layer))
 
 function Lux.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
-    return (; params=Array(SimpleChains.init_params(layer.layer; rng=rng)))
+    return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
 end
 
 # Some type-piracy for nicer interaction with NNlib
