@@ -11,7 +11,7 @@
 
     rng = Random.Xoshiro()
     ps_rng = []
-    for i ∈ 1:2
+    for i in 1:2
         ps, st = Lux.setup(Lux.replicate(rng), simple_chains_model)
         push!(ps_rng, ps)
     end
