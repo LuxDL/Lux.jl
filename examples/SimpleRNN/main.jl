@@ -16,7 +16,8 @@ Pkg.instantiate(; io=pkg_io) #hide
 Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
 Pkg.precompile(; io=pkg_io) #hide
 close(pkg_io) #hide
-using Lux, LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Random, Statistics
+using ADTypes, Lux, LuxAMDGPU, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Printf, Random,
+      Statistics
 
 # ## Dataset
 
@@ -114,20 +115,13 @@ function binarycrossentropy(y_pred, y_true)
     return mean(@. -xlogy(y_true, y_pred) - xlogy(1 - y_true, 1 - y_pred))
 end
 
-function compute_loss(x, y, model, ps, st)
+function compute_loss(model, ps, st, (x, y))
     y_pred, st = model(x, ps, st)
-    return binarycrossentropy(y_pred, y), y_pred, st
+    return binarycrossentropy(y_pred, y), st, (; y_pred=y_pred)
 end
 
 matches(y_pred, y_true) = sum((y_pred .> 0.5f0) .== y_true)
 accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
-
-# Finally lets create an optimiser given the model parameters.
-
-function create_optimiser(ps)
-    opt = Optimisers.Adam(0.01f0)
-    return Optimisers.setup(opt, ps)
-end
 
 # ## Training the Model
 
@@ -137,41 +131,37 @@ function main()
 
     ## Create the model
     model = SpiralClassifier(2, 8, 1)
-    rng = Random.default_rng()
-    Random.seed!(rng, 0)
-    ps, st = Lux.setup(rng, model)
+    rng = Xoshiro(0)
 
     dev = gpu_device()
-    ps = ps |> dev
-    st = st |> dev
-
-    ## Create the optimiser
-    opt_state = create_optimiser(ps)
+    train_state = Lux.Experimental.TrainState(
+        rng, model, Adam(0.01f0); transform_variables=dev)
 
     for epoch in 1:25
         ## Train the model
         for (x, y) in train_loader
             x = x |> dev
             y = y |> dev
-            (loss, y_pred, st), back = pullback(compute_loss, x, y, model, ps, st)
-            gs = back((one(loss), nothing, nothing))[4]
-            opt_state, ps = Optimisers.update(opt_state, ps, gs)
 
-            println("Epoch [$epoch]: Loss $loss")
+            gs, loss, _, train_state = Lux.Experimental.compute_gradients(
+                AutoZygote(), compute_loss, (x, y), train_state)
+            train_state = Lux.Experimental.apply_gradients(train_state, gs)
+
+            @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss
         end
 
         ## Validate the model
-        st_ = Lux.testmode(st)
+        st_ = Lux.testmode(train_state.states)
         for (x, y) in val_loader
             x = x |> dev
             y = y |> dev
-            (loss, y_pred, st_) = compute_loss(x, y, model, ps, st_)
-            acc = accuracy(y_pred, y)
-            println("Validation: Loss $loss Accuracy $acc")
+            loss, st_, ret = compute_loss(model, train_state.parameters, st_, (x, y))
+            acc = accuracy(ret.y_pred, y)
+            @printf "Validation: Loss %4.5f Accuracy %4.5f\n" loss acc
         end
     end
 
-    return (ps, st) |> cpu_device()
+    return (train_state.parameters, train_state.states) |> cpu_device()
 end
 
 ps_trained, st_trained = main()
