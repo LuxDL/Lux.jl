@@ -52,10 +52,10 @@ ps, st = Lux.setup(rng, model) .|> device
 x = rand(rng, Float32, 128, 2) |> device
 
 # Run the model
-y, st = Lux.apply(model, x, ps, st)
+y, st = model(x, ps, st)
 
 # Gradients
-gs = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
+gs = gradient(p -> sum(model(x, p, st)[1]), ps)[1]
 
 # Optimization
 st_opt = Optimisers.setup(Optimisers.Adam(0.0001), ps)
