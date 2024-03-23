@@ -9,9 +9,7 @@ end
 
 function Base.showerror(io::IO, e::LuxCompactModelParsingException)
     print(io, "LuxCompactModelParsingException(", e.msg, ")")
-    if !TruncatedStacktraces.VERBOSE[]
-        println(io, TruncatedStacktraces.VERBOSE_MSG)
-    end
+    return
 end
 
 """

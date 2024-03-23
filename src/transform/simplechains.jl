@@ -81,9 +81,7 @@ end
 
 function Base.showerror(io::IO, e::SimpleChainsModelConversionError)
     print(io, "SimpleChainsModelConversionError(", e.msg, ")")
-    if !TruncatedStacktraces.VERBOSE[]
-        println(io, TruncatedStacktraces.VERBOSE_MSG)
-    end
+    return
 end
 
 """
