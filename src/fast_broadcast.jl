@@ -3,6 +3,8 @@ using FastBroadcast: @..
 
 # Adapted from NNlib.jl
 # This just saves typing `only.(only.(` many times:
+# `sigmoid_fast` fails if we use the fast path, don't know why we just avoid the fast
+# gradient path for it
 @inline function __only_derivative(y, f::F, x) where {F}
     return only(only(CRC.derivatives_given_output(y, f, x)))
 end
@@ -24,7 +26,7 @@ function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_apply_ac
     end
 
     # Fast path: it is now safe to overwrite x, since this is not needed for gradient of σ
-    if isconcretetype(Core.Compiler._return_type(
+    if f !== sigmoid_fast && isconcretetype(Core.Compiler._return_type(
         __only_derivative, Tuple{T, F, NotaNumber}))
         Ω = fast_apply_activation!!(f, x)
         ∇fast_apply_activation!!_fast = @closure Δ -> begin
@@ -55,7 +57,7 @@ function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_bias_act
         return Ω, ∇identity_shortcut
     end
 
-    if isconcretetype(Core.Compiler._return_type(
+    if f !== sigmoid_fast && isconcretetype(Core.Compiler._return_type(
         __only_derivative, Tuple{T, F, NotaNumber}))
         Ω = fast_bias_activation!!(f, x, b)
         ∇fast_bias_activation!!_fast = @closure Δ -> begin
