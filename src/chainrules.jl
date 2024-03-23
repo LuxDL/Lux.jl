@@ -27,13 +27,13 @@ function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) wh
 end
 
 function CRC.rrule(::typeof(_eachslice), x, d::Val)
-    return _eachslice(x, d), Δ -> (NoTangent(), ∇_eachslice(Δ, x, d), NoTangent())
+    return _eachslice(x, d), @closure(Δ->(NoTangent(), ∇_eachslice(Δ, x, d), NoTangent()))
 end
 
 # RNN Helpers
 ## Taken from https://github.com/FluxML/Flux.jl/blob/1f82da4bfa051c809f7f3ce7dd7aeb43be515b14/src/layers/recurrent.jl#L9
 function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
-    function multigate_pullback(dy)
+    function ∇multigate(dy)
         dx = map!(zero, similar(x, float(eltype(x)), axes(x)), x)
         foreach(multigate(dx, c), dy) do dxᵢ, dyᵢ
             dyᵢ isa AbstractZero && return
@@ -41,7 +41,7 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
         end
         return (NoTangent(), dx, NoTangent())
     end
-    return multigate(x, c), multigate_pullback
+    return multigate(x, c), ∇multigate
 end
 
 # foldl_init
@@ -49,7 +49,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
         ::typeof(foldl_init), op::G, x::Tuple, init) where {G}
     x_arr = [x...]
     y, ∇foldl_init_internal = CRC.rrule_via_ad(cfg, foldl_init, op, x_arr, init)
-    function ∇foldl_init(Δ)
+    ∇foldl_init = @closure Δ -> begin
         ∂foldl_init, ∂op, ∂x, ∂init = ∇foldl_init_internal(Δ)
         ∂x = Tuple(∂x)
         return ∂foldl_init, ∂op, ∂x, ∂init
@@ -60,20 +60,23 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init),
         op::G, x::AbstractArray, init) where {G}
     list, start = x, init
-    hobbits = Vector{Any}(undef, length(list))  # Unfornately Zygote needs this
-    accumulate!(hobbits, list; init=(start, nothing)) do (a, _), b
-        return CRC.rrule_via_ad(cfg, op, a, b)
+    accum_func = @closure (a, b) -> CRC.rrule_via_ad(cfg, op, first(a), b)
+    accum_func_inner = @closure (x1, x2) -> begin
+        (_d1, dc, _d3) = x1
+        (_val, back) = x2
+        return back(dc)
     end
+    hobbits = Vector{Any}(undef, length(list))  # Unfornately Zygote needs this for CUDA
+    accumulate!(accum_func, hobbits, list; init=(start, nothing))
     y = first(last(hobbits))
     ax = axes(x)
-    project = ProjectTo(x)
-    function ∇foldl_init(Δ)
-        trio = accumulate(reverse(hobbits); init=(0, Δ, 0)) do (_, dc, _), (_, back)
-            return back(dc)
-        end
+    project = ProjectTo.(x)
+    ∇foldl_init = Δ -> begin
+        trio = accumulate(accum_func_inner, reverse(hobbits); init=(0, Δ, 0))
         ∂op = sum(first, trio)
-        ∂x = map(last, reverse(trio))
-        return NoTangent(), ∂op, project(reshape(∂x, ax)), trio[end][2]
+        ∂x = reshape(map(last, reverse(trio)), ax)
+        return (NoTangent(), ∂op,
+            [proj(∂xᵢ) for (proj, ∂xᵢ) in zip(project, ∂x)], last(trio)[2])
     end
     return y, ∇foldl_init
 end
