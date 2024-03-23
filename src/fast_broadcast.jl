@@ -14,26 +14,28 @@ end
 struct NotaNumber <: Real end
 
 @inline fast_apply_activation!!(::typeof(identity), x::AbstractArray) = x
+@inline fast_apply_activation!!(::typeof(sigmoid_fast), x::AbstractArray) = sigmoid_fast.(x)
+@inline fast_apply_activation!!(::typeof(sigmoid), x::AbstractArray) = sigmoid.(x)
 @inline function fast_apply_activation!!(f::F, x::AbstractArray) where {F}
+    return __fast_apply_activation_impl!!(f, x)
+end
+
+@inline function __fast_apply_activation_impl!!(f::F, x::AbstractArray) where {F}
     return fast_fast_broadcast!!(f, x)
 end
 
-function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_apply_activation!!),
+function CRC.rrule(
+        cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(__fast_apply_activation_impl!!),
         f::F, x::AbstractArray{T}) where {F, T}
-    if f === identity
-        ∇identity_shortcut(Δ) = NoTangent(), NoTangent(), Δ
-        return x, ∇identity_shortcut
-    end
-
     # Fast path: it is now safe to overwrite x, since this is not needed for gradient of σ
-    if f !== sigmoid_fast && isconcretetype(Core.Compiler._return_type(
+    if isconcretetype(Core.Compiler._return_type(
         __only_derivative, Tuple{T, F, NotaNumber}))
-        Ω = fast_apply_activation!!(f, x)
-        ∇fast_apply_activation!!_fast = @closure Δ -> begin
+        Ω = __fast_apply_activation_impl!!(f, x)
+        __∇fast_apply_activation_impl!!_fast = @closure Δ -> begin
             ∂x = __only_derivative.(Ω, f, NotaNumber()) .* CRC.unthunk(Δ)
             return NoTangent(), NoTangent(), ∂x
         end
-        return Ω, ∇fast_apply_activation!!_fast
+        return Ω, __∇fast_apply_activation_impl!!_fast
     end
 
     return CRC.rrule_via_ad(cfg, broadcast, f, x)
@@ -42,29 +44,32 @@ end
 # Bias Activation Fused
 function fast_bias_activation!!(f::F, x::AbstractArray, b::AbstractArray) where {F}
     f === identity && return fast_broadcast!!(+, x, b)
-    return fast_broadcast!!(f ∘ +, x, b)
+    return __fast_bias_activation_impl!!(f, x, b)
+end
+function fast_bias_activation!!(::typeof(sigmoid_fast), x::GPUArraysCore.AbstractGPUArray,
+        b::GPUArraysCore.AbstractGPUArray)
+    return __fast_bias_activation_impl!!(sigmoid, x, b)
 end
 
-function CRC.rrule(cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(fast_bias_activation!!),
+function __fast_bias_activation_impl!!(f::F, x::AbstractArray, b::AbstractArray) where {F}
+    return fast_fast_broadcast!!(f ∘ +, x, b)
+end
+
+function CRC.rrule(
+        cfg::RuleConfig{>:CRC.HasReverseMode}, ::typeof(__fast_bias_activation_impl!!),
         f::F, x::AbstractArray{T, N}, b::AbstractArray) where {F, T, N}
     # Summing over ndims(x)+1 is a trick to make b_dims type-stable
     dims = ntuple(d -> ifelse(size(b, d) == 1, d, N + 1), N)
     ∇bias(dx) = reshape(sum(dx; dims), size(b))
 
-    if f === identity
-        Ω = fast_bias_activation!!(f, x, b)
-        ∇identity_shortcut(Δ) = NoTangent(), NoTangent(), Δ, ∇bias(Δ)
-        return Ω, ∇identity_shortcut
-    end
-
     if f !== sigmoid_fast && isconcretetype(Core.Compiler._return_type(
         __only_derivative, Tuple{T, F, NotaNumber}))
         Ω = fast_bias_activation!!(f, x, b)
-        ∇fast_bias_activation!!_fast = @closure Δ -> begin
+        __∇fast_bias_activation_impl!!_fast = @closure Δ -> begin
             ∂x = __only_derivative.(Ω, f, NotaNumber()) .* CRC.unthunk(Δ)
             return NoTangent(), NoTangent(), ∂x, ∇bias(∂x)
         end
-        return Ω, ∇fast_bias_activation!!_fast
+        return Ω, __∇fast_bias_activation_impl!!_fast
     end
 
     return CRC.rrule_via_ad(cfg, fast_broadcast!!, f ∘ +, x, b)
