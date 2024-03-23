@@ -1,7 +1,6 @@
 module LuxZygoteExt
 
 using ADTypes, Lux, Setfield, Zygote
-using TruncatedStacktraces: @truncate_stacktrace
 using Zygote: Pullback
 
 function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F, data,
@@ -12,7 +11,5 @@ function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F,
     @set! ts.states = st
     return grads, loss, stats, ts
 end
-
-@truncate_stacktrace Pullback 1
 
 end

@@ -9,7 +9,6 @@ PrecompileTools.@recompile_invalidations begin
     using Adapt, ConcreteStructs, Functors, Setfield
     using ChainRulesCore
     using ArrayInterface, GPUArraysCore
-    import TruncatedStacktraces: TruncatedStacktraces, @truncate_stacktrace
 
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
                     initialparameters, initialstates, parameterlength, statelength,
@@ -37,7 +36,6 @@ include("layers/recurrent.jl")
 
 # Pretty Printing
 include("layers/display.jl")
-include("stacktraces.jl")
 
 # AutoDiff
 include("chainrules.jl")

@@ -8,7 +8,6 @@ import ..Lux: _merge, _pairs, initialstates, initialparameters, apply, NAME_TYPE
 import ChainRulesCore as CRC
 import ConcreteStructs: @concrete
 import Functors: fmap
-import TruncatedStacktraces
 
 include("map.jl")
 include("training.jl")

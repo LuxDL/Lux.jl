@@ -102,7 +102,5 @@ end
 
 function Base.showerror(io::IO, e::FluxModelConversionError)
     print(io, "FluxModelConversionError(", e.msg, ")")
-    if !TruncatedStacktraces.VERBOSE[]
-        println(io, TruncatedStacktraces.VERBOSE_MSG)
-    end
+    return
 end
