@@ -9,6 +9,7 @@ PrecompileTools.@recompile_invalidations begin
     using Adapt, ConcreteStructs, Functors, Setfield
     using ChainRulesCore
     using ArrayInterface, GPUArraysCore
+    using FastClosures: @closure
 
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
                     initialparameters, initialstates, parameterlength, statelength,
