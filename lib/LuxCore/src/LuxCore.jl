@@ -159,14 +159,29 @@ setup(rng::AbstractRNG, l) = (initialparameters(rng, l), initialstates(rng, l))
 """
     apply(model, x, ps, st)
 
-Simply calls `model(x, ps, st)`
+In most cases this function simply calls `model(x, ps, st)`. However, it is still
+recommended to call `apply` instead of `model(x, ps, st)` directly. Some of the reasons for
+this include:
+
+ 1. For certain types of inputs `x`, we might want to perform preprocessing before calling
+    `model`. For eg, if `x` is an Array of `ReverseDiff.TrackedReal`s this can cause
+    significant regressions in `model(x, ps, st)` (since it won't hit any of the BLAS
+    dispatches). In those cases, we would automatically convert `x` to a
+    `ReverseDiff.TrackedArray`.
+ 2. Certain user defined inputs need to be applied to specific layers but we want the
+    datatype of propagate through all the layers (even unsupported ones). In these cases,
+    we can unpack the input in `apply` and pass it to the appropriate layer and then
+    repack it before returning. See the Lux manual on Custom Input Types for a motivating
+    example.
 """
 apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 """
     stateless_apply(model, x, ps)
 
-Calls `apply` and only returns the first argument.
+Calls `apply` and only returns the first argument. This function requires that `model` has
+an empty state of `NamedTuple()`. Behavior of other kinds of models are undefined and it is
+the responsibility of the user to ensure that the model has an empty state.
 """
 function stateless_apply(model::AbstractExplicitLayer, x, ps)
     return first(apply(model, x, ps, _getemptystate(model)))
