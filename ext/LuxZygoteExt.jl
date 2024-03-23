@@ -1,7 +1,9 @@
 module LuxZygoteExt
 
-using ADTypes, Lux, Setfield, Zygote
-using Zygote: Pullback
+using ADTypes: AutoZygote
+using Lux: Lux
+using Setfield: @set!
+using Zygote: Zygote
 
 function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}

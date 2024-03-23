@@ -280,7 +280,7 @@ end
     end
 end
 
-@testitem "Recurrence" setup=[SharedTestSetup] begin
+@testitem "Recurrence" timeout=3000 setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

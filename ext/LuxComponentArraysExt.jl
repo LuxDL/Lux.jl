@@ -1,6 +1,7 @@
 module LuxComponentArraysExt
 
-using ComponentArrays, Lux
+using ComponentArrays: ComponentArrays, ComponentArray, FlatAxis
+using Lux: Lux
 
 # Empty NamedTuple: Hack to avoid breaking precompilation
 function ComponentArrays.ComponentArray(data::Vector{Any}, axes::Tuple{FlatAxis})

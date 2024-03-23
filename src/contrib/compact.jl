@@ -1,6 +1,3 @@
-using MacroTools
-import ConstructionBase: constructorof
-
 # This functionality is based off of the implementation in Fluxperimental.jl
 # https://github.com/FluxML/Fluxperimental.jl/blob/cc0e36fdd542cc6028bc69449645dc0390dd980b/src/compact.jl
 struct LuxCompactModelParsingException <: Exception

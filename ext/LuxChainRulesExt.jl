@@ -1,6 +1,6 @@
 module LuxChainRulesExt
 
-using ChainRules, ChainRulesCore, Lux
+using ChainRules: ChainRules
 
 # https://github.com/FluxML/Zygote.jl/pull/1328 broke the RNNs completely. Putting an
 # emergency patch here

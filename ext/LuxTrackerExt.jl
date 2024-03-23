@@ -1,7 +1,11 @@
 module LuxTrackerExt
 
-using ADTypes, ChainRulesCore, Functors, Lux, Setfield, Tracker
+using ADTypes: AutoTracker
 using ArrayInterface: ArrayInterface
+using Functors: fmap
+using Lux: Lux
+using Setfield: @set!
+using Tracker: Tracker
 
 # Type Piracy: Need to upstream
 Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)
@@ -16,18 +20,18 @@ Tracker.data(nt::NamedTuple) = fmap(Tracker.data, nt)
 Tracker.data(t::Tuple) = map(Tracker.data, t)
 
 # Weight Norm Patch
-@inline Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
+@inline Lux._norm(x::Tracker.TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
 
 # multigate chain rules
-@inline Lux._gate(x::TrackedVector, h::Int, n::Int) = x[Lux._gate(h, n)]
-@inline Lux._gate(x::TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
+@inline Lux._gate(x::Tracker.TrackedVector, h::Int, n::Int) = x[Lux._gate(h, n)]
+@inline Lux._gate(x::Tracker.TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
 
 # Lux.Training
 function Lux.Experimental.compute_gradients(::AutoTracker, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}
-    ps_tracked = fmap(param, ts.parameters)
+    ps_tracked = fmap(Tracker.param, ts.parameters)
     loss, st, stats = objective_function(ts.model, ps_tracked, ts.states, data)
-    back!(loss)
+    Tracker.back!(loss)
     @set! ts.states = st
     grads = fmap(Tracker.grad, ps_tracked)
     return grads, loss, stats, ts

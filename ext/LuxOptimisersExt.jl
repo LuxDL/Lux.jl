@@ -1,6 +1,9 @@
 module LuxOptimisersExt
 
-using Lux, Random, Optimisers
+using Lux: Lux
+using LuxDeviceUtils: AbstractLuxDevice, gpu_device
+using Optimisers: Optimisers
+using Random: Random
 
 """
     TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
@@ -24,7 +27,7 @@ Constructor for [`TrainState`](@ref).
 function Lux.Experimental.TrainState(
         rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
         optimizer::Optimisers.AbstractRule;
-        transform_variables::Union{Function, Lux.AbstractLuxDevice}=gpu_device())
+        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
     ps, st = Lux.setup(rng, model) .|> transform_variables
     st_opt = Optimisers.setup(optimizer, ps)
     return Lux.Experimental.TrainState(model, ps, st, st_opt, 0)
