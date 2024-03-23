@@ -1,6 +1,3 @@
-using Markdown
-using Functors: functor
-
 @doc doc"""
     @layer_map func layer ps st
 

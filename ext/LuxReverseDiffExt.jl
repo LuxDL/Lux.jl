@@ -1,7 +1,11 @@
 module LuxReverseDiffExt
 
-using ADTypes, Lux, Functors, ReverseDiff, Setfield
+using ADTypes: AutoReverseDiff
 using ArrayInterface: ArrayInterface
+using Functors: fmap
+using Lux: Lux
+using ReverseDiff: ReverseDiff
+using Setfield: @set!
 
 function Lux.Experimental.compute_gradients(::AutoReverseDiff, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}
