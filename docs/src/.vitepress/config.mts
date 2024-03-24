@@ -79,6 +79,12 @@ export default defineConfig({
                         ]
                     }
                 ]
+            },
+            {
+                text: 'Versions', items: [
+                    { text: 'Stable', link: 'https://lux.csail.mit.edu/stable/introduction' },
+                    { text: 'Dev', link: 'https://lux.csail.mit.edu/dev/introduction' }
+                ]
             }
         ],
         sidebar: {
@@ -150,8 +156,7 @@ export default defineConfig({
                             { text: 'LuxTestUtils', link: '/api/Testing_Functionality/LuxTestUtils' }]
                     }]
             }
-        }
-        , // TODO: Once https://github.com/LuxDL/DocumenterVitepress.jl/issues/48 is fixed we can use the default sidebar --- 'REPLACE_ME_DOCUMENTER_VITEPRESS'
+        }, // TODO: Once https://github.com/LuxDL/DocumenterVitepress.jl/issues/48 is fixed we can use the default sidebar --- 'REPLACE_ME_DOCUMENTER_VITEPRESS'
         editLink: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
         socialLinks: [
             { icon: 'github', link: 'REPLACE_ME_DOCUMENTER_VITEPRESS' },

@@ -60,7 +60,7 @@ try
                         return new_str * appendix_code
                     end;
                     Literate.markdown(ENV["EXAMPLE_PATH"], ENV["OUTPUT_DIRECTORY"];
-                        execute=true, name=ENV["EXAMPLE_NAME"],
+                        execute=false, name=ENV["EXAMPLE_NAME"],
                         flavor=Literate.DocumenterFlavor(),
                         preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]))'`
             @info "Running Command: $(cmd)"
