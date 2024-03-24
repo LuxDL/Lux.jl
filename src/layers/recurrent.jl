@@ -541,15 +541,14 @@ Gated Recurrent Unit (GRU) Cell
 ## Parameters
 
   - `weight_i`: Concatenated Weights to map from input space
-                ``\\left\\\{ W_{ir}, W_{iz}, W_{in} \\right\\\}``.
+                ``\{ W_{ir}, W_{iz}, W_{in} \}``.
   - `weight_h`: Concatenated Weights to map from hidden space
-                ``\\left\\\{ W_{hr}, W_{hz}, W_{hn} \\right\\\}``.
+                ``\{ W_{hr}, W_{hz}, W_{hn} \}``.
   - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`).
   - `bias_h`: Concatenated Bias vector for the hidden space
-              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}`` (not present if
-              `use_bias=false`).
+              ``\{ b_{hr}, b_{hz}, b_{hn} \}`` (not present if `use_bias=false`).
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
-              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}``.
+              ``\{ b_{hr}, b_{hz}, b_{hn} \}``.
 
 ## States
 

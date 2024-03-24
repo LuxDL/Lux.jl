@@ -19,6 +19,15 @@
             <p class="extra-info">Machine Learning</p>
         </span>
     </a>
+
+    <a class="enjoyer" href="https://una-auxme.github.io/MeshGraphNets.jl/dev/" target="_blank">
+        <img width="32" height="32" src="https://raw.githubusercontent.com/una-auxme/MeshGraphNets.jl/main/logo/meshgraphnetsjl_logo.png" />
+        <span>
+            <p class="extra-info">Physical Systems</p>
+            <p class="heading">MeshGraphNets.jl</p>
+            <p class="extra-info">Graph Neural Nets</p>
+        </span>
+    </a>
 </template>
 
 <style>

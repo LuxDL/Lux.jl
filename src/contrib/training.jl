@@ -17,6 +17,20 @@ Training State containing:
     step::Int
 end
 
+"""
+    apply_gradients(ts::TrainState, grads)
+
+Update the parameters stored in `ts` using the gradients `grads`.
+
+## Arguments
+
+  - `ts`: [`TrainState`](@ref) object.
+  - `grads`: Gradients of the loss function wrt `ts.params`.
+
+## Returns
+
+Updated [`TrainState`](@ref) object.
+"""
 function apply_gradients end
 
 """

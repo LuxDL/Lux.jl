@@ -352,7 +352,9 @@ end
 Applies [weight normalization](https://arxiv.org/abs/1602.07868) to a parameter in the given
 layer.
 
-``w = g\frac{v}{\|v\|}``
+```math
+w = g\frac{v}{\|v\|}
+```
 
 Weight normalization is a reparameterization that decouples the magnitude of a weight tensor
 from its direction. This updates the parameters in `which_params` (e.g. `weight`) using two

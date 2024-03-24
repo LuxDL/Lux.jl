@@ -1,5 +1,4 @@
 [deps]
-ANSIColoredPrinters = "a4c015fc-c6ff-483c-b24f-f7ea428134e9"
 Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"

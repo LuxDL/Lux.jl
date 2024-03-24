@@ -33,20 +33,6 @@ function Lux.Experimental.TrainState(
     return Lux.Experimental.TrainState(model, ps, st, st_opt, 0)
 end
 
-"""
-    apply_gradients(ts::TrainState, grads)
-
-Update the parameters stored in `ts` using the gradients `grads`.
-
-## Arguments
-
-  - `ts`: [`TrainState`](@ref) object.
-  - `grads`: Gradients of the loss function wrt `ts.params`.
-
-## Returns
-
-Updated [`TrainState`](@ref) object.
-"""
 function Lux.Experimental.apply_gradients(ts::Lux.Experimental.TrainState, grads)
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
     return Lux.Experimental.TrainState(

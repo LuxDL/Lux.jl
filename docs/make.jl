@@ -71,7 +71,7 @@ pages = [
 
 #! format: on
 
-makedocs(; sitename="Lux",
+makedocs(; sitename="Lux Documentation",
     authors="Avik Pal et al.",
     clean=true,
     doctest=true,
@@ -81,7 +81,7 @@ makedocs(; sitename="Lux",
     linkcheck_ignore=["https://turing.ml/stable/",
         "https://turing.ml/stable/tutorials/03-bayesian-neural-network/"],
     format=DocumenterVitepress.MarkdownVitepress(;
-        repo="github.com/LuxDL/Lux.jl", devbranch="main",
+        repo="https://github.com/LuxDL/Lux.jl", devbranch="main",
         devurl="dev", deploy_url="lux.csail.mit.edu"),
     draft=false,
     source="src",
