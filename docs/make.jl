@@ -81,11 +81,11 @@ makedocs(; sitename="Lux Documentation",
     linkcheck_ignore=["https://turing.ml/stable/",
         "https://turing.ml/stable/tutorials/03-bayesian-neural-network/"],
     format=DocumenterVitepress.MarkdownVitepress(;
-        repo="https://github.com/LuxDL/Lux.jl", devbranch="main",
-        devurl="dev", deploy_url="lux.csail.mit.edu"),
+        clean_md_output=true, repo="https://github.com/LuxDL/Lux.jl",
+        devbranch="main", devurl="dev", deploy_url="lux.csail.mit.edu"),
     draft=false,
     source="src",
-    build=joinpath(@__DIR__, "build"),
+    build="build",
     pages=pages)
 
 deploydocs(; repo="github.com/LuxDL/Lux.jl.git",
