@@ -1,10 +1,10 @@
 module LuxCUDAMPINCCLExt
 
-import Lux: MPIBackend, NCCLBackend, DistributedUtils
-import LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice
-import MPI
-import NCCL
-import Setfield: @set!
+using Lux: MPIBackend, NCCLBackend, DistributedUtils
+using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice
+using MPI: MPI
+using NCCL: NCCL
+using Setfield: @set!
 
 function DistributedUtils.__initialize(
         ::Val{:NCCL}; cuda_devices=nothing, amdgpu_devices=missing)

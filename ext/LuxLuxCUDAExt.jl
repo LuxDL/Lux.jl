@@ -1,7 +1,7 @@
 module LuxLuxCUDAExt
 
-import Lux
-import LuxCUDA: CUDA
+using Lux: Lux
+using LuxCUDA: CUDA
 
 Lux.__is_extension_loaded(::Val{:LuxCUDA}) = Val(true)
 

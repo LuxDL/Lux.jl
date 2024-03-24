@@ -1,9 +1,9 @@
 module LuxMPIExt
 
-import Lux: MPIBackend, NCCLBackend, DistributedUtils, MPI_CUDA_AWARE, MPI_ROCM_AWARE,
+using Lux: MPIBackend, NCCLBackend, DistributedUtils, MPI_CUDA_AWARE, MPI_ROCM_AWARE,
             __is_extension_loaded, __set_device!, __unwrap_val
-import LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device
-import MPI
+using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device
+using MPI: MPI
 
 function DistributedUtils.__initialize(
         ::Val{:MPI}; cuda_devices=nothing, amdgpu_devices=nothing)

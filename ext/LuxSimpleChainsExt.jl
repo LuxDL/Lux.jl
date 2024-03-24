@@ -1,10 +1,10 @@
 module LuxSimpleChainsExt
 
 using Lux
-import SimpleChains
-import Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
-            __fix_input_dims_simplechain
-import Random: AbstractRNG
+using SimpleChains: SimpleChains
+using Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
+           __fix_input_dims_simplechain
+using Random: AbstractRNG
 
 function __fix_input_dims_simplechain(layers::Vector, input_dims)
     L = Tuple(layers)

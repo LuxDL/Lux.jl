@@ -248,6 +248,9 @@ end
     return pairs(x)
 end
 
-@inline __value(x) = x
-
 function __set_device! end
+
+# Nondifferentiable hasmethod. Avoiding type-piracy
+@inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
+
+@inline __named_tuple(nt::NamedTuple) = nt
