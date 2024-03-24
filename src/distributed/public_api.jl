@@ -1,15 +1,14 @@
 module DistributedUtils
 
-import ChainRulesCore as CRC
-import ConcreteStructs: @concrete
-import Functors: fmap
-import ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
-import LuxDeviceUtils: get_device, cpu_device
-import Optimisers: AbstractRule, Leaf, Optimisers
-import Setfield: @set!
+using ChainRulesCore: ChainRulesCore
+using ConcreteStructs: @concrete
+using ..Lux: AbstractLuxDistributedBackend
+using LuxDeviceUtils: get_device
 
 const NCCL_Initialized = Ref(false)
 const MPI_Initialized = Ref(false)
+
+const CRC = ChainRulesCore
 
 """
     initialized(backend::Val)
@@ -207,11 +206,6 @@ function synchronize!!(
     return map(x -> synchronize!!(backend, x; root), ps)
 end
 
-function synchronize!!(backend::AbstractLuxDistributedBackend, ps::Leaf; root::Int=0)
-    @set! ps.state = synchronize!!(backend, ps.state; root)
-    return ps
-end
-
 function synchronize!!(backend::AbstractLuxDistributedBackend, ps::T; root::Int=0) where {T}
     isbitstype(T) && return bcast!(backend, [ps]; root)[]
     return ps # If we don't know how to synchronize, just return the value. For ex, Symbol, String, etc.
@@ -247,29 +241,33 @@ Base.getindex(ddc::DistributedDataContainer, i) = getindex(ddc.data, ddc.idxs[i]
 
 # Distributed Optimizer
 """
-    DistributedOptimizer(backend::AbstractLuxDistributedBacked, optimizer)
+    DistributedOptimizer(backend::AbstractLuxDistributedBackend, optimizer)
 
 Wrap the `optimizer` in a `DistributedOptimizer`. Before updating the parameters, this
 averages the gradients across the processes using Allreduce.
+
+::: warning
+
+`Optimisers.jl` must be installed and loaded to use this function.
+
+:::
+
+::: warning
+
+This is not a type. Since we have a weak dependency on `Optimisers.jl`, we return an
+internal type that is compatible with `Optimisers.jl`.
+
+:::
 
 ## Arguments
 
   - `optimizer`: An Optimizer compatible with the Optimisers.jl package
 """
-@concrete struct DistributedOptimizer{B <: AbstractLuxDistributedBackend} <: AbstractRule
-    backend::B
-    opt
-end
-
-function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
-    y_avg = allreduce!(opt.backend, y, avg)
-    return Optimisers.apply!(opt.opt, state, x, y_avg)
-end
-
-Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
-
-function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
-    return DistributedOptimizer(opt.backend, Optimisers._adjust(opt.opt, nt))
+function DistributedOptimizer(backend::AbstractLuxDistributedBackend, optimizer)
+    internal_mod = Base.get_extension(@__MODULE__, :LuxOptimisersExt)
+    internal_mod === nothing &&
+        error("`DistributedOptimizer` requires `Optimisers.jl` to be loaded.")
+    return internal_mod.DistributedOptimizer(backend, optimizer)
 end
 
 end

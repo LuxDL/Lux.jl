@@ -1,7 +1,7 @@
 module LuxMPIExt
 
 using Lux: MPIBackend, NCCLBackend, DistributedUtils, MPI_CUDA_AWARE, MPI_ROCM_AWARE,
-            __is_extension_loaded, __set_device!, __unwrap_val
+           __is_extension_loaded, __set_device!, __unwrap_val
 using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device
 using MPI: MPI
 
