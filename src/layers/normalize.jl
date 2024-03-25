@@ -328,7 +328,7 @@ function initialparameters(rng::AbstractRNG, l::InstanceNorm)
     end
 end
 
-initialstates(rng::AbstractRNG, l::InstanceNorm) = (; training=Val(true))
+initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
 
 parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 
