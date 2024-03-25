@@ -8,8 +8,14 @@ import { transformerMetaWordHighlight } from '@shikijs/transformers';
 export default defineConfig({
     base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
     title: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
-    description: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
-    lastUpdated: true,
+    description: 'Documentation for LuxDL Repositories',
+    lastUpdated: {
+        text: 'Updated at',
+        formatOptions: {
+            dateStyle: 'full',
+            timeStyle: 'medium'
+        }
+    },
     cleanUrls: true,
     outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
     head: [['link', { rel: 'icon', href: 'REPLACE_ME_DOCUMENTER_VITEPRESS' }]],
@@ -82,8 +88,8 @@ export default defineConfig({
             },
             {
                 text: 'Versions', items: [
-                    { text: 'Stable', link: 'https://lux.csail.mit.edu/stable/introduction' },
-                    { text: 'Dev', link: 'https://lux.csail.mit.edu/dev/introduction' }
+                    { text: 'Stable', link: 'https://lux.csail.mit.edu/stable/' },
+                    { text: 'Dev', link: 'https://lux.csail.mit.edu/dev/' }
                 ]
             }
         ],
@@ -157,7 +163,10 @@ export default defineConfig({
                     }]
             }
         }, // TODO: Once https://github.com/LuxDL/DocumenterVitepress.jl/issues/48 is fixed we can use the default sidebar --- 'REPLACE_ME_DOCUMENTER_VITEPRESS'
-        editLink: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
+        editLink: {
+            pattern: 'https://github.com/LuxDL/Lux.jl/edit/main/docs/src/:path',
+            text: 'Edit this page on GitHub'
+        },
         socialLinks: [
             { icon: 'github', link: 'REPLACE_ME_DOCUMENTER_VITEPRESS' },
             { icon: 'twitter', link: 'https://twitter.com/avikpal1410' }
