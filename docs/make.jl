@@ -3,9 +3,6 @@ using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
 using LuxTestUtils, LuxDeviceUtils
 using LuxAMDGPU, LuxCUDA
 
-deployconfig = Documenter.auto_detect_deploy_system()
-Documenter.post_status(deployconfig; type="pending", repo="github.com/LuxDL/Lux.jl.git")
-
 #! format: off
 
 pages = [
@@ -71,6 +68,11 @@ pages = [
 
 #! format: on
 
+deploy_config = Documenter.auto_detect_deploy_system()
+@info deploy_config
+deploy_decision = Documenter.deploy_folder(deploy_config; repo="github.com/LuxDL/Lux.jl",
+    devbranch="main", devurl="dev", push_preview=true)
+
 makedocs(; sitename="Lux.jl Documentation",
     authors="Avik Pal et al.",
     clean=true,
@@ -82,9 +84,9 @@ makedocs(; sitename="Lux.jl Documentation",
         "https://turing.ml/stable/tutorials/03-bayesian-neural-network/"],
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     format=DocumenterVitepress.MarkdownVitepress(;
-        clean_md_output=true, repo="github.com/LuxDL/Lux.jl", devbranch="main",
-        devurl="dev", deploy_url="https://lux.csail.mit.edu"),
-    draft=true,
+        repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
+        deploy_url="https://lux.csail.mit.edu", deploy_decision),
+    draft=true, # FIXME
     pages=pages)
 
 deploydocs(; repo="github.com/LuxDL/Lux.jl.git",
