@@ -1,10 +1,10 @@
 module LuxSimpleChainsExt
 
-using Lux
-import SimpleChains
-import Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
-            __fix_input_dims_simplechain
-import Random: AbstractRNG
+using Lux: Lux, NNlib
+using SimpleChains: SimpleChains
+using Lux: SimpleChainsModelConversionError
+import Lux: __to_simplechains_adaptor, __fix_input_dims_simplechain
+using Random: AbstractRNG
 
 function __fix_input_dims_simplechain(layers::Vector, input_dims)
     L = Tuple(layers)
@@ -21,20 +21,20 @@ end
 __equivalent_simplechains_fn(::typeof(Lux.relu)) = SimpleChains.relu
 __equivalent_simplechains_fn(f::F) where {F} = f
 
-function __to_simplechains_adaptor(layer::Dense{use_bias}) where {use_bias}
+function __to_simplechains_adaptor(layer::Lux.Dense{use_bias}) where {use_bias}
     return SimpleChains.TurboDense{use_bias}(
         __equivalent_simplechains_fn(layer.activation), layer.out_dims)
 end
 
-function __to_simplechains_adaptor(layer::Chain)
+function __to_simplechains_adaptor(layer::Lux.Chain)
     return reduce(vcat, map(__to_simplechains_adaptor, layer.layers))
 end
 
-function __to_simplechains_adaptor(layer::Conv)
+function __to_simplechains_adaptor(layer::Lux.Conv)
     if all(==(1), layer.stride) &&
        layer.groups == 1 &&
        all(==(1), layer.dilation) &&
-       (!(layer.pad isa SamePad) && all(==(0), layer.pad))
+       (!(layer.pad isa Lux.SamePad) && all(==(0), layer.pad))
         return SimpleChains.Conv(__equivalent_simplechains_fn(layer.activation),
             layer.kernel_size, layer.out_chs)
     end
@@ -42,13 +42,13 @@ function __to_simplechains_adaptor(layer::Conv)
                                             supported."))
 end
 
-function __to_simplechains_adaptor(layer::Dropout)
+function __to_simplechains_adaptor(layer::Lux.Dropout)
     layer.dims isa Colon && return SimpleChains.Dropout(layer.p)
     throw(SimpleChainsModelConversionError("Dropout with non-standard parameters not \
                                             supported."))
 end
 
-function __to_simplechains_adaptor(layer::FlattenLayer)
+function __to_simplechains_adaptor(layer::Lux.FlattenLayer)
     if layer.N === nothing
         throw(SimpleChainsModelConversionError("`FlattenLayer(nothing)` not supported. For \
                                                 `SimpleChains.Flatten` you must use \
@@ -57,8 +57,8 @@ function __to_simplechains_adaptor(layer::FlattenLayer)
     return SimpleChains.Flatten(layer.N)
 end
 
-function __to_simplechains_adaptor(layer::MaxPool)
-    if layer.stride == layer.k && (!(layer.pad isa SamePad) && all(==(0), layer.pad))
+function __to_simplechains_adaptor(layer::Lux.MaxPool)
+    if layer.stride == layer.k && (!(layer.pad isa Lux.SamePad) && all(==(0), layer.pad))
         return SimpleChains.MaxPool(layer.k)
     end
     throw(SimpleChainsModelConversionError("MaxPool with non-standard parameters not \
@@ -67,7 +67,7 @@ end
 
 __to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionError(layer))
 
-function Lux.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
+function Lux.initialparameters(rng::AbstractRNG, layer::Lux.SimpleChainsLayer)
     return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
 end
 

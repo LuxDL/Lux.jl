@@ -6,6 +6,7 @@
 # 1. Create custom Lux models.
 # 2. Become familiar with the Lux recurrent neural network API.
 # 3. Training using Optimisers.jl and Zygote.jl.
+# 4. Loading and saving models.
 
 # ## Package Imports
 import Pkg #hide
