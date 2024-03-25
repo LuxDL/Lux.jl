@@ -69,7 +69,6 @@ pages = [
 #! format: on
 
 deploy_config = Documenter.auto_detect_deploy_system()
-@info deploy_config
 deploy_decision = Documenter.deploy_folder(deploy_config; repo="github.com/LuxDL/Lux.jl",
     devbranch="main", devurl="dev", push_preview=true)
 
@@ -86,7 +85,7 @@ makedocs(; sitename="Lux.jl Documentation",
     format=DocumenterVitepress.MarkdownVitepress(;
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
         deploy_url="https://lux.csail.mit.edu", deploy_decision),
-    draft=true, # FIXME
+    draft=false,
     pages=pages)
 
 deploydocs(; repo="github.com/LuxDL/Lux.jl.git",

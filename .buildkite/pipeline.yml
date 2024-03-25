@@ -185,9 +185,8 @@ steps:
       julia --project --code-coverage=user --color=yes --threads=auto -e '
         println("--- :julia: Instantiating project")
         using Pkg
-        # Pkg.instantiate()
         Pkg.activate("docs")
-        # Pkg.develop(PackageSpec(path=pwd()))
+        Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
         println("+++ :julia: Building tutorials")
         include("docs/tutorials.jl")'
@@ -195,9 +194,8 @@ steps:
       julia --project --code-coverage=user --color=yes --threads=auto -e '
         println("--- :julia: Instantiating project")
         using Pkg
-        # Pkg.instantiate()
         Pkg.activate("docs")
-        # Pkg.develop(PackageSpec(path=pwd()))
+        Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
         println("+++ :julia: Building documentation")
         include("docs/make.jl")'

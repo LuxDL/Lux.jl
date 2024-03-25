@@ -207,3 +207,4 @@ record(fig, "results.gif", 1:250:size(θ, 1)) do i
     return fig
 end
 
+# ![](results.gif)
