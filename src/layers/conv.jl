@@ -13,12 +13,10 @@ this layer expects as input an array with `ndims(x) == N + 2`, where
 `size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is the
 number of observations in a batch.
 
-:::warning
+!!! warning
 
-Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d)
-perform cross-correlation in their convolution layers
-
-:::
+    Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d)
+    perform cross-correlation in their convolution layers
 
 ## Arguments
 
@@ -66,7 +64,7 @@ perform cross-correlation in their convolution layers
   - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where
 
 ```math
-O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s_i} + 1\right\rfloor
 ```
 
   - Empty `NamedTuple()`
@@ -180,7 +178,7 @@ value.
   - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
 
 ```math
-  O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+  O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s_i} + 1\right\rfloor
 ```
 
   - Empty `NamedTuple()`
@@ -247,7 +245,7 @@ value.
   - Output of the pooling `y` of size `(O_N, ..., O_1, C, N)` where
 
 ```math
-  O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+  O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s_i} + 1\right\rfloor
 ```
 
   - Empty `NamedTuple()`
@@ -504,9 +502,9 @@ function set to `Base.Fix2(pixel_shuffle, r)`
 ## Inputs
 
   - `x`: For 4D-arrays representing N images, the operation converts input
-    size(x) == (W, H, r^2 x C, N) to output of size (r x W, r x H, C, N). For D-dimensional
-    data, it expects ndims(x) == D+2 with channel and batch dimensions, and divides the
-    number of channels by r^D.
+    `size(x) == (W, H, r² x C, N)` to output of size `(r x W, r x H, C, N)`. For
+    D-dimensional data, it expects `ndims(x) == D + 2` with channel and batch dimensions, and
+    divides the number of channels by `rᴰ`.
 
 ## Returns
 
@@ -571,7 +569,7 @@ number of observations in a batch.
   - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where
 
 ```math
-O_i = floor\left(\frac{I_i + pad[i] + pad[(i + N) \% length(pad)] - dilation[i] \times (k[i] - 1)}{stride[i]} + 1\right)
+O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s_i} + 1\right\rfloor
 ```
 
   - Empty `NamedTuple()`

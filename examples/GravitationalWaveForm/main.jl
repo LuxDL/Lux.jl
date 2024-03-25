@@ -22,12 +22,10 @@ CUDA.allowscalar(false)
 
 # ## Define some Utility Functions
 
-# ::: tip
+# !!! tip
 #
-# This section can be skipped. It defines functions to simulate the model, however, from a
-# scientific machine learning perspective, isn't super relevant.
-#
-# :::
+#     This section can be skipped. It defines functions to simulate the model, however,
+#     from a scientific machine learning perspective, isn't super relevant.
 
 # We need a very crude 2-body path. Assume the 1-body motion is a newtonian 2-body position
 # vector $r = r_1 - r_2$ and use Newtonian formulas to get $r_1$, $r_2$ (e.g. Theoretical

@@ -5,18 +5,15 @@ Adaptor for converting a Lux Model to SimpleChains. The returned model is still 
 and satisfies the `AbstractExplicitLayer` interfacem but all internal calculations are
 performed using SimpleChains.
 
-:::warning
+!!! warning
 
-There is no way to preserve trained parameters and states when converting to
-`SimpleChains.jl`.
+    There is no way to preserve trained parameters and states when converting to
+    `SimpleChains.jl`.
 
-:::
+!!! warning
 
-:::warning
-
-Any kind of initialization function is not preserved when converting to `SimpleChains.jl`.
-
-:::
+    Any kind of initialization function is not preserved when converting to
+    `SimpleChains.jl`.
 
 ## Arguments
 

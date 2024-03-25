@@ -17,6 +17,8 @@ it both compiler and autodiff friendly.
 * **Given same inputs the outputs must be same** -- yes this must hold true even for
   stochastic functions. Randomness must be controlled using `rng`s passed in the state.
 * **Easily extensible**
+* **Extensive Testing** -- All layers and features are tested across all supported AD
+  backends across all supported hardware backends.
 
 ## Why use Lux over Flux?
 
@@ -25,8 +27,7 @@ it both compiler and autodiff friendly.
   `destructure` mechanism, but `destructure` comes with various
   [edge cases and limitations](https://fluxml.ai/Optimisers.jl/dev/api/#Optimisers.destructure). Lux
   forces users to make an explicit distinction between state variables and parameter
-  variables to avoid these issues. Also, it comes battery-included for distributed training
-  using [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl) *(I know :P the naming)*
+  variables to avoid these issues. Also, it comes battery-included for distributed training.
   
 * **Sensible display of Custom Layers** -- Ever wanted to see Pytorch like Network printouts
   or wondered how to extend the pretty printing of Flux's layers? Lux handles all of that
@@ -42,13 +43,18 @@ it both compiler and autodiff friendly.
   Without this separation, it is much harder to pass such parameters
   around without mutations which AD systems don't like.
 
-## Why not use Lux?
-
 * **Small Neural Networks on CPU** -- Lux is developed for training large neural networks.
   For smaller architectures, we recommend using
-  [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl).
+  [SimpleChains.jl](https://github.com/PumasAI/SimpleChains.jl) or even better use it in
+  conjunction with Lux via [`ToSimpleChainsAdaptor`](@ref).
 
-* **Lux won't magically speed up your code (yet)** -- Lux shares the same backend with Flux
-  and so if your primary desire to shift is driven by performance, you will be disappointed.
+* **Reliability** -- We have learned from the mistakes of the past with Flux and everything
+  in our core framework is extensively tested, along with downstream CI to ensure that
+  everything works as expected.
+
+## Why not use Lux (and Julia for traditional Deep Learning in general) ?
+
+* **Lack of Large Models Support** -- Classical deep learning is not Lux's primary focus.
+  For these, python frameworks like PyTorch and Jax are better suited.
 
 * **XLA Support** -- Lux doesn't compile to XLA which means no TPU support unfortunately.

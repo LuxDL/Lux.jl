@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Lux
+```
+
 # LuxCore
 
 `LuxCore.jl` defines the abstract layers for Lux. Allows users to be compatible with the
@@ -49,12 +53,10 @@ LuxCore.update_state
 
 ## Layer size
 
-::: warning
+!!! warning
 
-These specifications have been added very recently and most layers currently do not
-implement them.
-
-:::
+    These specifications have been added very recently and most layers currently do not
+    implement them.
 
 ```@docs
 LuxCore.inputsize

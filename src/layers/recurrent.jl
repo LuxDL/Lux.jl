@@ -26,13 +26,11 @@ struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
 
-:::warning
+!!! warning
 
-This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
-rather allows operating on an entire sequence of inputs at once. See
-[`StatefulRecurrentCell`](@ref) for functionality similar to `Flux.Recur`.
-
-:::
+    This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
+    rather allows operating on an entire sequence of inputs at once. See
+    [`StatefulRecurrentCell`](@ref) for functionality similar to `Flux.Recur`.
 
 ## Arguments
 
@@ -68,23 +66,21 @@ rather allows operating on an entire sequence of inputs at once. See
 
   - Same as `cell`.
 
-:::tip
+!!! tip
 
-Frameworks like Tensorflow have special implementation of
-[`MultiRNNCell`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/MultiRNNCell)
-to handle sequentially composed RNN Cells. In Lux, one can simple stack multiple
-`Recurrence` blocks in a `Chain` to achieve the same.
+    Frameworks like Tensorflow have special implementation of
+    [`MultiRNNCell`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/MultiRNNCell)
+    to handle sequentially composed RNN Cells. In Lux, one can simple stack multiple
+    `Recurrence` blocks in a `Chain` to achieve the same.
 
-    Chain(
-        Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
-        Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
-        :
-        x -> stack(x; dims=2)
-    )
+        Chain(
+            Recurrence(RNNCell(inputsize => latentsize); return_sequence=true),
+            Recurrence(RNNCell(latentsize => latentsize); return_sequence=true),
+            :
+            x -> stack(x; dims=2)
+        )
 
-For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
-
-:::
+    For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
 struct Recurrence{
     R, C <: AbstractRecurrentCell, O <: AbstractTimeSeriesDataBatchOrdering} <:
@@ -137,11 +133,9 @@ end
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) and
 makes it stateful.
 
-:::tip
+!!! tip
 
-This is very similar to `Flux.Recur`
-
-:::
+    This is very similar to `Flux.Recur`
 
 To avoid undefined behavior, once the processing of a single sequence of data is complete,
 update the state with `Lux.update_state(st, :carry, nothing)`.
@@ -547,15 +541,14 @@ Gated Recurrent Unit (GRU) Cell
 ## Parameters
 
   - `weight_i`: Concatenated Weights to map from input space
-                ``\\left\\\{ W_{ir}, W_{iz}, W_{in} \\right\\\}``.
+                ``\{ W_{ir}, W_{iz}, W_{in} \}``.
   - `weight_h`: Concatenated Weights to map from hidden space
-                ``\\left\\\{ W_{hr}, W_{hz}, W_{hn} \\right\\\}``.
+                ``\{ W_{hr}, W_{hz}, W_{hn} \}``.
   - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`).
   - `bias_h`: Concatenated Bias vector for the hidden space
-              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}`` (not present if
-              `use_bias=false`).
+              ``\{ b_{hr}, b_{hz}, b_{hn} \}`` (not present if `use_bias=false`).
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
-              ``\\left\\\{ b_{hr}, b_{hz}, b_{hn} \\right\\\}``.
+              ``\{ b_{hr}, b_{hz}, b_{hn} \}``.
 
 ## States
 

@@ -4,18 +4,14 @@ Debugging DNNs can be very painful. Especially with the gigantic stacktraces for
 even harder to pin-point to which particular layer errored out. This page describes some
 useful tools that ship with Lux, that can help you debug your models.
 
-:::tip TL;DR
+!!! tip "TL;DR"
 
-Simply wrap your model with `Lux.Experimental.@debug`!!
+    Simply wrap your model with `Lux.Experimental.@debug`!!
 
-:::
+!!! warning "Don't Forget"
 
-:::warning DON'T FORGET
-
-Remember to use the non Debug mode model after you finish debugging. Debug mode models are
-way slower.
-
-:::
+    Remember to use the non Debug mode model after you finish debugging. Debug mode models
+    are way slower.
 
 Let us construct a model which has an obviously incorrect dimension. In this example, you
 will see how easy it is to pin-point the problematic layer.

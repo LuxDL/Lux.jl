@@ -3,20 +3,16 @@
 
 Freeze the parameters with name `which_params` of the layer `l`.
 
-:::tip
+!!! tip
 
-It is always recommended to use the [`Lux.Experimental.freeze`](@ref) function instead of directly
-using the `FrozenLayer` constructor.
+    It is always recommended to use the [`Lux.Experimental.freeze`](@ref) function instead
+    of directly using the `FrozenLayer` constructor.
 
-:::
+!!! warning
 
-:::warning
-
-There are no checks for `which_params`. For example, if the original layer has
-parameters named `(:weight, :bias)`, and `which_params`is set to`(:myweight,)`
-then none of the parameters are frozen and no error is thrown.
-
-:::
+    There are no checks for `which_params`. For example, if the original layer has
+    parameters named `(:weight, :bias)`, and `which_params`is set to`(:myweight,)`
+    then none of the parameters are frozen and no error is thrown.
 
 ## Arguments
 

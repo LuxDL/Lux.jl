@@ -8,17 +8,15 @@ All features listed on this page are **experimental** which means:
 
 1. No SemVer Guarantees. We use code here to iterate fast and most users should wait for
    these features to be marked non-experimental.
-2. The code will probably be moved into a separate repository in the future.
-3. Expect edge-cases and report them. It will help us move these features out of
+2. Expect edge-cases and report them. It will help us move these features out of
    experimental sooner.
-4. None of the features are exported.
+3. None of the features are exported.
 
-:::warning
+!!! warning
 
-Starting v"0.5.2" all Experimental features need to be accessed via
-`Lux.Experimental.<feature>`. Direct access via `Lux.<feature>` will be removed in v"0.6".
-
-:::
+    Starting v"0.5.2" all Experimental features need to be accessed via
+    `Lux.Experimental.<feature>`. Direct access via `Lux.<feature>` will be removed in
+    v"0.6".
 
 ## Index
 
@@ -41,12 +39,10 @@ Lux.Experimental.apply_gradients
 
 ## Parameter Freezing
 
-:::info
+!!! info
 
-In the long term, this will be supported via
-[Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
-
-:::
+    In the long term, this will be supported via
+    [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
 
 ```@docs
 Lux.Experimental.FrozenLayer
