@@ -182,19 +182,17 @@ steps:
       npm i
       cd ..
 
-      julia --project --code-coverage=user --color=yes --threads=auto -e '
+      julia --project --code-coverage=user --color=yes --threads=auto --project=docs -e '
         println("--- :julia: Instantiating project")
         using Pkg
-        Pkg.activate("docs")
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
         println("+++ :julia: Building tutorials")
         include("docs/tutorials.jl")'
 
-      julia --project --code-coverage=user --color=yes --threads=auto -e '
+      julia --project --code-coverage=user --color=yes --threads=auto --project=docs -e '
         println("--- :julia: Instantiating project")
         using Pkg
-        Pkg.activate("docs")
         Pkg.develop(PackageSpec(path=pwd()))
         Pkg.instantiate()
         println("+++ :julia: Building documentation")

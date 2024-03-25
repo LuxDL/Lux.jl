@@ -41,8 +41,8 @@ Lux.Experimental.apply_gradients
 
 !!! info
 
-   In the long term, this will be supported via
-   [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
+    In the long term, this will be supported via
+    [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
 
 ```@docs
 Lux.Experimental.FrozenLayer
