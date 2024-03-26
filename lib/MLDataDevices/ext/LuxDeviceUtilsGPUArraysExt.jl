@@ -1,8 +1,10 @@
 module LuxDeviceUtilsGPUArraysExt
 
-using GPUArrays, LuxDeviceUtils, Random
-import Adapt: adapt_storage, adapt
+using Adapt: Adapt
+using GPUArrays: GPUArrays
+using LuxDeviceUtils: LuxCPUAdaptor
+using Random: Random
 
-adapt_storage(::LuxCPUAdaptor, rng::GPUArrays.RNG) = Random.default_rng()
+Adapt.adapt_storage(::LuxCPUAdaptor, rng::GPUArrays.RNG) = Random.default_rng()
 
 end

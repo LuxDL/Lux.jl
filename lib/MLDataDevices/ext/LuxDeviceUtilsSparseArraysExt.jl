@@ -1,9 +1,9 @@
 module LuxDeviceUtilsSparseArraysExt
 
-import Adapt: adapt_storage
-import LuxDeviceUtils: LuxCPUAdaptor
-import SparseArrays: AbstractSparseArray
+using Adapt: Adapt
+using LuxDeviceUtils: LuxCPUAdaptor
+using SparseArrays: AbstractSparseArray
 
-adapt_storage(::LuxCPUAdaptor, x::AbstractSparseArray) = x
+Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractSparseArray) = x
 
 end

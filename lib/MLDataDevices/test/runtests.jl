@@ -19,5 +19,7 @@ const GROUP = get(ENV, "GROUP", "NONE")
         @testset "Aqua Tests" Aqua.test_all(LuxDeviceUtils)
 
         @safetestset "Component Arrays" include("component_arrays.jl")
+
+        @safetestset "Explicit Imports" include("explicit_imports.jl")
     end
 end
