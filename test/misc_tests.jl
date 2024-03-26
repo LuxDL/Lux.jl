@@ -19,7 +19,7 @@
         @testset "Named Tuple Parameters" begin
             @test_nowarn test_f(x, ps)
 
-            @test_broken begin
+            @test begin
                 y, back = Zygote.pullback(test_f, x, ps)
                 ∂x, ∂ps = back(one(y))
                 ∂x !== nothing && ∂ps !== nothing
@@ -35,13 +35,13 @@
         @testset "Component Array Parameters" begin
             @test_nowarn test_f(x, ps_ca)
 
-            @test_broken begin
+            @test begin
                 y, back = Zygote.pullback(test_f, x, ps_ca)
                 ∂x, ∂ps = back(one(y))
                 ∂x !== nothing && ∂ps !== nothing
             end
 
-            @test_broken begin
+            @test begin
                 ∂x, ∂ps = Zygote.jacobian(test_f, x, ps_ca)
                 ∂x !== nothing && ∂ps !== nothing
             end
