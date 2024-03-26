@@ -152,7 +152,7 @@ end
 # Nonspecialized path
 @inline __combine_padding(padding) = padding[1:2:end] .+ padding[2:2:end]
 function __combine_padding(padding::NTuple{N, Int}) where {N}
-    return ntuple(@closure(i -> padding[2i - 1] + padding[2i]), N ÷ 2)
+    return ntuple(@closure(i->padding[2i - 1] + padding[2i]), N ÷ 2)
 end
 
 ## Adaptive Pooling

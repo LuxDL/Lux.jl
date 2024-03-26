@@ -16,6 +16,7 @@ struct NotaNumber <: Real end
 @inline fast_apply_activation!!(::typeof(identity), x::AbstractArray) = x
 @inline fast_apply_activation!!(::typeof(sigmoid_fast), x::AbstractArray) = sigmoid_fast.(x)
 @inline fast_apply_activation!!(::typeof(sigmoid), x::AbstractArray) = sigmoid.(x)
+@inline fast_apply_activation!!(::typeof(tanh_fast), x::AbstractArray) = tanh_fast.(x)
 @inline function fast_apply_activation!!(f::F, x::AbstractArray) where {F}
     return __fast_apply_activation_impl!!(f, x)
 end

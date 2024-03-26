@@ -1,12 +1,12 @@
 @testitem "BatchNorm" setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         m = BatchNorm(2)
         x = [1.0f0 3.0f0 5.0f0
              2.0f0 4.0f0 6.0f0] |> aType
         __display(m)
-        ps, st = Lux.setup(rng, m) .|> device
+        ps, st = Lux.setup(rng, m) .|> dev
 
         @test Lux.parameterlength(m) == Lux.parameterlength(ps)
         @test Lux.statelength(m) == Lux.statelength(st)
@@ -38,7 +38,7 @@
         @test check_approx(st_.running_var,
             0.1 .* var(Array(x); dims=2, corrected=false) .* (3 / 2) .+ 0.9 .* [1.0, 1.0])
 
-        st_ = Lux.testmode(st_) |> device
+        st_ = Lux.testmode(st_) |> dev
         x_ = m(x, ps, st_)[1] |> LuxCPUDevice()
         @test check_approx(x_[1], (1 .- 0.3) / sqrt(1.3), atol=1.0e-5)
 
@@ -50,7 +50,7 @@
             m = BatchNorm(2; affine, track_stats=false)
             x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0] |> aType
             __display(m)
-            ps, st = Lux.setup(rng, m) .|> device
+            ps, st = Lux.setup(rng, m) .|> dev
 
             @jet m(x, ps, st)
 
@@ -67,7 +67,7 @@
             x = [1.0f0 3.0f0 5.0f0
                  2.0f0 4.0f0 6.0f0] |> aType
             __display(m)
-            ps, st = Lux.setup(rng, m) .|> device
+            ps, st = Lux.setup(rng, m) .|> dev
             st = Lux.testmode(st)
             y, st_ = m(x, ps, st)
             @test check_approx(
@@ -85,9 +85,9 @@
             end
 
             m = BatchNorm(32; affine)
-            x = randn(Float32, 416, 416, 32, 1) |> aType
+            x = kaiming_normal(Float32, 416, 416, 32, 1) |> aType
             __display(m)
-            ps, st = Lux.setup(rng, m) .|> device
+            ps, st = Lux.setup(rng, m) .|> dev
             st = Lux.testmode(st)
             m(x, ps, st)
             @test (@allocated m(x, ps, st)) < 100_000_000
@@ -107,7 +107,7 @@ end
 @testitem "GroupNorm" setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
 
         m = GroupNorm(4, 2)
@@ -116,7 +116,7 @@ end
 
         __display(m)
         x = Float32.(x)
-        ps, st = Lux.setup(rng, m) .|> device
+        ps, st = Lux.setup(rng, m) .|> dev
         @test Lux.parameterlength(m) == Lux.parameterlength(ps)
         @test Lux.statelength(m) == Lux.statelength(st)
         @test ps.bias == [0, 0, 0, 0] |> aType  # init_bias(32)
@@ -130,9 +130,9 @@ end
 
         @testset "affine: $affine" for affine in (true, false)
             m = GroupNorm(2, 2; affine)
-            x = rand(rng, Float32, 3, 2, 1) |> aType
+            x = kaiming_normal(rng, Float32, 3, 2, 1) |> aType
             __display(m)
-            ps, st = Lux.setup(rng, m) .|> device
+            ps, st = Lux.setup(rng, m) .|> dev
 
             @jet m(x, ps, st)
 
@@ -146,9 +146,9 @@ end
 
             # with activation function
             m = GroupNorm(2, 2, sigmoid; affine)
-            x = randn(rng, Float32, 3, 2, 1) |> aType
+            x = kaiming_normal(rng, Float32, 3, 2, 1) |> aType
             __display(m)
-            ps, st = Lux.setup(rng, m) .|> device
+            ps, st = Lux.setup(rng, m) .|> dev
             st = Lux.testmode(st)
             y, st_ = m(x, ps, st)
 
@@ -163,9 +163,9 @@ end
             end
 
             m = GroupNorm(32, 16; affine)
-            x = randn(rng, Float32, 416, 416, 32, 1) |> aType
+            x = kaiming_normal(rng, Float32, 416, 416, 32, 1) |> aType
             __display(m)
-            ps, st = Lux.setup(rng, m) .|> device
+            ps, st = Lux.setup(rng, m) .|> dev
             st = Lux.testmode(st)
             m(x, ps, st)
 
@@ -192,9 +192,9 @@ end
 @testitem "WeightNorm" setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "_norm_except" begin
-            z = randn(rng, Float32, 3, 3, 4, 2) |> aType
+            z = kaiming_normal(rng, Float32, 3, 3, 4, 2) |> aType
 
             @test size(Lux._norm(z; dims=(1, 2))) == (1, 1, 4, 2)
             @test size(Lux._norm_except(z; dims=1)) == (3, 1, 1, 1)
@@ -212,8 +212,8 @@ end
 
             wn = WeightNorm(c, (:weight, :bias))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = ps -> sum(first(wn(x, ps, st)))
@@ -221,8 +221,8 @@ end
 
             wn = WeightNorm(c, (:weight,))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
@@ -230,8 +230,8 @@ end
 
             wn = WeightNorm(c, (:weight, :bias), (2, 2))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
@@ -239,8 +239,8 @@ end
 
             wn = WeightNorm(c, (:weight,), (2,))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 3, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
@@ -252,8 +252,8 @@ end
 
             wn = WeightNorm(d, (:weight, :bias))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = ps -> sum(first(wn(x, ps, st)))
@@ -261,8 +261,8 @@ end
 
             wn = WeightNorm(d, (:weight,))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
@@ -270,8 +270,8 @@ end
 
             wn = WeightNorm(d, (:weight, :bias), (2, 2))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
@@ -279,8 +279,8 @@ end
 
             wn = WeightNorm(d, (:weight,), (2,))
             __display(wn)
-            ps, st = Lux.setup(rng, wn) .|> device
-            x = randn(rng, Float32, 3, 1) |> aType
+            ps, st = Lux.setup(rng, wn) .|> dev
+            x = kaiming_normal(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
@@ -311,14 +311,14 @@ end
 @testitem "LayerNorm" setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        x = randn(rng, Float32, 3, 3, 3, 2) |> aType
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        x = kaiming_normal(rng, Float32, 3, 3, 3, 2) |> aType
 
         for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
             for affine in (true, false)
                 ln = LayerNorm(bshape; affine)
                 __display(ln)
-                ps, st = Lux.setup(rng, ln) .|> device
+                ps, st = Lux.setup(rng, ln) .|> dev
 
                 y, st_ = ln(x, ps, st)
 
@@ -338,7 +338,7 @@ end
                 for act in (sigmoid, tanh)
                     ln = LayerNorm(bshape, act; affine)
                     __display(ln)
-                    ps, st = Lux.setup(rng, ln) .|> device
+                    ps, st = Lux.setup(rng, ln) .|> dev
 
                     y, st_ = ln(x, ps, st)
 
@@ -367,14 +367,15 @@ end
 @testitem "InstanceNorm" setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
-            randn(rng, Float32, 3, 3, 3, 3, 2))
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        for x in (
+            kaiming_normal(rng, Float32, 3, 3, 3, 2), kaiming_normal(rng, Float32, 3, 3, 2),
+            kaiming_normal(rng, Float32, 3, 3, 3, 3, 2))
             x = x |> aType
             for affine in (true, false)
                 layer = InstanceNorm(3; affine)
                 __display(layer)
-                ps, st = Lux.setup(rng, layer) .|> device
+                ps, st = Lux.setup(rng, layer) .|> dev
 
                 y, st_ = layer(x, ps, st)
 
@@ -391,7 +392,7 @@ end
                 for act in (sigmoid, tanh)
                     layer = InstanceNorm(3, act; affine)
                     __display(layer)
-                    ps, st = Lux.setup(rng, layer) .|> device
+                    ps, st = Lux.setup(rng, layer) .|> dev
 
                     y, st_ = layer(x, ps, st)
 
