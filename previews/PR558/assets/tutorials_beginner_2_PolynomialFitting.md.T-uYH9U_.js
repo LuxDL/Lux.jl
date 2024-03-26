@@ -77,7 +77,7 @@ import{_ as t,c as i,m as A,a,a4 as s,o as n}from"./chunks/framework.DI4v-BsP.js
 <span class="line"><span>Environment:</span></span>
 <span class="line"><span>  LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64</span></span>
 <span class="line"><span>  JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6</span></span>
-<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-7/julialang/lux-dot-jl/docs</span></span>
+<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-9/julialang/lux-dot-jl/docs</span></span>
 <span class="line"><span>  JULIA_AMDGPU_LOGGING_ENABLED = true</span></span>
 <span class="line"><span>  JULIA_DEBUG = Literate</span></span>
 <span class="line"><span>  JULIA_CPU_THREADS = 2</span></span>
@@ -111,6 +111,6 @@ import{_ as t,c as i,m as A,a,a4 as s,o as n}from"./chunks/framework.DI4v-BsP.js
 <span class="line"><span>- JULIA_CUDA_HARD_MEMORY_LIMIT: 25%</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>1 device:</span></span>
-<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 4.609 GiB / 4.750 GiB available)</span></span>
+<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 4.140 GiB / 4.750 GiB available)</span></span>
 <span class="line"><span>┌ Warning: LuxAMDGPU is loaded but the AMDGPU is not functional.</span></span>
 <span class="line"><span>└ @ LuxAMDGPU ~/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6/packages/LuxAMDGPU/sGa0S/src/LuxAMDGPU.jl:19</span></span></code></pre></div><hr><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl" target="_blank" rel="noreferrer">Literate.jl</a>.</em></p>`,38);function g(o,I,f,v,C,R){return n(),i("div",null,[e,A("p",null,[a("Generate 128 datapoints from the polynomial "),A("mjx-container",p,[(n(),i("svg",E,k)),r]),a(".")]),d])}const y=t(l,[["render",g]]);export{Q as __pageData,y as default};
