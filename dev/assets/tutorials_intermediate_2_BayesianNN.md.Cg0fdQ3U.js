@@ -84,8 +84,8 @@ import{_ as n,c as i,m as A,a4 as s,o as a}from"./chunks/framework.D-goBycL.js";
 <span class="line"><span>Iterations        = 1:1:5000</span></span>
 <span class="line"><span>Number of chains  = 1</span></span>
 <span class="line"><span>Samples per chain = 5000</span></span>
-<span class="line"><span>Wall duration     = 26.68 seconds</span></span>
-<span class="line"><span>Compute duration  = 26.68 seconds</span></span>
+<span class="line"><span>Wall duration     = 24.95 seconds</span></span>
+<span class="line"><span>Compute duration  = 24.95 seconds</span></span>
 <span class="line"><span>parameters        = parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], parameters[6], parameters[7], parameters[8], parameters[9], parameters[10], parameters[11], parameters[12], parameters[13], parameters[14], parameters[15], parameters[16], parameters[17], parameters[18], parameters[19], parameters[20]</span></span>
 <span class="line"><span>internals         = lp, n_steps, is_accept, acceptance_rate, log_density, hamiltonian_energy, hamiltonian_energy_error, numerical_error, step_size, nom_step_size</span></span>
 <span class="line"><span></span></span>
@@ -93,26 +93,26 @@ import{_ as n,c as i,m as A,a4 as s,o as a}from"./chunks/framework.D-goBycL.js";
 <span class="line"><span>      parameters      mean       std      mcse   ess_bulk   ess_tail      rhat   ess_per_sec</span></span>
 <span class="line"><span>          Symbol   Float64   Float64   Float64    Float64    Float64   Float64       Float64</span></span>
 <span class="line"><span></span></span>
-<span class="line"><span>   parameters[1]   -0.5133    1.8835    0.5330    13.1888    25.0326    1.4853        0.4943</span></span>
-<span class="line"><span>   parameters[2]   -5.3361    2.4104    0.6377    15.5139    36.9602    1.0376        0.5814</span></span>
-<span class="line"><span>   parameters[3]    0.3151    0.6835    0.1441    27.6358    50.3442    1.1216        1.0357</span></span>
-<span class="line"><span>   parameters[4]    1.9624    3.7648    1.1478    11.5629    25.5317    2.0118        0.4333</span></span>
-<span class="line"><span>   parameters[5]   -0.0914    0.6013    0.0858    52.3129    54.6520    1.1223        1.9605</span></span>
-<span class="line"><span>   parameters[6]    4.9348    2.3882    0.6909    12.4651    22.5599    1.8704        0.4671</span></span>
-<span class="line"><span>   parameters[7]   -1.6494    2.7707    0.8306    11.9136    35.7353    1.9059        0.4465</span></span>
-<span class="line"><span>   parameters[8]   -0.3367    1.5561    0.3957    15.3027    35.5527    1.2732        0.5735</span></span>
-<span class="line"><span>   parameters[9]   -0.6247    1.7715    0.4439    16.1582    41.0067    1.0886        0.6055</span></span>
-<span class="line"><span>  parameters[10]   -0.0485    2.6496    0.7711    12.0002    18.2390    1.6173        0.4497</span></span>
-<span class="line"><span>  parameters[11]   -2.7777    2.4100    0.6937    13.2493    54.0054    1.2589        0.4965</span></span>
-<span class="line"><span>  parameters[12]    1.7397    2.7286    0.8144    12.5350    30.6674    1.3093        0.4698</span></span>
-<span class="line"><span>  parameters[13]   -1.3065    3.0122    0.9212    11.3718    29.5307    1.8415        0.4262</span></span>
-<span class="line"><span>  parameters[14]    2.1359    1.7145    0.4376    16.0168    29.9135    1.1185        0.6002</span></span>
-<span class="line"><span>  parameters[15]   -2.2917    1.1075    0.2143    27.1032    53.9717    1.0339        1.0157</span></span>
-<span class="line"><span>  parameters[16]   -1.8241    1.7783    0.4754    14.8255    44.7465    1.2380        0.5556</span></span>
-<span class="line"><span>  parameters[17]   -2.9541    1.0941    0.1964    32.4857    49.3634    1.0550        1.2174</span></span>
-<span class="line"><span>  parameters[18]   -2.9283    3.1083    0.9424    13.4337    49.1159    1.4880        0.5034</span></span>
-<span class="line"><span>  parameters[19]   -5.8506    1.2702    0.1981    41.3283    64.0949    1.0032        1.5488</span></span>
-<span class="line"><span>  parameters[20]   -3.6909    1.8615    0.5266    13.1481    52.3750    1.6064        0.4927</span></span>
+<span class="line"><span>   parameters[1]   -0.5133    1.8835    0.5330    13.1888    25.0326    1.4853        0.5286</span></span>
+<span class="line"><span>   parameters[2]   -5.3361    2.4104    0.6377    15.5139    36.9602    1.0376        0.6217</span></span>
+<span class="line"><span>   parameters[3]    0.3151    0.6835    0.1441    27.6358    50.3442    1.1216        1.1076</span></span>
+<span class="line"><span>   parameters[4]    1.9624    3.7648    1.1478    11.5629    25.5317    2.0118        0.4634</span></span>
+<span class="line"><span>   parameters[5]   -0.0914    0.6013    0.0858    52.3129    54.6520    1.1223        2.0965</span></span>
+<span class="line"><span>   parameters[6]    4.9348    2.3882    0.6909    12.4651    22.5599    1.8704        0.4996</span></span>
+<span class="line"><span>   parameters[7]   -1.6494    2.7707    0.8306    11.9136    35.7353    1.9059        0.4775</span></span>
+<span class="line"><span>   parameters[8]   -0.3367    1.5561    0.3957    15.3027    35.5527    1.2732        0.6133</span></span>
+<span class="line"><span>   parameters[9]   -0.6247    1.7715    0.4439    16.1582    41.0067    1.0886        0.6476</span></span>
+<span class="line"><span>  parameters[10]   -0.0485    2.6496    0.7711    12.0002    18.2390    1.6173        0.4809</span></span>
+<span class="line"><span>  parameters[11]   -2.7777    2.4100    0.6937    13.2493    54.0054    1.2589        0.5310</span></span>
+<span class="line"><span>  parameters[12]    1.7397    2.7286    0.8144    12.5350    30.6674    1.3093        0.5024</span></span>
+<span class="line"><span>  parameters[13]   -1.3065    3.0122    0.9212    11.3718    29.5307    1.8415        0.4557</span></span>
+<span class="line"><span>  parameters[14]    2.1359    1.7145    0.4376    16.0168    29.9135    1.1185        0.6419</span></span>
+<span class="line"><span>  parameters[15]   -2.2917    1.1075    0.2143    27.1032    53.9717    1.0339        1.0862</span></span>
+<span class="line"><span>  parameters[16]   -1.8241    1.7783    0.4754    14.8255    44.7465    1.2380        0.5942</span></span>
+<span class="line"><span>  parameters[17]   -2.9541    1.0941    0.1964    32.4857    49.3634    1.0550        1.3019</span></span>
+<span class="line"><span>  parameters[18]   -2.9283    3.1083    0.9424    13.4337    49.1159    1.4880        0.5384</span></span>
+<span class="line"><span>  parameters[19]   -5.8506    1.2702    0.1981    41.3283    64.0949    1.0032        1.6563</span></span>
+<span class="line"><span>  parameters[20]   -3.6909    1.8615    0.5266    13.1481    52.3750    1.6064        0.5269</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>Quantiles</span></span>
 <span class="line"><span>      parameters      2.5%     25.0%     50.0%     75.0%     97.5%</span></span>
@@ -188,7 +188,7 @@ import{_ as n,c as i,m as A,a4 as s,o as a}from"./chunks/framework.D-goBycL.js";
 <span class="line"><span>Environment:</span></span>
 <span class="line"><span>  LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64</span></span>
 <span class="line"><span>  JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6</span></span>
-<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-9/julialang/lux-dot-jl/docs</span></span>
+<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-3/julialang/lux-dot-jl/docs</span></span>
 <span class="line"><span>  JULIA_AMDGPU_LOGGING_ENABLED = true</span></span>
 <span class="line"><span>  JULIA_DEBUG = Literate</span></span>
 <span class="line"><span>  JULIA_CPU_THREADS = 2</span></span>

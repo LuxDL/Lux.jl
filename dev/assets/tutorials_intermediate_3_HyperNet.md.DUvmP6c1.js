@@ -128,26 +128,26 @@ import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.D-goBycL.js";const c
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
 <span class="line"></span>
-<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>[  1/ 10] 	        MNIST 	 Time 64.05367s 	 Training Accuracy: 76.27% 	 Test Accuracy: 78.12%</span></span>
-<span class="line"><span>[  1/ 10] 	 FashionMNIST 	 Time 0.16827s 	 Training Accuracy: 54.98% 	 Test Accuracy: 50.00%</span></span>
-<span class="line"><span>[  2/ 10] 	        MNIST 	 Time 0.05224s 	 Training Accuracy: 75.49% 	 Test Accuracy: 71.88%</span></span>
-<span class="line"><span>[  2/ 10] 	 FashionMNIST 	 Time 0.04354s 	 Training Accuracy: 56.45% 	 Test Accuracy: 65.62%</span></span>
-<span class="line"><span>[  3/ 10] 	        MNIST 	 Time 0.04194s 	 Training Accuracy: 81.84% 	 Test Accuracy: 78.12%</span></span>
-<span class="line"><span>[  3/ 10] 	 FashionMNIST 	 Time 0.03783s 	 Training Accuracy: 62.21% 	 Test Accuracy: 56.25%</span></span>
-<span class="line"><span>[  4/ 10] 	        MNIST 	 Time 0.03172s 	 Training Accuracy: 82.62% 	 Test Accuracy: 81.25%</span></span>
-<span class="line"><span>[  4/ 10] 	 FashionMNIST 	 Time 0.04123s 	 Training Accuracy: 66.41% 	 Test Accuracy: 56.25%</span></span>
-<span class="line"><span>[  5/ 10] 	        MNIST 	 Time 0.04566s 	 Training Accuracy: 81.54% 	 Test Accuracy: 81.25%</span></span>
-<span class="line"><span>[  5/ 10] 	 FashionMNIST 	 Time 0.07084s 	 Training Accuracy: 65.72% 	 Test Accuracy: 71.88%</span></span>
-<span class="line"><span>[  6/ 10] 	        MNIST 	 Time 0.07137s 	 Training Accuracy: 90.53% 	 Test Accuracy: 90.62%</span></span>
-<span class="line"><span>[  6/ 10] 	 FashionMNIST 	 Time 0.04043s 	 Training Accuracy: 69.14% 	 Test Accuracy: 62.50%</span></span>
-<span class="line"><span>[  7/ 10] 	        MNIST 	 Time 0.08447s 	 Training Accuracy: 92.68% 	 Test Accuracy: 90.62%</span></span>
-<span class="line"><span>[  7/ 10] 	 FashionMNIST 	 Time 0.06856s 	 Training Accuracy: 75.10% 	 Test Accuracy: 68.75%</span></span>
-<span class="line"><span>[  8/ 10] 	        MNIST 	 Time 0.03081s 	 Training Accuracy: 93.85% 	 Test Accuracy: 90.62%</span></span>
-<span class="line"><span>[  8/ 10] 	 FashionMNIST 	 Time 0.03594s 	 Training Accuracy: 74.02% 	 Test Accuracy: 71.88%</span></span>
-<span class="line"><span>[  9/ 10] 	        MNIST 	 Time 0.05651s 	 Training Accuracy: 94.53% 	 Test Accuracy: 93.75%</span></span>
-<span class="line"><span>[  9/ 10] 	 FashionMNIST 	 Time 0.03819s 	 Training Accuracy: 76.76% 	 Test Accuracy: 71.88%</span></span>
-<span class="line"><span>[ 10/ 10] 	        MNIST 	 Time 0.02985s 	 Training Accuracy: 94.73% 	 Test Accuracy: 87.50%</span></span>
-<span class="line"><span>[ 10/ 10] 	 FashionMNIST 	 Time 0.03267s 	 Training Accuracy: 80.08% 	 Test Accuracy: 65.62%</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span>[  1/ 10] 	        MNIST 	 Time 69.90224s 	 Training Accuracy: 76.27% 	 Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[  1/ 10] 	 FashionMNIST 	 Time 0.13887s 	 Training Accuracy: 54.98% 	 Test Accuracy: 50.00%</span></span>
+<span class="line"><span>[  2/ 10] 	        MNIST 	 Time 0.04828s 	 Training Accuracy: 75.49% 	 Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[  2/ 10] 	 FashionMNIST 	 Time 0.04034s 	 Training Accuracy: 56.45% 	 Test Accuracy: 65.62%</span></span>
+<span class="line"><span>[  3/ 10] 	        MNIST 	 Time 0.03645s 	 Training Accuracy: 81.84% 	 Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[  3/ 10] 	 FashionMNIST 	 Time 0.06975s 	 Training Accuracy: 62.21% 	 Test Accuracy: 56.25%</span></span>
+<span class="line"><span>[  4/ 10] 	        MNIST 	 Time 0.03190s 	 Training Accuracy: 82.62% 	 Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[  4/ 10] 	 FashionMNIST 	 Time 0.03040s 	 Training Accuracy: 66.41% 	 Test Accuracy: 56.25%</span></span>
+<span class="line"><span>[  5/ 10] 	        MNIST 	 Time 0.02987s 	 Training Accuracy: 81.54% 	 Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[  5/ 10] 	 FashionMNIST 	 Time 0.03331s 	 Training Accuracy: 65.72% 	 Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[  6/ 10] 	        MNIST 	 Time 0.02946s 	 Training Accuracy: 90.53% 	 Test Accuracy: 90.62%</span></span>
+<span class="line"><span>[  6/ 10] 	 FashionMNIST 	 Time 0.02925s 	 Training Accuracy: 69.14% 	 Test Accuracy: 62.50%</span></span>
+<span class="line"><span>[  7/ 10] 	        MNIST 	 Time 0.03149s 	 Training Accuracy: 92.68% 	 Test Accuracy: 90.62%</span></span>
+<span class="line"><span>[  7/ 10] 	 FashionMNIST 	 Time 0.02867s 	 Training Accuracy: 75.10% 	 Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[  8/ 10] 	        MNIST 	 Time 0.02925s 	 Training Accuracy: 93.85% 	 Test Accuracy: 90.62%</span></span>
+<span class="line"><span>[  8/ 10] 	 FashionMNIST 	 Time 0.03271s 	 Training Accuracy: 74.02% 	 Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[  9/ 10] 	        MNIST 	 Time 0.03655s 	 Training Accuracy: 94.53% 	 Test Accuracy: 93.75%</span></span>
+<span class="line"><span>[  9/ 10] 	 FashionMNIST 	 Time 0.02964s 	 Training Accuracy: 76.76% 	 Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[ 10/ 10] 	        MNIST 	 Time 0.03400s 	 Training Accuracy: 94.73% 	 Test Accuracy: 87.50%</span></span>
+<span class="line"><span>[ 10/ 10] 	 FashionMNIST 	 Time 0.02925s 	 Training Accuracy: 80.08% 	 Test Accuracy: 65.62%</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>[FINAL] 	        MNIST 	 Training Accuracy: 91.70% 	 Test Accuracy: 78.12%</span></span>
 <span class="line"><span>[FINAL] 	 FashionMNIST 	 Training Accuracy: 80.08% 	 Test Accuracy: 65.62%</span></span></code></pre></div><h2 id="Appendix" tabindex="-1">Appendix <a class="header-anchor" href="#Appendix" aria-label="Permalink to &quot;Appendix {#Appendix}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> InteractiveUtils</span></span>
@@ -167,7 +167,7 @@ import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.D-goBycL.js";const c
 <span class="line"><span>Environment:</span></span>
 <span class="line"><span>  LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64</span></span>
 <span class="line"><span>  JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6</span></span>
-<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-9/julialang/lux-dot-jl/docs</span></span>
+<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-3/julialang/lux-dot-jl/docs</span></span>
 <span class="line"><span>  JULIA_AMDGPU_LOGGING_ENABLED = true</span></span>
 <span class="line"><span>  JULIA_DEBUG = Literate</span></span>
 <span class="line"><span>  JULIA_CPU_THREADS = 2</span></span>
@@ -201,6 +201,6 @@ import{_ as s,c as i,o as a,a4 as n}from"./chunks/framework.D-goBycL.js";const c
 <span class="line"><span>- JULIA_CUDA_HARD_MEMORY_LIMIT: 25%</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>1 device:</span></span>
-<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 3.308 GiB / 4.750 GiB available)</span></span>
+<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 3.443 GiB / 4.750 GiB available)</span></span>
 <span class="line"><span>┌ Warning: LuxAMDGPU is loaded but the AMDGPU is not functional.</span></span>
 <span class="line"><span>└ @ LuxAMDGPU ~/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6/packages/LuxAMDGPU/sGa0S/src/LuxAMDGPU.jl:19</span></span></code></pre></div><hr><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl" target="_blank" rel="noreferrer">Literate.jl</a>.</em></p>`,22),p=[t];function l(k,e,r,E,d,g){return a(),i("div",null,p)}const F=s(h,[["render",l]]);export{c as __pageData,F as default};
