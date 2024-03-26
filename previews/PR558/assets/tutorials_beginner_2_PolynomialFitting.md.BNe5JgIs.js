@@ -77,7 +77,7 @@ import{_ as t,c as i,m as A,a,a4 as s,o as n}from"./chunks/framework.DI4v-BsP.js
 <span class="line"><span>Environment:</span></span>
 <span class="line"><span>  LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64</span></span>
 <span class="line"><span>  JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6</span></span>
-<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-3/julialang/lux-dot-jl/docs</span></span>
+<span class="line"><span>  JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-7/julialang/lux-dot-jl/docs</span></span>
 <span class="line"><span>  JULIA_AMDGPU_LOGGING_ENABLED = true</span></span>
 <span class="line"><span>  JULIA_DEBUG = Literate</span></span>
 <span class="line"><span>  JULIA_CPU_THREADS = 2</span></span>
