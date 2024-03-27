@@ -28,6 +28,14 @@ LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
 LuxDeviceUtils.get_device(x::CUDA.AnyCuArray) = LuxCUDADevice(CUDA.device(x))
 
 # Set Device
+function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, dev::CUDA.CuDevice)
+    if !CUDA.functional()
+        @warn "CUDA is not functional."
+        return
+    end
+    CUDA.device!(dev)
+    return
+end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Int)
     if !CUDA.functional()
         @warn "CUDA is not functional."

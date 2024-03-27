@@ -27,6 +27,14 @@ LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
 LuxDeviceUtils.get_device(x::AMDGPU.AnyROCArray) = LuxAMDGPUDevice(AMDGPU.device(x))
 
 # Set Device
+function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, dev::AMDGPU.HIPDevice)
+    if !AMDGPU.functional()
+        @warn "AMDGPU is not functional."
+        return
+    end
+    AMDGPU.device!(dev)
+    return
+end
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, id::Int)
     if !AMDGPU.functional()
         @warn "AMDGPU is not functional."

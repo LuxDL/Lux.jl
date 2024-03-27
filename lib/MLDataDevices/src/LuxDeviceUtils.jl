@@ -355,18 +355,20 @@ const SET_DEVICE_DANGER = """
 """
 
 """
-    set_device!(T::Type{<:AbstractLuxDevice}, id::Int)
+    set_device!(T::Type{<:AbstractLuxDevice}, dev_or_id)
 
 $SET_DEVICE_DOCS
 
 ## Arguments
 
   - `T::Type{<:AbstractLuxDevice}`: The device type to set.
-  - `id::Int`: The device id to set. This is `1`-indexed.
+  - `dev_or_id`: Can be the device from the corresponding package. For example for CUDA it
+    can be a `CuDevice`. If it is an integer, it is the device id to set. This is
+    `1`-indexed.
 
 $SET_DEVICE_DANGER
 """
-function set_device!(::Type{T}, id::Int) where {T <: AbstractLuxDevice}
+function set_device!(::Type{T}, dev_or_id) where {T <: AbstractLuxDevice}
     T === LuxCUDADevice &&
         @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
     T === LuxAMDGPUDevice &&
