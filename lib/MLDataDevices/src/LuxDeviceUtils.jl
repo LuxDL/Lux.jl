@@ -337,6 +337,64 @@ end
 
 CRC.@non_differentiable get_device(::Any...)
 
+# Set the device
+const SET_DEVICE_DOCS = """
+Set the device for the given type. This is a no-op for `LuxCPUDevice`. For `LuxCUDADevice`
+and `LuxAMDGPUDevice`, it prints a warning if the corresponding trigger package is not
+loaded.
+    
+Currently, `LuxMetalDevice` doesn't support setting the device.
+"""
+
+const SET_DEVICE_DANGER = """
+!!! danger
+
+    This specific function should be considered experimental at this point and is currently
+    provided to support distributed training in Lux. As such please use
+    `Lux.DistributedUtils` instead of using this function.
+"""
+
+"""
+    set_device!(T::Type{<:AbstractLuxDevice}, id::Int)
+
+$SET_DEVICE_DOCS
+
+## Arguments
+
+  - `T::Type{<:AbstractLuxDevice}`: The device type to set.
+  - `id::Int`: The device id to set. This is `1`-indexed.
+
+$SET_DEVICE_DANGER
+"""
+function set_device!(::Type{T}, id::Int) where {T <: AbstractLuxDevice}
+    T === LuxCUDADevice &&
+        @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
+    T === LuxAMDGPUDevice &&
+        @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
+    T === LuxMetalDevice &&
+        @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting." maxlog=1
+    T === LuxCPUDevice &&
+        @warn "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting." maxlog=1
+    return
+end
+
+"""
+    set_device!(T::Type{<:AbstractLuxDevice}, ::Nothing, rank::Int)
+
+$SET_DEVICE_DOCS
+
+## Arguments
+
+  - `T::Type{<:AbstractLuxDevice}`: The device type to set.
+  - `rank::Int`: Local Rank of the process. This is applicable for distributed training and
+    must be `0`-indexed.
+
+$SET_DEVICE_DANGER
+"""
+function set_device!(::Type{T}, ::Nothing, rank::Int) where {T <: AbstractLuxDevice}
+    return set_device!(T, rank)
+end
+
 # Adapt Interface
 abstract type AbstractLuxDeviceAdaptor end
 abstract type AbstractLuxGPUDeviceAdaptor <: AbstractLuxDeviceAdaptor end

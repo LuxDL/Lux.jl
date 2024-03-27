@@ -26,6 +26,20 @@ LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
 # Query Device from Array
 LuxDeviceUtils.get_device(x::AMDGPU.AnyROCArray) = LuxAMDGPUDevice(AMDGPU.device(x))
 
+# Set Device
+function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, id::Int)
+    if !AMDGPU.functional()
+        @warn "AMDGPU is not functional."
+        return
+    end
+    AMDGPU.device!(id)
+    return
+end
+function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, ::Nothing, rank::Int)
+    id = mod1(rank + 1, length(AMDGPU.devices()))
+    return LuxDeviceUtils.set_device!(LuxAMDGPUDevice, id)
+end
+
 # Device Transfer
 ## To GPU
 Adapt.adapt_storage(::LuxAMDGPUAdaptor{Nothing}, x) = AMDGPU.roc(x)

@@ -27,6 +27,20 @@ LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
 # Query Device from Array
 LuxDeviceUtils.get_device(x::CUDA.AnyCuArray) = LuxCUDADevice(CUDA.device(x))
 
+# Set Device
+function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Int)
+    if !CUDA.functional()
+        @warn "CUDA is not functional."
+        return
+    end
+    CUDA.device!(id - 1)
+    return
+end
+function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, ::Nothing, rank::Int)
+    id = mod1(rank + 1, length(CUDA.devices()))
+    return LuxDeviceUtils.set_device!(LuxCUDADevice, id)
+end
+
 # Device Transfer
 ## To GPU
 Adapt.adapt_storage(::LuxCUDAAdaptor{Nothing}, x) = CUDA.cu(x)
