@@ -21,7 +21,7 @@ hero:
       text: View on GitHub
       link: https://github.com/LuxDL/Lux.jl
   image:
-    src: /logo.png
+    src: /lux-logo.svg
     alt: Lux.jl
 
 features:
