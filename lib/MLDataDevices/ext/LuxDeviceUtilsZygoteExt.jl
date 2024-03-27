@@ -1,12 +1,13 @@
 module LuxDeviceUtilsZygoteExt
 
-using Adapt, LuxDeviceUtils, Zygote
+using Adapt: Adapt
+using LuxDeviceUtils: AbstractLuxDeviceAdaptor, LuxCPUAdaptor
+using Zygote: OneElement
 
-Adapt.adapt_structure(::LuxCPUAdaptor, x::Zygote.OneElement) = x
+Adapt.adapt_structure(::LuxCPUAdaptor, x::OneElement) = x
 
-function Adapt.adapt_structure(to::LuxDeviceUtils.AbstractLuxDeviceAdaptor,
-        x::Zygote.OneElement)
-    return adapt(to, collect(x))
+function Adapt.adapt_structure(to::AbstractLuxDeviceAdaptor, x::OneElement)
+    return Adapt.adapt(to, collect(x))
 end
 
 end

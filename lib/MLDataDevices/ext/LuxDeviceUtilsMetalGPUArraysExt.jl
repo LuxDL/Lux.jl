@@ -1,7 +1,10 @@
 module LuxDeviceUtilsMetalGPUArraysExt
 
-using GPUArrays, LuxDeviceUtils, Metal, Random
-import Adapt: adapt_storage, adapt
+using Adapt: Adapt
+using GPUArrays: GPUArrays
+using LuxDeviceUtils: LuxDeviceUtils, LuxMetalAdaptor, LuxMetalDevice, reset_gpu_device!
+using Metal: Metal, MtlArray
+using Random: Random, AbstractRNG
 
 __init__() = reset_gpu_device!()
 
@@ -18,8 +21,10 @@ LuxDeviceUtils.get_device(::MtlArray) = LuxMetalDevice()
 
 # Device Transfer
 ## To GPU
-adapt_storage(::LuxMetalAdaptor, x) = mtl(x)
-adapt_storage(::LuxMetalAdaptor, rng::AbstractRNG) = rng
-adapt_storage(::LuxMetalAdaptor, rng::Random.TaskLocalRNG) = GPUArrays.default_rng(MtlArray)
+Adapt.adapt_storage(::LuxMetalAdaptor, x) = Metal.mtl(x)
+Adapt.adapt_storage(::LuxMetalAdaptor, rng::AbstractRNG) = rng
+function Adapt.adapt_storage(::LuxMetalAdaptor, rng::Random.TaskLocalRNG)
+    return GPUArrays.default_rng(MtlArray)
+end
 
 end

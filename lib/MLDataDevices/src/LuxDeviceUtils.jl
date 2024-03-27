@@ -1,16 +1,23 @@
 module LuxDeviceUtils
 
-import PrecompileTools: @recompile_invalidations
+using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
-    using ChainRulesCore, Functors, LuxCore, Preferences, Random
-    import Adapt: adapt, adapt_storage
-    import ChainRulesCore as CRC
+    using Adapt: Adapt
+    using ChainRulesCore: ChainRulesCore, NoTangent
+    using FastClosures: @closure
+    using Functors: Functors, fmap
+    using LuxCore: LuxCore
+    using Preferences: @delete_preferences!, @load_preference, @set_preferences!
+    using Random: AbstractRNG, Random
 end
+
+const CRC = ChainRulesCore
 
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
-export gpu_device, cpu_device, LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
+export gpu_device, cpu_device
+export LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
 export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
 export get_device
 
@@ -143,7 +150,8 @@ function gpu_device(device_id::Union{Nothing, Int}=nothing;
     if GPU_DEVICE[] !== nothing
         dev = GPU_DEVICE[]
         if device_id === nothing
-            force_gpu_usage && !(dev isa AbstractLuxGPUDevice) &&
+            force_gpu_usage &&
+                !(dev isa AbstractLuxGPUDevice) &&
                 throw(LuxDeviceSelectionException())
             return dev
         else
@@ -292,15 +300,15 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
     @eval begin
         function (D::$(ldev))(x::AbstractArray)
             ladaptor = _get_adaptor(D)
-            fn = Base.Fix1(adapt, ladaptor)
+            fn = Base.Fix1(Adapt.adapt, ladaptor)
             return _isbitsarray(x) ? fn(x) : map(D, x)
         end
         (D::$(ldev))(x::Tuple) = map(D, x)
         (D::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(D(values(x)))
         function (D::$(ldev))(x)
             ladaptor = _get_adaptor(D)
-            _isleaf(x) && return adapt(ladaptor, x)
-            return fmap(Base.Fix1(adapt, ladaptor), x; exclude=_isleaf)
+            _isleaf(x) && return Adapt.adapt(ladaptor, x)
+            return fmap(Base.Fix1(Adapt.adapt, ladaptor), x; exclude=_isleaf)
         end
         function (::$(ldev))(NN::LuxCore.AbstractExplicitLayer)
             @warn "Lux layers are stateless and hence don't participate in device \
@@ -329,6 +337,66 @@ end
 
 CRC.@non_differentiable get_device(::Any...)
 
+# Set the device
+const SET_DEVICE_DOCS = """
+Set the device for the given type. This is a no-op for `LuxCPUDevice`. For `LuxCUDADevice`
+and `LuxAMDGPUDevice`, it prints a warning if the corresponding trigger package is not
+loaded.
+    
+Currently, `LuxMetalDevice` doesn't support setting the device.
+"""
+
+const SET_DEVICE_DANGER = """
+!!! danger
+
+    This specific function should be considered experimental at this point and is currently
+    provided to support distributed training in Lux. As such please use
+    `Lux.DistributedUtils` instead of using this function.
+"""
+
+"""
+    set_device!(T::Type{<:AbstractLuxDevice}, dev_or_id)
+
+$SET_DEVICE_DOCS
+
+## Arguments
+
+  - `T::Type{<:AbstractLuxDevice}`: The device type to set.
+  - `dev_or_id`: Can be the device from the corresponding package. For example for CUDA it
+    can be a `CuDevice`. If it is an integer, it is the device id to set. This is
+    `1`-indexed.
+
+$SET_DEVICE_DANGER
+"""
+function set_device!(::Type{T}, dev_or_id) where {T <: AbstractLuxDevice}
+    T === LuxCUDADevice &&
+        @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
+    T === LuxAMDGPUDevice &&
+        @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
+    T === LuxMetalDevice &&
+        @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting." maxlog=1
+    T === LuxCPUDevice &&
+        @warn "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting." maxlog=1
+    return
+end
+
+"""
+    set_device!(T::Type{<:AbstractLuxDevice}, ::Nothing, rank::Int)
+
+$SET_DEVICE_DOCS
+
+## Arguments
+
+  - `T::Type{<:AbstractLuxDevice}`: The device type to set.
+  - `rank::Int`: Local Rank of the process. This is applicable for distributed training and
+    must be `0`-indexed.
+
+$SET_DEVICE_DANGER
+"""
+function set_device!(::Type{T}, ::Nothing, rank::Int) where {T <: AbstractLuxDevice}
+    return set_device!(T, rank)
+end
+
 # Adapt Interface
 abstract type AbstractLuxDeviceAdaptor end
 abstract type AbstractLuxGPUDeviceAdaptor <: AbstractLuxDeviceAdaptor end
@@ -342,13 +410,13 @@ struct LuxAMDGPUAdaptor{D} <: AbstractLuxGPUDeviceAdaptor
 end
 struct LuxMetalAdaptor <: AbstractLuxGPUDeviceAdaptor end
 
-adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
-adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = adapt(Array, x)
-adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
+Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
+Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = Adapt.adapt(Array, x)
+Adapt.adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 
 # Prevent Ambiguity
 for T in (LuxAMDGPUAdaptor, LuxCUDAAdaptor, LuxMetalAdaptor)
-    @eval adapt_storage(to::$(T), x::AbstractRange) = adapt(to, collect(x))
+    @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
 end
 
 _isbitsarray(::AbstractArray{<:Number}) = true
@@ -359,12 +427,10 @@ _isleaf(::AbstractRNG) = true
 _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
 
 # Chain Rules Core
-function CRC.rrule(::typeof(adapt_storage), to::AbstractLuxDeviceAdaptor, x::AbstractArray)
-    function ∇adapt_storage(Δ)
-        dev = get_device(x)
-        return (NoTangent(), NoTangent(), dev(Δ))
-    end
-    return adapt_storage(to, x), ∇adapt_storage
+function CRC.rrule(
+        ::typeof(Adapt.adapt_storage), to::AbstractLuxDeviceAdaptor, x::AbstractArray)
+    ∇adapt_storage = @closure Δ -> (NoTangent(), NoTangent(), (get_device(x))(Δ))
+    return Adapt.adapt_storage(to, x), ∇adapt_storage
 end
 
 end
