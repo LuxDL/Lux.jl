@@ -1,11 +1,26 @@
 CUDA.allowscalar(false)
 
+function unsafe_free! end
+
 if LuxCUDA.functional()
-    # unsafe_free OneHotArrays
-    CUDA.unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
+    function unsafe_free!(x)
+        return hasmethod(CUDA.unsafe_free!, Tuple{typeof(x)}) ? CUDA.unsafe_free!(x) :
+               nothing
+    end
+    unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
 elseif LuxAMDGPU.functional()
-    # unsafe_free OneHotArrays
-    AMDGPU.unsafe_free!(x::OneHotArray) = AMDGPU.unsafe_free!(x.indices)
+    function unsafe_free!(x)
+        return hasmethod(AMDGPU.unsafe_free!, Tuple{typeof(x)}) ? AMDGPU.unsafe_free!(x) :
+               nothing
+    end
+    unsafe_free!(x::OneHotArray) = AMDGPU.unsafe_free!(x.indices)
+end
+
+function reclaim_all()
+    GC.gc(true)
+    LuxCUDA.functional() && CUDA.reclaim()
+    LuxAMDGPU.functional() && AMDGPU.reclaim()
+    return
 end
 
 # Loss Function
@@ -17,13 +32,7 @@ function logitcrossentropyloss(x, y, model, ps, st)
 end
 
 # Random
-function get_prng(seed::Int)
-    @static if VERSION >= v"1.7"
-        return Xoshiro(seed)
-    else
-        return MersenneTwister(seed)
-    end
-end
+get_prng(seed::Int) = Xoshiro(seed)
 
 # Accuracy
 function accuracy(ŷ, y, topk=(1,))
@@ -42,16 +51,13 @@ function accuracy(ŷ, y, topk=(1,))
     return accuracies .* 100 ./ size(y, ndims(y))
 end
 
-# Distributed Utils
-is_distributed() = FluxMPI.Initialized() && total_workers() > 1
-should_log() = !FluxMPI.Initialized() || local_rank() == 0
-
 # Checkpointing
 function save_checkpoint(state::NamedTuple; is_best::Bool, filename::String)
+    @assert last(splitext(filename))==".jld2" "Filename should have a .jld2 extension."
     isdir(dirname(filename)) || mkpath(dirname(filename))
-    JLSO.save(filename, :state => state)
-    is_best && _symlink_safe(filename, joinpath(dirname(filename), "model_best.jlso"))
-    _symlink_safe(filename, joinpath(dirname(filename), "model_current.jlso"))
+    save(filename; state)
+    is_best && _symlink_safe(filename, joinpath(dirname(filename), "model_best.jld2"))
+    _symlink_safe(filename, joinpath(dirname(filename), "model_current.jld2"))
     return nothing
 end
 
@@ -63,10 +69,10 @@ end
 function load_checkpoint(fname::String)
     try
         # NOTE(@avik-pal): ispath is failing for symlinks?
-        return JLSO.load(fname)[:state]
+        return JLD2[:state]
     catch
-        @warn """$fname could not be loaded. This might be because the file is absent or is
-                corrupt. Proceeding by returning `nothing`."""
+        @warn "$fname could not be loaded. This might be because the file is absent or is \
+               corrupt. Proceeding by returning `nothing`."
         return nothing
     end
 end
@@ -117,7 +123,7 @@ end
 (s::ConstantSchedule)(t) = s.val
 
 # Tracking
-Base.@kwdef mutable struct AverageMeter
+@kwdef mutable struct AverageMeter
     fmtstr
     val::Float64 = 0.0
     sum::Float64 = 0.0
@@ -135,7 +141,7 @@ function (meter::AverageMeter)(val, n::Int)
     s = val * n
     if is_distributed()
         v = [s, typeof(val)(n)]
-        v = FluxMPI.MPIExtensions.allreduce!(v, +, FluxMPI.MPI.COMM_WORLD)
+        v = DistributedUtils.allreduce!(backend, v, +)
         s = v[1]
         n = Int(v[2])
     end

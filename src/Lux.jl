@@ -13,6 +13,7 @@ PrecompileTools.@recompile_invalidations begin
     using GPUArraysCore: GPUArraysCore
     using LinearAlgebra: LinearAlgebra
     using Markdown: @doc_str
+    using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport
     using Setfield: Setfield, @set!
@@ -32,6 +33,8 @@ end
 const CRC = ChainRulesCore
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
+
+@inline __is_extension_loaded(x) = Val(false)
 
 # Utilities
 include("utils.jl")
@@ -61,6 +64,10 @@ include("transform/types.jl")
 include("transform/flux.jl")
 include("transform/simplechains.jl")
 
+# Distributed Training
+include("distributed/backend.jl")
+include("distributed/public_api.jl")
+
 # Deprecations
 include("deprecated.jl")
 
@@ -82,5 +89,7 @@ export StatefulLuxLayer
 export f16, f32, f64
 
 export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer, SimpleChainsLayer
+
+export MPIBackend, NCCLBackend, DistributedUtils
 
 end
