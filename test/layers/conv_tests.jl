@@ -550,7 +550,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(y, ps, st) opt_broken=true
+        @jet layer(y, ps, st)
 
         x_hat1 = layer(y, ps, st)[1]
 
@@ -558,7 +558,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(y, ps, st) opt_broken=true
+        @jet layer(y, ps, st)
 
         x_hat2 = layer(y, ps, st)[1]
 
@@ -569,7 +569,7 @@ end
         ps, st = Lux.setup(rng, layer) .|> device
         x = rand(Float32, 5, 5, 1, 1) |> aType
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
 
@@ -578,7 +578,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
 
@@ -607,7 +607,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
 
         @test size(layer(x, ps, st)[1]) == (10, 4, 1)
         @test length(ps.weight) == 3 * (2 * 4) / 2
@@ -620,7 +620,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
 
         @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
         @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
@@ -633,7 +633,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
         @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
         @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
 
@@ -645,7 +645,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
         @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
         @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
 
@@ -654,7 +654,7 @@ end
         __display(layer)
         ps, st = Lux.setup(rng, layer) .|> device
 
-        @jet layer(x, ps, st) opt_broken=true
+        @jet layer(x, ps, st)
         @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
         @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
 
@@ -669,7 +669,7 @@ end
 
             y = first(layer(x, ps, st))
             @test size(y) == (4, 1, 1)
-            @jet layer(x, ps, st) opt_broken=true
+            @jet layer(x, ps, st)
         end
 
         @testset "Catch Channel Mismatch Early: LuxDL/Lux.jl#455" begin

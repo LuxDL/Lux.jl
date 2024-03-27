@@ -118,10 +118,6 @@ function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
     return CRC.ProjectTo(x)(Δ)
 end
 
-# Activation Function
-@inline __apply_activation(::typeof(identity), x) = x
-@inline __apply_activation(f, x) = f.(x)
-
 # Backend Integration
 ## Convolution
 @inline _conv(x, weight, cdims) = conv(x, weight, cdims)
@@ -138,7 +134,7 @@ end
 function _conv_transpose_dims(
         x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
     # Calculate size of "input", from ∇conv_data()'s perspective...
-    combined_pad = (padding[1:2:end] .+ padding[2:2:end])
+    combined_pad = __combine_padding(padding)
     I = (size(x)[1:(end - 2)] .- 1) .* stride .+ 1 .+
         (size(weight)[1:(end - 2)] .- 1) .* dilation .- combined_pad
     C_in = size(weight)[end - 1] * groups
@@ -151,6 +147,12 @@ function _conv_transpose_dims(
     # Create DenseConvDims() that looks like the corresponding conv()
     return DenseConvDims(
         (I..., C_in, batch_size), w_size; stride, padding, dilation, groups)
+end
+
+# Nonspecialized path
+@inline __combine_padding(padding) = padding[1:2:end] .+ padding[2:2:end]
+function __combine_padding(padding::NTuple{N, Int}) where {N}
+    return ntuple(@closure(i->padding[2i - 1] + padding[2i]), N ÷ 2)
 end
 
 ## Adaptive Pooling

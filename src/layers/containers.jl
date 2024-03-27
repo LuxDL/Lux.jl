@@ -479,8 +479,8 @@ _flatten_model(x) = x
 @generated function applychain(
         layers::NamedTuple{fields}, x, ps, st::NamedTuple{fields}) where {fields}
     N = length(fields)
-    x_symbols = vcat([:x], [gensym() for _ in 1:N])
-    st_symbols = [gensym() for _ in 1:N]
+    x_symbols = vcat([:x], [gensym("x") for _ in 1:N])
+    st_symbols = [gensym("st") for _ in 1:N]
     calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = Lux.apply(
                  layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i])))
              for i in 1:N]

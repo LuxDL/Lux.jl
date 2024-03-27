@@ -2,6 +2,8 @@
     # Add tests for BatchedRoutines here
     rng = get_stable_rng()
 
+    # Second order is mostly broken, use BatchedRoutines which is significantly more
+    # efficient
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(rng, Float32, 1, 128) |> aType
         nn = Dense(1 => 1)
@@ -39,7 +41,6 @@
                 ∂x !== nothing && ∂ps !== nothing
             end
 
-            # Weird Zygote Quirks
             @test begin
                 ∂x, ∂ps = Zygote.jacobian(test_f, x, ps_ca)
                 ∂x !== nothing && ∂ps !== nothing
