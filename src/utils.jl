@@ -118,10 +118,6 @@ function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
     return CRC.ProjectTo(x)(Δ)
 end
 
-# Activation Function
-@inline __apply_activation(::typeof(identity), x) = x
-@inline __apply_activation(f, x) = f.(x)
-
 # Backend Integration
 ## Convolution
 @inline _conv(x, weight, cdims) = conv(x, weight, cdims)
@@ -252,3 +248,11 @@ __named_tuple(nt::NamedTuple) = nt
 
 # Nondifferentiable hasmethod. Avoiding type-piracy
 @inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
+
+# Helpers for bias and activation functions
+## Just Activation Function
+@inline apply_activation(::typeof(identity), x) = x
+@inline apply_activation(f, x) = f.(x)
+
+@inline apply_bias_activation(::typeof(identity), x, b) = x .+ b
+@inline apply_bias_activation(f::F, x, b) where {F} = @. f(x + b)

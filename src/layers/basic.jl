@@ -211,29 +211,29 @@ statelength(d::Dense) = 0
 outputsize(d::Dense) = (d.out_dims,)
 
 @inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    return __apply_activation(d.activation, ps.weight * x), st
+    return apply_activation(d.activation, ps.weight * x), st
 end
 
 @inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
     x_reshaped = reshape(x, size(x, 1), :)
     return (
-        reshape(__apply_activation(d.activation, ps.weight * x_reshaped),
+        reshape(apply_activation(d.activation, ps.weight * x_reshaped),
             d.out_dims, size(x)[2:end]...),
         st)
 end
 
 @inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
-    return __apply_activation(d.activation, ps.weight * x .+ vec(ps.bias)), st
+    return apply_bias_activation(d.activation, ps.weight * x, vec(ps.bias)), st
 end
 
 @inline function (d::Dense{true})(x::AbstractMatrix, ps, st::NamedTuple)
-    return __apply_activation(d.activation, ps.weight * x .+ ps.bias), st
+    return apply_bias_activation(d.activation, ps.weight * x, ps.bias), st
 end
 
 @inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
     x_reshaped = reshape(x, size(x, 1), :)
     return (
-        reshape(__apply_activation(d.activation, ps.weight * x_reshaped .+ ps.bias),
+        reshape(apply_bias_activation(d.activation, ps.weight * x_reshaped, ps.bias),
             d.out_dims, size(x)[2:end]...),
         st)
 end
@@ -315,11 +315,11 @@ statelength(d::Scale) = 0
 outputsize(d::Scale) = d.dims
 
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
-    return __apply_activation(d.activation, ps.weight .* x .+ ps.bias), st
+    return apply_bias_activation(d.activation, ps.weight .* x, ps.bias), st
 end
 
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    return __apply_activation(d.activation, ps.weight .* x), st
+    return apply_activation(d.activation, ps.weight .* x), st
 end
 
 """
@@ -431,9 +431,9 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
     if use_bias
-        return __apply_activation(b.activation, Wyx .+ ps.bias), st
+        return apply_bias_activation(b.activation, Wyx, ps.bias), st
     else
-        return __apply_activation(b.activation, Wyx), st
+        return apply_activation(b.activation, Wyx), st
     end
 end
 
