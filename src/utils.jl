@@ -248,11 +248,3 @@ __named_tuple(nt::NamedTuple) = nt
 
 # Nondifferentiable hasmethod. Avoiding type-piracy
 @inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
-
-# Helpers for bias and activation functions
-## Just Activation Function
-@inline apply_activation(::typeof(identity), x) = x
-@inline apply_activation(f, x) = f.(x)
-
-@inline apply_bias_activation(::typeof(identity), x, b) = x .+ b
-@inline apply_bias_activation(f::F, x, b) where {F} = @. f(x + b)
