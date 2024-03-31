@@ -1,6 +1,9 @@
 module LuxCore
 
-using Functors, Random, Setfield
+using FastClosures: @closure
+using Functors: Functors, fmap
+using Random: Random, AbstractRNG
+using Setfield: Setfield
 
 # PRNG Handling
 """
@@ -10,8 +13,7 @@ Creates a copy of the `rng` state depending on its type.
 """
 replicate(rng::AbstractRNG) = deepcopy(rng)
 function replicate(rng::Random.TaskLocalRNG)
-    @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same \
-           `TaskLocalRNG`." maxlog=1
+    @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`." maxlog=1
     return deepcopy(rng)
 end
 
@@ -32,7 +34,8 @@ Users implementing their custom layer, **must** implement
     returns a `NamedTuple` containing the trainable parameters for the layer.
   - `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a
     NamedTuple containing the current state for the layer. For most layers this is typically
-    empty. Layers that would potentially contain this include `BatchNorm`, `LSTM`, `GRU` etc.
+    empty. Layers that would potentially contain this include `BatchNorm`, `LSTM`, `GRU`,
+    etc.
 
 Optionally:
 
@@ -83,8 +86,8 @@ function initialstates(rng::AbstractRNG, l)
     throw(MethodError(initialstates, (rng, l)))
 end
 
-_getemptystate(::AbstractExplicitLayer) = NamedTuple()
-function _getemptystate(l::NamedTuple{fields}) where {fields}
+@inline _getemptystate(::AbstractExplicitLayer) = NamedTuple()
+@inline function _getemptystate(l::NamedTuple{fields}) where {fields}
     return NamedTuple{fields}(map(_getemptystate, values(l)))
 end
 
@@ -118,13 +121,13 @@ Return the input size of the layer.
 """
 function inputsize end
 
-__size(x::AbstractVector{T}) where {T} = isbitstype(T) ? size(x) : __size.(x)
-function __size(x::AbstractArray{T, N}) where {T, N}
+@inline __size(x::AbstractVector{T}) where {T} = isbitstype(T) ? size(x) : __size.(x)
+@inline function __size(x::AbstractArray{T, N}) where {T, N}
     return isbitstype(T) ? size(x)[1:(N - 1)] : __size.(x)
 end
-__size(x::Tuple) = __size.(x)
-__size(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(__size.(values(x)))
-__size(x) = fmap(__size, x)
+@inline __size(x::Tuple) = __size.(x)
+@inline __size(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(__size.(values(x)))
+@inline __size(x) = fmap(__size, x)
 
 """
     outputsize(layer, x, rng)
@@ -139,7 +142,7 @@ if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 """
 function outputsize(layer, x, rng)
     hasmethod(outputsize, Tuple{typeof(layer)}) && return outputsize(layer)
-    ps, st = LuxCore.setup(rng, layer)
+    ps, st = setup(rng, layer)
     y = first(apply(layer, x, ps, st))
     return __size(y)
 end
@@ -249,10 +252,11 @@ end
 function Functors.functor(::Type{<:AbstractExplicitContainerLayer{layers}},
         x) where {layers}
     _children = NamedTuple{layers}(getproperty.((x,), layers))
-    function layer_reconstructor(z)
-        return reduce((l, (c, n)) -> set(l, Setfield.PropertyLens{n}(), c), zip(z, layers);
-            init=x)
+    recon_fn = @closure (l, cn) -> begin
+        c, n = cn
+        return Setfield.set(l, Setfield.PropertyLens{n}(), c)
     end
+    layer_reconstructor = @closure z -> reduce(recon_fn, zip(z, layers); init=x)
     return _children, layer_reconstructor
 end
 
@@ -278,16 +282,14 @@ trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 Recursively update all occurances of the `key` in the state `st` with the `value`.
 """
 function update_state(st::NamedTuple, key::Symbol, value;
-        layer_check=_default_layer_check(key))
-    function _update_state(st, key::Symbol, value)
-        return Setfield.set(st, Setfield.PropertyLens{key}(), value)
-    end
-    return fmap(_st -> _update_state(_st, key, value), st; exclude=layer_check)
+        layer_check::LC=_default_layer_check(key)) where {LC}
+    _update_state = @closure (st, key, value) -> Setfield.set(
+        st, Setfield.PropertyLens{key}(), value)
+    return fmap(@closure(_st->_update_state(_st, key, value)), st; exclude=layer_check)
 end
 
 function _default_layer_check(key)
-    _default_layer_check_closure(x) = hasmethod(keys, (typeof(x),)) ? key ∈ keys(x) : false
-    return _default_layer_check_closure
+    return @closure(x->hasmethod(keys, (typeof(x),)) ? (key ∈ keys(x)) : false)
 end
 
 """
@@ -303,8 +305,7 @@ end
 """
     check_fmap_condition(cond, tmatch, x) -> Bool
 
-`fmap`s into the structure `x` and see if `cond` is statisfied for any of the leaf
-elements.
+`fmap`s into the structure `x` and see if `cond` is statisfied for any of the leaf elements.
 
 ## Arguments
 
@@ -317,14 +318,14 @@ elements.
 
 A Boolean Value
 """
-function check_fmap_condition(cond, tmatch, x)
+function check_fmap_condition(cond::C, tmatch, x) where {C}
     tmatch !== nothing && x isa tmatch && return true
     matched = Ref(false)
-    function __check(l)
+    __check! = @closure l -> begin
         cond(l) && (matched[] = true)
         return l
     end
-    fmap(__check, x)
+    fmap(__check!, x)
     return matched[]
 end
 

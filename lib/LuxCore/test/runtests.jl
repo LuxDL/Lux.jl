@@ -1,4 +1,4 @@
-using Aqua, Functors, LuxCore, Optimisers, Random, Test
+using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test
 
 rng = LuxCore._default_rng()
 
@@ -247,7 +247,10 @@ end
         @test LuxCore.contains_lux_layer(models3)
     end
 
-    @testset "Aqua: Quality Assurance" begin
+    @testset "Quality Assurance" begin
         Aqua.test_all(LuxCore)
+
+        @test ExplicitImports.check_no_implicit_imports(LuxCore) === nothing
+        @test ExplicitImports.check_no_stale_explicit_imports(LuxCore) === nothing
     end
 end
