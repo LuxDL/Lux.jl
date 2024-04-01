@@ -1,14 +1,23 @@
 module LuxLib
 
-import PrecompileTools
+using PrecompileTools: @recompile_invalidations
 
-PrecompileTools.@recompile_invalidations begin
-    using ChainRulesCore, KernelAbstractions, Markdown, NNlib, Random, Reexport, Statistics
+@recompile_invalidations begin
+    using ChainRulesCore: ChainRulesCore
+    using FastClosures: @closure
+    using KernelAbstractions: KernelAbstractions, @Const, @index, @kernel
+    using LuxCore: LuxCore
+    using Markdown: @doc_str
+    using NNlib: NNlib
+    using Random: Random, AbstractRNG, rand!
+    using Reexport: @reexport
+    using Statistics: Statistics, mean, var, varm
 end
 
 @reexport using NNlib
-import ChainRulesCore as CRC
-import KernelAbstractions as KA
+
+const CRC = ChainRulesCore
+const KA = KernelAbstractions
 
 include("utils.jl")
 
@@ -23,7 +32,6 @@ include("api/groupnorm.jl")
 include("api/instancenorm.jl")
 include("api/layernorm.jl")
 
-export batchnorm, groupnorm, instancenorm, layernorm,
-       alpha_dropout, dropout
+export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 
 end

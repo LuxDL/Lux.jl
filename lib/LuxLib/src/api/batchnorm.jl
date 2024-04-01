@@ -38,8 +38,11 @@ fallback is used which is not highly optimized.
     training by reducing internal covariate shift." International conference on machine
     learning. PMLR, 2015.
 """
-function batchnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::NOrAVR,
-        running_var::NOrAVR; momentum::Real, training::Val, epsilon::Real) where {N}
+function batchnorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
+        bias::Union{Nothing, <:AbstractVector},
+        running_mean::Union{Nothing, <:AbstractVector},
+        running_var::Union{Nothing, <:AbstractVector};
+        momentum::Real, training::Val, epsilon::Real) where {N}
     x_, xm, xv = _normalization(x, _drop_forwarddiff_partials(running_mean),
         _drop_forwarddiff_partials(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon)
@@ -48,7 +51,7 @@ function batchnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR, running_mean::
     return (x_, stats)
 end
 
-@generated function _get_batchnorm_reduce_dims(::AA{T, N}) where {T, N}
+@generated function _get_batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
     return :($(Val(Tuple(collect([1:(N - 2); N])))))
 end
 

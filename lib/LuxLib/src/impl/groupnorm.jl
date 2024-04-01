@@ -1,7 +1,7 @@
 # Low-Level Kernels
 ## Original Implementation: https://github.com/pytorch/pytorch/blob/master/caffe2/operators/group_norm_op.cu
-@kernel function _compute_fused_params_kernel!(scale, bias, @Const(C), @Const(K),
-        @Const(μ), @Const(σ⁻¹), @Const(γ), @Const(β))
+@kernel function _compute_fused_params_kernel!(
+        scale, bias, @Const(C), @Const(K), @Const(μ), @Const(σ⁻¹), @Const(γ), @Const(β))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
@@ -11,15 +11,15 @@
     @inbounds bias[idx] = β[c] - μ[ng] * scale_val
 end
 
-@kernel function _groupnorm_forward_kernel!(Y, @Const(WxH), @Const(X), @Const(scale),
-        @Const(bias))
+@kernel function _groupnorm_forward_kernel!(
+        Y, @Const(WxH), @Const(X), @Const(scale), @Const(bias))
     idx = @index(Global)
     nc = _div_idx(idx, WxH)
     @inbounds Y[idx] = X[idx] * scale[nc] + bias[nc]
 end
 
-@kernel function _groupnorm_dy_dscale_kernel!(dY_dscale, @Const(C), @Const(K), @Const(σ⁻¹),
-        @Const(γ))
+@kernel function _groupnorm_dy_dscale_kernel!(
+        dY_dscale, @Const(C), @Const(K), @Const(σ⁻¹), @Const(γ))
     idx = @index(Global)
     ng = _div_idx(idx, K)
     c = _mod_idx(idx, C)
@@ -27,8 +27,8 @@ end
     @inbounds dY_dscale[idx] = γ[c] * σ⁻¹[ng]
 end
 
-@kernel function _groupnorm_xscale_and_bias_kernel!(X_scale, bias, @Const(alpha),
-        @Const(μ), @Const(σ⁻¹), @Const(ds_sum), @Const(db_sum))
+@kernel function _groupnorm_xscale_and_bias_kernel!(X_scale, bias, @Const(alpha), @Const(μ),
+        @Const(σ⁻¹), @Const(ds_sum), @Const(db_sum))
     idx = @index(Global)
     @inbounds x = (db_sum[idx] * μ[idx] - ds_sum[idx]) * (σ⁻¹[idx]^3) * alpha
     @inbounds X_scale[idx] = x
@@ -44,7 +44,8 @@ end
 end
 
 # High-Level Function (Not User Facing)
-@inbounds function _groupnorm(X::AA4D, G::Int, γ::AV, β::AV, ϵ)
+@inbounds function _groupnorm(
+        X::AbstractArray{TX, 4}, G::Int, γ::AbstractVector, β::AbstractVector, ϵ) where {TX}
     W, H, C, N = size(X)
     K = div(C, G)
 
@@ -71,8 +72,10 @@ end
     return Y, μ, σ⁻¹
 end
 
-@inbounds function _∇groupnorm(dY::AA4D, Y::AA4D, X::AA4D, G::Int, γ::AV, β::AV, μ::AA5D,
-        σ⁻¹::AA5D)
+@inbounds function _∇groupnorm(
+        dY::AbstractArray{T1, 4}, Y::AbstractArray{T2, 4}, X::AbstractArray{T3, 4},
+        G::Int, γ::AbstractVector, β::AbstractVector, μ::AbstractArray{T4, 5},
+        σ⁻¹::AbstractArray{T5, 5}) where {T1, T2, T3, T4, T5}
     W, H, C, N = size(X)
     K = div(C, G)
     WxH = W * H
@@ -95,8 +98,8 @@ end
     bias = similar(X, T, (G, N))
 
     groupnorm_xscale_and_bias! = _groupnorm_xscale_and_bias_kernel!(backend)
-    groupnorm_xscale_and_bias!(X_scale, bias, T(1 / (K * WxH)), μ, σ⁻¹, ds_sum, db_sum;
-        ndrange=size(X_scale))
+    groupnorm_xscale_and_bias!(
+        X_scale, bias, T(1 / (K * WxH)), μ, σ⁻¹, ds_sum, db_sum; ndrange=size(X_scale))
     KA.synchronize(backend)
 
     dX = similar(X)

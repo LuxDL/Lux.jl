@@ -29,13 +29,13 @@ Normalized Array of same size as `x`.
 [1] Ba, Jimmy Lei, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer normalization." arXiv
     preprint arXiv:1607.06450 (2016).
 """
-function layernorm(x::AA{<:Real, N}, scale::AA{<:Real, N}, bias::AA{<:Real, N}; dims,
-        epsilon) where {N}
+function layernorm(x::AbstractArray{T1, N}, scale::AbstractArray{T2, N},
+        bias::AbstractArray{T3, N}; dims, epsilon) where {N, T1, T2, T3}
     x_norm = layernorm(x, nothing, nothing; dims, epsilon)
     return scale .* x_norm .+ bias
 end
 
-function layernorm(x::AA, ::Nothing, ::Nothing; dims, epsilon)
+function layernorm(x::AbstractArray, ::Nothing, ::Nothing; dims, epsilon)
     _mean = mean(x; dims)
     _rstd = 1 ./ (std(x; dims, mean=_mean, corrected=false) .+ epsilon)
 

@@ -33,36 +33,41 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
 [1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
     overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
-function dropout(rng::AbstractRNG, x::AA, p::T, ::Val{true}, invp::T; dims) where {T}
-    rng = _replicate(rng)
+function dropout(
+        rng::AbstractRNG, x::AbstractArray, p::T, ::Val{true}, invp::T; dims) where {T}
+    rng = LuxCore.replicate(rng)
     mask = _generate_dropout_mask(rng, x, p, invp; dims)
-    return (x .* ignore_derivatives(mask), mask, rng)
+    return (x .* CRC.ignore_derivatives(mask), mask, rng)
 end
 
-dropout(rng::AbstractRNG, x::AA, p::T, ::Val{false}, ::T; dims) where {T} = (x, x, rng)
+function dropout(
+        rng::AbstractRNG, x::AbstractArray, p::T, ::Val{false}, ::T; dims) where {T}
+    return (x, x, rng)
+end
 
-function dropout(rng::AbstractRNG, x::AA, p::T, t::Val; dims, invp::T=inv(p)) where {T}
+function dropout(
+        rng::AbstractRNG, x::AbstractArray, p::T, t::Val; dims, invp::T=inv(p)) where {T}
     return dropout(rng, x, p, t, invp; dims)
 end
 
-function dropout(rng::AbstractRNG, x::AA, mask::AA, p::T, t::Val, ::Val{true}, invp::T;
-        dims) where {T}
+function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
+        p::T, t::Val, ::Val{true}, invp::T; dims) where {T}
     return dropout(rng, x, p, t; dims, invp)
 end
 
-function dropout(rng::AbstractRNG, x::AA{T1, N}, mask::AA{T2, N}, p::T, ::Val{true},
-        ::Val{false}, invp::T; dims) where {T, T1, T2, N}
+function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
+        p::T, ::Val{true}, ::Val{false}, invp::T; dims) where {T, T1, T2, N}
     size(x) != size(mask) && return dropout(rng, x, p, Val(true); dims, invp)
-    return x .* ignore_derivatives(mask), mask, rng
+    return x .* CRC.ignore_derivatives(mask), mask, rng
 end
 
-function dropout(rng::AbstractRNG, x::AA{T1, N}, mask::AA{T2, N}, p::T, ::Val{false},
-        ::Val{false}, invp::T; dims) where {T, T1, T2, N}
+function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
+        p::T, ::Val{false}, ::Val{false}, invp::T; dims) where {T, T1, T2, N}
     return (x, mask, rng)
 end
 
-function dropout(rng::AbstractRNG, x::AA{T1, N}, mask::AA{T2, N}, p::T, t::Val, um::Val;
-        dims, invp::T=inv(p)) where {T, T1, T2, N}
+function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
+        p::T, t::Val, um::Val; dims, invp::T=inv(p)) where {T, T1, T2, N}
     return dropout(rng, x, mask, p, t, um, invp; dims)
 end
 
@@ -95,7 +100,7 @@ for a fixed dropout probability.
 [1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
 information processing systems 30 (2017).
 """
-function alpha_dropout(rng::AbstractRNG, x::AA{T}, p, t::Val{true}) where {T}
+function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, t::Val{true}) where {T}
     α = T(-1.7580993408473766)
     A = T(inv(sqrt((1 - p) * (1 + p * α^2))))
     B = T(-A * α * p)
@@ -103,12 +108,12 @@ function alpha_dropout(rng::AbstractRNG, x::AA{T}, p, t::Val{true}) where {T}
     return alpha_dropout(rng, x, p, t, α, A, B)
 end
 
-function alpha_dropout(rng::AbstractRNG, x::AA, p, t::Val{false})
+function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, t::Val{false})
     return alpha_dropout(rng, x, p, t, 0, 0, 0)
 end
 
-function alpha_dropout(rng::AbstractRNG, x::AA, p, ::Val{true}, α, A, B)
-    rng = _replicate(rng)
+function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
+    rng = LuxCore.replicate(rng)
     noise = rand!(rng, similar(x, _dropout_fptype(x)))
     # NOTE(@avik-pal): Combining the last 2 lines causes a compilation error for Tracker
     #                  on GPU
@@ -116,7 +121,7 @@ function alpha_dropout(rng::AbstractRNG, x::AA, p, ::Val{true}, α, A, B)
     return (A .* y .+ B), rng
 end
 
-alpha_dropout(rng::AbstractRNG, x::AA, p, ::Val{false}, α, A, B) = (x, rng)
+alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B) = (x, rng)
 
 # Mask Generation
 @inline _dropout_shape(s, ::Colon) = size(s)

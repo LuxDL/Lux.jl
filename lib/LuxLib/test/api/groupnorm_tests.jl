@@ -69,8 +69,8 @@ end
 
 @testitem "Group Normalization Generic Fallback" setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
-        @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16,
-                Float32, Float64), sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),
+        @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16, Float32, Float64),
+            sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),
             groups in (2, 3)
 
             T === Float16 && mode == "AMDGPU" && continue

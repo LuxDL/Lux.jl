@@ -5,7 +5,9 @@ version = "0.3.11"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
@@ -14,28 +16,33 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
-LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
+cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [extensions]
 LuxLibForwardDiffExt = "ForwardDiff"
 LuxLibLuxAMDGPUTrackerExt = ["LuxAMDGPU", "Tracker"]
-LuxLibLuxCUDAExt = "LuxCUDA"
-LuxLibLuxCUDATrackerExt = ["LuxCUDA", "Tracker"]
 LuxLibReverseDiffExt = "ReverseDiff"
 LuxLibTrackerExt = "Tracker"
+LuxLibTrackercuDNNExt = ["CUDA", "Tracker", "cuDNN"]
+LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
 Aqua = "0.8"
+CUDA = "5.2"
 ChainRulesCore = "1.20"
 ComponentArrays = "0.15.8"
+ExplicitImports = "1.4.1"
+FastClosures = "0.3.2"
 ForwardDiff = "0.10.36"
 KernelAbstractions = "0.9.2"
 LuxAMDGPU = "0.2.1"
 LuxCUDA = "0.3.1"
+LuxCore = "0.1.13"
 LuxTestUtils = "0.1.15"
 Markdown = "1.9"
 NNlib = "0.9.9"
@@ -49,12 +56,14 @@ Statistics = "1.9"
 Test = "1.9"
 Tracker = "0.2.26"
 Zygote = "0.6.69"
+cuDNN = "1.3"
 julia = "1.9"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
@@ -68,4 +77,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Aqua", "ChainRulesCore", "ComponentArrays", "ForwardDiff", "LuxAMDGPU", "LuxCUDA", "LuxTestUtils", "Random", "ReTestItems", "Reexport", "StableRNGs", "Statistics", "Test", "Zygote"]
+test = ["Aqua", "ChainRulesCore", "ComponentArrays", "ExplicitImports", "ForwardDiff", "LuxAMDGPU", "LuxCUDA", "LuxTestUtils", "Random", "ReTestItems", "Reexport", "StableRNGs", "Statistics", "Test", "Zygote"]
