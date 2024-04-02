@@ -1,8 +1,8 @@
 # LuxCore
 
 [![Join the chat at https://julialang.zulipchat.com #machine-learning](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/machine-learning)
-[![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://lux.csail.mit.edu/dev/api/)
-[![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://lux.csail.mit.edu/stable/api/)
+[![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://lux.csail.mit.edu/dev/api/Building_Blocks/LuxCore)
+[![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://lux.csail.mit.edu/stable/api/Building_Blocks/LuxCore)
 
 [![Build status](https://badge.buildkite.com/702f7908a08898971896c9bf5aae03e8e419bcbc44c5544237.svg?branch=main)](https://buildkite.com/julialang/luxcore-dot-jl)
 [![CI](https://github.com/LuxDL/LuxCore.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/LuxDL/LuxCore.jl/actions/workflows/CI.yml)
