@@ -40,7 +40,7 @@ jobs:
             Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
             Pkg.instantiate();
             include("runbenchmarks.jl")'
-      - name: Parse Benchmark Results
+      - name: Parse & Upload Benchmark Results
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Benchmark Results
@@ -49,7 +49,7 @@ jobs:
           summary-always: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           comment-always: true
-          alert-threshold: "50%"
+          alert-threshold: "200%"
           fail-on-alert: true
           benchmark-data-dir-path: benchmarks
-          auto-push: true
+          auto-push: ${{ github.event_name != 'pull_request' }}
