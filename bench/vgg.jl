@@ -19,7 +19,7 @@ function add_vgg_benchmarks!()
 
     for bsize in (1, 16, 64)
         x, ps, st = general_setup(vgg16, (32, 32, 3, bsize))
-        benchmark_forward_pass("vgg16 -- (32, 32, 3, $bsize)", vgg16, x, ps, st)
+        benchmark_forward_pass("vgg16", "(32, 32, 3, $bsize)", vgg16, x, ps, st)
     end
 
     return
