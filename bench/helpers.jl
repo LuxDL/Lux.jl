@@ -1,9 +1,9 @@
 # TODO: Special Handling for GPU Arrays with @sync
 function benchmark_forward_pass(tag::String, model, x, ps, st)
-    SUITE[tag]["forward"]["default"] = @benchmarkable Lux.apply($model, $x, $ps, $st)
+    SUITE[tag]["cpu"]["forward"]["default"] = @benchmarkable Lux.apply($model, $x, $ps, $st)
 
     ps_ca = ComponentArray(ps)
-    SUITE[tag]["forward"]["ComponentArray"] = @benchmarkable Lux.apply(
+    SUITE[tag]["cpu"]["forward"]["ComponentArray"] = @benchmarkable Lux.apply(
         $model, $x, $ps_ca, $st)
 
     return
