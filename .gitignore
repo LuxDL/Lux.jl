@@ -29,3 +29,5 @@ docs/src/tutorials/beginner
 docs/src/tutorials/intermediate
 docs/src/tutorials/advanced
 *.log
+
+bench/benchmark_results.json
