@@ -1,6 +1,6 @@
 # TODO: Special Handling for GPU Arrays with @sync
 function benchmark_forward_pass(tag::String, end_tag::String, model, x, ps_nt::NamedTuple,
-        st; simple_chains = nothing)
+        st; simple_chains=nothing)
     SUITE[tag]["cpu"]["forward"]["NamedTuple"][end_tag] = @benchmarkable Lux.apply(
         $model, $x, $ps_nt, $st)
 
@@ -19,10 +19,15 @@ function benchmark_forward_pass(tag::String, end_tag::String, model, x, ps_nt::N
 end
 
 function benchmark_reverse_pass(
-        tag::String, end_tag::String, backends::NTuple, model, x, ps_nt::NamedTuple, st)
+        tag::String, end_tag::String, backends, model, x, ps_nt::NamedTuple, st)
     # Not everyone can handle NamedTuples so convert to ComponentArray
     __f = @closure ps -> sum(abs2, first(Lux.apply(model, x, ps, st)))
     ps_ca = ComponentArray(ps_nt)
+
+    for backend in backends
+        __benchmark_reverse_pass(tag, end_tag, backend, __f, ps_ca)
+    end
+
     return
 end
 
@@ -34,17 +39,37 @@ function general_setup(model, x_dims)
     return x, ps, st
 end
 
-@inline __typein(::Type{T}, x) where {T} = any(Base.Fix2(isa, T), x)
-
 # TODO: Remove these once DifferentiationInterface has been released
-function __benchmark_tapir_reverse_pass(tag::String, end_tag::String, f::F, x) where {F}
+function __benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoEnzyme, f::F, x) where {F}
+    # TODO: Enable this. But enzyme doesn't handle closures well it seems...
+    # SUITE[tag]["cpu"]["reverse"]["Enzyme"][end_tag] = @benchmarkable Enzyme.gradient(
+    #     $Enzyme.Reverse, $f, $x)
+    error("Enzyme backend hasn't been implemented yet.")
 end
-function __benchmark_tracker_reverse_pass(tag::String, end_tag::String, f::F, x) where {F}
+function __benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoTapir, f::F, x) where {F}
 end
-function __benchmark_enzyme_reverse_pass(tag::String, end_tag::String, f::F, x) where {F}
+function __benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoTracker, f::F, x) where {F}
+    SUITE[tag]["cpu"]["reverse"]["Tracker"][end_tag] = @benchmarkable Tracker.gradient(
+        $f, $x)
+    return
 end
-function __benchmark_reversediff_reverse_pass(
-        tag::String, end_tag::String, f::F, x) where {F}
+function __benchmark_reverse_pass(
+        tag::String, end_tag::String, ad::AutoReverseDiff, f::F, x) where {F}
+    if ad.compile
+        SUITE[tag]["cpu"]["reverse"]["ReverseDiff (compiled)"][end_tag] = @benchmarkable ReverseDiff.gradient!(
+            ∂x, tape, $x) setup=(∂x = similar($x);
+        tape = ReverseDiff.compile(ReverseDiff.GradientTape($f, $x)))
+    else
+        SUITE[tag]["cpu"]["reverse"]["ReverseDiff"][end_tag] = @benchmarkable ReverseDiff.gradient(
+            $f, $x)
+    end
 end
-function __benchmark_zygote_reverse_pass(tag::String, end_tag::String, f::F, x) where {F}
+function __benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoZygote, f::F, x) where {F}
+    SUITE[tag]["cpu"]["reverse"]["Zygote"][end_tag] = @benchmarkable Zygote.gradient(
+        $f, $x)
+    return
 end
