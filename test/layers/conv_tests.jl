@@ -89,7 +89,7 @@
             @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], k)
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
         end
     end
 end

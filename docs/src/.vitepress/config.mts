@@ -62,9 +62,9 @@ export default defineConfig({
         },
         nav: [
             { text: 'Home', link: '/' },
-            { text: 'Getting Started', link: '/introduction/index' },
+            { text: 'Getting Started', link: '/introduction' },
             { text: 'Benchmarks', link: 'https://lux.csail.mit.edu/benchmarks/' },
-            { text: 'Tutorials', link: '/tutorials/index' },
+            { text: 'Tutorials', link: '/tutorials' },
             { text: 'Manual', link: '/manual/interface' },
             {
                 text: 'API', items: [
@@ -104,22 +104,22 @@ export default defineConfig({
             },
             {
                 text: 'Versions', items: [
-                    { text: 'Stable', link: 'https://lux.csail.mit.edu/stable/' },
-                    { text: 'Dev', link: 'https://lux.csail.mit.edu/dev/' }
+                    { text: 'Stable', link: 'https://lux.csail.mit.edu/stable' },
+                    { text: 'Dev', link: 'https://lux.csail.mit.edu/dev' }
                 ]
             }
         ],
         sidebar: {
             "/introduction/": {
                 text: 'Getting Started', collapsed: false, items: [
-                    { text: 'Introduction', link: '/introduction/index' },
+                    { text: 'Introduction', link: '/introduction' },
                     { text: 'Overview', link: '/introduction/overview' },
                     { text: 'Resources', link: '/introduction/resources' },
                     { text: 'Citation', link: '/introduction/citation' }]
             },
             "/tutorials/": {
                 text: 'Tutorials', collapsed: false, items: [
-                    { text: 'Overview', link: '/tutorials/index' },
+                    { text: 'Overview', link: '/tutorials' },
                     {
                         text: 'Beginner', collapsed: false, items: [
                             { text: 'Julia & Lux for the Uninitiated', link: '/tutorials/beginner/1_Basics' },

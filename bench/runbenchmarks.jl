@@ -3,6 +3,7 @@ using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using ComponentArrays: ComponentArray
 using InteractiveUtils: versioninfo
 using FastClosures: @closure
+using Flux: Flux
 using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
 using NNlib: relu
 using SimpleChains: SimpleChains, static
@@ -27,10 +28,11 @@ struct AutoTapir <: ADTypes.AbstractReverseMode end
 const SUITE = BenchmarkGroup()
 
 include("helpers.jl")
-# include("vgg.jl")
+include("vgg.jl")
 include("layers.jl")
 
 BenchmarkTools.tune!(SUITE; verbose=true)
 results = BenchmarkTools.run(SUITE; verbose=true)
+display(median(results))
 
 BenchmarkTools.save(joinpath(@__DIR__, "benchmark_results.json"), median(results))
