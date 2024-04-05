@@ -1,12 +1,19 @@
 # TODO: Special Handling for GPU Arrays with @sync
 function benchmark_forward_pass(tag::String, end_tag::String, model, x, ps_nt::NamedTuple,
-        st)
+        st; simple_chains = nothing)
     SUITE[tag]["cpu"]["forward"]["NamedTuple"][end_tag] = @benchmarkable Lux.apply(
         $model, $x, $ps_nt, $st)
 
     ps_ca = ComponentArray(ps_nt)
     SUITE[tag]["cpu"]["forward"]["ComponentArray"][end_tag] = @benchmarkable Lux.apply(
         $model, $x, $ps_ca, $st)
+
+    if simple_chains !== nothing
+        simple_chains_model = simple_chains(model)
+        ps_simple_chains, st_simple_chains = general_setup(simple_chains_model, nothing)
+        SUITE[tag]["cpu"]["forward"]["SimpleChains"][end_tag] = @benchmarkable Lux.apply(
+            $simple_chains_model, $x, $ps_simple_chains, $st_simple_chains)
+    end
 
     return
 end
@@ -22,6 +29,7 @@ end
 function general_setup(model, x_dims)
     rng = StableRNG(0)
     ps, st = Lux.setup(rng, model)
+    x_dims === nothing && return ps, st
     x = randn(rng, Float32, x_dims)
     return x, ps, st
 end

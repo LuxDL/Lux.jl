@@ -5,6 +5,7 @@ using InteractiveUtils: versioninfo
 using FastClosures: @closure
 using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
 using NNlib: relu
+using SimpleChains: SimpleChains, static
 using StableRNGs: StableRNG
 using Statistics: median
 
