@@ -27,7 +27,7 @@ struct AutoTapir <: ADTypes.AbstractReverseMode end
 const SUITE = BenchmarkGroup()
 
 include("helpers.jl")
-include("vgg.jl")
+# include("vgg.jl")
 include("layers.jl")
 
 BenchmarkTools.tune!(SUITE; verbose=true)

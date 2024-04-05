@@ -9,7 +9,7 @@ function add_dense_benchmarks!()
             "Dense($n => $n)", "($n, 128)",
             (AutoTapir(), AutoTracker(), AutoReverseDiff(),
                 AutoReverseDiff(true), AutoZygote()),
-            layer, x, ps, st)
+            layer, x, ps, st; simple_chains)
     end
 
     return
@@ -22,10 +22,9 @@ function add_conv_benchmarks!()
         simple_chains = Lux.ToSimpleChainsAdaptor((static(64), static(64), static(ch)))
         benchmark_forward_pass("Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)",
             layer, x, ps, st; simple_chains)
-
         benchmark_reverse_pass("Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)",
             (AutoTapir(), AutoTracker(), AutoReverseDiff(),
-                AutoReverseDiff(true), AutoZygote()), layer, x, ps, st)
+                AutoReverseDiff(true), AutoZygote()), layer, x, ps, st; simple_chains)
     end
 end
 
