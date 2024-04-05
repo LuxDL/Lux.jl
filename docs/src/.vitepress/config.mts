@@ -11,6 +11,7 @@ export default defineConfig({
     description: 'Documentation for LuxDL Repositories',
     cleanUrls: true,
     outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
+    lastUpdated: true,
 
     markdown: {
         math: true,
@@ -24,8 +25,28 @@ export default defineConfig({
             dark: "github-dark"
         },
         codeTransformers: [transformerMetaWordHighlight(),],
-
     },
+
+    head: [
+        [
+            "script",
+            { async: "", src: "https://www.googletagmanager.com/gtag/js?id=G-Q8GYTEVTZ2" },
+        ],
+        [
+            "script",
+            {},
+            `window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-Q8GYTEVTZ2');`,
+        ],
+        ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' }],
+        ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' }],
+        ['link', { rel: 'icon', href: '/favicon.ico' }],
+        ['link', { rel: 'manifest', href: '/site.webmanifest' }],
+    ],
+
     themeConfig: {
         outline: 'deep',
         // https://vitepress.dev/reference/default-theme-config
@@ -171,24 +192,6 @@ export default defineConfig({
             message: 'Made with <a href="https://documenter.juliadocs.org/stable/" target="_blank"><strong>Documenter.jl</strong></a>, <a href="https://vitepress.dev" target="_blank"><strong>VitePress</strong></a> and <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable" target="_blank"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href="https://www.julialang.org">Julia Programming Language</a>.<br>',
             copyright: `© Copyright ${new Date().getUTCFullYear()} Avik Pal.`
         },
-        head: [
-            [
-                "script",
-                { async: "", src: "https://www.googletagmanager.com/gtag/js?id=G-Q8GYTEVTZ2" },
-            ],
-            [
-                "script",
-                {},
-                `window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-Q8GYTEVTZ2');`,
-            ],
-            ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }],
-            ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' }],
-            ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' }],
-            ['link', { rel: 'manifest', href: '/site.webmanifest' }],
-        ],
         lastUpdated: {
             text: 'Updated at',
             formatOptions: {

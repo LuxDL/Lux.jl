@@ -27,12 +27,12 @@ hero:
 features:
   - icon: 🚀
     title: Fast & Extendible
-    details: Lux.jl is written in Julia itself, making it extremely extendible. <u><a href="https://github.com/JuliaGPU/CUDA.jl">CUDA</a></u> and <u><a href="https://github.com/JuliaGPU/AMDGPU.jl">AMDGPU</a></u> are supported first-class, with experimental support for <u><a href="https://github.com/JuliaGPU/Metal.jl">Metal</a></u> Hardware.
+    details: Lux.jl is written in Julia itself, making it extremely extendible. CUDA and AMDGPU are supported first-class, with experimental support for Metal Hardware.
     link: /introduction/
 
   - icon: 🧑‍🔬
     title: SciML ❤️ Lux
-    details: Lux is the default choice for many <u><a href="https://github.com/SciML">SciML</a></u> packages, including DiffEqFlux.jl, NeuralPDE.jl, and more.
+    details: Lux is the default choice for many SciML packages, including DiffEqFlux.jl, NeuralPDE.jl, and more.
     link: https://sciml.ai/
 
   - icon: 🧩
