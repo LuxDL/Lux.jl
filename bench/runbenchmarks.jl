@@ -1,10 +1,19 @@
+using ADTypes: ADTypes
 using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using ComponentArrays: ComponentArray
 using InteractiveUtils: versioninfo
+using FastClosures: @closure
 using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
 using NNlib: relu
 using StableRNGs: StableRNG
 using Statistics: median
+
+# AD Backends
+using Enzyme: Enzyme
+using ReverseDiff: ReverseDiff
+using Tapir: Tapir
+using Tracker: Tracker
+using Zygote: Zygote
 
 @info sprint(versioninfo)
 
