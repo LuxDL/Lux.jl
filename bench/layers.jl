@@ -23,13 +23,9 @@ function add_conv_benchmarks!()
         benchmark_forward_pass("Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)",
             layer, x, ps, st; simple_chains)
 
-        backends = ch ≤ 16 ?
-                   (AutoTapir(), AutoTracker(), AutoReverseDiff(),
-            AutoReverseDiff(true), AutoZygote()) :
-                   (AutoTapir(), AutoTracker(), AutoReverseDiff(), AutoZygote())
-
-        benchmark_reverse_pass(
-            "Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)", backends, layer, x, ps, st)
+        benchmark_reverse_pass("Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)",
+            (AutoTapir(), AutoTracker(), AutoReverseDiff(),
+                AutoReverseDiff(true), AutoZygote()), layer, x, ps, st)
     end
 end
 
