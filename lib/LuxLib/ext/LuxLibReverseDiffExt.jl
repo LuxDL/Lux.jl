@@ -33,4 +33,11 @@ for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
         kwargs...)
 end
 
+# Currently falls back to mapreduce and has a terrible performance
+@grad_from_chainrules Base.sum(::typeof(abs2), x::TrackedArray; kwargs...)
+
+for pool in (:maxpool, :meanpool, :lpnormpool)
+    @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::PoolDims; kwargs...)
+end
+
 end

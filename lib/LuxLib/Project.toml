@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.3.10"
+version = "0.3.11"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
@@ -15,12 +15,14 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [extensions]
 LuxLibForwardDiffExt = "ForwardDiff"
+LuxLibLuxAMDGPUTrackerExt = ["LuxAMDGPU", "Tracker"]
 LuxLibLuxCUDAExt = "LuxCUDA"
 LuxLibLuxCUDATrackerExt = ["LuxCUDA", "Tracker"]
 LuxLibReverseDiffExt = "ReverseDiff"
