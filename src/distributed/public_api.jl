@@ -227,15 +227,14 @@ processes.
 end
 
 function DistributedDataContainer(backend::AbstractLuxDistributedBackend, data)
-    total_size = length(data)
-    split_across = total_workers(backend)
-    size_per_worker = Int(ceil(total_size / split_across))
-
-    partitions = collect(Iterators.partition(1:total_size, size_per_worker))
-    idxs = collect(partitions[local_rank(backend) + 1])
-
-    return DistributedDataContainer(data, idxs)
+    if Base.get_extension(@__MODULE__, :LuxMLUtilsExt) === nothing
+        error("`MLUtils.jl` must be installed and loaded before using \
+               `DistributedDataContainer`.")
+    end
+    return __construct_distributed_data_container(backend, data)
 end
+
+function __construct_distributed_data_container end
 
 Base.length(ddc::DistributedDataContainer) = length(ddc.idxs)
 

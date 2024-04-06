@@ -1,7 +1,7 @@
 # Imagenet training script based on https://github.com/pytorch/examples/blob/main/imagenet/main.py
 using Boltz, Lux, Zygote
 using Augmentor, Configurations, Dates, FileIO, Functors, Images, MLUtils, OneHotArrays,
-      Optimisers, Random, Setfield, SimpleConfig, Statistics
+      Optimisers, ParameterSchedulers, Random, Setfield, SimpleConfig, Statistics
 import FLoops: ThreadedEx
 import Metalhead
 import MPI, NCCL
