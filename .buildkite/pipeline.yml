@@ -186,7 +186,7 @@ steps:
       echo $BUILDKITE_PULL_REQUEST
       echo $BUILDKITE_TAG
 
-      julia --project --code-coverage=user --color=yes --threads=auto --project=docs -e '
+      julia --project --code-coverage=user --color=yes --project=docs -e '
         println("--- :julia: Instantiating project")
         using Pkg
         Pkg.develop(PackageSpec(path=pwd()))
@@ -194,7 +194,7 @@ steps:
         println("+++ :julia: Building tutorials")
         include("docs/tutorials.jl")'
 
-      julia --project --code-coverage=user --color=yes --threads=auto --project=docs -e '
+      julia --project --code-coverage=user --color=yes --project=docs -e '
         println("--- :julia: Instantiating project")
         using Pkg
         Pkg.develop(PackageSpec(path=pwd()))
@@ -210,6 +210,7 @@ steps:
       DATADEPS_ALWAYS_ACCEPT: true
       JULIA_DEBUG: "Documenter"
       DEBUG: true
+      JULIA_NUM_THREADS: 6
       GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
     if: build.message !~ /\[skip docs\]/ && !build.pull_request.draft
     timeout_in_minutes: 240

@@ -4,6 +4,8 @@ using ComponentArrays: ComponentArray
 using InteractiveUtils: versioninfo
 using FastClosures: @closure
 using Flux: Flux
+using Functors: fmap
+using LinearAlgebra: BLAS
 using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
 using NNlib: relu
 using SimpleChains: SimpleChains, static
@@ -17,13 +19,12 @@ using Tapir: Tapir
 using Tracker: Tracker
 using Zygote: Zygote
 
-# BenchmarkTools Parameters
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 100
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 0.25
-
 struct AutoTapir <: ADTypes.AbstractReverseMode end
 
+BLAS.set_num_threads(min(4, Threads.nthreads()))
+
 @info sprint(versioninfo)
+@info "BLAS threads: $(BLAS.get_num_threads())"
 
 const SUITE = BenchmarkGroup()
 
