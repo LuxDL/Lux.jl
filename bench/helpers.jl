@@ -73,11 +73,13 @@ function __benchmark_reverse_pass(
 end
 function __benchmark_reverse_pass(
         tag::String, end_tag::String, ::AutoTracker, model, x_dims)
-    SUITE[tag]["cpu"]["reverse"]["Tracker"][end_tag] = @benchmarkable Tracker.gradient(
-        f, ps_ca) setup=begin
+    SUITE[tag]["cpu"]["reverse"]["Tracker"][end_tag] = @benchmarkable begin
+        ps_tracked = fmap(Tracker.param, ps)
+        x_tracked = Tracker.param(x)
+        loss = sum(abs2, first(Lux.apply($model, x_tracked, ps_tracked, st)))
+        Tracker.back!(loss)
+    end setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
-        ps_ca = ComponentArray(ps)
-        f = @closure(p->sum(abs2, first(Lux.apply($model, x, p, st))))
     end
     return
 end
@@ -93,39 +95,44 @@ function __benchmark_reverse_pass(
             tape = ReverseDiff.compile(ReverseDiff.GradientTape(f, ps_ca))
         end
     else
-        SUITE[tag]["cpu"]["reverse"]["ReverseDiff"][end_tag] = @benchmarkable ReverseDiff.gradient(
-            f, ps_ca) setup=begin
+        SUITE[tag]["cpu"]["reverse"]["ReverseDiff"][end_tag] = @benchmarkable begin
+            tape = ReverseDiff.InstructionTape()
+            ∂ps = fmap(zero, ps)
+            ps_tracked = fmap((p, g) -> ReverseDiff.TrackedArray(p, g, tape), ps, ∂ps)
+            ∂x = zero(x)
+            x_tracked = ReverseDiff.TrackedArray(x, ∂x, tape)
+            loss = sum(abs2, first(Lux.apply($model, x_tracked, ps_tracked, st)))
+            loss.deriv = true
+            ReverseDiff.reverse_pass!(tape)
+        end setup=begin
             (x, ps, st) = general_setup($model, $x_dims)
-            ps_ca = ComponentArray(ps)
-            f = @closure(p->sum(abs2, first(Lux.apply($model, x, p, st))))
         end
     end
 end
 function __benchmark_reverse_pass(tag::String, end_tag::String, ::AutoZygote, model, x_dims)
     SUITE[tag]["cpu"]["reverse"]["Zygote"][end_tag] = @benchmarkable Zygote.gradient(
-        f, ps_ca) setup=begin
+        f, $model, x, ps, st) setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
-        ps_ca = ComponentArray(ps)
-        f = @closure(p->sum(abs2, first(Lux.apply($model, x, p, st))))
+        f = @closure((model, x, p, st)->sum(abs2, first(Lux.apply(model, x, p, st))))
     end
     return
 end
 function __benchmark_reverse_pass_simple_chains(
         tag::String, end_tag::String, ::AutoZygote, model, x_dims)
     SUITE[tag]["cpu"]["reverse"]["SimpleChains"][end_tag] = @benchmarkable Zygote.gradient(
-        f, ps) setup=begin
+        f, $model, x, ps, st) setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
-        f = @closure(p->sum(abs2, first(Lux.apply($model, x, p, st))))
+        f = @closure((model, x, p, st)->sum(abs2, first(Lux.apply(model, x, p, st))))
     end
     return
 end
 function __benchmark_reverse_pass_flux(
         tag::String, end_tag::String, ::AutoZygote, model, x_dims)
     SUITE[tag]["cpu"]["reverse"]["Flux"][end_tag] = @benchmarkable Zygote.gradient(
-        f, m) setup=begin
+        f, m, x) setup=begin
         x = randn(StableRNG(0), Float32, $x_dims)
         m = $(model)()
-        f = @closure(m->sum(abs2, m(x)))
+        f = @closure((m, x)->sum(abs2, m(x)))
     end
     return
 end
