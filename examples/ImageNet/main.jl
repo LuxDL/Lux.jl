@@ -11,11 +11,11 @@ using Formatting # TODO: Get rid of this
 
 # Distributed Training: NCCL for NVIDIA GPUs and MPI for anything else
 if LuxCUDA.functional()
-    DistributedUtils.initialize(Val(:NCCL))
-    backend = DistributedUtils.get_distributed_backend(Val(:NCCL))
+    DistributedUtils.initialize(NCCLBackend)
+    backend = DistributedUtils.get_distributed_backend(NCCLBackend)
 else
-    DistributedUtils.initialize(Val(:MPI))
-    backend = DistributedUtils.get_distributed_backend(Val(:MPI))
+    DistributedUtils.initialize(MPIBackend)
+    backend = DistributedUtils.get_distributed_backend(MPIBackend)
 end
 
 const local_rank = DistributedUtils.local_rank(backend)

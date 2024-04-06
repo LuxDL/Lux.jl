@@ -1,7 +1,7 @@
 module LuxMLUtilsExt
 
 using Lux: DistributedUtils
-using MLUtils: numobs
+using MLUtils: MLUtils, numobs
 
 function DistributedUtils.__construct_distributed_data_container(
         backend::DistributedUtils.AbstractLuxDistributedBackend, data)
@@ -13,6 +13,10 @@ function DistributedUtils.__construct_distributed_data_container(
     idxs = collect(partitions[DistributedUtils.local_rank(backend) + 1])
 
     return DistributedUtils.DistributedDataContainer(data, idxs)
+end
+
+function MLUtils.getobs(dc::DistributedUtils.DistributedDataContainer, idx)
+    return MLUtils.getobs(dc.data, dc.idxs[idx])
 end
 
 end

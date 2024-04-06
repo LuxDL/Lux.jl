@@ -13,15 +13,15 @@ const NCCL_Initialized = Ref(false)
 const MPI_Initialized = Ref(false)
 
 """
-    initialized(backend::Val)
+    initialized(backend::Type{<:AbstractLuxDistributedBackend})
 
 Check if the given backend is initialized.
 """
-initialized(::Val{:MPI}) = MPI_Initialized[]
-initialized(::Val{:NCCL}) = NCCL_Initialized[]
+initialized(::Type{<:MPIBackend}) = MPI_Initialized[]
+initialized(::Type{<:NCCLBackend}) = NCCL_Initialized[]
 
 """
-    initialize(backend::Val; kwargs...)
+    initialize(backend::Type{<:AbstractLuxDistributedBackend}; kwargs...)
 
 Initialize the given backend. Users can supply `cuda_devices` and `amdgpu_devices` to
 initialize the backend with the given devices. These can be set to `missing` to prevent
@@ -31,12 +31,12 @@ initialize the backend with the given devices.
 
 Possible values for `backend` are:
 
-  - `Val(:MPI)`: MPI backend for distributed training. Requires `MPI.jl` to be installed.
-  - `Val(:NCCL)`: NCCL backend for CUDA distributed training. Requires `CUDA.jl`,
+  - `MPIBackend`: MPI backend for distributed training. Requires `MPI.jl` to be installed.
+  - `NCCLBackend`: NCCL backend for CUDA distributed training. Requires `CUDA.jl`,
     `MPI.jl`, and `NCCL.jl` to be installed. This also wraps `MPI` backend for non-CUDA
     communications.
 """
-function initialize(backend::Val; kwargs...)
+function initialize(backend::Type{<:AbstractLuxDistributedBackend}; kwargs...)
     initialized(backend) && return
     __initialize(backend; kwargs...)
     return
@@ -45,12 +45,12 @@ end
 function __initialize end
 
 """
-    get_distributed_backend(backend::Val)
+    get_distributed_backend(backend::Type{<:AbstractLuxDistributedBackend})
 
 Get the distributed backend for the given backend type. Possible values are:
 
-  - `Val(:MPI)`: MPI backend for distributed training. Requires `MPI.jl` to be installed.
-  - `Val(:NCCL)`: NCCL backend for CUDA distributed training. Requires `CUDA.jl`,
+  - `MPIBackend`: MPI backend for distributed training. Requires `MPI.jl` to be installed.
+  - `NCCLBackend`: NCCL backend for CUDA distributed training. Requires `CUDA.jl`,
     `MPI.jl`, and `NCCL.jl` to be installed. This also wraps `MPI` backend for non-CUDA
     communications.
 
@@ -58,7 +58,7 @@ Get the distributed backend for the given backend type. Possible values are:
 
     `initialize(backend; kwargs...)` must be called before calling this function.
 """
-function get_distributed_backend(backend::Val)
+function get_distributed_backend(backend::Type{<:AbstractLuxDistributedBackend})
     initialized(backend) ||
         error("Backend `$(backend)` is not initialized. Call `DistributedUtils.initialize` first.")
     return __get_distributed_backend(backend)

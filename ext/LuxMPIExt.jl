@@ -7,7 +7,7 @@ using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_dev
 using MPI: MPI
 
 function DistributedUtils.__initialize(
-        ::Val{:MPI}; cuda_devices=nothing, amdgpu_devices=nothing)
+        ::Type{MPIBackend}; cuda_devices=nothing, amdgpu_devices=nothing)
     !MPI.Initialized() && MPI.Init()
     DistributedUtils.MPI_Initialized[] = true
 
@@ -32,7 +32,7 @@ function DistributedUtils.__initialize(
     return
 end
 
-DistributedUtils.__get_distributed_backend(::Val{:MPI}) = MPIBackend(MPI.COMM_WORLD)
+DistributedUtils.__get_distributed_backend(::Type{MPIBackend}) = MPIBackend(MPI.COMM_WORLD)
 
 DistributedUtils.local_rank(backend::MPIBackend) = MPI.Comm_rank(backend.comm)
 

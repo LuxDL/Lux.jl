@@ -7,14 +7,14 @@ using NCCL: NCCL
 using Setfield: @set!
 
 function DistributedUtils.__initialize(
-        ::Val{:NCCL}; cuda_devices=nothing, amdgpu_devices=missing)
+        ::Type{NCCLBackend}; cuda_devices=nothing, amdgpu_devices=missing)
     DistributedUtils.NCCL_Initialized[] = true
     @assert amdgpu_devices===missing "`AMDGPU` is not supported by `NCCL`."
     DistributedUtils.__initialize(Val(:MPI); cuda_devices, amdgpu_devices)
     return
 end
 
-function DistributedUtils.__get_distributed_backend(::Val{:NCCL})
+function DistributedUtils.__get_distributed_backend(::Type{NCCLBackend})
     unique_id = NCCL.UniqueID()  # Generate on all ranks to know the type
     mpi_backend = DistributedUtils.__get_distributed_backend(Val(:MPI))
     buf = [unique_id.internal...]
