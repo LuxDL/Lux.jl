@@ -2,10 +2,8 @@ module DistributedUtils
 
 using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
-using Functors: fmap
 using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
-using LuxDeviceUtils: get_device, cpu_device
-using Setfield: @set!
+using LuxDeviceUtils: get_device
 
 const CRC = ChainRulesCore
 
@@ -220,6 +218,10 @@ end
 `data` must be compatible with `MLUtils` interface. The returned container is compatible
 with `MLUtils` interface and is used to partition the dataset across the available
 processes.
+
+!!! danger
+
+    `MLUtils.jl` must be installed and loaded before using this.
 """
 @concrete struct DistributedDataContainer
     data
@@ -250,6 +252,10 @@ averages the gradients across the processes using Allreduce.
 ## Arguments
 
   - `optimizer`: An Optimizer compatible with the Optimisers.jl package
+
+!!! danger
+
+    `Optimisers.jl` must be installed and loaded before using this.
 """
 function DistributedOptimizer(backend::AbstractLuxDistributedBackend, opt)
     mod = Base.get_extension(@__MODULE__, :LuxOptimisersExt)

@@ -4,7 +4,7 @@ abstract type AbstractLuxDistributedBackend end
     MPIBackend(comm = nothing)
 
 Create an MPI backend for distributed training. Users should not use this function directly.
-Instead use [`DistributedUtils.get_distributed_backend(Val(:NCCL))`](@ref).
+Instead use [`DistributedUtils.get_distributed_backend(MPIBackend)`](@ref).
 """
 struct MPIBackend{C} <: AbstractLuxDistributedBackend
     comm::C
@@ -21,7 +21,7 @@ end
     NCCLBackend(comm = nothing, mpi_backend = nothing)
 
 Create an NCCL backend for distributed training. Users should not use this function
-directly. Instead use [`DistributedUtils.get_distributed_backend(Val(:NCCL))`](@ref).
+directly. Instead use [`DistributedUtils.get_distributed_backend(NCCLBackend)`](@ref).
 """
 struct NCCLBackend{C, M <: Union{Nothing, MPIBackend}} <: AbstractLuxDistributedBackend
     comm::C

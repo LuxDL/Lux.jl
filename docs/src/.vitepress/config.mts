@@ -73,7 +73,8 @@ export default defineConfig({
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental', link: '/api/Lux/contrib' },
-                            { text: 'InterOp', link: '/api/Lux/switching_frameworks' }
+                            { text: 'InterOp', link: '/api/Lux/switching_frameworks' },
+                            { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }
                         ]
                     },
                     {
@@ -146,7 +147,8 @@ export default defineConfig({
                     { text: 'Freezing Model Parameters', link: '/manual/freezing_model_parameters' },
                     { text: 'GPU Management', link: '/manual/gpu_management' },
                     { text: 'Migrating from Flux to Lux', link: '/manual/migrate_from_flux' },
-                    { text: 'Initializing Weights', link: '/manual/weight_initializers' }]
+                    { text: 'Initializing Weights', link: '/manual/weight_initializers' },
+                    { text: 'Distributed Data Parallel Training', link: '/manual/distributed_utils' },]
             },
             "/api/": {
                 text: 'API Reference', collapsed: false, items: [
@@ -155,7 +157,8 @@ export default defineConfig({
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental Features', link: '/api/Lux/contrib' },
-                            { text: 'Switching between Deep Learning Frameworks', link: '/api/Lux/switching_frameworks' }]
+                            { text: 'Switching between Deep Learning Frameworks', link: '/api/Lux/switching_frameworks' },
+                            { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }]
                     },
                     {
                         text: 'Accelerator Support', collapsed: false, items: [

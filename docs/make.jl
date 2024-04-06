@@ -38,14 +38,16 @@ pages = [
         "manual/freezing_model_parameters.md",
         "manual/gpu_management.md",
         "manual/migrate_from_flux.md",
-        "manual/weight_initializers.md"
+        "manual/weight_initializers.md",
+        "manual/distributed_utils.md"
     ],
     "API Reference" => [
         "Lux" => [
             "api/Lux/layers.md",
             "api/Lux/utilities.md",
             "api/Lux/contrib.md",
-            "api/Lux/switching_frameworks.md"
+            "api/Lux/switching_frameworks.md",
+            "api/Lux/distributed_utils.md",
         ],
         "Accelerator Support" => [
             "api/Accelerator_Support/LuxAMDGPU.md",

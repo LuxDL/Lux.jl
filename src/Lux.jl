@@ -25,7 +25,7 @@ using PrecompileTools: @recompile_invalidations
                     initialparameters, initialstates, parameterlength, statelength,
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
                     display_name, replicate
-    import LuxDeviceUtils: get_device, set_device!
+    using LuxDeviceUtils: get_device
 end
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
