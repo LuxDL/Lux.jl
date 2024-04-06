@@ -10,7 +10,7 @@ hero:
   actions:
     - theme: brand
       text: Tutorials
-      link: /tutorials/
+      link: /tutorials
     - theme: alt
       text: Ecosystem
       link: /ecosystem
@@ -28,7 +28,7 @@ features:
   - icon: 🚀
     title: Fast & Extendible
     details: Lux.jl is written in Julia itself, making it extremely extendible. CUDA and AMDGPU are supported first-class, with experimental support for Metal Hardware.
-    link: /introduction/
+    link: /introduction
 
   - icon: 🧑‍🔬
     title: SciML ❤️ Lux

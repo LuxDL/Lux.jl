@@ -78,6 +78,11 @@ function train(model; rng=Xoshiro(0), kwargs...)
     train_state = Lux.Experimental.TrainState(
         rng, model, Adam(3.0f-4); transform_variables=identity)
 
+    ### Warmup the model
+    x_proto = randn(rng, Float32, 28, 28, 1, 1)
+    y_proto = onehotbatch([1], 0:9)
+    Lux.Experimental.compute_gradients(AutoZygote(), loss, (x_proto, y_proto), train_state)
+
     ### Lets train the model
     nepochs = 10
     for epoch in 1:nepochs
