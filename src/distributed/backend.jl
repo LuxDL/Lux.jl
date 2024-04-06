@@ -28,7 +28,7 @@ struct NCCLBackend{C, M <: Union{Nothing, MPIBackend}} <: AbstractLuxDistributed
     mpi_backend::M
 
     function NCCLBackend(comm=nothing, mpi_backend=nothing)
-        if Base.get_extension(@__MODULE__, :LuxCUDAMPINCCLExt) === nothing
+        if Base.get_extension(@__MODULE__, :LuxMPINCCLExt) === nothing
             error("`NCCLBackend` requires `CUDA.jl`, `MPI.jl` and `NCCL.jl` to be loaded.")
         end
         return new{typeof(comm), typeof(mpi_backend)}(comm, mpi_backend)

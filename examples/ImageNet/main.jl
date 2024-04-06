@@ -44,8 +44,7 @@ function construct(rng::AbstractRNG, cfg::ModelConfig, ecfg::ExperimentConfig)
     should_log() && println("$(now()) ==> forward pass warmup completed")
 
     if !ecfg.train.evaluate
-        (l, _, _), back = Zygote.pullback(
-            p -> logitcrossentropyloss(x__, y__, model, p, st), ps)
+        (l, _, _), back = Zygote.pullback(logitcrossentropyloss, x__, y__, model, ps, st)
         back((one(l), nothing, nothing))
         should_log() && println("$(now()) ==> backward pass warmup completed")
     end
@@ -238,10 +237,9 @@ function main(cfg::ExperimentConfig)
         bsize = size(x, ndims(x))
 
         # Gradients and Update
-        (loss, st, stats), back = Zygote.pullback(
-            p -> loss_function(model, p, st, (x, y)), ps)
+        (loss, st, stats), back = Zygote.pullback(loss_function, model, ps, st, (x, y))
         t_forward, t = time() - t, time()
-        gs = back((one(loss) / total_workers, nothing, nothing))[1]
+        gs = back((one(loss), nothing, nothing))[2]
         t_backward, t = time() - t, time()
         opt_state, ps = Optimisers.update!(opt_state, ps, gs)
         t_opt = time() - t

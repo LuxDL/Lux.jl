@@ -1,10 +1,10 @@
 module LuxMPIExt
 
-import Lux: MPIBackend, NCCLBackend, DistributedUtils, __is_extension_loaded, __set_device!,
-            __unwrap_val
-import LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, MPI_CUDA_AWARE,
-                       MPI_ROCM_AWARE, cpu_device
-import MPI
+using Lux: MPIBackend, NCCLBackend, DistributedUtils, __is_extension_loaded, __unwrap_val,
+           MPI_CUDA_AWARE, MPI_ROCM_AWARE
+using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device,
+                      set_device!, __is_functional
+using MPI: MPI
 
 function DistributedUtils.__initialize(
         ::Val{:MPI}; cuda_devices=nothing, amdgpu_devices=nothing)
@@ -13,19 +13,19 @@ function DistributedUtils.__initialize(
 
     local_rank = MPI.Comm_rank(MPI.COMM_WORLD)
 
-    if cuda_devices !== missing && __unwrap_val(__is_extension_loaded(Val(:LuxCUDA)))
+    if cuda_devices !== missing && __is_functional(LuxCUDADevice)
         if cuda_devices === nothing
-            __set_device!(Val(:CUDA), nothing, local_rank)
+            set_device!(LuxCUDADevice, nothing, local_rank)
         else
-            __set_device!(Val(:CUDA), cuda_devices[local_rank])
+            set_device!(LuxCUDADevice, cuda_devices[local_rank])
         end
     end
 
-    if amdgpu_devices !== missing && __unwrap_val(__is_extension_loaded(Val(:LuxAMDGPU)))
+    if amdgpu_devices !== missing && __is_functional(LuxAMDGPUDevice)
         if amdgpu_devices === nothing
-            __set_device!(Val(:AMDGPU), nothing, local_rank)
+            set_device!(LuxAMDGPUDevice, nothing, local_rank)
         else
-            __set_device!(Val(:AMDGPU), amdgpu_devices[local_rank])
+            set_device!(LuxAMDGPUDevice, amdgpu_devices[local_rank])
         end
     end
 

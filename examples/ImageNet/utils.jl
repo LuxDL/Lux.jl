@@ -194,7 +194,7 @@ end
 get_loggable_values(meter::ProgressMeter) = getproperty.(meter.meters, :average)
 
 # Optimisers State
-function (dev::Lux.AbstractLuxDevice)(l::Optimisers.Leaf)
+function (dev::LuxDeviceUtils.AbstractLuxDevice)(l::Optimisers.Leaf)
     @set! l.state = dev(l.state)
     return l
 end

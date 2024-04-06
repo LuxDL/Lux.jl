@@ -1,8 +1,8 @@
 module Lux
 
-import PrecompileTools
+using PrecompileTools: @recompile_invalidations
 
-PrecompileTools.@recompile_invalidations begin
+@recompile_invalidations begin
     using Adapt: Adapt, adapt
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
@@ -25,7 +25,7 @@ PrecompileTools.@recompile_invalidations begin
                     initialparameters, initialstates, parameterlength, statelength,
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
                     display_name, replicate
-    import LuxDeviceUtils: get_device
+    import LuxDeviceUtils: get_device, set_device!
 end
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers

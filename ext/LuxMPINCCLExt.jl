@@ -1,10 +1,10 @@
-module LuxCUDAMPINCCLExt
+module LuxMPINCCLExt
 
-import Lux: MPIBackend, NCCLBackend, DistributedUtils
-import LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice
-import MPI
-import NCCL
-import Setfield: @set!
+using Lux: MPIBackend, NCCLBackend, DistributedUtils
+using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice
+using MPI: MPI
+using NCCL: NCCL
+using Setfield: @set!
 
 function DistributedUtils.__initialize(
         ::Val{:NCCL}; cuda_devices=nothing, amdgpu_devices=missing)
@@ -32,7 +32,6 @@ DistributedUtils.local_rank(backend::NCCLBackend) = NCCL.rank(backend.comm)
 DistributedUtils.total_workers(backend::NCCLBackend) = NCCL.size(backend.comm)
 
 # For non-CUDA Arrays, fallback to MPI
-
 # Broadcast
 
 function DistributedUtils.__bcast!(

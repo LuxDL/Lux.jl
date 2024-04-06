@@ -1,12 +1,13 @@
 module DistributedUtils
 
-import ChainRulesCore as CRC
-import ConcreteStructs: @concrete
-import Functors: fmap
-import ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
-import LuxDeviceUtils: get_device, cpu_device
-import Optimisers: AbstractRule, Leaf, Optimisers
-import Setfield: @set!
+using ChainRulesCore: ChainRulesCore
+using ConcreteStructs: @concrete
+using Functors: fmap
+using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
+using LuxDeviceUtils: get_device, cpu_device
+using Setfield: @set!
+
+const CRC = ChainRulesCore
 
 const NCCL_Initialized = Ref(false)
 const MPI_Initialized = Ref(false)
@@ -207,11 +208,6 @@ function synchronize!!(
     return map(x -> synchronize!!(backend, x; root), ps)
 end
 
-function synchronize!!(backend::AbstractLuxDistributedBackend, ps::Leaf; root::Int=0)
-    @set! ps.state = synchronize!!(backend, ps.state; root)
-    return ps
-end
-
 function synchronize!!(backend::AbstractLuxDistributedBackend, ps::T; root::Int=0) where {T}
     isbitstype(T) && return bcast!(backend, [ps]; root)[]
     return ps # If we don't know how to synchronize, just return the value. For ex, Symbol, String, etc.
@@ -256,20 +252,11 @@ averages the gradients across the processes using Allreduce.
 
   - `optimizer`: An Optimizer compatible with the Optimisers.jl package
 """
-@concrete struct DistributedOptimizer{B <: AbstractLuxDistributedBackend} <: AbstractRule
-    backend::B
-    opt
-end
-
-function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
-    y_avg = allreduce!(opt.backend, y, avg)
-    return Optimisers.apply!(opt.opt, state, x, y_avg)
-end
-
-Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
-
-function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
-    return DistributedOptimizer(opt.backend, Optimisers._adjust(opt.opt, nt))
+function DistributedOptimizer(backend::AbstractLuxDistributedBackend, opt)
+    mod = Base.get_extension(@__MODULE__, :LuxOptimisersExt)
+    mod === nothing &&
+        error("`Optimisers.jl` must be installed and loaded before using this.")
+    return getproperty(mod, :DistributedOptimizer)(backend, opt)
 end
 
 end
