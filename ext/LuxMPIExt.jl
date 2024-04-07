@@ -1,13 +1,14 @@
 module LuxMPIExt
 
-using Lux: MPIBackend, NCCLBackend, DistributedUtils, __is_extension_loaded, __unwrap_val,
-           MPI_CUDA_AWARE, MPI_ROCM_AWARE
+using Lux: MPIBackend, NCCLBackend, DistributedUtils, __unwrap_val, MPI_CUDA_AWARE,
+           MPI_ROCM_AWARE
 using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device,
                       set_device!, __is_functional
 using MPI: MPI
 
 function DistributedUtils.__initialize(
-        ::Type{MPIBackend}; cuda_devices=nothing, amdgpu_devices=nothing)
+        ::Type{MPIBackend}; cuda_devices=nothing, amdgpu_devices=nothing,
+        force_cuda::Bool=false, caller::String="", force_amdgpu::Bool=false) # Undocumented internal kwarg 
     !MPI.Initialized() && MPI.Init()
     DistributedUtils.MPI_Initialized[] = true
 
@@ -15,18 +16,22 @@ function DistributedUtils.__initialize(
 
     if cuda_devices !== missing && __is_functional(LuxCUDADevice)
         if cuda_devices === nothing
-            set_device!(LuxCUDADevice, nothing, local_rank)
+            set_device!(LuxCUDADevice, nothing, local_rank + 1)
         else
-            set_device!(LuxCUDADevice, cuda_devices[local_rank])
+            set_device!(LuxCUDADevice, cuda_devices[local_rank + 1])
         end
+    elseif force_cuda
+        error(lazy"CUDA devices are not functional (or `LuxCUDA.jl` not loaded) and `force_cuda` is set to `true`. This is caused by backend: $(caller).")
     end
 
     if amdgpu_devices !== missing && __is_functional(LuxAMDGPUDevice)
         if amdgpu_devices === nothing
-            set_device!(LuxAMDGPUDevice, nothing, local_rank)
+            set_device!(LuxAMDGPUDevice, nothing, local_rank + 1)
         else
-            set_device!(LuxAMDGPUDevice, amdgpu_devices[local_rank])
+            set_device!(LuxAMDGPUDevice, amdgpu_devices[local_rank + 1])
         end
+    elseif force_amdgpu
+        error(lazy"AMDGPU devices are not functional (or `LuxAMDGPU.jl` not loaded) and `force_amdgpu` is set to `true`. This is caused by backend: $(caller).")
     end
 
     return
@@ -47,8 +52,9 @@ end
 
 function DistributedUtils.__bcast!(
         backend::MPIBackend, sendbuf, recvbuf, dev::AbstractLuxDevice; root=0)
-    MPI.Bcast!(sendbuf, recvbuf, backend.comm; root)
-    return recvbuf
+    return DistributedUtils.__bcast!(
+        backend, ifelse(DistributedUtils.local_rank(backend) == root, sendbuf, recvbuf),
+        dev; root)
 end
 
 for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))

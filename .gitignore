@@ -31,3 +31,4 @@ docs/src/tutorials/advanced
 *.log
 
 bench/benchmark_results.json
+*.cov

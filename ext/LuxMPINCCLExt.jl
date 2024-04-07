@@ -9,7 +9,8 @@ using Setfield: @set!
 function DistributedUtils.__initialize(
         ::Type{NCCLBackend}; cuda_devices=nothing, amdgpu_devices=missing)
     @assert amdgpu_devices===missing "`AMDGPU` is not supported by `NCCL`."
-    DistributedUtils.__initialize(MPIBackend; cuda_devices, amdgpu_devices)
+    DistributedUtils.__initialize(
+        MPIBackend; cuda_devices, force_cuda=true, caller="NCCLBackend", amdgpu_devices)
     DistributedUtils.NCCL_Initialized[] = true
     return
 end

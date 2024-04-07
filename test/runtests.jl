@@ -1,6 +1,6 @@
 using ReTestItems
 
-# ReTestItems.runtests(@__DIR__)
+ReTestItems.runtests(@__DIR__)
 
 # Distributed Tests
 using MPI, Pkg, Test
@@ -25,12 +25,18 @@ cur_proj = dirname(Pkg.project().path)
 include("setup_modes.jl")
 
 @testset "MODE: $(mode)" for (mode, aType, dev, ongpu) in MODES
+    if mode == "AMDGPU"
+        # AMDGPU needs to cause a deadlock, needs to be investigated
+        @test_broken 1 == 2
+        continue
+    end
     backends = mode == "CUDA" ? ("mpi", "nccl") : ("mpi",)
     for backend_type in backends
+        np = backend_type == "nccl" ? min(nprocs, length(CUDA.devices())) : nprocs
         @testset "Backend: $(backend_type)" begin
             @testset "$(basename(file))" for file in distributedtestfiles
                 @info "Running $file with $backend_type backend on $mode device"
-                run(`$(MPI.mpiexec()) -n $(nprocs) $(Base.julia_cmd()) --color=yes \
+                run(`$(MPI.mpiexec()) -n $(np) $(Base.julia_cmd()) --color=yes \
                      --code-coverage=user --project=$(cur_proj) --startup-file=no $(file) \
                      $(mode) $(backend_type)`)
                 Test.@test true

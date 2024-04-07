@@ -34,8 +34,6 @@ const CRC = ChainRulesCore
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
-@inline __is_extension_loaded(x) = Val(false)
-
 # Utilities
 include("utils.jl")
 

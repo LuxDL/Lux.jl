@@ -17,7 +17,6 @@ steps:
           cuda: "*"
         env:
           GROUP: "CUDA"
-          JULIA_MPI_TEST_NPROCS: 2  # Needs to be same as number of GPUs for NCCL
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 240
         matrix:

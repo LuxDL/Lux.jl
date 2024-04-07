@@ -1,4 +1,5 @@
 using Lux, MLUtils, MPI, NCCL, Random, Test
+using LuxAMDGPU, LuxCUDA
 
 const input_args = length(ARGS) == 2 ? ARGS : ("CPU", "mpi")
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
