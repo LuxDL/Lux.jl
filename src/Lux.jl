@@ -1,8 +1,8 @@
 module Lux
 
-import PrecompileTools
+using PrecompileTools: @recompile_invalidations
 
-PrecompileTools.@recompile_invalidations begin
+@recompile_invalidations begin
     using Adapt: Adapt, adapt
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
@@ -13,6 +13,7 @@ PrecompileTools.@recompile_invalidations begin
     using GPUArraysCore: GPUArraysCore
     using LinearAlgebra: LinearAlgebra
     using Markdown: @doc_str
+    using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport
     using Setfield: Setfield, @set!
@@ -24,7 +25,7 @@ PrecompileTools.@recompile_invalidations begin
                     initialparameters, initialstates, parameterlength, statelength,
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
                     display_name, replicate
-    import LuxDeviceUtils: get_device
+    using LuxDeviceUtils: get_device
 end
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
@@ -61,6 +62,10 @@ include("transform/types.jl")
 include("transform/flux.jl")
 include("transform/simplechains.jl")
 
+# Distributed Training
+include("distributed/backend.jl")
+include("distributed/public_api.jl")
+
 # Deprecations
 include("deprecated.jl")
 
@@ -82,5 +87,7 @@ export StatefulLuxLayer
 export f16, f32, f64
 
 export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer, SimpleChainsLayer
+
+export MPIBackend, NCCLBackend, DistributedUtils
 
 end

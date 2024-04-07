@@ -51,7 +51,7 @@ function ImageDataset(folder::String, augmentation_pipeline, normalization_param
 end
 
 function Base.getindex(data::ImageDataset, i::Int)
-    img = Images.load(data.image_files[i])
+    img = load(data.image_files[i])
     img = augment(img, data.augmentation_pipeline)
     cimg = channelview(img)
     if ndims(cimg) == 2
@@ -74,16 +74,17 @@ function construct(cfg::DatasetConfig)
         joinpath(cfg.data_root, "train"), train_data_augmentation, normalization_parameters)
     val_dataset = ImageDataset(
         joinpath(cfg.data_root, "val"), val_data_augmentation, normalization_parameters)
+
     if is_distributed()
-        train_dataset = DistributedDataContainer(train_dataset)
-        val_dataset = DistributedDataContainer(val_dataset)
+        train_dataset = DistributedUtils.DistributedDataContainer(backend, train_dataset)
+        val_dataset = DistributedUtils.DistributedDataContainer(backend, val_dataset)
     end
 
     train_data = BatchView(
-        shuffleobs(train_dataset); batchsize=cfg.train_batchsize ÷ total_workers(),
+        shuffleobs(train_dataset); batchsize=cfg.train_batchsize ÷ total_workers,
         partial=false, collate=true)
 
-    val_data = BatchView(val_dataset; batchsize=cfg.eval_batchsize ÷ total_workers(),
+    val_data = BatchView(val_dataset; batchsize=cfg.eval_batchsize ÷ total_workers,
         partial=true, collate=true)
 
     train_iter = Iterators.cycle(MLUtils.eachobsparallel(

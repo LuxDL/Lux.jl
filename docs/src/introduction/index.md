@@ -75,6 +75,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 using Lux, Random, Optimisers, Zygote
 # using LuxCUDA, LuxAMDGPU, Metal # Optional packages for GPU support
 import Lux.Experimental: @compact
+using Printf  # For pretty printing
 ```
 
 We will define a custom MLP using the `@compact` macro. The macro takes in a list of
@@ -117,7 +118,7 @@ for epoch in 1:1000
         return sum(abs2, y .- y_data), st_
     end
     gs = only(pb((one(loss), nothing)))
-    epoch % 100 == 1 && println("Epoch: $(epoch) | Loss: $(loss)")
+    epoch % 100 == 1 && @printf "Epoch: %04d \t Loss: %10.9g\n" epoch loss
     Optimisers.update!(st_opt, ps, gs)
 end
 ```

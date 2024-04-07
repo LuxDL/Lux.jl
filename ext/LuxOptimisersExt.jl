@@ -1,9 +1,12 @@
 module LuxOptimisersExt
 
-using Lux: Lux
+using ConcreteStructs: @concrete
+using Lux: Lux, DistributedUtils
+using .DistributedUtils: AbstractLuxDistributedBackend
 using LuxDeviceUtils: AbstractLuxDevice, gpu_device
-using Optimisers: Optimisers
+using Optimisers: Optimisers, AbstractRule, Leaf
 using Random: Random
+using Setfield: @set!
 
 """
     TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
@@ -37,6 +40,29 @@ function Lux.Experimental.apply_gradients(ts::Lux.Experimental.TrainState, grads
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
     return Lux.Experimental.TrainState(
         ts.model, ps, ts.states, optimizer_state, ts.step + 1)
+end
+
+# DistributedUtils
+@concrete struct DistributedOptimizer{B <: AbstractLuxDistributedBackend} <: AbstractRule
+    backend::B
+    opt
+end
+
+function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
+    y_avg = DistributedUtils.allreduce!(opt.backend, y, DistributedUtils.avg)
+    return Optimisers.apply!(opt.opt, state, x, y_avg)
+end
+
+Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
+
+function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
+    return DistributedOptimizer(opt.backend, Optimisers._adjust(opt.opt, nt))
+end
+
+function DistributedUtils.synchronize!!(
+        backend::AbstractLuxDistributedBackend, ps::Leaf; root::Int=0)
+    @set! ps.state = DistributedUtils.synchronize!!(backend, ps.state; root)
+    return ps
 end
 
 end

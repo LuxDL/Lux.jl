@@ -1,32 +1,12 @@
 @testsetup module SharedTestSetup
 import Reexport: @reexport
 
-using Lux, LuxCUDA, LuxAMDGPU
+using Lux
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics
-import LuxTestUtils: @jet, @test_gradients, check_approx
+using LuxTestUtils: @jet, @test_gradients, check_approx
 
-const GROUP = get(ENV, "GROUP", "All")
-
-CUDA.allowscalar(false)
-
-cpu_testing() = GROUP == "All" || GROUP == "CPU"
-cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && LuxCUDA.functional()
-amdgpu_testing() = (GROUP == "All" || GROUP == "AMDGPU") && LuxAMDGPU.functional()
-
-const MODES = begin
-    # Mode, Array Type, Device Function, GPU?
-    cpu_mode = ("CPU", Array, LuxCPUDevice(), false)
-    cuda_mode = ("CUDA", CuArray, LuxCUDADevice(), true)
-    amdgpu_mode = ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true)
-
-    modes = []
-    cpu_testing() && push!(modes, cpu_mode)
-    cuda_testing() && push!(modes, cuda_mode)
-    amdgpu_testing() && push!(modes, amdgpu_mode)
-
-    modes
-end
+include("setup_modes.jl")
 
 # Some Helper Functions
 function get_default_rng(mode::String)

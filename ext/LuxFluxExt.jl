@@ -1,6 +1,6 @@
 module LuxFluxExt
 
-import Flux
+using Flux: Flux
 using Lux: Lux
 using Random: AbstractRNG
 import Lux: __from_flux_adaptor, FluxLayer, FluxModelConversionError
