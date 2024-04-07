@@ -36,11 +36,7 @@ function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, dev::AMDGPU.HIPDevi
     return
 end
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, id::Int)
-    if !AMDGPU.functional()
-        @warn "AMDGPU is not functional."
-        return
-    end
-    AMDGPU.device!(id)
+    LuxDeviceUtils.set_device!(LuxAMDGPUDevice, AMDGPU.devices()[id])
     return
 end
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, ::Nothing, rank::Int)
