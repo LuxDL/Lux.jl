@@ -59,7 +59,7 @@ function Adapt.adapt_storage(to::LuxCUDAAdaptor, x)
         x_new = CUDA.cu(x)
         CUDA.device!(old_dev)
         return x_new
-    elseif CUDA.deviceid(x) == to.device
+    elseif CUDA.device(x) == to.device
         return x
     else
         CUDA.device!(to.device)
