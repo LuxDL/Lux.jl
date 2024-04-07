@@ -49,7 +49,7 @@ end
 end
 
 function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
-    y_avg = allreduce!(opt.backend, y, DistributedUtils.avg)
+    y_avg = DistributedUtils.allreduce!(opt.backend, y, DistributedUtils.avg)
     return Optimisers.apply!(opt.opt, state, x, y_avg)
 end
 

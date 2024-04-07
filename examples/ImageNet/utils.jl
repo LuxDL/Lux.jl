@@ -77,51 +77,6 @@ function load_checkpoint(fname::String)
     end
 end
 
-# Parameter Scheduling
-## Copied from ParameterSchedulers.jl due to its heavy dependencies
-struct CosineAnnealSchedule{restart, T, S <: Integer}
-    range::T
-    offset::T
-    dampen::T
-    period::S
-
-    function CosineAnnealSchedule(
-            lambda_0, lambda_1, period; restart::Bool=true, dampen=1.0f0)
-        range = abs(lambda_0 - lambda_1)
-        offset = min(lambda_0, lambda_1)
-        return new{restart, typeof(range), typeof(period)}(range, offset, dampen, period)
-    end
-end
-
-function (s::CosineAnnealSchedule{true})(t)
-    d = s.dampen^div(t - 1, s.period)
-    return (s.range * (1 + cos(pi * mod(t - 1, s.period) / s.period)) / 2 + s.offset) / d
-end
-
-function (s::CosineAnnealSchedule{false})(t)
-    return s.range * (1 + cos(pi * (t - 1) / s.period)) / 2 + s.offset
-end
-
-struct Step{T, S}
-    start::T
-    decay::T
-    step_sizes::S
-
-    function Step(start::T, decay::T, step_sizes::S) where {T, S}
-        _step_sizes = (S <: Integer) ? Iterators.repeated(step_sizes) : step_sizes
-
-        return new{T, typeof(_step_sizes)}(start, decay, _step_sizes)
-    end
-end
-
-(s::Step)(t) = s.start * s.decay^(searchsortedfirst(s.step_sizes, t - 1) - 1)
-
-struct ConstantSchedule{T}
-    val::T
-end
-
-(s::ConstantSchedule)(t) = s.val
-
 # Tracking
 @kwdef mutable struct AverageMeter
     fmtstr
@@ -132,7 +87,7 @@ end
 end
 
 function AverageMeter(name::String, fmt::String)
-    fmtstr = Formatting.FormatExpr("$name {1:$fmt} ({2:$fmt})")
+    fmtstr = FormatExpr("$name {1:$fmt} ({2:$fmt})")
     return AverageMeter(; fmtstr=fmtstr)
 end
 
@@ -160,7 +115,7 @@ function reset_meter!(meter::AverageMeter)
 end
 
 function print_meter(meter::AverageMeter)
-    return Formatting.printfmt(meter.fmtstr, meter.val, meter.average)
+    return printfmt(meter.fmtstr, meter.val, meter.average)
 end
 
 # ProgressMeter
@@ -171,10 +126,9 @@ end
 
 function ProgressMeter(num_batches::Int, meters::NTuple{N}, prefix::String="") where {N}
     fmt = "%" * string(length(string(num_batches))) * "d"
+    fmt2 = "{1:" * string(length(string(num_batches))) * "d}"
     prefix = prefix != "" ? endswith(prefix, " ") ? prefix : prefix * " " : ""
-    batch_fmtstr = Formatting.generate_formatter("$prefix[$fmt/" *
-                                                 Formatting.sprintf1(fmt, num_batches) *
-                                                 "]")
+    batch_fmtstr = FormatExpr("$prefix[$fmt2/" * cfmt(fmt, num_batches) * "]")
     return ProgressMeter{N}(batch_fmtstr, meters)
 end
 
@@ -184,8 +138,7 @@ function reset_meter!(meter::ProgressMeter)
 end
 
 function print_meter(meter::ProgressMeter, batch::Int)
-    base_str = meter.batch_fmtstr(batch)
-    print(base_str)
+    printfmt(meter.batch_fmtstr, batch)
     foreach(x -> (print("\t"); print_meter(x)), meter.meters[1:end])
     println()
     return nothing

@@ -3,7 +3,7 @@
 !!! tip
 
     For a fully functional example, see the
-    [ImageNet Training Example](https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet)
+    [ImageNet Training Example](https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet).
 
 DDP Training using `Lux.DistributedUtils` is a spiritual successor to
 [FluxMPI.jl](https://github.com/avik-pal/FluxMPI.jl), but has some key differences.

@@ -39,7 +39,6 @@ DistributedUtils.local_rank(backend::MPIBackend) = MPI.Comm_rank(backend.comm)
 DistributedUtils.total_workers(backend::MPIBackend) = MPI.Comm_size(backend.comm)
 
 # Broadcast
-
 function DistributedUtils.__bcast!(
         backend::MPIBackend, sendrecvbuf, dev::AbstractLuxDevice; root=0)
     MPI.Bcast!(sendrecvbuf, backend.comm; root)
@@ -78,11 +77,11 @@ for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDG
 end
 
 # Allreduce
-
 function DistributedUtils.__allreduce!(
         backend::MPIBackend, sendrecvbuf, op::F, dev::AbstractLuxDevice) where {F}
-    MPI.Allreduce!(sendrecvbuf, op, backend.comm)
-    if op === typeof(DistributedUtils.avg)
+    mpiop = ifelse(op === DistributedUtils.avg, +, op)
+    MPI.Allreduce!(sendrecvbuf, mpiop, backend.comm)
+    if op === DistributedUtils.avg
         sendrecvbuf ./= DistributedUtils.total_workers(backend)
     end
     return sendrecvbuf
@@ -90,8 +89,9 @@ end
 
 function DistributedUtils.__allreduce!(
         backend::MPIBackend, sendbuf, recvbuf, op::F, dev::AbstractLuxDevice) where {F}
-    MPI.Allreduce!(sendbuf, recvbuf, op, backend.comm)
-    if op === typeof(DistributedUtils.avg)
+    mpiop = ifelse(op === DistributedUtils.avg, +, op)
+    MPI.Allreduce!(sendbuf, recvbuf, mpiop, backend.comm)
+    if op === DistributedUtils.avg
         recvbuf ./= DistributedUtils.total_workers(backend)
     end
     return recvbuf
@@ -123,11 +123,11 @@ for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDG
 end
 
 # Reduce
-
 function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
         dev::AbstractLuxDevice; root::Int) where {F}
-    MPI.Reduce!(sendrecvbuf, op, backend.comm; root)
-    if op === typeof(DistributedUtils.avg)
+    mpiop = ifelse(op === DistributedUtils.avg, +, op)
+    MPI.Reduce!(sendrecvbuf, mpiop, backend.comm; root)
+    if op === DistributedUtils.avg
         sendrecvbuf ./= DistributedUtils.total_workers(backend)
     end
     return sendrecvbuf
@@ -135,8 +135,9 @@ end
 
 function DistributedUtils.__reduce!(backend::MPIBackend, sendbuf, recvbuf, op::F,
         dev::AbstractLuxDevice; root::Int) where {F}
-    MPI.Reduce!(sendbuf, recvbuf, op, backend.comm; root)
-    if op === typeof(DistributedUtils.avg)
+    mpiop = ifelse(op === DistributedUtils.avg, +, op)
+    MPI.Reduce!(sendbuf, recvbuf, mpiop, backend.comm; root)
+    if op === DistributedUtils.avg
         recvbuf ./= DistributedUtils.total_workers(backend)
     end
     return recvbuf

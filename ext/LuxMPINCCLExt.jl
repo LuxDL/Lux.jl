@@ -33,7 +33,6 @@ DistributedUtils.total_workers(backend::NCCLBackend) = NCCL.size(backend.comm)
 
 # For non-CUDA Arrays, fallback to MPI
 # Broadcast
-
 function DistributedUtils.__bcast!(
         backend::NCCLBackend, sendrecvbuf, ::LuxCUDADevice; root=0)
     NCCL.Broadcast!(sendrecvbuf, backend.comm; root)
@@ -57,7 +56,6 @@ function DistributedUtils.__bcast!(
 end
 
 # Allreduce
-
 function DistributedUtils.__allreduce!(
         backend::NCCLBackend, sendrecvbuf, op::F, ::LuxCUDADevice) where {F}
     op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
@@ -83,7 +81,6 @@ function DistributedUtils.__allreduce!(
 end
 
 # Reduce
-
 function DistributedUtils.__reduce!(
         backend::NCCLBackend, sendrecvbuf, op::F, ::LuxCUDADevice; root::Int) where {F}
     op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)

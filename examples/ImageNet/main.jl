@@ -6,8 +6,7 @@ import FLoops: ThreadedEx
 import Metalhead
 import MPI, NCCL
 using LuxAMDGPU, LuxCUDA
-
-using Formatting # TODO: Get rid of this
+using Format
 
 # Distributed Training: NCCL for NVIDIA GPUs and MPI for anything else
 if LuxCUDA.functional()
@@ -79,10 +78,12 @@ function construct(cfg::OptimizerConfig)
     end
 
     if cfg.scheduler.name == "cosine"
-        scheduler = CosineAnnealSchedule(cfg.learning_rate, cfg.learning_rate / 100,
-            cfg.scheduler.cycle_length; dampen=cfg.scheduler.damp_factor)
+        l0 = cfg.learning_rate
+        l1 = cfg.learning_rate / 100
+        scheduler = ComposedSchedule(CosAnneal(l0, l1, cfg.scheduler.cycle_length),
+            Step(l0, cfg.scheduler.damp_factor, cfg.scheduler.cycle_length))
     elseif cfg.scheduler.name == "constant"
-        scheduler = ConstantSchedule(cfg.learning_rate)
+        scheduler = Constant(cfg.learning_rate)
     elseif cfg.scheduler.name == "step"
         scheduler = Step(
             cfg.learning_rate, cfg.scheduler.lr_step_decay, cfg.scheduler.lr_step)
