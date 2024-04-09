@@ -8,8 +8,7 @@ end
 
 @testitem "Explicit Imports: Quality Assurance" begin
     # Load all trigger packages
-    import Lux, ComponentArrays, ReverseDiff, ChainRules, Flux, LuxAMDGPU, SimpleChains,
-           Tracker, Zygote
+    import Lux, ComponentArrays, ReverseDiff, Flux, LuxAMDGPU, SimpleChains, Tracker, Zygote
 
     using ExplicitImports
 
