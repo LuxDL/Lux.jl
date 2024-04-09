@@ -137,6 +137,25 @@ export default defineConfig({
                     {
                         text: 'Advanced', collapsed: false, items: [
                             { text: 'Training a Neural ODE to Model Gravitational Waveforms', link: '/tutorials/advanced/1_GravitationalWaveForm' }]
+                    },
+                    {
+                        text: '3rd Party Tutorials', collapsed: true, items: [
+                            {
+                                text: 'PINNs (NeuralPDE.jl)', link: 'https://docs.sciml.ai/NeuralPDE/stable/tutorials/pdesystem/'
+                            },
+                            {
+                                text: 'UDEs (SciMLSensitivity.jl)', link: 'https://docs.sciml.ai/SciMLSensitivity/stable/tutorials/data_parallel/'
+                            },
+                            {
+                                text: 'Neural DEs (DiffEqFlux.jl)', link: 'https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode/'
+                            },
+                            {
+                                text: 'DEQs (DeepEquilibriumNetworks.jl)', link: 'https://docs.sciml.ai/DeepEquilibriumNetworks/stable/tutorials/basic_mnist_deq/'
+                            },
+                            {
+                                text: 'Medical Image Segmentation', link: 'https://github.com/Dale-Black/ComputerVisionTutorials.jl/'
+                            }
+                        ]
                     }]
             },
             "/manual/": {
