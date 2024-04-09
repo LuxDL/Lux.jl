@@ -39,21 +39,17 @@ try
         withenv("JULIA_DEBUG" => "Literate",
             "PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path,
             "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%",
-            "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d),
-            "EXAMPLE_PATH" => p_, "EXAMPLE_NAME" => name,
-            "JULIA_NUM_THREADS" => Threads.nthreads()) do
-            cmd = `$(Base.julia_cmd()) --color=yes --project=$(tutorial_proj) -e \
+            "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d), "EXAMPLE_PATH" => p_,
+            "EXAMPLE_NAME" => name, "JULIA_NUM_THREADS" => Threads.nthreads(),
+            "JULIA_PKG_PRECOMPILE_AUTO" => 0) do
+            cmd = `$(Base.julia_cmd()) --color=yes --startup-file=no --project=$(tutorial_proj) -e \
                 'using Pkg;
                     io=open(ENV["PKG_LOG_PATH"], "w");
                     Pkg.develop(; path=ENV["LUX_PATH"], io);
                     Pkg.instantiate(; io);
-                    Pkg.precompile(; io);
-                    eval(Meta.parse("using " * join(keys(Pkg.project().dependencies), ", ")));
-                    close(io)'`
-            @info "Running Command: $(cmd)"
-            run(cmd)
-            cmd = `$(Base.julia_cmd()) --color=yes --project=$(tutorial_proj) -e \
-                'using Literate;
+                    close(io);
+
+                    using Literate;
                     function preprocess(path, str)
                         new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
                         appendix_code = "\n# ## Appendix\nusing InteractiveUtils\nInteractiveUtils.versioninfo()\nif @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end\nif @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end\nnothing#hide"
