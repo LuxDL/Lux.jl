@@ -6,7 +6,7 @@ useful tools that ship with Lux, that can help you debug your models.
 
 !!! tip "TL;DR"
 
-    Simply wrap your model with `Lux.Experimental.@debug`!!
+    Simply wrap your model with `Lux.Experimental.@debug_mode`!!
 
 !!! warning "Don't Forget"
 

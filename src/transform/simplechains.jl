@@ -102,6 +102,10 @@ regular `Array` or not. Default is `false`.
 !!! note
 
     Using the 2nd constructor makes the generation of the model struct type unstable.
+
+!!! note
+
+    If using `Tracker.jl`, the output will always be a regular `Array`.
 """
 struct SimpleChainsLayer{ToArray, L} <: AbstractExplicitLayer
     layer::L
@@ -129,10 +133,9 @@ function __apply_simple_chain(layer, x, ps, dev)
 end
 
 # Workaround for SimpleChains not being able to handle some input types
-function CRC.rrule(cfg::CRC.RuleConfig{>:HasReverseMode},
-        ::typeof(__apply_simple_chain), layer, x, ps, dev)
-    res, pb = CRC.rrule_via_ad(cfg, layer, x, ps)
-    function __∇apply_simple_chain(Δ)
+function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
+    res, pb = CRC.rrule(layer, x, ps)
+    __∇apply_simple_chain = @closure Δ -> begin
         # Safety measure to prevent errors from weird Array types that SimpleChains doesn't
         # support
         ∂layer, ∂x, ∂ps = pb(convert(Array, Δ))
