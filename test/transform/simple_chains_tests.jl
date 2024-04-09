@@ -33,6 +33,17 @@
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
+    @testset "Array Output" begin
+        adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)), true)
+        simple_chains_model = adaptor(lux_model)
+
+        ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
+        x = randn(Float32, 28, 28, 1, 1)
+
+        @test size(first(simple_chains_model(x, ps, st))) == (10, 1)
+        @test first(simple_chains_model(x, ps, st)) isa Array
+    end
+
     lux_model = Chain(
         FlattenLayer(3), Dense(784 => 20, tanh), Dropout(0.5), Dense(20 => 10))
 
