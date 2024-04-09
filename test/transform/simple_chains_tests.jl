@@ -22,16 +22,35 @@
     x = randn(Float32, 28, 28, 1, 1)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 1)
 
-    gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
+    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+
+    gs = Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
+
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
 
     x = randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
 
-    gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
+    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+
+    gs = Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
+
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+
+    @testset "Array Output" begin
+        adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)), true)
+        simple_chains_model = adaptor(lux_model)
+
+        ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
+        x = randn(Float32, 28, 28, 1, 1)
+
+        @test size(first(simple_chains_model(x, ps, st))) == (10, 1)
+        @test first(simple_chains_model(x, ps, st)) isa Array
+    end
 
     lux_model = Chain(
         FlattenLayer(3), Dense(784 => 20, tanh), Dropout(0.5), Dense(20 => 10))
@@ -45,14 +64,18 @@
     x = randn(Float32, 28, 28, 1, 1)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 1)
 
-    gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
+    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+
+    gs = Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
     x = randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
 
-    gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
+    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+
+    gs = Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
@@ -69,9 +92,13 @@
             x = randn(Float32, 10, 3)
             @test size(first(simple_chains_model(x, ps, st))) == (5, 3)
 
-            gs = Zygote.gradient((x, p) -> sum(first(simple_chains_model(x, p, st))), x, ps)
+            __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+
+            gs = Zygote.gradient(__f, x, ps)
             @test size(gs[1]) == size(x)
             @test length(gs[2].params) == length(ps.params)
+
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
         end
     end
 

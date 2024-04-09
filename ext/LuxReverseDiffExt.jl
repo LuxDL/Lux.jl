@@ -3,8 +3,8 @@ module LuxReverseDiffExt
 using ADTypes: AutoReverseDiff
 using ArrayInterface: ArrayInterface
 using Functors: fmap
-using Lux: Lux
-using ReverseDiff: ReverseDiff
+using Lux: Lux, LuxCPUDevice
+using ReverseDiff: ReverseDiff, TrackedArray, @grad_from_chainrules
 using Setfield: @set!
 
 function Lux.Experimental.compute_gradients(::AutoReverseDiff, objective_function::F, data,
@@ -33,6 +33,12 @@ function Lux.apply(
 end
 
 ## Prevent an infinite loop
-Lux.apply(m::Lux.AbstractExplicitLayer, x::ReverseDiff.TrackedArray, ps, st) = m(x, ps, st)
+Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
+
+# Handle SimpleChains
+@grad_from_chainrules Lux.__apply_simple_chain(layer, x::TrackedArray, ps, ::LuxCPUDevice)
+@grad_from_chainrules Lux.__apply_simple_chain(layer, x, ps::TrackedArray, ::LuxCPUDevice)
+@grad_from_chainrules Lux.__apply_simple_chain(
+    layer, x::TrackedArray, ps::TrackedArray, ::LuxCPUDevice)
 
 end
