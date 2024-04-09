@@ -206,6 +206,7 @@ steps:
       cuda: "*"
     artifact_paths:
       - "tutorial_deps/*"
+      - "docs/build/**/*"
     env:
       DATADEPS_ALWAYS_ACCEPT: true
       JULIA_DEBUG: "Documenter"

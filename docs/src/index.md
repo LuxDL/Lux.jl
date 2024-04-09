@@ -5,8 +5,8 @@ layout: home
 
 hero:
   name: LuxDL Docs
-  text: Elegant & Performant Deep Learning in JuliaLang
-  tagline: A Pure Julia Deep Learning Framework putting Correctness and Performance First
+  text: Elegant & Performant Scientific Machine Learning in JuliaLang
+  tagline: A Pure Julia Deep Learning Framework designed for Scientific Machine Learning
   actions:
     - theme: brand
       text: Tutorials
