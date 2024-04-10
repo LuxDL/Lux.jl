@@ -1,145 +1,126 @@
 ```@raw html
----
-layout: page
----
+<script setup lang="ts">
+import Gallery from "../components/Gallery.vue";
 
-<script setup>
-import { VPTeamPage, VPTeamPageTitle, VPTeamMembers, VPTeamPageSection } from 'vitepress/theme'
-
-const codeSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><path d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z"/></svg>';
-
-const beginners = [
+const beginner = [
   {
-    avatar: 'https://github.com/LuxDL.png',
-    name: 'Julia & Lux for the Uninitiated',
-    desc: 'A tutorial on how to get started with Julia and Lux for those who have never used Julia before.',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'beginner/1_Basics' }
-    ]
+    href: "beginner/1_Basics",
+    src: "https://picsum.photos/350/250?image=444",
+    caption: "Julia & Lux for the Uninitiated",
+    desc: "How to get started with Julia and Lux for those who have never used Julia before."
   },
   {
-    avatar: 'https://github.com/LuxDL.png',
-    name: 'Fitting a Polynomial using MLP',
-    desc: 'Learn the Basics of Lux by fitting a Multi-Layer Perceptron to a Polynomial.',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'beginner/2_PolynomialFitting' }
-    ]
+    href: "beginner/2_PolynomialFitting",
+    src: "../mlp.webp",
+    caption: "Fitting a Polynomial using MLP",
+    desc: "Learn the Basics of Lux by fitting a Multi-Layer Perceptron to a Polynomial."
   },
   {
-    avatar: 'https://github.com/LuxDL.png',
-    name: 'Training a Simple LSTM',
-    desc: 'Learn the API for defining Recurrent Models in Lux.',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'beginner/3_SimpleRNN' }
-    ]
+    href: "beginner/3_SimpleRNN",
+    src: "../lstm-illustrative.webp",
+    caption: "Training a Simple LSTM",
+    desc: "Learn how to define custom layers and train an RNN on time-series data."
   },
   {
-    avatar: 'https://github.com/PumasAI.png',
-    name: 'Use SimpleChains.jl as a Backend',
-    desc: 'Learn how to train small neural networks really fast',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'beginner/4_SimpleChains' }
-    ]
+    href: "beginner/4_SimpleChains",
+    src: "../blas_optimizations.jpg",
+    caption: "Use SimpleChains.jl as a Backend",
+    desc: "Learn how to train small neural networks really fast on CPU."
   }
 ];
 
 const intermediate = [
   {
-    avatar: 'https://github.com/SciML.png',
-    name: 'MNIST Classification using Neural ODE',
-    desc: 'Train a Neural ODE to classify MNIST Images.',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'intermediate/1_NeuralODE' }
-    ]
+    href: "intermediate/1_NeuralODE",
+    src: "../mnist.jpg",
+    caption: "MNIST Classification using Neural ODE",
+    desc: "Train a Neural Ordinary Differential Equations to classify MNIST Images."
   },
   {
-    avatar: 'https://github.com/TuringLang.png',
-    name: 'Bayesian Neural Networks',
-    desc: 'Figure out how to use Probabilistic Programming Frameworks like Turing with Lux.',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'intermediate/2_BayesianNN' }
-    ]
+    href: "intermediate/2_BayesianNN",
+    src: "https://github.com/TuringLang.png",
+    caption: "Bayesian Neural Networks",
+    desc: "Figure out how to use Probabilistic Programming Frameworks like Turing with Lux."
   },
   {
-    avatar: 'https://github.com/LuxDL.png',
-    name: 'Training a HyperNetwork',
-    desc: 'In this tutorial we will train a hypernetwork to work on multiple datasets by predicting neural network parameters.',
-    orgLink: 'intermediate/3_HyperNet',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'intermediate/3_HyperNet' }
-    ]
+    href: "intermediate/3_HyperNet",
+    src: "../hypernet.jpg",
+    caption: "Training a HyperNetwork",
+    desc: "Train a hypernetwork to work on multiple datasets by predicting neural network parameters."
   }
 ];
 
 const advanced = [
   {
-    avatar: 'https://github.com/SciML.png',
-    name: 'Neural ODE to Model Gravitational Waveforms',
-    desc: 'Training a Neural ODE to fit simulated data of gravitational waveforms.',
-    links: [
-      {
-        icon: {
-          svg: codeSvg,
-        },
-        link: 'advanced/1_GravitationalWaveForm' }
-    ]
+    href: "advanced/1_GravitationalWaveForm",
+    src: "../gravitational_waveform.png",
+    caption: "Neural ODE to Model Gravitational Waveforms",
+    desc: "Training a Neural ODE to fit simulated data of gravitational waveforms."
+  }
+];
+
+const thrid_party = [
+  {
+    href: "https://docs.sciml.ai/Overview/stable/showcase/pinngpu/",
+    src: "../pinn.gif",
+    caption: "GPU-Accelerated Physics-Informed Neural Networks",
+    desc: "Use Machine Learning (PINNs) to solve the Heat Equation PDE on a GPU."
+  },
+  {
+    href: "https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode_weather_forecast/",
+    src: "../weather-neural-ode.gif",
+    caption: "Weather Forecasting with Neural ODEs",
+    desc: "Train a neural ODEs to a multidimensional weather dataset and use it for weather forecasting."
+  },
+  {
+    href: "https://docs.sciml.ai/SciMLSensitivity/stable/examples/sde/SDE_control/",
+    src: "../neural-sde.png",
+    caption: "Controlling Stochastic Differential Equations",
+    desc: "Control the time evolution of a continuously monitored qubit described by an SDE with multiplicative scalar noise."
+  },
+  {
+    href: "https://github.com/Dale-Black/ComputerVisionTutorials.jl/",
+    src: "https://raw.githubusercontent.com/Dale-Black/ComputerVisionTutorials.jl/main/assets/image-seg-green.jpeg",
+    caption: "Medical Image Segmentation",
+    desc: "Explore various aspects of deep learning for medical imaging and a comprehensive overview of Julia packages."
   }
 ];
 </script>
 
-<VPTeamPage>
-  <VPTeamPageTitle>
-    <template #title>Tutorials</template>
-  </VPTeamPageTitle>
+# Tutorials
 
-  <VPTeamPageSection>
-    <template #title>Beginners Tutorials</template>
-    <template #members>
-      <VPTeamMembers size="small" :members="beginners" />
-    </template>
-  </VPTeamPageSection>
+## Beginner Tutorials
 
-  <VPTeamPageSection>
-    <template #title>Intermediate Tutorials</template>
-    <template #members>
-      <VPTeamMembers size="small" :members="intermediate" />
-    </template>
-  </VPTeamPageSection>
+<Gallery :images="beginner" />
 
-  <VPTeamPageSection>
-    <template #title>Advanced Tutorials</template>
-    <template #members>
-      <VPTeamMembers size="small" :members="advanced" />
-    </template>
-  </VPTeamPageSection>
-</VPTeamPage>
+## Intermediate Tutorials
 
+<Gallery :images="intermediate" />
+
+## Advanced Tutorials
+
+<Gallery :images="advanced" />
+
+## Selected 3rd Party Tutorials
+
+::: warning
+
+These tutorials are developed by the community and may not be up-to-date with the latest
+version of `Lux.jl`. Please refer to the official documentation for the most up-to-date
+information.
+
+Please open an issue (ideally both at `Lux.jl` and at the downstream linked package) if any
+of them are non-functional and we will try to get them updated.
+
+:::
+
+<Gallery :images="thrid_party" />
+
+
+::: tip
+
+If you found an amazing tutorial showcasing `Lux.jl` online, or wrote one yourself, please
+open an issue or PR to add it to the list!
+
+:::
 ```

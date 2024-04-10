@@ -88,7 +88,7 @@ makedocs(; sitename="Lux.jl Documentation",
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
         deploy_url="https://lux.csail.mit.edu", deploy_decision),
     draft=false,
-    pages=pages)
+    pages)
 
 deploydocs(; repo="github.com/LuxDL/Lux.jl.git",
     push_preview=true, target="build", devbranch="main")
