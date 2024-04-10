@@ -30,21 +30,20 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     /* Code Snippet font */
     --vp-font-family-mono: JuliaMono-Regular, monospace;
 
+    /* 
+    Disable the 'calt' (contextual alternates, often called ligatures) font feature
+    for monospaced text, which is usually enabled by default. This feature changes
+    the display of character combinations such "-" + ">", and "|" + ">". These can
+    be confusing for beginners, particularly if the font has 'unusual' designs.
+    */
+    font-feature-settings: 'calt' 0;
 }
 
 .mono {
-    /* 
-    Disable contextual alternates (kind of like ligatures but different) in monospace, 
-    which turns `/>` to an up arrow and `|>` (the Julia pipe symbol) to an up arrow as well.  
-    This is pretty bad for Julia folks reading even though copy+paste retains the same text.
-    */
-    font-feature-settings: 'calt' 0;
 
     pre {
         font-family: JuliaMono-Light;
     }
-
-    ;
 
     code {
         font-family: JuliaMono-Light;
