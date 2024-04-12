@@ -6,8 +6,8 @@ CurrentModule = Lux
 
 All features listed on this page are **experimental** which means:
 
-1. No SemVer Guarantees. We use code here to iterate fast and most users should wait for
-   these features to be marked non-experimental.
+1. No SemVer Guarantees. We use code here to iterate fast. That said, historically we have
+   never broken any code in this module and have always provided a deprecation period.
 2. Expect edge-cases and report them. It will help us move these features out of
    experimental sooner.
 3. None of the features are exported.
@@ -74,8 +74,14 @@ Lux.Experimental.DebugLayer
 Lux.Experimental.share_parameters
 ```
 
+## StatefulLuxLayer
+
+[`Lux.StatefulLuxLayer`](@ref) used to be part of experimental features, but has been
+promoted to stable API. It is now available via `Lux.StatefulLuxLayer`. Change all uses of
+`Lux.Experimental.StatefulLuxLayer` to `Lux.StatefulLuxLayer`.
+
 ## Compact Layer API
 
-```@docs
-Lux.Experimental.@compact
-```
+[`Lux.@compact`](@ref) used to be part of experimental features, but has been promoted to
+stable API. It is now available via `Lux.@compact`. Change all uses of
+`Lux.Experimental.@compact` to `Lux.@compact`.

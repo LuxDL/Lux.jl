@@ -48,13 +48,13 @@ standard AD and Optimisers API.
 
 ```@example quickstart
 # Get the device determined by Lux
-device = gpu_device()
+dev = gpu_device()
 
 # Parameter and State Variables
-ps, st = Lux.setup(rng, model) .|> device
+ps, st = Lux.setup(rng, model) .|> dev
 
 # Dummy Input
-x = rand(rng, Float32, 128, 2) |> device
+x = rand(rng, Float32, 128, 2) |> dev
 
 # Run the model
 y, st = Lux.apply(model, x, ps, st)
@@ -74,7 +74,6 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```@example custom_compact
 using Lux, Random, Optimisers, Zygote
 # using LuxCUDA, LuxAMDGPU, Metal # Optional packages for GPU support
-import Lux.Experimental: @compact
 using Printf  # For pretty printing
 ```
 

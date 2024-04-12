@@ -33,7 +33,6 @@ Here is a linear model:
 
 ```julia
 using Lux, Random
-import Lux.Experimental: @compact
 
 r = @compact(w=rand(3)) do x
     return w .* x
@@ -123,6 +122,11 @@ used inside a `Chain`.
     account for the total number of parameters printed at the bottom.
 """
 macro compact(_exs...)
+    return __compact_macro_impl(_exs...)
+end
+
+# Needed for the deprecation path
+function __compact_macro_impl(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
     if isempty(_exs)
         msg = "expects at least two expressions: a function and at least one keyword"
@@ -187,12 +191,13 @@ macro compact(_exs...)
         fex_args = fex.args[1]
         isa(fex_args, Symbol) ? string(fex_args) : join(fex_args.args, ", ")
     catch e
-        @warn "Function stringifying does not yet handle all cases. Falling back to empty string for input arguments"
+        @warn "Function stringifying does not yet handle all cases. Falling back to empty \
+               string for input arguments"
     end
     block = string(Base.remove_linenums!(fex).args[2])
 
     # edit expressions
-    vars = map(ex -> ex.args[1], kwexs)
+    vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)
     fex = supportself(fex, vars)
 
     # assemble
@@ -212,9 +217,8 @@ function supportself(fex::Expr, vars)
     calls = []
     for var in vars
         push!(calls,
-            :($var = Lux.Experimental.__maybe_make_stateful(
-                Lux._getproperty($self, $(Val(var))),
-                Lux._getproperty($ps, $(Val(var))), Lux._getproperty($st, $(Val(var))))))
+            :($var = $(__maybe_make_stateful)($(_getproperty)($self, $(Val(var))),
+                $(_getproperty)($ps, $(Val(var))), $(_getproperty)($st, $(Val(var))))))
     end
     body = Expr(:let, Expr(:block, calls...), sdef[:body])
     sdef[:body] = body
@@ -223,7 +227,7 @@ function supportself(fex::Expr, vars)
 end
 
 @inline function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
-    return Lux.StatefulLuxLayer(layer, ps, st)
+    return StatefulLuxLayer(layer, ps, st)
 end
 @inline __maybe_make_stateful(::Nothing, ps, st) = ps === nothing ? st : ps
 @inline function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
@@ -271,7 +275,7 @@ end
     value_storage
 end
 
-function constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
+function ConstructionBase.constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
     return CompactLuxLayer{dispatch}
 end
 
@@ -288,7 +292,7 @@ function __try_make_lux_layer(x::Union{AbstractVector, Tuple})
     return __try_make_lux_layer(NamedTuple{Tuple(Symbol.(1:length(x)))}(x))
 end
 function __try_make_lux_layer(x)
-    function __maybe_convert_layer(l)
+    __maybe_convert_layer = @closure l -> begin
         l isa AbstractExplicitLayer && return l
         l isa Function && return WrappedFunction(l)
         return l
