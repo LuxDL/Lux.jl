@@ -61,8 +61,8 @@ y, st = Lux.apply(model, x, ps, st)
 
 # Gradients
 ## Pullback API to capture change in state
-(l, st_), pb = pullback(p -> Lux.apply(model, x, p, st), ps)
-gs = pb((one.(l), nothing))[1]
+(l, st_), pb = pullback(Lux.apply, model, x, ps, st)
+gs = pb((one.(l), nothing))[3]
 
 # Optimization
 st_opt = Optimisers.setup(Adam(0.0001f0), ps)

@@ -1,6 +1,5 @@
 @testitem "@compact" setup=[SharedTestSetup] begin
     using ComponentArrays
-    import Lux.Experimental: @compact
 
     rng = get_stable_rng(12345)
 

@@ -99,6 +99,26 @@ function (s::SpiralClassifier)(
     return vec(y), st
 end
 
+# ## Using the `@compact` API
+
+# We can also define the model using the [`Lux.@compact`](@ref) API, which is a more concise
+# way of defining models. This macro automatically handles the boilerplate code for you and
+# as such we recommend this way of defining custom layers
+
+function SpiralClassifierCompact(in_dims, hidden_dims, out_dims)
+    lstm_cell = LSTMCell(in_dims => hidden_dims)
+    classifier = Dense(hidden_dims => out_dims, sigmoid)
+    return @compact(; lstm_cell=lstm_cell,
+        classifier=classifier) do x::AbstractArray{T, 3} where {T}
+        x_init, x_rest = Iterators.peel(Lux._eachslice(x, Val(2)))
+        y, carry = lstm_cell(x_init)
+        for x in x_rest
+            y, carry = lstm_cell((x, carry))
+        end
+        return vec(classifier(y))
+    end
+end
+
 # ## Defining Accuracy, Loss and Optimiser
 
 # Now let's define the binarycrossentropy loss. Typically it is recommended to use
@@ -125,12 +145,12 @@ accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
 
 # ## Training the Model
 
-function main()
+function main(model_type)
     ## Get the dataloaders
     (train_loader, val_loader) = get_dataloaders()
 
     ## Create the model
-    model = SpiralClassifier(2, 8, 1)
+    model = model_type(2, 8, 1)
     rng = Xoshiro(0)
 
     dev = gpu_device()
@@ -164,7 +184,12 @@ function main()
     return (train_state.parameters, train_state.states) |> cpu_device()
 end
 
-ps_trained, st_trained = main()
+ps_trained, st_trained = main(SpiralClassifier)
+nothing #hide
+
+# We can also train the compact model with the exact same code!
+
+ps_trained2, st_trained2 = main(SpiralClassifierCompact)
 nothing #hide
 
 # ## Saving the Model
