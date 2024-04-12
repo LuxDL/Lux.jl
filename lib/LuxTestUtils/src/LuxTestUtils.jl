@@ -2,7 +2,6 @@ module LuxTestUtils
 
 using ComponentArrays, Optimisers, Preferences, LuxCore, LuxDeviceUtils, Test
 using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
-# TODO: Yota, Enzyme
 
 const JET_TARGET_MODULES = @load_preference("target_modules", nothing)
 
@@ -32,20 +31,18 @@ or julia version is < 1.7, then the macro will be a no-op.
 
 All additional arguments will be forwarded to `@JET.test_call` and `@JET.test_opt`.
 
-:::tip
+!!! tip
 
-Instead of specifying `target_modules` with every call, you can set preferences for
-`target_modules` using `Preferences.jl`. For example, to set `target_modules` to
-`(Lux, LuxLib)` we can run:
+    Instead of specifying `target_modules` with every call, you can set preferences for
+    `target_modules` using `Preferences.jl`. For example, to set `target_modules` to
+    `(Lux, LuxLib)` we can run:
 
-```julia
-using Preferences
+    ```julia
+    using Preferences
 
-set_preferences!(Base.UUID("ac9de150-d08f-4546-94fb-7472b5760531"),
-    "target_modules" => ["Lux", "LuxLib"])
-```
-
-:::
+    set_preferences!(Base.UUID("ac9de150-d08f-4546-94fb-7472b5760531"),
+        "target_modules" => ["Lux", "LuxLib"])
+    ```
 
 ## Example
 
@@ -163,11 +160,9 @@ Compare the gradients computed by Zygote.jl (Reverse Mode AD) against:
   - ForwardDiff.jl (Forward Mode AD)
   - FiniteDifferences.jl (Finite Differences)
 
-:::tip
+!!! tip
 
-This function is completely compatible with Test.jl
-
-:::
+    This function is completely compatible with Test.jl
 
 ## Arguments
 

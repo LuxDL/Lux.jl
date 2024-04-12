@@ -1,0 +1,115 @@
+steps:
+  - group: ":telescope: Downstream CUDA"
+    steps:
+      - label: ":julia: {{matrix.repo}} (Julia {{matrix.julia}} + CUDA GPU)"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - src
+        command: |
+          julia --code-coverage=user --color=yes --project -e '
+            using Pkg
+
+            repo = ENV["DOWNSTREAM_TEST_REPO"]
+            if contains(repo, "#")
+              repo, group = split(repo, "#")
+            else
+              group = "CUDA"
+            end
+
+            println("--- :julia: Instantiating project")
+            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group) do
+              Pkg.instantiate()
+
+              try
+                Pkg.develop(repo)
+                println("+++ :julia: Running tests")
+                Pkg.test("$(repo)"; coverage=true)
+              catch err
+                err isa Pkg.Resolve.ResolverError || rethrow()
+                @info "Not compatible with this release. No problem." exception=err
+                exit(0)
+              end
+            end
+
+            println("+++ :julia: Finished Downstream Test")'
+        agents:
+          queue: "juliagpu"
+          cuda: "*"
+        env:
+          DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
+        if: build.message !~ /\[skip tests\]/ || build.message !~ /\[skip downstream\]/
+        timeout_in_minutes: 240
+        matrix:
+          setup:
+            julia:
+              - "1"
+            repo:
+              - "Lux"
+              - "LuxLib"
+
+  - group: ":telescope: Downstream AMD GPU"
+    steps:
+      - label: ":julia: {{matrix.repo}} (Julia {{matrix.julia}} + AMD GPU)"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - src
+        command: |
+          julia --code-coverage=user --color=yes --project -e '
+            using Pkg
+
+            repo = ENV["DOWNSTREAM_TEST_REPO"]
+            if contains(repo, "#")
+              repo, group = split(repo, "#")
+            else
+              group = "AMDGPU"
+            end
+
+            println("--- :julia: Instantiating project")
+            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group) do
+              Pkg.instantiate()
+
+              try
+                Pkg.develop(repo)
+                println("+++ :julia: Running tests")
+                Pkg.test("$(repo)"; coverage=true)
+              catch err
+                err isa Pkg.Resolve.ResolverError || rethrow()
+                @info "Not compatible with this release. No problem." exception=err
+                exit(0)
+              end
+            end
+
+            println("+++ :julia: Finished Downstream Test")'
+        agents:
+          queue: "juliagpu"
+          rocm: "*"
+          rocmgpu: "*"
+        env:
+          JULIA_AMDGPU_CORE_MUST_LOAD: "1"
+          JULIA_AMDGPU_HIP_MUST_LOAD: "1"
+          JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
+          DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
+        if: build.message !~ /\[skip tests\]/ || build.message !~ /\[skip downstream\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1"
+            repo:
+              - "Lux"
+              - "LuxLib"
+
+env:
+  RETESTITEMS_NWORKERS: 2
+  RETESTITEMS_NWORKER_THREADS: 2
+  JULIA_AMDGPU_LOGGING_ENABLED: true
+  RETESTITEMS_TESTITEM_TIMEOUT: 10000
+  SECRET_CODECOV_TOKEN: "jQ0BMTQgyZx7QGyU0Q2Ec7qB9mtE2q/tDu0FsfxvEG7/zOAGvXkyXrzIFFOQxvDoFcP+K2+hYZKMxicYdNqzr5wcxu505aNGN2GM3wyegAr+hO6q12bCFYx6qXzU9FLCCdeqINqn9gUSSOlGtWNFrbAlrTyz/D4Yo66TqBDzvaLL63FMnhCLaXW/zJt3hNuEAJaPY2O6Ze1rX2WZ3Y+i+s3uQ8aLImtoCJhPe8CRx+OhuYiTzGhynFfGntZ0738/1RN4gNM0S/hTC4gLE7XMVBanJpGh32rFaiDwW4zAyXKBrDkL3QA3MS1RvLTJxGJ085S16hCk0C4ddAhZCvIM9Q==;U2FsdGVkX1+bXdFeKMs5G79catOCyby2n07A2fg0FjVAvrjQLZ0yfvDS4paJiFikLkodho0khz2YALKb2Y0K6w=="
