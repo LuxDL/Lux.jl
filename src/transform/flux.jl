@@ -5,7 +5,7 @@ Convert a Flux Model to Lux Model.
 
 !!! warning
 
-    This always ingores the `active` field of some of the Flux layers. This is almost never
+    This always ignores the `active` field of some of the Flux layers. This is almost never
     going to be supported.
 
 ## Keyword Arguments

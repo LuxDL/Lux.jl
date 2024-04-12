@@ -87,7 +87,7 @@ reconstruction of the parameters and states.
 println("Parameter Length: ", Lux.parameterlength(l), "; State Length: ",
     Lux.statelength(l))
 
-# But still recommened to define these
+# But still recommended to define these
 Lux.parameterlength(l::Linear) = l.out_dims * l.in_dims + l.out_dims
 
 Lux.statelength(::Linear) = 0
