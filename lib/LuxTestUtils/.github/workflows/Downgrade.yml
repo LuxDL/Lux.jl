@@ -2,7 +2,7 @@ name: Downgrade
 on:
   pull_request:
     branches:
-      - main
+      - master
     paths-ignore:
       - 'docs/**'
   push:
