@@ -236,11 +236,11 @@ x = gpu_device()(ones(Float32, 28, 28, 1, 3));
 
 @code_warntype model_stateful(x, ps_stateful, st_stateful)
 
+# Note, that we still recommend using this layer internally and not exposing this as the
+# default API to the users.
+
 # Finally checking the compact model
 
 model_compact, ps_compact, st_compact = create_model(NeuralODECompact)
 
 @code_warntype model_compact(x, ps_compact, st_compact)
-
-# Note, that we still recommend using this layer internally and not exposing this as the
-# default API to the users.

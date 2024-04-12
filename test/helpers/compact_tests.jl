@@ -180,7 +180,7 @@
                 return w(x .* s)
             end
             expected_string = """@compact(
-                x = randn(32),
+                x = 32-element Vector{Float64},
                 w = Dense(32 => 32),                # 1_056 parameters
             ) do s 
                 return w(x .* s)
@@ -197,8 +197,8 @@
             end
             expected_string = """@compact(
                 w1 = Model(32)(),                   # 1_024 parameters
-                w2 = randn(32, 32),
-                w3 = randn(32),
+                w2 = 32×32 Matrix{Float64},
+                w3 = 32-element Vector{Float64},
             ) do x 
                 return w2 * w1(x)
             end       # Total: 2_080 parameters,

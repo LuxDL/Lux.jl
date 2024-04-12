@@ -200,8 +200,6 @@ function __compact_macro_impl(_exs...)
     vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)
     fex = supportself(fex, vars, splatted_kwargs)
 
-    display(fex)
-
     # assemble
     return esc(:($CompactLuxLayer{$dispatch}($fex, $name, ($layer, $input, $block),
         (($(Meta.quot.(splatted_kwargs)...),), ($(splatted_kwargs...),)); $(kwexs...))))
@@ -346,9 +344,8 @@ function CompactLuxLayer{dispatch}(
         if is_lux_layer
             setup_strings = merge(setup_strings, NamedTuple((name => val,)))
         else
-            setup_strings = merge(setup_strings,
-                NamedTuple((name => sprint(
-                    show, val; context=(:compact => true, :limit => true)),)))
+            setup_strings = merge(
+                setup_strings, NamedTuple((name => __kwarg_descriptor(val),)))
         end
     end
 
@@ -409,4 +406,21 @@ function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing
         println(io, ",")
     end
     return
+end
+
+function __kwarg_descriptor(val)
+    val isa Number && return string(val)
+    val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
+    val isa Tuple && return "(" * join(map(__kwarg_descriptor, val), ", ") * ")"
+    if val isa NamedTuple
+        fields = fieldnames(typeof(val))
+        strs = []
+        for fname in fields[1:min(length(fields), 3)]
+            internal_val = getfield(val, fname)
+            push!(strs, "$fname = $(__kwarg_descriptor(internal_val))")
+        end
+        return "@NamedTuple{$(join(strs, ", "))" * (length(fields) > 3 ? ", ..." : "") * "}"
+    end
+    val isa Function && return sprint(show, val; context=(:compact => true, :limit => true))
+    return lazy"$(nameof(typeof(val)))(...)"
 end
