@@ -183,11 +183,11 @@ end
 function RelativisticOrbitModel(u, (p, M, e), t)
     χ, ϕ = u
 
-    numer = (p - 2 - 2 * e * cos(χ)) * (1 + e * cos(χ))^2
+    number = (p - 2 - 2 * e * cos(χ)) * (1 + e * cos(χ))^2
     denom = sqrt((p - 2)^2 - 4 * e^2)
 
-    χ̇ = numer * sqrt(p - 6 - 2 * e * cos(χ)) / (M * (p^2) * denom)
-    ϕ̇ = numer / (M * (p^(3 / 2)) * denom)
+    χ̇ = number * sqrt(p - 6 - 2 * e * cos(χ)) / (M * (p^2) * denom)
+    ϕ̇ = number / (M * (p^(3 / 2)) * denom)
 
     return [χ̇, ϕ̇]
 end
@@ -260,11 +260,11 @@ function ODE_model(u, nn_params, t)
     ## it, however, in general, we should use `st` to store the state of the neural network.
     y = 1 .+ nn_model([first(u)], nn_params)
 
-    numer = (1 + e * cos(χ))^2
+    number = (1 + e * cos(χ))^2
     denom = M * (p^(3 / 2))
 
-    χ̇ = (numer / denom) * y[1]
-    ϕ̇ = (numer / denom) * y[2]
+    χ̇ = (number / denom) * y[1]
+    ϕ̇ = (number / denom) * y[2]
 
     return [χ̇, ϕ̇]
 end

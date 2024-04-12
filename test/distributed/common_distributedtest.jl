@@ -19,7 +19,7 @@ nworkers = DistributedUtils.total_workers(backend)
 @test rank < nworkers
 
 # Test the communication primitives
-## broacast!
+## broadcast!
 for arrType in (Array, aType)
     sendbuf = (rank == 0) ? arrType(ones(512)) : arrType(zeros(512))
     recvbuf = arrType(zeros(512))

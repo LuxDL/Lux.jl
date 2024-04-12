@@ -33,8 +33,8 @@ slice and normalises the input accordingly.
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
     
-      + `init_bias`: Controls how the `bias` is initialiazed
-      + `init_scale`: Controls how the `scale` is initialiazed
+      + `init_bias`: Controls how the `bias` is initialized
+      + `init_scale`: Controls how the `scale` is initialized
 
 ## Inputs
 
@@ -167,8 +167,8 @@ end
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
 
-      + `init_bias`: Controls how the `bias` is initialiazed
-      + `init_scale`: Controls how the `scale` is initialiazed
+      + `init_bias`: Controls how the `bias` is initialized
+      + `init_scale`: Controls how the `scale` is initialized
 
 ## Inputs
 
@@ -265,8 +265,8 @@ accordingly.
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
     
-      + `init_bias`: Controls how the `bias` is initialiazed
-      + `init_scale`: Controls how the `scale` is initialiazed
+      + `init_bias`: Controls how the `bias` is initialized
+      + `init_scale`: Controls how the `scale` is initialized
 
 ## Inputs
 
@@ -506,8 +506,8 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
 
-      + `init_bias`: Controls how the `bias` is initialiazed
-      + `init_scale`: Controls how the `scale` is initialiazed
+      + `init_bias`: Controls how the `bias` is initialized
+      + `init_scale`: Controls how the `scale` is initialized
 
 ## Inputs
 

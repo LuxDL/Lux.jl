@@ -508,7 +508,7 @@ outputsize(c::Chain) = outputsize(c.layers[end])
 This contains a number of internal layers, each of which receives the same input. Its output
 is the elementwise maximum of the the internal layers' outputs.
 
-Maxout over linear dense layers satisfies the univeral approximation theorem. See [1].
+Maxout over linear dense layers satisfies the universal approximation theorem. See [1].
 
 See also [`Parallel`](@ref) to reduce with other operators.
 
