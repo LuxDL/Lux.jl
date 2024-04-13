@@ -3,6 +3,16 @@ using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
 using LuxTestUtils, LuxDeviceUtils
 using LuxAMDGPU, LuxCUDA
 
+# Doctest Imports
+doctestexpr = quote
+    using SimpleChains: static
+    using Flux: Flux
+    using Metalhead: Metalhead
+    using Adapt, Lux, Random, Optimisers, Zygote
+end
+
+DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
+
 #! format: off
 
 pages = [
