@@ -45,81 +45,138 @@ in the CompactLuxLayer.
 
 Here is a linear model:
 
-```julia
-using Lux, Random
+```jldoctest
+julia> using Lux, Random
 
-r = @compact(w=rand(3)) do x
+julia> r = @compact(w=ones(3)) do x
+           return w .* x
+       end
+@compact(
+    w = 3-element Vector{Float64},
+) do x
     return w .* x
-end
-ps, st = Lux.setup(Xoshiro(0), r)
-r([1, 1, 1], ps, st)  # x is set to [1, 1, 1].
+end       # Total: 3 parameters,
+          #        plus 0 states.
+
+julia> ps, st = Lux.setup(Xoshiro(0), r);
+
+julia> r([1, 2, 3], ps, st)  # x is set to [1, 1, 1].
+([1.0, 2.0, 3.0], NamedTuple())
 ```
 
 Here is a linear model with bias and activation:
 
-```julia
-d_in = 5
-d_out = 7
-d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
+```jldoctest
+julia> d_in = 5
+5
+
+julia> d_out = 3
+3
+
+julia> d = @compact(W=ones(d_out, d_in), b=zeros(d_out), act=relu) do x
+           y = W * x
+           return act.(y .+ b)
+       end
+@compact(
+    W = 3×5 Matrix{Float64},
+    b = 3-element Vector{Float64},
+    act = relu,
+) do x
     y = W * x
     return act.(y .+ b)
-end
-ps, st = Lux.setup(Xoshiro(0), d)
-d(ones(5, 10), ps, st) # 7×10 Matrix as output.
+end       # Total: 18 parameters,
+          #        plus 1 states.
 
-ps_dense = (; weight=ps.W, bias=ps.b)
-first(d([1, 2, 3, 4, 5], ps, st)) ≈
-first(Dense(d_in => d_out, relu)([1, 2, 3, 4, 5], ps_dense, NamedTuple())) # Equivalent to a dense layer
+julia> ps, st = Lux.setup(Xoshiro(0), d);
+
+julia> d(ones(5, 2), ps, st)[1] # 3×2 Matrix as output.
+3×2 Matrix{Float64}:
+ 5.0  5.0
+ 5.0  5.0
+ 5.0  5.0
+
+julia> ps_dense = (; weight=ps.W, bias=ps.b);
+
+julia> first(d([1, 2, 3, 4, 5], ps, st)) ≈
+       first(Dense(d_in => d_out, relu)([1, 2, 3, 4, 5], ps_dense, NamedTuple())) # Equivalent to a dense layer
+true
 ```
 
-Finally, here is a simple MLP:
+Finally, here is a simple MLP. We can train this model just like any Lux model:
 
-```julia
-n_in = 1
-n_out = 1
-nlayers = 3
+```jldoctest
+julia> n_in = 1;
 
-model = @compact(w1=Dense(n_in, 128),
-    w2=[Dense(128, 128) for i in 1:nlayers], w3=Dense(128, n_out), act=relu) do x
-    embed = act(w1(x))
-    for w in w2
-        embed = act(w(embed))
+julia> n_out = 1;
+
+julia> nlayers = 3;
+
+julia> model = @compact(w1=Dense(n_in, 128),
+           w2=[Dense(128, 128) for i in 1:nlayers], w3=Dense(128, n_out), act=relu) do x
+           embed = act.(w1(x))
+           for w in w2
+               embed = act.(w(embed))
+           end
+           out = w3(embed)
+           return out
+       end
+@compact(
+    w1 = Dense(1 => 128),               # 256 parameters
+    w2 = NamedTuple(
+        1 = Dense(128 => 128),          # 16_512 parameters
+        2 = Dense(128 => 128),          # 16_512 parameters
+        3 = Dense(128 => 128),          # 16_512 parameters
+    ),
+    w3 = Dense(128 => 1),               # 129 parameters
+    act = relu,
+) do x
+    embed = act.(w1(x))
+    for w = w2
+        embed = act.(w(embed))
     end
     out = w3(embed)
     return out
-end
+end       # Total: 49_921 parameters,
+          #        plus 1 states.
 
-ps, st = Lux.setup(Xoshiro(0), model)
+julia> ps, st = Lux.setup(Xoshiro(0), model);
 
-model(randn(n_in, 32), ps, st)  # 1×32 Matrix as output.
-```
+julia> size(first(model(randn(n_in, 32), ps, st)))  # 1×32 Matrix as output.
+(1, 32)
 
-We can train this model just like any Lux model:
+julia> using Optimisers, Zygote
 
-```julia
-using Optimisers, Zygote
+julia> x_data = collect(-2.0f0:0.1f0:2.0f0)';
 
-x_data = collect(-2.0f0:0.1f0:2.0f0)'
-y_data = 2 .* x_data .- x_data .^ 3
-optim = Optimisers.setup(Adam(), ps)
+julia> y_data = 2 .* x_data .- x_data .^ 3;
 
-for epoch in 1:1000
-    loss, gs = Zygote.withgradient(
-        ps -> sum(abs2, first(model(x_data, ps, st)) .- y_data), ps)
-    @show epoch, loss
-    Optimisers.update!(optim, ps, gs[1])
-end
+julia> optim = Optimisers.setup(Adam(), ps);
+
+julia> loss_initial = sum(abs2, first(model(x_data, ps, st)) .- y_data);
+
+julia> for epoch in 1:1000
+           loss, gs = Zygote.withgradient(
+               ps -> sum(abs2, first(model(x_data, ps, st)) .- y_data), ps)
+           Optimisers.update!(optim, ps, gs[1])
+       end;
+
+julia> loss_final = sum(abs2, first(model(x_data, ps, st)) .- y_data);
+
+julia> loss_initial > loss_final
+true
 ```
 
 You may also specify a `name` for the model, which will be used instead of the default
 printout, which gives a verbatim representation of the code used to construct the model:
 
-```julia
-model = @compact(w=rand(3), name="Linear(3 => 1)") do x
-    return sum(w .* x)
-end
+```jldoctest
+julia> model = @compact(w=rand(3), name="Linear(3 => 1)") do x
+           return sum(w .* x)
+       end
+Linear(3 => 1)()    # 3 parameters
 
-println(model)  # "Linear(3 => 1)()"
+julia> println(model)
+Linear(3 => 1)()
 ```
 
 This can be useful when using `@compact` to hierarchically construct complex models to be

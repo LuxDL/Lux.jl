@@ -217,8 +217,14 @@ outputs.
 
 An easy way to replicate an input to an NTuple is to do
 
-```julia
-l = BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
+```jldoctest
+julia> BranchLayer(NoOpLayer(), NoOpLayer(), NoOpLayer())
+BranchLayer(
+    layer_1 = NoOpLayer(),
+    layer_2 = NoOpLayer(),
+    layer_3 = NoOpLayer(),
+)         # Total: 0 parameters,
+          #        plus 0 states.
 ```
 """
 struct BranchLayer{T <: NamedTuple, N <: NAME_TYPE} <:
@@ -414,8 +420,14 @@ keyword argument `disable_optimizations`.
 
 ## Example
 
-```julia
-c = Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
+```jldoctest
+julia> Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2))
+Chain(
+    layer_1 = Dense(2 => 3, relu),      # 9 parameters
+    layer_2 = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
+    layer_3 = Dense(3 => 2),            # 8 parameters
+)         # Total: 23 parameters,
+          #        plus 7 states.
 ```
 """
 struct Chain{T <: NamedTuple, N <: NAME_TYPE} <: AbstractExplicitContainerLayer{(:layers,)}

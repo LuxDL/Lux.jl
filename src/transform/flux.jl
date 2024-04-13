@@ -21,18 +21,21 @@ Convert a Flux Model to Lux Model.
 
 ## Example
 
-```julia
-import Flux
-using Adapt, Lux, Metalhead, Random
+```jldoctest
+julia> import Flux, Metalhead
 
-m = ResNet(18)
-m2 = adapt(FromFluxAdaptor(), m.layers) # or FromFluxAdaptor()(m.layers)
+julia> using Adapt, Lux, Random
 
-x = randn(Float32, 224, 224, 3, 1);
+julia> m = Metalhead.ResNet(18);
 
-ps, st = Lux.setup(Random.default_rng(), m2);
+julia> m2 = adapt(FromFluxAdaptor(), m.layers); # or FromFluxAdaptor()(m.layers)
 
-m2(x, ps, st)
+julia> x = randn(Float32, 224, 224, 3, 1);
+
+julia> ps, st = Lux.setup(Random.default_rng(), m2);
+
+julia> size(first(m2(x, ps, st))) == (1000, 1)
+true
 ```
 """
 @kwdef struct FromFluxAdaptor <: AbstractToLuxAdaptor

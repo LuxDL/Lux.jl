@@ -7,27 +7,45 @@ point.
 
 ## Example
 
-```julia
-using Lux, Random, Setfield
+```jldoctest
+julia> using Lux, Random
 
-c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3),
-                              dense_2=Dense(3 => 5)),
-             dense_3=Dense(5 => 1))
+julia> c = Parallel(
+           +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
+           dense_3=Dense(5 => 1))
+Parallel(
+    +
+    Chain(
+        dense_1 = Dense(2 => 3),        # 9 parameters
+        bn = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
+        dense_2 = Dense(3 => 5),        # 20 parameters
+    ),
+    Dense(5 => 1),                      # 6 parameters
+)         # Total: 41 parameters,
+          #        plus 7 states.
 
-rng = Random.default_rng()
-ps, st = Lux.setup(rng, c)
+julia> rng = Random.default_rng();
 
-# Makes parameters of Dense Layers inside Chain zero
-function zero_dense_params(l, ps, st, name)
-    if l isa Dense
-        println("zeroing params of $name")
-        @set! ps.weight = zero.(ps.weight)
-        @set! ps.bias = zero.(ps.bias)
-    end
-    return l, ps, st
-end
+julia> ps, st = Lux.setup(rng, c);
 
-Lux.@layer_map zero_dense_params c ps st
+julia> # Makes parameters of Dense Layers inside Chain zero
+       function zero_dense_params(l, ps, st, name)
+           if l isa Dense
+               println("zeroing params of $name")
+               ps = merge(ps, (; weight=zero.(ps.weight), bias=zero.(ps.bias)))
+           end
+           return l, ps, st
+       end;
+
+julia> _, ps_new, _ = Lux.Experimental.@layer_map zero_dense_params c ps st;
+zeroing params of c.layers.chain.layers.dense_1
+zeroing params of c.layers.chain.layers.dense_2
+zeroing params of c.layers.dense_3
+
+julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
+                    ps_new.chain.dense_2.weight, ps_new.chain.dense_2.bias,
+                    ps_new.dense_3.weight, ps_new.dense_3.bias))
+true
 ```
 """
 macro layer_map(f, l, ps, st)
@@ -58,27 +76,46 @@ the function on all of them together.
 
 ## Example
 
-```julia
-using Lux, Random, Setfield
+```jldoctest
+julia> using Lux, Random
 
-c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3),
-                              dense_2=Dense(3 => 5)),
-             dense_3=Dense(5 => 1))
 
-rng = Random.default_rng()
-ps, st = Lux.setup(rng, c)
+julia> c = Parallel(
+           +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
+           dense_3=Dense(5 => 1))
+Parallel(
+    +
+    Chain(
+        dense_1 = Dense(2 => 3),        # 9 parameters
+        bn = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
+        dense_2 = Dense(3 => 5),        # 20 parameters
+    ),
+    Dense(5 => 1),                      # 6 parameters
+)         # Total: 41 parameters,
+          #        plus 7 states.
 
-# Makes parameters of Dense Layers inside Chain zero
-function zero_dense_params(l, ps, st, name)
-    if l isa Dense
-        println("zeroing params of $name")
-        @set! ps.weight = zero.(ps.weight)
-        @set! ps.bias = zero.(ps.bias)
-    end
-    return l, ps, st
-end
+julia> rng = Random.default_rng();
 
-Lux.layer_map(zero_dense_params, c, ps, st)
+julia> ps, st = Lux.setup(rng, c);
+
+julia> # Makes parameters of Dense Layers inside Chain zero
+       function zero_dense_params(l, ps, st, name)
+           if l isa Dense
+               println("zeroing params of $name")
+               ps = merge(ps, (; weight=zero.(ps.weight), bias=zero.(ps.bias)))
+           end
+           return l, ps, st
+       end;
+
+julia> _, ps_new, _ = Lux.Experimental.layer_map(zero_dense_params, c, ps, st);
+zeroing params of model.layers.chain.layers.dense_1
+zeroing params of model.layers.chain.layers.dense_2
+zeroing params of model.layers.dense_3
+
+julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
+                    ps_new.chain.dense_2.weight, ps_new.chain.dense_2.bias,
+                    ps_new.dense_3.weight, ps_new.dense_3.bias))
+true
 ```
 """
 function layer_map(f::Function, l, ps, st, name::String="model")

@@ -25,22 +25,27 @@ performed using SimpleChains.
 
 ## Example
 
-```julia
-import SimpleChains: static
-using Adapt, Lux, Random
+```jldoctest
+julia> import SimpleChains: static
 
-lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
-    Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
-    Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)))
+julia> using Adapt, Lux, Random
 
-adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
+julia> lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
+           Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
+           Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)));
 
-simple_chains_model = adapt(adaptor, lux_model) # or adaptor(lux_model)
+julia> adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
+ToSimpleChainsAdaptor{Tuple{Static.StaticInt{28}, Static.StaticInt{28}, Static.StaticInt{1}}}((static(28), static(28), static(1)), false)
 
-ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
-x = randn(Float32, 28, 28, 1, 1)
+julia> simple_chains_model = adapt(adaptor, lux_model) # or adaptor(lux_model)
+SimpleChainsLayer()  # 47_154 parameters
 
-simple_chains_model(x, ps, st)
+julia> ps, st = Lux.setup(Random.default_rng(), simple_chains_model);
+
+julia> x = randn(Float32, 28, 28, 1, 1);
+
+julia> size(first(simple_chains_model(x, ps, st))) == (10, 1)
+true
 ```
 """
 struct ToSimpleChainsAdaptor{ID} <: AbstractFromLuxAdaptor

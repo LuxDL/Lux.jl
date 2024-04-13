@@ -24,14 +24,29 @@ Updated Parameters having the same structure as `ps`.
 
 ## Example
 
-```julia
-model = Chain(; d1=Dense(2 => 4, tanh),
-    d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)), d2=Dense(4 => 2))
+```jldoctest
+julia> model = Chain(; d1=Dense(2 => 4, tanh),
+           d3=Chain(; l1=Dense(4 => 2), l2=Dense(2 => 4)), d2=Dense(4 => 2))
+Chain(
+    d1 = Dense(2 => 4, tanh_fast),      # 12 parameters
+    d3 = Chain(
+        l1 = Dense(4 => 2),             # 10 parameters
+        l2 = Dense(2 => 4),             # 12 parameters
+    ),
+    d2 = Dense(4 => 2),                 # 10 parameters
+)         # Total: 44 parameters,
+          #        plus 0 states.
 
-ps, st = Lux.setup(Xoshiro(0), model)
+julia> ps, st = Lux.setup(Xoshiro(0), model);
 
-# share parameters of (d1 and d3.l1) and (d3.l2 and d2)
-ps = Lux.share_parameters(ps, (("d3.l2", "d1"), ("d2", "d3.l1")))
+julia> # share parameters of (d1 and d3.l1) and (d3.l2 and d2)
+       ps = Lux.Experimental.share_parameters(ps, (("d3.l2", "d1"), ("d2", "d3.l1")));
+
+julia> ps.d3.l2.weight === ps.d1.weight &&
+           ps.d3.l2.bias === ps.d1.bias &&
+           ps.d2.weight === ps.d3.l1.weight &&
+           ps.d2.bias === ps.d3.l1.bias
+true
 ```
 """
 function share_parameters(ps, sharing)
