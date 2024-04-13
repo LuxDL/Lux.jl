@@ -18,12 +18,6 @@ function Lux.FluxLayer(l)
     end
 end
 
-Lux.initialparameters(::AbstractRNG, l::Lux.FluxLayer) = (p=l.init_parameters(),)
-
-(l::FluxLayer)(x, ps, st) = l.re(ps.p)(x), st
-
-Base.show(io::IO, l::Lux.FluxLayer) = print(io, "FluxLayer($(l.layer))")
-
 function __from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
     @warn lazy"Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
 
