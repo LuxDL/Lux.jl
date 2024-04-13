@@ -80,7 +80,7 @@ gs = DistributedUtils.synchronize!!(backend, gs; root)
 @test all(gs[1][2] .== 1)
 @test all(gs[2] .== 1)
 
-# Miscelleneous
+# Miscellaneous
 x = nothing
 x = DistributedUtils.synchronize!!(backend, x; root)
 @test x === nothing

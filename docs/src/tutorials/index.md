@@ -59,7 +59,7 @@ const advanced = [
   }
 ];
 
-const thrid_party = [
+const third_party = [
   {
     href: "https://docs.sciml.ai/Overview/stable/showcase/pinngpu/",
     src: "../pinn.gif",
@@ -114,7 +114,7 @@ of them are non-functional and we will try to get them updated.
 
 :::
 
-<Gallery :images="thrid_party" />
+<Gallery :images="third_party" />
 
 
 ::: tip

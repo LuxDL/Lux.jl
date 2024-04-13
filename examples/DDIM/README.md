@@ -11,7 +11,7 @@ The model generates images from Gaussian noises by <em>denoising</em> iterativel
 # Usage
 Install Julia and instantiate `Project.toml`.
 
-Follwoing scripts are tested on a single NVIDIA Tesla T4 instance.
+Following scripts are tested on a single NVIDIA Tesla T4 instance.
 ## Dataset
 Download and extract `Dataset images` from [102 Category Flower Dataset](https://www.robots.ox.ac.uk/~vgg/data/flowers/102/).
 

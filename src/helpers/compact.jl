@@ -13,6 +13,9 @@ end
     @compact(kw...) do x
         ...
     end
+    @compact(kw...) do x, p
+        ...
+    end
     @compact(forward::Function; name=nothing, dispatch=nothing, parameters...)
 
 Creates a layer by specifying some `parameters`, in the form of keywords, and (usually as a
@@ -21,11 +24,22 @@ Creates a layer by specifying some `parameters`, in the form of keywords, and (u
 be used within the body of the `forward` function. Note that unlike typical Lux models, the
 forward function doesn't need to explicitly manage states.
 
+Defining the version with `p` allows you to access the parameters in the forward pass. This
+is useful when using it with SciML tools which require passing in the parameters explicitly.
+
 ## Reserved Kwargs:
 
  1. `name`: The name of the layer.
  2. `dispatch`: The constructed layer has the type
     `Lux.Experimental.CompactLuxLayer{dispatch}` which can be used for custom dispatches.
+
+!!! tip
+
+    Check the Lux tutorials for more examples of using `@compact`.
+
+If you are passing in kwargs by splatting them, they will be passed as is to the function
+body. This means if your splatted kwargs contain a lux layer that won't be registered
+in the CompactLuxLayer.
 
 ## Examples
 
@@ -33,7 +47,6 @@ Here is a linear model:
 
 ```julia
 using Lux, Random
-import Lux.Experimental: @compact
 
 r = @compact(w=rand(3)) do x
     return w .* x
@@ -123,6 +136,11 @@ used inside a `Chain`.
     account for the total number of parameters printed at the bottom.
 """
 macro compact(_exs...)
+    return __compact_macro_impl(_exs...)
+end
+
+# Needed for the deprecation path
+function __compact_macro_impl(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
     if isempty(_exs)
         msg = "expects at least two expressions: a function and at least one keyword"
@@ -157,65 +175,64 @@ macro compact(_exs...)
     kwexs = (kwexs1..., kwexs2...)
 
     # check if user has named layer
-    name_idx = findfirst(ex -> ex.args[1] == :name, kwexs)
-    name = nothing
-    if name_idx !== nothing && kwexs[name_idx].args[2] !== nothing
-        if length(kwexs) == 1
-            throw(LuxCompactModelParsingException("expects keyword arguments"))
-        end
-        name = kwexs[name_idx].args[2]
-        # remove name from kwexs (a tuple)
-        kwexs = (kwexs[1:(name_idx - 1)]..., kwexs[(name_idx + 1):end]...)
-    end
+    name, kwexs = __extract_reserved_kwarg(kwexs, :name)
 
     # check if user has provided a custom dispatch
-    dispatch_idx = findfirst(ex -> ex.args[1] == :dispatch, kwexs)
-    dispatch = nothing
-    if dispatch_idx !== nothing && kwexs[dispatch_idx].args[2] !== nothing
-        if length(kwexs) == 1
-            throw(LuxCompactModelParsingException("expects keyword arguments"))
-        end
-        dispatch = kwexs[dispatch_idx].args[2]
-        # remove dispatch from kwexs (a tuple)
-        kwexs = (kwexs[1:(dispatch_idx - 1)]..., kwexs[(dispatch_idx + 1):end]...)
-    end
+    dispatch, kwexs = __extract_reserved_kwarg(kwexs, :dispatch)
+
+    # Extract splatted kwargs
+    splat_idxs = findall(ex -> ex.head == :..., kwexs)
+    splatted_kwargs = map(first ∘ Base.Fix2(getproperty, :args), kwexs[splat_idxs])
+    kwexs = filter(ex -> ex.head != :..., kwexs)
 
     # make strings
     layer = "@compact"
-    setup = NamedTuple(map(ex -> Symbol(string(ex.args[1])) => string(ex.args[2]), kwexs))
     input = try
         fex_args = fex.args[1]
         isa(fex_args, Symbol) ? string(fex_args) : join(fex_args.args, ", ")
     catch e
-        @warn "Function stringifying does not yet handle all cases. Falling back to empty string for input arguments"
+        @warn "Function stringifying does not yet handle all cases. Falling back to empty \
+               string for input arguments"
     end
     block = string(Base.remove_linenums!(fex).args[2])
 
     # edit expressions
-    vars = map(ex -> ex.args[1], kwexs)
-    fex = supportself(fex, vars)
+    vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)
+    fex = supportself(fex, vars, splatted_kwargs)
 
     # assemble
-    return esc(:($CompactLuxLayer{$dispatch}(
-        $fex, $name, ($layer, $input, $block), $setup; $(kwexs...))))
+    return esc(:($CompactLuxLayer{$dispatch}($fex, $name, ($layer, $input, $block),
+        (($(Meta.quot.(splatted_kwargs)...),), ($(splatted_kwargs...),)); $(kwexs...))))
 end
 
-function supportself(fex::Expr, vars)
+function __extract_reserved_kwarg(kwexs, sym::Symbol)
+    idx = findfirst(ex -> ex.args[1] == sym, kwexs)
+    val = nothing
+    if idx !== nothing && kwexs[idx].args[2] !== nothing
+        length(kwexs) == 1 &&
+            throw(LuxCompactModelParsingException("expects keyword arguments"))
+        val = kwexs[idx].args[2]
+        kwexs = (kwexs[1:(idx - 1)]..., kwexs[(idx + 1):end]...)
+    end
+    return val, kwexs
+end
+
+function supportself(fex::Expr, vars, splatted_kwargs)
     @gensym self ps st curried_f res
     # To avoid having to manipulate fex's arguments and body explicitly, we split the input
     # function body and add the required arguments to the function definition.
     sdef = splitdef(fex)
-    if length(sdef[:args]) != 1
-        throw(LuxCompactModelParsingException("expects exactly 1 argument"))
-    end
-    args = [self, sdef[:args]..., ps, st]
+    custom_param = length(sdef[:args]) == 2
+    length(sdef[:args]) > 2 &&
+        throw(LuxCompactModelParsingException("expects at most 2 arguments"))
+    args = [self, sdef[:args][1], ps, st]
     calls = []
     for var in vars
         push!(calls,
-            :($var = Lux.Experimental.__maybe_make_stateful(
-                Lux._getproperty($self, $(Val(var))),
-                Lux._getproperty($ps, $(Val(var))), Lux._getproperty($st, $(Val(var))))))
+            :($var = $(__maybe_make_stateful)($(_getproperty)($self, $(Val(var))),
+                $(_getproperty)($ps, $(Val(var))), $(_getproperty)($st, $(Val(var))))))
     end
+    custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
     body = Expr(:let, Expr(:block, calls...), sdef[:body])
     sdef[:body] = body
     sdef[:args] = args
@@ -223,9 +240,9 @@ function supportself(fex::Expr, vars)
 end
 
 @inline function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
-    return Lux.StatefulLuxLayer(layer, ps, st)
+    return StatefulLuxLayer(layer, ps, st)
 end
-@inline __maybe_make_stateful(::Nothing, ps, st) = ps === nothing ? st : ps
+@inline __maybe_make_stateful(::Nothing, ps, st) = ifelse(ps === nothing, st, ps)
 @inline function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
     return map(i -> __maybe_make_stateful(model[i], ps[i], st[i]), eachindex(model))
 end
@@ -244,13 +261,13 @@ end
 function ValueStorage(; kwargs...)
     ps_init_fns, st_init_fns = [], []
     for (key, val) in pairs(kwargs)
-        push!(val isa AbstractArray ? ps_init_fns : st_init_fns, key => () -> val)
+        push!(val isa AbstractArray ? ps_init_fns : st_init_fns, key => Returns(val))
     end
     return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
 end
 
 function (v::ValueStorage)(x, ps, st)
-    throw(ArgumentError("ValueStorage isn't meant to be used as a layer!!!"))
+    throw(ArgumentError("`ValueStorage` isn't meant to be used as a layer!!!"))
 end
 
 function initialparameters(::AbstractRNG, v::ValueStorage)
@@ -269,9 +286,10 @@ end
     setup_strings
     layers
     value_storage
+    stored_kwargs
 end
 
-function constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
+function ConstructionBase.constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
     return CompactLuxLayer{dispatch}
 end
 
@@ -288,7 +306,7 @@ function __try_make_lux_layer(x::Union{AbstractVector, Tuple})
     return __try_make_lux_layer(NamedTuple{Tuple(Symbol.(1:length(x)))}(x))
 end
 function __try_make_lux_layer(x)
-    function __maybe_convert_layer(l)
+    __maybe_convert_layer = @closure l -> begin
         l isa AbstractExplicitLayer && return l
         l isa Function && return WrappedFunction(l)
         return l
@@ -296,27 +314,47 @@ function __try_make_lux_layer(x)
     return fmap(__maybe_convert_layer, x)
 end
 
-function CompactLuxLayer{dispatch}(f::Function, name::NAME_TYPE, str::Tuple,
-        setup_str::NamedTuple; kws...) where {dispatch}
+function CompactLuxLayer{dispatch}(
+        f::F, name::NAME_TYPE, str::Tuple, splatted_kwargs; kws...) where {F, dispatch}
     layers, others = [], []
+    setup_strings = NamedTuple()
     for (name, val) in pairs(kws)
+        is_lux_layer = false
         if val isa AbstractExplicitLayer
+            is_lux_layer = true
             push!(layers, name => val)
         elseif LuxCore.contains_lux_layer(val)
             # TODO: Rearrange Tuple and Vectors to NamedTuples for proper CA.jl support
-            # FIXME: This might lead to incorrect constructions? If the function is a closure over the provided keyword arguments?
+            # FIXME: This might lead to incorrect constructions? If the function is a
+            #        closure over the provided keyword arguments?
             val = __try_make_lux_layer(val)
             if LuxCore.check_fmap_condition(
                 !Base.Fix2(isa, AbstractExplicitLayer), nothing, val)
-                throw(LuxCompactModelParsingException("A container `$(name) = $(val)` is found which combines Lux layers with non-Lux layers. This is not supported."))
+                throw(LuxCompactModelParsingException("A container `$(name) = $(val)` is \
+                                                       found which combines Lux layers \
+                                                       with non-Lux layers. This is not \
+                                                       supported."))
             end
+            is_lux_layer = true
             push!(layers, name => val)
         else
             push!(others, name => val)
         end
+
+        if is_lux_layer
+            setup_strings = merge(setup_strings, NamedTuple((name => val,)))
+        else
+            setup_strings = merge(
+                setup_strings, NamedTuple((name => __kwarg_descriptor(val),)))
+        end
     end
-    return CompactLuxLayer{dispatch}(
-        f, name, str, setup_str, NamedTuple((; layers...)), ValueStorage(; others...))
+
+    for (kw_name, kw_val) in zip(splatted_kwargs[1], splatted_kwargs[2])
+        push!(others, kw_name => kw_val)
+    end
+
+    return CompactLuxLayer{dispatch}(f, name, str, setup_strings, NamedTuple((; layers...)),
+        ValueStorage(; others...), nothing)
 end
 
 function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
@@ -368,4 +406,21 @@ function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing
         println(io, ",")
     end
     return
+end
+
+function __kwarg_descriptor(val)
+    val isa Number && return string(val)
+    val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
+    val isa Tuple && return "(" * join(map(__kwarg_descriptor, val), ", ") * ")"
+    if val isa NamedTuple
+        fields = fieldnames(typeof(val))
+        strs = []
+        for fname in fields[1:min(length(fields), 3)]
+            internal_val = getfield(val, fname)
+            push!(strs, "$fname = $(__kwarg_descriptor(internal_val))")
+        end
+        return "@NamedTuple{$(join(strs, ", "))" * (length(fields) > 3 ? ", ..." : "") * "}"
+    end
+    val isa Function && return sprint(show, val; context=(:compact => true, :limit => true))
+    return lazy"$(nameof(typeof(val)))(...)"
 end

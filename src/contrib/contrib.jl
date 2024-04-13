@@ -3,15 +3,12 @@ module Experimental
 import ..Lux
 using ..Lux, LuxCore, LuxDeviceUtils, Random
 using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
-import ..Lux: _merge, _pairs, initialstates, initialparameters, apply, NAME_TYPE,
-              _getproperty
+import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
 
 using ADTypes: ADTypes
 import ChainRulesCore as CRC
 using ConcreteStructs: @concrete
-import ConstructionBase: constructorof
 using Functors: Functors, fmap, functor
-using MacroTools: block, combinedef, splitdef
 using Markdown: @doc_str
 using Random: AbstractRNG, Random
 using Setfield: Setfield
@@ -21,8 +18,7 @@ include("training.jl")
 include("freeze.jl")
 include("share_parameters.jl")
 include("debug.jl")
-include("stateful.jl")
-include("compact.jl")
+include("deprecated.jl")
 
 end
 

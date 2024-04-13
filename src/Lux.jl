@@ -26,6 +26,10 @@ using PrecompileTools: @recompile_invalidations
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
                     display_name, replicate
     using LuxDeviceUtils: get_device
+
+    # @compact specific
+    using MacroTools: block, combinedef, splitdef
+    using ConstructionBase: ConstructionBase
 end
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
@@ -56,6 +60,7 @@ include("contrib/contrib.jl")
 
 # Helpful Functionalities
 include("helpers/stateful.jl")
+include("helpers/compact.jl")
 
 # Transform to and from other frameworks
 include("transform/types.jl")
@@ -70,7 +75,8 @@ include("distributed/public_api.jl")
 include("deprecated.jl")
 
 # Layers
-export cpu, gpu
+export cpu, gpu  # deprecated
+
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
@@ -83,6 +89,7 @@ export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
 
 export StatefulLuxLayer
+export @compact, CompactLuxLayer
 
 export f16, f32, f64
 

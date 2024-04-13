@@ -42,7 +42,23 @@ function loadmnist(batchsize, train_split)
 end
 
 # ## Define the Neural ODE Layer
-#
+# 
+# First we will use the [`@compact`](@ref) macro to define the Neural ODE Layer.
+
+function NeuralODECompact(
+        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+    return @compact(; model, solver, tspan, kwargs...) do x, p
+        dudt(u, p, t) = vec(model(reshape(u, size(x)), p))
+        ## Note the `p.model` here
+        prob = ODEProblem(ODEFunction{false}(dudt), vec(x), tspan, p.model)
+        return solve(prob, solver; kwargs...)
+    end
+end
+
+# We recommend using the compact macro for creating custom layers. The below implementation
+# exists mostly for historical reasons when `@compact` was not part of the stable API. Also,
+# it helps users understand how the layer interface of Lux works.
+
 # The NeuralODE is a ContainerLayer, which stores a `model`. The parameters and states of
 # the NeuralODE are same as those of the underlying model.
 struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
@@ -154,6 +170,8 @@ function train(model_function; cpu::Bool=false, kwargs...)
     end
 end
 
+train(NeuralODECompact)
+
 train(NeuralODE)
 
 # We can also change the sensealg and train the model! `GaussAdjoint` allows you to use
@@ -173,8 +191,9 @@ train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true)
 
 # ## Alternate Implementation using Stateful Layer
 
-# Starting `v0.5.5`, Lux provides a `Lux.Experimental.StatefulLuxLayer` which can be used
-# to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276).
+# Starting `v0.5.5`, Lux provides a [`StatefulLuxLayer`](@ref) which can be used
+# to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276). Using
+# the `@compact` API avoids this problem entirely.
 struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
        Lux.AbstractExplicitContainerLayer{(:model,)}
     model::M
@@ -189,7 +208,7 @@ function StatefulNeuralODE(
 end
 
 function (n::StatefulNeuralODE)(x, ps, st)
-    st_model = Lux.StatefulLuxLayer(n.model, ps, st)
+    st_model = StatefulLuxLayer(n.model, ps, st)
     dudt(u, p, t) = st_model(u, p)
     prob = ODEProblem{false}(ODEFunction{false}(dudt), x, n.tspan, ps)
     return solve(prob, n.solver; n.kwargs...), st_model.st
@@ -219,3 +238,9 @@ x = gpu_device()(ones(Float32, 28, 28, 1, 3));
 
 # Note, that we still recommend using this layer internally and not exposing this as the
 # default API to the users.
+
+# Finally checking the compact model
+
+model_compact, ps_compact, st_compact = create_model(NeuralODECompact)
+
+@code_warntype model_compact(x, ps_compact, st_compact)

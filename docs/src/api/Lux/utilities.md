@@ -54,6 +54,11 @@ Lux.f64
 StatefulLuxLayer
 ```
 
+## Compact Layer
+
+```@docs
+@compact
+```
 
 ## Truncated Stacktraces
 

@@ -163,7 +163,7 @@ function compute_waveform(dt::T, soln, mass_ratio, model_params=nothing) where {
         m₁ = mass_ratio * m₂
 
         orbit₁, orbit₂ = one2two(orbit, m₁, m₂)
-        waveform = h_22_strain_two_body(dt, orbit1, mass1, orbit2, mass2)
+        waveform = h_22_strain_two_body(dt, orbit₁, m₁, orbit₂, m₂)
     else
         waveform = h_22_strain_one_body(dt, orbit)
     end

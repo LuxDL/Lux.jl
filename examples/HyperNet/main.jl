@@ -31,33 +31,25 @@ function load_datasets(n_train=1024, n_eval=32, batchsize=256)
 end
 
 # ## Implement a HyperNet Layer
-struct HyperNet{W <: Lux.AbstractExplicitLayer, C <: Lux.AbstractExplicitLayer, A} <:
-       Lux.AbstractExplicitContainerLayer{(:weight_generator, :core_network)}
-    weight_generator::W
-    core_network::C
-    ca_axes::A
+function HyperNet(weight_generator::Lux.AbstractExplicitLayer,
+        core_network::Lux.AbstractExplicitLayer)
+    ca_axes = Lux.initialparameters(Random.default_rng(), core_network) |>
+              ComponentArray |>
+              getaxes
+    return @compact(; ca_axes, weight_generator, core_network, dispatch=:HyperNet) do (x, y)
+        ## Generate the weights
+        ps_new = ComponentArray(vec(weight_generator(x)), ca_axes)
+        return core_network(y, ps_new)
+    end
 end
 
-function HyperNet(w::Lux.AbstractExplicitLayer, c::Lux.AbstractExplicitLayer)
-    ca_axes = Lux.initialparameters(Random.default_rng(), c) |> ComponentArray |> getaxes
-    return HyperNet(w, c, ca_axes)
-end
+# Defining functions on the CompactLuxLayer requires some understanding of how the layer
+# is structured, as such we don't recommend doing it unless you are familiar with the
+# internals. In this case, we simply write it to ignore the initialization of the 
+# `core_network` parameters.
 
-function Lux.initialparameters(rng::AbstractRNG, h::HyperNet)
-    return (weight_generator=Lux.initialparameters(rng, h.weight_generator),)
-end
-
-function (hn::HyperNet)(x, ps, st::NamedTuple)
-    ps_new, st_ = hn.weight_generator(x, ps.weight_generator, st.weight_generator)
-    @set! st.weight_generator = st_
-    return ComponentArray(vec(ps_new), hn.ca_axes), st
-end
-
-function (hn::HyperNet)((x, y)::T, ps, st::NamedTuple) where {T <: Tuple}
-    ps_ca, st = hn(x, ps, st)
-    pred, st_ = hn.core_network(y, ps_ca, st.core_network)
-    @set! st.core_network = st_
-    return pred, st
+function Lux.initialparameters(rng::AbstractRNG, hn::CompactLuxLayer{:HyperNet})
+    return (; weight_generator=Lux.initialparameters(rng, hn.layers.weight_generator),)
 end
 
 # ## Create and Initialize the HyperNet

@@ -20,6 +20,13 @@ First let's set the expectations straight.
     functionality in the core library (and officially supported ones) **must** adhere to
     the interface
 
+!!! tip
+
+    While writing out a custom struct and defining dispatches manually is a good way to
+    understand the interface, it is not the most concise way. We recommend using the
+    [`Lux.@compact`](@ref) macro to define layers which makes handling the states and
+    parameters downright trivial.
+
 ## Layer Interface
 
 ### Singular Layer
@@ -35,8 +42,8 @@ architecture cannot change.
 
 !!! tip
 
-    For people coming from Flux.jl background this might be weird. We recommend checking out
-    [the Flux to Lux migration guide](@ref migrate-from-flux) first before proceeding.
+    For people coming from Flux.jl background, this might be weird. We recommend checking
+    out [the Flux to Lux migration guide](@ref migrate-from-flux) first before proceeding.
 
 ```@example layer_interface
 using Lux, Random
@@ -80,7 +87,7 @@ reconstruction of the parameters and states.
 println("Parameter Length: ", Lux.parameterlength(l), "; State Length: ",
     Lux.statelength(l))
 
-# But still recommened to define these
+# But still recommended to define these
 Lux.parameterlength(l::Linear) = l.out_dims * l.in_dims + l.out_dims
 
 Lux.statelength(::Linear) = 0

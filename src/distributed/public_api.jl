@@ -179,7 +179,7 @@ function __reduce! end
 
 CRC.@non_differentiable reduce!(::Any...)
 
-# syncronize!
+# synchronize!
 """
     synchronize!!(backend::AbstractLuxDistributedBackend, ps; root::Int=0)
 
