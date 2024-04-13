@@ -8,6 +8,7 @@ doctestexpr = quote
     using SimpleChains: static
     using Flux: Flux
     using Metalhead: Metalhead
+    using DynamicExpressions
     using Adapt, Lux, Random, Optimisers, Zygote
 end
 

@@ -33,26 +33,45 @@ and `eval_grad_tree_array` function.
 
 ## Example
 
-```julia
-using Lux, Random, DynamicExpressions, Zygote
+```jldoctest
+julia> using Lux, Random, DynamicExpressions, Zygote
 
-operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos])
+julia> operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos]);
 
-x1 = Node(; feature=1)
-x2 = Node(; feature=2)
+julia> x1 = Node(; feature=1);
 
-expr_1 = x1 * cos(x2 - 3.2)
-expr_2 = x2 - x1 * x2 + 3.2 - 1.0 * x1
+julia> x2 = Node(; feature=2);
 
-layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
+julia> expr_1 = x1 * cos(x2 - 3.2)
+x1 * cos(x2 - 3.2)
 
-ps, st = Lux.setup(Random.default_rng(), layer)
+julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
+((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)
 
-x = rand(Float32, 2, 16)
+julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
+Chain(
+    layer_1 = Parallel(
+        layer_1 = DynamicExpressionNode(x1 * cos(x2 - 3.2)),  # 1 parameters
+        layer_2 = DynamicExpressionNode(((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)),  # 2 parameters
+    ),
+    layer_2 = WrappedFunction(__stack1),
+)         # Total: 3 parameters,
+          #        plus 0 states.
 
-layer(x, ps, st)
+julia> ps, st = Lux.setup(Random.default_rng(), layer)
+((layer_1 = (layer_1 = (params = Float32[3.2],), layer_2 = (params = Float32[2.5, 1.0],)), layer_2 = NamedTuple()), (layer_1 = (layer_1 = NamedTuple(), layer_2 = NamedTuple()), layer_2 = NamedTuple()))
 
-Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st)
+julia> x = [1.0f0 2.0f0 3.0f0
+            4.0f0 5.0f0 6.0f0]
+2×3 Matrix{Float32}:
+ 1.0  2.0  3.0
+ 4.0  5.0  6.0
+
+julia> layer(x, ps, st)
+(Float32[0.6967068 -0.4544041 -2.8266668; 1.5 -4.5 -12.5], (layer_1 = (layer_1 = NamedTuple(), layer_2 = NamedTuple()), layer_2 = NamedTuple()))
+
+julia> Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st)
+(Float32[-14.0292 54.206482 180.32669; -0.9995737 10.7700815 55.6814], (layer_1 = (layer_1 = (params = Float32[-6.451908],), layer_2 = (params = Float32[-31.0, 90.0],)), layer_2 = nothing), nothing)
 ```
 """
 @kwdef @concrete struct DynamicExpressionsLayer{N <: NAME_TYPE} <: AbstractExplicitLayer
