@@ -73,7 +73,7 @@ export default defineConfig({
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental', link: '/api/Lux/contrib' },
-                            { text: 'InterOp', link: '/api/Lux/switching_frameworks' },
+                            { text: 'InterOp', link: '/api/Lux/interop' },
                             { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }
                         ]
                     },
@@ -176,7 +176,7 @@ export default defineConfig({
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental Features', link: '/api/Lux/contrib' },
-                            { text: 'Switching between Deep Learning Frameworks', link: '/api/Lux/switching_frameworks' },
+                            { text: 'Switching between Deep Learning Frameworks', link: '/api/Lux/interop' },
                             { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }]
                     },
                     {

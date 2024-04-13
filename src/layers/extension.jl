@@ -4,6 +4,57 @@
 ## DynamicExpressions.jl
 ## We could constrain the type of `operator_enum` to be `OperatorEnum` but defining
 ## custom types in extensions tends to be a PITA
+"""
+    DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::Node...;
+        name::NAME_TYPE=nothing, turbo::Union{Bool, Val}=Val(false),
+        bumper::Union{Bool, Val}=Val(false))
+    DynamicExpressionsLayer(operator_enum::OperatorEnum,
+        expressions::AbstractVector{<:Node}; kwargs...)
+
+Wraps a `DynamicExpressions.jl` `Node` into a Lux layer and allows the constant nodes to
+be updated using any of the AD Backends.
+
+For details about these expressions, refer to the
+[`DynamicExpressions.jl` documentation](https://symbolicml.org/DynamicExpressions.jl/dev/types/).
+
+## Arguments
+
+  - `operator_enum`: `OperatorEnum` from `DynamicExpressions.jl`
+  - `expressions`: `Node` from `DynamicExpressions.jl` or `AbstractVector{<:Node}`
+
+## Keyword Arguments
+
+  - `name`: Name of the layer
+  - `turbo`: Use LoopVectorization.jl for faster evaluation
+  - `bumper`: Use Bumper.jl for faster evaluation
+
+These options are simply forwarded to `DynamicExpressions.jl`'s `eval_tree_array`
+and `eval_grad_tree_array` function.
+
+## Example
+
+```julia
+using Lux, Random, DynamicExpressions, Zygote
+
+operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos])
+
+x1 = Node(; feature=1)
+x2 = Node(; feature=2)
+
+expr_1 = x1 * cos(x2 - 3.2)
+expr_2 = x2 - x1 * x2 + 3.2 - 1.0 * x1
+
+layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
+
+ps, st = Lux.setup(Random.default_rng(), layer)
+
+x = rand(Float32, 2, 16)
+
+layer(x, ps, st)
+
+Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st)
+```
+"""
 @kwdef @concrete struct DynamicExpressionsLayer{N <: NAME_TYPE} <: AbstractExplicitLayer
     operator_enum
     expression

@@ -13,14 +13,13 @@ function Lux.DynamicExpressionsLayer(
     length(expressions) == 1 && return Lux.DynamicExpressionsLayer(
         operator_enum, first(expressions), name, turbo, bumper)
     _name_fn = name === nothing ? Returns(nothing) : @closure(i->"$(name)_$(i)")
-    # FIXME: replace the last function with `stack` once the rrule is fixed upstream
     return Chain(
         Parallel(nothing,
             map(
                 ((i, expr),) -> Lux.DynamicExpressionsLayer(
                     operator_enum, expr, _name_fn(i), turbo, bumper),
                 enumerate(expressions))...),
-        WrappedFunction(@closure(x->mapfoldl(Base.Fix2(reshape, (1, :)), vcat, x))))
+        WrappedFunction(Lux.__stack1))
 end
 
 function Lux.DynamicExpressionsLayer(

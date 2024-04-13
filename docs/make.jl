@@ -56,7 +56,7 @@ pages = [
             "api/Lux/layers.md",
             "api/Lux/utilities.md",
             "api/Lux/contrib.md",
-            "api/Lux/switching_frameworks.md",
+            "api/Lux/interop.md",
             "api/Lux/distributed_utils.md",
         ],
         "Accelerator Support" => [

@@ -1,10 +1,12 @@
-# Switching between Deep Learning Frameworks
+# Interoperability between Lux and other packages
 
 ```@meta
 CurrentModule = Lux
 ```
 
-## [Flux Models to Lux Models](@id flux-to-lux-migrate-api)
+## Switching from older frameworks
+
+### [Flux Models to Lux Models](@id flux-to-lux-migrate-api)
 
 `Flux.jl` has been around in the Julia ecosystem for a long time and has a large userbase,
 hence we provide a way to convert `Flux` models to `Lux` models.
@@ -20,7 +22,9 @@ FromFluxAdaptor
 FluxLayer
 ```
 
-## Lux Models to Simple Chains
+## Using a different backend for Lux
+
+### Lux Models to Simple Chains
 
 `SimpleChains.jl` provides a way to train Small Neural Networks really fast on CPUs.
 See [this blog post](https://julialang.org/blog/2022/04/simple-chains/) for more details.
@@ -36,4 +40,17 @@ preserving the [layer interface](@ref lux-interface).
 Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
 ToSimpleChainsAdaptor
 SimpleChainsLayer
+```
+
+## Symbolic Expressions
+
+### Embedding DynamicExpressions.jl Node in Lux Layers
+
+!!! tip
+
+    Accessing these functions require manually loading `DynamicExpressions`, i.e.,
+    `using DynamicExpressions` must be present somewhere in the code for these to be used.
+
+```@docs
+DynamicExpressionsLayer
 ```
