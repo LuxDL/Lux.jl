@@ -3,7 +3,7 @@ module LuxFluxExt
 using Flux: Flux
 using Lux: Lux
 using Random: AbstractRNG
-import Lux: __from_flux_adaptor, FluxLayer, FluxModelConversionError
+import Lux: __from_flux_adaptor, FluxModelConversionError
 
 __copy_anonymous_closure(x) = (args...) -> x
 

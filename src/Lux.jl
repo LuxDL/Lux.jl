@@ -99,7 +99,7 @@ export f16, f32, f64
 export transform
 export FromFluxAdaptor, FluxLayer
 export ToSimpleChainsAdaptor, SimpleChainsLayer
-export DynamicExpressionLayer, DynamicExpressionsLayer
+export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
 

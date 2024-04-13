@@ -4,14 +4,19 @@
 ## DynamicExpressions.jl
 ## We could constrain the type of `operator_enum` to be `OperatorEnum` but defining
 ## custom types in extensions tends to be a PITA
-# TODO: Add options for turbo and bumper
-@kwdef @concrete struct DynamicExpressionLayer{N <: NAME_TYPE} <: AbstractExplicitLayer
+@kwdef @concrete struct DynamicExpressionsLayer{N <: NAME_TYPE} <: AbstractExplicitLayer
     operator_enum
     expression
     name::N = nothing
+    turbo = Val(false)
+    bumper = Val(false)
 end
 
-function initialparameters(::AbstractRNG, layer::DynamicExpressionLayer)
+function Base.show(io::IO, l::DynamicExpressionsLayer)
+    return print(io, "DynamicExpressionNode($(l.expression))")
+end
+
+function initialparameters(::AbstractRNG, layer::DynamicExpressionsLayer)
     params = map(Base.Fix2(getproperty, :val),
         filter(node -> node.degree == 0 && node.constant, layer.expression))
     return (; params)
@@ -29,44 +34,32 @@ function __update_expression_constants!(expression, ps)
     return
 end
 
-@inline function (de::DynamicExpressionLayer)(x, ps, st)
+@inline function (de::DynamicExpressionsLayer)(x, ps, st)
     return (
         __apply_dynamic_expression(
-            de.expression, de.operator_enum, x, ps.params, get_device(x)),
+            de, de.expression, de.operator_enum, x, ps.params, get_device(x)),
         st)
 end
 
-function __apply_dynamic_expression(expr, operator_enum, x, ps, ::LuxCPUDevice)
+function __apply_dynamic_expression(
+        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::LuxCPUDevice)
     __update_expression_constants!(expr, ps)
-    return expr(x, operator_enum)
+    return expr(x, operator_enum; de.turbo, de.bumper)
 end
 
 function __apply_dynamic_expression_rrule end
 
-function CRC.rrule(
-        ::typeof(__apply_dynamic_expression), expr, operator_enum, x, ps, ::LuxCPUDevice)
+function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsLayer,
+        expr, operator_enum, x, ps, ::LuxCPUDevice)
     if !_is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                computing gradient for `DynamicExpressionLayer`.")
     end
-    return __apply_dynamic_expression_rrule(expr, operator_enum, x, ps)
+    return __apply_dynamic_expression_rrule(de, expr, operator_enum, x, ps)
 end
 
-function __apply_dynamic_expression(expr, operator_enum, x, ps, dev)
+function __apply_dynamic_expression(de, expr, operator_enum, x, ps, dev)
     throw(ArgumentError(lazy"`DynamicExpressions.jl` only supports CPU operations. Current device detected as $(dev)."))
-end
-
-function DynamicExpressionsLayer(operator_enum, expressions...; name::NAME_TYPE=nothing)
-    _name_fn = name === nothing ? i -> nothing : i -> "$(name)_$(i)"
-    return Chain(
-        Parallel(nothing,
-            map(((i, expr),) -> DynamicExpressionLayer(operator_enum, expr, _name_fn(i)),
-                enumerate(expressions))...),
-        WrappedFunction(@closure(x -> mapfoldl(Base.Fix2(reshape, (1, :)), vcat, x)))) # FIXME: replace this with `stack` once the rrule is fixed upstream
-end
-
-function DynamicExpressionsLayer(operator_enum, expressions::AbstractVector; kwargs...)
-    return DynamicExpressionsLayer(operator_enum, expressions...; kwargs...)
 end
 
 ## Flux.jl

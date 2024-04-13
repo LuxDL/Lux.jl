@@ -53,7 +53,7 @@ function Lux.apply(
     return Lux.apply(m, ArrayInterface.aos_to_soa(x), ps, st)
 end
 
-# Handle SimpleChains
+# SimpleChains.jl
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
 
@@ -70,6 +70,30 @@ Tracker.@grad function Lux.__apply_simple_chain(layer, x, ps, ::LuxCPUDevice)
     end
     # Tracker is not great at handling arbitrary types, so we convert to Array
     return Array(y), __∇apply_simple_chain
+end
+
+# DynamicExpressions.jl
+for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
+    T1 === :AbstractArray && T2 === :AbstractArray && continue
+
+    @eval function Lux.__apply_dynamic_expression(
+            de::Lux.DynamicExpressionsLayer, expr, operator_enum,
+            x::$(T1), ps::$(T2), dev::LuxCPUDevice)
+        return Tracker.track(
+            Lux.__apply_dynamic_expression, de, expr, operator_enum, x, ps, dev)
+    end
+end
+
+Tracker.@grad function Lux.__apply_dynamic_expression(
+        de::Lux.DynamicExpressionsLayer, expr, operator_enum, x, ps, dev::LuxCPUDevice)
+    y, pb_f = CRC.rrule(Lux.__apply_dynamic_expression, de, expr,
+        operator_enum, Tracker.data(x), Tracker.data(ps), dev)
+    __∇apply_dynamic_expression = @closure Δ -> begin
+        _, _, _, _, ∂x, ∂ps, _ = pb_f(Δ)
+        return Tracker.nobacksies(
+            :__apply_dynamic_expression, (nothing, nothing, nothing, ∂x, ∂ps, nothing))
+    end
+    return y, __∇apply_dynamic_expression
 end
 
 end
