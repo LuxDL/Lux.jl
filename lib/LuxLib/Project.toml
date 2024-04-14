@@ -16,22 +16,23 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-LuxAMDGPU = "83120cb1-ca15-4f04-bf3b-6967d2e6b60b"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [extensions]
 LuxLibForwardDiffExt = "ForwardDiff"
-LuxLibLuxAMDGPUTrackerExt = ["LuxAMDGPU", "Tracker"]
 LuxLibReverseDiffExt = "ReverseDiff"
+LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
 LuxLibTrackerExt = "Tracker"
 LuxLibTrackercuDNNExt = ["CUDA", "Tracker", "cuDNN"]
 LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
+AMDGPU = "0.8"
 Aqua = "0.8"
 CUDA = "5.2"
 ChainRulesCore = "1.20"
