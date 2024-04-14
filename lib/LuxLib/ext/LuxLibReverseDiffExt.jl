@@ -1,17 +1,19 @@
 module LuxLibReverseDiffExt
 
-using ChainRulesCore: NoTangent
+using ChainRulesCore: ChainRulesCore
 using LuxLib: LuxLib
 using NNlib: NNlib
 using ReverseDiff: ReverseDiff, TrackedArray, TrackedReal, @grad_from_chainrules
 
+const CRC = ChainRulesCore
+
 # Patches: Needs upstreaming
 @inline function ReverseDiff.increment_deriv!(
-        t::Union{TrackedArray, TrackedReal}, ::NoTangent, i)
+        t::Union{TrackedArray, TrackedReal}, ::CRC.NoTangent, i)
     return ReverseDiff.increment_deriv!(t, zero(eltype(value(t))), i)
 end
 @inline function ReverseDiff.decrement_deriv!(
-        t::Union{TrackedArray, TrackedReal}, ::NoTangent, i)
+        t::Union{TrackedArray, TrackedReal}, ::CRC.NoTangent, i)
     return ReverseDiff.decrement_deriv!(t, zero(eltype(value(t))), i)
 end
 
@@ -39,7 +41,7 @@ end
 @grad_from_chainrules Base.sum(::typeof(abs2), x::TrackedArray; kwargs...)
 
 for pool in (:maxpool, :meanpool, :lpnormpool)
-    @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::PoolDims; kwargs...)
+    @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::NNlib.PoolDims; kwargs...)
 end
 
 end

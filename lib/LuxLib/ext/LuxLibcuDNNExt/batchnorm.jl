@@ -80,8 +80,8 @@ function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArra
 
     xd = cudnnTensorDescriptor(x)
     yd = cudnnTensorDescriptor(y)
-    gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T),
-        Cint(length(dims)), cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
+    gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
+        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
 
     if training
         mean = fill!(similar(x, dims), zero(T))

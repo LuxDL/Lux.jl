@@ -2,9 +2,9 @@ module LuxLibTrackercuDNNExt
 
 using FastClosures: @closure
 # cuDNN not loaded but it is needed for the batchnorm_cudnn implementation
-using CUDA: CUDA, CuArray, CuVector, CuPtr
+using CUDA: CUDA, CuArray, CuVector, CU_NULL
 using LuxLib: LuxLib
-using Tracker: Tracker, @grad, TrackedArray, TrackedVector, TrackedReal
+using Tracker: Tracker, TrackedVector, TrackedArray
 
 # api/batchnorm.jl
 const TR_CUDNN_BN_ARRAY_TYPE = Union{
@@ -20,7 +20,8 @@ function LuxLib.batchnorm(
         running_mean::TR_BNParamType, running_var::TR_BNParamType;
         momentum::Real, training::Val, epsilon::Real)
     rm, rv = LuxLib._get_batchnorm_statistics(x, running_mean, running_var, training)
-    x_ = first(LuxLib.batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training))
+    # NOTE: The following returns a tracked tuple so we can't do `first` on it
+    x_ = LuxLib.batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training)[1]
     return x_, (; running_mean=rm, running_var=rv)
 end
 
@@ -40,16 +41,16 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
 end
 
 @inline __make_nothing(x) = x
-@inline __make_nothing(::CuPtr{Nothing}) = 0
+@inline __make_nothing(::typeof(CU_NULL)) = 0
 
-@grad function LuxLib.batchnorm_cudnn(
+Tracker.@grad function LuxLib.batchnorm_cudnn(
         running_mean, running_var, scale, bias, x, momentum, eps, training)
     y, xmean, xivar = LuxLib.batchnorm_cudnn(
         Tracker.data(running_mean), Tracker.data(running_var), Tracker.data(scale),
         Tracker.data(bias), Tracker.data(x), momentum, eps, training)
     ∇batchnorm_cudnn_internal = @closure Δ -> begin
         ∂y = first(Δ)
-        ∂g, ∂b, ∂x = ∇batchnorm_cudnn(
+        ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
             Tracker.data(scale), Tracker.data(bias), Tracker.data(x), ∂y,
             Tracker.data(running_mean), Tracker.data(running_var), xmean, xivar; ϵ=eps)
         return (nothing, nothing, ∂g, ∂b, ∂x, nothing, nothing, nothing)

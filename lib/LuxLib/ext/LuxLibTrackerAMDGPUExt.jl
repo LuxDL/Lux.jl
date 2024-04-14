@@ -35,8 +35,8 @@ for poolname in (:maxpool, :meanpool)
             _, workspace = AMDGPU.MIOpen.$(Symbol("$(poolname)!"))(
                 NNlib.insert_singleton_spatial_dimension(y, nd),
                 NNlib.insert_singleton_spatial_dimension(x, nd);
-                dims=NNlib.kernel_size(npdims), padding=nnlib_padding(npdims),
-                stride=NNlib.stride(npdims))
+                dims=NNlib.kernel_size(npdims),
+                padding=nnlib_padding(npdims), stride=NNlib.stride(npdims))
 
             function ∇pooling(Δ)
                 dx = similar(x)

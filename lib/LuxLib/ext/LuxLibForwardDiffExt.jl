@@ -1,6 +1,5 @@
 module LuxLibForwardDiffExt
 
-using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using LuxLib: LuxLib
 using NNlib: NNlib

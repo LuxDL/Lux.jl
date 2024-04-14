@@ -11,7 +11,7 @@ using PrecompileTools: @recompile_invalidations
     using NNlib: NNlib
     using Random: Random, AbstractRNG, rand!
     using Reexport: @reexport
-    using Statistics: Statistics, mean, var, varm
+    using Statistics: Statistics, mean, std, var
 end
 
 @reexport using NNlib

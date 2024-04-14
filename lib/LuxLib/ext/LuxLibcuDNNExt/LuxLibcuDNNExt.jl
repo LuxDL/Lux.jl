@@ -1,9 +1,9 @@
 module LuxLibcuDNNExt
 
 using LuxLib: LuxLib
-using CUDA: CUDA, CuArray, CuVector, CuPtr, CU_NULL, DenseCuArray
+using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray
 using ChainRulesCore: ChainRulesCore
-using cuDNN: CUDNN_BN_MIN_EPSILON, cudnnBatchNormalizationBackward,
+using cuDNN: cuDNN, CUDNN_BN_MIN_EPSILON, cudnnBatchNormalizationBackward,
              cudnnBatchNormalizationForwardInference, CUDNN_BATCHNORM_SPATIAL,
              cudnnBatchNormalizationForwardTraining, cudnnTensorDescriptor,
              CUDNN_TENSOR_NCHW, cudnnDataType
@@ -34,7 +34,7 @@ end
         scale, bias, x, running_mean, running_var, momentum, training; ϵ=eps)
 end
 
-function CRC.rrule(::typeof(batchnorm_cudnn), running_mean, running_var, scale,
+function CRC.rrule(::typeof(LuxLib.batchnorm_cudnn), running_mean, running_var, scale,
         bias, x, momentum, epsilon, t::Val{training}) where {training}
     y, xmean, xivar = LuxLib.batchnorm_cudnn(
         running_mean, running_var, scale, bias, x, momentum, epsilon, t)

@@ -46,9 +46,9 @@ Base.repeat(x::TrackedArray, counts...) = Tracker.track(Base.repeat, x, counts..
 @grad function Base.repeat(x, counts...)
     y, ∇repeat_cr = CRC.rrule(Base.repeat, Tracker.data(x), counts...)
     ∇repeat = @closure Δ -> begin
-        _, res... = ∇repeat_cr(Δ)
-        return nobacksies(
-            :repeat, map(x -> x == CRC.NoTangent() ? nothing : CRC.unthunk(x), res))
+        res = ∇repeat_cr(Δ)[2:(2 + length(counts))]
+        return Tracker.nobacksies(
+            :repeat, map(x -> x isa CRC.NoTangent ? nothing : CRC.unthunk(x), res))
     end
     return y, ∇repeat
 end
@@ -109,7 +109,7 @@ end
     ∇groupnorm = @closure Δ -> begin
         dx, dscale, dbias = LuxLib._∇groupnorm(
             Δ, y, Tracker.data(x), groups, Tracker.data(scale), Tracker.data(bias), μ, σ⁻¹)
-        return nobacksies(:groupnorm, (dx, dscale, dbias))
+        return Tracker.nobacksies(:groupnorm, (dx, dscale, dbias))
     end
     return y, ∇groupnorm
 end
