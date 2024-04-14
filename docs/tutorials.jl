@@ -15,7 +15,7 @@ addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"));
 BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl",
     "SimpleRNN/main.jl", "SimpleChains/main.jl"]
 INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
-ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl"]
+ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl", "SymbolicOptimalControl/main.jl"]
 
 TUTORIALS = [collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
     collect(enumerate(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS)))...,
@@ -55,10 +55,14 @@ try
                         appendix_code = "\n# ## Appendix\nusing InteractiveUtils\nInteractiveUtils.versioninfo()\nif @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end\nif @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end\nnothing#hide"
                         return new_str * appendix_code
                     end;
+                    function postprocess(path, str)
+                        return replace(str, "\`\`\`\`\n__REPLACEME__\$" => "\$\$", "\$__REPLACEME__\n\`\`\`\`" => "\$\$")
+                    end;
                     Literate.markdown(ENV["EXAMPLE_PATH"], ENV["OUTPUT_DIRECTORY"];
                         execute=true, name=ENV["EXAMPLE_NAME"],
                         flavor=Literate.DocumenterFlavor(),
-                        preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]))'`
+                        preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]),
+                        postprocess=Base.Fix1(postprocess, ENV["EXAMPLE_PATH"]))'`
             @info "Running Command: $(cmd)"
             run(cmd)
             return

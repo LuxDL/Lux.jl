@@ -136,7 +136,8 @@ export default defineConfig({
                     },
                     {
                         text: 'Advanced', collapsed: false, items: [
-                            { text: 'Training a Neural ODE to Model Gravitational Waveforms', link: '/tutorials/advanced/1_GravitationalWaveForm' }]
+                            { text: 'Training a Neural ODE to Model Gravitational Waveforms', link: '/tutorials/advanced/1_GravitationalWaveForm' },
+                            { text: 'Solving Optimal Control Problems with Symbolic UDEs', link: '/tutorials/advanced/2_SymbolicOptimalControl' },]
                     },
                     {
                         text: '3rd Party Tutorials', collapsed: true, items: [
@@ -176,7 +177,7 @@ export default defineConfig({
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental Features', link: '/api/Lux/contrib' },
-                            { text: 'Switching between Deep Learning Frameworks', link: '/api/Lux/interop' },
+                            { text: 'Interoperability', link: '/api/Lux/interop' },
                             { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }]
                     },
                     {
@@ -200,7 +201,7 @@ export default defineConfig({
                             { text: 'LuxTestUtils', link: '/api/Testing_Functionality/LuxTestUtils' }]
                     }]
             }
-        }, // TODO: Once https://github.com/LuxDL/DocumenterVitepress.jl/issues/48 is fixed we can use the default sidebar --- 'REPLACE_ME_DOCUMENTER_VITEPRESS'
+        },
         editLink: {
             pattern: 'https://github.com/LuxDL/Lux.jl/edit/main/docs/src/:path',
             text: 'Edit this page on GitHub'

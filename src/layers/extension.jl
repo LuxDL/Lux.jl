@@ -104,7 +104,15 @@ function __update_expression_constants!(expression, ps)
     return
 end
 
-@inline function (de::DynamicExpressionsLayer)(x, ps, st)
+@inline function (de::DynamicExpressionsLayer)(x::AbstractVector, ps, st)
+    x_ = reshape(x, :, 1)
+    return (
+        vec(__apply_dynamic_expression(
+            de, de.expression, de.operator_enum, x_, ps.params, get_device(x))),
+        st)
+end
+
+@inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
     return (
         __apply_dynamic_expression(
             de, de.expression, de.operator_enum, x, ps.params, get_device(x)),
@@ -128,8 +136,9 @@ function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsL
     return __apply_dynamic_expression_rrule(de, expr, operator_enum, x, ps)
 end
 
+# FIXME: Remove once https://github.com/SymbolicML/DynamicExpressions.jl/pull/65 is merged
 function __apply_dynamic_expression(de, expr, operator_enum, x, ps, dev)
-    throw(ArgumentError(lazy"`DynamicExpressions.jl` only supports CPU operations. Current device detected as $(dev)."))
+    throw(ArgumentError(lazy"`DynamicExpressions.jl` only supports CPU operations. Current device detected as $(dev). CUDA.jl will be supported after https://github.com/SymbolicML/DynamicExpressions.jl/pull/65 is merged upstream."))
 end
 
 ## Flux.jl
