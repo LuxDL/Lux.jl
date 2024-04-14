@@ -1,8 +1,7 @@
-# NOTE: This can be upstreamed to LuxCUDA once we drop support for v1.6
 # Difference from the NNlib version: We expose the mean and inv_variance computed in the
 # cudnn call, since they can be used at other places like forward mode AD
 @inline function _wsize(x::AbstractArray{T, N}) where {T, N}
-    return ntuple(i -> ifelse(i == N - 1, size(x, N - 1), 1), N)
+    return ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
 end
 
 function LuxLib.batchnorm_cudnn(γ::Nothing, β::Nothing, x::DenseCuArray, args...; kwargs...)

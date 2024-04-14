@@ -19,11 +19,10 @@ const CUDNN_BN_ARRAY_TYPE = Union{
     CuArray{<:Union{Float32, Float64}, 5}}
 const BNParamType = Union{Nothing, CuVector{<:Union{Float32, Float64}}}
 
-function batchnorm(x::CUDNN_BN_ARRAY_TYPE, scale::BNParamType, bias::BNParamType,
+function LuxLib.batchnorm(x::CUDNN_BN_ARRAY_TYPE, scale::BNParamType, bias::BNParamType,
         running_mean::BNParamType, running_var::BNParamType;
         momentum::Real, training::Val, epsilon::Real)
     rm, rv = LuxLib._get_batchnorm_statistics(x, running_mean, running_var, training)
-
     x_ = first(LuxLib.batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training))
     return x_, (; running_mean=rm, running_var=rv)
 end
