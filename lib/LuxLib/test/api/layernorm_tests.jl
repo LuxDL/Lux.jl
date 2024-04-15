@@ -2,10 +2,10 @@
     using Statistics
 
     function _setup_layernorm(aType, T, x_size, affine_shape)
-        x = randn(T, x_size) |> aType
+        x = __generate_fixed_array(T, x_size) |> aType
         if affine_shape !== nothing
-            scale = randn(T, affine_shape..., 1) |> aType
-            bias = randn(T, affine_shape..., 1) |> aType
+            scale = __generate_fixed_array(T, (affine_shape..., 1)) |> aType
+            bias = __generate_fixed_array(T, (affine_shape..., 1)) |> aType
             return x, scale, bias
         else
             return x, nothing, nothing

@@ -6,9 +6,8 @@
     # Computes (∂f/∂x)u
     function jvp_forwarddiff(f, x, u)
         uu = reshape(u, axes(x))
-        y = ForwardDiff.Dual{
-            typeof(ForwardDiff.Tag(LuxLibTestTag(), eltype(x))), eltype(x),
-            1}.(x, ForwardDiff.Partials.(tuple.(uu)))
+        y = ForwardDiff.Dual{typeof(ForwardDiff.Tag(LuxLibTestTag(), eltype(x))),
+            eltype(x), 1}.(x, ForwardDiff.Partials.(tuple.(uu)))
         return vec(ForwardDiff.partials.(vec(f(y)), 1))
     end
 
@@ -16,23 +15,15 @@
         xx = getdata(x)
         uu = vec(u)
         y = ComponentArray(
-            ForwardDiff.Dual{
-                typeof(ForwardDiff.Tag(LuxLibTestTag(), eltype(x))),
+            ForwardDiff.Dual{typeof(ForwardDiff.Tag(LuxLibTestTag(), eltype(x))),
                 eltype(x), 1}.(xx, ForwardDiff.Partials.(tuple.(uu))),
             getaxes(x))
         return vec(ForwardDiff.partials.(vec(f(y)), 1))
     end
 
     ## This exists exclusively for testing. It has horrifying performance implications
-    function jvp_forwarddiff_concrete(f, x, u)
-        Jₓ = ForwardDiff.jacobian(f, x)
-        return Jₓ * vec(u)
-    end
-
-    function jvp_zygote(f, x, u)
-        Jₓ = only(Zygote.jacobian(f, x))
-        return Jₓ * vec(u)
-    end
+    jvp_forwarddiff_concrete(f, x, u) = ForwardDiff.jacobian(f, x) * vec(u)
+    jvp_zygote(f, x, u) = only(Zygote.jacobian(f, x)) * vec(u)
 
     function test_jvp_computation(f, x, u, on_gpu)
         jvp₁ = jvp_forwarddiff(f, x, u)
@@ -69,8 +60,8 @@
 
                 test_jvp_computation(x -> op(x, w; flipped), x, ux, on_gpu)
                 test_jvp_computation(w -> op(x, w; flipped), w, uw, on_gpu)
-                test_jvp_computation(xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w),
-                    u, on_gpu)
+                test_jvp_computation(
+                    xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u, on_gpu)
             end
         end
     end

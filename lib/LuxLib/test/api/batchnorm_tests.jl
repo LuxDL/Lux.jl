@@ -2,13 +2,13 @@
     rng = get_stable_rng(12345)
 
     function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
-        x = randn(T, sz) |> aType
-        scale = affine ? aType(randn(T, sz[end - 1])) : nothing
-        bias = affine ? aType(randn(T, sz[end - 1])) : nothing
+        x = __generate_fixed_array(T, sz) |> aType
+        scale = affine ? aType(__generate_fixed_array(T, sz[end - 1])) : nothing
+        bias = affine ? aType(__generate_fixed_array(T, sz[end - 1])) : nothing
 
         if track_stats
-            running_mean = randn(T, sz[end - 1]) |> aType
-            running_var = abs2.(randn(T, sz[end - 1])) |> aType
+            running_mean = __generate_fixed_array(T, sz[end - 1]) |> aType
+            running_var = abs2.(__generate_fixed_array(T, sz[end - 1])) |> aType
             return x, scale, bias, running_mean, running_var
         else
             return x, scale, bias, nothing, nothing
@@ -45,8 +45,8 @@
 
             if __istraining(training) && affine
                 fp16 = T == Float16
-                __f = (args...) -> sum(first(batchnorm(x, args..., rm, rv; epsilon,
-                    training, momentum=T(0.9))))
+                __f = (args...) -> sum(first(batchnorm(
+                    x, args..., rm, rv; epsilon, training, momentum=T(0.9))))
                 @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2
             end
         end

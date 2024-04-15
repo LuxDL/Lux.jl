@@ -41,28 +41,33 @@ interface.
 [1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
     on computer vision (ECCV). 2018.
 """
-function groupnorm(x::AA{<:FP_32_64, 4}, scale::AV{<:FP_32_64}, bias::AV{<:FP_32_64};
-        groups::Int, epsilon::Real)
+function groupnorm(x::AbstractArray{<:Union{Float32, Float64}, 4},
+        scale::AbstractVector{<:Union{Float32, Float64}},
+        bias::AbstractVector{<:Union{Float32, Float64}}; groups::Int, epsilon::Real)
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
+                             channels (N - 1 dim of the input array)."))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
+                             number of groups $groups."))
     end
 
     return first(_groupnorm(x, groups, scale, bias, epsilon))
 end
 
 # Slow Fallback (without custom Pullback Implementation)
-function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; groups::Int,
-        epsilon::Real) where {N}
+function groupnorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
+        bias::Union{Nothing, <:AbstractVector}; groups::Int, epsilon::Real) where {N}
     _assert_same_backend(x, scale, bias)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
+                             channels (N - 1 dim of the input array)."))
     end
     if size(x, N - 1) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
+                             number of groups $groups."))
     end
 
     sz = size(x)
@@ -73,25 +78,28 @@ function groupnorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; groups::Int,
     return reshape(x_, sz)
 end
 
-@generated function _get_groupnorm_reduce_dims(::AA{T, N}) where {T, N}
+@generated function _get_groupnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
     return :($(Val(Tuple(collect(1:(N - 1))))))
 end
 
 # Custom Pullbacks
-function CRC.rrule(::typeof(groupnorm), x::AA{<:FP_32_64, 4}, scale::AV{<:FP_32_64},
-        bias::AV{<:FP_32_64}; groups::Int, epsilon::Real)
+function CRC.rrule(::typeof(groupnorm), x::AbstractArray{<:Union{Float32, Float64}, 4},
+        scale::AbstractVector{<:Union{Float32, Float64}},
+        bias::AbstractVector{<:Union{Float32, Float64}}; groups::Int, epsilon::Real)
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of channels (N - 1 dim of the input array)."))
+        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
+                             channels (N - 1 dim of the input array)."))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
+                             number of groups $groups."))
     end
 
     y, μ, σ⁻¹ = _groupnorm(x, groups, scale, bias, epsilon)
-    function ∇groupnorm(Δ)
+    ∇groupnorm = @closure Δ -> begin
         dx, dscale, dbias = _∇groupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
-        return ∂∅, dx, dscale, dbias
+        return CRC.NoTangent(), dx, dscale, dbias
     end
     return y, ∇groupnorm
 end

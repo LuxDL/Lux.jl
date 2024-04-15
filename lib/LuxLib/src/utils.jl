@@ -1,27 +1,15 @@
-# Shorthand Types
-const AA = AbstractArray
-const AV = AbstractVector
-const AM = AbstractMatrix
-const AA3D = AbstractArray{T, 3} where {T}
-const AA4D = AbstractArray{T, 4} where {T}
-const AA5D = AbstractArray{T, 5} where {T}
-const NOrAVR = Union{Nothing, AbstractVector{<:Real}}
-const NOrAVF = Union{Nothing, AbstractVector{<:AbstractFloat}}
-const FP_32_64 = Union{Float32, Float64}
-const ∂∅ = NoTangent()
-
 # Utilities
-_div_idx(idx, n) = div(idx - 1, n) + 1
-_mod_idx(idx, n) = mod(idx - 1, n) + 1
+@inline _div_idx(idx, n) = div(idx - 1, n) + 1
+@inline _mod_idx(idx, n) = mod(idx - 1, n) + 1
 
-_get_backend(::Nothing) = nothing
-function _get_backend(d)
+@inline _get_backend(::Nothing) = nothing
+@inline function _get_backend(d)
     return hasmethod(KA.get_backend, (typeof(d),)) ? KA.get_backend(d) : nothing
 end
-_get_backend(t::Tuple) = _get_backend.(t)
+@inline _get_backend(t::Tuple) = _get_backend.(t)
 
 function __check_all_same_or_nothing(x::Union{AbstractVector, Tuple})
-    for i in 1:length(x)
+    @inbounds for i in eachindex(x)
         x[i] === nothing && continue
         for j in (i + 1):length(x)
             x[j] === nothing && continue
@@ -33,11 +21,13 @@ end
 
 CRC.@non_differentiable _get_backend(::Any)
 
-_assert_same_backend(args...) = _assert_same_backend([args...])
-function _assert_same_backend(xs)
+@inline _assert_same_backend(args...) = _assert_same_backend([args...])
+@inline function _assert_same_backend(xs)
     devs = _get_backend.(xs)
     if !__check_all_same_or_nothing(devs)
-        throw(ArgumentError("All arguments must be on the same backend. This error is encountered if you are calling a function with a mix of CPU and GPU arrays."))
+        throw(ArgumentError("All arguments must be on the same backend. This error is \
+                             encountered if you are calling a function with a mix of CPU \
+                             and GPU arrays."))
     end
     return
 end
@@ -67,10 +57,6 @@ _copy_autodiff_barrier(::Nothing) = nothing
 
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
 
-_replicate(rng::AbstractRNG) = copy(rng)
-
-CRC.@non_differentiable _replicate(::Any)
-
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
@@ -84,3 +70,7 @@ _drop_forwarddiff_partials(x::Tuple) = _drop_forwarddiff_partials.(x)
 function _drop_forwarddiff_partials(x::NamedTuple{N}) where {N}
     return NamedTuple{N}(map(_drop_forwarddiff_partials, values(x)))
 end
+
+# Maybe typecast the array
+@inline _oftype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
+@inline _oftype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)

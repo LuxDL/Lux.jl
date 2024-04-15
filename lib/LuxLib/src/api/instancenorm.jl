@@ -28,8 +28,8 @@ mean and variance.
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
-function instancenorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; training::Val,
-        epsilon::Real) where {N}
+function instancenorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
+        bias::Union{Nothing, <:AbstractVector}; training::Val, epsilon::Real) where {N}
     _test_valid_instancenorm_arguments(x)
 
     x_, xm, xv = _normalization(x, nothing, nothing, scale, bias,
@@ -38,11 +38,11 @@ function instancenorm(x::AA{<:Real, N}, scale::NOrAVR, bias::NOrAVR; training::V
     return x_, (; running_mean=xm, running_var=xv)
 end
 
-@generated function _get_instancenorm_reduce_dims(::AA{T, N}) where {T, N}
+@generated function _get_instancenorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
     return :($(Val(Tuple([1:(N - 2)]...))))
 end
 
-function _test_valid_instancenorm_arguments(x::AA{T, N}) where {T, N}
+function _test_valid_instancenorm_arguments(::AbstractArray{T, N}) where {T, N}
     N > 2 || throw(ArgumentError("`ndims(x) = $(N)` must be at least 2."))
     return nothing
 end
