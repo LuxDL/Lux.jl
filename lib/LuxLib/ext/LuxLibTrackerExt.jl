@@ -8,6 +8,38 @@ using Tracker: Tracker, @grad, TrackedArray, TrackedVector, TrackedReal
 
 const CRC = ChainRulesCore
 
+# Macro to load chainrules to Tracker
+function LuxLib.__tracker_grad_from_chainrules(__source__, __module__, fcall)
+    Meta.isexpr(fcall, :call) && length(fcall.args) ≥ 2 ||
+        error("`@tracked_grad_from_chainrules` has to be applied to a function signature")
+    f = fcall.args[1]
+    kws_var = Meta.isexpr(fcall.args[2], :parameters) ? fcall.args[2].args[1].args[1] : :()
+    rem_args = Meta.isexpr(fcall.args[2], :parameters) ? fcall.args[3:end] :
+               fcall.args[2:end]
+    xs = map(rem_args) do x
+        Meta.isexpr(x, :(::)) || return x
+        length(x.args) == 1 && return :($(gensym())::$(x.args[1])) # ::T without var name
+        @assert length(x.args) == 2
+        return :($(x.args[1])::$(x.args[2])) # x::T
+    end
+    xs_untyped = map(xs) do x
+        Meta.isexpr(x, :(::)) || return x
+        return x.args[1]
+    end
+    tracked_args = Int[]
+    foreach(enumerate(xs)) do (i, x)
+        Meta.isexpr(x, :(::)) || return
+        x.args[2] in (:TrackedArray, :TrackedVector, :TrackedMatrix) || return
+        push!(tracked_args, i)
+    end
+    @assert length(tracked_args) > 0 "No tracked arguments found."
+    return esc(quote
+        function $(f)($(xs...); $(kws_var)...)
+            return Tracker.track($(f), $(xs_untyped...); $(kws_var)...)
+        end
+    end)
+end
+
 # NNlib: batched_mul
 for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
     LuxLib.__is_tracked(T1, T2) || continue

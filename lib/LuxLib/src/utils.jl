@@ -74,3 +74,11 @@ end
 # Maybe typecast the array
 @inline _oftype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 @inline _oftype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
+
+# Import chain rules to tracker with a syntax similar to ReverseDiff's
+# `@grad_from_chainrules`. Needs Tracker.jl to be explicit loaded
+macro tracker_grad_from_chainrules(expr)
+    return __tracker_grad_from_chainrules(__source__, __module__, expr)
+end
+
+function __tracker_grad_from_chainrules end

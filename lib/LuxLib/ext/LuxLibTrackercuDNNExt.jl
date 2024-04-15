@@ -40,11 +40,10 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
     end
 end
 
-@inline __make_nothing(x) = x
-@inline __make_nothing(::typeof(CU_NULL)) = 0
-
 Tracker.@grad function LuxLib.batchnorm_cudnn(
         running_mean, running_var, scale, bias, x, momentum, eps, training)
+    training === Val(false) &&
+        @warn "`training=Val(false)` but gradient was called." maxlog=1
     y, xmean, xivar = LuxLib.batchnorm_cudnn(
         Tracker.data(running_mean), Tracker.data(running_var), Tracker.data(scale),
         Tracker.data(bias), Tracker.data(x), momentum, eps, training)
@@ -55,7 +54,7 @@ Tracker.@grad function LuxLib.batchnorm_cudnn(
             Tracker.data(running_mean), Tracker.data(running_var), xmean, xivar; ϵ=eps)
         return (nothing, nothing, ∂g, ∂b, ∂x, nothing, nothing, nothing)
     end
-    return (y, __make_nothing(xmean), __make_nothing(xivar)), ∇batchnorm_cudnn_internal
+    return (y, xmean, xivar), ∇batchnorm_cudnn_internal
 end
 
 end
