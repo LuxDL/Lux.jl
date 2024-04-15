@@ -32,7 +32,7 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
 
     LuxLib.__is_tracked(RM, RV, S, B, XT) || continue
 
-    @eval LuxLib.@tracker_grad_from_chainrules LuxLib.batchnorm_cudnn(
+    @eval Tracker.@grad_from_chainrules LuxLib.batchnorm_cudnn(
         running_mean::$RM, running_var::$RV, scale::$S, bias::$B,
         x::$XT, momentum::Real, eps::Real, training::Val)
 end
