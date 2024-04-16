@@ -56,6 +56,12 @@ const advanced = [
     src: "../gravitational_waveform.png",
     caption: "Neural ODE to Model Gravitational Waveforms",
     desc: "Training a Neural ODE to fit simulated data of gravitational waveforms."
+  },
+  {
+    href: "advanced/2_SymbolicOptimalControl",
+    src: "../symbolic_optimal_control.png",
+    caption: "Optimal Control with Symbolic UDE",
+    desc: "Train a UDE and replace a part of it with Symbolic Regression."
   }
 ];
 

@@ -38,6 +38,8 @@ const CRC = ChainRulesCore
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
 
+@inline _is_extension_loaded(::Val) = false
+
 # Utilities
 include("utils.jl")
 
@@ -48,6 +50,7 @@ include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
 include("layers/recurrent.jl")
+include("layers/extension.jl")
 
 # Pretty Printing
 include("layers/display.jl")
@@ -93,7 +96,10 @@ export @compact, CompactLuxLayer
 
 export f16, f32, f64
 
-export transform, FromFluxAdaptor, ToSimpleChainsAdaptor, FluxLayer, SimpleChainsLayer
+export transform
+export FromFluxAdaptor, FluxLayer
+export ToSimpleChainsAdaptor, SimpleChainsLayer
+export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
 

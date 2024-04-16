@@ -237,6 +237,12 @@ for f in (f16, f32, f64)
     end
 end
 
+# Stack using vcat and mapreduce
+# FIXME: Just use `stack` once the rrule is fixed upstream
+@inline __stack1(xs) = mapfoldl(__expanddims1, vcat, xs)
+
+@inline __expanddims1(x) = reshape(x, 1, size(x)...)
+
 # Used in freezing
 ## Extend for custom types
 @inline function _pairs(x)
