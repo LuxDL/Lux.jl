@@ -3,9 +3,11 @@ module LuxLib
 using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
+    using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore
     using FastClosures: @closure
     using KernelAbstractions: KernelAbstractions, @Const, @index, @kernel
+    using LinearAlgebra: LinearAlgebra, mul!
     using LuxCore: LuxCore
     using Markdown: @doc_str
     using NNlib: NNlib
@@ -24,6 +26,7 @@ include("utils.jl")
 # Low-Level Implementations
 include("impl/groupnorm.jl")
 include("impl/normalization.jl")
+include("impl/fused_dense.jl")
 
 # User Facing
 include("api/batchnorm.jl")
@@ -33,5 +36,6 @@ include("api/instancenorm.jl")
 include("api/layernorm.jl")
 
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
+export fused_dense_bias_activation
 
 end

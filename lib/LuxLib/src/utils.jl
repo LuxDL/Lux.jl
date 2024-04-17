@@ -74,3 +74,12 @@ end
 # Maybe typecast the array
 @inline _oftype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 @inline _oftype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
+
+## This part is taken from NNlib.jl
+# This just saves typing `only.(only.(` many times:
+@inline only_derivative(y, f::F, x) where {F} = only(only(CRC.derivatives_given_output(
+    y, f, x)))
+
+# This has no methods, used for testing whether `derivatives_given_output(Ω, f, x)`
+# is independent of `x`, as `_return_type` says `Union{}` when calling is an error.
+struct NotaNumber <: Real end

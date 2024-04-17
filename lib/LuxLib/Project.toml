@@ -4,9 +4,11 @@ authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "0.3.14"
 
 [deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 FastClosures = "9aa1b823-49e4-5ca5-8b0f-3971ec8bab6a"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
@@ -34,6 +36,7 @@ LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 [compat]
 AMDGPU = "0.8.4"
 Aqua = "0.8.7"
+ArrayInterface = "7.9"
 CUDA = "5.2"
 ChainRulesCore = "1.23"
 ComponentArrays = "0.15.8"
