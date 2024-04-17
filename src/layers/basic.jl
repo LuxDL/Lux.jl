@@ -197,7 +197,7 @@ end
 function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias}
     if use_bias
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
-            bias=d.init_bias(rng, d.out_dims, 1))
+            bias=d.init_bias(rng, d.out_dims, 1)) #TODO: In v0.6 make it a vector
     else
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
@@ -210,32 +210,19 @@ statelength(d::Dense) = 0
 
 outputsize(d::Dense) = (d.out_dims,)
 
-@inline function (d::Dense{false})(x::AbstractVecOrMat, ps, st::NamedTuple)
-    return apply_activation(d.activation, ps.weight * x), st
+@inline function (d::Dense)(x::AbstractVector, ps, st::NamedTuple)
+    return vec(first(d(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (d::Dense{false})(x::AbstractArray, ps, st::NamedTuple)
-    x_reshaped = reshape(x, size(x, 1), :)
+@inline function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
     return (
-        reshape(apply_activation(d.activation, ps.weight * x_reshaped),
-            d.out_dims, size(x)[2:end]...),
+        fused_dense_bias_activation(
+            d.activation, ps.weight, x, _vec(_getproperty(ps, Val(:bias)))),
         st)
 end
 
-@inline function (d::Dense{true})(x::AbstractVector, ps, st::NamedTuple)
-    return apply_bias_activation(d.activation, ps.weight * x, vec(ps.bias)), st
-end
-
-@inline function (d::Dense{true})(x::AbstractMatrix, ps, st::NamedTuple)
-    return apply_bias_activation(d.activation, ps.weight * x, ps.bias), st
-end
-
-@inline function (d::Dense{true})(x::AbstractArray, ps, st::NamedTuple)
-    x_reshaped = reshape(x, size(x, 1), :)
-    return (
-        reshape(apply_bias_activation(d.activation, ps.weight * x_reshaped, ps.bias),
-            d.out_dims, size(x)[2:end]...),
-        st)
+@inline function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
+    return reshape(first(d(reshape(x, size(x, 1), :), ps, st), :, size(x)[2:end]...)), st
 end
 
 """
