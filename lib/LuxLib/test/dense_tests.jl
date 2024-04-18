@@ -1,4 +1,4 @@
-@testitem "Fused Dense Bias Activation" setup=[SharedTestSetup] begin
+@testitem "Fused Dense Bias Activation" tags=[:nworkers] setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, on_gpu) in MODES
@@ -10,7 +10,8 @@
             for M in (4, 8),
                 N in (4, 8),
                 hasbias in (true, false),
-                activation in (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu)
+                activation in (
+                    identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, x -> x^3)
 
                 bias = hasbias ? __generate_fixed_array(Tw, M) |> aType : nothing
                 w = __generate_fixed_array(Tw, M, N) |> aType
