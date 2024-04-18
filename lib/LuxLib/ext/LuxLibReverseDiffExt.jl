@@ -10,11 +10,11 @@ const CRC = ChainRulesCore
 # Patches: Needs upstreaming
 @inline function ReverseDiff.increment_deriv!(
         t::Union{TrackedArray, TrackedReal}, ::CRC.NoTangent, i)
-    return ReverseDiff.increment_deriv!(t, zero(eltype(value(t))), i)
+    return ReverseDiff.increment_deriv!(t, zero(eltype(ReverseDiff.value(t))), i)
 end
 @inline function ReverseDiff.decrement_deriv!(
         t::Union{TrackedArray, TrackedReal}, ::CRC.NoTangent, i)
-    return ReverseDiff.decrement_deriv!(t, zero(eltype(value(t))), i)
+    return ReverseDiff.decrement_deriv!(t, zero(eltype(ReverseDiff.value(t))), i)
 end
 
 # utils.jl
