@@ -1,9 +1,9 @@
-@testitem "Aqua: Quality Assurance" begin
+@testitem "Aqua: Quality Assurance" tags=[:nworkers] begin
     using Aqua
     Aqua.test_all(LuxLib)
 end
 
-@testitem "Explicit Imports" begin
+@testitem "Explicit Imports" tags=[:nworkers] begin
     import cuDNN, CUDA, ForwardDiff, ReverseDiff, Tracker, AMDGPU, NNlib
 
     using ExplicitImports

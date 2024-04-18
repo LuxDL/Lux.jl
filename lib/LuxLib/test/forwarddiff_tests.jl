@@ -1,4 +1,4 @@
-@testitem "Efficient JVPs" setup=[SharedTestSetup] begin
+@testitem "Efficient JVPs" tags=[:nworkers] setup=[SharedTestSetup] begin
     using ForwardDiff, Zygote, ComponentArrays
 
     struct LuxLibTestTag end

@@ -27,7 +27,8 @@ end
 export _setup_groupnorm, _groupnorm_generic_fallback
 end
 
-@testitem "Group Normalization KernelAbstractions" setup=[SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Normalization KernelAbstractions" tags=[:nworkers] setup=[
+    SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, ngroups $groups" for T in (Float32, Float64),
             sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
@@ -70,7 +71,8 @@ end
     end
 end
 
-@testitem "Group Normalization Generic Fallback" setup=[SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Normalization Generic Fallback" tags=[:nworkers] setup=[
+    SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16, Float32, Float64),
             sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),

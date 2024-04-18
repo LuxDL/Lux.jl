@@ -1,4 +1,4 @@
-@testitem "Batch Normalization" setup=[SharedTestSetup] begin
+@testitem "Batch Normalization" tags=[:nworkers] setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
     function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
