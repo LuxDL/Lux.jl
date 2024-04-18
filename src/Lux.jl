@@ -29,6 +29,8 @@ using PrecompileTools: @recompile_invalidations
 
     # @compact specific
     using MacroTools: block, combinedef, splitdef
+
+    # @compact and stateful layers
     using ConstructionBase: ConstructionBase
 end
 

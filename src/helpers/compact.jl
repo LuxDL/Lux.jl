@@ -289,6 +289,10 @@ function supportself(fex::Expr, vars, splatted_kwargs)
             :($var = $(__maybe_make_stateful)($(_getproperty)($self, $(Val(var))),
                 $(_getproperty)($ps, $(Val(var))), $(_getproperty)($st, $(Val(var))))))
     end
+    for var in splatted_kwargs
+        push!(
+            calls, :($var = $(_getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
+    end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
     body = Expr(:let, Expr(:block, calls...), sdef[:body])
     sdef[:body] = body
@@ -356,7 +360,11 @@ function initialparameters(rng::AbstractRNG, m::CompactLuxLayer)
 end
 
 function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
-    return (; initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...)
+    base_states = (;
+        initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...)
+    length(first(m.stored_kwargs)) == 0 && return base_states
+    return merge(
+        base_states, (; ₋₋₋kwargs₋₋₋=NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])))
 end
 
 function __try_make_lux_layer(x::Union{AbstractVector, Tuple})
@@ -406,12 +414,8 @@ function CompactLuxLayer{dispatch}(
         end
     end
 
-    for (kw_name, kw_val) in zip(splatted_kwargs[1], splatted_kwargs[2])
-        push!(others, kw_name => kw_val)
-    end
-
     return CompactLuxLayer{dispatch}(f, name, str, setup_strings, NamedTuple((; layers...)),
-        ValueStorage(; others...), nothing)
+        ValueStorage(; others...), splatted_kwargs)
 end
 
 function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
@@ -469,6 +473,7 @@ function __kwarg_descriptor(val)
     val isa Number && return string(val)
     val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
     val isa Tuple && return "(" * join(map(__kwarg_descriptor, val), ", ") * ")"
+    val isa Nothing && return "nothing"
     if val isa NamedTuple
         fields = fieldnames(typeof(val))
         strs = []

@@ -6,9 +6,9 @@
     This is not a Lux.AbstractExplicitLayer
 
 A convenience wrapper over Lux layers which stores the parameters and states internally.
-Most users should not be using this version. This comes handy when Lux internally uses
-the `@compact` to construct models and in SciML codebases where propagating state might
-involving [`Box`ing](https://github.com/JuliaLang/julia/issues/15276).
+This is meant to be used in internal implementation of layers. This comes handy when Lux
+internally uses the `@compact` to construct models and in SciML codebases where propagating
+state might involving [`Box`ing](https://github.com/JuliaLang/julia/issues/15276).
 
 For a motivating example, see the Neural ODE tutorial.
 
@@ -50,6 +50,10 @@ end
 @inline LuxCore.statelength(m::StatefulLuxLayer) = LuxCore.statelength(m.model)
 @inline LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
 
+function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {FT}
+    return StatefulLuxLayer{FT}
+end
+
 StatefulLuxLayer(model, st; kwargs...) = StatefulLuxLayer(model, nothing, st; kwargs...)
 function StatefulLuxLayer(model, ps, st; st_fixed_type::Val{ST}=Val(true)) where {ST}
     ST && return StatefulLuxLayer{ST}(model, ps, st, nothing)
@@ -71,8 +75,8 @@ end
 ## Only needed when the parameters are `nothing`
 function CRC.rrule(::Type{<:StatefulLuxLayer}, model::AbstractExplicitLayer, ::Nothing, st)
     slayer = StatefulLuxLayer(model, st)
-    function ∇StatefulLuxLayer(Δ::Union{CRC.ZeroTangent, CRC.NoTangent})
-        return (NoTangent(), NoTangent(), NoTangent(), NoTangent())
+    function ∇StatefulLuxLayer(::Union{CRC.ZeroTangent, CRC.NoTangent})
+        return ntuple(Returns(NoTangent()), 4)
     end
     return slayer, ∇StatefulLuxLayer
 end
