@@ -34,6 +34,7 @@ include("api/dropout.jl")
 include("api/groupnorm.jl")
 include("api/instancenorm.jl")
 include("api/layernorm.jl")
+include("api/dense.jl")
 
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation

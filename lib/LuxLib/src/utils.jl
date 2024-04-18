@@ -83,3 +83,21 @@ end
 # This has no methods, used for testing whether `derivatives_given_output(Ω, f, x)`
 # is independent of `x`, as `_return_type` says `Union{}` when calling is an error.
 struct NotaNumber <: Real end
+
+# Check no setindexing
+@inline __any_immutable_array(x...) = any(__is_immutable_array, x)
+@inline __is_immutable_array(x::AbstractArray) = !ArrayInterface.can_setindex(x)
+@inline __is_immutable_array(::Nothing) = false
+
+CRC.@non_differentiable __any_immutable_array(::Any...)
+
+@inline function __is_mixed_precision(args...)
+    idx = findfirst(Base.Fix2(isa, AbstractArray), args)
+    T = eltype(args[idx])
+    for arg in args[(idx + 1):end]
+        arg isa AbstractArray && T != eltype(arg) && return true
+    end
+    return false
+end
+
+CRC.@non_differentiable __is_mixed_precision(::Any...)
