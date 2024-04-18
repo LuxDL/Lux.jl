@@ -1,4 +1,4 @@
-@testitem "Layer Normalization" setup=[SharedTestSetup] begin
+@testitem "Layer Normalization" tags=[:nworkers] setup=[SharedTestSetup] begin
     using Statistics
 
     function _setup_layernorm(aType, T, x_size, affine_shape)

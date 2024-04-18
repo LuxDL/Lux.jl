@@ -18,7 +18,6 @@ steps:
           cuda: "*"
         env:
           GROUP: "CUDA"
-          RETESTITEMS_NWORKERS: 0  # Distributed is causing stalling issues with CUDA
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 60
         matrix:

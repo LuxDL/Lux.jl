@@ -1,4 +1,4 @@
-@testitem "Dropout" setup=[SharedTestSetup] begin
+@testitem "Dropout" tags=[:nworkers] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = get_stable_rng(12345)
@@ -39,7 +39,7 @@
     end
 end
 
-@testitem "Dropout with Preset Mask" setup=[SharedTestSetup] begin
+@testitem "Dropout with Preset Mask" tags=[:nworkers] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = get_stable_rng(12345)
@@ -129,7 +129,7 @@ end
     end
 end
 
-@testitem "Alpha Dropout" setup=[SharedTestSetup] begin
+@testitem "Alpha Dropout" tags=[:nworkers] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = get_stable_rng(12345)

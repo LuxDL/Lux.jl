@@ -1,4 +1,4 @@
-@testitem "Instance Normalization" setup=[SharedTestSetup] begin
+@testitem "Instance Normalization" tags=[:singleworker] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = get_stable_rng(12345)
