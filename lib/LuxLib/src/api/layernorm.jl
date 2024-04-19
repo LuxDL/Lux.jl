@@ -37,6 +37,5 @@ end
 
 function layernorm(x::AbstractArray, ::Nothing, ::Nothing; dims, epsilon)
     _mean = mean(x; dims)
-    rstd = 1 ./ (std(x; dims, mean=_mean, corrected=false) .+ epsilon)
-    return (x .- _mean) .* rstd
+    return (x .- _mean) ./ (std(x; dims, mean=_mean, corrected=false) .+ epsilon)
 end

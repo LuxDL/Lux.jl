@@ -5,7 +5,7 @@
 end
 
 # This implementation is different from `conv_bias_act` in that it defines the proper rrules
-# and fuses operations into a single kernel if it is possible. Unfortinately there are
+# and fuses operations into a single kernel if it is possible. Unfortunately there are
 # certain configurations where CUDNN allows caching intermediates, but we don't do that rn.
 
 @inline function __fused_conv_bias_activation_impl(

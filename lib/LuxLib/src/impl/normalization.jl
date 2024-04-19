@@ -41,37 +41,41 @@ end
     return Expr(:block, calls...)
 end
 
-@generated function _affine_normalize(x::AbstractArray, xmean::ST, xvar::ST,
-        scale::A, bias::A, epsilon::Real) where {ST, A}
-    if A != Nothing
-        return quote
-            x_norm = (x .- xmean) ./ sqrt.(xvar .+ epsilon)
-            return scale .* x_norm .+ bias
-        end
-    else
-        return :(return (x .- xmean) ./ sqrt.(xvar .+ epsilon))
-    end
-end
-
-function _normalization_impl(x::AbstractArray, running_mean::R, running_var::R,
-        scale::A, bias::A, r::Val{reduce_dims}, training::Val,
-        momentum::Union{Real, Nothing}, epsilon::Real) where {R, A, reduce_dims}
+function _normalization_impl(
+        x::AbstractArray, running_mean::R, running_var::R, scale::A, bias::A,
+        r::Val{reduce_dims}, training::Val, momentum::Union{Real, Nothing},
+        epsilon::Real, act::F=identity) where {R, A, reduce_dims, F}
     _stats = _get_batch_statistics(x, running_mean, running_var, r, training, momentum)
     (batchmean, batchvar), (running_mean, running_var) = _stats
-    x_norm = _affine_normalize(x, batchmean, batchvar, scale, bias, epsilon)
+    x_norm = _affine_normalize(act, x, batchmean, batchvar, scale, bias, epsilon)
     return (x_norm, running_mean, running_var)
 end
 
 function _normalization(x::AbstractArray, running_mean::Union{Nothing, <:AbstractVector},
         running_var::Union{Nothing, <:AbstractVector},
         scale::Union{Nothing, <:AbstractVector},
-        bias::Union{Nothing, <:AbstractVector}, reduce_dims::Val,
-        training::Val, momentum::Union{Real, Nothing}, epsilon::Real)
+        bias::Union{Nothing, <:AbstractVector}, reduce_dims::Val, training::Val,
+        momentum::Union{Real, Nothing}, epsilon::Real, act::F=identity) where {F}
     rm_ = _reshape_into_proper_shape(running_mean, x)
     rv_ = _reshape_into_proper_shape(running_var, x)
     s_ = _reshape_into_proper_shape(scale, x)
     b_ = _reshape_into_proper_shape(bias, x)
     x_, rm, rv = _normalization_impl(
-        x, rm_, rv_, s_, b_, reduce_dims, training, momentum, epsilon)
+        x, rm_, rv_, s_, b_, reduce_dims, training, momentum, epsilon, act)
     return x_, _vec(rm), _vec(rv)
+end
+
+function _affine_normalize(act::F, x::AbstractArray, xmean::ST, xvar::ST,
+        scale::A, bias::A, epsilon::Real) where {F, ST, A}
+    bfn = act === identity ? __affine_normalize_broadcast_fn :
+          identity ∘ __affine_normalize_broadcast_fn
+    scale === nothing && return @. bfn(x, xmean, xvar, epsilon)
+    return @. bfn(x, xmean, xvar, scale, bias, epsilon)
+end
+
+@inline function __affine_normalize_broadcast_fn(xᵢ, μᵢ, σ²ᵢ, γᵢ, βᵢ, ϵ)
+    return ((xᵢ .- μᵢ) ./ sqrt.(σ²ᵢ .+ ϵ)) .* γᵢ .+ βᵢ
+end
+@inline function __affine_normalize_broadcast_fn(xᵢ, μᵢ, σ²ᵢ, ϵ)
+    return (xᵢ .- μᵢ) ./ sqrt.(σ²ᵢ .+ ϵ)
 end

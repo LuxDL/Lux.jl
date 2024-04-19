@@ -29,6 +29,7 @@ include("impl/groupnorm.jl")
 include("impl/normalization.jl")
 include("impl/fused_dense.jl")
 include("impl/fused_conv.jl")
+include("impl/fast_activation.jl")
 
 # User Facing
 include("api/batchnorm.jl")
@@ -38,8 +39,10 @@ include("api/instancenorm.jl")
 include("api/layernorm.jl")
 include("api/dense.jl")
 include("api/conv.jl")
+include("api/fast_activation.jl")
 
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
+export fast_activation!!
 
 end

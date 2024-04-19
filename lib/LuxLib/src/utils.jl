@@ -113,11 +113,11 @@ end
         b::Union{Nothing, <:AbstractArray}) where {F, Tw, Tx}
     if b === nothing
         Ty = promote_type(Tw, Tx)
-        Tact = Core.Compiler.return_type(act, Tuple{Ty})
+        Tact = Core.Compiler._return_type(act, Tuple{Ty})
         return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
     end
     Ty = promote_type(Tw, Tx, eltype(b))
-    Tact = Core.Compiler.return_type(act, Tuple{Ty})
+    Tact = Core.Compiler._return_type(act, Tuple{Ty})
     return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
 end
 

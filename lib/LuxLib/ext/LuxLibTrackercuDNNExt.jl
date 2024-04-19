@@ -16,12 +16,12 @@ const TR_BNParamType = Union{
 
 function LuxLib.batchnorm(
         x::TR_CUDNN_BN_ARRAY_TYPE, scale::TR_BNParamType, bias::TR_BNParamType,
-        running_mean::TR_BNParamType, running_var::TR_BNParamType;
-        momentum::Real, training::Val, epsilon::Real)
+        running_mean::TR_BNParamType, running_var::TR_BNParamType,
+        σ::F=identity; momentum::Real, training::Val, epsilon::Real) where {F}
     rm, rv = LuxLib._get_batchnorm_statistics(x, running_mean, running_var, training)
     # NOTE: The following returns a tracked tuple so we can't do `first` on it
     x_ = LuxLib.batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training)[1]
-    return x_, (; running_mean=rm, running_var=rv)
+    return LuxLib.fast_activation!!(σ, x_), (; running_mean=rm, running_var=rv)
 end
 
 for RM in (:TrackedVector, :Nothing, :AbstractVector),
