@@ -110,8 +110,7 @@ function CRC.rrule(::typeof(__fused_conv_bias_activation_impl), act::F,
     T = __get_concrete_fba_output_eltype(act, weight, x, bias)
     y = similar(x, T, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
 
-    if act === relu ||
-       isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
+    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
         if act === relu
             NNlib.conv_bias_act!(y, x, weight, cdims, bias, act)
         else

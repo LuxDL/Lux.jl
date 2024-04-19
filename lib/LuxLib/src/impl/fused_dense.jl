@@ -51,11 +51,16 @@ function CRC.rrule(::typeof(__fused_dense_bias_activation_impl), ::typeof(identi
 end
 
 function __fused_dense_bias_activation_impl(
-        act::F, weight::AbstractMatrix, x::AbstractMatrix, ::Nothing) where {F}
+        act::F, weight::AbstractMatrix, x::AbstractMatrix,
+        b::Union{Nothing, AbstractVector}) where {F}
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, nothing),
         size(weight, 1), size(x, 2))
     mul!(y, weight, x)
-    @. y = act(y)
+    if b === nothing
+        @. y = act(y)
+    else
+        @. y = act(y + b)
+    end
     return y
 end
 
@@ -100,15 +105,6 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, CRC.NoTangent()
     end
     return z, ∇__fused_dense_bias_activation_impl_cached
-end
-
-function __fused_dense_bias_activation_impl(
-        act::F, weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector) where {F}
-    y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, b),
-        size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
-    @. y = act(y + b)
-    return y
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
