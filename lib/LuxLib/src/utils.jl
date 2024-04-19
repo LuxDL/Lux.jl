@@ -120,3 +120,35 @@ end
     Tact = Core.Compiler.return_type(act, Tuple{Ty})
     return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
 end
+
+# Helper to add bias and apply activation function
+## This is only meant to be used inside rrules
+@inline function __apply_bias_activation!!(
+        σ::F, x, bias::Union{Nothing, AbstractArray}, ::Val{cache}) where {F, cache}
+    if σ === identity
+        bias === nothing && return x
+        @. x += bias
+        return x
+    end
+    if !cache
+        if bias === nothing
+            @. x = σ(x)
+        else
+            @. x = σ(x + bias)
+        end
+        return x
+    end
+    bias === nothing && return σ.(x), x
+    @. x += bias
+    return σ.(x), x
+end
+
+@inline __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} = @. σ(x + bias)
+@inline __apply_bias_activation(σ::F, x, ::Nothing) where {F} = @. σ(x)
+
+@inline __added_bias_gradient(b::Nothing, Δ) = CRC.NoTangent()
+@inline function __added_bias_gradient(b::AbstractArray, Δ)
+    ∂b = similar(b)
+    sum!(∂b, Δ)
+    return ∂b
+end

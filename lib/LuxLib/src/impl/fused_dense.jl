@@ -27,7 +27,7 @@ end
     return weight * x
 end
 
-function __fused_dense_bias_activation_impl(
+@inline function __fused_dense_bias_activation_impl(
         ::typeof(identity), weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
     y = similar(weight, __get_concrete_fba_output_eltype(identity, weight, x, b),
         size(weight, 1), size(x, 2))
@@ -36,21 +36,7 @@ function __fused_dense_bias_activation_impl(
     return y
 end
 
-function CRC.rrule(::typeof(__fused_dense_bias_activation_impl), ::typeof(identity),
-        weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
-    y = __fused_dense_bias_activation_impl(identity, weight, x, b)
-    ∇__fused_dense_bias_activation_impl = @closure Δ -> begin
-        ∂y = CRC.unthunk(Δ)
-        ∂b = similar(b)
-        sum!(∂b, ∂y)
-        ∂x = weight' * ∂y
-        ∂w = ∂y * x'
-        return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
-    end
-    return y, ∇__fused_dense_bias_activation_impl
-end
-
-function __fused_dense_bias_activation_impl(
+@inline function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Union{Nothing, AbstractVector}) where {F}
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, nothing),
@@ -65,63 +51,21 @@ function __fused_dense_bias_activation_impl(
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(__fused_dense_bias_activation_impl), act::F,
-        weight::AbstractMatrix, x::AbstractMatrix, b::Nothing) where {F}
+        ::typeof(__fused_dense_bias_activation_impl), act::F, weight::AbstractMatrix,
+        x::AbstractMatrix, b::Union{AbstractVector, Nothing}) where {F}
     T = __get_concrete_fba_output_eltype(act, weight, x, b)
     y = similar(weight, T, size(weight, 1), size(x, 2))
     mul!(y, weight, x)
 
     # Case I: Activation Function doesn't require caching the intermediate value
     # See https://github.com/FluxML/NNlib.jl/blob/d85402aa39ddc6386d194e0dad88ab2e514ec5ea/src/bias_act.jl#L59-L60
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
-        @. y = act(y)
+    if act === identity ||
+       isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
+        y = __apply_bias_activation!!(act, y, b, Val(false))
         ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
-            ∂y = only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
-            ∂x = weight' * ∂y
-            ∂w = ∂y * x'
-            return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, CRC.NoTangent()
-        end
-        return y, ∇__fused_dense_bias_activation_impl_no_cached
-    end
-
-    # Case II: We can't overwrite `y` directly, but we can use the direct ChainRules
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
-        z = @. act(y)
-        ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
-            ∂y = only_derivative.(z, act, y) .* CRC.unthunk(Δ)
-            ∂x = weight' * ∂y
-            ∂w = ∂y * x'
-            return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, CRC.NoTangent()
-        end
-        return z, ∇__fused_dense_bias_activation_impl_cached_crc
-    end
-
-    # Case III: Activation Function requires caching the intermediate value
-    z, pb_f = CRC.rrule_via_ad(cfg, Base.Fix1(broadcast, act), y)
-    ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
-        _, ∂y = pb_f(Δ)
-        ∂x = weight' * ∂y
-        ∂w = ∂y * x'
-        return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, CRC.NoTangent()
-    end
-    return z, ∇__fused_dense_bias_activation_impl_cached
-end
-
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(__fused_dense_bias_activation_impl), act::F,
-        weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector) where {F}
-    T = __get_concrete_fba_output_eltype(act, weight, x, b)
-    y = similar(weight, T, size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
-
-    # Case I: Activation Function doesn't require caching the intermediate value
-    # See https://github.com/FluxML/NNlib.jl/blob/d85402aa39ddc6386d194e0dad88ab2e514ec5ea/src/bias_act.jl#L59-L60
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
-        @. y = act(y + b)
-        ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
-            ∂y = only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
-            ∂b = similar(b)
-            sum!(∂b, ∂y)
+            ∂y = act === identity ? CRC.unthunk(Δ) :
+                 only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
+            ∂b = __added_bias_gradient(b, ∂y)
             ∂x = weight' * ∂y
             ∂w = ∂y * x'
             return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
@@ -131,12 +75,10 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
 
     # Case II: We can't overwrite `y` directly, but we can use the direct ChainRules
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
-        @. y += b
-        z = @. act(y)
+        z, y = __apply_bias_activation!!(act, y, b, Val(true))
         ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
             ∂y = only_derivative.(z, act, y) .* CRC.unthunk(Δ)
-            ∂b = similar(b)
-            sum!(∂b, ∂y)
+            ∂b = __added_bias_gradient(b, ∂y)
             ∂x = weight' * ∂y
             ∂w = ∂y * x'
             return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
@@ -145,9 +87,9 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     end
 
     # Case III: Activation Function requires caching the intermediate value
-    z, pb_f = CRC.rrule_via_ad(cfg, @closure((y, b)->@.(act(y + b))), y, b)
+    z, pb_f = CRC.rrule_via_ad(cfg, __apply_bias_activation, act, y, b)
     ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
-        _, ∂y, ∂b = pb_f(Δ)
+        _, _, ∂y, ∂b = pb_f(Δ)
         ∂x = weight' * ∂y
         ∂w = ∂y * x'
         return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
