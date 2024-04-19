@@ -117,11 +117,6 @@ end
 
 # Backend Integration
 ## Convolution
-@inline _conv(x, weight, cdims) = conv(x, weight, cdims)
-@inline function _conv(x::SubArray{T, N, <:AbstractArray}, weight, cdims) where {T, N}
-    return _conv(copy(x), weight, cdims)
-end
-
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
 @inline function _conv_transpose(
         x::SubArray{T, N, <:GPUArraysCore.AnyGPUArray}, weight, cdims) where {T, N}
