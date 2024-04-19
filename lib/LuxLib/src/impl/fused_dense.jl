@@ -1,15 +1,6 @@
-function __generic_dense_bias_activation(::typeof(identity), weight::AbstractMatrix,
-        x::AbstractMatrix, bias::Union{Nothing, AbstractVector})
-    y = weight * x
-    bias === nothing && return y
-    return @. y + bias
-end
-
 function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::AbstractMatrix,
         bias::Union{Nothing, AbstractVector}) where {F}
-    y = weight * x
-    bias === nothing && return @. act(y)
-    return @. act(y + bias)
+    return __apply_bias_activation(act, weight * x, bias)
 end
 
 # Why are we catching the implementation at this point and not in `bias_act!` like NNlib?
@@ -23,31 +14,13 @@ end
 # that we can use to fuse the operations till we get CUBLASLt working.
 
 @inline function __fused_dense_bias_activation_impl(
-        ::typeof(identity), weight::AbstractMatrix, x::AbstractMatrix, ::Nothing)
-    return weight * x
-end
-
-@inline function __fused_dense_bias_activation_impl(
-        ::typeof(identity), weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
-    y = similar(weight, __get_concrete_fba_output_eltype(identity, weight, x, b),
-        size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
-    @. y += b
-    return y
-end
-
-@inline function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Union{Nothing, AbstractVector}) where {F}
+    act === identity && b === nothing && return (weight * x)
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, nothing),
         size(weight, 1), size(x, 2))
     mul!(y, weight, x)
-    if b === nothing
-        @. y = act(y)
-    else
-        @. y = act(y + b)
-    end
-    return y
+    return __apply_bias_activation!!(act, y, b, Val(false))
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
