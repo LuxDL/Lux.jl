@@ -14,23 +14,22 @@
         for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),
-            affine in (true, false)
+            affine in (true, false),
+            act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
 
-            T === Float16 && mode == "AMDGPU" && continue
-
-            _f = (args...) -> instancenorm(args...; epsilon, training)
+            _f = (args...) -> instancenorm(args..., act; epsilon, training)
 
             epsilon = T(1e-5)
             x, scale, bias = _setup_instancenorm(aType, T, sz; affine)
 
-            y, nt = instancenorm(x, scale, bias; epsilon, training)
+            y, nt = instancenorm(x, scale, bias, act; epsilon, training)
 
-            @inferred instancenorm(x, scale, bias; epsilon, training)
+            @inferred instancenorm(x, scale, bias, act; epsilon, training)
             @jet _f(x, scale, bias)
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
 
-            if !affine
+            if !affine && act === identity
                 _target_std = ones(
                     ntuple(_ -> 1, length(sz) - 2)..., size(x)[(end - 1):end]...)
                 @test check_approx(
@@ -40,8 +39,10 @@
 
             if __istraining(training) && affine
                 fp16 = T == Float16
-                __f = (args...) -> sum(first(instancenorm(x, args...; epsilon, training)))
-                @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                __f = (args...) -> sum(first(instancenorm(
+                    x, args..., act; epsilon, training)))
+                skip_fd = act === relu
+                @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
             end
         end
     end

@@ -67,15 +67,13 @@ end
 
 function _affine_normalize(act::F, x::AbstractArray, xmean::ST, xvar::ST,
         scale::A, bias::A, epsilon::Real) where {F, ST, A}
-    bfn = act === identity ? __affine_normalize_broadcast_fn :
-          identity ∘ __affine_normalize_broadcast_fn
-    scale === nothing && return @. bfn(x, xmean, xvar, epsilon)
-    return @. bfn(x, xmean, xvar, scale, bias, epsilon)
-end
-
-@inline function __affine_normalize_broadcast_fn(xᵢ, μᵢ, σ²ᵢ, γᵢ, βᵢ, ϵ)
-    return ((xᵢ .- μᵢ) ./ sqrt.(σ²ᵢ .+ ϵ)) .* γᵢ .+ βᵢ
-end
-@inline function __affine_normalize_broadcast_fn(xᵢ, μᵢ, σ²ᵢ, ϵ)
-    return (xᵢ .- μᵢ) ./ sqrt.(σ²ᵢ .+ ϵ)
+    if scale === nothing
+        act === identity && return @. (x .- xmean) / sqrt(xvar + epsilon)
+        return @. act((x .- xmean) / sqrt(xvar + epsilon))
+    end
+    # Here we reorder the operations a bit for better performance
+    _scale = @. scale / sqrt(xvar + epsilon)
+    _bias = @. bias - xmean * _scale
+    act === identity && return @. x * _scale + _bias
+    return @. act(x * _scale + _bias)
 end
