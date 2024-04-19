@@ -97,7 +97,7 @@ function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArra
             cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL, cuDNN.scalingParameter(T, α),
             cuDNN.scalingParameter(T, β), xd, x, yd, y, gd, g, b, running_μ, running_σ², ϵ)
 
-        return y, CU_NULL, CU_NULL
+        return y, similar(x, zero.(dims)), similar(x, zero.(dims))
     end
 end
 

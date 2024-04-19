@@ -67,7 +67,7 @@
     end
 end
 
-@testitem "ForwardDiff dropout" setup=[SharedTestSetup] begin
+@testitem "ForwardDiff dropout" tags=[:nworkers] setup=[SharedTestSetup] begin
     using ForwardDiff
 
     rng = get_stable_rng(12345)
