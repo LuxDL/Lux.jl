@@ -1,22 +1,15 @@
-# Reference implmentation to verify correctness
+function __generic_dense_bias_activation(::typeof(identity), weight::AbstractMatrix,
+        x::AbstractMatrix, bias::Union{Nothing, AbstractVector})
+    y = weight * x
+    bias === nothing && return y
+    return @. y + bias
+end
+
 function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::AbstractMatrix,
         bias::Union{Nothing, AbstractVector}) where {F}
     y = weight * x
     bias === nothing && return @. act(y)
     return @. act(y + bias)
-end
-
-@inline function __get_concrete_fdba_output_eltype(
-        act::F, ::AbstractMatrix{Tw}, ::AbstractMatrix{Tx},
-        b::Union{Nothing, <:AbstractVector}) where {F, Tw, Tx}
-    if b === nothing
-        Ty = promote_type(Tw, Tx)
-        Tact = Core.Compiler.return_type(act, Tuple{Ty})
-        return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
-    end
-    Ty = promote_type(Tw, Tx, eltype(b))
-    Tact = Core.Compiler.return_type(act, Tuple{Ty})
-    return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
 end
 
 # Why are we catching the implementation at this point and not in `bias_act!` like NNlib?
@@ -35,8 +28,31 @@ end
 end
 
 function __fused_dense_bias_activation_impl(
+        ::typeof(identity), weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
+    y = similar(weight, __get_concrete_fba_output_eltype(identity, weight, x, b),
+        size(weight, 1), size(x, 2))
+    mul!(y, weight, x)
+    @. y += b
+    return y
+end
+
+function CRC.rrule(::typeof(__fused_dense_bias_activation_impl), ::typeof(identity),
+        weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
+    y = __fused_dense_bias_activation_impl(identity, weight, x, b)
+    ∇__fused_dense_bias_activation_impl = @closure Δ -> begin
+        ∂y = CRC.unthunk(Δ)
+        ∂b = similar(b)
+        sum!(∂b, ∂y)
+        ∂x = weight' * ∂y
+        ∂w = ∂y * x'
+        return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
+    end
+    return y, ∇__fused_dense_bias_activation_impl
+end
+
+function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix, ::Nothing) where {F}
-    y = similar(weight, __get_concrete_fdba_output_eltype(act, weight, x, nothing),
+    y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, nothing),
         size(weight, 1), size(x, 2))
     mul!(y, weight, x)
     @. y = act(y)
@@ -46,7 +62,7 @@ end
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fused_dense_bias_activation_impl), act::F,
         weight::AbstractMatrix, x::AbstractMatrix, b::Nothing) where {F}
-    T = __get_concrete_fdba_output_eltype(act, weight, x, b)
+    T = __get_concrete_fba_output_eltype(act, weight, x, b)
     y = similar(weight, T, size(weight, 1), size(x, 2))
     mul!(y, weight, x)
 
@@ -76,7 +92,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     end
 
     # Case III: Activation Function requires caching the intermediate value
-    z, pb_f = CRC.rrule_via_ad(cfg, @closure(y->@.(act(y))), y)
+    z, pb_f = CRC.rrule_via_ad(cfg, Base.Fix1(broadcast, act), y)
     ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
         _, ∂y = pb_f(Δ)
         ∂x = weight' * ∂y
@@ -87,31 +103,8 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
 end
 
 function __fused_dense_bias_activation_impl(
-        ::typeof(identity), weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
-    y = similar(weight, __get_concrete_fdba_output_eltype(identity, weight, x, b),
-        size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
-    @. y += b
-    return y
-end
-
-function CRC.rrule(::typeof(__fused_dense_bias_activation_impl), ::typeof(identity),
-        weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector)
-    y = __fused_dense_bias_activation_impl(identity, weight, x, b)
-    ∇__fused_dense_bias_activation_impl = @closure Δ -> begin
-        ∂y = CRC.unthunk(Δ)
-        ∂b = similar(b)
-        sum!(∂b, ∂y)
-        ∂x = weight' * ∂y
-        ∂w = ∂y * x'
-        return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
-    end
-    return y, ∇__fused_dense_bias_activation_impl
-end
-
-function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector) where {F}
-    y = similar(weight, __get_concrete_fdba_output_eltype(act, weight, x, b),
+    y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     mul!(y, weight, x)
     @. y = act(y + b)
@@ -121,7 +114,7 @@ end
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fused_dense_bias_activation_impl), act::F,
         weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector) where {F}
-    T = __get_concrete_fdba_output_eltype(act, weight, x, b)
+    T = __get_concrete_fba_output_eltype(act, weight, x, b)
     y = similar(weight, T, size(weight, 1), size(x, 2))
     mul!(y, weight, x)
 

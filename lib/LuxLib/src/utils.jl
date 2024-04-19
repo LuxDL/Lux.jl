@@ -101,3 +101,22 @@ CRC.@non_differentiable __any_immutable_array(::Any...)
 end
 
 CRC.@non_differentiable __is_mixed_precision(::Any...)
+
+@inline function __expand_conv_bias_dims(
+        bias::AbstractVector, ::AbstractArray{T, N}) where {T, N}
+    @assert N ≥ 2
+    return reshape(bias, (ntuple(Returns(1), N - 2)..., length(bias), 1))
+end
+
+@inline function __get_concrete_fba_output_eltype(
+        act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
+        b::Union{Nothing, <:AbstractArray}) where {F, Tw, Tx}
+    if b === nothing
+        Ty = promote_type(Tw, Tx)
+        Tact = Core.Compiler.return_type(act, Tuple{Ty})
+        return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
+    end
+    Ty = promote_type(Tw, Tx, eltype(b))
+    Tact = Core.Compiler.return_type(act, Tuple{Ty})
+    return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
+end
