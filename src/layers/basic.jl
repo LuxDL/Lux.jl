@@ -222,7 +222,7 @@ end
 end
 
 @inline function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
-    return reshape(first(d(reshape(x, size(x, 1), :), ps, st), :, size(x)[2:end]...)), st
+    return reshape(first(d(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
 end
 
 """

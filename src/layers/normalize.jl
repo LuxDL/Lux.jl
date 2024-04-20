@@ -129,15 +129,15 @@ statelength(l::BatchNorm) = (_track_stats(l) ? 2 * l.chs : 0) + 1
 
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     y, stats = batchnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        _getproperty(st, Val(:running_mean)),
-        _getproperty(st, Val(:running_var)); BN.momentum, BN.epsilon, st.training)
+        _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var)),
+        BN.activation; BN.momentum, BN.epsilon, st.training)
 
     if _track_stats(BN)
         @set! st.running_mean = stats.running_mean
         @set! st.running_var = stats.running_var
     end
 
-    return apply_activation(BN.activation, y), st
+    return y, st
 end
 
 function Base.show(io::IO, l::BatchNorm)
@@ -241,9 +241,9 @@ end
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = groupnorm(x, _getproperty(ps, Val(:scale)),
-        _getproperty(ps, Val(:bias)); GN.groups, GN.epsilon)
-    return apply_activation(GN.activation, y), st
+    y = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+        GN.activation; GN.groups, GN.epsilon)
+    return y, st
 end
 
 function Base.show(io::IO, l::GroupNorm)
@@ -355,9 +355,9 @@ initialstates(rng::AbstractRNG, l::InstanceNorm) = (; training=Val(true))
 parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = instancenorm(x, _getproperty(ps, Val(:scale)),
-        _getproperty(ps, Val(:bias)); IN.epsilon, st.training)
-    return apply_activation(IN.activation, y), st
+    y, stats = instancenorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+        IN.activation; IN.epsilon, st.training)
+    return y, st
 end
 
 function Base.show(io::IO, l::InstanceNorm)
@@ -574,9 +574,9 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = layernorm(
-        x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)); l.dims, l.epsilon)
-    return apply_activation(l.activation, y), st
+    y = layernorm(x, _getproperty(ps, Val(:scale)),
+        _getproperty(ps, Val(:bias)), l.activation; l.dims, l.epsilon)
+    return y, st
 end
 
 function Base.show(io::IO, l::LayerNorm)
