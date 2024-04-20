@@ -1,4 +1,4 @@
-@testitem "Fused Dense Bias Activation" tags=[:nworkers] setup=[SharedTestSetup] begin
+@testitem "Fused Dense Bias Activation" tags=[:nworkers, :common_ops] setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, on_gpu) in MODES

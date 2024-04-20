@@ -56,6 +56,7 @@ function groupnorm(x::AbstractArray{<:Union{Float32, Float64}, 4},
 
     # FIXME: We need to fuse the activation function into the kernel for optimal performance
     return fast_activation!!(σ, __fast_groupnorm(x, groups, scale, bias, epsilon))
+    # return σ.(__fast_groupnorm(x, groups, scale, bias, epsilon))
 end
 
 # Separate this out for a cleaner rrule later on

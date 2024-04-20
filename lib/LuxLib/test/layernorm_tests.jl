@@ -1,4 +1,4 @@
-@testitem "Layer Normalization" tags=[:nworkers] setup=[SharedTestSetup] begin
+@testitem "Layer Normalization" tags=[:nworkers, :normalization] setup=[SharedTestSetup] begin
     using Statistics
 
     function _setup_layernorm(aType, T, x_size, affine_shape)
@@ -13,7 +13,7 @@
     end
 
     @testset "$mode" for (mode, aType, on_gpu) in MODES
-        for T in (Float16, Float32, Float64),
+        @testset "eltype $T, size $x_shape, $act" for T in (Float16, Float32, Float64),
             x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
             affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3])),
             act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)

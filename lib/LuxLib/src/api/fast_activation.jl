@@ -21,6 +21,6 @@ generic implementation.
 """
 @inline function fast_activation!!(σ::F, x::AbstractArray) where {F}
     σ === identity && return x
-    ArrayInterface.can_setindex(x) && __fast_activation_impl!(σ, x)
+    ArrayInterface.can_setindex(x) && return __fast_activation_impl!!(σ, x)
     return σ.(x)
 end

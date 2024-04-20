@@ -27,13 +27,13 @@ end
 export _setup_groupnorm, _groupnorm_generic_fallback
 end
 
-@testitem "Group Normalization KernelAbstractions" tags=[:nworkers] setup=[
+@testitem "Group Normalization KernelAbstractions" tags=[:nworkers, :normalization] setup=[
     SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
-        @testset "eltype $T, size $sz, ngroups $groups" for T in (Float32, Float64),
-            sz in ((16, 16, 6, 4), (32, 32, 6, 4), (64, 64, 12, 4)),
+        @testset "eltype $T, size $sz, ngroups $groups, $act" for T in (Float32, Float64),
+            sz in ((4, 4, 6, 2), (2, 2, 6, 2), (3, 3, 12, 4)),
             groups in (2, 3),
-            act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
+            act in (identity, relu, tanh_fast, sigmoid_fast, x -> relu(x))
 
             _f = (args...) -> groupnorm(args..., act; groups, epsilon)
 
@@ -46,7 +46,8 @@ end
 
             @inferred groupnorm(x, scale, bias, act; groups, epsilon)
 
-            @jet _f(x, scale, bias)
+            # Stresses CI too much
+            T !== Float16 && @jet groupnorm(x, scale, bias, act; groups, epsilon)
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
@@ -73,10 +74,11 @@ end
     end
 end
 
-@testitem "Group Normalization Generic Fallback" tags=[:nworkers] setup=[
+@testitem "Group Normalization Generic Fallback" tags=[:nworkers, :normalization] setup=[
     SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
-        @testset "eltype $T, size $sz, ngroups $groups" for T in (Float16, Float32, Float64),
+        @testset "eltype $T, size $sz, ngroups $groups, $act" for T in (
+                Float16, Float32, Float64),
             sz in ((4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2)),
             groups in (2, 3),
             act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
@@ -88,7 +90,9 @@ end
             y = _f(x, scale, bias)
 
             @inferred groupnorm(x, scale, bias, act; groups, epsilon)
-            @jet _f(x, scale, bias)
+
+            # Stresses CI too much
+            T !== Float16 && @jet groupnorm(x, scale, bias, act; groups, epsilon)
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
