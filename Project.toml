@@ -60,7 +60,7 @@ LuxTrackerExt = "Tracker"
 LuxZygoteExt = "Zygote"
 
 [compat]
-ADTypes = "0.2"
+ADTypes = "0.2, 1"
 Adapt = "4"
 Aqua = "0.8.4"
 ArrayInterface = "7.8"
