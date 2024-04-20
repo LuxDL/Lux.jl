@@ -16,7 +16,10 @@ end
         return NNlib.conv_bias_act(x, weight, cdims, bias, identity)
     end
     # cuDNN has a fused kernel only for relu
-    act === relu && return NNlib.conv_bias_act(x, weight, cdims, bias, act)
+    if act === relu
+        bias !== nothing && return NNlib.conv_bias_act(x, weight, cdims, bias, act)
+        return fast_activation!!(act, conv(x, weight, cdims))
+    end
     # just fusing bias doesn't make sense when we can fuse them both on the julia side
     y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
         NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
@@ -36,7 +39,12 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
        act === identity ||
        isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
         if act === relu || act === identity
-            NNlib.conv_bias_act!(y, x, weight, cdims, bias, act)
+            if bias !== nothing
+                NNlib.conv_bias_act!(y, x, weight, cdims, bias, act)
+            else
+                conv!(y, x, weight, cdims)
+                y = fast_activation!!(act, y)
+            end
         else
             conv!(y, x, weight, cdims)
             y = __apply_bias_activation!!(act, y, bias, Val(false))

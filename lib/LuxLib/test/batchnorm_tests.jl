@@ -35,7 +35,8 @@
                 x, scale, bias, rm, rv, act; epsilon, training, momentum=T(0.9))
 
             # Stresses CI too much
-            T !== Float16 && @jet _f(x, scale, bias, rm, rv)
+            T !== Float16 && @jet batchnorm(
+                x, scale, bias, rm, rv; act, epsilon, training, momentum=T(0.9))
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz

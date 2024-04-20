@@ -24,8 +24,8 @@
 
             x, scale, bias = _setup_layernorm(aType, T, x_shape, affine_shape)
 
-            @inferred _f(x, scale, bias)
-            @jet _f(x, scale, bias)
+            @inferred layernorm(x, scale, bias, act; dims, epsilon)
+            @jet layernorm(x, scale, bias, act; dims, epsilon)
 
             y = _f(x, scale, bias)
 

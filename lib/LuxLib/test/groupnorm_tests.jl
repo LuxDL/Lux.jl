@@ -33,7 +33,7 @@ end
         @testset "eltype $T, size $sz, ngroups $groups, $act" for T in (Float32, Float64),
             sz in ((4, 4, 6, 2), (2, 2, 6, 2), (3, 3, 12, 4)),
             groups in (2, 3),
-            act in (identity, relu, tanh_fast, sigmoid_fast, x -> relu(x))
+            act in (identity, relu, tanh_fast, sigmoid_fast, x -> gelu(x))
 
             _f = (args...) -> groupnorm(args..., act; groups, epsilon)
 
