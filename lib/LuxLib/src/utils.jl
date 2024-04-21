@@ -132,15 +132,23 @@ end
     end
     if !cache
         if bias === nothing
-            @. x = σ(x)
+            if ArrayInterface.fast_scalar_indexing(x)
+                @.. x = σ(x)
+            else
+                @. x = σ(x)
+            end
         else
             @. x = σ(x + bias)
         end
         return x
     end
-    bias === nothing && return σ.(x), x
+    bias === nothing && return __try_fast_broadcast(σ, x), x
     @. x += bias
-    return σ.(x), x
+    return __try_fast_broadcast(σ, x), x
+end
+
+@inline function __try_fast_broadcast(f::F, x) where {F}
+    return ArrayInterface.fast_scalar_indexing(x) ? @..(f(x)) : @.(f(x))
 end
 
 @inline __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} = @. σ(x + bias)

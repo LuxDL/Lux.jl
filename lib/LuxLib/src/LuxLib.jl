@@ -5,6 +5,7 @@ using PrecompileTools: @recompile_invalidations
 @recompile_invalidations begin
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore
+    using FastBroadcast: @..
     using FastClosures: @closure
     using KernelAbstractions: KernelAbstractions, @Const, @index, @kernel
     using LinearAlgebra: LinearAlgebra, mul!

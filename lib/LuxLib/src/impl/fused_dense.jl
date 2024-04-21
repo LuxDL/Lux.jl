@@ -27,14 +27,12 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fused_dense_bias_activation_impl), act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Union{AbstractVector, Nothing}) where {F}
     T = __get_concrete_fba_output_eltype(act, weight, x, b)
-    y = similar(weight, T, size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
 
     # Case I: Activation Function doesn't require caching the intermediate value
     # See https://github.com/FluxML/NNlib.jl/blob/d85402aa39ddc6386d194e0dad88ab2e514ec5ea/src/bias_act.jl#L59-L60
     if act === identity ||
        isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
-        y = __apply_bias_activation!!(act, y, b, Val(false))
+        y = __fused_dense_bias_activation_impl(act, weight, x, b)
         ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
             ∂y = act === identity ? CRC.unthunk(Δ) :
                  only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
@@ -45,6 +43,9 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         end
         return y, ∇__fused_dense_bias_activation_impl_no_cached
     end
+
+    y = similar(weight, T, size(weight, 1), size(x, 2))
+    mul!(y, weight, x)
 
     # Case II: We can't overwrite `y` directly, but we can use the direct ChainRules
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
