@@ -27,6 +27,9 @@
                 @jet fused_dense_bias_activation(activation, w, x, bias)
 
                 __f = (σ, w, x, b) -> sum(abs2, fused_dense_bias_activation(σ, w, x, b))
+
+                @inferred Zygote.gradient(__f, activation, w, x, bias)
+
                 fp16 = Tx == Float16 || Tw == Float16
                 atol = fp16 ? 1.0f-1 : 1.0f-3
                 rtol = fp16 ? 1.0f-1 : 1.0f-3

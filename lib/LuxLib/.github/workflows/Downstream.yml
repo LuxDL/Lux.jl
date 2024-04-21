@@ -57,6 +57,7 @@ jobs:
         env:
           RETESTITEMS_NWORKERS: 4
           RETESTITEMS_NWORKER_THREADS: 2
+          BACKEND_GROUP: ${{ matrix.package.group }}
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext

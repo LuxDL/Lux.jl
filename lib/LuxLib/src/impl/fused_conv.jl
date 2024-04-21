@@ -50,6 +50,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             y = __apply_bias_activation!!(act, y, bias, Val(false))
         end
         ∇__fused_conv_bias_activation_impl_no_cached = @closure Δ -> begin
+            Δ = NNlib.colmajor(Δ)
             ∂y = act === identity ? CRC.unthunk(Δ) :
                  only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
             ∂b = __added_bias_gradient(bias, ∂y)
@@ -66,6 +67,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
         z, y = __apply_bias_activation!!(act, y, bias, Val(true))
         ∇__fused_conv_bias_activation_impl_cached_crc = @closure Δ -> begin
+            Δ = NNlib.colmajor(Δ)
             ∂y = only_derivative.(z, act, y) .* CRC.unthunk(Δ)
             ∂b = __added_bias_gradient(bias, ∂y)
             ∂x = NNlib.∇conv_data(∂y, weight, cdims)
@@ -77,6 +79,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
 
     z, pb_f = CRC.rrule_via_ad(cfg, __apply_bias_activation, act, y, bias)
     ∇__fused_conv_bias_activation_impl_cached = @closure Δ -> begin
+        Δ = NNlib.colmajor(Δ)
         _, ∂y, ∂b = pb_f(Δ)
         ∂x = NNlib.∇conv_data(∂y, weight, cdims)
         ∂w = NNlib.∇conv_filter(x, ∂y, cdims)

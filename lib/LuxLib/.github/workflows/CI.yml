@@ -42,7 +42,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
-          GROUP: "CPU"
+          BACKEND_GROUP: "CPU"
           LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
           RETESTITEMS_NWORKERS: 4
           RETESTITEMS_NWORKER_THREADS: 2

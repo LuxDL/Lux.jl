@@ -1,3 +1,4 @@
+# The cases here are manually split up else Zygote becomes type unstable.
 """
     fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Union{Nothing, AbstractVector}) where {F}
@@ -27,9 +28,38 @@ multiple operations.
     fallback to the generic implementation.
 """
 @inline function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Union{Nothing, AbstractVector}) where {F}
-    (__any_immutable_array(weight, x, b) || __is_mixed_precision(weight, x, b)) &&
-        return __generic_dense_bias_activation(σ, weight, x, b)
+        σ::F, weight::AbstractMatrix{T}, x::AbstractMatrix{T}, b::Nothing) where {F, T}
+    return fused_dense_bias_activation(σ, weight, __is_immutable_array_val(weight), x,
+        __is_immutable_array_val(x), b, __is_immutable_array_val(b))
+end
+
+@inline function fused_dense_bias_activation(
+        σ::F, weight::AbstractMatrix{T}, x::AbstractMatrix{T},
+        b::AbstractVector{T}) where {F, T}
+    return fused_dense_bias_activation(σ, weight, __is_immutable_array_val(weight), x,
+        __is_immutable_array_val(x), b, __is_immutable_array_val(b))
+end
+
+@inline function fused_dense_bias_activation(
+        σ::F, weight::AbstractMatrix, ::Val{false}, x::AbstractMatrix,
+        ::Val{false}, b::Union{Nothing, AbstractVector}, ::Val{false}) where {F}
     return __fused_dense_bias_activation_impl(σ, weight, x, b)
+end
+
+@inline function fused_dense_bias_activation(
+        σ::F, weight::AbstractMatrix, ::Val, x::AbstractMatrix,
+        ::Val, b::Union{Nothing, AbstractVector}, ::Val) where {F}
+    return __generic_dense_bias_activation(σ, weight, x, b)
+end
+
+# Mixed Precision Casex
+@inline function fused_dense_bias_activation(
+        σ::F, weight::AbstractMatrix{wT}, x::AbstractMatrix{xT},
+        b::AbstractVector{bT}) where {F, wT, xT, bT}
+    return __generic_dense_bias_activation(σ, weight, x, b)
+end
+
+@inline function fused_dense_bias_activation(σ::F, weight::AbstractMatrix{wT},
+        x::AbstractMatrix{xT}, b::Nothing) where {F, wT, xT}
+    return __generic_dense_bias_activation(σ, weight, x, b)
 end

@@ -1,3 +1,4 @@
+# The cases here are manually split up else Zygote becomes type unstable.
 """
     fused_conv_bias_activation(σ::F, weight::AbstractArray, x::AbstractArray,
         b::Union{Nothing, AbstractArray}, cdims::ConvDims) where {F}

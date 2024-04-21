@@ -5,11 +5,13 @@ using LuxLib, LuxCUDA, LuxAMDGPU
 @reexport using LuxTestUtils, StableRNGs, Test, Zygote
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
-const GROUP = get(ENV, "GROUP", "All")
+const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
 
-cpu_testing() = GROUP == "All" || GROUP == "CPU"
-cuda_testing() = (GROUP == "All" || GROUP == "CUDA") && LuxCUDA.functional()
-amdgpu_testing() = (GROUP == "All" || GROUP == "AMDGPU") && LuxAMDGPU.functional()
+cpu_testing() = BACKEND_GROUP == "All" || BACKEND_GROUP == "CPU"
+cuda_testing() = (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && LuxCUDA.functional()
+function amdgpu_testing()
+    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && LuxAMDGPU.functional()
+end
 
 const MODES = begin
     # Mode, Array Type, GPU?

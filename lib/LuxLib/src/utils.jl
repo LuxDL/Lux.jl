@@ -86,10 +86,14 @@ struct NotaNumber <: Real end
 
 # Check no setindexing
 @inline __any_immutable_array(x...) = any(__is_immutable_array, x)
-@inline __is_immutable_array(x::AbstractArray) = !ArrayInterface.can_setindex(x)
-@inline __is_immutable_array(::Nothing) = false
 
 CRC.@non_differentiable __any_immutable_array(::Any...)
+
+@inline __is_immutable_array(x::AbstractArray) = !ArrayInterface.can_setindex(x)
+@inline __is_immutable_array(::Nothing) = false
+@inline __is_immutable_array_val(x) = Val(__is_immutable_array(x))
+
+CRC.@non_differentiable __is_immutable_array_val(::Any...)
 
 @inline function __is_mixed_precision(args...)
     idx = findfirst(Base.Fix2(isa, AbstractArray), args)
