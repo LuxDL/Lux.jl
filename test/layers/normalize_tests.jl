@@ -1,4 +1,4 @@
-@testitem "BatchNorm" setup=[SharedTestSetup] begin
+@testitem "BatchNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -104,7 +104,7 @@
     end
 end
 
-@testitem "GroupNorm" setup=[SharedTestSetup] begin
+@testitem "GroupNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -189,7 +189,7 @@ end
     end
 end
 
-@testitem "WeightNorm" setup=[SharedTestSetup] begin
+@testitem "WeightNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -308,7 +308,7 @@ end
     end
 end
 
-@testitem "LayerNorm" setup=[SharedTestSetup] begin
+@testitem "LayerNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -364,7 +364,7 @@ end
     end
 end
 
-@testitem "InstanceNorm" setup=[SharedTestSetup] begin
+@testitem "InstanceNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

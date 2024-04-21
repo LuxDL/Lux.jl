@@ -1,4 +1,4 @@
-@testitem "Layer Map" setup=[SharedTestSetup] begin
+@testitem "Layer Map" setup=[SharedTestSetup] tags=[:contrib] begin
     using Setfield
 
     function zero_dense_params_1(l, ps, st, name)

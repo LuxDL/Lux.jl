@@ -1,4 +1,4 @@
-@testitem "Dynamic Expressions" setup=[SharedTestSetup] begin
+@testitem "Dynamic Expressions" setup=[SharedTestSetup] tags=[:others] begin
     using DynamicExpressions
 
     operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos])

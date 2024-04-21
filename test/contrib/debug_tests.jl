@@ -1,4 +1,4 @@
-@testitem "Debugging Tools: DimensionMismatch" setup=[SharedTestSetup] begin
+@testitem "Debugging Tools: DimensionMismatch" setup=[SharedTestSetup] tags=[:contrib] begin
     using Logging
 
     rng = get_stable_rng(12345)
@@ -43,7 +43,7 @@
     end
 end
 
-@testitem "Debugging Tools: NaN" setup=[SharedTestSetup] begin
+@testitem "Debugging Tools: NaN" setup=[SharedTestSetup] tags=[:contrib] begin
     using Logging, ChainRulesCore
     import ChainRulesCore as CRC
 

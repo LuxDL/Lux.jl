@@ -1,7 +1,7 @@
 steps:
   - group: ":julia: CUDA GPU"
     steps:
-      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
+      - label: ":julia: Julia {{matrix.julia}} + {{matrix.test_group}} + CUDA GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -16,13 +16,22 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         env:
-          GROUP: "CUDA"
+          BACKEND_GROUP: "CUDA"
+          LUX_TEST_GROUP: "{{matrix.test_group}}"
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 240
         matrix:
           setup:
             julia:
               - "1"
+            test_group:
+              - "core_layers"
+              - "contrib"
+              - "helpers"
+              - "distributed"
+              - "normalize_layers"
+              - "others"
+              - "recurrent_layers"
 
   - group: ":telescope: Downstream CUDA"
     steps:
@@ -80,7 +89,7 @@ steps:
 
   - group: ":julia: AMD GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
+      - label: ":julia: Julia: {{matrix.julia}} + {{matrix.test_group}} + AMD GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -96,7 +105,8 @@ steps:
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
-          GROUP: "AMDGPU"
+          BACKEND_GROUP: "AMDGPU"
+          LUX_TEST_GROUP: "{{matrix.test_group}}"
         agents:
           queue: "juliagpu"
           rocm: "*"
@@ -107,6 +117,14 @@ steps:
           setup:
             julia:
               - "1"
+            test_group:
+              - "core_layers"
+              - "contrib"
+              - "helpers"
+              - "distributed"
+              - "normalize_layers"
+              - "others"
+              - "recurrent_layers"
 
   - group: ":telescope: Downstream AMD GPU"
     steps:

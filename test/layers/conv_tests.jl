@@ -1,4 +1,4 @@
-@testitem "Pooling" setup=[SharedTestSetup] begin
+@testitem "Pooling" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -94,7 +94,7 @@
     end
 end
 
-@testitem "CNN" setup=[SharedTestSetup] begin
+@testitem "CNN" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -369,7 +369,7 @@ end
     end
 end
 
-@testitem "Upsample" setup=[SharedTestSetup] begin
+@testitem "Upsample" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -443,7 +443,7 @@ end
     end
 end
 
-@testitem "PixelShuffle" setup=[SharedTestSetup] begin
+@testitem "PixelShuffle" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -475,7 +475,7 @@ end
     end
 end
 
-@testitem "CrossCor" setup=[SharedTestSetup] begin
+@testitem "CrossCor" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -555,7 +555,7 @@ end
     end
 end
 
-@testitem "ConvTranspose" setup=[SharedTestSetup] begin
+@testitem "ConvTranspose" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES

@@ -1,4 +1,4 @@
-@testitem "ToSimpleChainsAdaptor" setup=[SharedTestSetup] begin
+@testitem "ToSimpleChainsAdaptor" setup=[SharedTestSetup] tags=[:others] begin
     import SimpleChains: static
 
     lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),

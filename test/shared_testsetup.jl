@@ -31,7 +31,7 @@ function _rocRAND_functional()
 end
 
 export @jet, @test_gradients, check_approx
-export GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
+export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
        get_stable_rng, __display, _rocRAND_functional
 
 end

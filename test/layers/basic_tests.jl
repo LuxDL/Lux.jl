@@ -1,4 +1,4 @@
-@testitem "Miscellaneous Layers" setup=[SharedTestSetup] begin
+@testitem "Miscellaneous Layers" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -72,7 +72,7 @@
     end
 end
 
-@testitem "Dense" setup=[SharedTestSetup] begin
+@testitem "Dense" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -148,7 +148,7 @@ end
     end
 end
 
-@testitem "Scale" setup=[SharedTestSetup] begin
+@testitem "Scale" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -218,7 +218,7 @@ end
     end
 end
 
-@testitem "Bilinear" setup=[SharedTestSetup] begin
+@testitem "Bilinear" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -312,7 +312,7 @@ end
     end
 end
 
-@testitem "Embedding" setup=[SharedTestSetup] begin
+@testitem "Embedding" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

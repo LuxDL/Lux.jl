@@ -1,4 +1,4 @@
-@testitem "Parameter Sharing" setup=[SharedTestSetup] begin
+@testitem "Parameter Sharing" setup=[SharedTestSetup] tags=[:contrib] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
