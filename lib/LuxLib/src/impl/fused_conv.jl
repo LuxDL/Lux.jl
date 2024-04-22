@@ -1,7 +1,31 @@
 @inline function __generic_conv_bias_activation(
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
+        bias::AbstractArray{bT, N}, cdims::ConvDims) where {wT, xT, bT, N, F}
     return __apply_bias_activation(act, conv(x, weight, cdims), bias)
+end
+
+@inline function __generic_conv_bias_activation(
+        act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
+        bias::Nothing, cdims::ConvDims) where {wT, xT, N, F}
+    return __apply_bias_activation(act, conv(x, weight, cdims), bias)
+end
+
+@inline function __generic_conv_bias_activation(
+        act::F, weight::GPUArraysCore.AnyGPUArray{wT, N},
+        x::GPUArraysCore.AnyGPUArray{xT, N}, bias::GPUArraysCore.AnyGPUArray{bT, N},
+        cdims::ConvDims) where {wT, xT, bT, N, F}
+    T = promote_type(wT, xT)
+    return __apply_bias_activation(
+        act, conv(_oftype_array(T, x), _oftype_array(T, weight), cdims), bias)
+end
+
+@inline function __generic_conv_bias_activation(
+        act::F, weight::GPUArraysCore.AnyGPUArray{wT, N},
+        x::GPUArraysCore.AnyGPUArray{xT, N}, bias::Nothing,
+        cdims::ConvDims) where {wT, xT, N, F}
+    T = promote_type(wT, xT)
+    return __apply_bias_activation(
+        act, conv(_oftype_array(T, x), _oftype_array(T, weight), cdims), bias)
 end
 
 # This implementation is different from `conv_bias_act` in that it defines the proper rrules
@@ -13,11 +37,24 @@ end
         bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     if act === identity
         bias === nothing && return conv(x, weight, cdims)
-        return NNlib.conv_bias_act(x, weight, cdims, bias, identity)
+        if x isa GPUArraysCore.AnyGPUArray
+            # Use vendor specific fused kernels
+            return NNlib.conv_bias_act(x, weight, cdims, bias, identity)
+        else
+            y = conv(x, weight, cdims)
+            return __apply_bias_activation!!(identity, y, bias, Val(false))
+        end
     end
     # cuDNN has a fused kernel only for relu
     if act === relu
-        bias !== nothing && return NNlib.conv_bias_act(x, weight, cdims, bias, act)
+        if bias !== nothing
+            if x isa GPUArraysCore.AnyGPUArray
+                return NNlib.conv_bias_act(x, weight, cdims, bias, relu)
+            else
+                y = conv(x, weight, cdims)
+                return __apply_bias_activation!!(relu, y, bias, Val(false))
+            end
+        end
         return fast_activation!!(act, conv(x, weight, cdims))
     end
     # just fusing bias doesn't make sense when we can fuse them both on the julia side
@@ -40,7 +77,12 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
        isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
         if act === relu || act === identity
             if bias !== nothing
-                NNlib.conv_bias_act!(y, x, weight, cdims, bias, act)
+                if x isa GPUArraysCore.AnyGPUArray
+                    NNlib.conv_bias_act!(y, x, weight, cdims, bias, act)
+                else
+                    conv!(y, x, weight, cdims)
+                    y = __apply_bias_activation!!(act, y, bias, Val(false))
+                end
             else
                 conv!(y, x, weight, cdims)
                 y = fast_activation!!(act, y)
@@ -50,9 +92,8 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             y = __apply_bias_activation!!(act, y, bias, Val(false))
         end
         ∇__fused_conv_bias_activation_impl_no_cached = @closure Δ -> begin
-            Δ = NNlib.colmajor(Δ)
-            ∂y = act === identity ? CRC.unthunk(Δ) :
-                 only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
+            Δ = CRC.unthunk(NNlib.colmajor(Δ))
+            ∂y = act === identity ? Δ : __activation_gradient(Δ, y, act, NotaNumber())
             ∂b = __added_bias_gradient(bias, ∂y)
             ∂x = NNlib.∇conv_data(∂y, weight, cdims)
             ∂w = NNlib.∇conv_filter(x, ∂y, cdims)
@@ -67,8 +108,8 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
         z, y = __apply_bias_activation!!(act, y, bias, Val(true))
         ∇__fused_conv_bias_activation_impl_cached_crc = @closure Δ -> begin
-            Δ = NNlib.colmajor(Δ)
-            ∂y = only_derivative.(z, act, y) .* CRC.unthunk(Δ)
+            Δ = CRC.unthunk(NNlib.colmajor(Δ))
+            ∂y = __activation_gradient(Δ, z, act, y)
             ∂b = __added_bias_gradient(bias, ∂y)
             ∂x = NNlib.∇conv_data(∂y, weight, cdims)
             ∂w = NNlib.∇conv_filter(x, ∂y, cdims)
@@ -80,7 +121,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     z, pb_f = CRC.rrule_via_ad(cfg, __apply_bias_activation, act, y, bias)
     ∇__fused_conv_bias_activation_impl_cached = @closure Δ -> begin
         Δ = NNlib.colmajor(Δ)
-        _, ∂y, ∂b = pb_f(Δ)
+        _, _, ∂y, ∂b = pb_f(Δ)
         ∂x = NNlib.∇conv_data(∂y, weight, cdims)
         ∂w = NNlib.∇conv_filter(x, ∂y, cdims)
         return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b, CRC.NoTangent()

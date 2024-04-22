@@ -7,6 +7,7 @@ using PrecompileTools: @recompile_invalidations
     using ChainRulesCore: ChainRulesCore
     using FastBroadcast: @..
     using FastClosures: @closure
+    using GPUArraysCore: GPUArraysCore
     using KernelAbstractions: KernelAbstractions, @Const, @index, @kernel
     using LinearAlgebra: LinearAlgebra, mul!
     using LuxCore: LuxCore

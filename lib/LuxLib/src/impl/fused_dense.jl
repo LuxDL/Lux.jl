@@ -35,7 +35,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         y = __fused_dense_bias_activation_impl(act, weight, x, b)
         ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
             ∂y = act === identity ? CRC.unthunk(Δ) :
-                 only_derivative.(y, act, NotaNumber()) .* CRC.unthunk(Δ)
+                 __activation_gradient(CRC.unthunk(Δ), y, act, NotaNumber())
             ∂b = __added_bias_gradient(b, ∂y)
             ∂x = weight' * ∂y
             ∂w = ∂y * x'
@@ -51,7 +51,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
         z, y = __apply_bias_activation!!(act, y, b, Val(true))
         ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
-            ∂y = only_derivative.(z, act, y) .* CRC.unthunk(Δ)
+            ∂y = __activation_gradient(CRC.unthunk(Δ), z, act, y)
             ∂b = __added_bias_gradient(b, ∂y)
             ∂x = weight' * ∂y
             ∂w = ∂y * x'

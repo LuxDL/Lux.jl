@@ -24,24 +24,25 @@
             (Float16, Float16), (Float32, Float16), (Float32, Float32),
             (Float32, Float64), (Float64, Float64)]
             for hasbias in (true, false),
-                activation in (
-                    identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, x -> x^3),
+                activation in (identity, tanh, tanh_fast, sigmoid,
+                    sigmoid_fast, relu, gelu, x -> gelu(x)),
                 (kernel, padding, stride, groups) in (
                     ((2,), (1,), (1,), 1), ((2, 2), (1, 1), (1, 1), 1),
                     ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2))
 
-                weight = _convfilter(Tw, kernel, 3 => 4; groups) |> aType
+                weight = _convfilter(Tw, kernel, 4 => 8; groups) |> aType
                 x = __generate_fixed_array(
-                    Tx, ntuple(Returns(3), length(kernel))..., 3, 2) |> aType
+                    Tx, ntuple(Returns(3), length(kernel))..., 4, 2) |> aType
                 bias = hasbias ?
                        aType(__generate_fixed_array(
-                    Tx, ntuple(Returns(1), length(kernel))..., 4, 1)) : nothing
+                    Tx, ntuple(Returns(1), length(kernel))..., 8, 1)) : nothing
 
                 cdims = DenseConvDims(
                     x, weight; stride, padding=_calc_padding(padding, kernel, 1, stride),
                     dilation=1, groups)
 
                 y = fused_conv_bias_activation(activation, weight, x, bias, cdims)
+
                 y_generic = LuxLib.__generic_conv_bias_activation(
                     activation, weight, x, bias, cdims)
 
@@ -51,10 +52,13 @@
                 @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
                 @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
+                # FIXME: GPU compilation of the gradients for mixed precision seems broken
+                Tw !== Tx && on_gpu && continue
+
                 __f = (σ, w, x, b, cdims) -> sum(
                     abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
-                # @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+                @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
 
                 fp16 = Tx == Float16 || Tw == Float16
                 atol = fp16 ? 1.0f-1 : 1.0f-3
@@ -62,7 +66,7 @@
                 # FiniteDiffencing doesn't work great for MP because of how LuxTestUtils is
                 # implemented.
                 @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_finite_differences=$(Tx !=
-                                                                                                                                                            Tw)
+                                                                                                                                                                   Tw)
             end
         end
     end

@@ -85,26 +85,11 @@ end
 struct NotaNumber <: Real end
 
 # Check no setindexing
-@inline __any_immutable_array(x...) = any(__is_immutable_array, x)
-
-CRC.@non_differentiable __any_immutable_array(::Any...)
-
 @inline __is_immutable_array(x::AbstractArray) = !ArrayInterface.can_setindex(x)
 @inline __is_immutable_array(::Nothing) = false
 @inline __is_immutable_array_val(x) = Val(__is_immutable_array(x))
 
 CRC.@non_differentiable __is_immutable_array_val(::Any...)
-
-@inline function __is_mixed_precision(args...)
-    idx = findfirst(Base.Fix2(isa, AbstractArray), args)
-    T = eltype(args[idx])
-    for arg in args[(idx + 1):end]
-        arg isa AbstractArray && T != eltype(arg) && return true
-    end
-    return false
-end
-
-CRC.@non_differentiable __is_mixed_precision(::Any...)
 
 @inline function __expand_conv_bias_dims(
         bias::AbstractVector, ::AbstractArray{T, N}) where {T, N}
@@ -125,42 +110,67 @@ end
     return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
 end
 
+CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
+
 # Helper to add bias and apply activation function
 ## This is only meant to be used inside rrules
 @inline function __apply_bias_activation!!(
         σ::F, x, bias::Union{Nothing, AbstractArray}, ::Val{cache}) where {F, cache}
     if σ === identity
         bias === nothing && return x
-        @. x += bias
-        return x
+        return __nonuniform_fast_broadcast!(+, x, bias)
     end
     if !cache
-        if bias === nothing
-            if ArrayInterface.fast_scalar_indexing(x)
-                @.. x = σ(x)
-            else
-                @. x = σ(x)
-            end
-        else
-            @. x = σ(x + bias)
-        end
-        return x
+        bias === nothing && return __fast_broadcast!(σ, x)
+        return __nonuniform_fast_broadcast!(σ ∘ +, x, bias)
     end
-    bias === nothing && return __try_fast_broadcast(σ, x), x
-    @. x += bias
-    return __try_fast_broadcast(σ, x), x
+    bias === nothing && return __fast_broadcast(σ, x), x
+    x = __nonuniform_fast_broadcast!(+, x, bias)
+    return __fast_broadcast(σ, x), x
 end
 
-@inline function __try_fast_broadcast(f::F, x) where {F}
-    return ArrayInterface.fast_scalar_indexing(x) ? @..(f(x)) : @.(f(x))
+@inline function __fast_broadcast(f::F, x, args...) where {F}
+    return ArrayInterface.fast_scalar_indexing(x) ? @..(f(x, args...)) : @.(f(x, args...))
+end
+@inline function __fast_broadcast!(f::F, x, args...) where {F}
+    if ArrayInterface.fast_scalar_indexing(x)
+        @.. x = f(x, args...)
+    elseif f === ComposedFunction(sigmoid_fast, +) && length(args) == 1
+        # Has GPU Compilation Problems
+        x .= sigmoid_fast.(x .+ first(args))
+    else
+        @. x = f(x, args...)
+    end
+    return x
+end
+@inline function __nonuniform_fast_broadcast!(f::F, x, args...) where {F}
+    if ArrayInterface.fast_scalar_indexing(x)
+        bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
+        @simd ivdep for i in eachindex(bc)
+            @inbounds x[i] = bc[i]
+        end
+    elseif f === ComposedFunction(sigmoid_fast, +) && length(args) == 1
+        # Has GPU Compilation Problems
+        x .= sigmoid_fast.(x .+ first(args))
+    else
+        @. x = f(x, args...)
+    end
+    return x
 end
 
 @inline __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} = @. σ(x + bias)
 @inline __apply_bias_activation(σ::F, x, ::Nothing) where {F} = @. σ(x)
 
-@inline __added_bias_gradient(b::Nothing, Δ) = CRC.NoTangent()
+@inline __added_bias_gradient(::Nothing, _) = CRC.NoTangent()
 @inline function __added_bias_gradient(b::AbstractArray, Δ)
     ∂b = similar(b)
     sum!(∂b, Δ)
     return ∂b
+end
+
+@inline function __activation_gradient(Δ, out, act::F, x) where {F}
+    if ArrayInterface.fast_scalar_indexing(out)
+        return @.. Δ * only_derivative(out, act, x)
+    end
+    return @. Δ * only_derivative(out, act, x)
 end
