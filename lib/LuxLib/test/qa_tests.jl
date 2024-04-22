@@ -1,7 +1,7 @@
 @testitem "Aqua: Quality Assurance" tags=[:nworkers, :others] begin
     using Aqua
 
-    Aqua.test_all(LuxLib; unbound_args=(; broken = true))
+    Aqua.test_all(LuxLib; unbound_args=(; broken=true))
 end
 
 @testitem "Explicit Imports" tags=[:nworkers, :others] begin

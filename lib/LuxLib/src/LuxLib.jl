@@ -16,6 +16,7 @@ using PrecompileTools: @recompile_invalidations
     using Random: Random, AbstractRNG, rand!
     using Reexport: @reexport
     using Statistics: Statistics, mean, std, var
+    using Strided: Strided, @strided
 end
 
 @reexport using NNlib

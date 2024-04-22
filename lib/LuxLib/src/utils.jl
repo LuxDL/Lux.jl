@@ -130,14 +130,19 @@ CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
 end
 
 @inline function __fast_broadcast(f::F, x, args...) where {F}
-    return ArrayInterface.fast_scalar_indexing(x) ? @..(f(x, args...)) : @.(f(x, args...))
+    ArrayInterface.fast_scalar_indexing(x) && return @.. f(x, args...)
+    return @. f(x, args...)
 end
 @inline function __fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
-        @.. x = f(x, args...)
+        if maximum(length, (x, args...)) > 20_000
+            @strided x .= f.(x, args...)
+        else
+            @.. x = f(x, args...)
+        end
     elseif f === ComposedFunction(sigmoid_fast, +) && length(args) == 1
-        # Has GPU Compilation Problems
-        x .= sigmoid_fast.(x .+ first(args))
+        y = first(args)
+        @. x = sigmoid_fast(x + y) # Has GPU Compilation Problems
     else
         @. x = f(x, args...)
     end
@@ -145,13 +150,14 @@ end
 end
 @inline function __nonuniform_fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
-        bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
-        @simd ivdep for i in eachindex(bc)
-            @inbounds x[i] = bc[i]
+        if maximum(length, (x, args...)) > 20_000
+            @strided x .= f.(x, args...)
+        else
+            @. x = f(x, args...)
         end
     elseif f === ComposedFunction(sigmoid_fast, +) && length(args) == 1
-        # Has GPU Compilation Problems
-        x .= sigmoid_fast.(x .+ first(args))
+        y = first(args)
+        @. x = sigmoid_fast(x + y) # Has GPU Compilation Problems
     else
         @. x = f(x, args...)
     end
