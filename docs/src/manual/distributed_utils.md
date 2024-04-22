@@ -53,7 +53,7 @@ data = DistributedUtils.DistributedDataContainer(backend, data)
 opt = DistributedUtils.DistributedOptimizer(backend, opt)
 opt_state = Optimisers.setup(opt, ps)
 opt_state = DistributedUtils.synchronize!!(backend, opt_state)
- ```
+```
 
 * Finally change all logging and serialization code to trigger on
   `local_rank(backend) == 0`. This ensures that only the master process logs and serializes
