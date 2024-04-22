@@ -18,19 +18,11 @@ function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F,
     return grads, loss, stats, ts
 end
 
-# Nested AD Handling: Only for AbstractArray Inputs
-# function CRC.rrule(::typeof(Zygote._pullback), ctx::Zygote.AContext,
-#         model::Lux.StatefulLuxLayer, x::AbstractArray)
-#     y, pb_f = Zygote._pullback(ctx, model, x)
-#     ∇nested_pullback_default = Δ -> begin
-#         @show Δ
-#         error(2)
-#     end
-#     return (y, pb_f), ∇nested_pullback_default
-# end
-
-@inline __internal_gradient_capture(f::F, x, args...) where {F} = (first(Zygote.gradient(
-    f, x, args...)),)
+# Nested AD Handling
+## Zygote.gradient call
+@inline function __internal_gradient_capture(f::F, x, args...) where {F}
+    return Zygote.gradient(@closure(x->f(x, args...)), x)
+end
 
 @inline function Zygote.gradient(
         f::Base.ComposedFunction{<:Lux.StatefulLuxLayer, F}, x::AbstractArray) where {F}
@@ -68,6 +60,54 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     end
 
     return y, ∇internal_gradient_capture
+end
+
+## Zygote.jacobian call
+@inline function __internal_jacobian_capture(f::F, x, args...) where {F}
+    return Zygote.jacobian(@closure(x->f(x, args...)), x)
+end
+
+@inline function Zygote.jacobian(
+        f::Base.ComposedFunction{<:Lux.StatefulLuxLayer, F}, x::AbstractArray) where {F}
+    return __internal_jacobian_capture(@closure((x, ps)->f.outer(f.inner(x), ps)), x, ps)
+end
+
+@inline function Zygote.jacobian(
+        f::Base.ComposedFunction{F, <:Lux.StatefulLuxLayer}, x::AbstractArray) where {F}
+    return __internal_jacobian_capture(f, x, f.inner.ps)
+end
+
+@inline function Zygote.jacobian(f::Lux.StatefulLuxLayer, x::AbstractArray)
+    return __internal_jacobian_capture(f, x, f.ps)
+end
+
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(__internal_jacobian_capture), f::F, x::AbstractArray, ps) where {F}
+    if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+        if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+            @warn "Load ForwardDiff.jl for better nested AD handling." maxlog=1
+        end
+        # Use the AD itself for whatever reason. This will fail most likely!
+        y, pb_f = CRC.rrule_via_ad(cfg, Zygote.jacobian, f, x, ps)
+        return y, pb_f
+    end
+
+    J = __internal_jacobian_capture(f, x, ps)
+    ∇internal_jacobian_capture = Δ_ -> begin
+        (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
+            return ntuple(Returns(CRC.NoTangent()), 4)
+
+        Δ = reshape(CRC.unthunk(first(Δ_)), size(only(J)))
+        ∂x, ∂ps = mapreduce(Lux.__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
+            __f = (x, p) -> sum(vec(f(x, p))[i:i])
+            ∂xᵢ, ∂psᵢ = Lux.__forwarddiff_jvp(
+                @closure((x, ps)->Zygote.gradient(__f, x, ps)), x, reshape(Δᵢ, size(x)), ps)
+            return ∂xᵢ, ∂psᵢ
+        end
+        return CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂ps
+    end
+
+    return J, ∇internal_jacobian_capture
 end
 
 end

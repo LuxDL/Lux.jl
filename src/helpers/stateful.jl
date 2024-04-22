@@ -23,7 +23,9 @@ This is meant to be used in internal implementation of layers.
     for AD backends supporting ChainRules, so ReverseDiff and Tracker won't make this
     automatic conversion.
 
-    This behavior can be disabled by setting the preference
+!!! tip
+
+    Automatic Nested AD Switching behavior can be disabled by setting the preference
     `DisableAutomaticNestedADSwitching` to `true`. See documentation of
     [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl) and
     [PreferenceTools.jl](https://github.com/cjdoris/PreferenceTools.jl) on how to do this.

@@ -264,3 +264,13 @@ __named_tuple(nt::NamedTuple) = nt
 @inline apply_bias_activation(f::F, x, b) where {F} = @. f(x + b)
 
 @inline __value(x) = x
+
+## TODO: We can potentially do an inplace addition but those are typically not giant
+##       bottlenecks
+## This is used for adding up contributions to the gradient in extensions
+@inline __internal_add(x::AbstractArray, y::AbstractArray) = x .+ y
+@inline __internal_add(x::Tuple, y::Tuple) = map(__internal_add, x, y)
+@inline function __internal_add(x::NamedTuple{F}, y::NamedTuple{F}) where {F}
+    return NamedTuple{F}(map(__internal_add, values(x), values(y)))
+end
+@inline __internal_add(x, y) = fmap(__internal_add, x, y)

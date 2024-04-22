@@ -1,9 +1,12 @@
 module LuxForwardDiffExt
 
+using ChainRulesCore: ChainRulesCore
 using Lux: Lux
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: Functors
+
+const CRC = ChainRulesCore
 
 @inline Lux._is_extension_loaded(::Val{:ForwardDiff}) = true
 
