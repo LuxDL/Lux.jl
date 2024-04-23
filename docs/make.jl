@@ -50,7 +50,8 @@ pages = [
         "manual/gpu_management.md",
         "manual/migrate_from_flux.md",
         "manual/weight_initializers.md",
-        "manual/distributed_utils.md"
+        "manual/distributed_utils.md",
+        "manual/nested_autodiff.md"
     ],
     "API Reference" => [
         "Lux" => [

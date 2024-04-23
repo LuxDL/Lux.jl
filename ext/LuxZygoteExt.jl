@@ -26,7 +26,8 @@ end
 
 @inline function Zygote.gradient(
         f::Base.ComposedFunction{<:Lux.StatefulLuxLayer, F}, x::AbstractArray) where {F}
-    return __internal_gradient_capture(@closure((x, ps)->f.outer(f.inner(x), ps)), x, ps)
+    return __internal_gradient_capture(
+        @closure((x, ps)->f.outer(f.inner(x), ps)), x, f.outer.ps)
 end
 
 @inline function Zygote.gradient(
@@ -53,12 +54,11 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     ∇internal_gradient_capture = @closure Δ -> begin
         (Δ isa CRC.NoTangent || Δ isa CRC.ZeroTangent) &&
             return ntuple(Returns(CRC.NoTangent()), 4)
-        Δ_ = reshape(CRC.unthunk(first(Δ)), size(x))
+        Δ_ = reshape(CRC.unthunk(only(Δ)), size(x))
         ∂x, ∂ps = Lux.__forwarddiff_jvp(
             @closure((x, ps)->Zygote.gradient(f, x, ps)), x, Δ_, ps)
         return CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂ps
     end
-
     return y, ∇internal_gradient_capture
 end
 
@@ -97,7 +97,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
             return ntuple(Returns(CRC.NoTangent()), 4)
 
-        Δ = reshape(CRC.unthunk(first(Δ_)), size(only(J)))
+        Δ = reshape(CRC.unthunk(only(Δ_)), size(only(J)))
         ∂x, ∂ps = mapreduce(Lux.__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
             __f = (x, p) -> sum(vec(f(x, p))[i:i])
             ∂xᵢ, ∂psᵢ = Lux.__forwarddiff_jvp(
@@ -125,6 +125,16 @@ end
             x::AbstractArray)
         return Zygote._pullback(
             cx, ForwardDiff.jacobian, f, x, ForwardDiff.JacobianConfig(f, x), Val(true))
+    end
+
+    function Zygote._pullback(cx::Zygote.AContext,
+            ::typeof(ForwardDiff.gradient),
+            f::Union{Base.ComposedFunction{<:Any, <:Lux.StatefulLuxLayer},
+                Base.ComposedFunction{<:Lux.StatefulLuxLayer, <:Any},
+                Lux.StatefulLuxLayer},
+            x::AbstractArray)
+        return Zygote._pullback(
+            cx, ForwardDiff.gradient, f, x, ForwardDiff.GradientConfig(f, x), Val(true))
     end
 end
 
