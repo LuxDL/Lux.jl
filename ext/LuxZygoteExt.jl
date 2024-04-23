@@ -110,4 +110,22 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     return J, ∇internal_jacobian_capture
 end
 
+# Handle Weird Zygote shit
+## Hope this doesn't get moved into extensions then we will have to create another file
+@static if isdefined(Zygote, :ForwardDiff)
+    using Zygote: ForwardDiff
+
+    # Forward to a function that doesn't have this _pullback defined so that it triggers the
+    # rrule
+    function Zygote._pullback(cx::Zygote.AContext,
+            ::typeof(ForwardDiff.jacobian),
+            f::Union{Base.ComposedFunction{<:Any, <:Lux.StatefulLuxLayer},
+                Base.ComposedFunction{<:Lux.StatefulLuxLayer, <:Any},
+                Lux.StatefulLuxLayer},
+            x::AbstractArray)
+        return Zygote._pullback(
+            cx, ForwardDiff.jacobian, f, x, ForwardDiff.JacobianConfig(f, x), Val(true))
+    end
+end
+
 end

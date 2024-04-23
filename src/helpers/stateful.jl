@@ -101,3 +101,4 @@ end
 
 # Needed for nice nested AD
 function __forwarddiff_jvp end
+function __internal_forwarddiff_jacobian_capture end
