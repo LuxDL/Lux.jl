@@ -54,13 +54,13 @@ end
 @inline function fused_conv_bias_activation(
         σ::F, weight::AbstractArray, ::Val{false}, x::AbstractArray, ::Val{false},
         b::Union{Nothing, AbstractArray}, ::Val{false}, cdims::ConvDims) where {F}
-    return __fused_conv_bias_activation_impl(σ, weight, x, b, cdims)
+    return _fused_conv_bias_activation_impl(σ, weight, x, b, cdims)
 end
 
 @inline function fused_conv_bias_activation(
         σ::F, weight::AbstractArray, ::Val, x::AbstractArray, ::Val,
         b::Union{Nothing, AbstractArray}, ::Val, cdims::ConvDims) where {F}
-    return __generic_conv_bias_activation(σ, weight, x, b, cdims)
+    return _generic_conv_bias_activation(σ, weight, x, b, cdims)
 end
 
 # SubArray Inputs: copy a subarray to make it contiguous in memory
@@ -81,13 +81,13 @@ end
 @inline function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         b::AbstractArray{bT, N}, cdims::ConvDims) where {F, wT, xT, bT, N}
-    return __generic_conv_bias_activation(σ, weight, x, b, cdims)
+    return _generic_conv_bias_activation(σ, weight, x, b, cdims)
 end
 
 @inline function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         b::Nothing, cdims::ConvDims) where {F, wT, xT, N}
-    return __generic_conv_bias_activation(σ, weight, x, b, cdims)
+    return _generic_conv_bias_activation(σ, weight, x, b, cdims)
 end
 
 # Mixed Precision GPU Inputs

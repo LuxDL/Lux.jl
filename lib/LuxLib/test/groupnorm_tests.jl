@@ -74,7 +74,7 @@ end
     end
 end
 
-@testitem "Group Normalization Generic Fallback" tags=[:nworkers, :normalization] setup=[
+@testitem "Group Normalization Generic Fallback" tags=[:singleworker, :normalization] setup=[
     SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, ngroups $groups, $act" for T in (

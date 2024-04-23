@@ -180,3 +180,22 @@ end
     end
     return @. Δ * only_derivative(out, act, x)
 end
+
+# Reduce BLAS threads if we are going to use a native Julia implementation
+@inline function __maybe_reduce_BLAS_threads(x::AbstractArray)::Int
+    if ArrayInterface.fast_scalar_indexing(x)
+        old_threads = BLAS.get_num_threads()
+        BLAS.set_num_threads(1)
+        return old_threads
+    end
+    return -1
+end
+
+CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
+
+@inline function __reset_BLAS_threads(old_threads::Int)
+    old_threads ≥ 1 && BLAS.set_num_threads(old_threads)
+    return nothing
+end
+
+CRC.@non_differentiable __reset_BLAS_threads(::Int)

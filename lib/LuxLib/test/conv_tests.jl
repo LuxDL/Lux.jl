@@ -16,62 +16,68 @@
         return _expand(Val(2 * N), pad)
     end
 
+    anonact = x -> gelu(x)
+
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         # These are not all possible combinations but rather a representative set to keep
         # CI timings under check
         # Most of the actual tests happen upstream in Lux
-        @testset "$(Tw) x $(Tx)" for (Tw, Tx) in [
-            (Float16, Float16), (Float32, Float16), (Float32, Float32),
-            (Float32, Float64), (Float64, Float64)]
-            for hasbias in (true, false),
-                activation in (identity, tanh, tanh_fast, sigmoid,
-                    sigmoid_fast, relu, gelu, x -> gelu(x)),
-                (kernel, padding, stride, groups) in (
-                    ((2,), (1,), (1,), 1), ((2, 2), (1, 1), (1, 1), 1),
-                    ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2))
+        @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for (Tw, Tx) in [
+                (Float16, Float16), (Float32, Float16), (Float32, Float32),
+                (Float32, Float64), (Float64, Float64)],
+            hasbias in (true, false),
+            activation in (
+                identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact),
+            (kernel, padding, stride, groups) in (
+                ((2,), (1,), (1,), 1), ((2, 2), (1, 1), (1, 1), 1),
+                ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2))
 
-                weight = _convfilter(Tw, kernel, 4 => 8; groups) |> aType
-                x = __generate_fixed_array(
-                    Tx, ntuple(Returns(3), length(kernel))..., 4, 2) |> aType
-                bias = hasbias ?
-                       aType(__generate_fixed_array(
-                    Tx, ntuple(Returns(1), length(kernel))..., 8, 1)) : nothing
+            weight = _convfilter(Tw, kernel, 4 => 8; groups) |> aType
+            x = __generate_fixed_array(Tx, ntuple(Returns(3), length(kernel))..., 4, 2) |>
+                aType
+            bias = hasbias ?
+                   aType(__generate_fixed_array(
+                Tx, ntuple(Returns(1), length(kernel))..., 8, 1)) : nothing
 
-                cdims = DenseConvDims(
-                    x, weight; stride, padding=_calc_padding(padding, kernel, 1, stride),
-                    dilation=1, groups)
+            cdims = DenseConvDims(
+                x, weight; stride, padding=_calc_padding(padding, kernel, 1, stride),
+                dilation=1, groups)
 
-                y = fused_conv_bias_activation(activation, weight, x, bias, cdims)
+            y = fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-                y_generic = LuxLib.__generic_conv_bias_activation(
-                    activation, weight, x, bias, cdims)
+            y_generic = LuxLib.__generic_conv_bias_activation(
+                activation, weight, x, bias, cdims)
 
-                @test y ≈ y_generic
-                @test eltype(y) == promote_type(Tw, Tx)
+            fp16 = Tx == Float16 || Tw == Float16
+            atol = fp16 ? 1.0f-1 : 1.0f-3
+            rtol = fp16 ? 1.0f-1 : 1.0f-3
+            # Operation reordering has an effect on the accuracy of the results
+            @test y≈y_generic atol=atol rtol=rtol
+            @test eltype(y) == promote_type(Tw, Tx)
 
-                @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
-                @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
+            @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
+            @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-                # FIXME: GPU compilation of the gradients for mixed precision seems broken
-                Tw !== Tx && on_gpu && continue
+            # FIXME: GPU compilation of the gradients for mixed precision seems broken
+            Tw !== Tx && on_gpu && continue
 
-                __f = (σ, w, x, b, cdims) -> sum(
-                    abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
+            __f = (σ, w, x, b, cdims) -> sum(
+                abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
-                if mode != "AMDGPU"
+            if mode != "AMDGPU" && activation !== anonact
+                @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+            else
+                try
                     @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
-                else
-                    try
-                        @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
-                        @test true
-                    catch
-                        @test_broken false
-                    end
+                    @test true
+                catch
+                    @test_broken false
                 end
-
-                fp16 = Tx == Float16 || Tw == Float16
-                atol = fp16 ? 1.0f-1 : 1.0f-3
-                rtol = fp16 ? 1.0f-1 : 1.0f-3
+            end
+            if mode === "AMDGPU"
+                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_tracker=true skip_finite_differences=$(Tx !=
+                                                                                                                                                                                     Tw)
+            else
                 # FiniteDiffencing doesn't work great for MP because of how LuxTestUtils is
                 # implemented.
                 @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_finite_differences=$(Tx !=

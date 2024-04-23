@@ -9,7 +9,7 @@ using PrecompileTools: @recompile_invalidations
     using FastClosures: @closure
     using GPUArraysCore: GPUArraysCore
     using KernelAbstractions: KernelAbstractions, @Const, @index, @kernel
-    using LinearAlgebra: LinearAlgebra, mul!
+    using LinearAlgebra: LinearAlgebra, BLAS, mul!
     using LuxCore: LuxCore
     using Markdown: @doc_str
     using NNlib: NNlib
