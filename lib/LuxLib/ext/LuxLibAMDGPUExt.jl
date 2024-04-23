@@ -18,4 +18,42 @@ const MIOPENFloat = Union{Float16, Float32}
     end
 end
 
+@inline function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::ROCArray{Float64, N}, x::ROCArray{Float64, N},
+        b::ROCArray{Float64, N}, cdims::NNlib.ConvDims) where {F, N}
+    @warn "MIOpen doesn't support Float64 convolutions, type-casting everything to Float32 \
+           to avoid runtime errors" maxlog=1
+    return LuxLib._oftype_array(Float64,
+        LuxLib.fused_conv_bias_activation(
+            σ, LuxLib._oftype_array(Float32, weight), LuxLib._oftype_array(Float32, x),
+            LuxLib._oftype_array(Float32, b), cdims))
+end
+
+@inline function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::ROCArray{Float64, N}, x::ROCArray{Float64, N},
+        b::Nothing, cdims::NNlib.ConvDims) where {F, N}
+    @warn "MIOpen doesn't support Float64 convolutions, type-casting everything to Float32 \
+           to avoid runtime errors" maxlog=1
+    return LuxLib._oftype_array(Float64,
+        LuxLib.fused_conv_bias_activation(σ, LuxLib._oftype_array(Float32, weight),
+            LuxLib._oftype_array(Float32, x), b, cdims))
+end
+
+@inline function LuxLib.__generic_conv_bias_activation(
+        act::F, weight::ROCArray{Float64, N}, x::ROCArray{Float64, N},
+        bias::ROCArray{Float64, N}, cdims::NNlib.ConvDims) where {N, F}
+    return LuxLib._oftype_array(Float64,
+        LuxLib.__generic_conv_bias_activation(
+            act, LuxLib._oftype_array(Float32, weight), LuxLib._oftype_array(Float32, x),
+            LuxLib._oftype_array(Float32, bias), cdims))
+end
+
+@inline function LuxLib.__generic_conv_bias_activation(
+        act::F, weight::ROCArray{Float64, N}, x::ROCArray{Float64, N},
+        bias::Nothing, cdims::NNlib.ConvDims) where {N, F}
+    return LuxLib._oftype_array(Float64,
+        LuxLib.__generic_conv_bias_activation(act, LuxLib._oftype_array(Float32, weight),
+            LuxLib._oftype_array(Float32, x), bias, cdims))
+end
+
 end

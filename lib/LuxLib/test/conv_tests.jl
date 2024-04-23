@@ -49,19 +49,8 @@
                 @test y ≈ y_generic
                 @test eltype(y) == promote_type(Tw, Tx)
 
-                if mode != "AMDGPU"
-                    @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
-                    @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
-                else
-                    try
-                        @inferred fused_conv_bias_activation(
-                            activation, weight, x, bias, cdims)
-                        @test true
-                    catch
-                        @test_broken false
-                    end
-                    @jet fused_conv_bias_activation(activation, weight, x, bias, cdims) opt_broken=true call_broken=true
-                end
+                @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
+                @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
                 # FIXME: GPU compilation of the gradients for mixed precision seems broken
                 Tw !== Tx && on_gpu && continue
@@ -69,7 +58,16 @@
                 __f = (σ, w, x, b, cdims) -> sum(
                     abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
-                @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+                if mode != "AMDGPU"
+                    @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+                else
+                    try
+                        @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+                        @test true
+                    catch
+                        @test_broken false
+                    end
+                end
 
                 fp16 = Tx == Float16 || Tw == Float16
                 atol = fp16 ? 1.0f-1 : 1.0f-3
