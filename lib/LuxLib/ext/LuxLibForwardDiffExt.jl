@@ -12,55 +12,51 @@ end
 # Convolutions: We might want to capture these furthur down in `conv!`
 # NOTE: In principle we can concatenate all of the partials along the batch dimension
 #       and cut down substantially on the time to compute jacobians.
-for op in [:conv, :depthwiseconv]
+# Here we should be broadcasting with `Tag` for safety but that breaks GPU compilation.
+for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
     op! = Symbol("$(op)!")
 
-    @eval function NNlib.$(op)(
-            x::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N}, w::AbstractArray{<:Real, N},
-            cdims::NNlib.ConvDims; kwargs...) where {N, Tag, V, P}
-        x_ = ForwardDiff.value.(x)
+    @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
+            x2::AbstractArray{<:Real, N}, cdims::NNlib.ConvDims;
+            kwargs...) where {N, Tag, V, P}
+        x1_data = ForwardDiff.value.(x1)
 
-        y = NNlib.$(op)(x_, w, cdims; kwargs...)
-        dys = ntuple(i -> NNlib.$(op)(ForwardDiff.partials.(x, i), w, cdims; kwargs...), P)
-
-        return map(
-            (yᵢ, dyᵢ...) -> ForwardDiff.Dual{Tag, V, P}(yᵢ, ForwardDiff.Partials(dyᵢ)),
-            y, dys...)
-    end
-
-    @eval function NNlib.$(op)(
-            x::AbstractArray{<:Real, N}, w::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
-            cdims::NNlib.ConvDims; kwargs...) where {N, Tag, V, P}
-        w_ = ForwardDiff.value.(w)
-
-        y = NNlib.$(op)(x, w_, cdims; kwargs...)
-        dys = ntuple(i -> NNlib.$(op)(x, ForwardDiff.partials.(w, i), cdims; kwargs...), P)
+        y = NNlib.$(op)(x1_data, x2, cdims; kwargs...)
+        dys = ntuple(
+            i -> NNlib.$(op)(ForwardDiff.partials.(x1, i), x2, cdims; kwargs...), P)
 
         return map(
             (yᵢ, dyᵢ...) -> ForwardDiff.Dual{Tag, V, P}(yᵢ, ForwardDiff.Partials(dyᵢ)),
             y, dys...)
     end
 
-    @eval function NNlib.$(op)(x::AbstractArray{<:ForwardDiff.Dual{Tag, Vₓ, P}, N},
-            w::AbstractArray{<:ForwardDiff.Dual{Tag, Vₚ, P}, N},
+    @eval function NNlib.$(op)(x1::AbstractArray{<:Real, N},
+            x2::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
+            cdims::NNlib.ConvDims; kwargs...) where {N, Tag, V, P}
+        x2_data = ForwardDiff.value.(x2)
+
+        y = NNlib.$(op)(x1, x2_data, cdims; kwargs...)
+        dys = ntuple(
+            i -> NNlib.$(op)(x1, ForwardDiff.partials.(x2, i), cdims; kwargs...), P)
+
+        return map(
+            (yᵢ, dyᵢ...) -> ForwardDiff.Dual{Tag, V, P}(yᵢ, ForwardDiff.Partials(dyᵢ)),
+            y, dys...)
+    end
+
+    @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, Vₓ, P}, N},
+            x2::AbstractArray{<:ForwardDiff.Dual{Tag, Vₚ, P}, N},
             cdims::NNlib.ConvDims; kwargs...) where {N, Tag, Vₓ, Vₚ, P}
-        x_ = ForwardDiff.value.(x)
-        w_ = ForwardDiff.value.(w)
+        x1_data = ForwardDiff.value.(x1)
+        x2_data = ForwardDiff.value.(x2)
 
-        y = NNlib.$(op)(x_, w_, cdims; kwargs...)
+        y = NNlib.$(op)(x1_data, x2_data, cdims; kwargs...)
 
-        dys₁ = ntuple(
-            _ -> similar(
-                x_, Vₓ, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N)),
-            P)
-        dys₂ = ntuple(
-            _ -> similar(
-                x_, Vₓ, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N)),
-            P)
-        for i in 1:P
-            NNlib.$(op!)(dys₁[i], ForwardDiff.partials.(x, i), w_, cdims; kwargs...)
-            NNlib.$(op!)(dys₂[i], x_, ForwardDiff.partials.(w, i), cdims; kwargs...)
-            dys₁[i] .+= dys₂[i]
+        dys₁ = ntuple(P) do i
+            dys₁ᵢ = NNlib.$(op)(ForwardDiff.partials.(x1, i), x2_data, cdims; kwargs...)
+            dys₂ᵢ = NNlib.$(op)(x1_data, ForwardDiff.partials.(x2, i), cdims; kwargs...)
+            dys₁ᵢ .+= dys₂ᵢ
+            return dys₁ᵢ
         end
 
         # Technically it should `promote_type(Vₓ, Vₚ)` but this causes GPU compilation
