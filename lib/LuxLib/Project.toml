@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.3.15"
+version = "0.3.16"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -64,7 +64,7 @@ Reexport = "1"
 ReverseDiff = "1.15"
 StableRNGs = "1"
 Statistics = "1.10"
-Strided = "2"
+Strided = "1.2, 2"
 Test = "1.10"
 Tracker = "0.2.34"
 Zygote = "0.6.69"
