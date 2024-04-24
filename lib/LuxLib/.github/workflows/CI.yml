@@ -19,6 +19,11 @@ jobs:
       matrix:
         version:
           - "1"
+        test_group:
+          - "normalization"
+          - "common_ops"
+          - "others"
+          - "normalization_sp"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -37,7 +42,8 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
-          GROUP: "CPU"
+          BACKEND_GROUP: "CPU"
+          LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
           RETESTITEMS_NWORKERS: 4
           RETESTITEMS_NWORKER_THREADS: 2
       - uses: julia-actions/julia-processcoverage@v1

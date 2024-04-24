@@ -53,9 +53,8 @@ for T1 in (:TrackedArray, :AbstractArray),
 
     LuxLib.__is_tracked(T1, T2, T3) || continue
 
-    @eval Tracker.@grad_from_chainrules LuxLib.groupnorm(
-        x::$T1{<:Union{Float32, Float64}, 4}, scale::$T2{<:Union{Float32, Float64}},
-        bias::$T3{<:Union{Float32, Float64}}; groups::Int, epsilon::Real)
+    @eval Tracker.@grad_from_chainrules LuxLib.__fast_groupnorm(
+        x::$T1, groups, scale::$T2, bias::$T3, epsilon::Real)
 end
 
 end

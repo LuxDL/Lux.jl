@@ -43,37 +43,44 @@ interface.
 """
 function groupnorm(x::AbstractArray{<:Union{Float32, Float64}, 4},
         scale::AbstractVector{<:Union{Float32, Float64}},
-        bias::AbstractVector{<:Union{Float32, Float64}}; groups::Int, epsilon::Real)
+        bias::AbstractVector{<:Union{Float32, Float64}},
+        σ::F=identity; groups::Int, epsilon::Real) where {F}
     _assert_same_backend(x, scale, bias)
     if length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
                              channels (N - 1 dim of the input array)."))
     end
     if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
-                             number of groups $groups."))
+        throw(ArgumentError(lazy"Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
+    # FIXME: We need to fuse the activation function into the kernel for optimal performance
+    return fast_activation!!(σ, __fast_groupnorm(x, groups, scale, bias, epsilon))
+    # return σ.(__fast_groupnorm(x, groups, scale, bias, epsilon))
+end
+
+# Separate this out for a cleaner rrule later on
+@inline function __fast_groupnorm(x, groups, scale, bias, epsilon)
     return first(_groupnorm(x, groups, scale, bias, epsilon))
 end
 
 # Slow Fallback (without custom Pullback Implementation)
 function groupnorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
-        bias::Union{Nothing, <:AbstractVector}; groups::Int, epsilon::Real) where {N}
+        bias::Union{Nothing, <:AbstractVector}, σ::F=identity;
+        groups::Int, epsilon::Real) where {F, N}
     _assert_same_backend(x, scale, bias)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
                              channels (N - 1 dim of the input array)."))
     end
     if size(x, N - 1) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
-                             number of groups $groups."))
+        throw(ArgumentError(lazy"Number of channels $(size(x, 3)) must be divisible by the number of groups $groups."))
     end
 
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
     x_ = first(_normalization(x_reshaped, nothing, nothing, scale, bias,
-        _get_groupnorm_reduce_dims(x), Val(false), nothing, epsilon))
+        _get_groupnorm_reduce_dims(x), Val(false), nothing, epsilon, σ))
 
     return reshape(x_, sz)
 end
@@ -83,23 +90,11 @@ end
 end
 
 # Custom Pullbacks
-function CRC.rrule(::typeof(groupnorm), x::AbstractArray{<:Union{Float32, Float64}, 4},
-        scale::AbstractVector{<:Union{Float32, Float64}},
-        bias::AbstractVector{<:Union{Float32, Float64}}; groups::Int, epsilon::Real)
-    _assert_same_backend(x, scale, bias)
-    if length(scale) != length(bias) != size(x, 3)
-        throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
-                             channels (N - 1 dim of the input array)."))
-    end
-    if size(x, 3) % groups != 0
-        throw(ArgumentError("Number of channels $(size(x, 3)) must be divisible by the \
-                             number of groups $groups."))
-    end
-
+function CRC.rrule(::typeof(__fast_groupnorm), x, groups, scale, bias, epsilon)
     y, μ, σ⁻¹ = _groupnorm(x, groups, scale, bias, epsilon)
     ∇groupnorm = @closure Δ -> begin
-        dx, dscale, dbias = _∇groupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
-        return CRC.NoTangent(), dx, dscale, dbias
+        ∂x, ∂scale, ∂bias = _∇groupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
+        return CRC.NoTangent(), ∂x, CRC.NoTangent(), ∂scale, ∂bias, CRC.NoTangent()
     end
     return y, ∇groupnorm
 end
