@@ -1,4 +1,4 @@
-@testitem "Functors Compatibility" setup=[SharedTestSetup] begin
+@testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:others] begin
     using Functors
 
     rng = get_stable_rng(12345)

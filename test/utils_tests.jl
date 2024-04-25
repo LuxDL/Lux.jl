@@ -1,4 +1,4 @@
-@testitem "replicate" setup=[SharedTestSetup] begin
+@testitem "replicate" setup=[SharedTestSetup] tags=[:others] begin
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         _rng = get_default_rng(mode)
 
@@ -13,7 +13,7 @@
     end
 end
 
-@testitem "istraining" begin
+@testitem "istraining" tags=[:others] begin
     @test Lux.istraining(Val(true))
     @test !Lux.istraining(Val(false))
     @test !Lux.istraining((training=Val(false),))
@@ -22,7 +22,7 @@ end
     @test_throws MethodError Lux.istraining((training=true,))
 end
 
-@testitem "multigate" setup=[SharedTestSetup] begin
+@testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -58,7 +58,7 @@ end
     end
 end
 
-@testitem "ComponentArrays" setup=[SharedTestSetup] begin
+@testitem "ComponentArrays" setup=[SharedTestSetup] tags=[:others] begin
     using Optimisers, Functors
 
     rng = get_stable_rng(12345)
@@ -103,7 +103,7 @@ end
     @test_nowarn Zygote.gradient(l2reg, ps)
 end
 
-@testitem "_init_hidden_state" setup=[SharedTestSetup] begin
+@testitem "_init_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -114,7 +114,7 @@ end
     end
 end
 
-@testitem "FP Conversions" setup=[SharedTestSetup] begin
+@testitem "FP Conversions" setup=[SharedTestSetup] tags=[:others] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

@@ -1,5 +1,5 @@
 
-@testitem "SkipConnection" setup=[SharedTestSetup] begin
+@testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -31,7 +31,7 @@
     end
 end
 
-@testitem "Parallel" setup=[SharedTestSetup] begin
+@testitem "Parallel" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -149,7 +149,7 @@ end
     end
 end
 
-@testitem "PairwiseFusion" setup=[SharedTestSetup] begin
+@testitem "PairwiseFusion" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -198,7 +198,7 @@ end
     end
 end
 
-@testitem "BranchLayer" setup=[SharedTestSetup] begin
+@testitem "BranchLayer" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -232,7 +232,7 @@ end
     end
 end
 
-@testitem "Chain" setup=[SharedTestSetup] begin
+@testitem "Chain" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -308,7 +308,7 @@ end
     end
 end
 
-@testitem "Maxout" setup=[SharedTestSetup] begin
+@testitem "Maxout" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -370,7 +370,7 @@ end
     end
 end
 
-@testitem "Repeated" setup=[SharedTestSetup] begin
+@testitem "Repeated" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

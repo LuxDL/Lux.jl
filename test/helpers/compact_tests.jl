@@ -1,4 +1,4 @@
-@testitem "@compact" setup=[SharedTestSetup] begin
+@testitem "@compact" setup=[SharedTestSetup] tags=[:helpers] begin
     using ComponentArrays
 
     rng = get_stable_rng(12345)

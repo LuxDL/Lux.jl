@@ -1,4 +1,4 @@
-@testitem "All Parameter Freezing" setup=[SharedTestSetup] begin
+@testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -61,7 +61,7 @@
     end
 end
 
-@testitem "Partial Freezing" setup=[SharedTestSetup] begin
+@testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

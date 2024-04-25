@@ -1,4 +1,4 @@
-@testitem "TrainState" setup=[SharedTestSetup] begin
+@testitem "TrainState" setup=[SharedTestSetup] tags=[:contrib] begin
     using Optimisers
 
     rng = get_stable_rng(12345)
@@ -22,7 +22,7 @@
     end
 end
 
-@testitem "AbstractADTypes" setup=[SharedTestSetup] begin
+@testitem "AbstractADTypes" setup=[SharedTestSetup] tags=[:contrib] begin
     using ADTypes, Optimisers
 
     function _loss_function(model, ps, st, data)

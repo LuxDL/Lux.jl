@@ -1,5 +1,4 @@
-
-@testitem "RNNCell" setup=[SharedTestSetup] begin
+@testitem "RNNCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -58,7 +57,7 @@
     end
 end
 
-@testitem "LSTMCell" setup=[SharedTestSetup] begin
+@testitem "LSTMCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -164,7 +163,7 @@ end
     end
 end
 
-@testitem "GRUCell" setup=[SharedTestSetup] begin
+@testitem "GRUCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -234,7 +233,7 @@ end
     end
 end
 
-@testitem "StatefulRecurrentCell" setup=[SharedTestSetup] begin
+@testitem "StatefulRecurrentCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -280,7 +279,7 @@ end
     end
 end
 
-@testitem "Recurrence" timeout=3000 setup=[SharedTestSetup] begin
+@testitem "Recurrence" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES

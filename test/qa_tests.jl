@@ -1,4 +1,4 @@
-@testitem "Aqua: Quality Assurance" begin
+@testitem "Aqua: Quality Assurance" tags=[:others] begin
     using Aqua, ChainRulesCore
 
     Aqua.test_all(Lux; piracies=false)
@@ -6,7 +6,7 @@
         Lux; treat_as_own=[ChainRulesCore.frule, ChainRulesCore.rrule, Core.kwcall])
 end
 
-@testitem "Explicit Imports: Quality Assurance" begin
+@testitem "Explicit Imports: Quality Assurance" tags=[:others] begin
     # Load all trigger packages
     import Lux, ComponentArrays, ReverseDiff, Flux, LuxAMDGPU, SimpleChains, Tracker, Zygote
 
