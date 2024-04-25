@@ -273,4 +273,5 @@ __named_tuple(nt::NamedTuple) = nt
 @inline function __internal_add(x::NamedTuple{F}, y::NamedTuple{F}) where {F}
     return NamedTuple{F}(map(__internal_add, values(x), values(y)))
 end
+@inline __internal_add(::Nothing, ::Nothing) = nothing
 @inline __internal_add(x, y) = fmap(__internal_add, x, y)
