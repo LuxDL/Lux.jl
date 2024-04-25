@@ -6,6 +6,7 @@ using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
 using Functors: fmap
 using Lux: Lux, LuxCPUDevice
+using LuxCore: LuxCore
 using Setfield: @set!
 using Tracker: Tracker, TrackedArray
 
@@ -14,11 +15,13 @@ const CRC = ChainRulesCore
 # Type Piracy: Need to upstream
 Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)
 Tracker.param(t::Tuple) = map(Tracker.param, t)
+Tracker.param(l::LuxCore.AbstractExplicitLayer) = l
 
 Tracker.zero_grad!(nt::NamedTuple) = fmap(Tracker.zero_grad!, nt)
 
 Tracker.extract_grad!(nt::NamedTuple) = fmap(Tracker.extract_grad!, nt)
 Tracker.extract_grad!(t::Tuple) = map(Tracker.extract_grad!, t)
+Tracker.extract_grad!(::LuxCore.AbstractExplicitLayer) = nothing
 
 Tracker.data(nt::NamedTuple) = fmap(Tracker.data, nt)
 Tracker.data(t::Tuple) = map(Tracker.data, t)

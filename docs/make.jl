@@ -50,7 +50,8 @@ pages = [
         "manual/gpu_management.md",
         "manual/migrate_from_flux.md",
         "manual/weight_initializers.md",
-        "manual/distributed_utils.md"
+        "manual/distributed_utils.md",
+        "manual/nested_autodiff.md"
     ],
     "API Reference" => [
         "Lux" => [
@@ -99,6 +100,7 @@ makedocs(; sitename="Lux.jl Documentation",
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
         deploy_url="https://lux.csail.mit.edu", deploy_decision),
     draft=false,
+    warnonly=:linkcheck,  # Lately it has been failing quite a lot but those links are actually fine
     pages)
 
 deploydocs(; repo="github.com/LuxDL/Lux.jl.git",

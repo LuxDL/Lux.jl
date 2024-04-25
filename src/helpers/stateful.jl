@@ -6,11 +6,29 @@
     This is not a Lux.AbstractExplicitLayer
 
 A convenience wrapper over Lux layers which stores the parameters and states internally.
-This is meant to be used in internal implementation of layers. This comes handy when Lux
-internally uses the `@compact` to construct models and in SciML codebases where propagating
-state might involving [`Box`ing](https://github.com/JuliaLang/julia/issues/15276).
+This is meant to be used in internal implementation of layers.
 
-For a motivating example, see the Neural ODE tutorial.
+## Usecases
+
+  - Internal implementation of [`@compact`](@ref) heavily uses this layer.
+
+  - In SciML codebases where propagating state might involving
+    [`Box`ing](https://github.com/JuliaLang/julia/issues/15276). For a motivating example,
+    see the Neural ODE tutorial.
+  - This layer automatically converts `Zygote.gradient(op ∘ model::StatefulLuxLayer, x)` to
+    a `ForwardDiff.jl` jacobian-vector product over `Zygote.gradient` call. In future, we
+    will overload `DifferentiationInterface.gradient` and
+    `DifferentiationInterface.jacobian` calls as well. For this feature to be available,
+    `ForwardDiff.jl` must be loaded. Additionally this feature is exclusively available
+    for AD backends supporting ChainRules, so ReverseDiff and Tracker won't make this
+    automatic conversion.
+
+!!! tip
+
+    Automatic Nested AD Switching behavior can be disabled by setting the preference
+    `DisableAutomaticNestedADSwitching` to `true`. See documentation of
+    [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl) and
+    [PreferenceTools.jl](https://github.com/cjdoris/PreferenceTools.jl) on how to do this.
 
 ## Arguments
 
@@ -73,10 +91,22 @@ function (s::StatefulLuxLayer{false})(x, p=s.ps)
 end
 
 ## Only needed when the parameters are `nothing`
-function CRC.rrule(::Type{<:StatefulLuxLayer}, model::AbstractExplicitLayer, ::Nothing, st)
-    slayer = StatefulLuxLayer(model, st)
+function CRC.rrule(::Type{<:StatefulLuxLayer{FT}}, model::AbstractExplicitLayer,
+        ::Nothing, st, st_any) where {FT}
+    slayer = StatefulLuxLayer{FT}(model, nothing, st, st_any)
     function ∇StatefulLuxLayer(::Union{CRC.ZeroTangent, CRC.NoTangent})
-        return ntuple(Returns(NoTangent()), 4)
+        return ntuple(Returns(NoTangent()), 5)
     end
     return slayer, ∇StatefulLuxLayer
 end
+
+function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
+        model::AbstractExplicitLayer, ps, st, st_any) where {FT}
+    slayer = StatefulLuxLayer{FT}(model, ps, st, st_any)
+    ∇StatefulLuxLayer(Δ) = (CRC.NoTangent(), Δ.model, Δ.ps, Δ.st, Δ.st_any)
+    return slayer, ∇StatefulLuxLayer
+end
+
+# Needed for nice nested AD
+function __forwarddiff_jvp end
+function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)

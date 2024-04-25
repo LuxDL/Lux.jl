@@ -42,6 +42,9 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 
 @inline _is_extension_loaded(::Val) = false
 
+const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNestedADSwitching",
+    false)
+
 # Utilities
 include("utils.jl")
 

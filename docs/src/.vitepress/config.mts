@@ -168,7 +168,8 @@ export default defineConfig({
                     { text: 'GPU Management', link: '/manual/gpu_management' },
                     { text: 'Migrating from Flux to Lux', link: '/manual/migrate_from_flux' },
                     { text: 'Initializing Weights', link: '/manual/weight_initializers' },
-                    { text: 'Distributed Data Parallel Training', link: '/manual/distributed_utils' },]
+                    { text: 'Distributed Data Parallel Training', link: '/manual/distributed_utils' },
+                    { text: 'Nested Automatic Differentiation', link: '/manual/nested_autodiff' },]
             },
             "/api/": {
                 text: 'API Reference', collapsed: false, items: [
