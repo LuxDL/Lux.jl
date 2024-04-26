@@ -29,15 +29,15 @@ using ComponentArrays, FiniteDiff
 First let's set the stage using some minor changes that need to be made for this feature to
 work:
 
-1. Switching only works if a [`StatefulLuxLayer`](@ref) is being used, with the following
-   function calls:
+  - Switching only works if a [`StatefulLuxLayer`](@ref) is being used, with the following
+    function calls:
       - `(<some-function> ∘ <StatefulLuxLayer>)(x::AbstractArray)`
       - `(<StatefulLuxLayer> ∘ <some-function>)(x::AbstractArray)`
       - `(<StatefulLuxLayer>)(x::AbstractArray)`
-2. Currently we have custom routines implemented for:
+  - Currently we have custom routines implemented for:
       - `Zygote.<gradient|jacobian>`
       - `ForwardDiff.<gradient|jacobian>`
-3. Switching only happens for `ChainRules` compatible AD libraries.
+  - Switching only happens for `ChainRules` compatible AD libraries.
 
 We plan to capture `DifferentiationInterface`, `Zygote.pullback`, and `Enzyme.autodiff`
 calls in the future (PRs are welcome).

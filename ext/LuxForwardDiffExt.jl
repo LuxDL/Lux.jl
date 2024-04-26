@@ -160,7 +160,7 @@ function CRC.rrule(
         (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
             return ntuple(Returns(CRC.NoTangent()), 6)
 
-        Δ = reshape(CRC.unthunk(Δ_), size(J))
+        Δ = Lux.__compactify_if_structured_matrix(J, CRC.unthunk(Δ_))
         ∂x, ∂ps = mapreduce(Lux.__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
             __f = (x, p) -> sum(vec(f(x, p))[i:i])
             __gradient_fn = (x, ps) -> begin
