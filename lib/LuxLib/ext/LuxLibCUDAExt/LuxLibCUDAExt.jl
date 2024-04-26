@@ -3,6 +3,7 @@ module LuxLibCUDAExt
 # This file only wraps functionality part of CUDA like CUBLAS
 using CUDA: CUDA, CUBLAS, StridedCuMatrix, StridedCuVector, CuPtr
 using ChainRulesCore: ChainRulesCore
+using FastClosures: @closure
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint, mul!
 using LuxLib: LuxLib
 using NNlib: NNlib
