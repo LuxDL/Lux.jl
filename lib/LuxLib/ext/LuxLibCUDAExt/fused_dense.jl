@@ -32,3 +32,12 @@ end
         x::CUDA.AnyCuMatrix{xT}, b::Nothing) where {F, wT, xT}
     return LuxLib.__fused_dense_bias_activation_impl(σ, weight, x, b)
 end
+
+## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
+
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(LuxLib.__fused_dense_bias_activation_impl), ::typeof(NNlib.gelu),
+        weight::CUDA.AnyCuMatrix, x::CUDA.AnyCuMatrix, b::Union{CUDA.AnyCuVector, Nothing})
+    error("Not Implemented")
+    return
+end

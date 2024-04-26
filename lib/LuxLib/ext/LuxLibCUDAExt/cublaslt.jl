@@ -1,29 +1,36 @@
 const TransOrAdjOrRegStridedCuMatrix{T} = Union{Transpose{T, <:StridedCuMatrix{T}},
     Adjoint{T, <:StridedCuMatrix{T}}, StridedCuMatrix{T}}
 
-function LuxLib._cublaslt_matmul_fused!(
-        @nospecialize(y::TransOrAdjOrRegStridedCuMatrix), σ::F,
-        @nospecialize(w::TransOrAdjOrRegStridedCuMatrix),
+function LuxLib._cublaslt_matmul_fused!(@nospecialize(y::TransOrAdjOrRegStridedCuMatrix),
+        σ::F, @nospecialize(w::TransOrAdjOrRegStridedCuMatrix),
         @nospecialize(x::TransOrAdjOrRegStridedCuMatrix),
-        b::Union{Nothing, StridedCuVector}) where {F}
+        b::Union{Nothing, StridedCuVector},
+        aux::Union{Nothing, TransOrAdjOrRegStridedCuMatrix}=nothing) where {F}
     transy = y isa Transpose || y isa Adjoint
     transx = x isa Transpose || x isa Adjoint
     transw = w isa Transpose || w isa Adjoint
+    if aux !== nothing
+        transaux = aux isa Transpose || aux isa Adjoint
+        aux_ = parent(aux)
+    else
+        transaux = false
+        aux_ = nothing
+    end
     return LuxLib._cublaslt_matmul_fused!(
-        transy, parent(y), σ, transw, parent(w), transx, parent(x), b)
+        transy, parent(y), σ, transw, parent(w), transx, parent(x), b, transaux, aux_)
 end
 
 function LuxLib._cublaslt_matmul_fused!(
         transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
-        transw::Bool, @nospecialize(w::StridedCuMatrix{wT}),
-        transx::Bool, @nospecialize(x::StridedCuMatrix{xT}),
-        b::Union{Nothing, StridedCuVector}) where {F, yT, wT, xT}
+        transw::Bool, @nospecialize(w::StridedCuMatrix{wT}), transx::Bool,
+        @nospecialize(x::StridedCuMatrix{xT}), b::Union{Nothing, StridedCuVector},
+        transaux::Bool, aux::Union{Nothing, StridedCuMatrix}) where {F, yT, wT, xT}
     wxT = promote_type(wT, xT)
     @warn "Mixed Precision Inputs received for `weight`: $(typeof(w)) and `x`: \
            $(typeof(x)). Promoting to $(wxT)." maxlog=1
     return LuxLib._cublaslt_matmul_fused!(
         transy, y, σ, transw, LuxLib._oftype_array(wxT, w),
-        transx, LuxLib._oftype_array(wxT, x), b)
+        transx, LuxLib._oftype_array(wxT, x), b, transaux, aux)
 end
 
 # TODO: use https://docs.nvidia.com/cuda/cublas/#cublasltmatmul for a more robust
@@ -33,9 +40,9 @@ end
 # Returns: 0 if successful, -1 if unsuccessful
 function LuxLib._cublaslt_matmul_fused!(
         transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
-        transw::Bool, @nospecialize(w::StridedCuMatrix{wxT}),
-        transx::Bool, @nospecialize(x::StridedCuMatrix{wxT}),
-        b::Union{Nothing, StridedCuVector}) where {F, yT, wxT}
+        transw::Bool, @nospecialize(w::StridedCuMatrix{wxT}), transx::Bool,
+        @nospecialize(x::StridedCuMatrix{wxT}), b::Union{Nothing, StridedCuVector},
+        transaux::Bool, aux::Union{Nothing, StridedCuMatrix}) where {F, yT, wxT}
     m = size(y, 1)
     n = size(y, 2)
     k = size(w, 2)

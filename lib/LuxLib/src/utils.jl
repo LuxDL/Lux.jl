@@ -169,7 +169,7 @@ end
 
 @inline __added_bias_gradient(::Nothing, _) = CRC.NoTangent()
 @inline function __added_bias_gradient(b::AbstractArray, Δ)
-    ∂b = similar(b)
+    ∂b = similar(b, promote_type(eltype(b), eltype(Δ)))
     sum!(∂b, Δ)
     return ∂b
 end
