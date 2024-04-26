@@ -4,14 +4,8 @@ function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::Abst
 end
 
 # Why are we catching the implementation at this point and not in `bias_act!` like NNlib?
-# Turns out NVIDIA has been shipping a bunch of fused kernels for a while now. We can
-# potentially use those here to fuse all the operations into a single kernel.
-#
-# Currently that is not implemented, but once implemented integrating them into Lux will be
-# trivial.
-#
-# Alternatively we have a native julia version in https://github.com/JuliaGPU/GemmKernels.jl
-# that we can use to fuse the operations till we get CUBLASLt working.
+# Turns out NVIDIA has been shipping a bunch of fused kernels for a while now. We use
+# fuse all the operations into a single kernel.
 
 @inline function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,

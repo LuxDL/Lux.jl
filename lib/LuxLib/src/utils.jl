@@ -199,3 +199,6 @@ CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
 end
 
 CRC.@non_differentiable __reset_BLAS_threads(::Int)
+
+# Defined in ext/LuxLibCUDAExt.jl
+function _cublaslt_matmul_fused! end
