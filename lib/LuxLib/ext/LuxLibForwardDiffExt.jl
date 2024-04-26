@@ -1,8 +1,9 @@
 module LuxLibForwardDiffExt
 
 using ForwardDiff: ForwardDiff
+using GPUArraysCore: AnyGPUArray
 using LuxLib: LuxLib
-using NNlib: NNlib
+using NNlib: NNlib, ConvDims
 
 # dropout
 @inline function LuxLib._dropout_fptype(x::AbstractArray{<:ForwardDiff.Dual})
@@ -65,6 +66,52 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
             (yᵢ, dyᵢ...) -> ForwardDiff.Dual{Tag, Vₓ, P}(yᵢ, ForwardDiff.Partials(dyᵢ)),
             y, dys₁...)
     end
+end
+
+# TODO: We would want to use the fused versions here, but for now we will just dispatch the
+#       duals to the generic implementation for GPUArrays
+function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
+        x::AnyGPUArray{xT, N}, bias::Nothing, cdims::ConvDims) where {F, N, xT}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::AnyGPUArray{wT, N}, x::AnyGPUArray{<:ForwardDiff.Dual, N},
+        bias::Nothing, cdims::ConvDims) where {F, N, wT}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
+        x::AnyGPUArray{<:ForwardDiff.Dual, N}, bias::Nothing, cdims::ConvDims) where {F, N}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N}, x::AnyGPUArray{xT, N},
+        bias::AnyGPUArray{bT, N}, cdims::ConvDims) where {F, N, xT, bT}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::AnyGPUArray{wT, N}, x::AnyGPUArray{<:ForwardDiff.Dual, N},
+        bias::AnyGPUArray{bT, N}, cdims::ConvDims) where {F, wT, bT, N}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
+        x::AnyGPUArray{<:ForwardDiff.Dual, N},
+        bias::AnyGPUArray{bT, N}, cdims::ConvDims) where {F, N, bT}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N}, x::AnyGPUArray{xT, N},
+        bias::AnyGPUArray{<:ForwardDiff.Dual, N}, cdims::ConvDims) where {F, N, xT}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(
+        σ::F, weight::AnyGPUArray{wT, N}, x::AnyGPUArray{<:ForwardDiff.Dual, N},
+        bias::AnyGPUArray{<:ForwardDiff.Dual, N}, cdims::ConvDims) where {F, N, wT}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+end
+function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
+        x::AnyGPUArray{<:ForwardDiff.Dual, N},
+        bias::AnyGPUArray{<:ForwardDiff.Dual, N}, cdims::ConvDims) where {F, N}
+    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
 end
 
 function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})

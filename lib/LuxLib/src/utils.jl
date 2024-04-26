@@ -135,7 +135,7 @@ end
 end
 @inline function __fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
-        if maximum(length, (x, args...)) > 20_000
+        if maximum(length, (x, args...)) > 200_000
             @strided x .= f.(x, args...)
         else
             @.. x = f(x, args...)
@@ -150,7 +150,7 @@ end
 end
 @inline function __nonuniform_fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
-        if maximum(length, (x, args...)) > 20_000
+        if maximum(length, (x, args...)) > 200_000
             @strided x .= f.(x, args...)
         else
             @. x = f(x, args...)
