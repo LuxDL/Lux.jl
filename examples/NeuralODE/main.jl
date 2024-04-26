@@ -171,8 +171,12 @@ function train(model_function; cpu::Bool=false, kwargs...)
 end
 
 train(NeuralODECompact)
+nothing #hide
+
+#-
 
 train(NeuralODE)
+nothing #hide
 
 # We can also change the sensealg and train the model! `GaussAdjoint` allows you to use
 # any arbitrary parameter structure and not just a flat vector (`ComponentArray`).
