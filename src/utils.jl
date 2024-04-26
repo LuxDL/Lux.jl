@@ -279,9 +279,9 @@ end
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
 
-# Convert a structured Matrix to a General Matrix
+# Convert a structured Matrix to a General Matrix if it doesn't have fast scalar indexing
 @inline function __compactify_if_structured_matrix(J::AbstractMatrix, Δ::AbstractArray)
-    if ArrayInterface.isstructured(Δ)
+    if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
         J_ = similar(J)
         copyto!(J_, Δ)
         return J_

@@ -1,5 +1,5 @@
 @testitem "Nested ForwardDiff over Zygote" setup=[SharedTestSetup] tags=[:others] begin
-    using ComponentArrays, FiniteDifferences, ForwardDiff, Zygote
+    using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
 
     Base.isfinite(::Nothing) = true
 
@@ -73,6 +73,33 @@
                 @test ∂x≈∂x_fd rtol=1e-3 atol=1e-3
                 @test check_approx(∂ps, ∂ps_fd; rtol=1e-3, atol=1e-3)
             end
+        end
+
+        @testset "Structured Matrix: Issue LuxDL/Lux.jl#602" begin
+            model = @compact(; potential=Dense(5 => 5, gelu)) do x
+                return reshape(diag(only(Zygote.jacobian(potential, x))), size(x))
+            end
+
+            ps, st = Lux.setup(rng, model) |> dev
+            x = randn(rng, Float32, 5, 5) |> aType
+
+            ∂x, ∂ps, _ = Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ model, x, ps, st)
+
+            ps_cpu = ps |> cpu_device()
+            st_cpu = st |> cpu_device()
+            x_cpu = x |> cpu_device()
+
+            # Use FiniteDiff on CPU
+            ∂x_fd = FiniteDifferences.grad(
+                central_fdm(5, 1), x -> sum(abs2, first(model(x, ps_cpu, st_cpu))), x_cpu)[1]
+            ∂ps_fd = FiniteDifferences.grad(
+                central_fdm(5, 1), p -> sum(abs2, first(model(x_cpu, p, st_cpu))), ps_cpu)[1]
+
+            ∂x_cpu = ∂x |> cpu_device()
+            ∂ps_cpu = ∂ps |> cpu_device()
+
+            @test ∂x_cpu≈∂x_fd rtol=1e-3 atol=1e-3
+            @test check_approx(∂ps_cpu, ∂ps_fd; rtol=1e-3, atol=1e-3)
         end
     end
 end
