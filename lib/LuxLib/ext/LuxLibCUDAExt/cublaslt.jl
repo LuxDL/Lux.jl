@@ -19,12 +19,17 @@ function LuxLib._cublaslt_matmul_fused!(
         transw::Bool, @nospecialize(w::StridedCuMatrix{wT}), transx::Bool,
         @nospecialize(x::StridedCuMatrix{xT}), b::Union{Nothing, StridedCuVector},
         aux::Union{Nothing, StridedCuMatrix}) where {F, yT, wT, xT}
-    wxT = promote_type(wT, xT)
+    bT = b === nothing ? Bool : eltype(b)
+    auxT = aux === nothing ? Bool : eltype(aux)
+    # cuBLASLt will give wrong results if the types are not correct. As a hack we are going
+    # to promote the types to the largest type
+    wxT = promote_type(wT, xT, bT, auxT)
     @warn "Mixed Precision Inputs received for `weight`: $(typeof(w)) and `x`: \
            $(typeof(x)). Promoting to $(wxT)." maxlog=1
     return LuxLib._cublaslt_matmul_fused!(
         transy, y, σ, transw, LuxLib._oftype_array(wxT, w),
-        transx, LuxLib._oftype_array(wxT, x), b, aux)
+        transx, LuxLib._oftype_array(wxT, x),
+        LuxLib._oftype_array(wxT, b), LuxLib._oftype_array(wxT, aux))
 end
 
 # TODO: use https://docs.nvidia.com/cuda/cublas/#cublasltmatmul for a more robust
@@ -175,6 +180,7 @@ end
             end
         end
     else
+        @assert aux===nothing "`aux` must be `nothing` for `$(f)` activation."
         if b === nothing
             return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, false
         else

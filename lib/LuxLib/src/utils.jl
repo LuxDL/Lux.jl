@@ -74,6 +74,7 @@ end
 # Maybe typecast the array
 @inline _oftype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 @inline _oftype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
+@inline _oftype_array(::Type{T}, ::Nothing) where {T} = nothing
 
 ## This part is taken from NNlib.jl
 # This just saves typing `only.(only.(` many times:
