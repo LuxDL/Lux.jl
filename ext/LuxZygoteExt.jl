@@ -97,7 +97,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
             return ntuple(Returns(CRC.NoTangent()), 4)
 
-        Δ = reshape(CRC.unthunk(only(Δ_)), size(only(J)))
+        Δ = Lux.__compactify_if_structured_matrix(only(J), CRC.unthunk(only(Δ_)))
         ∂x, ∂ps = mapreduce(Lux.__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
             __f = (x, p) -> sum(vec(f(x, p))[i:i])
             ∂xᵢ, ∂psᵢ = Lux.__forwarddiff_jvp(

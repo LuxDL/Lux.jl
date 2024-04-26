@@ -275,3 +275,16 @@ __named_tuple(nt::NamedTuple) = nt
 end
 @inline __internal_add(::Nothing, ::Nothing) = nothing
 @inline __internal_add(x, y) = fmap(__internal_add, x, y)
+
+@inline _vec(x::AbstractArray) = vec(x)
+@inline _vec(::Nothing) = nothing
+
+# Convert a structured Matrix to a General Matrix
+@inline function __compactify_if_structured_matrix(J::AbstractMatrix, Δ::AbstractArray)
+    if ArrayInterface.isstructured(Δ)
+        J_ = similar(J)
+        copyto!(J_, Δ)
+        return J_
+    end
+    return reshape(Δ, size(J))
+end
