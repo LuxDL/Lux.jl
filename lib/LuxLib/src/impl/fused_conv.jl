@@ -1,3 +1,80 @@
+# wrappers over NNlib implementations to handle mixed precision inputs
+@inline function __gpu_get_weight_input(::Type{wT}, ::Type{xT}, weight, x) where {wT, xT}
+    T = promote_type(xT, wT)
+    @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
+           $(xT)]. Promoting to $(wT)." maxlog=1
+    return (__materialize_subarray(LuxLib._oftype_array(T, weight)),
+        __materialize_subarray(LuxLib._oftype_array(T, x)))
+end
+@inline function __gpu_get_weight_input(::Type{T}, ::Type{T}, weight, x) where {T}
+    return __materialize_subarray(weight), __materialize_subarray(x)
+end
+
+@inline __depthwiseconv(x, weight, cdims) = NNlib.depthwiseconv(x, weight, cdims)
+
+@inline __conv!(y, x, weight, cdims) = conv!(
+    y, __materialize_subarray(x), __materialize_subarray(weight), cdims)
+@inline function __conv!(y::AnyGPUArray{yT, N}, x::AnyGPUArray{xT, N},
+        weight::AnyGPUArray{wT, N}, cdims) where {yT, xT, wT, N}
+    if xT !== wT !== yT
+        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
+               $(xT)]. Promoting to $(yT)." maxlog=1
+    end
+    return conv!(y, __materialize_subarray(LuxLib._oftype_array(yT, x)),
+        __materialize_subarray(LuxLib._oftype_array(yT, weight)), cdims)
+end
+
+@inline __conv(x, weight, cdims) = conv(
+    __materialize_subarray(x), __materialize_subarray(weight), cdims)
+@inline function __conv(
+        x_::AnyGPUArray{xT, N}, weight_::AnyGPUArray{wT, N}, cdims) where {xT, wT, N}
+    weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
+    return conv(x, weight, cdims)
+end
+
+@inline __∇conv_data(x, weight, cdims) = ∇conv_data(
+    __materialize_subarray(x), __materialize_subarray(weight), cdims)
+@inline function __∇conv_data(
+        x_::AnyGPUArray{xT, N}, weight_::AnyGPUArray{wT, N}, cdims) where {xT, wT, N}
+    weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
+    return ∇conv_data(x, weight, cdims)
+end
+
+@inline __∇conv_filter(x, y, cdims) = ∇conv_filter(
+    __materialize_subarray(x), __materialize_subarray(y), cdims)
+@inline function __∇conv_filter(
+        x_::AnyGPUArray{xT, N}, y_::AnyGPUArray{yT, N}, cdims) where {xT, yT, N}
+    y, x = __gpu_get_weight_input(yT, xT, y_, x_)
+    return ∇conv_filter(x, y, cdims)
+end
+
+@inline __conv_bias_act(x, weight, cdims, bias, act::F) where {F} = __conv_bias_act_impl(
+    __materialize_subarray(x), __materialize_subarray(weight), cdims, bias, act)
+@inline function __conv_bias_act(x_::AnyGPUArray{xT, N}, weight_::AnyGPUArray{wT, N},
+        cdims, bias, act::F) where {xT, wT, N, F}
+    weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
+    bias !== nothing && (bias = LuxLib._oftype_array(eltype(x), bias))
+    return __conv_bias_act_impl(x, weight, cdims, bias, act)
+end
+
+@inline function __conv_bias_act_impl(x, weight, cdims, bias, act::F) where {F}
+    y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
+        NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
+    __conv!(y, x, weight, cdims)
+    return __apply_bias_activation!!(act, y, bias, Val(false))
+end
+@inline function __conv_bias_act_impl(x::AnyGPUArray, weight, cdims, bias, act::F) where {F}
+    bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
+    if act === identity || act === relu
+        return NNlib.conv_bias_act(x, weight, cdims, bias, act)
+    end
+    y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
+        NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
+    __conv!(y, x, weight, cdims)
+    return __apply_bias_activation!!(act, y, bias, Val(false))
+end
+
+# Our main implementations
 @inline function _generic_conv_bias_activation(
         act::F, weight::AbstractArray, args...) where {F}
     old_threads = __maybe_reduce_BLAS_threads(weight)
@@ -6,51 +83,15 @@
     return ret
 end
 
-for aType in (AbstractArray, GPUArraysCore.AnyGPUArray)
-    @eval begin
-        @inline function __generic_conv_bias_activation(
-                act::F, weight::$(aType){T, N}, x::$(aType){T, N},
-                bias::$(aType){T, N}, cdims::ConvDims) where {T, N, F}
-            return __apply_bias_activation(act, conv(x, weight, cdims), bias)
-        end
-
-        @inline function __generic_conv_bias_activation(
-                act::F, weight::$(aType){T, N}, x::$(aType){T, N},
-                bias::Nothing, cdims::ConvDims) where {T, N, F}
-            return __apply_bias_activation(act, conv(x, weight, cdims), bias)
-        end
-    end
-end
-
 @inline function __generic_conv_bias_activation(
-        act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::AbstractArray{bT, N}, cdims::ConvDims) where {wT, xT, bT, N, F}
-    return __apply_bias_activation(act, conv(x, weight, cdims), bias)
+        act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+        bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {F, N}
+    return __apply_bias_activation(act, __conv(x, weight, cdims), bias)
 end
 
-@inline function __generic_conv_bias_activation(
-        act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Nothing, cdims::ConvDims) where {wT, xT, N, F}
-    return __apply_bias_activation(act, conv(x, weight, cdims), bias)
-end
-
-@inline function __generic_conv_bias_activation(
-        act::F, weight::GPUArraysCore.AnyGPUArray{wT, N},
-        x::GPUArraysCore.AnyGPUArray{xT, N}, bias::GPUArraysCore.AnyGPUArray{bT, N},
-        cdims::ConvDims) where {wT, xT, bT, N, F}
-    T = promote_type(wT, xT)
-    return __generic_conv_bias_activation(
-        act, _oftype_array(T, weight), _oftype_array(T, x), _oftype_array(T, bias), cdims)
-end
-
-@inline function __generic_conv_bias_activation(
-        act::F, weight::GPUArraysCore.AnyGPUArray{wT, N},
-        x::GPUArraysCore.AnyGPUArray{xT, N}, bias::Nothing,
-        cdims::ConvDims) where {wT, xT, N, F}
-    T = promote_type(wT, xT)
-    return __generic_conv_bias_activation(
-        act, _oftype_array(T, weight), _oftype_array(T, x), bias, cdims)
-end
+# This implementation is different from `conv_bias_act` in that it defines the proper rrules
+# and fuses operations into a single kernel if it is possible. Unfortunately there are
+# certain configurations where CUDNN allows caching intermediates, but we don't do that rn.
 
 @inline function _fused_conv_bias_activation_impl(
         act::F, weight::AbstractArray, args...) where {F}
@@ -60,39 +101,10 @@ end
     return ret
 end
 
-# This implementation is different from `conv_bias_act` in that it defines the proper rrules
-# and fuses operations into a single kernel if it is possible. Unfortunately there are
-# certain configurations where CUDNN allows caching intermediates, but we don't do that rn.
 @inline function __fused_conv_bias_activation_impl(
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
-    if act === identity
-        bias === nothing && return conv(x, weight, cdims)
-        if x isa GPUArraysCore.AnyGPUArray
-            # Use vendor specific fused kernels
-            return NNlib.conv_bias_act(x, weight, cdims, bias, identity)
-        else
-            y = conv(x, weight, cdims)
-            return __apply_bias_activation!!(identity, y, bias, Val(false))
-        end
-    end
-    # cuDNN has a fused kernel only for relu
-    if act === relu
-        if bias !== nothing
-            if x isa GPUArraysCore.AnyGPUArray
-                return NNlib.conv_bias_act(x, weight, cdims, bias, relu)
-            else
-                y = conv(x, weight, cdims)
-                return __apply_bias_activation!!(relu, y, bias, Val(false))
-            end
-        end
-        return fast_activation!!(act, conv(x, weight, cdims))
-    end
-    # just fusing bias doesn't make sense when we can fuse them both on the julia side
-    y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
-        NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
-    conv!(y, x, weight, cdims)
-    return __apply_bias_activation!!(act, y, bias, Val(false))
+    return __conv_bias_act(x, weight, cdims, bias, act)
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
@@ -100,35 +112,14 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     T = __get_concrete_fba_output_eltype(act, weight, x, bias)
-    y = similar(x, T, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
 
-    # Will be true for identity and relu as well but still to be certain
-    if act === relu ||
-       act === identity ||
-       isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
-        if act === relu || act === identity
-            if bias !== nothing
-                if x isa GPUArraysCore.AnyGPUArray
-                    NNlib.conv_bias_act!(y, x, weight, cdims, bias, act)
-                else
-                    conv!(y, x, weight, cdims)
-                    y = __apply_bias_activation!!(act, y, bias, Val(false))
-                end
-            else
-                conv!(y, x, weight, cdims)
-                y = fast_activation!!(act, y)
-            end
-        else
-            conv!(y, x, weight, cdims)
-            y = __apply_bias_activation!!(act, y, bias, Val(false))
-        end
+    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
+        y = __conv_bias_act(x, weight, cdims, bias, act)
         ∇__fused_conv_bias_activation_impl_no_cached = @closure Δ -> begin
             old_threads = __maybe_reduce_BLAS_threads(weight)
             Δ = CRC.unthunk(NNlib.colmajor(Δ))
             ∂y = act === identity ? Δ : __activation_gradient(Δ, y, act, NotaNumber())
-            ∂b = __added_bias_gradient(bias, ∂y)
-            ∂x = NNlib.∇conv_data(∂y, weight, cdims)
-            ∂w = NNlib.∇conv_filter(x, ∂y, cdims)
+            ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
             return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b, CRC.NoTangent()
         end
@@ -136,6 +127,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     end
 
     # In any case here we need the intermediate pre-activation values
+    y = similar(x, T, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
     conv!(y, x, weight, cdims)
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
@@ -144,9 +136,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             old_threads = __maybe_reduce_BLAS_threads(weight)
             Δ = CRC.unthunk(NNlib.colmajor(Δ))
             ∂y = __activation_gradient(Δ, z, act, y)
-            ∂b = __added_bias_gradient(bias, ∂y)
-            ∂x = NNlib.∇conv_data(∂y, weight, cdims)
-            ∂w = NNlib.∇conv_filter(x, ∂y, cdims)
+            ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
             return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b, CRC.NoTangent()
         end
@@ -158,11 +148,19 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         old_threads = __maybe_reduce_BLAS_threads(weight)
         Δ = NNlib.colmajor(Δ)
         _, _, ∂y, ∂b = pb_f(Δ)
-        ∂x = NNlib.∇conv_data(∂y, weight, cdims)
-        ∂w = NNlib.∇conv_filter(x, ∂y, cdims)
+        ∂w, ∂x, _ = __conv_bias_partials(∂y, ∂b, weight, x, bias, cdims)
         __reset_BLAS_threads(old_threads)
         return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b, CRC.NoTangent()
     end
 
     return z, ∇__fused_conv_bias_activation_impl_cached
+end
+
+@inline function __conv_bias_partials(∂y, weight, x, bias, cdims)
+    return __conv_bias_partials(∂y, __added_bias_gradient(bias, ∂y), weight, x, bias, cdims)
+end
+@inline function __conv_bias_partials(∂y, ∂b, weight, x, bias, cdims)
+    ∂x = __∇conv_data(∂y, weight, cdims)
+    ∂w = __∇conv_filter(x, ∂y, cdims)
+    return ∂w, ∂x, ∂b
 end
