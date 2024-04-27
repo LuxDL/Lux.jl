@@ -92,6 +92,11 @@ struct NotaNumber <: Real end
 
 CRC.@non_differentiable __is_immutable_array_val(::Any...)
 
+@inline __has_dual(x) = false
+@inline __is_immutable_array_or_dual_val(x) = Val(__is_immutable_array(x) || __has_dual(x))
+
+CRC.@non_differentiable __is_immutable_array_or_dual_val(::Any...)
+
 @inline function __expand_conv_bias_dims(
         bias::AbstractVector, ::AbstractArray{T, N}) where {T, N}
     @assert N ≥ 2
@@ -166,7 +171,9 @@ end
 end
 
 @inline __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} = @. σ(x + bias)
+@inline __apply_bias_activation(::typeof(identity), x, bias::AbstractArray) = @. x + bias
 @inline __apply_bias_activation(σ::F, x, ::Nothing) where {F} = @. σ(x)
+@inline __apply_bias_activation(::typeof(identity), x, ::Nothing) = x
 
 @inline __added_bias_gradient(::Nothing, _) = CRC.NoTangent()
 @inline function __added_bias_gradient(b::AbstractArray, Δ)
@@ -203,3 +210,6 @@ CRC.@non_differentiable __reset_BLAS_threads(::Int)
 
 # Defined in ext/LuxLibCUDAExt.jl
 function _cublaslt_matmul_fused! end
+
+@inline __materialize_subarray(x::AbstractArray) = x
+@inline __materialize_subarray(x::SubArray) = copy(x)

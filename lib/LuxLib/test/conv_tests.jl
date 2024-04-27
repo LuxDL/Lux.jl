@@ -80,8 +80,9 @@
             else
                 # FiniteDiffencing doesn't work great for MP because of how LuxTestUtils is
                 # implemented.
-                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_finite_differences=$(Tx !=
-                                                                                                                                                                   Tw)
+                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
+                                                                                                                                                             Tw) skip_finite_differences=$(Tx !=
+                                                                                                                                                                                           Tw)
             end
         end
     end

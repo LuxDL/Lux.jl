@@ -2,8 +2,8 @@
 @inline __length(::Nothing) = nothing
 
 function LuxLib.__fused_dense_bias_activation_impl(
-        act::F, weight::CUDA.AnyCuMatrix, x::CUDA.AnyCuMatrix,
-        b::Union{Nothing, CUDA.AnyCuVector}) where {F}
+        act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
+        b::Union{Nothing, AnyCuVector}) where {F}
     y = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     if hasmethod(LuxLib._cublaslt_matmul_fused!,
@@ -17,27 +17,14 @@ function LuxLib.__fused_dense_bias_activation_impl(
     else
         @warn "cuBLASLt not available. Falling back to generic implementation." maxlog=1
     end
-    mul!(y, weight, x)
+    LuxLib.__matmul!(y, weight, x)
     return LuxLib.__apply_bias_activation!!(act, y, b, Val(false))
-end
-
-## Hijack mixed precision on CUDA to use cuBLASLt if possible
-@inline function LuxLib.fused_dense_bias_activation(
-        σ::F, weight::CUDA.AnyCuMatrix{wT}, x::CUDA.AnyCuMatrix{xT},
-        b::CUDA.AnyCuVector{bT}) where {F, wT, xT, bT}
-    return LuxLib.__fused_dense_bias_activation_impl(σ, weight, x, b)
-end
-
-@inline function LuxLib.fused_dense_bias_activation(σ::F, weight::CUDA.AnyCuMatrix{wT},
-        x::CUDA.AnyCuMatrix{xT}, b::Nothing) where {F, wT, xT}
-    return LuxLib.__fused_dense_bias_activation_impl(σ, weight, x, b)
 end
 
 ## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
 function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(LuxLib.__fused_dense_bias_activation_impl),
-        act::typeof(NNlib.gelu), weight::CUDA.AnyCuMatrix,
-        x::CUDA.AnyCuMatrix, b::Union{CUDA.AnyCuVector, Nothing})
+        ::typeof(LuxLib.__fused_dense_bias_activation_impl), act::typeof(NNlib.gelu),
+        weight::AnyCuMatrix, x::AnyCuMatrix, b::Union{AnyCuVector, Nothing})
     z = similar(x, LuxLib.__get_concrete_fba_output_eltype(NNlib.gelu, weight, x, b),
         size(weight, 1), size(x, 2))
     y = z # aliased for now for type stability
@@ -57,15 +44,13 @@ function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
 
     if retcode == -1
         # Generic Fallback: break aliasing in _apply_bias_activation!!
-        mul!(z, weight, x)
+        LuxLib.__matmul!(z, weight, x)
         z, y = LuxLib.__apply_bias_activation!!(act, z, b, Val(true))
     end
 
     ∇__fused_dense_bias_activation_impl_cublaslt = @closure Δ -> begin
         ∂y = LuxLib.__activation_gradient(CRC.unthunk(Δ), z, act, y)
-        ∂b = LuxLib.__added_bias_gradient(b, ∂y)
-        ∂x = weight' * ∂y
-        ∂w = ∂y * x'
+        ∂w, ∂x, ∂b = LuxLib.__matmul_bias_partials(∂y, weight, x, b)
         return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
     end
 

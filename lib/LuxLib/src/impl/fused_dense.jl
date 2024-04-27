@@ -1,6 +1,17 @@
+# Wrappers over Base & LinearAlgen implementations to use poly algs if needed
+## We define a special __matmul function so that we can define ForwardDiff rules on it without
+## type piracy
+@inline __matmul(A, B) = A * B
+@inline __matmul!(C, A, B) = mul!(C, A, B)
+@inline __matmuladd(A, B, C) = muladd(A, B, C)
+@inline __matmuladd(A, B, ::Nothing) = __matmul(A, B)
+
+# Our main implementations
+
 function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::AbstractMatrix,
         bias::Union{Nothing, AbstractVector}) where {F}
-    return __apply_bias_activation(act, weight * x, bias)
+    act === identity && return __matmuladd(weight, x, bias)
+    return __apply_bias_activation(act, __matmul(weight, x), bias)
 end
 
 # Why are we catching the implementation at this point and not in `bias_act!` like NNlib?
@@ -10,10 +21,13 @@ end
 @inline function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Union{Nothing, AbstractVector}) where {F}
-    act === identity && b === nothing && return (weight * x)
+    if act === identity
+        b === nothing && return (weight * x)
+        return __matmuladd(weight, x, b)
+    end
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, nothing),
         size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
+    __matmul!(y, weight, x)
     return __apply_bias_activation!!(act, y, b, Val(false))
 end
 
@@ -30,37 +44,41 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
             ∂y = act === identity ? CRC.unthunk(Δ) :
                  __activation_gradient(CRC.unthunk(Δ), y, act, NotaNumber())
-            ∂b = __added_bias_gradient(b, ∂y)
-            ∂x = weight' * ∂y
-            ∂w = ∂y * x'
+            ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
             return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
         end
         return y, ∇__fused_dense_bias_activation_impl_no_cached
     end
 
-    y = similar(weight, T, size(weight, 1), size(x, 2))
-    mul!(y, weight, x)
-
     # Case II: We can't overwrite `y` directly, but we can use the direct ChainRules
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
-        z, y = __apply_bias_activation!!(act, y, b, Val(true))
+        y = __matmuladd(weight, x, b)
+        z = __fast_broadcast(act, y)
         ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
             ∂y = __activation_gradient(CRC.unthunk(Δ), z, act, y)
-            ∂b = __added_bias_gradient(b, ∂y)
-            ∂x = weight' * ∂y
-            ∂w = ∂y * x'
+            ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
             return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
         end
         return z, ∇__fused_dense_bias_activation_impl_cached_crc
     end
 
     # Case III: Activation Function requires caching the intermediate value
+    y = similar(weight, T, size(weight, 1), size(x, 2))
+    __matmul!(y, weight, x)
     z, pb_f = CRC.rrule_via_ad(cfg, __apply_bias_activation, act, y, b)
     ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
         _, _, ∂y, ∂b = pb_f(Δ)
-        ∂x = weight' * ∂y
-        ∂w = ∂y * x'
+        ∂w, ∂x, _ = __matmul_bias_partials(∂y, ∂b, weight, x, b)
         return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
     end
     return z, ∇__fused_dense_bias_activation_impl_cached
+end
+
+@inline function __matmul_bias_partials(∂y, weight, x, bias)
+    return __matmul_bias_partials(∂y, __added_bias_gradient(bias, ∂y), weight, x, bias)
+end
+@inline function __matmul_bias_partials(∂y, ∂b, weight, x, bias)
+    ∂w = __matmul(∂y, x')
+    ∂x = __matmul(weight', ∂y)
+    return ∂w, ∂x, ∂b
 end

@@ -21,23 +21,23 @@ multiple operations.
     though this function doesn't call those operations.
   - If any of the inputs, don't support setindexing (aka immutable arrays) we fallback to
     the generic non-mutating implementation.
-  - For mixed precision inputs, we use the fallback allocating implementation.
   - Maximum memory reuse and operation fusion is guaranteed for ChainRules compatible AD
     backends or backends that support mutation. Backends like `Tracker` and `ReverseDiff`
     fallback to the generic implementation.
   - For CUDA Arrays, this uses a special fused implementation via cuBLASLt.
 """
 @inline function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix{T}, x::AbstractMatrix{T}, b::Nothing) where {F, T}
-    return fused_dense_bias_activation(σ, weight, __is_immutable_array_val(weight), x,
-        __is_immutable_array_val(x), b, __is_immutable_array_val(b))
+        σ::F, weight::AbstractMatrix, x::AbstractMatrix, b::Nothing) where {F}
+    return fused_dense_bias_activation(
+        σ, weight, __is_immutable_array_or_dual_val(weight), x,
+        __is_immutable_array_or_dual_val(x), b, __is_immutable_array_or_dual_val(b))
 end
 
 @inline function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix{T}, x::AbstractMatrix{T},
-        b::AbstractVector{T}) where {F, T}
-    return fused_dense_bias_activation(σ, weight, __is_immutable_array_val(weight), x,
-        __is_immutable_array_val(x), b, __is_immutable_array_val(b))
+        σ::F, weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector) where {F}
+    return fused_dense_bias_activation(
+        σ, weight, __is_immutable_array_or_dual_val(weight), x,
+        __is_immutable_array_or_dual_val(x), b, __is_immutable_array_or_dual_val(b))
 end
 
 @inline function fused_dense_bias_activation(
@@ -49,17 +49,5 @@ end
 @inline function fused_dense_bias_activation(
         σ::F, weight::AbstractMatrix, ::Val, x::AbstractMatrix,
         ::Val, b::Union{Nothing, AbstractVector}, ::Val) where {F}
-    return __generic_dense_bias_activation(σ, weight, x, b)
-end
-
-# Mixed Precision Casex
-@inline function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix{wT}, x::AbstractMatrix{xT},
-        b::AbstractVector{bT}) where {F, wT, xT, bT}
-    return __generic_dense_bias_activation(σ, weight, x, b)
-end
-
-@inline function fused_dense_bias_activation(σ::F, weight::AbstractMatrix{wT},
-        x::AbstractMatrix{xT}, b::Nothing) where {F, wT, xT}
     return __generic_dense_bias_activation(σ, weight, x, b)
 end

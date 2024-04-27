@@ -1,9 +1,11 @@
 module LuxLibForwardDiffExt
 
 using ForwardDiff: ForwardDiff
-using GPUArraysCore: AnyGPUArray
 using LuxLib: LuxLib
-using NNlib: NNlib, ConvDims
+using NNlib: NNlib
+
+LuxLib.__has_dual(::ForwardDiff.Dual) = true
+LuxLib.__has_dual(::AbstractArray{<:ForwardDiff.Dual}) = true
 
 # dropout
 @inline function LuxLib._dropout_fptype(x::AbstractArray{<:ForwardDiff.Dual})
@@ -15,16 +17,16 @@ end
 #       and cut down substantially on the time to compute jacobians.
 # Here we should be broadcasting with `Tag` for safety but that breaks GPU compilation.
 for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
-    op! = Symbol("$(op)!")
+    luxlibop = Symbol("__$(op)")
 
     @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
             x2::AbstractArray{<:Real, N}, cdims::NNlib.ConvDims;
             kwargs...) where {N, Tag, V, P}
         x1_data = ForwardDiff.value.(x1)
 
-        y = NNlib.$(op)(x1_data, x2, cdims; kwargs...)
+        y = LuxLib.$(luxlibop)(x1_data, x2, cdims; kwargs...)
         dys = ntuple(
-            i -> NNlib.$(op)(ForwardDiff.partials.(x1, i), x2, cdims; kwargs...), P)
+            i -> LuxLib.$(luxlibop)(ForwardDiff.partials.(x1, i), x2, cdims; kwargs...), P)
 
         return map(
             (yᵢ, dyᵢ...) -> ForwardDiff.Dual{Tag, V, P}(yᵢ, ForwardDiff.Partials(dyᵢ)),
@@ -36,9 +38,9 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
             cdims::NNlib.ConvDims; kwargs...) where {N, Tag, V, P}
         x2_data = ForwardDiff.value.(x2)
 
-        y = NNlib.$(op)(x1, x2_data, cdims; kwargs...)
+        y = LuxLib.$(luxlibop)(x1, x2_data, cdims; kwargs...)
         dys = ntuple(
-            i -> NNlib.$(op)(x1, ForwardDiff.partials.(x2, i), cdims; kwargs...), P)
+            i -> LuxLib.$(luxlibop)(x1, ForwardDiff.partials.(x2, i), cdims; kwargs...), P)
 
         return map(
             (yᵢ, dyᵢ...) -> ForwardDiff.Dual{Tag, V, P}(yᵢ, ForwardDiff.Partials(dyᵢ)),
@@ -51,11 +53,13 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
         x1_data = ForwardDiff.value.(x1)
         x2_data = ForwardDiff.value.(x2)
 
-        y = NNlib.$(op)(x1_data, x2_data, cdims; kwargs...)
+        y = LuxLib.$(luxlibop)(x1_data, x2_data, cdims; kwargs...)
 
         dys₁ = ntuple(P) do i
-            dys₁ᵢ = NNlib.$(op)(ForwardDiff.partials.(x1, i), x2_data, cdims; kwargs...)
-            dys₂ᵢ = NNlib.$(op)(x1_data, ForwardDiff.partials.(x2, i), cdims; kwargs...)
+            dys₁ᵢ = LuxLib.$(luxlibop)(
+                ForwardDiff.partials.(x1, i), x2_data, cdims; kwargs...)
+            dys₂ᵢ = LuxLib.$(luxlibop)(
+                x1_data, ForwardDiff.partials.(x2, i), cdims; kwargs...)
             dys₁ᵢ .+= dys₂ᵢ
             return dys₁ᵢ
         end
@@ -68,53 +72,21 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
     end
 end
 
-# TODO: We would want to use the fused versions here, but for now we will just dispatch the
-#       duals to the generic implementation for GPUArrays
-function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
-        x::AnyGPUArray{xT, N}, bias::Nothing, cdims::ConvDims) where {F, N, xT}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+# Don't try to promote the input types
+@inline function LuxLib.__gpu_get_weight_input(
+        ::Type{T}, ::Type{<:ForwardDiff.Dual}, weight, x) where {T}
+    return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
 end
-function LuxLib.fused_conv_bias_activation(
-        σ::F, weight::AnyGPUArray{wT, N}, x::AnyGPUArray{<:ForwardDiff.Dual, N},
-        bias::Nothing, cdims::ConvDims) where {F, N, wT}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+@inline function LuxLib.__gpu_get_weight_input(
+        ::Type{<:ForwardDiff.Dual}, ::Type{T}, weight, x) where {T}
+    return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
 end
-function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
-        x::AnyGPUArray{<:ForwardDiff.Dual, N}, bias::Nothing, cdims::ConvDims) where {F, N}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
-end
-function LuxLib.fused_conv_bias_activation(
-        σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N}, x::AnyGPUArray{xT, N},
-        bias::AnyGPUArray{bT, N}, cdims::ConvDims) where {F, N, xT, bT}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
-end
-function LuxLib.fused_conv_bias_activation(
-        σ::F, weight::AnyGPUArray{wT, N}, x::AnyGPUArray{<:ForwardDiff.Dual, N},
-        bias::AnyGPUArray{bT, N}, cdims::ConvDims) where {F, wT, bT, N}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
-end
-function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
-        x::AnyGPUArray{<:ForwardDiff.Dual, N},
-        bias::AnyGPUArray{bT, N}, cdims::ConvDims) where {F, N, bT}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
-end
-function LuxLib.fused_conv_bias_activation(
-        σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N}, x::AnyGPUArray{xT, N},
-        bias::AnyGPUArray{<:ForwardDiff.Dual, N}, cdims::ConvDims) where {F, N, xT}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
-end
-function LuxLib.fused_conv_bias_activation(
-        σ::F, weight::AnyGPUArray{wT, N}, x::AnyGPUArray{<:ForwardDiff.Dual, N},
-        bias::AnyGPUArray{<:ForwardDiff.Dual, N}, cdims::ConvDims) where {F, N, wT}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
-end
-function LuxLib.fused_conv_bias_activation(σ::F, weight::AnyGPUArray{<:ForwardDiff.Dual, N},
-        x::AnyGPUArray{<:ForwardDiff.Dual, N},
-        bias::AnyGPUArray{<:ForwardDiff.Dual, N}, cdims::ConvDims) where {F, N}
-    return LuxLib._generic_conv_bias_activation(σ, weight, x, bias, cdims)
+@inline function LuxLib.__gpu_get_weight_input(
+        ::Type{<:ForwardDiff.Dual}, ::Type{<:ForwardDiff.Dual}, weight, x)
+    return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
 end
 
-function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})
+@inline function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})
     return ForwardDiff.value.(x)
 end
 
