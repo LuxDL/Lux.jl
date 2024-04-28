@@ -114,16 +114,12 @@ function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
            (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::Conv{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(
-        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
-end
-
-@inline function (c::Conv{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(
-        x, ps.weight; stride=c.stride, padding=c.pad, dilation=c.dilation, groups=c.groups)
-    return apply_bias_activation(c.activation, _conv(x, ps.weight, cdims), ps.bias), st
+@inline function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
+    cdims = DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    return (
+        fused_conv_bias_activation(
+            c.activation, ps.weight, x, _getproperty(ps, Val(:bias)), cdims),
+        st)
 end
 
 function Base.show(io::IO, l::Conv)
@@ -617,16 +613,13 @@ function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
     return prod(c.kernel_size) * c.in_chs * c.out_chs + (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::CrossCor{N, false})(x::AbstractArray, ps, st::NamedTuple) where {N}
+@inline function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     cdims = DenseConvDims(
         DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
-    return apply_activation(c.activation, _conv(x, ps.weight, cdims)), st
-end
-
-@inline function (c::CrossCor{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = DenseConvDims(
-        DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
-    return apply_bias_activation(c.activation, _conv(x, ps.weight, cdims), ps.bias), st
+    return (
+        fused_conv_bias_activation(
+            c.activation, ps.weight, x, _getproperty(ps, Val(:bias)), cdims),
+        st)
 end
 
 function Base.show(io::IO, l::CrossCor)

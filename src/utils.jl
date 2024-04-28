@@ -29,7 +29,7 @@ _maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(
 # Padding
 struct SamePad end
 
-function _calc_padding(pad, k::NTuple{N}, dilation, stride) where {N}
+function _calc_padding(pad, ::NTuple{N}, dilation, stride) where {N}
     return _expand(Val(2 * N), pad)
 end
 
@@ -42,9 +42,6 @@ function _calc_padding(::SamePad, k::NTuple, dilation, stride)
     # In case amount of padding is odd we need to apply different amounts to each side.
     return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
 end
-
-# Getting typename
-get_typename(::T) where {T} = Base.typename(T).wrapper
 
 # RNN Utilities
 @inline _gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
@@ -120,11 +117,6 @@ end
 
 # Backend Integration
 ## Convolution
-@inline _conv(x, weight, cdims) = conv(x, weight, cdims)
-@inline function _conv(x::SubArray{T, N, <:AbstractArray}, weight, cdims) where {T, N}
-    return _conv(copy(x), weight, cdims)
-end
-
 @inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
 @inline function _conv_transpose(
         x::SubArray{T, N, <:GPUArraysCore.AnyGPUArray}, weight, cdims) where {T, N}
