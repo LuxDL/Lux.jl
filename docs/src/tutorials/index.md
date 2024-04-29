@@ -89,6 +89,12 @@ const third_party = [
     src: "https://raw.githubusercontent.com/Dale-Black/ComputerVisionTutorials.jl/main/assets/image-seg-green.jpeg",
     caption: "Medical Image Segmentation",
     desc: "Explore various aspects of deep learning for medical imaging and a comprehensive overview of Julia packages."
+  },
+  {
+    href: "https://github.com/agdestein/NeuralClosureTutorials",
+    src: "https://raw.githubusercontent.com/agdestein/NeuralClosureTutorials/main/assets/navier_stokes.gif",
+    caption: "Neural PDE closures",
+    desc: "Learn an unknown term in a PDE using convolutional neural networks and Fourier neural operators."
   }
 ];
 </script>
