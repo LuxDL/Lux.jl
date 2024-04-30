@@ -20,46 +20,19 @@ end
 
 # Nested AD Handling
 ## Zygote.gradient call
-@inline function __internal_gradient_capture(f::F, x, args...) where {F}
-    return Zygote.gradient(@closure(x->f(x, args...)), x)
-end
-
 @inline function Zygote.gradient(
         f::Base.ComposedFunction{<:Lux.StatefulLuxLayer, F}, x::AbstractArray) where {F}
-    return __internal_gradient_capture(
-        @closure((x, ps)->f.outer(f.inner(x), ps)), x, f.outer.ps)
+    return Lux.__internal_ad_gradient_call(
+        Zygote.gradient, @closure((x, ps)->f.outer(f.inner(x), ps)), x, f.inner.ps)
 end
 
 @inline function Zygote.gradient(
         f::Base.ComposedFunction{F, <:Lux.StatefulLuxLayer}, x::AbstractArray) where {F}
-    return __internal_gradient_capture(f, x, f.inner.ps)
+    return Lux.__internal_ad_gradient_call(Zygote.gradient, f, x, f.inner.ps)
 end
 
 @inline function Zygote.gradient(f::Lux.StatefulLuxLayer, x::AbstractArray)
-    return __internal_gradient_capture(f, x, f.ps)
-end
-
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(__internal_gradient_capture), f::F, x::AbstractArray, ps) where {F}
-    if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-        if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-            @warn "Load ForwardDiff.jl for better nested AD handling." maxlog=1
-        end
-        # Use the AD itself for whatever reason
-        y, pb_f = CRC.rrule_via_ad(cfg, Zygote.gradient, f, x, ps)
-        return (first(y),), pb_f
-    end
-
-    y = __internal_gradient_capture(f, x, ps)
-    ∇internal_gradient_capture = @closure Δ -> begin
-        (Δ isa CRC.NoTangent || Δ isa CRC.ZeroTangent) &&
-            return ntuple(Returns(CRC.NoTangent()), 4)
-        Δ_ = reshape(CRC.unthunk(only(Δ)), size(x))
-        ∂x, ∂ps = Lux.__forwarddiff_jvp(
-            @closure((x, ps)->Zygote.gradient(f, x, ps)), x, Δ_, ps)
-        return CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂ps
-    end
-    return y, ∇internal_gradient_capture
+    return Lux.__internal_ad_gradient_call(Zygote.gradient, f, x, f.ps)
 end
 
 ## Zygote.jacobian call

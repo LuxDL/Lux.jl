@@ -10,17 +10,15 @@ const CRC = ChainRulesCore
 
 @inline Lux._is_extension_loaded(::Val{:ForwardDiff}) = true
 
-@inline Lux.__partials(::Type{Tag}, x::AbstractArray, i) where {Tag} = ForwardDiff.partials.(
-    Tag, x, i)
-@inline Lux.__partials(::Type{Tag}, x::Tuple, i) where {Tag} = map(
-    @closure(xᵢ->Lux.__partials(Tag, xᵢ, i)), x)
-@inline Lux.__partials(::Type{Tag}, x::NamedTuple{F}, i) where {Tag, F} = NamedTuple{F}(map(
-    @closure(xᵢ->Lux.__partials(Tag, xᵢ, i)), values(x)))
-@inline Lux.__partials(::Type{Tag}, x::CRC.AbstractTangent, i) where {Tag} = Lux.__partials(
-    Tag, CRC.backing(x), i)
-@inline Lux.__partials(::Type{Tag}, ::Nothing, i) where {Tag} = nothing
-@inline Lux.__partials(::Type{Tag}, x, i) where {Tag} = fmap(
-    @closure(xᵢ->Lux.__partials(Tag, xᵢ, i)), x)
+@inline function Lux.__partials(::Type{Tag}, x, i) where {Tag}
+    x isa AbstractArray && return ForwardDiff.partials.(Tag, x, i)
+    map_fn = @closure(xᵢ->Lux.__partials(Tag, xᵢ, i))
+    x isa Tuple && return map(map_fn, x)
+    x isa NamedTuple && return NamedTuple{keys(x)}(map(map_fn, values(x)))
+    x isa CRC.AbstractTangent && return Lux.__partials(Tag, CRC.backing(x), i)
+    x === nothing && return nothing
+    return fmap(map_fn, x)
+end
 
 # This is not a general jvp code, but rather meant to be efficient for nested AD calls
 function Lux.__forwarddiff_jvp(
@@ -34,16 +32,12 @@ function Lux.__forwarddiff_jvp(
 end
 
 # Capture ForwardDiff.jacobian call and replace it with forward over reverse mode AD
-@inline function __updated_forwarddiff_config(
-        ::ForwardDiff.JacobianConfig{T, V, N, D}, f::F,
-        x::AbstractArray{V}) where {T, V, N, D, F}
-    return ForwardDiff.JacobianConfig(f, x, ForwardDiff.Chunk{N}())
-end
-
-@inline function __updated_forwarddiff_config(
-        ::ForwardDiff.GradientConfig{T, V, N, D}, f::F,
-        x::AbstractArray{V}) where {T, V, N, D, F}
-    return ForwardDiff.GradientConfig(f, x, ForwardDiff.Chunk{N}())
+for cfg in (:JacobianConfig, :GradientConfig)
+    @eval @inline function __updated_forwarddiff_config(
+            ::ForwardDiff.$(cfg){T, V, N, D}, f::F,
+            x::AbstractArray{V}) where {T, V, N, D, F}
+        return ForwardDiff.$(cfg){T, V, N, D}(f, x, ForwardDiff.Chunk{N}())
+    end
 end
 
 # TODO: We can define multiple dispatches using meta programming to not construct these
@@ -80,35 +74,21 @@ end
 function CRC.rrule(
         cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(__internal_gradient_capture),
         f::F, jc_cfg::ForwardDiff.GradientConfig, chk::Val, x::AbstractArray, ps) where {F}
-    if DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-        y, pb_f = CRC.rrule_via_ad(cfg, ForwardDiff.gradient, Base.Fix2(f, ps), x)
-        ∇internal_jacobian_capture_noswitch = Δ -> begin
-            @warn "Nested AD switch is disabled for `ForwardDiff.gradient`. If used with \
-                   an outer `Zygote.gradient` call, the gradients wrt parameters `ps` will \
-                   be dropped. Enable nested AD switching to get the correct (full) \
-                   gradients." maxlog=1
-            _, _, ∂x = pb_f(Δ)
-            return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(),
-                CRC.NoTangent(), ∂x, CRC.NoTangent())
-        end
-        return y, ∇internal_jacobian_capture_noswitch
+    # Restructure the call here
+    grad_fn = (f_internal, x, args...) -> begin
+        res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
+        return ∂f(one(res))[2:end]
     end
 
-    g = __internal_gradient_capture(f, jc_cfg, chk, x, ps)
-    ∇internal_gradient_capture = Δ_ -> begin
-        (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
-            return ntuple(Returns(CRC.NoTangent()), 6)
-
-        Δ = reshape(CRC.unthunk(Δ_), size(x))
-        ∂x, ∂ps = Lux.__forwarddiff_jvp(x, Δ, ps) do x, ps
-            y, pb_f = CRC.rrule_via_ad(cfg, f, x, ps)
-            return pb_f(one(y))[2:3]
-        end
+    res, pb_f = CRC.rrule_via_ad(cfg, Lux.__internal_ad_gradient_call, grad_fn, f, x, ps)
+    ∇internal_gradient_capture = Δ -> begin
+        _, _, _, ∂x, ∂ps = pb_f(tuple(Δ))
         return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂ps)
     end
-    return g, ∇internal_gradient_capture
+    return only(res), ∇internal_gradient_capture
 end
 
+## ForwardDiff.jacobian
 @inline function __internal_jacobian_capture(
         f::F, cfg::ForwardDiff.JacobianConfig, chk::Val, x, args...) where {F}
     # Here we can't really pass in the actual config because we modify the internal function

@@ -106,7 +106,3 @@ function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
     ∇StatefulLuxLayer(Δ) = (CRC.NoTangent(), Δ.model, Δ.ps, Δ.st, Δ.st_any)
     return slayer, ∇StatefulLuxLayer
 end
-
-# Needed for nice nested AD
-function __forwarddiff_jvp end
-function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)

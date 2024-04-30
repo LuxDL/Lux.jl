@@ -69,6 +69,7 @@ include("contrib/contrib.jl")
 # Helpful Functionalities
 include("helpers/stateful.jl")
 include("helpers/compact.jl")
+include("helpers/nested_ad.jl")
 
 # Transform to and from other frameworks
 include("transform/types.jl")
