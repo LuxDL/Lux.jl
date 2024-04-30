@@ -21,6 +21,7 @@ const CRC = ChainRulesCore
 end
 
 # This is not a general jvp code, but rather meant to be efficient for nested AD calls
+# TODO: Generalize the x to be non AbstractArray
 function Lux.__forwarddiff_jvp(
         f::F, x::AbstractArray{xT}, Δx::AbstractArray{ΔxT}, ps) where {F, xT, ΔxT}
     T = promote_type(xT, ΔxT)
@@ -36,44 +37,30 @@ for cfg in (:JacobianConfig, :GradientConfig)
     @eval @inline function __updated_forwarddiff_config(
             ::ForwardDiff.$(cfg){T, V, N, D}, f::F,
             x::AbstractArray{V}) where {T, V, N, D, F}
-        return ForwardDiff.$(cfg){T, V, N, D}(f, x, ForwardDiff.Chunk{N}())
+        return ForwardDiff.$(cfg)(f, x, ForwardDiff.Chunk{N}())
     end
 end
 
-# TODO: We can define multiple dispatches using meta programming to not construct these
-#       intermediate configs, but that is kind of a micro-optimization, so we can handle
-#       those later.
-@inline function __internal_gradient_capture(
-        f::F, cfg::ForwardDiff.GradientConfig, chk::Val, x, args...) where {F}
+## ForwardDiff.gradient
+@inline function __internal_forwarddiff_gradient(
+        f::F, cfg::ForwardDiff.GradientConfig, chk::Val, x, y) where {F}
     # Here we can't really pass in the actual config because we modify the internal function
-    __f = @closure(x->f(x, args...))
+    __f = Base.Fix2(f, y)
     return ForwardDiff.gradient(__f, x, __updated_forwarddiff_config(cfg, __f, x), chk)
 end
 
-@inline function ForwardDiff.gradient(
-        f::Base.ComposedFunction{<:Lux.StatefulLuxLayer, F}, x::AbstractArray,
-        cfg::ForwardDiff.GradientConfig=ForwardDiff.GradientConfig(f, x),
-        check::Val=Val(true)) where {F}
-    return __internal_gradient_capture(
-        @closure((x, ps)->f.outer(f.inner(x), ps)), cfg, check, x, ps)
+for fType in Lux.GRADIENT_CONVERTIBLE_FUNCTIONS
+    @eval @inline function ForwardDiff.gradient(f::$fType, x::AbstractArray,
+            cfg::ForwardDiff.GradientConfig=ForwardDiff.GradientConfig(f, x),
+            chk::Val=Val(true))
+        f_internal, ps = Lux.__rewrite_ad_call_for_inputs(f)
+        return __internal_forwarddiff_gradient(f_internal, cfg, chk, x, ps)
+    end
 end
 
-@inline function ForwardDiff.gradient(
-        f::Base.ComposedFunction{F, <:Lux.StatefulLuxLayer}, x::AbstractArray,
-        cfg::ForwardDiff.GradientConfig=ForwardDiff.GradientConfig(f, x),
-        check::Val=Val(true)) where {F}
-    return __internal_gradient_capture(f, cfg, check, x, f.inner.ps)
-end
-
-@inline function ForwardDiff.gradient(f::Lux.StatefulLuxLayer, x::AbstractArray,
-        cfg::ForwardDiff.GradientConfig=ForwardDiff.GradientConfig(f, x),
-        check::Val=Val(true))
-    return __internal_gradient_capture(f, cfg, check, x, f.ps)
-end
-
-function CRC.rrule(
-        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(__internal_gradient_capture),
-        f::F, jc_cfg::ForwardDiff.GradientConfig, chk::Val, x::AbstractArray, ps) where {F}
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(__internal_forwarddiff_gradient), f::F,
+        jc_cfg::ForwardDiff.GradientConfig, chk::Val, x::AbstractArray, ps) where {F}
     # Restructure the call here
     grad_fn = (f_internal, x, args...) -> begin
         res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)

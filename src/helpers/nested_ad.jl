@@ -3,6 +3,17 @@ function __forwarddiff_jvp end
 
 function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)
 
+GRADIENT_CONVERTIBLE_FUNCTIONS = [ComposedFunction{<:Any, <:StatefulLuxLayer},
+    ComposedFunction{<:StatefulLuxLayer}, StatefulLuxLayer]
+
+@inline function __rewrite_ad_call_for_inputs(f::F) where {F}
+    f isa ComposedFunction{<:Any, <:StatefulLuxLayer} && return f, f.inner.ps
+    f isa ComposedFunction{<:StatefulLuxLayer} &&
+        return @closure((x, ps)->f.outer(f.inner(x), ps)), f.inner.ps
+    f isa StatefulLuxLayer && return f, f.ps
+    return error("Unknown function type: $(typeof(f))")
+end
+
 # Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
 # To compute the gradient of `f(x, y)` wrt y, just reorder the arguments with a wrapper
 # over `f`

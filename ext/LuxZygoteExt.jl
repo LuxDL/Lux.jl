@@ -20,19 +20,11 @@ end
 
 # Nested AD Handling
 ## Zygote.gradient call
-@inline function Zygote.gradient(
-        f::Base.ComposedFunction{<:Lux.StatefulLuxLayer, F}, x::AbstractArray) where {F}
-    return Lux.__internal_ad_gradient_call(
-        Zygote.gradient, @closure((x, ps)->f.outer(f.inner(x), ps)), x, f.inner.ps)
-end
-
-@inline function Zygote.gradient(
-        f::Base.ComposedFunction{F, <:Lux.StatefulLuxLayer}, x::AbstractArray) where {F}
-    return Lux.__internal_ad_gradient_call(Zygote.gradient, f, x, f.inner.ps)
-end
-
-@inline function Zygote.gradient(f::Lux.StatefulLuxLayer, x::AbstractArray)
-    return Lux.__internal_ad_gradient_call(Zygote.gradient, f, x, f.ps)
+for fType in Lux.GRADIENT_CONVERTIBLE_FUNCTIONS
+    @eval @inline function Zygote.gradient(f::$fType, x)
+        f_internal, ps = Lux.__rewrite_ad_call_for_inputs(f)
+        return Lux.__internal_ad_gradient_call(Zygote.gradient, f_internal, x, ps)
+    end
 end
 
 ## Zygote.jacobian call
