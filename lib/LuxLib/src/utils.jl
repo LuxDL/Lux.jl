@@ -141,8 +141,8 @@ end
 end
 @inline function __fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
-        if maximum(length, (x, args...)) > 200_000
-            @strided x .= f.(x, args...)
+        if maximum(length, (x, args...)) > 100_000
+            @.. thread=true x=f(x, args...)
         else
             @.. x = f(x, args...)
         end
@@ -156,8 +156,11 @@ end
 end
 @inline function __nonuniform_fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
-        if maximum(length, (x, args...)) > 200_000
-            @strided x .= f.(x, args...)
+        if maximum(length, (x, args...)) > 100_000
+            bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
+            @batch for I in eachindex(bc)
+                @inbounds x[I] = bc[I]
+            end
         else
             @. x = f(x, args...)
         end
