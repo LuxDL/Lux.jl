@@ -192,6 +192,16 @@ end
     return @. Δ * only_derivative(out, act, x)
 end
 
+@inline function __activation_gradient_simple(Δ, out, act::F, x) where {F}
+    return @. Δ * only_derivative(out, act, x)
+end
+
+# Needed for reverse over reverse mode AD
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(__activation_gradient), Δ, out, act::F, x) where {F}
+    return CRC.rrule_via_ad(cfg, __activation_gradient_simple, Δ, out, act, x)
+end
+
 # Reduce BLAS threads if we are going to use a native Julia implementation
 @inline function __maybe_reduce_BLAS_threads(x::AbstractArray)::Int
     if ArrayInterface.fast_scalar_indexing(x)
