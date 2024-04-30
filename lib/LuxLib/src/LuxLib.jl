@@ -13,10 +13,10 @@ using PrecompileTools: @recompile_invalidations
     using LuxCore: LuxCore
     using Markdown: @doc_str
     using NNlib: NNlib
+    using Polyester: @batch
     using Random: Random, AbstractRNG, rand!
     using Reexport: @reexport
     using Statistics: Statistics, mean, std, var
-    using Strided: Strided, @strided
 end
 
 @reexport using NNlib
