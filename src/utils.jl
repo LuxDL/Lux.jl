@@ -257,26 +257,5 @@ __named_tuple(nt::NamedTuple) = nt
 
 @inline __value(x) = x
 
-## TODO: We can potentially do an inplace addition but those are typically not giant
-##       bottlenecks
-## This is used for adding up contributions to the gradient in extensions
-@inline __internal_add(x::AbstractArray, y::AbstractArray) = x .+ y
-@inline __internal_add(x::Tuple, y::Tuple) = map(__internal_add, x, y)
-@inline function __internal_add(x::NamedTuple{F}, y::NamedTuple{F}) where {F}
-    return NamedTuple{F}(map(__internal_add, values(x), values(y)))
-end
-@inline __internal_add(::Nothing, ::Nothing) = nothing
-@inline __internal_add(x, y) = fmap(__internal_add, x, y)
-
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
-
-# Convert a structured Matrix to a General Matrix if it doesn't have fast scalar indexing
-@inline function __compactify_if_structured_matrix(J::AbstractMatrix, Δ::AbstractArray)
-    if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
-        J_ = similar(J)
-        copyto!(J_, Δ)
-        return J_
-    end
-    return reshape(Δ, size(J))
-end
