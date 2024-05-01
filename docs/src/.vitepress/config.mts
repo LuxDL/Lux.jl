@@ -155,6 +155,9 @@ export default defineConfig({
                             },
                             {
                                 text: 'Medical Image Segmentation', link: 'https://github.com/Dale-Black/ComputerVisionTutorials.jl/'
+                            },
+                            {
+                                text: 'Neural closure models', link: 'https://github.com/agdestein/NeuralClosureTutorials/'
                             }
                         ]
                     }]
