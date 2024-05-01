@@ -1,17 +1,5 @@
 using Distributed
 
-addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"));
-    enable_threaded_blas=true, env=["JULIA_NUM_THREADS" => "$(Threads.nthreads())"])
-
-@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(
-    Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
-@info "Lux Tutorial Build Running tutorials with $(LUX_DOCUMENTATION_NWORKERS) workers."
-@everywhere const CUDA_MEMORY_LIMIT = 100 ÷ LUX_DOCUMENTATION_NWORKERS
-
-@everywhere using Literate
-
-@everywhere get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
-
 #! format: off
 BEGINNER_TUTORIALS = [
     "Basics/main.jl",
@@ -36,33 +24,32 @@ TUTORIALS = [
 ]
 #! format: on
 
-const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
-mkpath(storage_dir)
+NWORKERS = min(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1")), length(TUTORIALS))
+
+addprocs(NWORKERS;
+    enable_threaded_blas=true,
+    env=["JULIA_NUM_THREADS" => "$(Threads.nthreads())",
+        "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 ÷ NWORKERS)",
+        "JULIA_PKG_PRECOMPILE_AUTO" => "0", "JULIA_DEBUG" => "Literate"])
+
+@info "Lux Tutorial Build Running tutorials with $(NWORKERS) workers."
+
+@everywhere get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 
 @info "Starting tutorial build"
 
 try
     pmap(TUTORIALS) do (i, (d, p))
         println("Running tutorial $(i): $(p) on worker $(myid())")
-        OUTPUT = joinpath(@__DIR__, "src", "tutorials")
-        p_ = get_example_path(p)
+        path = get_example_path(p)
         name = "$(i)_$(first(rsplit(p, "/")))"
-        tutorial_proj = dirname(p_)
-        pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
-        lux_path = joinpath(@__DIR__, "..")
+        output_directory = joinpath(joinpath(@__DIR__, "src", "tutorials"), d)
+        tutorial_proj = dirname(path)
+        file = joinpath(dirname(@__FILE__), "run_single_tutorial.jl")
 
-        withenv("JULIA_DEBUG" => "Literate",
-            "PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path,
-            "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%",
-            "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d), "EXAMPLE_PATH" => p_,
-            "EXAMPLE_NAME" => name, "JULIA_NUM_THREADS" => Threads.nthreads(),
-            "JULIA_PKG_PRECOMPILE_AUTO" => 0) do
-            file = joinpath(dirname(@__FILE__), "run_single_tutorial.jl")
-            cmd = `$(Base.julia_cmd()) --color=yes --startup-file=no --project=$(tutorial_proj) $(file)`
-            @info "Running Command: $(cmd)"
-            run(cmd)
-            return
-        end
+        cmd = `$(Base.julia_cmd()) --color=yes --startup-file=no --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)"`
+        @info "Running Command: $(cmd)"
+        run(cmd)
     end
 catch e
     rmprocs(workers()...)

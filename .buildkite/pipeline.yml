@@ -192,18 +192,7 @@ steps:
           dirs:
             - src
             - ext
-      - sv-oss/node-n#v0.1.2:
-          node-version: v20
     command: |
-      echo "+++ :node: Instantiate NPM"
-      cd docs/
-      npm i
-      cd ..
-
-      echo $BUILDKITE
-      echo $BUILDKITE_PULL_REQUEST
-      echo $BUILDKITE_TAG
-
       julia --project --code-coverage=user --color=yes --project=docs -e '
         println("--- :julia: Instantiating project")
         using Pkg
