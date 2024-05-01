@@ -2,11 +2,18 @@ function __forwarddiff_jvp end # Defined in ForwardDiff.jl extension
 
 function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)
 
-AD_CONVERTIBLE_FUNCTIONS = [ComposedFunction{<:Any, <:StatefulLuxLayer},
-    ComposedFunction{<:StatefulLuxLayer, <:Any}, StatefulLuxLayer,
+#! format: off
+const AD_CONVERTIBLE_FUNCTIONS = [
+    # Input Gradient/Jacobian
+    ComposedFunction{<:Any, <:StatefulLuxLayer},
+    ComposedFunction{<:StatefulLuxLayer, <:Any},
+    StatefulLuxLayer,
+    # Parameter Gradient/Jacobian
     ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}},
     ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any},
-    Base.Fix1{<:StatefulLuxLayer}]
+    Base.Fix1{<:StatefulLuxLayer}
+]
+#! format: on
 
 @inline function __rewrite_ad_call(f::F) where {F}
     # Input Gradient / Jacobian

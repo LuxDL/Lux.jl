@@ -21,7 +21,8 @@ This is meant to be used in internal implementation of layers.
     `DifferentiationInterface.jacobian` calls as well. For this feature to be available,
     `ForwardDiff.jl` must be loaded. Additionally this feature is exclusively available
     for AD backends supporting ChainRules, so ReverseDiff and Tracker won't make this
-    automatic conversion.
+    automatic conversion. For more details on this feature, see the
+    [Nested AD Manual Page](@ref nested_autodiff).
 
 !!! tip
 
