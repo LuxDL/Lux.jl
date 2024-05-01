@@ -7,7 +7,6 @@
 # reference.
 
 # ## Package Imports
-
 using Lux, ADTypes, MLUtils, Optimisers, Zygote, OneHotArrays, Random, Statistics, Printf
 import MLDatasets: MNIST
 import SimpleChains: static

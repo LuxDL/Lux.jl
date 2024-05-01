@@ -6,13 +6,16 @@ on:
   push:
     branches:
       - main
+
 concurrency:
   # Skip intermediate builds: always.
   # Cancel intermediate builds: only if it is a pull request build.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
 jobs:
   test:
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
