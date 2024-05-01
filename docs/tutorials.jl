@@ -12,14 +12,29 @@ addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"));
 
 @everywhere get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
 
-BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl",
-    "SimpleRNN/main.jl", "SimpleChains/main.jl"]
-INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
-ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl", "SymbolicOptimalControl/main.jl"]
+#! format: off
+BEGINNER_TUTORIALS = [
+    "Basics/main.jl",
+    "PolynomialFitting/main.jl",
+    "SimpleRNN/main.jl",
+    "SimpleChains/main.jl"
+]
+INTERMEDIATE_TUTORIALS = [
+    "NeuralODE/main.jl",
+    "BayesianNN/main.jl",
+    "HyperNet/main.jl"
+]
+ADVANCED_TUTORIALS = [
+    "GravitationalWaveForm/main.jl",
+    "SymbolicOptimalControl/main.jl"
+]
 
-TUTORIALS = [collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
+TUTORIALS = [
+    collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
     collect(enumerate(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS)))...,
-    collect(enumerate(Iterators.product(["advanced"], ADVANCED_TUTORIALS)))...]
+    collect(enumerate(Iterators.product(["advanced"], ADVANCED_TUTORIALS)))...
+]
+#! format: on
 
 const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
 mkpath(storage_dir)
@@ -42,27 +57,8 @@ try
             "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d), "EXAMPLE_PATH" => p_,
             "EXAMPLE_NAME" => name, "JULIA_NUM_THREADS" => Threads.nthreads(),
             "JULIA_PKG_PRECOMPILE_AUTO" => 0) do
-            cmd = `$(Base.julia_cmd()) --color=yes --startup-file=no --project=$(tutorial_proj) -e \
-                'using Pkg;
-                    io=open(ENV["PKG_LOG_PATH"], "w");
-                    Pkg.develop(; path=ENV["LUX_PATH"], io);
-                    Pkg.instantiate(; io);
-                    close(io);
-
-                    using Literate;
-                    function preprocess(path, str)
-                        new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
-                        appendix_code = "\n# ## Appendix\nusing InteractiveUtils\nInteractiveUtils.versioninfo()\nif @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end\nif @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end\nnothing#hide"
-                        return new_str * appendix_code
-                    end;
-                    function postprocess(path, str)
-                        return replace(str, "\`\`\`\`\n__REPLACEME__\$" => "\$\$", "\$__REPLACEME__\n\`\`\`\`" => "\$\$")
-                    end;
-                    Literate.markdown(ENV["EXAMPLE_PATH"], ENV["OUTPUT_DIRECTORY"];
-                        execute=true, name=ENV["EXAMPLE_NAME"],
-                        flavor=Literate.DocumenterFlavor(),
-                        preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]),
-                        postprocess=Base.Fix1(postprocess, ENV["EXAMPLE_PATH"]))'`
+            file = joinpath(dirname(@__FILE__), "run_single_tutorial.jl")
+            cmd = `$(Base.julia_cmd()) --color=yes --startup-file=no --project=$(tutorial_proj) $(file)`
             @info "Running Command: $(cmd)"
             run(cmd)
             return
