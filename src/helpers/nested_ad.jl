@@ -29,7 +29,7 @@ const AD_CONVERTIBLE_FUNCTIONS = [
         return @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x
     f isa Base.Fix1{<:StatefulLuxLayer} && return @closure((ps, x)->f.f(x, ps)), f.x
 
-    return error("Unknown function type: $(typeof(f))")
+    error("Unknown function type: $(typeof(f))")
 end
 
 # Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
@@ -69,6 +69,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     return res, ∇internal_gradient_capture
 end
 
+# `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
 function __internal_ad_jacobian_call(
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
     return jac_fn(Base.Fix2(f, y), x)
