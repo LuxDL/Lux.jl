@@ -21,7 +21,8 @@ This is meant to be used in internal implementation of layers.
     `DifferentiationInterface.jacobian` calls as well. For this feature to be available,
     `ForwardDiff.jl` must be loaded. Additionally this feature is exclusively available
     for AD backends supporting ChainRules, so ReverseDiff and Tracker won't make this
-    automatic conversion.
+    automatic conversion. For more details on this feature, see the
+    [Nested AD Manual Page](@ref nested_autodiff).
 
 !!! tip
 
@@ -106,7 +107,3 @@ function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
     ∇StatefulLuxLayer(Δ) = (CRC.NoTangent(), Δ.model, Δ.ps, Δ.st, Δ.st_any)
     return slayer, ∇StatefulLuxLayer
 end
-
-# Needed for nice nested AD
-function __forwarddiff_jvp end
-function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)

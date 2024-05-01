@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.40"
+version = "0.5.41"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -70,7 +70,7 @@ ChainRulesCore = "1.23"
 ComponentArrays = "0.15.11"
 ConcreteStructs = "0.2.3"
 ConstructionBase = "1.5"
-DynamicExpressions = "0.16"
+DynamicExpressions = "0.16, 0.17"
 ExplicitImports = "1.1.1"
 FastClosures = "0.3.2"
 FiniteDifferences = "0.12.31"
