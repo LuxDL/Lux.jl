@@ -1,8 +1,7 @@
 steps:
   - group: ":julia: CUDA GPU"
     steps:
-      - label: ":julia: Julia {{matrix.julia}} + Group %n + CUDA GPU"
-        parallelism: 4
+      - label: ":julia: Julia {{matrix.julia}} + {{matrix.test_group}} + CUDA GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -18,8 +17,21 @@ steps:
           cuda: "*"
         env:
           BACKEND_GROUP: "CUDA"
+          LUX_TEST_GROUP: "{{matrix.test_group}}"
         if: build.message !~ /\[skip tests\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
+        matrix:
+          setup:
+            julia:
+              - "1"
+            test_group:
+              - "core_layers"
+              - "contrib"
+              - "helpers"
+              - "distributed"
+              - "normalize_layers"
+              - "others"
+              - "recurrent_layers"
 
   - group: ":telescope: Downstream CUDA"
     steps:
@@ -65,9 +77,11 @@ steps:
         env:
           DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
         if: build.message !~ /\[skip tests\]/ || build.message !~ /\[skip downstream\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
+            julia:
+              - "1"
             repo:
               - "Boltz"
               - "NeuralPDE#GPU"
@@ -75,8 +89,7 @@ steps:
 
   - group: ":julia: AMD GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + Group %n + AMD GPU"
-        parallelism: 2
+      - label: ":julia: Julia: {{matrix.julia}} + {{matrix.test_group}} + AMD GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -93,12 +106,25 @@ steps:
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
           BACKEND_GROUP: "AMDGPU"
+          LUX_TEST_GROUP: "{{matrix.test_group}}"
         agents:
           queue: "juliagpu"
           rocm: "*"
           rocmgpu: "*"
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1"
+            test_group:
+              - "core_layers"
+              - "contrib"
+              - "helpers"
+              - "distributed"
+              - "normalize_layers"
+              - "others"
+              - "recurrent_layers"
 
   - group: ":telescope: Downstream AMD GPU"
     steps:
@@ -152,6 +178,8 @@ steps:
         timeout_in_minutes: 60
         matrix:
           setup:
+            julia:
+              - "1"
             repo:
               - "Boltz"
 
@@ -171,6 +199,10 @@ steps:
       cd docs/
       npm i
       cd ..
+
+      echo $BUILDKITE
+      echo $BUILDKITE_PULL_REQUEST
+      echo $BUILDKITE_TAG
 
       julia --project --code-coverage=user --color=yes --project=docs -e '
         println("--- :julia: Instantiating project")
@@ -201,11 +233,6 @@ steps:
       GKSwstype: "100" # https://discourse.julialang.org/t/generation-of-documentation-fails-qt-qpa-xcb-could-not-connect-to-display/60988
     if: build.message !~ /\[skip docs\]/ && !build.pull_request.draft
     timeout_in_minutes: 240
-
-matrix:
-  setup:
-    julia:
-      - "1"
 
 env:
   RETESTITEMS_NWORKERS: 8
