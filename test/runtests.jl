@@ -1,10 +1,24 @@
 using ReTestItems
 
-const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+const BUILDKITE_PARALLEL_JOB_COUNT = parse(
+    Int64, get(ENV, "BUILDKITE_PARALLEL_JOB_COUNT", "-1"))
+const LUX_TEST_GROUP = if BUILDKITE_PARALLEL_JOB_COUNT ≤ 0
+    lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+else
+    POSSIBLE_GROUPS = ["core_layers", "contrib", "helpers", "distributed", "normalize_layers",
+        "others", "recurrent_layers"]
+    id = parse(Int64, get(ENV, "BUILDKITE_PARALLEL_JOB", "-1"))
+    collect(Iterators.partition(POSSIBLE_GROUPS, BUILDKITE_PARALLEL_JOB_COUNT))[id]
+end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
 if LUX_TEST_GROUP == "all"
     ReTestItems.runtests(@__DIR__)
+elseif LUX_TEST_GROUP isa Vector
+    for group in LUX_TEST_GROUP
+        tag = Symbol(group)
+        ReTestItems.runtests(@__DIR__; tags=[tag])
+    end
 else
     tag = Symbol(LUX_TEST_GROUP)
     ReTestItems.runtests(@__DIR__; tags=[tag])
@@ -13,7 +27,9 @@ end
 # Distributed Tests
 using MPI, Pkg, Test
 
-if LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed"
+if LUX_TEST_GROUP == "all" ||
+   LUX_TEST_GROUP == "distributed" ||
+   (LUX_TEST_GROUP isa Vector && :distributed ∈ LUX_TEST_GROUP)
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")
     nprocs = nprocs_str == "" ? clamp(Sys.CPU_THREADS, 2, 4) : parse(Int, nprocs_str)
     testdir = @__DIR__
