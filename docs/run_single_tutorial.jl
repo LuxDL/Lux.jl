@@ -34,7 +34,7 @@ function preprocess(path, str)
         AMDGPU.versioninfo()
     end
 
-    nothing#hide
+    nothing #hide
     """
     return new_str * appendix_code
 end
