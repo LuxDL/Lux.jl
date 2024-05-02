@@ -1,74 +1,60 @@
-using Distributed
+#! format: off
+const BEGINNER_TUTORIALS = [
+    "Basics/main.jl",
+    "PolynomialFitting/main.jl",
+    "SimpleRNN/main.jl",
+    "SimpleChains/main.jl"
+]
+const INTERMEDIATE_TUTORIALS = [
+    "NeuralODE/main.jl",
+    "BayesianNN/main.jl",
+    "HyperNet/main.jl"
+]
+const ADVANCED_TUTORIALS = [
+    "GravitationalWaveForm/main.jl",
+    "SymbolicOptimalControl/main.jl"
+]
 
-addprocs(parse(Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"));
-    enable_threaded_blas=true, env=["JULIA_NUM_THREADS" => "$(Threads.nthreads())"])
-
-@everywhere const LUX_DOCUMENTATION_NWORKERS = parse(
-    Int, get(ENV, "LUX_DOCUMENTATION_NWORKERS", "1"))
-@info "Lux Tutorial Build Running tutorials with $(LUX_DOCUMENTATION_NWORKERS) workers."
-@everywhere const CUDA_MEMORY_LIMIT = 100 ÷ LUX_DOCUMENTATION_NWORKERS
-
-@everywhere using Literate
-
-@everywhere get_example_path(p) = joinpath(@__DIR__, "..", "examples", p)
-
-BEGINNER_TUTORIALS = ["Basics/main.jl", "PolynomialFitting/main.jl",
-    "SimpleRNN/main.jl", "SimpleChains/main.jl"]
-INTERMEDIATE_TUTORIALS = ["NeuralODE/main.jl", "BayesianNN/main.jl", "HyperNet/main.jl"]
-ADVANCED_TUTORIALS = ["GravitationalWaveForm/main.jl", "SymbolicOptimalControl/main.jl"]
-
-TUTORIALS = [collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
+const TUTORIALS = [
+    collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
     collect(enumerate(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS)))...,
-    collect(enumerate(Iterators.product(["advanced"], ADVANCED_TUTORIALS)))...]
+    collect(enumerate(Iterators.product(["advanced"], ADVANCED_TUTORIALS)))...
+]
+#! format: on
 
-const storage_dir = joinpath(@__DIR__, "..", "tutorial_deps")
-mkpath(storage_dir)
+const BUILDKITE_PARALLEL_JOB_COUNT = parse(
+    Int, get(ENV, "BUILDKITE_PARALLEL_JOB_COUNT", "-1"))
 
-@info "Starting tutorial build"
+const TUTORIALS_BUILDING = if BUILDKITE_PARALLEL_JOB_COUNT > 0
+    id = parse(Int, ENV["BUILDKITE_PARALLEL_JOB"]) + 1 # Index starts from 0
+    splits = collect(Iterators.partition(
+        TUTORIALS, cld(length(TUTORIALS), BUILDKITE_PARALLEL_JOB_COUNT)))
+    id > length(splits) ? [] : splits[id]
+else
+    TUTORIALS
+end
 
-try
-    pmap(TUTORIALS) do (i, (d, p))
-        println("Running tutorial $(i): $(p) on worker $(myid())")
-        OUTPUT = joinpath(@__DIR__, "src", "tutorials")
-        p_ = get_example_path(p)
-        name = "$(i)_$(first(rsplit(p, "/")))"
-        tutorial_proj = dirname(p_)
-        pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
-        lux_path = joinpath(@__DIR__, "..")
+const NTASKS = min(
+    parse(Int, get(ENV, "LUX_DOCUMENTATION_NTASKS", "1")), length(TUTORIALS_BUILDING))
 
-        withenv("JULIA_DEBUG" => "Literate",
-            "PKG_LOG_PATH" => pkg_log_path, "LUX_PATH" => lux_path,
-            "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(CUDA_MEMORY_LIMIT)%",
-            "OUTPUT_DIRECTORY" => joinpath(OUTPUT, d), "EXAMPLE_PATH" => p_,
-            "EXAMPLE_NAME" => name, "JULIA_NUM_THREADS" => Threads.nthreads(),
-            "JULIA_PKG_PRECOMPILE_AUTO" => 0) do
-            cmd = `$(Base.julia_cmd()) --color=yes --startup-file=no --project=$(tutorial_proj) -e \
-                'using Pkg;
-                    io=open(ENV["PKG_LOG_PATH"], "w");
-                    Pkg.develop(; path=ENV["LUX_PATH"], io);
-                    Pkg.instantiate(; io);
-                    close(io);
+@info "Building Tutorials" TUTORIALS_BUILDING
 
-                    using Literate;
-                    function preprocess(path, str)
-                        new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
-                        appendix_code = "\n# ## Appendix\nusing InteractiveUtils\nInteractiveUtils.versioninfo()\nif @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end\nif @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end\nnothing#hide"
-                        return new_str * appendix_code
-                    end;
-                    function postprocess(path, str)
-                        return replace(str, "\`\`\`\`\n__REPLACEME__\$" => "\$\$", "\$__REPLACEME__\n\`\`\`\`" => "\$\$")
-                    end;
-                    Literate.markdown(ENV["EXAMPLE_PATH"], ENV["OUTPUT_DIRECTORY"];
-                        execute=true, name=ENV["EXAMPLE_NAME"],
-                        flavor=Literate.DocumenterFlavor(),
-                        preprocess=Base.Fix1(preprocess, ENV["EXAMPLE_PATH"]),
-                        postprocess=Base.Fix1(postprocess, ENV["EXAMPLE_PATH"]))'`
-            @info "Running Command: $(cmd)"
-            run(cmd)
-            return
-        end
+@info "Starting Lux Tutorial Build with $(NTASKS) tasks."
+
+asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
+    @info "Running Tutorial $(i): $(p) on task $(current_task())"
+    path = joinpath(@__DIR__, "..", "examples", p)
+    name = "$(i)_$(first(rsplit(p, "/")))"
+    output_directory = joinpath(joinpath(@__DIR__, "src", "tutorials"), d)
+    tutorial_proj = dirname(path)
+    file = joinpath(dirname(@__FILE__), "run_single_tutorial.jl")
+
+    withenv("JULIA_NUM_THREADS" => "$(Threads.nthreads())",
+        "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 ÷ NTASKS)%",
+        "JULIA_PKG_PRECOMPILE_AUTO" => "0", "JULIA_DEBUG" => "Literate") do
+        cmd = `$(Base.julia_cmd()) --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)"`
+        run(cmd)
     end
-catch e
-    rmprocs(workers()...)
-    rethrow(e)
+
+    return
 end
