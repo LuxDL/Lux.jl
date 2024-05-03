@@ -507,13 +507,11 @@ Base.getindex(c::Chain, i::Int) = c.layers[i]
 Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))
 
 function Base.getproperty(c::Chain, name::Symbol)
-  if hasfield(Chain, name)
-    return getfield(c, name)
-  elseif hasfield(typeof(getfield(c, :layers)), name)
-    return getfield(getfield(c, :layers), name)
-  else
+    hasfield(typeof(c), name) && return getfield(c, name)
+    layers = getfield(c, :layers)
+    hasfield(typeof(layers), name) && return getfield(layers, name)
     throw(ArgumentError("$(typeof(c)) has no field or layer $name"))
-  end
+end
 end
 
 Base.length(c::Chain) = length(c.layers)
