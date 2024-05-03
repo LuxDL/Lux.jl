@@ -305,6 +305,21 @@ end
         @test_throws ArgumentError Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
             d21=Dense(2 => 1), d2=Dense(2 => 1), disable_optimizations=false)
+
+        @testset "indexing and field access" begin
+            encoder = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh))
+            decoder = Chain(Dense(2 => 5, tanh), Dense(5 => 10, sigmoid))
+            autoencoder = Chain(; encoder, decoder)
+            @test encoder[1] == encoder.layer_1
+            @test encoder[2] == encoder.layer_2
+            @test autoencoder[1] == autoencoder.encoder
+            @test autoencoder[2] == autoencoder.decoder
+            @test keys(encoder) == (:layer_1, :layer_2)
+            @test keys(autoencoder) == (:encoder, :decoder)
+            @test autoencoder.layers isa NamedTuple
+            @test autoencoder.encoder isa Chain
+            @test_throws ArgumentError autoencoder.layer_1
+        end
     end
 end
 
