@@ -415,8 +415,8 @@ keyword argument `disable_optimizations`.
 
 ## Miscellaneous Properties
 
-  - Allows indexing. We can access the `i`th layer using `m[i]`. We can also index using
-    ranges or arrays.
+  - Allows indexing and field access syntax. We can access the `i`th layer by `m[i]` or 
+    `m.layer_i`. We can also index using ranges or arrays.
 
 ## Example
 
@@ -501,10 +501,20 @@ _flatten_model(x) = x
     return Expr(:block, calls...)
 end
 
-Base.keys(m::Chain) = Base.keys(getfield(m, :layers))
+Base.keys(c::Chain) = Base.keys(getfield(c, :layers))
 
 Base.getindex(c::Chain, i::Int) = c.layers[i]
 Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))
+
+function Base.getproperty(c::Chain, name::Symbol)
+  if hasfield(Chain, name)
+    return getfield(c, name)
+  elseif hasfield(typeof(getfield(c, :layers)), name)
+    return getfield(getfield(c, :layers), name)
+  else
+    throw(ArgumentError("$(typeof(c)) has no field or layer $name"))
+  end
+end
 
 Base.length(c::Chain) = length(c.layers)
 Base.lastindex(c::Chain) = lastindex(c.layers)
