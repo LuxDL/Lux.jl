@@ -512,8 +512,6 @@ function Base.getproperty(c::Chain, name::Symbol)
     hasfield(typeof(layers), name) && return getfield(layers, name)
     throw(ArgumentError("$(typeof(c)) has no field or layer $name"))
 end
-end
-
 Base.length(c::Chain) = length(c.layers)
 Base.lastindex(c::Chain) = lastindex(c.layers)
 Base.firstindex(c::Chain) = firstindex(c.layers)
