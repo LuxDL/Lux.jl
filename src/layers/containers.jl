@@ -415,7 +415,7 @@ keyword argument `disable_optimizations`.
 
 ## Miscellaneous Properties
 
-  - Allows indexing and field access syntax. We can access the `i`th layer by `m[i]` or 
+  - Allows indexing and field access syntax. We can access the `i`th layer by `m[i]` or
     `m.layer_i`. We can also index using ranges or arrays.
 
 ## Example
