@@ -1,6 +1,7 @@
 function __forwarddiff_jvp end # Defined in ForwardDiff.jl extension
 
 function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)
+function __dualify end
 
 #! format: off
 const AD_CONVERTIBLE_FUNCTIONS = [
@@ -32,9 +33,10 @@ const AD_CONVERTIBLE_FUNCTIONS = [
     error("Unknown function type: $(typeof(f))")
 end
 
-# Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
-# To compute the gradient of `f(x, y)` wrt y, just reorder the arguments with a wrapper
-# over `f`
+# Nested Gradients
+## Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
+## To compute the gradient of `f(x, y)` wrt y, just reorder the arguments with a wrapper
+## over `f`
 @inline function __internal_ad_gradient_call(grad_fn::G, f::F, x, y) where {G, F}
     return grad_fn(Base.Fix2(f, y), x)
 end
@@ -69,7 +71,26 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     return res, ∇internal_gradient_capture
 end
 
-# `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
+# Nested Pullbacks
+@inline function __internal_ad_pullback_call(pullback_fn::P, f::F, x, y, u) where {P, F}
+    _, pb_f = pullback_fn(f, x, y)
+    return pb_f(u)
+end
+
+@inline function __internal_ad_pullback_call_no_custom_rrule(
+        pullback_fn::P, f::F, x, y, u) where {P, F}
+    _, pb_f = pullback_fn(f, x, y)
+    return pb_f(u) # Don' call `__internal_ad_pullback_call`
+end
+
+function CRC.rrule(
+        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(__internal_ad_pullback_call),
+        pullback_fn::P, f::F, x, y, u) where {P, F}
+    error("Not yet implemented")
+end
+
+# Nested Jacobians 
+## `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
 function __internal_ad_jacobian_call(
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
     return jac_fn(Base.Fix2(f, y), x)

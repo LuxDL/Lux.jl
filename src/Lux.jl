@@ -3,6 +3,7 @@ module Lux
 using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
+    using ADTypes: AbstractADType, AutoForwardDiff, AutoZygote
     using Adapt: Adapt, adapt
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
@@ -69,6 +70,7 @@ include("contrib/contrib.jl")
 # Helpful Functionalities
 include("helpers/stateful.jl")
 include("helpers/compact.jl")
+include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
 
 # Transform to and from other frameworks
@@ -99,6 +101,7 @@ export SamePad, TimeLastIndex, BatchLastIndex
 
 export StatefulLuxLayer
 export @compact, CompactLuxLayer
+export jacobian_vector_product, vector_jacobian_product
 
 export f16, f32, f64
 
