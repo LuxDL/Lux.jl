@@ -61,7 +61,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             return ntuple(Returns(CRC.NoTangent()), 5)
 
         Δ = CRC.unthunk(Δ_)
-        Δ isa Tuple && (Δ = only(Δ))  # For Zygote and such which return a tuple
+        (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
         ∂x, ∂y = __forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
         return CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y
     end
@@ -90,16 +90,21 @@ function CRC.rrule(
     end
 
     res = __internal_ad_pullback_call(pullback_fn, f, x, y, u)
-    ∇internal_pullback_capture = let pullback_fn = pullback_fn, f = f, x = x, y = y, u = u
+    ∇internal_pullback_capture = let pullback_fn = pullback_fn,
+        f = f,
+        x = x,
+        y = y,
+        u = u,
+        res = res
+
         Δ_ -> begin
             (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
                 return ntuple(Returns(CRC.NoTangent()), 6)
 
             Δ = CRC.unthunk(Δ_)
-            Δ isa Tuple && (Δ = only(Δ))  # For Zygote and such which return a tuple
+            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
             ∂x, ∂y = __forwarddiff_jvp(x, Δ, y) do x_dual, y_
-                _, pb_f = pullback_fn(f, x_dual, y_)
-                return pb_f(u)
+                return last(pullback_fn(f, x_dual, y_))(u)
             end
             return (
                 CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y, CRC.NoTangent())
@@ -138,7 +143,7 @@ function CRC.rrule(
                 return ntuple(Returns(CRC.NoTangent()), 6)
 
             Δ = CRC.unthunk(Δ_)
-            Δ isa Tuple && (Δ = only(Δ))  # For Zygote and such which return a tuple
+            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
             Δ = __compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
             # TODO: Here we can potentially chunk the gradients for faster AD calls

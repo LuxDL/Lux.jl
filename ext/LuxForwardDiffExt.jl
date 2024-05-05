@@ -13,6 +13,7 @@ const CRC = ChainRulesCore
 
 # Low-Level functions
 @inline function Lux.__partials(::Type{Tag}, x, i) where {Tag}
+    x isa ForwardDiff.Dual && return ForwardDiff.partials(Tag, x, i)
     x isa AbstractArray && return ForwardDiff.partials.(Tag, x, i)
     map_fn = @closure(xᵢ->Lux.__partials(Tag, xᵢ, i))
     x isa Tuple && return map(map_fn, x)
@@ -34,16 +35,51 @@ end
 end
 
 # This is not a general jvp code, but rather meant to be efficient for nested AD calls
-function Lux.__forwarddiff_jvp(f::F, x, Δx, args...) where {F}
+function Lux.__forwarddiff_jvp(f::F, x, Δx, y) where {F}
     T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(Δx))
     Tag = typeof(ForwardDiff.Tag(f, T))
-    y_dual, args_duals... = f(Lux.__dualify(Tag, T, x, Δx), args...)
-    return (Lux.__partials(Tag, y_dual, 1), Lux.__partials.((Tag,), args_duals, 1)...)
+    res1_dual, res2_dual = f(Lux.__dualify(Tag, T, x, Δx), y)
+    return (Lux.__partials(Tag, res1_dual, 1), Lux.__partials(Tag, res2_dual, 1))
 end
 
 # jvp
 function Lux.__jacobian_vector_product_impl(f::F, ::AutoForwardDiff, x, u) where {F}
-    return only(Lux.__forwarddiff_jvp(f, x, u))
+    T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(u))
+    Tag = typeof(ForwardDiff.Tag(f, T))
+    y_dual = f(Lux.__dualify(Tag, T, x, u))
+    return Lux.__partials(Tag, y_dual, 1)
+end
+
+function __jacobian_vector_product_ad_impl(f::F, x, u, y) where {F}
+    return Lux.__jacobian_vector_product_impl(Base.Fix2(f, y), AutoForwardDiff(), x, u)
+end
+
+for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
+    @eval @inline function Lux.__jacobian_vector_product_impl(
+            f::$(fType), ::AutoForwardDiff, x, u)
+        f_internal, y = Lux.__rewrite_ad_call(f)
+        return __jacobian_vector_product_ad_impl(f_internal, x, u, y)
+    end
+end
+
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(__jacobian_vector_product_ad_impl), f::F, x, u, y) where {F}
+    res = __jacobian_vector_product_ad_impl(f, x, u, y)
+
+    pullback_fn = (f_internal, x, args...) -> begin
+        res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
+        ∂f_internal(Δ) = ∂f(Δ)[2:end]
+        return res, ∂f_internal
+    end
+
+    ∇internal_nested_pushforward_capture = Δ -> begin
+        _, pb_f = CRC.rrule_via_ad(
+            cfg, Lux.__internal_ad_pullback_call, pullback_fn, f, x, y, Δ)
+        _, _, _, ∂x, ∂y, _ = pb_f(u)
+        return CRC.NoTangent(), CRC.NoTangent(), ∂x, CRC.NoTangent(), ∂y
+    end
+
+    return res, ∇internal_nested_pushforward_capture
 end
 
 # Capture ForwardDiff.jacobian call and replace it with forward over reverse mode AD
@@ -64,8 +100,8 @@ for fType in Lux.AD_CONVERTIBLE_FUNCTIONS, type in (:Gradient, :Jacobian)
         @inline function ForwardDiff.$(fname)(f::$fType, x::AbstractArray,
                 cfg::ForwardDiff.$(cfgname)=ForwardDiff.$(cfgname)(f, x),
                 chk::Val=Val(true))
-            f_internal, ps = Lux.__rewrite_ad_call(f)
-            return $(internal_fname)(f_internal, cfg, chk, x, ps)
+            f_internal, y = Lux.__rewrite_ad_call(f)
+            return $(internal_fname)(f_internal, cfg, chk, x, y)
         end
     end
 end
