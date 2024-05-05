@@ -34,18 +34,16 @@ end
 end
 
 # This is not a general jvp code, but rather meant to be efficient for nested AD calls
-function Lux.__forwarddiff_jvp(f::F, x, Δx, ps) where {F}
+function Lux.__forwarddiff_jvp(f::F, x, Δx, args...) where {F}
     T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(Δx))
     Tag = typeof(ForwardDiff.Tag(f, T))
-    y_dual, ps_dual = f(Lux.__dualify(Tag, T, x, Δx), ps)
-    return Lux.__partials(Tag, y_dual, 1), Lux.__partials(Tag, ps_dual, 1)
+    y_dual, args_duals... = f(Lux.__dualify(Tag, T, x, Δx), args...)
+    return (Lux.__partials(Tag, y_dual, 1), Lux.__partials.((Tag,), args_duals, 1)...)
 end
 
 # jvp
 function Lux.__jacobian_vector_product_impl(f::F, ::AutoForwardDiff, x, u) where {F}
-    T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(u))
-    Tag = typeof(ForwardDiff.Tag(f, T))
-    return Lux.__partials(Tag, f(Lux.__dualify(Tag, T, x, u)), 1)
+    return only(Lux.__forwarddiff_jvp(f, x, u))
 end
 
 # Capture ForwardDiff.jacobian call and replace it with forward over reverse mode AD

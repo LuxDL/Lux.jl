@@ -37,6 +37,11 @@ for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
             return Lux.__internal_ad_jacobian_call(
                 Zygote.jacobian, Zygote.gradient, f_internal, x, y)
         end
+
+        @inline function Lux.__vector_jacobian_product_impl(f::$fType, ::AutoZygote, x, u)
+            f_internal, y = Lux.__rewrite_ad_call(f)
+            return Lux.__internal_ad_pullback_call(Zygote.pullback, f_internal, x, y, u)
+        end
     end
 end
 

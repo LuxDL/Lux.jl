@@ -2,12 +2,16 @@
     vector_jacobian_product(f, backend::AbstractADType, x, u)
 
 Compute the Vector Jacobian Product ``\left(\frac{\partial f}{\partial x}\right)^T u``.
-This is a wrapper around `DifferentiationInterface.pullback` but allows us to compute
-gradients of vector-jacobian products efficiently using mixed-mode AD.
+This is a wrapper around AD backends but allows us to compute gradients of vector-jacobian
+products efficiently using mixed-mode AD.
 
 The following backends are supported:
 
   - `AutoZygote`: `Zygote.jl` must be loaded.
+
+!!! warning
+
+    Gradient wrt `u` in the reverse pass is always dropped.
 
 ## Arguments
 
@@ -36,12 +40,16 @@ function __vector_jacobian_product_impl end
     jacobian_vector_product(f, backend::AbstractADType, x, u)
 
 Compute the Vector Jacobian Product ``\left(\frac{\partial f}{\partial x}\right) u``.
-This is a wrapper around `DifferentiationInterface.pushforward` but allows us to compute
-gradients of jacobian-vector products efficiently using mixed-mode AD.
+This is a wrapper around AD backends but allows us to compute gradients of jacobian-vector
+products efficiently using mixed-mode AD.
 
 The following packages must be loaded for this function to work:
 
   - `AutoForwardDiff`: `ForwardDiff.jl` must be loaded.
+
+!!! warning
+
+    Gradient wrt `u` in the reverse pass is always dropped.
 
 ## Arguments
 
