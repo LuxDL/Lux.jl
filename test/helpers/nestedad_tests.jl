@@ -199,3 +199,74 @@ end
         end
     end
 end
+
+@testitem "Nested AD: VJP & JVP" setup=[SharedTestSetup] tags=[:others] begin
+    using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote, ADTypes
+
+    Base.isfinite(::Nothing) = true
+
+    rng = get_stable_rng()
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        # FIXME: AMDGPU takes too long right now
+        mode === "AMDGPU" && continue
+
+        models = (
+            Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
+                Conv((3, 3), 4 => 1, gelu; pad=SamePad())),
+            Chain(Dense(2, 4, gelu), Dense(4, 1)))
+        Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
+
+        for (model, X) in zip(models, Xs)
+            ps, st = Lux.setup(rng, model) |> dev
+            X = X |> aType
+
+            vjp_input = first(model(X, ps, st))
+            jvp_input = aType(randn(rng, Float32, size(X)...))
+
+            function loss_function_vjp(model, X, ps, st, vjp_input)
+                smodel = StatefulLuxLayer(model, ps, st)
+                vjp = vector_jacobian_product(smodel, AutoZygote(), X, vjp_input)
+                return sum(vjp)
+            end
+
+            function loss_function_vjp_jacobian(model, X, ps, st, vjp_input)
+                smodel = StatefulLuxLayer(model, ps, st)
+                J = only(Zygote.jacobian(smodel, X))
+                return sum(J' * vec(vjp_input))
+            end
+
+            function loss_function_jvp(model, X, ps, st, jvp_input)
+                smodel = StatefulLuxLayer(model, ps, st)
+                jvp = jacobian_vector_product(smodel, AutoForwardDiff(), X, jvp_input)
+                return sum(jvp)
+            end
+
+            function loss_function_jvp_jacobian(model, X, ps, st, jvp_input)
+                smodel = StatefulLuxLayer(model, ps, st)
+                J = only(Zygote.jacobian(smodel, X))
+                return sum(J * vec(jvp_input))
+            end
+
+            @test_nowarn loss_function_vjp(model, X, ps, st, vjp_input)
+            @test loss_function_vjp(model, X, ps, st, vjp_input) isa Number
+
+            _, ∂x, ∂ps, _ = Zygote.gradient(loss_function_vjp, model, X, ps, st, vjp_input)
+            _, ∂x_vjp, ∂ps_vjp, _, _ = Zygote.gradient(
+                loss_function_vjp_jacobian, model, X, ps, st, vjp_input)
+
+            @test ∂x≈∂x_vjp rtol=1e-3 atol=1e-3
+            @test check_approx(∂ps, ∂ps_vjp; rtol=1e-3, atol=1e-3)
+
+            @test_nowarn loss_function_jvp(model, X, ps, st, jvp_input)
+            @test loss_function_jvp(model, X, ps, st, jvp_input) isa Number
+
+            _, ∂x, ∂ps, _ = Zygote.gradient(loss_function_jvp, model, X, ps, st, jvp_input)
+            _, ∂x_jvp, ∂ps_jvp, _, _ = Zygote.gradient(
+                loss_function_jvp_jacobian, model, X, ps, st, jvp_input)
+
+            @test ∂x≈∂x_jvp rtol=1e-3 atol=1e-3
+            @test check_approx(∂ps, ∂ps_jvp; rtol=1e-3, atol=1e-3)
+        end
+    end
+end

@@ -191,7 +191,7 @@ nothing; # hide
 
 Hutchinson Trace Estimation often shows up in machine learning literature to provide a fast
 estimate of the trace of a Jacobian Matrix. This is based off of
-[Hutchinson 1990](https://www.tandfonline.com/doi/abs/10.1080/03610918908812806) which
+[Hutchinson 1990](https://www.researchgate.net/publication/243668757_A_Stochastic_Estimator_of_the_Trace_of_the_Influence_Matrix_for_Laplacian_Smoothing_Splines) which
 computes the estimated trace of a matrix ``A \in \mathbb{R}^{D \times D}`` using random
 vectors ``v \in \mathbb{R}^{D}`` s.t. ``\mathbb{E}\left[v v^T\right] = I``.
 
@@ -263,7 +263,7 @@ model = Chain(Dense(4 => 12,tanh), Dense(12 => 12,tanh), Dense(12 => 12,tanh),
     Dense(12 => 4))
 ps, st = Lux.setup(Xoshiro(0), model)
 x = rand(Xoshiro(0), Float32, 4, 12)
-v = rand(Xoshiro(0), Float32, 4, 12)
+v = (rand(Xoshiro(12), Float32, 4, 12) .> 0.5f0) * 2.0f0 .- 1.0f0  # rademacher sample
 nothing; # hide
 ```
 
