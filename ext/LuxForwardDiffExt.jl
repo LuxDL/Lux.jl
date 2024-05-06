@@ -1,5 +1,6 @@
 module LuxForwardDiffExt
 
+using ADTypes: AutoForwardDiff
 using ChainRulesCore: ChainRulesCore
 using Lux: Lux
 using FastClosures: @closure
@@ -10,7 +11,9 @@ const CRC = ChainRulesCore
 
 @inline Lux._is_extension_loaded(::Val{:ForwardDiff}) = true
 
+# Low-Level functions
 @inline function Lux.__partials(::Type{Tag}, x, i) where {Tag}
+    x isa ForwardDiff.Dual && return ForwardDiff.partials(Tag, x, i)
     x isa AbstractArray && return ForwardDiff.partials.(Tag, x, i)
     map_fn = @closure(xᵢ->Lux.__partials(Tag, xᵢ, i))
     x isa Tuple && return map(map_fn, x)
@@ -20,15 +23,63 @@ const CRC = ChainRulesCore
     return fmap(map_fn, x)
 end
 
+@inline function Lux.__dualify(::Type{Tag}, ::Type{T}, x, u) where {Tag, T}
+    if x isa AbstractArray
+        return ForwardDiff.Dual{
+            Tag, T, 1}.(x, ForwardDiff.Partials{1, T}.(tuple.(reshape(u, size(x)))))
+    end
+    x isa Tuple && return map((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u)
+    x isa NamedTuple &&
+        return NamedTuple{keys(x)}(map((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u))
+    return fmap((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u)
+end
+
 # This is not a general jvp code, but rather meant to be efficient for nested AD calls
-function Lux.__forwarddiff_jvp(
-        f::F, x::AbstractArray{xT}, Δx::AbstractArray{ΔxT}, ps) where {F, xT, ΔxT}
-    T = promote_type(xT, ΔxT)
+function Lux.__forwarddiff_jvp(f::F, x, Δx, y) where {F}
+    T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(Δx))
     Tag = typeof(ForwardDiff.Tag(f, T))
-    partials = ForwardDiff.Partials{1, T}.(tuple.(Δx))
-    x_dual = ForwardDiff.Dual{Tag, T, 1}.(x, reshape(partials, size(x)))
-    y_dual, ps_dual = f(x_dual, ps)
-    return Lux.__partials(Tag, y_dual, 1), Lux.__partials(Tag, ps_dual, 1)
+    res1_dual, res2_dual = f(Lux.__dualify(Tag, T, x, Δx), y)
+    return (Lux.__partials(Tag, res1_dual, 1), Lux.__partials(Tag, res2_dual, 1))
+end
+
+# jvp
+function Lux.__jacobian_vector_product_impl(f::F, ::AutoForwardDiff, x, u) where {F}
+    T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(u))
+    Tag = typeof(ForwardDiff.Tag(f, T))
+    y_dual = f(Lux.__dualify(Tag, T, x, u))
+    return Lux.__partials(Tag, y_dual, 1)
+end
+
+function __jacobian_vector_product_ad_impl(f::F, x, u, y) where {F}
+    return Lux.__jacobian_vector_product_impl(Base.Fix2(f, y), AutoForwardDiff(), x, u)
+end
+
+for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
+    @eval @inline function Lux.__jacobian_vector_product_impl(
+            f::$(fType), ::AutoForwardDiff, x, u)
+        f_internal, y = Lux.__rewrite_ad_call(f)
+        return __jacobian_vector_product_ad_impl(f_internal, x, u, y)
+    end
+end
+
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(__jacobian_vector_product_ad_impl), f::F, x, u, y) where {F}
+    res = __jacobian_vector_product_ad_impl(f, x, u, y)
+
+    pullback_fn = (f_internal, x, args...) -> begin
+        res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
+        ∂f_internal(Δ) = ∂f(Δ)[2:end]
+        return res, ∂f_internal
+    end
+
+    ∇internal_nested_pushforward_capture = Δ -> begin
+        _, pb_f = CRC.rrule_via_ad(
+            cfg, Lux.__internal_ad_pullback_call, pullback_fn, f, x, y, Δ)
+        _, _, _, ∂x, ∂y, _ = pb_f(u)
+        return CRC.NoTangent(), CRC.NoTangent(), ∂x, CRC.NoTangent(), ∂y
+    end
+
+    return res, ∇internal_nested_pushforward_capture
 end
 
 # Capture ForwardDiff.jacobian call and replace it with forward over reverse mode AD
@@ -49,8 +100,8 @@ for fType in Lux.AD_CONVERTIBLE_FUNCTIONS, type in (:Gradient, :Jacobian)
         @inline function ForwardDiff.$(fname)(f::$fType, x::AbstractArray,
                 cfg::ForwardDiff.$(cfgname)=ForwardDiff.$(cfgname)(f, x),
                 chk::Val=Val(true))
-            f_internal, ps = Lux.__rewrite_ad_call(f)
-            return $(internal_fname)(f_internal, cfg, chk, x, ps)
+            f_internal, y = Lux.__rewrite_ad_call(f)
+            return $(internal_fname)(f_internal, cfg, chk, x, y)
         end
     end
 end

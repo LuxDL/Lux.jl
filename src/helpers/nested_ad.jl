@@ -1,6 +1,7 @@
 function __forwarddiff_jvp end # Defined in ForwardDiff.jl extension
 
 function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)
+function __dualify end
 
 #! format: off
 const AD_CONVERTIBLE_FUNCTIONS = [
@@ -32,15 +33,14 @@ const AD_CONVERTIBLE_FUNCTIONS = [
     error("Unknown function type: $(typeof(f))")
 end
 
-# Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
-# To compute the gradient of `f(x, y)` wrt y, just reorder the arguments with a wrapper
-# over `f`
-@inline function __internal_ad_gradient_call(grad_fn::G, f::F, x, y) where {G, F}
-    return grad_fn(Base.Fix2(f, y), x)
-end
-@inline function __internal_ad_gradient_call_no_custom_rrule(
-        grad_fn::G, f::F, x, y) where {G, F}
-    return grad_fn(Base.Fix2(f, y), x) # Don' call `__internal_ad_gradient_call`
+# Nested Gradients
+## Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
+## To compute the gradient of `f(x, y)` wrt y, just reorder the arguments with a wrapper
+## over `f`
+for fname in (:__internal_ad_gradient_call, :__internal_ad_gradient_call_no_custom_rrule)
+    @eval @inline function $fname(grad_fn::G, f::F, x, y) where {G, F}
+        return grad_fn(Base.Fix2(f, y), x)
+    end
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
@@ -48,7 +48,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     # Check if we can use the faster implementation
     if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
         if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-            @warn "Load ForwardDiff.jl for better nested AD handling." maxlog=1
+            @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
         end
         # Use the AD itself for whatever reason
         return CRC.rrule_via_ad(
@@ -60,8 +60,8 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
             return ntuple(Returns(CRC.NoTangent()), 5)
 
-        Δ = CRC.backing(CRC.unthunk(Δ_))
-        Δ isa Tuple && (Δ = only(Δ))  # For Zygote and such which return a tuple
+        Δ = CRC.unthunk(Δ_)
+        (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
         ∂x, ∂y = __forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
         return CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y
     end
@@ -69,14 +69,58 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     return res, ∇internal_gradient_capture
 end
 
-# `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
-function __internal_ad_jacobian_call(
-        jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
-    return jac_fn(Base.Fix2(f, y), x)
+# Nested Pullbacks
+for fname in (:__internal_ad_pullback_call, :__internal_ad_pullback_call_no_custom_rrule)
+    @eval @inline function $fname(pullback_fn::P, f::F, x, y, u) where {P, F}
+        return only(last(pullback_fn(Base.Fix2(f, y), x))(u))
+    end
 end
-@inline function __internal_ad_jacobian_call_no_custom_rrule(
-        jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
-    return jac_fn(Base.Fix2(f, y), x) # Don' call `__internal_ad_jacobian_call`
+
+function CRC.rrule(
+        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(__internal_ad_pullback_call),
+        pullback_fn::P, f::F, x, y, u) where {P, F}
+    # Check if we can use the faster implementation
+    if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+        if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+            @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
+        end
+        # Use the AD itself for whatever reason
+        return CRC.rrule_via_ad(
+            cfg, __internal_ad_pullback_call_no_custom_rrule, pullback_fn, f, x, y, u)
+    end
+
+    res = __internal_ad_pullback_call(pullback_fn, f, x, y, u)
+    ∇internal_pullback_capture = let pullback_fn = pullback_fn,
+        f = f,
+        x = x,
+        y = y,
+        u = u,
+        res = res
+
+        Δ_ -> begin
+            (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
+                return ntuple(Returns(CRC.NoTangent()), 6)
+
+            Δ = CRC.unthunk(Δ_)
+            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
+            ∂x, ∂y = __forwarddiff_jvp(x, Δ, y) do x_dual, y_
+                return last(pullback_fn(f, x_dual, y_))(u)
+            end
+            return (
+                CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y, CRC.NoTangent())
+        end
+    end
+
+    return res, ∇internal_pullback_capture
+end
+
+# Nested Jacobians 
+## `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
+for fname in (:__internal_ad_jacobian_call, :__internal_ad_jacobian_call_no_custom_rrule)
+    @eval @inline function $fname(
+            jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
+        return jac_fn(Base.Fix2(f, y), x)
+    end
 end
 
 function CRC.rrule(
@@ -85,7 +129,7 @@ function CRC.rrule(
     # Check if we can use the faster implementation
     if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
         if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-            @warn "Load ForwardDiff.jl for better nested AD handling." maxlog=1
+            @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
         end
         # Use the AD itself for whatever reason
         return CRC.rrule_via_ad(
@@ -98,8 +142,8 @@ function CRC.rrule(
             (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
                 return ntuple(Returns(CRC.NoTangent()), 6)
 
-            Δ = CRC.backing(CRC.unthunk(Δ_))
-            Δ isa Tuple && (Δ = only(Δ))  # For Zygote and such which return a tuple
+            Δ = CRC.unthunk(Δ_)
+            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
             Δ = __compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
             # TODO: Here we can potentially chunk the gradients for faster AD calls

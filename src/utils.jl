@@ -259,3 +259,19 @@ __named_tuple(nt::NamedTuple) = nt
 
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
+
+# recussive_eltype
+@inline __recursive_eltype(x::AbstractArray) = eltype(x)
+@inline __recursive_eltype(x::Tuple) = promote_type(__recursice_eltype.(x)...)
+@inline __recursive_eltype(x::NamedTuple) = promote_type(__recursive_eltype.(values(x))...)
+@inline __recursive_eltype(::Nothing) = Bool
+@inline __recursive_eltype(x::Number) = eltype(x)
+@inline function __recursive_eltype(x)
+    _eltype = Ref(Bool)
+    function __internal_recursive_eltype(x)
+        _eltype[] = promote_type(_eltype[], __recursive_eltype(x))
+        return x
+    end
+    fmap(__internal_recursive_eltype, x)
+    return _eltype[]
+end

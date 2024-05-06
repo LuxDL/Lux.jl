@@ -11,25 +11,11 @@ This is meant to be used in internal implementation of layers.
 ## Usecases
 
   - Internal implementation of [`@compact`](@ref) heavily uses this layer.
-
   - In SciML codebases where propagating state might involving
     [`Box`ing](https://github.com/JuliaLang/julia/issues/15276). For a motivating example,
     see the Neural ODE tutorial.
-  - This layer automatically converts `Zygote.gradient(op ∘ model::StatefulLuxLayer, x)` to
-    a `ForwardDiff.jl` jacobian-vector product over `Zygote.gradient` call. In future, we
-    will overload `DifferentiationInterface.gradient` and
-    `DifferentiationInterface.jacobian` calls as well. For this feature to be available,
-    `ForwardDiff.jl` must be loaded. Additionally this feature is exclusively available
-    for AD backends supporting ChainRules, so ReverseDiff and Tracker won't make this
-    automatic conversion. For more details on this feature, see the
+  - Facilitates Nested AD support in Lux. For more details on this feature, see the
     [Nested AD Manual Page](@ref nested_autodiff).
-
-!!! tip
-
-    Automatic Nested AD Switching behavior can be disabled by setting the preference
-    `DisableAutomaticNestedADSwitching` to `true`. See documentation of
-    [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl) and
-    [PreferenceTools.jl](https://github.com/cjdoris/PreferenceTools.jl) on how to do this.
 
 ## Arguments
 

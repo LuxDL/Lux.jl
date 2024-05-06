@@ -8,6 +8,8 @@ using Zygote: Zygote
 
 const CRC = ChainRulesCore
 
+Lux._is_extension_loaded(::Val{:Zygote}) = true
+
 function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}
     (loss, st, stats), back = Zygote.pullback(
@@ -17,18 +19,28 @@ function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F,
     return grads, loss, stats, ts
 end
 
+function Lux.__vector_jacobian_product_impl(f::F, ::AutoZygote, x, u) where {F}
+    _, pb_f = Zygote.pullback(f, x)
+    return only(pb_f(u))
+end
+
 # Nested AD Handling
 for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
     @eval begin
         @inline function Zygote.gradient(f::$fType, x)
-            f_internal, ps = Lux.__rewrite_ad_call(f)
-            return Lux.__internal_ad_gradient_call(Zygote.gradient, f_internal, x, ps)
+            f_internal, y = Lux.__rewrite_ad_call(f)
+            return Lux.__internal_ad_gradient_call(Zygote.gradient, f_internal, x, y)
         end
 
         @inline function Zygote.jacobian(f::$fType, x::AbstractArray)
-            f_internal, ps = Lux.__rewrite_ad_call(f)
+            f_internal, y = Lux.__rewrite_ad_call(f)
             return Lux.__internal_ad_jacobian_call(
-                Zygote.jacobian, Zygote.gradient, f_internal, x, ps)
+                Zygote.jacobian, Zygote.gradient, f_internal, x, y)
+        end
+
+        @inline function Lux.__vector_jacobian_product_impl(f::$fType, ::AutoZygote, x, u)
+            f_internal, y = Lux.__rewrite_ad_call(f)
+            return Lux.__internal_ad_pullback_call(Zygote.pullback, f_internal, x, y, u)
         end
     end
 end

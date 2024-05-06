@@ -25,7 +25,8 @@ The 🔥 Deep Learning Framework
 ## Installation
 
 ```julia
-] add Lux
+import Pkg
+Pkg.add("Lux")
 ```
 
 ## Getting Started
