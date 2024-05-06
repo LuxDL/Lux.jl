@@ -1,59 +1,3 @@
-module LuxForwardDiffExt
-
-using ADTypes: AutoForwardDiff
-using ChainRulesCore: ChainRulesCore
-using Lux: Lux
-using FastClosures: @closure
-using ForwardDiff: ForwardDiff
-using Functors: fmap
-
-const CRC = ChainRulesCore
-
-@inline Lux._is_extension_loaded(::Val{:ForwardDiff}) = true
-
-# Low-Level functions
-@inline function Lux.__partials(::Type{Tag}, x, i) where {Tag}
-    x isa ForwardDiff.Dual && return ForwardDiff.partials(Tag, x, i)
-    x isa AbstractArray && return ForwardDiff.partials.(Tag, x, i)
-    map_fn = @closure(xᵢ->Lux.__partials(Tag, xᵢ, i))
-    x isa Tuple && return map(map_fn, x)
-    x isa NamedTuple && return NamedTuple{keys(x)}(map(map_fn, values(x)))
-    x isa CRC.AbstractTangent && return Lux.__partials(Tag, CRC.backing(x), i)
-    x === nothing && return nothing
-    return fmap(map_fn, x)
-end
-
-@inline function Lux.__dualify(::Type{Tag}, ::Type{T}, x, u) where {Tag, T}
-    if x isa AbstractArray
-        return ForwardDiff.Dual{
-            Tag, T, 1}.(x, ForwardDiff.Partials{1, T}.(tuple.(reshape(u, size(x)))))
-    end
-    x isa Tuple && return map((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u)
-    x isa NamedTuple &&
-        return NamedTuple{keys(x)}(map((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u))
-    return fmap((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u)
-end
-
-# This is not a general jvp code, but rather meant to be efficient for nested AD calls
-function Lux.__forwarddiff_jvp(f::F, x, Δx, y) where {F}
-    T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(Δx))
-    Tag = typeof(ForwardDiff.Tag(f, T))
-    res1_dual, res2_dual = f(Lux.__dualify(Tag, T, x, Δx), y)
-    return (Lux.__partials(Tag, res1_dual, 1), Lux.__partials(Tag, res2_dual, 1))
-end
-
-# jvp
-function Lux.__jacobian_vector_product_impl(f::F, ::AutoForwardDiff, x, u) where {F}
-    T = promote_type(Lux.__recursive_eltype(x), Lux.__recursive_eltype(u))
-    Tag = typeof(ForwardDiff.Tag(f, T))
-    y_dual = f(Lux.__dualify(Tag, T, x, u))
-    return Lux.__partials(Tag, y_dual, 1)
-end
-
-function __jacobian_vector_product_ad_impl(f::F, x, u, y) where {F}
-    return Lux.__jacobian_vector_product_impl(Base.Fix2(f, y), AutoForwardDiff(), x, u)
-end
-
 for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
     @eval @inline function Lux.__jacobian_vector_product_impl(
             f::$(fType), ::AutoForwardDiff, x, u)
@@ -142,6 +86,4 @@ for type in (:Gradient, :Jacobian)
             return $(ret_expr), ∇internal_nested_ad_capture
         end
     end
-end
-
 end

@@ -292,10 +292,11 @@ nothing; # hide
 For sanity check, let's verify that the gradients are the same:
 
 ```@example nested_ad
-println("∂x using vjp: ", norm(∂x_vjp .- ∂x_jvp, Inf))
-println("∂ps using vjp: ", norm(ComponentArray(∂ps_vjp) .- ComponentArray(∂ps_jvp), Inf))
-println("∂x using full jacobian: ", norm(∂x_full_jacobian .- ∂x_vjp, Inf))
-println("∂ps using full jacobian: ",
+println("∞-norm(∂x using vjp): ", norm(∂x_vjp .- ∂x_jvp, Inf))
+println("∞-norm(∂ps using vjp): ",
+    norm(ComponentArray(∂ps_vjp) .- ComponentArray(∂ps_jvp), Inf))
+println("∞-norm(∂x using full jacobian): ", norm(∂x_full_jacobian .- ∂x_vjp, Inf))
+println("∞-norm(∂ps using full jacobian): ",
     norm(ComponentArray(∂ps_full_jacobian) .- ComponentArray(∂ps_vjp), Inf))
 @assert norm(∂x_vjp .- ∂x_jvp, Inf) < 1e-3 # hide
 @assert norm(ComponentArray(∂ps_vjp) .- ComponentArray(∂ps_jvp), Inf) < 1e-3 # hide
