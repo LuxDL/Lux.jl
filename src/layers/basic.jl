@@ -503,3 +503,54 @@ function Base.show(io::IO, e::Embedding)
 end
 
 outputsize(e::Embedding) = (e.out_dims,)
+
+"""
+    Periodic(dims, periods)
+
+Create a layer periodic in `dims` with respective periods `periods`. All other input
+dimensions are passed through unchanged, but `dims` are replaced with their sine and cosine
+(scaled appropriately to have the specified periods).
+
+## Arguments
+
+  - `dims`: Periodic dimensions
+  - `periods`: Periods of the dimensions `dims`, in the same order
+
+## Inputs
+
+  - `x` must be an AbstractArray with `issubset(dims, axes(x, 1))`
+
+## Returns
+
+  - AbstractArray with dimensions `(size(x, 1) + length(dims), ...)` where `...` are the
+    other dimensions of `x`; the unchanged dimensions are first, then all the sines, then
+    all the cosines.
+  - Empty `NamedTuple()`
+"""
+@concrete struct Periodic <:AbstractExplicitLayer
+    dims
+    periods
+end
+
+
+@inline function (p::Periodic)(x::AbstractVector, ps, st::NamedTuple)
+    return vec(first(p(reshape(x, :, 1), ps, st))), st
+end
+
+@inline function (p::Periodic)(x::AbstractMatrix, ps, st::NamedTuple)
+    return (
+        vcat(
+            view(x, setdiff(axes(x, 1), p.dims), :),
+            sin.(2π ./ p.periods .* view(x, p.dims, :)),
+            cos.(2π ./ p.periods .* view(x, p.dims, :))
+        ),
+        st)
+end
+
+@inline function (p::Periodic)(x::AbstractArray, ps, st::NamedTuple)
+    return reshape(first(p(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
+end
+
+function Base.show(io::IO, p::Periodic)
+    return print(io, "Periodic(dims = ", p.dims, ", periods = ", p.periods, ")")
+end

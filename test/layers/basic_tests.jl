@@ -69,6 +69,27 @@
             __f = x -> sum(first(layer(x, ps, st)))
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
         end
+
+        @testset "Periodic" begin
+            layer = Periodic([2, 3], [4.0, π/5])
+            __display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            x = randn(rng, 6, 4, 3, 2) |> aType
+
+            @test all(
+                    layer(x, ps, st)[1][1:4, :, :, :] .==
+                    layer(x .+ [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0], ps, st)[1][1:4, :, :, :]
+                    ) &&
+                all(isapprox(
+                    layer(x, ps, st)[1][5:8, :, :, :],
+                    layer(x .+ [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0], ps, st)[1][5:8, :, :, :];
+                    atol=sqrt(eps(Float64))
+                ))
+
+            @jet layer(x, ps, st)
+            __f = x -> sum(first(layer(x, ps, st)))
+            @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        end
     end
 end
 
