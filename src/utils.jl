@@ -72,7 +72,8 @@ Split up `x` into `N` equally sized chunks (along dimension `1`).
 end
 
 # Val utilities
-__unwrap_val(::Val{T}) where {T} = T
+@inline __unwrap_val(::Val{T}) where {T} = T
+@inline __unwrap_val(x) = x
 
 # Indexing into NamedTuple
 function _index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
@@ -306,3 +307,21 @@ end
     __recursive_make_zero!!, values(x)))
 @inline __recursive_make_zero!!(::Nothing) = nothing
 @inline __recursive_make_zero!!(x) = fmap(__recursive_make_zero!!, x)
+
+@inline function __ones_like(x::AbstractArray{T}, dims=size(x)) where {T}
+    y = similar(x, dims)
+    fill!(y, one(T))
+    return y
+end
+
+CRC.@non_differentiable __ones_like(::Any...)
+
+# The default constructor for PermutedDimsArray is type unstable
+@inline function __lazy_permutedims(x::AbstractArray, ::Val{P}) where {P}
+    return PermutedDimsArray{eltype(x), ndims(x), P, invperm(P), typeof(x)}(x)
+end
+
+@inline __maybe_lazy_permutedims(x::AbstractArray, dims::Val) = __lazy_permutedims(x, dims)
+@inline function __maybe_lazy_permutedims(x::GPUArraysCore.AnyGPUArray, ::Val{D}) where {D}
+    return permutedims(x, D)
+end
