@@ -77,13 +77,13 @@
             x = randn(rng, 6, 4, 3, 2) |> aType
             Δx = [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0] |> aType
 
-            @test all(
-                    layer(x, ps, st)[1][1:4, :, :, :] .==
-                    layer(x .+ Δx, ps, st)[1][1:4, :, :, :]
-                    ) &&
+            val = layer(x, ps, st)[1] |> Array
+            shifted_val = layer(x .+ Δx, ps, st)[1] |> Array
+
+            @test all(val[1:4, :, :, :] .== shifted_val[1:4, :, :, :]) &&
                 all(isapprox(
-                    layer(x, ps, st)[1][5:8, :, :, :],
-                    layer(x .+ Δx, ps, st)[1][5:8, :, :, :];
+                    val[5:8, :, :, :],
+                    shifted_val[5:8, :, :, :];
                     atol=sqrt(eps(typeof(first(x))))
                 ))
 
