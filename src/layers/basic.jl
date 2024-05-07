@@ -537,12 +537,13 @@ end
     return vec(first(p(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (p::Periodic)(x::AbstractMatrix, ps, st::NamedTuple)
+@inline function (p::Periodic)(x::AbstractMatrix{T}, ps, st::NamedTuple) where T
+    k = convert.(T, 2π ./ p.periods)
     return (
         vcat(
             view(x, setdiff(axes(x, 1), p.dims), :),
-            sin.(2π ./ p.periods .* view(x, p.dims, :)),
-            cos.(2π ./ p.periods .* view(x, p.dims, :))
+            sin.(k .* view(x, p.dims, :)),
+            cos.(k .* view(x, p.dims, :))
         ),
         st)
 end

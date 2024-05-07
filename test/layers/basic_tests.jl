@@ -83,7 +83,7 @@
                 all(isapprox(
                     layer(x, ps, st)[1][5:8, :, :, :],
                     layer(x .+ [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0], ps, st)[1][5:8, :, :, :];
-                    atol=sqrt(eps(Float64))
+                    atol=sqrt(eps(typeof(first(x))))
                 ))
 
             @jet layer(x, ps, st)
