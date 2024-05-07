@@ -54,6 +54,7 @@ include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/dropout.jl")
 include("layers/recurrent.jl")
+include("layers/kan.jl")
 include("layers/extension.jl")
 
 # Pretty Printing
@@ -96,6 +97,7 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
+export KAN, KANCell, SymbolicKANCell
 
 export StatefulLuxLayer
 export @compact, CompactLuxLayer
