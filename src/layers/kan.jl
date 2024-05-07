@@ -168,9 +168,16 @@ end
             (Δ isa CRC.NoTangent || Δ isa CRC.ZeroTangent) &&
                 return ntuple(Returns(NoTangent()), 4)
             Δ_ = CRC.unthunk(Δ)
-            ∂B = @. order * (m₁ - m₂) * Δ_
-            ∂x = similar(x)
-            sum!(∂x, ∂B)
+            if ArrayInterface.fast_scalar_indexing(x)  # Proxy check for GPUs
+                ∂x = @. order * (m₁[:, 1, :] - m₂[:, 1, :]) * Δ_[:, 1, :]
+                @inbounds for i in eachindex(axes(m₁, 2))[2:end]
+                    @. ∂x += order * (m₁[:, i, :] - m₂[:, i, :]) * Δ_[:, i, :]
+                end
+            else
+                ∂B = @. order * (m₁ - m₂) * Δ_
+                ∂x = similar(x)
+                sum!(∂x, ∂B)
+            end
             return NoTangent(), ∂x, NoTangent(), NoTangent()
         end
     end
