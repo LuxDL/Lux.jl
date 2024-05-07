@@ -25,24 +25,24 @@ end
 
 function initialparameters(
         rng::AbstractRNG, kan::KANLayer{spT, bT, order}) where {spT, bT, order}
-    _size = kan.in_dims * kan.out_dims
     grid = __generate_kan_grid(kan)  # unfortunately we need to generate the grid here as well
-    noises = (randn(rng, eltype(kan.scale_noise), _size, size(grid, 2)) .- (1 // 2)) .*
-             kan.scale_noise ./ kan.num_grid_intervals
+    noises = (randn(
+        rng, eltype(kan.scale_noise), kan.in_dims * kan.out_dims, size(grid, 2)) .-
+              (1 // 2)) .* kan.scale_noise ./ kan.num_grid_intervals
     coefficients = __curve_to_coefficient(grid, noises, grid, Val(order))
     ps = (; coefficients)
-    spT && (ps = merge(ps, (; scale_spline=__generate_scale_arr(_size, kan.scale_spline))))
-    bT && (ps = merge(ps, (; scale_base=__generate_scale_arr(_size, kan.scale_base))))
+    spT && (ps = merge(ps, (; scale_spline=__generate_scale_arr(kan, kan.scale_spline))))
+    bT && (ps = merge(ps, (; scale_base=__generate_scale_arr(kan, kan.scale_base))))
     return ps
 end
 
 function initialstates(::AbstractRNG, kan::KANLayer{spT, bT, order}) where {spT, bT, order}
-    _size = kan.in_dims * kan.out_dims
     grid = __generate_kan_grid(kan)
-    mask = ones(eltype(grid), _size)
-    st = (; grid, mask, weight_sharing=Colon(), lock_counter=0, lock_id=zeros(_size))
-    !spT && (st = merge(st, (; scale_spline=__generate_scale_arr(_size, kan.scale_spline))))
-    !bT && (st = merge(st, (; scale_base=__generate_scale_arr(_size, kan.scale_base))))
+    mask = ones(eltype(grid), (kan.in_dims, kan.out_dims))
+    st = (; grid, mask, weight_sharing=Colon(), lock_counter=0,
+        lock_id=zeros(Int, kan.in_dims, kan.out_dims))
+    !spT && (st = merge(st, (; scale_spline=__generate_scale_arr(kan, kan.scale_spline))))
+    !bT && (st = merge(st, (; scale_base=__generate_scale_arr(kan, kan.scale_base))))
     return st
 end
 
@@ -55,18 +55,21 @@ end
         B = size(x, 2)
         scale_spline = $(scale_expr)
         scale_base = $(base_expr)
-        preacts = reshape(x, :, 1, B) .* __ones_like(x, (1, kan.out_dims, 1)) # I x O x B
-        base = reshape(kan.activation.(preacts), :, B)                        # (I x O) x B
+        x_ = reshape(x, :, 1, B)
+        preacts = x_ .* __ones_like(x, (1, kan.out_dims, 1))                  # I x O x B
         y = __coefficient_to_curve(reshape(preacts, :, B), st.grid[st.weight_sharing, :],
             ps.coefficients[st.weight_sharing, :], $(Val(order)))             # (I x O) x B
         postspline = reshape(y, kan.in_dims, kan.out_dims, B)
-        y = @. (scale_base * base + scale_spline * y) * st.mask               # (I x O) x B
-        postacts = reshape(y, kan.in_dims, kan.out_dims, B)
+        mask = CRC.ignore_derivatives(st.mask)
+        postacts = @. (scale_base * kan.activation(x_) + scale_spline * postspline) * mask
         res = dropdims(sum(postacts; dims=1); dims=1)                         # O x B
         return (res, preacts, postacts, postspline), st
     end
 end
 
+@inline function __generate_scale_arr(kan::KANLayer, scale_spline::T) where {T <: Number}
+    return __generate_scale_arr((kan.in_dims, kan.out_dims), scale_spline)
+end
 @inline function __generate_scale_arr(size, scale_spline::T) where {T <: Number}
     return ones(T, size) .* scale_spline
 end
@@ -132,19 +135,47 @@ end
     return (x .≥ grid[:, 1:(end - 1), :]) .* (x .< grid[:, 2:end, :])
 end
 
-@views @generated function __bspline_evaluate(
-        x::AbstractArray{T1, 3}, grid::AbstractArray{T2, 3},
-        ::Val{order}) where {T1, T2, order}
-    return quote
-        y = __bspline_evaluate(x, grid, $(Val(order - 1)))
+CRC.@non_differentiable __bspline_evaluate(
+    ::AbstractArray{<:Any, 3}, ::AbstractArray{<:Any, 3}, ::Val{0})
 
-        return @. (x - grid[:, 1:(end - $(order) - 1), :]) /
-                  (grid[:, ($(order) + 1):(end - 1), :] -
-                   grid[:, 1:(end - $(order) - 1), :]) * y[:, 1:(end - 1), :] +
-                  (grid[:, ($(order) + 2):end, :] - x) /
-                  (grid[:, ($(order) + 2):end, :] - grid[:, 2:(end - $(order)), :]) *
-                  y[:, 2:end, :]
+@views function __bspline_evaluate(x::AbstractArray{T1, 3}, grid::AbstractArray{T2, 3},
+        ::Val{order}) where {T1, T2, order}
+    y = __bspline_evaluate(x, grid, Val(order - 1))
+
+    return @. (x - grid[:, 1:(end - order - 1), :]) /
+              (grid[:, (order + 1):(end - 1), :] - grid[:, 1:(end - order - 1), :]) *
+              y[:, 1:(end - 1), :] +
+              (grid[:, (order + 2):end, :] - x) /
+              (grid[:, (order + 2):end, :] - grid[:, 2:(end - order), :]) * y[:, 2:end, :]
+end
+
+# grid should be fixed, so we don't compute the gradient wrt the grid
+@views function CRC.rrule(::typeof(__bspline_evaluate), x::AbstractArray{T1, 3},
+        grid::AbstractArray{T2, 3}, ::Val{order}) where {T1, T2, order}
+    y = __bspline_evaluate(x, grid, Val(order - 1))
+
+    y₁ = y[:, 1:(end - 1), :]
+    y₂ = y[:, 2:end, :]
+
+    m₁ = @. y₁ / (grid[:, (order + 1):(end - 1), :] - grid[:, 1:(end - order - 1), :])
+    m₂ = @. y₂ / (grid[:, (order + 2):end, :] - grid[:, 2:(end - order), :])
+
+    res = @. (x - grid[:, 1:(end - order - 1), :]) * m₁ +
+             (grid[:, (order + 2):end, :] - x) * m₂
+
+    ∇bspline_evaluate = let m₁ = m₁, m₂ = m₂, x = x
+        Δ -> begin
+            (Δ isa CRC.NoTangent || Δ isa CRC.ZeroTangent) &&
+                return ntuple(Returns(NoTangent()), 4)
+            Δ_ = CRC.unthunk(Δ)
+            ∂B = @. order * (m₁ - m₂) * Δ_
+            ∂x = similar(x)
+            sum!(∂x, ∂B)
+            return NoTangent(), ∂x, NoTangent(), NoTangent()
+        end
     end
+
+    return res, ∇bspline_evaluate
 end
 
 # x       --> N splines x B
@@ -175,5 +206,5 @@ end
 # TODO: GPUs typically ship faster routines for batched least squares.
 # NOTE: The batching here is over the first dimension of A and b
 function __batched_least_squares(A::AbstractArray{T, 3}, b::AbstractMatrix) where {T}
-    return __stack1(map(\, eachslice(A; dims=1), eachslice(b; dims=1)))
+    return mapreduce(__expanddims1 ∘ \, vcat, eachslice(A; dims=1), eachslice(b; dims=1))
 end
