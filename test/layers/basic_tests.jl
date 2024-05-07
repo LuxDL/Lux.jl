@@ -84,7 +84,7 @@
                 all(isapprox(
                     val[5:8, :, :, :],
                     shifted_val[5:8, :, :, :];
-                    atol=sqrt(eps(typeof(first(x))))
+                    atol=sqrt(eps(typeof(first(val))))
                 ))
 
             @jet layer(x, ps, st)
