@@ -538,12 +538,12 @@ end
 end
 
 @inline function (p::Periodic)(x::A, ps, st::NamedTuple) where A <:AbstractMatrix
-    k = convert(A, reshape(2π ./ p.periods, :, 1))
+    k = convert(A, reshape(2 ./ p.periods, :, 1))
     return (
         vcat(
             view(x, setdiff(axes(x, 1), p.dims), :),
-            sin.(k .* view(x, p.dims, :)),
-            cos.(k .* view(x, p.dims, :))
+            sinpi.(k .* view(x, p.dims, :)),
+            cospi.(k .* view(x, p.dims, :))
         ),
         st)
 end
