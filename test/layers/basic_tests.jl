@@ -75,14 +75,15 @@
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 4, 3, 2) |> aType
+            Δx = [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0] |> aType
 
             @test all(
                     layer(x, ps, st)[1][1:4, :, :, :] .==
-                    layer(x .+ [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0], ps, st)[1][1:4, :, :, :]
+                    layer(x .+ Δx, ps, st)[1][1:4, :, :, :]
                     ) &&
                 all(isapprox(
                     layer(x, ps, st)[1][5:8, :, :, :],
-                    layer(x .+ [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0], ps, st)[1][5:8, :, :, :];
+                    layer(x .+ Δx, ps, st)[1][5:8, :, :, :];
                     atol=sqrt(eps(typeof(first(x))))
                 ))
 
