@@ -537,8 +537,8 @@ end
     return vec(first(p(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (p::Periodic)(x::AbstractMatrix{T}, ps, st::NamedTuple) where T
-    k = convert.(T, 2π ./ p.periods)
+@inline function (p::Periodic)(x::A, ps, st::NamedTuple) where A <:AbstractMatrix
+    k = vec(convert(A, reshape(2π ./ p.periods, :, 1)))
     return (
         vcat(
             view(x, setdiff(axes(x, 1), p.dims), :),
