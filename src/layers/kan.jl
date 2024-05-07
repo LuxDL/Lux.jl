@@ -46,20 +46,25 @@ function initialstates(::AbstractRNG, kan::KANLayer{spT, bT, order}) where {spT,
     return st
 end
 
-@views function (kan::KANLayer{spT, bT, order})(
+# @generated Needed else Zygote is type unstable
+@views @generated function (kan::KANLayer{spT, bT, order})(
         x::AbstractMatrix, ps, st::NamedTuple) where {spT, bT, order}
-    B = size(x, 2)
-    scale_spline = spT ? ps.scale_spline : st.scale_spline
-    scale_base = bT ? ps.scale_base : st.scale_base
-    preacts = reshape(x, :, 1, B) .* __ones_like(x, (1, kan.out_dims, 1)) # I x O x B
-    base = reshape(kan.activation.(preacts), :, B) # (I x O) x B
-    y = __coefficient_to_curve(reshape(preacts, :, B), st.grid[st.weight_sharing, :],
-        ps.coefficients[st.weight_sharing, :], Val(order)) # (I x O) x B
-    postspline = reshape(y, kan.in_dims, kan.out_dims, B)
-    y = @. (scale_base * base + scale_spline * y) * st.mask  # (I x O) x B
-    postacts = reshape(y, kan.in_dims, kan.out_dims, B)
-    res = dropdims(sum(postacts; dims=1); dims=1) # O x B
-    return (res, preacts, postacts, postspline), st
+    scale_expr = spT ? :(ps.scale_spline) : :(st.scale_spline)
+    base_expr = bT ? :(ps.scale_base) : :(st.scale_base)
+    return quote
+        B = size(x, 2)
+        scale_spline = $(scale_expr)
+        scale_base = $(base_expr)
+        preacts = reshape(x, :, 1, B) .* __ones_like(x, (1, kan.out_dims, 1)) # I x O x B
+        base = reshape(kan.activation.(preacts), :, B)                        # (I x O) x B
+        y = __coefficient_to_curve(reshape(preacts, :, B), st.grid[st.weight_sharing, :],
+            ps.coefficients[st.weight_sharing, :], $(Val(order)))             # (I x O) x B
+        postspline = reshape(y, kan.in_dims, kan.out_dims, B)
+        y = @. (scale_base * base + scale_spline * y) * st.mask               # (I x O) x B
+        postacts = reshape(y, kan.in_dims, kan.out_dims, B)
+        res = dropdims(sum(postacts; dims=1); dims=1)                         # O x B
+        return (res, preacts, postacts, postspline), st
+    end
 end
 
 @inline function __generate_scale_arr(size, scale_spline::T) where {T <: Number}
@@ -98,24 +103,28 @@ end
 
 @inline NNlib.fast_act(::typeof(silu), ::AbstractArray=1:0) = silu_fast
 
-@views function __extend_grid(grid::AbstractMatrix; k::Integer=0)
-    k == 0 && return grid
-    h = (grid[:, end:end] .- grid[:, 1:1]) ./ (size(grid, 2) - 1)
-    for _ in 1:k
-        grid = hcat(grid[:, 1:1] .- h, grid, grid[:, end:end] .+ h)
+@views @generated function __extend_grid(grid::AbstractMatrix, ::Val{k}=Val(3)) where {k}
+    k == 0 && return :(grid)
+    calls = [:(grid = hcat(grid[:, 1:1] .- h, grid, grid[:, end:end] .+ h)) for _ in 1:k]
+    return quote
+        h = (grid[:, end:end] .- grid[:, 1:1]) ./ $(k)
+        $(calls...)
+        return grid
     end
-    return grid
 end
 
 # x       --> N splines x B
 # grid    --> N splines x Grid size
 # Outputs --> N splines x N coeffs x B
-@views function __bspline_evaluate(
+@views @generated function __bspline_evaluate(
         x::AbstractMatrix, grid::AbstractMatrix, ::Val{order}=Val(3),
         ::Val{extend}=Val(true)) where {order, extend}
-    grid = extend ? __extend_grid(grid; k=order) : grid
-    return __bspline_evaluate(reshape(x, size(x, 1), 1, size(x, 2)),
-        reshape(grid, size(grid, 1), size(grid, 2), 1), Val(order))
+    grid_expr = extend ? :(grid = __extend_grid(grid, $(Val(order)))) : :()
+    return quote
+        $(grid_expr)
+        return __bspline_evaluate(reshape(x, size(x, 1), 1, size(x, 2)),
+            reshape(grid, size(grid, 1), size(grid, 2), 1), $(Val(order)))
+    end
 end
 
 @views function __bspline_evaluate(
@@ -123,15 +132,19 @@ end
     return (x .≥ grid[:, 1:(end - 1), :]) .* (x .< grid[:, 2:end, :])
 end
 
-@views function __bspline_evaluate(x::AbstractArray{T1, 3}, grid::AbstractArray{T2, 3},
+@views @generated function __bspline_evaluate(
+        x::AbstractArray{T1, 3}, grid::AbstractArray{T2, 3},
         ::Val{order}) where {T1, T2, order}
-    y = __bspline_evaluate(x, grid, Val(order - 1))
+    return quote
+        y = __bspline_evaluate(x, grid, $(Val(order - 1)))
 
-    return @. (x - grid[:, 1:(end - order - 1), :]) /
-              (grid[:, (order + 1):(end - 1), :] - grid[:, 1:(end - order - 1), :]) *
-              y[:, 1:(end - 1), :] +
-              (grid[:, (order + 2):end, :] - x) /
-              (grid[:, (order + 2):end, :] - grid[:, 2:(end - order), :]) * y[:, 2:end, :]
+        return @. (x - grid[:, 1:(end - $(order) - 1), :]) /
+                  (grid[:, ($(order) + 1):(end - 1), :] -
+                   grid[:, 1:(end - $(order) - 1), :]) * y[:, 1:(end - 1), :] +
+                  (grid[:, ($(order) + 2):end, :] - x) /
+                  (grid[:, ($(order) + 2):end, :] - grid[:, 2:(end - $(order)), :]) *
+                  y[:, 2:end, :]
+    end
 end
 
 # x       --> N splines x B
