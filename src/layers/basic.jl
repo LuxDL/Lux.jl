@@ -539,7 +539,7 @@ end
 
 @inline function (p::Periodic)(x::A, ps, st::NamedTuple) where A <:AbstractMatrix
     k = convert(A, reshape(2 ./ p.periods, :, 1))
-    ChainRulesCore.@ignore_derivatives other_dims = setdiff(axes(x, 1), p.dims)
+    other_dims = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.dims)
     return (
         vcat(
             view(x, other_dims, :),
