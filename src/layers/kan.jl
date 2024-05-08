@@ -1,3 +1,63 @@
+@concrete struct KAN{usebias, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+    layers::T
+    width
+    init_bias
+end
+
+function KAN(rng::AbstractRNG, width, activation=silu; use_bias::Union{Bool, Val}=Val(true),
+        num_grid_intervals::Int=5, spline_order::Union{Int, Val}=Val(3),
+        scale_noise=0.1f0, scale_noise_base=0.1f0, scale_spline=1.0f0, grid_eps=1.0f-2,
+        grid_range=(-1.0f0, 1.0f0), spline_trainable::Union{Bool, Val}=Val(true),
+        base_trainable::Union{Bool, Val}=Val(true),
+        allow_fast_activation::Bool=true, init_bias::F=zeros32) where {F}
+    activation_functions = Vector{KANLayer}(undef, length(width) - 1)
+    for i in 1:(length(width) - 1)
+        scale_base = inv(sqrt(width[i])) .+
+                     (randn(rng, width[i] * width[i + 1]) .* 2 .- 1) .* scale_noise_base
+        activation_functions[i] = KANLayer(
+            width[i] => width[i + 1], activation; num_grid_intervals,
+            spline_order, scale_noise, scale_base, scale_spline, grid_eps,
+            grid_range, spline_trainable, base_trainable, allow_fast_activation)
+    end
+    names = ntuple(i -> Symbol("layer_$i"), length(activation_functions))
+    layers = NamedTuple{names}(activation_functions)
+    return KAN{__unwrap_val(use_bias)}(layers, width, init_bias)
+end
+
+function initialparameters(
+        rng::AbstractRNG, kan::KAN{usebias, <:NamedTuple{names}}) where {usebias, names}
+    if usebias
+        biases = NamedTuple{names}(map(Base.Fix1(kan.init_bias, rng), kan.width[2:end]))
+        return (; layers=initialparameters(rng, kan.layers), biases)
+    end
+    return (; layers=initialparameters(rng, kan.layers))
+end
+
+function (kan::KAN{usebias})(x::AbstractMatrix, ps, st::NamedTuple) where {usebias}
+    return applykanlayers(kan.layers, x, ps.layers, _getproperty(ps, Val(:biases)), st)
+end
+
+@generated function applykanlayers(layers::NamedTuple{fields}, x, ps, biases::B,
+        st::NamedTuple{fields}) where {B, fields}
+    N = length(fields)
+    x_symbols = vcat([:x], [gensym("x") for _ in 1:N])
+    postact_symbols = [gensym("postact") for _ in 1:N]
+    st_symbols = [gensym("st") for _ in 1:N]
+    calls = Expr[]
+    for i in 1:N
+        push!(calls,
+            :((($(x_symbols[i + 1]), _, $(postact_symbols[i]), _), $(st_symbols[i])) = Lux.apply(
+                layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i]))))
+        if B !== Nothing
+            push!(
+                calls, :($(x_symbols[i + 1]) = $(x_symbols[i + 1]) .+ biases.$(fields[i])))
+        end
+    end
+    push!(calls,
+        :(return $(x_symbols[N + 1]), NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+    return Expr(:block, calls...)
+end
+
 @concrete struct KANLayer{spline_trainable, base_trainable, order} <: AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
@@ -10,9 +70,9 @@
     grid_range
 end
 
-function KANLayer(mapping::Pair{<:Int, <:Int}, num_grid_intervals::Int=5,
-        activation=silu; spline_order::Union{Int, Val}=Val(3),
-        scale_noise=0.1f0, scale_base=1.0f0, scale_spline=1.0f0, grid_eps=1.0f-2,
+function KANLayer(mapping::Pair{<:Int, <:Int}, activation=silu; num_grid_intervals::Int=5,
+        spline_order::Union{Int, Val}=Val(3), scale_noise=0.1f0,
+        scale_base=1.0f0, scale_spline=1.0f0, grid_eps=1.0f-2,
         grid_range=(-1.0f0, 1.0f0), spline_trainable::Union{Bool, Val}=Val(true),
         base_trainable::Union{Bool, Val}=Val(true), allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
@@ -67,14 +127,15 @@ end
     end
 end
 
-@inline function __generate_scale_arr(kan::KANLayer, scale_spline::T) where {T <: Number}
+@inline function __generate_scale_arr(kan::KANLayer, scale_spline)
     return __generate_scale_arr((kan.in_dims, kan.out_dims), scale_spline)
 end
-@inline function __generate_scale_arr(size, scale_spline::T) where {T <: Number}
+@inline function __generate_scale_arr(
+        size::Union{Int, Tuple{Vararg{Int}}}, scale_spline::T) where {T <: Number}
     return ones(T, size) .* scale_spline
 end
-@inline function __generate_scale_arr(
-        _size, scale_spline::AbstractArray{T}) where {T <: Number}
+@inline function __generate_scale_arr(_size::Union{Int, Tuple{Vararg{Int}}},
+        scale_spline::AbstractArray{T}) where {T <: Number}
     @assert prod(_size) == length(scale_spline)
     x = similar(scale_spline, _size)
     copyto!(x, scale_spline)
