@@ -528,8 +528,7 @@ periodicity.
 
   - `AbstractArray` of size `(size(x, 1) + length(dims), ...)` where `...` are the other
     dimensions of `x`.
-  - `NamedTuple` with field `k` equal to `st[:k]`, but with elements of the same type as the
-    elements of `x`
+  - `st`, unchanged
 """
 @concrete struct PeriodicEmbedding <:AbstractExplicitLayer
     dims
@@ -544,14 +543,13 @@ end
 
 @inline function (p::PeriodicEmbedding)(x::AbstractMatrix{T}, ps, st::NamedTuple) where T
     other_dims = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.dims)
-    _st = (k = T.(st[:k]), )
     return (
         vcat(
             view(x, other_dims, :),
-            sinpi.(_st[:k].* view(x, p.dims, :)),
-            cospi.(_st[:k] .* view(x, p.dims, :))
+            sinpi.(T.(st[:k]) .* view(x, p.dims, :)),
+            cospi.(T.(st[:k]) .* view(x, p.dims, :))
         ),
-        _st)
+        st)
 end
 
 @inline function (p::PeriodicEmbedding)(x::AbstractArray, ps, st::NamedTuple)
