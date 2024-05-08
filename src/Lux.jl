@@ -97,7 +97,7 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
-export KAN, KANLayer, KANUtils
+export KAN, KANLayer, KANUtils, KANGrid
 
 export StatefulLuxLayer
 export @compact, CompactLuxLayer

@@ -5,21 +5,22 @@
     init_bias
 end
 
-function KAN(rng::AbstractRNG, width, activation=silu; use_bias::Union{Bool, Val}=Val(true),
-        return_intermediates::Union{Bool, Val}=Val(false), num_grid_intervals::Int=5,
-        spline_order::Union{Int, Val}=Val(3), scale_noise=0.1f0,
-        scale_noise_base=0.1f0, scale_spline=1.0f0, grid_eps=1.0f-2,
-        grid_range=(-1.0f0, 1.0f0), spline_trainable::Union{Bool, Val}=Val(true),
-        base_trainable::Union{Bool, Val}=Val(true),
-        allow_fast_activation::Bool=true, init_bias::F=kaiming_normal) where {F}
+function KAN(width, activation::A=silu; use_bias::Union{Bool, Val}=Val(true),
+        return_intermediates::Union{Bool, Val}=Val(false),
+        init_bias::F=kaiming_normal, scale_noise_base=nothing,
+        init_scale_base=__scale_base_init, kwargs...) where {A, F}
     activation_functions = Vector{KANLayer}(undef, length(width) - 1)
+    init_scale_base = if init_scale_base === __scale_base_init
+        scale_noise_base === nothing && (scale_noise_base = 0.1f0)
+        __scale_base_init(; scale_noise_base)
+    else
+        @assert scale_noise_base===nothing "`scale_noise_base` can be supplied only if \
+                                            `init_scale_base` is `__scale_base_init`"
+        init_scale_base
+    end
     for i in 1:(length(width) - 1)
-        scale_base = inv(sqrt(width[i])) .+
-                     (randn(rng, width[i] * width[i + 1]) .* 2 .- 1) .* scale_noise_base
         activation_functions[i] = KANLayer(
-            width[i] => width[i + 1], activation; num_grid_intervals,
-            spline_order, scale_noise, scale_base, scale_spline, grid_eps,
-            grid_range, spline_trainable, base_trainable, allow_fast_activation)
+            width[i] => width[i + 1], activation; init_scale_base, kwargs...)
     end
     names = ntuple(i -> Symbol("layer_$i"), length(activation_functions))
     layers = NamedTuple{names}(activation_functions)
@@ -73,55 +74,81 @@ end
     return Expr(:block, calls...)
 end
 
+@concrete struct KANGrid{T, mode}
+    grid_eps
+    grid_range
+
+    function KANGrid{T}(grid_eps, grid_range) where {T <: Real}
+        return KANGrid{T, :uniform}(grid_eps, grid_range)
+    end
+    function KANGrid{T, mode}(grid_eps, grid_range) where {T <: Real, mode}
+        grid_eps = T(grid_eps)
+        grid_range = T.(grid_range)
+        return new{T, mode, typeof(grid_eps), typeof(grid_range)}(grid_eps, grid_range)
+    end
+end
+
+function (grid::KANGrid{T, :uniform})(
+        nsplines::Integer, num_grid_intervals::Integer) where {T <: Real}
+    return ones(T, nsplines) .*
+           LinRange(grid.grid_range[1], grid.grid_range[2], num_grid_intervals + 1)'
+end
+
 @concrete struct KANLayer{spline_trainable, base_trainable, order} <: AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
     num_grid_intervals::Int
     activation
+
     scale_noise
-    scale_base
-    scale_spline
-    grid_eps
-    grid_range
+    init_noise
+    init_scale_base
+    init_scale_spline
+
+    grid
 end
 
 function KANLayer(mapping::Pair{<:Int, <:Int}, activation=silu; num_grid_intervals::Int=5,
-        spline_order::Union{Int, Val}=Val(3), scale_noise=0.1f0,
-        scale_base=1.0f0, scale_spline=1.0f0, grid_eps=1.0f-2,
-        grid_range=(-1.0f0, 1.0f0), spline_trainable::Union{Bool, Val}=Val(true),
+        spline_order::Union{Int, Val}=Val(3), scale_noise=0.1f0, init_noise=randn32,
+        init_scale_base=__scale_base_init, init_scale_spline=ones32,
+        grid=KANGrid{Float32, :uniform}(1.0f-2, (-1.0f0, 1.0f0)),
+        spline_trainable::Union{Bool, Val}=Val(true),
         base_trainable::Union{Bool, Val}=Val(true), allow_fast_activation::Bool=true)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
     in_dims, out_dims = mapping
     return KANLayer{__unwrap_val(spline_trainable),
         __unwrap_val(base_trainable), __unwrap_val(spline_order)}(
-        in_dims, out_dims, num_grid_intervals, activation,
-        scale_noise, scale_base, scale_spline, grid_eps, grid_range)
+        in_dims, out_dims, num_grid_intervals, activation, scale_noise,
+        init_noise, init_scale_base, init_scale_spline, grid)
 end
 
 function initialparameters(
         rng::AbstractRNG, kan::KANLayer{spT, bT, order}) where {spT, bT, order}
-    grid = __generate_kan_grid(kan)  # unfortunately we need to generate the grid here as well
-    noises = (randn(
-        rng, eltype(kan.scale_noise), kan.in_dims * kan.out_dims, size(grid, 2)) .-
-              (1 // 2)) .* kan.scale_noise ./ kan.num_grid_intervals
+    grid = kan.grid(kan.in_dims * kan.out_dims, kan.num_grid_intervals)
+    noises = (kan.init_noise(rng, kan.in_dims * kan.out_dims, size(grid, 2)) .- (1 // 2)) .*
+             kan.scale_noise ./ kan.num_grid_intervals
     coefficients = __curve_to_coefficient(grid, noises, grid, Val(order))
     ps = (; coefficients)
-    spT && (ps = merge(ps, (; scale_spline=__generate_scale_arr(kan, kan.scale_spline))))
-    bT && (ps = merge(ps, (; scale_base=__generate_scale_arr(kan, kan.scale_base))))
+    spT && (ps = merge(
+        ps, (; scale_spline=kan.init_scale_spline(rng, kan.in_dims, kan.out_dims))))
+    bT &&
+        (ps = merge(ps, (; scale_base=kan.init_scale_base(rng, kan.in_dims, kan.out_dims))))
     return ps
 end
 
 function initialstates(::AbstractRNG, kan::KANLayer{spT, bT, order}) where {spT, bT, order}
-    grid = __generate_kan_grid(kan)
+    grid = kan.grid(kan.in_dims * kan.out_dims, kan.num_grid_intervals)
     mask = ones(eltype(grid), (kan.in_dims, kan.out_dims))
     st = (; grid, mask, weight_sharing=Colon(), lock_counter=0,
         lock_id=zeros(Int, kan.in_dims, kan.out_dims))
-    !spT && (st = merge(st, (; scale_spline=__generate_scale_arr(kan, kan.scale_spline))))
-    !bT && (st = merge(st, (; scale_base=__generate_scale_arr(kan, kan.scale_base))))
+    !spT && (st = merge(
+        st, (; scale_spline=kan.init_scale_spline(rng, kan.in_dims, kan.out_dims))))
+    !bT &&
+        (st = merge(st, (; scale_base=kan.init_scale_base(rng, kan.in_dims, kan.out_dims))))
     return st
 end
 
-# @generated Needed else Zygote is type unstable
+# @generated needed else Zygote is type unstable
 @views @generated function (kan::KANLayer{spT, bT, order})(
         x::AbstractMatrix, ps, st::NamedTuple) where {spT, bT, order}
     scale_expr = spT ? :(ps.scale_spline) : :(st.scale_spline)
@@ -140,26 +167,6 @@ end
         res = dropdims(sum(postacts; dims=1); dims=1)                         # O x B
         return (res, preacts, postacts, postspline), st
     end
-end
-
-@inline function __generate_scale_arr(kan::KANLayer, scale_spline)
-    return __generate_scale_arr((kan.in_dims, kan.out_dims), scale_spline)
-end
-@inline function __generate_scale_arr(
-        size::Union{Int, Tuple{Vararg{Int}}}, scale_spline::T) where {T <: Number}
-    return ones(T, size) .* scale_spline
-end
-@inline function __generate_scale_arr(_size::Union{Int, Tuple{Vararg{Int}}},
-        scale_spline::AbstractArray{T}) where {T <: Number}
-    @assert prod(_size) == length(scale_spline)
-    x = similar(scale_spline, _size)
-    copyto!(x, scale_spline)
-    return x
-end
-
-@inline function __generate_kan_grid(kan::KANLayer)
-    return ones(Float32, kan.in_dims * kan.out_dims) *
-           LinRange(kan.grid_range[1], kan.grid_range[2], kan.num_grid_intervals + 1)'
 end
 
 # Exported KANUtils
@@ -290,4 +297,33 @@ end
 # NOTE: The batching here is over the first dimension of A and b
 function __batched_least_squares(A::AbstractArray{T, 3}, b::AbstractMatrix) where {T}
     return mapreduce(__expanddims1 ∘ \, vcat, eachslice(A; dims=1), eachslice(b; dims=1))
+end
+
+# TODO: Maybe upstream to WeightInitializers.jl
+function __scale_base_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
+        scale_noise_base=0.1) where {T <: Real}
+    @assert length(dims)==2 "Expected 2 dimensions for scale_base initialization"
+    in_dims, out_dims = dims
+    return T(inv(sqrt(in_dims))) .+
+           (randn(rng, T, in_dims, out_dims) .* T(2) .- T(1)) .* T(scale_noise_base)
+end
+
+@inline function __scale_base_init(dims::Integer...; kwargs...)
+    return __scale_base_init(WeightInitializers._default_rng(), Float32, dims...; kwargs...)
+end
+
+@inline function __scale_base_init(rng::AbstractRNG; kwargs...)
+    return WeightInitializers.__partial_apply(__scale_base_init, (rng, (; kwargs...)))
+end
+
+@inline function __scale_base_init(rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: Real}
+    return WeightInitializers.__partial_apply(__scale_base_init, ((rng, T), (; kwargs...)))
+end
+
+@inline function __scale_base_init(rng::AbstractRNG, dims::Integer...; kwargs...)
+    return __scale_base_init(rng, Float32, dims...; kwargs...)
+end
+
+@inline function __scale_base_init(; kwargs...)
+    return WeightInitializers.__partial_apply(__scale_base_init, (; kwargs...))
 end
