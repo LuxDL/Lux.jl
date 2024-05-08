@@ -70,8 +70,8 @@
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
         end
 
-        @testset "Periodic" begin
-            layer = Periodic([2, 3], [4.0, π/5])
+        @testset "PeriodicEmbedding" begin
+            layer = PeriodicEmbedding([2, 3], [4.0, π/5])
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 4, 3, 2) |> aType

@@ -505,7 +505,7 @@ end
 outputsize(e::Embedding) = (e.out_dims,)
 
 """
-    Periodic(dims, periods)
+    PeriodicEmbedding(dims, periods)
 
 Create a layer periodic in `dims` with respective periods `periods`. All other input
 dimensions are passed through unchanged, but `dims` are replaced with their sine and cosine
@@ -527,17 +527,17 @@ dimensions are passed through unchanged, but `dims` are replaced with their sine
     all the cosines.
   - Empty `NamedTuple()`
 """
-@concrete struct Periodic <:AbstractExplicitLayer
+@concrete struct PeriodicEmbedding <:AbstractExplicitLayer
     dims
     periods
 end
 
 
-@inline function (p::Periodic)(x::AbstractVector, ps, st::NamedTuple)
+@inline function (p::PeriodicEmbedding)(x::AbstractVector, ps, st::NamedTuple)
     return vec(first(p(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (p::Periodic)(x::A, ps, st::NamedTuple) where A <:AbstractMatrix
+@inline function (p::PeriodicEmbedding)(x::A, ps, st::NamedTuple) where A <:AbstractMatrix
     k = convert(A, reshape(2 ./ p.periods, :, 1))
     other_dims = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.dims)
     return (
@@ -549,10 +549,10 @@ end
         st)
 end
 
-@inline function (p::Periodic)(x::AbstractArray, ps, st::NamedTuple)
+@inline function (p::PeriodicEmbedding)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(first(p(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
 end
 
-function Base.show(io::IO, p::Periodic)
-    return print(io, "Periodic(dims = ", p.dims, ", periods = ", p.periods, ")")
+function Base.show(io::IO, p::PeriodicEmbedding)
+    return print(io, "PeriodicEmbedding(dims = ", p.dims, ", periods = ", p.periods, ")")
 end
