@@ -64,7 +64,8 @@ end
 """
     Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
 
-Adapt a Flux model to Lux model. See [`ToSimpleChainsAdaptor`](@ref) for more details.
+Adapt a Simple Chains model to Lux model. See [`ToSimpleChainsAdaptor`](@ref) for more
+details.
 """
 function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
     if Base.get_extension(@__MODULE__, :LuxSimpleChainsExt) === nothing
@@ -87,5 +88,4 @@ end
 
 function Base.showerror(io::IO, e::SimpleChainsModelConversionError)
     print(io, "SimpleChainsModelConversionError(", e.msg, ")")
-    return
 end
