@@ -1,15 +1,17 @@
-@concrete struct KAN{usebias, T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct KAN{usebias, return_intermediates, T <: NamedTuple} <:
+                 AbstractExplicitLayer
     layers::T
     width
     init_bias
 end
 
 function KAN(rng::AbstractRNG, width, activation=silu; use_bias::Union{Bool, Val}=Val(true),
-        num_grid_intervals::Int=5, spline_order::Union{Int, Val}=Val(3),
-        scale_noise=0.1f0, scale_noise_base=0.1f0, scale_spline=1.0f0, grid_eps=1.0f-2,
+        return_intermediates::Union{Bool, Val}=Val(false), num_grid_intervals::Int=5,
+        spline_order::Union{Int, Val}=Val(3), scale_noise=0.1f0,
+        scale_noise_base=0.1f0, scale_spline=1.0f0, grid_eps=1.0f-2,
         grid_range=(-1.0f0, 1.0f0), spline_trainable::Union{Bool, Val}=Val(true),
         base_trainable::Union{Bool, Val}=Val(true),
-        allow_fast_activation::Bool=true, init_bias::F=zeros32) where {F}
+        allow_fast_activation::Bool=true, init_bias::F=kaiming_normal) where {F}
     activation_functions = Vector{KANLayer}(undef, length(width) - 1)
     for i in 1:(length(width) - 1)
         scale_base = inv(sqrt(width[i])) .+
@@ -21,11 +23,13 @@ function KAN(rng::AbstractRNG, width, activation=silu; use_bias::Union{Bool, Val
     end
     names = ntuple(i -> Symbol("layer_$i"), length(activation_functions))
     layers = NamedTuple{names}(activation_functions)
-    return KAN{__unwrap_val(use_bias)}(layers, width, init_bias)
+    return KAN{__unwrap_val(use_bias), __unwrap_val(return_intermediates)}(
+        layers, width, init_bias)
 end
 
-function initialparameters(
-        rng::AbstractRNG, kan::KAN{usebias, <:NamedTuple{names}}) where {usebias, names}
+function initialparameters(rng::AbstractRNG,
+        kan::KAN{usebias, return_intermediates, <:NamedTuple{names}}) where {
+        usebias, return_intermediates, names}
     if usebias
         biases = NamedTuple{names}(map(Base.Fix1(kan.init_bias, rng), kan.width[2:end]))
         return (; layers=initialparameters(rng, kan.layers), biases)
@@ -33,28 +37,39 @@ function initialparameters(
     return (; layers=initialparameters(rng, kan.layers))
 end
 
+initialstates(rng::AbstractRNG, kan::KAN) = initialstates(rng, kan.layers)
+
 function (kan::KAN{usebias})(x::AbstractMatrix, ps, st::NamedTuple) where {usebias}
-    return applykanlayers(kan.layers, x, ps.layers, _getproperty(ps, Val(:biases)), st)
+    return applykanlayers(kan, kan.layers, x, ps.layers, _getproperty(ps, Val(:biases)), st)
 end
 
-@generated function applykanlayers(layers::NamedTuple{fields}, x, ps, biases::B,
-        st::NamedTuple{fields}) where {B, fields}
+@generated function applykanlayers(
+        ::KAN{usebias, return_intermediates}, layers::NamedTuple{fields}, x, ps, biases::B,
+        st::NamedTuple{fields}) where {usebias, return_intermediates, B, fields}
     N = length(fields)
-    x_symbols = vcat([:x], [gensym("x") for _ in 1:N])
+    x_symbols = [gensym("x") for _ in 1:N]
+    y_symbols = vcat([:x], [gensym("y") for _ in 1:N])
+    preact_symbols = [gensym("preact") for _ in 1:N]
     postact_symbols = [gensym("postact") for _ in 1:N]
+    postspline_symbols = [gensym("postspline") for _ in 1:N]
     st_symbols = [gensym("st") for _ in 1:N]
     calls = Expr[]
     for i in 1:N
         push!(calls,
-            :((($(x_symbols[i + 1]), _, $(postact_symbols[i]), _), $(st_symbols[i])) = Lux.apply(
-                layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i]))))
-        if B !== Nothing
-            push!(
-                calls, :($(x_symbols[i + 1]) = $(x_symbols[i + 1]) .+ biases.$(fields[i])))
+            :((($(x_symbols[i]), $(preact_symbols[i]), $(postact_symbols[i]), $(postspline_symbols[i])), $(st_symbols[i])) = Lux.apply(
+                layers.$(fields[i]), $(y_symbols[i]), ps.$(fields[i]), st.$(fields[i]))))
+        if usebias
+            push!(calls, :($(y_symbols[i + 1]) = $(x_symbols[i]) .+ biases.$(fields[i])))
         end
     end
-    push!(calls,
-        :(return $(x_symbols[N + 1]), NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
+    ret_expr = if return_intermediates
+        :(($(y_symbols[N + 1]),
+            (($(Tuple(x_symbols)...),), ($(Tuple(preact_symbols)...),),
+                ($(Tuple(postact_symbols)...),), ($(Tuple(postspline_symbols)...),))))
+    else
+        :($(y_symbols[N + 1]))
+    end
+    push!(calls, :(return $ret_expr, NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     return Expr(:block, calls...)
 end
 
