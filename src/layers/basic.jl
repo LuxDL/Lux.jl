@@ -541,13 +541,13 @@ Lux.initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k = 2 ./ p.periods,)
     return vec(first(p(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (p::PeriodicEmbedding)(x::AbstractMatrix{T}, ps, st::NamedTuple) where T
+@inline function (p::PeriodicEmbedding)(x::AbstractMatrix, ps, st::NamedTuple)
     other_dims = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.dims)
     return (
         vcat(
             view(x, other_dims, :),
-            sinpi.(T.(st[:k]) .* view(x, p.dims, :)),
-            cospi.(T.(st[:k]) .* view(x, p.dims, :))
+            sinpi.(st[:k] .* view(x, p.dims, :)),
+            cospi.(st[:k] .* view(x, p.dims, :))
         ),
         st)
 end
