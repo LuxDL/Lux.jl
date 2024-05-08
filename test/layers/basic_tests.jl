@@ -81,7 +81,7 @@
             shifted_val = layer(x .+ Δx, ps, st)[1] |> Array
 
             @test all(val[1:4, :, :, :] .== shifted_val[1:4, :, :, :]) &&
-                all(isapprox(
+                all(isapprox.(
                     val[5:8, :, :, :],
                     shifted_val[5:8, :, :, :];
                     atol=sqrt(eps(typeof(first(val))))

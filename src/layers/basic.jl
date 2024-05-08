@@ -507,9 +507,11 @@ outputsize(e::Embedding) = (e.out_dims,)
 """
     PeriodicEmbedding(dims, periods)
 
-Create a layer periodic in `dims` with respective periods `periods`. All other input
-dimensions are passed through unchanged, but `dims` are replaced with their sine and cosine
-(scaled appropriately to have the specified periods).
+Create an embedding periodic in some dimensions with specified periods. Dimensions not in
+`dims` are passed through unchanged, but dimensions in `dims` are moved to the end of the
+output and replaced with their sines, followed by their cosines (scaled appropriately to
+have the specified periods). This smooth embedding preserves phase information and enforces
+periodicity.
 
 ## Arguments
 
@@ -518,35 +520,38 @@ dimensions are passed through unchanged, but `dims` are replaced with their sine
 
 ## Inputs
 
-  - `x` must be an AbstractArray with `issubset(dims, axes(x, 1))`
+  - `x` must be an `AbstractArray` with `issubset(dims, axes(x, 1))`
+  - `st` must be a `NamedTuple` where `st[:k] = 2 ./ periods`, but is on the same device as
+    `x`
 
 ## Returns
 
-  - AbstractArray with dimensions `(size(x, 1) + length(dims), ...)` where `...` are the
-    other dimensions of `x`; the unchanged dimensions are first, then all the sines, then
-    all the cosines.
-  - Empty `NamedTuple()`
+  - `AbstractArray` of size `(size(x, 1) + length(dims), ...)` where `...` are the other
+    dimensions of `x`.
+  - `NamedTuple` with field `k` equal to `st[:k]`, but with elements of the same type as the
+    elements of `x`
 """
 @concrete struct PeriodicEmbedding <:AbstractExplicitLayer
     dims
     periods
 end
 
+Lux.initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k = 2 ./ p.periods,)
 
 @inline function (p::PeriodicEmbedding)(x::AbstractVector, ps, st::NamedTuple)
     return vec(first(p(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (p::PeriodicEmbedding)(x::A, ps, st::NamedTuple) where A <:AbstractMatrix
-    k = convert(A, reshape(2 ./ p.periods, :, 1))
+@inline function (p::PeriodicEmbedding)(x::AbstractMatrix{T}, ps, st::NamedTuple) where T
     other_dims = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.dims)
+    _st = (k = T.(st[:k]), )
     return (
         vcat(
             view(x, other_dims, :),
-            sinpi.(k .* view(x, p.dims, :)),
-            cospi.(k .* view(x, p.dims, :))
+            sinpi.(_st[:k].* view(x, p.dims, :)),
+            cospi.(_st[:k] .* view(x, p.dims, :))
         ),
-        st)
+        _st)
 end
 
 @inline function (p::PeriodicEmbedding)(x::AbstractArray, ps, st::NamedTuple)
