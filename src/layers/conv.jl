@@ -745,7 +745,7 @@ end
         x::AbstractArray, ps, st::NamedTuple) where {N}
     cdims = _conv_transpose_dims(
         x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    return apply_activation(c.activation, _conv_transpose(x, ps.weight, cdims)), st
+    return fast_activation!!(c.activation, _conv_transpose(x, ps.weight, cdims)), st
 end
 
 @inline function (c::ConvTranspose{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}

@@ -1,15 +1,15 @@
 @doc doc"""
     vector_jacobian_product(f, backend::AbstractADType, x, u)
 
-Compute the Vector Jacobian Product ``\left(\frac{\partial f}{\partial x}\right)^T u``.
+Compute the Vector-Jacobian Product ``\left(\frac{\partial f}{\partial x}\right)^T u``.
 This is a wrapper around AD backends but allows us to compute gradients of vector-jacobian
 products efficiently using mixed-mode AD.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed  |
-| :----------------- | :--------------- |
-| `AutoZygote`       | `Zygote.jl`      |
+| Supported Backends | Packages Needed |
+| :----------------- | :-------------- |
+| `AutoZygote`       | `Zygote.jl`     |
 
 !!! warning
 
@@ -41,7 +41,7 @@ function __vector_jacobian_product_impl end
 @doc doc"""
     jacobian_vector_product(f, backend::AbstractADType, x, u)
 
-Compute the Vector Jacobian Product ``\left(\frac{\partial f}{\partial x}\right) u``.
+Compute the Jacobian-Vector Product ``\left(\frac{\partial f}{\partial x}\right) u``.
 This is a wrapper around AD backends but allows us to compute gradients of jacobian-vector
 products efficiently using mixed-mode AD.
 
@@ -84,8 +84,8 @@ function __jacobian_vector_product_impl end
 Computes the Jacobian of a function `f` with respect to a batch of inputs `x`. This expects
 the following properties for `y = f(x)`:
 
-  1. `ndims(y) ≥ 2`
-  2. `size(y, ndims(y)) == size(x, ndims(x))`
+ 1. `ndims(y) ≥ 2`
+ 2. `size(y, ndims(y)) == size(x, ndims(x))`
 
 ## Backends & AD Packages
 

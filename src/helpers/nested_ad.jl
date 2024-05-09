@@ -148,8 +148,9 @@ function CRC.rrule(
 
             # TODO: Here we can potentially chunk the gradients for faster AD calls
             ∂x, ∂y = mapreduce(__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
-                ∂xᵢ, ∂yᵢ = __forwarddiff_jvp(
-                    (x, y) -> grad_fn((x_, y_) -> sum(vec(f(x_, y_))[i:i]), x, y), x, Δᵢ, y)
+                ∂xᵢ, ∂yᵢ = __forwarddiff_jvp(x, Δᵢ, y) do x, y
+                    return grad_fn(sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f, x, y)
+                end
                 return ∂xᵢ, ∂yᵢ
             end
 
