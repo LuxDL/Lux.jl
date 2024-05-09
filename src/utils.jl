@@ -7,7 +7,7 @@
 Returns `true` if `training` is `true` or if `st` contains a `training` field with value
 `true`. Else returns `false`.
 """
-@inline istraining(::Val{training}) where {training <: Bool} = training
+@inline istraining(::Val{training}) where {training} = training
 @inline istraining(training::Bool) = training
 @inline istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.training)
 

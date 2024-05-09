@@ -14,6 +14,7 @@ using PrecompileTools: @recompile_invalidations
     using GPUArraysCore: GPUArraysCore
     using LinearAlgebra: LinearAlgebra
     using Markdown: @doc_str
+    using OhMyThreads: tmapreduce
     using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport

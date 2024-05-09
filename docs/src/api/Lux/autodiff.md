@@ -15,10 +15,10 @@ CurrentModule = Lux
 | [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr] | ✔️     | ✔️     | ✔️                   | Tier I        |
 | [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                 | ✔️     | ✔️     | ✔️                   | Tier I        |
 | [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | ✔️     | ✔️     | ✔️                   | Tier I        |
-| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | ✔️     | ⨉     | ⨉                   | Tier II       |
-| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | ✔️     | ✔️     | ⨉                   | Tier II       |
+| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | ✔️     | ❌     | ❌                   | Tier II       |
+| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | ✔️     | ✔️     | ❌                   | Tier II       |
 | [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | ❓[^q] | ❓[^q] | ❓[^q]               | Tier III      |
-| [`Tapir.jl`](https://github.com/withbayes/Tapir.jl)                | ❓[^q] | ❓[^q] | ⨉                   | Tier IV       |
+| [`Tapir.jl`](https://github.com/withbayes/Tapir.jl)                | ❓[^q] | ❓[^q] | ❌                   | Tier IV       |
 | [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | ❓[^q] | ❓[^q] | ❓[^q]               | Tier IV       |
 
 [^q]: This feature is supported downstream, but we don't extensively test it to ensure

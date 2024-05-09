@@ -49,7 +49,7 @@
                 return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ smodel, x)))
             end
 
-            loss_fns = ongpu ? (loss_function2, loss_function4) :
+            loss_fns = ongpu ? (loss_function1, loss_function2, loss_function4) :
                        (loss_function1, loss_function2, loss_function3, loss_function4)
 
             for loss_fn in loss_fns
@@ -132,7 +132,7 @@ end
                     only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)))
             end
 
-            loss_fns = ongpu ? (loss_function2, loss_function4) :
+            loss_fns = ongpu ? (loss_function1, loss_function2, loss_function4) :
                        (loss_function1, loss_function2, loss_function3, loss_function4)
 
             for loss_fn in loss_fns
@@ -250,6 +250,8 @@ end
 
             @test_nowarn loss_function_vjp(model, X, ps, st, vjp_input)
             @test loss_function_vjp(model, X, ps, st, vjp_input) isa Number
+            @test loss_function_vjp(model, X, ps, st, vjp_input) ≈
+                  loss_function_vjp_jacobian(model, X, ps, st, vjp_input)
 
             _, ∂x, ∂ps, _ = Zygote.gradient(loss_function_vjp, model, X, ps, st, vjp_input)
             _, ∂x_vjp, ∂ps_vjp, _, _ = Zygote.gradient(
@@ -260,6 +262,8 @@ end
 
             @test_nowarn loss_function_jvp(model, X, ps, st, jvp_input)
             @test loss_function_jvp(model, X, ps, st, jvp_input) isa Number
+            @test loss_function_jvp(model, X, ps, st, jvp_input) ≈
+                  loss_function_jvp_jacobian(model, X, ps, st, jvp_input)
 
             _, ∂x, ∂ps, _ = Zygote.gradient(loss_function_jvp, model, X, ps, st, jvp_input)
             _, ∂x_jvp, ∂ps_jvp, _, _ = Zygote.gradient(
