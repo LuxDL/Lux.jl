@@ -16,13 +16,13 @@ function Lux.DynamicExpressionsLayer(
     length(expressions) == 1 && return Lux.DynamicExpressionsLayer(
         operator_enum, first(expressions), name, turbo, bumper)
     _name_fn = name === nothing ? Returns(nothing) : @closure(i->"$(name)_$(i)")
+    #! format: off
     return Chain(
         Parallel(nothing,
-            map(
-                ((i, expr),) -> Lux.DynamicExpressionsLayer(
-                    operator_enum, expr, _name_fn(i), turbo, bumper),
-                enumerate(expressions))...),
+            ntuple(i -> Lux.DynamicExpressionsLayer(operator_enum, expressions[i],
+                _name_fn(i), turbo, bumper), length(expressions))...),
         WrappedFunction(Lux.__stack1))
+    #! format: on
 end
 
 function Lux.DynamicExpressionsLayer(
@@ -33,14 +33,12 @@ end
 function Lux.__apply_dynamic_expression_rrule(
         de::Lux.DynamicExpressionsLayer, expr, operator_enum, x, ps)
     Lux.__update_expression_constants!(expr, ps)
-    @static if pkgversion(DynamicExpressions) < v"0.17"
-        error("`DynamicExpressions` v0.17 or later is required for reverse mode to work.")
-    end
-    (y, _), pb_f = CRC.rrule(eval_tree_array, expr, x, operator_enum; de.turbo, de.bumper)
+    _, Jₓ, _ = eval_grad_tree_array(expr, x, operator_enum; variable=Val(true), de.turbo)
+    y, Jₚ, _ = eval_grad_tree_array(expr, x, operator_enum; variable=Val(false), de.turbo)
     __∇apply_dynamic_expression = @closure Δ -> begin
-        _, ∂expr, ∂x, ∂operator_enum = pb_f((Δ, nothing))
-        ∂ps = CRC.unthunk(∂expr).gradient
-        return NoTangent(), NoTangent(), NoTangent(), ∂operator_enum, ∂x, ∂ps, NoTangent()
+        ∂x = Jₓ .* reshape(Δ, 1, :)
+        ∂ps = Jₚ * Δ
+        return NoTangent(), NoTangent(), NoTangent(), NoTangent(), ∂x, ∂ps, NoTangent()
     end
     return y, __∇apply_dynamic_expression
 end
