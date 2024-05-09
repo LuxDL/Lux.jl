@@ -60,13 +60,6 @@ StatefulLuxLayer
 @compact
 ```
 
-## AutoDiff Helpers
-
-```@docs
-jacobian_vector_product
-vector_jacobian_product
-```
-
 ## Truncated Stacktraces
 
 ```@docs

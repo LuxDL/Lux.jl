@@ -102,6 +102,7 @@ export SamePad, TimeLastIndex, BatchLastIndex
 export StatefulLuxLayer
 export @compact, CompactLuxLayer
 export jacobian_vector_product, vector_jacobian_product
+export batched_jacobian
 
 export f16, f32, f64
 
