@@ -11,12 +11,15 @@ function CRC.rrule(
         return ∂f(one(res))[2:end]
     end
 
-    jac_fn = (f_internal, x_in) -> Lux.__batched_jacobian_impl(f_internal, backend, x_in)
+    jac_fn = @closure (f_internal, x_in) -> Lux.__batched_jacobian_impl(
+        f_internal, backend, x_in)
 
     res, pb_f = CRC.rrule_via_ad(
         cfg, Lux.__internal_ad_jacobian_call, jac_fn, grad_fn, f, x, y)
-    ∇internal_nested_ad_capture = Δ -> begin
-        ∂x, ∂y = pb_f(tuple(Δ))[(end - 1):end]
+    ∇internal_nested_ad_capture = @closure Δ -> begin
+        ∂s = pb_f(tuple(Δ))
+        ∂x = ∂s[lastindex(∂s) - 1]
+        ∂y = ∂s[lastindex(∂s)]
         return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y)
     end
 

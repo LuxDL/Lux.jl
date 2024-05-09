@@ -16,22 +16,20 @@ const AD_CONVERTIBLE_FUNCTIONS = [
 ]
 #! format: on
 
-@inline function __rewrite_ad_call(f::F) where {F}
-    # Input Gradient / Jacobian
-    f isa ComposedFunction{<:Any, <:StatefulLuxLayer} && return f, f.inner.ps
-    f isa ComposedFunction{<:StatefulLuxLayer, <:Any} &&
-        return @closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps
-    f isa StatefulLuxLayer && return f, f.ps
+## Written like this to avoid dynamic dispatch from Zygote
+# Input Gradient / Jacobian
+@inline __rewrite_ad_call(f::ComposedFunction{<:Any, <:StatefulLuxLayer}) = f, f.inner.ps
+@inline __rewrite_ad_call(f::ComposedFunction{<:StatefulLuxLayer, <:Any}) = (
+    @closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps)
+@inline __rewrite_ad_call(f::StatefulLuxLayer) = f, f.ps
 
-    # Parameter Gradient / Jacobian
-    f isa ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}} &&
-        return @closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x
-    f isa ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any} &&
-        return @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x
-    f isa Base.Fix1{<:StatefulLuxLayer} && return @closure((ps, x)->f.f(x, ps)), f.x
-
-    error("Unknown function type: $(typeof(f))")
-end
+# Parameter Gradient / Jacobian
+@inline __rewrite_ad_call(f::ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}}) = (
+    @closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x)
+@inline __rewrite_ad_call(f::ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any}) = (
+    @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x)
+@inline __rewrite_ad_call(f::Base.Fix1{<:StatefulLuxLayer}) = (
+    @closure((ps, x)->f.f(x, ps)), f.x)
 
 # Nested Gradients
 ## Essentially computes the gradient of `f(x, y)` wrt x using the function `grad_fn`
@@ -149,13 +147,17 @@ function CRC.rrule(
             # TODO: Here we can potentially chunk the gradients for faster AD calls
             # TODO: Might be worth investigating if we can use Polyester or OhMyThreads
             #       to speed this up
-            ∂x, ∂y = mapreduce(
-                __internal_add, enumerate(__maybe_batched_eachrow(Δ))) do (i, Δᵢ)
-                ∂xᵢ, ∂yᵢ = __forwarddiff_jvp(x, Δᵢ, y) do x, y
-                    return grad_fn(sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f, x, y)
+            __inner_grad_fn = @closure(i->sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)
+            map_fn = @closure inp -> begin
+                i, Δᵢ = inp
+                fn = __inner_grad_fn(i)
+                __f = let fn=fn
+                    (x, y) -> grad_fn(fn, x, y)
                 end
-                return ∂xᵢ, ∂yᵢ
+                return __forwarddiff_jvp(__f, x, Δᵢ, y)
             end
+            ∂x, ∂y = mapreduce(
+                map_fn, __internal_add, enumerate(__maybe_batched_eachrow(Δ)))
 
             return (
                 CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y)
