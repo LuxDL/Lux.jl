@@ -119,7 +119,7 @@ function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray) where
         error("`ForwardDiff.jl` must be loaded for `batched_jacobian` to work with \
                `$(backend)`.")
     end
-    return __batched_jacobian(f, backend, x, missing)
+    return __batched_jacobian(f, backend, x)
 end
 
 function __batched_jacobian end

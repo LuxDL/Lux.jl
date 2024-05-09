@@ -1,10 +1,38 @@
+## This function allows us the rewrite the function call to get the gradients for `p`
 @inline function Lux.__batched_jacobian(f::F, backend::AutoForwardDiff, x, p) where {F}
     return Lux.__batched_jacobian_impl(Base.Fix2(f, p), backend, x)
 end
 
-@inline function Lux.__batched_jacobian(
-        f::F, backend::AutoForwardDiff, x, ::Missing) where {F}
+function CRC.rrule(
+        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(Lux.__batched_jacobian),
+        f::F, backend::AutoForwardDiff, x, y) where {F}
+    grad_fn = (f_internal, x, args...) -> begin
+        res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
+        return ∂f(one(res))[2:end]
+    end
+
+    jac_fn = (f_internal, x_in) -> Lux.__batched_jacobian_impl(f_internal, backend, x_in)
+
+    res, pb_f = CRC.rrule_via_ad(
+        cfg, Lux.__internal_ad_jacobian_call, jac_fn, grad_fn, f, x, y)
+    ∇internal_nested_ad_capture = Δ -> begin
+        ∂x, ∂y = pb_f(tuple(Δ))[(end - 1):end]
+        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y)
+    end
+
+    return res, ∇internal_nested_ad_capture
+end
+
+@inline function Lux.__batched_jacobian(f::F, backend::AutoForwardDiff, x) where {F}
     return Lux.__batched_jacobian_impl(f, backend, x)
+end
+
+## Nested AD rewriting
+for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
+    @eval @inline function Lux.__batched_jacobian(f::$(fType), backend::AutoForwardDiff, x)
+        f_internal, y = Lux.__rewrite_ad_call(f)
+        return Lux.__batched_jacobian(f_internal, backend, x, y)
+    end
 end
 
 function Lux.__batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) where {F, CK}
@@ -18,7 +46,7 @@ function Lux.__batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) wher
         __f, reshape(x, :, size(x, ndims(x))), typeof(tag), chunksize)
 end
 
-# This can be made more efficient by caching
+# TODO: This can be made more efficient by caching
 @views function __batched_forwarddiff_jacobian(f::F, x::AbstractMatrix{T}, ::Type{Tag},
         ck::ForwardDiff.Chunk{CK}) where {F, T, Tag, CK}
     N, B = size(x)

@@ -147,7 +147,10 @@ function CRC.rrule(
             Δ = __compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
             # TODO: Here we can potentially chunk the gradients for faster AD calls
-            ∂x, ∂y = mapreduce(__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
+            # TODO: Might be worth investigating if we can use Polyester or OhMyThreads
+            #       to speed this up
+            ∂x, ∂y = mapreduce(
+                __internal_add, enumerate(__maybe_batched_eachrow(Δ))) do (i, Δᵢ)
                 ∂xᵢ, ∂yᵢ = __forwarddiff_jvp(x, Δᵢ, y) do x, y
                     return grad_fn(sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f, x, y)
                 end
@@ -163,13 +166,31 @@ function CRC.rrule(
 end
 
 # Convert a structured Matrix to a General Matrix if it doesn't have fast scalar indexing
-@inline function __compactify_if_structured_matrix(J::AbstractMatrix, Δ::AbstractArray)
+@inline function __compactify_if_structured_matrix(
+        J::AbstractArray{T1, N}, Δ::AbstractArray{T2}) where {T1, T2, N}
+    @assert N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
     if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
         J_ = similar(J)
         copyto!(J_, Δ)
         return J_
     end
     return reshape(Δ, size(J))
+end
+
+@inline __maybe_batched_eachrow(x::AbstractMatrix) = eachrow(x)
+@inline function __maybe_batched_eachrow(x::AbstractArray{T, 3}) where {T}
+    M, N, K = size(x)
+    rowfn = @closure i -> begin
+        k = (i - 1) ÷ M + 1
+        i = mod1(i, M)
+        y = similar(x, N * K)
+        data = view(x, i, :, k)
+        fill!(view(y, 1:(N * (K - 1))), zero(T))
+        copyto!(view(y, (N * (k - 1) + 1):(N * k)), data)
+        fill!(view(y, (N * k + 1):(N * K)), zero(T))
+        return y
+    end
+    return (rowfn(i) for i in 1:(M * K))
 end
 
 ## TODO: We can do an inplace addition but those are typically not giant bottlenecks
