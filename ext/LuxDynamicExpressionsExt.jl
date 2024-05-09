@@ -1,9 +1,12 @@
 module LuxDynamicExpressionsExt
 
-using ChainRulesCore: NoTangent
-using DynamicExpressions: Node, OperatorEnum, eval_grad_tree_array
+using ChainRulesCore: ChainRulesCore, NoTangent
+using DynamicExpressions: DynamicExpressions, Node, OperatorEnum, eval_grad_tree_array,
+                          eval_tree_array
 using FastClosures: @closure
 using Lux: Lux, NAME_TYPE, Chain, Parallel, WrappedFunction
+
+const CRC = ChainRulesCore
 
 @inline Lux._is_extension_loaded(::Val{:DynamicExpressions}) = true
 
@@ -13,13 +16,13 @@ function Lux.DynamicExpressionsLayer(
     length(expressions) == 1 && return Lux.DynamicExpressionsLayer(
         operator_enum, first(expressions), name, turbo, bumper)
     _name_fn = name === nothing ? Returns(nothing) : @closure(i->"$(name)_$(i)")
+    #! format: off
     return Chain(
         Parallel(nothing,
-            map(
-                ((i, expr),) -> Lux.DynamicExpressionsLayer(
-                    operator_enum, expr, _name_fn(i), turbo, bumper),
-                enumerate(expressions))...),
+            ntuple(i -> Lux.DynamicExpressionsLayer(operator_enum, expressions[i],
+                _name_fn(i), turbo, bumper), length(expressions))...),
         WrappedFunction(Lux.__stack1))
+    #! format: on
 end
 
 function Lux.DynamicExpressionsLayer(

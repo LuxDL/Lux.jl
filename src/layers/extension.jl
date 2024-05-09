@@ -105,11 +105,8 @@ function __update_expression_constants!(expression, ps)
 end
 
 @inline function (de::DynamicExpressionsLayer)(x::AbstractVector, ps, st)
-    x_ = reshape(x, :, 1)
-    return (
-        vec(__apply_dynamic_expression(
-            de, de.expression, de.operator_enum, x_, ps.params, get_device(x))),
-        st)
+    y, st_ = de(reshape(x, :, 1), ps, st)
+    return vec(y), st_
 end
 
 @inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
@@ -182,7 +179,7 @@ Base.show(io::IO, l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 
 """
     SimpleChainsLayer{ToArray}(layer)
-    SimpleChainsLayer(layer, ToArray::Bool=false)
+    SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
 
 Wraps a `SimpleChains` layer into a `Lux` layer. All operations are performed using
 `SimpleChains` but the layer satisfies the `AbstractExplicitLayer` interface.
@@ -196,7 +193,8 @@ regular `Array` or not. Default is `false`.
 
 !!! note
 
-    Using the 2nd constructor makes the generation of the model struct type unstable.
+    Using the 2nd constructor with Boolean `ToArray` makes the generation of the model
+    struct type unstable.
 
 !!! note
 
@@ -209,7 +207,7 @@ end
 @inline function SimpleChainsLayer{ToArray}(layer) where {ToArray}
     return SimpleChainsLayer{ToArray, typeof(layer)}(layer)
 end
-@inline SimpleChainsLayer(layer, ToArray::Bool=false) = SimpleChainsLayer{ToArray}(layer)
+@inline SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false)) = SimpleChainsLayer{__unwrap_val(ToArray)}(layer)
 
 @inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 

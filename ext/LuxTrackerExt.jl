@@ -8,7 +8,7 @@ using Functors: fmap
 using Lux: Lux, LuxCPUDevice
 using LuxCore: LuxCore
 using Setfield: @set!
-using Tracker: Tracker, TrackedArray
+using Tracker: Tracker, TrackedArray, @grad_from_chainrules
 
 const CRC = ChainRulesCore
 
@@ -56,7 +56,7 @@ function Lux.apply(
     return Lux.apply(m, ArrayInterface.aos_to_soa(x), ps, st)
 end
 
-# SimpleChains.jl
+# SimpleChains.jl: DON'T REPLACE THESE WITH @grad_from_chainrules
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
 
@@ -79,24 +79,9 @@ end
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
 
-    @eval function Lux.__apply_dynamic_expression(
-            de::Lux.DynamicExpressionsLayer, expr, operator_enum,
-            x::$(T1), ps::$(T2), dev::LuxCPUDevice)
-        return Tracker.track(
-            Lux.__apply_dynamic_expression, de, expr, operator_enum, x, ps, dev)
-    end
-end
-
-Tracker.@grad function Lux.__apply_dynamic_expression(
-        de::Lux.DynamicExpressionsLayer, expr, operator_enum, x, ps, dev::LuxCPUDevice)
-    y, pb_f = CRC.rrule(Lux.__apply_dynamic_expression, de, expr,
-        operator_enum, Tracker.data(x), Tracker.data(ps), dev)
-    __∇apply_dynamic_expression = @closure Δ -> begin
-        _, _, _, _, ∂x, ∂ps, _ = pb_f(Δ)
-        return Tracker.nobacksies(
-            :__apply_dynamic_expression, (nothing, nothing, nothing, ∂x, ∂ps, nothing))
-    end
-    return y, __∇apply_dynamic_expression
+    @eval @grad_from_chainrules Lux.__apply_dynamic_expression(
+        de::Lux.DynamicExpressionsLayer, expr, operator_enum,
+        x::$(T1), ps::$(T2), dev::LuxCPUDevice)
 end
 
 end

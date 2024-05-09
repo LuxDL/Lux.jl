@@ -18,7 +18,7 @@ function Lux.__fix_input_dims_simplechain(layers, input_dims)
     return __fix_input_dims_simplechain([layers], input_dims)
 end
 
-__equivalent_simplechains_fn(::typeof(Lux.relu)) = SimpleChains.relu
+__equivalent_simplechains_fn(::typeof(NNlib.relu)) = SimpleChains.relu
 __equivalent_simplechains_fn(f::F) where {F} = f
 
 function Lux.__to_simplechains_adaptor(layer::Dense{use_bias}) where {use_bias}
