@@ -23,7 +23,6 @@
 
         for (X, model) in zip(Xs, models)
             ps, st = Lux.setup(rng, model) |> dev
-            X = X |> aType
 
             # smodel | ForwardDiff.jacobian
             loss_function1 = (model, x, ps, st) -> begin
@@ -104,7 +103,6 @@ end
             ps, st = Lux.setup(rng, model)
             ps = ps |> ComponentArray |> dev
             st = st |> dev
-            X = X |> aType
 
             # smodel | ForwardDiff.jacobian
             loss_function1 = (model, x, ps, st) -> begin
@@ -219,7 +217,6 @@ end
 
         for (model, X) in zip(models, Xs)
             ps, st = Lux.setup(rng, model) |> dev
-            X = X |> aType
 
             vjp_input = first(model(X, ps, st))
             jvp_input = aType(randn(rng, Float32, size(X)...))

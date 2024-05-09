@@ -44,6 +44,7 @@ work:
     - `ForwardDiff.<gradient|jacobian>`
     - [`vector_jacobian_product`](@ref)
     - [`jacobian_vector_product`](@ref)
+    - [`batched_jacobian`](@ref)
   - Switching only happens for `ChainRules` compatible AD libraries.
 
 We plan to capture `DifferentiationInterface`, and `Enzyme.autodiff` calls in the
