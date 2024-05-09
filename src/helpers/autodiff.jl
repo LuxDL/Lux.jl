@@ -10,7 +10,6 @@ products efficiently using mixed-mode AD.
 | Supported Backends | Packages Needed  |
 | :----------------- | :--------------- |
 | `AutoZygote`       | `Zygote.jl`      |
-| ------------------ | ---------------- |
 
 !!! warning
 
@@ -51,7 +50,6 @@ products efficiently using mixed-mode AD.
 | Supported Backends | Packages Needed  |
 | :----------------- | :--------------- |
 | `AutoForwardDiff`  | `ForwardDiff.jl` |
-| ------------------ | ---------------- |
 
 !!! warning
 
@@ -86,15 +84,14 @@ function __jacobian_vector_product_impl end
 Computes the Jacobian of a function `f` with respect to a batch of inputs `x`. This expects
 the following properties for `y = f(x)`:
 
-    1. `ndims(y) ≥ 2`
-    2. `size(y, ndims(y)) == size(x, ndims(x))`
+  1. `ndims(y) ≥ 2`
+  2. `size(y, ndims(y)) == size(x, ndims(x))`
 
 ## Backends & AD Packages
 
 | Supported Backends | Packages Needed  |
 |:------------------ |:---------------- |
 | `AutoForwardDiff`  | `ForwardDiff.jl` |
-| ------------------ | ---------------- |
 
 ## Arguments
 
@@ -105,8 +102,8 @@ the following properties for `y = f(x)`:
 ## Returns
 
   - `J`: The Jacobian of `f` with respect to `x`. This will be a 3D Array. If the dimensions
-    of `x` are `(N1, N2, ..., Nd, B)` and of `y` are `(M1, M2, ..., Md, B)`, then `J` will
-    be `((M1 × M2 × ... × Md), (N1 × N2 × ... × Nd), B)`.
+    of `x` are `(N₁, N₂, ..., Nₙ, B)` and of `y` are `(M₁, M₂, ..., Mₘ, B)`, then `J` will
+    be a `((M₁ × M₂ × ... × Mₘ), (N₁ × N₂ × ... × Nₙ), B)` Array.
 
 !!! danger
 

@@ -3,7 +3,7 @@ module Lux
 using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
-    using ADTypes: AbstractADType, AutoForwardDiff, AutoZygote
+    using ADTypes: AbstractADType, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
     using Adapt: Adapt, adapt
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
@@ -101,8 +101,10 @@ export SamePad, TimeLastIndex, BatchLastIndex
 
 export StatefulLuxLayer
 export @compact, CompactLuxLayer
+
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
+export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
 
 export f16, f32, f64
 
