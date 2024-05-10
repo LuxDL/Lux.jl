@@ -80,3 +80,11 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init),
     end
     return y, ∇foldl_init
 end
+
+# getproperty rrule for AbstractExplicitLayer. needed for type stability of Zygote
+# gradients
+function CRC.rrule(::typeof(getproperty), m::AbstractExplicitLayer, name::Symbol)
+    res = getproperty(m, name)
+    ∇getproperty = Δ -> ntuple(Returns(NoTangent()), 3)
+    return res, ∇getproperty
+end

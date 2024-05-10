@@ -133,8 +133,7 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         BN.activation; BN.momentum, BN.epsilon, st.training)
 
     if _track_stats(BN)
-        @set! st.running_mean = stats.running_mean
-        @set! st.running_var = stats.running_var
+        st = merge(st, (; running_mean=stats.running_mean, running_var=stats.running_var))
     end
 
     return y, st
