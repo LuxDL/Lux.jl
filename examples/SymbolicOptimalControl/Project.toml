@@ -19,7 +19,7 @@ SymbolicRegression = "8254be44-1295-4e6a-a16d-46603ac705cb"
 SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 
 [compat]
-CairoMakie = "0.11.10"
+CairoMakie = "0.11.10, 0.12"
 ComponentArrays = "0.15.11"
 DynamicExpressions = "0.16.0, 0.17"
 Latexify = "0.16.2"
