@@ -1,19 +1,25 @@
 # Generic Normalization Implementation
-@inline function _update_normalization_statistics(
+@generated function _update_normalization_statistics(
         x::AbstractArray{<:Number, N}, rμ::AbstractArray{<:Number, N},
         rσ²::AbstractArray{<:Number, N}, μ::AbstractArray{<:Number, N},
         σ²::AbstractArray{<:Number, N}, momentum::Real,
-        ::Val{reduce_dims}) where {N, reduce_dims}
-    m = eltype(x)(prod(Base.Fix1(size, x), reduce_dims))
-    m_ = m / (m - one(m))
-    if last(reduce_dims) != N
-        μ = mean(μ; dims=N)
-        σ² = mean(σ²; dims=N)
+        r::Val{reduce_dims}) where {N, reduce_dims}
+    return quote
+        m = eltype(x)(__accum_size(x, r))
+        m_ = momentum * m / (m - one(m))
+        $(if last(reduce_dims) != N
+            :(μ = mean(μ; dims=N);
+            σ² = mean(σ²; dims=N))
+        end)
+        rμ = @. (1 - momentum) * rμ + momentum * μ
+        rσ² = @. (1 - momentum) * rσ² + m_ * σ²
+        return rμ, rσ²
     end
-    rμ = @. (1 - momentum) * rμ + momentum * μ
-    rσ² = @. (1 - momentum) * rσ² + momentum * σ² * m_
-    return rμ, rσ²
 end
+
+@inline __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
+
+CRC.@non_differentiable __accum_size(::Any...)
 
 @inline function _get_batch_statistics(x::AbstractArray, ::Nothing, ::Nothing,
         ::Val{rdims}, ::Val{false}, momentum) where {rdims}
@@ -66,18 +72,25 @@ function _normalization(x::AbstractArray, running_mean::Union{Nothing, <:Abstrac
     return x_, _vec(rμ), _vec(rσ²)
 end
 
-function _affine_normalize(act::F, x::AbstractArray, xmean::AbstractArray,
-        xvar::AbstractArray, ::Nothing, ::Nothing, epsilon::Real) where {F}
-    act === identity && return @. (x .- xmean) / sqrt(xvar + epsilon)
+function _affine_normalize(::typeof(identity), x::AbstractArray, xmean,
+        xvar, ::Nothing, ::Nothing, epsilon::Real)
+    return @. (x .- xmean) / sqrt(xvar + epsilon)
+end
+function _affine_normalize(act::F, x::AbstractArray, xmean, xvar,
+        ::Nothing, ::Nothing, epsilon::Real) where {F}
     return @. act((x .- xmean) / sqrt(xvar + epsilon))
 end
 
-function _affine_normalize(
-        act::F, x::AbstractArray, xmean::AbstractArray, xvar::AbstractArray,
-        scale::AbstractArray, bias::AbstractArray, epsilon::Real) where {F}
-    # Here we reorder the operations a bit for better performance
+# Here we reorder the operations a bit for better performance
+function _affine_normalize(::typeof(identity), x::AbstractArray, xmean, xvar,
+        scale::AbstractArray, bias::AbstractArray, epsilon::Real)
     _scale = @. scale / sqrt(xvar + epsilon)
     _bias = @. bias - xmean * _scale
-    act === identity && return @. x * _scale + _bias
+    return @. x * _scale + _bias
+end
+function _affine_normalize(act::F, x::AbstractArray, xmean, xvar, scale::AbstractArray,
+        bias::AbstractArray, epsilon::Real) where {F}
+    _scale = @. scale / sqrt(xvar + epsilon)
+    _bias = @. bias - xmean * _scale
     return @. act(x * _scale + _bias)
 end
