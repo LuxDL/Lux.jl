@@ -60,8 +60,8 @@ for fname in (:__internal_ad_gradient_call, :__internal_ad_gradient_call_no_cust
     end
 end
 
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(__internal_ad_gradient_call), grad_fn::G, f::F, x, y) where {G, F}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_gradient_call),
+        grad_fn::G, f::F, x, y) where {G, F}
     # Check if we can use the faster implementation
     if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
         if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
@@ -74,8 +74,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
 
     res = __internal_ad_gradient_call(grad_fn, f, x, y)
     ∇internal_gradient_capture = @closure Δ_ -> begin
-        (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
-            return ntuple(Returns(NoTangent()), 5)
+        (Δ_ isa NoTangent || Δ_ isa ZeroTangent) && return ntuple(Returns(NoTangent()), 5)
 
         Δ = CRC.unthunk(Δ_)
         (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
@@ -93,8 +92,7 @@ for fname in (:__internal_ad_pullback_call, :__internal_ad_pullback_call_no_cust
     end
 end
 
-function CRC.rrule(
-        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(__internal_ad_pullback_call),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pullback_call),
         pullback_fn::P, f::F, x, y, u) where {P, F}
     # Check if we can use the faster implementation
     if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
@@ -115,7 +113,7 @@ function CRC.rrule(
         res = res
 
         Δ_ -> begin
-            (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
+            (Δ_ isa NoTangent || Δ_ isa ZeroTangent) &&
                 return ntuple(Returns(NoTangent()), 6)
 
             Δ = CRC.unthunk(Δ_)
@@ -139,8 +137,7 @@ for fname in (:__internal_ad_jacobian_call, :__internal_ad_jacobian_call_no_cust
     end
 end
 
-function CRC.rrule(
-        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(__internal_ad_jacobian_call),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jacobian_call),
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
     # Check if we can use the faster implementation
     if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
@@ -155,7 +152,7 @@ function CRC.rrule(
     res = __internal_ad_jacobian_call(jac_fn, grad_fn, f, x, y)
     ∇internal_jacobian_capture = let res = res, grad_fn = grad_fn, f = f, x = x, y = y
         Δ_ -> begin
-            (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
+            (Δ_ isa NoTangent || Δ_ isa ZeroTangent) &&
                 return ntuple(Returns(NoTangent()), 6)
 
             Δ = CRC.unthunk(Δ_)

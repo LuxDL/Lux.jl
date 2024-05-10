@@ -342,7 +342,7 @@ end
 @concrete struct CompactLuxLayer{dispatch} <:
                  AbstractExplicitContainerLayer{(:layers, :value_storage)}
     f
-    name::NAME_TYPE
+    name::Any
     strings::NTuple{3, String}
     setup_strings
     layers

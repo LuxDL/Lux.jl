@@ -81,7 +81,7 @@ end
 function CRC.rrule(::Type{<:StatefulLuxLayer{FT}}, model::AbstractExplicitLayer,
         ::Nothing, st, st_any) where {FT}
     slayer = StatefulLuxLayer{FT}(model, nothing, st, st_any)
-    function ∇StatefulLuxLayer(::Union{CRC.ZeroTangent, CRC.NoTangent})
+    function ∇StatefulLuxLayer(::Union{ZeroTangent, NoTangent})
         return ntuple(Returns(NoTangent()), 5)
     end
     return slayer, ∇StatefulLuxLayer

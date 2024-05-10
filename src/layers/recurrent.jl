@@ -270,7 +270,7 @@ end
 function (rnn::RNNCell{use_bias, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_hidden_state(rng, rnn, x)
     return rnn((x, (hidden_state,)), ps, st)
 end
@@ -278,7 +278,7 @@ end
 function (rnn::RNNCell{use_bias, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
     return rnn((x, (hidden_state,)), ps, st)
 end
@@ -428,7 +428,7 @@ end
 function (lstm::LSTMCell{use_bias, false, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_hidden_state(rng, lstm, x)
     memory = _init_hidden_state(rng, lstm, x)
     return lstm((x, (hidden_state, memory)), ps, st)
@@ -437,7 +437,7 @@ end
 function (lstm::LSTMCell{use_bias, true, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
     memory = _init_hidden_state(rng, lstm, x)
     return lstm((x, (hidden_state, memory)), ps, st)
@@ -446,7 +446,7 @@ end
 function (lstm::LSTMCell{use_bias, false, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_hidden_state(rng, lstm, x)
     memory = _init_trainable_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, st)
@@ -455,7 +455,7 @@ end
 function (lstm::LSTMCell{use_bias, true, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
     memory = _init_trainable_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, st)
@@ -597,7 +597,7 @@ end
 function (gru::GRUCell{use_bias, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
     return gru((x, (hidden_state,)), ps, st)
 end
@@ -605,7 +605,7 @@ end
 function (gru::GRUCell{use_bias, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    @set! st.rng = rng
+    st = merge(st, (; rng))
     hidden_state = _init_hidden_state(rng, gru, x)
     return gru((x, (hidden_state,)), ps, st)
 end
