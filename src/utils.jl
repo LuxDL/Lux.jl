@@ -1,14 +1,14 @@
 # Training Check
 """
     istraining(::Val{training})
+    istraining(::Bool)
     istraining(st::NamedTuple)
 
 Returns `true` if `training` is `true` or if `st` contains a `training` field with value
 `true`. Else returns `false`.
-
-Method undefined if `st.training` is not of type `Val`.
 """
 @inline istraining(::Val{training}) where {training} = training
+@inline istraining(training::Bool) = training
 @inline istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.training)
 
 # Convolution
@@ -117,11 +117,7 @@ end
 
 # Backend Integration
 ## Convolution
-@inline _conv_transpose(x, weight, cdims) = ∇conv_data(x, weight, cdims)
-@inline function _conv_transpose(
-        x::SubArray{T, N, <:GPUArraysCore.AnyGPUArray}, weight, cdims) where {T, N}
-    return _conv_transpose(copy(x), weight, cdims)
-end
+@inline _conv_transpose(x, weight, cdims) = LuxLib.__∇conv_data(x, weight, cdims)
 
 function _conv_transpose_dims(
         x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
@@ -245,13 +241,10 @@ end
 __named_tuple(nt::NamedTuple) = nt
 
 # Nondifferentiable hasmethod. Avoiding type-piracy
+# FIXME: This is fixed in ChainRules 1.66
 @inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
 
 # Helpers for bias and activation functions
-## Just Activation Function
-@inline apply_activation(::typeof(identity), x) = x
-@inline apply_activation(f, x) = f.(x)
-
 @inline apply_bias_activation(::typeof(identity), x, b) = x .+ b
 @inline apply_bias_activation(f::F, x, b) where {F} = @. f(x + b)
 

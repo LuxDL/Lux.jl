@@ -306,7 +306,7 @@ function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
 end
 
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    return apply_activation(d.activation, ps.weight .* x), st
+    return fast_activation!!(d.activation, ps.weight .* x), st
 end
 
 """
@@ -420,7 +420,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     if use_bias
         return apply_bias_activation(b.activation, Wyx, ps.bias), st
     else
-        return apply_activation(b.activation, Wyx), st
+        return fast_activation!!(b.activation, Wyx), st
     end
 end
 

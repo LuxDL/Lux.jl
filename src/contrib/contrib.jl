@@ -6,12 +6,14 @@ using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
 
 using ADTypes: ADTypes
-import ChainRulesCore as CRC
+using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
 using Functors: Functors, fmap, functor
 using Markdown: @doc_str
 using Random: AbstractRNG, Random
 using Setfield: Setfield
+
+const CRC = ChainRulesCore
 
 include("map.jl")
 include("training.jl")

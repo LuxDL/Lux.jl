@@ -19,7 +19,8 @@ end
     @test !Lux.istraining((training=Val(false),))
     @test Lux.istraining((training=Val(true),))
     @test !Lux.istraining((no_training=1,))
-    @test_throws MethodError Lux.istraining((training=true,))
+    @test Lux.istraining((training=true,))
+    @test !Lux.istraining((training=false,))
 end
 
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin

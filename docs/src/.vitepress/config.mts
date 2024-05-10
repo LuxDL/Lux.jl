@@ -71,6 +71,7 @@ export default defineConfig({
                     {
                         text: 'Lux', items: [
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
+                            { text: 'Automatic Differentiation', link: '/api/Lux/autodiff' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental', link: '/api/Lux/contrib' },
                             { text: 'InterOp', link: '/api/Lux/interop' },
@@ -179,6 +180,7 @@ export default defineConfig({
                     {
                         text: 'Lux', collapsed: false, items: [
                             { text: 'Built-In Layers', link: '/api/Lux/layers' },
+                            { text: 'Automatic Differentiation', link: '/api/Lux/autodiff' },
                             { text: 'Utilities', link: '/api/Lux/utilities' },
                             { text: 'Experimental Features', link: '/api/Lux/contrib' },
                             { text: 'Interoperability', link: '/api/Lux/interop' },

@@ -39,6 +39,14 @@ function apply_gradients end
 
 Compute the gradients of the objective function wrt parameters stored in `ts`.
 
+## Backends & AD Packages
+
+| Supported Backends | Packages Needed  |
+|:------------------ |:---------------- |
+| `AutoZygote`       | `Zygote.jl`      |
+| `AutoReverseDiff`  | `ReverseDiff.jl` |
+| `AutoTracker`      | `Tracker.jl`     |
+
 ## Arguments
 
   - `ad`: Backend (from [ADTypes.jl](https://github.com/SciML/ADTypes.jl)) used to compute

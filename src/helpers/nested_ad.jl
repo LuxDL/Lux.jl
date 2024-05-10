@@ -16,21 +16,38 @@ const AD_CONVERTIBLE_FUNCTIONS = [
 ]
 #! format: on
 
-@inline function __rewrite_ad_call(f::F) where {F}
-    # Input Gradient / Jacobian
-    f isa ComposedFunction{<:Any, <:StatefulLuxLayer} && return f, f.inner.ps
-    f isa ComposedFunction{<:StatefulLuxLayer, <:Any} &&
-        return @closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps
-    f isa StatefulLuxLayer && return f, f.ps
+## Written like this to avoid dynamic dispatch from Zygote
+# Input Gradient / Jacobian
+@inline __rewrite_ad_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F} = (
+    f, f.inner.ps)
+@inline __rewrite_ad_call(f::ComposedFunction{<:StatefulLuxLayer, F}) where {F} = (
+    @closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps)
+@inline __rewrite_ad_call(f::StatefulLuxLayer) = f, f.ps
 
-    # Parameter Gradient / Jacobian
-    f isa ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}} &&
-        return @closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x
-    f isa ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any} &&
-        return @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x
-    f isa Base.Fix1{<:StatefulLuxLayer} && return @closure((ps, x)->f.f(x, ps)), f.x
+# Parameter Gradient / Jacobian
+@inline __rewrite_ad_call(f::ComposedFunction{F, <:Base.Fix1{<:StatefulLuxLayer}}) where {F} = (
+    @closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x)
+@inline __rewrite_ad_call(f::ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, F}) where {F} = (
+    @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x)
+@inline __rewrite_ad_call(f::Base.Fix1{<:StatefulLuxLayer}) = (
+    @closure((ps, x)->f.f(x, ps)), f.x)
 
-    error("Unknown function type: $(typeof(f))")
+## Break ambiguity
+@inline function __rewrite_ad_call(::ComposedFunction{
+        <:StatefulLuxLayer, <:StatefulLuxLayer})
+    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer layers")
+end
+@inline function __rewrite_ad_call(::ComposedFunction{
+        <:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}})
+    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as outer layer and inner layer")
+end
+@inline function __rewrite_ad_call(::ComposedFunction{
+        <:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer})
+    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner layer and outer layer")
+end
+@inline function __rewrite_ad_call(::ComposedFunction{
+        <:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}})
+    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer layers")
 end
 
 # Nested Gradients
@@ -58,12 +75,12 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     res = __internal_ad_gradient_call(grad_fn, f, x, y)
     ∇internal_gradient_capture = @closure Δ_ -> begin
         (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
-            return ntuple(Returns(CRC.NoTangent()), 5)
+            return ntuple(Returns(NoTangent()), 5)
 
         Δ = CRC.unthunk(Δ_)
         (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
         ∂x, ∂y = __forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
-        return CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y
+        return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
     end
 
     return res, ∇internal_gradient_capture
@@ -99,15 +116,14 @@ function CRC.rrule(
 
         Δ_ -> begin
             (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
-                return ntuple(Returns(CRC.NoTangent()), 6)
+                return ntuple(Returns(NoTangent()), 6)
 
             Δ = CRC.unthunk(Δ_)
             (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
             ∂x, ∂y = __forwarddiff_jvp(x, Δ, y) do x_dual, y_
                 return last(pullback_fn(f, x_dual, y_))(u)
             end
-            return (
-                CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y, CRC.NoTangent())
+            return (NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y, NoTangent())
         end
     end
 
@@ -140,21 +156,32 @@ function CRC.rrule(
     ∇internal_jacobian_capture = let res = res, grad_fn = grad_fn, f = f, x = x, y = y
         Δ_ -> begin
             (Δ_ isa CRC.NoTangent || Δ_ isa CRC.ZeroTangent) &&
-                return ntuple(Returns(CRC.NoTangent()), 6)
+                return ntuple(Returns(NoTangent()), 6)
 
             Δ = CRC.unthunk(Δ_)
             (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
             Δ = __compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
             # TODO: Here we can potentially chunk the gradients for faster AD calls
-            ∂x, ∂y = mapreduce(__internal_add, enumerate(eachrow(Δ))) do (i, Δᵢ)
-                ∂xᵢ, ∂yᵢ = __forwarddiff_jvp(
-                    (x, y) -> grad_fn((x_, y_) -> sum(vec(f(x_, y_))[i:i]), x, y), x, Δᵢ, y)
-                return ∂xᵢ, ∂yᵢ
+            __inner_grad_fn = @closure(i->sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)
+            map_fn = @closure i -> begin
+                Δᵢ = __maybe_batched_row(Δ, i)
+                fn = __inner_grad_fn(i)
+                __f = let fn = fn
+                    (x, y) -> grad_fn(fn, x, y)
+                end
+                return __forwarddiff_jvp(__f, x, Δᵢ, y)
             end
 
-            return (
-                CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y)
+            # FIXME: threading on GPUs cause unexpected errors. but this also makes things
+            #        slower. We should investigate this further.
+            if get_device(x) isa LuxCPUDevice
+                ∂x, ∂y = tmapreduce(map_fn, __internal_add, 1:__numrows(Δ))
+            else
+                ∂x, ∂y = mapreduce(map_fn, __internal_add, 1:__numrows(Δ))
+            end
+
+            return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y)
         end
     end
 
@@ -162,13 +189,31 @@ function CRC.rrule(
 end
 
 # Convert a structured Matrix to a General Matrix if it doesn't have fast scalar indexing
-@inline function __compactify_if_structured_matrix(J::AbstractMatrix, Δ::AbstractArray)
+@inline function __compactify_if_structured_matrix(
+        J::AbstractArray{T1, N}, Δ::AbstractArray{T2}) where {T1, T2, N}
+    @assert N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
     if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
         J_ = similar(J)
         copyto!(J_, Δ)
         return J_
     end
     return reshape(Δ, size(J))
+end
+
+@inline __numrows(x::AbstractMatrix) = size(x, 1)
+@inline __numrows(x::AbstractArray{T, 3}) where {T} = size(x, 1) * size(x, 3)
+
+@inline __maybe_batched_row(x::AbstractMatrix, i::Integer) = view(x, i, :)
+@inline function __maybe_batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
+    M, N, K = size(x)
+    k = (i - 1) ÷ M + 1
+    i = mod1(i, M)
+    y = similar(x, N * K)
+    data = view(x, i, :, k)
+    fill!(view(y, 1:(N * (K - 1))), zero(T))
+    copyto!(view(y, (N * (k - 1) + 1):(N * k)), data)
+    fill!(view(y, (N * k + 1):(N * K)), zero(T))
+    return y
 end
 
 ## TODO: We can do an inplace addition but those are typically not giant bottlenecks

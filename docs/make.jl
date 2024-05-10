@@ -56,6 +56,7 @@ pages = [
     "API Reference" => [
         "Lux" => [
             "api/Lux/layers.md",
+            "api/Lux/autodiff.md",
             "api/Lux/utilities.md",
             "api/Lux/contrib.md",
             "api/Lux/interop.md",
