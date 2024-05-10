@@ -87,7 +87,7 @@
                     atol = 5 * eps(Float32)
                 ))
 
-            @jet layer(x, ps, st) target_modules = (Lux, LuxCore, LuxLib)
+            @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
         end
