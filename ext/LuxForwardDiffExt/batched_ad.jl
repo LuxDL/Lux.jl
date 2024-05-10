@@ -43,7 +43,7 @@ function Lux.__batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) wher
     __f = @closure x -> f(reshape(x, x_size))
     tag = backend.tag === nothing ? ForwardDiff.Tag(__f, eltype(x)) : backend.tag
     chunksize = (CK === nothing || CK ≤ 0) ?
-                ForwardDiff.Chunk{ForwardDiff.pickchunksize(prod(size(x)[1:(end - 1)]))}() :
+                ForwardDiff.Chunk{min(prod(size(x)[1:(end - 1)]), 8)}() :
                 ForwardDiff.Chunk{CK}()
     return __batched_forwarddiff_jacobian(
         __f, reshape(x, :, size(x, ndims(x))), typeof(tag), chunksize)
