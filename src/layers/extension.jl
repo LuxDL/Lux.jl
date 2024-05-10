@@ -77,7 +77,7 @@ julia> Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st)
 @kwdef @concrete struct DynamicExpressionsLayer <: AbstractExplicitLayer
     operator_enum
     expression
-    name::Any = nothing
+    name::NAME_TYPE = nothing
     turbo = Val(false)
     bumper = Val(false)
 end

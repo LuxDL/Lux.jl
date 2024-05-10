@@ -44,10 +44,10 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-@concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
+@kwdef @concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
     layers
     connection
-    name::Any
+    name::NAME_TYPE = nothing
 end
 
 function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
@@ -126,12 +126,11 @@ See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 @concrete struct Parallel{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection
     layers::T
-    name::Any
+    name::NAME_TYPE
 end
 
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return Parallel(connection, NamedTuple{names}(layers), name)
+    return Parallel(connection, __named_tuple_layers(layers...), name)
 end
 
 function Parallel(connection; name::NAME_TYPE=nothing, kwargs...)
@@ -227,19 +226,16 @@ BranchLayer(
 """
 struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    name::Any
+    name::NAME_TYPE
 end
 
 function BranchLayer(layers...; name::NAME_TYPE=nothing)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return BranchLayer(NamedTuple{names}(layers), name)
+    return BranchLayer(__named_tuple_layers(layers...), name)
 end
 
 BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), name)
 
-function (m::BranchLayer)(x, ps, st::NamedTuple)
-    return applybranching(m.layers, x, ps, st)
-end
+(m::BranchLayer)(x, ps, st::NamedTuple) = applybranching(m.layers, x, ps, st)
 
 @generated function applybranching(
         layers::NamedTuple{names}, x, ps, st::NamedTuple) where {names}
@@ -323,12 +319,11 @@ end
                  AbstractExplicitContainerLayer{(:layers,)}
     connection
     layers::T
-    name::Any
+    name::NAME_TYPE
 end
 
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return PairwiseFusion(connection, NamedTuple{names}(layers), name)
+    return PairwiseFusion(connection, __named_tuple_layers(layers...), name)
 end
 
 function PairwiseFusion(connection; name::NAME_TYPE=nothing, kwargs...)
@@ -429,16 +424,14 @@ Chain(
 """
 struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    name::Any
+    name::NAME_TYPE
 end
 
 function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false)
     xs = disable_optimizations ? xs : _flatten_model(xs)
     length(xs) == 0 && return NoOpLayer()
     length(xs) == 1 && return first(xs)
-    names = ntuple(i -> Symbol("layer_$i"), length(xs))
-    layers = NamedTuple{names}(xs)
-    return Chain(layers, name)
+    return Chain(__named_tuple_layers(xs...), name)
 end
 
 Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
@@ -562,14 +555,9 @@ struct Maxout{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 end
 
-function Maxout(layers...)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return Maxout(NamedTuple{names}(layers))
-end
-
+Maxout(layers...) = Maxout(__named_tuple_layers(layers...))
 Maxout(; kwargs...) = Maxout((; kwargs...))
-
-Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
+Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
 
 # NOTE(@avik-pal): Calling `applyparallel` with broadcasted `max` is slower than this
 #                  implementation.
@@ -650,7 +638,7 @@ struct RepeatedLayer{N, IJ, M <: AbstractExplicitLayer} <:
     model::M
 end
 
-function LuxCore.display_name(model::RepeatedLayer{N, IJ}) where {N, IJ}
+function LuxCore.display_name(::RepeatedLayer{N, IJ}) where {N, IJ}
     return "RepeatedLayer{repeats = $N, input_injection = $IJ}"
 end
 

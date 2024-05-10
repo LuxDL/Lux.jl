@@ -268,3 +268,7 @@ __named_tuple(nt::NamedTuple) = nt
     fmap(__internal_recursive_eltype, x)
     return _eltype[]
 end
+
+@inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
+    return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
+end
