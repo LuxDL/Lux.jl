@@ -1,6 +1,5 @@
 module LuxCore
 
-using FastClosures: @closure
 using Functors: Functors, fmap
 using Random: Random, AbstractRNG
 using Setfield: Setfield
@@ -252,11 +251,10 @@ end
 function Functors.functor(::Type{<:AbstractExplicitContainerLayer{layers}},
         x) where {layers}
     _children = NamedTuple{layers}(getproperty.((x,), layers))
-    recon_fn = @closure (l, cn) -> begin
-        c, n = cn
-        return Setfield.set(l, Setfield.PropertyLens{n}(), c)
+    recon_fn = (l, (c, n)) -> Setfield.set(l, Setfield.PropertyLens{n}(), c)
+    layer_reconstructor = let x = x, recon_fn = recon_fn, layers = layers
+        z -> reduce(recon_fn, zip(z, layers); init=x)
     end
-    layer_reconstructor = @closure z -> reduce(recon_fn, zip(z, layers); init=x)
     return _children, layer_reconstructor
 end
 
@@ -283,13 +281,16 @@ Recursively update all occurances of the `key` in the state `st` with the `value
 """
 function update_state(st::NamedTuple, key::Symbol, value;
         layer_check::LC=_default_layer_check(key)) where {LC}
-    _update_state = @closure (st, key, value) -> Setfield.set(
-        st, Setfield.PropertyLens{key}(), value)
-    return fmap(@closure(_st->_update_state(_st, key, value)), st; exclude=layer_check)
+    fmap_fn = let key = key, value = value
+        _st -> Setfield.set(_st, Setfield.PropertyLens{key}(), value)
+    end
+    return fmap(fmap_fn, st; exclude=layer_check)
 end
 
 function _default_layer_check(key)
-    return @closure(x->hasmethod(keys, (typeof(x),)) ? (key ∈ keys(x)) : false)
+    return let key = key
+        x -> hasmethod(keys, (typeof(x),)) ? (key ∈ keys(x)) : false
+    end
 end
 
 """
@@ -321,9 +322,11 @@ A Boolean Value
 function check_fmap_condition(cond::C, tmatch, x) where {C}
     tmatch !== nothing && x isa tmatch && return true
     matched = Ref(false)
-    __check! = @closure l -> begin
-        cond(l) && (matched[] = true)
-        return l
+    __check! = let matched = matched
+        l -> begin
+            cond(l) && (matched[] = true)
+            return l
+        end
     end
     fmap(__check!, x)
     return matched[]
