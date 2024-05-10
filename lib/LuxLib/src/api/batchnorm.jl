@@ -1,6 +1,6 @@
 @doc doc"""
-    batchnorm(x, scale, bias, running_mean, running_var, σ=identity; momentum, epsilon,
-        training)
+    batchnorm(x, scale, bias, running_mean, running_var, training, σ=identity,
+        momentum = 0.1f0, epsilon = 1f-5)
 
 Batch Normalization. For details see [1].
 
@@ -15,13 +15,10 @@ accordingly.
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
   - `running_mean`: Running mean (can be `nothing`)
   - `running_var`: Running variance (can be `nothing`)
-  - `σ`: Activation function (default: `identity`)
-
-## Keyword Arguments
-
-  - `momentum`: Momentum for updating running mean and variance
-  - `epsilon`: Value added to the denominator for numerical stability
   - `training`: Set to `Val(true)` if running in training mode
+  - `σ`: Activation function (default: `identity`)
+  - `momentum`: Momentum for updating running mean and variance (default: `0.1f0`)
+  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
 
 ## Returns
 
@@ -43,8 +40,8 @@ fallback is used which is not highly optimized.
 function batchnorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
         bias::Union{Nothing, <:AbstractVector},
         running_mean::Union{Nothing, <:AbstractVector},
-        running_var::Union{Nothing, <:AbstractVector}, σ::F=identity;
-        momentum::Real, training::Val, epsilon::Real) where {F, N}
+        running_var::Union{Nothing, <:AbstractVector}, training::Val,
+        σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
     x_, xm, xv = _normalization(x, _drop_forwarddiff_partials(running_mean),
         _drop_forwarddiff_partials(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)

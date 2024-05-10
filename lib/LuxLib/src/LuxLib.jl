@@ -43,6 +43,9 @@ include("api/dense.jl")
 include("api/conv.jl")
 include("api/fast_activation.jl")
 
+# Deprecations for version 0.4
+include("deprecations.jl")
+
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
 export fast_activation!!
