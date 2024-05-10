@@ -33,6 +33,19 @@
 
             @test J2≈J3 atol=1.0e-5 rtol=1.0e-5
         end
+
+        @testset "Issue #636 Chunksize Specialization" begin
+            for N in (2, 4, 8, 11, 12, 50, 51)
+                model = @compact(; potential=Dense(N => N, gelu)) do x
+                    return batched_jacobian(potential, AutoForwardDiff(), x)
+                end
+
+                ps, st = Lux.setup(Random.default_rng(), model) |> dev
+
+                x = randn(Float32, N, 3) |> dev
+                @test_nowarn model(x, ps, st)
+            end
+        end
     end
 end
 
