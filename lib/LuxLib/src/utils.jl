@@ -178,7 +178,7 @@ end
 @inline __apply_bias_activation(σ::F, x, ::Nothing) where {F} = @. σ(x)
 @inline __apply_bias_activation(::typeof(identity), x, ::Nothing) = x
 
-@inline __added_bias_gradient(::Nothing, _) = CRC.NoTangent()
+@inline __added_bias_gradient(::Nothing, _) = NoTangent()
 @inline function __added_bias_gradient(b::AbstractArray, Δ)
     ∂b = similar(b, promote_type(eltype(b), eltype(Δ)))
     sum!(∂b, Δ)

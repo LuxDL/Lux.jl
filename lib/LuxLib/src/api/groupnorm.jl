@@ -1,5 +1,5 @@
 @doc doc"""
-    groupnorm(x, scale, bias; groups, epsilon)
+    groupnorm(x, scale, bias, groups, σ::F=identity, epsilon::Real=1.0f-5)
 
 Group Normalization. For details see [1].
 
@@ -13,11 +13,9 @@ statistics.
   - `x`: Input to be Normalized
   - `scale`: Scale factor (``\gamma``) (can be `nothing`)
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
-
-## Keyword Arguments
-
   - `groups`: Number of groups
-  - `epsilon`: Value added to the denominator for numerical stability
+  - `σ`: Activation function (default: `identity`)
+  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
 
 ## Returns
 
@@ -78,7 +76,7 @@ function CRC.rrule(::typeof(__fast_groupnorm), x, groups, scale, bias, epsilon)
     y, μ, σ⁻¹ = _groupnorm(x, groups, scale, bias, epsilon)
     ∇groupnorm = @closure Δ -> begin
         ∂x, ∂scale, ∂bias = _∇groupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
-        return CRC.NoTangent(), ∂x, CRC.NoTangent(), ∂scale, ∂bias, CRC.NoTangent()
+        return NoTangent(), ∂x, NoTangent(), ∂scale, ∂bias, NoTangent()
     end
     return y, ∇groupnorm
 end

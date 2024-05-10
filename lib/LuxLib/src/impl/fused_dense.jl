@@ -45,7 +45,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             ∂y = act === identity ? CRC.unthunk(Δ) :
                  __activation_gradient(CRC.unthunk(Δ), y, act, NotaNumber())
             ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-            return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
+            return NoTangent(), NoTangent(), ∂w, ∂x, ∂b
         end
         return y, ∇__fused_dense_bias_activation_impl_no_cached
     end
@@ -57,7 +57,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
             ∂y = __activation_gradient(CRC.unthunk(Δ), z, act, y)
             ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-            return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
+            return NoTangent(), NoTangent(), ∂w, ∂x, ∂b
         end
         return z, ∇__fused_dense_bias_activation_impl_cached_crc
     end
@@ -69,7 +69,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
         _, _, ∂y, ∂b = pb_f(Δ)
         ∂w, ∂x, _ = __matmul_bias_partials(∂y, ∂b, weight, x, b)
-        return CRC.NoTangent(), CRC.NoTangent(), ∂w, ∂x, ∂b
+        return NoTangent(), NoTangent(), ∂w, ∂x, ∂b
     end
     return z, ∇__fused_dense_bias_activation_impl_cached
 end

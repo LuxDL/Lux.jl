@@ -5,13 +5,13 @@
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fast_activation_impl!!), σ::F, x::AbstractArray{T}) where {F, T}
-    σ === identity && return x, @closure(Δ->(CRC.NoTangent(), CRC.NoTangent(), Δ))
+    σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
         x = __fast_activation_impl!!(σ, x)
         ∇__fast_activation_impl_no_cached = @closure Δ -> begin
             ∂x = __activation_gradient(Δ, x, σ, NotaNumber())
-            return CRC.NoTangent(), CRC.NoTangent(), ∂x
+            return NoTangent(), NoTangent(), ∂x
         end
         return x, ∇__fast_activation_impl_no_cached
     end
@@ -20,7 +20,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         y = __fast_broadcast(σ, x)
         ∇__fast_activation_impl_cached_crc = @closure Δ -> begin
             ∂y = __activation_gradient(CRC.unthunk(Δ), y, σ, x)
-            return CRC.NoTangent(), CRC.NoTangent(), ∂y
+            return NoTangent(), NoTangent(), ∂y
         end
         return y, ∇__fast_activation_impl_cached_crc
     end

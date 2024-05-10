@@ -4,7 +4,7 @@ using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
     using ArrayInterface: ArrayInterface
-    using ChainRulesCore: ChainRulesCore
+    using ChainRulesCore: ChainRulesCore, NoTangent
     using FastBroadcast: @..
     using FastClosures: @closure
     using GPUArraysCore: GPUArraysCore, AnyGPUArray

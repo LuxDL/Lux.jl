@@ -29,7 +29,6 @@ steps:
               - "normalization"
               - "common_ops"
               - "others"
-              - "normalization_sp"
 
   # Downstream CUDA Tests
   - group: ":telescope: Downstream CUDA"
@@ -116,7 +115,6 @@ steps:
               - "normalization"
               - "common_ops"
               - "others"
-              - "normalization_sp"
 
   # Downstream AMDGPU Tests
   - group: ":telescope: Downstream AMD GPU"
