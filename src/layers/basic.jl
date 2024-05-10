@@ -507,11 +507,16 @@ outputsize(e::Embedding) = (e.out_dims,)
 """
     PeriodicEmbedding(idxs, periods)
 
-Create an embedding periodic in some dimensions with specified periods. Dimensions not in
-`idxs` are passed through unchanged, but dimensions in `idxs` are moved to the end of the
+Create an embedding periodic in some inputs with specified periods. Input indices not in
+`idxs` are passed through unchanged, but inputs in `idxs` are moved to the end of the
 output and replaced with their sines, followed by their cosines (scaled appropriately to
 have the specified periods). This smooth embedding preserves phase information and enforces
 periodicity.
+
+For example, `layer = PeriodicEmbedding([2, 3], [3.0, 1.0])` will create a layer periodic in
+the second input with period 3.0 and periodic in the third input with period 1.0. In this
+case, `layer([a, b, c, d], st) == ([a, d, sinpi(2 / 3.0 * b), sinpi(2 / 1.0 * c),
+cospi(2 / 3.0 * b), cospi(2 / 1.0 * c)], st)`.
 
 ## Arguments
 
@@ -528,6 +533,19 @@ periodicity.
   - `AbstractArray` of size `(size(x, 1) + length(idxs), ...)` where `...` are the other
     dimensions of `x`.
   - `st`, unchanged
+
+## Example
+
+```jldoctest
+julia> layer = PeriodicEmbedding([2], [4.0])
+PeriodicEmbedding(idxs = [2], periods = [4.0])
+julia> using Random; rng = Random.seed!(123);
+
+julia> ps, st = Lux.setup(rng, layer)
+(NamedTuple(), (k = [0.5],))
+julia> all(layer([1.1, 2.2, 3.3], ps, st)[1] .== [1.1, 3.3, sinpi(2 / 4.0 * 2.2), cospi(2 / 4.0 * 2.2)])
+true
+```
 """
 @concrete struct PeriodicEmbedding <:AbstractExplicitLayer
     idxs
