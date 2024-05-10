@@ -521,7 +521,7 @@ periodicity.
 ## Inputs
 
   - `x` must be an `AbstractArray` with `issubset(idxs, axes(x, 1))`
-  - `st` must be a `NamedTuple` where `st[:k] = 2 ./ periods`, but on the same device as `x`
+  - `st` must be a `NamedTuple` where `st.k = 2 ./ periods`, but on the same device as `x`
 
 ## Returns
 
@@ -544,9 +544,9 @@ end
     other_idxs = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.idxs)
     return (
         vcat(
-            view(x, other_idxs, :),
-            sinpi.(st[:k] .* view(x, p.idxs, :)),
-            cospi.(st[:k] .* view(x, p.idxs, :))
+            x[other_idxs, :],
+            sinpi.(st.k .* x[p.idxs, :]),
+            cospi.(st.k .* x[p.idxs, :])
         ),
         st)
 end
