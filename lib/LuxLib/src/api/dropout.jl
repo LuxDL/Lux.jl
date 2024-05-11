@@ -1,7 +1,6 @@
 @doc doc"""
-    dropout(rng::AbstractRNG, x, p, ::Val{training}, invp; dims)
-    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}, invp;
-            dims)
+    dropout(rng::AbstractRNG, x, p, ::Val{training}, invp, dims)
+    dropout(rng::AbstractRNG, x, mask, p, ::Val{training}, ::Val{update_mask}, invp, dims)
 
 Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see [1].
 
@@ -16,9 +15,6 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
   - `Val(update_mask)`: If `true` then the mask is generated and used. Else, the `mask`
     provided is directly used
   - `invp`: Inverse of the probability
-
-## Keyword Arguments
-
   - `dims`: Dimensions along which dropout is applied
   - `invp`: Inverse of the probability (``\frac{1}{p}``)
 
@@ -34,41 +30,31 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
     overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
 function dropout(
-        rng::AbstractRNG, x::AbstractArray, p::T, ::Val{true}, invp::T; dims) where {T}
+        rng::AbstractRNG, x::AbstractArray, p::T, ::Val{true}, invp::T, dims) where {T}
     rng = LuxCore.replicate(rng)
     mask = _generate_dropout_mask(rng, x, p, invp; dims)
     return (x .* CRC.ignore_derivatives(mask), mask, rng)
 end
 
 function dropout(
-        rng::AbstractRNG, x::AbstractArray, p::T, ::Val{false}, ::T; dims) where {T}
+        rng::AbstractRNG, x::AbstractArray, p::T, ::Val{false}, ::T, dims) where {T}
     return (x, x, rng)
 end
 
-function dropout(
-        rng::AbstractRNG, x::AbstractArray, p::T, t::Val; dims, invp::T=inv(p)) where {T}
-    return dropout(rng, x, p, t, invp; dims)
-end
-
-function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        p::T, t::Val, ::Val{true}, invp::T; dims) where {T}
-    return dropout(rng, x, p, t; dims, invp)
+function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray,
+        p::T, t::Val, ::Val{true}, invp::T, dims) where {T}
+    return dropout(rng, x, p, t, invp, dims)
 end
 
 function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
-        p::T, ::Val{true}, ::Val{false}, invp::T; dims) where {T, T1, T2, N}
-    size(x) != size(mask) && return dropout(rng, x, p, Val(true); dims, invp)
+        p::T, ::Val{true}, ::Val{false}, invp::T, dims) where {T, T1, T2, N}
+    size(x) != size(mask) && return dropout(rng, x, p, Val(true), invp, dims)
     return x .* CRC.ignore_derivatives(mask), mask, rng
 end
 
 function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
-        p::T, ::Val{false}, ::Val{false}, invp::T; dims) where {T, T1, T2, N}
+        p::T, ::Val{false}, ::Val{false}, invp::T, dims) where {T, T1, T2, N}
     return (x, mask, rng)
-end
-
-function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
-        p::T, t::Val, um::Val; dims, invp::T=inv(p)) where {T, T1, T2, N}
-    return dropout(rng, x, mask, p, t, um, invp; dims)
 end
 
 """
