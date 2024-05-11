@@ -1,7 +1,7 @@
 @doc doc"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
          activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-         pad=0, dilation=1, groups=1, use_bias=true)
+         pad=0, dilation=1, groups=1, use_bias=true, allow_fast_activation=true)
 
 Standard convolutional layer.
 
@@ -512,7 +512,7 @@ PixelShuffle(r::Int) = WrappedFunction(Base.Fix2(pixel_shuffle, r))
 @doc doc"""
     CrossCor(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
              activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-             pad=0, dilation=1, use_bias=true)
+             pad=0, dilation=1, use_bias=true, allow_fast_activation=true)
 
 Cross Correlation layer.
 
@@ -641,7 +641,8 @@ end
 @doc doc"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=true)
+                  stride=1, pad=0, dilation=1, groups=1, use_bias=true, 
+                  allow_fast_activation=true)
 
 Standard convolutional transpose layer.
 
