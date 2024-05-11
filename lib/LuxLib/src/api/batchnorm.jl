@@ -54,17 +54,17 @@ end
     return :($(Val(Tuple(collect([1:(N - 2); N])))))
 end
 
-function _get_batchnorm_statistics(x, running_mean, running_var, ::Val{T}) where {T}
-    if T
-        # NNlib silently updates running_mean and running_var. Copying them!
-        rm = _copy_autodiff_barrier(running_mean)
-        rv = _copy_autodiff_barrier(running_var)
-    else
-        N = ndims(x)
-        dims = collect([1:(N - 2); N])
-        rm = running_mean === nothing ? mean(x; dims) : running_mean
-        rv = running_var === nothing ? var(x; mean=rm, dims, corrected=false) : running_var
-    end
+function _get_batchnorm_statistics(x, running_mean, running_var, ::Val{true})
+    rm = _copy_autodiff_barrier(running_mean)
+    rv = _copy_autodiff_barrier(running_var)
+    return rm, rv
+end
+
+function _get_batchnorm_statistics(
+        x::AbstractArray{T, N}, running_mean, running_var, ::Val{false}) where {T, N}
+    dims = collect([1:(N - 2); N])
+    rm = running_mean === nothing ? mean(x; dims) : running_mean
+    rv = running_var === nothing ? var(x; mean=rm, dims, corrected=false) : running_var
     return rm, rv
 end
 

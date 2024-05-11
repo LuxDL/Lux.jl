@@ -84,7 +84,7 @@ for a fixed dropout probability.
 ## References
 
 [1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
-    information processing systems 30 (2017).
+information processing systems 30 (2017).
 """
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, t::Val{true}) where {T}
     α = T(-1.7580993408473766)
@@ -122,7 +122,7 @@ end
     _cond = noise .> p
     y = ifelse.(_cond, x, α)
     _∇alpha_dropout_kernel = @closure Δ -> begin
-        return NoTangent(), NoTangent(), NoTangent(), (_cond .* Δ), sum(@.((1 - _cond) * Δ))
+        return NoTangent(), NoTangent(), NoTangent(), (_cond .* Δ), sum(@.((1 - _cond)*Δ))
     end
     return y, _∇alpha_dropout_kernel
 end
