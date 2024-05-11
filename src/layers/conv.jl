@@ -759,7 +759,8 @@ end
     cdims = _conv_transpose_dims(
         x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
-        apply_bias_activation(c.activation, _conv_transpose(x, ps.weight, cdims), ps.bias),
+        __apply_bias_activation(
+            c.activation, _conv_transpose(x, ps.weight, cdims), ps.bias),
         st)
 end
 

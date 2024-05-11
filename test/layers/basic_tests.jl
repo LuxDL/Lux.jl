@@ -71,21 +71,17 @@
         end
 
         @testset "PeriodicEmbedding" begin
-            layer = PeriodicEmbedding([2, 3], [4.0, π/5])
+            layer = PeriodicEmbedding([2, 3], [4.0, π / 5])
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 4, 3, 2) |> aType
-            Δx = [0.0, 12.0, -2π/5, 0.0, 0.0, 0.0] |> aType
+            Δx = [0.0, 12.0, -2π / 5, 0.0, 0.0, 0.0] |> aType
 
             val = layer(x, ps, st)[1] |> Array
             shifted_val = layer(x .+ Δx, ps, st)[1] |> Array
 
-            @test all(val[1:4, :, :, :] .== shifted_val[1:4, :, :, :]) &&
-                all(isapprox.(
-                    val[5:8, :, :, :],
-                    shifted_val[5:8, :, :, :];
-                    atol = 5 * eps(Float32)
-                ))
+            @test all(val[1:4, :, :, :] .== shifted_val[1:4, :, :, :]) && all(isapprox.(
+                val[5:8, :, :, :], shifted_val[5:8, :, :, :]; atol=5 * eps(Float32)))
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))

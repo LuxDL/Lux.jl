@@ -9,8 +9,6 @@ function ComponentArrays.ComponentArray(data::Vector{Any}, axes::Tuple{FlatAxis}
     return ComponentArray{Any, 1, typeof(data), typeof(axes)}(data, axes)
 end
 
-Lux.__named_tuple(ca::ComponentArray) = NamedTuple(ca)
-
 # Distributed Functionality
 function DistributedUtils.synchronize!!(
         backend::Lux.AbstractLuxDistributedBackend, ps::ComponentArray; root::Int=0)

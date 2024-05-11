@@ -1,10 +1,10 @@
 @testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "NamedTuple" begin
             d = Dense(5 => 5)
-            psd, std = Lux.setup(rng, d) .|> device
+            psd, std = Lux.setup(rng, d) .|> dev
 
             fd, ps, st = Lux.Experimental.freeze(d, psd, std, nothing)
             @test length(keys(ps)) == 0
@@ -25,9 +25,9 @@
         @testset "ComponentArray" begin
             m = Chain(Lux.Experimental.freeze(Dense(1 => 3, tanh)), Dense(3 => 1))
             ps, st = Lux.setup(rng, m)
-            st = st |> device
-            ps_c = ComponentVector(ps) |> device
-            ps = ps |> device
+            st = st |> dev
+            ps_c = ComponentVector(ps) |> dev
+            ps = ps |> dev
             x = randn(rng, Float32, 1, 2) |> aType
 
             @test m(x, ps, st)[1] == m(x, ps_c, st)[1]
@@ -40,9 +40,9 @@
         @testset "LuxDL/Lux.jl#427" begin
             m = Dense(1 => 1)
             ps, st = Lux.setup(rng, m)
-            st = st |> device
-            ps_c = ComponentVector(ps) |> device
-            ps = ps |> device
+            st = st |> dev
+            ps_c = ComponentVector(ps) |> dev
+            ps = ps |> dev
 
             fd, psf, stf = Lux.Experimental.freeze(m, ps, st)
 
@@ -64,9 +64,9 @@ end
 @testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         d = Dense(5 => 5)
-        psd, std = Lux.setup(rng, d) .|> device
+        psd, std = Lux.setup(rng, d) .|> dev
 
         fd, ps, st = Lux.Experimental.freeze(d, psd, std, (:weight,))
         @test length(keys(ps)) == 1

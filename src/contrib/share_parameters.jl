@@ -1,5 +1,3 @@
-using Functors
-
 """
     share_parameters(ps, sharing)
     share_parameters(ps, sharing, new_parameters)
@@ -51,7 +49,7 @@ true
 """
 function share_parameters(ps, sharing)
     _assert_disjoint_sharing_list(sharing)
-    lens = map(x -> _construct_lens.(x), sharing)
+    lens = map(_construct_lens, sharing)
     ps_extracted = get.((ps,), first.(lens))
     return _share_parameters(ps, ps_extracted, lens)
 end
@@ -61,7 +59,7 @@ function share_parameters(ps, sharing, new_parameters)
     if !(length(sharing) == length(new_parameters))
         throw(ArgumentError("The length of sharing and new_parameters must be equal"))
     end
-    return _share_parameters(ps, new_parameters, map(x -> _construct_lens.(x), sharing))
+    return _share_parameters(ps, new_parameters, map(_construct_lens, sharing))
 end
 
 function _share_parameters(ps, new_parameters, lens)
@@ -72,28 +70,13 @@ function _share_parameters(ps, new_parameters, lens)
 end
 
 function _safe_update_parameter(ps, lens, new_ps)
-    new_ps_st = _parameter_structure(new_ps)
-    ps_st = _parameter_structure(get(ps, lens))
+    new_ps_st = fmapstructure(Lux.__size, new_ps)
+    ps_st = fmapstructure(Lux.__size, get(ps, lens))
     if new_ps_st != ps_st
-        msg = lazy"The structure of the new parameters must be the same as the old parameters for lens $(lens)!!! The new parameters have a structure: $new_ps_st while the old parameters have a structure: $ps_st. This could potentially be caused since `_parameter_structure` is not appropriately defined for type $(typeof(new_ps))."
+        msg = lazy"The structure of the new parameters must be the same as the old parameters for lens $(lens)!!! The new parameters have a structure: $new_ps_st while the old parameters have a structure: $ps_st. This could potentially be caused since `Lux.__size` is not appropriately defined for type $(typeof(new_ps))."
         throw(ArgumentError(msg))
     end
     return Setfield.set(ps, lens, new_ps)
-end
-
-function _parameter_structure(ps::AbstractArray)
-    Lux._hasmethod(Lux.__named_tuple, Tuple{typeof(ps)}) &&
-        return _parameter_structure(Lux.__named_tuple(ps))
-    return size(ps)
-end
-_parameter_structure(::Number) = 1
-function _parameter_structure(ps::NamedTuple{F}) where {F}
-    return NamedTuple{F}(map(_parameter_structure, values(ps)))
-end
-function _parameter_structure(ps)
-    Lux._hasmethod(Lux.__named_tuple, Tuple{typeof(ps)}) &&
-        return _parameter_structure(Lux.__named_tuple(ps))
-    return fmap(_parameter_structure, ps)
 end
 
 function _assert_disjoint_sharing_list(sharing)
@@ -104,7 +87,8 @@ function _assert_disjoint_sharing_list(sharing)
     end
 end
 
-function _construct_lens(x::String)
+@inline _construct_lens(x) = _construct_lens.(x)
+@inline function _construct_lens(x::String)
     return foldr(
         Setfield.ComposedLens, map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, ".")))
 end

@@ -8,7 +8,7 @@ import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
 using ADTypes: ADTypes
 using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
-using Functors: Functors, fmap, functor
+using Functors: Functors, fmap, fmapstructure, functor
 using Markdown: @doc_str
 using Random: AbstractRNG, Random
 using Setfield: Setfield

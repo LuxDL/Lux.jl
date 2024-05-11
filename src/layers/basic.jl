@@ -301,12 +301,17 @@ statelength(d::Scale) = 0
 
 outputsize(d::Scale) = d.dims
 
-function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
-    return apply_bias_activation(d.activation, ps.weight .* x, ps.bias), st
+function (d::Scale{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
+    return x .* ps.weight, st
 end
-
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    return fast_activation!!(d.activation, ps.weight .* x), st
+    return @.(d.activation(x .* ps.weight)), st
+end
+function (d::Scale{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
+    return @.(x * ps.weight+ps.bias), st
+end
+function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
+    return @.(d.activation(x * ps.weight + ps.bias)), st
 end
 
 """
@@ -418,7 +423,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
     if use_bias
-        return apply_bias_activation(b.activation, Wyx, ps.bias), st
+        return __apply_bias_activation(b.activation, Wyx, ps.bias), st
     else
         return fast_activation!!(b.activation, Wyx), st
     end
@@ -515,8 +520,7 @@ periodicity.
 
 For example, `layer = PeriodicEmbedding([2, 3], [3.0, 1.0])` will create a layer periodic in
 the second input with period 3.0 and periodic in the third input with period 1.0. In this
-case, `layer([a, b, c, d], st) == ([a, d, sinpi(2 / 3.0 * b), sinpi(2 / 1.0 * c),
-cospi(2 / 3.0 * b), cospi(2 / 1.0 * c)], st)`.
+case, `layer([a, b, c, d], st) == ([a, d, sinpi(2 / 3.0 * b), sinpi(2 / 1.0 * c), cospi(2 / 3.0 * b), cospi(2 / 1.0 * c)], st)`.
 
 ## Arguments
 
@@ -539,20 +543,24 @@ cospi(2 / 3.0 * b), cospi(2 / 1.0 * c)], st)`.
 ```jldoctest
 julia> layer = PeriodicEmbedding([2], [4.0])
 PeriodicEmbedding(idxs = [2], periods = [4.0])
-julia> using Random; rng = Random.seed!(123);
+
+julia> using Random;
+       rng = Random.seed!(123);
 
 julia> ps, st = Lux.setup(rng, layer)
 (NamedTuple(), (k = [0.5],))
-julia> all(layer([1.1, 2.2, 3.3], ps, st)[1] .== [1.1, 3.3, sinpi(2 / 4.0 * 2.2), cospi(2 / 4.0 * 2.2)])
+
+julia> all(layer([1.1, 2.2, 3.3], ps, st)[1] .==
+           [1.1, 3.3, sinpi(2 / 4.0 * 2.2), cospi(2 / 4.0 * 2.2)])
 true
 ```
 """
-@concrete struct PeriodicEmbedding <:AbstractExplicitLayer
+@concrete struct PeriodicEmbedding <: AbstractExplicitLayer
     idxs
     periods
 end
 
-Lux.initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k = 2 ./ p.periods,)
+Lux.initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k=2 ./ p.periods,)
 
 @inline function (p::PeriodicEmbedding)(x::AbstractVector, ps, st::NamedTuple)
     return vec(first(p(reshape(x, :, 1), ps, st))), st
@@ -561,11 +569,7 @@ end
 @inline function (p::PeriodicEmbedding)(x::AbstractMatrix, ps, st::NamedTuple)
     other_idxs = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.idxs)
     return (
-        vcat(
-            x[other_idxs, :],
-            sinpi.(st.k .* x[p.idxs, :]),
-            cospi.(st.k .* x[p.idxs, :])
-        ),
+        vcat(x[other_idxs, :], sinpi.(st.k .* x[p.idxs, :]), cospi.(st.k .* x[p.idxs, :])),
         st)
 end
 
