@@ -31,6 +31,7 @@ steps:
               - "distributed"
               - "normalize_layers"
               - "others"
+              - "autodiff"
               - "recurrent_layers"
 
   - group: ":telescope: Downstream CUDA"
@@ -124,6 +125,7 @@ steps:
               - "distributed"
               - "normalize_layers"
               - "others"
+              - "autodiff"
               - "recurrent_layers"
 
   - group: ":telescope: Downstream AMD GPU"

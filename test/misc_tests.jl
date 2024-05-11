@@ -1,7 +1,7 @@
 # Previously we had a few Zygote.gradient over Zygote.gradient tests but those are now 
 # removed in favor of BatchedRoutines.jl
 
-@testitem "Tracing AD: AoS to SoA" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Tracing AD: AoS to SoA" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ReverseDiff, Tracker
 
     rng = get_stable_rng()

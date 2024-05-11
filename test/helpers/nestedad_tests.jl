@@ -1,4 +1,4 @@
-@testitem "Nested AD: Input Gradient/Jacobian" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Nested AD: Input Gradient/Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
 
     Base.isfinite(::Nothing) = true
@@ -76,7 +76,7 @@
     end
 end
 
-@testitem "Nested AD: Parameter Gradient/Jacobian" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Nested AD: Parameter Gradient/Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
 
     Base.isfinite(::Nothing) = true
@@ -158,7 +158,7 @@ end
     end
 end
 
-@testitem "Nested AD: Structured Matrix LuxDL/Lux.jl#602" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Nested AD: Structured Matrix LuxDL/Lux.jl#602" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
 
     Base.isfinite(::Nothing) = true
@@ -198,7 +198,7 @@ end
     end
 end
 
-@testitem "Nested AD: VJP & JVP" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Nested AD: VJP & JVP" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote, ADTypes
 
     Base.isfinite(::Nothing) = true

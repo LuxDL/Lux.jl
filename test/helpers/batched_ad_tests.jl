@@ -1,4 +1,4 @@
-@testitem "Batched Jacobian" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
     rng = get_stable_rng(12345)
@@ -49,7 +49,7 @@
     end
 end
 
-@testitem "Nested AD: Batched Jacobian" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Nested AD: Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
     rng = get_stable_rng(12345)
