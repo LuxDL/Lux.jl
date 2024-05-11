@@ -1,5 +1,5 @@
 @doc doc"""
-    instancenorm(x, scale, bias, σ = identity; epsilon, training)
+    instancenorm(x, scale, bias, training::Val, σ = identity, epsilon = 1f-5)
 
 Instance Normalization. For details see [1].
 
@@ -13,10 +13,7 @@ accordingly.
   - `scale`: Scale factor (``\gamma``) (can be `nothing`)
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
   - `σ`: Activation function (default: `identity`)
-
-## Keyword Arguments
-
-  - `epsilon`: Value added to the denominator for numerical stability
+  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
   - `training`: Set to `Val(true)` if running in training mode
 
 ## Returns
@@ -30,8 +27,8 @@ mean and variance.
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
 function instancenorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
-        bias::Union{Nothing, <:AbstractVector}, σ::F=identity;
-        training::Val, epsilon::Real) where {N, F}
+        bias::Union{Nothing, <:AbstractVector}, training::Val,
+        σ::F=identity, epsilon::Real=1.0f-5) where {N, F}
     _test_valid_instancenorm_arguments(x)
 
     x_, xm, xv = _normalization(x, nothing, nothing, scale, bias,

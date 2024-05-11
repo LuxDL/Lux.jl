@@ -23,7 +23,6 @@ jobs:
           - "normalization"
           - "common_ops"
           - "others"
-          - "normalization_sp"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

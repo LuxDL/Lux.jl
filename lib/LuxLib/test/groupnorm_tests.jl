@@ -27,7 +27,7 @@ end
 export _setup_groupnorm, _groupnorm_generic_fallback
 end
 
-@testitem "Group Normalization KernelAbstractions" tags=[:nworkers, :normalization] setup=[
+@testitem "Group Normalization KernelAbstractions" tags=[:singleworker, :normalization] setup=[
     SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, ngroups $groups, $act" for T in (Float32, Float64),

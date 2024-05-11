@@ -100,7 +100,7 @@ end
         x = randn(rng, Float32, 10, 2) |> aType
         x_dual = ForwardDiff.Dual.(x)
 
-        @test_nowarn dropout(rng, x_dual, 0.5f0, Val(true); dims=:)
+        @test_nowarn dropout(rng, x_dual, 0.5f0, Val(true), 2.0f0, :)
 
         x_dropout = dropout(rng, x, 0.5f0, Val(true); dims=:)[1]
         x_dual_dropout = ForwardDiff.value.(dropout(rng, x_dual, 0.5f0, Val(true); dims=:)[1])

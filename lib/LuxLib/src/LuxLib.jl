@@ -4,7 +4,7 @@ using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
     using ArrayInterface: ArrayInterface
-    using ChainRulesCore: ChainRulesCore
+    using ChainRulesCore: ChainRulesCore, NoTangent
     using FastBroadcast: @..
     using FastClosures: @closure
     using GPUArraysCore: GPUArraysCore, AnyGPUArray
@@ -42,6 +42,8 @@ include("api/layernorm.jl")
 include("api/dense.jl")
 include("api/conv.jl")
 include("api/fast_activation.jl")
+
+include("deprecations.jl")
 
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
