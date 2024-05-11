@@ -38,7 +38,7 @@ function add_vgg_benchmarks!()
         Flux.MaxPool((2, 2)), Flux.flatten, Flux.Dense(512, 4096, relu), Flux.Dropout(0.5),
         Flux.Dense(4096, 4096, relu), Flux.Dropout(0.5), Flux.Dense(4096, 10))
 
-    for bsize in (1, 16, 64)
+    for bsize in (2, 16, 64)
         benchmark_forward_pass(
             "vgg16", "(32, 32, 3, $bsize)", vgg16, (32, 32, 3, bsize); flux_model)
         benchmark_reverse_pass(

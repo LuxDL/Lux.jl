@@ -3,10 +3,10 @@ function benchmark_forward_pass(
         tag::String, end_tag::String, model, x_dims; simple_chains=nothing,
         flux_model=nothing)
     SUITE[tag]["cpu"]["forward"]["NamedTuple"][end_tag] = @benchmarkable Lux.apply(
-        $model, x, ps_nt, st) setup=((x, ps_nt, st) = general_setup($model, $x_dims))
+        $model, x, ps_nt, st_test) setup=((x, ps_nt, st) = general_setup($model, $x_dims); st_test = Lux.testmode(st))
 
     SUITE[tag]["cpu"]["forward"]["ComponentArray"][end_tag] = @benchmarkable Lux.apply(
-        $model, x, ps_ca, st) setup=((x, ps_nt, st) = general_setup($model, $x_dims); ps_ca = ComponentArray(ps_nt))
+        $model, x, ps_ca, st_test) setup=((x, ps_nt, st) = general_setup($model, $x_dims); ps_ca = ComponentArray(ps_nt); st_test = Lux.testmode(st))
 
     if simple_chains !== nothing
         simple_chains_model = simple_chains(model)

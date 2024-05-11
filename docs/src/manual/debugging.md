@@ -34,7 +34,7 @@ to make any changes. If you ran the original model this is the kind of error you
 rng = Xoshiro(0)
 
 ps, st = Lux.setup(rng, model)
-x = randn(rng, Float32, 1, 1)
+x = randn(rng, Float32, 1, 2)
 
 try
     model(x, ps, st)

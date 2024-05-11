@@ -30,12 +30,12 @@ julia> m = Metalhead.ResNet(18);
 
 julia> m2 = adapt(FromFluxAdaptor(), m.layers); # or FromFluxAdaptor()(m.layers)
 
-julia> x = randn(Float32, 224, 224, 3, 1);
+julia> x = randn(Float32, 224, 224, 3, 2);
 
 julia> ps, st = Lux.setup(Random.default_rng(), m2);
 
-julia> size(first(m2(x, ps, st))) == (1000, 1)
-true
+julia> size(first(m2(x, ps, st)))
+(1000, 2)
 ```
 """
 @kwdef struct FromFluxAdaptor <: AbstractToLuxAdaptor
