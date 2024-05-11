@@ -346,8 +346,8 @@ end
              layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
          $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
          for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return $(y_symbols[N + 1]), st))
+    push!(calls,
+        :(return $(y_symbols[N + 1]), NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     return Expr(:block, calls...)
 end
 

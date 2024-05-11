@@ -110,7 +110,7 @@ function Dropout(p; dims=:)
 end
 
 function (d::Dropout)(x, ps, st::NamedTuple)
-    y, _, rng = dropout(st.rng, x, d.p, st.training; invp=d.q, d.dims)
+    y, _, rng = dropout(st.rng, x, d.p, st.training, d.q, d.dims)
     return y, merge(st, (; rng))
 end
 

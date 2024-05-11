@@ -385,7 +385,10 @@ See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 """
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
-(g::GlobalMaxPool)(x, ps, st::NamedTuple) = maximum(x; dims=1:(ndims(x) - 2)), st
+function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
+    pdims = PoolDims(x, size(x)[1:(end - 2)])
+    return maxpool(x, pdims), st
+end
 
 """
     GlobalMeanPool()
@@ -406,7 +409,10 @@ See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 """
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
-(g::GlobalMeanPool)(x, ps, st::NamedTuple) = mean(x; dims=1:(ndims(x) - 2)), st
+function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
+    pdims = PoolDims(x, size(x)[1:(end - 2)])
+    return meanpool(x, pdims), st
+end
 
 """
     AdaptiveMaxPool(out::NTuple)
