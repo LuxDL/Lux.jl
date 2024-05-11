@@ -84,13 +84,12 @@ for a fixed dropout probability.
 ## References
 
 [1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
-information processing systems 30 (2017).
+    information processing systems 30 (2017).
 """
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, t::Val{true}) where {T}
     α = T(-1.7580993408473766)
     A = T(inv(sqrt((1 - p) * (1 + p * α^2))))
     B = T(-A * α * p)
-
     return alpha_dropout(rng, x, p, t, α, A, B)
 end
 
@@ -99,12 +98,11 @@ function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, t::Val{false})
 end
 
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
-    rng = LuxCore.replicate(rng)
-    noise = rand!(rng, similar(x, _dropout_fptype(x)))
-    # NOTE(@avik-pal): Combining the last 2 lines causes a compilation error for Tracker
-    #                  on GPU
-    y = ifelse.(noise .> p, x, α)
-    return (A .* y .+ B), rng
+    noise, rng = _alpha_dropout_noise(rng, x)
+    # NOTE: Combining the last 2 lines causes a compilation error for Tracker on GPU
+    y = _alpha_dropout_kernel(noise, p, x, α)
+    res = @. A * y + B
+    return res, rng
 end
 
 alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B) = (x, rng)
@@ -117,7 +115,30 @@ end
 
 @inline _dropout_kernel(y, p, invp) = ifelse(y > p, invp, oftype(y, 0))
 
+@inline _alpha_dropout_kernel(noise, p, x, α) = @. ifelse(noise > p, x, α)
+
+## Zygote is otherwise type unstable
+@inline function CRC.rrule(::typeof(_alpha_dropout_kernel), noise, p, x, α)
+    _cond = noise .> p
+    y = ifelse.(_cond, x, α)
+    _∇alpha_dropout_kernel = @closure Δ -> begin
+        return NoTangent(), NoTangent(), NoTangent(), (_cond .* Δ), sum(@.((1 - _cond) * Δ))
+    end
+    return y, _∇alpha_dropout_kernel
+end
+
 @inline _dropout_fptype(x) = float(real(eltype(x)))
+
+CRC.@non_differentiable _dropout_fptype(::Any...)
+
+@inline function _alpha_dropout_noise(rng, x)
+    rng = LuxCore.replicate(rng)
+    noise = similar(x, _dropout_fptype(x))
+    rand!(rng, noise)
+    return noise, rng
+end
+
+CRC.@non_differentiable _alpha_dropout_noise(::Any...)
 
 @inline function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
     realfptype = _dropout_fptype(x)
