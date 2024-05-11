@@ -94,3 +94,9 @@ WeightNorm
 PixelShuffle
 Upsample
 ```
+
+## SciML Layers
+
+```@docs
+PeriodicEmbedding
+```

@@ -90,7 +90,7 @@ include("deprecated.jl")
 export cpu, gpu  # deprecated
 
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
-export Bilinear, Dense, Embedding, Scale
+export Bilinear, Dense, Embedding, Scale, PeriodicEmbedding
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
        AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
 export AlphaDropout, Dropout, VariationalHiddenDropout
