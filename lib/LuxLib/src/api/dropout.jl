@@ -130,6 +130,7 @@ end
 @inline _dropout_fptype(x) = float(real(eltype(x)))
 
 CRC.@non_differentiable _dropout_fptype(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_dropout_fptype), ::Any...) = nothing
 
 @inline function _alpha_dropout_noise(rng, x)
     rng = LuxCore.replicate(rng)
@@ -139,6 +140,7 @@ CRC.@non_differentiable _dropout_fptype(::Any...)
 end
 
 CRC.@non_differentiable _alpha_dropout_noise(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 
 @inline function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
     realfptype = _dropout_fptype(x)
@@ -148,4 +150,6 @@ CRC.@non_differentiable _alpha_dropout_noise(::Any...)
 end
 
 CRC.@non_differentiable _generate_dropout_mask(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_generate_dropout_mask), ::Any...) = nothing
 CRC.@non_differentiable _dropout_shape(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_dropout_shape), ::Any...) = nothing

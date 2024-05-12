@@ -20,6 +20,7 @@ end
 @inline __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
 
 CRC.@non_differentiable __accum_size(::Any...)
+EnzymeRules.inactive_noinl(::typeof(__accum_size), ::Any...) = nothing
 
 @inline function _get_batch_statistics(x::AbstractArray, ::Nothing, ::Nothing,
         ::Val{rdims}, ::Val{false}, momentum) where {rdims}

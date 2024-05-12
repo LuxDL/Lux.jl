@@ -1,39 +1,3 @@
-# Utilities
-@inline _div_idx(idx, n) = div(idx - 1, n) + 1
-@inline _mod_idx(idx, n) = mod(idx - 1, n) + 1
-
-@inline _get_backend(::Nothing) = nothing
-@inline function _get_backend(d)
-    return hasmethod(KA.get_backend, (typeof(d),)) ? KA.get_backend(d) : nothing
-end
-@inline _get_backend(t::Tuple) = _get_backend.(t)
-
-function __check_all_same_or_nothing(x::Union{AbstractVector, Tuple})
-    @inbounds for i in eachindex(x)
-        x[i] === nothing && continue
-        for j in (i + 1):length(x)
-            x[j] === nothing && continue
-            x[i] != x[j] && return false
-        end
-    end
-    return true
-end
-
-CRC.@non_differentiable _get_backend(::Any)
-
-@inline _assert_same_backend(args...) = _assert_same_backend([args...])
-@inline function _assert_same_backend(xs)
-    devs = _get_backend.(xs)
-    if !__check_all_same_or_nothing(devs)
-        throw(ArgumentError("All arguments must be on the same backend. This error is \
-                             encountered if you are calling a function with a mix of CPU \
-                             and GPU arrays."))
-    end
-    return
-end
-
-CRC.@non_differentiable _assert_same_backend(::Any...)
-
 @inline @generated _vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
 
 @inline @inbounds function _get_reshape_dims(sx::NTuple{N, <:Int}, ly::Int) where {N}
@@ -47,6 +11,7 @@ CRC.@non_differentiable _assert_same_backend(::Any...)
 end
 
 CRC.@non_differentiable _get_reshape_dims(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_get_reshape_dims), ::Any...) = nothing
 
 @inline _reshape_into_proper_shape(::Nothing, y) = nothing
 @inline _reshape_into_proper_shape(x, y) = reshape(x, _get_reshape_dims(size(y), length(x)))
@@ -56,6 +21,7 @@ _copy_autodiff_barrier(x) = copy(x)
 _copy_autodiff_barrier(::Nothing) = nothing
 
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
+EnzymeRules.inactive_noinl(::typeof(_copy_autodiff_barrier), ::Any...) = nothing
 
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
@@ -91,11 +57,13 @@ struct NotaNumber <: Real end
 @inline __is_immutable_array_val(x) = Val(__is_immutable_array(x))
 
 CRC.@non_differentiable __is_immutable_array_val(::Any...)
+EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_val), ::Any...) = nothing
 
 @inline __has_dual(x) = false
 @inline __is_immutable_array_or_dual_val(x) = Val(__is_immutable_array(x) || __has_dual(x))
 
 CRC.@non_differentiable __is_immutable_array_or_dual_val(::Any...)
+EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_or_dual_val), ::Any...) = nothing
 
 @inline function __expand_conv_bias_dims(
         bias::AbstractVector, ::AbstractArray{T, N}) where {T, N}
@@ -117,6 +85,7 @@ end
 end
 
 CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
+EnzymeRules.inactive_noinl(::typeof(__get_concrete_fba_output_eltype), ::Any...) = nothing
 
 # Helper to add bias and apply activation function
 ## This is only meant to be used inside rrules
@@ -209,6 +178,7 @@ end
 end
 
 CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
+EnzymeRules.inactive_noinl(::typeof(__maybe_reduce_BLAS_threads), ::AbstractArray) = nothing
 
 @inline function __reset_BLAS_threads(old_threads::Int)
     old_threads ≥ 1 && BLAS.set_num_threads(old_threads)
@@ -216,6 +186,7 @@ CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
 end
 
 CRC.@non_differentiable __reset_BLAS_threads(::Int)
+EnzymeRules.inactive_noinl(::typeof(__reset_BLAS_threads), ::Int) = nothing
 
 # Defined in ext/LuxLibCUDAExt.jl
 function _cublaslt_matmul_fused! end

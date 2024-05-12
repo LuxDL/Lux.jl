@@ -41,20 +41,7 @@ function LuxLib._copy_autodiff_barrier(x::Union{TrackedArray, TrackedReal})
     return LuxLib._copy_autodiff_barrier(Tracker.data(x))
 end
 
-LuxLib._get_backend(x::TrackedArray) = LuxLib._get_backend(Tracker.data(x))
-
 # api/dropout.jl
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(Tracker.data(x))
-
-# api/groupnorm.jl
-for T1 in (:TrackedArray, :AbstractArray),
-    T2 in (:TrackedVector, :AbstractVector),
-    T3 in (:TrackedVector, :AbstractVector)
-
-    LuxLib.__is_tracked(T1, T2, T3) || continue
-
-    @eval Tracker.@grad_from_chainrules LuxLib.__fast_groupnorm(
-        x::$T1, groups, scale::$T2, bias::$T3, epsilon::Real)
-end
 
 end
