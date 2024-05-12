@@ -29,6 +29,7 @@ jobs:
           - "distributed"
           - "normalize_layers"
           - "others"
+          - "autodiff"
           - "recurrent_layers"
     steps:
       - uses: actions/checkout@v4

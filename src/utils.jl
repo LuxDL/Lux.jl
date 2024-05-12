@@ -122,16 +122,20 @@ end
 function _conv_transpose_dims(
         x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
     # Calculate size of "input", from ∇conv_data()'s perspective...
-    combined_pad = (padding[1:2:end] .+ padding[2:2:end])
-    I = (size(x)[1:(end - 2)] .- 1) .* stride .+ 1 .+
-        (size(weight)[1:(end - 2)] .- 1) .* dilation .- combined_pad
+    function calc_dim(xsz, wsz, stride, dilation, pad)
+        return (xsz - 1) * stride + 1 + (wsz - 1) * dilation - pad
+    end
+    combined_pad = ntuple(i -> padding[2i - 1] + padding[2i], length(padding) ÷ 2)
+    I = map(calc_dim, size(x)[1:(end - 2)], size(weight)[1:(end - 2)],
+        stride, dilation, combined_pad)
     C_in = size(weight)[end - 1] * groups
     C_out = size(weight)[end]
     batch_size = size(x)[end]
     w_size = size(weight)
-    if size(x)[end - 1] != C_out
+
+    size(x)[end - 1] != C_out &&
         throw(DimensionMismatch(lazy"Expected $(C_out) input channels but got $(size(x)[end - 1]) channels."))
-    end
+
     # Create DenseConvDims() that looks like the corresponding conv()
     return DenseConvDims(
         (I..., C_in, batch_size), w_size; stride, padding, dilation, groups)
