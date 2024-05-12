@@ -160,18 +160,18 @@ in the backward pass.
 # Merging Exotic Types
 _merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
 function _merge(p, nt::NamedTuple)
-    _hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(__named_tuple(p), nt)
+    __can_named_tuple(p) && return _merge(__named_tuple(p), nt)
     @assert length(p) == 0
     return nt
 end
 function _merge(nt::NamedTuple, p)
-    _hasmethod(__named_tuple, Tuple{typeof(p)}) && return _merge(nt, __named_tuple(p))
+    __can_named_tuple(p) && return _merge(nt, __named_tuple(p))
     @assert length(p) == 0
     return nt
 end
 function _merge(x, y)
-    _hasmethod(__named_tuple, Tuple{typeof(x)}) && return _merge(__named_tuple(x), y)
-    _hasmethod(__named_tuple, Tuple{typeof(y)}) && return _merge(x, __named_tuple(y))
+    __can_named_tuple(x) && return _merge(__named_tuple(x), y)
+    __can_named_tuple(y) && return _merge(x, __named_tuple(y))
     length(x) == 0 && return y
     length(y) == 0 && return x
     throw(ArgumentError(lazy"Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define `_merge` method for these types."))
@@ -234,19 +234,27 @@ end
 # Used in freezing
 ## Extend for custom types
 @inline function _pairs(x)
-    _hasmethod(__named_tuple, Tuple{typeof(x)}) && return pairs(__named_tuple(x))
+    __can_named_tuple(x) && return pairs(__named_tuple(x))
     return pairs(x)
 end
 
-__named_tuple(nt::NamedTuple) = nt
+@inline __named_tuple(nt::NamedTuple) = nt
+@inline function __named_tuple(x::T) where {T}
+    NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
+    if NT === Union{} || NT === NamedTuple
+        error("`NamedTuple` is not defined for type `$(T)`. Please define \
+               `_named_tuple(::$(T))` method (or preferably `NamedTuple(::$(T))`).")
+    end
+    return NamedTuple(x)
+end
 
-# Nondifferentiable hasmethod. Avoiding type-piracy
-# FIXME: This is fixed in ChainRules 1.66
-@inline _hasmethod(f::F, args...) where {F} = hasmethod(f, args...)
-
-# Helpers for bias and activation functions
-@inline apply_bias_activation(::typeof(identity), x, b) = x .+ b
-@inline apply_bias_activation(f::F, x, b) where {F} = @. f(x + b)
+@inline __can_named_tuple(::NamedTuple) = true
+@inline function __can_named_tuple(::Type{T}) where {T}
+    return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
+end
+@inline function __can_named_tuple(::T) where {T}
+    return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
+end
 
 @inline __value(x) = x
 
@@ -268,3 +276,10 @@ __named_tuple(nt::NamedTuple) = nt
     fmap(__internal_recursive_eltype, x)
     return _eltype[]
 end
+
+@inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
+    return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
+end
+
+@inline __size(x::AbstractArray) = size(x)
+@inline __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? size(x) : nothing

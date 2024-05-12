@@ -12,17 +12,14 @@ using PrecompileTools: @recompile_invalidations
     using FastClosures: @closure
     using Functors: Functors, fmap
     using GPUArraysCore: GPUArraysCore
-    using LinearAlgebra: LinearAlgebra
     using Markdown: @doc_str
     using OhMyThreads: tmapreduce
     using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport
-    using Setfield: Setfield, @set!
-    using Statistics: Statistics, mean
-    using WeightInitializers: WeightInitializers, glorot_uniform, ones32, randn32, zeros32
 
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
+    using LuxLib: __apply_bias_activation
     import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
                     initialparameters, initialstates, parameterlength, statelength,
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,

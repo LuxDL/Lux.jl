@@ -124,21 +124,30 @@ function initialstates(rng::AbstractRNG, l::BatchNorm)
     end
 end
 
-parameterlength(l::BatchNorm) = _affine(l) ? (l.chs * 2) : 0
-statelength(l::BatchNorm) = (_track_stats(l) ? 2 * l.chs : 0) + 1
+parameterlength(l::BatchNorm) = ifelse(_affine(l), l.chs * 2, 0)
+statelength(l::BatchNorm) = ifelse(_track_stats(l), l.chs * 2, 0) + 1
 
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = batchnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var)),
-        BN.activation; BN.momentum, BN.epsilon, st.training)
-
-    if _track_stats(BN)
-        @set! st.running_mean = stats.running_mean
-        @set! st.running_var = stats.running_var
+    CRC.ignore_derivatives() do
+        if st.training isa Val{true}
+            @assert size(x, ndims(x))!=1 "Batch size for BatchNorm cannot be 1 during training"
+        end
     end
 
-    return y, st
+    y, stats = batchnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+        _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var)),
+        st.training, BN.activation, BN.momentum, BN.epsilon)
+    return y, __update_bn_state(BN, st, stats)
 end
+
+function __update_bn_state(BN::BatchNorm, st::NamedTuple, stats)
+    if _track_stats(BN)
+        st = merge(st, (; running_mean=stats.running_mean, running_var=stats.running_var))
+    end
+    return st
+end
+
+CRC.@non_differentiable __update_bn_state(::Any...)
 
 function Base.show(io::IO, l::BatchNorm)
     print(io, "BatchNorm($(l.chs)")
@@ -242,7 +251,7 @@ parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     y = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        GN.activation; GN.groups, GN.epsilon)
+        GN.groups, GN.activation, GN.epsilon)
     return y, st
 end
 
@@ -350,13 +359,12 @@ function initialparameters(rng::AbstractRNG, l::InstanceNorm)
     end
 end
 
-initialstates(rng::AbstractRNG, l::InstanceNorm) = (; training=Val(true))
-
-parameterlength(l::InstanceNorm) = _affine(l) ? (l.chs * 2) : 0
+initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
+parameterlength(l::InstanceNorm) = ifelse(_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     y, stats = instancenorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        IN.activation; IN.epsilon, st.training)
+        st.training, IN.activation, IN.epsilon)
     return y, st
 end
 
@@ -575,7 +583,7 @@ end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     y = layernorm(x, _getproperty(ps, Val(:scale)),
-        _getproperty(ps, Val(:bias)), l.activation; l.dims, l.epsilon)
+        _getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
     return y, st
 end
 

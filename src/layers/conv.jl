@@ -385,7 +385,10 @@ See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 """
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
-(g::GlobalMaxPool)(x, ps, st::NamedTuple) = maximum(x; dims=1:(ndims(x) - 2)), st
+function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
+    pdims = PoolDims(x, size(x)[1:(end - 2)])
+    return maxpool(x, pdims), st
+end
 
 """
     GlobalMeanPool()
@@ -406,7 +409,10 @@ See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 """
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
-(g::GlobalMeanPool)(x, ps, st::NamedTuple) = mean(x; dims=1:(ndims(x) - 2)), st
+function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
+    pdims = PoolDims(x, size(x)[1:(end - 2)])
+    return meanpool(x, pdims), st
+end
 
 """
     AdaptiveMaxPool(out::NTuple)
@@ -753,7 +759,8 @@ end
     cdims = _conv_transpose_dims(
         x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
-        apply_bias_activation(c.activation, _conv_transpose(x, ps.weight, cdims), ps.bias),
+        __apply_bias_activation(
+            c.activation, _conv_transpose(x, ps.weight, cdims), ps.bias),
         st)
 end
 

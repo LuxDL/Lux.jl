@@ -8,7 +8,6 @@ CRC.@non_differentiable _track_stats(::Any)
 CRC.@non_differentiable _conv_transpose_dims(::Any...)
 CRC.@non_differentiable _calc_padding(::Any...)
 CRC.@non_differentiable Base.printstyled(::Any...)
-CRC.@non_differentiable _hasmethod(::Any...)
 ## Type Piracy: Needs upstreaming
 ## This is needed for fixing NamedTuple nested differentiation
 CRC.@non_differentiable fieldcount(::Any)
@@ -79,4 +78,12 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(foldl_init),
             [proj(∂xᵢ) for (proj, ∂xᵢ) in zip(project, ∂x)], last(trio)[2])
     end
     return y, ∇foldl_init
+end
+
+# getproperty rrule for AbstractExplicitLayer. needed for type stability of Zygote
+# gradients
+function CRC.rrule(::typeof(getproperty), m::AbstractExplicitLayer, name::Symbol)
+    res = getproperty(m, name)
+    ∇getproperty = Δ -> ntuple(Returns(NoTangent()), 3)
+    return res, ∇getproperty
 end

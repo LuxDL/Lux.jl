@@ -80,7 +80,7 @@ CRC.@non_differentiable __any_nan(::Any)
 function __debug_layer(
         ::Val{NC}, ::Val{EC}, layer, x, ps, st, location::String) where {NC, EC}
     CRC.ignore_derivatives() do
-        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmap(__size, x))"
+        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmapstructure(Lux.__size, x))"
         @info lazy"Running Layer: $(layer) at location $(location)!"
     end
     if NC ∈ (:both, :forward)
@@ -93,13 +93,10 @@ function __debug_layer(
     end
     y, st_ = __debug_layer_internal(layer, x, ps, st, location, EC, NC ∈ (:both, :backward))
     CRC.ignore_derivatives() do
-        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(fmap(__size, y))"
+        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(fmapstructure(Lux.__size, y))"
     end
     return y, st_
 end
-
-__size(x::AbstractArray) = size(x)
-@generated __size(x::T) where {T} = _hasmethod(size, Tuple{T}) ? :(size(x)) : :(nothing)
 
 function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
     if EC

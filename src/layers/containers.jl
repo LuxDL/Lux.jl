@@ -44,11 +44,10 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-@concrete struct SkipConnection{N <: NAME_TYPE} <:
-                 AbstractExplicitContainerLayer{(:layers,)}
+@kwdef @concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
     layers
     connection
-    name::N
+    name::NAME_TYPE = nothing
 end
 
 function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
@@ -56,13 +55,13 @@ function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
 end
 
 function initialparameters(
-        rng::AbstractRNG, l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
+        rng::AbstractRNG, l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
     return (layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection))
 end
 
 function initialstates(
-        rng::AbstractRNG, l::SkipConnection{N, T, <:AbstractExplicitLayer}) where {T, N}
+        rng::AbstractRNG, l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
     return (
         layers=initialstates(rng, l.layers), connection=initialstates(rng, l.connection))
 end
@@ -72,8 +71,8 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
     return skip.connection(mx, x), st
 end
 
-function (skip::SkipConnection{N, <:AbstractExplicitLayer, <:AbstractExplicitLayer})(
-        x, ps, st::NamedTuple) where {N}
+function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(
+        x, ps, st::NamedTuple)
     mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
     return y, (layers=st1, connection=st2)
@@ -124,16 +123,14 @@ with `connection`.
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 """
-@concrete struct Parallel{T <: NamedTuple, N <: NAME_TYPE} <:
-                 AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct Parallel{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection
     layers::T
-    name::N
+    name::NAME_TYPE
 end
 
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return Parallel(connection, NamedTuple{names}(layers), name)
+    return Parallel(connection, __named_tuple_layers(layers...), name)
 end
 
 function Parallel(connection; name::NAME_TYPE=nothing, kwargs...)
@@ -227,22 +224,18 @@ BranchLayer(
           #        plus 0 states.
 ```
 """
-struct BranchLayer{T <: NamedTuple, N <: NAME_TYPE} <:
-       AbstractExplicitContainerLayer{(:layers,)}
+struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    name::N
+    name::NAME_TYPE
 end
 
 function BranchLayer(layers...; name::NAME_TYPE=nothing)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return BranchLayer(NamedTuple{names}(layers), name)
+    return BranchLayer(__named_tuple_layers(layers...), name)
 end
 
 BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), name)
 
-function (m::BranchLayer)(x, ps, st::NamedTuple)
-    return applybranching(m.layers, x, ps, st)
-end
+(m::BranchLayer)(x, ps, st::NamedTuple) = applybranching(m.layers, x, ps, st)
 
 @generated function applybranching(
         layers::NamedTuple{names}, x, ps, st::NamedTuple) where {names}
@@ -322,16 +315,15 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
-@concrete struct PairwiseFusion{T <: NamedTuple, N <: NAME_TYPE} <:
+@concrete struct PairwiseFusion{T <: NamedTuple} <:
                  AbstractExplicitContainerLayer{(:layers,)}
     connection
     layers::T
-    name::N
+    name::NAME_TYPE
 end
 
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return PairwiseFusion(connection, NamedTuple{names}(layers), name)
+    return PairwiseFusion(connection, __named_tuple_layers(layers...), name)
 end
 
 function PairwiseFusion(connection; name::NAME_TYPE=nothing, kwargs...)
@@ -354,8 +346,8 @@ end
              layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
          $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
          for i in 1:N])
-    push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
-    push!(calls, :(return $(y_symbols[N + 1]), st))
+    push!(calls,
+        :(return $(y_symbols[N + 1]), NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     return Expr(:block, calls...)
 end
 
@@ -430,18 +422,16 @@ Chain(
           #        plus 7 states.
 ```
 """
-struct Chain{T <: NamedTuple, N <: NAME_TYPE} <: AbstractExplicitContainerLayer{(:layers,)}
+struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    name::N
+    name::NAME_TYPE
 end
 
 function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false)
     xs = disable_optimizations ? xs : _flatten_model(xs)
     length(xs) == 0 && return NoOpLayer()
     length(xs) == 1 && return first(xs)
-    names = ntuple(i -> Symbol("layer_$i"), length(xs))
-    layers = NamedTuple{names}(xs)
-    return Chain(layers, name)
+    return Chain(__named_tuple_layers(xs...), name)
 end
 
 Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
@@ -464,12 +454,9 @@ function _flatten_model(layers::Union{AbstractVector, Tuple})
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-            if !_hasmethod(f, (Any, Any, NamedTuple))
-                if f === identity
-                    continue
-                else
-                    push!(new_layers, WrappedFunction(f))
-                end
+            if !hasmethod(f, (Any, Any, NamedTuple))
+                f === identity && continue
+                push!(new_layers, WrappedFunction(f))
             else
                 push!(new_layers, f)
             end
@@ -568,14 +555,9 @@ struct Maxout{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 end
 
-function Maxout(layers...)
-    names = ntuple(i -> Symbol("layer_$i"), length(layers))
-    return Maxout(NamedTuple{names}(layers))
-end
-
+Maxout(layers...) = Maxout(__named_tuple_layers(layers...))
 Maxout(; kwargs...) = Maxout((; kwargs...))
-
-Maxout(f::Function, n_alts::Int) = Maxout(ntuple(_ -> f(), n_alts)...)
+Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
 
 # NOTE(@avik-pal): Calling `applyparallel` with broadcasted `max` is slower than this
 #                  implementation.
@@ -656,7 +638,7 @@ struct RepeatedLayer{N, IJ, M <: AbstractExplicitLayer} <:
     model::M
 end
 
-function LuxCore.display_name(model::RepeatedLayer{N, IJ}) where {N, IJ}
+function LuxCore.display_name(::RepeatedLayer{N, IJ}) where {N, IJ}
     return "RepeatedLayer{repeats = $N, input_injection = $IJ}"
 end
 
