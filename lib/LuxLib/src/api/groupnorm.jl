@@ -21,35 +21,11 @@ statistics.
 
 The normalized array is returned.
 
-## Performance Considerations
-
-The most common case of this Op -- `x` is a 4D array -- is optimized using
-KernelAbstractions and has a fast custom backwards pass implemented. All other cases have a
-fallback implementation which is not especially optimized.
-
-We have tested the code path for `Float16` and it works, but gradient accumulation is
-extremely fragile. Hence, for `Float16` inputs, it uses the fallback implementation.
-
-If the batch size is small (< 16), then the fallback implementation will be faster than the
-KA version. However, this customization is not possible using the direct `groupnorm`
-interface.
-
 ## References
 
 [1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
     on computer vision (ECCV). 2018.
 """
-function groupnorm(x::AbstractArray{<:Union{Float32, Float64}, 4},
-        scale::AbstractVector{<:Union{Float32, Float64}},
-        bias::AbstractVector{<:Union{Float32, Float64}},
-        groups::Int, σ::F=identity, epsilon::Real=1.0f-5) where {F}
-    _test_valid_groupnorm_arguments(x, scale, bias, groups)
-    # FIXME: We need to fuse the activation function into the kernel for optimal performance
-    return fast_activation!!(
-        σ, __groupnorm_kernel_abstractions(x, groups, scale, bias, epsilon))
-end
-
-# Slow Fallback (without custom Pullback Implementation)
 function groupnorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
         bias::Union{Nothing, <:AbstractVector}, groups::Int,
         σ::F=identity, epsilon::Real=1.0f-5) where {F, N}
@@ -69,7 +45,6 @@ end
 
 function _test_valid_groupnorm_arguments(
         x::AbstractArray{T, N}, scale, bias, groups) where {T, N}
-    _assert_same_backend(x, scale, bias)
     if scale !== nothing && bias !== nothing && length(scale) != length(bias) != size(x, 3)
         throw(ArgumentError("Length of `scale` and `bias` must be equal to the number of \
                              channels (N - 1 dim of the input array)."))

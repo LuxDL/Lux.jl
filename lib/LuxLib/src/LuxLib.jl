@@ -9,25 +9,22 @@ using PrecompileTools: @recompile_invalidations
     using FastBroadcast: @..
     using FastClosures: @closure
     using GPUArraysCore: GPUArraysCore, AnyGPUArray
-    using KernelAbstractions: KernelAbstractions, @Const, @index, @kernel
     using LinearAlgebra: LinearAlgebra, BLAS, mul!
     using LuxCore: LuxCore
     using Markdown: @doc_str
     using NNlib: NNlib
     using Random: Random, AbstractRNG, rand!
     using Reexport: @reexport
-    using Statistics: Statistics, mean, std, var
+    using Statistics: Statistics, mean, var
 end
 
 @reexport using NNlib
 
 const CRC = ChainRulesCore
-const KA = KernelAbstractions
 
 include("utils.jl")
 
 # Low-Level Implementations
-include("impl/groupnorm.jl")
 include("impl/normalization.jl")
 include("impl/fused_dense.jl")
 include("impl/fused_conv.jl")
