@@ -33,13 +33,13 @@ function Lux.Experimental.TrainState(
         transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
     ps, st = Lux.setup(rng, model) .|> transform_variables
     st_opt = Optimisers.setup(optimizer, ps)
-    return Lux.Experimental.TrainState(model, ps, st, st_opt, 0)
+    return Lux.Experimental.TrainState(nothing, nothing, model, ps, st, st_opt, 0)
 end
 
 function Lux.Experimental.apply_gradients(ts::Lux.Experimental.TrainState, grads)
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
-    return Lux.Experimental.TrainState(
-        ts.model, ps, ts.states, optimizer_state, ts.step + 1)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
+        ps, ts.states, optimizer_state, ts.step + 1)
 end
 
 # DistributedUtils

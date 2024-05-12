@@ -23,7 +23,7 @@
 end
 
 @testitem "AbstractADTypes" setup=[SharedTestSetup] tags=[:contrib] begin
-    using ADTypes, Optimisers
+    using ADTypes, Optimisers, Enzyme
 
     function _loss_function(model, ps, st, data)
         y, st = model(data, ps, st)

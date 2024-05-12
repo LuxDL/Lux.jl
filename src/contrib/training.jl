@@ -8,8 +8,15 @@ Training State containing:
   - `states`: Non-trainable Variables of the `model`.
   - `optimizer_state`: Optimizer State.
   - `step`: Number of updates of the parameters made.
+
+Internal fields:
+
+  - `cache`: Cached values. Implementations are free to use this for whatever they want.
+  - `objective_function`: Objective function might be cached.
 """
-@concrete struct TrainState
+@concrete struct TrainState{C, F}
+    cache::C
+    objective_function::F
     model
     parameters
     states
