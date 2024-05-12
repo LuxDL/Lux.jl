@@ -58,7 +58,7 @@ end
         (Chain(StatefulRecurrentCell(GRUCell(3 => 5)), StatefulRecurrentCell(GRUCell(5 => 3))), rand(Float32, 3, 10)),
 
     ]
-    # ! format: on
+    #! format: on
 
     rng = get_stable_rng(12345)
 
