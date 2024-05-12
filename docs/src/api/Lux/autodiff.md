@@ -17,7 +17,7 @@ CurrentModule = Lux
 | [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | ✔️     | ✔️     | ✔️                   | Tier I        |
 | [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | ✔️     | ❌     | ❌                   | Tier II       |
 | [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | ✔️     | ✔️     | ❌                   | Tier II       |
-| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | ❓[^q] | ❓[^q] | ❓[^q]               | Tier III      |
+| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | ✔️     | ❓[^q] | ❓[^q]               | Tier II       |
 | [`Tapir.jl`](https://github.com/withbayes/Tapir.jl)                | ❓[^q] | ❓[^q] | ❌                   | Tier IV       |
 | [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | ❓[^q] | ❓[^q] | ❓[^q]               | Tier IV       |
 
