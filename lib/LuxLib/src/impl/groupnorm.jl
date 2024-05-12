@@ -44,7 +44,7 @@ end
 end
 
 # High-Level Function (Not User Facing)
-@inbounds function _groupnorm(
+@inbounds function _groupnorm_kernel_abstractions_impl(
         X::AbstractArray{TX, 4}, G::Int, γ::AbstractVector, β::AbstractVector, ϵ) where {TX}
     W, H, C, N = size(X)
     K = div(C, G)
@@ -72,7 +72,7 @@ end
     return Y, μ, σ⁻¹
 end
 
-@inbounds function _∇groupnorm(
+@inbounds function _∇groupnorm_kernel_abstractions_impl(
         dY::AbstractArray{T1, 4}, Y::AbstractArray{T2, 4}, X::AbstractArray{T3, 4},
         G::Int, γ::AbstractVector, β::AbstractVector, μ::AbstractArray{T4, 5},
         σ⁻¹::AbstractArray{T5, 5}) where {T1, T2, T3, T4, T5}
@@ -110,4 +110,20 @@ end
     KA.synchronize(backend)
 
     return dX, dγ, dβ
+end
+
+# Separate this out for a cleaner rrule later on
+@inline function __groupnorm_kernel_abstractions(x, groups, scale, bias, epsilon)
+    return first(_groupnorm_kernel_abstractions_impl(x, groups, scale, bias, epsilon))
+end
+
+function CRC.rrule(
+        ::typeof(__groupnorm_kernel_abstractions), x, groups, scale, bias, epsilon)
+    y, μ, σ⁻¹ = _groupnorm_kernel_abstractions_impl(x, groups, scale, bias, epsilon)
+    ∇groupnorm = @closure Δ -> begin
+        ∂x, ∂scale, ∂bias = _∇groupnorm_kernel_abstractions_impl(
+            Δ, y, x, groups, scale, bias, μ, σ⁻¹)
+        return NoTangent(), ∂x, NoTangent(), ∂scale, ∂bias, NoTangent()
+    end
+    return y, ∇groupnorm
 end

@@ -5,6 +5,7 @@ using PrecompileTools: @recompile_invalidations
 @recompile_invalidations begin
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore, NoTangent
+    using EnzymeCore: EnzymeCore, EnzymeRules
     using FastBroadcast: @..
     using FastClosures: @closure
     using GPUArraysCore: GPUArraysCore, AnyGPUArray

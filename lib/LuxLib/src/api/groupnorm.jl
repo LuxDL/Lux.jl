@@ -45,12 +45,8 @@ function groupnorm(x::AbstractArray{<:Union{Float32, Float64}, 4},
         groups::Int, σ::F=identity, epsilon::Real=1.0f-5) where {F}
     _test_valid_groupnorm_arguments(x, scale, bias, groups)
     # FIXME: We need to fuse the activation function into the kernel for optimal performance
-    return fast_activation!!(σ, __fast_groupnorm(x, groups, scale, bias, epsilon))
-end
-
-# Separate this out for a cleaner rrule later on
-@inline function __fast_groupnorm(x, groups, scale, bias, epsilon)
-    return first(_groupnorm(x, groups, scale, bias, epsilon))
+    return fast_activation!!(
+        σ, __groupnorm_kernel_abstractions(x, groups, scale, bias, epsilon))
 end
 
 # Slow Fallback (without custom Pullback Implementation)
@@ -71,16 +67,6 @@ end
     return :($(Val(Tuple(collect(1:(N - 1))))))
 end
 
-# Custom Pullbacks
-function CRC.rrule(::typeof(__fast_groupnorm), x, groups, scale, bias, epsilon)
-    y, μ, σ⁻¹ = _groupnorm(x, groups, scale, bias, epsilon)
-    ∇groupnorm = @closure Δ -> begin
-        ∂x, ∂scale, ∂bias = _∇groupnorm(Δ, y, x, groups, scale, bias, μ, σ⁻¹)
-        return NoTangent(), ∂x, NoTangent(), ∂scale, ∂bias, NoTangent()
-    end
-    return y, ∇groupnorm
-end
-
 function _test_valid_groupnorm_arguments(
         x::AbstractArray{T, N}, scale, bias, groups) where {T, N}
     _assert_same_backend(x, scale, bias)
@@ -95,3 +81,4 @@ function _test_valid_groupnorm_arguments(
 end
 
 CRC.@non_differentiable _test_valid_groupnorm_arguments(::Any...)
+EnzymeRules.inactive(::typeof(_test_valid_groupnorm_arguments), ::Any...) = nothing

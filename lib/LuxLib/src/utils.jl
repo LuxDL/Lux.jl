@@ -20,6 +20,7 @@ function __check_all_same_or_nothing(x::Union{AbstractVector, Tuple})
 end
 
 CRC.@non_differentiable _get_backend(::Any)
+EnzymeRules.inactive(::typeof(_get_backend), ::Any...) = nothing
 
 @inline _assert_same_backend(args...) = _assert_same_backend([args...])
 @inline function _assert_same_backend(xs)
@@ -33,6 +34,7 @@ CRC.@non_differentiable _get_backend(::Any)
 end
 
 CRC.@non_differentiable _assert_same_backend(::Any...)
+EnzymeRules.inactive(::typeof(_assert_same_backend), ::Any...) = nothing
 
 @inline @generated _vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
 
@@ -47,6 +49,7 @@ CRC.@non_differentiable _assert_same_backend(::Any...)
 end
 
 CRC.@non_differentiable _get_reshape_dims(::Any...)
+EnzymeRules.inactive(::typeof(_get_reshape_dims), ::Any...) = nothing
 
 @inline _reshape_into_proper_shape(::Nothing, y) = nothing
 @inline _reshape_into_proper_shape(x, y) = reshape(x, _get_reshape_dims(size(y), length(x)))
@@ -56,6 +59,7 @@ _copy_autodiff_barrier(x) = copy(x)
 _copy_autodiff_barrier(::Nothing) = nothing
 
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
+EnzymeRules.inactive(::typeof(_copy_autodiff_barrier), ::Any...) = nothing
 
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
@@ -91,11 +95,13 @@ struct NotaNumber <: Real end
 @inline __is_immutable_array_val(x) = Val(__is_immutable_array(x))
 
 CRC.@non_differentiable __is_immutable_array_val(::Any...)
+EnzymeRules.inactive(::typeof(__is_immutable_array_val), ::Any...) = nothing
 
 @inline __has_dual(x) = false
 @inline __is_immutable_array_or_dual_val(x) = Val(__is_immutable_array(x) || __has_dual(x))
 
 CRC.@non_differentiable __is_immutable_array_or_dual_val(::Any...)
+EnzymeRules.inactive(::typeof(__is_immutable_array_or_dual_val), ::Any...) = nothing
 
 @inline function __expand_conv_bias_dims(
         bias::AbstractVector, ::AbstractArray{T, N}) where {T, N}
@@ -117,6 +123,7 @@ end
 end
 
 CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
+EnzymeRules.inactive(::typeof(__get_concrete_fba_output_eltype), ::Any...) = nothing
 
 # Helper to add bias and apply activation function
 ## This is only meant to be used inside rrules
@@ -209,6 +216,7 @@ end
 end
 
 CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
+EnzymeRules.inactive(::typeof(__maybe_reduce_BLAS_threads), ::AbstractArray) = nothing
 
 @inline function __reset_BLAS_threads(old_threads::Int)
     old_threads ≥ 1 && BLAS.set_num_threads(old_threads)
@@ -216,6 +224,7 @@ CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
 end
 
 CRC.@non_differentiable __reset_BLAS_threads(::Int)
+EnzymeRules.inactive(::typeof(__reset_BLAS_threads), ::Int) = nothing
 
 # Defined in ext/LuxLibCUDAExt.jl
 function _cublaslt_matmul_fused! end
