@@ -56,4 +56,3 @@ function _test_valid_groupnorm_arguments(
 end
 
 CRC.@non_differentiable _test_valid_groupnorm_arguments(::Any...)
-EnzymeRules.inactive(::typeof(_test_valid_groupnorm_arguments), ::Any...) = nothing
