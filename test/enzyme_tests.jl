@@ -56,7 +56,6 @@ end
         (Chain(StatefulRecurrentCell(LSTMCell(3 => 5)), StatefulRecurrentCell(LSTMCell(5 => 3))), rand(Float32, 3, 2)),
         (StatefulRecurrentCell(GRUCell(3 => 5)), rand(Float32, 3, 10)),
         (Chain(StatefulRecurrentCell(GRUCell(3 => 5)), StatefulRecurrentCell(GRUCell(5 => 3))), rand(Float32, 3, 10)),
-
     ]
     #! format: on
 
