@@ -46,6 +46,7 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 | `AutoZygote`       | `Zygote.jl`      |
 | `AutoReverseDiff`  | `ReverseDiff.jl` |
 | `AutoTracker`      | `Tracker.jl`     |
+| `AutoEnzyme`       | `Enzyme.jl`      |
 
 ## Arguments
 
@@ -74,9 +75,11 @@ function __maybe_implemented_compute_gradients(::T) where {T <: ADTypes.Abstract
     throw(ArgumentError(lazy"Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
 end
 
-for package in (:Zygote, :Tracker, :ReverseDiff)
+for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     adtype = Symbol(:Auto, package)
+    msg = "Load `$(package)` with `using $(package)`/`import $(package)` before using this \
+           function!"
     @eval function __maybe_implemented_compute_gradients(::ADTypes.$(adtype))
-        throw(ArgumentError(lazy"Load `$(package)` with `using $(package)`/`import $(package)` before using this function!"))
+        throw(ArgumentError($msg))
     end
 end
