@@ -89,7 +89,9 @@ A 4-Tuple containing:
 
 ## Special Notes on Backends
 
-  - `AutoEnzyme`: `mode` is always ignored and Enzyme ReverseMode is used.
+  - `AutoEnzyme`: `mode` is always ignored and Enzyme ReverseMode is used. The first call
+    to `compute_gradients` will be type-unstable. It is recommended to call this function
+    once outside of the training loop and use the returned train_state for type stability.
   - `AutoReverseDiff`: `compile` is always ignored and the gradient tape is never compiled.
 
 !!! danger
@@ -114,4 +116,31 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     @eval function __maybe_implemented_compute_gradients(::ADTypes.$(adtype))
         throw(ArgumentError($msg))
     end
+end
+
+@inline function __get_st_stat_refs(objective_function::F, model, ps, st, data) where {F}
+    ref_types = Core.Compiler._return_type(
+        objective_function, Base.typesof(model, ps, st, data))
+    ref_types <: Tuple &&
+        return Ref{ref_types.parameters[2]}(), Ref{ref_types.parameters[3]}()
+    return Ref{Any}(), Ref{Any}()
+end
+
+@inline function __wrap_objective_function(
+        objective_function::F, model, ps, st, data) where {F}
+    st_ref, stats_ref = __get_st_stat_refs(objective_function, model, ps, st, data)
+
+    wrapped_objective_function = let objective_function = objective_function,
+        st_ref = st_ref,
+        stats_ref = stats_ref
+
+        (model, ps, st, data) -> begin
+            y, st, stats = objective_function(model, ps, st, data)
+            st_ref[] = st
+            stats_ref[] = stats
+            return y
+        end
+    end
+
+    return wrapped_objective_function, st_ref, stats_ref
 end
