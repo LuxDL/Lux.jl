@@ -4,7 +4,6 @@ using ADTypes: AutoEnzyme
 using ConcreteStructs: @concrete
 using Enzyme: Enzyme, Active, Const, Duplicated
 using Lux: Lux
-using Setfield: @set!
 
 @concrete struct CachedEnzymeExtras
     dparameters
@@ -16,8 +15,7 @@ end
 # Case I: We have CachedEnzymeExtras and objective_function is unchanged.
 function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F, data,
         ts::Lux.Experimental.TrainState{<:CachedEnzymeExtras, F}) where {F}
-    dps = ts.cache.dparameters
-    Lux.__recursive_make_zero!(dps)
+    dps = Lux.__recursive_make_zero!!(ts.cache.dparameters)
 
     _, loss = Enzyme.autodiff(
         Enzyme.ReverseWithPrimal, ts.cache.objective_function, Active, Const(ts.model),
@@ -33,8 +31,7 @@ end
 # Case II: We have CachedEnzymeExtras and objective_function is changed.
 function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F, data,
         ts::Lux.Experimental.TrainState{<:CachedEnzymeExtras}) where {F}
-    dps = ts.cache.dparameters
-    Lux.__recursive_make_zero!(dps)
+    dps = Lux.__recursive_make_zero!!(ts.cache.dparameters)
 
     obj_fn, st_wrap, stats_wrap = Lux.Experimental.__wrap_objective_function(
         objective_function, ts.states)
@@ -49,20 +46,13 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F,
 end
 
 # Case III: Nothing is cached. First call to `compute_gradients`
-function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F, data,
+function Lux.Experimental.compute_gradients(ad::AutoEnzyme, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}
     dps = Lux.__recursive_make_zero(ts.parameters)
-
-    obj_fn, st_wrap, stats_wrap = Lux.Experimental.__wrap_objective_function(
-        objective_function, ts.states)
-
-    _, loss = Enzyme.autodiff(Enzyme.ReverseWithPrimal, obj_fn, Active, Const(ts.model),
-        Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
-
-    ts_new = __construct_new_trainstate(
-        st_wrap, ts.states, ts, objective_function, dps, obj_fn, st_wrap, stats_wrap)
-
-    return dps, loss, stats_wrap, ts_new
+    cache = CachedEnzymeExtras(dps, nothing, nothing, nothing)
+    ts_new = Lux.Experimental.TrainState(
+        cache, nothing, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    return Lux.Experimental.compute_gradients(ad, objective_function, data, ts_new)
 end
 
 # If `st_new` is of a new type, we will have to recompute the cache anyway. Force it by not
