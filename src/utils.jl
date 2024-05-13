@@ -287,3 +287,20 @@ end
 
 @inline __size(x::AbstractArray) = size(x)
 @inline __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? size(x) : nothing
+
+@inline __recursive_make_zero(x::AbstractArray{<:Number}) = zero(x)
+@inline __recursive_make_zero(x::AbstractArray) = map(__recursive_make_zero, x)
+@inline __recursive_make_zero(x::Tuple) = map(__recursive_make_zero, x)
+@inline __recursive_make_zero(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
+    __recursive_make_zero, values(x)))
+@inline __recursive_make_zero(::Nothing) = nothing
+@inline __recursive_make_zero(v::Val) = v
+@inline __recursive_make_zero(x) = fmap(__recursive_make_zero, x)
+
+@inline __recursive_make_zero!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
+@inline __recursive_make_zero!(x::AbstractArray) = map(__recursive_make_zero!, x)
+@inline __recursive_make_zero!(x::Tuple) = map(__recursive_make_zero!, x)
+@inline __recursive_make_zero!(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
+    __recursive_make_zero!, values(x)))
+@inline __recursive_make_zero!(::Nothing) = nothing
+@inline __recursive_make_zero!(x) = fmap(__recursive_make_zero!, x)

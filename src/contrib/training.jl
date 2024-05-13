@@ -25,7 +25,7 @@ Internal fields:
 end
 
 """
-    apply_gradients(ts::TrainState, grads)
+    apply_gradients(ts::TrainState, grads, update_inplace::Bool=false)
 
 Update the parameters stored in `ts` using the gradients `grads`.
 
@@ -33,6 +33,7 @@ Update the parameters stored in `ts` using the gradients `grads`.
 
   - `ts`: [`TrainState`](@ref) object.
   - `grads`: Gradients of the loss function wrt `ts.params`.
+  - `update_inplace`: Whether to update the parameters inplace or not.
 
 ## Returns
 
@@ -73,6 +74,17 @@ A 4-Tuple containing:
   - `loss`: Loss from the objective function.
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
+
+## Special Notes on Backends
+
+  - `AutoEnzyme`: `mode` is always ignored.
+
+!!! danger
+
+    `grads` returned by this function might be aliased by the implementation of the gradient
+    backend. For example, if you cache the `grads` from step `i`, the new gradients
+    returned in step `i + 1` might be aliased by the old gradients. If you want to prevent
+    this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
 function compute_gradients(ad::ADTypes.AbstractADType, ::F, _, ::TrainState) where {F}
     return __maybe_implemented_compute_gradients(ad)
