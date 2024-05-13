@@ -7,7 +7,8 @@ function add_dense_benchmarks!()
             "Dense($n => $n)", "($n, 128)", layer, (n, 128); simple_chains, flux_model)
         benchmark_reverse_pass(
             "Dense($n => $n)", "($n, 128)",
-            (AutoTracker(), AutoReverseDiff(), AutoReverseDiff(true), AutoZygote(), AutoEnzyme()),
+            (AutoTracker(), AutoReverseDiff(),
+                AutoReverseDiff(true), AutoZygote(), AutoEnzyme()),
             layer, (n, 128); simple_chains, flux_model)
     end
 
@@ -24,7 +25,8 @@ function add_conv_benchmarks!()
         benchmark_forward_pass("Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)",
             layer, (64, 64, ch, 128); simple_chains, flux_model)
         benchmark_reverse_pass("Conv((3, 3), $ch => $ch)", "(64, 64, $ch, 128)",
-            (AutoTracker(), AutoReverseDiff(), AutoReverseDiff(true), AutoZygote(), AutoEnzyme()),
+            (AutoTracker(), AutoReverseDiff(),
+                AutoReverseDiff(true), AutoZygote(), AutoEnzyme()),
             layer, (64, 64, ch, 128); simple_chains, flux_model)
     end
 end

@@ -61,13 +61,16 @@ sumabsapply(model, x, p, st) = sum(abs2, first(Lux.apply(model, x, p, st)))
 
 function __benchmark_reverse_pass(
         tag::String, end_tag::String, ::AutoEnzyme, model, x_dims)
-    SUITE[tag]["cpu"]["reverse"]["Enzyme"][end_tag] = @benchmarkable Enzyme.autodiff(Enzyme.Reverse,
-            $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel), Enzyme.Const(x), Enzyme.Const(ps), Enzyme.Const(st)) setup=begin
+    SUITE[tag]["cpu"]["reverse"]["Enzyme"][end_tag] = @benchmarkable Enzyme.autodiff(
+        Enzyme.Reverse,
+        $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel),
+        Enzyme.Const(x), Enzyme.Const(ps), Enzyme.Const(st)) setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
         dmodel = Enzyme.make_zero($model)
         # Force jit compilation in initial run
         Enzyme.autodiff(Enzyme.Reverse,
-            $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel), Enzyme.Const(x), Enzyme.Const(ps), Enzyme.Const(st)) 
+            $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel),
+            Enzyme.Const(x), Enzyme.Const(ps), Enzyme.Const(st))
     end
     return
 end
