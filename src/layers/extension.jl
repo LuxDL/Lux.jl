@@ -199,6 +199,12 @@ regular `Array` or not. Default is `false`.
 !!! note
 
     If using `Tracker.jl`, the output will always be a regular `Array`.
+
+!!! danger
+
+    `Tracker.jl` sometimes produces incorrect gradients for `SimpleChains.jl` models. As
+    such please test your model with FiniteDifferences or Zygote before using `Tracker.jl`
+    for your model.
 """
 struct SimpleChainsLayer{ToArray, L} <: AbstractExplicitLayer
     layer::L
