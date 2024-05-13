@@ -72,7 +72,7 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(Dense(4, 32, tanh), BatchNorm(32),
-            Dense(32, 32, tanh), BatchNorm(32), Dense(32, 1))
+            Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4))
         dataset_ = [dev((x, y)) for (x, y) in dataset]
         opt = Adam(0.001f0)
 

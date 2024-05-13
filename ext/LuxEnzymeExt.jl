@@ -24,10 +24,10 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F,
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     ts_new = __construct_new_trainstate(
-        ts.cache.st_wrap[], ts.states, ts, objective_function, dps,
+        ts.cache.st_wrap, ts.states, ts, objective_function, dps,
         ts.cache.objective_function, ts.cache.st_wrap, ts.cache.stats_wrap)
 
-    return dps, loss, ts.cache.stats_wrap[], ts_new
+    return dps, loss, ts.cache.stats_wrap, ts_new
 end
 
 # Case II: We have CachedEnzymeExtras and objective_function is changed.
@@ -37,15 +37,15 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F,
     Lux.__recursive_make_zero!(dps)
 
     obj_fn, st_wrap, stats_wrap = Lux.Experimental.__wrap_objective_function(
-        objective_function, ts.model, ts.parameters, ts.states, data)
+        objective_function, ts.states)
 
     _, loss = Enzyme.autodiff(Enzyme.ReverseWithPrimal, obj_fn, Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     ts_new = __construct_new_trainstate(
-        st_wrap[], ts.states, ts, objective_function, dps, obj_fn, st_wrap, stats_wrap)
+        st_wrap, ts.states, ts, objective_function, dps, obj_fn, st_wrap, stats_wrap)
 
-    return dps, loss, stats_wrap[], ts_new
+    return dps, loss, stats_wrap, ts_new
 end
 
 # Case III: Nothing is cached. First call to `compute_gradients`
@@ -54,15 +54,15 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F,
     dps = Lux.__recursive_make_zero(ts.parameters)
 
     obj_fn, st_wrap, stats_wrap = Lux.Experimental.__wrap_objective_function(
-        objective_function, ts.model, ts.parameters, ts.states, data)
+        objective_function, ts.states)
 
     _, loss = Enzyme.autodiff(Enzyme.ReverseWithPrimal, obj_fn, Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     ts_new = __construct_new_trainstate(
-        st_wrap[], ts.states, ts, objective_function, dps, obj_fn, st_wrap, stats_wrap)
+        st_wrap, ts.states, ts, objective_function, dps, obj_fn, st_wrap, stats_wrap)
 
-    return dps, loss, stats_wrap[], ts_new
+    return dps, loss, stats_wrap, ts_new
 end
 
 # If `st_new` is of a new type, we will have to recompute the cache anyway. Force it by not

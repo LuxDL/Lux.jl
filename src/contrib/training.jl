@@ -118,29 +118,14 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     end
 end
 
-@inline function __get_st_stat_refs(objective_function::F, model, ps, st, data) where {F}
-    ref_types = Core.Compiler._return_type(
-        objective_function, Base.typesof(model, ps, st, data))
-    ref_types <: Tuple &&
-        return Ref{ref_types.parameters[2]}(), Ref{ref_types.parameters[3]}()
-    return Ref{Any}(), Ref{Any}()
-end
+@inline function __wrap_objective_function(objective_function::F, st) where {F}
+    st_updated, stats = st, (;)
 
-@inline function __wrap_objective_function(
-        objective_function::F, model, ps, st, data) where {F}
-    st_ref, stats_ref = __get_st_stat_refs(objective_function, model, ps, st, data)
-
-    wrapped_objective_function = let objective_function = objective_function,
-        st_ref = st_ref,
-        stats_ref = stats_ref
-
-        (model, ps, st, data) -> begin
-            y, st, stats = objective_function(model, ps, st, data)
-            st_ref[] = st
-            stats_ref[] = stats
-            return y
-        end
+    # Boxing here is intentional
+    wrapped_objective_function = (model, ps, st, data) -> begin
+        y, st_updated, stats = objective_function(model, ps, st, data)
+        return y
     end
 
-    return wrapped_objective_function, st_ref, stats_ref
+    return wrapped_objective_function, st_updated, stats
 end
