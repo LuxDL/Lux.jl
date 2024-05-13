@@ -72,11 +72,6 @@ function __benchmark_reverse_pass(
     return
 end
 function __benchmark_reverse_pass(
-        tag::String, end_tag::String, ::AutoReactant, model, x_dims)
-    throw(AssertionError("unsupported"))
-    return
-end
-function __benchmark_reverse_pass(
         tag::String, end_tag::String, ::AutoTapir, model, x_dims)
     SUITE[tag]["cpu"]["reverse"]["Tapir"][end_tag] = @benchmarkable Tapir.value_and_pullback!!(
         trrule, 1.0f0, f, ps_ca) setup=begin
