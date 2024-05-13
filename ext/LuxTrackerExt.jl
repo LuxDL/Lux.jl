@@ -66,9 +66,12 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
 end
 
 Tracker.@grad function Lux.__apply_simple_chain(layer, x, ps, ::LuxCPUDevice)
+    @warn "`Tracker.jl` often produces incorrect gradients for `SimpleChains.jl` models. \
+           As such please test your model with FiniteDifferences or Zygote before using \
+           `Tracker.jl` for your model." maxlog=1
     y, pb_f = CRC.rrule(layer, Tracker.data(x), Tracker.data(ps))
     __∇apply_simple_chain = @closure Δ -> begin
-        _, ∂x, ∂ps = pb_f(convert(Array, Δ))
+        _, ∂x, ∂ps = pb_f(convert(Array, Tracker.data(Δ)))
         return Tracker.nobacksies(:__apply_simple_chain, (nothing, ∂x, ∂ps, nothing))
     end
     # Tracker is not great at handling arbitrary types, so we convert to Array
