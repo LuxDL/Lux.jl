@@ -37,7 +37,7 @@ function Base.show(io::IO, ts::TrainState)
 end
 
 """
-    apply_gradients(ts::TrainState, grads, update_inplace::Bool=false)
+    apply_gradients(ts::TrainState, grads)
 
 Update the parameters stored in `ts` using the gradients `grads`.
 
@@ -52,6 +52,23 @@ Update the parameters stored in `ts` using the gradients `grads`.
 Updated [`TrainState`](@ref) object.
 """
 function apply_gradients end
+
+"""
+    apply_gradients!(ts::TrainState, grads)
+
+Update the parameters stored in `ts` using the gradients `grads`. This is an inplace version
+of [`apply_gradients`](@ref).
+
+## Arguments
+
+  - `ts`: [`TrainState`](@ref) object.
+  - `grads`: Gradients of the loss function wrt `ts.params`.
+
+## Returns
+
+Updated [`TrainState`](@ref) object.
+"""
+function apply_gradients! end
 
 """
     compute_gradients(ad::ADTypes.AbstractADType, objective_function::Function, data,

@@ -36,18 +36,17 @@ function Lux.Experimental.TrainState(
     return Lux.Experimental.TrainState(nothing, nothing, model, ps, st, st_opt, 0)
 end
 
-function Lux.Experimental.apply_gradients(
-        ts::Lux.Experimental.TrainState, grads, update_inplace=false)
-    if update_inplace
-        optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
-        return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
-            ps, ts.states, optimizer_state, ts.step + 1)
-    else
-        Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
-        return Lux.Experimental.TrainState(
-            ts.cache, ts.objective_function, ts.model, ts.parameters,
-            ts.states, ts.optimizer_state, ts.step + 1)
-    end
+function Lux.Experimental.apply_gradients(ts::Lux.Experimental.TrainState, grads)
+    optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
+        ps, ts.states, optimizer_state, ts.step + 1)
+end
+
+function Lux.Experimental.apply_gradients!(ts::Lux.Experimental.TrainState, grads)
+    Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
+    return Lux.Experimental.TrainState(
+        ts.cache, ts.objective_function, ts.model, ts.parameters,
+        ts.states, ts.optimizer_state, ts.step + 1)
 end
 
 # DistributedUtils
