@@ -157,7 +157,7 @@ function main(model_type)
 
             gs, loss, _, train_state = Lux.Experimental.compute_gradients(
                 AutoZygote(), compute_loss, (x, y), train_state)
-            train_state = Lux.Experimental.apply_gradients(train_state, gs)
+            train_state = Lux.Experimental.apply_gradients(train_state, gs, true)
 
             @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss
         end

@@ -82,7 +82,7 @@ function train(model; rng=Xoshiro(0), kwargs...)
         for (x, y) in train_dataloader
             (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
                 AutoZygote(), loss, (x, y), train_state)
-            train_state = Lux.Experimental.apply_gradients(train_state, gs)
+            train_state = Lux.Experimental.apply_gradients(train_state, gs, true)
         end
         ttime = time() - stime
 

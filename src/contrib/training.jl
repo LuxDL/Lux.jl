@@ -24,6 +24,18 @@ Internal fields:
     step::Int
 end
 
+function Base.show(io::IO, ts::TrainState)
+    println(io, "TrainState")
+    println(io, "    model: ", ts.model)
+    println(io, "    parameters: ", Lux.parameterlength(ts.parameters))
+    println(io, "    states: ", Lux.statelength(ts.states))
+    println(io, "    optimizer_state: ", ts.optimizer_state)
+    print(io, "    step: ", ts.step)
+    ts.cache !== nothing && print(io, "\n    cache: ", nameof(typeof(ts.cache)))
+    ts.objective_function !== nothing &&
+        print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
+end
+
 """
     apply_gradients(ts::TrainState, grads, update_inplace::Bool=false)
 
@@ -77,7 +89,8 @@ A 4-Tuple containing:
 
 ## Special Notes on Backends
 
-  - `AutoEnzyme`: `mode` is always ignored.
+  - `AutoEnzyme`: `mode` is always ignored and Enzyme ReverseMode is used.
+  - `AutoReverseDiff`: `compile` is always ignored and the gradient tape is never compiled.
 
 !!! danger
 

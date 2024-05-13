@@ -51,7 +51,6 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F,
         Enzyme.ReverseSplitWithPrimal, Const{typeof(objective_function)},
         Active, Const{typeof(ts.model)}, Duplicated{typeof(ts.parameters)},
         Const{typeof(ts.states)}, Const{typeof(data)})
-
     loss, st_new, stats = __compute_gradients!(
         forward, reverse, objective_function, ts.model, ts.parameters, dps, ts.states, data)
     ts_new = __construct_new_trainstate(
@@ -70,14 +69,13 @@ function __compute_gradients!(
     return loss, st_new, stats
 end
 
-# If `st_new` is of a new type, we will have to recompute the cache anyway. Force it
-# my not storing the objective function.
+# If `st_new` is of a new type, we will have to recompute the cache anyway. Force it by not
+# storing the objective function.
 function __construct_new_trainstate(
         st_new::S, ::S, forward::F, reverse::R, ts::Lux.Experimental.TrainState,
         objective_fn::O, dps) where {S, F, R, O}
     cache = CachedEnzymeExtras(dps, forward, reverse)
-    return Lux.Experimental.TrainState(
-        cache, ts.objective_function, ts.model, ts.parameters,
+    return Lux.Experimental.TrainState(cache, objective_fn, ts.model, ts.parameters,
         st_new, ts.optimizer_state, ts.step + 1)
 end
 

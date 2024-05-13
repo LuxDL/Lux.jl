@@ -79,7 +79,7 @@ function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
         if epoch % 50 == 1 || epoch == epochs
             @printf "Epoch: %3d \t Loss: %.5g\n" epoch loss
         end
-        tstate = Lux.Training.apply_gradients(tstate, grads)
+        tstate = Lux.Training.apply_gradients(tstate, grads, true)
     end
     return tstate
 end
