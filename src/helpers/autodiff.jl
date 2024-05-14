@@ -92,6 +92,7 @@ the following properties for `y = f(x)`:
 | Supported Backends | Packages Needed  |
 |:------------------ |:---------------- |
 | `AutoForwardDiff`  | `ForwardDiff.jl` |
+| `AutoZygote`       | `Zygote.jl`      |
 
 ## Arguments
 
@@ -113,10 +114,16 @@ the following properties for `y = f(x)`:
 """
 function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray) where {F}
     ndims(x) ≤ 1 && error("`batched_jacobian` only supports batched inputs (ndims(x) > 1).")
-    @assert backend isa AutoForwardDiff "Only `AutoForwardDiff` is currently supported for \
-                                        `batched_jacobian`."
-    if !_is_extension_loaded(Val(:ForwardDiff))
+    if !(backend isa AutoForwardDiff) && !(backend isa AutoZygote)
+        throw(AssertionError("Only `AutoForwardDiff` and `AutoZygote` are currently \
+                              supported for `batched_jacobian`."))
+    end
+    if (backend isa AutoForwardDiff) && !_is_extension_loaded(Val(:ForwardDiff))
         error("`ForwardDiff.jl` must be loaded for `batched_jacobian` to work with \
+               `$(backend)`.")
+    end
+    if (backend isa AutoZygote) && !_is_extension_loaded(Val(:Zygote))
+        error("`Zygote.jl` must be loaded for `batched_jacobian` to work with \
                `$(backend)`.")
     end
     return __batched_jacobian(f, backend, x)

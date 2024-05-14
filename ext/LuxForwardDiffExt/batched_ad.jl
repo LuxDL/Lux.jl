@@ -49,7 +49,6 @@ function Lux.__batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) wher
         __f, reshape(x, :, size(x, ndims(x))), typeof(tag), chunksize)
 end
 
-# TODO: This can be made more efficient by caching
 @views function __batched_forwarddiff_jacobian(f::F, x::AbstractMatrix{T}, ::Type{Tag},
         ck::ForwardDiff.Chunk{CK}) where {F, T, Tag, CK}
     N, B = size(x)
@@ -68,7 +67,7 @@ end
     J = similar(J_partial, size(J_partial, 1), N, B)
     J[:, 1:CK, :] .= J_partial
 
-    for i in 2:nchunks
+    @tasks for i in 2:nchunks
         __batched_forwarddiff_jacobian_chunk!!(
             J[:, ((i - 1) * CK + 1):(i * CK), :], f, x, Tag,
             ck, dual_type, partials_type, (i - 1) * CK + 1)
