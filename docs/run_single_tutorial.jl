@@ -10,8 +10,6 @@ output_directory = ARGS[2]
 path = ARGS[3]
 
 io = open(pkg_log_path, "w")
-Pkg.Registry.update()
-Pkg.update()
 Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
 Pkg.instantiate(; io)
 close(io)

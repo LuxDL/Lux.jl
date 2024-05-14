@@ -47,6 +47,8 @@ jobs:
             ${{ runner.os }}-test-
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@v1
+        env:
+          JULIA_PKG_SERVER: ""
       - uses: julia-actions/julia-runtest@v1
         env:
           BACKEND_GROUP: "CPU"
