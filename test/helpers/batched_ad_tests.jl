@@ -19,25 +19,27 @@
 
             J1 = ForwardDiff.jacobian(smodel, X)
 
-            J2 = batched_jacobian(smodel, AutoForwardDiff(), X)
-            J2_mat = mapreduce(Base.Fix1(Lux.__maybe_batched_row, J2),
-                hcat, 1:(size(J2, 1) * size(J2, 3)))'
+            @testset "$(backend)" for backend in (AutoZygote(), AutoForwardDiff())
+                J2 = batched_jacobian(smodel, backend, X)
+                J2_mat = mapreduce(Base.Fix1(Lux.__maybe_batched_row, J2),
+                    hcat, 1:(size(J2, 1) * size(J2, 3)))'
 
-            @test J1≈J2_mat atol=1.0e-5 rtol=1.0e-5
+                @test J1≈J2_mat atol=1.0e-5 rtol=1.0e-5
 
-            ps = ps |> cpu_device() |> ComponentArray |> dev
+                ps = ps |> cpu_device() |> ComponentArray |> dev
 
-            smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
 
-            J3 = batched_jacobian(smodel, AutoForwardDiff(), X)
+                J3 = batched_jacobian(smodel, backend, X)
 
-            @test J2≈J3 atol=1.0e-5 rtol=1.0e-5
+                @test J2≈J3 atol=1.0e-5 rtol=1.0e-5
+            end
         end
 
         @testset "Issue #636 Chunksize Specialization" begin
-            for N in (2, 4, 8, 11, 12, 50, 51)
-                model = @compact(; potential=Dense(N => N, gelu)) do x
-                    return batched_jacobian(potential, AutoForwardDiff(), x)
+            for N in (2, 4, 8, 11, 12, 50, 51), backend in (AutoZygote(), AutoForwardDiff())
+                model = @compact(; potential=Dense(N => N, gelu), backend=backend) do x
+                    return batched_jacobian(potential, backend, x)
                 end
 
                 ps, st = Lux.setup(Random.default_rng(), model) |> dev
@@ -64,12 +66,12 @@ end
             Chain(Dense(2, 4, gelu), Dense(4, 2)))
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
-        for (model, X) in zip(models, Xs)
+        for (model, X) in zip(models, Xs), backend in (AutoZygote(), AutoForwardDiff())
             ps, st = Lux.setup(rng, model) |> dev
 
             function loss_function_batched(model, x, ps, st)
                 smodel = StatefulLuxLayer(model, ps, st)
-                J = batched_jacobian(smodel, AutoForwardDiff(), x)
+                J = batched_jacobian(smodel, backend, x)
                 return sum(abs2, J)
             end
 

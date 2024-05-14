@@ -6,6 +6,7 @@ using Lux: Lux, get_device
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: fmap
+using OhMyThreads: @tasks
 
 const CRC = ChainRulesCore
 
