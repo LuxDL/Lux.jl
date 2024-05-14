@@ -1,24 +1,3 @@
-module LuxZygoteExt
-
-using ADTypes: AutoZygote
-using ChainRulesCore: ChainRulesCore
-using Lux: Lux
-using Setfield: @set!
-using Zygote: Zygote
-
-const CRC = ChainRulesCore
-
-Lux._is_extension_loaded(::Val{:Zygote}) = true
-
-function Lux.Experimental.compute_gradients(::AutoZygote, objective_function::F, data,
-        ts::Lux.Experimental.TrainState) where {F}
-    (loss, st, stats), back = Zygote.pullback(
-        objective_function, ts.model, ts.parameters, ts.states, data)
-    grads = back((one(loss), nothing, nothing))[2]
-    @set! ts.states = st
-    return grads, loss, stats, ts
-end
-
 function Lux.__vector_jacobian_product_impl(f::F, ::AutoZygote, x, u) where {F}
     _, pb_f = Zygote.pullback(f, x)
     return only(pb_f(u))
@@ -62,6 +41,4 @@ end
                 cx, ForwardDiff.$fdiff_func, f, x, ForwardDiff.$(cfg_func)(f, x), Val(true))
         end
     end
-end
-
 end
