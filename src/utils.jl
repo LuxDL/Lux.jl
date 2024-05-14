@@ -325,3 +325,5 @@ end
 @inline function __maybe_lazy_permutedims(x::GPUArraysCore.AnyGPUArray, ::Val{D}) where {D}
     return permutedims(x, D)
 end
+
+@inline __broadcast_add(x, y) = x .+ y

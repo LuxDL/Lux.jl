@@ -59,6 +59,44 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     end
 end
 
+function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
+    setup_strings = obj.setup_strings
+    local_name = obj.name
+    layer, input, block = obj.strings
+    if local_name !== nothing && local_name != ""
+        Lux._layer_show(io, obj, indent, name)
+        return
+    end
+    pre, post = ("(", ")")
+    println(io, " "^indent, isnothing(name) ? "" : "$name = ", layer, pre)
+    for (k, v) in pairs(setup_strings)
+        val = _getproperty(obj.layers, Val(k))
+        if val === nothing
+            println(io, " "^(indent + 4), "$k = $v,")
+        else
+            Lux._big_show(io, val, indent + 4, k)
+        end
+    end
+    if indent == 0  # i.e. this is the outermost container
+        print(io, rpad(post, 1))
+    else
+        print(io, " "^indent, post)
+    end
+    input != "" && print(io, " do ", input)
+    if block != ""
+        block_to_print = block[6:end]
+        # Increase indentation of block according to `indent`:
+        block_to_print = replace(block_to_print, r"\n" => "\n" * " "^(indent))
+        print(io, " ", block_to_print)
+    end
+    if indent == 0
+        Lux._big_finale(io, obj, 7)
+    else
+        println(io, ",")
+    end
+    return
+end
+
 _show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
 _show_leaflike(::Tuple{}) = false       # Prevents method ambiguity
 _show_leaflike(x::AbstractExplicitLayer) = false

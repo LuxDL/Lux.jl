@@ -22,8 +22,10 @@ end
 
 outputsize(r::ReshapeLayer) = r.dims
 
-@inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
-    return reshape(x, r.dims..., size(x, ndims(x))), st
+# This is a weird case, but julia sometimes fails to optimize without the generated function
+@generated function (r::ReshapeLayer)(
+        x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+    return :(reshape(x, r.dims..., size(x, $N)), st)
 end
 
 function Base.show(io::IO, r::ReshapeLayer)

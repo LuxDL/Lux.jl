@@ -47,6 +47,12 @@ const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNes
 # Utilities
 include("utils.jl")
 
+# Helpful Functionalities
+include("helpers/stateful.jl")
+include("helpers/compact.jl")
+include("helpers/autodiff.jl")
+include("helpers/nested_ad.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -65,12 +71,6 @@ include("chainrules.jl")
 
 # Experimental
 include("contrib/contrib.jl")
-
-# Helpful Functionalities
-include("helpers/stateful.jl")
-include("helpers/compact.jl")
-include("helpers/autodiff.jl")
-include("helpers/nested_ad.jl")
 
 # Transform to and from other frameworks
 include("transform/types.jl")
@@ -97,7 +97,7 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
-export KAN, KANLayer, KANUtils, KANGrid
+export KANDense, RadialBasisFunction
 
 export StatefulLuxLayer
 export @compact, CompactLuxLayer
