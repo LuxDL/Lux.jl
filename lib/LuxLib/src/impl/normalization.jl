@@ -73,16 +73,19 @@ function _normalization(x::AbstractArray, running_mean::Union{Nothing, <:Abstrac
     return x_, _vec(rμ), _vec(rσ²)
 end
 
+# Here we reorder the operations a bit for better performance
 function _affine_normalize(::typeof(identity), x::AbstractArray, xmean,
         xvar, ::Nothing, ::Nothing, epsilon::Real)
-    return @. (x .- xmean) / sqrt(xvar + epsilon)
+    _scale = @. inv(sqrt(xvar + epsilon))
+    _bias = @. xmean * _scale
+    return @. x * _scale - _bias
 end
 function _affine_normalize(act::F, x::AbstractArray, xmean, xvar,
         ::Nothing, ::Nothing, epsilon::Real) where {F}
-    return @. act((x .- xmean) / sqrt(xvar + epsilon))
+    _scale = @. inv(sqrt(xvar + epsilon))
+    _bias = @. xmean * _scale
+    return @. act(x * _scale - _bias)
 end
-
-# Here we reorder the operations a bit for better performance
 function _affine_normalize(::typeof(identity), x::AbstractArray, xmean, xvar,
         scale::AbstractArray, bias::AbstractArray, epsilon::Real)
     _scale = @. scale / sqrt(xvar + epsilon)
