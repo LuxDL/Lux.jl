@@ -21,6 +21,15 @@ for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
             f_internal, y = Lux.__rewrite_ad_call(f)
             return Lux.__internal_ad_pullback_call(Zygote.pullback, f_internal, x, y, u)
         end
+
+        @eval @inline function Lux.__batched_jacobian(f::$(fType), backend::AutoZygote, x)
+            f_internal, y = Lux.__rewrite_ad_call(f)
+            jac_fn = let backend=backend
+                (f, x_in) -> Lux.__batched_jacobian_impl(f, backend, x_in)
+            end
+            return Lux.__internal_ad_jacobian_call(
+                jac_fn, Zygote.gradient, f_internal, x, y)
+        end
     end
 end
 

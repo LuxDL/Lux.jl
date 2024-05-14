@@ -11,7 +11,7 @@ const CRC = ChainRulesCore
 Lux._is_extension_loaded(::Val{:Zygote}) = true
 
 include("training.jl")
-include("nested_ad.jl")
 include("batched_ad.jl")
+include("nested_ad.jl")
 
 end

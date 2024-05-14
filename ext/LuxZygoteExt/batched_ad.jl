@@ -25,7 +25,7 @@ function Lux.__batched_jacobian_impl(f::F, ::AutoZygote, x) where {F}
     return J
 end
 
-function __fill_chunked_jacobian!(J, i::Int, ::F, pb_f::PBF, y, x) where {F, PBF}
+@inbounds function __fill_chunked_jacobian!(J, i::Int, ::F, pb_f::PBF, y, x) where {F, PBF}
     v = reshape(similar(y), :, size(y, ndims(y)))
     fill!(v, zero(eltype(y)))
     v[i, :] .= one(eltype(y))
