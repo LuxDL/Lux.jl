@@ -19,25 +19,27 @@
 
             J1 = ForwardDiff.jacobian(smodel, X)
 
-            J2 = batched_jacobian(smodel, AutoForwardDiff(), X)
-            J2_mat = mapreduce(Base.Fix1(Lux.__maybe_batched_row, J2),
-                hcat, 1:(size(J2, 1) * size(J2, 3)))'
+            @testset "$(backend)" for backend in (AutoZygote(), AutoForwardDiff())
+                J2 = batched_jacobian(smodel, backend, X)
+                J2_mat = mapreduce(Base.Fix1(Lux.__maybe_batched_row, J2),
+                    hcat, 1:(size(J2, 1) * size(J2, 3)))'
 
-            @test J1≈J2_mat atol=1.0e-5 rtol=1.0e-5
+                @test J1≈J2_mat atol=1.0e-5 rtol=1.0e-5
 
-            ps = ps |> cpu_device() |> ComponentArray |> dev
+                ps = ps |> cpu_device() |> ComponentArray |> dev
 
-            smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer(model, ps, st)
 
-            J3 = batched_jacobian(smodel, AutoForwardDiff(), X)
+                J3 = batched_jacobian(smodel, backend, X)
 
-            @test J2≈J3 atol=1.0e-5 rtol=1.0e-5
+                @test J2≈J3 atol=1.0e-5 rtol=1.0e-5
+            end
         end
 
         @testset "Issue #636 Chunksize Specialization" begin
-            for N in (2, 4, 8, 11, 12, 50, 51)
-                model = @compact(; potential=Dense(N => N, gelu)) do x
-                    return batched_jacobian(potential, AutoForwardDiff(), x)
+            for N in (2, 4, 8, 11, 12, 50, 51), backend in (AutoZygote(), AutoForwardDiff())
+                model = @compact(; potential=Dense(N => N, gelu), backend=backend) do x
+                    return batched_jacobian(potential, backend, x)
                 end
 
                 ps, st = Lux.setup(Random.default_rng(), model) |> dev
