@@ -12,9 +12,11 @@ end
 """
     @compact(kw...) do x
         ...
+        @return y # optional (but recommended for best performance)
     end
     @compact(kw...) do x, p
         ...
+        @return y # optional (but recommended for best performance)
     end
     @compact(forward::Function; name=nothing, dispatch=nothing, parameters...)
 
@@ -30,8 +32,8 @@ is useful when using it with SciML tools which require passing in the parameters
 ## Reserved Kwargs:
 
  1. `name`: The name of the layer.
- 2. `dispatch`: The constructed layer has the type
-    `Lux.Experimental.CompactLuxLayer{dispatch}` which can be used for custom dispatches.
+ 2. `dispatch`: The constructed layer has the type `Lux.CompactLuxLayer{dispatch}` which can
+    be used for custom dispatches.
 
 !!! tip
 
@@ -40,6 +42,20 @@ is useful when using it with SciML tools which require passing in the parameters
 If you are passing in kwargs by splatting them, they will be passed as is to the function
 body. This means if your splatted kwargs contain a lux layer that won't be registered
 in the CompactLuxLayer.
+
+## Special Syntax
+
+These are special macros which don't really exist, but they do carry special meaning if used
+in the `@compact` block.
+
+  - `@return`: This macro is used to return a value from the `@compact` block. Without the
+    presence of this macro, we need to rely on closures which can lead to performance
+    penalties in the reverse pass.
+
+      + There cannot be more than one `@return` macro in the `@compact` block.
+      + Having statements after the last `@return` macro might lead to incorrect code.
+
+# Extended Help
 
 ## Examples
 
@@ -251,7 +267,7 @@ function __compact_macro_impl(_exs...)
         @warn "Function stringifying does not yet handle all cases. Falling back to empty \
                string for input arguments"
     end
-    block = string(Base.remove_linenums!(fex).args[2])
+    block = string(MacroTools.striplines(Base.remove_linenums!(fex).args[2]))
 
     # edit expressions
     vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)
@@ -286,31 +302,62 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     calls = []
     for var in vars
         push!(calls,
-            :($var = $(__maybe_make_stateful)($(_getproperty)($self, $(Val(var))),
-                $(_getproperty)($ps, $(Val(var))), $(_getproperty)($st, $(Val(var))))))
+            :($var = $(__maybe_make_stateful)(
+                $(CRC.ignore_derivatives)($(_getproperty)($self, $(Val(var)))),
+                $(_getproperty)($ps, $(Val(var))),
+                $(CRC.ignore_derivatives)($(_getproperty)($st, $(Val(var)))))))
     end
     for var in splatted_kwargs
         push!(
             calls, :($var = $(_getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
     end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
+
     @gensym fname res
-    modified_body = quote
-        $fname = () -> $(sdef[:body])
-        $res = $(fname)()
-        return $(res), (; $(vars...), $(splatted_kwargs...))
+    # Try to generate efficient code for the function body
+    has_return_macro = false
+    flattened_expr = MacroTools.postwalk(sdef[:body]) do x
+        if MacroTools.@capture(x, @return val_)
+            if has_return_macro
+                throw(LuxCompactModelParsingException("Multiple @return macros found \
+                                                       in the function body. This is not \
+                                                       supported."))
+            end
+            has_return_macro = true
+            return :($(res) = $(val))
+        end
+        if has_return_macro && MacroTools.@capture(x, return val_)
+            throw(LuxCompactModelParsingException("Encountered a return statement \
+                                                   after the last @return statement. \
+                                                   This is not supported."))
+        end
+        return x
     end
-    body = Expr(:let, Expr(:block, calls...), modified_body)
-    display(body)
-    sdef[:body] = body
+
+    if !has_return_macro
+        @warn "No @return macro found in the function body. This will lead to the \
+               generation of inefficient code."
+        modified_body = quote
+            $fname = () -> $(sdef[:body])
+            $res = $(fname)()
+            return $(res), (; $(vars...),)
+        end
+    else
+        modified_body = quote
+            $(flattened_expr)
+            return $(res), (; $(vars...),)
+        end
+    end
+    sdef[:body] = Expr(:let, Expr(:block, calls...), modified_body)
     sdef[:args] = args
     return combinedef(sdef)
 end
 
 @inline function __maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
-    return StatefulLuxLayer(layer, ps, st)
+    return StatefulLuxLayer{true}(layer, ps, st)
 end
-@inline __maybe_make_stateful(::Nothing, ps, st) = ifelse(ps === nothing, st, ps)
+@inline __maybe_make_stateful(::Nothing, ::Nothing, st) = st
+@inline __maybe_make_stateful(::Nothing, ps, st) = ps
 @inline function __maybe_make_stateful(model::Union{AbstractVector, Tuple}, ps, st)
     return map(i -> __maybe_make_stateful(model[i], ps[i], st[i]), eachindex(model))
 end
@@ -431,13 +478,16 @@ end
     st_expr = :(NamedTuple{$(filter(f -> f != :₋₋₋kwargs₋₋₋, fields))}(($(st_expr...),)))
     st_expr = :(merge(st, $st_expr))
     return quote
-        y, st_new = m.f(m.layers, x, ps, st)
+        y, st_new = m.f(m.layers, x, ps, CRC.ignore_derivatives(st))
         return y, $(st_expr)
     end
 end
 
 @inline __state_if_stateful(st_new) = st_new
-@inline __state_if_stateful(st_new::StatefulLuxLayer) = st_new.st
+@inline __state_if_stateful(st_new::StatefulLuxLayer{true}) = st_new.st
+@inline __state_if_stateful(st_new::StatefulLuxLayer{false}) = st_new.st_any
+
+CRC.@non_differentiable __state_if_stateful(::Any)
 
 # Shortcut for potential chain rules bug?
 function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
