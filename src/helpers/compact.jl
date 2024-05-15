@@ -294,7 +294,14 @@ function supportself(fex::Expr, vars, splatted_kwargs)
             calls, :($var = $(_getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
     end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
-    body = Expr(:let, Expr(:block, calls...), sdef[:body])
+    @gensym fname res
+    modified_body = quote
+        $fname = () -> $(sdef[:body])
+        $res = $(fname)()
+        return $(res), (; $(vars...), $(splatted_kwargs...))
+    end
+    body = Expr(:let, Expr(:block, calls...), modified_body)
+    display(body)
     sdef[:body] = body
     sdef[:args] = args
     return combinedef(sdef)
@@ -418,15 +425,23 @@ function CompactLuxLayer{dispatch}(
         ValueStorage(; others...), splatted_kwargs)
 end
 
-function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
-    y = m.f(m.layers, x, ps, st)
-    st_ = NamedTuple{fields}((getfield.((st,), fields)...,))
-    return y, st_
+@generated function (m::CompactLuxLayer)(x, ps, st::NamedTuple{fields}) where {fields}
+    st_expr = [:($(__state_if_stateful)(st_new.$(field)))
+               for field in fields if field != :₋₋₋kwargs₋₋₋]
+    st_expr = :(NamedTuple{$(filter(f -> f != :₋₋₋kwargs₋₋₋, fields))}(($(st_expr...),)))
+    st_expr = :(merge(st, $st_expr))
+    return quote
+        y, st_new = m.f(m.layers, x, ps, st)
+        return y, $(st_expr)
+    end
 end
+
+@inline __state_if_stateful(st_new) = st_new
+@inline __state_if_stateful(st_new::StatefulLuxLayer) = st_new.st
 
 # Shortcut for potential chain rules bug?
 function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
-    y = m.f(m.layers, x, ps, st)
+    y, _ = m.f(m.layers, x, ps, st)
     return y, st
 end
 
