@@ -44,7 +44,7 @@ function NeuralODECompact(
         dudt(u, p, t) = vec(model(reshape(u, size(x)), p))
         ## Note the `p.model` here
         prob = ODEProblem(ODEFunction{false}(dudt), vec(x), tspan, p.model)
-        return solve(prob, solver; kwargs...)
+        @return solve(prob, solver; kwargs...)
     end
 end
 

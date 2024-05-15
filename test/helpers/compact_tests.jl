@@ -1,5 +1,5 @@
 @testitem "@compact" setup=[SharedTestSetup] tags=[:helpers] begin
-    using ComponentArrays
+    using ComponentArrays, Zygote
 
     rng = get_stable_rng(12345)
 
@@ -20,7 +20,7 @@
     @testset "$mode: @compact" for (mode, aType, device, ongpu) in MODES
         @testset "Linear Layer" begin
             r = @compact(w=[1, 5, 10]) do x
-                return sum(w .* x)
+                @return sum(w .* x)
             end
             ps, st = Lux.setup(rng, r) |> device
 
@@ -48,7 +48,7 @@
             d_out = 7
             d = @compact(W=randn(d_out, d_in), b=zeros(d_out), act=relu) do x
                 y = W * x
-                return act.(y .+ b)
+                @return act.(y .+ b)
             end
 
             ps, st = Lux.setup(rng, d) |> device
@@ -98,7 +98,7 @@
                     embed = act.(w(embed))
                 end
                 out = w3(embed)
-                return out
+                @return out
             end
 
             ps, st = Lux.setup(rng, model) |> device
@@ -131,7 +131,7 @@
         @testset "String Representations" begin
             model = @compact(w=Dense(32 => 32)) do (x, y)
                 tmp = sum(w(x))
-                return tmp + y
+                @return tmp + y
             end
             expected_string = """@compact(
                 w = Dense(32 => 32),                # 1_056 parameters
@@ -147,7 +147,7 @@
         @testset "Custom Naming" begin
             model = @compact(w=Dense(32, 32), name="Linear(...)") do (x, y)
                 tmp = sum(w(x))
-                return tmp + y
+                @return tmp + y
             end
             expected_string = "Linear(...)()       # 1_056 parameters"
             @test similar_strings(get_model_string(model), expected_string)
@@ -155,10 +155,10 @@
 
         @testset "Hierarchical Models" begin
             model1 = @compact(w1=Dense(32 => 32, relu), w2=Dense(32 => 32, relu)) do x
-                return w2(w1(x))
+                @return w2(w1(x))
             end
             model2 = @compact(w1=model1, w2=Dense(32 => 32, relu)) do x
-                return w2(w1(x))
+                @return w2(w1(x))
             end
             expected_string = """@compact(
                 w1 = @compact(
@@ -177,7 +177,7 @@
 
         @testset "Array Parameters" begin
             model = @compact(x=randn(32), w=Dense(32 => 32)) do s
-                return w(x .* s)
+                @return w(x .* s)
             end
             expected_string = """@compact(
                 x = 32-element Vector{Float64},
@@ -191,9 +191,9 @@
 
         @testset "Hierarchy with Inner Model Named" begin
             model = @compact(w1=@compact(w1=randn(32, 32), name="Model(32)") do x
-                    return w1 * x
+                    @return w1 * x
                 end, w2=randn(32, 32), w3=randn(32),) do x
-                return w2 * w1(x)
+                @return w2 * w1(x)
             end
             expected_string = """@compact(
                 w1 = Model(32)(),                   # 1_024 parameters
@@ -208,9 +208,9 @@
 
         @testset "Hierarchy with Outer Model Named" begin
             model = @compact(w1=@compact(w1=randn(32, 32)) do x
-                    return w1 * x
+                    @return w1 * x
                 end, w2=randn(32, 32), w3=randn(32), name="Model(32)") do x
-                return w2 * w1(x)
+                @return w2 * w1(x)
             end
             expected_string = """Model(32)()         # 2_080 parameters"""
             @test similar_strings(get_model_string(model), expected_string)
@@ -219,7 +219,7 @@
         @testset "Dependent Initializations" begin
             # Test that initialization lines cannot depend on each other
             @test_throws UndefVarError @compact(y₁=3, z=y₁^2) do x
-                return y₁ + z + x
+                @return y₁ + z + x
             end
         end
 
@@ -228,21 +228,21 @@
             _b = 4
             c = 5
             model = @compact(a=_a; b=_b, c) do x
-                return a + b * x + c * x^2
+                @return a + b * x + c * x^2
             end
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(2, ps, st)) == _a + _b * 2 + c * 2^2
         end
 
         @testset "Keyword Arguments with Anonymous Function" begin
-            model = @test_nowarn @compact(x->x + a + b; a=1, b=2)
+            model = @test_nowarn @compact(x->@return(x+a+b); a=1, b=2)
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(3, ps, st)) == 1 + 2 + 3
             expected_string = """@compact(
                 a = 1,
                 b = 2,
             ) do x 
-                x + a + b
+                return x + a + b
             end       # Total: 0 parameters,
                       #        plus 2 states."""
             @test similar_strings(get_model_string(model), expected_string)
@@ -251,10 +251,59 @@
         @testset "Scoping of Parameter Arguments" begin
             model = @compact(w1=3, w2=5) do a
                 g(w1, w2) = 2 * w1 * w2
-                return (w1 + w2) * g(a, a)
+                @return (w1 + w2) * g(a, a)
             end
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(2, ps, st)) == (3 + 5) * 2 * 2 * 2
+        end
+
+        @testset "Updated State" begin
+            function ScaledDense1(; d_in=5, d_out=7, act=relu)
+                @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
+                    y = W * x
+                    incr *= 10
+                    return act.(y .+ b) .+ incr
+                end
+            end
+
+            model = ScaledDense1()
+            ps, st = Lux.setup(Xoshiro(0), model) |> device
+            x = ones(5, 10) |> aType
+
+            @test st.incr == 1
+            _, st_new = model(x, ps, st)
+            @test st_new.incr == 10
+            _, st_new = model(x, ps, st_new)
+            @test st_new.incr == 100
+
+            # By default creates a closure so type cannot be inferred
+            inf_type = Core.Compiler._return_type(
+                model, Tuple{typeof(x), typeof(ps), typeof(st)}).parameters
+            @test inf_type[1] === Any
+            @test inf_type[2] === NamedTuple
+
+            function ScaledDense2(; d_in=5, d_out=7, act=relu)
+                @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
+                    y = W * x
+                    incr *= 10
+                    @return act.(y .+ b) .+ incr
+                end
+            end
+
+            model = ScaledDense2()
+            ps, st = Lux.setup(Xoshiro(0), model) |> device
+            x = ones(5, 10) |> aType
+
+            @test st.incr == 1
+            _, st_new = model(x, ps, st)
+            @test st_new.incr == 10
+            _, st_new = model(x, ps, st_new)
+            @test st_new.incr == 100
+
+            @inferred model(x, ps, st)
+
+            __f = (m, x, ps, st) -> sum(abs2, first(m(x, ps, st)))
+            @inferred Zygote.gradient(__f, model, x, ps, st)
         end
     end
 end

@@ -27,7 +27,7 @@ using PrecompileTools: @recompile_invalidations
     using LuxDeviceUtils: get_device
 
     # @compact specific
-    using MacroTools: block, combinedef, splitdef
+    using MacroTools: MacroTools, block, combinedef, splitdef
 
     # @compact and stateful layers
     using ConstructionBase: ConstructionBase

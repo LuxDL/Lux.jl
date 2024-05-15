@@ -13,18 +13,6 @@ CRC.@non_differentiable Base.printstyled(::Any...)
 CRC.@non_differentiable fieldcount(::Any)
 
 # Utilities
-function CRC.rrule(::typeof(merge), nt1::NamedTuple{F1}, nt2::NamedTuple{F2}) where {F1, F2}
-    y = merge(nt1, nt2)
-    function ∇merge(dy)
-        dnt1 = NamedTuple((f1 => (f1 in F2 ? NoTangent() : getproperty(dy, f1))
-        for f1 in F1))
-        dnt2 = NamedTuple((f2 => getproperty(dy, f2) for f2 in F2))
-        return (NoTangent(), dnt1, dnt2)
-    end
-    ∇merge(::Union{NoTangent, ZeroTangent}) = (NoTangent(), NoTangent(), NoTangent())
-    return y, ∇merge
-end
-
 function CRC.rrule(::typeof(_eachslice), x, d::Val)
     return _eachslice(x, d), @closure(Δ->(NoTangent(), ∇_eachslice(Δ, x, d), NoTangent()))
 end

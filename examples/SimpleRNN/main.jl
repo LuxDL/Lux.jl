@@ -107,7 +107,7 @@ function SpiralClassifierCompact(in_dims, hidden_dims, out_dims)
         for x in x_rest
             y, carry = lstm_cell((x, carry))
         end
-        return vec(classifier(y))
+        @return vec(classifier(y))
     end
 end
 

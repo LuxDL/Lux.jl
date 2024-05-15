@@ -1,5 +1,6 @@
 """
-    StatefulLuxLayer(model, ps, st; st_fixed_type = Val(true))
+    StatefulLuxLayer(model, ps, st; st_fixed_type = Val(true))  # deprecated
+    StatefulLuxLayer{ST}(model, ps, st)
 
 !!! warning
 
@@ -59,37 +60,65 @@ function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {F
     return StatefulLuxLayer{FT}
 end
 
-StatefulLuxLayer(model, st; kwargs...) = StatefulLuxLayer(model, nothing, st; kwargs...)
-function StatefulLuxLayer(model, ps, st; st_fixed_type::Val{ST}=Val(true)) where {ST}
-    ST && return StatefulLuxLayer{ST}(model, ps, st, nothing)
-    return StatefulLuxLayer{ST}(model, ps, nothing, st)
+# TODO: In v0.6 we should deprecate the kwarg and directly using `StatefulLuxLayer{true}`
+function StatefulLuxLayer(model::AbstractExplicitLayer, st::NamedTuple; kwargs...)
+    return StatefulLuxLayer(model, nothing, st; kwargs...)
+end
+function StatefulLuxLayer(model::AbstractExplicitLayer, ps, st::NamedTuple;
+        st_fixed_type::Val{ST}=Val(true)) where {ST}
+    Base.depwarn("`st_fixed_type` is deprecated. Use `StatefulLuxLayer{ST}` instead.",
+        :StatefulLuxLayer)
+    return StatefulLuxLayer{ST}(model, ps, st)
+end
+function StatefulLuxLayer{true}(model::AbstractExplicitLayer, ps, st::NamedTuple)
+    return StatefulLuxLayer{true}(model, ps, st, nothing)
+end
+function StatefulLuxLayer{false}(model::AbstractExplicitLayer, ps, st::NamedTuple)
+    return StatefulLuxLayer{false}(model, ps, nothing, st)
 end
 
 function (s::StatefulLuxLayer{true})(x, p=s.ps)
     y, st = apply(s.model, x, p, s.st)
-    s.st = st
+    CRC.@ignore_derivatives begin
+        s.st = st
+    end
     return y
 end
 
 function (s::StatefulLuxLayer{false})(x, p=s.ps)
     y, st = apply(s.model, x, p, s.st_any)
-    s.st_any = st
+    CRC.@ignore_derivatives begin
+        s.st_any = st
+    end
     return y
 end
 
-## Only needed when the parameters are `nothing`
-function CRC.rrule(::Type{<:StatefulLuxLayer{FT}}, model::AbstractExplicitLayer,
-        ::Nothing, st, st_any) where {FT}
-    slayer = StatefulLuxLayer{FT}(model, nothing, st, st_any)
-    function ∇StatefulLuxLayer(::Union{ZeroTangent, NoTangent})
-        return ntuple(Returns(NoTangent()), 5)
-    end
+function CRC.rrule(::Type{<:StatefulLuxLayer{true}}, model::AbstractExplicitLayer, ps, st)
+    slayer = StatefulLuxLayer{true}(model, ps, st, nothing)
+    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
     return slayer, ∇StatefulLuxLayer
 end
 
-function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
-        model::AbstractExplicitLayer, ps, st, st_any) where {FT}
-    slayer = StatefulLuxLayer{FT}(model, ps, st, st_any)
-    ∇StatefulLuxLayer(Δ) = (CRC.NoTangent(), Δ.model, Δ.ps, Δ.st, Δ.st_any)
+function CRC.rrule(::Type{<:StatefulLuxLayer{false}}, model::AbstractExplicitLayer, ps, st)
+    slayer = StatefulLuxLayer{false}(model, ps, nothing, st)
+    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
     return slayer, ∇StatefulLuxLayer
+end
+
+for FT in (true, false)
+    @eval function CRC.rrule(
+            ::Type{<:StatefulLuxLayer{$(FT)}}, model::AbstractExplicitLayer, ps, st, st_any)
+        slayer = StatefulLuxLayer{$(FT)}(model, ps, st, st_any)
+        ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
+        return slayer, ∇StatefulLuxLayer
+    end
+end
+
+function CRC.rrule(::typeof(getproperty), s::StatefulLuxLayer, name::Symbol)
+    y = getproperty(s, name)
+    ∇getproperty = @closure Δ -> begin
+        name === :ps && return NoTangent(), (; ps=Δ), NoTangent()
+        return NoTangent(), NoTangent(), NoTangent()
+    end
+    return y, ∇getproperty
 end

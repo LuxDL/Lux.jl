@@ -66,7 +66,7 @@ gs = pb((one.(l), nothing))[3]
 
 # Optimization
 st_opt = Optimisers.setup(Adam(0.0001f0), ps)
-st_opt, ps = Optimisers.update(st_opt, ps, gs)
+st_opt, ps = Optimisers.update(st_opt, ps, gs)  # or Optimisers.update!(st_opt, ps, gs)
 ```
 
 ## Defining Custom Layers
@@ -95,7 +95,7 @@ model = @compact(w1=Dense(n_in, 128),
         embed = act(w(embed))
     end
     out = w3(embed)
-    return out
+    @return out
 end
 ```
 
