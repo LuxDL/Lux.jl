@@ -54,6 +54,9 @@ in the `@compact` block.
 
       + There cannot be more than one `@return` macro in the `@compact` block.
       + Having statements after the last `@return` macro might lead to incorrect code.
+      + Don't do things like `@return return x`. This will generate non-sensical code like
+        `<new var> = return x`. Essentially, `@return <expr>` supports any expression, that
+        can be assigned to a variable.
 
 # Extended Help
 
@@ -302,10 +305,8 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     calls = []
     for var in vars
         push!(calls,
-            :($var = $(__maybe_make_stateful)(
-                $(CRC.ignore_derivatives)($(_getproperty)($self, $(Val(var)))),
-                $(_getproperty)($ps, $(Val(var))),
-                $(CRC.ignore_derivatives)($(_getproperty)($st, $(Val(var)))))))
+            :($var = $(__maybe_make_stateful)($(_getproperty)($self, $(Val(var))),
+                $(_getproperty)($ps, $(Val(var))), $(_getproperty)($st, $(Val(var))))))
     end
     for var in splatted_kwargs
         push!(

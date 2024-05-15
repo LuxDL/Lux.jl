@@ -117,7 +117,7 @@ end
 function CRC.rrule(::typeof(getproperty), s::StatefulLuxLayer, name::Symbol)
     y = getproperty(s, name)
     ∇getproperty = @closure Δ -> begin
-        name === :ps && return NoTangent(), (; ps = Δ), NoTangent()
+        name === :ps && return NoTangent(), (; ps=Δ), NoTangent()
         return NoTangent(), NoTangent(), NoTangent()
     end
     return y, ∇getproperty
