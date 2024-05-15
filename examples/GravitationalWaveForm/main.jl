@@ -205,8 +205,7 @@ begin
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s = scatter!(ax, tsteps, waveform; markershape=:circle,
-        markersize=12, markeralpha=0.25, alpha=0.5)
+    s = scatter!(ax, tsteps, waveform; marker=:circle, markersize=12, alpha=0.5)
 
     axislegend(ax, [[l, s]], ["Waveform Data"])
 
@@ -274,12 +273,12 @@ begin
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s1 = scatter!(ax, tsteps, waveform; markershape=:circle, markersize=12,
-        markeralpha=0.25, alpha=0.5, strokewidth=2)
+    s1 = scatter!(
+        ax, tsteps, waveform; marker=:circle, markersize=12, alpha=0.5, strokewidth=2)
 
     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
-    s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
-        markersize=12, markeralpha=0.25, alpha=0.5, strokewidth=2)
+    s2 = scatter!(
+        ax, tsteps, waveform_nn; marker=:circle, markersize=12, alpha=0.5, strokewidth=2)
 
     axislegend(ax, [[l1, s1], [l2, s2]],
         ["Waveform Data", "Waveform Neural Net (Untrained)"]; position=:lb)
@@ -331,8 +330,7 @@ begin
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Iteration", ylabel="Loss")
 
     lines!(ax, losses; linewidth=4, alpha=0.75)
-    scatter!(ax, 1:length(losses), losses; markershape=:circle,
-        markersize=12, markeralpha=0.25, strokewidth=2)
+    scatter!(ax, 1:length(losses), losses; marker=:circle, markersize=12, strokewidth=2)
 
     fig
 end
@@ -349,16 +347,16 @@ begin
     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
 
     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
-    s1 = scatter!(ax, tsteps, waveform; markershape=:circle,
-        markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
+    s1 = scatter!(
+        ax, tsteps, waveform; marker=:circle, alpha=0.5, strokewidth=2, markersize=12)
 
     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
-    s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
-        markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
+    s2 = scatter!(
+        ax, tsteps, waveform_nn; marker=:circle, alpha=0.5, strokewidth=2, markersize=12)
 
     l3 = lines!(ax, tsteps, waveform_nn_trained; linewidth=2, alpha=0.75)
-    s3 = scatter!(ax, tsteps, waveform_nn_trained; markershape=:circle,
-        markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
+    s3 = scatter!(ax, tsteps, waveform_nn_trained; marker=:circle,
+        alpha=0.5, strokewidth=2, markersize=12)
 
     axislegend(ax, [[l1, s1], [l2, s2], [l3, s3]],
         ["Waveform Data", "Waveform Neural Net (Untrained)", "Waveform Neural Net"];
