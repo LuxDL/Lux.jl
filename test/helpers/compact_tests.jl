@@ -1,5 +1,5 @@
 @testitem "@compact" setup=[SharedTestSetup] tags=[:helpers] begin
-    using ComponentArrays
+    using ComponentArrays, Zygote
 
     rng = get_stable_rng(12345)
 
@@ -219,7 +219,7 @@
         @testset "Dependent Initializations" begin
             # Test that initialization lines cannot depend on each other
             @test_throws UndefVarError @compact(y₁=3, z=y₁^2) do x
-                return y₁ + z + x
+                @return y₁ + z + x
             end
         end
 
@@ -235,7 +235,7 @@
         end
 
         @testset "Keyword Arguments with Anonymous Function" begin
-            model = @test_nowarn @compact(x->@return(x + a + b); a=1, b=2)
+            model = @test_nowarn @compact(x->@return(x+a+b); a=1, b=2)
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(3, ps, st)) == 1 + 2 + 3
             expected_string = """@compact(
@@ -255,6 +255,55 @@
             end
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(2, ps, st)) == (3 + 5) * 2 * 2 * 2
+        end
+
+        @testset "Updated State" begin
+            function ScaledDense1(; d_in=5, d_out=7, act=relu)
+                @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
+                    y = W * x
+                    incr *= 10
+                    return act.(y .+ b) .+ incr
+                end
+            end
+
+            model = ScaledDense1()
+            ps, st = Lux.setup(Xoshiro(0), model) |> device
+            x = ones(5, 10) |> aType
+
+            @test st.incr == 1
+            _, st_new = model(x, ps, st)
+            @test st_new.incr == 10
+            _, st_new = model(x, ps, st_new)
+            @test st_new.incr == 100
+
+            # By default creates a closure so type cannot be inferred
+            inf_type = Core.Compiler._return_type(
+                model, Tuple{typeof(x), typeof(ps), typeof(st)}).parameters
+            @test inf_type[1] === Any
+            @test inf_type[2] === NamedTuple
+
+            function ScaledDense2(; d_in=5, d_out=7, act=relu)
+                @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
+                    y = W * x
+                    incr *= 10
+                    @return act.(y .+ b) .+ incr
+                end
+            end
+
+            model = ScaledDense2()
+            ps, st = Lux.setup(Xoshiro(0), model) |> device
+            x = ones(5, 10) |> aType
+
+            @test st.incr == 1
+            _, st_new = model(x, ps, st)
+            @test st_new.incr == 10
+            _, st_new = model(x, ps, st_new)
+            @test st_new.incr == 100
+
+            @inferred model(x, ps, st)
+
+            __f = (m, x, ps, st) -> sum(abs2, first(m(x, ps, st)))
+            @inferred Zygote.gradient(__f, model, x, ps, st)
         end
     end
 end

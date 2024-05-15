@@ -66,7 +66,7 @@ gs = pb((one.(l), nothing))[3]
 
 # Optimization
 st_opt = Optimisers.setup(Adam(0.0001f0), ps)
-st_opt, ps = Optimisers.update(st_opt, ps, gs)
+st_opt, ps = Optimisers.update(st_opt, ps, gs)  # or Optimisers.update!(st_opt, ps, gs)
 ```
 
 ## Defining Custom Layers

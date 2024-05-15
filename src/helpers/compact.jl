@@ -57,6 +57,9 @@ in the `@compact` block.
       + Don't do things like `@return return x`. This will generate non-sensical code like
         `<new var> = return x`. Essentially, `@return <expr>` supports any expression, that
         can be assigned to a variable.
+      + *Shortcomings*: Since multiple `@return` macros are not supported, there is no way
+        to use this currently for conditional return statements. Simply don't use the macro
+        for conditional return statements.
 
 # Extended Help
 
@@ -190,7 +193,7 @@ printout, which gives a verbatim representation of the code used to construct th
 
 ```jldoctest
 julia> model = @compact(w=rand(3), name="Linear(3 => 1)") do x
-           return sum(w .* x)
+           @return sum(w .* x)
        end
 Linear(3 => 1)()    # 3 parameters
 
@@ -490,6 +493,13 @@ end
     end
 end
 
+@inline function __state_if_stateful(st_new::NamedTuple{fields}) where {fields}
+    return NamedTuple{fields}(map(__state_if_stateful, values(st_new)))
+end
+@inline __state_if_stateful(st_new::AbstractArray{<:Number}) = st_new
+@inline function __state_if_stateful(st_new::Union{AbstractArray, Tuple})
+    return map(__state_if_stateful, st_new)
+end
 @inline __state_if_stateful(st_new) = st_new
 @inline __state_if_stateful(st_new::StatefulLuxLayer{true}) = st_new.st
 @inline __state_if_stateful(st_new::StatefulLuxLayer{false}) = st_new.st_any

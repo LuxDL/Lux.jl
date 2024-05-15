@@ -82,7 +82,7 @@ function construct_ude(mlp, solver; kwargs...)
 
         us = mlp(reshape(ts, 1, :), ps.mlp)
         ret_sol === Val(true) && return sol, us
-        @return Array(sol), us
+        return Array(sol), us
     end
 end
 
@@ -117,7 +117,7 @@ function train_model_1(ude, rng, ts_)
     optprob = OptimizationProblem(optf, res1.u)
     res2 = solve(optprob, LBFGS(); callback, maxiters=100)
 
-    return StatefulLuxLayer(ude, res2.u, st)
+    return StatefulLuxLayer{true}(ude, res2.u, st)
 end
 
 trained_ude = train_model_1(ude, rng, 0.0:0.01:8.0)

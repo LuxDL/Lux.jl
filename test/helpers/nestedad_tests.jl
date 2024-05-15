@@ -26,25 +26,25 @@
 
             # smodel | ForwardDiff.jacobian
             loss_function1 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2, ForwardDiff.jacobian(smodel, x))
             end
 
             # smodel | Zygote.jacobian
             loss_function2 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2, only(Zygote.jacobian(smodel, x)))
             end
 
             # sum(abs2) ∘ smodel | ForwardDiff.gradient
             loss_function3 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2, ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ smodel, x))
             end
 
             # sum(abs2) ∘ smodel | Zygote.gradient
             loss_function4 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ smodel, x)))
             end
 
@@ -106,26 +106,26 @@ end
 
             # smodel | ForwardDiff.jacobian
             loss_function1 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2, ForwardDiff.jacobian(Base.Fix1(smodel, x), ps))
             end
 
             # smodel | Zygote.jacobian
             loss_function2 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2, only(Zygote.jacobian(Base.Fix1(smodel, x), ps)))
             end
 
             # sum(abs2) ∘ smodel | ForwardDiff.gradient
             loss_function3 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2,
                     ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps))
             end
 
             # sum(abs2) ∘ smodel | Zygote.gradient
             loss_function4 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 return sum(abs2,
                     only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)))
             end
@@ -222,25 +222,25 @@ end
             jvp_input = aType(randn(rng, Float32, size(X)...))
 
             function loss_function_vjp(model, X, ps, st, vjp_input)
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 vjp = vector_jacobian_product(smodel, AutoZygote(), X, vjp_input)
                 return sum(vjp)
             end
 
             function loss_function_vjp_jacobian(model, X, ps, st, vjp_input)
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 J = only(Zygote.jacobian(smodel, X))
                 return sum(J' * vec(vjp_input))
             end
 
             function loss_function_jvp(model, X, ps, st, jvp_input)
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 jvp = jacobian_vector_product(smodel, AutoForwardDiff(), X, jvp_input)
                 return sum(jvp)
             end
 
             function loss_function_jvp_jacobian(model, X, ps, st, jvp_input)
-                smodel = StatefulLuxLayer(model, ps, st)
+                smodel = StatefulLuxLayer{true}(model, ps, st)
                 J = only(Zygote.jacobian(smodel, X))
                 return sum(J * vec(jvp_input))
             end
