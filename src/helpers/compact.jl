@@ -68,7 +68,7 @@ Here is a linear model:
 julia> using Lux, Random
 
 julia> r = @compact(w=ones(3)) do x
-           return w .* x
+           @return w .* x
        end
 @compact(
     w = 3-element Vector{Float64},
@@ -94,7 +94,7 @@ julia> d_out = 3
 
 julia> d = @compact(W=ones(d_out, d_in), b=zeros(d_out), act=relu) do x
            y = W * x
-           return act.(y .+ b)
+           @return act.(y .+ b)
        end
 @compact(
     W = 3×5 Matrix{Float64},
@@ -137,7 +137,7 @@ julia> model = @compact(w1=Dense(n_in, 128),
                embed = act.(w(embed))
            end
            out = w3(embed)
-           return out
+           @return out
        end
 @compact(
     w1 = Dense(1 => 128),               # 256 parameters
@@ -270,7 +270,13 @@ function __compact_macro_impl(_exs...)
         @warn "Function stringifying does not yet handle all cases. Falling back to empty \
                string for input arguments"
     end
-    block = string(MacroTools.striplines(Base.remove_linenums!(fex).args[2]))
+
+    # Remove compact specific macros
+    fex_clean = MacroTools.postwalk(MacroTools.striplines(Base.remove_linenums!(fex).args[2])) do x
+        MacroTools.@capture(x, @return val_) && return :(return $val)
+        return x
+    end
+    block = string(fex_clean)
 
     # edit expressions
     vars = map(first ∘ Base.Fix2(getproperty, :args), kwexs)

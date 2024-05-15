@@ -82,7 +82,7 @@ function construct_ude(mlp, solver; kwargs...)
 
         us = mlp(reshape(ts, 1, :), ps.mlp)
         ret_sol === Val(true) && return sol, us
-        return Array(sol), us
+        @return Array(sol), us
     end
 end
 

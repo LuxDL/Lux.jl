@@ -39,7 +39,7 @@
         @testset "Issue #636 Chunksize Specialization" begin
             for N in (2, 4, 8, 11, 12, 50, 51), backend in (AutoZygote(), AutoForwardDiff())
                 model = @compact(; potential=Dense(N => N, gelu), backend=backend) do x
-                    return batched_jacobian(potential, backend, x)
+                    @return batched_jacobian(potential, backend, x)
                 end
 
                 ps, st = Lux.setup(Random.default_rng(), model) |> dev

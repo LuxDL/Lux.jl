@@ -95,7 +95,7 @@ model = @compact(w1=Dense(n_in, 128),
         embed = act(w(embed))
     end
     out = w3(embed)
-    return out
+    @return out
 end
 ```
 

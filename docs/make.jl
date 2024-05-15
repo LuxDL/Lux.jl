@@ -94,8 +94,6 @@ makedocs(; sitename="Lux.jl Documentation",
     modules=[Lux, LuxCore, LuxLib, WeightInitializers, Boltz,
         LuxTestUtils, LuxDeviceUtils, LuxAMDGPU, LuxCUDA],
     linkcheck=true,
-    linkcheck_ignore=["https://turing.ml/stable/",
-        "https://turing.ml/stable/tutorials/03-bayesian-neural-network/"],
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     format=DocumenterVitepress.MarkdownVitepress(;
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",

@@ -171,7 +171,7 @@ end
 
         @testset "Structured Matrix: Issue LuxDL/Lux.jl#602" begin
             model = @compact(; potential=Dense(5 => 5, gelu)) do x
-                return reshape(diag(only(Zygote.jacobian(potential, x))), size(x))
+                @return reshape(diag(only(Zygote.jacobian(potential, x))), size(x))
             end
 
             ps, st = Lux.setup(rng, model) |> dev

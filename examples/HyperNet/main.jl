@@ -32,7 +32,7 @@ function HyperNet(weight_generator::Lux.AbstractExplicitLayer,
     return @compact(; ca_axes, weight_generator, core_network, dispatch=:HyperNet) do (x, y)
         ## Generate the weights
         ps_new = ComponentArray(vec(weight_generator(x)), ca_axes)
-        return core_network(y, ps_new)
+        @return core_network(y, ps_new)
     end
 end
 
