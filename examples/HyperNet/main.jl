@@ -102,7 +102,7 @@ function train()
             y = y |> dev
             (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
                 AutoZygote(), loss, (data_idx, x, y), train_state)
-            train_state = Lux.Experimental.apply_gradients(train_state, gs)
+            train_state = Lux.Experimental.apply_gradients!(train_state, gs)
         end
         ttime = time() - stime
 

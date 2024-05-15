@@ -41,7 +41,7 @@ function Lux.Experimental.compute_gradients(::AutoTracker, objective_function::F
     Tracker.back!(loss)
     @set! ts.states = st
     grads = fmap(Tracker.grad, ps_tracked)
-    return grads, loss, stats, ts
+    return grads, Tracker.value(loss), stats, ts
 end
 
 # AoS to SoA conversion

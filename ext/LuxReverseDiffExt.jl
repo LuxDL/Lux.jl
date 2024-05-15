@@ -16,7 +16,7 @@ function Lux.Experimental.compute_gradients(::AutoReverseDiff, objective_functio
     loss.deriv = true
     ReverseDiff.reverse_pass!(tape)
     @set! ts.states = st
-    return grads, loss, stats, ts
+    return grads, ReverseDiff.value(loss), stats, ts
 end
 
 # AoS to SoA conversion

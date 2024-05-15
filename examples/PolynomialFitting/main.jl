@@ -74,12 +74,12 @@ vjp_rule = AutoZygote()
 function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
     data = data .|> gpu_device()
     for epoch in 1:epochs
-        grads, loss, stats, tstate = Lux.Training.compute_gradients(
+        grads, loss, stats, tstate = Lux.Experimental.compute_gradients(
             vjp, loss_function, data, tstate)
         if epoch % 50 == 1 || epoch == epochs
             @printf "Epoch: %3d \t Loss: %.5g\n" epoch loss
         end
-        tstate = Lux.Training.apply_gradients(tstate, grads)
+        tstate = Lux.Experimental.apply_gradients!(tstate, grads)
     end
     return tstate
 end

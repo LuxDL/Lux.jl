@@ -35,6 +35,7 @@ basic building blocks which can be seamlessly composed to create complex trainin
 Lux.Experimental.TrainState
 Lux.Experimental.compute_gradients
 Lux.Experimental.apply_gradients
+Lux.Experimental.apply_gradients!
 ```
 
 ## Parameter Freezing
