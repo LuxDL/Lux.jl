@@ -28,3 +28,6 @@ Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 SimpleChains = "de6bee2f-e2f4-4ec7-b6ed-219cc6f6e9e5"
 WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[compat]
+DocumenterVitepress = "0.0.19"
