@@ -6,10 +6,11 @@
 <div align="center">
 
 [![Join the chat at https://julialang.zulipchat.com #machine-learning](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/machine-learning)
+[![Join the chat at https://julialang.org/slack #machine-learning](https://img.shields.io/badge/Slack-Slack?logo=slack&message=chat&color=4A154B&logoColor=4A154B&labelColor=389826)](https://julialang.org/slack/)
 [![Latest Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://lux.csail.mit.edu/dev/)
 [![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](http://lux.csail.mit.edu/stable/)
 
-[![CI](https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml)
+[![CI](https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml)
 [![Build status](https://img.shields.io/buildkite/ba1f9622add5978c2d7b194563fd9327113c9c21e5734be20e/main.svg?label=gpu&branch=main)](https://buildkite.com/julialang/lux-dot-jl)
 [![codecov](https://codecov.io/gh/LuxDL/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/LuxDL/Lux.jl)
 [![Benchmarks](https://github.com/LuxDL/Lux.jl/actions/workflows/Benchmark.yml/badge.svg?branch=main)](https://lux.csail.mit.edu/benchmarks/)
