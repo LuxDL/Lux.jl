@@ -56,6 +56,9 @@ function Lux.apply(
     return Lux.apply(m, ArrayInterface.aos_to_soa(x), ps, st)
 end
 
+## Prevent an infinite loop
+Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
+
 # SimpleChains.jl: DON'T REPLACE THESE WITH @grad_from_chainrules
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
