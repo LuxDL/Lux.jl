@@ -27,7 +27,7 @@ products efficiently using mixed-mode AD.
   - `v`: The Vector Jacobian Product.
 """
 function vector_jacobian_product(f::F, backend::AbstractADType, x, u) where {F}
-    @assert backend isa AutoZygote "Only `AutoZygote` is supported for \
+    @argcheck backend isa AutoZygote "Only `AutoZygote` is supported for \
                                     `vector_jacobian_product`."
     if !_is_extension_loaded(Val(:Zygote))
         error("`Zygote.jl` must be loaded for `vector_jacobian_product` \
@@ -67,7 +67,7 @@ products efficiently using mixed-mode AD.
   - `v`: The Jacobian Vector Product.
 """
 function jacobian_vector_product(f::F, backend::AbstractADType, x, u) where {F}
-    @assert backend isa AutoForwardDiff "Only `AutoForwardDiff` is supported for \
+    @argcheck backend isa AutoForwardDiff "Only `AutoForwardDiff` is supported for \
                                         `jacobian_vector_product`."
     if !_is_extension_loaded(Val(:ForwardDiff))
         error("`ForwardDiff.jl` must be loaded for `jacobian_vector_product` \

@@ -6,6 +6,7 @@ using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
 
 using ADTypes: ADTypes
+using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
 using Functors: Functors, fmap, fmapstructure, functor

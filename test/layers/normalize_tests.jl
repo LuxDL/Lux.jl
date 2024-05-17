@@ -178,7 +178,7 @@ end
             end
         end
 
-        @test_throws AssertionError GroupNorm(5, 2)
+        @test_throws ArgumentError GroupNorm(5, 2)
 
         @testset "allow fast activation" begin
             layer = GroupNorm(10, 2, tanh)

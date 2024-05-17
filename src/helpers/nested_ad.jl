@@ -188,7 +188,7 @@ end
 # Convert a structured Matrix to a General Matrix if it doesn't have fast scalar indexing
 @inline function __compactify_if_structured_matrix(
         J::AbstractArray{T1, N}, Δ::AbstractArray{T2}) where {T1, T2, N}
-    @assert N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
+    @argcheck N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
     if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
         J_ = similar(J)
         copyto!(J_, Δ)

@@ -5,6 +5,7 @@ using PrecompileTools: @recompile_invalidations
 @recompile_invalidations begin
     using ADTypes: AbstractADType, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
     using Adapt: Adapt, adapt
+    using ArgCheck: @argcheck
     using ArrayInterface: ArrayInterface
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
                           ProjectTo, RuleConfig, ZeroTangent

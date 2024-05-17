@@ -41,7 +41,7 @@ function initialstates(rng::AbstractRNG, ::AlphaDropout)
 end
 
 function AlphaDropout(p::T) where {T <: Real}
-    @assert 0 ≤ p ≤ 1
+    @argcheck 0 ≤ p ≤ 1
     iszero(p) && return NoOpLayer()
     isone(p) && return WrappedFunction(Base.Fix1(broadcast, zero))
 
@@ -104,7 +104,7 @@ function initialstates(rng::AbstractRNG, ::Dropout)
 end
 
 function Dropout(p; dims=:)
-    @assert 0 ≤ p ≤ 1
+    @argcheck 0 ≤ p ≤ 1
     iszero(p) && return NoOpLayer()
     return Dropout(p, 1 / (1 - p), dims)
 end
@@ -169,7 +169,7 @@ function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
 end
 
 function VariationalHiddenDropout(p; dims=:)
-    @assert 0 ≤ p ≤ 1
+    @argcheck 0 ≤ p ≤ 1
     iszero(p) && return NoOpLayer()
     return VariationalHiddenDropout(p, 1 / (1 - p), dims)
 end

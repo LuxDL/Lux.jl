@@ -55,7 +55,7 @@ end
 
 @inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     f.N === nothing && return reshape(x, :, size(x, N)), st
-    @assert f.N < N
+    @argcheck f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
 
