@@ -30,4 +30,4 @@ WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-DocumenterVitepress = "0.0.19"
+DocumenterVitepress = "0.0.19, 0.0.20"
