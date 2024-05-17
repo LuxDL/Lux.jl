@@ -95,13 +95,13 @@ end
 
 function CRC.rrule(::Type{<:StatefulLuxLayer{true}}, model::AbstractExplicitLayer, ps, st)
     slayer = StatefulLuxLayer{true}(model, ps, st, nothing)
-    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
+    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent()
     return slayer, ∇StatefulLuxLayer
 end
 
 function CRC.rrule(::Type{<:StatefulLuxLayer{false}}, model::AbstractExplicitLayer, ps, st)
     slayer = StatefulLuxLayer{false}(model, ps, nothing, st)
-    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
+    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent()
     return slayer, ∇StatefulLuxLayer
 end
 
