@@ -46,6 +46,7 @@ const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNes
 
 # Utilities
 include("utils.jl")
+include("fast_ops.jl")
 
 # Helpful Functionalities
 include("helpers/stateful.jl")
@@ -97,7 +98,7 @@ export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction
 export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
 export SamePad, TimeLastIndex, BatchLastIndex
-export KANDense, RadialBasisFunction
+export KANDenseRBF, KANDenseBSpline
 
 export StatefulLuxLayer
 export @compact, CompactLuxLayer
