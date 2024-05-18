@@ -1,11 +1,12 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.50"
+version = "0.5.51"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
+ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
@@ -65,6 +66,7 @@ LuxZygoteExt = "Zygote"
 ADTypes = "0.2, 1"
 Adapt = "4"
 Aqua = "0.8.4"
+ArgCheck = "2.1"
 ArrayInterface = "7.9"
 CUDA = "5.3.2"
 ChainRules = "1.66"

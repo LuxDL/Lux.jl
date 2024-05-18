@@ -125,7 +125,7 @@ function layer_map(f::Function, l, ps, st, name::String="model")
 
     length(l_c) == 0 && return f(l, ps, st, name)
 
-    @assert fieldnames(typeof(st_c)) == fieldnames(typeof(ps_c))
+    @argcheck fieldnames(typeof(st_c)) == fieldnames(typeof(ps_c))
 
     if length(l_c) == 1 && fieldnames(typeof(l_c)) != fieldnames(typeof(ps_c))
         __correct_luxcore_inconsistency = true
@@ -167,7 +167,7 @@ end
 
 function __fix_tuple_functor(x::Tuple, ::NamedTuple{names}) where {names}
     length(x) == 1 && length(names) > 1 && first(x) isa NamedTuple && return first(x)
-    @assert length(x)==length(names) lazy"length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
+    @argcheck length(x)==length(names) lazy"length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
     return NamedTuple{names}(x)
 end
 __fix_tuple_functor(x, _) = x

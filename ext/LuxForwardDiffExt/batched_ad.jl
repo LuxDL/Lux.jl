@@ -52,7 +52,7 @@ end
 @views function __batched_forwarddiff_jacobian(f::F, x::AbstractMatrix{T}, ::Type{Tag},
         ck::ForwardDiff.Chunk{CK}) where {F, T, Tag, CK}
     N, B = size(x)
-    @assert CK≤N "chunksize must be less than or equal to the number of elements"
+    @argcheck CK ≤ N
 
     nchunks, remainder = divrem(N, CK)
 
@@ -115,7 +115,7 @@ end
 
     x_duals = vcat(x_part_prev, x_part_duals, x_part_next)
     y_duals_ = f(x_duals)
-    @assert ndims(y_duals_) > 1 && size(y_duals_, ndims(y_duals_)) == B
+    @argcheck ndims(y_duals_) > 1 && size(y_duals_, ndims(y_duals_)) == B
     y_duals = reshape(y_duals_, :, B)
 
     partials_wrap(y, i) = ForwardDiff.partials(Tag, y, i)

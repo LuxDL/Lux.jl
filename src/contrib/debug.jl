@@ -51,7 +51,7 @@ end
 
 function DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
         error_check::Bool=true, location::String="")
-    @assert nan_check ∈ (:both, :forward, :backward, :none)
+    @argcheck nan_check in (:both, :forward, :backward, :none)
     return DebugLayer{nan_check, error_check}(layer, location)
 end
 

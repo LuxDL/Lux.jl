@@ -177,10 +177,10 @@ end
             # Test that we cannot ask for non-integer multiplication factors
             layer = Conv((2, 2), 3 => 10; groups=2)
             __display(layer)
-            @test_throws AssertionError Lux.setup(rng, layer)
+            @test_throws DimensionMismatch Lux.setup(rng, layer)
             layer = Conv((2, 2), 2 => 9; groups=2)
             __display(layer)
-            @test_throws AssertionError Lux.setup(rng, layer)
+            @test_throws DimensionMismatch Lux.setup(rng, layer)
 
             @testset "Segfault Test LuxDL/Lux.jl#386" begin
                 layer = Conv((5,), 32 => 32, tanh; groups=32)
@@ -276,7 +276,7 @@ end
             # Test that we cannot ask for non-integer multiplication factors
             layer = Conv((2, 2), 3 => 10; groups=3)
             __display(layer)
-            @test_throws AssertionError Lux.setup(rng, layer)
+            @test_throws DimensionMismatch Lux.setup(rng, layer)
         end
 
         @testset "Conv SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3), (1, 2, 3))

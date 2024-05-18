@@ -1,5 +1,6 @@
 module LuxForwardDiffExt
 
+using ArgCheck: @argcheck
 using ADTypes: AutoForwardDiff
 using ChainRulesCore: ChainRulesCore
 using Lux: Lux, get_device

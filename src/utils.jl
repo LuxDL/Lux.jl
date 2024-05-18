@@ -15,8 +15,8 @@ Returns `true` if `training` is `true` or if `st` contains a `training` field wi
 function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
         ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
     cin, cout = ch
-    @assert cin % groups==0 "Input channel dimension must be divisible by groups."
-    @assert cout % groups==0 "Output channel dimension must be divisible by groups."
+    @argcheck cin % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
+    @argcheck cout % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
     return init(rng, filter..., cin ÷ groups, cout)
 end
 
@@ -165,12 +165,12 @@ in the backward pass.
 _merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
 function _merge(p, nt::NamedTuple)
     __can_named_tuple(p) && return _merge(__named_tuple(p), nt)
-    @assert length(p) == 0
+    @argcheck length(p) == 0
     return nt
 end
 function _merge(nt::NamedTuple, p)
     __can_named_tuple(p) && return _merge(nt, __named_tuple(p))
-    @assert length(p) == 0
+    @argcheck length(p) == 0
     return nt
 end
 function _merge(x, y)

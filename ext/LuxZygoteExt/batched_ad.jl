@@ -9,7 +9,7 @@ end
 function Lux.__batched_jacobian_impl(f::F, ::AutoZygote, x) where {F}
     y, pb_f = Zygote.pullback(f, x)
 
-    @assert y isa AbstractArray
+    @argcheck y isa AbstractArray MethodError
     if ndims(y) ≤ 1 || size(y, ndims(y)) != size(x, ndims(x))
         throw(AssertionError("`batched_jacobian` only supports batched outputs \
                               (ndims(y) > 1) && size(y, ndims(y)) == size(x, ndims(x))."))
