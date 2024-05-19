@@ -1,13 +1,17 @@
 @inline __length(x) = length(x)
 @inline __length(::Nothing) = nothing
 
+@inline function __might_use_cuBLASLt(::Z, ::A, ::W, ::X, ::B) where {Z, A, W, X, B}
+    cuBLASLt_functional[] || return false
+    return hasmethod(LuxLib._cublaslt_matmul_fused!, (Z, A, W, X, B))
+end
+
 function LuxLib.__fused_dense_bias_activation_impl(
         act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
         b::Union{Nothing, AnyCuVector}) where {F}
     y = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
-    if hasmethod(LuxLib._cublaslt_matmul_fused!,
-        (typeof(y), F, typeof(weight), typeof(x), typeof(b)))
+    if __might_use_cuBLASLt(y, act, weight, x, b)
         retcode = LuxLib._cublaslt_matmul_fused!(y, act, weight, x, b)
         retcode == 0 && return y
         # cuBLASLt failed for the given inputs use the generic fallback
@@ -29,8 +33,7 @@ function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
         size(weight, 1), size(x, 2))
     y = z # aliased for now for type stability
     retcode = -1
-    if hasmethod(LuxLib._cublaslt_matmul_fused!,
-        (typeof(z), typeof(act), typeof(weight), typeof(x), typeof(b)))
+    if __might_use_cuBLASLt(z, act, weight, x, b)
         y = similar(z)  # break aliasing
         retcode = LuxLib._cublaslt_matmul_fused!(z, act, weight, x, b, y)
         if retcode == -1
