@@ -7,13 +7,13 @@ Computes `exp.(-x.^2)` using the exp function `f`.
 
 ## Arguments
 
- - `f` must be an exponential function, providing other functions will lead to incorrect
-   results. Defaults to `Base.`
+  - `f` must be an exponential function, providing other functions will lead to incorrect
+    results. Defaults to `Base.`
 """
 @inline fast_neg_exp_sq(x::AbstractArray) = fast_neg_exp_sq(Base.FastMath.exp_fast, x)
 @inline function fast_neg_exp_sq(f::F, x::AbstractArray) where {F}
     hasmethod(f, Tuple{typeof(x)}) && return f(@. -x .^ 2)
-    return @. f.(-x ^ 2)
+    return @. f.(-x^2)
 end
 
 function CRC.rrule(::typeof(fast_neg_exp_sq), f::F, x::AbstractArray) where {F}
