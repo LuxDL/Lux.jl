@@ -7,11 +7,9 @@
 # ## Package Imports
 
 using ArgCheck, ChainRulesCore, ConcreteStructs, Comonicon, DataAugmentation, DataDeps,
-      Images, JLD2, Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, ParameterSchedulers,
-      ProgressBars, Random, Setfield, StableRNGs, Statistics, Zygote
+      FileIO, ImageCore, JLD2, Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers,
+      ParameterSchedulers, ProgressBars, Random, Setfield, StableRNGs, Statistics, Zygote
 const CRC = ChainRulesCore
-
-ENV["DATADEPS_ALWAYS_ACCEPT"] = true
 
 # ## Model Definition
 
@@ -269,7 +267,7 @@ Base.length(ds::FlowersDataset) = length(ds.image_files)
 
 function Base.getindex(ds::FlowersDataset, i::Int)
     ds.use_cache && !isnothing(ds.cache[i]) && return ds.cache[i]
-    img = Images.load(ds.image_files[i])
+    img = load(ds.image_files[i])
     img = ds.preprocess(img)
     img = permutedims(channelview(img), (2, 3, 1))
     ds.use_cache && (ds.cache[i] = img)
@@ -384,7 +382,7 @@ end
             @info "Saving checkpoint to $(path)"
             parameters = tstate.parameters |> cpu_device()
             states = tstate.states |> cpu_device()
-            @save path {compress = true} parameters states
+            @save path parameters states
         end
     end
 
