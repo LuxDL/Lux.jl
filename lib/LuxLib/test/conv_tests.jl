@@ -27,7 +27,7 @@
                 (Float32, Float64), (Float64, Float64)],
             hasbias in (true, false),
             activation in (
-                identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact),
+                identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact, swish),
             (kernel, padding, stride, groups) in (
                 ((2,), (1,), (1,), 1), ((2, 2), (1, 1), (1, 1), 1),
                 ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2))
