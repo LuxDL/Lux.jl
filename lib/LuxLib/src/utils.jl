@@ -111,9 +111,9 @@ end
 @inline function __fast_broadcast!(f::F, x, args...) where {F}
     if ArrayInterface.fast_scalar_indexing(x)
         @.. x = f(x, args...)
-    elseif f === ComposedFunction(sigmoid_fast, +) && length(args) == 1
+    elseif __fails_inplace_bcast_gpu(f) && length(args) == 1
         y = first(args)
-        @. x = sigmoid_fast(x + y) # Has GPU Compilation Problems
+        @. x = f.outer(f.inner(x, y))
     else
         @. x = f(x, args...)
     end
@@ -129,14 +129,18 @@ end
         else
             @. x = f(x, args...)
         end
-    elseif f === ComposedFunction(sigmoid_fast, +) && length(args) == 1
+    elseif __fails_inplace_bcast_gpu(f) && length(args) == 1
         y = first(args)
-        @. x = sigmoid_fast(x + y) # Has GPU Compilation Problems
+        @. x = f.outer(f.inner(x, y))
     else
         @. x = f(x, args...)
     end
     return x
 end
+
+@inline __fails_inplace_bcast_gpu(::ComposedFunction{typeof(sigmoid_fast), typeof(+)}) = true
+@inline __fails_inplace_bcast_gpu(::ComposedFunction{typeof(swish), typeof(+)}) = true
+@inline __fails_inplace_bcast_gpu(::F) where {F} = false
 
 @inline __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} = @. σ(x + bias)
 @inline __apply_bias_activation(::typeof(identity), x, bias::AbstractArray) = @. x + bias
