@@ -37,6 +37,15 @@ memory. We recommend running the code for atleast 80 epochs to get good results.
 ## Image generation
 
 ```bash
+julia --startup-file=no \
+    --project=. \
+    --threads=auto \
+    main.jl \
+    --inference-mode \
+    --saved-model-path output/checkpoints/model_100.jld2 \
+    --generate-n-images 24 \
+    --generate-image-seed 12 \
+    --expt-dir inference
 ```
 
 ## Usage

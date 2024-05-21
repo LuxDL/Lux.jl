@@ -40,12 +40,10 @@ function residual_block(in_channels::Int, out_channels::Int)
     first_layer = in_channels == out_channels ? NoOpLayer() :
                   Conv((1, 1), in_channels => out_channels; pad=SamePad())
 
-    __swish(x) = x * sigmoid(x) # sigmoid_fast breaks GPU compilation
-
     return Chain(first_layer,
         SkipConnection(
             Chain(BatchNorm(out_channels; affine=false),
-                Conv((3, 3), out_channels => out_channels, __swish; pad=SamePad()),
+                Conv((3, 3), out_channels => out_channels, swish; pad=SamePad()),
                 Conv((3, 3), out_channels => out_channels; pad=SamePad())),
             +);
         name="ResidualBlock(in_chs=$in_channels, out_chs=$out_channels)")
@@ -294,7 +292,7 @@ end
 
 @main function main(; epochs::Int=100, image_size::Int=128,
         batchsize::Int=128, learning_rate_start::Float32=1.0f-3,
-        learning_rate_end::Float32=1.0f-3, weight_decay::Float32=1.0f-6,
+        learning_rate_end::Float32=1.0f-5, weight_decay::Float32=1.0f-6,
         checkpoint_interval::Int=25, expt_dir=tempname(@__DIR__),
         diffusion_steps::Int=80, generate_image_interval::Int=5,
         # model hyper params
@@ -343,7 +341,7 @@ end
 
     @info "Preparing dataset"
     ds = FlowersDataset(x -> preprocess_image(x, image_size), true)
-    data_loader = DataLoader(ds; batchsize, collate=true)
+    data_loader = DataLoader(ds; batchsize, collate=true, parallel=true)
 
     scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
 
