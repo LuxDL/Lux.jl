@@ -24,27 +24,52 @@ The dataset is cached for subsequent runs.
 ## Training
 
 ```bash
-julia --project main.jl \
-    --dataset-dir oxford_flower_102 \ # path to dataset directory containing image files
-    --epochs 25 \
-    --image-size 96 \
-    --batchsize 64 \
-    --learning-rate 1e-3 \
-    --weight-decay 1e-4 \
-    --val-diffusion-steps 80 \
-    --output-dir output/train # path to save checkpoint and images
+julia --startup-file=no \
+    --project=examples/DDIM \
+    --threads=auto \
+    main.jl \
+    --expt-dir output
 ```
 
-This code runs in about XXXX minutes in a single NVIDIA V100 instance with 32GB of GPU
+This code runs in about 35 minutes in a single NVIDIA V100 instance with 32GB of GPU
 memory. We recommend running the code for atleast 80 epochs to get good results.
 
 ## Image generation
 
 ```bash
-julia --project main.jl \
-    --checkpoint output/ckpt/checkpoint_25.bson \ # path to checkpoint
-    --image-size 96 \
-    --num-images 10 \
-    --diffusion-steps 80 \
-    --output-dir output/generate # path to save images
+```
+
+## Usage
+
+```bash
+usage: main [options] [flags]
+
+Options
+
+  --epochs <100::Int>
+  --image-size <128::Int>
+  --batchsize <128::Int>
+  --learning-rate-start <0.001::Float32>
+  --learning-rate-end <0.001::Float32>
+  --weight-decay <1.0e-6::Float32>
+  --checkpoint-interval <25::Int>
+  --expt-dir <tempnam...>
+  --diffusion-steps <80::Int>
+  --generate-image-interval <5::Int>
+  --channels <[32, 64...::Vector{Int}>
+  --block-depth <2::Int>
+  --min-freq <1.0::Float32>
+  --max-freq <1000.0::Float32>
+  --embedding-dims <32::Int>
+  --min-signal-rate <0.02::Float32>
+  --max-signal-rate <0.95::Float32>
+  --generate-image-seed <12::Int>
+  --saved-model-path <nothing>
+  --generate-n-images <10::Int>
+
+Flags
+
+  --inference-mode
+  -h, --help                                                Print this help message.
+  --version                                                 Print version.
 ```

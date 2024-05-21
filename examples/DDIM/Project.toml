@@ -43,3 +43,6 @@ Setfield = "1"
 StableRNGs = "1.0.2"
 Statistics = "1.10"
 Zygote = "0.6"
+
+[extras]
+CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
