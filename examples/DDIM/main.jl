@@ -284,8 +284,7 @@ function loss_function(model, ps, st, data)
     (noises, images, pred_noises, pred_images), st = Lux.apply(model, data, ps, st)
     noise_loss = mean(abs, noises .- pred_noises)
     image_loss = mean(abs, images .- pred_images)
-    loss = noise_loss + image_loss
-    return loss, st, ()
+    return noise_loss, st, (; image_loss, noise_loss)
 end
 
 # ## Entry Point for our code
@@ -323,6 +322,8 @@ end
     if inference_mode
         @argcheck saved_model_path!==nothing "`saved_model_path` must be specified for inference"
         @load saved_model_path parameters states
+        parameters = parameters |> gdev
+        states = states |> gdev
         model = StatefulLuxLayer{true}(model, parameters, Lux.testmode(states))
 
         generated_images = __generate(model, StableRNG(generate_image_seed),
@@ -345,7 +346,8 @@ end
 
     scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
 
-    losses = Vector{Float32}(undef, length(data_loader))
+    image_losses = Vector{Float32}(undef, length(data_loader))
+    noise_losses = Vector{Float32}(undef, length(data_loader))
     for epoch in 1:epochs
         pbar = ProgressBar(data_loader)
 
@@ -354,11 +356,14 @@ end
 
         for (i, data) in enumerate(data_loader)
             data = data |> gdev
-            grads, loss, stats, tstate = Lux.Experimental.compute_gradients(
+            grads, _, stats, tstate = Lux.Experimental.compute_gradients(
                 AutoZygote(), loss_function, data, tstate)
-            losses[i] = loss
+            image_losses[i] = stats.image_loss
+            noise_losses[i] = stats.noise_loss
             ProgressBars.update(pbar)
-            set_description(pbar, "Epoch: $(epoch) Loss: $(mean(view(losses, 1:i)))")
+            set_description(
+                pbar, "Epoch: $(epoch) Image Loss: $(mean(view(image_losses, 1:i))) Noise \
+                       Loss: $(mean(view(noise_losses, 1:i)))")
             tstate = Lux.Experimental.apply_gradients!(tstate, grads)
         end
 

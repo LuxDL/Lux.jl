@@ -6,7 +6,7 @@ The implementation follows [the Keras example](https://keras.io/examples/generat
 
 The model generates images from Gaussian noises by denoising iteratively.
 
-TODO: add image
+![generated flowers](./assets/flowers_generated.jpg)
 
 # Usage
 
@@ -45,7 +45,7 @@ julia --startup-file=no \
     --saved-model-path output/checkpoints/model_100.jld2 \
     --generate-n-images 24 \
     --generate-image-seed 12 \
-    --expt-dir inference
+    --expt-dir output
 ```
 
 ## Usage
