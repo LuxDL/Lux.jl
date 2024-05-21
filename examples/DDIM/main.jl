@@ -6,9 +6,12 @@
 
 # ## Package Imports
 
-using ArgCheck, ChainRulesCore, ConcreteStructs, DataAugmentation, DataDeps, Images, Lux,
-      LuxCUDA, Random, Setfield
+using ArgCheck, ChainRulesCore, ConcreteStructs, DataAugmentation, DataDeps, Images, JLD2,
+      Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers, ParameterSchedulers,
+      ProgressBars, Random, Setfield, StableRNGs, Statistics, Zygote
 const CRC = ChainRulesCore
+
+ENV["DATADEPS_ALWAYS_ACCEPT"] = true
 
 # ## Model Definition
 
@@ -35,13 +38,15 @@ end
 
 function residual_block(in_channels::Int, out_channels::Int)
     first_layer = in_channels == out_channels ? NoOpLayer() :
-                  Conv((3, 3), in_channels => out_channels; pad=SamePad())
+                  Conv((1, 1), in_channels => out_channels; pad=SamePad())
+
+    __swish(x) = x * sigmoid(x) # sigmoid_fast breaks GPU compilation
 
     return Chain(first_layer,
         SkipConnection(
-            Chain(BatchNorm(out_channels; affine=false, momentum=0.99f0),
-                Conv((3, 3), out_channels => out_channels, swish; stride=1, pad=(1, 1)),
-                Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1))),
+            Chain(BatchNorm(out_channels; affine=false),
+                Conv((3, 3), out_channels => out_channels, __swish; pad=SamePad()),
+                Conv((3, 3), out_channels => out_channels; pad=SamePad())),
             +);
         name="ResidualBlock(in_chs=$in_channels, out_chs=$out_channels)")
 end
@@ -52,12 +57,12 @@ function downsample_block(in_channels::Int, out_channels::Int, block_depth::Int)
         residual_blocks=Tuple(residual_block(
                                   ifelse(i == 1, in_channels, out_channels), out_channels)
         for i in 1:block_depth),
-        maxpool=MaxPool((2, 2); pad=0), block_depth) do x
+        meanpool=MeanPool((2, 2); pad=0), block_depth) do x
         skips = (x,)
         for i in 1:block_depth
             skips = (skips..., residual_blocks[i](last(skips)))
         end
-        y = maxpool(last(skips))
+        y = meanpool(last(skips))
         @return y, skips
     end
 end
@@ -127,7 +132,7 @@ end
 function ddim(rng::AbstractRNG, args...; min_signal_rate=0.02f0,
         max_signal_rate=0.95f0, kwargs...)
     unet = unet_model(args...; kwargs...)
-    bn = BatchNorm(3; affine=false, momentum=0.99f0, track_stats=true)
+    bn = BatchNorm(3; affine=false, track_stats=true)
 
     return @compact(; unet, bn, rng, min_signal_rate,
         max_signal_rate, dispatch=:DDIM) do x::AbstractArray{<:Real, 4}
@@ -172,7 +177,73 @@ end
     return pred_noises, pred_images
 end
 
+# ## Helper Functions for Image Generation
+
+function __reverse_diffusion(
+        model, initial_noise::AbstractArray{T, 4}, diffusion_steps::Int) where {T <: Real}
+    num_images = size(initial_noise, 4)
+    step_size = one(T) / diffusion_steps
+    dev = get_device(initial_noise)
+
+    next_noisy_images = initial_noise
+    pred_images = nothing
+
+    min_signal_rate = model.model.value_storage.st_init_fns.min_signal_rate()
+    max_signal_rate = model.model.value_storage.st_init_fns.max_signal_rate()
+
+    for step in 1:diffusion_steps
+        noisy_images = next_noisy_images
+
+        # We start t = 1, and gradually decreases to t=0
+        diffusion_times = (ones(T, 1, 1, 1, num_images) .- step_size * step) |> dev
+
+        noise_rates, signal_rates = __diffusion_schedules(
+            diffusion_times, min_signal_rate, max_signal_rate)
+
+        pred_noises, pred_images = __denoise(
+            StatefulLuxLayer{true}(model.model.layers.unet, model.ps.unet, model.st.unet),
+            noisy_images, noise_rates, signal_rates)
+
+        next_diffusion_times = diffusion_times .- step_size
+        next_noisy_rates, next_signal_rates = __diffusion_schedules(
+            next_diffusion_times, min_signal_rate, max_signal_rate)
+
+        next_noisy_images = next_signal_rates .* pred_images .+
+                            next_noisy_rates .* pred_noises
+    end
+
+    return pred_images
+end
+
+function __denormalize(model::StatefulLuxLayer{true}, x::AbstractArray{<:Real, 4})
+    mean = reshape(model.st.bn.running_mean, 1, 1, 3, 1)
+    var = reshape(model.st.bn.running_var, 1, 1, 3, 1)
+    std = sqrt.(var .+ model.model.layers.bn.epsilon)
+    return std .* x .+ mean
+end
+
+function __save_images(output_dir, images::AbstractArray{<:Real, 4})
+    for i in axes(images, 4)
+        img = @view images[:, :, :, i]
+        img = colorview(RGB, permutedims(img, (3, 1, 2)))
+        save(joinpath(output_dir, "img_%$(i).png"), img)
+    end
+end
+
+function __generate(
+        model::StatefulLuxLayer, rng, image_size::NTuple{4, Int}, diffusion_steps::Int, dev)
+    initial_noise = randn(rng, Float32, image_size...) |> dev
+    generated_images = __reverse_diffusion(model, initial_noise, diffusion_steps)
+    generated_images = __denormalize(model, generated_images)
+    return clamp01.(generated_images)
+end
+
 # ## Dataset
+
+# We will register the dataset using the [DataDeps.jl](https://github.com/oxinabox/DataDeps.jl)
+# package. The dataset is available at
+# [https://www.robots.ox.ac.uk/~vgg/data/flowers/102/](https://www.robots.ox.ac.uk/~vgg/data/flowers/102/).
+# This allows us to automatically download the dataset when we run the code.
 
 struct FlowersDataset
     image_files::Vector{AbstractString}
@@ -207,9 +278,105 @@ function Base.getindex(ds::FlowersDataset, i::Int)
     return convert(AbstractArray{Float32}, img)
 end
 
-# function preprocess_image(image::Matrix{RGB{T}}, image_size::Int) where {T <: Real}
-#     sigma = min(size(image)...) / image_size
-#     k = round(Int, 2 * sigma) * 2 + 1 # kernel size of two sigma in each direction
-#     pl = CropRatio(1.0) |> GaussianBlur(k, sigma) |> Resize(image_size, image_size)
-#     return augment(image, pl)
-# end
+function preprocess_image(image::Matrix{<:RGB}, image_size::Int)
+    return apply(CenterResizeCrop((image_size, image_size)), Image(image)) |> itemdata
+end
+
+function loss_function(model, ps, st, data)
+    (noises, images, pred_noises, pred_images), st = Lux.apply(model, data, ps, st)
+    noise_loss = mean(abs, noises .- pred_noises)
+    image_loss = mean(abs, images .- pred_images)
+    loss = noise_loss + image_loss
+    return loss, st, ()
+end
+
+# ## Entry Point for our code
+
+function main(; epochs::Int=50, image_size::Int=128,
+        batchsize::Int=32, learning_rate_start::Float32=1.0f-3,
+        learning_rate_end::Float32=1.0f-5, weight_decay::Float32=1.0f-6,
+        checkpoint_interval::Int=25, expt_dir=tempname(@__DIR__),
+        val_diffusion_steps::Int=80, generate_image_interval::Int=5,
+        # model hyper params
+        channels::Vector{Int}=[32, 64, 96, 128], block_depth::Int=2, min_freq::Float32=1.0f0,
+        max_freq::Float32=1000.0f0, embedding_dims::Int=32,
+        min_signal_rate::Float32=0.02f0, max_signal_rate::Float32=0.95f0)
+    isdir(expt_dir) || mkpath(expt_dir)
+
+    @info "Experiment directory: $expt_dir"
+
+    rng = StableRNG(1234)
+
+    image_dir = joinpath(expt_dir, "images")
+    isdir(image_dir) || mkpath(image_dir)
+
+    ckpt_dir = joinpath(expt_dir, "checkpoints")
+    isdir(ckpt_dir) || mkpath(ckpt_dir)
+
+    gdev = gpu_device()
+    @info "Using device: $gdev"
+
+    @info "Preparing dataset"
+    ds = FlowersDataset(x -> preprocess_image(x, image_size), true)
+    data_loader = DataLoader(ds; batchsize, collate=true)
+
+    @info "Building model"
+    model = ddim(rng, (image_size, image_size); channels, block_depth, min_freq,
+        max_freq, embedding_dims, min_signal_rate, max_signal_rate)
+
+    tstate = Lux.Experimental.TrainState(
+        rng, model, AdamW(; eta=learning_rate_start, lambda=weight_decay);
+        transform_variables=gdev)
+
+    scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
+
+    losses = Vector{Float32}(undef, length(data_loader))
+    for epoch in 1:epochs
+        pbar = ProgressBar(data_loader)
+
+        eta = scheduler(epoch)
+        tstate = Optimisers.adjust!(tstate, eta)
+
+        for (i, data) in enumerate(data_loader)
+            data = data |> gdev
+            grads, loss, stats, tstate = Lux.Experimental.compute_gradients(
+                AutoZygote(), loss_function, data, tstate)
+            losses[i] = loss
+            ProgressBars.update(pbar)
+            set_description(pbar, "Epoch: $(epoch) Loss: $(mean(view(losses, 1:i)))")
+            tstate = Lux.Experimental.apply_gradients!(tstate, grads)
+        end
+
+        if epoch % generate_image_interval == 0 || epoch == epochs
+            model_test = StatefulLuxLayer{true}(
+                tstate.model, tstate.parameters, Lux.testmode(tstate.states))
+            generated_images = __generate(
+                model_test, StableRNG(12), (image_size, image_size, 3, 12),
+                val_diffusion_steps, gdev) |> cpu_device()
+
+            path = joinpath(image_dir, "epoch_$(epoch)")
+            @info "Saving generated images to $(path)"
+            __save_images(path, generated_images)
+        end
+
+        if epoch % checkpoint_interval == 0 || epoch == epochs
+            path = joinpath(ckpt_dir, "model_$(epoch).jld2")
+            @info "Saving checkpoint to $(path)"
+            parameters = tstate.parameters |> cpu_device()
+            states = tstate.states |> cpu_device()
+            @save path {compress = true} parameters states
+        end
+    end
+
+    return tstate
+end
+
+# Finally, we run the training loop.
+
+#=
+expt_dir = joinpath(@__DIR__, "run")
+tstate = main(; expt_dir);
+nothing # hide
+=#
+
+# ## Image Generation using the Saved Model

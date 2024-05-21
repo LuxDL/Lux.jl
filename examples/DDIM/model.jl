@@ -42,7 +42,7 @@ function residual_block(in_channels::Int, out_channels::Int)
 
     return Chain(first_layer,
         SkipConnection(
-            Chain(BatchNorm(out_channels; affine=false, momentum=0.99),
+            Chain(BatchNorm(out_channels; affine=false, momentum=0.99f0),
                 Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1)), swish,
                 Conv((3, 3), out_channels => out_channels; stride=1, pad=(1, 1))),
             +))
@@ -223,7 +223,7 @@ function DenoisingDiffusionImplicitModel(
         embedding_dims=32, min_signal_rate=0.02f0, max_signal_rate=0.95f0)
     unet = UNet(image_size; channels=channels, block_depth=block_depth,
         min_freq=min_freq, max_freq=max_freq, embedding_dims=embedding_dims)
-    batchnorm = BatchNorm(3; affine=false, momentum=0.99, track_stats=true)
+    batchnorm = BatchNorm(3; affine=false, momentum=0.99f0, track_stats=true)
 
     return DenoisingDiffusionImplicitModel(
         unet, batchnorm, min_signal_rate, max_signal_rate)
