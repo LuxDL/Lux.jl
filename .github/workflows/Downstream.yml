@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 60
     env:
       GROUP: ${{ matrix.package.group }}
+      BACKEND_GROUP: ${{ matrix.package.group }}
     strategy:
       fail-fast: false
       matrix:

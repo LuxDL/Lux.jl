@@ -57,7 +57,8 @@ steps:
             end
 
             println("--- :julia: Instantiating project")
-            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group) do
+            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group,
+              "BACKEND_GROUP" => group) do
               Pkg.instantiate()
 
               try
@@ -151,7 +152,8 @@ steps:
             end
 
             println("--- :julia: Instantiating project")
-            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group) do
+            withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group,
+              "BACKEND_GROUP" => group) do
               Pkg.instantiate()
 
               try
