@@ -71,7 +71,8 @@ export generic_loss_function, compute_enzyme_gradient, compute_zygote_gradient,
        test_enzyme_gradients, MODELS_LIST
 end
 
-@testitem "Enzyme Integration" setup=[EnzymeTestSetup, SharedTestSetup] tags=[:autodiff, :enzyme] begin
+@testitem "Enzyme Integration" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
+    :autodiff, :enzyme] begin
     rng = get_stable_rng(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -88,7 +89,8 @@ end
     end
 end
 
-@testitem "Enzyme Integration ComponentArray" setup=[EnzymeTestSetup, SharedTestSetup] tags=[:autodiff, :enzyme] begin
+@testitem "Enzyme Integration ComponentArray" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
+    :autodiff, :enzyme] begin
     using ComponentArrays
 
     rng = get_stable_rng(12345)
