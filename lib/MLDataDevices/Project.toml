@@ -38,7 +38,7 @@ LuxDeviceUtilsSparseArraysExt = "SparseArrays"
 LuxDeviceUtilsZygoteExt = "Zygote"
 
 [compat]
-AMDGPU = "0.8.4"
+AMDGPU = "0.8.4, 0.9"
 Adapt = "4"
 Aqua = "0.8.4"
 CUDA = "5.2"
