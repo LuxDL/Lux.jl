@@ -288,8 +288,8 @@ end
 # ## Entry Point for our code
 
 @main function main(; epochs::Int=100, image_size::Int=128,
-        batchsize::Int=128, learning_rate_start::Float32=1.0f-3,
-        learning_rate_end::Float32=1.0f-5, weight_decay::Float32=1.0f-6,
+        batchsize::Int=128, learning_rate_start::Float32=1.0f-2,
+        learning_rate_end::Float32=1.0f-4, weight_decay::Float32=1.0f-4,
         checkpoint_interval::Int=25, expt_dir=tempname(@__DIR__),
         diffusion_steps::Int=80, generate_image_interval::Int=5,
         # model hyper params
