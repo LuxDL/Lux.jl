@@ -251,7 +251,8 @@ end
 
 # TODO: Add a ChainRules rrule that calls the `bwd` function, i.e. uses Enzyme for the
 #       gradient computation
-@concrete struct ReactantLayer{FST, T, inType, inCType, psType, stType, F, B,
+# TODO: Inference won't work OOTB, we will have to compile that separately
+@concrete struct ReactantLayer{FST, T, inType, inCType, psType, stType,
     L <: AbstractExplicitLayer, AD <: ToReactantAdaptor} <: AbstractExplicitLayer
     adaptor::AD
     input_prototype::inType
@@ -260,8 +261,8 @@ end
     concrete_st::stType
     layer::L
     clayer
-    fwd::F
-    bwd::B
+    fwd_fn
+    vjp_fn
     eltype_adaptor
     input_structure
 end
