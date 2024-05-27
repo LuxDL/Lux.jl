@@ -29,7 +29,26 @@ function Lux.__to_reactant_adaptor(
 
     fwd = Reactant.compile((m, x) -> m(x), (csmodel, concrete_input))
 
-    return Lux.ReactantLayer{FST}(model, cmodel, fwd, nothing)
+    bwd = try
+        enzyme_grad_fn = (m, x) -> begin
+            dx = Enzyme.make_zero(x)
+            dps = Enzyme.make_zero(m.ps)
+            st = ifelse(FST, m.st, m.st_any)
+            Enzyme.autodiff(
+                Enzyme.Reverse, (m, x, ps, st) -> first(LuxCore.apply(m, x, ps, st)),
+                Enzyme.Duplicated, Enzyme.Const(m), Enzyme.Duplicated(x, dx),
+                Enzyme.Duplicated(ps, dps), Enzyme.Const(st))
+            return (; ps=dps), dx
+        end
+
+        Reactant.compile(enzyme_grad_fn, (csmodel, concrete_input))
+    catch err
+        @error "Enzyme failed to compile the backward pass. Differentiation will be \
+                disabled for this model." exception=err
+        nothing
+    end
+
+    return Lux.ReactantLayer{FST}(model, cmodel, fwd, bwd)
 end
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::Lux.ReactantLayer)
