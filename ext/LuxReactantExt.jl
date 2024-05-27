@@ -3,6 +3,7 @@ module LuxReactantExt
 using Adapt: adapt
 using ArgCheck: @argcheck
 using Enzyme: Enzyme
+using Functors: fmapstructure
 using Random: AbstractRNG, Xoshiro
 using Reactant: Reactant
 using Lux: Lux, LuxEltypeAdaptor
@@ -26,7 +27,7 @@ function Lux.__to_reactant_adaptor(
     st_eltype = Lux.__recursive_eltype(st)
 
     newT = promote_type(input_eltype, ps_eltype, st_eltype)
-    eltype_adaptor = LuxEltypeAdaptor{newT}()
+    eltype_adaptor = nothing
 
     if !to.force_allow_mixed_eltypes &&
        any(x -> x != newT && x != Union{}, (input_eltype, ps_eltype, st_eltype))
@@ -46,6 +47,7 @@ function Lux.__to_reactant_adaptor(
             """ exception=err input_eltype ps_eltype st_eltype common_eltype=newT
         end
 
+        eltype_adaptor = LuxEltypeAdaptor{newT}()
         input_prototype = adapt(eltype_adaptor, to.input_prototype)
         ps = adapt(eltype_adaptor, ps)
         st = adapt(eltype_adaptor, st)
@@ -91,7 +93,8 @@ function Lux.__to_reactant_adaptor(
         nothing
     end
 
-    return Lux.ReactantLayer{FST}(model, cmodel, fwd, bwd, eltype_adaptor)
+    return Lux.ReactantLayer{FST, Lux.__recursive_eltype(input_prototype)}(
+        model, cmodel, fwd, bwd, eltype_adaptor, fmapstructure(Lux.__size, input_prototype))
 end
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::Lux.ReactantLayer)
@@ -106,11 +109,34 @@ function LuxCore.initialstates(rng::AbstractRNG, layer::Lux.ReactantLayer)
     return __make_concrete_array(st)
 end
 
-function (l::Lux.ReactantLayer{FST})(x, ps, st::NamedTuple) where {FST}
+function (l::Lux.ReactantLayer{FST, T})(x, ps, st::NamedTuple) where {FST, T}
     csmodel = Lux.StatefulLuxLayer{FST}(l.clayer, ps, st)
     l.eltype_adaptor !== nothing && (x = adapt(l.eltype_adaptor, x))
-    y = l.fwd(csmodel, __make_concrete_array(x))
+
+    # XLARuntimeError is not great, so check and terminate early if needed
+    input_structure = fmapstructure(Lux.__size, x)
+    if l.input_structure != input_structure
+        throw(DimensionMismatch(lazy"Input structure mismatch. Expected $(l.input_structure), got $(input_structure)."))
+    end
+
+    # TODO: For non array inputs this we make the eltype uniform which might not be
+    # desirable. We should handle those cases with `fmap`
+    if T != Lux.__recursive_eltype(x)
+        @warn """
+        `Reactant.compile` was called with input eltype $(T) but the current input eltype \
+        is $(Lux.__recursive_eltype(x)). This might lead to unexpected behavior.
+
+        We will convert the input to $(T) and continue. If you want to avoid this, please \
+        recompile the model with the correct input eltype.
+        """ maxlog=1
+        x = adapt(LuxEltypeAdaptor{T}(), x)
+    end
+
+    y = Lux.__apply_reactant(l, csmodel, x)
     return y, ifelse(FST, csmodel.st, csmodel.st_any)
 end
+
+@inline Lux.__apply_reactant(l::Lux.ReactantLayer, csmodel, x) = l.fwd(
+    csmodel, __make_concrete_array(x))
 
 end

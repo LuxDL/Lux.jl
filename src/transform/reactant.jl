@@ -21,3 +21,4 @@ function Adapt.adapt(to::ToReactantAdaptor, model::AbstractExplicitLayer)
 end
 
 function __to_reactant_adaptor end
+function __apply_reactant end
