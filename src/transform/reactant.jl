@@ -1,11 +1,13 @@
 @concrete struct ToReactantAdaptor{FST} <: AbstractFromLuxAdaptor
     input_prototype
     force_compile_backward::Bool
+    force_allow_mixed_eltypes::Bool
 end
 
-function ToReactantAdaptor{FST}(
-        input_prototype; force_compile_backward::Bool=false) where {FST}
-    return ToReactantAdaptor{FST}(input_prototype, force_compile_backward)
+function ToReactantAdaptor{FST}(input_prototype; force_compile_backward::Bool=false,
+        force_allow_mixed_eltypes::Bool=false) where {FST}
+    return ToReactantAdaptor{FST}(
+        input_prototype, force_compile_backward, force_allow_mixed_eltypes)
 end
 function ToReactantAdaptor(args...; fixed_state_type::Val=Val(true), kwargs...)
     return ToReactantAdaptor{__unwrap_val(fixed_state_type)}(args...; kwargs...)

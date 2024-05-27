@@ -1,10 +1,11 @@
 module LuxReactantExt
 
+using Adapt: adapt
 using ArgCheck: @argcheck
 using Enzyme: Enzyme
 using Random: AbstractRNG, Xoshiro
 using Reactant: Reactant
-using Lux: Lux
+using Lux: Lux, LuxEltypeAdaptor
 using LuxCore: LuxCore, AbstractExplicitLayer
 
 @inline __make_concrete_array(x::Reactant.ConcreteRArray) = x
@@ -13,16 +14,52 @@ using LuxCore: LuxCore, AbstractExplicitLayer
     return Reactant.make_tracer(IdDict(), x, (), Reactant.ArrayToConcrete, nothing)
 end
 
+# Reactant doesn't handle mixed eltypes that well, so we will first try to compile it as
+# a usual julia function. However, if that fails, we will type cast and try to recompile.
+# Note that this is only a one time operation so it doesn't matter if this step is too slow.
 function Lux.__to_reactant_adaptor(
         to::Lux.ToReactantAdaptor{FST}, model::AbstractExplicitLayer) where {FST}
-    concrete_input = __make_concrete_array(to.input_prototype)
+    input_prototype = to.input_prototype
+    input_eltype = Lux.__recursive_eltype(input_prototype)
+    ps, st = Lux.setup(Xoshiro(123), model) # We generate fake parameters and states to compile the model
+    ps_eltype = Lux.__recursive_eltype(ps)
+    st_eltype = Lux.__recursive_eltype(st)
+
+    newT = promote_type(input_eltype, ps_eltype, st_eltype)
+    eltype_adaptor = LuxEltypeAdaptor{newT}()
+
+    if !to.force_allow_mixed_eltypes &&
+       any(x -> x != newT && x != Union{}, (input_eltype, ps_eltype, st_eltype))
+        # Try compiling, but this might fail
+        try
+            return Lux.__to_reactant_adaptor(to, model, input_prototype, ps, st, nothing)
+        catch err
+            @warn """
+            Mixed Eltypes detected. Failure is NOT unexpected. Trying to recompile with a \
+            common eltype.
+
+            HINT: To force compiling the mixed eltypes, set \
+            `force_allow_mixed_eltypes=true` in the constructor of `ToReactantAdaptor`.
+
+            If compilation succeeds, all inputs to the compiled model will be \
+            automatically type casted to the common eltype.\n
+            """ exception=err input_eltype ps_eltype st_eltype common_eltype=newT
+        end
+
+        input_prototype = adapt(eltype_adaptor, to.input_prototype)
+        ps = adapt(eltype_adaptor, ps)
+        st = adapt(eltype_adaptor, st)
+    end
+
+    return Lux.__to_reactant_adaptor(to, model, input_prototype, ps, st, eltype_adaptor)
+end
+
+function Lux.__to_reactant_adaptor(
+        to::Lux.ToReactantAdaptor{FST}, model::AbstractExplicitLayer,
+        input_prototype, ps, st, eltype_adaptor) where {FST}
+    concrete_input = __make_concrete_array(input_prototype)
     cmodel = __make_concrete_array(model)
-
-    # We generate fake parameters and states to compile the model
-    ps = LuxCore.initialparameters(Xoshiro(123), model)
     cps = __make_concrete_array(ps)
-
-    st = LuxCore.initialstates(Xoshiro(123), model)
     cst = __make_concrete_array(st)
 
     csmodel = Lux.StatefulLuxLayer{FST}(cmodel, cps, cst)
@@ -44,24 +81,34 @@ function Lux.__to_reactant_adaptor(
         Reactant.compile(enzyme_grad_fn, (csmodel, concrete_input))
     catch err
         to.force_compile_backward && rethrow(err)
-        @error "Enzyme failed to compile the backward pass. Differentiation will be \
-                disabled for this model." exception=err
+        @error """
+        Enzyme failed to compile the backward pass. Differentiation will be disabled for \
+        this model.
+
+        HINT: To force compilation of the backward pass, set `force_compile_backward=true` \
+        in the constructor of `ToReactantAdaptor`.\n
+        """ exception=err
         nothing
     end
 
-    return Lux.ReactantLayer{FST}(model, cmodel, fwd, bwd)
+    return Lux.ReactantLayer{FST}(model, cmodel, fwd, bwd, eltype_adaptor)
 end
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::Lux.ReactantLayer)
-    return __make_concrete_array(LuxCore.initialparameters(rng, layer.layer))
+    ps = LuxCore.initialparameters(rng, layer.layer)
+    layer.eltype_adaptor !== nothing && (ps = adapt(layer.eltype_adaptor, ps))
+    return __make_concrete_array(ps)
 end
 
 function LuxCore.initialstates(rng::AbstractRNG, layer::Lux.ReactantLayer)
-    return __make_concrete_array(LuxCore.initialstates(rng, layer.layer))
+    st = LuxCore.initialstates(rng, layer.layer)
+    layer.eltype_adaptor !== nothing && (st = adapt(layer.eltype_adaptor, st))
+    return __make_concrete_array(st)
 end
 
 function (l::Lux.ReactantLayer{FST})(x, ps, st::NamedTuple) where {FST}
     csmodel = Lux.StatefulLuxLayer{FST}(l.clayer, ps, st)
+    l.eltype_adaptor !== nothing && (x = adapt(l.eltype_adaptor, x))
     y = l.fwd(csmodel, __make_concrete_array(x))
     return y, ifelse(FST, csmodel.st, csmodel.st_any)
 end

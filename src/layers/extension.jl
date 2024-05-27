@@ -257,4 +257,5 @@ end
     clayer
     fwd::F
     bwd::B
+    eltype_adaptor
 end

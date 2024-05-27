@@ -267,7 +267,7 @@ end
 
 # recussive_eltype
 @inline __recursive_eltype(x::AbstractArray) = eltype(x)
-@inline __recursive_eltype(x::Tuple) = promote_type(__recursice_eltype.(x)...)
+@inline __recursive_eltype(x::Tuple) = promote_type(__recursive_eltype.(x)...)
 @inline __recursive_eltype(x::NamedTuple) = promote_type(__recursive_eltype.(values(x))...)
 @inline __recursive_eltype(::Nothing) = Bool
 @inline __recursive_eltype(x::Number) = eltype(x)
