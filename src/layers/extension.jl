@@ -251,7 +251,8 @@ end
 
 # TODO: Add a ChainRules rrule that calls the `bwd` function, i.e. uses Enzyme for the
 #       gradient computation
-@concrete struct ReactantLayer{F, B, L <: AbstractExplicitLayer} <: AbstractExplicitLayer
+@concrete struct ReactantLayer{FST, F, B, L <: AbstractExplicitLayer} <:
+                 AbstractExplicitLayer
     layer::L
     clayer
     fwd::F

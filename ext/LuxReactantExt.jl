@@ -13,8 +13,9 @@ using LuxCore: LuxCore, AbstractExplicitLayer
     return Reactant.make_tracer(IdDict(), x, (), Reactant.ArrayToConcrete, nothing)
 end
 
-function Lux.__to_reactant_adaptor(model::AbstractExplicitLayer, input_prototype)
-    concrete_input = __make_concrete_array(input_prototype)
+function Lux.__to_reactant_adaptor(
+        to::Lux.ToReactantAdaptor{FST}, model::AbstractExplicitLayer) where {FST}
+    concrete_input = __make_concrete_array(to.input_prototype)
     cmodel = __make_concrete_array(model)
 
     # We generate fake parameters and states to compile the model
@@ -24,11 +25,11 @@ function Lux.__to_reactant_adaptor(model::AbstractExplicitLayer, input_prototype
     st = LuxCore.initialstates(Xoshiro(123), model)
     cst = __make_concrete_array(st)
 
-    csmodel = Lux.StatefulLuxLayer{false}(cmodel, cps, cst)
+    csmodel = Lux.StatefulLuxLayer{FST}(cmodel, cps, cst)
 
     fwd = Reactant.compile((m, x) -> m(x), (csmodel, concrete_input))
 
-    return Lux.ReactantLayer(model, cmodel, fwd, nothing)
+    return Lux.ReactantLayer{FST}(model, cmodel, fwd, nothing)
 end
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::Lux.ReactantLayer)
@@ -39,10 +40,10 @@ function LuxCore.initialstates(rng::AbstractRNG, layer::Lux.ReactantLayer)
     return __make_concrete_array(LuxCore.initialstates(rng, layer.layer))
 end
 
-function (l::Lux.ReactantLayer)(x, ps, st::NamedTuple)
-    csmodel = Lux.StatefulLuxLayer{false}(l.clayer, ps, st)
+function (l::Lux.ReactantLayer{FST})(x, ps, st::NamedTuple) where {FST}
+    csmodel = Lux.StatefulLuxLayer{FST}(l.clayer, ps, st)
     y = l.fwd(csmodel, __make_concrete_array(x))
-    return y, csmodel.st_any
+    return y, ifelse(FST, csmodel.st, csmodel.st_any)
 end
 
 end
