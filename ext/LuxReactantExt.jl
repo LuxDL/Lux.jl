@@ -43,6 +43,7 @@ function Lux.__to_reactant_adaptor(
 
         Reactant.compile(enzyme_grad_fn, (csmodel, concrete_input))
     catch err
+        to.force_compile_backward && rethrow(err)
         @error "Enzyme failed to compile the backward pass. Differentiation will be \
                 disabled for this model." exception=err
         nothing
