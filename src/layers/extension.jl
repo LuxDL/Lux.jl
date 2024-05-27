@@ -251,12 +251,31 @@ end
 
 # TODO: Add a ChainRules rrule that calls the `bwd` function, i.e. uses Enzyme for the
 #       gradient computation
-@concrete struct ReactantLayer{FST, T, F, B, L <: AbstractExplicitLayer} <:
-                 AbstractExplicitLayer
+@concrete struct ReactantLayer{FST, T, inType, inCType, psType, stType, F, B,
+    L <: AbstractExplicitLayer, AD <: ToReactantAdaptor} <: AbstractExplicitLayer
+    adaptor::AD
+    input_prototype::inType
+    concrete_input_prototype::inCType
+    concrete_ps::psType
+    concrete_st::stType
     layer::L
     clayer
     fwd::F
     bwd::B
     eltype_adaptor
     input_structure
+end
+
+function Base.show(io::IO, s::ReactantLayer{ST}) where {ST}
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        print(io, "ReactantLayer{$ST}(\n")
+        _big_show(io, s.layer, 4)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        print(io, "ReactantLayer{$ST}(")
+        _layer_show(io, s.layer)
+    else
+        print(io, "ReactantLayer{$ST}(")
+        show(io, s.layer)
+    end
+    print(io, ")")
 end

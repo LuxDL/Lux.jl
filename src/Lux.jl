@@ -16,7 +16,7 @@ using PrecompileTools: @recompile_invalidations
     using Markdown: @doc_str
     using OhMyThreads: tmapreduce
     using Preferences: @load_preference
-    using Random: Random, AbstractRNG
+    using Random: Random, AbstractRNG, Xoshiro
     using Reexport: @reexport
 
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
@@ -48,6 +48,12 @@ const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNes
 # Utilities
 include("utils.jl")
 
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
+include("transform/reactant.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -71,12 +77,6 @@ include("helpers/stateful.jl")
 include("helpers/compact.jl")
 include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
-
-# Transform to and from other frameworks
-include("transform/types.jl")
-include("transform/flux.jl")
-include("transform/simplechains.jl")
-include("transform/reactant.jl")
 
 # Distributed Training
 include("distributed/backend.jl")
@@ -111,7 +111,7 @@ export f16, f32, f64
 export transform
 export FromFluxAdaptor, FluxLayer
 export ToSimpleChainsAdaptor, SimpleChainsLayer
-export ToReactantAdaptor
+export ToReactantAdaptor, ReactantLayer
 export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
