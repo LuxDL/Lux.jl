@@ -83,8 +83,8 @@ function Lux.__to_reactant_adaptor(
             st = ifelse(FST, m.st, m.st_any)
             Enzyme.autodiff(
                 Enzyme.Reverse, (m, x, ps, st) -> first(LuxCore.apply(m, x, ps, st)),
-                Enzyme.Duplicated, Enzyme.Const(m), Enzyme.Duplicated(x, dx),
-                Enzyme.Duplicated(ps, dps), Enzyme.Const(st))
+                Enzyme.Duplicated, Enzyme.Const(m.model), Enzyme.Duplicated(x, dx),
+                Enzyme.Duplicated(m.ps, dps), Enzyme.Const(st))
             return (; ps=dps), dx
         end
 
