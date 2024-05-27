@@ -76,6 +76,7 @@ include("helpers/nested_ad.jl")
 include("transform/types.jl")
 include("transform/flux.jl")
 include("transform/simplechains.jl")
+include("transform/reactant.jl")
 
 # Distributed Training
 include("distributed/backend.jl")
@@ -110,6 +111,7 @@ export f16, f32, f64
 export transform
 export FromFluxAdaptor, FluxLayer
 export ToSimpleChainsAdaptor, SimpleChainsLayer
+export ToReactantAdaptor
 export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
