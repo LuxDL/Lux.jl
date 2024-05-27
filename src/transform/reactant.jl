@@ -1,4 +1,3 @@
-# TODO: Add options to compile the gradients directly using Enzyme.jl
 @concrete struct ToReactantAdaptor <: AbstractFromLuxAdaptor
     input_prototype
 end
