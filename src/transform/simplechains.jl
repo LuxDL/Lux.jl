@@ -38,7 +38,18 @@ julia> adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
 ToSimpleChainsAdaptor{Tuple{Static.StaticInt{28}, Static.StaticInt{28}, Static.StaticInt{1}}}((static(28), static(28), static(1)), false)
 
 julia> simple_chains_model = adapt(adaptor, lux_model) # or adaptor(lux_model)
-SimpleChainsLayer()  # 47_154 parameters
+SimpleChainsLayer{false}(
+    Chain(
+        layer_1 = Conv((5, 5), 1 => 6, relu),  # 156 parameters
+        layer_2 = MaxPool((2, 2)),
+        layer_3 = Conv((5, 5), 6 => 16, relu),  # 2_416 parameters
+        layer_4 = MaxPool((2, 2)),
+        layer_5 = FlattenLayer(),
+        layer_6 = Dense(256 => 128, relu),  # 32_896 parameters
+        layer_7 = Dense(128 => 84, relu),  # 10_836 parameters
+        layer_8 = Dense(84 => 10),      # 850 parameters
+    ),
+)  # 47_154 parameters
 
 julia> ps, st = Lux.setup(Random.default_rng(), simple_chains_model);
 
@@ -72,7 +83,7 @@ function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
         error("`ToSimpleChainsAdaptor` requires `SimpleChains.jl` to be loaded.")
     end
     sc_layer = __fix_input_dims_simplechain(__to_simplechains_adaptor(L), to.input_dims)
-    return SimpleChainsLayer{to.convert_to_array}(sc_layer)
+    return SimpleChainsLayer{to.convert_to_array}(sc_layer, L)
 end
 
 function __to_simplechains_adaptor end

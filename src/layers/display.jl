@@ -119,3 +119,17 @@ end
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end
+
+function _print_wrapper_model(io::IO, desc::String, model::AbstractExplicitLayer)
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        print(io, desc, "(\n")
+        _big_show(io, model, 4)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        print(io, desc, "(")
+        _layer_show(io, model)
+    else
+        print(io, desc, "(")
+        show(io, model)
+    end
+    print(io, ")")
+end

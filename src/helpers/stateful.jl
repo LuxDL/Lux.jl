@@ -53,17 +53,7 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
 end
 
 function Base.show(io::IO, s::StatefulLuxLayer{ST}) where {ST}
-    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
-        print(io, "StatefulLuxLayer{$ST}(\n")
-        _big_show(io, s.model, 4)
-    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
-        print(io, "StatefulLuxLayer{$ST}(")
-        _layer_show(io, s.model)
-    else
-        print(io, "StatefulLuxLayer{$ST}(")
-        show(io, s.model)
-    end
-    print(io, ")")
+    _print_wrapper_model(io, "StatefulLuxLayer{$ST}", s.model)
 end
 
 function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}
@@ -115,7 +105,7 @@ CRC.@non_differentiable __set_state!(::Any...)
 
 function (s::StatefulLuxLayer)(x, p=s.ps)
     y, st = apply(s.model, x, p, __get_state(s))
-    __set_state!(s, st.layer_1)
+    __set_state!(s, st)
     return y
 end
 

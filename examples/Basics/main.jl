@@ -310,9 +310,9 @@ function sse(model, ps, st, X, y)
     return sum(abs2, y_pred .- y), st_new
 end
 sse(weight, bias, X, y) = sum(abs2, weight * X .+ bias .- y)
-loss_function(ps, X, y) = mse(model, ps, st, X, y)
+loss_function(ps, X, y) = sse(model, ps, st, X, y)
 
-println("Loss Value with ground true parameters: ", mse(W, b, x_samples, y_samples))
+println("Loss Value with ground true parameters: ", sse(W, b, x_samples, y_samples))
 
 for i in 1:100
     ## In actual code, don't use globals. But here I will simply for the sake of
