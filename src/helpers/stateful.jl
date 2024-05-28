@@ -52,6 +52,25 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
     end
 end
 
+function Base.show(io::IO, s::StatefulLuxLayer{ST}) where {ST}
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        print(io, "StatefulLuxLayer{$ST}(\n")
+        _big_show(io, s.model, 4)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        print(io, "StatefulLuxLayer{$ST}(")
+        _layer_show(io, s.model)
+    else
+        print(io, "StatefulLuxLayer{$ST}(")
+        show(io, s.model)
+    end
+    print(io, ")")
+end
+
+function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}
+    return ((; x.model, x.ps, x.st, x.st_any),
+        nt -> StatefulLuxLayer{FT}(nt.model, nt.ps, nt.st, nt.st_any))
+end
+
 @inline LuxCore.parameterlength(m::StatefulLuxLayer) = LuxCore.parameterlength(m.model)
 @inline LuxCore.statelength(m::StatefulLuxLayer) = LuxCore.statelength(m.model)
 @inline LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
@@ -77,19 +96,26 @@ function StatefulLuxLayer{false}(model::AbstractExplicitLayer, ps, st::NamedTupl
     return StatefulLuxLayer{false}(model, ps, nothing, st)
 end
 
-function (s::StatefulLuxLayer{true})(x, p=s.ps)
-    y, st = apply(s.model, x, p, s.st)
-    CRC.@ignore_derivatives begin
-        s.st = st
-    end
-    return y
-end
+@inline __get_state(s::StatefulLuxLayer{true}) = s.st
+@inline __get_state(s::StatefulLuxLayer{false}) = s.st_any
 
-function (s::StatefulLuxLayer{false})(x, p=s.ps)
-    y, st = apply(s.model, x, p, s.st_any)
-    CRC.@ignore_derivatives begin
-        s.st_any = st
-    end
+@inline function __set_state!(
+        s::StatefulLuxLayer{true, M, psType, stType}, st::stType) where {M, psType, stType}
+    s.st = st
+end
+function __set_state!(::StatefulLuxLayer{true, M, psType, stType},
+        ::stType2) where {M, psType, stType, stType2}
+    throw(ArgumentError("Output state from the model has type `$(stType2)`, but expected \
+        `$(stType)`. Construct the Stateful layer as `StatefulLuxLayer{false}` instead \
+        of `StatefulLuxLayer{true}`."))
+end
+@inline __set_state!(s::StatefulLuxLayer{false}, st) = (s.st_any = st)
+
+CRC.@non_differentiable __set_state!(::Any...)
+
+function (s::StatefulLuxLayer)(x, p=s.ps)
+    y, st = apply(s.model, x, p, __get_state(s))
+    __set_state!(s, st.layer_1)
     return y
 end
 

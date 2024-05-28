@@ -49,6 +49,35 @@ function Lux.Experimental.apply_gradients!(ts::Lux.Experimental.TrainState, grad
         ts.states, ts.optimizer_state, ts.step + 1)
 end
 
+# Simple extension to the `adjust!` API
+function Optimisers.adjust!(ts::Lux.Experimental.TrainState, eta::Real)
+    st_opt = ts.optimizer_state
+    Optimisers.adjust!(st_opt, eta)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, st_opt, ts.step)
+end
+
+function Optimisers.adjust!(ts::Lux.Experimental.TrainState; kwargs...)
+    st_opt = ts.optimizer_state
+    Optimisers.adjust!(st_opt; kwargs...)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, st_opt, ts.step)
+end
+
+function Optimisers.adjust(ts::Lux.Experimental.TrainState, eta::Real)
+    st_opt = ts.optimizer_state
+    st_opt = Optimisers.adjust(st_opt, eta)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, st_opt, ts.step)
+end
+
+function Optimisers.adjust(ts::Lux.Experimental.TrainState; kwargs...)
+    st_opt = ts.optimizer_state
+    st_opt = Optimisers.adjust(st_opt; kwargs...)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, st_opt, ts.step)
+end
+
 # DistributedUtils
 @concrete struct DistributedOptimizer{B <: AbstractLuxDistributedBackend} <: AbstractRule
     backend::B

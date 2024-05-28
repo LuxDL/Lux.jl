@@ -25,7 +25,7 @@ using PrecompileTools: @recompile_invalidations
                     initialparameters, initialstates, parameterlength, statelength,
                     inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
                     display_name, replicate
-    using LuxDeviceUtils: get_device
+    using LuxDeviceUtils: AbstractLuxDeviceAdaptor, get_device
 
     # @compact specific
     using MacroTools: MacroTools, block, combinedef, splitdef
