@@ -510,6 +510,75 @@ end
 outputsize(e::Embedding) = (e.out_dims,)
 
 """
+    CartesianEmbedding(in_dims => out_dims; init_weight=randn32)
+
+A lookup table that stores embeddings of dimension `out_dims` for a vocabulary of size
+`in_dims` that acts as cartesian indices. This is in contrast with the standard
+`Embedding` layer where where the vocabulary acts as linear indices.
+
+## Arguments
+
+  - `in_dims`: tuple of the numbers of input dimensions along each axis
+  - `out_dims`: number of output dimensions
+
+## Keyword Arguments
+
+  - `init_weight`: initializer for the weight matrix
+    (`weight = init_weight(rng, out_dims, in_dims...)`)
+
+## Input
+
+  - Tuple of Integers OR
+  - Tuple of Abstract Vectors of Integers OR
+  - Tuple of Abstract Arrays of Integers
+
+## Returns
+
+  - Returns the embedding corresponding to each index in the input. For an N dimensional
+    input, an N + 1 dimensional output is returned.
+  - Empty `NamedTuple()`
+"""
+@concrete struct CartesianEmbedding{N} <: AbstractExplicitLayer
+    in_dims::NTuple{N, Int}
+    out_dims::Int
+    init_weight
+end
+
+function CartesianEmbedding((in_dims, out_dims)::Pair{<:NTuple{N, <:Integer}, <:Integer};
+        init_weight=randn32) where {N}
+    return CartesianEmbedding{N}(in_dims, out_dims, init_weight)
+end
+
+function initialparameters(rng::AbstractRNG, c::CartesianEmbedding)
+    return (weight=c.init_weight(rng, c.out_dims, c.in_dims...),)
+end
+
+function (c::CartesianEmbedding)(x::NTuple{N, <:Integer}, ps, st::NamedTuple) where {N}
+    view(ps.weight, :, x...), st
+end
+function (c::CartesianEmbedding)(
+        x::NTuple{N, <:AbstractVector{<:Integer}}, ps, st::NamedTuple) where {N}
+    sizes = size.(x)
+    @argcheck allequal(sizes) DimensionMismatch("Input vectors must have the same shape")
+    return NNlib.gather(ps.weight, x...), st
+end
+function (c::CartesianEmbedding)(
+        x::NTuple{N, <:AbstractArray{<:Integer}}, ps, st::NamedTuple) where {N}
+    sizes = size.(x)
+    @argcheck allequal(sizes) DimensionMismatch("Input arrays must have the same shape")
+    return reshape(c(vec.(x), ps, st)[1], :, first(sizes)...), st
+end
+function (c::CartesianEmbedding)(x::Tuple{}, ps, st::NamedTuple)
+    throw(ArgumentError("Input tuple must contain at least one element"))
+end
+
+function Base.show(io::IO, c::CartesianEmbedding)
+    return print(io, "CartesianEmbedding(", c.in_dims, " => ", c.out_dims, ")")
+end
+
+outputsize(c::CartesianEmbedding) = (c.out_dims,)
+
+"""
     PeriodicEmbedding(idxs, periods)
 
 Create an embedding periodic in some inputs with specified periods. Input indices not in

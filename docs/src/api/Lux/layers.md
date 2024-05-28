@@ -98,5 +98,6 @@ Upsample
 ## SciML Layers
 
 ```@docs
+CartesianEmbedding
 PeriodicEmbedding
 ```
