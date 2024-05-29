@@ -451,7 +451,8 @@ end
     Embedding(in_dims => out_dims; init_weight=randn32)
 
 A lookup table that stores embeddings of dimension `out_dims` for a vocabulary of size
-`in_dims`.
+`in_dims`. When `in_dims` is a scalar the vocabulary acts as linear indices, while when
+`in_dims` is a tuple of scalars the vocabulary acts as Cartesian indices.
 
 This layer is often used to store word embeddings and retrieve them using indices.
 
@@ -461,19 +462,22 @@ This layer is often used to store word embeddings and retrieve them using indice
 
 ## Arguments
 
-  - `in_dims`: number of input dimensions
+  - `in_dims`: number(s) of input dimensions
   - `out_dims`: number of output dimensions
 
 ## Keyword Arguments
 
   - `init_weight`: initializer for the weight matrix
-    (`weight = init_weight(rng, out_dims, in_dims)`)
+    (`weight = init_weight(rng, out_dims, in_dims...)`)
 
 ## Input
 
   - Integer OR
   - Abstract Vector of Integers OR
-  - Abstract Array of Integers
+  - Abstract Array of Integers OR
+  - Tuple of Integers OR
+  - Tuple of Abstract Vectors of Integers OR
+  - Tuple of Abstract Arrays of Integers
 
 ## Returns
 
@@ -481,18 +485,22 @@ This layer is often used to store word embeddings and retrieve them using indice
     input, an N + 1 dimensional output is returned.
   - Empty `NamedTuple()`
 """
-@concrete struct Embedding <: AbstractExplicitLayer
-    in_dims::Int
+@concrete struct Embedding{N} <: AbstractExplicitLayer
+    in_dims::NTuple{N, Int}
     out_dims::Int
     init_weight
 end
 
 function Embedding((in_dims, out_dims)::Pair{<:Integer, <:Integer}; init_weight=randn32)
-    return Embedding(in_dims, out_dims, init_weight)
+    return Embedding{1}(Tuple(in_dims), out_dims, init_weight)
+end
+function Embedding((in_dims, out_dims)::Pair{<:NTuple{N, <:Integer}, <:Integer};
+        init_weight=randn32) where {N}
+    return Embedding{N}(in_dims, out_dims, init_weight)
 end
 
 function initialparameters(rng::AbstractRNG, e::Embedding)
-    return (weight=e.init_weight(rng, e.out_dims, e.in_dims),)
+    return (weight=e.init_weight(rng, e.out_dims, e.in_dims...),)
 end
 
 (e::Embedding)(x::Integer, ps, st::NamedTuple) = view(ps.weight, :, x), st
@@ -501,6 +509,24 @@ function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)
 end
 function (e::Embedding)(x::AbstractArray{<:Integer}, ps, st::NamedTuple)
     return reshape(e(vec(x), ps, st)[1], :, size(x)...), st
+end
+function (e::Embedding)(x::NTuple{N, <:Integer}, ps, st::NamedTuple) where {N}
+    view(ps.weight, :, x...), st
+end
+function (e::Embedding)(
+        x::NTuple{N, <:AbstractVector{<:Integer}}, ps, st::NamedTuple) where {N}
+    sizes = size.(x)
+    @argcheck allequal(sizes) DimensionMismatch("Input vectors must have the same shape")
+    return NNlib.gather(ps.weight, x...), st
+end
+function (e::Embedding)(
+        x::NTuple{N, <:AbstractArray{<:Integer}}, ps, st::NamedTuple) where {N}
+    sizes = size.(x)
+    @argcheck allequal(sizes) DimensionMismatch("Input arrays must have the same shape")
+    return reshape(e(vec.(x), ps, st)[1], :, first(sizes)...), st
+end
+function (e::Embedding)(x::Tuple{}, ps, st::NamedTuple)
+    throw(ArgumentError("Input tuple must contain at least one element"))
 end
 
 function Base.show(io::IO, e::Embedding)
