@@ -3,7 +3,7 @@
 
     struct NotFixedStateModel <: Lux.AbstractExplicitLayer end
 
-    (m::NotFixedStateModel)(x, ps, st) = (x, (; s = 1))
+    (m::NotFixedStateModel)(x, ps, st) = (x, (; s=1))
 
     model = NotFixedStateModel()
     ps, st = Lux.setup(rng, model)
