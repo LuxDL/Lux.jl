@@ -15,6 +15,7 @@ using LuxCore: LuxCore, AbstractExplicitLayer
 # for the model.
 include("layer.jl")
 
+# compile the entire training loop
 include("train.jl")
 
 end

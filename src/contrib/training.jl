@@ -36,20 +36,23 @@ function Base.show(io::IO, ts::TrainState)
         print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
 
+const APPLY_GRAD_DOCSTRING = """
+## Arguments
+
+  - `ts`: [`TrainState`](@ref) object.
+  - `grads`: Gradients of the loss function wrt `ts.params`.
+
+## Returns
+
+Updated [`TrainState`](@ref) object.
+"""
+
 """
     apply_gradients(ts::TrainState, grads)
 
 Update the parameters stored in `ts` using the gradients `grads`.
 
-## Arguments
-
-  - `ts`: [`TrainState`](@ref) object.
-  - `grads`: Gradients of the loss function wrt `ts.params`.
-  - `update_inplace`: Whether to update the parameters inplace or not.
-
-## Returns
-
-Updated [`TrainState`](@ref) object.
+$(APPLY_GRAD_DOCSTRING)
 """
 function apply_gradients end
 
@@ -59,14 +62,7 @@ function apply_gradients end
 Update the parameters stored in `ts` using the gradients `grads`. This is an inplace version
 of [`apply_gradients`](@ref).
 
-## Arguments
-
-  - `ts`: [`TrainState`](@ref) object.
-  - `grads`: Gradients of the loss function wrt `ts.params`.
-
-## Returns
-
-Updated [`TrainState`](@ref) object.
+$(APPLY_GRAD_DOCSTRING)
 """
 function apply_gradients! end
 
@@ -145,4 +141,41 @@ end
     end
 
     return wrapped_objective_function, st_updated, stats
+end
+
+"""
+    single_train_step!(backend, obj_fn::F, data, ts::TrainState)
+
+Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
+updates the parameters using [`apply_gradients!`](@ref). All backends supported via
+[`compute_gradients`](@ref) are supported here.
+
+## Additional Backends
+
+   - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+"""
+function single_train_step! end
+
+"""
+    single_train_step(backend, obj_fn::F, data, ts::TrainState)
+
+Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
+updates the parameters using [`apply_gradients`](@ref). All backends supported via
+[`compute_gradients`](@ref) are supported here.
+
+## Additional Backends
+
+   - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+
+In most cases you should use [`single_train_step!`](@ref) instead of this function.
+"""
+function single_train_step end
+
+for inplace in ("!", "")
+    step, apply_fn = Symbol(:single_train_step, inplace), Symbol(:apply_gradients, inplace)
+    @eval function $step(backend, obj_fn::F, data, ts::TrainState) where {F}
+        grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
+        $apply_fn(ts, grads)
+        return grads, loss, stats, ts
+    end
 end
