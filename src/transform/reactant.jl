@@ -25,3 +25,14 @@ end
 
 function __to_reactant_adaptor end
 function __apply_reactant end
+
+"""
+    AutoReactant()
+
+Compile the training loop to MLIR/XLA via `Reactant.jl`.
+
+This has been added to Lux very recently and is under-going rapid development. Currently,
+only a limited subset of Lux models can be compiled via `Reactant.jl`. If you encounter any
+issues, please report them on the `Lux.jl` or `Reactant.jl` GitHub repository.
+"""
+struct AutoReactant end

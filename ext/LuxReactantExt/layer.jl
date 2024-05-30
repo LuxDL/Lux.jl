@@ -1,14 +1,3 @@
-module LuxReactantExt
-
-using Adapt: adapt
-using ArgCheck: @argcheck
-using Enzyme: Enzyme
-using Functors: fmapstructure, fmap
-using Markdown: @md_str
-using Random: AbstractRNG, Xoshiro
-using Reactant: Reactant
-using Lux: Lux, LuxEltypeAdaptor
-using LuxCore: LuxCore, AbstractExplicitLayer
 
 @inline function __make_concrete_array(x)
     return Reactant.make_tracer(IdDict(), x, (), Reactant.ArrayToConcrete, nothing)
@@ -233,6 +222,4 @@ function __graceful_type_mismatch_error(
     List of Type Mismatches:
 
      $(input_type_mismatch_str) $(ps_type_mismatch_str) $(st_type_mismatch_str)"""))
-end
-
 end
