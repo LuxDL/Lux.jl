@@ -13,6 +13,11 @@ Internal fields:
 
   - `cache`: Cached values. Implementations are free to use this for whatever they want.
   - `objective_function`: Objective function might be cached.
+
+!!! warning
+
+    Constructing this object directly shouldn't be considered a stable API. Use the
+    version with the Optimisers API.
 """
 @concrete struct TrainState{C, F}
     cache::C
@@ -27,8 +32,8 @@ end
 function Base.show(io::IO, ts::TrainState)
     println(io, "TrainState")
     println(io, "    model: ", ts.model)
-    println(io, "    parameters: ", Lux.parameterlength(ts.parameters))
-    println(io, "    states: ", Lux.statelength(ts.states))
+    println(io, "    # of parameters: ", Lux.parameterlength(ts.parameters))
+    println(io, "    # of states: ", Lux.statelength(ts.states))
     println(io, "    optimizer_state: ", ts.optimizer_state)
     print(io, "    step: ", ts.step)
     ts.cache !== nothing && print(io, "\n    cache: ", nameof(typeof(ts.cache)))
@@ -152,7 +157,14 @@ updates the parameters using [`apply_gradients!`](@ref). All backends supported 
 
 ## Additional Backends
 
-   - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+  - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+
+## Return
+
+Returned values are the same as [`compute_gradients`](@ref). Note that despite the `!`,
+only the parameters in `ts` are updated inplace. Users should be using the returned `ts`
+object for further training steps, else there is no caching and performance will be
+suboptimal (and absolutely terrible for backends like `AutoReactant`).
 """
 function single_train_step! end
 
@@ -165,17 +177,21 @@ updates the parameters using [`apply_gradients`](@ref). All backends supported v
 
 ## Additional Backends
 
-   - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+  - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
 
 In most cases you should use [`single_train_step!`](@ref) instead of this function.
+
+## Return
+
+Returned values are the same as [`compute_gradients`](@ref).
 """
 function single_train_step end
 
 for inplace in ("!", "")
     step, apply_fn = Symbol(:single_train_step, inplace), Symbol(:apply_gradients, inplace)
-    @eval function $step(backend, obj_fn::F, data, ts::TrainState) where {F}
+    @eval function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
         grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
-        $apply_fn(ts, grads)
+        ts = $apply_fn(ts, grads)
         return grads, loss, stats, ts
     end
 end

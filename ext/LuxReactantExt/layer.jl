@@ -1,17 +1,3 @@
-
-@inline function __make_concrete_array(x)
-    return Reactant.make_tracer(IdDict(), x, (), Reactant.ArrayToConcrete, nothing)
-end
-
-@inline function __try_similar_structure(x::AbstractArray, y::NamedTuple{()})
-    length(x) == 0 && return y
-    throw(DimensionMismatch(lazy"Expected empty array, got $(size(x))."))
-end
-@inline function __try_similar_structure(x::AbstractArray, y::AbstractArray)
-    return parent(x) !== x ? copy(x) : x # unview arrays and such
-end
-@inline __try_similar_structure(x, y) = fmap(__try_similar_structure, x, y)
-
 # Reactant doesn't handle mixed eltypes that well, so we will first try to compile it as
 # a usual julia function. However, if that fails, we will type cast and try to recompile.
 # Note that this is only a one time operation so it doesn't matter if this step is too slow.
