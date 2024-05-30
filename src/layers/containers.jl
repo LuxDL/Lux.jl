@@ -147,7 +147,7 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = []
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(
+        [:(($(y_symbols[i]), $(st_symbols[i])) = LuxCore.apply(
              layers.$(names[i]), $(getinput(i)), ps.$(names[i]), st.$(names[i])))
          for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))

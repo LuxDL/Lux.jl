@@ -178,7 +178,7 @@ Base.show(io::IO, l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 ## SimpleChains.jl
 
 """
-    SimpleChainsLayer{ToArray}(layer)
+    SimpleChainsLayer{ToArray}(layer, lux_layer=nothing)
     SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
 
 Wraps a `SimpleChains` layer into a `Lux` layer. All operations are performed using
@@ -206,13 +206,18 @@ regular `Array` or not. Default is `false`.
     such please test your model with FiniteDifferences or Zygote before using `Tracker.jl`
     for your model.
 """
-struct SimpleChainsLayer{ToArray, L} <: AbstractExplicitLayer
-    layer::L
+@concrete struct SimpleChainsLayer{ToArray} <: AbstractExplicitLayer
+    layer
+    lux_layer
 end
 
-@inline function SimpleChainsLayer{ToArray}(layer) where {ToArray}
-    return SimpleChainsLayer{ToArray, typeof(layer)}(layer)
+function Base.show(io::IO, s::SimpleChainsLayer{ToArray}) where {ToArray}
+    _print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
 end
+
+@inline SimpleChainsLayer{ToArray}(layer) where {ToArray} = SimpleChainsLayer{ToArray}(
+    layer, nothing)
+
 @inline SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false)) = SimpleChainsLayer{__unwrap_val(ToArray)}(layer)
 
 @inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
@@ -228,7 +233,8 @@ end
 @inline __apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
 
 function __apply_simple_chain(layer, x, ps, dev)
-    throw(ArgumentError(lazy"`SimpleChains.jl` only supports CPU operations. Current device detected as $(dev)."))
+    throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
+        detected as $(dev)."))
 end
 
 # Workaround for SimpleChains not being able to handle some input types
