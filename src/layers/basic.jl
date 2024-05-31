@@ -451,8 +451,8 @@ end
     Embedding(in_dims => out_dims; init_weight=randn32)
 
 A lookup table that stores embeddings of dimension `out_dims` for a vocabulary of size
-`in_dims`. When `in_dims` is a scalar the vocabulary acts as linear indices, while when
-`in_dims` is a tuple of scalars the vocabulary acts as Cartesian indices.
+`in_dims`. When the vocabulary is multi-dimensional, the input is expected to be a tuple
+of Cartesian indices.
 
 This layer is often used to store word embeddings and retrieve them using indices.
 
@@ -485,18 +485,16 @@ This layer is often used to store word embeddings and retrieve them using indice
     input, an N + 1 dimensional output is returned.
   - Empty `NamedTuple()`
 """
-@concrete struct Embedding{N} <: AbstractExplicitLayer
-    in_dims::NTuple{N, Int}
+@concrete struct Embedding <: AbstractExplicitLayer
+    in_dims
     out_dims::Int
     init_weight
 end
 
-function Embedding((in_dims, out_dims)::Pair{<:Integer, <:Integer}; init_weight=randn32)
-    return Embedding{1}(Tuple(in_dims), out_dims, init_weight)
-end
-function Embedding((in_dims, out_dims)::Pair{<:NTuple{N, <:Integer}, <:Integer};
+function Embedding(
+        (in_dims, out_dims)::Pair{<:Union{Integer, NTuple{N, <:Integer}}, <:Integer};
         init_weight=randn32) where {N}
-    return Embedding{N}(in_dims, out_dims, init_weight)
+    return Embedding(in_dims, out_dims, init_weight)
 end
 
 function initialparameters(rng::AbstractRNG, e::Embedding)
