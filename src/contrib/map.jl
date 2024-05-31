@@ -69,6 +69,12 @@ the function on all of them together.
   - Must return a tuple of 3 elements -- `AbstractExplicitLayer`, new parameters and the new
     states.
 
+!!! note
+
+    Starting `v0.6`, instead of the name of the layer, we will provide the [KeyPath to the
+    layer](https://fluxml.ai/Functors.jl/stable/api/#KeyPath). The current version of
+    providing a String has been deprecated.
+
 !!! tip
 
     We recommend using the macro `Lux.@layer_map` instead of this function. It automatically
@@ -118,56 +124,41 @@ julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
 true
 ```
 """
-function layer_map(f::Function, l, ps, st, name::String="model")
-    l_c, l_re = __consistent_functor(l)
-    ps_c, ps_re = __consistent_functor(ps)
-    st_c, st_re = __consistent_functor(st)
-
-    length(l_c) == 0 && return f(l, ps, st, name)
-
-    @argcheck fieldnames(typeof(st_c)) == fieldnames(typeof(ps_c))
-
-    if length(l_c) == 1 && fieldnames(typeof(l_c)) != fieldnames(typeof(ps_c))
-        __correct_luxcore_inconsistency = true
-        ps_c = NamedTuple{fieldnames(typeof(l_c))}((ps_c,))
-        st_c = NamedTuple{fieldnames(typeof(l_c))}((st_c,))
-    else
-        __correct_luxcore_inconsistency = false
-    end
-
-    l_c_new, ps_c_new, st_c_new = [], [], []
-    for k in keys(l_c)
-        l_c_new_, ps_c_new_, st_c_new_ = layer_map(
-            f, getproperty(l_c, k), getproperty(ps_c, k),
-            getproperty(st_c, k), join((name, k), "."))
-        push!(l_c_new, k => l_c_new_)
-        push!(ps_c_new, k => ps_c_new_)
-        push!(st_c_new, k => st_c_new_)
-    end
-
-    l_new = l_re((; l_c_new...))
-    ps_new, st_new = __correct_luxcore_inconsistency ?
-                     (
-        ps_re((; last(first(ps_c_new))...)), st_re((; last(first(st_c_new))...))) :
-                     (ps_re((; ps_c_new...)), st_re((; st_c_new...)))
-
-    return l_new, ps_new, st_new
+function layer_map(f::F, l, ps, st, name::String="model") where {F <: Function}
+    # TODO: In v0.6 deprecate passing the string
+    f_wrapper = @closure (kp, layer, ps_, st_) -> f(
+        layer, ps_, st_, __keypath_to_string(name, kp))
+    return fmap_with_path(f_wrapper, l, ps, st; walk=LayerWalkWithPath())
 end
 
-function __consistent_functor(x)
-    c, re = functor(x)
-    c isa NamedTuple && return (c, re)
-    c_fixed = NamedTuple{Tuple(collect(Symbol.(1:(length(c)))))}(c)
-    function re_updated(y::NamedTuple)
-        c isa AbstractVector && return re([values(y)...])
-        return re(values(y))
-    end
-    return (c_fixed, re_updated)
-end
+@inline __keypath_to_string(kp::KeyPath) = join(kp.keys, ".")
+@inline __keypath_to_string(str::String, kp::KeyPath) = "$(str).$(__keypath_to_string(kp))"
 
-function __fix_tuple_functor(x::Tuple, ::NamedTuple{names}) where {names}
-    length(x) == 1 && length(names) > 1 && first(x) isa NamedTuple && return first(x)
-    @argcheck length(x)==length(names) lazy"length(x) ($(length(x))) != length(names) ($(length(names))). This should never happen, please open an issue."
-    return NamedTuple{names}(x)
+struct LayerWalkWithPath <: Functors.AbstractWalk end
+
+function (::LayerWalkWithPath)(recurse, kp::KeyPath, layer, ps, st)
+    _layer_children, layer_re = functor(layer)
+    ps_children, ps_re = functor(ps)
+    st_children, st_re = functor(st)
+
+    _children = keys(ps_children)
+    needs_correction = _children != keys(_layer_children)
+    _key = needs_correction ? only(keys(_layer_children)) : nothing
+    layer_children = needs_correction ? getfield(layer, _key) : _layer_children
+    @assert keys(layer_children) == keys(ps_children) == keys(st_children)
+
+    kps = NamedTuple{_children}(map(
+        x -> needs_correction ? KeyPath(kp, _key, x) : KeyPath(kp, x), _children))
+
+    ys = map(recurse, kps, layer_children, ps_children, st_children)
+    layer_children_new = map(Base.Fix2(getindex, 1), ys)
+    ps_children_new = map(Base.Fix2(getindex, 2), ys)
+    st_children_new = map(Base.Fix2(getindex, 3), ys)
+
+    layer_new = needs_correction ? layer_re(NamedTuple{(_key,)}((layer_children_new,))) :
+                layer_re(layer_children_new)
+    ps_new = ps_re(ps_children_new)
+    st_new = st_re(st_children_new)
+
+    return layer_new, ps_new, st_new
 end
-__fix_tuple_functor(x, _) = x

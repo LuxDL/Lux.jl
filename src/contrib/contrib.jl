@@ -9,7 +9,8 @@ using ADTypes: ADTypes
 using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
-using Functors: Functors, fmap, fmapstructure, functor
+using FastClosures: @closure
+using Functors: Functors, KeyPath, fmap, fmap_with_path, fmapstructure, functor
 using Markdown: @doc_str
 using Random: AbstractRNG, Random
 using Setfield: Setfield

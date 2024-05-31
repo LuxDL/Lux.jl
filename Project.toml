@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.52"
+version = "0.5.53"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -81,7 +81,7 @@ FastClosures = "0.3.2"
 FiniteDifferences = "0.12.31"
 Flux = "0.14.11"
 ForwardDiff = "0.10.36"
-Functors = "0.4.4"
+Functors = "0.4.10"
 GPUArraysCore = "0.1.6"
 LinearAlgebra = "1.10"
 Logging = "1.10"
