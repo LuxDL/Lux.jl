@@ -8,11 +8,11 @@ function Lux.Experimental.single_train_step(
     # st = ts.states
     # model = ts.model
 
-    data = __make_concrete_array(data)
-    model = __make_concrete_array(ts.model)
-    dps = __make_concrete_array(dps)
-    ps = __make_concrete_array(ts.parameters)
-    st = __make_concrete_array(ts.states)
+    data = Lux.__make_reactant_array(data)
+    model = Lux.__make_reactant_array(ts.model)
+    dps = Lux.__make_reactant_array(dps)
+    ps = Lux.__make_reactant_array(ts.parameters)
+    st = Lux.__make_reactant_array(ts.states)
 
     # @show 
 

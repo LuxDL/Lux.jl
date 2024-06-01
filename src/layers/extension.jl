@@ -240,9 +240,8 @@ end
 # Workaround for SimpleChains not being able to handle some input types
 function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
+    # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     __∇apply_simple_chain = @closure Δ -> begin
-        # Safety measure to prevent errors from weird Array types that SimpleChains doesn't
-        # support
         ∂layer, ∂x, ∂ps = pb(convert(Array, Δ))
         return CRC.NoTangent(), ∂layer, ∂x, ∂ps, CRC.NoTangent()
     end
@@ -251,18 +250,19 @@ end
 
 # TODO: Add a ChainRules rrule that calls the `bwd` function, i.e. uses Enzyme for the
 #       gradient computation
-# TODO: Inference won't work OOTB, we will have to compile that separately
-@concrete struct ReactantLayer{FST, T, inType, inCType, psType, stType,
+# TODO: Docstring
+@concrete struct ReactantLayer{FST, T, inType, inCType, stType, stTestType, psType,
     L <: AbstractExplicitLayer, AD <: ToReactantAdaptor} <: AbstractExplicitLayer
     adaptor::AD
-    input_prototype::inType
-    concrete_input_prototype::inCType
     concrete_ps::psType
-    concrete_st::stType
     layer::L
-    clayer
+
+    # Compiled Functions
     fwd_fn
+    inference_fn
     vjp_fn
+    jvp_fn
+
     eltype_adaptor
     input_structure
 end
