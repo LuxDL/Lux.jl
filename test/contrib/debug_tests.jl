@@ -16,7 +16,7 @@
 
         @test_throws DimensionMismatch model_debug(x, ps, st)
         @test_logs (:info,) (:error,
-            "Layer Dense(1 => 1) failed!! This layer is present at location model.layers.layer_2.layers.layer_2") match_mode=:any try
+            "Layer Dense(1 => 1) failed!! This layer is present at location KeyPath(:model, :layers, :layer_2, :layers, :layer_2)") match_mode=:any try
             model_debug(x, ps, st)
         catch
         end
