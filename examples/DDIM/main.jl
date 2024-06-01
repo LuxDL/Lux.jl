@@ -9,6 +9,7 @@
 using ArgCheck, ChainRulesCore, ConcreteStructs, Comonicon, DataAugmentation, DataDeps,
       FileIO, ImageCore, JLD2, Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers,
       ParameterSchedulers, ProgressBars, Random, Setfield, StableRNGs, Statistics, Zygote
+using TensorBoardLogger: TBLogger, log_value, log_images
 const CRC = ChainRulesCore
 
 # ## Model Definition
@@ -25,25 +26,18 @@ function sinusoidal_embedding(x::AbstractArray{T, 4}, min_freq::T, max_freq::T,
     lower, upper = log(min_freq), log(max_freq)
     n = embedding_dims ÷ 2
     d = (upper - lower) / (n - 1)
-    freqs = exp.(lower:d:upper) |> get_device(x)
-
-    @argcheck length(freqs) == n && size(freqs) == (n,)
-
-    angular_speeds = reshape(T(2π) .* freqs, (1, 1, n, 1))
-    embeddings = cat(sin.(angular_speeds .* x), cos.(angular_speeds .* x); dims=Val(3))
-    return embeddings
+    freqs = reshape(exp.(lower:d:upper) |> get_device(x), 1, 1, n, 1)
+    x_ = 2 .* x .* freqs
+    return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
 function residual_block(in_channels::Int, out_channels::Int)
-    first_layer = in_channels == out_channels ? NoOpLayer() :
-                  Conv((1, 1), in_channels => out_channels; pad=SamePad())
-
-    return Chain(first_layer,
-        SkipConnection(
-            Chain(BatchNorm(out_channels; affine=false),
-                Conv((3, 3), out_channels => out_channels, swish; pad=SamePad()),
-                Conv((3, 3), out_channels => out_channels; pad=SamePad())),
-            +);
+    return Parallel(+,
+        in_channels == out_channels ? NoOpLayer() :
+        Conv((1, 1), in_channels => out_channels; pad=SamePad()),
+        Chain(BatchNorm(in_channels; affine=false),
+            Conv((3, 3), in_channels => out_channels, swish; pad=SamePad()),
+            Conv((3, 3), out_channels => out_channels; pad=SamePad()));
         name="ResidualBlock(in_chs=$in_channels, out_chs=$out_channels)")
 end
 
@@ -53,7 +47,7 @@ function downsample_block(in_channels::Int, out_channels::Int, block_depth::Int)
         residual_blocks=Tuple(residual_block(
                                   ifelse(i == 1, in_channels, out_channels), out_channels)
         for i in 1:block_depth),
-        meanpool=MeanPool((2, 2); pad=0), block_depth) do x
+        meanpool=MeanPool((2, 2)), block_depth) do x
         skips = (x,)
         for i in 1:block_depth
             skips = (skips..., residual_blocks[i](last(skips)))
@@ -219,11 +213,14 @@ function __denormalize(model::StatefulLuxLayer{true}, x::AbstractArray{<:Real, 4
 end
 
 function __save_images(output_dir, images::AbstractArray{<:Real, 4})
+    imgs = Vector{Array{RGB, 2}}(undef, size(images, 4))
     for i in axes(images, 4)
         img = @view images[:, :, :, i]
         img = colorview(RGB, permutedims(img, (3, 1, 2)))
         save(joinpath(output_dir, "img_$(i).png"), img)
+        imgs[i] = img
     end
+    return imgs
 end
 
 function __generate(
@@ -288,8 +285,8 @@ end
 # ## Entry Point for our code
 
 @main function main(; epochs::Int=100, image_size::Int=128,
-        batchsize::Int=128, learning_rate_start::Float32=1.0f-2,
-        learning_rate_end::Float32=1.0f-4, weight_decay::Float32=1.0f-4,
+        batchsize::Int=128, learning_rate_start::Float32=1.0f-3,
+        learning_rate_end::Float32=1.0f-5, weight_decay::Float32=1.0f-6,
         checkpoint_interval::Int=25, expt_dir=tempname(@__DIR__),
         diffusion_steps::Int=80, generate_image_interval::Int=5,
         # model hyper params
@@ -309,6 +306,10 @@ end
 
     ckpt_dir = joinpath(expt_dir, "checkpoints")
     isdir(ckpt_dir) || mkpath(ckpt_dir)
+
+    tb_dir = joinpath(expt_dir, "tb_logs")
+    @info "Logging Tensorboard logs to $(tb_dir). Run tensorboard with `tensorboard --logdir $(dirname(tb_dir))`"
+    tb_logger = TBLogger(tb_dir)
 
     gdev = gpu_device()
     @info "Using device: $gdev"
@@ -346,18 +347,26 @@ end
 
     image_losses = Vector{Float32}(undef, length(data_loader))
     noise_losses = Vector{Float32}(undef, length(data_loader))
+    step = 1
     for epoch in 1:epochs
         pbar = ProgressBar(data_loader)
 
         eta = scheduler(epoch)
         tstate = Optimisers.adjust!(tstate, eta)
 
+        log_value(tb_logger, "Learning Rate", eta; step)
+
         for (i, data) in enumerate(data_loader)
+            step += 1
             data = data |> gdev
             grads, _, stats, tstate = Lux.Experimental.compute_gradients(
                 AutoZygote(), loss_function, data, tstate)
             image_losses[i] = stats.image_loss
             noise_losses[i] = stats.noise_loss
+
+            log_value(tb_logger, "Image Loss", stats.image_loss; step)
+            log_value(tb_logger, "Noise Loss", stats.noise_loss; step)
+
             ProgressBars.update(pbar)
             set_description(
                 pbar, "Epoch: $(epoch) Image Loss: $(mean(view(image_losses, 1:i))) Noise \
@@ -374,7 +383,8 @@ end
 
             path = joinpath(image_dir, "epoch_$(epoch)")
             @info "Saving generated images to $(path)"
-            __save_images(path, generated_images)
+            imgs = __save_images(path, generated_images)
+            log_images(tb_logger, "Generated Images", imgs; step)
         end
 
         if epoch % checkpoint_interval == 0 || epoch == epochs
