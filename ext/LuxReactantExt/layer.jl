@@ -50,11 +50,13 @@ function Lux.__to_reactant_adaptor(
     cst = Lux.__make_reactant_array(st)
 
     smodel = Lux.StatefulLuxLayer{FST}(model, cps, cst)
-    fwd_fn = Reactant.compile((m, x) -> m(x), (smodel, concrete_input))
+    fwd_fn = to.skip_compile_forward ? nothing :
+             Reactant.compile((m, x) -> m(x), (smodel, concrete_input))
 
     cst_test = Lux.__make_reactant_array(Lux.testmode(st))
     smodel_test = Lux.StatefulLuxLayer{FST}(model, cps, cst_test)
-    inference_fn = Reactant.compile((m, x) -> m(x), (smodel_test, concrete_input))
+    inference_fn = to.skip_compile_inference ? nothing :
+                   Reactant.compile((m, x) -> m(x), (smodel_test, concrete_input))
 
     vjp_fn = if to.skip_compile_vjp
         nothing
@@ -191,10 +193,12 @@ function Lux.__apply_reactant(l, x, ps, st, training)
 end
 
 @inline function Lux.__apply_reactant(l::Lux.ReactantLayer, smodel, x, ::Val{true})
+    @argcheck l.fwd_fn !== nothing
     return l.fwd_fn(smodel, x)
 end
 
 @inline function Lux.__apply_reactant(l::Lux.ReactantLayer, smodel, x, ::Val{false})
+    @argcheck l.inference_fn !== nothing
     return l.inference_fn(smodel, x)
 end
 

@@ -271,6 +271,7 @@ end
 @inline __recursive_eltype(x::NamedTuple) = promote_type(__recursive_eltype.(values(x))...)
 @inline __recursive_eltype(::Nothing) = Bool
 @inline __recursive_eltype(x::Number) = eltype(x)
+@inline __recursive_eltype(::Val) = Bool
 @inline function __recursive_eltype(x)
     _eltype = Ref(Bool)
     function __internal_recursive_eltype(x)
