@@ -1,19 +1,25 @@
-using ADTypes: ADTypes, AutoEnzyme, AutoTapir, AutoTracker, AutoReverseDiff, AutoZygote
-using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
-using ComponentArrays: ComponentArray
+using BenchmarkTools: BenchmarkTools, BenchmarkGroup, Trial, @btime, @benchmarkable
+using Dates: Dates
 using InteractiveUtils: versioninfo
 using FastClosures: @closure
-using Flux: Flux
 using Functors: fmap
+using Git: git
 using LinearAlgebra: BLAS
-using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
-using NNlib: relu
-using SimpleChains: SimpleChains, static
 using StableRNGs: StableRNG
 using Statistics: median
 using ThreadPinning: ThreadPinning
 
+# NN specific
+using ComponentArrays: ComponentArray
+using Flux: Flux
+using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
+using LuxCUDA: LuxCUDA, CUDA
+using LuxDeviceUtils: LuxCPUDevice, LuxCUDADevice
+using NNlib: relu
+using SimpleChains: SimpleChains, static
+
 # AD Backends
+using ADTypes: ADTypes, AutoEnzyme, AutoTapir, AutoTracker, AutoReverseDiff, AutoZygote
 using Enzyme: Enzyme
 using ReverseDiff: ReverseDiff
 using Tapir: Tapir
@@ -35,6 +41,8 @@ include("layers.jl")
 
 BenchmarkTools.tune!(SUITE; verbose=true)
 results = BenchmarkTools.run(SUITE; verbose=true)
-display(median(results))
+
+flat_results = flatten_benchmark(results)
+JSON.print(flat_results, 4)
 
 BenchmarkTools.save(joinpath(@__DIR__, "benchmark_results.json"), median(results))

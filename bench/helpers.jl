@@ -1,7 +1,44 @@
-# TODO: Special Handling for GPU Arrays with @sync
-function benchmark_forward_pass(
-        tag::String, end_tag::String, model, x_dims; simple_chains=nothing,
-        flux_model=nothing)
+function flatten_benchmark(results, prefix="", flat_results=[], depth=0)
+    for (key, value) in results
+        if value isa BenchmarkGroup
+            flat_results = flatten_benchmark(value, "$prefix$key/", flat_results, depth + 1)
+        elseif value isa Trial
+            BenchmarkTools.rmskew!(value)
+
+            push!(flat_results,
+                Dict("benchmark" => "$prefix$key", "median" => median(value).time / 1e9,
+                    "mean" => mean(value).time / 1e9, "min" => minimum(value).time / 1e9,
+                    "max" => maximum(value).time / 1e9,
+                    "allocs" => value.allocs, "gctime" => median(value).gctime))
+        else
+            error("Unexpected value type: $(typeof(value))")
+        end
+    end
+
+    depth > 0 && return flat_results
+
+    return Dict("commit" => readchomp(`$(git()) rev-parse HEAD`),
+        "branch" => readchomp(`$(git()) rev-parse --abbrev-ref HEAD`),
+        "julia_cmd" => string(Base.julia_cmd()),
+        "date" => string(Dates.now()), "results" => flat_results)
+end
+
+function benchmark_forward_pass(tag::String, end_tag::String, model, x_dims;
+        simple_chains=nothing, flux_model=nothing)
+    benchmark_forward_pass(
+        tag, end_tag, model, x_dims, LuxCPUDevice(); simple_chains, flux_model)
+
+    if LuxCUDA.functional()
+        benchmark_forward_pass(tag, end_tag, model, x_dims, LuxCUDADevice(); flux_model)
+    else
+        @warn "CUDA is not functional. Skipping..."
+    end
+
+    return
+end
+
+function benchmark_forward_pass(tag::String, end_tag::String, model, x_dims,
+        ::LuxCPUDevice; simple_chains=nothing, flux_model=nothing)
     SUITE[tag]["cpu"]["forward"]["NamedTuple"][end_tag] = @benchmarkable Lux.apply(
         $model, x, ps_nt, st_test) setup=((x, ps_nt, st) = general_setup($model, $x_dims); st_test = Lux.testmode(st))
 
@@ -24,21 +61,39 @@ function benchmark_forward_pass(
     return
 end
 
-function benchmark_reverse_pass(
-        tag::String, end_tag::String, backends, model, x_dims;
-        simple_chains=nothing, flux_model=nothing)
+function benchmark_forward_pass(
+        tag::String, end_tag::String, model, x_dims, dev::LuxCUDADevice; flux_model=nothing)
+    # TODO: Needs to be implemented
+end
+
+function benchmark_reverse_pass(tag::String, end_tag::String, backends, model,
+        x_dims; simple_chains=nothing, flux_model=nothing)
+    benchmark_reverse_pass(
+        tag, end_tag, backends, model, x_dims, LuxCPUDevice(); simple_chains, flux_model)
+
+    if LuxCUDA.functional()
+        benchmark_reverse_pass(
+            tag, end_tag, backends, model, x_dims, LuxCUDADevice(); flux_model)
+    else
+        @warn "CUDA is not functional. Skipping..."
+    end
+
+    return
+end
+
+function benchmark_reverse_pass(tag::String, end_tag::String, backends, model, x_dims,
+        dev; simple_chains=nothing, flux_model=nothing)
     for backend in backends
-        __benchmark_reverse_pass(tag, end_tag, backend, model, x_dims)
+        benchmark_reverse_pass(tag, end_tag, backend, model, x_dims, dev)
     end
 
     if simple_chains !== nothing
-        simple_chains_model = simple_chains(model)
-        __benchmark_reverse_pass_simple_chains(
-            tag, end_tag, AutoZygote(), simple_chains_model, x_dims)
+        benchmark_reverse_pass_simple_chains(
+            tag, end_tag, AutoZygote(), simple_chains(model), x_dims, dev)
     end
 
     if flux_model !== nothing
-        __benchmark_reverse_pass_flux(tag, end_tag, AutoZygote(), flux_model, x_dims)
+        benchmark_reverse_pass_flux(tag, end_tag, AutoZygote(), flux_model, x_dims, dev)
     end
 
     return
@@ -52,41 +107,43 @@ function general_setup(model, x_dims)
     return x, ps, st
 end
 
-# TODO: Remove these once DifferentiationInterface has been released
-#   - Note DI's present design requires the creation of closures and prevents
-#     marking some arguments as inactive. As such, in its current form it is
-#     ill-suited as a high-performance/high-compatibility interface for Enzyme.
-
 sumabsapply(model, x, p, st) = sum(abs2, first(Lux.apply(model, x, p, st)))
 
-function __benchmark_reverse_pass(
-        tag::String, end_tag::String, ::AutoEnzyme, model, x_dims)
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoEnzyme, model, x_dims, ::LuxCPUDevice)
     SUITE[tag]["cpu"]["reverse"]["Enzyme"][end_tag] = @benchmarkable Enzyme.autodiff(
-        Enzyme.Reverse,
-        $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel),
+        Enzyme.Reverse, $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel),
         Enzyme.Const(x), Enzyme.Const(ps), Enzyme.Const(st)) setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
         dmodel = Enzyme.make_zero($model)
         # Force jit compilation in initial run
-        Enzyme.autodiff(Enzyme.Reverse,
-            $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel),
+        Enzyme.autodiff(
+            Enzyme.Reverse, $sumabsapply, Enzyme.Active, Enzyme.Duplicated($model, dmodel),
             Enzyme.Const(x), Enzyme.Const(ps), Enzyme.Const(st))
     end
     return
 end
-function __benchmark_reverse_pass(
-        tag::String, end_tag::String, ::AutoTapir, model, x_dims)
-    SUITE[tag]["cpu"]["reverse"]["Tapir"][end_tag] = @benchmarkable Tapir.value_and_pullback!!(
-        trrule, 1.0f0, f, ps_ca) setup=begin
-        (x, ps, st) = general_setup($model, $x_dims)
-        ps_ca = ComponentArray(ps)
-        f = @closure(p->sum(abs2, first(Lux.apply($model, x, p, st))))
-        trrule = Tapir.build_rrule(f, ps_ca)
-    end
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoEnzyme, model, x_dims, ::LuxCUDADevice)
+    @warn "Enzyme supports CUDA but we haven't implemented it yet. Skipping..."
     return
 end
-function __benchmark_reverse_pass(
-        tag::String, end_tag::String, ::AutoTracker, model, x_dims)
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoTapir, model, x_dims, ::LuxCPUDevice)
+    @warn "Tapir supports CPU but we haven't implemented it yet. Skipping..."
+    return
+end
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoTapir, model, x_dims, ::LuxCUDADevice)
+    @warn "Tapir supports CUDA but we haven't implemented it yet. Skipping..."
+    return
+end
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoTracker, model, x_dims, ::LuxCPUDevice)
     SUITE[tag]["cpu"]["reverse"]["Tracker"][end_tag] = @benchmarkable begin
         ps_tracked = fmap(Tracker.param, ps)
         x_tracked = Tracker.param(x)
@@ -97,8 +154,15 @@ function __benchmark_reverse_pass(
     end
     return
 end
-function __benchmark_reverse_pass(
-        tag::String, end_tag::String, ad::AutoReverseDiff, model, x_dims)
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoTracker, model, x_dims, ::LuxCUDADevice)
+    @warn "Tracker supports CUDA but we haven't implemented it yet. Skipping..."
+    return
+end
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ad::AutoReverseDiff, model, x_dims, ::LuxCPUDevice)
     if ad.compile
         SUITE[tag]["cpu"]["reverse"]["ReverseDiff (compiled)"][end_tag] = @benchmarkable ReverseDiff.gradient!(
             ∂ps, tape, ps_ca) setup=begin
@@ -123,7 +187,15 @@ function __benchmark_reverse_pass(
         end
     end
 end
-function __benchmark_reverse_pass(tag::String, end_tag::String, ::AutoZygote, model, x_dims)
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ad::AutoReverseDiff, model, x_dims, ::LuxCUDADevice)
+    @warn "ReverseDiff doesn't support CUDA. Skipping..."
+    return
+end
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoZygote, model, x_dims, ::LuxCPUDevice)
     SUITE[tag]["cpu"]["reverse"]["Zygote"][end_tag] = @benchmarkable Zygote.gradient(
         f, $model, x, ps, st) setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
@@ -131,8 +203,15 @@ function __benchmark_reverse_pass(tag::String, end_tag::String, ::AutoZygote, mo
     end
     return
 end
-function __benchmark_reverse_pass_simple_chains(
-        tag::String, end_tag::String, ::AutoZygote, model, x_dims)
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoZygote, model, x_dims, ::LuxCUDADevice)
+    @warn "Zygote supports CUDA but we haven't implemented it yet. Skipping..."
+    return
+end
+
+function benchmark_reverse_pass_simple_chains(
+        tag::String, end_tag::String, ::AutoZygote, model, x_dims, ::LuxCPUDevice)
     SUITE[tag]["cpu"]["reverse"]["SimpleChains"][end_tag] = @benchmarkable Zygote.gradient(
         f, $model, x, ps, st) setup=begin
         (x, ps, st) = general_setup($model, $x_dims)
@@ -140,13 +219,25 @@ function __benchmark_reverse_pass_simple_chains(
     end
     return
 end
-function __benchmark_reverse_pass_flux(
-        tag::String, end_tag::String, ::AutoZygote, model, x_dims)
-    SUITE[tag]["cpu"]["reverse"]["Flux"][end_tag] = @benchmarkable Zygote.gradient(
-        f, m, x) setup=begin
+
+function benchmark_reverse_pass(
+        tag::String, end_tag::String, ::AutoZygote, model, x_dims, ::LuxCUDADevice)
+    @warn "SimpleChains doesn't support CUDA. Skipping..."
+    return
+end
+
+function benchmark_reverse_pass_flux(
+        tag::String, end_tag::String, ::AutoZygote, model, x_dims, ::LuxCPUDevice)
+    SUITE[tag]["cpu"]["reverse"]["Flux"][end_tag] = @benchmarkable Zygote.gradient(f, m, x) setup=begin
         x = randn(StableRNG(0), Float32, $x_dims)
         m = $(model)()
         f = @closure((m, x)->sum(abs2, m(x)))
     end
+    return
+end
+
+function benchmark_reverse_pass_flux(
+        tag::String, end_tag::String, ::AutoZygote, model, x_dims, ::LuxCUDADevice)
+    @warn "Flux supports CUDA but we haven't implemented it yet. Skipping..."
     return
 end
