@@ -141,6 +141,12 @@ export default defineConfig({
                             { text: 'Solving Optimal Control Problems with Symbolic UDEs', link: '/tutorials/advanced/2_SymbolicOptimalControl' },]
                     },
                     {
+                        text: 'Large Models', collapsed: true, items: [
+                            { text: 'Training Image Classification Models on ImageNet with Distributed Data Parallel Training', link: 'https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet' },
+                            { text: 'Training a DDIM (Diffusion Model) for Image Generation', link: 'https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM' },
+                        ]
+                    },
+                    {
                         text: '3rd Party Tutorials', collapsed: true, items: [
                             {
                                 text: 'PINNs (NeuralPDE.jl)', link: 'https://docs.sciml.ai/NeuralPDE/stable/tutorials/pdesystem/'

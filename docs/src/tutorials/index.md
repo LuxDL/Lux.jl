@@ -65,6 +65,21 @@ const advanced = [
   }
 ];
 
+const large_models = [
+  {
+    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet",
+    src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
+    caption: "ImageNet Classification",
+    desc: "Train Large Image Classifiers using Lux (on Distributed GPUs)."
+  },
+  {
+    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM",
+    src: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM/assets/flowers_generated.png",
+    caption: "Denoising Diffusion Implicit Model (DDIM)",
+    desc: "Train a Diffusion Model to generate images from Gaussian noises."
+  }
+];
+
 const third_party = [
   {
     href: "https://docs.sciml.ai/Overview/stable/showcase/pinngpu/",
@@ -112,6 +127,18 @@ const third_party = [
 ## Advanced Tutorials
 
 <Gallery :images="advanced" />
+
+## Larger Models
+
+::: warning
+
+These models are part of the Lux examples, however, these are large model that cannot be
+run on CI and aren't frequently tested. If you find a bug in one of these models, please
+open an issue or PR to fix it.
+
+:::
+
+<Gallery :images="large_models" />
 
 ## Selected 3rd Party Tutorials
 
