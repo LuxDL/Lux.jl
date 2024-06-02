@@ -12,12 +12,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "ext/**"
-      - "test/**"
-      - "Project.toml"
-      - "bench/**"
 
 concurrency:
   # Skip intermediate builds: always.

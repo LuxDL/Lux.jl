@@ -1,4 +1,4 @@
-using ADTypes: ADTypes, AutoEnzyme, AutoTracker, AutoReverseDiff, AutoZygote
+using ADTypes: ADTypes, AutoEnzyme, AutoTapir, AutoTracker, AutoReverseDiff, AutoZygote
 using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using ComponentArrays: ComponentArray
 using InteractiveUtils: versioninfo
@@ -11,6 +11,7 @@ using NNlib: relu
 using SimpleChains: SimpleChains, static
 using StableRNGs: StableRNG
 using Statistics: median
+using ThreadPinning: ThreadPinning
 
 # AD Backends
 using Enzyme: Enzyme
@@ -19,9 +20,9 @@ using Tapir: Tapir
 using Tracker: Tracker
 using Zygote: Zygote
 
-struct AutoTapir <: ADTypes.AbstractReverseMode end
-
 BLAS.set_num_threads(min(4, Threads.nthreads()))
+ThreadPinning.pinthreads(:cores)
+ThreadPinning.threadinfo()
 
 @info sprint(versioninfo)
 @info "BLAS threads: $(BLAS.get_num_threads())"
