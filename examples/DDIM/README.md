@@ -6,7 +6,7 @@ The implementation follows [the Keras example](https://keras.io/examples/generat
 
 The model generates images from Gaussian noises by denoising iteratively.
 
-![generated flowers](./assets/flowers_generated.jpg)
+![generated flowers](./assets/flowers_generated.png)
 
 # Usage
 

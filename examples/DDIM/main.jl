@@ -6,8 +6,8 @@
 
 # ## Package Imports
 
-using ArgCheck, ChainRulesCore, ConcreteStructs, Comonicon, DataAugmentation, DataDeps,
-      FileIO, ImageCore, JLD2, Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers,
+using ArgCheck, CairoMakie, ChainRulesCore, ConcreteStructs, Comonicon, DataAugmentation,
+      DataDeps, FileIO, ImageCore, JLD2, Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers,
       ParameterSchedulers, ProgressBars, Random, Setfield, StableRNGs, Statistics, Zygote
 using TensorBoardLogger: TBLogger, log_value, log_images
 const CRC = ChainRulesCore
@@ -223,6 +223,20 @@ function __save_images(output_dir, images::AbstractArray{<:Real, 4})
     return imgs
 end
 
+function __generate_and_save_image_grid(output_dir, imgs::Vector{<:AbstractArray{<:RGB, 2}})
+    fig = Figure()
+    nrows, ncols = 3, 4
+    for r in 1:nrows, c in 1:ncols
+        i = (r - 1) * ncols + c
+        i > length(imgs) && break
+        ax = Axis(fig[r, c]; aspect=DataAspect())
+        image!(ax, imgs[i])
+        hidedecorations!(ax)
+    end
+    save(joinpath(output_dir, "flowers_generated.png"), fig)
+    return
+end
+
 function __generate(
         model::StatefulLuxLayer, rng, image_size::NTuple{4, Int}, diffusion_steps::Int, dev)
     initial_noise = randn(rng, Float32, image_size...) |> dev
@@ -294,7 +308,7 @@ end
         embedding_dims::Int=32, min_signal_rate::Float32=0.02f0,
         max_signal_rate::Float32=0.95f0, generate_image_seed::Int=12,
         # inference specific
-        inference_mode::Bool=false, saved_model_path=nothing, generate_n_images::Int=10)
+        inference_mode::Bool=false, saved_model_path=nothing, generate_n_images::Int=12)
     isdir(expt_dir) || mkpath(expt_dir)
 
     @info "Experiment directory: $(expt_dir)"
@@ -306,10 +320,6 @@ end
 
     ckpt_dir = joinpath(expt_dir, "checkpoints")
     isdir(ckpt_dir) || mkpath(ckpt_dir)
-
-    tb_dir = joinpath(expt_dir, "tb_logs")
-    @info "Logging Tensorboard logs to $(tb_dir). Run tensorboard with `tensorboard --logdir $(dirname(tb_dir))`"
-    tb_logger = TBLogger(tb_dir)
 
     gdev = gpu_device()
     @info "Using device: $gdev"
@@ -331,9 +341,14 @@ end
 
         path = joinpath(image_dir, "inference")
         @info "Saving generated images to $(path)"
-        __save_images(path, generated_images)
+        imgs = __save_images(path, generated_images)
+        __generate_and_save_image_grid(path, imgs)
         return
     end
+
+    tb_dir = joinpath(expt_dir, "tb_logs")
+    @info "Logging Tensorboard logs to $(tb_dir). Run tensorboard with `tensorboard --logdir $(dirname(tb_dir))`"
+    tb_logger = TBLogger(tb_dir)
 
     tstate = Lux.Experimental.TrainState(
         rng, model, AdamW(; eta=learning_rate_start, lambda=weight_decay);

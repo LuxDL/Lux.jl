@@ -74,7 +74,7 @@ const large_models = [
   },
   {
     href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM",
-    src: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM/assets/flowers_generated.jpg",
+    src: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM/assets/flowers_generated.png",
     caption: "Denoising Diffusion Implicit Model (DDIM)",
     desc: "Train a Diffusion Model to generate images from Gaussian noises."
   }
