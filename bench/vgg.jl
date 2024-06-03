@@ -52,9 +52,9 @@ function add_vgg_benchmarks!()
 
     for bsize in (2, 16, 64)
         benchmark_forward_pass(
-            "vgg16", "(32, 32, 3, $bsize)", vgg16, (32, 32, 3, bsize); flux_model)
+            "VGG16", "(32, 32, 3, $bsize)", vgg16, (32, 32, 3, bsize); flux_model)
         benchmark_reverse_pass(
-            "vgg16", "(32, 32, 3, $bsize)", (AutoTracker(), AutoZygote()),
+            "VGG16", "(32, 32, 3, $bsize)", (AutoTracker(), AutoZygote()),
             vgg16, (32, 32, 3, bsize); flux_model)
     end
 
