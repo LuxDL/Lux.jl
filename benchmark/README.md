@@ -5,7 +5,7 @@ time.
 
 This is built using https://github.com/benchmark-action/github-action-benchmark/ so it
 allows for nice visualizations of the benchmark results in github pages and produces
-warnings on PRs if the benchmarks regress.
+warnings on PRs if the benchmark regress.
 
 ## Current Benchmarks
 

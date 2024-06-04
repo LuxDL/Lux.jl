@@ -1,0 +1,45 @@
+steps:
+  - group: ":racehorse: Continuous Benchmarks"
+    if: build.message !~ /\[skip benchmark\]/ && build.message !~ /\[skip ci\]/ && !build.pull_request.draft
+    steps:
+      - label: "Benchmark Run (Trial)"
+        if: build.branch != "main"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        agents:
+          queue: "juliagpu"
+          gpu: "*"
+          cuda: "*"
+        timeout_in_minutes: 120
+        command: |
+          cd benchmark;
+
+          julia --project --threads=auto --color=yes -e '
+            using Pkg;
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
+            Pkg.instantiate();
+            include("runbenchmarks.jl")'
+        env:
+          LUX_TRIAL_BENCHMARK: true
+
+      - label: "Benchmark Run"
+        if: build.branch == "main" || build.tag != null
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        agents:
+          queue: "juliagpu"
+          gpu: "*"
+          cuda: "*"
+        timeout_in_minutes: 120
+        command: |
+          cd benchmark;
+
+          julia --project --threads=auto --color=yes -e '
+            using Pkg;
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
+            Pkg.instantiate();
+            include("runbenchmarks.jl")'
+        env:
+          LUX_TRIAL_BENCHMARK: false

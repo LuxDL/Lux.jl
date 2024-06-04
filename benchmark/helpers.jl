@@ -23,6 +23,26 @@ function flatten_benchmark(results, prefix="", flat_results=[], depth=0)
         "date" => string(Dates.now()), "results" => flat_results)
 end
 
+# tune the benchmark or load the tuned parameters if possible
+function tune_or_load!(suite, loaded_params, cur_key="")
+    for k in keys(suite)
+        _cur_key = cur_key == "" ? k : "$cur_key/$k"
+        if haskey(loaded_params, k)
+            if suite[k] isa BenchmarkGroup
+                tune_or_load!(suite[k], loaded_params[k], _cur_key)
+            elseif suite[k] isa BenchmarkTools.Benchmark
+                @info "Loading parameters for $(_cur_key)."
+                BenchmarkTools.loadparams!(suite[k], loaded_params[k])
+            else
+                error("Unexpected value type: $(typeof(suite[k]))")
+            end
+        else
+            @info "Tuning $(_cur_key)..."
+            BenchmarkTools.tune!(suite[k]; verbose=true)
+        end
+    end
+end
+
 # convenience macro to create a benchmark that requires synchronizing the GPU
 # Mostly taken from `@benchmarkable` macro in BenchmarkTools.jl
 macro async_benchmarkable(dev, ex...)
