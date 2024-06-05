@@ -66,9 +66,11 @@ end
 Adapt.adapt_storage(::LuxAMDGPUAdaptor{Nothing}, rng::AbstractRNG) = rng
 Adapt.adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
 function Adapt.adapt_storage(::LuxAMDGPUAdaptor{Nothing}, rng::Random.TaskLocalRNG)
-    return AMDGPU.rocrand_rng()
+    return LuxDeviceUtils.default_device_rng(LuxAMDGPUDevice(nothing))
 end
-Adapt.adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG) = AMDGPU.rocrand_rng()
+function Adapt.adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG)
+    return LuxDeviceUtils.default_device_rng(rng)
+end
 
 Adapt.adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()
 

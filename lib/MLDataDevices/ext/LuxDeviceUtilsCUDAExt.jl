@@ -71,15 +71,19 @@ end
 Adapt.adapt_storage(::LuxCUDAAdaptor{Nothing}, rng::AbstractRNG) = rng
 Adapt.adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
 function Adapt.adapt_storage(::LuxCUDAAdaptor{Nothing}, rng::Random.TaskLocalRNG)
-    return CUDA.default_rng()
+    return LuxDeviceUtils.default_device_rng(LuxCUDADevice(nothing))
 end
-Adapt.adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG) = CUDA.default_rng()
+function Adapt.adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG)
+    return LuxDeviceUtils.default_device_rng(LuxCUDADevice(nothing))
+end
 
 Adapt.adapt_storage(::LuxCPUAdaptor, rng::CUDA.RNG) = Random.default_rng()
 
 ## To CPU
 ## FIXME: Use SparseArrays to preserve the sparsity
 function Adapt.adapt_storage(::LuxCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix)
+    @warn "Currently we don't convert CUSPARSE matrices to CPU SparseArrays. Constructing \
+           a dense matrix instead." maxlog=1
     return Adapt.adapt(Array, x)
 end
 

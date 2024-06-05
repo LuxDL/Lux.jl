@@ -18,15 +18,15 @@ const CRC = ChainRulesCore
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
 export gpu_device, cpu_device
-export LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice
-export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor
+export LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice, LuxoneAPIDevice
+export LuxCPUAdaptor, LuxCUDAAdaptor, LuxAMDGPUAdaptor, LuxMetalAdaptor, LuxoneAPIAdaptor
 export get_device
 
 abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
 
-__is_functional(x) = false
-__is_loaded(x) = false
+@inline __is_functional(x) = false
+@inline __is_loaded(x) = false
 
 struct LuxCPUDevice <: AbstractLuxDevice end
 @kwdef struct LuxCUDADevice{D} <: AbstractLuxGPUDevice
@@ -36,41 +36,44 @@ end
     device::D = nothing
 end
 struct LuxMetalDevice <: AbstractLuxGPUDevice end
+struct LuxoneAPIDevice <: AbstractLuxGPUDevice end
 
-_with_device(::Type{LuxCPUDevice}, ::Nothing) = LuxCPUDevice()
-function _with_device(::Type{LuxCPUDevice}, device_id)
-    @warn "`device_id` is not applicable for `LuxCPUDevice`." maxlog=1
-    return LuxCPUDevice()
+for dev in (LuxCPUDevice, LuxMetalDevice, LuxoneAPIDevice)
+    @eval begin
+        _with_device(::Type{$dev}, ::Nothing) = $dev()
+        function _with_device(::Type{$dev}, device_id)
+            @warn "`device_id` is not applicable for `$dev`." maxlog=1
+            return $dev()
+        end
+    end
 end
 
-_with_device(::Type{LuxMetalDevice}, ::Nothing) = LuxMetalDevice()
-function _with_device(::Type{LuxMetalDevice}, device_id)
-    @warn "`device_id` is not applicable for `LuxMetalDevice`." maxlog=1
-    return LuxMetalDevice()
-end
+@inline __is_functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
+@inline __is_loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
 
-__is_functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
-__is_loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
+@inline _get_device_name(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = "CPU"
+@inline _get_device_name(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}}) = "CUDA"
+@inline _get_device_name(::Union{LuxAMDGPUDevice, Type{<:LuxAMDGPUDevice}}) = "AMDGPU"
+@inline _get_device_name(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = "Metal"
+@inline _get_device_name(::Union{LuxoneAPIDevice, Type{<:LuxoneAPIDevice}}) = "oneAPI"
 
-_get_device_name(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = "CPU"
-_get_device_name(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}}) = "CUDA"
-_get_device_name(::Union{LuxAMDGPUDevice, Type{<:LuxAMDGPUDevice}}) = "AMDGPU"
-_get_device_name(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = "Metal"
+@inline _get_triggerpkg_name(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = ""
+@inline _get_triggerpkg_name(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}}) = "LuxCUDA"
+@inline _get_triggerpkg_name(::Union{LuxAMDGPUDevice, Type{<:LuxAMDGPUDevice}}) = "LuxAMDGPU"
+@inline _get_triggerpkg_name(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = "Metal"
+@inline _get_triggerpkg_name(::Union{LuxoneAPIDevice, Type{<:LuxoneAPIDevice}}) = "oneAPI"
 
-_get_triggerpkg_name(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = ""
-_get_triggerpkg_name(::Union{LuxCUDADevice, Type{<:LuxCUDADevice}}) = "LuxCUDA"
-_get_triggerpkg_name(::Union{LuxAMDGPUDevice, Type{<:LuxAMDGPUDevice}}) = "LuxAMDGPU"
-_get_triggerpkg_name(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = "Metal"
+@inline _get_adaptor(::LuxCPUDevice) = LuxCPUAdaptor()
+@inline _get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device)
+@inline _get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device)
+@inline _get_adaptor(::LuxMetalDevice) = LuxMetalAdaptor()
+@inline _get_adaptor(::LuxoneAPIDevice) = LuxoneAPIAdaptor()
 
-_get_adaptor(::LuxCPUDevice) = LuxCPUAdaptor()
-_get_adaptor(dev::LuxCUDADevice) = LuxCUDAAdaptor(dev.device)
-_get_adaptor(dev::LuxAMDGPUDevice) = LuxAMDGPUAdaptor(dev.device)
-_get_adaptor(::LuxMetalDevice) = LuxMetalAdaptor()
-
-_get_device_id(::LuxCPUDevice) = nothing
-_get_device_id(::LuxCUDADevice{Nothing}) = nothing
-_get_device_id(::LuxAMDGPUDevice{Nothing}) = nothing
-_get_device_id(::LuxMetalDevice) = nothing
+@inline _get_device_id(::LuxCPUDevice) = nothing
+@inline _get_device_id(::LuxCUDADevice{Nothing}) = nothing
+@inline _get_device_id(::LuxAMDGPUDevice{Nothing}) = nothing
+@inline _get_device_id(::LuxMetalDevice) = nothing
+@inline _get_device_id(::LuxoneAPIDevice) = nothing
 
 Base.show(io::IO, dev::AbstractLuxDevice) = print(io, nameof(dev))
 
@@ -81,7 +84,7 @@ function Base.showerror(io::IO, ::LuxDeviceSelectionException)
 end
 
 # Order is important here
-const GPU_DEVICES = (LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice)
+const GPU_DEVICES = (LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice, LuxoneAPIDevice)
 
 const GPU_DEVICE = Ref{Union{Nothing, AbstractLuxDevice}}(nothing)
 
@@ -105,8 +108,8 @@ Return a tuple of supported GPU backends.
 
 !!! danger
 
-    `Metal.jl` support is **extremely** experimental and most things are not expected to
-    work.
+    `Metal.jl` and `oneAPI.jl` support is **extremely** experimental and most things are not
+    expected to work.
 """
 supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
@@ -222,9 +225,10 @@ function _get_gpu_device(; force_gpu_usage::Bool)
 
                  1. If no GPU is available, nothing needs to be done.
                  2. If GPU is available, load the corresponding trigger package.
-                     a. LuxCUDA.jl for NVIDIA CUDA Support.
-                     b. LuxAMDGPU.jl for AMD GPU ROCM Support.
-                     c. Metal.jl for Apple Metal GPU Support.""" maxlog=1
+                     a. `LuxCUDA.jl` for NVIDIA CUDA Support.
+                     b. `LuxAMDGPU.jl` for AMD GPU ROCM Support.
+                     c. `Metal.jl` for Apple Metal GPU Support.
+                     d. `oneAPI.jl` for Intel oneAPI GPU Support.""" maxlog=1
         return LuxCPUDevice
     end
 end
@@ -284,7 +288,8 @@ and states on the device using
 [WeightInitializers.jl](https://github.com/LuxDL/WeightInitializers.jl).
 """
 function default_device_rng(D::AbstractLuxDevice)
-    return error("""`default_device_rng` not implemented for $(typeof(D)). This is either because:
+    return error("""`default_device_rng` not implemented for `$(typeof(D))`. This is \
+           either because:
 
            1. The default RNG for this device is not known / officially provided.
            2. The trigger package for the device is not loaded.
@@ -296,7 +301,7 @@ default_device_rng(::LuxCPUDevice) = Random.default_rng()
 # Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
 # For all other types we rely on fmap which means we lose type stability.
 # For Lux, typically models only has these 3 datastructures so we should be mostly fine.
-for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal)
+for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     ldev = Symbol("Lux$(dev)Device")
     @eval begin
         function (D::$(ldev))(x::AbstractArray)
@@ -406,6 +411,8 @@ function set_device!(::Type{T}, dev_or_id) where {T <: AbstractLuxDevice}
         @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
     T === LuxMetalDevice &&
         @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting." maxlog=1
+    T === LuxoneAPIDevice &&
+        @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting." maxlog=1
     T === LuxCPUDevice &&
         @warn "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting." maxlog=1
     return
@@ -440,13 +447,14 @@ struct LuxAMDGPUAdaptor{D} <: AbstractLuxGPUDeviceAdaptor
     device::D
 end
 struct LuxMetalAdaptor <: AbstractLuxGPUDeviceAdaptor end
+struct LuxoneAPIAdaptor <: AbstractLuxGPUDeviceAdaptor end
 
 Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
 Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = Adapt.adapt(Array, x)
 Adapt.adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 
 # Prevent Ambiguity
-for T in (LuxAMDGPUAdaptor, LuxCUDAAdaptor, LuxMetalAdaptor)
+for T in (LuxAMDGPUAdaptor, LuxCUDAAdaptor, LuxMetalAdaptor, LuxoneAPIAdaptor)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
 end
 

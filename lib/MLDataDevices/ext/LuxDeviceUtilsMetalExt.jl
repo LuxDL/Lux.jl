@@ -24,7 +24,7 @@ LuxDeviceUtils.get_device(::MtlArray) = LuxMetalDevice()
 Adapt.adapt_storage(::LuxMetalAdaptor, x) = Metal.mtl(x)
 Adapt.adapt_storage(::LuxMetalAdaptor, rng::AbstractRNG) = rng
 function Adapt.adapt_storage(::LuxMetalAdaptor, rng::Random.TaskLocalRNG)
-    return GPUArrays.default_rng(MtlArray)
+    return LuxDeviceUtils.default_device_rng(LuxMetalDevice())
 end
 
 end
