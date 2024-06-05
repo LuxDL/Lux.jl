@@ -1,4 +1,4 @@
-module LuxDeviceUtilsMetalGPUArraysExt
+module LuxDeviceUtilsMetalExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays

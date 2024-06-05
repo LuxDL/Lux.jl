@@ -4,6 +4,7 @@ using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
     using Adapt: Adapt
+    using ArgCheck: @argcheck
     using ChainRulesCore: ChainRulesCore, NoTangent
     using FastClosures: @closure
     using Functors: Functors, fmap
@@ -326,7 +327,8 @@ end
 Returns the device of the array `x`. Trigger Packages must be loaded for this to return the
 correct device.
 """
-function get_device(x::AbstractArray)
+function get_device(x::AbstractArray{T}) where {T}
+    !isbitstype(T) && __combine_devices(get_device.(x))
     if hasmethod(parent, Tuple{typeof(x)})
         parent_x = parent(x)
         parent_x === x && return LuxCPUDevice()
@@ -335,7 +337,36 @@ function get_device(x::AbstractArray)
     return LuxCPUDevice()
 end
 
+"""
+    get_device(x) -> AbstractLuxDevice | Exception | Nothing
+
+If all arrays (on the leaves of the structure) are on the same device, we return that
+device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
+"""
+function get_device(x)
+    dev = Ref{Union{AbstractLuxDevice, Nothing}}(nothing)
+    _get_device(x) = (dev[] = __combine_devices(dev[], get_device(x)))
+    fmap(_get_device, x)
+    return dev[]
+end
+for T in (Number, AbstractRNG, Val)
+    @eval get_device(::$(T)) = nothing
+end
+get_device(x::Tuple) = __combine_devices(get_device.(x)...)
+get_device(x::NamedTuple) = __combine_devices(get_device.(values(x))...)
+
 CRC.@non_differentiable get_device(::Any...)
+
+__combine_devices(dev1) = dev1
+function __combine_devices(dev1, dev2)
+    dev1 === nothing && return dev2
+    dev2 === nothing && return dev1
+    @argcheck dev1 == dev2
+    return dev1
+end
+function __combine_devices(dev1, dev2, rem_devs...)
+    return foldl(__combine_devices, (dev1, dev2, rem_devs...))
+end
 
 # Set the device
 const SET_DEVICE_DOCS = """
