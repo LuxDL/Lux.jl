@@ -453,6 +453,16 @@ Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractRange) = x
 Adapt.adapt_storage(::LuxCPUAdaptor, x::AbstractArray) = Adapt.adapt(Array, x)
 Adapt.adapt_storage(::LuxCPUAdaptor, rng::AbstractRNG) = rng
 
+for T in (LuxAMDGPUAdaptor, LuxAMDGPUAdaptor{Nothing}, LuxCUDAAdaptor,
+    LuxCUDAAdaptor{Nothing}, LuxMetalAdaptor, LuxoneAPIAdaptor)
+    @eval begin
+        function Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG)
+            return default_device_rng(to)
+        end
+        Adapt.adapt_storage(::$(T), rng::AbstractRNG) = rng
+    end
+end
+
 # Prevent Ambiguity
 for T in (LuxAMDGPUAdaptor, LuxCUDAAdaptor, LuxMetalAdaptor, LuxoneAPIAdaptor)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))

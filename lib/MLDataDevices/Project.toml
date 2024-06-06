@@ -38,7 +38,7 @@ LuxDeviceUtilsMetalExt = ["GPUArrays", "Metal"]
 LuxDeviceUtilsRecursiveArrayToolsExt = "RecursiveArrayTools"
 LuxDeviceUtilsSparseArraysExt = "SparseArrays"
 LuxDeviceUtilsZygoteExt = "Zygote"
-LuxDeviceUtilsoneAPIExt = "oneAPI"
+LuxDeviceUtilsoneAPIExt = ["GPUArrays", "oneAPI"]
 
 [compat]
 AMDGPU = "0.8.4, 0.9"

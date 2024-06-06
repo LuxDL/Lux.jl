@@ -3,7 +3,7 @@ module LuxDeviceUtilsCUDAExt
 using Adapt: Adapt
 using CUDA: CUDA, CUSPARSE
 using LuxDeviceUtils: LuxDeviceUtils, LuxCUDAAdaptor, LuxCUDADevice, LuxCPUAdaptor
-using Random: Random, AbstractRNG
+using Random: Random
 
 function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id::Int)
     id > length(CUDA.devices()) &&
@@ -67,14 +67,6 @@ function Adapt.adapt_storage(to::LuxCUDAAdaptor, x)
         CUDA.device!(old_dev)
         return x_new
     end
-end
-Adapt.adapt_storage(::LuxCUDAAdaptor{Nothing}, rng::AbstractRNG) = rng
-Adapt.adapt_storage(::LuxCUDAAdaptor, rng::AbstractRNG) = rng
-function Adapt.adapt_storage(::LuxCUDAAdaptor{Nothing}, rng::Random.TaskLocalRNG)
-    return LuxDeviceUtils.default_device_rng(LuxCUDADevice(nothing))
-end
-function Adapt.adapt_storage(::LuxCUDAAdaptor, rng::Random.TaskLocalRNG)
-    return LuxDeviceUtils.default_device_rng(LuxCUDADevice(nothing))
 end
 
 Adapt.adapt_storage(::LuxCPUAdaptor, rng::CUDA.RNG) = Random.default_rng()

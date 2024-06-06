@@ -3,7 +3,7 @@ module LuxDeviceUtilsAMDGPUExt
 using Adapt: Adapt
 using AMDGPU: AMDGPU
 using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUAdaptor, LuxAMDGPUDevice, LuxCPUAdaptor
-using Random: Random, AbstractRNG
+using Random: Random
 
 function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, ::Nothing)
     return LuxAMDGPUDevice(nothing)
@@ -62,14 +62,6 @@ function Adapt.adapt_storage(to::LuxAMDGPUAdaptor, x)
         AMDGPU.device!(old_dev)
         return x_new
     end
-end
-Adapt.adapt_storage(::LuxAMDGPUAdaptor{Nothing}, rng::AbstractRNG) = rng
-Adapt.adapt_storage(::LuxAMDGPUAdaptor, rng::AbstractRNG) = rng
-function Adapt.adapt_storage(::LuxAMDGPUAdaptor{Nothing}, rng::Random.TaskLocalRNG)
-    return LuxDeviceUtils.default_device_rng(LuxAMDGPUDevice(nothing))
-end
-function Adapt.adapt_storage(::LuxAMDGPUAdaptor, rng::Random.TaskLocalRNG)
-    return LuxDeviceUtils.default_device_rng(rng)
 end
 
 Adapt.adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()
