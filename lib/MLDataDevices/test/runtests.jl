@@ -15,6 +15,10 @@ const GROUP = get(ENV, "GROUP", "NONE")
         @safetestset "Metal" include("metal.jl")
     end
 
+    if GROUP == "oneAPI" || GROUP == "ALL"
+        @safetestset "oneAPI" include("oneapi.jl")
+    end
+
     @testset "Others" begin
         @testset "Aqua Tests" Aqua.test_all(LuxDeviceUtils)
 
