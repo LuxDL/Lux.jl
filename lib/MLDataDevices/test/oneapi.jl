@@ -25,7 +25,6 @@ using oneAPI
     @test LuxDeviceUtils.GPU_DEVICE[] !== nothing
 end
 
-
 using FillArrays, Zygote  # Extensions
 
 @testset "Data Transfer" begin

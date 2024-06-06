@@ -3,9 +3,18 @@ module LuxDeviceUtilsoneAPIExt
 using Adapt: Adapt
 using GPUArrays: GPUArrays
 using LuxDeviceUtils: LuxDeviceUtils, LuxoneAPIDevice, reset_gpu_device!
-using oneAPI: oneAPI, oneArray
+using oneAPI: oneAPI, oneArray, oneL0
 
-__init__() = reset_gpu_device!()
+const SUPPORTS_FP64 = Dict{oneL0.ZeDevice, Bool}()
+
+function __init__()
+    reset_gpu_device!()
+    for dev in oneAPI.devices()
+        SUPPORTS_FP64[dev] = oneL0.module_properties(dev).fp64flags &
+                             oneL0.ZE_DEVICE_MODULE_FLAG_FP64 ==
+                             oneL0.ZE_DEVICE_MODULE_FLAG_FP64
+    end
+end
 
 LuxDeviceUtils.__is_loaded(::Union{LuxoneAPIDevice, Type{<:LuxoneAPIDevice}}) = true
 function LuxDeviceUtils.__is_functional(::Union{LuxoneAPIDevice, Type{<:LuxoneAPIDevice}})
@@ -20,6 +29,16 @@ LuxDeviceUtils.get_device(::oneArray) = LuxoneAPIDevice()
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxoneAPIDevice, x) = oneArray(x)
+for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
+    @eval function Adapt.adapt_storage(::LuxoneAPIDevice, x::AbstractArray{$(T1)})
+        if !SUPPORTS_FP64[oneAPI.device()]
+            @warn LazyString(
+                "Double type is not supported on this device. Using `", $(T2), "` instead.")
+            return oneArray{$(T2)}(x)
+        end
+        return oneArray(x)
+    end
+end
+Adapt.adapt_storage(::LuxoneAPIDevice, x::AbstractArray) = oneArray(x)
 
 end
