@@ -38,6 +38,7 @@ using FillArrays, Zygote  # Extensions
               Random.AbstractRNG
 
     ps_xpu = ps |> device
+    @test get_device(ps_xpu) isa LuxoneAPIDevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -55,6 +56,7 @@ using FillArrays, Zygote  # Extensions
     end
 
     ps_cpu = ps_xpu |> cpu_device()
+    @test get_device(ps_cpu) isa LuxCPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -72,4 +74,7 @@ using FillArrays, Zygote  # Extensions
         @test ps_cpu.one_elem isa Zygote.OneElement
         @test ps_cpu.farray isa Fill
     end
+
+    ps_mixed = (; a=rand(2), b=device(rand(2)))
+    @test_throws ArgumentError get_device(ps_mixed)
 end

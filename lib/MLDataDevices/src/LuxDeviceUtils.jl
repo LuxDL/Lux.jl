@@ -366,7 +366,7 @@ function get_device(x)
     fmap(_get_device, x)
     return dev[]
 end
-for T in (Number, AbstractRNG, Val)
+for T in (Number, AbstractRNG, Val, Symbol, String)
     @eval get_device(::$(T)) = nothing
 end
 get_device(x::Tuple) = __combine_devices(get_device.(x)...)
