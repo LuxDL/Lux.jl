@@ -2,7 +2,7 @@ module LuxDeviceUtilsAMDGPUExt
 
 using Adapt: Adapt
 using AMDGPU: AMDGPU
-using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUAdaptor, LuxAMDGPUDevice, LuxCPUAdaptor
+using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUDevice, LuxCPUDevice
 using Random: Random
 
 function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, ::Nothing)
@@ -46,8 +46,8 @@ end
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxAMDGPUAdaptor{Nothing}, x) = AMDGPU.roc(x)
-function Adapt.adapt_storage(to::LuxAMDGPUAdaptor, x)
+Adapt.adapt_storage(::LuxAMDGPUDevice{Nothing}, x) = AMDGPU.roc(x)
+function Adapt.adapt_storage(to::LuxAMDGPUDevice, x)
     old_dev = AMDGPU.device()  # remember the current device
     if !(x isa AMDGPU.AnyROCArray)
         AMDGPU.device!(to.device)
@@ -64,6 +64,6 @@ function Adapt.adapt_storage(to::LuxAMDGPUAdaptor, x)
     end
 end
 
-Adapt.adapt_storage(::LuxCPUAdaptor, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()
+Adapt.adapt_storage(::LuxCPUDevice, rng::AMDGPU.rocRAND.RNG) = Random.default_rng()
 
 end

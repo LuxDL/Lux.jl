@@ -2,8 +2,8 @@ module LuxDeviceUtilsoneAPIExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays
-using LuxDeviceUtils: LuxDeviceUtils, LuxoneAPIAdaptor, LuxoneAPIDevice, reset_gpu_device!
-using oneAPI: oneAPI, oneAPIArray
+using LuxDeviceUtils: LuxDeviceUtils, LuxoneAPIDevice, reset_gpu_device!
+using oneAPI: oneAPI, oneArray
 
 __init__() = reset_gpu_device!()
 
@@ -13,13 +13,13 @@ function LuxDeviceUtils.__is_functional(::Union{LuxoneAPIDevice, Type{<:LuxoneAP
 end
 
 # Default RNG
-LuxDeviceUtils.default_device_rng(::LuxoneAPIDevice) = GPUArrays.default_rng(oneAPIArray)
+LuxDeviceUtils.default_device_rng(::LuxoneAPIDevice) = GPUArrays.default_rng(oneArray)
 
 # Query Device from Array
-LuxDeviceUtils.get_device(::oneAPIArray) = LuxoneAPIDevice()
+LuxDeviceUtils.get_device(::oneArray) = LuxoneAPIDevice()
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxoneAPIAdaptor, x) = oneAPI.oneAPIArray(x)
+Adapt.adapt_storage(::LuxoneAPIDevice, x) = oneArray(x)
 
 end

@@ -2,7 +2,7 @@ module LuxDeviceUtilsMetalExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays
-using LuxDeviceUtils: LuxDeviceUtils, LuxMetalAdaptor, LuxMetalDevice, reset_gpu_device!
+using LuxDeviceUtils: LuxDeviceUtils, LuxMetalDevice, reset_gpu_device!
 using Metal: Metal, MtlArray
 
 __init__() = reset_gpu_device!()
@@ -20,6 +20,6 @@ LuxDeviceUtils.get_device(::MtlArray) = LuxMetalDevice()
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxMetalAdaptor, x) = Metal.mtl(x)
+Adapt.adapt_storage(::LuxMetalDevice, x) = Metal.mtl(x)
 
 end

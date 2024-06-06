@@ -2,7 +2,7 @@ module LuxDeviceUtilsCUDAExt
 
 using Adapt: Adapt
 using CUDA: CUDA, CUSPARSE
-using LuxDeviceUtils: LuxDeviceUtils, LuxCUDAAdaptor, LuxCUDADevice, LuxCPUAdaptor
+using LuxDeviceUtils: LuxDeviceUtils, LuxCUDADevice, LuxCPUDevice
 using Random: Random
 
 function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id::Int)
@@ -51,8 +51,8 @@ end
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxCUDAAdaptor{Nothing}, x) = CUDA.cu(x)
-function Adapt.adapt_storage(to::LuxCUDAAdaptor, x)
+Adapt.adapt_storage(::LuxCUDADevice{Nothing}, x) = CUDA.cu(x)
+function Adapt.adapt_storage(to::LuxCUDADevice, x)
     old_dev = CUDA.device()  # remember the current device
     if !(x isa CUDA.AnyCuArray)
         CUDA.device!(to.device)
@@ -69,11 +69,11 @@ function Adapt.adapt_storage(to::LuxCUDAAdaptor, x)
     end
 end
 
-Adapt.adapt_storage(::LuxCPUAdaptor, rng::CUDA.RNG) = Random.default_rng()
+Adapt.adapt_storage(::LuxCPUDevice, rng::CUDA.RNG) = Random.default_rng()
 
 ## To CPU
 ## FIXME: Use SparseArrays to preserve the sparsity
-function Adapt.adapt_storage(::LuxCPUAdaptor, x::CUSPARSE.AbstractCuSparseMatrix)
+function Adapt.adapt_storage(::LuxCPUDevice, x::CUSPARSE.AbstractCuSparseMatrix)
     @warn "Currently we don't convert CUSPARSE matrices to CPU SparseArrays. Constructing \
            a dense matrix instead." maxlog=1
     return Adapt.adapt(Array, x)
