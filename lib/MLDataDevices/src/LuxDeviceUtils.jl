@@ -36,6 +36,8 @@ Note that while this function is not exported, it is considered part of the publ
 """
 @inline functional(x) = false
 
+Base.@deprecate __is_functional(x) functional(x)
+
 """
     loaded(x::AbstractLuxDevice) -> Bool
     loaded(::Type{<:AbstractLuxDevice}) -> Bool
@@ -48,6 +50,8 @@ Checks if the trigger package for the device is loaded. Trigger packages are as 
     - `oneAPI.jl` for Intel oneAPI GPU Support.
 """
 @inline loaded(x) = false
+
+Base.@deprecate __is_loaded(x) loaded(x)
 
 struct LuxCPUDevice <: AbstractLuxDevice end
 @kwdef struct LuxCUDADevice{D} <: AbstractLuxGPUDevice

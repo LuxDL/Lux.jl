@@ -73,25 +73,54 @@ using FillArrays, Zygote  # Extensions
     end
 end
 
-if LuxDeviceUtils.functional(LuxCUDADevice)
-    ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
-    ps_cpu = deepcopy(ps)
-    cdev = cpu_device()
-    for idx in 1:length(CUDA.devices())
-        cuda_device = gpu_device(idx)
-        @test typeof(cuda_device.device) <: CUDA.CuDevice
-        @test cuda_device.device.handle == (idx - 1)
+@testset "Multiple Devices CUDA" begin
+    if LuxDeviceUtils.functional(LuxCUDADevice)
+        ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
+        ps_cpu = deepcopy(ps)
+        cdev = cpu_device()
+        for idx in 1:length(CUDA.devices())
+            cuda_device = gpu_device(idx)
+            @test typeof(cuda_device.device) <: CUDA.CuDevice
+            @test cuda_device.device.handle == (idx - 1)
 
-        global ps = ps |> cuda_device
-        @test ps.weight isa CuArray
-        @test ps.bias isa CuArray
-        @test CUDA.device(ps.weight).handle == idx - 1
-        @test CUDA.device(ps.bias).handle == idx - 1
-        @test isequal(cdev(ps.weight), ps_cpu.weight)
-        @test isequal(cdev(ps.bias), ps_cpu.bias)
+            ps = ps |> cuda_device
+            @test ps.weight isa CuArray
+            @test ps.bias isa CuArray
+            @test CUDA.device(ps.weight).handle == idx - 1
+            @test CUDA.device(ps.bias).handle == idx - 1
+            @test isequal(cdev(ps.weight), ps_cpu.weight)
+            @test isequal(cdev(ps.bias), ps_cpu.bias)
+        end
+
+        ps = ps |> cdev
+        @test ps.weight isa Array
+        @test ps.bias isa Array
     end
+end
 
-    ps = ps |> cdev
-    @test ps.weight isa Array
-    @test ps.bias isa Array
+using SparseArrays
+
+@testset "CUDA Sparse Arrays" begin
+    if LuxDeviceUtils.functional(LuxCUDADevice)
+        ps = (; weight=sprand(Float32, 10, 10, 0.1), bias=sprand(Float32, 10, 0.1))
+        ps_cpu = deepcopy(ps)
+        cdev = cpu_device()
+        for idx in 1:length(CUDA.devices())
+            cuda_device = gpu_device(idx)
+            @test typeof(cuda_device.device) <: CUDA.CuDevice
+            @test cuda_device.device.handle == (idx - 1)
+
+            ps = ps |> cuda_device
+            @test ps.weight isa CUSPARSE.CuSparseMatrixCSC
+            @test ps.bias isa CUSPARSE.CuSparseVector
+            @test get_device(ps.weight).device.handle == idx - 1
+            @test get_device(ps.bias).device.handle == idx - 1
+            @test isequal(cdev(ps.weight), ps_cpu.weight)
+            @test isequal(cdev(ps.bias), ps_cpu.bias)
+        end
+
+        ps = ps |> cdev
+        @test ps.weight isa SparseMatrixCSC
+        @test ps.bias isa SparseVector
+    end
 end

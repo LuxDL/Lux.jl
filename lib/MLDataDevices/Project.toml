@@ -29,6 +29,7 @@ oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 [extensions]
 LuxDeviceUtilsAMDGPUExt = "AMDGPU"
 LuxDeviceUtilsCUDAExt = "CUDA"
+LuxDeviceUtilsCUDASparseArraysExt = ["CUDA", "SparseArrays"]
 LuxDeviceUtilsFillArraysExt = "FillArrays"
 LuxDeviceUtilsGPUArraysExt = "GPUArrays"
 LuxDeviceUtilsLuxCUDAExt = "LuxCUDA"
