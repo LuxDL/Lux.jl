@@ -1,6 +1,7 @@
 using LuxDeviceUtils, Random
 
 @testset "CPU Fallback" begin
+    @test !LuxDeviceUtils.functional(LuxCUDADevice)
     @test cpu_device() isa LuxCPUDevice
     @test gpu_device() isa LuxCPUDevice
     @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;

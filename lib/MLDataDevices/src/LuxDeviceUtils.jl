@@ -4,9 +4,7 @@ using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
     using Adapt: Adapt
-    using ArgCheck: @argcheck
     using ChainRulesCore: ChainRulesCore, NoTangent
-    using FastClosures: @closure
     using Functors: Functors, fmap
     using LuxCore: LuxCore
     using Preferences: @delete_preferences!, @load_preference, @set_preferences!
@@ -280,7 +278,9 @@ function gpu_backend!(backend::String)
         return
     end
 
-    @argcheck backend in allowed_backends
+    if backend ∉ allowed_backends
+        throw(ArgumentError("Invalid backend: $backend. Valid backends are $allowed_backends."))
+    end
 
     @set_preferences!("gpu_backend"=>backend)
     @info "GPU backend has been set to $backend. Restart Julia to use the new backend."
@@ -378,7 +378,8 @@ __combine_devices(dev1) = dev1
 function __combine_devices(dev1, dev2)
     dev1 === nothing && return dev2
     dev2 === nothing && return dev1
-    @argcheck dev1 == dev2
+    dev1 != dev2 &&
+        throw(ArgumentError("Objects are on different devices: $dev1 and $dev2."))
     return dev1
 end
 function __combine_devices(dev1, dev2, rem_devs...)
@@ -456,7 +457,6 @@ for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     @eval Base.@deprecate_binding $(adaptor) $(dev) true
 end
 
-Adapt.adapt_storage(::LuxCPUDevice, x::AbstractRange) = x
 Adapt.adapt_storage(::LuxCPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
 Adapt.adapt_storage(::LuxCPUDevice, rng::AbstractRNG) = rng
 
@@ -470,6 +470,7 @@ for T in (LuxAMDGPUDevice, LuxAMDGPUDevice{Nothing}, LuxCUDADevice,
     end
 end
 
+Adapt.adapt_storage(::LuxCPUDevice, x::AbstractRange) = x
 # Prevent Ambiguity
 for T in (LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDevice, LuxoneAPIDevice)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
@@ -484,7 +485,9 @@ end
 
 # Chain Rules Core
 function CRC.rrule(::typeof(Adapt.adapt_storage), to::AbstractLuxDevice, x::AbstractArray)
-    ∇adapt_storage = @closure Δ -> (NoTangent(), NoTangent(), (get_device(x))(Δ))
+    ∇adapt_storage = let x = x
+        Δ -> (NoTangent(), NoTangent(), (get_device(x))(Δ))
+    end
     return Adapt.adapt_storage(to, x), ∇adapt_storage
 end
 
