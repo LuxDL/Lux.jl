@@ -12,7 +12,7 @@ using Metal
 @testset "Loaded Trigger Package" begin
     @test LuxDeviceUtils.GPU_DEVICE[] === nothing
 
-    if Metal.functional()
+    if LuxDeviceUtils.functional(LuxMetalDevice)
         @info "Metal is functional"
         @test gpu_device() isa LuxMetalDevice
         @test gpu_device(; force_gpu_usage=true) isa LuxMetalDevice
@@ -33,8 +33,9 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = Metal.functional() ? MtlArray : Array
-    rngType = Metal.functional() ? Metal.GPUArrays.RNG : Random.AbstractRNG
+    aType = LuxDeviceUtils.functional(LuxMetalDevice) ? MtlArray : Array
+    rngType = LuxDeviceUtils.functional(LuxMetalDevice) ? Metal.GPUArrays.RNG :
+              Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test ps_xpu.a.c isa aType
@@ -45,7 +46,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if Metal.functional()
+    if LuxDeviceUtils.functional(LuxMetalDevice)
         @test ps_xpu.one_elem isa MtlArray
         @test ps_xpu.farray isa MtlArray
     else
@@ -64,7 +65,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if Metal.functional()
+    if LuxDeviceUtils.functional(LuxMetalDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else

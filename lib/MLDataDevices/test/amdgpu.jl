@@ -7,17 +7,17 @@ using LuxDeviceUtils, Random
         force_gpu_usage=true)
 end
 
-using LuxAMDGPU
+using AMDGPU
 
 @testset "Loaded Trigger Package" begin
     @test LuxDeviceUtils.GPU_DEVICE[] === nothing
 
-    if LuxAMDGPU.functional()
-        @info "LuxAMDGPU is functional"
+    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+        @info "AMDGPU is functional"
         @test gpu_device() isa LuxAMDGPUDevice
         @test gpu_device(; force_gpu_usage=true) isa LuxAMDGPUDevice
     else
-        @info "LuxAMDGPU is NOT functional"
+        @info "AMDGPU is NOT functional"
         @test gpu_device() isa LuxCPUDevice
         @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
             force_gpu_usage=true)
@@ -33,8 +33,9 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = LuxAMDGPU.functional() ? ROCArray : Array
-    rngType = LuxAMDGPU.functional() ? AMDGPU.rocRAND.RNG : Random.AbstractRNG
+    aType = LuxDeviceUtils.functional(LuxAMDGPUDevice) ? ROCArray : Array
+    rngType = LuxDeviceUtils.functional(LuxAMDGPUDevice) ? AMDGPU.rocRAND.RNG :
+              Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test ps_xpu.a.c isa aType
@@ -45,7 +46,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if LuxAMDGPU.functional()
+    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
         @test ps_xpu.one_elem isa ROCArray
         @test ps_xpu.farray isa ROCArray
     else
@@ -64,7 +65,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if LuxAMDGPU.functional()
+    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -73,7 +74,7 @@ using FillArrays, Zygote  # Extensions
     end
 end
 
-if LuxAMDGPU.functional()
+if LuxDeviceUtils.functional(LuxAMDGPUDevice)
     ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
     ps_cpu = deepcopy(ps)
     cdev = cpu_device()

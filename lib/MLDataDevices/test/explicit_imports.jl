@@ -1,6 +1,5 @@
 # Load all trigger packages
-import LuxAMDGPU, LuxCUDA, FillArrays, Metal, RecursiveArrayTools, SparseArrays, Zygote,
-       oneAPI
+import FillArrays, RecursiveArrayTools, SparseArrays, Zygote
 using ExplicitImports, LuxDeviceUtils
 
 @test check_no_implicit_imports(LuxDeviceUtils) === nothing

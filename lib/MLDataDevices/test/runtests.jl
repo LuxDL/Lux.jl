@@ -10,7 +10,7 @@ const GROUP = get(ENV, "GROUP", "NONE")
     end
 
     if GROUP == "AMDGPU" || GROUP == "ALL"
-        Pkg.add("LuxAMDGPU")
+        Pkg.add("AMDGPU")
         @safetestset "AMDGPU" include("amdgpu.jl")
     end
 
@@ -29,7 +29,6 @@ const GROUP = get(ENV, "GROUP", "NONE")
 
         @safetestset "Component Arrays" include("component_arrays.jl")
 
-        Pkg.add(["LuxCUDA", "LuxAMDGPU", "Metal", "oneAPI"])
         @safetestset "Explicit Imports" include("explicit_imports.jl")
     end
 end

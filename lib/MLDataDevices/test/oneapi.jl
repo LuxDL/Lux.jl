@@ -12,7 +12,7 @@ using oneAPI
 @testset "Loaded Trigger Package" begin
     @test LuxDeviceUtils.GPU_DEVICE[] === nothing
 
-    if oneAPI.functional()
+    if LuxDeviceUtils.functional(LuxoneAPIDevice)
         @info "oneAPI is functional"
         @test gpu_device() isa LuxoneAPIDevice
         @test gpu_device(; force_gpu_usage=true) isa LuxoneAPIDevice
@@ -33,8 +33,9 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = oneAPI.functional() ? oneArray : Array
-    rngType = oneAPI.functional() ? oneAPI.GPUArrays.RNG : Random.AbstractRNG
+    aType = LuxDeviceUtils.functional(LuxoneAPIDevice) ? oneArray : Array
+    rngType = LuxDeviceUtils.functional(LuxoneAPIDevice) ? oneAPI.GPUArrays.RNG :
+              Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test ps_xpu.a.c isa aType
@@ -45,7 +46,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if oneAPI.functional()
+    if LuxDeviceUtils.functional(LuxoneAPIDevice)
         @test ps_xpu.one_elem isa oneArray
         @test ps_xpu.farray isa oneArray
     else
@@ -64,7 +65,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if oneAPI.functional()
+    if LuxDeviceUtils.functional(LuxoneAPIDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else

@@ -24,8 +24,30 @@ export get_device
 abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
 
-@inline __is_functional(x) = false
-@inline __is_loaded(x) = false
+"""
+    functional(x::AbstractLuxDevice) -> Bool
+    functional(::Type{<:AbstractLuxDevice}) -> Bool
+
+Checks if the device is functional. This is used to determine if the device can be used for
+computation. Note that even if the backend is loaded (as checked via
+[`LuxDeviceUtils.loaded`](@ref)), the device may not be functional.
+
+Note that while this function is not exported, it is considered part of the public API.
+"""
+@inline functional(x) = false
+
+"""
+    loaded(x::AbstractLuxDevice) -> Bool
+    loaded(::Type{<:AbstractLuxDevice}) -> Bool
+
+Checks if the trigger package for the device is loaded. Trigger packages are as follows:
+
+    - `LuxCUDA.jl` for NVIDIA CUDA Support.
+    - `AMDGPU.jl` for AMD GPU ROCM Support.
+    - `Metal.jl` for Apple Metal GPU Support.
+    - `oneAPI.jl` for Intel oneAPI GPU Support.
+"""
+@inline loaded(x) = false
 
 struct LuxCPUDevice <: AbstractLuxDevice end
 @kwdef struct LuxCUDADevice{D} <: AbstractLuxGPUDevice
@@ -47,11 +69,11 @@ for dev in (LuxCPUDevice, LuxMetalDevice, LuxoneAPIDevice)
     end
 end
 
-@inline __is_functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
-@inline __is_loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
+@inline functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
+@inline loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
 
 for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    tpkg = name === :CPU ? "" : (name ∈ (:CUDA, :AMDGPU) ? "Lux$(name)" : string(name))
+    tpkg = name === :CPU ? "" : (name == :CUDA ? "Lux$(name)" : string(name))
     ldev = eval(Symbol(:Lux, name, :Device))
     @eval begin
         @inline _get_device_name(::Union{$ldev, Type{<:$ldev}}) = $(string(name))
@@ -173,13 +195,13 @@ function _get_gpu_device(; force_gpu_usage::Bool)
             @debug "Using GPU backend set in preferences: $backend."
             idx = findfirst(isequal(backend), allowed_backends)
             device = GPU_DEVICES[idx]
-            if !__is_loaded(device)
+            if !loaded(device)
                 @warn "Trying to use backend: $(_get_device_name(device)) but the trigger \
                        package $(_get_triggerpkg_name(device)) is not loaded. Ignoring the \
                        Preferences backend!!! Please load the package and call this \
                        function again to respect the Preferences backend." maxlog=1
             else
-                if __is_functional(device)
+                if functional(device)
                     @debug "Using GPU backend: $(_get_device_name(device))."
                     return device
                 else
@@ -193,9 +215,9 @@ function _get_gpu_device(; force_gpu_usage::Bool)
 
     @debug "Running automatic GPU backend selection..."
     for device in GPU_DEVICES
-        if __is_loaded(device)
+        if loaded(device)
             @debug "Trying backend: $(_get_device_name(device))."
-            if __is_functional(device)
+            if functional(device)
                 @debug "Using GPU backend: $(_get_device_name(device))."
                 return device
             end
@@ -214,7 +236,7 @@ function _get_gpu_device(; force_gpu_usage::Bool)
                  1. If no GPU is available, nothing needs to be done.
                  2. If GPU is available, load the corresponding trigger package.
                      a. `LuxCUDA.jl` for NVIDIA CUDA Support.
-                     b. `LuxAMDGPU.jl` for AMD GPU ROCM Support.
+                     b. `AMDGPU.jl` for AMD GPU ROCM Support.
                      c. `Metal.jl` for Apple Metal GPU Support.
                      d. `oneAPI.jl` for Intel oneAPI GPU Support.""" maxlog=1
         return LuxCPUDevice

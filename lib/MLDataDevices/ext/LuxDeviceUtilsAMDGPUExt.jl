@@ -2,8 +2,30 @@ module LuxDeviceUtilsAMDGPUExt
 
 using Adapt: Adapt
 using AMDGPU: AMDGPU
-using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUDevice, LuxCPUDevice
+using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUDevice, LuxCPUDevice, reset_gpu_device!
 using Random: Random
+
+__init__() = reset_gpu_device!()
+
+# This code used to be in `LuxAMDGPU.jl`, but we no longer need that package.
+const USE_AMD_GPU = Ref{Union{Nothing, Bool}}(nothing)
+
+function _check_use_amdgpu!()
+    USE_AMD_GPU[] === nothing || return
+
+    USE_AMD_GPU[] = AMDGPU.functional()
+    if USE_AMD_GPU[] && !AMDGPU.functional(:MIOpen)
+        @warn "MIOpen is not functional in AMDGPU.jl, some functionality will not be \
+               available." maxlog=1
+    end
+    return
+end
+
+LuxDeviceUtils.loaded(::Union{LuxAMDGPUDevice, <:Type{LuxAMDGPUDevice}}) = true
+function LuxDeviceUtils.functional(::Union{LuxAMDGPUDevice, <:Type{LuxAMDGPUDevice}})::Bool
+    _check_use_amdgpu!()
+    return USE_AMD_GPU[]
+end
 
 function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, ::Nothing)
     return LuxAMDGPUDevice(nothing)

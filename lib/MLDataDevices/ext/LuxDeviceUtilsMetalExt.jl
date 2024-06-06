@@ -7,8 +7,8 @@ using Metal: Metal, MtlArray
 
 __init__() = reset_gpu_device!()
 
-LuxDeviceUtils.__is_loaded(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = true
-function LuxDeviceUtils.__is_functional(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}})
+LuxDeviceUtils.loaded(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}}) = true
+function LuxDeviceUtils.functional(::Union{LuxMetalDevice, Type{<:LuxMetalDevice}})
     return Metal.functional()
 end
 

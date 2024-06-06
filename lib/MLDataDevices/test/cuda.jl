@@ -12,7 +12,7 @@ using LuxCUDA
 @testset "Loaded Trigger Package" begin
     @test LuxDeviceUtils.GPU_DEVICE[] === nothing
 
-    if LuxCUDA.functional()
+    if LuxDeviceUtils.functional(LuxCUDADevice)
         @info "LuxCUDA is functional"
         @test gpu_device() isa LuxCUDADevice
         @test gpu_device(; force_gpu_usage=true) isa LuxCUDADevice
@@ -33,8 +33,8 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = LuxCUDA.functional() ? CuArray : Array
-    rngType = LuxCUDA.functional() ? CUDA.RNG : Random.AbstractRNG
+    aType = LuxDeviceUtils.functional(LuxCUDADevice) ? CuArray : Array
+    rngType = LuxDeviceUtils.functional(LuxCUDADevice) ? CUDA.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test ps_xpu.a.c isa aType
@@ -45,7 +45,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if LuxCUDA.functional()
+    if LuxDeviceUtils.functional(LuxCUDADevice)
         @test ps_xpu.one_elem isa CuArray
         @test ps_xpu.farray isa CuArray
     else
@@ -64,7 +64,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if LuxCUDA.functional()
+    if LuxDeviceUtils.functional(LuxCUDADevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -73,7 +73,7 @@ using FillArrays, Zygote  # Extensions
     end
 end
 
-if LuxCUDA.functional()
+if LuxDeviceUtils.functional(LuxCUDADevice)
     ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
     ps_cpu = deepcopy(ps)
     cdev = cpu_device()
