@@ -2,6 +2,7 @@ module LuxDeviceUtilsCUDAExt
 
 using Adapt: Adapt
 using CUDA: CUDA
+using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector
 using LuxDeviceUtils: LuxDeviceUtils, LuxCUDADevice, LuxCPUDevice
 using Random: Random
 
@@ -72,5 +73,18 @@ function Adapt.adapt_storage(to::LuxCUDADevice, x)
 end
 
 Adapt.adapt_storage(::LuxCPUDevice, rng::CUDA.RNG) = Random.default_rng()
+
+# Defining as extensions seems to case precompilation errors
+@static if isdefined(CUDA.CUSPARSE, :SparseArrays)
+    function Adapt.adapt_storage(::LuxCPUDevice, x::AbstractCuSparseMatrix)
+        return CUDA.CUSPARSE.SparseArrays.SparseMatrixCSC(x)
+    end
+    function Adapt.adapt_storage(::LuxCPUDevice, x::AbstractCuSparseVector)
+        return CUDA.CUSPARSE.SparseArrays.SparseVector(x)
+    end
+else
+    @warn "CUDA.CUSPARSE seems to have removed SparseArrays as a dependency. Please open \
+           an issue in LuxDeviceUtils.jl repository."
+end
 
 end
