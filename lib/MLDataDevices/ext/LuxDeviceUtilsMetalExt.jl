@@ -20,6 +20,6 @@ LuxDeviceUtils.get_device(::MtlArray) = LuxMetalDevice()
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxMetalDevice, x) = Metal.mtl(x)
+Adapt.adapt_storage(::LuxMetalDevice, x::AbstractArray) = Metal.mtl(x)
 
 end

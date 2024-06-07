@@ -54,8 +54,8 @@ function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, ::Nothing, rank::Int)
 end
 
 # Device Transfer
-Adapt.adapt_storage(::LuxCUDADevice{Nothing}, x) = CUDA.cu(x)
-function Adapt.adapt_storage(to::LuxCUDADevice, x)
+Adapt.adapt_storage(::LuxCUDADevice{Nothing}, x::AbstractArray) = CUDA.cu(x)
+function Adapt.adapt_storage(to::LuxCUDADevice, x::AbstractArray)
     old_dev = CUDA.device()  # remember the current device
     if !(x isa CUDA.AnyCuArray)
         CUDA.device!(to.device)

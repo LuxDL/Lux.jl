@@ -68,8 +68,8 @@ end
 
 # Device Transfer
 ## To GPU
-Adapt.adapt_storage(::LuxAMDGPUDevice{Nothing}, x) = AMDGPU.roc(x)
-function Adapt.adapt_storage(to::LuxAMDGPUDevice, x)
+Adapt.adapt_storage(::LuxAMDGPUDevice{Nothing}, x::AbstractArray) = AMDGPU.roc(x)
+function Adapt.adapt_storage(to::LuxAMDGPUDevice, x::AbstractArray)
     old_dev = AMDGPU.device()  # remember the current device
     if !(x isa AMDGPU.AnyROCArray)
         AMDGPU.device!(to.device)

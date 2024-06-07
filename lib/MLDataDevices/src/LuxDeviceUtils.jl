@@ -83,11 +83,10 @@ for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     end
 end
 
-@inline _get_device_id(::LuxCPUDevice) = nothing
-@inline _get_device_id(::LuxCUDADevice{Nothing}) = nothing
-@inline _get_device_id(::LuxAMDGPUDevice{Nothing}) = nothing
-@inline _get_device_id(::LuxMetalDevice) = nothing
-@inline _get_device_id(::LuxoneAPIDevice) = nothing
+for T in (LuxCPUDevice, LuxCUDADevice{Nothing},
+    LuxAMDGPUDevice{Nothing}, LuxMetalDevice, LuxoneAPIDevice)
+    @eval @inline _get_device_id(::$(T)) = nothing
+end
 
 struct LuxDeviceSelectionException <: Exception end
 
@@ -339,10 +338,14 @@ end
 
 # Query Device from Array
 """
-    get_device(x::AbstractArray) -> AbstractLuxDevice
+    get_device(x) -> AbstractLuxDevice | Exception | Nothing
 
-Returns the device of the array `x`. Trigger Packages must be loaded for this to return the
-correct device.
+If all arrays (on the leaves of the structure) are on the same device, we return that
+device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
+
+!!! note
+
+    Trigger Packages must be loaded for this to return the correct device.
 """
 function get_device(x::AbstractArray{T}) where {T}
     !isbitstype(T) && return mapreduce(get_device, __combine_devices, x)
@@ -353,13 +356,6 @@ function get_device(x::AbstractArray{T}) where {T}
     end
     return LuxCPUDevice()
 end
-
-"""
-    get_device(x) -> AbstractLuxDevice | Exception | Nothing
-
-If all arrays (on the leaves of the structure) are on the same device, we return that
-device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
-"""
 function get_device(x)
     dev = Ref{Union{AbstractLuxDevice, Nothing}}(nothing)
     _get_device(x) = (dev[] = __combine_devices(dev[], get_device(x)))
@@ -460,8 +456,7 @@ end
 Adapt.adapt_storage(::LuxCPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
 Adapt.adapt_storage(::LuxCPUDevice, rng::AbstractRNG) = rng
 
-for T in (LuxAMDGPUDevice, LuxAMDGPUDevice{Nothing}, LuxCUDADevice,
-    LuxCUDADevice{Nothing}, LuxMetalDevice, LuxoneAPIDevice)
+for T in (LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDevice, LuxoneAPIDevice)
     @eval begin
         function Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG)
             return default_device_rng(to)

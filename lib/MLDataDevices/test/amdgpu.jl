@@ -89,7 +89,7 @@ using FillArrays, Zygote  # Extensions
     @test_throws ArgumentError get_device(ps_mixed)
 end
 
-@testset "Multiple Devices CUDA" begin
+@testset "Multiple Devices AMDGPU" begin
     if LuxDeviceUtils.functional(LuxAMDGPUDevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
         ps_cpu = deepcopy(ps)
