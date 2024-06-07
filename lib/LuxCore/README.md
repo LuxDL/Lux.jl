@@ -7,7 +7,6 @@
 [![Build status](https://badge.buildkite.com/702f7908a08898971896c9bf5aae03e8e419bcbc44c5544237.svg?branch=main)](https://buildkite.com/julialang/luxcore-dot-jl)
 [![CI](https://github.com/LuxDL/LuxCore.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/LuxDL/LuxCore.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/LuxDL/LuxCore.jl/branch/main/graph/badge.svg?token=1ZY0A2NPEM)](https://codecov.io/gh/LuxDL/LuxCore.jl)
-[![Package Downloads](https://shields.io/endpoint?url=https://pkgs.genieframework.com/api/v1/badge/LuxCore)](https://pkgs.genieframework.com?packages=LuxCore)
 
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
