@@ -26,19 +26,18 @@ LuxDeviceUtils._get_device_id(dev::LuxCUDADevice) = CUDA.deviceid(dev.device) + 
 LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
 
 # Query Device from Array
-LuxDeviceUtils.get_device(x::CUDA.AnyCuArray) = LuxCUDADevice(CUDA.device(x))
+function LuxDeviceUtils.get_device(x::CUDA.AnyCuArray)
+    parent_x = parent(x)
+    parent_x === x && return LuxCUDADevice(CUDA.device(x))
+    return LuxDeviceUtils.get_device(parent_x)
+end
 function LuxDeviceUtils.get_device(x::CUDA.CUSPARSE.AbstractCuSparseArray)
     return LuxCUDADevice(CUDA.device(x.nzVal))
 end
 
 # Set Device
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, dev::CUDA.CuDevice)
-    if !CUDA.functional()
-        @warn "CUDA is not functional."
-        return
-    end
-    CUDA.device!(dev)
-    return
+    return CUDA.device!(dev)
 end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Int)
     return LuxDeviceUtils.set_device!(LuxCUDADevice, CUDA.devices()[id])
@@ -52,7 +51,7 @@ end
 Adapt.adapt_storage(::LuxCUDADevice{Nothing}, x::AbstractArray) = CUDA.cu(x)
 function Adapt.adapt_storage(to::LuxCUDADevice, x::AbstractArray)
     old_dev = CUDA.device()  # remember the current device
-    if !(x isa CUDA.AnyCuArray)
+    if !(LuxDeviceUtils.get_device(x) isa LuxCUDADevice)
         CUDA.device!(to.device)
         x_new = CUDA.cu(x)
         CUDA.device!(old_dev)

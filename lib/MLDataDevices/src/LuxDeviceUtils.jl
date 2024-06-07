@@ -372,16 +372,12 @@ get_device(x::NamedTuple) = mapreduce(get_device, __combine_devices, values(x))
 
 CRC.@non_differentiable get_device(::Any...)
 
-__combine_devices(dev1) = dev1
 function __combine_devices(dev1, dev2)
     dev1 === nothing && return dev2
     dev2 === nothing && return dev1
     dev1 != dev2 &&
         throw(ArgumentError("Objects are on different devices: $dev1 and $dev2."))
     return dev1
-end
-function __combine_devices(dev1, dev2, rem_devs...)
-    return foldl(__combine_devices, (dev1, dev2, rem_devs...))
 end
 
 # Set the device
@@ -390,7 +386,7 @@ Set the device for the given type. This is a no-op for `LuxCPUDevice`. For `LuxC
 and `LuxAMDGPUDevice`, it prints a warning if the corresponding trigger package is not
 loaded.
     
-Currently, `LuxMetalDevice` doesn't support setting the device.
+Currently, `LuxMetalDevice` and `LuxoneAPIDevice` doesn't support setting the device.
 """
 
 const SET_DEVICE_DANGER = """

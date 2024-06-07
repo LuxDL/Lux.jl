@@ -46,20 +46,18 @@ LuxDeviceUtils._get_device_id(dev::LuxAMDGPUDevice) = AMDGPU.device_id(dev.devic
 LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
 
 # Query Device from Array
-LuxDeviceUtils.get_device(x::AMDGPU.AnyROCArray) = LuxAMDGPUDevice(AMDGPU.device(x))
+function LuxDeviceUtils.get_device(x::AMDGPU.AnyROCArray)
+    parent_x = parent(x)
+    parent_x === x && return LuxAMDGPUDevice(AMDGPU.device(x))
+    return LuxDeviceUtils.get_device(parent_x)
+end
 
 # Set Device
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, dev::AMDGPU.HIPDevice)
-    if !AMDGPU.functional()
-        @warn "AMDGPU is not functional."
-        return
-    end
-    AMDGPU.device!(dev)
-    return
+    return AMDGPU.device!(dev)
 end
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, id::Int)
-    LuxDeviceUtils.set_device!(LuxAMDGPUDevice, AMDGPU.devices()[id])
-    return
+    return LuxDeviceUtils.set_device!(LuxAMDGPUDevice, AMDGPU.devices()[id])
 end
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, ::Nothing, rank::Int)
     id = mod1(rank + 1, length(AMDGPU.devices()))
@@ -71,7 +69,7 @@ end
 Adapt.adapt_storage(::LuxAMDGPUDevice{Nothing}, x::AbstractArray) = AMDGPU.roc(x)
 function Adapt.adapt_storage(to::LuxAMDGPUDevice, x::AbstractArray)
     old_dev = AMDGPU.device()  # remember the current device
-    if !(x isa AMDGPU.AnyROCArray)
+    if !(LuxDeviceUtils.get_device(x) isa LuxAMDGPUDevice)
         AMDGPU.device!(to.device)
         x_new = AMDGPU.roc(x)
         AMDGPU.device!(old_dev)

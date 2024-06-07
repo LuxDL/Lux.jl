@@ -6,6 +6,7 @@ using LuxDeviceUtils, Random
     @test gpu_device() isa LuxCPUDevice
     @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
         force_gpu_usage=true)
+    @test_throws Exception default_device_rng(LuxoneAPIDevice())
 end
 
 using oneAPI
