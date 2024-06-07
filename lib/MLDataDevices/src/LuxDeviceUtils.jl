@@ -345,7 +345,7 @@ Returns the device of the array `x`. Trigger Packages must be loaded for this to
 correct device.
 """
 function get_device(x::AbstractArray{T}) where {T}
-    !isbitstype(T) && __combine_devices(get_device.(x))
+    !isbitstype(T) && return mapreduce(get_device, __combine_devices, x)
     if hasmethod(parent, Tuple{typeof(x)})
         parent_x = parent(x)
         parent_x === x && return LuxCPUDevice()
@@ -369,8 +369,8 @@ end
 for T in (Number, AbstractRNG, Val, Symbol, String)
     @eval get_device(::$(T)) = nothing
 end
-get_device(x::Tuple) = __combine_devices(get_device.(x)...)
-get_device(x::NamedTuple) = __combine_devices(get_device.(values(x))...)
+get_device(x::Tuple) = mapreduce(get_device, __combine_devices, x)
+get_device(x::NamedTuple) = mapreduce(get_device, __combine_devices, values(x))
 
 CRC.@non_differentiable get_device(::Any...)
 

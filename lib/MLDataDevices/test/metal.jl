@@ -29,8 +29,8 @@ end
 using FillArrays, Zygote  # Extensions
 
 @testset "Data Transfer" begin
-    ps = (a=(c=zeros(10, 1), d=1), b=ones(10, 1), e=:c, d="string",
-        mixed=[2.0f0, 3.0, ones(2, 3)],  # mixed array types
+    ps = (a=(c=zeros(10, 1), d=1), b=ones(10, 1), e=:c,
+        d="string", mixed=[2.0f0, 3.0, ones(2, 3)],  # mixed array types
         rng_default=Random.default_rng(), rng=MersenneTwister(),
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
