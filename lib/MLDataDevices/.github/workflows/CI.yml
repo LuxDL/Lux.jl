@@ -73,7 +73,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
-          GROUP: Metal
+          BACKEND_GROUP: Metal
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext
