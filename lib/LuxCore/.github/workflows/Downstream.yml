@@ -16,7 +16,7 @@ jobs:
     name: ${{ matrix.package.repo }}/${{ matrix.package.group }}
     runs-on: ${{ matrix.os }}
     env:
-      GROUP: ${{ matrix.package.group }}
+      BACKEND_GROUP: ${{ matrix.package.group }}
     strategy:
       fail-fast: false
       matrix:
