@@ -16,16 +16,16 @@ jobs:
     name: ${{ matrix.package.repo }}/${{ matrix.package.group }}
     runs-on: ${{ matrix.os }}
     env:
-      GROUP: ${{ matrix.package.group }}
+      BACKEND_GROUP: ${{ matrix.package.group }}
     strategy:
       fail-fast: false
       matrix:
         julia-version: ["1"]
         os: [ubuntu-latest]
         package:
-          - { user: LuxDL, repo: Lux.jl, group: All }
-          - { user: LuxDL, repo: Boltz.jl, group: All }
-          - { user: LuxDL, repo: LuxTestUtils.jl, group: All }
+          - { user: LuxDL, repo: Lux.jl, group: CPU }
+          - { user: LuxDL, repo: Boltz.jl, group: CPU }
+          - { user: LuxDL, repo: LuxTestUtils.jl, group: CPU }
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

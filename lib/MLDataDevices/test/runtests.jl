@@ -1,25 +1,25 @@
 import Pkg
 using Aqua, SafeTestsets, Test, LuxDeviceUtils, TestSetExtensions
 
-const GROUP = get(ENV, "GROUP", "NONE")
+const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "NONE")
 
 @testset ExtendedTestSet "LuxDeviceUtils Tests" begin
-    if GROUP == "CUDA" || GROUP == "ALL"
+    if BACKEND_GROUP == "CUDA" || BACKEND_GROUP == "ALL"
         Pkg.add("LuxCUDA")
         @safetestset "CUDA" include("cuda.jl")
     end
 
-    if GROUP == "AMDGPU" || GROUP == "ALL"
+    if BACKEND_GROUP == "AMDGPU" || BACKEND_GROUP == "ALL"
         Pkg.add("AMDGPU")
         @safetestset "AMDGPU" include("amdgpu.jl")
     end
 
-    if GROUP == "Metal" || GROUP == "ALL"
+    if BACKEND_GROUP == "Metal" || BACKEND_GROUP == "ALL"
         Pkg.add("Metal")
         @safetestset "Metal" include("metal.jl")
     end
 
-    if GROUP == "oneAPI" || GROUP == "ALL"
+    if BACKEND_GROUP == "oneAPI" || BACKEND_GROUP == "ALL"
         Pkg.add("oneAPI")
         @safetestset "oneAPI" include("oneapi.jl")
     end
