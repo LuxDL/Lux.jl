@@ -31,6 +31,7 @@ using FillArrays, Zygote  # Extensions
 @testset "Data Transfer" begin
     ps = (a=(c=zeros(10, 1), d=1), b=ones(10, 1), e=:c,
         d="string", mixed=[2.0f0, 3.0, ones(2, 3)],  # mixed array types
+        range=1:10,
         rng_default=Random.default_rng(), rng=MersenneTwister(),
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
@@ -47,6 +48,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.mixed[1] isa Float32
     @test ps_xpu.mixed[2] isa Float64
     @test ps_xpu.mixed[3] isa aType
+    @test ps_xpu.range isa aType
     @test ps_xpu.e == ps.e
     @test ps_xpu.d == ps.d
     @test ps_xpu.rng_default isa rngType
@@ -71,6 +73,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.mixed[1] isa Float32
     @test ps_cpu.mixed[2] isa Float64
     @test ps_cpu.mixed[3] isa Array
+    @test ps_cpu.range isa Array
     @test ps_cpu.e == ps.e
     @test ps_cpu.d == ps.d
     @test ps_cpu.rng_default isa Random.TaskLocalRNG

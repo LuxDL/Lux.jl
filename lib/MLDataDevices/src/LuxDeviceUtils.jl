@@ -469,7 +469,8 @@ end
 
 Adapt.adapt_storage(::LuxCPUDevice, x::AbstractRange) = x
 # Prevent Ambiguity
-for T in (LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDevice, LuxoneAPIDevice)
+for T in (LuxAMDGPUDevice, LuxAMDGPUDevice{Nothing}, LuxCUDADevice,
+    LuxCUDADevice{Nothing}, LuxMetalDevice, LuxoneAPIDevice)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
 end
 
