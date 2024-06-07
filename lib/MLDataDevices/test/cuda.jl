@@ -1,4 +1,4 @@
-using LuxDeviceUtils, Random
+using LuxDeviceUtils, Random, Functors
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
@@ -91,7 +91,24 @@ using FillArrays, Zygote  # Extensions
         @test ps_cpu.farray isa Fill
     end
 
-    ps_mixed = (; a=rand(2), b=device(rand(2)))
+    struct MyStruct
+        x::Any
+    end
+
+    Functors.@functor MyStruct
+
+    data = MyStruct(rand(10))
+    @test get_device(data) isa LuxCPUDevice
+    data_dev = data |> device
+    if LuxDeviceUtils.functional(LuxCUDADevice)
+        @test get_device(data_dev) isa LuxCUDADevice
+    else
+        @test get_device(data_dev) isa LuxCPUDevice
+    end
+
+    ps_mixed = (; a=rand(2), c=(rand(2), 1), st=MyStruct(rand(2)), b=device(rand(2)))
+    @test get_device(ps_mixed.st) isa LuxCPUDevice
+    @test get_device(ps_mixed.c) isa LuxCPUDevice
     @test_throws ArgumentError get_device(ps_mixed)
 
     dev = gpu_device()

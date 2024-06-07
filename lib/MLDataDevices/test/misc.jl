@@ -3,6 +3,7 @@ using ArrayInterface: parameterless_type
 using ChainRulesTestUtils: test_rrule
 using ReverseDiff, Tracker, ForwardDiff
 using SparseArrays, FillArrays, Zygote, RecursiveArrayTools
+using LuxCore
 
 @testset "https://github.com/LuxDL/LuxDeviceUtils.jl/issues/10 patch" begin
     dev = LuxCPUDevice()
@@ -105,4 +106,49 @@ end
 
     @test get_device(x) isa LuxCPUDevice
     @test get_device(x_view) isa LuxCPUDevice
+
+    struct MyArrayType <: AbstractArray{Float32, 2}
+        data::Array{Float32, 2}
+    end
+
+    x_custom = MyArrayType(rand(10, 10))
+
+    @test get_device(x_custom) isa LuxCPUDevice
+end
+
+@testset "loaded and functional" begin
+    @test LuxDeviceUtils.loaded(LuxCPUDevice)
+    @test LuxDeviceUtils.functional(LuxCPUDevice)
+end
+
+@testset "writing to preferences" begin
+    @test_logs (:info,
+        "Deleted the local preference for `gpu_backend`. Restart Julia to use the new backend.") gpu_backend!()
+
+    for backend in (:CUDA, :AMDGPU, :oneAPI, :Metal, LuxAMDGPUDevice(),
+        LuxCUDADevice(), LuxMetalDevice(), LuxoneAPIDevice())
+        backend_name = backend isa Symbol ? string(backend) :
+                       LuxDeviceUtils._get_device_name(backend)
+        @test_logs (:info,
+            "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.") gpu_backend!(backend)
+    end
+
+    gpu_backend!(:CUDA)
+    @test_logs (:info, "GPU backend is already set to CUDA. No action is required.") gpu_backend!(:CUDA)
+
+    @test_throws ArgumentError gpu_backend!("my_backend")
+end
+
+@testset "LuxCore warnings" begin
+    struct MyCustomLayer <: LuxCore.AbstractExplicitContainerLayer{(:layer,)}
+        layer::Any
+    end
+
+    my_layer = MyCustomLayer(rand(10, 10))
+
+    dev = cpu_device()
+    @test_logs (
+        :warn, "Lux layers are stateless and hence don't participate in device \
+                transfers. Apply this function on the parameters and states generated \
+                using `Lux.setup`.") dev(my_layer)
 end
