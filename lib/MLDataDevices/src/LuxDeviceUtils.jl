@@ -318,15 +318,15 @@ default_device_rng(::LuxCPUDevice) = Random.default_rng()
 for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     ldev = Symbol("Lux$(dev)Device")
     @eval begin
-        function (D::$(ldev))(x::AbstractArray)
+        function (D::$(ldev))(x::AbstractArray{T}) where {T}
             fn = Base.Fix1(Adapt.adapt, D)
-            return _isbitsarray(x) ? fn(x) : map(D, x)
+            return isbitstype(T) ? fn(x) : map(D, x)
         end
         (D::$(ldev))(x::Tuple) = map(D, x)
         (D::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(D(values(x)))
         function (D::$(ldev))(x)
-            _isleaf(x) && return Adapt.adapt(D, x)
-            return fmap(Base.Fix1(Adapt.adapt, D), x; exclude=_isleaf)
+            Functors.isleaf(x) && return Adapt.adapt(D, x)
+            return fmap(Base.Fix1(Adapt.adapt, D), x)
         end
         function (::$(ldev))(NN::LuxCore.AbstractExplicitLayer)
             @warn "Lux layers are stateless and hence don't participate in device \
@@ -475,13 +475,6 @@ Adapt.adapt_storage(::LuxCPUDevice, x::AbstractRange) = x
 for T in (LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDevice, LuxoneAPIDevice)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
 end
-
-@inline _isbitsarray(::AbstractArray{<:Number}) = true
-@inline _isbitsarray(::AbstractArray{T}) where {T} = isbitstype(T)
-@inline _isbitsarray(x) = false
-
-@inline _isleaf(::AbstractRNG) = true
-@inline _isleaf(x) = _isbitsarray(x) || Functors.isleaf(x)
 
 # Chain Rules Core
 function CRC.rrule(::typeof(Adapt.adapt_storage), to::AbstractLuxDevice, x::AbstractArray)
