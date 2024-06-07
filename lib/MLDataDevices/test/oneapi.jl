@@ -92,3 +92,20 @@ using FillArrays, Zygote  # Extensions
     ps_mixed = (; a=rand(2), b=device(rand(2)))
     @test_throws ArgumentError get_device(ps_mixed)
 end
+
+@testset "Wrapper Arrays" begin
+    if LuxDeviceUtils.functional(LuxoneAPIDevice)
+        x = rand(10, 10) |> LuxoneAPIDevice()
+        @test get_device(x) isa LuxoneAPIDevice
+        x_view = view(x, 1:5, 1:5)
+        @test get_device(x_view) isa LuxoneAPIDevice
+    end
+end
+
+@testset "setdevice!" begin
+    if LuxDeviceUtils.functional(LuxoneAPIDevice)
+        @test_logs (:warn,
+            "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting.") LuxDeviceUtils.set_device!(
+            LuxoneAPIDevice, nothing, 1)
+    end
+end

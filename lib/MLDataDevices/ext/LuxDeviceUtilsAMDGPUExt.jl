@@ -69,12 +69,13 @@ end
 Adapt.adapt_storage(::LuxAMDGPUDevice{Nothing}, x::AbstractArray) = AMDGPU.roc(x)
 function Adapt.adapt_storage(to::LuxAMDGPUDevice, x::AbstractArray)
     old_dev = AMDGPU.device()  # remember the current device
-    if !(LuxDeviceUtils.get_device(x) isa LuxAMDGPUDevice)
+    dev = LuxDeviceUtils.get_device(x)
+    if !(dev isa LuxAMDGPUDevice)
         AMDGPU.device!(to.device)
         x_new = AMDGPU.roc(x)
         AMDGPU.device!(old_dev)
         return x_new
-    elseif AMDGPU.device_id(AMDGPU.device(x)) == AMDGPU.device_id(to.device)
+    elseif AMDGPU.device_id(dev.device) == AMDGPU.device_id(to.device)
         return x
     else
         AMDGPU.device!(to.device)

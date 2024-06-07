@@ -7,6 +7,8 @@ using LuxDeviceUtils, Random
     @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
         force_gpu_usage=true)
     @test_throws Exception default_device_rng(LuxCUDADevice(nothing))
+    @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") LuxDeviceUtils.set_device!(
+        LuxCUDADevice, nothing, 1)
 end
 
 using LuxCUDA
@@ -92,6 +94,15 @@ using FillArrays, Zygote  # Extensions
     @test_throws ArgumentError get_device(ps_mixed)
 end
 
+@testset "Wrapped Arrays" begin
+    if LuxDeviceUtils.functional(LuxCUDADevice)
+        x = rand(10, 10) |> LuxCUDADevice()
+        @test get_device(x) isa LuxCUDADevice
+        x_view = view(x, 1:5, 1:5)
+        @test get_device(x_view) isa LuxCUDADevice
+    end
+end
+
 @testset "Multiple Devices CUDA" begin
     if LuxDeviceUtils.functional(LuxCUDADevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
@@ -141,5 +152,13 @@ using SparseArrays
         ps = ps |> cdev
         @test ps.weight isa SparseMatrixCSC
         @test ps.bias isa SparseVector
+    end
+end
+
+@testset "setdevice!" begin
+    if LuxDeviceUtils.functional(LuxCUDADevice)
+        for i in 1:10
+            @test_nowarn LuxDeviceUtils.set_device!(LuxCUDADevice, nothing, i)
+        end
     end
 end

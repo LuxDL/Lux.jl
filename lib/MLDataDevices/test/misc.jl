@@ -88,3 +88,21 @@ end
     vecarray_dev = vecarray |> gdev
     @test get_device(vecarray_dev) isa parameterless_type(typeof(gdev))
 end
+
+@testset "CPU default rng" begin
+    @test default_device_rng(LuxCPUDevice()) isa Random.TaskLocalRNG
+end
+
+@testset "CPU setdevice!" begin
+    @test_logs (:warn,
+        "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting.") LuxDeviceUtils.set_device!(
+        LuxCPUDevice, nothing, 1)
+end
+
+@testset "get_device on Arrays" begin
+    x = rand(10, 10)
+    x_view = view(x, 1:5, 1:5)
+
+    @test get_device(x) isa LuxCPUDevice
+    @test get_device(x_view) isa LuxCPUDevice
+end

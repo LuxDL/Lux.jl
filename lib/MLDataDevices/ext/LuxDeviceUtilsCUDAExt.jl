@@ -40,7 +40,7 @@ function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, dev::CUDA.CuDevice)
     return CUDA.device!(dev)
 end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Int)
-    return LuxDeviceUtils.set_device!(LuxCUDADevice, CUDA.devices()[id])
+    return LuxDeviceUtils.set_device!(LuxCUDADevice, collect(CUDA.devices())[id])
 end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, ::Nothing, rank::Int)
     id = mod1(rank + 1, length(CUDA.devices()))
@@ -51,12 +51,13 @@ end
 Adapt.adapt_storage(::LuxCUDADevice{Nothing}, x::AbstractArray) = CUDA.cu(x)
 function Adapt.adapt_storage(to::LuxCUDADevice, x::AbstractArray)
     old_dev = CUDA.device()  # remember the current device
-    if !(LuxDeviceUtils.get_device(x) isa LuxCUDADevice)
+    dev = LuxDeviceUtils.get_device(x)
+    if !(dev isa LuxCUDADevice)
         CUDA.device!(to.device)
         x_new = CUDA.cu(x)
         CUDA.device!(old_dev)
         return x_new
-    elseif CUDA.device(x) == to.device
+    elseif dev.device == to.device
         return x
     else
         CUDA.device!(to.device)

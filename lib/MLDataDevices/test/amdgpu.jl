@@ -7,6 +7,8 @@ using LuxDeviceUtils, Random
     @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
         force_gpu_usage=true)
     @test_throws Exception default_device_rng(LuxAMDGPUDevice(nothing))
+    @test_logs (:warn, "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting.") LuxDeviceUtils.set_device!(
+        LuxAMDGPUDevice, nothing, 1)
 end
 
 using AMDGPU
@@ -93,6 +95,15 @@ using FillArrays, Zygote  # Extensions
     @test_throws ArgumentError get_device(ps_mixed)
 end
 
+@testset "Wrapped Arrays" begin
+    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+        x = rand(10, 10) |> LuxAMDGPUDevice()
+        @test get_device(x) isa LuxAMDGPUDevice
+        x_view = view(x, 1:5, 1:5)
+        @test get_device(x_view) isa LuxAMDGPUDevice
+    end
+end
+
 @testset "Multiple Devices AMDGPU" begin
     if LuxDeviceUtils.functional(LuxAMDGPUDevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
@@ -115,5 +126,13 @@ end
         ps = ps |> cdev
         @test ps.weight isa Array
         @test ps.bias isa Array
+    end
+end
+
+@testset "setdevice!" begin
+    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+        for i in 1:10
+            @test_nowarn LuxDeviceUtils.set_device!(LuxAMDGPUDevice, nothing, i)
+        end
     end
 end

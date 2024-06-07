@@ -150,8 +150,8 @@ Selects GPU device based on the following criteria:
 
 !!! warning
 
-    `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal` and `CPU`
-    backends, `device_id` is ignored and a warning is printed.
+    `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal`, `oneAPI`
+    and `CPU` backends, `device_id` is ignored and a warning is printed.
 
 ## Keyword Arguments
 
@@ -413,15 +413,15 @@ $SET_DEVICE_DANGER
 """
 function set_device!(::Type{T}, dev_or_id) where {T <: AbstractLuxDevice}
     T === LuxCUDADevice &&
-        @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
+        @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting."
     T === LuxAMDGPUDevice &&
-        @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting." maxlog=1
+        @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting."
     T === LuxMetalDevice &&
-        @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting." maxlog=1
+        @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting."
     T === LuxoneAPIDevice &&
-        @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting." maxlog=1
+        @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting."
     T === LuxCPUDevice &&
-        @warn "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting." maxlog=1
+        @warn "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting."
     return
 end
 
