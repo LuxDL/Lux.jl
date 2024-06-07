@@ -30,7 +30,7 @@ end
 function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, ::Nothing)
     return LuxAMDGPUDevice(nothing)
 end
-function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, id::Int)
+function LuxDeviceUtils._with_device(::Type{LuxAMDGPUDevice}, id::Integer)
     id > length(AMDGPU.devices()) &&
         throw(ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"))
     old_dev = AMDGPU.device()
@@ -56,10 +56,10 @@ end
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, dev::AMDGPU.HIPDevice)
     return AMDGPU.device!(dev)
 end
-function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, id::Int)
+function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, id::Integer)
     return LuxDeviceUtils.set_device!(LuxAMDGPUDevice, AMDGPU.devices()[id])
 end
-function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, ::Nothing, rank::Int)
+function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, ::Nothing, rank::Integer)
     id = mod1(rank + 1, length(AMDGPU.devices()))
     return LuxDeviceUtils.set_device!(LuxAMDGPUDevice, id)
 end

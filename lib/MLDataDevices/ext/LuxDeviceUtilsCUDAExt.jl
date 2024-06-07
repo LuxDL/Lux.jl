@@ -6,7 +6,7 @@ using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector
 using LuxDeviceUtils: LuxDeviceUtils, LuxCUDADevice, LuxCPUDevice
 using Random: Random
 
-function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id::Int)
+function LuxDeviceUtils._with_device(::Type{LuxCUDADevice}, id::Integer)
     id > length(CUDA.devices()) &&
         throw(ArgumentError("id = $id > length(CUDA.devices()) = $(length(CUDA.devices()))"))
     old_dev = CUDA.device()
@@ -39,10 +39,10 @@ end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, dev::CUDA.CuDevice)
     return CUDA.device!(dev)
 end
-function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Int)
+function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Integer)
     return LuxDeviceUtils.set_device!(LuxCUDADevice, collect(CUDA.devices())[id])
 end
-function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, ::Nothing, rank::Int)
+function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, ::Nothing, rank::Integer)
     id = mod1(rank + 1, length(CUDA.devices()))
     return LuxDeviceUtils.set_device!(LuxCUDADevice, id)
 end

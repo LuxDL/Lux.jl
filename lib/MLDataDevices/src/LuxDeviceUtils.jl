@@ -125,7 +125,7 @@ Return a tuple of supported GPU backends.
 @inline supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
 """
-    gpu_device(device_id::Union{Nothing, Int}=nothing;
+    gpu_device(device_id::Union{Nothing, Integer}=nothing;
         force_gpu_usage::Bool=false) -> AbstractLuxDevice()
 
 Selects GPU device based on the following criteria:
@@ -141,10 +141,10 @@ Selects GPU device based on the following criteria:
 
 ## Arguments
 
-  - `device_id::Union{Nothing, Int}`: The device id to select. If `nothing`, then we return
+  - `device_id::Union{Nothing, Integer}`: The device id to select. If `nothing`, then we return
     the last selected device or if none was selected then we run the autoselection and
     choose the current device using `CUDA.device()` or `AMDGPU.device()` or similar. If
-    `Int`, then we select the device with the given id. Note that this is `1`-indexed, in
+    `Integer`, then we select the device with the given id. Note that this is `1`-indexed, in
     contrast to the `0`-indexed `CUDA.jl`. For example, `id = 4` corresponds to
     `CUDA.device!(3)`.
 
@@ -158,7 +158,7 @@ Selects GPU device based on the following criteria:
   - `force_gpu_usage::Bool`: If `true`, then an error is thrown if no functional GPU
     device is found.
 """
-function gpu_device(device_id::Union{Nothing, Int}=nothing;
+function gpu_device(device_id::Union{Nothing, <:Integer}=nothing;
         force_gpu_usage::Bool=false)::AbstractLuxDevice
     device_id == 0 && throw(ArgumentError("`device_id` is 1-indexed."))
 
@@ -426,19 +426,19 @@ function set_device!(::Type{T}, dev_or_id) where {T <: AbstractLuxDevice}
 end
 
 """
-    set_device!(T::Type{<:AbstractLuxDevice}, ::Nothing, rank::Int)
+    set_device!(T::Type{<:AbstractLuxDevice}, ::Nothing, rank::Integer)
 
 $SET_DEVICE_DOCS
 
 ## Arguments
 
   - `T::Type{<:AbstractLuxDevice}`: The device type to set.
-  - `rank::Int`: Local Rank of the process. This is applicable for distributed training and
+  - `rank::Integer`: Local Rank of the process. This is applicable for distributed training and
     must be `0`-indexed.
 
 $SET_DEVICE_DANGER
 """
-function set_device!(::Type{T}, ::Nothing, rank::Int) where {T <: AbstractLuxDevice}
+function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractLuxDevice}
     return set_device!(T, rank)
 end
 

@@ -1,4 +1,5 @@
 using LuxDeviceUtils, Random
+using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
     @test !LuxDeviceUtils.functional(LuxCUDADevice)
@@ -92,6 +93,17 @@ using FillArrays, Zygote  # Extensions
 
     ps_mixed = (; a=rand(2), b=device(rand(2)))
     @test_throws ArgumentError get_device(ps_mixed)
+
+    dev = gpu_device()
+    x = rand(Float32, 10, 2)
+    x_dev = x |> dev
+    @test get_device(x_dev) isa parameterless_type(typeof(dev))
+
+    if LuxDeviceUtils.functional(LuxCUDADevice)
+        dev2 = gpu_device(length(CUDA.devices()))
+        x_dev2 = x_dev |> dev2
+        @test get_device(x_dev2) isa typeof(dev2)
+    end
 end
 
 @testset "Wrapped Arrays" begin
