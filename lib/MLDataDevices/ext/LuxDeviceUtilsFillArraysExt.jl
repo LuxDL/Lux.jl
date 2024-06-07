@@ -1,14 +1,10 @@
 module LuxDeviceUtilsFillArraysExt
 
 using Adapt: Adapt
-using FillArrays: FillArrays
-using LuxDeviceUtils: LuxDeviceUtils, LuxCPUAdaptor
+using FillArrays: FillArrays, AbstractFill
+using LuxDeviceUtils: LuxDeviceUtils, LuxCPUDevice, AbstractLuxDevice
 
-Adapt.adapt_structure(::LuxCPUAdaptor, x::FillArrays.AbstractFill) = x
-
-function Adapt.adapt_structure(
-        to::LuxDeviceUtils.AbstractLuxDeviceAdaptor, x::FillArrays.AbstractFill)
-    return Adapt.adapt(to, collect(x))
-end
+Adapt.adapt_structure(::LuxCPUDevice, x::AbstractFill) = x
+Adapt.adapt_structure(to::AbstractLuxDevice, x::AbstractFill) = Adapt.adapt(to, collect(x))
 
 end
