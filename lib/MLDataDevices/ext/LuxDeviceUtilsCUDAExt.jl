@@ -41,12 +41,7 @@ function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, dev::CUDA.CuDevice)
     return
 end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, id::Int)
-    if !CUDA.functional()
-        @warn "CUDA is not functional."
-        return
-    end
-    CUDA.device!(id - 1)
-    return
+    return LuxDeviceUtils.set_device!(LuxCUDADevice, CUDA.devices()[id])
 end
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, ::Nothing, rank::Int)
     id = mod1(rank + 1, length(CUDA.devices()))

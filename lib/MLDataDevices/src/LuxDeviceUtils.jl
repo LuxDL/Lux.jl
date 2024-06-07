@@ -238,8 +238,8 @@ function _get_gpu_device(; force_gpu_usage::Bool)
                  2. If GPU is available, load the corresponding trigger package.
                      a. `LuxCUDA.jl` for NVIDIA CUDA Support.
                      b. `AMDGPU.jl` for AMD GPU ROCM Support.
-                     c. `Metal.jl` for Apple Metal GPU Support.
-                     d. `oneAPI.jl` for Intel oneAPI GPU Support.""" maxlog=1
+                     c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
+                     d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog=1
         return LuxCPUDevice
     end
 end
@@ -319,7 +319,7 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     @eval begin
         function (D::$(ldev))(x::AbstractArray{T}) where {T}
             fn = Base.Fix1(Adapt.adapt, D)
-            return isbitstype(T) ? fn(x) : map(D, x)
+            return isbitstype(T) || __special_aos(x) ? fn(x) : map(D, x)
         end
         (D::$(ldev))(x::Tuple) = map(D, x)
         (D::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(D(values(x)))
@@ -335,6 +335,8 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
         end
     end
 end
+
+@inline __special_aos(x::AbstractArray) = false
 
 # Query Device from Array
 """
