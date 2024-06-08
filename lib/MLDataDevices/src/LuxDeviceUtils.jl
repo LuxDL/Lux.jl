@@ -42,10 +42,10 @@ Base.@deprecate __is_functional(x) functional(x)
 
 Checks if the trigger package for the device is loaded. Trigger packages are as follows:
 
-    - `LuxCUDA.jl` for NVIDIA CUDA Support.
-    - `AMDGPU.jl` for AMD GPU ROCM Support.
-    - `Metal.jl` for Apple Metal GPU Support.
-    - `oneAPI.jl` for Intel oneAPI GPU Support.
+  - `LuxCUDA.jl` for NVIDIA CUDA Support.
+  - `AMDGPU.jl` for AMD GPU ROCM Support.
+  - `Metal.jl` for Apple Metal GPU Support.
+  - `oneAPI.jl` for Intel oneAPI GPU Support.
 """
 @inline loaded(x) = false
 
