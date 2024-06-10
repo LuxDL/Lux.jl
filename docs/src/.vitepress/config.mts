@@ -193,6 +193,10 @@ export default defineConfig({
                             { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }]
                     },
                     {
+                        text: 'Activation Functions', collapsed: false, items: [
+                            { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }]
+                    },
+                    {
                         text: 'Accelerator Support', collapsed: false, items: [
                             { text: 'LuxAMDGPU', link: '/api/Accelerator_Support/LuxAMDGPU' },
                             { text: 'LuxCUDA', link: '/api/Accelerator_Support/LuxCUDA' },
