@@ -1,7 +1,7 @@
 name = "LuxDeviceUtils"
 uuid = "34f89e08-e1d5-43b4-8944-0b49ac560553"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.21"
+version = "0.1.22"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
