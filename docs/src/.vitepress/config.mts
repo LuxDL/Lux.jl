@@ -206,7 +206,9 @@ export default defineConfig({
                     },
                     {
                         text: 'Domain Specific Modeling', collapsed: false, items: [
-                            { text: 'Boltz', link: '/api/Domain_Specific_Modeling/Boltz' }]
+                            { text: 'Boltz', link: '/api/Domain_Specific_Modeling/Boltz' },
+                            { text: 'Computer Vision', link: '/api/Domain_Specific_Modeling/Boltz_Vision' },
+                            { text: 'Boltz.Layers', link: '/api/Domain_Specific_Modeling/Boltz_Layers' }]
                     },
                     {
                         text: 'Testing Functionality', collapsed: false, items: [
