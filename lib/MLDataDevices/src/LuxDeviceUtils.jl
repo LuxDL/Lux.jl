@@ -62,10 +62,11 @@ struct LuxMetalDevice <: AbstractLuxGPUDevice end
 struct LuxoneAPIDevice <: AbstractLuxGPUDevice end
 
 for dev in (LuxCPUDevice, LuxMetalDevice, LuxoneAPIDevice)
+    msg = "`device_id` is not applicable for `$dev`."
     @eval begin
         _with_device(::Type{$dev}, ::Nothing) = $dev()
         function _with_device(::Type{$dev}, device_id)
-            @warn "`device_id` is not applicable for `$dev`." maxlog=1
+            @warn $(msg) maxlog=1
             return $dev()
         end
     end
