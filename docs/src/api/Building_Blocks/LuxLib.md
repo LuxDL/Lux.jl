@@ -2,10 +2,6 @@
 
 Backend for Lux.jl
 
-```@meta
-CurrentModule = LuxLib
-```
-
 ## Index
 
 ```@index

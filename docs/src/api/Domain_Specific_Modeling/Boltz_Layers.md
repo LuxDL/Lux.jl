@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = Boltz
-```
-
 # `Boltz.Layers` and `Boltz.Basis` API Reference
 
 ## `Layers` API
@@ -28,7 +24,7 @@ Layers.VisionTransformerEncoder
 
 ```@docs
 Basis.Cos
-Basis.Chebychev
+Basis.Chebyshev
 Basis.Fourier
 Basis.Legendre
 Basis.Polynomial

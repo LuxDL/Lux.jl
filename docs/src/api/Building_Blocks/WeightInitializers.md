@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = WeightInitializers
-```
-
 # [WeightInitializers](@id WeightInitializers-API)
 
 This package is a light dependency providing common weight initialization schemes for deep

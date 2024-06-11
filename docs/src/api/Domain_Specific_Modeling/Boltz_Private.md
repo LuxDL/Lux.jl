@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = Boltz
-```
-
 # Boltz.jl Private API
 
 ```@docs

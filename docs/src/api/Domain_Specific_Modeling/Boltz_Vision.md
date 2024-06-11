@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = Boltz
-```
-
 # Computer Vision Models (`Vision` API)
 
 ## Native Lux Models

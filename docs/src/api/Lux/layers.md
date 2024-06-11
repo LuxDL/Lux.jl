@@ -1,9 +1,5 @@
 # Built-In Layers
 
-```@meta
-CurrentModule = Lux
-```
-
 ## Index
 
 ```@index

@@ -1,9 +1,5 @@
 # Experimental Features
 
-```@meta
-CurrentModule = Lux
-```
-
 All features listed on this page are **experimental** which means:
 
 1. No SemVer Guarantees. We use code here to iterate fast. That said, historically we have

@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = LuxDeviceUtils
-```
-
 # [LuxDeviceUtils](@id LuxDeviceUtils-API)
 
 `LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across
