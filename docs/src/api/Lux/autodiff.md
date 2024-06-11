@@ -4,10 +4,6 @@ Lux is not an AD package, but it composes well with most of the AD packages avai
 Julia ecosystem. This document lists the current level of support for various AD packages in
 Lux. Additionally, we provide some convenience functions for working with AD.
 
-```@meta
-CurrentModule = Lux
-```
-
 ## Overview
 
 | AD Package                                                         | CPU   | GPU   | Nested 2nd Order AD | Support Class |

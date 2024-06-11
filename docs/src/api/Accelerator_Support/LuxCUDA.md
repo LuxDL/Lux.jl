@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = LuxCUDA
-```
-
 # LuxCUDA
 
 `LuxCUDA` is meant to be used as a trigger package for all `CUDA` dependencies in `Lux`.

@@ -73,7 +73,10 @@ pages = [
             "api/Building_Blocks/WeightInitializers.md"
         ],
         "Domain Specific Modeling" => [
-            "api/Domain_Specific_Modeling/Boltz.md"
+            "api/Domain_Specific_Modeling/Boltz.md",
+            "api/Domain_Specific_Modeling/Boltz_Layers.md",
+            "api/Domain_Specific_Modeling/Boltz_Vision.md",
+            "api/Domain_Specific_Modeling/Boltz_Private.md"
         ],
         "Testing Functionality" => [
             "api/Testing_Functionality/LuxTestUtils.md"

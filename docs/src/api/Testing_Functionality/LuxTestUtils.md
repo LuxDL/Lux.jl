@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = LuxTestUtils
-```
-
 # LuxTestUtils
 
 !!! warning
