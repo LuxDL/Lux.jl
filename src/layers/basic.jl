@@ -48,6 +48,22 @@ Flattens the passed array into a matrix.
 
   - AbstractMatrix of size `(:, size(x, ndims(x)))`
   - Empty `NamedTuple()`
+
+## Example
+
+```jldoctest
+julia> model = FlattenLayer()
+FlattenLayer()
+
+julia> rng = Random.default_rng();
+        Random.seed!(rng, 0);
+        ps, st = Lux.setup(rng, model);
+        x = randn(rng,Float32,(2,2,2,2));
+
+julia> y,st_new = model(x,ps,st);
+        size(y)
+(8, 2)
+```
 """
 @kwdef @concrete struct FlattenLayer <: AbstractExplicitLayer
     N = nothing
