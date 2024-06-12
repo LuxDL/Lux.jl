@@ -122,6 +122,25 @@ with `connection`.
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 
 See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
+
+## Example
+
+```jldoctest
+julia> model = Parallel(nothing,Dense(2,1),Dense(2,1))
+Parallel(
+    layer_1 = Dense(2 => 1),            # 3 parameters
+    layer_2 = Dense(2 => 1),            # 3 parameters
+)         # Total: 6 parameters,
+          #        plus 0 states.
+
+julia> using Random;
+       rng = Random.seed!(123);
+       ps, st = Lux.setup(rng, model);
+       x = randn(rng,Float32,2);
+
+julia> y, st_new = model(x,ps,st)
+((Float32[2.0603316], Float32[0.7091646]), (layer_1 = NamedTuple(), layer_2 = NamedTuple()))
+```
 """
 @concrete struct Parallel{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection
