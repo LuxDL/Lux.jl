@@ -89,7 +89,9 @@ export default defineConfig({
                         text: 'Building Blocks', items: [
                             { text: 'LuxCore', link: '/api/Building_Blocks/LuxCore' },
                             { text: 'LuxLib', link: '/api/Building_Blocks/LuxLib' },
-                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' }
+                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' },
+                            { text: 'NNlib', link: 'https://fluxml.ai/NNlib.jl/dev/' },
+                            { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }
                         ]
                     },
                     {
@@ -193,10 +195,6 @@ export default defineConfig({
                             { text: 'DistributedUtils', link: '/api/Lux/distributed_utils' }]
                     },
                     {
-                        text: 'Activation Functions', collapsed: false, items: [
-                            { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }]
-                    },
-                    {
                         text: 'Accelerator Support', collapsed: false, items: [
                             { text: 'LuxAMDGPU', link: '/api/Accelerator_Support/LuxAMDGPU' },
                             { text: 'LuxCUDA', link: '/api/Accelerator_Support/LuxCUDA' },
@@ -206,7 +204,9 @@ export default defineConfig({
                         text: 'Building Blocks', collapsed: false, items: [
                             { text: 'LuxCore', link: '/api/Building_Blocks/LuxCore' },
                             { text: 'LuxLib', link: '/api/Building_Blocks/LuxLib' },
-                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' }]
+                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' },
+                            { text: 'NNlib', link: 'https://fluxml.ai/NNlib.jl/dev/' },
+                            { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }]
                     },
                     {
                         text: 'Domain Specific Modeling', collapsed: false, items: [
