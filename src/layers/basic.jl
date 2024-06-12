@@ -15,6 +15,22 @@ Reshapes the passed array to have a size of `(dims..., :)`
 
   - AbstractArray of size `(dims..., size(x, ndims(x)))`
   - Empty `NamedTuple()`
+
+## Example
+
+```jldoctest
+julia> model = ReshapeLayer((2,2))
+ReshapeLayer(output_dims = (2, 2, :))
+
+julia> rng = Random.default_rng();
+        Random.seed!(rng, 0);
+        ps, st = Lux.setup(rng, model);
+        x = randn(rng,Float32,(4,1,3));
+
+julia> y,st_new = model(x,ps,st);
+        size(y)
+(2, 2, 3)       
+```
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N, Int}
