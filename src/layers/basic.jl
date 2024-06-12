@@ -47,6 +47,32 @@ function Base.show(io::IO, r::ReshapeLayer)
 end
 
 """
+    ReverseSequence(dims)
+
+Reverse the specified dimension `dims` of the passed array
+
+## Arguments
+
+  - `dim`: Dimension that need to be reversed.
+
+## Inputs
+
+  - `x`: AbstractArray of any shape.
+
+## Returns
+
+  - AbstractArray with the same dimensions as the input
+  - Empty `NamedTuple()`
+"""
+struct ReverseSequence <: AbstractExplicitLayer
+  dim::Int
+end
+
+@inline function (r::ReverseSequence)(x::AbstractArray, ps, st::NamedTuple)
+  return reverse(x;dims = r.dims), st
+end
+
+"""
     FlattenLayer(N = nothing)
 
 Flattens the passed array into a matrix.

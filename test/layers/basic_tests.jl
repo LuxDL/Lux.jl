@@ -16,6 +16,22 @@
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
         end
 
+        @testset "Reverse Sequence" begin
+            layer = ReverseSequence(2)
+            __display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            x = [1 2; 3 4] |> aType
+
+            y = layer(x, ps, st)[1]
+            @test size(y) == (2, 2)
+
+            @test y == [2 1; 4 3]
+
+            @jet layer(x, ps, st)
+            __f = x -> sum(first(layer(x, ps, st)))
+            @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        end
+
         @testset "Flatten Layer" begin
             layer = FlattenLayer()
             __display(layer)
