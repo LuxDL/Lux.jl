@@ -31,5 +31,4 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 Boltz = "0.3.7"
-DocumenterVitepress = "0.0.19"
 LuxDeviceUtils = "0.1.21"
