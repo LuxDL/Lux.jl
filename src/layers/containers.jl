@@ -136,9 +136,10 @@ Parallel(
 julia> using Random;
        rng = Random.seed!(123);
        ps, st = Lux.setup(rng, model);
-       x = randn(rng,Float32,2);
+       x1 = randn(rng,Float32,2);
+       x2 = randn(rng,Float32,2);
 
-julia> y, st_new = model(x,ps,st)
+julia> y, st_new = model((x1,x2),ps,st)
 ((Float32[2.0603316], Float32[0.7091646]), (layer_1 = NamedTuple(), layer_2 = NamedTuple()))
 ```
 """
