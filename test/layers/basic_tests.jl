@@ -25,13 +25,10 @@
             x = [1,2,3] |> aType
             x2 = [1 2; 3 4] |> aType
 
-            y = layer(x, ps, st)[1]
-            @test y == [3,2,1]
-            y = layer(x2, ps, st)[1]
-            @test y == [3 4; 1 2]
+            @test layer(x, ps, st)[1] == aType([3,2,1])
+            @test layer(x2, ps, st)[1] == aType([3 4; 1 2])
             @test_throws DimensionMismatch layer2(x, ps, st)[1]
-            y = layer2(x2, ps, st)[1]
-            @test y == [3 4; 1 2]
+            @test layer2(x2, ps, st)[1] == aType([3 4; 1 2])
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
