@@ -125,7 +125,7 @@ See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 
 ## Example
 
-```jldoctest
+```julia
 julia> model = Parallel(nothing,Dense(2,1),Dense(2,1))
 Parallel(
     layer_1 = Dense(2 => 1),            # 3 parameters

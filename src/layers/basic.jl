@@ -142,11 +142,11 @@ NoOpLayer()
 julia> rng = Random.default_rng();
         Random.seed!(rng, 0);
         ps, st = Lux.setup(rng, model);
-        x = rand(Float32);
-0.7446796f0
+        x = 1
+1
 
 julia> y,st_new = model(x,ps,st)
-(0.7446796f0, NamedTuple())
+(1, NamedTuple())
 ```
 """
 struct NoOpLayer <: AbstractExplicitLayer end
