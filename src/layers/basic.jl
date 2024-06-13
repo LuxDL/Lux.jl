@@ -77,11 +77,11 @@ end
   	return reverse(x; dims = ndims(x) - 1), st
 end
 
-@inline function (f::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
+@inline function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
 	throw(DimensionMismatch(lazy"Cannot specify dimension when input is AbstractVector{T}"))
 end
 
-@inline function (f::ReverseSequence)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+@inline function (r::ReverseSequence)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
 	return reverse(x; dims = r.dim), st
 end
 
