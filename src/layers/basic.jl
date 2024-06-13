@@ -47,13 +47,14 @@ function Base.show(io::IO, r::ReshapeLayer)
 end
 
 """
-    ReverseSequence(dims)
+    ReverseSequence(dim = nothing)
 
 Reverse the specified dimension `dims` of the passed array
 
 ## Arguments
 
-  - `dim`: Dimension that need to be reversed.
+  - `dim`: Dimension that need to be reversed. If `nothing`, for AbstractVector{T}
+	it reverses itself (dimension 1), for other arrays, reverse the dimension `ndims(x) - 1`.
 
 ## Inputs
 
@@ -64,12 +65,24 @@ Reverse the specified dimension `dims` of the passed array
   - AbstractArray with the same dimensions as the input
   - Empty `NamedTuple()`
 """
-struct ReverseSequence <: AbstractExplicitLayer
-  dim::Int
+@kwdef @concrete struct ReverseSequence <: AbstractExplicitLayer
+	dim = nothing
 end
 
-@inline function (r::ReverseSequence)(x::AbstractArray, ps, st::NamedTuple)
-  return reverse(x;dims = r.dims), st
+@inline function (r::ReverseSequence{Nothing})(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
+	return (isbitstype(T) ? reverse(x) : Iterators.reverse(x)),st
+end
+
+@inline function (r::ReverseSequence{Nothing})(x::AbstractArray{T,N}, ps, st::NamedTuple) where {T, N}
+  	return reverse(x; dims = ndims(x) - 1), st
+end
+
+@inline function (f::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
+	throw(DimensionMismatch(lazy"Cannot specify dimension when input is AbstractVector{T}"))
+end
+
+@inline function (f::ReverseSequence)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+	return reverse(x; dims = r.dim), st
 end
 
 """

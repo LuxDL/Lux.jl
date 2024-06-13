@@ -17,15 +17,21 @@
         end
 
         @testset "Reverse Sequence" begin
-            layer = ReverseSequence(2)
+            layer = ReverseSequence(nothing)
+            layer2 = ReverseSequence(1)
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
-            x = [1 2; 3 4] |> aType
+            ps2, st2 = Lux.setup(rng, layer2) .|> device
+            x = [1,2,3] |> aType
+            x2 = [1 2; 3 4] |> aType
 
             y = layer(x, ps, st)[1]
-            @test size(y) == (2, 2)
-
-            @test y == [2 1; 4 3]
+            @test y == [3,2,1]
+            y = layer(x2, ps, st)[1]
+            @test y == [3 4; 1 2]
+            @test_throws DimensionMismatch layer2(x, ps, st)[1]
+            y = layer2(x2, ps, st)[1]
+            @test y == [3 4; 1 2]
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
