@@ -9,6 +9,7 @@ Layers.ClassTokens
 Layers.HamiltonianNN
 Layers.MultiHeadSelfAttention
 Layers.MLP
+Layers.SplineLayer
 Layers.TensorProductLayer
 Layers.ViPosEmbedding
 Layers.VisionTransformerEncoder
