@@ -144,6 +144,7 @@ export default defineConfig({
                         text: 'Large Models', collapsed: true, items: [
                             { text: 'Training Image Classification Models on ImageNet with Distributed Data Parallel Training', link: 'https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet' },
                             { text: 'Training a DDIM (Diffusion Model) for Image Generation', link: 'https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM' },
+                            { text: 'ConvMixer on CIFAR-10', link: 'https://github.com/LuxDL/Lux.jl/tree/main/examples/ConvMixer' },
                         ]
                     },
                     {
