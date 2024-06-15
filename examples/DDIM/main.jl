@@ -12,6 +12,8 @@ using ArgCheck, CairoMakie, ChainRulesCore, ConcreteStructs, Comonicon, DataAugm
 using TensorBoardLogger: TBLogger, log_value, log_images
 const CRC = ChainRulesCore
 
+CUDA.allowscalar(false)
+
 # ## Model Definition
 
 # This DDIM implementation follows
