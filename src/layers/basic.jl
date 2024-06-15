@@ -19,17 +19,17 @@ Reshapes the passed array to have a size of `(dims..., :)`
 ## Example
 
 ```jldoctest
-julia> model = ReshapeLayer((2,2))
+julia> model = ReshapeLayer((2, 2))
 ReshapeLayer(output_dims = (2, 2, :))
 
 julia> rng = Random.default_rng();
-        Random.seed!(rng, 0);
-        ps, st = Lux.setup(rng, model);
-        x = randn(rng,Float32,(4,1,3));
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = randn(rng, Float32, (4, 1, 3));
 
-julia> y,st_new = model(x,ps,st);
-        size(y)
-(2, 2, 3)       
+julia> y, st_new = model(x, ps, st);
+       size(y)
+(2, 2, 3)
 ```
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
@@ -72,12 +72,12 @@ julia> model = FlattenLayer()
 FlattenLayer()
 
 julia> rng = Random.default_rng();
-        Random.seed!(rng, 0);
-        ps, st = Lux.setup(rng, model);
-        x = randn(rng,Float32,(2,2,2,2));
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = randn(rng, Float32, (2, 2, 2, 2));
 
-julia> y,st_new = model(x,ps,st);
-        size(y)
+julia> y, st_new = model(x, ps, st);
+       size(y)
 (8, 2)
 ```
 """
@@ -140,12 +140,12 @@ julia> model = NoOpLayer()
 NoOpLayer()
 
 julia> rng = Random.default_rng();
-        Random.seed!(rng, 0);
-        ps, st = Lux.setup(rng, model);
-        x = 1
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = 1
 1
 
-julia> y,st_new = model(x,ps,st)
+julia> y, st_new = model(x, ps, st)
 (1, NamedTuple())
 ```
 """

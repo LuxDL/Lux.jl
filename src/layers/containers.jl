@@ -126,7 +126,7 @@ See also [`SkipConnection`](@ref) which is `Parallel` with one identity.
 ## Example
 
 ```jldoctest
-julia> model = Parallel(nothing,Dense(2,1),Dense(2,1))
+julia> model = Parallel(nothing, Dense(2, 1), Dense(2, 1))
 Parallel(
     layer_1 = Dense(2 => 1),            # 3 parameters
     layer_2 = Dense(2 => 1),            # 3 parameters
@@ -136,11 +136,12 @@ Parallel(
 julia> using Random;
        rng = Random.seed!(123);
        ps, st = Lux.setup(rng, model);
-       x1 = randn(rng,Float32,2);
-       x2 = randn(rng,Float32,2);
+       x1 = randn(rng, Float32, 2);
+       x2 = randn(rng, Float32, 2);
 
-julia> size.(first(model((x1, x2),ps,st)))
+julia> size.(first(model((x1, x2), ps, st)))
 ((1,), (1,))
+```
 """
 @concrete struct Parallel{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection
