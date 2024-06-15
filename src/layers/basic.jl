@@ -80,11 +80,11 @@ end
 end
 
 @inline function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-	if r.dim == 1
-		return reverse(x),st
-	else
-		throw(DimensionMismatch(lazy"Cannot specify a dimension other than 1 for AbstractVector{T}"))
-	end
+    if r.dim == 1
+        return reverse(x), st
+    else
+        throw(DimensionMismatch(lazy"Cannot specify a dimension other than 1 for AbstractVector{T}"))
+    end
 end
 
 @inline function (r::ReverseSequence)(
