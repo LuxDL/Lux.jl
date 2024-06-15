@@ -58,15 +58,15 @@ Reverse the specified dimension `dims` of the passed array
 
 ## Inputs
 
-  - `x`: AbstractArray of any shape.
+  - `x`: AbstractArray.
 
 ## Returns
 
   - AbstractArray with the same dimensions as the input
   - Empty `NamedTuple()`
 """
-@kwdef @concrete struct ReverseSequence <: AbstractExplicitLayer
-    dim = nothing
+@kwdef struct ReverseSequence{D <: Union{Int, Nothing}} <: AbstractExplicitLayer
+    dim::D = nothing
 end
 
 @inline function (r::ReverseSequence{Nothing})(
@@ -80,11 +80,8 @@ end
 end
 
 @inline function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    if r.dim == 1
-        return reverse(x), st
-    else
-        throw(DimensionMismatch(lazy"Cannot specify a dimension other than 1 for AbstractVector{T}"))
-    end
+    r.dim == 1 && return reverse(x), st
+    throw(DimensionMismatch(lazy"Cannot specify a dimension other than 1 for AbstractVector{T}"))
 end
 
 @inline function (r::ReverseSequence)(
