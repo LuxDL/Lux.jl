@@ -15,6 +15,22 @@ Reshapes the passed array to have a size of `(dims..., :)`
 
   - AbstractArray of size `(dims..., size(x, ndims(x)))`
   - Empty `NamedTuple()`
+
+## Example
+
+```jldoctest
+julia> model = ReshapeLayer((2, 2))
+ReshapeLayer(output_dims = (2, 2, :))
+
+julia> rng = Random.default_rng();
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = randn(rng, Float32, (4, 1, 3));
+
+julia> y, st_new = model(x, ps, st);
+       size(y)
+(2, 2, 3)
+```
 """
 struct ReshapeLayer{N} <: AbstractExplicitLayer
     dims::NTuple{N, Int}
@@ -48,6 +64,22 @@ Flattens the passed array into a matrix.
 
   - AbstractMatrix of size `(:, size(x, ndims(x)))`
   - Empty `NamedTuple()`
+
+## Example
+
+```jldoctest
+julia> model = FlattenLayer()
+FlattenLayer()
+
+julia> rng = Random.default_rng();
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = randn(rng, Float32, (2, 2, 2, 2));
+
+julia> y, st_new = model(x, ps, st);
+       size(y)
+(8, 2)
+```
 """
 @kwdef @concrete struct FlattenLayer <: AbstractExplicitLayer
     N = nothing
@@ -100,6 +132,22 @@ end
 
 As the name suggests does nothing but allows pretty printing of layers. Whatever input is
 passed is returned.
+
+# Example
+
+```jldoctest
+julia> model = NoOpLayer()
+NoOpLayer()
+
+julia> rng = Random.default_rng();
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = 1
+1
+
+julia> y, st_new = model(x, ps, st)
+(1, NamedTuple())
+```
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 

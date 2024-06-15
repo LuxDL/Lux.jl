@@ -89,7 +89,9 @@ export default defineConfig({
                         text: 'Building Blocks', items: [
                             { text: 'LuxCore', link: '/api/Building_Blocks/LuxCore' },
                             { text: 'LuxLib', link: '/api/Building_Blocks/LuxLib' },
-                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' }
+                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' },
+                            { text: 'NNlib', link: 'https://fluxml.ai/NNlib.jl/dev/' },
+                            { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }
                         ]
                     },
                     {
@@ -203,7 +205,9 @@ export default defineConfig({
                         text: 'Building Blocks', collapsed: false, items: [
                             { text: 'LuxCore', link: '/api/Building_Blocks/LuxCore' },
                             { text: 'LuxLib', link: '/api/Building_Blocks/LuxLib' },
-                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' }]
+                            { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' },
+                            { text: 'NNlib', link: 'https://fluxml.ai/NNlib.jl/dev/' },
+                            { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }]
                     },
                     {
                         text: 'Domain Specific Modeling', collapsed: false, items: [
