@@ -82,7 +82,7 @@ const large_models = [
     href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/ConvMixer",
     src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
     caption: "ConvMixer on CIFAR-10",
-    desc: "Train ConvMixer on CIFAR-10."
+    desc: "Train ConvMixer on CIFAR-10 to 90% accuracy within 10 minutes."
   }
 ];
 
