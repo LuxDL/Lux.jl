@@ -449,7 +449,7 @@ end
 for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     dev = Symbol(:Lux, name, :Device)
     adaptor = Symbol(:Lux, name, :Adaptor)
-    @eval Base.@deprecate_binding $(adaptor) $(dev) true
+    @eval Base.@deprecate $(adaptor) $(dev) true
 end
 
 Adapt.adapt_storage(::LuxCPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
