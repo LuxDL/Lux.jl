@@ -1,9 +1,5 @@
 # Utilities
 
-```@meta
-CurrentModule = Lux
-```
-
 ## Index
 
 ```@index

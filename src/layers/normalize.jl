@@ -130,7 +130,7 @@ statelength(l::BatchNorm) = ifelse(_track_stats(l), l.chs * 2, 0) + 1
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     CRC.ignore_derivatives() do
         if st.training isa Val{true}
-            @assert size(x, ndims(x))!=1 "Batch size for BatchNorm cannot be 1 during training"
+            @argcheck size(x, ndims(x))!=1 "Batch size for BatchNorm cannot be 1 during training"
         end
     end
 
@@ -237,7 +237,7 @@ end
 
 function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
         init_scale=ones32, affine=true, epsilon=1.0f-5, allow_fast_activation::Bool=true)
-    @assert chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
+    @argcheck chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     return GroupNorm{affine}(activation, epsilon, chs, init_bias, init_scale, groups)

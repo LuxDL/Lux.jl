@@ -1,5 +1,6 @@
 module LuxZygoteExt
 
+using ArgCheck: @argcheck
 using ADTypes: AutoZygote
 using ChainRulesCore: ChainRulesCore
 using Lux: Lux

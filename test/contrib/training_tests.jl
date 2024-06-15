@@ -91,6 +91,19 @@ end
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
             end
 
+            # Test the adjust API
+            tstate = Optimisers.adjust(tstate, 0.1f0)
+            @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.1f0
+
+            tstate = Optimisers.adjust(tstate; eta=0.5f0)
+            @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.5f0
+
+            Optimisers.adjust!(tstate, 0.01f0)
+            @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.01f0
+
+            Optimisers.adjust!(tstate; eta=0.11f0)
+            @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.11f0
+
             final_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
 
             @test final_loss * 100 < initial_loss

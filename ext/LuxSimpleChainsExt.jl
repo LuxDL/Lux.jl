@@ -1,5 +1,6 @@
 module LuxSimpleChainsExt
 
+using ArgCheck: @argcheck
 using Lux
 using SimpleChains: SimpleChains
 using Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
@@ -77,7 +78,7 @@ NNlib.logsoftmax(x::SimpleChains.StrideArray{T, 2}) where {T} = SimpleChains.log
 function NNlib.logsoftmax!(y::SimpleChains.StrideArray{T1, 2},
         x::Union{SimpleChains.StrideArray{T2, 2}, SimpleChains.PtrArray{T2, 2}};
         dims=1) where {T1, T2}
-    @assert dims == 1
+    @argcheck dims == 1
     m = similar(y, SimpleChains.static_size(y, 2))
     SimpleChains.logsoftmax!(y, m, x)
     return y

@@ -6,9 +6,11 @@ using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
 
 using ADTypes: ADTypes
+using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
-using Functors: Functors, fmap, fmapstructure, functor
+using FastClosures: @closure
+using Functors: Functors, KeyPath, fmap_with_path, fmapstructure, functor
 using Markdown: @doc_str
 using Random: AbstractRNG, Random
 using Setfield: Setfield

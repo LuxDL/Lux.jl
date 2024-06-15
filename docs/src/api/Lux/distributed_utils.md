@@ -4,10 +4,6 @@
 
     These functionalities are available via the `Lux.DistributedUtils` module.
 
-```@meta
-CurrentModule = Lux
-```
-
 ## Index
 
 ```@index
