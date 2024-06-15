@@ -18,7 +18,7 @@ steps:
         env:
           BACKEND_GROUP: "CUDA"
           LUX_TEST_GROUP: "{{matrix.test_group}}"
-        if: build.message !~ /\[skip tests\]/
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 240
         matrix:
           setup:
@@ -78,7 +78,7 @@ steps:
           cuda: "*"
         env:
           DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
-        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 240
         matrix:
           setup:
@@ -113,7 +113,7 @@ steps:
           queue: "juliagpu"
           rocm: "*"
           rocmgpu: "*"
-        if: build.message !~ /\[skip tests\]/
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
           setup:
@@ -178,7 +178,7 @@ steps:
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
           DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
-        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
           setup:
