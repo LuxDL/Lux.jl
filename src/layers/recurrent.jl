@@ -700,3 +700,12 @@ function Bidirectional(cell::AbstractRecurrentCell;
     return Bidirectional(
         layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence()), merge_mode)
 end
+
+function (m::Bidirectional)(x, ps, st::NamedTuple)
+    applybidirectional(m.layer, m.backward_layer, m.merge_mode, x, ps, st)
+end
+
+@generated function applybidirectional(layer::Recurrence, backward_layer::Chain,
+        merge_mode::Union{Function, Nothing}x::T, ps, st::NamedTuple) where {T} 
+  #TODO      
+end
