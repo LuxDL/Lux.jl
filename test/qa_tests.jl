@@ -22,3 +22,18 @@ end
         ignore=(:inputsize, :setup, :testmode, :trainmode, :update_state, :AbstractRNG)) ===
           nothing
 end
+
+@testitem "doctests: Quality Assurance" tags=[:others] begin
+    using Documenter
+
+    doctestexpr = quote
+        using SimpleChains: static
+        using Flux: Flux
+        using Metalhead: Metalhead
+        using DynamicExpressions
+        using Adapt, Lux, Random, Optimisers, Zygote
+    end
+
+    DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
+    doctest(Lux; manual=false)
+end

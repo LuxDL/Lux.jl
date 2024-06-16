@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.test_group }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -128,7 +128,7 @@ jobs:
 
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }} && github.base_ref == github.event.repository.default_branch
-    name: Downgrade Julia ${{ matrix.version }} - ${{ github.event_name }}
+    name: Downgrade Julia ${{ matrix.version }} - ${{ matrix.test_group }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
