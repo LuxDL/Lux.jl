@@ -1,11 +1,23 @@
 name: Benchmarks
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
+    paths:
+      - "src/**"
+      - "ext/**"
+      - "test/**"
+      - "Project.toml"
+      - "bench/**"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "ext/**"
+      - "test/**"
+      - "Project.toml"
+      - "bench/**"
 
 concurrency:
   # Skip intermediate builds: always.
