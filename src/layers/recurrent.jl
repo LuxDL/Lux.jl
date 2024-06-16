@@ -645,7 +645,8 @@ end
 """
     Bidirectional(cell::AbstractRecurrentCell;
         backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
-        merge_mode::Union{Function,Nothing}=vcat)
+        merge_mode::Union{Function, Nothing}=vcat,
+        ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
 
 Bidirectional wrapper for RNNs.
 
@@ -658,9 +659,12 @@ Bidirectional wrapper for RNNs.
 
   - `backward_cell`: A optional backward recurrent cell. If `backward_cell` is `nothing`,
     the rnn layer instance passed as the `cell` argument will be used to generate the
-    backward layer automatically.
+    backward layer automatically. `in_dims` of `backward_cell` should be consistent with
+    `in_dims` of `cell`
   - `merge_mode`: Function by which outputs of the forward and backward RNNs will be combined.
     default value is `vcat`. If `nothing`, the outputs will not be combined.
+  - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
+    `BatchLastIndex()`. Alternatively can be set to `TimeLastIndex()`.
 
 ## Inputs
 
@@ -686,10 +690,14 @@ Bidirectional wrapper for RNNs.
 """
 function Bidirectional(cell::AbstractRecurrentCell;
         backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
-        merge_mode::Union{Function, Nothing}=vcat)
-    layer = Recurrence(cell; return_sequence=true)
+        merge_mode::Union{Function, Nothing}=vcat,
+        ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
+    if !isnothing(backward_cell) && cell.in_dims != backward_cell.in_dims
+        throw(DimensionMismatch(lazy"`in_dims` of `cell` and `backward_cell` should be the same"))
+    end
+    layer = Recurrence(cell; return_sequence=true, ordering)
     backward_rnn_layer = isnothing(backward_cell) ? deepcopy(layer) :
-                         Recurrence(backward_cell; return_sequence=true)
+                         Recurrence(backward_cell; return_sequence=true, ordering)
     fuse_op = isnothing(merge_mode) ? nothing : Broadcast.BroadcastFunction(merge_mode)
     return Parallel(
         fuse_op, layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence()))

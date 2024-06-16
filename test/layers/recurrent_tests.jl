@@ -372,5 +372,48 @@ end
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         x = randn(rng, 2, 3) |> aType
         @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
+end
+
+@testitem "Bidirectional" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+    rng = get_stable_rng(12345)
+    # TODO
+    # Test: backward_cell
+    # Test: `in_dims` throw error
+    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+        @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
+            cell = _cell(3 => 5)
+            bi_rnn = Bidirectional(cell)
+            bi_rnn_no_merge = Bidirectional(cell; merge_mode=nothing)
+            println("Bidirectional:")
+            __display(bi_rnn)
+
+            # Batched Time Series
+            x = randn(rng, Float32, 3, 4, 2) |> aType
+            ps, st = Lux.setup(rng, bi_rnn) .|> device
+            y, st_ = bi_rnn(x, ps, st)
+            y_, st__ = bi_rnn_no_merge(x, ps, st)
+
+            @jet bi_rnn(x, ps, st)
+            @jet bi_rnn_no_merge(x, ps, st)
+
+            @test size(y) == (4,)
+            @test all(x -> size(x) == (10, 2), y)
+
+            @test length(y_) == 2
+            @test size(y_[1]) == size(y_[2])
+            @test size(y_[1]) == (4,)
+            @test all(x -> size(x) == (5, 2),y_[1])
+
+            if mode != "AMDGPU"
+                __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
+                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+
+                # how to test gradients????
+                __f = p -> sum(Base.Fix1(sum, abs2), first(first(bi_rnn_no_merge(x, p, st))))
+                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+            else
+                # This is just added as a stub to remember about this broken test
+            end
+        end
     end
 end
