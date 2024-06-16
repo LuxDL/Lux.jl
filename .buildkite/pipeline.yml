@@ -1,5 +1,6 @@
 steps:
-  - label: "Triggering pipelines"
+  - label: "Triggering Pipelines (Pull Request)"
+    if: "build.pull_request.base_branch == 'main'"
     agents:
       queue: "juliagpu"
     plugins:
@@ -27,3 +28,11 @@ steps:
                 command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
                 agents:
                   queue: "juliagpu"
+
+  - label: "Triggering Pipelines (Main Branch / Tag)"
+    if: build.branch == "main" || build.tag != null
+    agents:
+      queue: "juliagpu"
+    command: |
+      buildkite-agent pipeline upload .buildkite/testing.yml
+      buildkite-agent pipeline upload .buildkite/documentation.yml

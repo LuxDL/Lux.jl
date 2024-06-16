@@ -11,11 +11,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "src/**"
-      - "ext/**"
-      - "test/**"
-      - "Project.toml"
 
 concurrency:
   # Skip intermediate builds: always.
@@ -77,6 +72,7 @@ jobs:
 
   downstream:
     name: Downstream ${{ matrix.package.repo }}/${{ matrix.package.group }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }} && github.base_ref == github.event.repository.default_branch
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
@@ -131,7 +127,7 @@ jobs:
           fail_ci_if_error: true
 
   downgrade:
-    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }} && github.base_ref == github.event.repository.default_branch
     name: Downgrade Julia ${{ matrix.version }} - ${{ github.event_name }}
     runs-on: ubuntu-latest
     strategy:
