@@ -78,24 +78,24 @@ The full test of `Lux.jl` takes a long time, here's how to test a portion of the
 
 For each `@testitem`, there are corresponding `tags`, for example:
 
-``` julia
+```julia
 @testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers]
 ```
 
 For `SkipConnection`, you can test `core_layers` separately by setting the `LUX_TEST_GROUP` environment variable, or rename the tag to further narrow the test scope:
 
-``` shell
+```shell
 export LUX_TEST_GROUP="core_layers"
 ```
 
 Or directly modify the default test tag in `runtests.jl`:
 
-``` julia
+```julia
 # const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "core_layers"))
 ```
 
-But be sure to restore the default value "all" before submitting the code
+But be sure to restore the default value "all" before submitting the code.
 
 ## Getting Help
 
