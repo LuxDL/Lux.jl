@@ -684,28 +684,12 @@ Bidirectional wrapper for RNNs.
 
   - Same as `cell` and `backward_cell`.
 """
-struct Bidirectional{T <: Union{Function, Nothing}} <:
-       AbstractExplicitContainerLayer{(:layer, :backward_layer)}
-    merge_mode::T
-    layer::Recurrence
-    backward_layer::Chain
-end
-
 function Bidirectional(cell::AbstractRecurrentCell;
         backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
         merge_mode::Union{Function, Nothing}=vcat)
     layer = Recurrence(cell; return_sequence=true)
     backward_rnn_layer = isnothing(backward_cell) ? deepcopy(layer) :
                          Recurrence(backward_cell; return_sequence=true)
-    return Bidirectional(
-        layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence()), merge_mode)
-end
-
-function (m::Bidirectional)(x, ps, st::NamedTuple)
-    applybidirectional(m.layer, m.backward_layer, m.merge_mode, x, ps, st)
-end
-
-@generated function applybidirectional(layer::Recurrence, backward_layer::Chain,
-        merge_mode::Union{Function, Nothing},x::T, ps, st::NamedTuple) where {T} 
-  #TODO      
+    return Parallel(
+        Broadcast.BroadcastFunction(merge_mode),layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence()))
 end
