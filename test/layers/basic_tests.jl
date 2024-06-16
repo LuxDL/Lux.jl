@@ -27,11 +27,11 @@
 
             x = randn(rng, 3) |> aType
             xr = reverse(x)
-            x2 = randn(rng, 2,2) |> aType
-            x2rd1 = reverse(x2,dims=1)
-            x2rd2 = reverse(x2,dims=2)
+            x2 = randn(rng, 2, 2) |> aType
+            x2rd1 = reverse(x2; dims=1)
+            x2rd2 = reverse(x2; dims=2)
 
-            xs = randn(rng,1) |> aType
+            xs = randn(rng, 1) |> aType
 
             @test layer(x, ps, st)[1] == aType(xr)
             @test layer(x2, ps, st)[1] == aType(x2rd1)
