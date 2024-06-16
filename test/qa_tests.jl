@@ -23,7 +23,7 @@ end
           nothing
 end
 
-@testitem "doctests: Quality Assurance" tags=[:others] begin
+@testitem "doctests: Quality Assurance" tags=[:others] skip=:(!Sys.islinux()) begin
     using Documenter
 
     doctestexpr = quote
