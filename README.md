@@ -72,6 +72,57 @@ Look in the [examples](/examples/) directory for self-contained usage examples. 
 
 Checkout our [Ecosystem](http://lux.csail.mit.edu/dev/ecosystem) page for more details. 
 
+## Testing
+
+The full test of `Lux.jl` takes a long time, here's how to test a portion of the code.
+
+For each `@testitem`, there are corresponding `tags`, for example:
+
+```julia
+@testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers]
+```
+
+For example, let's consider the tests for `SkipConnection`:
+
+```julia
+@testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers] begin
+    .....
+end
+```
+
+We can test the group to which `SkipConnection` belongs by testing `core_layers`.
+To do so set the `LUX_TEST_GROUP` environment variable, or rename the tag to
+further narrow the test scope:
+
+```shell
+export LUX_TEST_GROUP="core_layers"
+```
+
+Or directly modify the default test tag in `runtests.jl`:
+
+```julia
+# const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "core_layers"))
+```
+
+But be sure to restore the default value "all" before submitting the code.
+
+Furthermore if you want to run a specific test based on the name of the testset, you can
+use [TestEnv.jl](https://github.com/JuliaTesting/TestEnv.jl) as follows. Start with activating the Lux environment and then run the following:
+
+```julia
+using TestEnv; TestEnv.activate(); using ReTestItems;
+
+# Assuming you are in the main directory of Lux
+ReTestItems.runtests("tests/"; name = <NAME OF THE TEST>)
+```
+
+For the `SkipConnection` tests that would be:
+
+```julia
+ReTestItems.runtests("tests/"; name = SkipConnection)
+```
+
 ## Getting Help
 
 For usage related questions, please use [Github Discussions](https://github.com/LuxDL/Lux.jl/discussions) or [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a [pull request](https://github.com/LuxDL/Lux.jl/pulls).
