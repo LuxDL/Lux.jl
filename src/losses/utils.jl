@@ -60,3 +60,14 @@ end
 @inline __check_sizes(ŷ, y) = nothing
 
 CRC.@non_differentiable __check_sizes(ŷ::Any, y::Any)
+
+@inline __fused_agg(::typeof(mean), op::OP, x) where {OP} = mean(op, x)
+@inline __fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
+@inline __fused_agg(::Nothing, op::OP, x) where {OP} = op.(x)
+@inline __fused_agg(f::F, op::OP, x) where {F, OP} = f(op.(x))
+
+@inline __label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
+@inline function __label_smoothing(label_smoothing::Real, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
+end
