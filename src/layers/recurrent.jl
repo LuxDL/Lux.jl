@@ -706,6 +706,6 @@ function (m::Bidirectional)(x, ps, st::NamedTuple)
 end
 
 @generated function applybidirectional(layer::Recurrence, backward_layer::Chain,
-        merge_mode::Union{Function, Nothing}x::T, ps, st::NamedTuple) where {T} 
+        merge_mode::Union{Function, Nothing},x::T, ps, st::NamedTuple) where {T} 
   #TODO      
 end
