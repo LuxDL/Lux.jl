@@ -37,7 +37,7 @@ end
 const NTASKS = min(
     parse(Int, get(ENV, "LUX_DOCUMENTATION_NTASKS", "1")), length(TUTORIALS_BUILDING))
 
-@info "Building Tutorials" TUTORIALS_BUILDING
+@info "Building Tutorials:" TUTORIALS_BUILDING
 
 @info "Starting Lux Tutorial Build with $(NTASKS) tasks."
 
