@@ -76,7 +76,7 @@ julia> rng = Random.default_rng();
        ps, st = Lux.setup(rng, model);
        x = [1.0, 2.0, 3.0];
 
-julia> y, st_new = model(x, ps, st);
+julia> y, st_new = model(x, ps, st)
 ([3.0, 2.0, 1.0], NamedTuple())
 ```
 """
