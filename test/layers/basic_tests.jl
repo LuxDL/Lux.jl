@@ -16,6 +16,36 @@
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
         end
 
+        @testset "Reverse Sequence" begin
+            layer = ReverseSequence(nothing)
+            layer2 = ReverseSequence(2)
+            layer3 = ReverseSequence(1)
+            __display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            ps2, st2 = Lux.setup(rng, layer2) .|> device
+            ps3, st3 = Lux.setup(rng, layer3) .|> device
+
+            x = randn(rng, 3) |> aType
+            xr = reverse(x)
+            x2 = randn(rng, 2, 2) |> aType
+            x2rd1 = reverse(x2; dims=1)
+            x2rd2 = reverse(x2; dims=2)
+
+            xs = randn(rng, 1) |> aType
+
+            @test layer(x, ps, st)[1] == aType(xr)
+            @test layer(x2, ps, st)[1] == aType(x2rd1)
+            @test_throws DimensionMismatch layer2(x, ps2, st2)[1]
+            @test layer3(x, ps3, st3)[1] == aType(xr)
+            @test layer2(x2, ps2, st2)[1] == aType(x2rd2)
+
+            @test layer(xs, ps, st)[1] == aType(xs)
+
+            @jet layer(x, ps, st)
+            __f = x -> sum(first(layer(x, ps, st)))
+            @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        end
+
         @testset "Flatten Layer" begin
             layer = FlattenLayer()
             __display(layer)

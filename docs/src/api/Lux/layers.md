@@ -72,6 +72,7 @@ NoOpLayer
 ReshapeLayer
 SelectDim
 WrappedFunction
+ReverseSequence
 ```
 
 ## Normalization Layers
