@@ -690,7 +690,7 @@ function Bidirectional(cell::AbstractRecurrentCell;
     layer = Recurrence(cell; return_sequence=true)
     backward_rnn_layer = isnothing(backward_cell) ? deepcopy(layer) :
                          Recurrence(backward_cell; return_sequence=true)
-    fuse_op = isnothing(merge_mode) ? Broadcast.BroadcastFunction(merge_mode) : nothing
+    fuse_op = isnothing(merge_mode) ? nothing : Broadcast.BroadcastFunction(merge_mode)
     return Parallel(
         fuse_op, layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence()))
 end
