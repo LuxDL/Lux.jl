@@ -66,6 +66,9 @@ include("layers/display.jl")
 # AutoDiff
 include("chainrules.jl")
 
+# Losses
+include("losses/Losses.jl")
+
 # Experimental
 include("contrib/contrib.jl")
 
@@ -107,6 +110,8 @@ export @compact, CompactLuxLayer
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+
+export Losses
 
 export f16, f32, f64
 
