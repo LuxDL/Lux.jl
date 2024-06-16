@@ -9,6 +9,7 @@ using PrecompileTools: @recompile_invalidations
     using FastClosures: @closure
     using ..Lux: __unwrap_val
     using Markdown: @doc_str
+    using LuxLib: logsoftmax, logsigmoid
     using Statistics: mean
 end
 
@@ -19,7 +20,8 @@ abstract type AbstractLossFunction <: Function end
 include("utils.jl")
 include("loss_functions.jl")
 
-export CrossEntropyLoss, L1Loss, MSELoss, MSLELoss
+export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, FocalLoss, L1Loss, L2Loss,
+       MAELoss, MSELoss, MSLELoss, SiameseContrastiveLoss, TverskyLoss
 
 end
 

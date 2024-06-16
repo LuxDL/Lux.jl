@@ -1,5 +1,6 @@
 """
     xlogx(x::Number)
+using Base: func_for_method_checked
 
 Return `x * log(x)` for `x ≥ 0`, handling `x == 0` by taking the limit from above, to get
 zero.
@@ -71,3 +72,16 @@ CRC.@non_differentiable __check_sizes(ŷ::Any, y::Any)
     label_smoothing = T(label_smoothing)
     return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
 end
+
+@inline __label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
+@inline function __label_smoothing_binary(label_smoothing::Real, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ 2
+end
+
+@inline __get_epsilon(::Type{T}, ϵ::Real) where {T} = T(ϵ)
+@inline __get_epsilon(::Type{T}, ::Nothing) where {T} = eps(T)
+
+@inline __get_dims(_) = Colon()
+@inline __get_dims(::AbstractVector) = Colon()
+@inline __get_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)

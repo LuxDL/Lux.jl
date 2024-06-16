@@ -111,7 +111,8 @@ export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
 
-export CrossEntropyLoss, L1Loss, MSELoss, MSLELoss
+export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, FocalLoss, L1Loss, L2Loss,
+       MAELoss, MSELoss, MSLELoss, SiameseContrastiveLoss, TverskyLoss
 
 export f16, f32, f64
 
