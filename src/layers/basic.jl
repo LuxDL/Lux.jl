@@ -64,6 +64,24 @@ Reverse the specified dimension `dims` of the passed array
 
   - AbstractArray with the same dimensions as the input
   - Empty `NamedTuple()`
+
+## Example
+```jldoctest
+julia> model = ReverseSequence()
+ReverseSequence()
+
+julia> rng = Random.default_rng();
+       Random.seed!(rng, 0);
+       ps, st = Lux.setup(rng, model);
+       x = [1.0,2.0,3.0]
+3-element Vector{Float64}:
+ 1.0
+ 2.0
+ 3.0
+
+julia> y, st_new = model(x, ps, st);
+([3.0, 2.0, 1.0], NamedTuple())
+```
 """
 @kwdef struct ReverseSequence{D <: Union{Int, Nothing}} <: AbstractExplicitLayer
     dim::D = nothing
