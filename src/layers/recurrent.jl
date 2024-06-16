@@ -636,3 +636,62 @@ function Base.show(io::IO, g::GRUCell{use_bias, TS}) where {use_bias, TS}
     TS && print(io, ", train_state=true")
     return print(io, ")")
 end
+
+"""
+    Bidirectional(cell::AbstractRecurrentCell;
+        backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
+        merge_mode::Union{Function,Nothing}=vcat)
+
+Bidirectional wrapper for RNNs.
+
+## Arguments
+
+  - `cell`: A recurrent cell. See [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref),
+    for how the inputs/outputs of a recurrent cell must be structured.
+
+## Keyword Arguments
+
+  - `backward_cell`: A optional backward recurrent cell. If `backward_cell` is `nothing`,
+    the rnn layer instance passed as the `cell` argument will be used to generate the
+    backward layer automatically.
+  - `merge_mode`: Function by which outputs of the forward and backward RNNs will be combined.
+    default value is `vcat`. If `nothing`, the outputs will not be combined.
+
+## Inputs
+
+  - If `x` is a
+
+      + Tuple or Vector: Each element is fed to the `cell` sequentially.
+
+      + Array (except a Vector): It is spliced along the penultimate dimension and each
+        slice is fed to the `cell` sequentially.
+
+## Returns
+
+  - Merged output of the `cell` and `backward_cell` for the entire sequence.
+  - Update state of the `cell` and `backward_cell`.
+
+## Parameters
+
+  - Same as `cell` and `backward_cell`.
+
+## States
+
+  - Same as `cell` and `backward_cell`.
+"""
+struct Bidirectional{T <: Union{Function, Nothing}} <:
+       AbstractExplicitContainerLayer{(:layer, :backward_layer)}
+    merge_mode::T
+    layer::Recurrence
+    backward_layer::Chain
+end
+
+function Bidirectional(cell::AbstractRecurrentCell;
+        backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
+        merge_mode::Union{Function, Nothing}=vcat)
+    layer = Recurrence(cell; return_sequence=true)
+    backward_rnn_layer = isnothing(backward_cell) ? deepcopy(layer) :
+                         Recurrence(backward_cell; return_sequence=true)
+    return Bidirectional(
+        layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence()), merge_mode)
+end
