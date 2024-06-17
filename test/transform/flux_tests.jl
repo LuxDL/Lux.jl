@@ -1,4 +1,7 @@
 @testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:others] begin
+    import Pkg
+    Pkg.add("Flux")
+
     import Flux
 
     from_flux = fdevice(::Lux.LuxCPUDevice) = Flux.cpu

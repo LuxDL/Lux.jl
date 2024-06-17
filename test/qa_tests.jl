@@ -26,10 +26,12 @@ end
 @testitem "doctests: Quality Assurance" tags=[:others] skip=:(!Sys.islinux()) begin
     using Documenter
 
+    import Pkg
+    Pkg.add("Flux")
+
     doctestexpr = quote
         using SimpleChains: static
         using Flux: Flux
-        using Metalhead: Metalhead
         using DynamicExpressions
         using Adapt, Lux, Random, Optimisers, Zygote
     end
