@@ -7,6 +7,9 @@
 end
 
 @testitem "Explicit Imports: Quality Assurance" tags=[:others] begin
+    import Pkg
+    Pkg.add(["Flux", "LuxAMDGPU"])
+
     # Load all trigger packages
     import Lux, ComponentArrays, ReverseDiff, Flux, LuxAMDGPU, SimpleChains, Tracker,
            Zygote, Enzyme
@@ -23,7 +26,7 @@ end
           nothing
 end
 
-@testitem "doctests: Quality Assurance" tags=[:others] skip=:(!Sys.islinux()) begin
+@testitem "doctests: Quality Assurance" tags=[:others] begin
     using Documenter
 
     import Pkg

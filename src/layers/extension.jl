@@ -67,11 +67,19 @@ julia> x = [1.0f0 2.0f0 3.0f0
  1.0  2.0  3.0
  4.0  5.0  6.0
 
-julia> layer(x, ps, st)
-(Float32[0.6967068 -0.4544041 -2.8266668; 1.5 -4.5 -12.5], (layer_1 = (layer_1 = NamedTuple(), layer_2 = NamedTuple()), layer_2 = NamedTuple()))
+julia> layer(x, ps, st)[1] ≈ Float32[0.6967068 -0.4544041 -2.8266668; 1.5 -4.5 -12.5]
+true
 
-julia> Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st)
-(Float32[-14.0292 54.206482 180.32669; -0.9995737 10.7700815 55.6814], (layer_1 = (layer_1 = (params = Float32[-6.451908],), layer_2 = (params = Float32[-31.0, 90.0],)), layer_2 = nothing), nothing)
+julia> ∂x, ∂ps, _ = Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st);
+
+julia> ∂x ≈ Float32[-14.0292 54.206482 180.32669; -0.9995737 10.7700815 55.6814]
+true
+
+julia> ∂ps.layer_1.layer_1.params ≈ Float32[-6.451908]
+true
+
+julia> ∂ps.layer_1.layer_2.params ≈ Float32[-31.0, 90.0]
+true
 ```
 """
 @kwdef @concrete struct DynamicExpressionsLayer <: AbstractExplicitLayer

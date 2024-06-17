@@ -1,7 +1,13 @@
 using Lux, MPI, NCCL, Test
-using LuxAMDGPU, LuxCUDA
 
 const input_args = length(ARGS) == 2 ? ARGS : ("CPU", "mpi")
+if input_args[1] == "CUDA"
+    using LuxCUDA
+end
+if input_args[1] == "AMDGPU"
+    using LuxAMDGPU
+end
+
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 const dev = input_args[1] == "CPU" ? LuxCPUDevice() :
             (input_args[1] == "CUDA" ? LuxCUDADevice() : LuxAMDGPUDevice())

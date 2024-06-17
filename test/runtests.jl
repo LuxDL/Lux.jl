@@ -1,4 +1,4 @@
-using ReTestItems, Pkg, Tests
+using ReTestItems, Pkg, Test
 
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 @info "Running tests for group: $LUX_TEST_GROUP"
