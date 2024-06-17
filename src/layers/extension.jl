@@ -240,11 +240,43 @@ end
 # Workaround for SimpleChains not being able to handle some input types
 function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
+    # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     __∇apply_simple_chain = @closure Δ -> begin
-        # Safety measure to prevent errors from weird Array types that SimpleChains doesn't
-        # support
         ∂layer, ∂x, ∂ps = pb(convert(Array, Δ))
         return CRC.NoTangent(), ∂layer, ∂x, ∂ps, CRC.NoTangent()
     end
     return res, __∇apply_simple_chain
+end
+
+# TODO: Add a ChainRules rrule that calls the `bwd` function, i.e. uses Enzyme for the
+#       gradient computation
+# TODO: Docstring
+@concrete struct ReactantLayer{FST, T, inType, inCType, stType, stTestType, psType,
+    L <: AbstractExplicitLayer, AD <: ToReactantAdaptor} <: AbstractExplicitLayer
+    adaptor::AD
+    concrete_ps::psType
+    layer::L
+
+    # Compiled Functions
+    fwd_fn
+    inference_fn
+    vjp_fn
+    jvp_fn
+
+    eltype_adaptor
+    input_structure
+end
+
+function Base.show(io::IO, s::ReactantLayer{ST}) where {ST}
+    if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
+        print(io, "ReactantLayer{$ST}(\n")
+        _big_show(io, s.layer, 4)
+    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
+        print(io, "ReactantLayer{$ST}(")
+        _layer_show(io, s.layer)
+    else
+        print(io, "ReactantLayer{$ST}(")
+        show(io, s.layer)
+    end
+    print(io, ")")
 end

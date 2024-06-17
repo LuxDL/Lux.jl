@@ -3,7 +3,8 @@ module Lux
 using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
-    using ADTypes: AbstractADType, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+    using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff,
+                   AutoTracker, AutoZygote
     using Adapt: Adapt, adapt
     using ArgCheck: @argcheck
     using ArrayInterface: ArrayInterface
@@ -16,7 +17,7 @@ using PrecompileTools: @recompile_invalidations
     using Markdown: @doc_str
     using OhMyThreads: tmapreduce
     using Preferences: @load_preference
-    using Random: Random, AbstractRNG
+    using Random: Random, AbstractRNG, Xoshiro
     using Reexport: @reexport
 
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
@@ -51,6 +52,12 @@ const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNes
 # Utilities
 include("utils.jl")
 
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
+include("transform/reactant.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -74,11 +81,6 @@ include("helpers/stateful.jl")
 include("helpers/compact.jl")
 include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
-
-# Transform to and from other frameworks
-include("transform/types.jl")
-include("transform/flux.jl")
-include("transform/simplechains.jl")
 
 # Distributed Training
 include("distributed/backend.jl")
@@ -106,13 +108,15 @@ export @compact, CompactLuxLayer
 
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
-export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoReactant
 
 export f16, f32, f64
 
 export transform
 export FromFluxAdaptor, FluxLayer
 export ToSimpleChainsAdaptor, SimpleChainsLayer
+export ToReactantAdaptor, ReactantLayer
 export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
