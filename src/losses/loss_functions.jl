@@ -178,12 +178,67 @@ function __unsafe_apply_loss(loss::DiceCoeffLoss, ŷ, y)
     return loss.agg(true - num ./ den)
 end
 
+@kwdef @concrete struct HuberLoss <: AbstractLossFunction
+    delta = 1
+    agg = mean
+end
 
-# TODO: HuberLoss
-# TODO: KLDivergenceLoss
-# TODO: PoissonLoss
-# TODO: HingeLoss
-# TODO: SquaredHingeLoss
+function __unsafe_apply_loss(loss::HuberLoss, ŷ, y)
+    T = promote_type(eltype(ŷ), eltype(y))
+    return __fused_agg(loss.agg, Base.Fix2(__huber_metric, T(loss.delta)), abs.(ŷ .- y))
+end
+
+function __huber_metric(err::T1, δ::T2) where {T1, T2}
+    T = promote_type(T1, T2)
+    x = T(1 // 2)
+    return ifelse(err < δ, err^2 * x, δ * (err - x * δ))
+end
+
+@kwdef @concrete struct HingeLoss <: AbstractLossFunction
+    agg = mean
+end
+
+function __unsafe_apply_loss(loss::HingeLoss, ŷ, y)
+    T = promote_type(eltype(ŷ), eltype(y))
+    return __fused_agg(loss.agg, Base.Fix1(max, T(0)), 1 .- y .* ŷ)
+end
+
+@kwdef @concrete struct SquaredHingeLoss <: AbstractLossFunction
+    agg = mean
+end
+
+function __unsafe_apply_loss(loss::SquaredHingeLoss, ŷ, y)
+    T = promote_type(eltype(ŷ), eltype(y))
+    return __fused_agg(loss.agg, abs2 ∘ Base.Fix2(max, T(0)), 1 .- y .* ŷ)
+end
+
+@concrete struct KLDivergenceLoss{C <: CrossEntropyLoss} <: AbstractLossFunction
+    agg
+    dims
+    celoss::C
+end
+
+function KLDivergenceLoss(; dims=1, agg=mean, epsilon=nothing, label_smoothing=nothing)
+    celoss = CrossEntropyLoss(; dims, agg, epsilon, label_smoothing)
+    return KLDivergenceLoss(agg, dims, celoss)
+end
+
+function __unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
+    cross_entropy = __unsafe_apply_loss(loss.celoss, ŷ, y)
+    entropy = loss.agg(sum(xlogx, y; loss.dims))
+    return entropy + cross_entropy
+end
+
+@kwdef @concrete struct PoissonLoss <: AbstractLossFunction
+    agg = mean
+    epsilon = nothing
+end
+
+function __unsafe_apply_loss(loss::PoissonLoss, ŷ, y)
+    T = promote_type(eltype(ŷ), eltype(y))
+    ϵ = __get_epsilon(T, loss.epsilon)
+    return loss.agg(ŷ .- xlogy.(y, ŷ .+ ϵ))
+end
 
 ```@meta
 DocTestFilters = nothing

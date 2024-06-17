@@ -1,3 +1,5 @@
+# Eventually the idea is to create a package `DeepLearningLosses.jl` and move this
+# functionality there and simply reexport it here.
 module Losses # A huge chunk of this code has been derived from Flux.jl
 
 using PrecompileTools: @recompile_invalidations
@@ -20,8 +22,9 @@ abstract type AbstractLossFunction <: Function end
 include("utils.jl")
 include("loss_functions.jl")
 
-export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, FocalLoss, L1Loss, L2Loss,
-       MAELoss, MSELoss, MSLELoss, SiameseContrastiveLoss, TverskyLoss
+export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, FocalLoss, HingeLoss,
+       HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
+       PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss, TverskyLoss
 
 end
 
