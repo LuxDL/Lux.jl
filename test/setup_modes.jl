@@ -1,8 +1,18 @@
-using Lux, LuxCUDA, LuxAMDGPU
+using Lux, GPUArraysCore, Pkg
 
-CUDA.allowscalar(false)
+GPUArraysCore.allowscalar(false)
 
 const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
+
+if BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA"
+    Pkg.add("LuxCUDA")
+    using LuxCUDA
+end
+
+if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
+    Pkg.add("LuxAMDGPU")
+    using LuxAMDGPU
+end
 
 cpu_testing() = BACKEND_GROUP == "All" || BACKEND_GROUP == "CPU"
 cuda_testing() = (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && LuxCUDA.functional()
@@ -12,14 +22,10 @@ end
 
 const MODES = begin
     # Mode, Array Type, Device Function, GPU?
-    cpu_mode = ("CPU", Array, LuxCPUDevice(), false)
-    cuda_mode = ("CUDA", CuArray, LuxCUDADevice(), true)
-    amdgpu_mode = ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true)
-
     modes = []
-    cpu_testing() && push!(modes, cpu_mode)
-    cuda_testing() && push!(modes, cuda_mode)
-    amdgpu_testing() && push!(modes, amdgpu_mode)
+    cpu_testing() && push!(modes, ("CPU", Array, LuxCPUDevice(), false))
+    cuda_testing() && push!(modes, ("CUDA", CuArray, LuxCUDADevice(), true))
+    amdgpu_testing() && push!(modes, ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true))
 
     modes
 end

@@ -1,4 +1,4 @@
-using ReTestItems
+using ReTestItems, Pkg, Tests
 
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 @info "Running tests for group: $LUX_TEST_GROUP"
@@ -11,8 +11,6 @@ else
 end
 
 # Distributed Tests
-using Pkg, Test
-
 if LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed"
     Pkg.add(["MPI", "NCCL"])
     using MPI
