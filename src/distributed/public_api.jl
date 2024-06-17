@@ -1,6 +1,7 @@
 module DistributedUtils
 
 using ChainRulesCore: ChainRulesCore
+using Compat: @compat
 using ConcreteStructs: @concrete
 using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
 using LuxDeviceUtils: get_device
@@ -263,5 +264,10 @@ function DistributedOptimizer(backend::AbstractLuxDistributedBackend, opt)
         error("`Optimisers.jl` must be installed and loaded before using this.")
     return getproperty(mod, :DistributedOptimizer)(backend, opt)
 end
+
+@compat(public,
+    (initialized, initialize, get_distributed_backend, local_rank,
+        total_workers, bcast!, allreduce!, reduce!, synchronize!!,
+        DistributedDataContainer, DistributedOptimizer, avg))
 
 end
