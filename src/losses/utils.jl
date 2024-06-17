@@ -1,6 +1,5 @@
 """
     xlogx(x::Number)
-using Base: func_for_method_checked
 
 Return `x * log(x)` for `x ≥ 0`, handling `x == 0` by taking the limit from above, to get
 zero.

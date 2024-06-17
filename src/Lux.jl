@@ -111,9 +111,9 @@ export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
 
-export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, FocalLoss, HingeLoss,
-       HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss, PoissonLoss,
-       SiameseContrastiveLoss, SquaredHingeLoss, TverskyLoss
+export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
+       HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
+       PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss, TverskyLoss
 
 export f16, f32, f64
 

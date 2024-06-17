@@ -22,8 +22,8 @@ abstract type AbstractLossFunction <: Function end
 include("utils.jl")
 include("loss_functions.jl")
 
-export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, FocalLoss, HingeLoss,
-       HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
+export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
+       HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
        PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss, TverskyLoss
 
 end
