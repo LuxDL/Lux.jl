@@ -32,6 +32,9 @@ using PrecompileTools: @recompile_invalidations
 
     # @compact and stateful layers
     using ConstructionBase: ConstructionBase
+
+    # For public keyword
+    using Compat: @compat
 end
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
@@ -113,5 +116,8 @@ export ToSimpleChainsAdaptor, SimpleChainsLayer
 export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
+
+# Unexported functions that are part of the public API
+@compat public Experimental
 
 end

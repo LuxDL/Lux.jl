@@ -8,6 +8,7 @@ import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
 using ADTypes: ADTypes
 using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
+using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Functors: Functors, KeyPath, fmap_with_path, fmapstructure, functor
@@ -23,6 +24,12 @@ include("freeze.jl")
 include("share_parameters.jl")
 include("debug.jl")
 include("deprecated.jl")
+
+@compat public layer_map, @layer_map
+@compat public TrainState, apply_gradients, apply_gradients!, compute_gradients
+@compat public FrozenLayer, freeze, unfreeze
+@compat public share_parameters
+@compat public DebugLayer, @debug_mode
 
 end
 
