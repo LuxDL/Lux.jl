@@ -20,18 +20,8 @@ get_stable_rng(seed=12345) = StableRNG(seed)
 
 __display(args...) = (println(); display(args...))
 
-# AMDGPU Specifics
-function _rocRAND_functional()
-    try
-        get_default_rng("AMDGPU")
-        return true
-    catch
-        return false
-    end
-end
-
 export @jet, @test_gradients, check_approx
 export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
-       get_stable_rng, __display, _rocRAND_functional
+       get_stable_rng, __display
 
 end

@@ -3,17 +3,6 @@ using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
 using LuxTestUtils, LuxDeviceUtils
 using LuxAMDGPU, LuxCUDA
 
-# Doctest Imports
-doctestexpr = quote
-    using SimpleChains: static
-    using Flux: Flux
-    using Metalhead: Metalhead
-    using DynamicExpressions
-    using Adapt, Lux, Random, Optimisers, Zygote
-end
-
-DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
-
 #! format: off
 
 pages = [
@@ -93,7 +82,7 @@ deploy_decision = Documenter.deploy_folder(deploy_config; repo="github.com/LuxDL
 makedocs(; sitename="Lux.jl Documentation",
     authors="Avik Pal et al.",
     clean=true,
-    doctest=true,
+    doctest=false,  # We test it in the CI, no need to run it here
     modules=[Lux, LuxCore, LuxLib, WeightInitializers, Boltz,
         LuxTestUtils, LuxDeviceUtils, LuxAMDGPU, LuxCUDA],
     linkcheck=true,

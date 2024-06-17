@@ -1,4 +1,4 @@
-using ReTestItems
+using ReTestItems, Pkg, Test
 
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 @info "Running tests for group: $LUX_TEST_GROUP"
@@ -11,9 +11,10 @@ else
 end
 
 # Distributed Tests
-using MPI, Pkg, Test
-
 if LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed"
+    Pkg.add(["MPI", "NCCL"])
+    using MPI
+
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")
     nprocs = nprocs_str == "" ? clamp(Sys.CPU_THREADS, 2, 4) : parse(Int, nprocs_str)
     testdir = @__DIR__

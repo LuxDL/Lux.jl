@@ -7,6 +7,9 @@
 end
 
 @testitem "Explicit Imports: Quality Assurance" tags=[:others] begin
+    import Pkg
+    Pkg.add(["Flux", "LuxAMDGPU"])
+
     # Load all trigger packages
     import Lux, ComponentArrays, ReverseDiff, Flux, LuxAMDGPU, SimpleChains, Tracker,
            Zygote, Enzyme
@@ -21,4 +24,21 @@ end
     @test check_no_stale_explicit_imports(Lux;
         ignore=(:inputsize, :setup, :testmode, :trainmode, :update_state, :AbstractRNG)) ===
           nothing
+end
+
+@testitem "doctests: Quality Assurance" tags=[:others] begin
+    using Documenter
+
+    import Pkg
+    Pkg.add("Flux")
+
+    doctestexpr = quote
+        using SimpleChains: static
+        using Flux: Flux
+        using DynamicExpressions
+        using Adapt, Lux, Random, Optimisers, Zygote
+    end
+
+    DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)
+    doctest(Lux; manual=false)
 end

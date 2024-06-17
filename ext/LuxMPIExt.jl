@@ -3,7 +3,7 @@ module LuxMPIExt
 using Lux: MPIBackend, NCCLBackend, DistributedUtils, __unwrap_val, MPI_CUDA_AWARE,
            MPI_ROCM_AWARE
 using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device,
-                      set_device!, __is_functional
+                      set_device!, functional
 using MPI: MPI
 
 function DistributedUtils.__initialize(
@@ -14,7 +14,7 @@ function DistributedUtils.__initialize(
 
     local_rank = MPI.Comm_rank(MPI.COMM_WORLD)
 
-    if cuda_devices !== missing && __is_functional(LuxCUDADevice)
+    if cuda_devices !== missing && functional(LuxCUDADevice)
         if cuda_devices === nothing
             set_device!(LuxCUDADevice, nothing, local_rank + 1)
         else
@@ -24,7 +24,7 @@ function DistributedUtils.__initialize(
         error(lazy"CUDA devices are not functional (or `LuxCUDA.jl` not loaded) and `force_cuda` is set to `true`. This is caused by backend: $(caller).")
     end
 
-    if amdgpu_devices !== missing && __is_functional(LuxAMDGPUDevice)
+    if amdgpu_devices !== missing && functional(LuxAMDGPUDevice)
         if amdgpu_devices === nothing
             set_device!(LuxAMDGPUDevice, nothing, local_rank + 1)
         else
