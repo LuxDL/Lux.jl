@@ -5,7 +5,7 @@
 
 # ## Package Imports
 
-using Lux, ADTypes, LuxAMDGPU, LuxCUDA, Optimisers, Printf, Random, Statistics, Zygote
+using Lux, ADTypes, AMDGPU, LuxCUDA, Optimisers, Printf, Random, Statistics, Zygote
 using CairoMakie
 
 # ## Dataset

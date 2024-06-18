@@ -5,7 +5,7 @@ if input_args[1] == "CUDA"
     using LuxCUDA
 end
 if input_args[1] == "AMDGPU"
-    using LuxAMDGPU
+    using AMDGPU
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend

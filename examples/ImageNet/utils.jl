@@ -2,13 +2,13 @@ CUDA.allowscalar(false)
 
 function unsafe_free! end
 
-if LuxCUDA.functional()
+if LuxDeviceUtils.functional(LuxCUDADevice)
     function unsafe_free!(x)
         return hasmethod(CUDA.unsafe_free!, Tuple{typeof(x)}) ? CUDA.unsafe_free!(x) :
                nothing
     end
     unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
-elseif LuxAMDGPU.functional()
+elseif LuxDeviceUtils.functional(LuxAMDGPUDevice)
     function unsafe_free!(x)
         return hasmethod(AMDGPU.unsafe_free!, Tuple{typeof(x)}) ? AMDGPU.unsafe_free!(x) :
                nothing
@@ -18,8 +18,8 @@ end
 
 function reclaim_all()
     GC.gc(true)
-    LuxCUDA.functional() && CUDA.reclaim()
-    LuxAMDGPU.functional() && AMDGPU.reclaim()
+    LuxDeviceUtils.functional(LuxCUDADevice) && CUDA.reclaim()
+    LuxDeviceUtils.functional(LuxAMDGPUDevice) && AMDGPU.reclaim()
     return
 end
 

@@ -3,7 +3,7 @@ using ReTestItems, Pkg, Test
 const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
 
 (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && Pkg.add("LuxCUDA")
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && Pkg.add(["AMDGPU", "LuxAMDGPU"])
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && Pkg.add("AMDGPU")
 
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 @info "Running tests for group: $LUX_TEST_GROUP"

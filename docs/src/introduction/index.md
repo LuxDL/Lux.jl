@@ -25,7 +25,7 @@ import Pkg; Pkg.add("Lux")
 
 ```@example quickstart
 using Lux, Random, Optimisers, Zygote
-# using LuxCUDA, LuxAMDGPU, Metal # Optional packages for GPU support
+# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
 ```
 
 We take randomness very seriously
@@ -73,7 +73,7 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)  # or Optimisers.update!(st_opt, 
 
 ```@example custom_compact
 using Lux, Random, Optimisers, Zygote
-# using LuxCUDA, LuxAMDGPU, Metal # Optional packages for GPU support
+# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
 using Printf  # For pretty printing
 ```
 
@@ -134,5 +134,6 @@ You can install all those packages via `import Pkg; Pkg.add(<package name>)`.
 GPU Support for Lux.jl requires loading additional packages:
 
 * [`LuxCUDA.jl`](https://github.com/LuxDL/LuxCUDA.jl) for CUDA support.
-* [`LuxAMDGPU.jl`](https://github.com/LuxDL/LuxAMDGPU.jl) for AMDGPU support.
+* [`AMDGPU.jl`](https://github.com/JuliaGPU/AMDGPU.jl) for AMDGPU support.
 * [`Metal.jl`](https://github.com/JuliaGPU/Metal.jl) for Apple Metal support.
+* [`oneAPI.jl`](https://github.com/JuliaGPU/oneAPI.jl) for oneAPI support.

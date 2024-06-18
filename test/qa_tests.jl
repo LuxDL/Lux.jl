@@ -6,13 +6,16 @@
         Lux; treat_as_own=[ChainRulesCore.frule, ChainRulesCore.rrule, Core.kwcall])
 end
 
-@testitem "Explicit Imports: Quality Assurance" tags=[:others] begin
+@testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
     import Pkg
-    Pkg.add(["Flux", "LuxAMDGPU"])
+    Pkg.add("Flux")
+
+    if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
+        using AMDGPU
+    end
 
     # Load all trigger packages
-    import Lux, ComponentArrays, ReverseDiff, Flux, LuxAMDGPU, SimpleChains, Tracker,
-           Zygote, Enzyme
+    import Lux, ComponentArrays, ReverseDiff, Flux, SimpleChains, Tracker, Zygote, Enzyme
 
     using ExplicitImports
 

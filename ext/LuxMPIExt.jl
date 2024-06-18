@@ -31,7 +31,7 @@ function DistributedUtils.__initialize(
             set_device!(LuxAMDGPUDevice, amdgpu_devices[local_rank + 1])
         end
     elseif force_amdgpu
-        error(lazy"AMDGPU devices are not functional (or `LuxAMDGPU.jl` not loaded) and `force_amdgpu` is set to `true`. This is caused by backend: $(caller).")
+        error(lazy"AMDGPU devices are not functional (or `AMDGPU.jl` not loaded) and `force_amdgpu` is set to `true`. This is caused by backend: $(caller).")
     end
 
     return

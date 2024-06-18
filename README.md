@@ -34,7 +34,7 @@ Pkg.add("Lux")
 
 ```julia
 using Lux, Random, Optimisers, Zygote
-# using LuxCUDA, LuxAMDGPU # Optional packages for GPU support
+# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
 
 # Seeding
 rng = Random.default_rng()

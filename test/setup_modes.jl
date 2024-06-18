@@ -1,4 +1,4 @@
-using Lux, GPUArraysCore, Pkg
+using Lux, LuxDeviceUtils, GPUArraysCore, Pkg
 
 GPUArraysCore.allowscalar(false)
 
@@ -10,14 +10,18 @@ if BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA"
 end
 
 if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
-    Pkg.add(["AMDGPU", "LuxAMDGPU"])
-    using LuxAMDGPU
+    Pkg.add("AMDGPU")
+    using AMDGPU
 end
 
 cpu_testing() = BACKEND_GROUP == "All" || BACKEND_GROUP == "CPU"
-cuda_testing() = (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && LuxCUDA.functional()
+function cuda_testing()
+    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") &&
+           LuxDeviceUtils.functional(LuxCUDADevice)
+end
 function amdgpu_testing()
-    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && LuxAMDGPU.functional()
+    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") &&
+           LuxDeviceUtils.functional(LuxAMDGPUDevice)
 end
 
 const MODES = begin

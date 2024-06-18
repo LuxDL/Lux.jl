@@ -7,7 +7,7 @@
 # ## Package Imports
 
 using ArgCheck, CairoMakie, ChainRulesCore, ConcreteStructs, Comonicon, DataAugmentation,
-      DataDeps, FileIO, ImageCore, JLD2, Lux, LuxAMDGPU, LuxCUDA, MLUtils, Optimisers,
+      DataDeps, FileIO, ImageCore, JLD2, Lux, LuxCUDA, MLUtils, Optimisers,
       ParameterSchedulers, ProgressBars, Random, Setfield, StableRNGs, Statistics, Zygote
 using TensorBoardLogger: TBLogger, log_value, log_images
 const CRC = ChainRulesCore

@@ -7,8 +7,8 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, SciMLSensitivity, LuxAMDGPU, LuxCUDA, Optimisers,
-      OrdinaryDiffEq, Random, Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
+using Lux, ComponentArrays, SciMLSensitivity, AMDGPU, LuxCUDA, Optimisers, OrdinaryDiffEq,
+      Random, Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
 import MLDatasets: MNIST
 import MLUtils: DataLoader, splitobs
 
