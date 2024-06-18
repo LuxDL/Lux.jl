@@ -10,7 +10,7 @@ if BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA"
 end
 
 if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
-    Pkg.add("LuxAMDGPU")
+    Pkg.add(["AMDGPU", "LuxAMDGPU"])
     using LuxAMDGPU
 end
 

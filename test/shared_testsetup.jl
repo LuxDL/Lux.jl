@@ -1,12 +1,13 @@
 @testsetup module SharedTestSetup
+
+include("setup_modes.jl")
+
 import Reexport: @reexport
 
 using Lux
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics
 using LuxTestUtils: @jet, @test_gradients, check_approx
-
-include("setup_modes.jl")
 
 # Some Helper Functions
 function get_default_rng(mode::String)

@@ -1,7 +1,17 @@
 using ReTestItems, Pkg, Test
 
+const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
+
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && Pkg.add("LuxCUDA")
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && Pkg.add(["AMDGPU", "LuxAMDGPU"])
+
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 @info "Running tests for group: $LUX_TEST_GROUP"
+
+(LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed") && Pkg.add(["MPI", "NCCL"])
+(LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "others") && Pkg.add("Flux")
+
+Pkg.instantiate()
 
 if LUX_TEST_GROUP == "all"
     ReTestItems.runtests(@__DIR__)
@@ -12,7 +22,6 @@ end
 
 # Distributed Tests
 if LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed"
-    Pkg.add(["MPI", "NCCL"])
     using MPI
 
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")
