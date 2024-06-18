@@ -1,34 +1,42 @@
 using ReTestItems, Pkg, Test
 
 const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
-const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
+    "normalize_layers", "others", "autodiff", "recurrent_layers"]
+
+__INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+const LUX_TEST_GROUP = if startswith("!", __INPUT_TEST_GROUP[1])
+    exclude_group = lowercase.(split(__INPUT_TEST_GROUP[2:end], ","))
+    filter(x -> x ∉ exclude_group, ALL_LUX_TEST_GROUPS)
+else
+    [__INPUT_TEST_GROUP]
+end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
 const EXTRA_PKGS = String[]
 
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "LuxCUDA")
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && push!(EXTRA_PKGS, "AMDGPU")
-if (LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed")
+if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, "MPI")
     (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "NCCL")
 end
-(LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "others") && push!(EXTRA_PKGS, "Flux")
+("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "LuxCUDA")
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && push!(EXTRA_PKGS, "AMDGPU")
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
     Pkg.add(EXTRA_PKGS)
+    Pkg.update()
     Pkg.instantiate()
 end
 
-if LUX_TEST_GROUP == "all"
-    ReTestItems.runtests(@__DIR__)
-else
-    tag = Symbol(LUX_TEST_GROUP)
-    ReTestItems.runtests(@__DIR__; tags=[tag])
+for tag in LUX_TEST_GROUP
+    @info "Running tests for group: $tag"
+    ReTestItems.runtests(@__DIR__; tags=[Symbol(tag)])
 end
 
 # Distributed Tests
-if LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed"
+if "all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP
     using MPI
 
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")

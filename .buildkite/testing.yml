@@ -53,7 +53,7 @@ steps:
 
   - group: ":julia: AMD GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
+      - label: ":julia: Julia: {{matrix.julia}} + {{matrix.test_group}} + AMD GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -69,7 +69,7 @@ steps:
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
           BACKEND_GROUP: "AMDGPU"
-          LUX_TEST_GROUP: "all"
+          LUX_TEST_GROUP: "{{matrix.test_group}}"
         agents:
           queue: "juliagpu"
           rocm: "*"
@@ -80,6 +80,9 @@ steps:
           setup:
             julia:
               - "1"
+            test_group:
+              - "!distributed"
+              - "distributed"
 
   - group: ":telescope: Downstream AMD GPU"
     steps:
@@ -111,6 +114,7 @@ steps:
 
 
 env:
+  JULIA_PKG_PRECOMPILE_AUTO: 0
   RETESTITEMS_NWORKERS: 8
   RETESTITEMS_NWORKER_THREADS: 2
   RETESTITEMS_TESTITEM_TIMEOUT: 10000

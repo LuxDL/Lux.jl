@@ -7,9 +7,6 @@
 end
 
 @testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
-    import Pkg
-    Pkg.add("Flux")
-
     if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
         using AMDGPU
     end
@@ -31,9 +28,6 @@ end
 
 @testitem "doctests: Quality Assurance" tags=[:others] begin
     using Documenter
-
-    import Pkg
-    Pkg.add("Flux")
 
     doctestexpr = quote
         using SimpleChains: static

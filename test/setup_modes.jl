@@ -5,12 +5,10 @@ GPUArraysCore.allowscalar(false)
 const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
 
 if BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA"
-    Pkg.add("LuxCUDA")
     using LuxCUDA
 end
 
 if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
-    Pkg.add("AMDGPU")
     using AMDGPU
 end
 

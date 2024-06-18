@@ -1,12 +1,13 @@
 @testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:others] begin
-    import Pkg
-    Pkg.add("Flux")
-
     import Flux
 
     from_flux = fdevice(::Lux.LuxCPUDevice) = Flux.cpu
     fdevice(::Lux.LuxCUDADevice) = Base.Fix1(Flux.gpu, Flux.FluxCUDAAdaptor())
     fdevice(::Lux.LuxAMDGPUDevice) = Base.Fix1(Flux.gpu, Flux.FluxAMDAdaptor())
+
+    toluxpsst = FromFluxAdaptor(; preserve_ps_st=true)
+    tolux = FromFluxAdaptor()
+    toluxforce = FromFluxAdaptor(; force_preserve=true, preserve_ps_st=true)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "Containers" begin
@@ -15,12 +16,12 @@
                         fdevice(device)
                 x = rand(Float32, 2, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (1, 1)
@@ -30,12 +31,12 @@
                 model = Flux.Maxout(() -> Flux.Dense(2 => 5), 4) |> fdevice(device)
                 x = rand(Float32, 2, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (5, 1)
@@ -45,12 +46,12 @@
                 model = Flux.SkipConnection(Flux.Dense(2 => 2), +) |> fdevice(device)
                 x = rand(Float32, 2, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (2, 1)
@@ -61,12 +62,12 @@
                         fdevice(device)
                 x = rand(Float32, 2, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (2, 1)
@@ -77,12 +78,12 @@
                         fdevice(device)
                 x = (rand(Float32, 2, 1), rand(Float32, 2, 1)) .|> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test all(model(x) .≈ model_lux(x, ps, st)[1])
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test all(size.(model_lux(x, ps, st)[1]) .== ((2, 1),))
@@ -95,12 +96,12 @@
                     Flux.Dense(2 => 4; bias=false) |> fdevice(device)]
                     x = randn(Float32, 2, 4) |> aType
 
-                    model_lux = transform(model; preserve_ps_st=true)
+                    model_lux = toluxpsst(model)
                     ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                     @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                    model_lux = transform(model)
+                    model_lux = tolux(model)
                     ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                     @test size(model_lux(x, ps, st)[1]) == size(model(x))
@@ -112,12 +113,12 @@
                     Flux.Scale(2; bias=false) |> fdevice(device)]
                     x = randn(Float32, 2, 4) |> aType
 
-                    model_lux = transform(model; preserve_ps_st=true)
+                    model_lux = toluxpsst(model)
                     ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                     @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                    model_lux = transform(model)
+                    model_lux = tolux(model)
                     ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                     @test size(model_lux(x, ps, st)[1]) == size(model(x))
@@ -130,12 +131,12 @@
                     x = randn(Float32, 2, 4) |> aType
                     y = randn(Float32, 3, 4) |> aType
 
-                    model_lux = transform(model; preserve_ps_st=true)
+                    model_lux = toluxpsst(model)
                     ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                     @test model(x, y) ≈ model_lux((x, y), ps, st)[1]
 
-                    model_lux = transform(model)
+                    model_lux = tolux(model)
                     ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                     @test size(model_lux((x, y), ps, st)[1]) == size(model(x, y))
@@ -146,12 +147,12 @@
                 model = Flux.Embedding(16 => 4) |> fdevice(device)
                 x = rand(1:16, 2, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (4, 2, 4)
@@ -163,7 +164,7 @@
                 model = Flux.Conv((3, 3), 1 => 2) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -171,7 +172,7 @@
                 model = Flux.Conv((3, 3), 1 => 2; pad=Flux.SamePad()) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -181,7 +182,7 @@
                 model = Flux.CrossCor((3, 3), 1 => 2) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -189,7 +190,7 @@
                 model = Flux.CrossCor((3, 3), 1 => 2; pad=Flux.SamePad()) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -199,7 +200,7 @@
                 model = Flux.ConvTranspose((3, 3), 1 => 2) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -208,7 +209,7 @@
                         fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -220,7 +221,7 @@
                 model = Flux.AdaptiveMaxPool((2, 2)) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -230,7 +231,7 @@
                 model = Flux.AdaptiveMeanPool((2, 2)) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -240,7 +241,7 @@
                 model = Flux.MaxPool((2, 2)) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -250,7 +251,7 @@
                 model = Flux.MeanPool((2, 2)) |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -260,7 +261,7 @@
                 model = Flux.GlobalMaxPool() |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -270,7 +271,7 @@
                 model = Flux.GlobalMeanPool() |> fdevice(device)
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -282,7 +283,7 @@
                 model = Flux.Upsample(5) |> fdevice(device)
                 x = rand(Float32, 2, 2, 2, 1) |> aType
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (10, 10, 2, 1)
@@ -293,7 +294,7 @@
                 model = Flux.PixelShuffle(2) |> fdevice(device)
                 x = randn(Float32, 2, 2, 4, 1) |> aType
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (4, 4, 1, 1)
@@ -308,7 +309,7 @@
                 model = Flux.RNNCell(2 => 3) |> fdevice(device)
                 x = rand(Float32, 2, 4) |> aType
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
@@ -318,7 +319,7 @@
                 model = Flux.LSTMCell(2 => 3) |> fdevice(device)
                 x = rand(Float32, 2, 4) |> aType
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
@@ -328,7 +329,7 @@
                 model = Flux.GRUCell(2 => 3) |> fdevice(device)
                 x = rand(Float32, 2, 4) |> aType
 
-                model_lux = transform(model)
+                model_lux = tolux(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
@@ -340,7 +341,7 @@
                 model = Flux.BatchNorm(2) |> fdevice(device)
                 x = randn(Float32, 2, 4) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
@@ -350,7 +351,7 @@
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model; preserve_ps_st=true, force_preserve=true)
+                model_lux = toluxforce(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
@@ -361,13 +362,13 @@
                 model = Flux.GroupNorm(4, 2) |> fdevice(device)
                 x = randn(Float32, 2, 2, 4, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model_lux = transform(model; preserve_ps_st=true, force_preserve=true)
+                model_lux = toluxforce(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
@@ -378,7 +379,7 @@
                 model = Flux.LayerNorm(4) |> fdevice(device)
                 x = randn(Float32, 4, 4, 4, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
@@ -389,7 +390,7 @@
                 model = Flux.InstanceNorm(4) |> fdevice(device)
                 x = randn(Float32, 4, 4, 4, 1) |> aType
 
-                model_lux = transform(model; preserve_ps_st=true)
+                model_lux = toluxpsst(model)
                 ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -398,7 +399,7 @@
 
         @testset "Dropout" begin
             @testset "Dropout" begin
-                model = transform(Flux.Dropout(0.5f0))
+                model = tolux(Flux.Dropout(0.5f0))
 
                 x = randn(Float32, 2, 4) |> aType
                 ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
@@ -412,7 +413,7 @@
             end
 
             @testset "AlphaDropout" begin
-                model = transform(Flux.AlphaDropout(0.5))
+                model = tolux(Flux.AlphaDropout(0.5))
 
                 x = randn(Float32, 2, 4) |> aType
                 ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
@@ -439,7 +440,7 @@
             c = CustomFluxLayer(randn(10), randn(10)) |> fdevice(device)
             x = randn(10) |> aType
 
-            c_lux = transform(c)
+            c_lux = tolux(c)
             ps, st = Lux.setup(get_stable_rng(12345), c_lux) .|> device
 
             @test c(x) ≈ c_lux(x, ps, st)[1]
