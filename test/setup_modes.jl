@@ -2,32 +2,35 @@ using Lux, LuxDeviceUtils, GPUArraysCore, Pkg
 
 GPUArraysCore.allowscalar(false)
 
-const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
+if !@isdefined(BACKEND_GROUP)
+    const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
+end
 
-if BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA"
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
     using LuxCUDA
 end
 
-if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+    Pkg.add("AMDGPU")  # Don't know why this is necessary
     using AMDGPU
 end
 
-cpu_testing() = BACKEND_GROUP == "All" || BACKEND_GROUP == "CPU"
+cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
-    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") &&
+    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
            LuxDeviceUtils.functional(LuxCUDADevice)
 end
 function amdgpu_testing()
-    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") &&
+    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
            LuxDeviceUtils.functional(LuxAMDGPUDevice)
 end
 
 const MODES = begin
     # Mode, Array Type, Device Function, GPU?
     modes = []
-    cpu_testing() && push!(modes, ("CPU", Array, LuxCPUDevice(), false))
-    cuda_testing() && push!(modes, ("CUDA", CuArray, LuxCUDADevice(), true))
-    amdgpu_testing() && push!(modes, ("AMDGPU", ROCArray, LuxAMDGPUDevice(), true))
+    cpu_testing() && push!(modes, ("cpu", Array, LuxCPUDevice(), false))
+    cuda_testing() && push!(modes, ("cuda", CuArray, LuxCUDADevice(), true))
+    amdgpu_testing() && push!(modes, ("amdgpu", ROCArray, LuxAMDGPUDevice(), true))
 
     modes
 end

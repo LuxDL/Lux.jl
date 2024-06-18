@@ -7,7 +7,7 @@
 end
 
 @testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
-    if BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU"
+    if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
         using AMDGPU
     end
 

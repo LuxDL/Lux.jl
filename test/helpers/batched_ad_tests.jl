@@ -5,7 +5,7 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
-        mode === "AMDGPU" && continue
+        mode === "amdgpu" && continue
 
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
@@ -58,7 +58,7 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
-        mode === "AMDGPU" && continue
+        mode === "amdgpu" && continue
 
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()),

@@ -1,6 +1,6 @@
 using ReTestItems, Pkg, Test
 
-const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
+const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
     "normalize_layers", "others", "autodiff", "recurrent_layers"]
 
@@ -17,22 +17,27 @@ const EXTRA_PKGS = String[]
 
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, "MPI")
-    (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "NCCL")
+    (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "NCCL")
 end
 ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "LuxCUDA")
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && push!(EXTRA_PKGS, "AMDGPU")
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
     Pkg.add(EXTRA_PKGS)
     Pkg.update()
+    Base.retry_load_extensions()
     Pkg.instantiate()
 end
 
 for tag in LUX_TEST_GROUP
     @info "Running tests for group: $tag"
-    ReTestItems.runtests(@__DIR__; tags=[Symbol(tag)])
+    if tag == "all"
+        ReTestItems.runtests(@__DIR__)
+    else
+        ReTestItems.runtests(@__DIR__; tags=[Symbol(tag)])
+    end
 end
 
 # Distributed Tests
@@ -59,12 +64,12 @@ if "all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP
     include("setup_modes.jl")
 
     @testset "MODE: $(mode)" for (mode, aType, dev, ongpu) in MODES
-        if mode == "AMDGPU"
+        if mode == "amdgpu"
             # AMDGPU needs to cause a deadlock, needs to be investigated
             @test_broken 1 == 2
             continue
         end
-        backends = mode == "CUDA" ? ("mpi", "nccl") : ("mpi",)
+        backends = mode == "cuda" ? ("mpi", "nccl") : ("mpi",)
         for backend_type in backends
             np = backend_type == "nccl" ? min(nprocs, length(CUDA.devices())) : nprocs
             @testset "Backend: $(backend_type)" begin

@@ -1,16 +1,16 @@
 using Lux, MPI, Optimisers, Random, Test
 
-const input_args = length(ARGS) == 2 ? ARGS : ("CPU", "mpi")
-if input_args[1] == "CUDA"
+const input_args = length(ARGS) == 2 ? ARGS : ("cpu", "mpi")
+if input_args[1] == "cuda"
     using LuxCUDA, NCCL
 end
-if input_args[1] == "AMDGPU"
+if input_args[1] == "amdgpu"
     using AMDGPU
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
-const dev = input_args[1] == "CPU" ? LuxCPUDevice() :
-            (input_args[1] == "CUDA" ? LuxCUDADevice() : LuxAMDGPUDevice())
+const dev = input_args[1] == "cpu" ? LuxCPUDevice() :
+            (input_args[1] == "cuda" ? LuxCUDADevice() : LuxAMDGPUDevice())
 
 DistributedUtils.initialize(backend_type)
 backend = DistributedUtils.get_distributed_backend(backend_type)
