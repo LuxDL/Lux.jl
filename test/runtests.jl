@@ -1,17 +1,24 @@
 using ReTestItems, Pkg, Test
 
 const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
-
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && Pkg.add("LuxCUDA")
-(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && Pkg.add("AMDGPU")
-
 const LUX_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 @info "Running tests for group: $LUX_TEST_GROUP"
 
-(LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed") && Pkg.add(["MPI", "NCCL"])
-(LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "others") && Pkg.add("Flux")
+const EXTRA_PKGS = String[]
 
-Pkg.instantiate()
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "LuxCUDA")
+(BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") && push!(EXTRA_PKGS, "AMDGPU")
+if (LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "distributed")
+    push!(EXTRA_PKGS, "MPI")
+    (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") && push!(EXTRA_PKGS, "NCCL")
+end
+(LUX_TEST_GROUP == "all" || LUX_TEST_GROUP == "others") && push!(EXTRA_PKGS, "Flux")
+
+if !isempty(EXTRA_PKGS)
+    @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
+    Pkg.add(EXTRA_PKGS)
+    Pkg.instantiate()
+end
 
 if LUX_TEST_GROUP == "all"
     ReTestItems.runtests(@__DIR__)

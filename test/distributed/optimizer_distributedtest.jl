@@ -1,8 +1,8 @@
-using Lux, MPI, NCCL, Optimisers, Random, Test
+using Lux, MPI, Optimisers, Random, Test
 
 const input_args = length(ARGS) == 2 ? ARGS : ("CPU", "mpi")
 if input_args[1] == "CUDA"
-    using LuxCUDA
+    using LuxCUDA, NCCL
 end
 if input_args[1] == "AMDGPU"
     using AMDGPU

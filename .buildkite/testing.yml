@@ -65,7 +65,6 @@ steps:
                 - src
                 - ext
         env:
-          RETESTITEMS_NWORKERS: 2
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
