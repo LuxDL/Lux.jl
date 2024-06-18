@@ -17,7 +17,6 @@ steps:
           cuda: "*"
         env:
           BACKEND_GROUP: "CUDA"
-          LUX_TEST_GROUP: "all"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 240
         matrix:
@@ -65,12 +64,11 @@ steps:
                 - src
                 - ext
         env:
-          RETESTITEMS_NWORKERS: 2
+          RETESTITEMS_NWORKERS: 0
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
           BACKEND_GROUP: "AMDGPU"
-          LUX_TEST_GROUP: "all"
         agents:
           queue: "juliagpu"
           rocm: "*"
@@ -99,7 +97,6 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         env:
-          RETESTITEMS_NWORKERS: 2
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
@@ -112,6 +109,7 @@ steps:
 
 
 env:
+  JULIA_PKG_PRECOMPILE_AUTO: 0
   RETESTITEMS_NWORKERS: 8
   RETESTITEMS_NWORKER_THREADS: 2
   RETESTITEMS_TESTITEM_TIMEOUT: 10000

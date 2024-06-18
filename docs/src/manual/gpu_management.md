@@ -10,7 +10,8 @@
 `Lux.jl` can handle multiple GPU backends. Currently, the following backends are supported:
 
 ```@example gpu_management
-using Lux, LuxCUDA, LuxAMDGPU  # Important to load trigger packages
+# Important to load trigger packages
+using Lux, LuxCUDA #, AMDGPU, Metal, oneAPI
 
 supported_gpu_backends()
 ```
@@ -59,14 +60,14 @@ Automatic Device Selection can be circumvented by directly using `LuxCPUDevice` 
 `AbstractLuxGPUDevice` objects.
 
 ```@example gpu_management
-cdev = LuxCPUDevice()
+cdev = cpu_device()
 
 x_cpu = randn(Float32, 3, 2)
 
-if LuxCUDA.functional()
+if LuxDeviceUtils.functional(LuxCUDADevice)
     gdev = LuxCUDADevice()
     x_gpu = x_cpu |> gdev
-elseif LuxAMDGPU.functional()
+elseif LuxDeviceUtils.functional(LuxAMDGPUDevice)
     gdev = LuxAMDGPUDevice()
     x_gpu = x_cpu |> gdev
 else

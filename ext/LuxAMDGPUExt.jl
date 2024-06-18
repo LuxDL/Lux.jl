@@ -1,6 +1,6 @@
-module LuxLuxAMDGPUExt
+module LuxAMDGPUExt
 
-using LuxAMDGPU: AMDGPU
+using AMDGPU: AMDGPU
 using Lux: Lux
 
 # Flux modifies Conv weights while mapping to AMD GPU

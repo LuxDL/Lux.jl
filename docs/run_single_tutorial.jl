@@ -24,14 +24,16 @@ function preprocess(path, str)
     using InteractiveUtils
     InteractiveUtils.versioninfo()
 
-    if @isdefined(LuxCUDA) && CUDA.functional()
-        println()
-        CUDA.versioninfo()
-    end
+    if @isdefined(LuxDeviceUtils)
+        if @isdefined(CUDA) && LuxDeviceUtils.functional(LuxCUDADevice)
+            println()
+            CUDA.versioninfo()
+        end
 
-    if @isdefined(LuxAMDGPU) && LuxAMDGPU.functional()
-        println()
-        AMDGPU.versioninfo()
+        if @isdefined(AMDGPU) && LuxDeviceUtils.functional(LuxAMDGPUDevice)
+            println()
+            AMDGPU.versioninfo()
+        end
     end
 
     nothing #hide

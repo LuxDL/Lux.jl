@@ -73,7 +73,7 @@
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev
 
-            if mode == "AMDGPU" && (model isa Conv || model isa LayerNorm)
+            if mode == "amdgpu" && (model isa Conv || model isa LayerNorm)
                 @test_broken false
             else
                 @inferred model(x, ps, st)

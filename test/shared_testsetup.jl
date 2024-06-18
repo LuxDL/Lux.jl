@@ -1,4 +1,7 @@
 @testsetup module SharedTestSetup
+
+include("setup_modes.jl")
+
 import Reexport: @reexport
 
 using Lux
@@ -6,12 +9,10 @@ using Lux
                 Zygote, Statistics
 using LuxTestUtils: @jet, @test_gradients, check_approx
 
-include("setup_modes.jl")
-
 # Some Helper Functions
 function get_default_rng(mode::String)
-    dev = mode == "CPU" ? LuxCPUDevice() :
-          mode == "CUDA" ? LuxCUDADevice() : mode == "AMDGPU" ? LuxAMDGPUDevice() : nothing
+    dev = mode == "cpu" ? LuxCPUDevice() :
+          mode == "cuda" ? LuxCUDADevice() : mode == "amdgpu" ? LuxAMDGPUDevice() : nothing
     rng = default_device_rng(dev)
     return rng isa TaskLocalRNG ? copy(rng) : deepcopy(rng)
 end

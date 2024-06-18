@@ -316,7 +316,7 @@ end
                         @test length(y_) == 4
                         @test all(x -> size(x) == (5, 2), y_)
 
-                        if mode != "AMDGPU"
+                        if mode != "amdgpu"
                             __f = p -> sum(first(rnn(x, p, st)))
                             @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 
@@ -346,7 +346,7 @@ end
                         @test length(y_) == 4
                         @test all(x -> size(x) == (5,), y_)
 
-                        if mode != "AMDGPU"
+                        if mode != "amdgpu"
                             __f = p -> sum(first(rnn(x, p, st)))
                             @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 

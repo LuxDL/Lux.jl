@@ -1,16 +1,16 @@
-using Lux, MLUtils, MPI, NCCL, Random, Test
+using Lux, MLUtils, MPI, Random, Test
 
-const input_args = length(ARGS) == 2 ? ARGS : ("CPU", "mpi")
-if input_args[1] == "CUDA"
-    using LuxCUDA
+const input_args = length(ARGS) == 2 ? ARGS : ("cpu", "mpi")
+if input_args[1] == "cuda"
+    using LuxCUDA, NCCL
 end
-if input_args[1] == "AMDGPU"
-    using LuxAMDGPU
+if input_args[1] == "amdgpu"
+    using AMDGPU
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
-const dev = input_args[1] == "CPU" ? LuxCPUDevice() :
-            (input_args[1] == "CUDA" ? LuxCUDADevice() : LuxAMDGPUDevice())
+const dev = input_args[1] == "cpu" ? LuxCPUDevice() :
+            (input_args[1] == "cuda" ? LuxCUDADevice() : LuxAMDGPUDevice())
 
 rng = Xoshiro(1234)
 

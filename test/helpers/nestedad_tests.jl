@@ -7,7 +7,7 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
-        mode === "AMDGPU" && continue
+        mode === "amdgpu" && continue
 
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
             aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
@@ -85,7 +85,7 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
-        mode === "AMDGPU" && continue
+        mode === "amdgpu" && continue
 
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
             aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
@@ -167,7 +167,7 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
-        mode === "AMDGPU" && continue
+        mode === "amdgpu" && continue
 
         @testset "Structured Matrix: Issue LuxDL/Lux.jl#602" begin
             model = @compact(; potential=Dense(5 => 5, gelu)) do x
@@ -207,7 +207,7 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
-        mode === "AMDGPU" && continue
+        mode === "amdgpu" && continue
 
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
