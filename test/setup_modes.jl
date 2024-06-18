@@ -11,7 +11,6 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
 end
 
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
-    Pkg.add("AMDGPU")  # Don't know why this is necessary
     using AMDGPU
 end
 
