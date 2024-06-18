@@ -100,9 +100,8 @@ function train()
         for (x, y) in train_dataloader
             x = x |> dev
             y = y |> dev
-            (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
+            (_, _, _, train_state) = Lux.Experimental.single_train_step!(
                 AutoZygote(), loss, (data_idx, x, y), train_state)
-            train_state = Lux.Experimental.apply_gradients!(train_state, gs)
         end
         ttime = time() - stime
 
@@ -117,7 +116,8 @@ function train()
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
-        @printf "[%3d/%3d] \t %12s \t Time %.5fs \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
+        @printf "[%3d/%3d] \t %12s \t Time %.5fs \t Training Accuracy: %.2f%% \t Test \
+                 Accuracy: %.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
     end
 
     println()
@@ -135,7 +135,8 @@ function train()
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
-        @printf "[FINAL] \t %12s \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" data_name train_acc test_acc
+        @printf "[FINAL] \t %12s \t Training Accuracy: %.2f%% \t Test Accuracy: \
+                 %.2f%%\n" data_name train_acc test_acc
     end
 end
 

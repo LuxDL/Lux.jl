@@ -35,7 +35,7 @@ function loadmnist(batchsize, train_split)
 end
 
 # ## Define the Neural ODE Layer
-# 
+#
 # First we will use the [`@compact`](@ref) macro to define the Neural ODE Layer.
 
 function NeuralODECompact(
@@ -107,9 +107,9 @@ end
 # ## Define Utility Functions
 logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
 
-function loss(x, y, model, ps, st)
+function loss(model, ps, st, (x, y))
     y_pred, st = model(x, ps, st)
-    return logitcrossentropy(y_pred, y), st
+    return logitcrossentropy(y_pred, y), st, (;)
 end
 
 function accuracy(model, ps, st, dataloader; dev=gpu_device())
@@ -142,15 +142,15 @@ function train(model_function; cpu::Bool=false, kwargs...)
         for (x, y) in train_dataloader
             x = dev(x)
             y = dev(y)
-            grads, loss, _, tstate = Lux.Experimental.compute_gradients(
+            _, _, _, tstate = Lux.Experimental.single_train_step!(
                 AutoZygote(), loss, (x, y), tstate)
-            tstate = Lux.Experimental.apply_gradients!(tstate, grads)
         end
         ttime = time() - stime
 
         tr_acc = accuracy(model, tstate.parameters, tstate.states, train_dataloader; dev)
         te_acc = accuracy(model, tstate.parameters, tstate.states, test_dataloader; dev)
-        @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
+        @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test \
+                 Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
     end
 end
 

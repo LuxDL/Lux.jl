@@ -183,7 +183,7 @@ for inplace in ("!", "")
     step, apply_fn = Symbol(:single_train_step, inplace), Symbol(:apply_gradients, inplace)
     @eval function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
         grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
-        ts = $apply_fn(ts, grads)
+        ts = $(apply_fn)(ts, grads)
         return grads, loss, stats, ts
     end
 end
