@@ -26,7 +26,9 @@ include("debug.jl")
 include("deprecated.jl")
 
 @compat public layer_map, @layer_map
-@compat public TrainState, apply_gradients, apply_gradients!, compute_gradients
+@compat(public,
+    (TrainState, apply_gradients, apply_gradients!,
+        compute_gradients, single_train_step, single_train_step!))
 @compat public FrozenLayer, freeze, unfreeze
 @compat public share_parameters
 @compat public DebugLayer, @debug_mode

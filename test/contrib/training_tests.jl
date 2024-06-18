@@ -91,6 +91,16 @@ end
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
             end
 
+            for epoch in 1:100, (x, y) in dataset_
+                grads, loss, _, tstate = Lux.Experimental.single_train_step!(
+                    ad, mse, (x, y), tstate)
+            end
+
+            for epoch in 1:100, (x, y) in dataset_
+                grads, loss, _, tstate = Lux.Experimental.single_train_step(
+                    ad, mse, (x, y), tstate)
+            end
+
             # Test the adjust API
             tstate = Optimisers.adjust(tstate, 0.1f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.1f0

@@ -12,12 +12,15 @@ using Setfield: @set!
     TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
         optimizer::Optimisers.AbstractRule;
         transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
+    TrainState(model::Lux.AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
 
 Constructor for [`TrainState`](@ref).
 
 ## Arguments
 
   - `rng`: Random Number Generator.
+  - `ps`: Parameters of the model.
+  - `st`: States of the model.
   - `model`: `Lux` model.
   - `optimizer`: Optimizer from `Optimisers.jl`.
   - `transform_variables`: Function to transform the variables of the model. Typically used
@@ -32,6 +35,11 @@ function Lux.Experimental.TrainState(
         optimizer::Optimisers.AbstractRule;
         transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
     ps, st = Lux.setup(rng, model) .|> transform_variables
+    return Lux.Experimental.TrainState(model, ps, st, optimizer)
+end
+
+function Lux.Experimental.TrainState(
+        model::Lux.AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
     st_opt = Optimisers.setup(optimizer, ps)
     return Lux.Experimental.TrainState(nothing, nothing, model, ps, st, st_opt, 0)
 end
