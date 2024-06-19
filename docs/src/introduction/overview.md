@@ -28,20 +28,24 @@ it both compiler and autodiff friendly.
   [edge cases and limitations](https://fluxml.ai/Optimisers.jl/dev/api/#Optimisers.destructure). Lux
   forces users to make an explicit distinction between state variables and parameter
   variables to avoid these issues. Also, it comes battery-included for distributed training.
-  
+
 * **Sensible display of Custom Layers** -- Ever wanted to see Pytorch like Network printouts
   or wondered how to extend the pretty printing of Flux's layers? Lux handles all of that
   by default.
-  
+
 * **Truly immutable models** - No *unexpected internal mutations* since all layers are
-  implemented as pure functions. All layers are also *deterministic* given the parameters and
-  state: if a layer is supposed to be stochastic (say `Dropout`), the state must contain a
-  seed which is then updated after the function call.
+  implemented as pure functions. All layers are also *deterministic* given the parameters
+  and state: if a layer is supposed to be stochastic (say [`Dropout`](@ref)), the state
+  must contain a seed which is then updated after the function call.
 
 * **Easy Parameter Manipulation** -- By separating parameter data and layer structures,
-  Lux makes implementing `WeightNorm`, `SpectralNorm`, etc. downright trivial.
-  Without this separation, it is much harder to pass such parameters
-  around without mutations which AD systems don't like.
+  Lux makes implementing [`WeightNorm`](@ref), `SpectralNorm`, etc. downright trivial.
+  Without this separation, it is much harder to pass such parameters around without
+  mutations which AD systems don't like.
+
+* **Wider AD Support** -- Lux has extensive support for most
+  [AD systems in julia](@ref autodiff-lux), while Flux is mostly tied to Zygote (with some
+  initial support for Enzyme).
 
 * **Small Neural Networks on CPU** -- Lux is developed for training large neural networks.
   For smaller architectures, we recommend using
@@ -58,3 +62,4 @@ it both compiler and autodiff friendly.
   For these, python frameworks like PyTorch and Jax are better suited.
 
 * **XLA Support** -- Lux doesn't compile to XLA which means no TPU support unfortunately.
+  We are currently actively working on XLA support via [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl).

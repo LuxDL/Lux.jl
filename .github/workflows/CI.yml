@@ -149,6 +149,8 @@ jobs:
         with:
           version: ${{ matrix.version }}
       - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          skip: 'AMDGPU'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:

@@ -1,6 +1,4 @@
-using Lux, LuxDeviceUtils, GPUArraysCore, Pkg
-
-GPUArraysCore.allowscalar(false)
+using Lux, LuxDeviceUtils
 
 if !@isdefined(BACKEND_GROUP)
     const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))

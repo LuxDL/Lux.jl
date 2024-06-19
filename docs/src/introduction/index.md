@@ -4,16 +4,11 @@
 
 Install [Julia v1.10 or above](https://julialang.org/downloads/). Lux.jl is available
 through the Julia package manager. You can enter it by pressing `]` in the REPL and then
-typing
+typing `add Lux`. Alternatively, you can also do
 
 ```julia
-pkg> add Lux
-```
-
-Alternatively, you can also do
-
-```julia
-import Pkg; Pkg.add("Lux")
+import Pkg
+Pkg.add("Lux")
 ```
 
 ## Quickstart

@@ -16,7 +16,7 @@ end
 const EXTRA_PKGS = String[]
 
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
-    push!(EXTRA_PKGS, "MPI")
+    BACKEND_GROUP != "amdgpu" && push!(EXTRA_PKGS, "MPI")
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "NCCL")
 end
 ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
@@ -41,7 +41,7 @@ for tag in LUX_TEST_GROUP
 end
 
 # Distributed Tests
-if "all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP
+if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP) && BACKEND_GROUP != "amdgpu"
     using MPI
 
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")
