@@ -100,7 +100,7 @@ end
     BinaryFocalLoss(; gamma = 2, agg = mean, epsilon = nothing)
 
 Return the binary focal loss [1]. The model input, $\hat{y}$, is expected to be normalized
-(i.e. [softmax](@ref Softmax) output).
+(i.e. softmax output).
 
 For $\gamma = 0$ this is equivalent to [`BinaryCrossEntropyLoss`](@ref).
 

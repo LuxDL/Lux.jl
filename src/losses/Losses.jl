@@ -7,6 +7,7 @@ using PrecompileTools: @recompile_invalidations
 @recompile_invalidations begin
     using ArgCheck: @argcheck
     using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk
+    using Compat: @compat
     using ConcreteStructs: @concrete
     using FastClosures: @closure
     using ..Lux: __unwrap_val
@@ -21,6 +22,8 @@ abstract type AbstractLossFunction <: Function end
 
 include("utils.jl")
 include("loss_functions.jl")
+
+@compat public xlogx, xlogy
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,

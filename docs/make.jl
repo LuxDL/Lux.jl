@@ -52,7 +52,6 @@ pages = [
             "api/Lux/distributed_utils.md",
         ],
         "Accelerator Support" => [
-            "api/Accelerator_Support/LuxCUDA.md",
             "api/Accelerator_Support/LuxDeviceUtils.md"
         ],
         "Building Blocks" => [
@@ -82,8 +81,7 @@ makedocs(; sitename="Lux.jl Documentation",
     authors="Avik Pal et al.",
     clean=true,
     doctest=false,  # We test it in the CI, no need to run it here
-    modules=[Lux, LuxCore, LuxLib, WeightInitializers,
-        Boltz, LuxTestUtils, LuxDeviceUtils, LuxCUDA],
+    modules=[Lux, LuxCore, LuxLib, WeightInitializers, Boltz, LuxTestUtils, LuxDeviceUtils],
     linkcheck=true,
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     format=DocumenterVitepress.MarkdownVitepress(;

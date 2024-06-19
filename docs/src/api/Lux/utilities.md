@@ -6,17 +6,25 @@
 Pages = ["utilities.md"]
 ```
 
-## Device Management / Data Transfer
+## Loss Functions
 
 ```@docs
-Lux.cpu
-Lux.gpu
+BinaryCrossEntropyLoss
+BinaryFocalLoss
+CrossEntropyLoss
+DiceCoeffLoss
+FocalLoss
+HingeLoss
+HuberLoss
+KLDivergenceLoss
+MAELoss
+MSELoss
+MSLELoss
+PoissonLoss
+SiameseContrastiveLoss
+SquaredHingeLoss
+TverskyLoss
 ```
-
-!!! warning
-
-    For detailed API documentation on Data Transfer check out the
-    [LuxDeviceUtils.jl](@ref LuxDeviceUtils-API)
 
 ## Weight Initialization
 
@@ -31,6 +39,8 @@ Lux.gpu
 Lux.foldl_init
 Lux.istraining
 Lux.multigate
+Lux.Losses.xlogy
+Lux.Losses.xlogx
 ```
 
 ## Updating Floating Point Precision
@@ -56,8 +66,20 @@ StatefulLuxLayer
 @compact
 ```
 
-## Truncated Stacktraces
+## Truncated Stacktraces (Deprecated)
 
 ```@docs
 Lux.disable_stacktrace_truncation!
 ```
+
+## Device Management / Data Transfer (Deprecated)
+
+```@docs
+Lux.cpu
+Lux.gpu
+```
+
+!!! warning
+
+    For detailed API documentation on Data Transfer check out the
+    [LuxDeviceUtils.jl](@ref LuxDeviceUtils-API)

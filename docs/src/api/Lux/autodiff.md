@@ -14,7 +14,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 | [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | ✔️     | ❌     | ❌                   | Tier II       |
 | [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | ✔️     | ✔️     | ❌                   | Tier II       |
 | [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | ✔️     | ❓[^q] | ❓[^q]               | Tier II       |
-| [`Tapir.jl`](https://github.com/withbayes/Tapir.jl)                | ❓[^q] | ❓[^q] | ❌                   | Tier IV       |
+| [`Tapir.jl`](https://github.com/withbayes/Tapir.jl)                | ❓[^q] | ❌     | ❌                   | Tier IV       |
 | [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | ❓[^q] | ❓[^q] | ❓[^q]               | Tier IV       |
 
 [^q]: This feature is supported downstream, but we don't extensively test it to ensure
