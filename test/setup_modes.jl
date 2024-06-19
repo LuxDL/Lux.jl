@@ -1,12 +1,16 @@
-using Lux, LuxDeviceUtils, GPUArraysCore, Pkg
-
-GPUArraysCore.allowscalar(false)
+using Lux, LuxDeviceUtils
 
 if !@isdefined(BACKEND_GROUP)
     const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 end
 
-using LuxCUDA, AMDGPU
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
+    using LuxCUDA
+end
+
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+    using AMDGPU
+end
 
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
