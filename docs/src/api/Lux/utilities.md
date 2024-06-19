@@ -8,6 +8,17 @@ Pages = ["utilities.md"]
 
 ## Loss Functions
 
+!!! warning
+
+    When using ChainRules.jl compatible AD (like Zygote), we only compute the gradients
+    wrt the inputs and drop any gradients wrt the targets.
+
+```@docs
+GenericLossFunction
+```
+
+### Specialized Loss Functions
+
 ```@docs
 BinaryCrossEntropyLoss
 BinaryFocalLoss

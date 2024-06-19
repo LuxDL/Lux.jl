@@ -50,11 +50,11 @@ julia> y_model = Float32[2, -1, pi]
 
 julia> logitbce = BinaryCrossEntropyLoss(; logits=Val(true));
 
-julia> logitbce(y_model, y_bin)
-0.160832f0
+julia> logitbce(y_model, y_bin) ≈ 0.160832f0
+true
 
-julia> bce(sigmoid.(y_model), y_bin)
-0.16083185f0
+julia> bce(sigmoid.(y_model), y_bin) ≈ 0.16083185f0
+true
 
 julia> bce_ls = BinaryCrossEntropyLoss(label_smoothing=0.1);
 
@@ -66,8 +66,6 @@ julia> logitbce_ls = BinaryCrossEntropyLoss(label_smoothing=0.1, logits=Val(true
 julia> logitbce_ls(y_model, y_bin) > logitbce(y_model, y_bin)
 true
 ```
-
-See also [`CrossEntropyLoss`](@ref).
 """
 @concrete struct BinaryCrossEntropyLoss{logits, L <: Union{Nothing, Real}} <:
                  AbstractLossFunction
@@ -120,8 +118,6 @@ julia> BinaryFocalLoss(gamma=0)(ŷ, y) ≈ BinaryCrossEntropyLoss()(ŷ, y)
 true
 ```
 
-See also [`FocalLoss`](@ref) for multi-class focal loss.
-
 ## References
 
 [1] Lin, Tsung-Yi, et al. "Focal loss for dense object detection." Proceedings of the IEEE
@@ -154,7 +150,14 @@ The loss is calculated as:
 
 $$\text{agg}\left(-\sum \tilde{y} \log(\hat{y} + \epsilon)\right)$$
 
-where $\epsilon$ is the smoothing factor.
+where $\epsilon$ is added for numerical stability. The value of $\tilde{y}$ is computed
+using label smoothing. If `label_smoothing` is `nothing`, then no label smoothing is
+applied. If `label_smoothing` is a real number $\in [0, 1]$, then the value of
+$\tilde{y}$ is calculated as:
+
+$$\tilde{y} = (1 - \alpha) * y + \alpha * \text{size along dim}$$
+
+where $\alpha$ is the value of `label_smoothing`.
 
 ## Example
 
@@ -173,17 +176,15 @@ julia> y_model = softmax(reshape(-7:7, 3, 5) .* 1f0)
  0.244728   0.244728   0.244728   0.244728   0.244728
  0.665241   0.665241   0.665241   0.665241   0.665241
 
-julia> CrossEntropyLoss()(y_model, y)
-1.6076053f0
+julia> CrossEntropyLoss()(y_model, y) ≈ 1.6076053f0
+true
 
 julia> 5 * 1.6076053f0 ≈ CrossEntropyLoss(; agg=sum)(y_model, y)
 true
 
-julia> CrossEntropyLoss(label_smoothing=0.15)(y_model, y)
-1.5776052f0
+julia> CrossEntropyLoss(label_smoothing=0.15)(y_model, y) ≈ 1.5776052f0
+true
 ```
-
-See also [`BinaryCrossEntropyLoss`](@ref) for binary classification tasks.
 """
 @concrete struct CrossEntropyLoss{logits, L <: Union{Nothing, Real}} <: AbstractLossFunction
     label_smoothing::L
@@ -220,7 +221,7 @@ end
 Return the Dice Coefficient loss [1] which is used in segmentation tasks. The dice
 coefficient is similar to the F1_score. Loss calculated as:
 
-$$agg\left(1 - \frac{2 \sum \tilde{y} \hat{y} + \alpha}{\sum \tilde{y}^2 + \sum \hat{y}^2 + \alpha}\right)$$
+$$agg\left(1 - \frac{2 \sum y \hat{y} + \alpha}{\sum y^2 + \sum \hat{y}^2 + \alpha}\right)$$
 
 where $\alpha$ is the smoothing factor (`smooth`).
 
@@ -229,11 +230,11 @@ where $\alpha$ is the smoothing factor (`smooth`).
 ```jldoctest
 julia> y_pred = [1.1, 2.1, 3.1];
 
-julia> DiceCoeffLoss()(y_pred, 1:3)
-0.000992391663909964
+julia> DiceCoeffLoss()(y_pred, 1:3)  ≈ 0.000992391663909964
+true
 
-julia> 1 - DiceCoeffLoss()(y_pred, 1:3)
-0.99900760833609
+julia> 1 - DiceCoeffLoss()(y_pred, 1:3)  ≈ 0.99900760833609
+true
 ```
 
 ## References
@@ -330,29 +331,11 @@ julia> y_true = [1, -1, 1, 1];
 
 julia> y_pred = [0.1, 0.3, 1, 1.5];
 
-julia> loss(y_pred, y_true)
-0.55
-
-julia> loss(y_pred[1], y_true[1])
-0.9
-
-julia> loss(y_pred[2], y_true[2])
-1.3
-
-julia> loss(y_pred[3], y_true[3])
-0.0
+julia> loss(y_pred, y_true) ≈ 0.55
+true
 ```
-
-See also [`SquaredHingeLoss`](@ref).
 """
-@kwdef @concrete struct HingeLoss <: AbstractLossFunction
-    agg = mean
-end
-
-function __unsafe_apply_loss(loss::HingeLoss, ŷ, y)
-    T = promote_type(eltype(ŷ), eltype(y))
-    return __fused_agg(loss.agg, Base.Fix1(max, T(0)), 1 .- y .* ŷ)
-end
+HingeLoss(; agg=mean) = GenericLossFunction(LossFunctions.L1HingeLoss(); agg)
 
 @doc doc"""
     HuberLoss(; delta = 1, agg = mean)
@@ -371,26 +354,16 @@ where $\delta$ is the `delta` parameter.
 ```jldoctest
 julia> y_model = [1.1, 2.1, 3.1];
 
-julia> HuberLoss()(y_model, 1:3)
-0.005000000000000009
+julia> HuberLoss()(y_model, 1:3) ≈ 0.005000000000000009
+true
 
-julia> HuberLoss(delta=0.05)(y_model, 1:3)
-0.003750000000000005
+julia> HuberLoss(delta=0.05)(y_model, 1:3) ≈ 0.003750000000000005
+true
 ```
 """
-@kwdef @concrete struct HuberLoss <: AbstractLossFunction
-    delta = 1
-    agg = mean
-end
-
-function __unsafe_apply_loss(loss::HuberLoss, ŷ, y)
-    T = promote_type(eltype(ŷ), eltype(y))
-    return __fused_agg(loss.agg, Base.Fix2(__huber_metric, T(loss.delta)), abs.(ŷ .- y))
-end
-
-function __huber_metric(err::T1, δ::T2) where {T1, T2}
-    x = promote_type(T1, T2)(0.5)
-    return ifelse(err < δ, err^2 * x, δ * (err - x * δ))
+function HuberLoss(; delta::Union{Nothing, AbstractFloat}=nothing, agg=mean)
+    delta = ifelse(delta === nothing, Float16(1), delta)
+    return GenericLossFunction(LossFunctions.HuberLoss(delta); agg)
 end
 
 @doc doc"""
@@ -461,17 +434,13 @@ julia> loss = MAELoss();
 
 julia> y_model = [1.1, 1.9, 3.1];
 
-julia> loss(y_model, 1:3)
-0.10000000000000009
+julia> loss(y_model, 1:3) ≈ 0.1
+true
 ```
 """
-@kwdef @concrete struct MAELoss <: AbstractLossFunction
-    agg = mean
-end
+MAELoss(; agg=mean) = GenericLossFunction(LossFunctions.L1DistLoss(); agg)
 
 const L1Loss = MAELoss
-
-@inline __unsafe_apply_loss(loss::MAELoss, ŷ, y) = __fused_agg(loss.agg, abs, ŷ .- y)
 
 @doc doc"""
     MSELoss(; agg = mean)
@@ -487,19 +456,13 @@ julia> loss = MSELoss();
 
 julia> y_model = [1.1, 1.9, 3.1];
 
-julia> loss(y_model, 1:3)
-0.010000000000000018
+julia> loss(y_model, 1:3) ≈ 0.01
+true
 ```
-
-See also [`MSELoss`](@ref).
 """
-@kwdef @concrete struct MSELoss <: AbstractLossFunction
-    agg = mean
-end
+MSELoss(; agg=mean) = GenericLossFunction(LossFunctions.L2DistLoss(); agg)
 
 const L2Loss = MSELoss
-
-@inline __unsafe_apply_loss(loss::MSELoss, ŷ, y) = __fused_agg(loss.agg, abs2, ŷ .- y)
 
 @doc doc"""
     MSLELoss(; agg = mean, epsilon = nothing)
@@ -516,22 +479,15 @@ is `nothing`, then we set it to `eps(<type of y and ŷ>)`.
 ```jldoctest
 julia> loss = MSLELoss();
 
-julia> loss(Float32[1.1, 2.2, 3.3], 1:3)
-0.009084041f0
+julia> loss(Float32[1.1, 2.2, 3.3], 1:3) ≈ 0.009084041f0
+true
 
-julia> loss(Float32[0.9, 1.8, 2.7], 1:3)
-0.011100831f0
+julia> loss(Float32[0.9, 1.8, 2.7], 1:3) ≈ 0.011100831f0
+true
 ```
 """
-@kwdef @concrete struct MSLELoss <: AbstractLossFunction
-    agg = mean
-    epsilon = nothing
-end
-
-@inline function __unsafe_apply_loss(loss::MSLELoss, ŷ, y)
-    T = promote_type(eltype(ŷ), eltype(y))
-    ϵ = __get_epsilon(T, loss.epsilon)
-    return __fused_agg(loss.agg, abs2 ∘ log, (ŷ .+ ϵ) ./ (y .+ ϵ))
+function MSLELoss(; agg=mean, epsilon=nothing)
+    return GenericLossFunction(@$(__msle_loss(_, _, epsilon)); agg)
 end
 
 @doc doc"""
@@ -547,19 +503,12 @@ $$\text{agg}\left(\hat{y} - y * \log(\hat{y})\right)$$
 ```jldoctest
 julia> y_model = [1, 3, 3];  # data should only take integral values
 
-julia> PoissonLoss()(y_model, 1:3)
-0.502312852219817
+julia> PoissonLoss()(y_model, 1:3) ≈ 0.502312852219817
+true
 ```
 """
-@kwdef @concrete struct PoissonLoss <: AbstractLossFunction
-    agg = mean
-    epsilon = nothing
-end
-
-function __unsafe_apply_loss(loss::PoissonLoss, ŷ, y)
-    T = promote_type(eltype(ŷ), eltype(y))
-    ϵ = __get_epsilon(T, loss.epsilon)
-    return loss.agg(ŷ .- xlogy.(y, ŷ .+ ϵ))
+function PoissonLoss(; agg=mean, epsilon=nothing)
+    return GenericLossFunction(@$(__poisson_loss(_, _, epsilon)); agg)
 end
 
 @doc doc"""
@@ -577,11 +526,11 @@ Specify `margin` to set the baseline for distance at which pairs are dissimilar.
 ```jldoctest
 julia> ŷ = [0.5, 1.5, 2.5];
 
-julia> SiameseContrastiveLoss()(ŷ, 1:3)
--4.833333333333333
+julia> SiameseContrastiveLoss()(ŷ, 1:3) ≈ -4.833333333333333
+true
 
-julia> SiameseContrastiveLoss(margin=2)(ŷ, 1:3)
--4.0
+julia> SiameseContrastiveLoss(margin=2)(ŷ, 1:3) ≈ -4.0
+true
 ```
 
 ## References
@@ -590,19 +539,9 @@ julia> SiameseContrastiveLoss(margin=2)(ŷ, 1:3)
 invariant mapping." 2006 IEEE computer society conference on computer vision and pattern
 recognition (CVPR'06). Vol. 2. IEEE, 2006.
 """
-@concrete struct SiameseContrastiveLoss <: AbstractLossFunction
-    margin
-    agg
-end
-
 function SiameseContrastiveLoss(; margin::Real=true, agg=mean)
     @argcheck margin ≥ 0
-    return SiameseContrastiveLoss(margin, agg)
-end
-
-@inline function __unsafe_apply_loss(loss::SiameseContrastiveLoss, ŷ, y)
-    z = @. (1 - y) * ŷ^2 + y * max(0, loss.margin - ŷ)^2
-    return loss.agg(z)
+    return GenericLossFunction(@$(__siamese_contrastive_loss(_, _, margin)); agg)
 end
 
 @doc doc"""
@@ -624,29 +563,11 @@ julia> y_true = [1, -1, 1, 1];
 
 julia> y_pred = [0.1, 0.3, 1, 1.5];
 
-julia> loss(y_pred, y_true)
-0.625
-
-julia> loss(y_pred[1], y_true[1]) ≈ 0.81
+julia> loss(y_pred, y_true) ≈ 0.625
 true
-
-julia> loss(y_pred[2], y_true[2]) ≈ 1.69
-true
-
-julia> loss(y_pred[3], y_true[3])
-0.0
 ```
-
-See also [`HingeLoss`](@ref).
 """
-@kwdef @concrete struct SquaredHingeLoss <: AbstractLossFunction
-    agg = mean
-end
-
-function __unsafe_apply_loss(loss::SquaredHingeLoss, ŷ, y)
-    T = promote_type(eltype(ŷ), eltype(y))
-    return __fused_agg(loss.agg, abs2 ∘ Base.Fix2(max, T(0)), 1 .- y .* ŷ)
-end
+SquaredHingeLoss(; agg=mean) = GenericLossFunction(LossFunctions.L2HingeLoss(); agg)
 
 @doc doc"""
     TverskyLoss(; beta = 0.7, smooth = true, agg = mean)
@@ -655,7 +576,7 @@ Return the Tversky loss [1]. Used with imbalanced data to give more weight to fa
 negatives. Larger `beta` weigh recall more than precision (by placing more emphasis on
 false negatives). Calculated as:
 
-$$1 - \frac{\sum \left(y * \hat{y}\right) + \alpha}{\sum \left(y * \hat{y} + (1 - \beta) * (1 - y) * \hat{y} + \beta y * (1 - \hat{y})\right) + \alpha}$$
+$$1 - \frac{\sum \left(y \hat{y}\right) + \alpha}{\sum \left(y \hat{y} + (1 - \beta) (1 - y) \hat{y} + \beta y (1 - \hat{y})\right) + \alpha}$$
 
 where $\alpha$ is the smoothing factor (`smooth`).
 
@@ -684,6 +605,39 @@ function __unsafe_apply_loss(loss::TverskyLoss, ŷ, y)
     FN = sum(y .* (true .- ŷ); dims)
 
     return loss.agg(1 - (TP + α) / (TP + α * FP + β * FN + α))
+end
+
+# Wrapper for LossFunctions.jl
+@doc doc"""
+    GenericLossFunction(loss_fn; agg = mean)
+
+Takes any function `loss_fn` that maps 2 number inputs to a single number output.
+Additionally, array inputs are efficiently broadcasted and aggregated using `agg`.
+
+```jldoctest
+julia> mseloss = GenericLossFunction((ŷ, y) -> abs2(ŷ - y));
+
+julia> y_model = [1.1, 1.9, 3.1];
+
+julia> mseloss(y_model, 1:3) ≈ 0.01
+true
+```
+
+## Special Note
+
+This function takes any of the
+[`LossFunctions.jl`](https://juliaml.github.io/LossFunctions.jl/stable). public functions
+into the Lux Losses API with efficient aggregation.
+"""
+@concrete struct GenericLossFunction <: AbstractLossFunction
+    loss_fn
+    agg
+end
+
+GenericLossFunction(loss_fn; agg=mean) = GenericLossFunction(loss_fn, agg)
+
+function __unsafe_apply_loss(loss::GenericLossFunction, ŷ, y)
+    return __fused_agg(loss.agg, loss.loss_fn, ŷ, y)
 end
 
 ```@meta
