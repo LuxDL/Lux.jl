@@ -6,13 +6,7 @@ if !@isdefined(BACKEND_GROUP)
     const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 end
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
-    using LuxCUDA
-end
-
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
-    using AMDGPU
-end
+using LuxCUDA, AMDGPU
 
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()

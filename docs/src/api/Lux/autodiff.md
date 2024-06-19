@@ -1,4 +1,4 @@
-# Automatic Differentiation
+# [Automatic Differentiation](@id autodiff-lux)
 
 Lux is not an AD package, but it composes well with most of the AD packages available in the
 Julia ecosystem. This document lists the current level of support for various AD packages in

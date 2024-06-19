@@ -25,16 +25,19 @@
 
 </div>
 
-The 🔥 Deep Learning Framework
+<div align="center">
+    <h2>Elegant & Performant Scientific Machine Learning in Julia</h2>
+    <h3>A Pure Julia Deep Learning Framework designed for Scientific Machine Learning</h3>
+</div>
 
-## Installation
+## 💻 Installation
 
 ```julia
 import Pkg
 Pkg.add("Lux")
 ```
 
-## Getting Started
+## 🤸 Quickstart
 
 ```julia
 using Lux, Random, Optimisers, Zygote
@@ -61,22 +64,18 @@ x = rand(rng, Float32, 128, 2) |> device
 y, st = Lux.apply(model, x, ps, st)
 
 # Gradients
-gs = gradient(p -> sum(Lux.apply(model, x, p, st)[1]), ps)[1]
+gs = only(gradient(p -> sum(first(Lux.apply(model, x, p, st))), ps))
 
 # Optimization
 st_opt = Optimisers.setup(Optimisers.Adam(0.0001), ps)
 st_opt, ps = Optimisers.update(st_opt, ps, gs)
 ```
 
-## Examples
+## 📚 Examples
 
 Look in the [examples](/examples/) directory for self-contained usage examples. The [documentation](https://lux.csail.mit.edu) has examples sorted into proper categories.
 
-## Ecosystem
-
-Checkout our [Ecosystem](http://lux.csail.mit.edu/dev/ecosystem) page for more details. 
-
-## Testing
+## 🧪 Testing
 
 The full test of `Lux.jl` takes a long time, here's how to test a portion of the code.
 
@@ -90,7 +89,7 @@ For example, let's consider the tests for `SkipConnection`:
 
 ```julia
 @testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers] begin
-    .....
+    ...
 end
 ```
 
@@ -118,7 +117,7 @@ use [TestEnv.jl](https://github.com/JuliaTesting/TestEnv.jl) as follows. Start w
 using TestEnv; TestEnv.activate(); using ReTestItems;
 
 # Assuming you are in the main directory of Lux
-ReTestItems.runtests("tests/"; name = <NAME OF THE TEST>)
+ReTestItems.runtests("tests/"; name = "NAME OF THE TEST")
 ```
 
 For the `SkipConnection` tests that would be:
@@ -127,11 +126,11 @@ For the `SkipConnection` tests that would be:
 ReTestItems.runtests("tests/"; name = SkipConnection)
 ```
 
-## Getting Help
+## 🆘 Getting Help
 
 For usage related questions, please use [Github Discussions](https://github.com/LuxDL/Lux.jl/discussions) or [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a [pull request](https://github.com/LuxDL/Lux.jl/pulls).
 
-## Citation
+## 🧑‍🔬 Citation
 
 If you found this library to be useful in academic work, then please cite:
 
