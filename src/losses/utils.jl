@@ -79,7 +79,7 @@ end
 end
 
 @inline __get_epsilon(::Type{T}, ϵ::Real) where {T} = T(ϵ)
-@inline __get_epsilon(::Type{T}, ::Nothing) where {T} = eps(T)
+@inline __get_epsilon(::Type{T}, ::Nothing) where {T} = eps(float(T))
 
 @inline __get_dims(_) = Colon()
 @inline __get_dims(::AbstractVector) = Colon()
