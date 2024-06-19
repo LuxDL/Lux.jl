@@ -376,7 +376,7 @@ end
         for (i, data) in enumerate(data_loader)
             step += 1
             data = data |> gdev
-            grads, _, stats, tstate = Lux.Experimental.compute_gradients(
+            (_, _, stats, tstate) = Lux.Experimental.single_train_step!(
                 AutoZygote(), loss_function, data, tstate)
             image_losses[i] = stats.image_loss
             noise_losses[i] = stats.noise_loss
@@ -388,7 +388,6 @@ end
             set_description(
                 pbar, "Epoch: $(epoch) Image Loss: $(mean(view(image_losses, 1:i))) Noise \
                        Loss: $(mean(view(noise_losses, 1:i)))")
-            tstate = Lux.Experimental.apply_gradients!(tstate, grads)
         end
 
         if epoch % generate_image_interval == 0 || epoch == epochs

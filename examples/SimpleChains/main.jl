@@ -80,9 +80,8 @@ function train(model; rng=Xoshiro(0), kwargs...)
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
-            (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
+            (gs, _, _, train_state) = Lux.Experimental.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
-            train_state = Lux.Experimental.apply_gradients!(train_state, gs)
         end
         ttime = time() - stime
 
@@ -91,7 +90,8 @@ function train(model; rng=Xoshiro(0), kwargs...)
         te_acc = accuracy(
             model, train_state.parameters, train_state.states, test_dataloader) * 100
 
-        @printf "[%2d/%2d] \t Time %.2fs \t Training Accuracy: %.2f%% \t Test Accuracy: %.2f%%\n" epoch nepochs ttime tr_acc te_acc
+        @printf "[%2d/%2d] \t Time %.2fs \t Training Accuracy: %.2f%% \t Test Accuracy: \
+                 %.2f%%\n" epoch nepochs ttime tr_acc te_acc
     end
 end
 

@@ -32,6 +32,8 @@ Lux.Experimental.TrainState
 Lux.Experimental.compute_gradients
 Lux.Experimental.apply_gradients
 Lux.Experimental.apply_gradients!
+Lux.Experimental.single_train_step
+Lux.Experimental.single_train_step!
 ```
 
 ## Parameter Freezing

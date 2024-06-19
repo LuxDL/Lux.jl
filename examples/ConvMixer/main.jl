@@ -102,9 +102,8 @@ end
             train_state = Optimisers.adjust!(train_state, lr)
             x = x |> gdev
             y = y |> gdev
-            (gs, _, _, train_state) = Lux.Experimental.compute_gradients(
+            (_, _, _, train_state) = Lux.Experimental.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
-            train_state = Lux.Experimental.apply_gradients!(train_state, gs)
         end
         ttime = time() - stime
 
@@ -113,6 +112,7 @@ end
         test_acc = accuracy(model, train_state.parameters, train_state.states, testloader) *
                    100
 
-        @printf "Epoch %2d: Learning Rate %.2e, Train Acc: %.2f%%, Test Acc: %.2f%%, Time: %.2f\n" epoch lr train_acc test_acc ttime
+        @printf "Epoch %2d: Learning Rate %.2e, Train Acc: %.2f%%, Test Acc: %.2f%%, \
+                 Time: %.2f\n" epoch lr train_acc test_acc ttime
     end
 end

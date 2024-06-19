@@ -35,7 +35,7 @@ function loadmnist(batchsize, train_split)
 end
 
 # ## Define the Neural ODE Layer
-# 
+#
 # First we will use the [`@compact`](@ref) macro to define the Neural ODE Layer.
 
 function NeuralODECompact(
@@ -107,9 +107,9 @@ end
 # ## Define Utility Functions
 logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
 
-function loss(x, y, model, ps, st)
+function loss(model, ps, st, (x, y))
     y_pred, st = model(x, ps, st)
-    return logitcrossentropy(y_pred, y), st
+    return logitcrossentropy(y_pred, y), st, (;)
 end
 
 function accuracy(model, ps, st, dataloader; dev=gpu_device())
@@ -133,15 +133,7 @@ function train(model_function; cpu::Bool=false, kwargs...)
     ## Training
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
 
-    opt = Adam(0.001f0)
-    st_opt = Optimisers.setup(opt, ps)
-
-    ### Warmup the Model
-    img = dev(train_dataloader.data[1][:, :, :, 1:1])
-    lab = dev(train_dataloader.data[2][:, 1:1])
-    loss(img, lab, model, ps, st)
-    (l, _), back = pullback(p -> loss(img, lab, model, p, st), ps)
-    back((one(l), nothing))
+    tstate = Lux.Experimental.TrainState(model, ps, st, Adam(0.001f0))
 
     ### Lets train the model
     nepochs = 9
@@ -150,16 +142,15 @@ function train(model_function; cpu::Bool=false, kwargs...)
         for (x, y) in train_dataloader
             x = dev(x)
             y = dev(y)
-            (l, st), back = pullback(p -> loss(x, y, model, p, st), ps)
-            ### We need to add `nothing`s equal to the number of returned values - 1
-            gs = back((one(l), nothing))[1]
-            st_opt, ps = Optimisers.update(st_opt, ps, gs)
+            _, _, _, tstate = Lux.Experimental.single_train_step!(
+                AutoZygote(), loss, (x, y), tstate)
         end
         ttime = time() - stime
 
-        tr_acc = accuracy(model, ps, st, train_dataloader; dev)
-        te_acc = accuracy(model, ps, st, test_dataloader; dev)
-        @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
+        tr_acc = accuracy(model, tstate.parameters, tstate.states, train_dataloader; dev)
+        te_acc = accuracy(model, tstate.parameters, tstate.states, test_dataloader; dev)
+        @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test \
+                 Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
     end
 end
 
