@@ -52,7 +52,7 @@ LSTMCell
 RNNCell
 Recurrence
 StatefulRecurrentCell
-Bidirectional
+BidirectionalRNN
 ```
 
 ## Linear Layers
