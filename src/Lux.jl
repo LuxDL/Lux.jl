@@ -93,7 +93,7 @@ export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ReverseSequence
-export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell, Bidirectional
+export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell, BidirectionalRNN
 export SamePad, TimeLastIndex, BatchLastIndex
 
 export StatefulLuxLayer
