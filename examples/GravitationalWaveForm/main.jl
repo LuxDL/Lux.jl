@@ -22,7 +22,7 @@ CUDA.allowscalar(false)
 
 # We need a very crude 2-body path. Assume the 1-body motion is a newtonian 2-body position
 # vector $r = r_1 - r_2$ and use Newtonian formulas to get $r_1$, $r_2$ (e.g. Theoretical
-# Mechanics of Particles and Continua 4.3) 
+# Mechanics of Particles and Continua 4.3)
 
 function one2two(path, m₁, m₂)
     M = m₁ + m₂
@@ -290,11 +290,12 @@ end
 
 # Next, we define the objective (loss) function to be minimized when training the neural
 # differential equations.
+const mseloss = MSELoss()
+
 function loss(θ)
     pred = Array(solve(prob_nn, RK4(); u0, p=θ, saveat=tsteps, dt, adaptive=false))
     pred_waveform = first(compute_waveform(dt_data, pred, mass_ratio, ode_model_params))
-    loss = sum(abs2, waveform .- pred_waveform)
-    return loss, pred_waveform
+    return mseloss(waveform, pred_waveform), pred_waveform
 end
 
 # Warmup the loss function

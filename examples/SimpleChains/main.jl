@@ -44,12 +44,7 @@ adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
 simple_chains_model = adaptor(lux_model)
 
 # ## Helper Functions
-logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
-
-function loss(model, ps, st, (x, y))
-    y_pred, st = model(x, ps, st)
-    return logitcrossentropy(y_pred, y), st, (;)
-end
+const loss = CrossEntropyLoss(; logits=Val(true))
 
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0

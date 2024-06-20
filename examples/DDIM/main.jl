@@ -291,10 +291,12 @@ function preprocess_image(image::Matrix{<:RGB}, image_size::Int)
     return apply(CenterResizeCrop((image_size, image_size)), Image(image)) |> itemdata
 end
 
+const maeloss = MAELoss()
+
 function loss_function(model, ps, st, data)
     (noises, images, pred_noises, pred_images), st = Lux.apply(model, data, ps, st)
-    noise_loss = mean(abs, noises .- pred_noises)
-    image_loss = mean(abs, images .- pred_images)
+    noise_loss = maeloss(noises, pred_noises)
+    image_loss = maeloss(images, pred_images)
     return noise_loss, st, (; image_loss, noise_loss)
 end
 

@@ -80,7 +80,6 @@ export default defineConfig({
                     },
                     {
                         text: 'Accelerator Support', items: [
-                            { text: 'LuxCUDA', link: '/api/Accelerator_Support/LuxCUDA' },
                             { text: 'LuxDeviceUtils', link: '/api/Accelerator_Support/LuxDeviceUtils' }
                         ]
                     },
@@ -196,7 +195,6 @@ export default defineConfig({
                     },
                     {
                         text: 'Accelerator Support', collapsed: false, items: [
-                            { text: 'LuxCUDA', link: '/api/Accelerator_Support/LuxCUDA' },
                             { text: 'LuxDeviceUtils', link: '/api/Accelerator_Support/LuxDeviceUtils' }]
                     },
                     {

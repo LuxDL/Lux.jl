@@ -294,34 +294,26 @@ println("x shape: ", size(x_samples), "; y shape: ", size(y_samples))
 # [Optimisers.jl](https://github.com/FluxML/Optimisers.jl). We will use Stochastic Gradient
 # Descent (SGD) with a learning rate of `0.01`.
 
-using Optimisers
-
-opt = Optimisers.Descent(0.01f0)
-
-# Initialize the initial state of the optimiser
-opt_state = Optimisers.setup(opt, ps)
+using Optimisers, Printf
 
 # Define the loss function
-function sse(model, ps, st, X, y)
-    y_pred, st_new = model(X, ps, st)
-    return sum(abs2, y_pred .- y), st_new
-end
-sse(weight, bias, X, y) = sum(abs2, weight * X .+ bias .- y)
-loss_function(ps, X, y) = sse(model, ps, st, X, y)
+lossfn = MSELoss()
 
-println("Loss Value with ground true parameters: ", sse(W, b, x_samples, y_samples))
+println("Loss Value with ground true parameters: ", lossfn(W * x_samples .+ b, y_samples))
 
-for i in 1:100
-    ## In actual code, don't use globals. But here I will simply for the sake of
-    ## demonstration
-    global ps, st, opt_state
-    ## Compute the gradient using the pullback API to update the states
-    (loss, st), pb_f = Zygote.pullback(loss_function, ps, x_samples, y_samples)
-    ## We pass nothing as the seed for `st`, since we don't want to propagate any gradient
-    ## for st
-    gs = pb_f((one(loss), nothing))[1]
-    ## Update model parameters
-    ## `Optimisers.update` can be used if mutation is not desired
-    opt_state, ps = Optimisers.update!(opt_state, ps, gs)
-    (i % 10 == 1 || i == 100) && println(lazy"Loss Value after $i iterations: $loss")
+# We will train the model using our training API.
+function train_model!(model, ps, st, opt, nepochs::Int)
+    tstate = Lux.Experimental.TrainState(model, ps, st, opt)
+    for i in 1:nepochs
+        grads, loss, _, tstate = Lux.Experimental.single_train_step!(
+            AutoZygote(), lossfn, (x_samples, y_samples), tstate)
+        if i % 1000 == 1 || i == nepochs
+            @printf "Loss Value after %6d iterations: %.8f\n" i loss
+        end
+    end
+    return tstate.model, tstate.parameters, tstate.states
 end
+
+model, ps, st = train_model!(model, ps, st, Descent(0.01f0), 10000)
+
+println("Loss Value after training: ", lossfn(first(model(x_samples, ps, st)), y_samples))

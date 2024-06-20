@@ -105,12 +105,7 @@ function create_model(model_fn=NeuralODE; dev=gpu_device(), use_named_tuple::Boo
 end
 
 # ## Define Utility Functions
-logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
-
-function loss(model, ps, st, (x, y))
-    y_pred, st = model(x, ps, st)
-    return logitcrossentropy(y_pred, y), st, (;)
-end
+const logitcrossentropy = CrossEntropyLoss(; logits=Val(true))
 
 function accuracy(model, ps, st, dataloader; dev=gpu_device())
     total_correct, total = 0, 0
@@ -143,7 +138,7 @@ function train(model_function; cpu::Bool=false, kwargs...)
             x = dev(x)
             y = dev(y)
             _, _, _, tstate = Lux.Experimental.single_train_step!(
-                AutoZygote(), loss, (x, y), tstate)
+                AutoZygote(), logitcrossentropy, (x, y), tstate)
         end
         ttime = time() - stime
 

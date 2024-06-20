@@ -306,3 +306,101 @@ end
     __recursive_make_zero!!, values(x)))
 @inline __recursive_make_zero!!(::Nothing) = nothing
 @inline __recursive_make_zero!!(x) = fmap(__recursive_make_zero!!, x)
+
+# helpers for the loss functions
+"""
+    xlogx(x::Number)
+
+Return `x * log(x)` for `x ≥ 0`, handling `x == 0` by taking the limit from above, to get
+zero.
+"""
+@inline function xlogx(x::Number)
+    result = x * log(x)
+    return ifelse(iszero(x), zero(result), result)
+end
+
+"""
+    xlogy(x::Number, y::Number)
+
+Return `x * log(y)` for `y > 0`, and zero when `x == 0`.
+"""
+@inline function xlogy(x::Number, y::Number)
+    result = x * log(y)
+    return ifelse(iszero(x), zero(result), result)
+end
+
+# Some functional forms of losses
+@concrete struct __Fix3
+    f
+    x
+end
+
+Broadcast.broadcastable(f::__Fix3) = Ref(f)
+
+@inline (f::__Fix3)(a, b) = f.f(a, b, f.x)
+
+@inline function __siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
+    return (1 - y) * x^2 + y * max(promote_type(T1, T2)(0), margin - x)^2
+end
+
+@inline function __poisson_loss(x::T1, y::T2, ϵ) where {T1, T2}
+    return x - xlogy(y, x + __get_epsilon(T1, ϵ))
+end
+
+@inline function __msle_loss(x::T1, y::T2, ϵ) where {T1, T2}
+    ϵ = __get_epsilon(promote_type(T1, T2), ϵ)
+    return log((x + ϵ) / (y + ϵ))^2
+end
+
+# Misc Utils
+@inline function __check_sizes(ŷ::AbstractArray, y::AbstractArray)
+    for d in 1:max(ndims(ŷ), ndims(y))
+        if size(ŷ, d) != size(y, d)
+            throw(DimensionMismatch("loss function expects size(ŷ) = $(size(ŷ)) to match \
+                                     size(y) = $(size(y))"))
+        end
+    end
+end
+@inline __check_sizes(ŷ, y) = nothing
+
+CRC.@non_differentiable __check_sizes(ŷ::Any, y::Any)
+
+@inline function __fused_agg(::typeof(mean), op::OP, x) where {OP}
+    return __fused_agg(sum, op, x) / length(x)
+end
+@inline function __fused_agg(::typeof(mean), lfn::LossFunctions.Traits.Loss, x, y)
+    return __fused_agg(sum, lfn, x, y) / length(x)
+end
+
+@inline __fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
+@inline __fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
+@inline function __fused_agg(
+        ::typeof(sum), lfn::LossFunctions.Traits.Loss, x::Number, y::Number)
+    return lfn(x, y)
+end
+@inline function __fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
+    fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
+    return mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y)
+end
+
+@inline __fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
+@inline __fused_agg(f::F, op::OP, args...) where {F, OP} = f(op.(args...))
+
+@inline __label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
+@inline function __label_smoothing(label_smoothing::Real, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
+end
+
+@inline __label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
+@inline function __label_smoothing_binary(label_smoothing::Real, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ 2
+end
+
+@inline __get_epsilon(::Type{T}, ϵ::Real) where {T} = T(ϵ)
+@inline __get_epsilon(::Type{T}, ::Nothing) where {T} = eps(float(T))
+
+@inline __get_dims(_) = Colon()
+@inline __get_dims(::AbstractVector) = Colon()
+@inline __get_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
