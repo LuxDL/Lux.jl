@@ -77,11 +77,7 @@ end
 
             @jet MSLELoss()(ŷ, y)
 
-            if ongpu
-                @test_broken @inferred Zygote.gradient(MSLELoss(), ŷ, y)
-            else
-                @inferred Zygote.gradient(MSLELoss(), ŷ, y)
-            end
+            @test_broken @inferred Zygote.gradient(MSLELoss(), ŷ, y)
 
             __f = Base.Fix2(MSLELoss(), y)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
@@ -191,11 +187,7 @@ end
             @jet bceloss(σ.(logŷ), y)
             @jet bceloss_smooth(σ.(logŷ), y)
 
-            if ongpu
-                @test_broken @inferred Zygote.gradient(bceloss, σ.(logŷ), y)
-            else
-                @inferred Zygote.gradient(bceloss, σ.(logŷ), y)
-            end
+            @inferred Zygote.gradient(bceloss, σ.(logŷ), y)
 
             __f = Base.Fix2(bceloss, y)
             σlogŷ = σ.(logŷ)
@@ -240,7 +232,11 @@ end
 
             @jet BinaryFocalLoss()(ŷ, y)
 
-            @inferred Zygote.gradient(BinaryFocalLoss(), ŷ, y)
+            if ongpu
+                @test_broken @inferred Zygote.gradient(BinaryFocalLoss(), ŷ, y)
+            else
+                @inferred Zygote.gradient(BinaryFocalLoss(), ŷ, y)
+            end
 
             __f = Base.Fix2(BinaryFocalLoss(), y)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
@@ -264,7 +260,11 @@ end
 
             @jet FocalLoss()(ŷ, y)
 
-            @inferred Zygote.gradient(FocalLoss(), ŷ, y)
+            if ongpu
+                @test_broken @inferred Zygote.gradient(FocalLoss(), ŷ, y)
+            else
+                @inferred Zygote.gradient(FocalLoss(), ŷ, y)
+            end
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
