@@ -699,7 +699,7 @@ function BidirectionalRNN(cell::AbstractRecurrentCell;
         merge_mode::Union{Function, Nothing}=vcat,
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
     layer = Recurrence(cell; return_sequence=true, ordering)
-    backward_rnn_layer = isnothing(backward_cell) ? layer :
+    backward_rnn_layer = backward_cell=== nothing ? layer :
                          Recurrence(backward_cell; return_sequence=true, ordering)
     fuse_op = merge_mode === nothing ? nothing : Broadcast.BroadcastFunction(merge_mode)
     return BidirectionalRNN(Parallel(
