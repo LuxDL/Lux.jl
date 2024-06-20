@@ -372,16 +372,18 @@ end
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         x = randn(rng, 2, 3) |> aType
         @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
+    end
 end
 
 @testitem "Bidirectional" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
+
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
             cell = _cell(3 => 5)
             bi_rnn = BidirectionalRNN(cell)
             bi_rnn_no_merge = BidirectionalRNN(cell; merge_mode=nothing)
-            __display(bi_rnn)
+            display(bi_rnn)
 
             # Batched Time Series
             x = randn(rng, Float32, 3, 4, 2) |> aType
@@ -401,7 +403,6 @@ end
             @test all(x -> size(x) == (5, 2), y_[1])
 
             if mode != "AMDGPU"
-
                 # gradients test failed after vcat
                 # __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
                 # @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
@@ -412,6 +413,7 @@ end
             else
                 # This is just added as a stub to remember about this broken test
             end
+
             @testset "backward_cell: $_backward_cell" for _backward_cell in (
                 RNNCell, LSTMCell, GRUCell)
                 cell = _cell(3 => 5)
@@ -420,7 +422,7 @@ end
                 bi_rnn_no_merge = BidirectionalRNN(
                     cell; backward_cell=backward_cell, merge_mode=nothing)
                 println("BidirectionalRNN:")
-                __display(bi_rnn)
+                display(bi_rnn)
 
                 # Batched Time Series
                 x = randn(rng, Float32, 3, 4, 2) |> aType

@@ -648,7 +648,7 @@ end
         merge_mode::Union{Function, Nothing}=vcat,
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
 
-BidirectionalRNN wrapper for RNNs.
+Bidirectional RNN wrapper.
 
 ## Arguments
 
@@ -688,8 +688,8 @@ BidirectionalRNN wrapper for RNNs.
 
   - Same as `cell` and `backward_cell`.
 """
-struct BidirectionalRNN <: AbstractExplicitContainerLayer{(:model,)}
-    model::Parallel
+@concrete struct BidirectionalRNN <: AbstractExplicitContainerLayer{(:model,)}
+    model <: Parallel
 end
 
 (rnn::BidirectionalRNN)(x, ps, st::NamedTuple) = rnn.model(x, ps, st)
@@ -699,7 +699,7 @@ function BidirectionalRNN(cell::AbstractRecurrentCell;
         merge_mode::Union{Function, Nothing}=vcat,
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
     layer = Recurrence(cell; return_sequence=true, ordering)
-    backward_rnn_layer = backward_cell=== nothing ? layer :
+    backward_rnn_layer = backward_cell === nothing ? layer :
                          Recurrence(backward_cell; return_sequence=true, ordering)
     fuse_op = merge_mode === nothing ? nothing : Broadcast.BroadcastFunction(merge_mode)
     return BidirectionalRNN(Parallel(
