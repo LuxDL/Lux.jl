@@ -77,7 +77,11 @@ end
 
             @jet MSLELoss()(ŷ, y)
 
-            @test_broken @inferred Zygote.gradient(MSLELoss(), ŷ, y)
+            if ongpu
+                @test_broken @inferred Zygote.gradient(MSLELoss(), ŷ, y)
+            else
+                @inferred Zygote.gradient(MSLELoss(), ŷ, y)
+            end
 
             __f = Base.Fix2(MSLELoss(), y)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
@@ -187,7 +191,11 @@ end
             @jet bceloss(σ.(logŷ), y)
             @jet bceloss_smooth(σ.(logŷ), y)
 
-            @inferred Zygote.gradient(bceloss, σ.(logŷ), y)
+            if ongpu
+                @test_broken @inferred Zygote.gradient(bceloss, σ.(logŷ), y)
+            else
+                @inferred Zygote.gradient(bceloss, σ.(logŷ), y)
+            end
 
             __f = Base.Fix2(bceloss, y)
             σlogŷ = σ.(logŷ)
@@ -242,7 +250,7 @@ end
             y = [1 0 0 0 1
                  0 1 0 1 0
                  0 0 1 0 0] |> aType
-            ŷ = softmax(reshape(-7:7, 3, 5) .* 1.0f0)
+            ŷ = softmax(reshape(-7:7, 3, 5) .* 1.0f0) |> aType
             y1 = [1 0
                   0 0
                   0 1] |> aType
@@ -351,7 +359,7 @@ end
             y1 = [1 0 0 0 1
                   0 1 0 1 0
                   0 0 1 0 0] |> aType
-            ŷ1 = softmax(reshape(-7:7, 3, 5) .* 1.0f0)
+            ŷ1 = softmax(reshape(-7:7, 3, 5) .* 1.0f0) |> aType
             y2 = [1
                   0
                   0

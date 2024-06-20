@@ -330,6 +330,14 @@ Return `x * log(y)` for `y > 0`, and zero when `x == 0`.
 end
 
 # Some functional forms of losses
+@concrete struct __Fix3
+    f
+    x
+end
+
+Broadcast.broadcastable(f::__Fix3) = Ref(f)
+
+@inline (f::__Fix3)(a, b) = f.f(a, b, f.x)
 
 @inline function __siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
     return (1 - y) * x^2 + y * max(promote_type(T1, T2)(0), margin - x)^2

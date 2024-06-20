@@ -16,7 +16,6 @@ using PrecompileTools: @recompile_invalidations
     using LossFunctions: LossFunctions
     using Markdown: @doc_str
     using OhMyThreads: tmapreduce
-    using PartialFunctions: @$
     using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport

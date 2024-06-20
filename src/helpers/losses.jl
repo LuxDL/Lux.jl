@@ -488,7 +488,7 @@ true
 ```
 """
 function MSLELoss(; agg=mean, epsilon=nothing)
-    return GenericLossFunction(@$(__msle_loss(_, _, epsilon)); agg)
+    return GenericLossFunction(__Fix3(__msle_loss, epsilon); agg)
 end
 
 @doc doc"""
@@ -509,7 +509,7 @@ true
 ```
 """
 function PoissonLoss(; agg=mean, epsilon=nothing)
-    return GenericLossFunction(@$(__poisson_loss(_, _, epsilon)); agg)
+    return GenericLossFunction(__Fix3(__poisson_loss, epsilon); agg)
 end
 
 @doc doc"""
@@ -542,7 +542,7 @@ recognition (CVPR'06). Vol. 2. IEEE, 2006.
 """
 function SiameseContrastiveLoss(; margin::Real=true, agg=mean)
     @argcheck margin ≥ 0
-    return GenericLossFunction(@$(__siamese_contrastive_loss(_, _, margin)); agg)
+    return GenericLossFunction(__Fix3(__siamese_contrastive_loss, margin); agg)
 end
 
 @doc doc"""
