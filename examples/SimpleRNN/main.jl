@@ -116,20 +116,12 @@ end
 # Now let's define the binarycrossentropy loss. Typically it is recommended to use
 # `logitbinarycrossentropy` since it is more numerically stable, but for the sake of
 # simplicity we will use `binarycrossentropy`.
-
-function xlogy(x, y)
-    result = x * log(y)
-    return ifelse(iszero(x), zero(result), result)
-end
-
-function binarycrossentropy(y_pred, y_true)
-    y_pred = y_pred .+ eps(eltype(y_pred))
-    return mean(@. -xlogy(y_true, y_pred) - xlogy(1 - y_true, 1 - y_pred))
-end
+const lossfn = BinaryCrossEntropyLoss()
 
 function compute_loss(model, ps, st, (x, y))
-    y_pred, st = model(x, ps, st)
-    return binarycrossentropy(y_pred, y), st, (; y_pred=y_pred)
+    ŷ, st_ = model(x, ps, st)
+    loss = lossfn(ŷ, y)
+    return loss, st_, (; y_pred=ŷ)
 end
 
 matches(y_pred, y_true) = sum((y_pred .> 0.5f0) .== y_true)
@@ -156,7 +148,7 @@ function main(model_type)
             y = y |> dev
 
             (_, loss, _, train_state) = Lux.Experimental.single_train_step!(
-                AutoZygote(), compute_loss, (x, y), train_state)
+                AutoZygote(), lossfn, (x, y), train_state)
 
             @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss
         end
@@ -166,8 +158,9 @@ function main(model_type)
         for (x, y) in val_loader
             x = x |> dev
             y = y |> dev
-            loss, st_, ret = compute_loss(model, train_state.parameters, st_, (x, y))
-            acc = accuracy(ret.y_pred, y)
+            ŷ, st_ = model(x, train_state.parameters, st_)
+            loss = lossfn(ŷ, y)
+            acc = accuracy(ŷ, y)
             @printf "Validation: Loss %4.5f Accuracy %4.5f\n" loss acc
         end
     end

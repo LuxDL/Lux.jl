@@ -57,12 +57,7 @@ function create_model()
 end
 
 # ## Define Utility Functions
-logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
-
-function loss(model, ps, st, (data_idx, x, y))
-    y_pred, st = model((data_idx, x), ps, st)
-    return logitcrossentropy(y_pred, y), st, (;)
-end
+const loss = CrossEntropyLoss(; logits=Val(true))
 
 function accuracy(model, ps, st, dataloader, data_idx, gdev=gpu_device())
     total_correct, total = 0, 0
@@ -101,7 +96,7 @@ function train()
             x = x |> dev
             y = y |> dev
             (_, _, _, train_state) = Lux.Experimental.single_train_step!(
-                AutoZygote(), loss, (data_idx, x, y), train_state)
+                AutoZygote(), loss, ((data_idx, x), y), train_state)
         end
         ttime = time() - stime
 

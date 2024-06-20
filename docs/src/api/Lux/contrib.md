@@ -20,7 +20,7 @@ All features listed on this page are **experimental** which means:
 Pages = ["contrib.md"]
 ```
 
-## Training
+## [Training](@id Training-API)
 
 Helper Functions making it easier to train `Lux.jl` models.
 

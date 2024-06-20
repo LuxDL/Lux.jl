@@ -51,12 +51,9 @@ opt = Adam(0.03f0)
 
 # We will use the `Lux.Training` API so we need to ensure that our loss function takes 4
 # inputs -- model, parameters, states and data. The function must return 3 values -- loss,
-# updated_state, and any computed statistics.
-function loss_function(model, ps, st, data)
-    y_pred, st = Lux.apply(model, data[1], ps, st)
-    mse_loss = mean(abs2, y_pred .- data[2])
-    return mse_loss, st, ()
-end
+# updated_state, and any computed statistics. This is already satisfied by the loss
+# functions provided by Lux.
+const loss_function = MSELoss()
 
 # ## Training
 

@@ -55,13 +55,6 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
     #! format: on
 end
 
-logitcrossentropy(y_pred, y) = mean(-sum(y .* logsoftmax(y_pred); dims=1))
-
-function loss(model, ps, st, (x, y))
-    y_pred, st = model(x, ps, st)
-    return logitcrossentropy(y_pred, y), st, (;)
-end
-
 function accuracy(model, ps, st, dataloader; dev=gpu_device())
     total_correct, total = 0, 0
     st = Lux.testmode(st)
@@ -93,6 +86,8 @@ end
 
     lr_schedule = linear_interpolation(
         [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0])
+
+    loss = CrossEntropyLoss(; logits=Val(true))
 
     for epoch in 1:epochs
         stime = time()
