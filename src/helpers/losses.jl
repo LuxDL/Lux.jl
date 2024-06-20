@@ -2,6 +2,7 @@
 ```@meta
 DocTestFilters = r"[0-9\.]+f0"
 ```
+abstract type AbstractLossFunction <: Function end
 
 function (loss::AbstractLossFunction)(ŷ, y)
     __check_sizes(ŷ, y)
@@ -607,7 +608,6 @@ function __unsafe_apply_loss(loss::TverskyLoss, ŷ, y)
     return loss.agg(1 - (TP + α) / (TP + α * FP + β * FN + α))
 end
 
-# Wrapper for LossFunctions.jl
 @doc doc"""
     GenericLossFunction(loss_fn; agg = mean)
 
@@ -626,7 +626,7 @@ true
 ## Special Note
 
 This function takes any of the
-[`LossFunctions.jl`](https://juliaml.github.io/LossFunctions.jl/stable). public functions
+[`LossFunctions.jl`](https://juliaml.github.io/LossFunctions.jl/stable) public functions
 into the Lux Losses API with efficient aggregation.
 """
 @concrete struct GenericLossFunction <: AbstractLossFunction

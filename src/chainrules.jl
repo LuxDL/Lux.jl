@@ -9,7 +9,6 @@ CRC.@non_differentiable _conv_transpose_dims(::Any...)
 CRC.@non_differentiable _calc_padding(::Any...)
 CRC.@non_differentiable Base.printstyled(::Any...)
 ## Type Piracy: Needs upstreaming
-## This is needed for fixing NamedTuple nested differentiation
 CRC.@non_differentiable fieldcount(::Any)
 
 # Utilities
@@ -74,4 +73,47 @@ function CRC.rrule(::typeof(getproperty), m::AbstractExplicitLayer, name::Symbol
     res = getproperty(m, name)
     ∇getproperty = Δ -> ntuple(Returns(NoTangent()), 3)
     return res, ∇getproperty
+end
+
+# For loss functions
+@inline function CRC.rrule(
+        ::typeof(__fused_agg), ::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
+    z = lfn.(x, y)
+    ∇lfn = let z = z, y = y, lfn = lfn
+        Δ -> begin
+            ∂x = @thunk LossFunctions.deriv.((lfn,), z, y) .* Δ
+            return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
+        end
+    end
+    return sum(z), ∇lfn
+end
+
+function CRC.rrule(::typeof(xlogx), x::Number)
+    iszero(x) && return x, Δ -> (NoTangent(), ZeroTangent())
+    logx = log(x)
+    ∇xlogx = @closure Δ -> (NoTangent(), @thunk(Δ*(logx + true)))
+    return x * logx, ∇xlogx
+end
+
+function CRC.rrule(
+        ::typeof(Broadcast.broadcasted), ::typeof(xlogx), x::AbstractArray{<:Number})
+    logx = log.(x)
+    y = x .* logx
+    ∇xlogx = @closure Δ -> (NoTangent(), NoTangent(), @thunk(Δ.*(logx .+ true)))
+    return y, ∇xlogx
+end
+
+function CRC.rrule(::typeof(xlogy), x::Number, y::Number)
+    iszero(x) && return x, Δ -> (NoTangent(), ZeroTangent())
+    logy = log(y)
+    ∇xlogy = @closure Δ -> (NoTangent(), @thunk(Δ*logy), @thunk(Δ * x/y))
+    return x * logy, ∇xlogy
+end
+
+function CRC.rrule(::typeof(Broadcast.broadcasted), ::typeof(xlogy),
+        x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
+    logy = log.(y)
+    y = x .* logy
+    ∇xlogy = @closure Δ -> (NoTangent(), NoTangent(), @thunk(Δ.*logy), @thunk(Δ .* x./y))
+    return y, ∇xlogy
 end

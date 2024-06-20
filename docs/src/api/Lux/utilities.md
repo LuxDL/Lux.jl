@@ -15,11 +15,6 @@ Pages = ["utilities.md"]
 
 ```@docs
 GenericLossFunction
-```
-
-### Specialized Loss Functions
-
-```@docs
 BinaryCrossEntropyLoss
 BinaryFocalLoss
 CrossEntropyLoss
@@ -50,8 +45,8 @@ TverskyLoss
 Lux.foldl_init
 Lux.istraining
 Lux.multigate
-Lux.Losses.xlogy
-Lux.Losses.xlogx
+Lux.xlogy
+Lux.xlogx
 ```
 
 ## Updating Floating Point Precision

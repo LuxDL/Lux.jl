@@ -6,18 +6,21 @@ using PrecompileTools: @recompile_invalidations
     using ADTypes: AbstractADType, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
     using Adapt: Adapt, adapt
     using ArgCheck: @argcheck
-    using ArrayInterface: ArrayInterface
+    using ArrayInterface: ArrayInterface, fast_scalar_indexing
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
-                          ProjectTo, RuleConfig, ZeroTangent
+                          ProjectTo, RuleConfig, ZeroTangent, @thunk
     using ConcreteStructs: @concrete
     using FastClosures: @closure
     using Functors: Functors, fmap
     using GPUArraysCore: GPUArraysCore
+    using LossFunctions: LossFunctions
     using Markdown: @doc_str
     using OhMyThreads: tmapreduce
+    using PartialFunctions: @$
     using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport
+    using Statistics: mean
 
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
     using LuxLib: __apply_bias_activation
@@ -63,12 +66,6 @@ include("layers/extension.jl")
 # Pretty Printing
 include("layers/display.jl")
 
-# AutoDiff
-include("chainrules.jl")
-
-# Losses
-include("losses/Losses.jl")
-
 # Experimental
 include("contrib/contrib.jl")
 
@@ -77,6 +74,10 @@ include("helpers/stateful.jl")
 include("helpers/compact.jl")
 include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
+include("helpers/losses.jl")
+
+# AutoDiff
+include("chainrules.jl")
 
 # Transform to and from other frameworks
 include("transform/types.jl")
@@ -127,5 +128,6 @@ export MPIBackend, NCCLBackend, DistributedUtils
 
 # Unexported functions that are part of the public API
 @compat public Experimental
+@compat public xlogx, xlogy
 
 end
