@@ -364,7 +364,12 @@ end
     return __fused_agg(sum, lfn, x, y) / length(x)
 end
 
+@inline __fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
 @inline __fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
+@inline function __fused_agg(
+        ::typeof(sum), lfn::LossFunctions.Traits.Loss, x::Number, y::Number)
+    return lfn(x, y)
+end
 @inline function __fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
     fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
     return mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y)

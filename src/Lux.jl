@@ -114,7 +114,7 @@ export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
-       PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss, TverskyLoss
+       PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss
 export GenericLossFunction
 
 export f16, f32, f64

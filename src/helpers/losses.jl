@@ -417,7 +417,7 @@ end
 
 function __unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
     cross_entropy = __unsafe_apply_loss(loss.celoss, ŷ, y)
-    entropy = loss.agg(sum(xlogx, y; loss.dims))
+    entropy = loss.agg(sum(xlogx.(y); loss.dims)) # Intentional broadcasting for Zygote type stability
     return entropy + cross_entropy
 end
 
@@ -569,44 +569,6 @@ true
 ```
 """
 SquaredHingeLoss(; agg=mean) = GenericLossFunction(LossFunctions.L2HingeLoss(); agg)
-
-@doc doc"""
-    TverskyLoss(; beta = 0.7, smooth = true, agg = mean)
-
-Return the Tversky loss [1]. Used with imbalanced data to give more weight to false
-negatives. Larger `beta` weigh recall more than precision (by placing more emphasis on
-false negatives). Calculated as:
-
-$$1 - \frac{\sum \left(y \hat{y}\right) + \alpha}{\sum \left(y \hat{y} + (1 - \beta) (1 - y) \hat{y} + \beta y (1 - \hat{y})\right) + \alpha}$$
-
-where $\alpha$ is the smoothing factor (`smooth`).
-
-## References
-
-[1] Salehi, Seyed Sadegh Mohseni, Deniz Erdogmus, and Ali Gholipour. "Tversky loss function
-for image segmentation using 3D fully convolutional deep networks." International workshop
-on machine learning in medical imaging. Cham: Springer International Publishing, 2017.
-"""
-@kwdef @concrete struct TverskyLoss <: AbstractLossFunction
-    beta = 0.7
-    smooth = true
-    agg = mean
-end
-
-function __unsafe_apply_loss(loss::TverskyLoss, ŷ, y)
-    T = promote_type(eltype(ŷ), eltype(y))
-    β = T(loss.beta)
-    α = T(loss.smooth)
-
-    yŷ = y .* ŷ
-    dims = __get_dims(yŷ)
-
-    TP = sum(yŷ; dims)
-    FP = sum((true .- y) .* ŷ; dims)
-    FN = sum(y .* (true .- ŷ); dims)
-
-    return loss.agg(1 - (TP + α) / (TP + α * FP + β * FN + α))
-end
 
 @doc doc"""
     GenericLossFunction(loss_fn; agg = mean)

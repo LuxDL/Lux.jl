@@ -103,6 +103,7 @@ MacroTools = "0.5.13"
 Markdown = "1.10"
 NCCL = "0.1.1"
 OhMyThreads = "0.5.1"
+OneHotArrays = "0.2.5"
 Optimisers = "0.3"
 PartialFunctions = "1.2.0"
 Pkg = "1.10"
@@ -135,6 +136,7 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+OneHotArrays = "0b1bfda6-eb8a-41d2-88d8-f5af5cad476f"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
@@ -147,4 +149,4 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Aqua", "ComponentArrays", "Documenter", "DynamicExpressions", "Enzyme", "ExplicitImports", "FiniteDifferences", "ForwardDiff", "Logging", "LuxTestUtils", "MLUtils", "Optimisers", "Pkg", "ReTestItems", "ReverseDiff", "SimpleChains", "StableRNGs", "Statistics", "Test", "Tracker", "Zygote"]
+test = ["Aqua", "ComponentArrays", "Documenter", "DynamicExpressions", "Enzyme", "ExplicitImports", "FiniteDifferences", "ForwardDiff", "Logging", "LuxTestUtils", "MLUtils", "OneHotArrays", "Optimisers", "Pkg", "ReTestItems", "ReverseDiff", "SimpleChains", "StableRNGs", "Statistics", "Test", "Tracker", "Zygote"]

@@ -29,7 +29,6 @@ MSLELoss
 PoissonLoss
 SiameseContrastiveLoss
 SquaredHingeLoss
-TverskyLoss
 ```
 
 ## Weight Initialization

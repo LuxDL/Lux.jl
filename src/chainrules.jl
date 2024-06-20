@@ -78,14 +78,11 @@ end
 # For loss functions
 @inline function CRC.rrule(
         ::typeof(__fused_agg), ::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
-    z = lfn.(x, y)
-    ∇lfn = let z = z, y = y, lfn = lfn
-        Δ -> begin
-            ∂x = @thunk LossFunctions.deriv.((lfn,), z, y) .* Δ
-            return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
-        end
+    ∇lfn = @closure Δ -> begin
+        ∂x = @thunk LossFunctions.deriv.(Ref(lfn), x, y) .* Δ
+        return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
     end
-    return sum(z), ∇lfn
+    return __fused_agg(sum, lfn, x, y), ∇lfn
 end
 
 function CRC.rrule(::typeof(xlogx), x::Number)
@@ -113,7 +110,7 @@ end
 function CRC.rrule(::typeof(Broadcast.broadcasted), ::typeof(xlogy),
         x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
     logy = log.(y)
-    y = x .* logy
+    z = x .* logy
     ∇xlogy = @closure Δ -> (NoTangent(), NoTangent(), @thunk(Δ.*logy), @thunk(Δ .* x./y))
-    return y, ∇xlogy
+    return z, ∇xlogy
 end
