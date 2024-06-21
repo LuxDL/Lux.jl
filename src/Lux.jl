@@ -16,7 +16,6 @@ using PrecompileTools: @recompile_invalidations
     using GPUArraysCore: GPUArraysCore
     using LossFunctions: LossFunctions
     using Markdown: @doc_str
-    using OhMyThreads: tmapreduce
     using Preferences: @load_preference
     using Random: Random, AbstractRNG
     using Reexport: @reexport
@@ -75,6 +74,7 @@ include("helpers/compact.jl")
 include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
+include("helpers/recursive_ops.jl")
 
 # AutoDiff
 include("chainrules.jl")
@@ -129,5 +129,6 @@ export MPIBackend, NCCLBackend, DistributedUtils
 # Unexported functions that are part of the public API
 @compat public Experimental
 @compat public xlogx, xlogy
+@compat public recursive_add!!
 
 end

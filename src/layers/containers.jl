@@ -605,7 +605,7 @@ Iteratively applies `model` for `repeats` number of times. The initial input is 
 into the model repeatedly if `input_injection = Val(true)`. This layer unrolls the
 computation, however, semantically this is same as:
 
- 1. `input_injection = Val(false)`
+  - `input_injection = Val(false)`
 
 ```julia
 res = x
@@ -614,7 +614,7 @@ for i in 1:repeats
 end
 ```
 
- 2. `input_injection = Val(true)`
+  - `input_injection = Val(true)`
 
 ```julia
 res = x

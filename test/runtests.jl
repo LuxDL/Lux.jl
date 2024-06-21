@@ -64,6 +64,12 @@ using Lux
         using DynamicExpressions
         @test Lux._is_extension_loaded(Val(:DynamicExpressions))
     end
+
+    # These need to be run before MPI or NCCL is ever loaded
+    @testset "Ensure MPI and NCCL are loaded" begin
+        @test_throws ErrorException MPIBackend()
+        @test_throws ErrorException NCCLBackend()
+    end
 end
 
 for tag in LUX_TEST_GROUP
@@ -77,12 +83,6 @@ end
 
 # Distributed Tests
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP) && BACKEND_GROUP != "amdgpu"
-    # These need to be run before MPI or NCCL is ever loaded
-    @testset "Ensure MPI and NCCL are loaded" begin
-        @test_throws ErrorException MPIBackend()
-        @test_throws ErrorException NCCLBackend()
-    end
-
     using MPI
 
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")
