@@ -1,4 +1,9 @@
-using Lux, MLUtils, MPI, Random, Test
+using Lux, MPI, Random, Test
+
+@test_throws ErrorException DistributedUtils.DistributedDataContainer(
+    MPIBackend(), randn(Float32, 10))
+
+using MLUtils
 
 const input_args = length(ARGS) == 2 ? ARGS : ("cpu", "mpi")
 if input_args[1] == "cuda"

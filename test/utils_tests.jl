@@ -34,12 +34,18 @@ end
 end
 
 @testitem "Deprecations" tags=[:others] begin
+    using Functors
+
     @test_deprecated Lux.disable_stacktrace_truncation!()
     @test_deprecated Lux.cpu(rand(2))
     @test_deprecated Lux.gpu(rand(2))
 
     model = NoOpLayer()
     @test_deprecated Lux.Experimental.StatefulLuxLayer(model, (;), (;))
+
+    @test_deprecated Lux.Experimental.DebugLayer(model; location="model")
+    dmodel = Lux.Experimental.DebugLayer(model; location="model")
+    @test dmodel.location == KeyPath(:model)
 end
 
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin

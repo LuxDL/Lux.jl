@@ -375,3 +375,13 @@ end
         @test Array(vec(reduce(vcat, res))) ≈ [0.5, 0.5, 1.2, 2.0]
     end
 end
+
+
+@testitem "RNN Error Checks" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+    rng = get_stable_rng(12345)
+
+    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+        x = randn(rng, 2, 3) |> aType
+        @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
+    end
+end
