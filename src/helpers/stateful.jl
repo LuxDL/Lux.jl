@@ -114,13 +114,11 @@ function (s::StatefulLuxLayer)(x, p=s.ps)
     return y
 end
 
-for FT in (true, false)
-    @eval function CRC.rrule(
-            ::Type{<:StatefulLuxLayer{$(FT)}}, model::AbstractExplicitLayer, ps, st, st_any)
-        slayer = StatefulLuxLayer{$(FT)}(model, ps, st, st_any)
-        ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
-        return slayer, ∇StatefulLuxLayer
-    end
+function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
+        model::AbstractExplicitLayer, ps, st, st_any) where {FT}
+    slayer = StatefulLuxLayer{FT}(model, ps, st, st_any)
+    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
+    return slayer, ∇StatefulLuxLayer
 end
 
 function CRC.rrule(::typeof(getproperty), s::StatefulLuxLayer, name::Symbol)

@@ -249,10 +249,8 @@ end
 end
 
 @inline __can_named_tuple(::NamedTuple) = true
+@inline __can_named_tuple(::T) where {T} = __can_named_tuple(T)
 @inline function __can_named_tuple(::Type{T}) where {T}
-    return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
-end
-@inline function __can_named_tuple(::T) where {T}
     return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
 end
 

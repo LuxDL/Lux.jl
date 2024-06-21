@@ -30,6 +30,10 @@
         @test Lux.parameterlength(smodel) == Lux.parameterlength(model)
         @test Lux.statelength(smodel) == Lux.statelength(model)
 
+        smodel2 = StatefulLuxLayer{false}(model, ps, st)
+        @test Lux.parameterlength(smodel2) == Lux.parameterlength(model)
+        @test Lux.statelength(smodel2) == Lux.statelength(model)
+
         x = Float32.(randn(rng, 2, 5))
         @test smodel(x) isa Matrix{Float32}
 

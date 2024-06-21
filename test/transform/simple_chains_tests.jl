@@ -104,4 +104,13 @@
 
     @test_throws ArgumentError ToSimpleChainsAdaptor((10, 10, 1))
     @test_throws ArgumentError ToSimpleChainsAdaptor(1)
+
+    # Failures
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(Conv(
+        (1, 1), 2 => 3; stride=(5, 5)))
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(Dropout(0.2f0; dims=1))
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(FlattenLayer())
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(MaxPool(
+        (2, 2); stride=(1, 1)))
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(ReshapeLayer((2, 3)))
 end

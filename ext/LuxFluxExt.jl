@@ -7,17 +7,6 @@ import Lux: __from_flux_adaptor, FluxModelConversionError
 
 __copy_anonymous_closure(x) = (args...) -> x
 
-function Lux.FluxLayer(l)
-    if isdefined(Flux, :destructure)
-        p, re = Flux.destructure(l)
-        p_ = copy(p)
-        return Lux.FluxLayer(l, re, () -> p_)
-    else
-        error("`Flux.destructure` not found. Please open an issue on LuxDL/Lux.jl with a \
-               MWE")
-    end
-end
-
 function __from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
     @warn lazy"Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
 
