@@ -271,3 +271,29 @@ end
         end
     end
 end
+
+@testitem "VJP/JVP Interface Test" setup=[SharedTestSetup] tags=[:autodiff] begin
+    using ForwardDiff, Zygote, ADTypes
+
+    rng = StableRNG(1234)
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        # FIXME: AMDGPU takes too long right now
+        mode === "amdgpu" && continue
+
+        x = rand(rng, 3, 3) |> aType
+        v = vec(rand(rng, 3, 3)) |> aType
+
+        ftest(x) = abs2.(x)
+
+        J = ForwardDiff.jacobian(ftest, x)
+        Jv = J * v
+        vJ = vec(v' * J)
+
+        Jv_fdiff = vec(jacobian_vector_product(ftest, AutoForwardDiff(), x, v))
+        @test Jv ≈ Jv_fdiff rtol=1e-3 atol=1e-3
+
+        vJ_zyg = vec(vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x))))
+        @test vJ ≈ vJ_zyg rtol=1e-3 atol=1e-3
+    end
+end
