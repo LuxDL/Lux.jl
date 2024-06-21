@@ -4,9 +4,9 @@ DocTestFilters = r"[0-9\.]+f0"
 ```
 abstract type AbstractLossFunction <: Function end
 
-function (loss::AbstractLossFunction)(model::AbstractExplicitLayer, ps, st, (x, y))
-    ŷ, st_ = model(x, ps, st)
-    return loss(ŷ, y), st_, (;)
+function (loss::AbstractLossFunction)(model::AbstractExplicitLayer, ps, st, xy::Tuple)
+    ŷ, st_ = model(first(xy), ps, st)
+    return loss(ŷ, last(xy)), st_, (;)
 end
 
 function (loss::AbstractLossFunction)(ŷ, y)

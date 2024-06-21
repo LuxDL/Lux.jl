@@ -9,7 +9,7 @@ using Zygote: Zygote
 
 const CRC = ChainRulesCore
 
-Lux._is_extension_loaded(::Val{:Zygote}) = true
+@inline Lux._is_extension_loaded(::Val{:Zygote}) = true
 
 include("training.jl")
 include("batched_ad.jl")

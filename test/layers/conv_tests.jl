@@ -515,7 +515,8 @@ end
             x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
 
             @testset "Kwargs: $kwarg" for kwarg in (
-                (; stride=1), (; dilation=max.(k .÷ 2, 1), stride=1), (; stride=3))
+                (; stride=1), (; dilation=max.(k .÷ 2, 1), stride=1),
+                (; stride=3), (; stride=1, use_bias=false))
                 layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), kwarg...)
                 __display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev

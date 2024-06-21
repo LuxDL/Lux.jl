@@ -23,6 +23,30 @@ end
     @test !Lux.istraining((training=false,))
 end
 
+@testitem "Ext Loading Check" begin
+    @test !Lux._is_extension_loaded(Val(:ForwardDiff))
+    using ForwardDiff
+    @test Lux._is_extension_loaded(Val(:ForwardDiff))
+
+    @test !Lux._is_extension_loaded(Val(:Zygote))
+    using Zygote
+    @test Lux._is_extension_loaded(Val(:Zygote))
+
+    @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
+    using DynamicExpressions
+    @test Lux._is_extension_loaded(Val(:DynamicExpressions))
+end
+
+@testitem "ComponentArrays edge cases" begin
+    using ComponentArrays
+
+    @test eltype(ComponentArray()) == Float32
+    @test eltype(ComponentArray(NamedTuple())) == Float32
+    @test eltype(ComponentArray{Float64}(NamedTuple())) == Float64
+
+    @test eltype(ComponentArray(Any[:a, 1], (FlatAxis(),))) == Any
+end
+
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
     rng = get_stable_rng(12345)
 
