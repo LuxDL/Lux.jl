@@ -10,7 +10,7 @@ Pages = ["utilities.md"]
 
 Loss Functions Objects take 2 forms of inputs:
 
-  1. $\hat{y}$ and $y$ where $\hat{y}$ is the predicted output and $y$ is the target output.
+  1. `ŷ` and `y` where `ŷ` is the predicted output and `y` is the target output.
   2. `model`, `ps`, `st`, `(x, y)` where `model` is the model, `ps` are the parameters,
      `st` are the states and `(x, y)` are the input and target pair. Then it returns the
      loss, updated states, and an empty named tuple. This makes them compatible with the

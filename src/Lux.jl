@@ -3,7 +3,8 @@ module Lux
 using PrecompileTools: @recompile_invalidations
 
 @recompile_invalidations begin
-    using ADTypes: AbstractADType, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+    using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff,
+                   AutoTracker, AutoZygote
     using Adapt: Adapt, adapt
     using ArgCheck: @argcheck
     using ArrayInterface: ArrayInterface, fast_scalar_indexing
@@ -109,7 +110,7 @@ export @compact, CompactLuxLayer
 
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
-export AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,

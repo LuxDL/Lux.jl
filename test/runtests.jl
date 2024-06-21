@@ -33,27 +33,37 @@ end
 
 using Lux
 
-# These have to be loaded before using other packages
-@testset "Ext Loading Check" begin
-    @test !Lux._is_extension_loaded(Val(:ForwardDiff))
-    using ForwardDiff
-    @test Lux._is_extension_loaded(Val(:ForwardDiff))
+@testset "Load Tests" begin
+    @testset "Load Packages Tests" begin
+        @test_throws ErrorException FromFluxAdaptor()(1)
+        showerror(stdout, Lux.FluxModelConversionError("cannot convert"))
 
-    @test !Lux._is_extension_loaded(Val(:Zygote))
-    using Zygote
-    @test Lux._is_extension_loaded(Val(:Zygote))
+        @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
+        showerror(stdout, Lux.SimpleChainsModelConversionError(Dense(2 => 2)))
 
-    @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
-    using DynamicExpressions
-    @test Lux._is_extension_loaded(Val(:DynamicExpressions))
-end
+        @test_throws ErrorException vector_jacobian_product(
+            x -> x, AutoZygote(), rand(2), rand(2))
+        @test_throws ErrorException jacobian_vector_product(
+            x -> x, AutoForwardDiff(), rand(2), rand(2))
 
-@testset "Load Adaptor Tests" begin
-    @test_throws ErrorException FromFluxAdaptor()(1)
-    showerror(stdout, Lux.FluxModelConversionError("cannot convert"))
+        @test_throws AssertionError batched_jacobian(x -> x, AutoEnzyme(), rand(2, 2))
+        @test_throws ErrorException batched_jacobian(x -> x, AutoForwardDiff(), rand(2, 2))
+        @test_throws ErrorException batched_jacobian(x -> x, AutoZygote(), rand(2, 2))
+    end
 
-    @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
-    showerror(stdout, Lux.SimpleChainsModelConversionError(Dense(2 => 2)))
+    @testset "Ext Loading Check" begin
+        @test !Lux._is_extension_loaded(Val(:ForwardDiff))
+        using ForwardDiff
+        @test Lux._is_extension_loaded(Val(:ForwardDiff))
+
+        @test !Lux._is_extension_loaded(Val(:Zygote))
+        using Zygote
+        @test Lux._is_extension_loaded(Val(:Zygote))
+
+        @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
+        using DynamicExpressions
+        @test Lux._is_extension_loaded(Val(:DynamicExpressions))
+    end
 end
 
 for tag in LUX_TEST_GROUP
