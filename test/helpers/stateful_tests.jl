@@ -39,7 +39,7 @@
         smodel_f64_2 = @set smodel_f64.ps = ps
         @test smodel_f64_2(x) isa Matrix{Float32}
 
-        smodel = StatefulLuxLayer{true}(model, ps, (; x = 2))
+        smodel = StatefulLuxLayer{true}(model, ps, (; x=2))
         myloss(m) = m.st.x
         @test only(Zygote.gradient(myloss, smodel)) === nothing
     end

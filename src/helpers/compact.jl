@@ -6,7 +6,6 @@ end
 
 function Base.showerror(io::IO, e::LuxCompactModelParsingException)
     print(io, "LuxCompactModelParsingException(", e.msg, ")")
-    return
 end
 
 """

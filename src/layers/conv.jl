@@ -513,7 +513,7 @@ function set to `Base.Fix2(pixel_shuffle, r)`
   - Output of size `(r x W, r x H, C, N)` for 4D-arrays, and `(r x W, r x H, ..., C, N)`
     for D-dimensional data, where `D = ndims(x) - 2`
 """
-PixelShuffle(r::Int) = WrappedFunction(Base.Fix2(pixel_shuffle, r))
+PixelShuffle(r::Int) = WrappedFunction{:direct_call}(Base.Fix2(pixel_shuffle, r))
 
 @doc doc"""
     CrossCor(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},

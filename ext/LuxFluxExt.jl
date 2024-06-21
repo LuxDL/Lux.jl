@@ -30,7 +30,7 @@ function __from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where 
     return Lux.FluxLayer(l)
 end
 
-__from_flux_adaptor(l::Function; kwargs...) = Lux.WrappedFunction(l)
+__from_flux_adaptor(l::Function; kwargs...) = Lux.WrappedFunction{:direct_call}(l)
 
 function __from_flux_adaptor(l::Flux.Chain; kwargs...)
     fn = x -> __from_flux_adaptor(x; kwargs...)

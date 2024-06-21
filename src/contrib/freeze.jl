@@ -58,7 +58,7 @@ struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicit
     function FrozenLayer(
             l::AbstractExplicitLayer, which_params::Union{Tuple, Nothing}=nothing)
         if which_params !== nothing && length(which_params) == 0
-            @warn lazy"Layer `FrozenLayer($l, (,))` is same as `l`, returning `l`."
+            @warn "Layer `FrozenLayer($l, (,))` is same as `l`, returning `l`."
             return l
         end
         return new{which_params, typeof(l)}(l)

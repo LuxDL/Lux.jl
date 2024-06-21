@@ -80,6 +80,8 @@ end
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
 
+            @test_throws ArgumentError Lux.Experimental.__maybe_implemented_compute_gradients(ad)
+
             @test_deprecated Lux.Training.TrainState(
                 Lux.replicate(rng), model, opt; transform_variables=dev)
 
@@ -124,5 +126,13 @@ end
 
             @test final_loss * 100 < initial_loss
         end
+
+        struct AutoCustomAD <: ADTypes.AbstractADType end
+
+        tstate = Lux.Experimental.TrainState(
+            Lux.replicate(rng), model, opt; transform_variables=dev)
+
+        @test_throws ArgumentError Lux.Experimental.compute_gradients(
+            AutoCustomAD(), mse, dataset_[1], tstate)
     end
 end
