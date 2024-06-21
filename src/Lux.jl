@@ -129,6 +129,6 @@ export MPIBackend, NCCLBackend, DistributedUtils
 # Unexported functions that are part of the public API
 @compat public Experimental
 @compat public xlogx, xlogy
-@compat public recursive_add!!
+@compat public recursive_add!!, recursive_eltype, recursive_make_zero, recursive_make_zero!!
 
 end

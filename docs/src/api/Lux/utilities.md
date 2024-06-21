@@ -60,6 +60,9 @@ Lux.xlogx
 
 ```@docs
 Lux.recursive_add!!
+Lux.recursive_eltype
+Lux.recursive_make_zero
+Lux.recursive_make_zero!!
 ```
 
 ## Updating Floating Point Precision

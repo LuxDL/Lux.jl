@@ -131,9 +131,9 @@ end
 
 function _print_conv_opt(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
-    all(==(1), l.dilation) || print(io, ", dilation=", _maybetuple_string(l.dilation))
+    all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
+    all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
     (use_bias == false) && print(io, ", bias=false")
     return nothing
@@ -201,8 +201,8 @@ end
 
 function Base.show(io::IO, m::MaxPool)
     print(io, "MaxPool(", m.k)
-    all(==(0), m.pad) || print(io, ", pad=", _maybetuple_string(m.pad))
-    m.stride == m.k || print(io, ", stride=", _maybetuple_string(m.stride))
+    all(==(0), m.pad) || print(io, ", pad=", __tuple_string(m.pad))
+    m.stride == m.k || print(io, ", stride=", __tuple_string(m.stride))
     return print(io, ")")
 end
 
@@ -268,8 +268,8 @@ end
 
 function Base.show(io::IO, m::MeanPool)
     print(io, "MeanPool(", m.k)
-    all(==(0), m.pad) || print(io, ", pad=", _maybetuple_string(m.pad))
-    m.stride == m.k || print(io, ", stride=", _maybetuple_string(m.stride))
+    all(==(0), m.pad) || print(io, ", pad=", __tuple_string(m.pad))
+    m.stride == m.k || print(io, ", stride=", __tuple_string(m.stride))
     return print(io, ")")
 end
 
@@ -386,8 +386,7 @@ See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
 function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
-    pdims = PoolDims(x, size(x)[1:(end - 2)])
-    return maxpool(x, pdims), st
+    return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
 """
@@ -410,8 +409,7 @@ See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
 function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
-    pdims = PoolDims(x, size(x)[1:(end - 2)])
-    return meanpool(x, pdims), st
+    return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
 """
@@ -478,8 +476,7 @@ struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
 end
 
 function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
-    pdims = compute_adaptive_pooling_dims(x, a.out)
-    return meanpool(x, pdims), st
+    return meanpool(x, compute_adaptive_pooling_dims(x, a.out)), st
 end
 
 function Base.show(io::IO, a::AdaptiveMeanPool)
@@ -637,9 +634,9 @@ end
 
 function _print_crosscor_opt(io::IO, l::CrossCor{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
-    all(==(1), l.dilation) || print(io, ", dilation=", _maybetuple_string(l.dilation))
+    all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
+    all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
     (use_bias == false) && print(io, ", bias=false")
     return nothing
 end
@@ -773,9 +770,9 @@ end
 
 function _print_convtranspose_opt(io::IO, l::ConvTranspose{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", _maybetuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", _maybetuple_string(l.stride))
-    all(==(1), l.dilation) || print(io, ", dilation=", _maybetuple_string(l.dilation))
+    all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
+    all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
     (use_bias == false) && print(io, ", bias=false")
     return nothing

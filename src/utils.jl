@@ -23,8 +23,7 @@ end
 _expand(N, i::Tuple) = i
 _expand(N, i::Integer) = ntuple(_ -> i, N)
 
-_maybetuple_string(pad) = string(pad)
-_maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
+@inline __tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
 
 # Padding
 struct SamePad end
@@ -259,47 +258,12 @@ end
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
 
-# recussive_eltype
-@inline __recursive_eltype(x::AbstractArray) = eltype(x)
-@inline __recursive_eltype(x::Tuple) = promote_type(__recursice_eltype.(x)...)
-@inline __recursive_eltype(x::NamedTuple) = promote_type(__recursive_eltype.(values(x))...)
-@inline __recursive_eltype(::Nothing) = Bool
-@inline __recursive_eltype(x::Number) = eltype(x)
-@inline function __recursive_eltype(x)
-    _eltype = Ref(Bool)
-    function __internal_recursive_eltype(x)
-        _eltype[] = promote_type(_eltype[], __recursive_eltype(x))
-        return x
-    end
-    fmap(__internal_recursive_eltype, x)
-    return _eltype[]
-end
-
 @inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
 
 @inline __size(x::AbstractArray) = size(x)
 @inline __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? size(x) : nothing
-
-@inline __recursive_make_zero(x::Number) = zero(x)
-@inline __recursive_make_zero(x::AbstractArray{<:Number}) = zero(x)
-@inline __recursive_make_zero(x::AbstractArray) = map(__recursive_make_zero, x)
-@inline __recursive_make_zero(x::Tuple) = map(__recursive_make_zero, x)
-@inline __recursive_make_zero(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
-    __recursive_make_zero, values(x)))
-@inline __recursive_make_zero(::Nothing) = nothing
-@inline __recursive_make_zero(v::Val) = v
-@inline __recursive_make_zero(x) = fmap(__recursive_make_zero, x)
-
-@inline __recursive_make_zero!!(x::Number) = zero(x)
-@inline __recursive_make_zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
-@inline __recursive_make_zero!!(x::AbstractArray) = map(__recursive_make_zero!!, x)
-@inline __recursive_make_zero!!(x::Tuple) = map(__recursive_make_zero!!, x)
-@inline __recursive_make_zero!!(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
-    __recursive_make_zero!!, values(x)))
-@inline __recursive_make_zero!!(::Nothing) = nothing
-@inline __recursive_make_zero!!(x) = fmap(__recursive_make_zero!!, x)
 
 # helpers for the loss functions
 """

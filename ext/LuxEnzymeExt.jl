@@ -15,7 +15,7 @@ end
 # Case I: We have CachedEnzymeExtras and objective_function is unchanged.
 function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F, data,
         ts::Lux.Experimental.TrainState{<:CachedEnzymeExtras{FT}, F}) where {F, FT}
-    dps = Lux.__recursive_make_zero!!(ts.cache.dparameters)
+    dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
 
     _, loss = Enzyme.autodiff(
         Enzyme.ReverseWithPrimal, ts.cache.objective_function, Active, Const(ts.model),
@@ -31,7 +31,7 @@ end
 # Case II: We have CachedEnzymeExtras and objective_function is changed.
 function Lux.Experimental.compute_gradients(::AutoEnzyme, objective_function::F, data,
         ts::Lux.Experimental.TrainState{<:CachedEnzymeExtras{FT}}) where {F, FT}
-    dps = Lux.__recursive_make_zero!!(ts.cache.dparameters)
+    dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
 
     obj_fn, st_wrap, stats_wrap = Lux.Experimental.__wrap_objective_function(
         objective_function, ts.model, ts.parameters, ts.states, data, Val(FT))
@@ -48,7 +48,7 @@ end
 # Case III: Nothing is cached. First call to `compute_gradients`
 function Lux.Experimental.compute_gradients(ad::AutoEnzyme, objective_function::F, data,
         ts::Lux.Experimental.TrainState) where {F}
-    dps = Lux.__recursive_make_zero(ts.parameters)
+    dps = Lux.recursive_make_zero(ts.parameters)
     cache = CachedEnzymeExtras{true}(dps, nothing, nothing, nothing)
     ts_new = Lux.Experimental.TrainState(
         cache, nothing, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
