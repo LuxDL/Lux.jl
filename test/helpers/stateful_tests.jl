@@ -1,5 +1,5 @@
 @testitem "Simple Stateful Tests" setup=[SharedTestSetup] tags=[:helpers] begin
-    using Setfield
+    using Setfield, Zygote
 
     rng = StableRNG(12345)
 
@@ -38,5 +38,9 @@
 
         smodel_f64_2 = @set smodel_f64.ps = ps
         @test smodel_f64_2(x) isa Matrix{Float32}
+
+        smodel = StatefulLuxLayer{true}(model, ps, (; x = 2))
+        myloss(m) = m.st.x
+        @test only(Zygote.gradient(myloss, smodel)) === nothing
     end
 end

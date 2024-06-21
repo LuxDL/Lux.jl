@@ -33,7 +33,8 @@ end
 
 using Lux
 
-@testset "Ext Loading Check" begin  # These have to be loaded before using other packages
+# These have to be loaded before using other packages
+@testset "Ext Loading Check" begin
     @test !Lux._is_extension_loaded(Val(:ForwardDiff))
     using ForwardDiff
     @test Lux._is_extension_loaded(Val(:ForwardDiff))
@@ -45,6 +46,14 @@ using Lux
     @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
     using DynamicExpressions
     @test Lux._is_extension_loaded(Val(:DynamicExpressions))
+end
+
+@testset "Load Adaptor Tests" begin
+    @test_throws ErrorException FromFluxAdaptor()(1)
+    showerror(stdout, Lux.FluxModelConversionError("cannot convert"))
+
+    @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
+    showerror(stdout, Lux.SimpleChainsModelConversionError(Dense(2 => 2)))
 end
 
 for tag in LUX_TEST_GROUP

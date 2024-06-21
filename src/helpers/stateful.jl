@@ -75,7 +75,6 @@ function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {F
     return StatefulLuxLayer{FT}
 end
 
-# TODO: In v0.6 we should deprecate the kwarg and directly using `StatefulLuxLayer{true}`
 function StatefulLuxLayer(model::AbstractExplicitLayer, st::NamedTuple; kwargs...)
     return StatefulLuxLayer(model, nothing, st; kwargs...)
 end
@@ -113,18 +112,6 @@ function (s::StatefulLuxLayer)(x, p=s.ps)
     y, st = apply(s.model, x, p, __get_state(s))
     __set_state!(s, st)
     return y
-end
-
-function CRC.rrule(::Type{<:StatefulLuxLayer{true}}, model::AbstractExplicitLayer, ps, st)
-    slayer = StatefulLuxLayer{true}(model, ps, st, nothing)
-    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent()
-    return slayer, ∇StatefulLuxLayer
-end
-
-function CRC.rrule(::Type{<:StatefulLuxLayer{false}}, model::AbstractExplicitLayer, ps, st)
-    slayer = StatefulLuxLayer{false}(model, ps, nothing, st)
-    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent()
-    return slayer, ∇StatefulLuxLayer
 end
 
 for FT in (true, false)
