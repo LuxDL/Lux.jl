@@ -6,6 +6,8 @@
             d = Dense(5 => 5)
             psd, std = Lux.setup(rng, d) .|> dev
 
+            @test_deprecated Lux.freeze(d, psd, std, nothing)
+
             fd, ps, st = Lux.Experimental.freeze(d, psd, std, nothing)
             @test length(keys(ps)) == 0
             @test length(keys(st)) == 2

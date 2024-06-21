@@ -80,6 +80,9 @@ end
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
 
+            @test_deprecated Lux.Training.TrainState(
+                Lux.replicate(rng), model, opt; transform_variables=dev)
+
             tstate = Lux.Experimental.TrainState(
                 Lux.replicate(rng), model, opt; transform_variables=dev)
 
@@ -89,6 +92,9 @@ end
                 grads, loss, _, tstate = Lux.Experimental.compute_gradients(
                     ad, mse, (x, y), tstate)
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
+
+                @test_deprecated Lux.Training.compute_gradients(ad, mse, (x, y), tstate)
+                @test_deprecated Lux.Training.apply_gradients(tstate, grads)
             end
 
             for epoch in 1:100, (x, y) in dataset_

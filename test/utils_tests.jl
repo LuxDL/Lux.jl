@@ -23,7 +23,7 @@ end
     @test !Lux.istraining((training=false,))
 end
 
-@testitem "Ext Loading Check" begin
+@testitem "Ext Loading Check" tags=[:others] begin
     @test !Lux._is_extension_loaded(Val(:ForwardDiff))
     using ForwardDiff
     @test Lux._is_extension_loaded(Val(:ForwardDiff))
@@ -37,7 +37,7 @@ end
     @test Lux._is_extension_loaded(Val(:DynamicExpressions))
 end
 
-@testitem "ComponentArrays edge cases" begin
+@testitem "ComponentArrays edge cases" tags=[:others] begin
     using ComponentArrays
 
     @test eltype(ComponentArray()) == Float32
@@ -45,6 +45,15 @@ end
     @test eltype(ComponentArray{Float64}(NamedTuple())) == Float64
 
     @test eltype(ComponentArray(Any[:a, 1], (FlatAxis(),))) == Any
+end
+
+@testitem "Deprecations" tags=[:others] begin
+    @test_deprecated Lux.disable_stacktrace_truncation!()
+    @test_deprecated Lux.cpu(rand(2))
+    @test_deprecated Lux.gpu(rand(2))
+
+    model = NoOpLayer()
+    @test_deprecated Lux.Experimental.StatefulLuxLayer(model, (;), (;))
 end
 
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin

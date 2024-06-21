@@ -9,6 +9,8 @@
 
         sharing = (("d2.l2", "d1"), ("d3", "d2.l1"))
 
+        @test_deprecated Lux.share_parameters(ps, sharing)
+
         ps_1 = Lux.Experimental.share_parameters(ps, sharing)
 
         @test ps_1.d2.l2.weight == ps_1.d1.weight
