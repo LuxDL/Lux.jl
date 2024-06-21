@@ -17,12 +17,12 @@
                 x = rand(Float32, 2, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (1, 1)
             end
@@ -32,12 +32,12 @@
                 x = rand(Float32, 2, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (5, 1)
             end
@@ -47,12 +47,12 @@
                 x = rand(Float32, 2, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (2, 1)
             end
@@ -63,12 +63,12 @@
                 x = rand(Float32, 2, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (2, 1)
             end
@@ -79,12 +79,12 @@
                 x = (rand(Float32, 2, 1), rand(Float32, 2, 1)) .|> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test all(model(x) .≈ model_lux(x, ps, st)[1])
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test all(size.(model_lux(x, ps, st)[1]) .== ((2, 1),))
             end
@@ -97,12 +97,12 @@
                     x = randn(Float32, 2, 4) |> aType
 
                     model_lux = toluxpsst(model)
-                    ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                    ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                     @test model(x) ≈ model_lux(x, ps, st)[1]
 
                     model_lux = tolux(model)
-                    ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                    ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                     @test size(model_lux(x, ps, st)[1]) == size(model(x))
                 end
@@ -114,12 +114,12 @@
                     x = randn(Float32, 2, 4) |> aType
 
                     model_lux = toluxpsst(model)
-                    ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                    ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                     @test model(x) ≈ model_lux(x, ps, st)[1]
 
                     model_lux = tolux(model)
-                    ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                    ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                     @test size(model_lux(x, ps, st)[1]) == size(model(x))
                 end
@@ -132,12 +132,12 @@
                     y = randn(Float32, 3, 4) |> aType
 
                     model_lux = toluxpsst(model)
-                    ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                    ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                     @test model(x, y) ≈ model_lux((x, y), ps, st)[1]
 
                     model_lux = tolux(model)
-                    ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                    ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                     @test size(model_lux((x, y), ps, st)[1]) == size(model(x, y))
                 end
@@ -148,12 +148,12 @@
                 x = rand(1:16, 2, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (4, 2, 4)
             end
@@ -165,7 +165,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
@@ -173,7 +173,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -183,7 +183,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
@@ -191,7 +191,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -201,7 +201,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
@@ -210,7 +210,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -222,7 +222,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -232,7 +232,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -242,7 +242,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -252,7 +252,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -262,7 +262,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -272,7 +272,7 @@
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -284,7 +284,7 @@
                 x = rand(Float32, 2, 2, 2, 1) |> aType
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (10, 10, 2, 1)
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -295,7 +295,7 @@
                 x = randn(Float32, 2, 2, 4, 1) |> aType
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1]) == (4, 4, 1, 1)
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -310,7 +310,7 @@
                 x = rand(Float32, 2, 4) |> aType
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
             end
@@ -320,7 +320,7 @@
                 x = rand(Float32, 2, 4) |> aType
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
             end
@@ -330,7 +330,7 @@
                 x = rand(Float32, 2, 4) |> aType
 
                 model_lux = tolux(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
             end
@@ -342,7 +342,7 @@
                 x = randn(Float32, 2, 4) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -352,7 +352,7 @@
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = toluxforce(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -363,13 +363,13 @@
                 x = randn(Float32, 2, 2, 4, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
                 model_lux = toluxforce(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -380,7 +380,7 @@
                 x = randn(Float32, 4, 4, 4, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
                 st = Lux.testmode(st)
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
@@ -391,7 +391,7 @@
                 x = randn(Float32, 4, 4, 4, 1) |> aType
 
                 model_lux = toluxpsst(model)
-                ps, st = Lux.setup(get_stable_rng(12345), model_lux) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> device
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
             end
@@ -402,12 +402,12 @@
                 model = tolux(Flux.Dropout(0.5f0))
 
                 x = randn(Float32, 2, 4) |> aType
-                ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model) .|> device
 
                 @test size(model(x, ps, st)[1]) == size(x)
 
                 x = randn(Float32, 2, 3, 4) |> aType
-                ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model) .|> device
 
                 @test size(model(x, ps, st)[1]) == size(x)
             end
@@ -416,12 +416,12 @@
                 model = tolux(Flux.AlphaDropout(0.5))
 
                 x = randn(Float32, 2, 4) |> aType
-                ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model) .|> device
 
                 @test size(model(x, ps, st)[1]) == size(x)
 
                 x = randn(Float32, 2, 4, 3) |> aType
-                ps, st = Lux.setup(get_stable_rng(12345), model) .|> device
+                ps, st = Lux.setup(StableRNG(12345), model) .|> device
 
                 @test size(model(x, ps, st)[1]) == size(x)
             end
@@ -441,7 +441,7 @@
             x = randn(10) |> aType
 
             c_lux = tolux(c)
-            ps, st = Lux.setup(get_stable_rng(12345), c_lux) .|> device
+            ps, st = Lux.setup(StableRNG(12345), c_lux) .|> device
 
             @test c(x) ≈ c_lux(x, ps, st)[1]
         end

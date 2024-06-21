@@ -1,7 +1,7 @@
 @testitem "TrainState" setup=[SharedTestSetup] tags=[:contrib] begin
     using Optimisers
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
@@ -30,7 +30,7 @@ end
         return sum(y), st, ()
     end
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
@@ -63,7 +63,7 @@ end
         return sum(abs2, y .- y_data), st_, ()
     end
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     x_data = randn(rng, Float32, 4, 32)
     y_data = evalpoly.(x_data, ((1, 2, 3),)) .- evalpoly.(x_data, ((5, 2),))

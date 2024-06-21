@@ -1,7 +1,7 @@
 @testitem "Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -54,7 +54,7 @@ end
 @testitem "Nested AD: Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now

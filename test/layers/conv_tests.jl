@@ -1,12 +1,12 @@
 @testitem "Pooling" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = randn(rng, Float32, 10, 10, 3, 2) |> aType
         y = randn(rng, Float32, 20, 20, 3, 2) |> aType
 
         layer = AdaptiveMaxPool((5, 5))
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test layer(x, ps, st)[1] == maxpool(x, PoolDims(x, 2))
@@ -15,7 +15,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = AdaptiveMeanPool((5, 5))
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test layer(x, ps, st)[1] == meanpool(x, PoolDims(x, 2))
@@ -24,7 +24,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = AdaptiveMaxPool((10, 5))
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test layer(y, ps, st)[1] == maxpool(y, PoolDims(y, (2, 4)))
@@ -33,7 +33,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = AdaptiveMeanPool((10, 5))
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test layer(y, ps, st)[1] == meanpool(y, PoolDims(y, (2, 4)))
@@ -42,7 +42,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = GlobalMaxPool()
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
@@ -51,7 +51,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = GlobalMeanPool()
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
@@ -60,7 +60,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = MaxPool((2, 2))
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test layer(x, ps, st)[1] == maxpool(x, PoolDims(x, 2))
@@ -69,7 +69,7 @@
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
         layer = MeanPool((2, 2))
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @test layer(x, ps, st)[1] == meanpool(x, PoolDims(x, 2))
@@ -83,7 +83,7 @@
             x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
 
             layer = ltype(k; pad=Lux.SamePad())
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1])[1:(end - 2)] == cld.(size(x)[1:(end - 2)], k)
@@ -95,13 +95,13 @@
 end
 
 @testitem "CNN" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Grouped Conv" begin
             x = rand(rng, Float32, 4, 6, 1) |> aType
             layer = Conv((3,), 6 => 2; groups=2)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             broken = false
@@ -126,7 +126,7 @@ end
 
             x = rand(rng, Float32, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3), 6 => 2; groups=2)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             broken = false
@@ -151,7 +151,7 @@ end
 
             x = rand(rng, Float32, 4, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3, 3), 6 => 2; groups=2)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             broken = false
@@ -176,15 +176,15 @@ end
 
             # Test that we cannot ask for non-integer multiplication factors
             layer = Conv((2, 2), 3 => 10; groups=2)
-            __display(layer)
+            display(layer)
             @test_throws DimensionMismatch Lux.setup(rng, layer)
             layer = Conv((2, 2), 2 => 9; groups=2)
-            __display(layer)
+            display(layer)
             @test_throws DimensionMismatch Lux.setup(rng, layer)
 
             @testset "Segfault Test LuxDL/Lux.jl#386" begin
                 layer = Conv((5,), 32 => 32, tanh; groups=32)
-                __display(layer)
+                display(layer)
                 x = rand(rng, Float32, 16, 32, 1) |> aType
                 ps, st = Lux.setup(rng, layer) |> dev
 
@@ -209,7 +209,7 @@ end
 
         @testset "Asymmetric Padding" begin
             layer = Conv((3, 3), 1 => 1, relu; pad=(0, 1, 1, 2))
-            __display(layer)
+            display(layer)
             x = ones(Float32, 28, 28, 1, 1) |> aType
             ps, st = Lux.setup(rng, layer) |> dev
 
@@ -232,7 +232,7 @@ end
             layer = Conv((5, 5), 10 => 20, identity;
                 init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
                 init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer)
             @test ps.weight isa aType{Float64, 4}
             @test ps.bias isa aType{Float16, 4}
@@ -242,7 +242,7 @@ end
             x = randn(rng, Float32, 4, 4, 3, 2) |> aType
 
             layer = Conv((2, 2), 3 => 15; groups=3)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
 
@@ -253,7 +253,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             layer = Conv((2, 2), 3 => 9; groups=3)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1], 3) == 9
@@ -263,7 +263,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             layer = Conv((2, 2), 3 => 9; groups=3, use_bias=false)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
 
@@ -275,7 +275,7 @@ end
 
             # Test that we cannot ask for non-integer multiplication factors
             layer = Conv((2, 2), 3 => 10; groups=3)
-            __display(layer)
+            display(layer)
             @test_throws DimensionMismatch Lux.setup(rng, layer)
         end
 
@@ -285,7 +285,7 @@ end
             @testset "Kwargs: $kwarg" for kwarg in (
                 (; stride=1), (; dilation=max.(k .÷ 2, 1), stride=1), (; stride=3))
                 layer = Conv(k, 1 => 1; pad=Lux.SamePad(), kwarg...)
-                __display(layer)
+                display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
 
                 broken = false
@@ -320,7 +320,7 @@ end
             x = x |> aType
 
             layer = Conv((3, 3), 1 => 1)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             y = zeros(eltype(ps.weight), 5, 5, 1, 1) |> aType
@@ -330,7 +330,7 @@ end
             @jet layer(x, ps, st)
 
             layer = Conv((3, 1), 1 => 1)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             y = zeros(eltype(ps.weight), 5, 7, 1, 1) |> aType
@@ -340,7 +340,7 @@ end
             @jet layer(x, ps, st)
 
             layer = Conv((1, 3), 1 => 1)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
@@ -350,7 +350,7 @@ end
             @jet layer(x, ps, st)
 
             layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
@@ -370,7 +370,7 @@ end
 end
 
 @testitem "Upsample" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Construction" begin
@@ -401,7 +401,7 @@ end
                     continue
                 end
                 layer = Upsample(umode; size=xsize, scale=scale)
-                __display(layer)
+                display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
                 x = zeros((32, 32, 3, 4)) |> aType
 
@@ -424,7 +424,7 @@ end
                     continue
                 end
                 layer = Upsample(umode; size=xsize, scale=scale)
-                __display(layer)
+                display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
                 x = zeros((32, 32, 32, 3, 4)) |> aType
 
@@ -444,11 +444,11 @@ end
 end
 
 @testitem "PixelShuffle" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         layer = PixelShuffle(2)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         x = rand(rng, Float32, 3, 6, 3) |> aType
 
@@ -461,7 +461,7 @@ end
         @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1e-3 rtol=1e-3
 
         layer = PixelShuffle(3)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 3, 4, 9, 3) |> aType
 
@@ -476,12 +476,12 @@ end
 end
 
 @testitem "CrossCor" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Asymmetric Padding" begin
             layer = CrossCor((3, 3), 1 => 1, relu; pad=(0, 1, 1, 2))
-            __display(layer)
+            display(layer)
             x = ones(Float32, 28, 28, 1, 1) |> aType
             ps, st = Lux.setup(rng, layer) |> dev
 
@@ -504,7 +504,7 @@ end
             layer = CrossCor((5, 5), 10 => 20, identity;
                 init_weight=(rng, dims...) -> aType(randn(rng, Float64, dims...)),
                 init_bias=(rng, dims...) -> aType(randn(rng, Float16, dims...)))
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer)
             @test ps.weight isa aType{Float64, 4}
             @test ps.bias isa aType{Float16, 4}
@@ -518,7 +518,7 @@ end
                 (; stride=1), (; dilation=max.(k .÷ 2, 1), stride=1),
                 (; stride=3), (; stride=1, use_bias=false))
                 layer = CrossCor(k, 1 => 1; pad=Lux.SamePad(), kwarg...)
-                __display(layer)
+                display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
 
                 broken = false
@@ -557,7 +557,7 @@ end
 end
 
 @testitem "ConvTranspose" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = randn(Float32, 5, 5, 1, 1) |> aType
@@ -566,7 +566,7 @@ end
         y = layer(x, ps, st)[1]
 
         layer = ConvTranspose((3, 3), 1 => 1)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(y, ps, st)
@@ -574,7 +574,7 @@ end
         x_hat1 = layer(y, ps, st)[1]
 
         layer = ConvTranspose((3, 3), 1 => 1; use_bias=false)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(y, ps, st)
@@ -584,7 +584,7 @@ end
         @test size(x_hat1) == size(x_hat2) == size(x)
 
         layer = ConvTranspose((3, 3), 1 => 1)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 5, 5, 1, 1) |> aType
 
@@ -594,7 +594,7 @@ end
 
         x = rand(Float32, 5, 5, 2, 4) |> aType
         layer = ConvTranspose((3, 3), 2 => 3)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(x, ps, st)
@@ -604,13 +604,13 @@ end
         # test ConvTranspose supports groups argument
         x = randn(Float32, 10, 10, 2, 3) |> aType
         layer1 = ConvTranspose((3, 3), 2 => 4; pad=SamePad())
-        __display(layer1)
+        display(layer1)
         ps1, st1 = Lux.setup(rng, layer1) |> dev
         @test size(ps1.weight) == (3, 3, 4, 2)
         @test size(layer1(x, ps1, st1)[1]) == (10, 10, 4, 3)
 
         layer2 = ConvTranspose((3, 3), 2 => 4; groups=2, pad=SamePad())
-        __display(layer2)
+        display(layer2)
         ps2, st2 = Lux.setup(rng, layer2) |> dev
         @test size(ps2.weight) == (3, 3, 2, 2)
         @test size(layer1(x, ps1, st1)[1]) == size(layer2(x, ps2, st2)[1])
@@ -623,7 +623,7 @@ end
 
         x = randn(Float32, 10, 2, 1) |> aType
         layer = ConvTranspose((3,), 2 => 4; pad=SamePad(), groups=2)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(x, ps, st)
@@ -636,7 +636,7 @@ end
 
         x = randn(Float32, 10, 11, 4, 2) |> aType
         layer = ConvTranspose((3, 5), 4 => 4; pad=SamePad(), groups=4)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(x, ps, st)
@@ -649,7 +649,7 @@ end
 
         x = randn(Float32, 10, 11, 4, 2) |> aType
         layer = ConvTranspose((3, 5), 4 => 4, tanh; pad=SamePad(), groups=4)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(x, ps, st)
@@ -661,7 +661,7 @@ end
 
         x = randn(Float32, 10, 11, 12, 3, 2) |> aType
         layer = ConvTranspose((3, 5, 3), 3 => 6; pad=SamePad(), groups=3)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(x, ps, st)
@@ -670,7 +670,7 @@ end
 
         x = randn(Float32, 10, 11, 12, 3, 2) |> aType
         layer = ConvTranspose((3, 5, 3), 3 => 6, tanh; pad=SamePad(), groups=3)
-        __display(layer)
+        display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
 
         @jet layer(x, ps, st)
@@ -682,7 +682,7 @@ end
 
         @testset "SamePad size mismatch LuxDL/Lux.jl#534" begin
             layer = ConvTranspose((3,), 2 => 1; pad=SamePad(), stride=2)
-            __display(layer)
+            display(layer)
             x = ones(Float32, 2, 2, 1) |> aType
             ps, st = Lux.setup(rng, layer) |> dev
 

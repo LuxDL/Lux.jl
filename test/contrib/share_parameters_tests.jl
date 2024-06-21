@@ -1,5 +1,5 @@
 @testitem "Parameter Sharing" setup=[SharedTestSetup] tags=[:contrib] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         model = Chain(; d1=Dense(2 => 4, tanh),

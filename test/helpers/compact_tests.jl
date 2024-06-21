@@ -1,7 +1,7 @@
 @testitem "@compact" setup=[SharedTestSetup] tags=[:helpers] begin
     using ComponentArrays, Zygote
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     function similar_strings(s₁::String, s₂::String)
         if s₁ != s₂

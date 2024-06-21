@@ -73,7 +73,7 @@ end
 
 @testitem "Enzyme Integration" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
     :autodiff, :enzyme] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # TODO: Currently all the tests are run on CPU. We should eventually add tests for
@@ -93,7 +93,7 @@ end
     :autodiff, :enzyme] begin
     using ComponentArrays
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # TODO: Currently all the tests are run on CPU. We should eventually add tests for

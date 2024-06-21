@@ -1,15 +1,8 @@
 @testitem "replicate" setup=[SharedTestSetup] tags=[:others] begin
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         _rng = get_default_rng(mode)
-
-        if mode == "amdgpu"
-            @test_skip randn(_rng, 10, 2) != randn(_rng, 10, 2)
-            @test_skip randn(Lux.replicate(_rng), 10, 2) ==
-                       randn(Lux.replicate(_rng), 10, 2)
-        else
-            @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
-            @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
-        end
+        @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
+        @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
     end
 end
 
@@ -49,7 +42,7 @@ end
 end
 
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         x = randn(rng, 10, 1) |> aType
@@ -87,7 +80,7 @@ end
 @testitem "ComponentArrays" setup=[SharedTestSetup] tags=[:others] begin
     using Optimisers, Functors
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
@@ -109,7 +102,7 @@ end
         @test ps_c_re(ps_c_f) == ps_c
 
         # Empty ComponentArray test
-        @test_nowarn __display(ComponentArray(NamedTuple()))
+        @test_nowarn display(ComponentArray(NamedTuple()))
         println()
 
         # Optimisers
@@ -130,7 +123,7 @@ end
 end
 
 @testitem "_init_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
@@ -141,7 +134,7 @@ end
 end
 
 @testitem "FP Conversions" setup=[SharedTestSetup] tags=[:others] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),

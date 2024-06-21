@@ -3,7 +3,7 @@
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -81,7 +81,7 @@ end
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -163,7 +163,7 @@ end
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -203,7 +203,7 @@ end
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now

@@ -4,7 +4,7 @@
 @testitem "Tracing AD: AoS to SoA" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ReverseDiff, Tracker
 
-    rng = get_stable_rng()
+    rng = StableRNG()
 
     x = rand(rng, Float32, 1, 128)
     nn = Dense(1 => 1)

@@ -1,7 +1,7 @@
 @testitem "Type Stability" setup=[SharedTestSetup] tags=[:core_layers] begin
     using Zygote
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     #! format: off
     MODELS = [
