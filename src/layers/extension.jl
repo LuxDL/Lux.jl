@@ -49,7 +49,7 @@ julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
 ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)
 
 julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
-Chain(
+DynamicExpressionsLayer(
     layer_1 = Parallel(
         layer_1 = DynamicExpressionNode(x1 * cos(x2 - 3.2)),  # 1 parameters
         layer_2 = DynamicExpressionNode(((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)),  # 2 parameters

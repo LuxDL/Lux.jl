@@ -153,20 +153,19 @@ end
     return Ref{typeof(st_)}(st_), Ref{typeof(stats_)}(stats_)
 end
 
+@inline __set_refval!(x, y) = (x[] = y)
+CRC.@non_differentiable __set_refval!(::Any...)
+EnzymeRules.inactive(::typeof(__set_refval!), ::Any...) = nothing
+
 @inline function __wrap_objective_function(
         objective_function::F, m, ps, st, data, first_try::Val) where {F}
     st_updated, stats = __generate_wrappers(objective_function, m, ps, st, data, first_try)
 
-    wrapped_objective_function = let objective_function = objective_function,
-        st_updated = st_updated,
-        stats = stats
-
-        (model, ps, st, data) -> begin
-            y, st_, stats_ = objective_function(model, ps, st, data)
-            st_updated[] = st_
-            stats[] = stats_
-            return y
-        end
+    wrapped_objective_function = @closure (model, ps, st, data) -> begin
+        loss, st_, stats_ = objective_function(model, ps, st, data)
+        __set_refval!(st_updated, st_)
+        __set_refval!(stats, stats_)
+        return loss
     end
 
     return wrapped_objective_function, st_updated, stats

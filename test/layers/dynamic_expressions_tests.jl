@@ -1,5 +1,5 @@
 @testitem "Dynamic Expressions" setup=[SharedTestSetup] tags=[:others] begin
-    using DynamicExpressions
+    using DynamicExpressions, ForwardDiff, ComponentArrays
 
     operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos])
 
@@ -21,10 +21,37 @@
         __f = (x, p) -> sum(abs2, first(layer(x, p, st)))
         @test_gradients __f x ps atol=1.0f-3 rtol=1.0f-3
 
+        # Particular ForwardDiff dispatches
+        ps_ca = ComponentArray(ps)
+        dps_ca = ForwardDiff.gradient(ps_ca) do ps_
+            sum(abs2, first(layer(x, ps_, st)))
+        end
+        dx = ForwardDiff.gradient(x) do x_
+            sum(abs2, first(layer(x_, ps, st)))
+        end
+        dxps = ForwardDiff.gradient(ComponentArray(; x=x, ps=ps)) do ca
+            sum(abs2, first(layer(ca.x, ca.ps, st)))
+        end
+
+        @test dx≈dxps.x atol=1.0f-3 rtol=1.0f-3
+        @test dps_ca≈dxps.ps atol=1.0f-3 rtol=1.0f-3
+
         x = Float64.(x)
         y, st_ = layer(x, ps, st)
         @test eltype(y) == Float64
         __f = (x, p) -> sum(abs2, first(layer(x, p, st)))
         @test_gradients __f x ps atol=1.0e-3 rtol=1.0e-3
+    end
+
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        layer = DynamicExpressionsLayer(operators, expr_1)
+        ps, st = Lux.setup(Random.default_rng(), layer) |> dev
+
+        x = [1.0f0 2.0f0 3.0f0
+             4.0f0 5.0f0 6.0f0] |> aType
+
+        if ongpu
+            @test_throws ArgumentError layer(x, ps, st)
+        end
     end
 end
