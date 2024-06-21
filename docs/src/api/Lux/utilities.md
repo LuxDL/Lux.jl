@@ -56,6 +56,12 @@ Lux.xlogy
 Lux.xlogx
 ```
 
+## Recursive Operations
+
+```@docs
+Lux.recursive_add!!
+```
+
 ## Updating Floating Point Precision
 
 By default, Lux uses Float32 for all parameters and states. To update the precision

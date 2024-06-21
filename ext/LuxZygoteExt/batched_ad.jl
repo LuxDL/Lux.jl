@@ -1,7 +1,3 @@
-@inline function Lux.__batched_jacobian(f::F, backend::AutoZygote, x, p) where {F}
-    return Lux.__batched_jacobian_impl(Base.Fix2(f, p), backend, x)
-end
-
 @inline function Lux.__batched_jacobian(f::F, backend::AutoZygote, x) where {F}
     return Lux.__batched_jacobian_impl(f, backend, x)
 end

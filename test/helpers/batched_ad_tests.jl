@@ -48,6 +48,33 @@
                 @test_nowarn model(x, ps, st)
             end
         end
+
+        @testset "Simple Batched Jacobian" begin
+            # Without any Lux bs just plain old batched jacobian
+            ftest(x) = x .^ 2
+            x = reshape(Float32.(1:6), 2, 3) |> dev
+
+            Jx_true = zeros(Float32, 2, 2, 3)
+            Jx_true[1, 1, 1] = 2
+            Jx_true[2, 2, 1] = 4
+            Jx_true[1, 1, 2] = 6
+            Jx_true[2, 2, 2] = 8
+            Jx_true[1, 1, 3] = 10
+            Jx_true[2, 2, 3] = 12
+            Jx_true = Jx_true |> dev
+
+            Jx_fdiff = batched_jacobian(ftest, AutoForwardDiff(), x)
+            @test Jx_fdiff ≈ Jx_true
+
+            Jx_zygote = batched_jacobian(ftest, AutoZygote(), x)
+            @test Jx_zygote ≈ Jx_true
+
+            fincorrect(x) = x[:, 1]
+            x = reshape(Float32.(1:6), 2, 3) |> dev
+
+            @test_throws ArgumentError batched_jacobian(fincorrect, AutoForwardDiff(), x)
+            @test_throws AssertionError batched_jacobian(fincorrect, AutoZygote(), x)
+        end
     end
 end
 
