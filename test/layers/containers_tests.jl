@@ -37,6 +37,7 @@ end
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "zero sum" begin
             layer = Parallel(+, WrappedFunction(zero), NoOpLayer())
+            @test :layer_1 in keys(layer) && :layer_2 in keys(layer)
             __display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 10, 10, 10, 10) |> aType
@@ -321,6 +322,26 @@ end
             @test_throws ArgumentError autoencoder.layer_1
         end
     end
+
+    @testset "constructors" begin
+        @test Chain([Dense(10 => 5, sigmoid)]) == Dense(10 => 5, sigmoid)
+
+        f1(x, ps, st::NamedTuple) = (x .+ 1, st)
+        f2(x) = x .+ 2
+        model = Chain((Dense(2 => 3), Dense(3 => 2)), f1, f2, NoOpLayer())
+
+        @test length(model) == 4
+
+        x = rand(Float32, 2, 5)
+        ps, st = Lux.setup(rng, model)
+
+        y = first(model(x, ps, st))
+        @test size(y) == (2, 5)
+
+        @test y ≈
+              ps.layer_2.weight * (ps.layer_1.weight * x .+ ps.layer_1.bias) .+
+              ps.layer_2.bias .+ 1 .+ 2
+    end
 end
 
 @testitem "Maxout" setup=[SharedTestSetup] tags=[:core_layers] begin
@@ -339,17 +360,22 @@ end
         end
 
         @testset "simple alternatives" begin
-            layer = Maxout(
+            layer1 = Maxout(
                 NoOpLayer(), WrappedFunction(x -> 2x), WrappedFunction(x -> 0.5x))
-            __display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
-            x = Float32.(collect(1:40)) |> aType
+            layer2 = Maxout(;
+                l1=NoOpLayer(), l2=WrappedFunction(x -> 2x), l3=WrappedFunction(x -> 0.5x))
 
-            @test layer(x, ps, st)[1] == 2 .* x
+            for layer in (layer1, layer2)
+                __display(layer)
+                ps, st = Lux.setup(rng, layer) .|> device
+                x = Float32.(collect(1:40)) |> aType
 
-            @jet layer(x, ps, st)
-            __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                @test layer(x, ps, st)[1] == 2 .* x
+
+                @jet layer(x, ps, st)
+                __f = x -> sum(first(layer(x, ps, st)))
+                @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            end
         end
 
         @testset "complex alternatives" begin

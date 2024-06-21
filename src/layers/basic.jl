@@ -212,7 +212,8 @@ struct NoOpLayer <: AbstractExplicitLayer end
 @inline (noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
 
 """
-    WrappedFunction(f)
+    WrappedFunction{DC}(f)
+    WrappedFunction(f) -> WrappedFunction{:direct_call}(f)
 
 Wraps a stateless and parameter less function. Might be used when a function is added to
 `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
@@ -221,7 +222,11 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 
 ## Arguments
 
-  - `f::Function`: A stateless and parameterless function
+  - `DC`: If `:runtime_check`, then we check if the function can be called with the input
+    `x`, `ps`, and `st` using `hasmethod`. If `:direct_call`, we call `f(x)` directly.
+    For all other values, we call `f(x, ps, st)` which must return a tuple. **(In future
+    versions, we will default to `:runtime_check`)**
+  - `f`: Some function.
 
 ## Inputs
 
@@ -232,11 +237,35 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-@concrete struct WrappedFunction <: AbstractExplicitLayer
+@concrete struct WrappedFunction{DC} <: AbstractExplicitLayer
     func
 end
 
-(wf::WrappedFunction)(x, ps, st::NamedTuple) = wf.func(x), st
+function WrappedFunction(f::F) where {F}
+    # Not a depwarn but helpful to call this
+    Base.depwarn("The current default of `:direct_call` will be replaced with \
+                  `:runtime_check` from v0.6). Please make sure that the assumptions of \
+                  this function are correct or specific \
+                  `WrappedFunction{:direct_call}(f)`",
+        :WrappedFunction)
+    return WrappedFunction{:direct_call}(f)
+end
+
+function (wf::WrappedFunction{:direct_call})(x, ps, st::NamedTuple)
+    return __maybe_direct_call(wf.func, x, ps, st, Val(true))
+end
+
+function (wf::WrappedFunction)(x, ps, st::NamedTuple)
+    return __maybe_direct_call(wf.func, x, ps, st, Val(false))
+end
+
+function (wf::WrappedFunction{:runtime_check})(x, ps, st::NamedTuple)
+    return __maybe_direct_call(
+        wf.func, x, ps, st, Val(!hasmethod(wf.func, (typeof(x), typeof(ps), typeof(st)))))
+end
+
+@inline __maybe_direct_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
+@inline __maybe_direct_call(f, x, ps, st, ::Val{true}) = f(x), st
 
 function Base.show(io::IO, w::WrappedFunction)
     return print(io, "WrappedFunction(", w.func, ")")

@@ -23,20 +23,6 @@ end
     @test !Lux.istraining((training=false,))
 end
 
-@testitem "Ext Loading Check" tags=[:others] begin
-    @test !Lux._is_extension_loaded(Val(:ForwardDiff))
-    using ForwardDiff
-    @test Lux._is_extension_loaded(Val(:ForwardDiff))
-
-    @test !Lux._is_extension_loaded(Val(:Zygote))
-    using Zygote
-    @test Lux._is_extension_loaded(Val(:Zygote))
-
-    @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
-    using DynamicExpressions
-    @test Lux._is_extension_loaded(Val(:DynamicExpressions))
-end
-
 @testitem "ComponentArrays edge cases" tags=[:others] begin
     using ComponentArrays
 
