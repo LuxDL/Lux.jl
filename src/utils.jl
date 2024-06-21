@@ -106,7 +106,7 @@ function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
     Δ = similar(x)
     for i in axes(x, dims)
         Δi = selectdim(Δ, dims, i)
-        fill!(Δi, Δs[i])
+        copyto!(Δi, Δs[i])
     end
     return CRC.ProjectTo(x)(Δ)
 end

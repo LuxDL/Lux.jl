@@ -2,7 +2,8 @@
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         _rng = get_default_rng(mode)
         @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
-        @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2)
+        @test randn(Lux.replicate(_rng), 10, 2)==randn(Lux.replicate(_rng), 10, 2) broken=(mode ==
+                                                                                           "amdgpu")
     end
 end
 

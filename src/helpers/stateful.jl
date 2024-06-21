@@ -61,8 +61,14 @@ function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}
         nt -> StatefulLuxLayer{FT}(nt.model, nt.ps, nt.st, nt.st_any))
 end
 
-@inline LuxCore.parameterlength(m::StatefulLuxLayer) = LuxCore.parameterlength(m.model)
-@inline LuxCore.statelength(m::StatefulLuxLayer) = LuxCore.statelength(m.model)
+@inline function LuxCore.parameterlength(m::StatefulLuxLayer)
+    m.ps === nothing && return LuxCore.parameterlength(m.model)
+    return LuxCore.parameterlength(m.ps)
+end
+@inline function LuxCore.statelength(m::StatefulLuxLayer{FT}) where {FT}
+    FT && return LuxCore.statelength(m.st)
+    return LuxCore.statelength(m.st_any)
+end
 @inline LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
 
 function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {FT}

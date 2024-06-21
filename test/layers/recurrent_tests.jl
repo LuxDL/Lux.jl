@@ -376,7 +376,6 @@ end
     end
 end
 
-
 @testitem "RNN Error Checks" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = StableRNG(12345)
 
