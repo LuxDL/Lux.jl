@@ -331,7 +331,9 @@ end
 end
 @inline function __fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
     fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
-    return mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y)
+    # mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y) leads to slowdowns, better to
+    # allocate a new array
+    return sum(lfn.(x, y))
 end
 
 @inline __fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)

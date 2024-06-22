@@ -2,10 +2,9 @@ module LuxReverseDiffExt
 
 using ADTypes: ADTypes, AutoReverseDiff
 using ArrayInterface: ArrayInterface
-using Functors: fmap
 using Lux: Lux, LuxCPUDevice
+using Lux.Experimental: TrainingBackendCache, TrainState
 using ReverseDiff: ReverseDiff, TrackedArray, @grad_from_chainrules
-using Setfield: @set!
 
 # AoS to SoA conversion
 function Lux.apply(

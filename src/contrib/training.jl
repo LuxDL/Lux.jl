@@ -29,6 +29,14 @@ Internal fields:
     step::Int
 end
 
+@concrete struct TrainingBackendCache{backend, first_try}
+    dparameters
+    objective_function
+    extras
+end
+
+@inline __backend(::TrainingBackendCache{backend}) where {backend} = backend
+
 function Base.show(io::IO, ts::TrainState)
     println(io, "TrainState")
     println(io, "    model: ", ts.model)
@@ -36,7 +44,13 @@ function Base.show(io::IO, ts::TrainState)
     println(io, "    # of states: ", Lux.statelength(ts.states))
     println(io, "    optimizer_state: ", ts.optimizer_state)
     print(io, "    step: ", ts.step)
-    ts.cache !== nothing && print(io, "\n    cache: ", nameof(typeof(ts.cache)))
+    if ts.cache !== nothing
+        if ts.cache isa TrainingBackendCache
+            print(io, "\n    cache: $(nameof(typeof(ts.cache))){$(__backend(ts.cache))}")
+        else
+            print(io, "\n    cache: $(nameof(typeof(ts.cache)))")
+        end
+    end
     ts.objective_function !== nothing &&
         print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
