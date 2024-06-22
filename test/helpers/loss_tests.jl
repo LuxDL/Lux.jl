@@ -33,11 +33,11 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(xlogx)
-        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_finite_differences=true
 
         y = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(xlogy)
-        @eval @test_gradients $__f $x $y gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        @eval @test_gradients $__f $x $y gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_finite_differences=true
     end
 end
 

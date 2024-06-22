@@ -98,6 +98,26 @@
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+
+            f11(x) = x .* x
+
+            layer = WrappedFunction{:runtime_check}(f11)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            x = randn(rng, 2, 3) |> aType
+
+            @test layer(x, ps, st)[1] ≈ x .* x
+            @inferred layer(x, ps, st)
+
+            f12(x, ps, st) = x .+ 1, st
+
+            layer = WrappedFunction{:runtime_check}(f12)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            x = randn(rng, 2, 3) |> aType
+
+            @test layer(x, ps, st)[1] ≈ x .+ 1
+            @inferred layer(x, ps, st)
         end
 
         @testset "PeriodicEmbedding" begin
@@ -204,12 +224,18 @@ end
             layer = Scale(10, 100)
             ps, st = Lux.setup(rng, layer) .|> device
 
+            @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
+            @test Lux.statelength(layer) == Lux.statelength(st)
+
             @test size(ps.weight) == (10, 100)
             @test size(ps.bias) == (10, 100)
             @test layer.activation == identity
 
             layer = Scale(10, 100, relu; use_bias=false)
             ps, st = Lux.setup(rng, layer) .|> device
+
+            @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
+            @test Lux.statelength(layer) == Lux.statelength(st)
 
             @test !haskey(ps, :bias)
             @test layer.activation == relu
