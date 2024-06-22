@@ -17,11 +17,11 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
         _layer_show(io, obj, indent, name)
     else
         println(io, " "^indent, isnothing(name) ? "" : "$name = ", display_name(obj), pre)
-        if obj isa Chain{<:NamedTuple}
+        if obj isa Chain
             for k in Base.keys(obj)
                 _big_show(io, obj.layers[k], indent + 4, k)
             end
-        elseif obj isa Parallel{<:Any, <:NamedTuple}
+        elseif obj isa Parallel
             if obj.connection !== nothing
                 _big_show(io, obj.connection, indent + 4)
             end
@@ -60,10 +60,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
 end
 
 _show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
-_show_leaflike(::Tuple{}) = false       # Prevents method ambiguity
 _show_leaflike(x::AbstractExplicitLayer) = false
-_show_leaflike(::Tuple{Vararg{Number}}) = true         # e.g. stride of Conv
-_show_leaflike(::Tuple{Vararg{AbstractArray}}) = true  # e.g. parameters of LSTMcell
 
 function _get_children(l::AbstractExplicitContainerLayer{names}) where {names}
     return NamedTuple{names}(getfield.((l,), names))

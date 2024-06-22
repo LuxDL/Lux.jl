@@ -26,7 +26,7 @@ Recursively determine the element type of a nested structure `x`. This is equiva
 doing `fmap(eltype, x)`, but this implementation uses type stable code for common cases.
 """
 @inline recursive_eltype(x::AbstractArray) = eltype(x)
-@inline recursive_eltype(x::Tuple) = promote_type(__recursice_eltype.(x)...)
+@inline recursive_eltype(x::Tuple) = promote_type(recursive_eltype.(x)...)
 @inline recursive_eltype(x::NamedTuple) = promote_type(recursive_eltype.(values(x))...)
 @inline recursive_eltype(::Nothing) = Bool
 @inline recursive_eltype(x::Number) = eltype(x)

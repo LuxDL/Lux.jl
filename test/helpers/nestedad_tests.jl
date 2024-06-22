@@ -273,7 +273,7 @@ end
 end
 
 @testitem "VJP/JVP Interface Test" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ForwardDiff, Zygote, ADTypes
+    using ForwardDiff, Functors, Zygote, ADTypes
 
     rng = StableRNG(1234)
 
@@ -296,4 +296,20 @@ end
         vJ_zyg = vec(vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x))))
         @test vJ≈vJ_zyg rtol=1e-3 atol=1e-3
     end
+
+    struct functorABC{A, B}
+        a::A
+        b::B
+    end
+
+    @functor functorABC
+
+    function ftest(st)
+        return functorABC(st.functor.a .* st.functor.b, st.tup[1] .* st.tup[2])
+    end
+
+    nt = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
+    u = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
+
+    @test_nowarn jacobian_vector_product(ftest, AutoForwardDiff(), nt, u)
 end
