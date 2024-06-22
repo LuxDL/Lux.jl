@@ -31,7 +31,6 @@ end
 
 @concrete struct TrainingBackendCache{backend, first_try}
     dparameters
-    objective_function
     extras
 end
 

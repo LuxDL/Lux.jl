@@ -16,32 +16,40 @@ else
 end
 
 # Uncompiled ReverseDiff
-@inline function __uncompiled_reverse_diff(
-        obj_fn::F, data, ts::TrainState{<:TrainingBackendCache{:ReverseDiff}}) where {F}
+@inline function __uncompiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
+    grads = Lux.recursive_make_zero(ts.parameters)
+    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing),
+        obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    return __uncompiled_reverse_diff(obj_fn, data, ts_new)
+end
+
+@inline function __uncompiled_reverse_diff(obj_fn::F, data,
+        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     tape = ReverseDiff.InstructionTape()
+    dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
     ps_tracked = Lux.recursive_map(
-        Lux.__Fix3(ReverseDiff.TrackedArray, tape), ts.parameters, ts.cache.dparameters)
+        Lux.__Fix3(ReverseDiff.TrackedArray, tape), ts.parameters, dparams)
 
     loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     loss.deriv = true
     ReverseDiff.reverse_pass!(tape)
 
     ts_new = TrainState(
-        TrainingBackendCache{:ReverseDiff, false}(ts.cache.dparameters, obj_fn, nothing),
+        TrainingBackendCache{:ReverseDiff, false}(ts.cache.dparameters, nothing),
         obj_fn, ts.model, ts.parameters, st, ts.optimizer_state, ts.step)
 
     return ts.cache.dparameters, ReverseDiff.value(loss), stats, ts_new
 end
 
-# First call, nothing is cached
-@inline function __uncompiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
-    grads = Lux.recursive_make_zero(ts.parameters)
-    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, obj_fn, nothing),
-        obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
-    return __uncompiled_reverse_diff(obj_fn, data, ts_new)
-end
-
 # Compiled ReverseDiff
 @inline function __compiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
-    error("Not implemented yet")
+    grads = Lux.recursive_make_zero(ts.parameters)
+    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing),
+        obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    return __compiled_reverse_diff(obj_fn, data, ts_new)
+end
+
+@inline function __compiled_reverse_diff(obj_fn::F, data,
+        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
+    error(1)
 end
