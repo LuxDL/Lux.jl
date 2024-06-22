@@ -1,14 +1,13 @@
 module LuxFluxExt
 
+using ArgCheck: @argcheck
 using Flux: Flux
 using Lux: Lux
 using Random: AbstractRNG
 import Lux: __from_flux_adaptor, FluxModelConversionError
 
-__copy_anonymous_closure(x) = (args...) -> x
-
 function __from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
-    @warn lazy"Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
+    @warn "Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
 
     if !preserve_ps_st
         @warn "`FluxLayer` uses the parameters and states of the `layer`. It is not \
@@ -35,9 +34,8 @@ function __from_flux_adaptor(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs..
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
         bias = l.bias isa Bool ? nothing : reshape(copy(l.bias), out_dims, 1)
-        return Lux.Dense(
-            in_dims => out_dims, l.σ; init_weight=__copy_anonymous_closure(copy(l.weight)),
-            init_bias=__copy_anonymous_closure(bias), use_bias=!(l.bias isa Bool))
+        return Lux.Dense(in_dims => out_dims, l.σ; init_weight=Returns(copy(l.weight)),
+            init_bias=Returns(bias), use_bias=!(l.bias isa Bool))
     else
         return Lux.Dense(in_dims => out_dims, l.σ; use_bias=!(l.bias isa Bool))
     end
@@ -45,9 +43,8 @@ end
 
 function __from_flux_adaptor(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
-        return Lux.Scale(
-            size(l.scale), l.σ; init_weight=__copy_anonymous_closure(copy(l.scale)),
-            init_bias=__copy_anonymous_closure(copy(l.bias)), use_bias=!(l.bias isa Bool))
+        return Lux.Scale(size(l.scale), l.σ; init_weight=Returns(copy(l.scale)),
+            init_bias=Returns(copy(l.bias)), use_bias=!(l.bias isa Bool))
     else
         return Lux.Scale(size(l.scale), l.σ; use_bias=!(l.bias isa Bool))
     end
@@ -66,9 +63,8 @@ end
 function __from_flux_adaptor(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
     out, in1, in2 = size(l.weight)
     if preserve_ps_st
-        return Lux.Bilinear(
-            (in1, in2) => out, l.σ; init_weight=__copy_anonymous_closure(copy(l.weight)),
-            init_bias=__copy_anonymous_closure(copy(l.bias)), use_bias=!(l.bias isa Bool))
+        return Lux.Bilinear((in1, in2) => out, l.σ; init_weight=Returns(copy(l.weight)),
+            init_bias=Returns(copy(l.bias)), use_bias=!(l.bias isa Bool))
     else
         return Lux.Bilinear((in1, in2) => out, l.σ; use_bias=!(l.bias isa Bool))
     end
@@ -93,8 +89,7 @@ end
 function __from_flux_adaptor(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
-        return Lux.Embedding(
-            in_dims => out_dims; init_weight=__copy_anonymous_closure(copy(l.weight)))
+        return Lux.Embedding(in_dims => out_dims; init_weight=Returns(copy(l.weight)))
     else
         return Lux.Embedding(in_dims => out_dims)
     end
@@ -108,10 +103,9 @@ function __from_flux_adaptor(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing :
                 reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
-        return Lux.Conv(
-            k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation, groups,
-            init_weight=__copy_anonymous_closure(Lux._maybe_flip_conv_weight(l.weight)),
-            init_bias=__copy_anonymous_closure(_bias), use_bias=!(l.bias isa Bool))
+        return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
+            groups, init_weight=Returns(Lux._maybe_flip_conv_weight(l.weight)),
+            init_bias=Returns(_bias), use_bias=!(l.bias isa Bool))
     else
         return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
             l.dilation, groups, use_bias=!(l.bias isa Bool))
@@ -128,8 +122,8 @@ function __from_flux_adaptor(l::Flux.ConvTranspose; preserve_ps_st::Bool=false, 
                 reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride,
             pad, l.dilation, groups, use_bias=!(l.bias isa Bool),
-            init_weight=__copy_anonymous_closure(Lux._maybe_flip_conv_weight(l.weight)),
-            init_bias=__copy_anonymous_closure(_bias))
+            init_weight=Returns(Lux._maybe_flip_conv_weight(l.weight)),
+            init_bias=Returns(_bias))
     else
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
             l.dilation, groups, use_bias=!(l.bias isa Bool))
@@ -143,9 +137,9 @@ function __from_flux_adaptor(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwarg
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing :
                 reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
-        return Lux.CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
-            init_weight=__copy_anonymous_closure(copy(l.weight)),
-            init_bias=__copy_anonymous_closure(_bias), use_bias=!(l.bias isa Bool))
+        return Lux.CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad,
+            l.dilation, init_weight=Returns(copy(l.weight)),
+            init_bias=Returns(_bias), use_bias=!(l.bias isa Bool))
     else
         return Lux.CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad,
             l.dilation, use_bias=!(l.bias isa Bool))
@@ -193,12 +187,11 @@ function __from_flux_adaptor(
     out_dims, in_dims = size(l.Wi)
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError(lazy"Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
-        return Lux.RNNCell(
-            in_dims => out_dims, l.σ; init_bias=__copy_anonymous_closure(copy(l.b)),
-            init_state=__copy_anonymous_closure(copy(l.state0)))
+        return Lux.RNNCell(in_dims => out_dims, l.σ; init_bias=Returns(copy(l.b)),
+            init_state=Returns(copy(l.state0)))
     else
         return Lux.RNNCell(in_dims => out_dims, l.σ)
     end
@@ -210,15 +203,14 @@ function __from_flux_adaptor(
     out_dims = _out_dims ÷ 4
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError(lazy"Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `LSTMCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `LSTMCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux \
                and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(4))
         _s, _m = copy.(l.state0)
-        return Lux.LSTMCell(in_dims => out_dims; init_bias=__copy_anonymous_closure.(bs),
-            init_state=__copy_anonymous_closure(_s),
-            init_memory=__copy_anonymous_closure(_m))
+        return Lux.LSTMCell(in_dims => out_dims; init_bias=Returns.(bs),
+            init_state=Returns(_s), init_memory=Returns(_m))
     else
         return Lux.LSTMCell(in_dims => out_dims)
     end
@@ -230,13 +222,13 @@ function __from_flux_adaptor(
     out_dims = _out_dims ÷ 3
     if preserve_ps_st
         if force_preserve
-            throw(FluxModelConversionError(lazy"Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `GRUCell`."))
+            throw(FluxModelConversionError("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `GRUCell`."))
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux \
                and hence not supported. Ignoring these parameters." maxlog=1
         bs = Lux.multigate(l.b, Val(3))
-        return Lux.GRUCell(in_dims => out_dims; init_bias=_const_return_anon_function.(bs),
-            init_state=__copy_anonymous_closure(copy(l.state0)))
+        return Lux.GRUCell(
+            in_dims => out_dims; init_bias=Returns.(bs), init_state=Returns(copy(l.state0)))
     else
         return Lux.GRUCell(in_dims => out_dims)
     end
@@ -251,9 +243,9 @@ function __from_flux_adaptor(
                    Ignoring the state." maxlog=1
         end
         if l.affine
-            return Lux.BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ,
-                l.momentum, init_bias=__copy_anonymous_closure(copy(l.β)),
-                init_scale=__copy_anonymous_closure(copy(l.γ)))
+            return Lux.BatchNorm(
+                l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum,
+                init_bias=Returns(copy(l.β)), init_scale=Returns(copy(l.γ)))
         else
             return Lux.BatchNorm(
                 l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
@@ -265,26 +257,21 @@ end
 function __from_flux_adaptor(
         l::Flux.GroupNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
-        if l.track_stats
-            force_preserve && return Lux.FluxLayer(l)
-            @warn "Preserving the state of `Flux.GroupNorm` is currently not supported. \
-                   Ignoring the state." maxlog=1
-        end
+        @argcheck !l.track_stats
         if l.affine
             return Lux.GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ,
-                init_bias=__copy_anonymous_closure(copy(l.β)),
-                init_scale=__copy_anonymous_closure(copy(l.γ)))
+                init_bias=Returns(copy(l.β)), init_scale=Returns(copy(l.γ)))
         else
             return Lux.GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
         end
     end
-    return Lux.GroupNorm(l.chs, l.G, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
+    return Lux.GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
 end
 
 const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
 
 function __from_flux_adaptor(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
-    throw(FluxModelConversionError(lazy"Transformation of type $(T) is not supported."))
+    throw(FluxModelConversionError("Transformation of type $(T) is not supported."))
 end
 
 end

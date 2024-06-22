@@ -396,7 +396,7 @@ end
 
     @test_throws ArgumentError Lux.ValueStorage()(1, 1, 1)
 
-    @test_throws Lux.LuxCompactModelParsingException("A container `x = (Dense(2 => 3), 1)` is found which combines Lux layers with non-Lux layers. This is not supported.") @macroexpand @compact(;
+    @test_throws Lux.LuxCompactModelParsingException("A container `x = (var\"1\" = Dense(2 => 3), var\"2\" = 1)` is found which combines Lux layers with non-Lux layers. This is not supported.") @compact(;
         x=(Dense(2 => 3), 1)) do y
         @return x[1](x[2] .* y)
     end
