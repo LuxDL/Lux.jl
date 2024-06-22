@@ -158,6 +158,41 @@ end
             @test eltype(st.layer_3.running_mean) == ftype
             @test eltype(st.layer_3.running_var) == ftype
             @test typeof(st.layer_3.training) == Val{true}
+
+            @test_throws ArgumentError (ps.|>f)
+            @test_throws ArgumentError f.(ps)
+
+            x = [1.0, 2.0, 3.0] |> aType
+            @test eltype(f(x)) == ftype
+            x = ComplexF64.([1, 2, 3]) |> aType
+            @test eltype(f(x)) == complex(ftype)
         end
     end
+end
+
+@testitem "Edge Cases" tags=[:others] begin
+    @test Lux.__size(nothing) === nothing
+    @test Lux.__size(1) === ()
+    @test Lux.__size(1.0) === ()
+    @test Lux.__size([1, 2]) === (2,)
+
+    struct ABC
+        a
+        b
+    end
+
+    abc = ABC(1, 2)
+
+    @test_throws ErrorException Lux.__named_tuple(abc)
+    @test_throws MethodError Lux._pairs(abc)
+
+    Base.NamedTuple(abc::ABC) = (a=abc.a, b=abc.b)
+
+    @test Lux.__named_tuple(abc) == (a=1, b=2)
+    @test Lux._pairs(abc) == pairs((a=1, b=2))
+
+    @test Lux._merge(1.0, []) == 1.0
+    @test Lux._merge([], 1.0) == 1.0
+    @test_throws ArgumentError Lux._merge([2.0], 1)
+    @test Lux._merge(abc, abc) == (a=1, b=2)
 end

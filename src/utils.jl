@@ -48,12 +48,7 @@ end
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
-    return rnn.init_state(rng, rnn.out_dims, size(x, 2))
-end
-
-@inline function _init_hidden_state(rng::AbstractRNG, rnn, x::GPUArraysCore.AnyGPUMatrix)
-    return convert(ArrayInterface.parameterless_type(parent(x)),
-        rnn.init_state(rng, rnn.out_dims, size(x, 2)))
+    return rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> get_device(x)
 end
 
 @inline function _init_trainable_hidden_state(
@@ -242,7 +237,7 @@ end
     NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
     if NT === Union{} || NT === NamedTuple
         error("`NamedTuple` is not defined for type `$(T)`. Please define \
-               `_named_tuple(::$(T))` method (or preferably `NamedTuple(::$(T))`).")
+               `Lux.__named_tuple(::$(T))` method (or preferably `NamedTuple(::$(T))`).")
     end
     return NamedTuple(x)
 end
@@ -252,8 +247,6 @@ end
 @inline function __can_named_tuple(::Type{T}) where {T}
     return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
 end
-
-@inline __value(x) = x
 
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
@@ -359,6 +352,5 @@ end
 @inline __get_epsilon(::Type{T}, ϵ::Real) where {T} = T(ϵ)
 @inline __get_epsilon(::Type{T}, ::Nothing) where {T} = eps(float(T))
 
-@inline __get_dims(_) = Colon()
 @inline __get_dims(::AbstractVector) = Colon()
 @inline __get_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)

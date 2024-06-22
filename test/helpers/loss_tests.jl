@@ -392,3 +392,19 @@ end
         end
     end
 end
+
+@testitem "Losses: Error Checks and Misc" setup=[SharedTestSetup] tags=[:helpers] begin
+    @testset "Size Checks" begin
+        @test_throws DimensionMismatch MSELoss()([1, 2], [1, 2, 3])
+    end
+
+    @testset "No Aggregation" begin
+        @test MSELoss(; agg=nothing)([1, 3], [3, 1]) == [4, 4]
+    end
+
+    @testset "Scalar Loss" begin
+        @test MSELoss(; agg=sum)(1.0, 1.0) == 0.0
+        @test MSELoss(; agg=sum)(2.0, 0.0) == 4.0
+        @test MSLELoss(; agg=sum)(2.0, 0.0) ≈ Lux.__msle_loss(2.0, 0.0, nothing)
+    end
+end
