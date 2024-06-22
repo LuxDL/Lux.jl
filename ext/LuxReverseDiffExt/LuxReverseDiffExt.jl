@@ -1,6 +1,6 @@
 module LuxReverseDiffExt
 
-using ADTypes: AutoReverseDiff
+using ADTypes: ADTypes, AutoReverseDiff
 using ArrayInterface: ArrayInterface
 using Functors: fmap
 using Lux: Lux, LuxCPUDevice

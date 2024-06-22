@@ -354,3 +354,20 @@ end
 
 @inline __get_dims(::AbstractVector) = Colon()
 @inline __get_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
+
+@inline __zero(x) = zero(x)
+@inline __zero(::Nothing) = nothing
+@inline __zero(x::Val) = x
+
+@inline __zero!!(x::Number) = zero(x)
+@inline __zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
+@inline __zero!!(::Nothing) = nothing
+@inline __zero!!(x::Val) = x
+
+@inline function __add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
+    ArrayInterface.can_setindex(x) || return x .+ y
+    @. x += y
+    return x
+end
+@inline __add!!(x::Number, y::Number) = x + y
+@inline __add!!(::Nothing, ::Nothing) = nothing
