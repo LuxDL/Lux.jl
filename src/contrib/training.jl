@@ -79,12 +79,12 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed  |
-|:------------------ |:---------------- |
-| `AutoZygote`       | `Zygote.jl`      |
-| `AutoReverseDiff`  | `ReverseDiff.jl` |
-| `AutoTracker`      | `Tracker.jl`     |
-| `AutoEnzyme`       | `Enzyme.jl`      |
+| Supported Backends           | Packages Needed  |
+|:---------------------------- |:---------------- |
+| `AutoZygote`                 | `Zygote.jl`      |
+| `AutoReverseDiff(; compile)` | `ReverseDiff.jl` |
+| `AutoTracker`                | `Tracker.jl`     |
+| `AutoEnzyme`                 | `Enzyme.jl`      |
 
 ## Arguments
 
@@ -105,14 +105,7 @@ A 4-Tuple containing:
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
 
-## Special Notes on Backends
-
-  - `AutoEnzyme`: `mode` is always ignored and Enzyme ReverseMode is used. The first call
-    to `compute_gradients` will be type-unstable. It is recommended to call this function
-    once outside of the training loop and use the returned train_state for type stability.
-  - `AutoReverseDiff`: `compile` is always ignored and the gradient tape is never compiled.
-
-!!! danger
+!!! danger "Aliased Gradients"
 
     `grads` returned by this function might be aliased by the implementation of the gradient
     backend. For example, if you cache the `grads` from step `i`, the new gradients
