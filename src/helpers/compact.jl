@@ -385,7 +385,16 @@ end
 function ValueStorage(; kwargs...)
     ps_init_fns, st_init_fns = [], []
     for (key, val) in pairs(kwargs)
-        push!(val isa AbstractArray ? ps_init_fns : st_init_fns, key => Returns(val))
+        list = if val isa AbstractVector{<:AbstractArray{<:Number}}
+            ps_init_fns
+        elseif val isa AbstractArray
+            isbitstype(eltype(val)) ? ps_init_fns : st_init_fns
+        elseif val isa NTuple{N, <:AbstractArray{<:Number}} where {N}
+            ps_init_fns
+        else
+            st_init_fns
+        end
+        push!(list, key => Returns(val))
     end
     return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
 end
@@ -430,17 +439,10 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
         base_states, (; ₋₋₋kwargs₋₋₋=NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])))
 end
 
-function __try_make_lux_layer(x::Union{AbstractVector, Tuple})
+@inline function __try_make_lux_layer(x::Union{AbstractVector, Tuple})
     return __try_make_lux_layer(NamedTuple{Tuple(Symbol.(1:length(x)))}(x))
 end
-function __try_make_lux_layer(x)
-    __maybe_convert_layer = @closure l -> begin
-        l isa AbstractExplicitLayer && return l
-        l isa Function && return WrappedFunction(l)
-        return l
-    end
-    return fmap(__maybe_convert_layer, x)
-end
+@inline __try_make_lux_layer(x) = x
 
 function CompactLuxLayer{dispatch}(
         f::F, name::NAME_TYPE, str::Tuple, splatted_kwargs; kws...) where {F, dispatch}
@@ -452,7 +454,6 @@ function CompactLuxLayer{dispatch}(
             is_lux_layer = true
             push!(layers, name => val)
         elseif LuxCore.contains_lux_layer(val)
-            # TODO: Rearrange Tuple and Vectors to NamedTuples for proper CA.jl support
             # FIXME: This might lead to incorrect constructions? If the function is a
             #        closure over the provided keyword arguments?
             val = __try_make_lux_layer(val)

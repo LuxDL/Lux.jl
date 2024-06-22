@@ -291,9 +291,9 @@ end
         vJ = vec(v' * J)
 
         Jv_fdiff = vec(jacobian_vector_product(ftest, AutoForwardDiff(), x, v))
-        @test Jv ≈ Jv_fdiff rtol=1e-3 atol=1e-3
+        @test Jv≈Jv_fdiff rtol=1e-3 atol=1e-3
 
         vJ_zyg = vec(vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x))))
-        @test vJ ≈ vJ_zyg rtol=1e-3 atol=1e-3
+        @test vJ≈vJ_zyg rtol=1e-3 atol=1e-3
     end
 end

@@ -189,6 +189,52 @@
             @test similar_strings(get_model_string(model), expected_string)
         end
 
+        @testset "Iterable Inputs" begin
+            w1 = randn(rng, 32, 32)
+            w2 = randn(rng, 32, 32)
+
+            for x_list in ((w1, w2), [w1, w2])
+                model = @compact(x=x_list) do s
+                    @return x[2] * (x[1] * s)
+                end
+
+                ps, st = Lux.setup(rng, model)
+                x = randn(Float32, 32, 2)
+
+                @test ps.x[1] === w1
+                @test ps.x[2] === w2
+
+                y, _ = model(x, ps, st)
+                @test y ≈ w2 * (w1 * x)
+            end
+
+            model = @compact(x=[Dense(32 => 32), Dense(32 => 32)]) do s
+                @return x[2](x[1](s))
+            end
+
+            ps, st = Lux.setup(rng, model)
+            x = randn(Float32, 32, 2)
+
+            y, _ = model(x, ps, st)
+            ŷ = ps.x[2].weight * (ps.x[1].weight * x .+ ps.x[1].bias) .+ ps.x[2].bias
+
+            @test y ≈ ŷ
+        end
+
+        @testset "Function kwarg" begin
+            model = @compact(; f=abs2) do x
+                @return f.(x)
+            end
+
+            ps, st = Lux.setup(rng, model)
+            x = randn(Float32, 32, 2)
+
+            y, _ = model(x, ps, st)
+            ŷ = abs2.(x)
+
+            @test y ≈ ŷ
+        end
+
         @testset "Hierarchy with Inner Model Named" begin
             model = @compact(w1=@compact(w1=randn(32, 32), name="Model(32)") do x
                     @return w1 * x
@@ -216,13 +262,6 @@
             @test similar_strings(get_model_string(model), expected_string)
         end
 
-        @testset "Dependent Initializations" begin
-            # Test that initialization lines cannot depend on each other
-            @test_throws UndefVarError @compact(y₁=3, z=y₁^2) do x
-                @return y₁ + z + x
-            end
-        end
-
         @testset "Keyword Argument Syntax" begin
             _a = 3
             _b = 4
@@ -245,6 +284,22 @@
                 return x + a + b
             end       # Total: 0 parameters,
                       #        plus 2 states."""
+            @test similar_strings(get_model_string(model), expected_string)
+        end
+
+        @testset "kwarg printing" begin
+            model = @compact(; a=1, b=2, z=(; a=3, v=1, k=3, w=2), c=4) do x
+                @return x + a + b
+            end
+            expected_string = """@compact(
+                a = 1,
+                b = 2,
+                z = @NamedTuple{a = 3, v = 1, k = 3, ...},
+                c = 4,
+            ) do x 
+                return x + a + b
+            end       # Total: 0 parameters,
+                      #        plus 7 states."""
             @test similar_strings(get_model_string(model), expected_string)
         end
 
@@ -305,5 +360,44 @@
             __f = (m, x, ps, st) -> sum(abs2, first(m(x, ps, st)))
             @inferred Zygote.gradient(__f, model, x, ps, st)
         end
+    end
+end
+
+@testitem "@compact error checks" setup=[SharedTestSetup] tags=[:helpers] begin
+    showerror(stdout, Lux.LuxCompactModelParsingException(""))
+    println()
+
+    # Test that initialization lines cannot depend on each other
+    @test_throws UndefVarError @compact(y₁=3, z=y₁^2) do x
+        @return y₁ + z + x
+    end
+
+    @test_throws Lux.LuxCompactModelParsingException("expects at least two expressions: a function and at least one keyword") @macroexpand @compact()
+
+    @test_throws Lux.LuxCompactModelParsingException("expects an anonymous function") @macroexpand @compact(;
+        a=1)
+
+    @test_throws Lux.LuxCompactModelParsingException("expects only keyword arguments") @macroexpand @compact(2;
+        a=1) do x
+        @return x + a
+    end
+
+    @test_throws Lux.LuxCompactModelParsingException("Multiple @return macros found in the function body. This is not supported.") @macroexpand @compact(;
+        a=1) do x
+        @return x
+        @return 1
+    end
+
+    @test_throws Lux.LuxCompactModelParsingException("Encountered a return statement after the last @return statement. This is not supported.") @macroexpand @compact(;
+        a=1) do x
+        @return x
+        return 1
+    end
+
+    @test_throws ArgumentError Lux.ValueStorage()(1, 1, 1)
+
+    @test_throws Lux.LuxCompactModelParsingException("A container `x = (Dense(2 => 3), 1)` is found which combines Lux layers with non-Lux layers. This is not supported.") @macroexpand @compact(;
+        x=(Dense(2 => 3), 1)) do y
+        @return x[1](x[2] .* y)
     end
 end

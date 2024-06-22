@@ -441,6 +441,7 @@
             x = randn(10) |> aType
 
             c_lux = tolux(c)
+            display(c_lux)
             ps, st = Lux.setup(StableRNG(12345), c_lux) .|> device
 
             @test c(x) ≈ c_lux(x, ps, st)[1]

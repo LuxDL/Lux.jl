@@ -25,7 +25,7 @@ end
 @testitem "Tracker.jl patches" setup=[SharedTestSetup] tags=[:autodiff] begin
     using Tracker
 
-    nested_st = (; m = Dense(2 => 3), v = rand(2), d = (; x = (rand(2), 1)))
+    nested_st = (; m=Dense(2 => 3), v=rand(2), d=(; x=(rand(2), 1)))
     tnested_st = Tracker.param(nested_st)
 
     @test tnested_st.m === nested_st.m
