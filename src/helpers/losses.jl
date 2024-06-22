@@ -241,6 +241,9 @@ true
 
 julia> 1 - DiceCoeffLoss()(y_pred, 1:3)  ≈ 0.99900760833609
 true
+
+julia> DiceCoeffLoss()(reshape(y_pred, 3, 1), reshape(1:3, 3, 1)) ≈ 0.000992391663909964
+true
 ```
 
 ## References
@@ -264,7 +267,7 @@ function __unsafe_apply_loss(loss::DiceCoeffLoss, ŷ, y)
     num = T(2) .* sum(yŷ; dims) .+ α
     den = sum(abs2, ŷ; dims) .+ sum(abs2, y; dims) .+ α
 
-    return loss.agg(true - num ./ den)
+    return loss.agg(true .- num ./ den)
 end
 
 @doc doc"""

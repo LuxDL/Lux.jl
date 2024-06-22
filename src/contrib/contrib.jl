@@ -10,6 +10,7 @@ using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using Compat: @compat
 using ConcreteStructs: @concrete
+using EnzymeCore: EnzymeRules
 using FastClosures: @closure
 using Functors: Functors, KeyPath, fmap_with_path, fmapstructure, functor
 using Markdown: @doc_str

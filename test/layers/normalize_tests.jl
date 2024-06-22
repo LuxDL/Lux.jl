@@ -1,11 +1,11 @@
 @testitem "BatchNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         m = BatchNorm(2)
         x = [1.0f0 3.0f0 5.0f0
              2.0f0 4.0f0 6.0f0] |> aType
-        __display(m)
+        display(m)
         ps, st = Lux.setup(rng, m) .|> device
 
         @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -49,7 +49,7 @@
         for affine in (true, false)
             m = BatchNorm(2; affine, track_stats=false)
             x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0] |> aType
-            __display(m)
+            display(m)
             ps, st = Lux.setup(rng, m) .|> device
 
             @jet m(x, ps, st)
@@ -66,7 +66,7 @@
             m = BatchNorm(2, sigmoid; affine)
             x = [1.0f0 3.0f0 5.0f0
                  2.0f0 4.0f0 6.0f0] |> aType
-            __display(m)
+            display(m)
             ps, st = Lux.setup(rng, m) .|> device
             st = Lux.testmode(st)
             y, st_ = m(x, ps, st)
@@ -86,7 +86,7 @@
 
             m = BatchNorm(32; affine)
             x = randn(Float32, 416, 416, 32, 1) |> aType
-            __display(m)
+            display(m)
             ps, st = Lux.setup(rng, m) .|> device
             st = Lux.testmode(st)
             m(x, ps, st)
@@ -105,7 +105,7 @@
 end
 
 @testitem "GroupNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         squeeze(x) = dropdims(x; dims=tuple(findall(size(x) .== 1)...)) # To remove all singular dimensions
@@ -114,7 +114,7 @@ end
         sizes = (3, 4, 2)
         x = reshape(collect(1:prod(sizes)), sizes) |> aType
 
-        __display(m)
+        display(m)
         x = Float32.(x)
         ps, st = Lux.setup(rng, m) .|> device
         @test Lux.parameterlength(m) == Lux.parameterlength(ps)
@@ -131,7 +131,7 @@ end
         @testset "affine: $affine" for affine in (true, false)
             m = GroupNorm(2, 2; affine)
             x = rand(rng, Float32, 3, 2, 1) |> aType
-            __display(m)
+            display(m)
             ps, st = Lux.setup(rng, m) .|> device
 
             @jet m(x, ps, st)
@@ -147,7 +147,7 @@ end
             # with activation function
             m = GroupNorm(2, 2, sigmoid; affine)
             x = randn(rng, Float32, 3, 2, 1) |> aType
-            __display(m)
+            display(m)
             ps, st = Lux.setup(rng, m) .|> device
             st = Lux.testmode(st)
             y, st_ = m(x, ps, st)
@@ -164,7 +164,7 @@ end
 
             m = GroupNorm(32, 16; affine)
             x = randn(rng, Float32, 416, 416, 32, 1) |> aType
-            __display(m)
+            display(m)
             ps, st = Lux.setup(rng, m) .|> device
             st = Lux.testmode(st)
             m(x, ps, st)
@@ -190,7 +190,7 @@ end
 end
 
 @testitem "WeightNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "_norm_except" begin
@@ -211,7 +211,7 @@ end
             c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
             wn = WeightNorm(c, (:weight, :bias))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
@@ -220,7 +220,7 @@ end
             @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
             wn = WeightNorm(c, (:weight,))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
@@ -229,7 +229,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
             wn = WeightNorm(c, (:weight, :bias), (2, 2))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
@@ -238,7 +238,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_reverse_diff=true
 
             wn = WeightNorm(c, (:weight,), (2,))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
@@ -251,7 +251,7 @@ end
             d = Dense(3 => 3; init_bias=Lux.ones32)
 
             wn = WeightNorm(d, (:weight, :bias))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 1) |> aType
 
@@ -260,7 +260,7 @@ end
             @eval @test_gradients $__f $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             wn = WeightNorm(d, (:weight,))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 1) |> aType
 
@@ -269,7 +269,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             wn = WeightNorm(d, (:weight, :bias), (2, 2))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 1) |> aType
 
@@ -278,7 +278,7 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             wn = WeightNorm(d, (:weight,), (2,))
-            __display(wn)
+            display(wn)
             ps, st = Lux.setup(rng, wn) .|> device
             x = randn(rng, Float32, 3, 1) |> aType
 
@@ -309,7 +309,7 @@ end
 end
 
 @testitem "LayerNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         x = randn(rng, Float32, 3, 3, 3, 2) |> aType
@@ -317,7 +317,7 @@ end
         for bshape in ((3, 3, 3), (1, 3, 1), (3, 1, 3))
             for affine in (true, false)
                 ln = LayerNorm(bshape; affine)
-                __display(ln)
+                display(ln)
                 ps, st = Lux.setup(rng, ln) .|> device
 
                 y, st_ = ln(x, ps, st)
@@ -337,7 +337,7 @@ end
 
                 for act in (sigmoid, tanh)
                     ln = LayerNorm(bshape, act; affine)
-                    __display(ln)
+                    display(ln)
                     ps, st = Lux.setup(rng, ln) .|> device
 
                     y, st_ = ln(x, ps, st)
@@ -365,7 +365,7 @@ end
 end
 
 @testitem "InstanceNorm" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
@@ -373,7 +373,7 @@ end
             x = x |> aType
             for affine in (true, false)
                 layer = InstanceNorm(3; affine)
-                __display(layer)
+                display(layer)
                 ps, st = Lux.setup(rng, layer) .|> device
 
                 y, st_ = layer(x, ps, st)
@@ -390,7 +390,7 @@ end
 
                 for act in (sigmoid, tanh)
                     layer = InstanceNorm(3, act; affine)
-                    __display(layer)
+                    display(layer)
                     ps, st = Lux.setup(rng, layer) .|> device
 
                     y, st_ = layer(x, ps, st)

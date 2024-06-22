@@ -69,5 +69,4 @@ end
 
 function Base.showerror(io::IO, e::FluxModelConversionError)
     print(io, "FluxModelConversionError(", e.msg, ")")
-    return
 end

@@ -1,10 +1,10 @@
 @testitem "Miscellaneous Layers" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "Reshape Layer" begin
             layer = ReshapeLayer((2, 3))
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 3) |> aType
 
@@ -20,7 +20,7 @@
             layer = ReverseSequence(nothing)
             layer2 = ReverseSequence(2)
             layer3 = ReverseSequence(1)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             ps2, st2 = Lux.setup(rng, layer2) .|> device
             ps3, st3 = Lux.setup(rng, layer3) .|> device
@@ -48,7 +48,7 @@
 
         @testset "Flatten Layer" begin
             layer = FlattenLayer()
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 3, 2) |> aType
 
@@ -61,7 +61,7 @@
 
         @testset "NoOpLayer" begin
             layer = NoOpLayer()
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = (x=2, b=5) # Something totally arbitrary
 
@@ -76,7 +76,7 @@
 
         @testset "SelectDim Layer" begin
             layer = SelectDim(3, 1)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 4, 3, 2) |> aType
 
@@ -89,7 +89,7 @@
 
         @testset "WrappedFunction" begin
             layer = WrappedFunction(x -> x .* x)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 4, 3, 2) |> aType
 
@@ -98,11 +98,31 @@
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
             @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+
+            f11(x) = x .* x
+
+            layer = WrappedFunction{:runtime_check}(f11)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            x = randn(rng, 2, 3) |> aType
+
+            @test layer(x, ps, st)[1] ≈ x .* x
+            @inferred layer(x, ps, st)
+
+            f12(x, ps, st) = x .+ 1, st
+
+            layer = WrappedFunction{:runtime_check}(f12)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) .|> device
+            x = randn(rng, 2, 3) |> aType
+
+            @test layer(x, ps, st)[1] ≈ x .+ 1
+            @inferred layer(x, ps, st)
         end
 
         @testset "PeriodicEmbedding" begin
             layer = PeriodicEmbedding([2, 3], [4.0, π / 5])
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 6, 4, 3, 2) |> aType
             Δx = [0.0, 12.0, -2π / 5, 0.0, 0.0, 0.0] |> aType
@@ -121,7 +141,7 @@
 end
 
 @testitem "Dense" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "constructors" begin
@@ -197,12 +217,15 @@ end
 end
 
 @testitem "Scale" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "constructors" begin
             layer = Scale(10, 100)
             ps, st = Lux.setup(rng, layer) .|> device
+
+            @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
+            @test Lux.statelength(layer) == Lux.statelength(st)
 
             @test size(ps.weight) == (10, 100)
             @test size(ps.bias) == (10, 100)
@@ -210,6 +233,9 @@ end
 
             layer = Scale(10, 100, relu; use_bias=false)
             ps, st = Lux.setup(rng, layer) .|> device
+
+            @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
+            @test Lux.statelength(layer) == Lux.statelength(st)
 
             @test !haskey(ps, :bias)
             @test layer.activation == relu
@@ -267,16 +293,16 @@ end
 end
 
 @testitem "Bilinear" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "SkipConnection recombinator" begin
             d = Dense(2 => 2)
-            __display(d)
+            display(d)
             b = Bilinear((2, 2) => 3)
-            __display(b)
+            display(b)
             layer = SkipConnection(d, b)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, Float32, 2, 1) |> aType
 
@@ -287,11 +313,11 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             d = Dense(2 => 2)
-            __display(d)
+            display(d)
             b = Bilinear((2, 2) => 3; use_bias=false)
-            __display(b)
+            display(b)
             layer = SkipConnection(d, b)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, Float32, 2, 1) |> aType
 
@@ -302,11 +328,11 @@ end
             @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             d = Dense(2 => 3)
-            __display(d)
+            display(d)
             b = Bilinear((3, 2) => 5)
-            __display(b)
+            display(b)
             layer = SkipConnection(d, b)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, Float32, 2, 7, 11) |> aType
 
@@ -321,7 +347,7 @@ end
             x = zeros(Float32, 2, 1) |> aType
             y = zeros(Float32, 1, 1) |> aType
             layer = Bilinear((2, 1) => 3)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
 
             @test size(layer((x, y), ps, st)[1]) == (3, 1)
@@ -337,7 +363,7 @@ end
         @testset "Inner interactions" begin
             x = randn(Float32, 2, 1) |> aType
             layer = Bilinear((2, 2) => 3)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
@@ -348,7 +374,7 @@ end
 
             x = randn(Float32, 2, 1) |> aType
             layer = Bilinear(2 => 3)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
@@ -361,13 +387,13 @@ end
 end
 
 @testitem "Embedding" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "Linear indices" begin
             vocab_size, embed_size = 10, 4
             layer = Embedding(vocab_size => embed_size)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
 
             @test size(ps.weight) == (embed_size, vocab_size)
@@ -399,7 +425,7 @@ end
         @testset "Cartesian indices" begin
             vocab_size, embed_size = (5, 2), 4
             layer = Embedding(vocab_size => embed_size)
-            __display(layer)
+            display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
 
             @test size(ps.weight) == (embed_size, vocab_size...)

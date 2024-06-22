@@ -476,9 +476,9 @@ function _flatten_model(layers::Union{AbstractVector, Tuple})
         elseif f isa Function
             if !hasmethod(f, (Any, Any, NamedTuple))
                 f === identity && continue
-                push!(new_layers, WrappedFunction(f))
+                push!(new_layers, WrappedFunction{:direct_call}(f))
             else
-                push!(new_layers, f)
+                push!(new_layers, WrappedFunction{:layer}(f))
             end
         elseif f isa Chain
             append!(new_layers, f.layers)
@@ -605,7 +605,7 @@ Iteratively applies `model` for `repeats` number of times. The initial input is 
 into the model repeatedly if `input_injection = Val(true)`. This layer unrolls the
 computation, however, semantically this is same as:
 
- 1. `input_injection = Val(false)`
+  - `input_injection = Val(false)`
 
 ```julia
 res = x
@@ -614,7 +614,7 @@ for i in 1:repeats
 end
 ```
 
- 2. `input_injection = Val(true)`
+  - `input_injection = Val(true)`
 
 ```julia
 res = x

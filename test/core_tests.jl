@@ -1,7 +1,7 @@
 @testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:others] begin
     using Functors
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
         dense_3=Dense(5 => 1))

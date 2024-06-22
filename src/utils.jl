@@ -23,8 +23,7 @@ end
 _expand(N, i::Tuple) = i
 _expand(N, i::Integer) = ntuple(_ -> i, N)
 
-_maybetuple_string(pad) = string(pad)
-_maybetuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
+@inline __tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
 
 # Padding
 struct SamePad end
@@ -49,12 +48,7 @@ end
 @inline _gate(x::AbstractMatrix, h::Int, n::Int) = view(x, _gate(h, n), :)
 
 @inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
-    return rnn.init_state(rng, rnn.out_dims, size(x, 2))
-end
-
-@inline function _init_hidden_state(rng::AbstractRNG, rnn, x::GPUArraysCore.AnyGPUMatrix)
-    return convert(ArrayInterface.parameterless_type(parent(x)),
-        rnn.init_state(rng, rnn.out_dims, size(x, 2)))
+    return rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> get_device(x)
 end
 
 @inline function _init_trainable_hidden_state(
@@ -106,11 +100,7 @@ function ∇_eachslice(Δ_raw, x::AbstractArray, ::Val{dims}) where {dims}
     Δ = similar(x)
     for i in axes(x, dims)
         Δi = selectdim(Δ, dims, i)
-        if Δi isa CRC.AbstractZero
-            fill!(Δi, 0)
-        else
-            copyto!(Δi, Δs[i])
-        end
+        copyto!(Δi, Δs[i])
     end
     return CRC.ProjectTo(x)(Δ)
 end
@@ -247,39 +237,19 @@ end
     NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
     if NT === Union{} || NT === NamedTuple
         error("`NamedTuple` is not defined for type `$(T)`. Please define \
-               `_named_tuple(::$(T))` method (or preferably `NamedTuple(::$(T))`).")
+               `Lux.__named_tuple(::$(T))` method (or preferably `NamedTuple(::$(T))`).")
     end
     return NamedTuple(x)
 end
 
 @inline __can_named_tuple(::NamedTuple) = true
+@inline __can_named_tuple(::T) where {T} = __can_named_tuple(T)
 @inline function __can_named_tuple(::Type{T}) where {T}
     return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
 end
-@inline function __can_named_tuple(::T) where {T}
-    return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
-end
-
-@inline __value(x) = x
 
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
-
-# recussive_eltype
-@inline __recursive_eltype(x::AbstractArray) = eltype(x)
-@inline __recursive_eltype(x::Tuple) = promote_type(__recursice_eltype.(x)...)
-@inline __recursive_eltype(x::NamedTuple) = promote_type(__recursive_eltype.(values(x))...)
-@inline __recursive_eltype(::Nothing) = Bool
-@inline __recursive_eltype(x::Number) = eltype(x)
-@inline function __recursive_eltype(x)
-    _eltype = Ref(Bool)
-    function __internal_recursive_eltype(x)
-        _eltype[] = promote_type(_eltype[], __recursive_eltype(x))
-        return x
-    end
-    fmap(__internal_recursive_eltype, x)
-    return _eltype[]
-end
 
 @inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
@@ -287,25 +257,6 @@ end
 
 @inline __size(x::AbstractArray) = size(x)
 @inline __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? size(x) : nothing
-
-@inline __recursive_make_zero(x::Number) = zero(x)
-@inline __recursive_make_zero(x::AbstractArray{<:Number}) = zero(x)
-@inline __recursive_make_zero(x::AbstractArray) = map(__recursive_make_zero, x)
-@inline __recursive_make_zero(x::Tuple) = map(__recursive_make_zero, x)
-@inline __recursive_make_zero(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
-    __recursive_make_zero, values(x)))
-@inline __recursive_make_zero(::Nothing) = nothing
-@inline __recursive_make_zero(v::Val) = v
-@inline __recursive_make_zero(x) = fmap(__recursive_make_zero, x)
-
-@inline __recursive_make_zero!!(x::Number) = zero(x)
-@inline __recursive_make_zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
-@inline __recursive_make_zero!!(x::AbstractArray) = map(__recursive_make_zero!!, x)
-@inline __recursive_make_zero!!(x::Tuple) = map(__recursive_make_zero!!, x)
-@inline __recursive_make_zero!!(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
-    __recursive_make_zero!!, values(x)))
-@inline __recursive_make_zero!!(::Nothing) = nothing
-@inline __recursive_make_zero!!(x) = fmap(__recursive_make_zero!!, x)
 
 # helpers for the loss functions
 """
@@ -401,6 +352,5 @@ end
 @inline __get_epsilon(::Type{T}, ϵ::Real) where {T} = T(ϵ)
 @inline __get_epsilon(::Type{T}, ::Nothing) where {T} = eps(float(T))
 
-@inline __get_dims(_) = Colon()
 @inline __get_dims(::AbstractVector) = Colon()
 @inline __get_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)

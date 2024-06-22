@@ -31,6 +31,47 @@ if !isempty(EXTRA_PKGS)
     Pkg.instantiate()
 end
 
+using Lux
+
+@testset "Load Tests" begin
+    @testset "Load Packages Tests" begin
+        @test_throws ErrorException FromFluxAdaptor()(1)
+        showerror(stdout, Lux.FluxModelConversionError("cannot convert"))
+
+        @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
+        showerror(stdout, Lux.SimpleChainsModelConversionError(Dense(2 => 2)))
+
+        @test_throws ErrorException vector_jacobian_product(
+            x -> x, AutoZygote(), rand(2), rand(2))
+        @test_throws ErrorException jacobian_vector_product(
+            x -> x, AutoForwardDiff(), rand(2), rand(2))
+
+        @test_throws AssertionError batched_jacobian(x -> x, AutoEnzyme(), rand(2, 2))
+        @test_throws ErrorException batched_jacobian(x -> x, AutoForwardDiff(), rand(2, 2))
+        @test_throws ErrorException batched_jacobian(x -> x, AutoZygote(), rand(2, 2))
+    end
+
+    @testset "Ext Loading Check" begin
+        @test !Lux._is_extension_loaded(Val(:ForwardDiff))
+        using ForwardDiff
+        @test Lux._is_extension_loaded(Val(:ForwardDiff))
+
+        @test !Lux._is_extension_loaded(Val(:Zygote))
+        using Zygote
+        @test Lux._is_extension_loaded(Val(:Zygote))
+
+        @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
+        using DynamicExpressions
+        @test Lux._is_extension_loaded(Val(:DynamicExpressions))
+    end
+
+    # These need to be run before MPI or NCCL is ever loaded
+    @testset "Ensure MPI and NCCL are loaded" begin
+        @test_throws ErrorException MPIBackend()
+        @test_throws ErrorException NCCLBackend()
+    end
+end
+
 for tag in LUX_TEST_GROUP
     @info "Running tests for group: $tag"
     if tag == "all"

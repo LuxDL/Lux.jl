@@ -104,4 +104,36 @@
 
     @test_throws ArgumentError ToSimpleChainsAdaptor((10, 10, 1))
     @test_throws ArgumentError ToSimpleChainsAdaptor(1)
+
+    # Failures
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(Conv(
+        (1, 1), 2 => 3; stride=(5, 5)))
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(Dropout(0.2f0; dims=1))
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(FlattenLayer())
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(MaxPool(
+        (2, 2); stride=(1, 1)))
+    @test_throws Lux.SimpleChainsModelConversionError adaptor(ReshapeLayer((2, 3)))
+
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        lux_model = Dense(10 => 5)
+        adaptor = ToSimpleChainsAdaptor((static(10),))
+        smodel = adaptor(lux_model)
+
+        ps, st = Lux.setup(Lux.replicate(rng), smodel) |> dev
+        x = randn(rng, 10, 3) |> aType
+
+        if ongpu
+            @test_throws ArgumentError smodel(x, ps, st)
+        else
+            @test size(first(smodel(x, ps, st))) == (5, 3)
+        end
+    end
+
+    lux_model = Dense(10 => 5)
+    adaptor = ToSimpleChainsAdaptor((static(10),))
+    smodel = adaptor(lux_model)
+
+    smodel2 = SimpleChainsLayer(smodel.layer, Val(true))
+    @test smodel2.layer == smodel.layer
+    @test smodel2.lux_layer === nothing
 end

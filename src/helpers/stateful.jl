@@ -61,15 +61,20 @@ function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}
         nt -> StatefulLuxLayer{FT}(nt.model, nt.ps, nt.st, nt.st_any))
 end
 
-@inline LuxCore.parameterlength(m::StatefulLuxLayer) = LuxCore.parameterlength(m.model)
-@inline LuxCore.statelength(m::StatefulLuxLayer) = LuxCore.statelength(m.model)
+@inline function LuxCore.parameterlength(m::StatefulLuxLayer)
+    m.ps === nothing && return LuxCore.parameterlength(m.model)
+    return LuxCore.parameterlength(m.ps)
+end
+@inline function LuxCore.statelength(m::StatefulLuxLayer{FT}) where {FT}
+    FT && return LuxCore.statelength(m.st)
+    return LuxCore.statelength(m.st_any)
+end
 @inline LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
 
 function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {FT}
     return StatefulLuxLayer{FT}
 end
 
-# TODO: In v0.6 we should deprecate the kwarg and directly using `StatefulLuxLayer{true}`
 function StatefulLuxLayer(model::AbstractExplicitLayer, st::NamedTuple; kwargs...)
     return StatefulLuxLayer(model, nothing, st; kwargs...)
 end
@@ -109,25 +114,11 @@ function (s::StatefulLuxLayer)(x, p=s.ps)
     return y
 end
 
-function CRC.rrule(::Type{<:StatefulLuxLayer{true}}, model::AbstractExplicitLayer, ps, st)
-    slayer = StatefulLuxLayer{true}(model, ps, st, nothing)
-    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent()
+function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
+        model::AbstractExplicitLayer, ps, st, st_any) where {FT}
+    slayer = StatefulLuxLayer{FT}(model, ps, st, st_any)
+    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
     return slayer, ∇StatefulLuxLayer
-end
-
-function CRC.rrule(::Type{<:StatefulLuxLayer{false}}, model::AbstractExplicitLayer, ps, st)
-    slayer = StatefulLuxLayer{false}(model, ps, nothing, st)
-    ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent()
-    return slayer, ∇StatefulLuxLayer
-end
-
-for FT in (true, false)
-    @eval function CRC.rrule(
-            ::Type{<:StatefulLuxLayer{$(FT)}}, model::AbstractExplicitLayer, ps, st, st_any)
-        slayer = StatefulLuxLayer{$(FT)}(model, ps, st, st_any)
-        ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
-        return slayer, ∇StatefulLuxLayer
-    end
 end
 
 function CRC.rrule(::typeof(getproperty), s::StatefulLuxLayer, name::Symbol)

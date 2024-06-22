@@ -49,7 +49,7 @@ julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
 ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)
 
 julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
-Chain(
+DynamicExpressionsLayer(
     layer_1 = Parallel(
         layer_1 = DynamicExpressionNode(x1 * cos(x2 - 3.2)),  # 1 parameters
         layer_2 = DynamicExpressionNode(((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)),  # 2 parameters
@@ -141,9 +141,11 @@ function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsL
     return __apply_dynamic_expression_rrule(de, expr, operator_enum, x, ps)
 end
 
-# FIXME: Remove once https://github.com/SymbolicML/DynamicExpressions.jl/pull/65 is merged
 function __apply_dynamic_expression(de, expr, operator_enum, x, ps, dev)
-    throw(ArgumentError(lazy"`DynamicExpressions.jl` only supports CPU operations. Current device detected as $(dev). CUDA.jl will be supported after https://github.com/SymbolicML/DynamicExpressions.jl/pull/65 is merged upstream."))
+    throw(ArgumentError("`DynamicExpressions.jl` only supports CPU operations. Current \
+                         device detected as $(dev). CUDA.jl will be supported after \
+                         https://github.com/SymbolicML/DynamicExpressions.jl/pull/65 is \
+                         merged upstream."))
 end
 
 ## Flux.jl
@@ -201,11 +203,6 @@ regular `Array` or not. Default is `false`.
 
 !!! note
 
-    Using the 2nd constructor with Boolean `ToArray` makes the generation of the model
-    struct type unstable.
-
-!!! note
-
     If using `Tracker.jl`, the output will always be a regular `Array`.
 
 !!! danger
@@ -214,19 +211,22 @@ regular `Array` or not. Default is `false`.
     such please test your model with FiniteDifferences or Zygote before using `Tracker.jl`
     for your model.
 """
-@concrete struct SimpleChainsLayer{ToArray} <: AbstractExplicitLayer
-    layer
-    lux_layer
+struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer}} <:
+       AbstractExplicitLayer
+    layer::SL
+    lux_layer::LL
+
+    function SimpleChainsLayer{ToArray}(layer, lux_layer=nothing) where {ToArray}
+        return new{ToArray, typeof(layer), typeof(lux_layer)}(layer, lux_layer)
+    end
+    function SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
+        return new{__unwrap_val(ToArray), typeof(layer), Nothing}(layer, nothing)
+    end
 end
 
 function Base.show(io::IO, s::SimpleChainsLayer{ToArray}) where {ToArray}
     _print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
 end
-
-@inline SimpleChainsLayer{ToArray}(layer) where {ToArray} = SimpleChainsLayer{ToArray}(
-    layer, nothing)
-
-@inline SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false)) = SimpleChainsLayer{__unwrap_val(ToArray)}(layer)
 
 @inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 
@@ -242,17 +242,16 @@ end
 
 function __apply_simple_chain(layer, x, ps, dev)
     throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
-        detected as $(dev)."))
+                         detected as $(dev)."))
 end
 
 # Workaround for SimpleChains not being able to handle some input types
 function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
+    # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     __∇apply_simple_chain = @closure Δ -> begin
-        # Safety measure to prevent errors from weird Array types that SimpleChains doesn't
-        # support
         ∂layer, ∂x, ∂ps = pb(convert(Array, Δ))
-        return CRC.NoTangent(), ∂layer, ∂x, ∂ps, CRC.NoTangent()
+        return NoTangent(), ∂layer, ∂x, ∂ps, NoTangent()
     end
     return res, __∇apply_simple_chain
 end

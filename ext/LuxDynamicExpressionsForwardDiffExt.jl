@@ -22,7 +22,7 @@ end
 function Lux.__apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum, x,
         ps::AbstractVector{<:ForwardDiff.Dual{Tag, T, N}},
         ::LuxCPUDevice) where {T, N, Tag}
-    Lux.__update_expression_constants!(expr, ps_value)
+    Lux.__update_expression_constants!(expr, ForwardDiff.value.(ps))
     y, Jₚ, _ = eval_grad_tree_array(expr, x, operator_enum; variable=Val(false), de.turbo)
     partials = ntuple(
         @closure(i->dropdims(sum(ForwardDiff.partials.(ps, i) .* Jₚ; dims=1); dims=1)), N)

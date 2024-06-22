@@ -63,11 +63,6 @@ function DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
     return DebugLayer{nan_check, error_check}(layer, location)
 end
 
-nan_check(::DebugLayer{NaNCheck}) where {NaNCheck} = Val(NaNCheck)
-function error_check(::DebugLayer{NaNCheck, ErrorCheck}) where {NaNCheck, ErrorCheck}
-    return Val(ErrorCheck)
-end
-
 function (d::DebugLayer{NaNCheck, ErrorCheck})(x, ps, st) where {NaNCheck, ErrorCheck}
     CRC.ignore_derivatives() do
         @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmapstructure(Lux.__size, x))"
@@ -103,15 +98,14 @@ function __check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
         return x
     end
 
-    fmap_with_path(nan_check, x)
+    return fmap_with_path(nan_check, x)
 end
 
 function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
     y, st_ = try
         apply(layer, x, ps, st)
     catch
-        EC &&
-            @error lazy"Layer $(layer) failed!! This layer is present at location $(location)"
+        EC && @error "Layer $(layer) failed!! This layer is present at location $(location)"
         rethrow()
     end
     return y, st_
@@ -128,14 +122,13 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             ∇debug_layer_internal(Δ)
         catch
             EC &&
-                @error lazy"Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)"
+                @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)"
             rethrow()
         end
 
         if NC
             for (i, g) in enumerate(gs)
-                __check_nan_and_throw(
-                    g, lazy"pullback output ($(syms[i]))", layer, location)
+                __check_nan_and_throw(g, "pullback output ($(syms[i]))", layer, location)
             end
         end
 

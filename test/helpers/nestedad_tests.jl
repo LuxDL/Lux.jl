@@ -3,7 +3,7 @@
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -81,7 +81,7 @@ end
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -163,7 +163,7 @@ end
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -203,7 +203,7 @@ end
 
     Base.isfinite(::Nothing) = true
 
-    rng = get_stable_rng()
+    rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # FIXME: AMDGPU takes too long right now
@@ -270,4 +270,46 @@ end
             @test check_approx(∂ps, ∂ps_jvp; rtol=1e-3, atol=1e-3)
         end
     end
+end
+
+@testitem "VJP/JVP Interface Test" setup=[SharedTestSetup] tags=[:autodiff] begin
+    using ForwardDiff, Functors, Zygote, ADTypes
+
+    rng = StableRNG(1234)
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        # FIXME: AMDGPU takes too long right now
+        mode === "amdgpu" && continue
+
+        x = rand(rng, 3, 3) |> aType
+        v = vec(rand(rng, 3, 3)) |> aType
+
+        ftest(x) = abs2.(x)
+
+        J = ForwardDiff.jacobian(ftest, x)
+        Jv = J * v
+        vJ = vec(v' * J)
+
+        Jv_fdiff = vec(jacobian_vector_product(ftest, AutoForwardDiff(), x, v))
+        @test Jv≈Jv_fdiff rtol=1e-3 atol=1e-3
+
+        vJ_zyg = vec(vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x))))
+        @test vJ≈vJ_zyg rtol=1e-3 atol=1e-3
+    end
+
+    struct functorABC{A, B}
+        a::A
+        b::B
+    end
+
+    @functor functorABC
+
+    function ftest(st)
+        return functorABC(st.functor.a .* st.functor.b, st.tup[1] .* st.tup[2])
+    end
+
+    nt = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
+    u = (functor=functorABC(rand(rng, 3), rand(rng, 3)), tup=(rand(rng, 3), rand(rng, 3)))
+
+    @test_nowarn jacobian_vector_product(ftest, AutoForwardDiff(), nt, u)
 end

@@ -1,12 +1,12 @@
 @testitem "RNNCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
             RNNCell(3 => 5, tanh; use_bias=false),
             RNNCell(3 => 5, identity; use_bias=false),
             RNNCell(3 => 5, identity; use_bias=false, train_state=false))
-            __display(rnncell)
+            display(rnncell)
             ps, st = Lux.setup(rng, rnncell) .|> device
             for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
@@ -58,12 +58,12 @@
 end
 
 @testitem "LSTMCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         for lstmcell in (LSTMCell(3 => 5), LSTMCell(3 => 5; use_bias=true),
             LSTMCell(3 => 5; use_bias=false))
-            __display(lstmcell)
+            display(lstmcell)
             ps, st = Lux.setup(rng, lstmcell) .|> device
 
             for x_size in ((3, 2), (3,))
@@ -164,12 +164,12 @@ end
 end
 
 @testitem "GRUCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         for grucell in (GRUCell(3 => 5), GRUCell(3 => 5; use_bias=true),
             GRUCell(3 => 5; use_bias=false))
-            __display(grucell)
+            display(grucell)
             ps, st = Lux.setup(rng, grucell) .|> device
 
             for x_size in ((3, 2), (3,))
@@ -234,7 +234,7 @@ end
 end
 
 @testitem "StatefulRecurrentCell" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         for _cell in (RNNCell, LSTMCell, GRUCell),
@@ -243,7 +243,7 @@ end
 
             cell = _cell(3 => 5; use_bias, train_state)
             rnn = StatefulRecurrentCell(cell)
-            __display(rnn)
+            display(rnn)
 
             for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
@@ -280,7 +280,7 @@ end
 end
 
 @testitem "Recurrence" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "ordering: $ordering" for ordering in (BatchLastIndex(), TimeLastIndex())
@@ -292,7 +292,7 @@ end
                     cell = _cell(3 => 5; use_bias, train_state)
                     rnn = Recurrence(cell; ordering)
                     rnn_seq = Recurrence(cell; ordering, return_sequence=true)
-                    __display(rnn)
+                    display(rnn)
 
                     # Batched Time Series
                     @testset "typeof(x): $(typeof(x))" for x in (
@@ -373,5 +373,14 @@ end
         res, _ = encoder(m2, ps, st)
 
         @test Array(vec(reduce(vcat, res))) ≈ [0.5, 0.5, 1.2, 2.0]
+    end
+end
+
+@testitem "RNN Error Checks" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+    rng = StableRNG(12345)
+
+    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+        x = randn(rng, 2, 3) |> aType
+        @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
     end
 end

@@ -8,6 +8,11 @@ using Optimisers: Optimisers, AbstractRule, Leaf
 using Random: Random
 using Setfield: @set!
 
+function Lux.FluxLayer(l)
+    p, re = Optimisers.destructure(l)
+    return Lux.FluxLayer(l, re, Returns(copy(p)))
+end
+
 """
     TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
         optimizer::Optimisers.AbstractRule;

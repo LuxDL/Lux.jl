@@ -67,7 +67,7 @@ end
     J = similar(J_partial, size(J_partial, 1), N, B)
     J[:, 1:CK, :] .= J_partial
 
-    @tasks for i in 2:nchunks
+    Threads.@threads for i in 2:nchunks
         __batched_forwarddiff_jacobian_chunk!!(
             J[:, ((i - 1) * CK + 1):(i * CK), :], f, x, Tag,
             ck, dual_type, partials_type, (i - 1) * CK + 1)

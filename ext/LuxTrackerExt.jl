@@ -13,18 +13,22 @@ using Tracker: Tracker, TrackedArray, @grad_from_chainrules
 const CRC = ChainRulesCore
 
 # Type Piracy: Need to upstream
-Tracker.param(nt::NamedTuple) = fmap(Tracker.param, nt)
+Tracker.param(nt::NamedTuple{F}) where {F} = NamedTuple{F}(Tracker.param.(values(nt)))
 Tracker.param(t::Tuple) = map(Tracker.param, t)
 Tracker.param(l::LuxCore.AbstractExplicitLayer) = l
 
-Tracker.zero_grad!(nt::NamedTuple) = fmap(Tracker.zero_grad!, nt)
+Tracker.zero_grad!(nt::NamedTuple) = Tracker.zero_grad!.(values(nt))
+Tracker.zero_grad!(::LuxCore.AbstractExplicitLayer) = nothing
 
-Tracker.extract_grad!(nt::NamedTuple) = fmap(Tracker.extract_grad!, nt)
+function Tracker.extract_grad!(nt::NamedTuple{F}) where {F}
+    return NamedTuple{F}(Tracker.extract_grad!.(values(nt)))
+end
 Tracker.extract_grad!(t::Tuple) = map(Tracker.extract_grad!, t)
 Tracker.extract_grad!(::LuxCore.AbstractExplicitLayer) = nothing
 
 Tracker.data(nt::NamedTuple) = fmap(Tracker.data, nt)
 Tracker.data(t::Tuple) = map(Tracker.data, t)
+Tracker.data(l::LuxCore.AbstractExplicitLayer) = l
 
 # Weight Norm Patch
 @inline Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))

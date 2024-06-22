@@ -1,5 +1,5 @@
 @testitem "Parameter Sharing" setup=[SharedTestSetup] tags=[:contrib] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         model = Chain(; d1=Dense(2 => 4, tanh),
@@ -8,6 +8,8 @@
         ps, st = Lux.setup(rng, model) .|> device
 
         sharing = (("d2.l2", "d1"), ("d3", "d2.l1"))
+
+        @test_deprecated Lux.share_parameters(ps, sharing)
 
         ps_1 = Lux.Experimental.share_parameters(ps, sharing)
 

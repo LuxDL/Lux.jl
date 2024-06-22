@@ -1,7 +1,7 @@
 @testitem "Debugging Tools: DimensionMismatch" setup=[SharedTestSetup] tags=[:contrib] begin
     using Logging
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)),
@@ -47,7 +47,7 @@ end
     using Logging, ChainRulesCore
     import ChainRulesCore as CRC
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     offending_layer(x) = 2 .* x
 

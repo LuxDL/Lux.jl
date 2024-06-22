@@ -1,7 +1,7 @@
 @testitem "TrainState" setup=[SharedTestSetup] tags=[:contrib] begin
     using Optimisers
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
@@ -30,7 +30,7 @@ end
         return sum(y), st, ()
     end
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
@@ -60,10 +60,10 @@ end
     function mse(model, ps, st, data)
         x_data, y_data = data
         y, st_ = model(x_data, ps, st)
-        return sum(abs2, y .- y_data), st_, ()
+        return sum(abs2, y .- y_data), st_, (;)
     end
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     x_data = randn(rng, Float32, 4, 32)
     y_data = evalpoly.(x_data, ((1, 2, 3),)) .- evalpoly.(x_data, ((5, 2),))
@@ -80,6 +80,11 @@ end
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
 
+            @test_throws ArgumentError Lux.Experimental.__maybe_implemented_compute_gradients(ad)
+
+            @test_deprecated Lux.Training.TrainState(
+                Lux.replicate(rng), model, opt; transform_variables=dev)
+
             tstate = Lux.Experimental.TrainState(
                 Lux.replicate(rng), model, opt; transform_variables=dev)
 
@@ -89,6 +94,9 @@ end
                 grads, loss, _, tstate = Lux.Experimental.compute_gradients(
                     ad, mse, (x, y), tstate)
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
+
+                @test_deprecated Lux.Training.compute_gradients(ad, mse, (x, y), tstate)
+                @test_deprecated Lux.Training.apply_gradients(tstate, grads)
             end
 
             for epoch in 1:100, (x, y) in dataset_
@@ -118,5 +126,54 @@ end
 
             @test final_loss * 100 < initial_loss
         end
+
+        struct AutoCustomAD <: ADTypes.AbstractADType end
+
+        tstate = Lux.Experimental.TrainState(
+            Lux.replicate(rng), model, opt; transform_variables=dev)
+
+        @test_throws ArgumentError Lux.Experimental.compute_gradients(
+            AutoCustomAD(), mse, dataset_[1], tstate)
     end
+end
+
+@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:contrib] begin
+    using ADTypes, Optimisers
+    import Enzyme
+
+    function mse(model, ps, st, data)
+        x_data, y_data = data
+        y, st_ = model(x_data, ps, st)
+        return sum(abs2, y .- y_data), st_, (;)
+    end
+
+    mse2(args...) = mse(args...)
+
+    rng = StableRNG(12345)
+
+    model = Chain(Dense(4 => 3), VariationalHiddenDropout(0.5f0), Dense(3 => 4))
+    ps, st = Lux.setup(rng, model)
+    x = randn(rng, Float32, 4, 32)
+    opt = Adam(0.001f0)
+
+    tstate = Lux.Experimental.TrainState(model, ps, st, opt)
+
+    _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
+        AutoEnzyme(), mse, (x, x), tstate)
+
+    @test tstate_new.states !== tstate.states
+
+    model = Chain(Dense(4 => 3), Dense(3 => 4))
+    ps, st = Lux.setup(rng, model)
+
+    tstate = Lux.Experimental.TrainState(model, ps, st, opt)
+
+    _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
+        AutoEnzyme(), mse, (x, x), tstate)
+
+    # We don't keep recompiling as that would be bad for performance
+    @test_throws ErrorException @inferred Lux.Experimental.compute_gradients(
+        AutoEnzyme(), mse2, (x, x), tstate_new)
+
+    @inferred Lux.Experimental.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)
 end

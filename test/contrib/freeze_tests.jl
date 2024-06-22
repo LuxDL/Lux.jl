@@ -1,10 +1,12 @@
 @testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "NamedTuple" begin
             d = Dense(5 => 5)
             psd, std = Lux.setup(rng, d) .|> dev
+
+            @test_deprecated Lux.freeze(d, psd, std, nothing)
 
             fd, ps, st = Lux.Experimental.freeze(d, psd, std, nothing)
             @test length(keys(ps)) == 0
@@ -62,7 +64,7 @@
 end
 
 @testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         d = Dense(5 => 5)
@@ -82,5 +84,19 @@ end
         @jet fd(x, ps, st)
         __f = (x, ps) -> sum(first(fd(x, ps, st)))
         @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+
+        fd = Lux.Experimental.freeze(d, ())
+        @test fd === d
+
+        fd = Lux.Experimental.freeze(d, nothing)
+        display(fd)
+        @test fd isa Lux.Experimental.FrozenLayer
+
+        und = Lux.Experimental.unfreeze(fd)
+        @test und === d
+
+        und, psd, std = Lux.Experimental.unfreeze(fd, ps, st)
+        @test und === d
+        @test und(x, psd, std)[1] == fd(x, ps, st)[1]
     end
 end

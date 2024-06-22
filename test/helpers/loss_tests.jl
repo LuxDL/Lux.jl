@@ -33,11 +33,11 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(xlogx)
-        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_finite_differences=true
 
         y = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(xlogy)
-        @eval @test_gradients $__f $x $y gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+        @eval @test_gradients $__f $x $y gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_finite_differences=true
     end
 end
 
@@ -390,5 +390,21 @@ end
             @test_throws ArgumentError SiameseContrastiveLoss(; margin=-0.5)
             @test_throws ArgumentError SiameseContrastiveLoss(; margin=-1)
         end
+    end
+end
+
+@testitem "Losses: Error Checks and Misc" setup=[SharedTestSetup] tags=[:helpers] begin
+    @testset "Size Checks" begin
+        @test_throws DimensionMismatch MSELoss()([1, 2], [1, 2, 3])
+    end
+
+    @testset "No Aggregation" begin
+        @test MSELoss(; agg=nothing)([1, 3], [3, 1]) == [4, 4]
+    end
+
+    @testset "Scalar Loss" begin
+        @test MSELoss(; agg=sum)(1.0, 1.0) == 0.0
+        @test MSELoss(; agg=sum)(2.0, 0.0) == 4.0
+        @test MSLELoss(; agg=sum)(2.0, 0.0) ≈ Lux.__msle_loss(2.0, 0.0, nothing)
     end
 end

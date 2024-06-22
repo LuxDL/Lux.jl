@@ -136,13 +136,36 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     end
 end
 
-@inline function __wrap_objective_function(objective_function::F, st) where {F}
-    st_updated, stats = st, (;)
+@inline function __generate_wrappers(
+        objective_function::F, m, ps, st, data, ::Val{false}) where {F}
+    @warn "Detected function wrapper generation with function being updated between calls. \
+           This will generate type-unstable code. A possible reason for this is \
+           `TrainState` was compiled (first call to `compute_gradients`) with function \
+           `foo` and is being called with `bar`. A common pattern for this would be \
+           passing an anonymous function as `objective_function` inside a loop." maxlog=1
+    return Ref{Any}(), Ref{NamedTuple}()
+end
 
-    # Boxing here is intentional
-    wrapped_objective_function = (model, ps, st, data) -> begin
-        y, st_updated, stats = objective_function(model, ps, st, data)
-        return y
+# Run the code when trying to compile the function for the first time.
+@inline function __generate_wrappers(
+        objective_function::F, m, ps, st, data, ::Val{true}) where {F}
+    _, st_, stats_ = objective_function(m, ps, st, data)
+    return Ref{typeof(st_)}(st_), Ref{typeof(stats_)}(stats_)
+end
+
+@inline __set_refval!(x, y) = (x[] = y)
+CRC.@non_differentiable __set_refval!(::Any...)
+EnzymeRules.inactive(::typeof(__set_refval!), ::Any...) = nothing
+
+@inline function __wrap_objective_function(
+        objective_function::F, m, ps, st, data, first_try::Val) where {F}
+    st_updated, stats = __generate_wrappers(objective_function, m, ps, st, data, first_try)
+
+    wrapped_objective_function = @closure (model, ps, st, data) -> begin
+        loss, st_, stats_ = objective_function(model, ps, st, data)
+        __set_refval!(st_updated, st_)
+        __set_refval!(stats, stats_)
+        return loss
     end
 
     return wrapped_objective_function, st_updated, stats

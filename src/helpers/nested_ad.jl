@@ -33,21 +33,13 @@ const AD_CONVERTIBLE_FUNCTIONS = [
     @closure((ps, x)->f.f(x, ps)), f.x)
 
 ## Break ambiguity
-@inline function __rewrite_ad_call(::ComposedFunction{
-        <:StatefulLuxLayer, <:StatefulLuxLayer})
-    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer layers")
-end
-@inline function __rewrite_ad_call(::ComposedFunction{
-        <:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}})
-    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as outer layer and inner layer")
-end
-@inline function __rewrite_ad_call(::ComposedFunction{
-        <:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer})
-    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner layer and outer layer")
-end
-@inline function __rewrite_ad_call(::ComposedFunction{
-        <:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}})
-    error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer layers")
+for op in [ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
+    ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}]
+    @eval @inline function __rewrite_ad_call(::$op)
+        error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer layers")
+    end
 end
 
 # Nested Gradients
@@ -128,7 +120,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pul
     return res, ∇internal_pullback_capture
 end
 
-# Nested Jacobians 
+# Nested Jacobians
 ## `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
 for fname in (:__internal_ad_jacobian_call, :__internal_ad_jacobian_call_no_custom_rrule)
     @eval @inline function $fname(
@@ -159,7 +151,6 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jac
             (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))  # For Zygote and such which return a tuple
             Δ = __compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
-            # TODO: Here we can potentially chunk the gradients for faster AD calls
             __inner_grad_fn = @closure(i->sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)
             map_fn = @closure i -> begin
                 Δᵢ = __maybe_batched_row(Δ, i)
@@ -170,12 +161,13 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jac
                 return __forwarddiff_jvp(__f, x, Δᵢ, y)
             end
 
-            # FIXME: threading on GPUs cause unexpected errors. but this also makes things
-            #        slower. We should investigate this further.
-            if get_device(x) isa LuxCPUDevice
-                ∂x, ∂y = tmapreduce(map_fn, __internal_add, 1:__numrows(Δ))
+            # FIXME: threading on CUDA cause unexpected errors on the first run to CUDNN
+            #        when doing a algorithm lookup
+            ∂x, ∂y = if get_device(x) isa LuxCPUDevice
+                tasks = map(i -> Threads.@spawn(map_fn(i)), 1:__numrows(Δ))
+                mapreduce(fetch, recursive_add!!, tasks)
             else
-                ∂x, ∂y = mapreduce(map_fn, __internal_add, 1:__numrows(Δ))
+                mapreduce(map_fn, recursive_add!!, 1:__numrows(Δ))
             end
 
             return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y)
@@ -212,13 +204,3 @@ end
     fill!(view(y, (N * k + 1):(N * K)), zero(T))
     return y
 end
-
-## TODO: We can do an inplace addition but those are typically not giant bottlenecks
-## This is used for adding up contributions to the gradient in extensions
-@inline __internal_add(x::AbstractArray, y::AbstractArray) = x .+ y
-@inline __internal_add(x::Tuple, y::Tuple) = map(__internal_add, x, y)
-@inline function __internal_add(x::NamedTuple{F}, y::NamedTuple{F}) where {F}
-    return NamedTuple{F}(map(__internal_add, values(x), values(y)))
-end
-@inline __internal_add(::Nothing, ::Nothing) = nothing
-@inline __internal_add(x, y) = fmap(__internal_add, x, y)

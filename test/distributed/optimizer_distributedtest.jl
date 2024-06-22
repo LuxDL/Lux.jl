@@ -34,3 +34,5 @@ _, ps_opt = Optimisers.update(st_opt, ps, gs)
 
 @test ps_dopt.a≈ps_opt.a atol=1.0e-5 rtol=1.0e-5
 @test ps_dopt.b≈ps_opt.b atol=1.0e-5 rtol=1.0e-5
+
+@test_nowarn Optimisers.adjust(st_dopt, 0.1f0)
