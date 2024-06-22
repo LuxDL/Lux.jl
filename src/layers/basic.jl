@@ -440,14 +440,8 @@ statelength(d::Scale) = 0
 
 outputsize(d::Scale) = d.dims
 
-function (d::Scale{false, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    return x .* ps.weight, st
-end
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
     return @.(d.activation(x .* ps.weight)), st
-end
-function (d::Scale{true, typeof(identity)})(x::AbstractArray, ps, st::NamedTuple)
-    return @.(x * ps.weight+ps.bias), st
 end
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
     return @.(d.activation(x * ps.weight + ps.bias)), st
@@ -551,12 +545,8 @@ outputsize(b::Bilinear) = (b.out_dims,)
 function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat},
         ps, st::NamedTuple) where {use_bias}
     d_z, d_x, d_y = size(ps.weight)
-    if d_x != size(x, 1) || d_y != size(y, 1)
-        throw(DimensionMismatch(lazy"number of rows in data must match `ps.weight`"))
-    end
-    if size(x, 2) != size(y, 2)
-        throw(DimensionMismatch(lazy"data inputs must agree on batch size, got $(size(x, 2)) and $(size(y, 2))"))
-    end
+    @argcheck d_x == size(x, 1) && d_y == size(y, 1)
+    @argcheck size(x, 2) == size(y, 2)
 
     Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))
     Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
@@ -569,10 +559,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)
-    if size(x)[2:end] != size(y)[2:end]
-        throw(DimensionMismatch("data arrays must agree on batch dimensions, " *
-                                "got sizes $(size(x)), and $(size(y))"))
-    end
+    @argcheck size(x)[2:end] == size(y)[2:end]
 
     d_z, d_x, d_y = size(ps.weight)
 

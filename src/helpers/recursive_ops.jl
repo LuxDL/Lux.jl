@@ -73,4 +73,5 @@ See also [`Lux.recursive_make_zero`](@ref) for fully out-of-place version.
 @inline recursive_make_zero!!(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(map(
     recursive_make_zero!!, values(x)))
 @inline recursive_make_zero!!(::Nothing) = nothing
+@inline recursive_make_zero!!(x::Val) = x
 @inline recursive_make_zero!!(x) = fmap(recursive_make_zero!!, x)
