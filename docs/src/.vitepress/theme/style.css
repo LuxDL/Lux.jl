@@ -4,11 +4,6 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
 
 /* Layouts */
 
-/* 
- :root {
-  --vp-layout-max-width: 1440px;
-} */
-
 .VPHero .clip {
     white-space: pre;
     max-width: 500px;
@@ -30,7 +25,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     /* Code Snippet font */
     --vp-font-family-mono: JuliaMono-Regular, monospace;
 
-    /* 
+    /*
     Disable the 'calt' (contextual alternates, often called ligatures) font feature
     for monospaced text, which is usually enabled by default. This feature changes
     the display of character combinations such "-" + ">", and "|" + ">". These can
@@ -133,7 +128,7 @@ https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/var
     /* --vp-c-bg: hsl(240, 2%, 11%); */
     --vp-custom-block-info-bg: hsl(220 14% 17%);
     /* --vp-c-gutter: hsl(220 20% 9%);
-  
+
       --vp-c-bg-alt: hsl(220 20% 9%);
       --vp-c-bg-soft: hsl(220 14% 17%);
       --vp-c-bg-mute: hsl(220 12% 23%);
@@ -197,4 +192,79 @@ mjx-container>svg {
 
 :root:is(.dark) .light-only {
     display: none;
+}
+
+
+/* https://bddxg.top/article/note/vitepress优化/一些细节上的优化.html#文档页面调整-加宽 */
+
+@media (min-width: 1440px) {
+    .VPSidebar {
+        padding-left: 20px !important;
+        width: 250px !important;
+    }
+
+    .VPNavBar .title {
+        padding-left: 15px !important;
+        width: 230px !important;
+    }
+
+    .VPContent.has-sidebar {
+        padding-left: 250px !important;
+        padding-right: 5vw !important;
+    }
+
+    .VPNavBar .curtain {
+        width: 100% !important;
+    }
+
+    .VPDoc {
+        padding: 32px 0 0 !important;
+    }
+
+    .VPNavBar.has-sidebar .content {
+        padding-left: 250px !important;
+        padding-right: 20px !important;
+    }
+
+    .VPNavBar .divider {
+        padding-left: 250px !important;
+    }
+}
+
+@media (min-width: 960px) {
+    .VPDoc {
+        padding: 32px 32px 0 10 !important;
+    }
+
+    .VPContent.has-sidebar {
+        padding-left: 255px !important;
+    }
+}
+
+.VPNavBar {
+    padding-right: 0px !important;
+}
+
+.VPDoc.has-aside .content-container {
+    max-width: 100% !important;
+}
+
+.aside {
+    max-width: 200px !important;
+    padding-left: 0 !important;
+}
+
+/* This one does the right menu */
+
+.VPDocOutlineItem li {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 200px;
+}
+
+.VPNavBar .title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
