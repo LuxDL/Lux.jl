@@ -51,6 +51,15 @@ See also [`Lux.recursive_make_zero`](@ref) for fully out-of-place version.
 @inline recursive_make_zero!!(x) = recursive_map(__zero!!, x)::typeof(x)
 
 """
+    recursive_copyto!(x, y)
+
+Recursively copy the leaves of two nested structures `x` and `y`. In Functor language, this
+is equivalent to doing `fmap(copyto!, x, y)`, but this implementation uses type stable code
+for common cases. Note that any immutable leaf will lead to an error.
+"""
+@inline recursive_copyto!(x, y) = recursive_map(copyto!, x, y)
+
+"""
     recursive_map(f, x, args...)
 
 Similar to `fmap(f, args...)` but with restricted support for the notion of "leaf" types.

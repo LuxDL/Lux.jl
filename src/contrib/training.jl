@@ -118,6 +118,12 @@ A 4-Tuple containing:
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
 
+## Known Limitations
+
+- `AutoReverseDiff(; compile=true)` is not supported for Lux models with empty state
+  `st`. Additionally the returned stats must be empty (`NamedTuple()`). We catch these
+  issues in most cases and throw an error.
+
 !!! danger "Aliased Gradients"
 
     `grads` returned by this function might be aliased by the implementation of the gradient

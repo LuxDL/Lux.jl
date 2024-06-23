@@ -61,6 +61,7 @@ Lux.xlogx
 ```@docs
 Lux.recursive_map
 Lux.recursive_add!!
+Lux.recursive_copyto!
 Lux.recursive_eltype
 Lux.recursive_make_zero
 Lux.recursive_make_zero!!
