@@ -13,7 +13,9 @@ end
 
 @jog Lux
 
-result = JogLux.benchmark(; verbose=true)
-filename = JogLux.save_benchmarks(result)
-
-@info "Benchmark results saved to $filename"
+try
+    PkgJogger.list_benchmarks(JogLux.BENCHMARK_DIR)
+    JogLux.benchmark(; verbose=true, save=true, ref=:latest)
+catch e
+    JogLux.benchmark(; verbose=true, save=true)
+end

@@ -3,8 +3,7 @@ steps:
     if: build.message !~ /\[skip benchmark\]/ && build.message !~ /\[skip ci\]/ && !build.pull_request.draft
     steps:
       - label: ":running: Benchmark Run (Pull Request)"
-        key: "benchmark-run"
-        if: build.branch != "main" # TODO: run on dedicated machine for main
+        if: build.branch != "main"
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -12,9 +11,15 @@ steps:
           queue: "juliagpu"
           gpu: "*"
           cuda: "*"
-        timeout_in_minutes: 120
+        timeout_in_minutes: 60
         command: |
+          git clone --single-branch --branch benchmark-results https://github.com/LuxDL/Lux.jl "../lux-benchmarks";
+
           cd benchmark;
+          mkdir -p trial;
+
+          ls -l ../../lux-benchmarks;
+          cp -r "../../lux-benchmarks/" "trial/";
 
           julia --project --threads=auto --color=yes -e '
             using Pkg;
@@ -24,9 +29,38 @@ steps:
         artifact_paths:
           - "benchmark/trial/**"
 
+      # if we will submit results, use the benchmark queue so that we will
+      # be running on the same system each time
+      - label: ":running: Benchmark Run"
+        if: build.branch == "main" || build.tag != null
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        agents:
+          queue: "benchmark"
+          gpu: "*"
+          cuda: "*"
+        timeout_in_minutes: 60
+        command: |
+          git clone --single-branch --branch benchmark-results https://github.com/LuxDL/Lux.jl "../lux-benchmarks";
+
+          cd benchmark;
+          mkdir -p trial;
+
+          ls -l ../../lux-benchmarks;
+          cp -r "../../lux-benchmarks/" "trial/";
+
+          julia --project --threads=auto --color=yes -e '
+            using Pkg;
+            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
+            Pkg.instantiate();
+            include("runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmark/trial/**"
+
+      - wait: ~
+
       - label: ":ship: Upload Benchmark Results"
-        # if: build.branch == "main" || build.tag != null
-        depends_on: [benchmark-run]
         agents:
           queue: "juliagpu"
           gpu: "*"
