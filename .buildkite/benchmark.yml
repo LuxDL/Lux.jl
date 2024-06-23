@@ -2,8 +2,9 @@ steps:
   - group: ":racehorse: Continuous Benchmarks"
     if: build.message !~ /\[skip benchmark\]/ && build.message !~ /\[skip ci\]/ && !build.pull_request.draft
     steps:
-      - label: "Benchmark Run (Trial)"
-        if: build.branch != "main"
+      - label: ":running: Benchmark Run (Pull Request)"
+        key: "benchmark-run"
+        if: build.branch != "main" # TODO: run on dedicated machine for main
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -20,26 +21,27 @@ steps:
             Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
             Pkg.instantiate();
             include("runbenchmarks.jl")'
-        env:
-          LUX_TRIAL_BENCHMARK: true
+        artifact_paths:
+          - "benchmark/trial/**"
 
-      - label: "Benchmark Run"
-        if: build.branch == "main" || build.tag != null
-        plugins:
-          - JuliaCI/julia#v1:
-              version: "1"
+      - label: ":ship: Upload Benchmark Results"
+        # if: build.branch == "main" || build.tag != null
+        depends_on: [benchmark-run]
         agents:
           queue: "juliagpu"
           gpu: "*"
           cuda: "*"
-        timeout_in_minutes: 120
         command: |
-          cd benchmark;
+          buildkite-agent artifact download "**/*" . --build $BUILDKITE_BUILD_ID
+          mv benchmark/trial/* ./
+        plugins:
+          - datumforge/git-commit#v1.0.1:
+              branch: "benchmark-results"
+              https: true
+              message: "Benchmark Results from Build #${BUILDKITE_BUILD_NUMBER}"
+              user:
+                name: avik-pal
+                email: avikpal@mit.edu
 
-          julia --project --threads=auto --color=yes -e '
-            using Pkg;
-            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
-            Pkg.instantiate();
-            include("runbenchmarks.jl")'
-        env:
-          LUX_TRIAL_BENCHMARK: false
+env:
+  SECRET_GITHUB_TOKEN: "Mw9x1+DQ5z2B4RHSAn34/7XAmG1UlrqByGX4LctlrPhbfqAefn4F9EcypF3DI4cEIrfRJ8wj//w+XUjHbcqND0iq7nibGrV9lY1hm8OvCrODUnzuh5JvkJMh2JI98M/ykX/O+uCzTb/c5v9CGDvAEYgTds4M3yFpG07zts2yN8DILwGjo7h5vo6rFfze3S3kFVVR9p+Qa+HsFdQ/E0ZJggJts66guIutBnxTdgBlpmF50qU5AedIOqnk0FJ4gPAR0i2woNI21k6IChDLP5+4mU7v3uOzveQxmnT9reLpoNoi+lWXne7zWwX2jZMzRhFv5PsyfNP4RN2D7R9ATf1ETw==;U2FsdGVkX1+Gis41a0wHs50ZATpuUrCXGEtNkQieFC0I79oahuC5Jm01daOCSFEFlbcCcZzSpcgwAi/USisa4w=="
