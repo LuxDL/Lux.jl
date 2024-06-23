@@ -85,7 +85,7 @@ true
 @kwdef @concrete struct DynamicExpressionsLayer <: AbstractExplicitLayer
     operator_enum
     expression
-    name::NAME_TYPE = nothing
+    name = nothing
     turbo = Val(false)
     bumper = Val(false)
 end
