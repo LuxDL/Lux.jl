@@ -331,7 +331,9 @@ end
 end
 @inline function __fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
     fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
-    return mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y)
+    # mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y) leads to slowdowns, better to
+    # allocate a new array
+    return sum(lfn.(x, y))
 end
 
 @inline __fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
@@ -354,3 +356,20 @@ end
 
 @inline __get_dims(::AbstractVector) = Colon()
 @inline __get_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
+
+@inline __zero(x) = zero(x)
+@inline __zero(::Nothing) = nothing
+@inline __zero(x::Val) = x
+
+@inline __zero!!(x::Number) = zero(x)
+@inline __zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
+@inline __zero!!(::Nothing) = nothing
+@inline __zero!!(x::Val) = x
+
+@inline function __add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
+    ArrayInterface.can_setindex(x) || return x .+ y
+    @. x += y
+    return x
+end
+@inline __add!!(x::Number, y::Number) = x + y
+@inline __add!!(::Nothing, ::Nothing) = nothing

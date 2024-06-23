@@ -3,32 +3,12 @@ module LuxTrackerExt
 using ADTypes: AutoTracker
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore
-using FastClosures: @closure
-using Functors: fmap
 using Lux: Lux, LuxCPUDevice
+using Lux.Experimental: TrainingBackendCache, TrainState
 using LuxCore: LuxCore
-using Setfield: @set!
 using Tracker: Tracker, TrackedArray, @grad_from_chainrules
 
 const CRC = ChainRulesCore
-
-# Type Piracy: Need to upstream
-Tracker.param(nt::NamedTuple{F}) where {F} = NamedTuple{F}(Tracker.param.(values(nt)))
-Tracker.param(t::Tuple) = map(Tracker.param, t)
-Tracker.param(l::LuxCore.AbstractExplicitLayer) = l
-
-Tracker.zero_grad!(nt::NamedTuple) = Tracker.zero_grad!.(values(nt))
-Tracker.zero_grad!(::LuxCore.AbstractExplicitLayer) = nothing
-
-function Tracker.extract_grad!(nt::NamedTuple{F}) where {F}
-    return NamedTuple{F}(Tracker.extract_grad!.(values(nt)))
-end
-Tracker.extract_grad!(t::Tuple) = map(Tracker.extract_grad!, t)
-Tracker.extract_grad!(::LuxCore.AbstractExplicitLayer) = nothing
-
-Tracker.data(nt::NamedTuple) = fmap(Tracker.data, nt)
-Tracker.data(t::Tuple) = map(Tracker.data, t)
-Tracker.data(l::LuxCore.AbstractExplicitLayer) = l
 
 # Weight Norm Patch
 @inline Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
@@ -37,15 +17,33 @@ Tracker.data(l::LuxCore.AbstractExplicitLayer) = l
 @inline Lux._gate(x::Tracker.TrackedVector, h::Int, n::Int) = x[Lux._gate(h, n)]
 @inline Lux._gate(x::Tracker.TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
 
+function __construct_tracked_params(ps, dps)
+    map_fn = (p, dp) -> Tracker.TrackedArray(Tracker.Call(), p, dp)
+    return Lux.recursive_map(map_fn, ps, dps)
+end
+
 # Lux.Training
-function Lux.Experimental.compute_gradients(::AutoTracker, objective_function::F, data,
-        ts::Lux.Experimental.TrainState) where {F}
-    ps_tracked = fmap(Tracker.param, ts.parameters)
-    loss, st, stats = objective_function(ts.model, ps_tracked, ts.states, data)
+function Lux.Experimental.compute_gradients(::AutoTracker, obj_fn::F, data,
+        ts::TrainState{<:TrainingBackendCache{:Tracker, FT}}) where {F, FT}
+    dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
+    ps_tracked = __construct_tracked_params(ts.parameters, dparams)
+
+    loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     Tracker.back!(loss)
-    @set! ts.states = st
-    grads = fmap(Tracker.grad, ps_tracked)
-    return grads, Tracker.value(loss), stats, ts
+
+    ts_new = TrainState(
+        TrainingBackendCache{:Tracker, false}(ts.cache.dparameters, nothing),
+        obj_fn, ts.model, ts.parameters, st, ts.optimizer_state, ts.step)
+
+    return dparams, Tracker.value(loss), stats, ts_new
+end
+
+function Lux.Experimental.compute_gradients(
+        ::AutoTracker, obj_fn::F, data, ts::TrainState) where {F}
+    grads = Lux.recursive_make_zero(ts.parameters)
+    ts_new = TrainState(TrainingBackendCache{:Tracker, true}(grads, nothing), obj_fn,
+        ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    return Lux.Experimental.compute_gradients(AutoTracker(), obj_fn, data, ts_new)
 end
 
 # AoS to SoA conversion
@@ -77,9 +75,11 @@ Tracker.@grad function Lux.__apply_simple_chain(layer, x, ps, ::LuxCPUDevice)
            As such please test your model with FiniteDifferences or Zygote before using \
            `Tracker.jl` for your model." maxlog=1
     y, pb_f = CRC.rrule(layer, Tracker.data(x), Tracker.data(ps))
-    __∇apply_simple_chain = @closure Δ -> begin
-        _, ∂x, ∂ps = pb_f(convert(Array, Tracker.data(Δ)))
-        return Tracker.nobacksies(:__apply_simple_chain, (nothing, ∂x, ∂ps, nothing))
+    __∇apply_simple_chain = let pb_f = pb_f
+        Δ -> begin
+            _, ∂x, ∂ps = pb_f(convert(Array, Tracker.data(Δ)))
+            return Tracker.nobacksies(:__apply_simple_chain, (nothing, ∂x, ∂ps, nothing))
+        end
     end
     # Tracker is not great at handling arbitrary types, so we convert to Array
     return Array(y), __∇apply_simple_chain

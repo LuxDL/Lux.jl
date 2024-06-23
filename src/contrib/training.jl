@@ -29,6 +29,13 @@ Internal fields:
     step::Int
 end
 
+@concrete struct TrainingBackendCache{backend, first_try}
+    dparameters
+    extras
+end
+
+@inline __backend(::TrainingBackendCache{backend}) where {backend} = backend
+
 function Base.show(io::IO, ts::TrainState)
     println(io, "TrainState")
     println(io, "    model: ", ts.model)
@@ -36,7 +43,13 @@ function Base.show(io::IO, ts::TrainState)
     println(io, "    # of states: ", Lux.statelength(ts.states))
     println(io, "    optimizer_state: ", ts.optimizer_state)
     print(io, "    step: ", ts.step)
-    ts.cache !== nothing && print(io, "\n    cache: ", nameof(typeof(ts.cache)))
+    if ts.cache !== nothing
+        if ts.cache isa TrainingBackendCache
+            print(io, "\n    cache: $(nameof(typeof(ts.cache))){$(__backend(ts.cache))}")
+        else
+            print(io, "\n    cache: $(nameof(typeof(ts.cache)))")
+        end
+    end
     ts.objective_function !== nothing &&
         print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
@@ -79,12 +92,12 @@ Compute the gradients of the objective function wrt parameters stored in `ts`.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed  |
-|:------------------ |:---------------- |
-| `AutoZygote`       | `Zygote.jl`      |
-| `AutoReverseDiff`  | `ReverseDiff.jl` |
-| `AutoTracker`      | `Tracker.jl`     |
-| `AutoEnzyme`       | `Enzyme.jl`      |
+| Supported Backends           | Packages Needed  |
+|:---------------------------- |:---------------- |
+| `AutoZygote`                 | `Zygote.jl`      |
+| `AutoReverseDiff(; compile)` | `ReverseDiff.jl` |
+| `AutoTracker`                | `Tracker.jl`     |
+| `AutoEnzyme`                 | `Enzyme.jl`      |
 
 ## Arguments
 
@@ -105,14 +118,13 @@ A 4-Tuple containing:
   - `stats`: Any computed statistics from the objective function.
   - `ts`: Updated Training State.
 
-## Special Notes on Backends
+## Known Limitations
 
-  - `AutoEnzyme`: `mode` is always ignored and Enzyme ReverseMode is used. The first call
-    to `compute_gradients` will be type-unstable. It is recommended to call this function
-    once outside of the training loop and use the returned train_state for type stability.
-  - `AutoReverseDiff`: `compile` is always ignored and the gradient tape is never compiled.
+  - `AutoReverseDiff(; compile=true)` is not supported for Lux models with empty state
+    `st`. Additionally the returned stats must be empty (`NamedTuple()`). We catch these
+    issues in most cases and throw an error.
 
-!!! danger
+!!! danger "Aliased Gradients"
 
     `grads` returned by this function might be aliased by the implementation of the gradient
     backend. For example, if you cache the `grads` from step `i`, the new gradients
