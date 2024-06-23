@@ -47,7 +47,7 @@ See [`Parallel`](@ref) for a more general implementation.
 @kwdef @concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
     layers
     connection
-    name::NAME_TYPE = nothing
+    name = nothing
 end
 
 function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
@@ -146,7 +146,7 @@ julia> size.(first(model((x1, x2), ps, st)))
 @concrete struct Parallel{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     connection
     layers::T
-    name::NAME_TYPE
+    name
 end
 
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
@@ -246,7 +246,7 @@ BranchLayer(
 """
 struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    name::NAME_TYPE
+    name
 end
 
 function BranchLayer(layers...; name::NAME_TYPE=nothing)
@@ -339,7 +339,7 @@ end
                  AbstractExplicitContainerLayer{(:layers,)}
     connection
     layers::T
-    name::NAME_TYPE
+    name
 end
 
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
@@ -442,9 +442,9 @@ Chain(
           #        plus 7 states.
 ```
 """
-struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
-    name::NAME_TYPE
+    name
 end
 
 function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false)
