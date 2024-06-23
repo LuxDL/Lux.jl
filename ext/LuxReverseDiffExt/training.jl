@@ -18,15 +18,15 @@ end
 # Uncompiled ReverseDiff
 @inline function __uncompiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
-    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing),
-        obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing), obj_fn,
+        ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
     return __uncompiled_reverse_diff(obj_fn, data, ts_new)
 end
 
 @inline function __uncompiled_reverse_diff(obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
-    tape = ReverseDiff.InstructionTape()
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
+    tape = ReverseDiff.InstructionTape()
     ps_tracked = Lux.recursive_map(
         Lux.__Fix3(ReverseDiff.TrackedArray, tape), ts.parameters, dparams)
 
@@ -44,12 +44,22 @@ end
 # Compiled ReverseDiff
 @inline function __compiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
-    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing),
-        obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing), obj_fn,
+        ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
     return __compiled_reverse_diff(obj_fn, data, ts_new)
 end
 
-@inline function __compiled_reverse_diff(obj_fn::F, data,
-        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
+## Tape hasn't been compiled yet
+@inline function __compiled_reverse_diff(obj_fn::F,
+        data,
+        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT, P, Nothing}}) where {
+        F, FT, P}
+    dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
+    tape = ReverseDiff.InstructionTape()
+    ps_tracked = Lux.recursive_map(
+        Lux.__Fix3(ReverseDiff.TrackedArray, tape), ts.parameters, dparams)
+
+    loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
+
     error(1)
 end
