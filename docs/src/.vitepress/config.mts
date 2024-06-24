@@ -11,7 +11,6 @@ export default defineConfig({
     description: 'Documentation for LuxDL Repositories',
     cleanUrls: true,
     outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
-    lastUpdated: true,
 
     markdown: {
         math: true,
@@ -174,14 +173,16 @@ export default defineConfig({
                 text: 'Manual', collapsed: false, items: [
                     { text: 'Lux Interface', link: '/manual/interface' },
                     { text: 'Debugging Lux Models', link: '/manual/debugging' },
-                    { text: 'Dispatching on Custom Input Types', link: '/manual/dispatch_custom_input' },
-                    { text: 'Freezing Model Parameters', link: '/manual/freezing_model_parameters' },
+                    { text: 'Custom Input Types', link: '/manual/dispatch_custom_input' },
+                    { text: 'Freezing Parameters', link: '/manual/freezing_model_parameters' },
                     { text: 'GPU Management', link: '/manual/gpu_management' },
-                    { text: 'Migrating from Flux to Lux', link: '/manual/migrate_from_flux' },
+                    { text: 'Migrating from Flux', link: '/manual/migrate_from_flux' },
                     { text: 'Initializing Weights', link: '/manual/weight_initializers' },
-                    { text: 'Distributed Data Parallel Training', link: '/manual/distributed_utils' },
-                    { text: 'Nested Automatic Differentiation', link: '/manual/nested_autodiff' },
-                    { text: 'Using Lux Inside GPU Kernels', link: '/manual/nn_inside_gpu_kernels' },]
+                    { text: 'Distributed Training', link: '/manual/distributed_utils' },
+                    { text: 'Nested AD', link: '/manual/nested_autodiff' },
+                    { text: 'Preferences', link: '/manual/preferences' },
+                    { text: 'Performance Pitfalls', link: '/manual/performance_pitfalls' },
+                    { text: 'Lux In GPU Kernels', link: '/manual/nn_inside_gpu_kernels' },]
             },
             "/api/": {
                 text: 'API Reference', collapsed: false, items: [
