@@ -13,9 +13,12 @@ end
 
 @jog Lux
 
+# TODO: Judge and post to GitHub
 try
-    PkgJogger.list_benchmarks(JogLux.BENCHMARK_DIR)
+    list = PkgJogger.list_benchmarks(joinpath(JogLux.BENCHMARK_DIR, "trial"))
+    @info "Previous Benchmarks" list=list
     JogLux.benchmark(; verbose=true, save=true, ref=:latest)
 catch e
+    @warn "Failed to load previous benchmarks" exception=(e, catch_backtrace())
     JogLux.benchmark(; verbose=true, save=true)
 end

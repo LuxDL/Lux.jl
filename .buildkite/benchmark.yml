@@ -11,7 +11,7 @@ steps:
           queue: "juliagpu"
           gpu: "*"
           cuda: "*"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
         command: |
           git clone --single-branch --branch benchmark-results https://github.com/LuxDL/Lux.jl "../lux-benchmarks";
 
@@ -19,7 +19,7 @@ steps:
           mkdir -p trial;
 
           ls -l ../../lux-benchmarks;
-          cp -r "../../lux-benchmarks/" "trial/";
+          cp -a "../../lux-benchmarks/." "trial/";
 
           julia --project --threads=auto --color=yes -e '
             using Pkg;
@@ -40,7 +40,7 @@ steps:
           queue: "benchmark"
           gpu: "*"
           cuda: "*"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
         command: |
           git clone --single-branch --branch benchmark-results https://github.com/LuxDL/Lux.jl "../lux-benchmarks";
 
@@ -48,7 +48,7 @@ steps:
           mkdir -p trial;
 
           ls -l ../../lux-benchmarks;
-          cp -r "../../lux-benchmarks/" "trial/";
+          cp -a "../../lux-benchmarks/." "trial/";
 
           julia --project --threads=auto --color=yes -e '
             using Pkg;
