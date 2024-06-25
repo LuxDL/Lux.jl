@@ -5,15 +5,23 @@ macro deprecate_preference(old_pref, new_pref, default)
     msg2 = "Both `$(old_pref)` and `$(new_pref)` preferences are set. Please remove \
             `$(old_pref)`."
     return esc(quote
-        old_pref_val = load_preference($(__module__), $(old_pref), missing)
-        if old_pref_val !== missing
+        if has_preference($(__module__), $(new_pref))
             Base.depwarn($msg1, $(Meta.quot(Symbol(__module__))))
-            new_pref_val = load_preference($(__module__), $(new_pref), missing)
-            new_pref_val !== missing && error($msg2)
-            old_pref_val
+            has_preference($(__module__), $(old_pref)) && error($msg2)
+            load_preference($(__module__), $(old_pref), $(default))
         else
             load_preference($(__module__), $(new_pref), $(default))
         end
+    end)
+end
+
+macro load_preference_with_choices(pref, default, choices)
+    msg1 = "Invalid value for `$(pref)` preference: "
+    msg2 = ". Valid choices are: $(choices)"
+    return esc(quote
+        val = load_preference($(__module__), $(pref), $(default))
+        val ∉ $(choices) && error($(msg1) * string(val) * $(msg2))
+        val
     end)
 end
 
@@ -26,3 +34,7 @@ const MPI_CUDA_AWARE = @deprecate_preference("LuxDistributedMPICUDAAware", "cuda
     false)
 const MPI_ROCM_AWARE = @deprecate_preference("LuxDistributedMPIROCMAware", "rocm_aware_mpi",
     false)
+
+# Eltype Auto Conversion
+const AUTO_ELTYPE_CONVERSION = @load_preference_with_choices("auto_eltype_conversion",
+    "none", ("none", "warn", "convert", "error"))
