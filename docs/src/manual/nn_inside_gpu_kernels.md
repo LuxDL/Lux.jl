@@ -70,8 +70,8 @@ Now we will run the same model on GPU.
 ```@example nn_in_gpu_kernels
 gdev = gpu_device()
 
-input_gpu = input |> gpu
-output_gpu = [@SArray(zeros(Float64, 4, 1)) for i in 1:1024] |> gpu
+input_gpu = input |> gdev
+output_gpu = [@SArray(zeros(Float64, 4, 1)) for i in 1:1024] |> gdev
 ```
 
 ```@example nn_in_gpu_kernels

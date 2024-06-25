@@ -34,7 +34,3 @@ struct NCCLBackend{C, M <: Union{Nothing, MPIBackend}} <: AbstractLuxDistributed
         return new{typeof(comm), typeof(mpi_backend)}(comm, mpi_backend)
     end
 end
-
-# Preferences for GPU-Aware MPI
-const MPI_CUDA_AWARE = @load_preference("LuxDistributedMPICUDAAware", false)
-const MPI_ROCM_AWARE = @load_preference("LuxDistributedMPIROCMAware", false)

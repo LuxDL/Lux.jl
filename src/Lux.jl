@@ -17,7 +17,7 @@ using GPUArraysCore: GPUArraysCore
 using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
-using Preferences: @load_preference
+using Preferences: load_preference
 using Random: Random, AbstractRNG
 using Reexport: @reexport
 using Statistics: mean
@@ -35,8 +35,8 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 
 @inline _is_extension_loaded(::Val) = false
 
-const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNestedADSwitching",
-    false)
+# Preferences
+include("preferences.jl")
 
 # Utilities
 include("utils.jl")

@@ -13,7 +13,7 @@ needed.
 !!! tip
 
     Don't wan't Lux to do this switching for you? You can disable it by setting the
-    `DisableAutomaticNestedADSwitching` Preference to `true`.
+    `automatic_nested_ad_switching` Preference to `false`.
 
     Remember that if you are using ForwardDiff inside a Zygote call, it will drop gradients
     (with a warning message), so it is not recommended to use this combination.

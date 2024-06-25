@@ -20,11 +20,18 @@ exhaustive list of preferences that Lux.jl uses.
 
 ## Nested Automatic Differentiation
 
-1. `DisableAutomaticNestedADSwitching` - Set this to `true` to disable automatic switching
+1. `automatic_nested_ad_switching` - Set this to `true` to disable automatic switching
    of backends for nested automatic differentiation. See the manual section on
    [nested automatic differentiation](@ref nested_autodiff) for more details.
 
 ## GPU-Aware MPI Support
 
-1. `LuxDistributedMPICUDAAware` - Set this to `true` if your MPI build is CUDA aware.
-2. `LuxDistributedMPIROCMAware` - Set this to `true` if your MPI build is ROCM aware.
+1. `cuda_aware_mpi` - Set this to `true` if your MPI build is CUDA aware.
+2. `rocm_aware_mpi` - Set this to `true` if your MPI build is ROCM aware.
+
+## GPU Backend Selection
+
+1. `gpu_backend` - Set this to bypass the automatic backend selection and use a specific
+   gpu backend. Valid options are "cuda", "rocm", "metal", and "oneapi". This preference
+   needs to be set for `LuxDeviceUtils` package. It is recommended to use
+   [`LuxDeviceUtils.gpu_backend!`](@ref) to set this preference.
