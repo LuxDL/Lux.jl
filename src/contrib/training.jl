@@ -122,7 +122,7 @@ A 4-Tuple containing:
 
 ## Known Limitations
 
-  - `AutoReverseDiff(; compile=true)` is not supported for Lux models with empty state
+  - `AutoReverseDiff(; compile=true)` is not supported for Lux models with non-empty state
     `st`. Additionally the returned stats must be empty (`NamedTuple()`). We catch these
     issues in most cases and throw an error.
 

@@ -141,7 +141,10 @@ end
     import Enzyme
 
     mse = MSELoss()
-    mse2(args...) = mse(args...)
+    function mse2(model, ps, st, (x, y))
+        z, st = model(x, ps, st)
+        return sum(abs2, z .- y), st, ()
+    end
 
     rng = StableRNG(12345)
 
@@ -165,13 +168,12 @@ end
     _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
-    Enzyme.API.runtimeActivity!(true) # Needed else the next line throws different error
-
-    # We don't keep recompiling as that would be bad for performance
-    @test_throws ErrorException @inferred Lux.Experimental.compute_gradients(
-        AutoEnzyme(), mse2, (x, x), tstate_new)
-
     @inferred Lux.Experimental.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)
+
+    _, _, _, tstate_new2 = @inferred Lux.Experimental.compute_gradients(
+        AutoEnzyme(), mse2, (x, x), tstate_new)
+    @test hasfield(typeof(tstate_new2.cache.extras), :forward)
+    @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
 end
 
 @testitem "Compiled ReverseDiff" setup=[SharedTestSetup] tags=[:contrib] begin
