@@ -314,8 +314,6 @@ end
 end
 @inline __check_sizes(ŷ, y) = nothing
 
-CRC.@non_differentiable __check_sizes(ŷ::Any, y::Any)
-
 @inline function __fused_agg(::typeof(mean), op::OP, x) where {OP}
     return __fused_agg(sum, op, x) / length(x)
 end
@@ -373,3 +371,5 @@ end
 end
 @inline __add!!(x::Number, y::Number) = x + y
 @inline __add!!(::Nothing, ::Nothing) = nothing
+
+@inline __set_refval!(x, y) = (x[] = y)

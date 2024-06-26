@@ -11,6 +11,7 @@ using PrecompileTools: @recompile_invalidations
     using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
                           ProjectTo, RuleConfig, ZeroTangent, @thunk
     using ConcreteStructs: @concrete
+    using EnzymeCore: EnzymeCore, EnzymeRules
     using FastClosures: @closure
     using Functors: Functors, fmap
     using GPUArraysCore: GPUArraysCore
@@ -79,6 +80,7 @@ include("helpers/recursive_ops.jl")
 
 # AutoDiff
 include("chainrules.jl")
+include("enzymerules.jl")
 
 # Transform to and from other frameworks
 include("transform/types.jl")

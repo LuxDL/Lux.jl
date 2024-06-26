@@ -57,11 +57,7 @@ end
     using ADTypes, Optimisers
     import Enzyme, Tracker, ReverseDiff, Zygote
 
-    function mse(model, ps, st, data)
-        x_data, y_data = data
-        y, st_ = model(x_data, ps, st)
-        return sum(abs2, y .- y_data), st_, (;)
-    end
+    mse = MSELoss()
 
     rng = StableRNG(12345)
 
@@ -94,10 +90,13 @@ end
                 grads, loss, _, tstate = Lux.Experimental.compute_gradients(
                     ad, mse, (x, y), tstate)
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
-
-                @test_deprecated Lux.Training.compute_gradients(ad, mse, (x, y), tstate)
-                @test_deprecated Lux.Training.apply_gradients(tstate, grads)
             end
+
+            (x, y) = first(dataset_)
+            @test_deprecated Lux.Training.compute_gradients(ad, mse, (x, y), tstate)
+            grads, loss, _, tstate = Lux.Experimental.compute_gradients(
+                ad, mse, (x, y), tstate)
+            @test_deprecated Lux.Training.apply_gradients(tstate, grads)
 
             for epoch in 1:100, (x, y) in dataset_
                 grads, loss, _, tstate = Lux.Experimental.single_train_step!(
@@ -141,12 +140,7 @@ end
     using ADTypes, Optimisers
     import Enzyme
 
-    function mse(model, ps, st, data)
-        x_data, y_data = data
-        y, st_ = model(x_data, ps, st)
-        return sum(abs2, y .- y_data), st_, (;)
-    end
-
+    mse = MSELoss()
     mse2(args...) = mse(args...)
 
     rng = StableRNG(12345)
@@ -181,12 +175,7 @@ end
 @testitem "Compiled ReverseDiff" setup=[SharedTestSetup] tags=[:contrib] begin
     using ADTypes, Optimisers, ReverseDiff
 
-    function mse1(model, ps, st, data)
-        x_data, y_data = data
-        y, st_ = model(x_data, ps, st)
-        return sum(abs2, y .- y_data), st_, (;)
-    end
-
+    mse1 = MSELoss()
     function mse2(model, ps, st, data)
         l, st_, stats = mse1(model, ps, st, data)
         return l, st_, (; data=2.0f0)
