@@ -20,6 +20,7 @@ using PrecompileTools: @recompile_invalidations
     using Random: Random, AbstractRNG
     using Reexport: @reexport
     using Statistics: mean
+    using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
     using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
     using LuxLib: __apply_bias_activation

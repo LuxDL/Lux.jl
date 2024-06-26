@@ -15,19 +15,21 @@ Any leaves of `x` that are arrays and allow in-place addition will be modified i
 Recursively determine the element type of a nested structure `x`. This is equivalent to
 doing `fmap(eltype, x)`, but this implementation uses type stable code for common cases.
 """
-@inline recursive_eltype(x::AbstractArray) = eltype(x)
-@inline recursive_eltype(x::Tuple) = promote_type(recursive_eltype.(x)...)
-@inline recursive_eltype(x::NamedTuple) = promote_type(recursive_eltype.(values(x))...)
-@inline recursive_eltype(::Nothing) = Bool
+@inline function recursive_eltype(x::AbstractArray{T}) where {T}
+    isbitstype(T) && return eltype(x)
+    return mapreduce(recursive_eltype, promote_type, x)
+end
+@inline recursive_eltype(::Union{Nothing, Missing, Val}) = Bool
 @inline recursive_eltype(x::Number) = eltype(x)
+@inline function recursive_eltype(x::Union{Tuple, NamedTuple})
+    leaves = x isa Tuple ? x : values(x)
+    length(leaves) == 0 && return Bool
+    return unrolled_mapreduce(recursive_eltype, promote_type, leaves)
+end
 @inline function recursive_eltype(x)
-    _eltype = Ref(Bool)
-    function __internal_recursive_eltype(x)
-        _eltype[] = promote_type(_eltype[], recursive_eltype(x))
-        return x
-    end
-    fmap(__internal_recursive_eltype, x)
-    return _eltype[]
+    leaves = Functors.fleaves(x)
+    length(leaves) == 0 && return Bool
+    return mapreduce(recursive_eltype, promote_type, leaves)
 end
 
 """
@@ -38,7 +40,7 @@ Recursively create a zero value for a nested structure `x`. This is equivalent t
 
 See also [`Lux.recursive_make_zero!!`](@ref).
 """
-@inline recursive_make_zero(x) = recursive_map(__zero, x)::typeof(x)
+@inline recursive_make_zero(x) = recursive_map(__zero, x)
 
 """
     recursive_make_zero!!(x)
@@ -48,7 +50,7 @@ in-place zeroing will be modified in place.
 
 See also [`Lux.recursive_make_zero`](@ref) for fully out-of-place version.
 """
-@inline recursive_make_zero!!(x) = recursive_map(__zero!!, x)::typeof(x)
+@inline recursive_make_zero!!(x) = recursive_map(__zero!!, x)
 
 """
     recursive_copyto!(x, y)
@@ -101,6 +103,6 @@ end
     map_fn = let f = f
         (args_...) -> recursive_map(f, args_...)
     end
-    return NamedTuple{fields}(map(map_fn, values(x), values.(args)...))
+    return NamedTuple{fields}(unrolled_map(map_fn, values(x), values.(args)...))
 end
 @inline recursive_map(f::F, x, args...) where {F} = fmap(f, x, args...)
