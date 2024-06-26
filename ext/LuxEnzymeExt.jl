@@ -22,6 +22,7 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, obj_fn::F, data,
 end
 
 # Case II: We have CachedEnzymeExtras and obj_fn is changed.
+# TODO: If not FT then use split primal mode which is not the most efficient.
 function Lux.Experimental.compute_gradients(::AutoEnzyme, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:Enzyme, FT}}) where {F, FT}
     dps = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)

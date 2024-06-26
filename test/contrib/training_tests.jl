@@ -165,6 +165,8 @@ end
     _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
+    Enzyme.API.runtimeActivity!(true) # Needed else the next line throws different error
+
     # We don't keep recompiling as that would be bad for performance
     @test_throws ErrorException @inferred Lux.Experimental.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
