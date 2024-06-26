@@ -181,8 +181,8 @@ SelectDim(dim, index) = SelectDim{dim, index}()
     return selectdim(x, dim, index), st
 end
 
-function Base.show(io::IO, s::SelectDim{dim, index}) where {dim, index}
-    return print(io, "SelectDim(dim = ", dim, ", index = ", index, ")")
+function Base.show(io::IO, ::SelectDim{dim, index}) where {dim, index}
+    return print(io, "SelectDim(", dim, ", ", index, ")")
 end
 
 """
@@ -267,8 +267,8 @@ end
 @inline __maybe_direct_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
 @inline __maybe_direct_call(f, x, ps, st, ::Val{true}) = f(x), st
 
-function Base.show(io::IO, w::WrappedFunction)
-    return print(io, "WrappedFunction(", w.func, ")")
+function Base.show(io::IO, w::WrappedFunction{T}) where {T}
+    return print(io, "WrappedFunction{$(Meta.quot(T))}($(w.func))")
 end
 
 """

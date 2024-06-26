@@ -95,10 +95,9 @@ end
 
 function Base.show(io::IO, f::FrozenLayer{which_params}) where {which_params}
     if which_params === nothing
-        return print(io, f.layer, " (with all parameters frozen)")
+        return print(io, "FrozenLayer(", f.layer, ")")
     end
-    wp = join(map(x -> "`$(x)`", which_params), ", ", " & ")
-    return print(io, f.layer, " (with ", wp, " frozen)")
+    print(io, "FrozenLayer(", f.layer, ", ", which_params, ")")
 end
 
 """

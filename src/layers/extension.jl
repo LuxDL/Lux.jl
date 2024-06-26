@@ -90,7 +90,7 @@ true
     bumper = Val(false)
 end
 
-function Base.show(io::IO, l::DynamicExpressionsLayer)
+function Base.show(io::IO, ::MIME"text/plain", l::DynamicExpressionsLayer)
     return print(io, "DynamicExpressionNode($(l.expression))")
 end
 
@@ -183,7 +183,7 @@ Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
 (l::FluxLayer)(x, ps, st) = l.re(ps.p)(x), st
 
-Base.show(io::IO, l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
+Base.show(io::IO, ::MIME"text/plain", l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 
 ## SimpleChains.jl
 
@@ -224,7 +224,8 @@ struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer
     end
 end
 
-function Base.show(io::IO, s::SimpleChainsLayer{ToArray}) where {ToArray}
+function Base.show(
+        io::IO, ::MIME"text/plain", s::SimpleChainsLayer{ToArray}) where {ToArray}
     _print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
 end
 

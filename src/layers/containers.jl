@@ -1,5 +1,6 @@
 """
-    SkipConnection(layer, connection; name=nothing)
+    SkipConnection(layers, connection; name=nothing)
+    SkipConnection(; layers, connection, name=nothing)
 
 Create a skip connection which consists of a layer or [`Chain`](@ref) of consecutive layers
 and a shortcut connection linking the block's input to the output through a user-supplied
@@ -44,13 +45,24 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-@kwdef @concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
     layers
     connection
-    name = nothing
+    name
+end
+
+function Functors.functor(::Type{<:SkipConnection}, sc)
+    recon = let name = sc.name
+        nt -> SkipConnection(nt.layers, nt.connection, name)
+    end
+    return (; sc.layers, sc.connection), recon
 end
 
 function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
+    return SkipConnection(; layers, connection, name)
+end
+
+function SkipConnection(; layers, connection, name::NAME_TYPE=nothing)
     return SkipConnection(layers, connection, name)
 end
 
@@ -81,6 +93,7 @@ end
 """
     Parallel(connection, layers...; name=nothing)
     Parallel(connection; name=nothing, layers...)
+    Parallel(; connection, layers..., name=nothing)
 
 Create a layer which passes an input to each path in `layers`, before reducing the output
 with `connection`.
@@ -149,11 +162,22 @@ julia> size.(first(model((x1, x2), ps, st)))
     name
 end
 
+function Functors.functor(::Type{<:Parallel}, p)
+    recon = let name = p.name
+        nt -> Parallel(nt.connection, nt.layers, name)
+    end
+    return (; p.connection, p.layers), recon
+end
+
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
     return Parallel(connection, __named_tuple_layers(layers...), name)
 end
 
 function Parallel(connection; name::NAME_TYPE=nothing, kwargs...)
+    return Parallel(; connection, name, kwargs...)
+end
+
+function Parallel(; name::NAME_TYPE=nothing, connection, kwargs...)
     return Parallel(connection, (; kwargs...), name)
 end
 
@@ -276,6 +300,7 @@ Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
 """
     PairwiseFusion(connection, layers...; name=nothing)
     PairwiseFusion(connection; name=nothing, layers...)
+    PairwiseFusion(; connection, layers..., name=nothing)
 
 ```
 x1 → layer1 → y1 ↘
@@ -342,11 +367,22 @@ end
     name
 end
 
+function Functors.functor(::Type{<:PairwiseFusion}, p)
+    recon = let name = p.name
+        nt -> PairwiseFusion(nt.connection, nt.layers, name)
+    end
+    return (; p.connection, p.layers), recon
+end
+
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
     return PairwiseFusion(connection, __named_tuple_layers(layers...), name)
 end
 
 function PairwiseFusion(connection; name::NAME_TYPE=nothing, kwargs...)
+    return PairwiseFusion(; connection, name, kwargs...)
+end
+
+function PairwiseFusion(; name::NAME_TYPE=nothing, connection, kwargs...)
     return PairwiseFusion(connection, (; kwargs...), name)
 end
 
@@ -658,13 +694,14 @@ struct RepeatedLayer{N, IJ, M <: AbstractExplicitLayer} <:
     model::M
 end
 
-function LuxCore.display_name(::RepeatedLayer{N, IJ}) where {N, IJ}
-    return "RepeatedLayer{repeats = $N, input_injection = $IJ}"
-end
+LuxCore.display_name(::RepeatedLayer{N, IJ}) where {N, IJ} = "RepeatedLayer{$N, $IJ}"
+
+RepeatedLayer{N, IJ}(model) where {N, IJ} = RepeatedLayer{N, IJ, typeof(model)}(model)
+RepeatedLayer{N, IJ}(; model) where {N, IJ} = RepeatedLayer{N, IJ, typeof(model)}(model)
 
 function RepeatedLayer(model::AbstractExplicitLayer; repeats::Val{N}=Val(10),
         input_injection::Val{IJ}=Val(false)) where {N, IJ}
-    return RepeatedLayer{N, IJ, typeof(model)}(model)
+    return RepeatedLayer{N, IJ}(model)
 end
 
 (m::RepeatedLayer)(x, ps, st) = repeatedlayer(m, m.model, x, ps, st)

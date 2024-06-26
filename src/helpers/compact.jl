@@ -516,11 +516,15 @@ end
 function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
     setup_strings = obj.setup_strings
     local_name = obj.name
-    layer, input, block = obj.strings
     if local_name !== nothing && local_name != ""
-        Lux._layer_show(io, obj, indent, name)
+        _str = name === nothing ? "" : "$name = "
+        str = _str * local_name
+        print(io, " "^indent, str, indent == 0 ? "" : ",")
+        _show_parameters_count(io, obj, indent, str)
+        indent == 0 || println(io)
         return
     end
+    layer, input, block = obj.strings
     pre, post = ("(", ")")
     println(io, " "^indent, isnothing(name) ? "" : "$name = ", layer, pre)
     for (k, v) in pairs(setup_strings)
@@ -528,7 +532,7 @@ function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing
         if val === nothing
             println(io, " "^(indent + 4), "$k = $v,")
         else
-            Lux._big_show(io, val, indent + 4, k)
+            _big_show(io, val, indent + 4, k)
         end
     end
     if indent == 0  # i.e. this is the outermost container
