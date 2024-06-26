@@ -47,9 +47,9 @@ Effectively does `TruncatedStacktraces.VERBOSE[] = disable`
     This function is now deprecated and will be removed in v0.6.
 """
 function disable_stacktrace_truncation!(; disable::Bool=true)
-    Base.depwarn("`disable_stacktrace_truncation!` is not needed anymore, as \
-        stacktraces are truncated by default. This function is now deprecated and will be \
-        removed in v0.6.",
+    Base.depwarn(
+        "`disable_stacktrace_truncation!` is not needed anymore, as stacktraces are \
+        truncated by default. This function is now deprecated and will be removed in v0.6.",
         :disable_stacktrace_truncation)
     return
 end

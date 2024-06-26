@@ -32,8 +32,8 @@ function Lux.Experimental.compute_gradients(::AutoTracker, obj_fn::F, data,
     Tracker.back!(loss)
 
     ts_new = TrainState(
-        TrainingBackendCache{:Tracker, false}(ts.cache.dparameters, nothing),
-        obj_fn, ts.model, ts.parameters, st, ts.optimizer_state, ts.step)
+        TrainingBackendCache{:Tracker, false}(ts.cache.dparameters, nothing), obj_fn,
+        ts.model, ts.parameters, st, ts.optimizer, ts.optimizer_state, ts.step)
 
     return dparams, Tracker.value(loss), stats, ts_new
 end
@@ -41,8 +41,9 @@ end
 function Lux.Experimental.compute_gradients(
         ::AutoTracker, obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
-    ts_new = TrainState(TrainingBackendCache{:Tracker, true}(grads, nothing), obj_fn,
-        ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(
+        TrainingBackendCache{:Tracker, true}(grads, nothing), obj_fn, ts.model,
+        ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
     return Lux.Experimental.compute_gradients(AutoTracker(), obj_fn, data, ts_new)
 end
 

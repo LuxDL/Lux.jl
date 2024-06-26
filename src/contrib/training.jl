@@ -6,6 +6,7 @@ Training State containing:
   - `model`: `Lux` model.
   - `parameters`: Trainable Variables of the `model`.
   - `states`: Non-trainable Variables of the `model`.
+  - `optimizer`: Optimizer from `Optimisers.jl`.
   - `optimizer_state`: Optimizer State.
   - `step`: Number of updates of the parameters made.
 
@@ -25,6 +26,7 @@ Internal fields:
     model
     parameters
     states
+    optimizer
     optimizer_state
     step::Int
 end
@@ -36,12 +38,12 @@ end
 
 @inline __backend(::TrainingBackendCache{backend}) where {backend} = backend
 
-function Base.show(io::IO, ts::TrainState)
+function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     println(io, "TrainState")
     println(io, "    model: ", ts.model)
     println(io, "    # of parameters: ", Lux.parameterlength(ts.parameters))
     println(io, "    # of states: ", Lux.statelength(ts.states))
-    println(io, "    optimizer_state: ", ts.optimizer_state)
+    println(io, "    optimizer: ", ts.optimizer)
     print(io, "    step: ", ts.step)
     if ts.cache !== nothing
         if ts.cache isa TrainingBackendCache
