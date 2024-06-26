@@ -51,10 +51,10 @@ julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
 julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
 DynamicExpressionsLayer(
     layer_1 = Parallel(
-        layer_1 = DynamicExpressionNode(x1 * cos(x2 - 3.2)),  # 1 parameters
-        layer_2 = DynamicExpressionNode(((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)),  # 2 parameters
+        layer_1 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), x1 * cos(x2 - 3.2); turbo=Val{false}(), bumper=Val{false}()),  # 1 parameters
+        layer_2 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1); turbo=Val{false}(), bumper=Val{false}()),  # 2 parameters
     ),
-    layer_2 = WrappedFunction(__stack1),
+    layer_2 = WrappedFunction{:direct_call}(__stack1),
 )         # Total: 3 parameters,
           #        plus 0 states.
 
@@ -91,7 +91,8 @@ true
 end
 
 function Base.show(io::IO, l::DynamicExpressionsLayer)
-    return print(io, "DynamicExpressionNode($(l.expression))")
+    print(io,
+        "DynamicExpressionsLayer($(l.operator_enum), $(l.expression); turbo=$(l.turbo), bumper=$(l.bumper))")
 end
 
 function initialparameters(::AbstractRNG, layer::DynamicExpressionsLayer)
@@ -183,7 +184,7 @@ Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
 (l::FluxLayer)(x, ps, st) = l.re(ps.p)(x), st
 
-Base.show(io::IO, l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
+Base.show(io::IO, ::MIME"text/plain", l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 
 ## SimpleChains.jl
 
@@ -224,7 +225,8 @@ struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer
     end
 end
 
-function Base.show(io::IO, s::SimpleChainsLayer{ToArray}) where {ToArray}
+function Base.show(
+        io::IO, ::MIME"text/plain", s::SimpleChainsLayer{ToArray}) where {ToArray}
     _print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
 end
 

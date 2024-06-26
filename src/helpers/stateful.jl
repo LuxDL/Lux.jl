@@ -52,7 +52,7 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
     end
 end
 
-function Base.show(io::IO, s::StatefulLuxLayer{ST}) where {ST}
+function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer{ST}) where {ST}
     _print_wrapper_model(io, "StatefulLuxLayer{$ST}", s.model)
 end
 

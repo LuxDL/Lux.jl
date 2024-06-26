@@ -47,7 +47,7 @@ parameter types, users need to implement `Lux._merge(::CustomParamType, ::NamedT
 
 ```jldoctest
 julia> Lux.Experimental.FrozenLayer(Dense(2 => 2), (:weight,))
-Dense(2 => 2) (with `weight` frozen)  # 2 parameters, plus 4 non-trainable
+FrozenLayer(Dense(2 => 2), (:weight,))  # 2 parameters, plus 4 non-trainable
 ```
 
 See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).
@@ -95,10 +95,9 @@ end
 
 function Base.show(io::IO, f::FrozenLayer{which_params}) where {which_params}
     if which_params === nothing
-        return print(io, f.layer, " (with all parameters frozen)")
+        return print(io, "FrozenLayer(", f.layer, ")")
     end
-    wp = join(map(x -> "`$(x)`", which_params), ", ", " & ")
-    return print(io, f.layer, " (with ", wp, " frozen)")
+    print(io, "FrozenLayer(", f.layer, ", ", which_params, ")")
 end
 
 """

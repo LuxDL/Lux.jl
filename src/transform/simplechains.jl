@@ -44,12 +44,13 @@ SimpleChainsLayer{false}(
         layer_2 = MaxPool((2, 2)),
         layer_3 = Conv((5, 5), 6 => 16, relu),  # 2_416 parameters
         layer_4 = MaxPool((2, 2)),
-        layer_5 = FlattenLayer(),
+        layer_5 = FlattenLayer{Int64}(3),
         layer_6 = Dense(256 => 128, relu),  # 32_896 parameters
         layer_7 = Dense(128 => 84, relu),  # 10_836 parameters
         layer_8 = Dense(84 => 10),      # 850 parameters
     ),
-)  # 47_154 parameters
+)         # Total: 47_154 parameters,
+          #        plus 0 states.
 
 julia> ps, st = Lux.setup(Random.default_rng(), simple_chains_model);
 

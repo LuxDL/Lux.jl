@@ -297,7 +297,7 @@ end
 function Base.show(io::IO, r::RNNCell{use_bias, TS}) where {use_bias, TS}
     print(io, "RNNCell($(r.in_dims) => $(r.out_dims)")
     (r.activation == identity) || print(io, ", $(r.activation)")
-    use_bias || print(io, ", bias=false")
+    use_bias || print(io, ", use_bias=false")
     TS && print(io, ", train_state=true")
     return print(io, ")")
 end
@@ -480,7 +480,7 @@ end
 function Base.show(io::IO,
         lstm::LSTMCell{use_bias, TS, train_memory}) where {use_bias, TS, train_memory}
     print(io, "LSTMCell($(lstm.in_dims) => $(lstm.out_dims)")
-    use_bias || print(io, ", bias=false")
+    use_bias || print(io, ", use_bias=false")
     TS && print(io, ", train_state=true")
     train_memory && print(io, ", train_memory=true")
     return print(io, ")")
@@ -525,7 +525,7 @@ Gated Recurrent Unit (GRU) Cell
             updated hidden state is returned.
 
 ## Returns
-  
+
   - Tuple containing
 
       + Output ``h_{new}`` of shape `(out_dims, batch_size)`
@@ -631,7 +631,7 @@ end
 
 function Base.show(io::IO, g::GRUCell{use_bias, TS}) where {use_bias, TS}
     print(io, "GRUCell($(g.in_dims) => $(g.out_dims)")
-    use_bias || print(io, ", bias=false")
+    use_bias || print(io, ", use_bias=false")
     TS && print(io, ", train_state=true")
     return print(io, ")")
 end

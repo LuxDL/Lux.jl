@@ -180,7 +180,7 @@ function (d::VariationalHiddenDropout)(x, ps, st::NamedTuple)
     return y, merge(st, (; mask, rng, update_mask=Val(false)))
 end
 
-function Base.show(io::IO, d::VariationalHiddenDropout)
+function Base.show(io::IO, ::MIME"text/plain", d::VariationalHiddenDropout)
     print(io, "VariationalHiddenDropout(", d.p)
     d.dims != Colon() && print(io, ", dims=", d.dims)
     return print(io, ")")

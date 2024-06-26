@@ -422,9 +422,14 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
     dims
 end
 
+function WeightNorm{which_params}(layer::AbstractExplicitLayer;
+        dims::Union{Tuple, Nothing}=nothing) where {which_params}
+    return WeightNorm{which_params}(layer, dims)
+end
+
 function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
         dims::Union{Tuple, Nothing}=nothing) where {N}
-    return WeightNorm{which_params}(layer, dims)
+    return WeightNorm{which_params}(layer; dims)
 end
 
 @inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
@@ -552,7 +557,7 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
   - `affine=false`: Empty `NamedTuple()`
   - `affine=true`
-    
+
       + `bias`: Bias of shape `(shape..., 1)`
       + `scale`: Scale of shape `(shape..., 1)`
 """

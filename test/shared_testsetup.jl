@@ -17,8 +17,13 @@ function get_default_rng(mode::String)
     return rng isa TaskLocalRNG ? copy(rng) : deepcopy(rng)
 end
 
+function test_roundtrip_show(l)
+    display(l)
+    @test eval(Meta.parse(sprint(show, l))) == l
+end
+
 export @jet, @test_gradients, check_approx
 export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
-       StableRNG
+       StableRNG, test_roundtrip_show
 
 end
