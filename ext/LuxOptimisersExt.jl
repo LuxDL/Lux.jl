@@ -46,49 +46,52 @@ end
 function Lux.Experimental.TrainState(
         model::Lux.AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
     st_opt = Optimisers.setup(optimizer, ps)
-    return Lux.Experimental.TrainState(nothing, nothing, model, ps, st, st_opt, 0)
+    return Lux.Experimental.TrainState(
+        nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
 
 function Lux.Experimental.apply_gradients(ts::Lux.Experimental.TrainState, grads)
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
-    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
-        ps, ts.states, optimizer_state, ts.step + 1)
+    return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model, ps,
+        ts.states, ts.optimizer, optimizer_state, ts.step + 1)
 end
 
 function Lux.Experimental.apply_gradients!(ts::Lux.Experimental.TrainState, grads)
     Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
     return Lux.Experimental.TrainState(
         ts.cache, ts.objective_function, ts.model, ts.parameters,
-        ts.states, ts.optimizer_state, ts.step + 1)
+        ts.states, ts.optimizer, ts.optimizer_state, ts.step + 1)
 end
 
 # Simple extension to the `adjust!` API
 function Optimisers.adjust!(ts::Lux.Experimental.TrainState, eta::Real)
     st_opt = ts.optimizer_state
     Optimisers.adjust!(st_opt, eta)
+    optimizer = Optimisers.adjust(ts.optimizer, eta)
     return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, st_opt, ts.step)
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
 end
 
 function Optimisers.adjust!(ts::Lux.Experimental.TrainState; kwargs...)
     st_opt = ts.optimizer_state
     Optimisers.adjust!(st_opt; kwargs...)
+    optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
     return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, st_opt, ts.step)
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
 end
 
 function Optimisers.adjust(ts::Lux.Experimental.TrainState, eta::Real)
-    st_opt = ts.optimizer_state
-    st_opt = Optimisers.adjust(st_opt, eta)
+    st_opt = Optimisers.adjust(ts.optimizer_state, eta)
+    optimizer = Optimisers.adjust(ts.optimizer, eta)
     return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, st_opt, ts.step)
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
 end
 
 function Optimisers.adjust(ts::Lux.Experimental.TrainState; kwargs...)
-    st_opt = ts.optimizer_state
-    st_opt = Optimisers.adjust(st_opt; kwargs...)
+    st_opt = Optimisers.adjust(ts.optimizer_state; kwargs...)
+    optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
     return Lux.Experimental.TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, st_opt, ts.step)
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
 end
 
 # DistributedUtils

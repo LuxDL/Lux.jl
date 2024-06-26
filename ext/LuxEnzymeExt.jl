@@ -14,8 +14,9 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, obj_fn::F, data,
         Enzyme.ReverseWithPrimal, ts.cache.extras.obj_fn, Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
-    ts_new = TrainState(ts.cache, obj_fn, ts.model, ts.parameters,
-        ts.cache.extras.st_wrap[], ts.optimizer_state, ts.step)
+    ts_new = TrainState(
+        ts.cache, obj_fn, ts.model, ts.parameters, ts.cache.extras.st_wrap[],
+        ts.optimizer, ts.optimizer_state, ts.step)
 
     return dps, loss, ts.cache.extras.stats_wrap[], ts_new
 end
@@ -34,8 +35,8 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, obj_fn::F, data,
 
     cache = TrainingBackendCache{:Enzyme, false}(
         dps, (; obj_fn=obj_fn_wrap, st_wrap, stats_wrap))
-    ts_new = TrainState(
-        cache, obj_fn, ts.model, ts.parameters, st_wrap[], ts.optimizer_state, ts.step)
+    ts_new = TrainState(cache, obj_fn, ts.model, ts.parameters, st_wrap[],
+        ts.optimizer, ts.optimizer_state, ts.step)
 
     return dps, loss, stats_wrap[], ts_new
 end
@@ -46,8 +47,8 @@ function Lux.Experimental.compute_gradients(
     dps = Lux.recursive_make_zero(ts.parameters)
     cache = TrainingBackendCache{:Enzyme, true}(
         dps, (; obj_fn=nothing, st_wrap=nothing, stats_wrap=nothing))
-    ts_new = TrainState(
-        cache, nothing, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(cache, nothing, ts.model, ts.parameters, ts.states,
+        ts.optimizer, ts.optimizer_state, ts.step)
     return Lux.Experimental.compute_gradients(ad, obj_fn, data, ts_new)
 end
 

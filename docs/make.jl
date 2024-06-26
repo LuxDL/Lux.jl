@@ -3,6 +3,8 @@ using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
 using LuxTestUtils, LuxDeviceUtils
 using LuxCUDA
 
+using Optimisers # for some docstrings
+
 #! format: off
 
 pages = [

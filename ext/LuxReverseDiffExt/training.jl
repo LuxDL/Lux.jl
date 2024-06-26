@@ -18,8 +18,9 @@ end
 # Uncompiled ReverseDiff
 @inline function __uncompiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
-    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, nothing), obj_fn,
-        ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(
+        TrainingBackendCache{:ReverseDiff, true}(grads, nothing), obj_fn, ts.model,
+        ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
     return __uncompiled_reverse_diff(obj_fn, data, ts_new)
 end
 
@@ -36,7 +37,7 @@ end
 
     ts_new = TrainState(
         TrainingBackendCache{:ReverseDiff, false}(ts.cache.dparameters, nothing),
-        obj_fn, ts.model, ts.parameters, st, ts.optimizer_state, ts.step)
+        obj_fn, ts.model, ts.parameters, st, ts.optimizer, ts.optimizer_state, ts.step)
 
     return ts.cache.dparameters, ReverseDiff.value(loss), stats, ts_new
 end
@@ -48,8 +49,9 @@ end
     ps_cache = deepcopy(ts.parameters)
     extras = (; data_cache, ps_cache)
 
-    ts_new = TrainState(TrainingBackendCache{:ReverseDiff, true}(grads, extras), nothing,
-        ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(
+        TrainingBackendCache{:ReverseDiff, true}(grads, extras), nothing, ts.model,
+        ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
     return __compiled_reverse_diff(obj_fn, data, ts_new)
 end
 
@@ -100,7 +102,8 @@ end
         ps_cache, data_cache, forward_executor, reverse_executor, output=loss)
     ts_new = TrainState(
         TrainingBackendCache{:ReverseDiff, false}(ts.cache.dparameters, compiled_extras),
-        obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+        obj_fn, ts.model, ts.parameters, ts.states,
+        ts.optimizer, ts.optimizer_state, ts.step)
 
     return dparams, ReverseDiff.value(loss), NamedTuple(), ts_new
 end
@@ -121,7 +124,7 @@ end
         wrapper()
     end
 
-    ts_new = TrainState(
-        ts.cache, obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, ts.step)
+    ts_new = TrainState(ts.cache, obj_fn, ts.model, ts.parameters, ts.states,
+        ts.optimizer, ts.optimizer_state, ts.step)
     return dparams, ReverseDiff.value(output), NamedTuple(), ts_new
 end
