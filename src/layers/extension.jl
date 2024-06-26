@@ -51,10 +51,10 @@ julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
 julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
 DynamicExpressionsLayer(
     layer_1 = Parallel(
-        layer_1 = DynamicExpressionNode(x1 * cos(x2 - 3.2)),  # 1 parameters
-        layer_2 = DynamicExpressionNode(((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)),  # 2 parameters
+        layer_1 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), x1 * cos(x2 - 3.2); turbo=Val{false}(), bumper=Val{false}()),  # 1 parameters
+        layer_2 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1); turbo=Val{false}(), bumper=Val{false}()),  # 2 parameters
     ),
-    layer_2 = WrappedFunction(__stack1),
+    layer_2 = WrappedFunction{:direct_call}(__stack1),
 )         # Total: 3 parameters,
           #        plus 0 states.
 
@@ -90,8 +90,9 @@ true
     bumper = Val(false)
 end
 
-function Base.show(io::IO, ::MIME"text/plain", l::DynamicExpressionsLayer)
-    return print(io, "DynamicExpressionNode($(l.expression))")
+function Base.show(io::IO, l::DynamicExpressionsLayer)
+    print(io,
+        "DynamicExpressionsLayer($(l.operator_enum), $(l.expression); turbo=$(l.turbo), bumper=$(l.bumper))")
 end
 
 function initialparameters(::AbstractRNG, layer::DynamicExpressionsLayer)

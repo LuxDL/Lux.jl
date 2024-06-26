@@ -47,7 +47,7 @@ parameter types, users need to implement `Lux._merge(::CustomParamType, ::NamedT
 
 ```jldoctest
 julia> Lux.Experimental.FrozenLayer(Dense(2 => 2), (:weight,))
-Dense(2 => 2) (with `weight` frozen)  # 2 parameters, plus 4 non-trainable
+FrozenLayer(Dense(2 => 2), (:weight,))  # 2 parameters, plus 4 non-trainable
 ```
 
 See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).

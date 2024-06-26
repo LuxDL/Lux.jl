@@ -149,7 +149,7 @@
                 tmp = sum(w(x))
                 @return tmp + y
             end
-            expected_string = "Linear(...)()       # 1_056 parameters"
+            expected_string = "Linear(...)         # 1_056 parameters"
             @test similar_strings(get_model_string(model), expected_string)
         end
 
@@ -242,7 +242,7 @@
                 @return w2 * w1(x)
             end
             expected_string = """@compact(
-                w1 = Model(32)(),                   # 1_024 parameters
+                w1 = Model(32),                     # 1_024 parameters
                 w2 = 32×32 Matrix{Float64},
                 w3 = 32-element Vector{Float64},
             ) do x 
@@ -258,7 +258,7 @@
                 end, w2=randn(32, 32), w3=randn(32), name="Model(32)") do x
                 @return w2 * w1(x)
             end
-            expected_string = """Model(32)()         # 2_080 parameters"""
+            expected_string = """Model(32)           # 2_080 parameters"""
             @test similar_strings(get_model_string(model), expected_string)
         end
 

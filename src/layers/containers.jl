@@ -51,13 +51,6 @@ See [`Parallel`](@ref) for a more general implementation.
     name
 end
 
-function Functors.functor(::Type{<:SkipConnection}, sc)
-    recon = let name = sc.name
-        nt -> SkipConnection(nt.layers, nt.connection, name)
-    end
-    return (; sc.layers, sc.connection), recon
-end
-
 function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
     return SkipConnection(; layers, connection, name)
 end
@@ -160,13 +153,6 @@ julia> size.(first(model((x1, x2), ps, st)))
     connection
     layers::T
     name
-end
-
-function Functors.functor(::Type{<:Parallel}, p)
-    recon = let name = p.name
-        nt -> Parallel(nt.connection, nt.layers, name)
-    end
-    return (; p.connection, p.layers), recon
 end
 
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
@@ -365,13 +351,6 @@ end
     connection
     layers::T
     name
-end
-
-function Functors.functor(::Type{<:PairwiseFusion}, p)
-    recon = let name = p.name
-        nt -> PairwiseFusion(nt.connection, nt.layers, name)
-    end
-    return (; p.connection, p.layers), recon
 end
 
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)

@@ -20,7 +20,7 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
         return
     end
 
-    children = _children(obj)
+    children = _printable_children(obj)
     if all(_show_leaflike, children)
         _layer_show(io, obj, indent, name)
     else
@@ -37,8 +37,8 @@ function _big_show(io::IO, obj, indent::Int=0, name=nothing)
     end
 end
 
-_children(x::AbstractExplicitLayer) = Functors.children(x)
-function _children(m::AbstractExplicitContainerLayer{layers}) where {layers}
+_printable_children(x) = Functors.children(x)
+function _printable_children(m::AbstractExplicitContainerLayer{layers}) where {layers}
     children = Functors.children(m)
     length(layers) ≥ 2 && return children
     field = first(layers)
@@ -47,6 +47,12 @@ function _children(m::AbstractExplicitContainerLayer{layers}) where {layers}
     nt isa NamedTuple || (nt = NamedTuple{(field,)}((nt,)))
     return merge(Base.structdiff(children, NamedTuple{(field,)}), nt)
 end
+function _printable_children(l::Union{PairwiseFusion, Parallel})
+    children = Functors.children(l)
+    l.connection === nothing && return children.layers
+    return merge((; l.connection), children.layers)
+end
+_printable_children(l::SkipConnection) = (; l.connection, l.layers)
 
 _show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
 _show_leaflike(x::AbstractExplicitLayer) = false
@@ -89,11 +95,14 @@ function _print_wrapper_model(io::IO, desc::String, model::AbstractExplicitLayer
     if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
         print(io, desc, "(\n")
         _big_show(io, model, 4)
-    elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
-        print(io, desc, "(")
+        print(io, ") ")
+        _big_finale(io, model)
+        return
+    end
+    print(io, desc, "(")
+    if !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
         _layer_show(io, model)
     else
-        print(io, desc, "(")
         show(io, model)
     end
     print(io, ")")

@@ -69,7 +69,7 @@ Reverse the specified dimension `dims` of the passed array
 
 ```jldoctest
 julia> model = ReverseSequence()
-ReverseSequence()
+ReverseSequence{Nothing}(nothing)
 
 julia> rng = Random.default_rng();
        Random.seed!(rng, 0);
@@ -127,7 +127,7 @@ Flattens the passed array into a matrix.
 
 ```jldoctest
 julia> model = FlattenLayer()
-FlattenLayer()
+FlattenLayer{Nothing}(nothing)
 
 julia> rng = Random.default_rng();
        Random.seed!(rng, 0);

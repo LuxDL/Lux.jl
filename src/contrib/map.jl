@@ -14,7 +14,7 @@ julia> c = Parallel(
            +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
            dense_3=Dense(5 => 1))
 Parallel(
-    +
+    connection = +,
     chain = Chain(
         dense_1 = Dense(2 => 3),        # 9 parameters
         bn = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
@@ -90,7 +90,7 @@ julia> c = Parallel(
            +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
            dense_3=Dense(5 => 1))
 Parallel(
-    +
+    connection = +,
     chain = Chain(
         dense_1 = Dense(2 => 3),        # 9 parameters
         bn = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7

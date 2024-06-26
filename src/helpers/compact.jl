@@ -194,10 +194,7 @@ printout, which gives a verbatim representation of the code used to construct th
 julia> model = @compact(w=rand(3), name="Linear(3 => 1)") do x
            @return sum(w .* x)
        end
-Linear(3 => 1)()    # 3 parameters
-
-julia> println(model)
-Linear(3 => 1)()
+Linear(3 => 1)      # 3 parameters
 ```
 
 This can be useful when using `@compact` to hierarchically construct complex models to be
