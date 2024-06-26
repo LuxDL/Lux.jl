@@ -202,8 +202,6 @@ name is used.
 end
 display_name(::T) where {T} = string(nameof(T))
 
-Base.show(io::IO, x::AbstractExplicitLayer) = print(io, "$(display_name(x))()")
-
 # Abstract Container Layers
 """
     abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer
