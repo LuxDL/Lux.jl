@@ -1,22 +1,17 @@
 module LuxLib
 
-using PrecompileTools: @recompile_invalidations
-
-@recompile_invalidations begin
-    using ArrayInterface: ArrayInterface
-    using ChainRulesCore: ChainRulesCore, NoTangent
-    using EnzymeCore: EnzymeCore, EnzymeRules
-    using FastBroadcast: @..
-    using FastClosures: @closure
-    using GPUArraysCore: GPUArraysCore, AnyGPUArray
-    using LinearAlgebra: LinearAlgebra, BLAS, mul!
-    using LuxCore: LuxCore
-    using Markdown: @doc_str
-    using NNlib: NNlib
-    using Random: Random, AbstractRNG, rand!
-    using Reexport: @reexport
-    using Statistics: Statistics, mean, var
-end
+using ArrayInterface: ArrayInterface
+using ChainRulesCore: ChainRulesCore, NoTangent
+using EnzymeCore: EnzymeCore, EnzymeRules
+using FastBroadcast: @..
+using FastClosures: @closure
+using GPUArraysCore: GPUArraysCore, AnyGPUArray
+using LinearAlgebra: LinearAlgebra, BLAS, mul!
+using LuxCore: LuxCore
+using Markdown: @doc_str
+using Random: Random, AbstractRNG, rand!
+using Reexport: @reexport
+using Statistics: Statistics, mean, var
 
 @reexport using NNlib
 
