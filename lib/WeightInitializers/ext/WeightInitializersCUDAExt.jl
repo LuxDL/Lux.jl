@@ -1,8 +1,7 @@
 module WeightInitializersCUDAExt
 
 using CUDA: CUDA, CURAND
-using Random: Random, shuffle
-using WeightInitializers: WeightInitializers, NUM_TO_FPOINT, __partial_apply
+using WeightInitializers: WeightInitializers
 
 const AbstractCuRNG = Union{CUDA.RNG, CURAND.RNG}
 

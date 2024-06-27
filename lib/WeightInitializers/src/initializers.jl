@@ -104,7 +104,8 @@ truncated normal distribution. The numbers are distributed like
 function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(0),
         std=T(1), lo=-T(2), hi=T(2)) where {T <: Real}
     if (mean < lo - 2 * std) || (mean > hi + 2 * std)
-        @warn "Mean is more than 2 std outside the limits in truncated_normal, so the distribution of values may be inaccurate."
+        @warn "Mean is more than 2 std outside the limits in truncated_normal, so the \
+               distribution of values may be inaccurate."
     end
     l = _norm_cdf((T(lo) - T(mean)) / T(std))
     u = _norm_cdf((T(hi) - T(mean)) / T(std))
@@ -122,13 +123,12 @@ end
         gain = 1)  -> AbstractArray{T, length(dims)}
 
 Return an `AbstractArray{T}` of the given dimensions (`dims`) which is a
-(semi) orthogonal matrix, as described in [^Saxe14]
+(semi) orthogonal matrix, as described in [1].
 
 The function constructs an orthogonal or semi-orthogonal matrix depending on the specified
-dimensions. For two dimensions, it returns a matrix where `dims = (rows, cols)`.
-For more than two dimensions, it computes an orthogonal matrix of
-size `prod(dims[1:(end - 1)])` by `dims[end]` before reshaping it to
-the original dimensions.
+dimensions. For two dimensions, it returns a matrix where `dims = (rows, cols)`. For more
+than two dimensions, it computes an orthogonal matrix of size `prod(dims[1:(end - 1)])` by
+`dims[end]` before reshaping it to the original dimensions.
 
 Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 
@@ -141,9 +141,8 @@ Cannot construct a vector, i.e., `length(dims) == 1` is forbidden.
 
 # References
 
-[^Saxe14] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of
-learning in deep linear neural networks",
-ICLR 2014, https://arxiv.org/abs/1312.6120
+[1] Saxe, McClelland, Ganguli. "Exact solutions to the nonlinear dynamics of learning in
+deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
 """
 function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=T(1.0)) where {T <: Number}
@@ -164,12 +163,15 @@ end
         sparsity::Number, std::Number=0.01) -> AbstractArray{T}
 
 Creates a sparsely initialized weight matrix with a specified proportion of zeroed elements,
-using random numbers drawn from a normal distribution for the non-zero elements.
-This method is introduced in [^Martens2010].
-Note: The sparsity parameter controls the proportion of the matrix that will be zeroed.
-For example, a sparsity of 0.3 means that approximately 30% of the elements will be
-set to zero. The non-zero elements are distributed according to a normal distribution,
-scaled by the std parameter.
+using random numbers drawn from a normal distribution for the non-zero elements. This method
+was introduced in [1].
+
+!!! note
+
+    The sparsity parameter controls the proportion of the matrix that will be zeroed. For
+    example, a sparsity of 0.3 means that approximately 30% of the elements will be set to
+    zero. The non-zero elements are distributed according to a normal distribution, scaled
+    by the std parameter.
 
 # Arguments
 
@@ -177,43 +179,36 @@ scaled by the std parameter.
   - `T::Type{<:Number}`: The numeric type of the elements in the returned array.
   - `dims::Integer...`: The dimensions of the weight matrix to be generated.
   - `sparsity::Number`: The proportion of elements to be zeroed. Must be between 0 and 1.
-  - `std::Number=0.01`: The standard deviation of the normal distribution
-    before applying `gain`.
+  - `std::Number=0.01`: The standard deviation of the normal distribution before applying
+    `gain`.
 
 # Returns
 
-  - `AbstractArray{T}`: A sparsely initialized weight matrix of dimensions `dims`
-    and type `T`.
+  - `AbstractArray{T}`: A sparsely initialized weight matrix of dimensions `dims` and type
+    `T`.
 
 # Examples
 
-```julia
-using Random
+```jldoctest
+julia> y = sparse_init(Xoshiro(123), Float32, 5, 5; sparsity=0.3, std=0.01);
 
-# Initialize a 5x5 sparsely initialized matrix with 30% sparsity
-rng = MersenneTwister(123)
-matrix = sparse_init(rng, Float32, 5, 5; sparsity=0.3, std=0.01)
-```
+julia> y isa Matrix{Float32}
+true
 
-```
-5×5 Matrix{Float64}:
-  0.0          0.00273815    0.00592403   0.0          0.0
-  0.00459416  -0.000754831  -0.00888936  -0.0077507    0.0
-  0.0         -0.00194229    0.0          0.0         -0.00468489
-  0.0114265    0.0           0.0         -0.00734886   0.00277726
- -0.00396679   0.0           0.00327215  -0.0071741   -0.00880897
+julia> size(y) == (5, 5)
+true
 ```
 
 # References
 
-[^Martens2010] Martens, J, "Deep learning via Hessian-free optimization"
-_Proceedings of the 27th International Conference on International Conference
-on Machine Learning_. 2010.
+[1] Martens, J, "Deep learning via Hessian-free optimization" Proceedings of the 27th
+International Conference on International Conference on Machine Learning. 2010.
 """
 function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         sparsity::Number, std::Number=T(0.01)) where {T <: Number}
     if length(dims) != 2
-        throw(ArgumentError("Only 2-dimensional outputs are supported for sparse initialization."))
+        throw(ArgumentError("Only 2-dimensional outputs are supported for sparse \
+                             initialization."))
     end
 
     rows, cols = dims
@@ -250,8 +245,8 @@ most layers of a neural network. The identity mapping is scaled by the `gain` pa
   - Layers must have `input_size == output_size` for a perfect identity mapping.
     In cases where this condition is not met, the function pads extra dimensions with zeros.
   - For convolutional layers to achieve an identity mapping, kernel sizes must be odd,
-    and appropriate padding must be applied to ensure the output
-    feature maps are the same size as the input feature maps.
+    and appropriate padding must be applied to ensure the output feature maps are the same
+    size as the input feature maps.
 
 # Arguments
 
@@ -271,16 +266,21 @@ most layers of a neural network. The identity mapping is scaled by the `gain` pa
 
 # Examples
 
-```julia
-using Random
+```jldoctest
+julia> identity_init(Xoshiro(123), Float32, 5, 5)
+5×5 Matrix{Float32}:
+ 1.0  1.0  1.0  1.0  1.0
+ 1.0  1.0  1.0  1.0  1.0
+ 1.0  1.0  1.0  1.0  1.0
+ 1.0  1.0  1.0  1.0  1.0
+ 1.0  1.0  1.0  1.0  1.0
 
-# Identity matrix for fully connected layer
-identity_matrix = identity_init(MersenneTwister(123), Float32, 5, 5)
-
-# Identity tensor for convolutional layer
-identity_tensor = identity_init(MersenneTwister(123), Float32,        # Bias initialization
-    3, 3, 5,        # Matrix multiplication
-    5; gain=1.5, shift=(1, 0))
+julia> identity_init(Xoshiro(123), Float32, 3, 3, 1, 1; gain=1.5)
+3×3×1×1 Array{Float32, 4}:
+[:, :, 1, 1] =
+ 0.0  0.0  0.0
+ 0.0  1.5  0.0
+ 0.0  0.0  0.0
 ```
 """
 function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
