@@ -1,15 +1,11 @@
 module LuxDeviceUtils
 
-using PrecompileTools: @recompile_invalidations
-
-@recompile_invalidations begin
-    using Adapt: Adapt
-    using ChainRulesCore: ChainRulesCore, NoTangent
-    using Functors: Functors, fmap
-    using LuxCore: LuxCore
-    using Preferences: @delete_preferences!, @load_preference, @set_preferences!
-    using Random: AbstractRNG, Random
-end
+using Adapt: Adapt
+using ChainRulesCore: ChainRulesCore, NoTangent
+using Functors: Functors, fmap
+using LuxCore: LuxCore
+using Preferences: @delete_preferences!, @load_preference, @set_preferences!
+using Random: AbstractRNG, Random
 
 const CRC = ChainRulesCore
 
