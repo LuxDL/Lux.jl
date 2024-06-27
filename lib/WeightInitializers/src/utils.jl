@@ -16,12 +16,13 @@ end
 # This is needed if using `PartialFunctions.$` inside @eval block
 __partial_apply(fn, inp) = fn$inp
 
-const NAME_TO_DIST = Dict(:zeros => "an AbstractArray of zeros",
-    :ones => "an AbstractArray of ones",
+const NAME_TO_DIST = Dict(
+    :zeros => "an AbstractArray of zeros", :ones => "an AbstractArray of ones",
     :randn => "random numbers from a standard normal distribution",
     :rand => "random numbers from a uniform distribution")
-const NUM_TO_FPOINT = Dict(Symbol(16) => Float16, Symbol(32) => Float32,
-    Symbol(64) => Float64, :C16 => ComplexF16, :C32 => ComplexF32, :C64 => ComplexF64)
+const NUM_TO_FPOINT = Dict(
+    Symbol(16) => Float16, Symbol(32) => Float32, Symbol(64) => Float64,
+    :C16 => ComplexF16, :C32 => ComplexF32, :C64 => ComplexF64)
 
 @inline function __funcname(fname::String)
     fp = fname[(end - 2):end]

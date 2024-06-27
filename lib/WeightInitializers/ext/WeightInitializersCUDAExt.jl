@@ -70,8 +70,8 @@ for initializer in (:sparse_init, :identity_init)
     @eval function ($initializer)(rng::AbstractCuRNG; kwargs...)
         return __partial_apply($initializer, (rng, (; kwargs...)))
     end
-    @eval function ($initializer)(rng::AbstractCuRNG,
-            ::Type{T}; kwargs...) where {T <: Number}
+    @eval function ($initializer)(
+            rng::AbstractCuRNG, ::Type{T}; kwargs...) where {T <: Number}
         return __partial_apply($initializer, ((rng, T), (; kwargs...)))
     end
 end

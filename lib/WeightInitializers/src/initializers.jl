@@ -4,15 +4,13 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand
     TP = NUM_TO_FPOINT[Symbol(T)]
     if fname in (:ones, :zeros)
         @eval begin
-            @doc $docstring
-            function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
+            @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
                 return $(fname)($TP, dims...; kwargs...)
             end
         end
     else
         @eval begin
-            @doc $docstring
-            function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
+            @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
                 return $(fname)(rng, $TP, dims...; kwargs...)
             end
         end
@@ -34,8 +32,8 @@ Xavier initialization.
 feedforward neural networks." _Proceedings of the thirteenth international conference on
 artificial intelligence and statistics_. 2010.
 """
-function glorot_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        gain::Number=1) where {T <: Number}
+function glorot_uniform(
+        rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     scale = T(gain) * sqrt(T(24) / sum(_nfan(dims...)))
     return (rand(rng, T, dims...) .- T(1 // 2)) .* scale
 end
@@ -54,8 +52,8 @@ method is described in [1] and also known as Xavier initialization.
 feedforward neural networks." _Proceedings of the thirteenth international conference on
 artificial intelligence and statistics_. 2010.
 """
-function glorot_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
-        gain::Number=1) where {T <: Number}
+function glorot_normal(
+        rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     std = T(gain) * sqrt(T(2) / sum(_nfan(dims...)))
     return randn(rng, T, dims...) .* std
 end
@@ -293,14 +291,9 @@ using Random
 identity_matrix = identity_init(MersenneTwister(123), Float32, 5, 5)
 
 # Identity tensor for convolutional layer
-identity_tensor = identity_init(MersenneTwister(123),
-    Float32,        # Bias initialization
-    3,
-    3,
-    5,        # Matrix multiplication
-    5;
-    gain=1.5,
-    shift=(1, 0))
+identity_tensor = identity_init(MersenneTwister(123), Float32,        # Bias initialization
+    3, 3, 5,        # Matrix multiplication
+    5; gain=1.5, shift=(1, 0))
 ```
 """
 function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
@@ -339,15 +332,15 @@ for initializer in (:glorot_uniform, :glorot_normal, :kaiming_uniform, :kaiming_
     @eval function ($initializer)(rng::AbstractRNG, dims::Integer...; kwargs...)
         return $initializer(rng, Float32, dims...; kwargs...)
     end
-    @eval function ($initializer)(::Type{T},
-            dims::Integer...; kwargs...) where {T <: $NType}
+    @eval function ($initializer)(
+            ::Type{T}, dims::Integer...; kwargs...) where {T <: $NType}
         return $initializer(_default_rng(), T, dims...; kwargs...)
     end
     @eval function ($initializer)(rng::AbstractRNG; kwargs...)
         return __partial_apply($initializer, (rng, (; kwargs...)))
     end
-    @eval function ($initializer)(rng::AbstractRNG,
-            ::Type{T}; kwargs...) where {T <: $NType}
+    @eval function ($initializer)(
+            rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: $NType}
         return __partial_apply($initializer, ((rng, T), (; kwargs...)))
     end
     @eval ($initializer)(; kwargs...) = __partial_apply($initializer, (; kwargs...))

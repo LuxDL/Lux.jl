@@ -32,10 +32,9 @@ const GROUP = get(ENV, "GROUP", "All")
     end
 
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in rngs_arrtypes
-        @testset "Sizes and Types: $init" for init in [zeros32, ones32, rand32, randn32,
-            kaiming_uniform, kaiming_normal, glorot_uniform, glorot_normal,
-            truncated_normal, identity_init
-        ]
+        @testset "Sizes and Types: $init" for init in [
+            zeros32, ones32, rand32, randn32, kaiming_uniform, kaiming_normal,
+            glorot_uniform, glorot_normal, truncated_normal, identity_init]
             # Sizes
             @test size(init(3)) == (3,)
             @test size(init(rng, 3)) == (3,)
@@ -52,15 +51,15 @@ const GROUP = get(ENV, "GROUP", "All")
             @test cl(3, 5) isa arrtype{Float32, 2}
         end
 
-        @testset "Sizes and Types: $init" for (init, fp) in [(zeros16, Float16),
-            (zerosC16, ComplexF16), (zeros32, Float32), (zerosC32, ComplexF32),
-            (zeros64, Float64), (zerosC64, ComplexF64), (ones16, Float16),
-            (onesC16, ComplexF16), (ones32, Float32), (onesC32, ComplexF32),
-            (ones64, Float64), (onesC64, ComplexF64), (rand16, Float16),
-            (randC16, ComplexF16), (rand32, Float32), (randC32, ComplexF32),
-            (rand64, Float64), (randC64, ComplexF64), (randn16, Float16),
-            (randnC16, ComplexF16), (randn32, Float32), (randnC32, ComplexF32),
-            (randn64, Float64), (randnC64, ComplexF64)]
+        @testset "Sizes and Types: $init" for (init, fp) in [
+            (zeros16, Float16), (zerosC16, ComplexF16), (zeros32, Float32),
+            (zerosC32, ComplexF32), (zeros64, Float64), (zerosC64, ComplexF64),
+            (ones16, Float16), (onesC16, ComplexF16), (ones32, Float32),
+            (onesC32, ComplexF32), (ones64, Float64), (onesC64, ComplexF64),
+            (rand16, Float16), (randC16, ComplexF16), (rand32, Float32),
+            (randC32, ComplexF32), (rand64, Float64), (randC64, ComplexF64),
+            (randn16, Float16), (randnC16, ComplexF16), (randn32, Float32),
+            (randnC32, ComplexF32), (randn64, Float64), (randnC64, ComplexF64)]
             # Sizes
             @test size(init(3)) == (3,)
             @test size(init(rng, 3)) == (3,)
@@ -77,11 +76,10 @@ const GROUP = get(ENV, "GROUP", "All")
             @test cl(3, 5) isa arrtype{fp, 2}
         end
 
-        @testset "AbstractArray Type: $init $T" for init in [kaiming_uniform,
-                kaiming_normal,
-                glorot_uniform, glorot_normal, truncated_normal, identity_init],
-            T in (Float16, Float32,
-                Float64, ComplexF16, ComplexF32, ComplexF64)
+        @testset "AbstractArray Type: $init $T" for init in [
+                kaiming_uniform, kaiming_normal, glorot_uniform,
+                glorot_normal, truncated_normal, identity_init],
+            T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
 
             init === truncated_normal && !(T <: Real) && continue
 
@@ -99,8 +97,9 @@ const GROUP = get(ENV, "GROUP", "All")
             @test cl(3, 5) isa arrtype{T, 2}
         end
 
-        @testset "Closure: $init" for init in [kaiming_uniform, kaiming_normal,
-            glorot_uniform, glorot_normal, truncated_normal, identity_init]
+        @testset "Closure: $init" for init in [
+            kaiming_uniform, kaiming_normal, glorot_uniform,
+            glorot_normal, truncated_normal, identity_init]
             cl = init(;)
             # Sizes
             @test size(cl(3)) == (3,)
