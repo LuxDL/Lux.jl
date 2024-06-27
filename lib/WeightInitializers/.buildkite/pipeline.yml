@@ -16,7 +16,7 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         env:
-          GROUP: "CUDA"
+          BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 240
         matrix:
@@ -61,7 +61,7 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         env:
-          GROUP: "CUDA"
+          BACKEND_GROUP: "CUDA"
           DOWNSTREAM_TEST_REPO: "{{matrix.repo}}"
         if: build.message !~ /\[skip tests\]/ || build.message !~ /\[skip downstream\]/
         timeout_in_minutes: 240
@@ -111,7 +111,7 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         env:
-          GROUP: "AMDGPU"
+          BACKEND_GROUP: "AMDGPU"
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"

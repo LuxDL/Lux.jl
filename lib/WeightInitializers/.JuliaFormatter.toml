@@ -5,4 +5,5 @@ margin = 92
 indent = 4
 format_docstrings = true
 separate_kwargs_with_semicolon = true
+join_lines_based_on_source = false
 always_for_in = true

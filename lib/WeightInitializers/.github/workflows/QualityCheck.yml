@@ -1,0 +1,19 @@
+name: Code Quality Check
+
+on: [pull_request]
+
+jobs:
+  code-style:
+    name: Format Suggestions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: julia-actions/julia-format@v3
+
+  typos-check:
+    name: Spell Check with Typos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Actions Repository
+        uses: actions/checkout@v4
+      - name: Check spelling
+        uses: crate-ci/typos@v1.22.9
