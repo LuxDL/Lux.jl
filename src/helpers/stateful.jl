@@ -46,10 +46,11 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
     ps::psType
     st::stType
     st_any::Any
+end
 
-    function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
-        return new{ST, typeof(model), typeof(ps), typeof(st)}(model, ps, st, st_any)
-    end
+function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
+    return StatefulLuxLayer{ST, typeof(model), typeof(ps), typeof(st)}(
+        model, ps, st, st_any)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer{ST}) where {ST}

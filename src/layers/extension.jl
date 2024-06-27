@@ -54,7 +54,7 @@ DynamicExpressionsLayer(
         layer_1 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), x1 * cos(x2 - 3.2); turbo=Val{false}(), bumper=Val{false}()),  # 1 parameters
         layer_2 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1); turbo=Val{false}(), bumper=Val{false}()),  # 2 parameters
     ),
-    layer_2 = WrappedFunction{:direct_call}(__stack1),
+    layer_2 = WrappedFunction{:direct_call}(Lux.__stack1),
 )         # Total: 3 parameters,
           #        plus 0 states.
 

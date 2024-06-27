@@ -72,12 +72,14 @@ using Lux
     end
 end
 
-for tag in LUX_TEST_GROUP
-    @info "Running tests for group: $tag"
-    if tag == "all"
-        ReTestItems.runtests(@__DIR__)
-    else
-        ReTestItems.runtests(@__DIR__; tags=[Symbol(tag)])
+@testset "ReTestItem Tests" begin
+    for tag in LUX_TEST_GROUP
+        @info "Running tests for group: $tag"
+        if tag == "all"
+            ReTestItems.runtests(@__DIR__)
+        else
+            ReTestItems.runtests(@__DIR__; tags=[Symbol(tag)])
+        end
     end
 end
 
