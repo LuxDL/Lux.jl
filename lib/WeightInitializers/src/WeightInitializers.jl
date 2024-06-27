@@ -2,7 +2,7 @@ module WeightInitializers
 
 #! format: off
 using ChainRulesCore: ChainRulesCore
-using GPUArraysCore: GPUArraysCore
+using GPUArraysCore: @allowscalar
 using LinearAlgebra: LinearAlgebra, Diagonal, qr
 using PartialFunctions: :$
 using Random: Random, AbstractRNG, Xoshiro, shuffle

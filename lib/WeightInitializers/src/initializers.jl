@@ -1,18 +1,15 @@
+__zeros(::AbstractRNG, ::Type{T}, dims::Integer...) where {T} = zeros(T, dims...)
+__ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T} = ones(T, dims...)
+
 for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand, :randn)
     name = Symbol(fname, T)
     docstring = __generic_docstring(string(name))
     TP = NUM_TO_FPOINT[Symbol(T)]
-    if fname in (:ones, :zeros)
-        @eval begin
-            @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
-                return $(fname)($TP, dims...; kwargs...)
-            end
-        end
-    else
-        @eval begin
-            @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
-                return $(fname)(rng, $TP, dims...; kwargs...)
-            end
+    __fname = fname in (:ones, :zeros) ? Symbol("__", fname) : fname
+
+    @eval begin
+        @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
+            return $__fname(rng, $TP, dims...; kwargs...)
         end
     end
 end
@@ -222,9 +219,11 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     rows, cols = dims
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
+
     sparse_array = randn(rng, T, dims...) .* T(std)
-    sparse_array[1:num_zeros, :] .= zero(T)
-    return mapslices(shuffle, sparse_array; dims=1)
+    fill!(view(sparse_array, 1:num_zeros, :), zero(T))
+
+    return @allowscalar mapslices(shuffle, sparse_array; dims=1)
 end
 
 """
@@ -284,30 +283,27 @@ identity_tensor = identity_init(MersenneTwister(123), Float32,        # Bias ini
     5; gain=1.5, shift=(1, 0))
 ```
 """
-function identity_init(::AbstractRNG, ::Type{T}, dims::Integer...;
+function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
-    if length(dims) == 1
-        # Bias initialization
-        return zeros(T, dims...)
-    elseif length(dims) == 2
-        # Matrix multiplication
+    length(dims) == 1 && return __zeros(rng, T, dims...)  # Bias initialization
+
+    if length(dims) == 2
         rows, cols = dims
-        mat = zeros(T, rows, cols)
-        for i in 1:min(rows, cols)
-            mat[i, i] = T(gain)
-        end
+        mat = __zeros(rng, T, rows, cols)
+        diag_indices = 1:min(rows, cols)
+        fill!(view(mat, diag_indices, diag_indices), T(gain))
         return circshift(mat, shift)
-    else
-        # Convolution or more dimensions
-        nin, nout = dims[end - 1], dims[end]
-        centers = map(d -> cld(d, 2), dims[1:(end - 2)])
-        weights = zeros(T, dims...)
-        for i in 1:min(nin, nout)
-            index = (centers..., i, i)
-            weights[index...] = T(gain)
-        end
-        return circshift(weights, (ntuple(d -> 0, length(dims) - 2)..., shift, shift))
     end
+
+    # Convolution or more dimensions
+    nin, nout = dims[end - 1], dims[end]
+    centers = map(d -> cld(d, 2), dims[1:(end - 2)])
+    weights = __zeros(rng, T, dims...)
+    @allowscalar for i in 1:min(nin, nout)
+        index = (centers..., i, i)
+        weights[index...] = T(gain)
+    end
+    return circshift(weights, (ntuple(d -> 0, length(dims) - 2)..., shift, shift))
 end
 
 # Default Fallbacks for all functions
