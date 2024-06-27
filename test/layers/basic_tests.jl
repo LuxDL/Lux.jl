@@ -21,9 +21,9 @@
             layer2 = ReverseSequence(2)
             layer3 = ReverseSequence(1)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
-            ps2, st2 = Lux.setup(rng, layer2) .|> device
-            ps3, st3 = Lux.setup(rng, layer3) .|> device
+            ps, st = Lux.setup(rng, layer) |> device
+            ps2, st2 = Lux.setup(rng, layer2) |> device
+            ps3, st3 = Lux.setup(rng, layer3) |> device
 
             x = randn(rng, 3) |> aType
             xr = reverse(x)
