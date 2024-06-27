@@ -1,9 +1,8 @@
 module WeightInitializersCUDAExt
 
-using WeightInitializers, CUDA
-using Random
-import WeightInitializers: __partial_apply, NUM_TO_FPOINT, identity_init, sparse_init,
-                           orthogonal
+using CUDA: CUDA, CURAND
+using Random: Random, shuffle
+using WeightInitializers: WeightInitializers, NUM_TO_FPOINT, __partial_apply
 
 const AbstractCuRNG = Union{CUDA.RNG, CURAND.RNG}
 
@@ -21,7 +20,7 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros)
     end
 end
 
-function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
+function WeightInitializers.sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
         sparsity::Number, std::Number=T(0.01)) where {T <: Number}
     if length(dims) != 2
         throw(ArgumentError("Only 2-dimensional outputs are supported for sparse initialization."))
@@ -36,7 +35,7 @@ function sparse_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
     return CUDA.@allowscalar mapslices(shuffle, sparse_array, dims=1)
 end
 
-function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
+function WeightInitializers.identity_init(::AbstractCuRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
     if length(dims) == 1
         # Bias initialization
@@ -59,20 +58,6 @@ function identity_init(rng::AbstractCuRNG, ::Type{T}, dims::Integer...;
             weights[index...] = T(gain)
         end
         return CUDA.circshift(weights, (ntuple(d -> 0, length(dims) - 2)..., shift, shift))
-    end
-end
-
-for initializer in (:sparse_init, :identity_init)
-    @eval function ($initializer)(rng::AbstractCuRNG, dims::Integer...; kwargs...)
-        return $initializer(rng, Float32, dims...; kwargs...)
-    end
-
-    @eval function ($initializer)(rng::AbstractCuRNG; kwargs...)
-        return __partial_apply($initializer, (rng, (; kwargs...)))
-    end
-    @eval function ($initializer)(
-            rng::AbstractCuRNG, ::Type{T}; kwargs...) where {T <: Number}
-        return __partial_apply($initializer, ((rng, T), (; kwargs...)))
     end
 end
 

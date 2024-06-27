@@ -152,26 +152,14 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=T(1.0)) where {T <: Number}
     @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
 
-    if length(dims) == 2
-        rows, cols = dims
-    else
-        rows = prod(dims[1:(end - 1)])
-        cols = dims[end]
-    end
-
-    if rows < cols
-        return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
-    end
+    rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
+    rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
 
     mat = randn(rng, T, rows, cols)
     Q, R = qr(mat)
     mat .= Q * sign.(Diagonal(R)) .* T(gain)
 
-    if length(dims) > 2
-        return reshape(mat, dims)
-    else
-        return mat
-    end
+    return length(dims) > 2 ? reshape(mat, dims) : mat
 end
 
 """
@@ -296,7 +284,7 @@ identity_tensor = identity_init(MersenneTwister(123), Float32,        # Bias ini
     5; gain=1.5, shift=(1, 0))
 ```
 """
-function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
+function identity_init(::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
     if length(dims) == 1
         # Bias initialization
