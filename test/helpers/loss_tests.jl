@@ -1,6 +1,6 @@
 @testitem "xlogx & xlogy" setup=[SharedTestSetup] tags=[:helpers] begin
     using Lux: xlogx, xlogy
-    using ForwardDiff, Zygote
+    using ForwardDiff, Zygote, Enzyme
 
     @test iszero(xlogx(0))
     @test isnan(xlogx(NaN))
@@ -23,25 +23,59 @@
     ∂x1 = ForwardDiff.derivative(Base.Fix2(xlogy, 3.0), 2.0)
     ∂y1 = ForwardDiff.derivative(Base.Fix1(xlogy, 2.0), 3.0)
     ∂x2, ∂y2 = Zygote.gradient(xlogy, 2.0, 3.0)
-    @test ∂x1 ≈ ∂x2
-    @test ∂y1 ≈ ∂y2
+    ((∂x3, ∂y3),) = Enzyme.autodiff(Enzyme.Reverse, xlogy, Active, Active(2.0), Active(3.0))
+    @test ∂x1 ≈ ∂x2 ≈ ∂x3
+    @test ∂y1 ≈ ∂y2 ≈ ∂y3
 
     @inferred xlogy(2, 3)
     @inferred xlogy(0, 1)
     @jet xlogy(2, 3)
 
+    @inferred Enzyme.autodiff(Enzyme.Reverse, xlogy, Active, Active(2.0), Active(3.0))
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(xlogx)
+
+        if !ongpu
+            ∂x1 = Enzyme.gradient(Enzyme.Reverse, __f, x)
+            ∂x2 = only(Zygote.gradient(__f, x))
+            @test ∂x1≈∂x2 atol=1.0f-3 rtol=1.0f-3
+        end
+
         @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_finite_differences=true
 
         y = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(xlogy)
+
+        if !ongpu
+            ∂x1, ∂y1 = zero(x), zero(y)
+            Enzyme.autodiff(
+                Enzyme.Reverse, __f, Active, Duplicated(x, ∂x1), Duplicated(y, ∂y1))
+            ∂x2, ∂y2 = Zygote.gradient(__f, x, y)
+            @test ∂x1≈∂x2 atol=1.0f-3 rtol=1.0f-3
+            @test ∂y1≈∂y2 atol=1.0f-3 rtol=1.0f-3
+        end
+
         @eval @test_gradients $__f $x $y gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_finite_differences=true
     end
 end
 
-@testitem "Regression Loss" setup=[SharedTestSetup] tags=[:helpers] begin
+@testsetup module EnzymeLossTestSetup
+
+using Enzyme, Zygote, Test
+
+function test_enzyme_gradient(f::F, x) where {F}
+    gs_zyg = only(Zygote.gradient(f, x))
+    gs_enz = Enzyme.gradient(Enzyme.Reverse, f, x)
+    @test gs_zyg≈gs_enz atol=1.0f-3 rtol=1.0f-3
+end
+
+export test_enzyme_gradient
+
+end
+
+@testitem "Regression Loss" setup=[SharedTestSetup, EnzymeLossTestSetup] tags=[:helpers] begin
     using Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -66,6 +100,7 @@ end
             @jet loss_sum(ŷ, y)
 
             __f = Base.Fix2(loss_mean, y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -80,12 +115,13 @@ end
             @test_broken @inferred Zygote.gradient(MSLELoss(), ŷ, y)
 
             __f = Base.Fix2(MSLELoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
     end
 end
 
-@testitem "Classification Loss" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Classification Loss" setup=[SharedTestSetup, EnzymeLossTestSetup] tags=[:helpers] begin
     using OneHotArrays, Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -139,6 +175,7 @@ end
             @inferred Zygote.gradient(celoss, ŷ, y)
 
             __f = Base.Fix2(celoss, y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -162,6 +199,7 @@ end
             @inferred Zygote.gradient(logitceloss, logŷ, y)
 
             __f = Base.Fix2(logitceloss, y)
+            !ongpu && test_enzyme_gradient(__f, logŷ)
             @eval @test_gradients $__f $logŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -191,6 +229,7 @@ end
 
             __f = Base.Fix2(bceloss, y)
             σlogŷ = σ.(logŷ)
+            !ongpu && test_enzyme_gradient(__f, σlogŷ)
             @eval @test_gradients $__f $σlogŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -212,6 +251,7 @@ end
             @inferred Zygote.gradient(logitbceloss, logŷ, y)
 
             __f = Base.Fix2(logitbceloss, y)
+            !ongpu && test_enzyme_gradient(__f, logŷ)
             @eval @test_gradients $__f $logŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -239,6 +279,7 @@ end
             end
 
             __f = Base.Fix2(BinaryFocalLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -267,13 +308,14 @@ end
             end
 
             __f = Base.Fix2(FocalLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             # FD will lead to out of domain errors
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu skip_finite_differences=true
         end
     end
 end
 
-@testitem "Other Losses" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Other Losses" setup=[SharedTestSetup, EnzymeLossTestSetup] tags=[:helpers] begin
     using Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -290,6 +332,7 @@ end
             @inferred Zygote.gradient(KLDivergenceLoss(), ŷ, y)
 
             __f = Base.Fix2(KLDivergenceLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -304,6 +347,7 @@ end
             @inferred Zygote.gradient(Lux.HingeLoss(), ŷ, y)
 
             __f = Base.Fix2(Lux.HingeLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -318,6 +362,7 @@ end
             @inferred Zygote.gradient(SquaredHingeLoss(), ŷ, y)
 
             __f = Base.Fix2(SquaredHingeLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -332,6 +377,7 @@ end
             @test_broken @inferred Zygote.gradient(Lux.PoissonLoss(), ŷ, y)
 
             __f = Base.Fix2(Lux.PoissonLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 
@@ -346,6 +392,7 @@ end
             @test_broken @inferred Zygote.gradient(DiceCoeffLoss(), ŷ, y)
 
             __f = Base.Fix2(DiceCoeffLoss(), y)
+            !ongpu && test_enzyme_gradient(__f, ŷ)
             @eval @test_gradients $__f $ŷ gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3 skip_tracker=$ongpu
         end
 

@@ -147,8 +147,6 @@ function __update_bn_state(BN::BatchNorm, st::NamedTuple, stats)
     return st
 end
 
-CRC.@non_differentiable __update_bn_state(::Any...)
-
 function Base.show(io::IO, l::BatchNorm)
     print(io, "BatchNorm($(l.chs)")
     (l.activation == identity) || print(io, ", $(l.activation)")

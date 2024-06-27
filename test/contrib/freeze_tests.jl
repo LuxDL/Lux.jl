@@ -64,6 +64,8 @@
 end
 
 @testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
+    using Lux.Experimental: FrozenLayer
+
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES

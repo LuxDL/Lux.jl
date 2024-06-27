@@ -46,10 +46,11 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
     ps::psType
     st::stType
     st_any::Any
+end
 
-    function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
-        return new{ST, typeof(model), typeof(ps), typeof(st)}(model, ps, st, st_any)
-    end
+function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
+    return StatefulLuxLayer{ST, typeof(model), typeof(ps), typeof(st)}(
+        model, ps, st, st_any)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer{ST}) where {ST}
@@ -105,8 +106,6 @@ function __set_state!(::StatefulLuxLayer{true, M, psType, stType},
         of `StatefulLuxLayer{true}`."))
 end
 @inline __set_state!(s::StatefulLuxLayer{false}, st) = (s.st_any = st)
-
-CRC.@non_differentiable __set_state!(::Any...)
 
 function (s::StatefulLuxLayer)(x, p=s.ps)
     y, st = apply(s.model, x, p, __get_state(s))

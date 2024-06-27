@@ -8,8 +8,12 @@ CRC.@non_differentiable _track_stats(::Any)
 CRC.@non_differentiable _conv_transpose_dims(::Any...)
 CRC.@non_differentiable _calc_padding(::Any...)
 CRC.@non_differentiable Base.printstyled(::Any...)
-## Type Piracy: Needs upstreaming
-CRC.@non_differentiable fieldcount(::Any)
+CRC.@non_differentiable fieldcount(::Any) ## Type Piracy: Needs upstreaming
+CRC.@non_differentiable __check_sizes(ŷ::Any, y::Any)
+CRC.@non_differentiable __set_refval!(::Any...)
+CRC.@non_differentiable __state_if_stateful(::Any)
+CRC.@non_differentiable __set_state!(::Any...)
+CRC.@non_differentiable __update_bn_state(::Any...)
 
 # Utilities
 function CRC.rrule(::typeof(_eachslice), x, d::Val)
@@ -75,7 +79,7 @@ function CRC.rrule(::typeof(getproperty), m::AbstractExplicitLayer, name::Symbol
     return res, ∇getproperty
 end
 
-# For loss functions
+# Loss Functions
 @inline function CRC.rrule(
         ::typeof(__fused_agg), ::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
     ∇lfn = @closure Δ -> begin

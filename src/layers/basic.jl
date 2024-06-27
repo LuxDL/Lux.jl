@@ -139,9 +139,11 @@ julia> y, st_new = model(x, ps, st);
 (8, 2)
 ```
 """
-@kwdef @concrete struct FlattenLayer <: AbstractExplicitLayer
-    N = nothing
+struct FlattenLayer{NT <: Union{Nothing, Int}} <: AbstractExplicitLayer
+    N::NT
 end
+
+FlattenLayer(; N=nothing) = FlattenLayer(N)
 
 @inline function (::FlattenLayer{Nothing})(
         x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
@@ -268,7 +270,9 @@ end
 @inline __maybe_direct_call(f, x, ps, st, ::Val{true}) = f(x), st
 
 function Base.show(io::IO, w::WrappedFunction{T}) where {T}
-    return print(io, "WrappedFunction{$(Meta.quot(T))}($(w.func))")
+    print(io, "WrappedFunction{$(Meta.quot(T))}(")
+    show(io, w.func)
+    print(io, ")")
 end
 
 """
@@ -319,7 +323,7 @@ end
 function Base.show(io::IO, d::Dense{use_bias}) where {use_bias}
     print(io, "Dense($(d.in_dims) => $(d.out_dims)")
     (d.activation == identity) || print(io, ", $(d.activation)")
-    use_bias || print(io, ", bias=false")
+    use_bias || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
@@ -407,9 +411,10 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
     init_bias
 end
 
-function Base.show(io::IO, d::Scale)
+function Base.show(io::IO, d::Scale{use_bias}) where {use_bias}
     print(io, "Scale($(d.dims)")
     (d.activation == identity) || print(io, ", $(d.activation)")
+    use_bias || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
@@ -511,7 +516,7 @@ end
 function Base.show(io::IO, b::Bilinear{use_bias}) where {use_bias}
     print(io, "Bilinear(($(b.in1_dims), $(b.in2_dims)) => $(b.out_dims)")
     (b.activation == identity) || print(io, ", $(b.activation)")
-    use_bias || print(io, ", bias=false")
+    use_bias || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
@@ -690,7 +695,7 @@ case, `layer([a, b, c, d], st) == ([a, d, sinpi(2 / 3.0 * b), sinpi(2 / 1.0 * c)
 
 ```jldoctest
 julia> layer = PeriodicEmbedding([2], [4.0])
-PeriodicEmbedding(idxs = [2], periods = [4.0])
+PeriodicEmbedding([2], [4.0])
 
 julia> using Random;
        rng = Random.seed!(123);
@@ -726,5 +731,5 @@ end
 end
 
 function Base.show(io::IO, p::PeriodicEmbedding)
-    return print(io, "PeriodicEmbedding(idxs = ", p.idxs, ", periods = ", p.periods, ")")
+    return print(io, "PeriodicEmbedding(", p.idxs, ", ", p.periods, ")")
 end

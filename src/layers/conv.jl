@@ -135,7 +135,7 @@ function _print_conv_opt(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
     all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
     all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
-    (use_bias == false) && print(io, ", bias=false")
+    (use_bias == false) && print(io, ", use_bias=false")
     return nothing
 end
 
@@ -637,7 +637,7 @@ function _print_crosscor_opt(io::IO, l::CrossCor{N, use_bias}) where {N, use_bia
     all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
     all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
     all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
-    (use_bias == false) && print(io, ", bias=false")
+    (use_bias == false) && print(io, ", use_bias=false")
     return nothing
 end
 
@@ -774,6 +774,6 @@ function _print_convtranspose_opt(io::IO, l::ConvTranspose{N, use_bias}) where {
     all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
     all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
-    (use_bias == false) && print(io, ", bias=false")
+    (use_bias == false) && print(io, ", use_bias=false")
     return nothing
 end
