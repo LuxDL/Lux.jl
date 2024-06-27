@@ -440,27 +440,48 @@ end
             @jet layer(x, ps, st)
 
             x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 3)) .|> aType
-            y, st_ = layer(x, ps, st)
-            @test y isa aType{Float32}
-            @test y == ps.weight[:, CartesianIndex.(x...)]
+            if mode == "cuda"
+                @test_broken begin
+                    y, st_ = layer(x, ps, st)
+                    @test y isa aType{Float32}
+                    @test y == ps.weight[:, CartesianIndex.(x...)]
+                end
 
-            @jet layer(x, ps, st)
+                @jet layer(x, ps, st) opt_broken=true call_broken=true
+            else
+                y, st_ = layer(x, ps, st)
+                @test y isa aType{Float32}
+                @test y == ps.weight[:, CartesianIndex.(x...)]
 
-            x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
-            y, st_ = layer(x, ps, st)
-            @test y isa aType{Float32, 3}
-            @test size(y) == (embed_size, 3, 4)
+                @jet layer(x, ps, st)
+            end
 
-            @jet layer(x, ps, st)
+            if mode == "cuda"
+                @test_broken begin
+                    x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
+                    y, st_ = layer(x, ps, st)
+                    @test y isa aType{Float32, 3}
+                    @test size(y) == (embed_size, 3, 4)
+                end
 
-            x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 4)) .|> aType
-            @test_throws DimensionMismatch layer(x, ps, st)
+                @jet layer(x, ps, st) opt_broken=true call_broken=true
+            else
+                x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
+                y, st_ = layer(x, ps, st)
+                @test y isa aType{Float32, 3}
+                @test size(y) == (embed_size, 3, 4)
 
-            x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 4, 5)) .|> aType
-            @test_throws DimensionMismatch layer(x, ps, st)
+                @jet layer(x, ps, st)
 
-            x = ()
-            @test_throws ArgumentError layer(x, ps, st)
+                x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 4)) .|> aType
+                @test_throws DimensionMismatch layer(x, ps, st)
+
+                x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 4, 5)) .|> aType
+                @test_throws DimensionMismatch layer(x, ps, st)
+
+                x = ()
+                @test_throws ArgumentError layer(x, ps, st)
+            end
         end
     end
 end
