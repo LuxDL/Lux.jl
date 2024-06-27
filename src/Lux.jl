@@ -1,12 +1,12 @@
 module Lux
 
-using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff,
-                AutoTracker, AutoZygote
+using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker,
+               AutoZygote
 using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface, fast_scalar_indexing
-using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
-                        ProjectTo, RuleConfig, ZeroTangent, @thunk
+using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent, ProjectTo,
+                      RuleConfig, ZeroTangent, @thunk
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
@@ -22,10 +22,9 @@ using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
 using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 using LuxLib: __apply_bias_activation
-import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
-                initialparameters, initialstates, parameterlength, statelength,
-                inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
-                display_name, replicate
+import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
+                initialstates, parameterlength, statelength, inputsize, outputsize,
+                update_state, trainmode, testmode, setup, apply, display_name, replicate
 using LuxDeviceUtils: get_device
 
 # @compact specific
