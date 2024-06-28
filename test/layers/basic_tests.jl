@@ -21,9 +21,9 @@
             layer2 = ReverseSequence(2)
             layer3 = ReverseSequence(1)
             display(layer)
-            ps, st = Lux.setup(rng, layer) |> device
-            ps2, st2 = Lux.setup(rng, layer2) |> device
-            ps3, st3 = Lux.setup(rng, layer3) |> device
+            ps, st = Lux.setup(rng, layer) .|> device
+            ps2, st2 = Lux.setup(rng, layer2) .|> device
+            ps3, st3 = Lux.setup(rng, layer3) .|> device
 
             x = randn(rng, 3) |> aType
             xr = reverse(x)
@@ -440,44 +440,27 @@ end
             @jet layer(x, ps, st)
 
             x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 3)) .|> aType
-            if mode == "cuda"
-                @test_broken begin
-                    y, st_ = layer(x, ps, st)
-                    @test y isa aType{Float32}
-                    @test y == ps.weight[:, CartesianIndex.(x...)]
-                end
-            else
-                y, st_ = layer(x, ps, st)
-                @test y isa aType{Float32}
-                @test y == ps.weight[:, CartesianIndex.(x...)]
-            end
+            y, st_ = layer(x, ps, st)
+            @test y isa aType{Float32}
+            @test y == ps.weight[:, CartesianIndex.(x...)]
+
             @jet layer(x, ps, st)
 
-            if mode == "cuda"
-                @test_broken begin
-                    x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
-                    y, st_ = layer(x, ps, st)
-                    @test y isa aType{Float32, 3}
-                    @test size(y) == (embed_size, 3, 4)
-                end
-            else
-                x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
-                y, st_ = layer(x, ps, st)
-                @test y isa aType{Float32, 3}
-                @test size(y) == (embed_size, 3, 4)
-            end
+            x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
+            y, st_ = layer(x, ps, st)
+            @test y isa aType{Float32, 3}
+            @test size(y) == (embed_size, 3, 4)
+
             @jet layer(x, ps, st)
 
-            if mode != "cuda"
-                x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 4)) .|> aType
-                @test_throws DimensionMismatch layer(x, ps, st)
+            x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 4)) .|> aType
+            @test_throws DimensionMismatch layer(x, ps, st)
 
-                x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 4, 5)) .|> aType
-                @test_throws DimensionMismatch layer(x, ps, st)
+            x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 4, 5)) .|> aType
+            @test_throws DimensionMismatch layer(x, ps, st)
 
-                x = ()
-                @test_throws ArgumentError layer(x, ps, st)
-            end
+            x = ()
+            @test_throws ArgumentError layer(x, ps, st)
         end
     end
 end
