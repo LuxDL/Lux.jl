@@ -7,12 +7,15 @@ using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface, fast_scalar_indexing
 using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent, ProjectTo,
                       RuleConfig, ZeroTangent, @thunk
+using Compat: @compat
 using ConcreteStructs: @concrete
+using ConstructionBase: ConstructionBase
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
 using Functors: Functors, fmap
 using GPUArraysCore: GPUArraysCore
 using LossFunctions: LossFunctions
+using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using Preferences: @load_preference
 using Random: Random, AbstractRNG
@@ -20,23 +23,11 @@ using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
-using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
+@reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 using LuxLib: __apply_bias_activation
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, display_name, replicate
-using LuxDeviceUtils: get_device
-
-# @compact specific
-using MacroTools: MacroTools, block, combinedef, splitdef
-
-# @compact and stateful layers
-using ConstructionBase: ConstructionBase
-
-# For public keyword
-using Compat: @compat
-
-@reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 
 const CRC = ChainRulesCore
 
