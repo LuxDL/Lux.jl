@@ -29,7 +29,6 @@ jobs:
       matrix:
         version:
           - "1"
-          - "pre"
         os:
           - ubuntu-latest
           - macos-latest
@@ -43,11 +42,6 @@ jobs:
           - "others"
           - "autodiff"
           - "recurrent_layers"
-        exclude:
-          - version: pre
-            os: windows-latest
-          - version: pre
-            os: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
