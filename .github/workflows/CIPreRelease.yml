@@ -1,0 +1,75 @@
+name: CIPreRelease
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "ext/**"
+      - "test/**"
+      - "Project.toml"
+      - ".github/workflows/CI.yml"
+  push:
+    branches:
+      - main
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  ci:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.test_group }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - "pre"
+        os:
+          - ubuntu-latest
+        test_group:
+          - "core_layers"
+          - "contrib"
+          - "helpers"
+          - "distributed"
+          - "normalize_layers"
+          - "others"
+          - "autodiff"
+          - "recurrent_layers"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: actions/cache@v4
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        env:
+          LUX_TEST_GROUP: ${{ matrix.test_group }}
+      - uses: julia-actions/julia-processcoverage@v1
+        with:
+          directories: src,ext
+      - uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          fail_ci_if_error: true
+
+env:
+  BACKEND_GROUP: "CPU"
+  RETESTITEMS_NWORKERS: 4
+  RETESTITEMS_NWORKER_THREADS: 2

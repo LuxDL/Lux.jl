@@ -13,6 +13,7 @@ steps:
                 - "ext/"
                 - "test/"
                 - "Project.toml"
+                - ".buildkite/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
                 agents:
@@ -24,6 +25,7 @@ steps:
                 - "Project.toml"
                 - "docs/"
                 - "examples/"
+                - ".buildkite/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
                 agents:
