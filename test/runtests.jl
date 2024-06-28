@@ -36,10 +36,10 @@ using Lux
 @testset "Load Tests" begin
     @testset "Load Packages Tests" begin
         @test_throws ErrorException FromFluxAdaptor()(1)
-        showerror(stdout, Lux.FluxModelConversionError("cannot convert"))
+        showerror(stdout, Lux.FluxModelConversionException("cannot convert"))
 
         @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
-        showerror(stdout, Lux.SimpleChainsModelConversionError(Dense(2 => 2)))
+        showerror(stdout, Lux.SimpleChainsModelConversionException(Dense(2 => 2)))
 
         @test_throws ErrorException vector_jacobian_product(
             x -> x, AutoZygote(), rand(2), rand(2))

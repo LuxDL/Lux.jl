@@ -62,11 +62,3 @@ Base.@deprecate transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=fa
 
 # Extend for AMDGPU in extensions
 @inline _maybe_flip_conv_weight(x) = copy(x)
-
-struct FluxModelConversionError <: Exception
-    msg::String
-end
-
-function Base.showerror(io::IO, e::FluxModelConversionError)
-    print(io, "FluxModelConversionError(", e.msg, ")")
-end

@@ -115,10 +115,11 @@ function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
-    cdims = DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    y = __match_eltype(c, ps, st, x)
+    cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, x, _getproperty(ps, Val(:bias)), cdims),
+            c.activation, ps.weight, y, _getproperty(ps, Val(:bias)), cdims),
         st)
 end
 
@@ -274,8 +275,8 @@ function Base.show(io::IO, m::MeanPool)
 end
 
 """
-    Upsample(mode = :nearest; [scale, size]) 
-    Upsample(scale, mode = :nearest)  
+    Upsample(mode = :nearest; [scale, size])
+    Upsample(scale, mode = :nearest)
 
 Upsampling Layer.
 
@@ -334,28 +335,21 @@ end
 
 Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
 
-function (m::Upsample{:nearest})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_nearest(x, m.scale), st
+for interp in (:nearest, :bilinear, :trilinear)
+    interp_func = Symbol(:upsample_, interp)
+    @eval begin
+        function (m::Upsample{$(Meta.quot(interp))})(x::AbstractArray, ps, st::NamedTuple)
+            return NNlib.$(interp_func)(x, m.scale), st
+        end
+        function (m::Upsample{$(Meta.quot(interp)), Nothing})(
+                x::AbstractArray, ps, st::NamedTuple)
+            return NNlib.$(interp_func)(x; m.size), st
+        end
+    end
 end
+
 function (m::Upsample{:nearest, Int})(x::AbstractArray, ps, st::NamedTuple)
     return NNlib.upsample_nearest(x, ntuple(i -> m.scale, ndims(x) - 2)), st
-end
-function (m::Upsample{:nearest, Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_nearest(x; size=m.size), st
-end
-
-function (m::Upsample{:bilinear})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_bilinear(x, m.scale), st
-end
-function (m::Upsample{:bilinear, Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_bilinear(x; size=m.size), st
-end
-
-function (m::Upsample{:trilinear})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_trilinear(x, m.scale), st
-end
-function (m::Upsample{:trilinear, Nothing})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_trilinear(x; size=m.size), st
 end
 
 function Base.show(io::IO, u::Upsample{mode}) where {mode}
@@ -544,7 +538,7 @@ number of observations in a batch.
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -617,11 +611,12 @@ function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
+    y = __match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
-        DenseConvDims(x, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
+        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, x, _getproperty(ps, Val(:bias)), cdims),
+            c.activation, ps.weight, y, _getproperty(ps, Val(:bias)), cdims),
         st)
 end
 
@@ -747,9 +742,10 @@ end
 
 @inline function (c::ConvTranspose{N, false})(
         x::AbstractArray, ps, st::NamedTuple) where {N}
+    y = __match_eltype(c, ps, st, x)
     cdims = _conv_transpose_dims(
-        x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    return fast_activation!!(c.activation, _conv_transpose(x, ps.weight, cdims)), st
+        y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    return fast_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims)), st
 end
 
 @inline function (c::ConvTranspose{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}

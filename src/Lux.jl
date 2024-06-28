@@ -1,6 +1,5 @@
 module Lux
 
-<<<<<<< HEAD
 using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker,
                AutoZygote
 using Adapt: Adapt, adapt
@@ -23,46 +22,6 @@ using Random: Random, AbstractRNG
 using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
-=======
-using PrecompileTools: @recompile_invalidations
-
-@recompile_invalidations begin
-    using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff,
-                   AutoTracker, AutoZygote
-    using Adapt: Adapt, adapt
-    using ArgCheck: @argcheck
-    using ArrayInterface: ArrayInterface, fast_scalar_indexing
-    using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent,
-                          ProjectTo, RuleConfig, ZeroTangent, @thunk
-    using ConcreteStructs: @concrete
-    using FastClosures: @closure
-    using Functors: Functors, fmap
-    using GPUArraysCore: GPUArraysCore
-    using LossFunctions: LossFunctions
-    using Markdown: @doc_str
-    using Preferences: load_preference, has_preference
-    using Random: Random, AbstractRNG
-    using Reexport: @reexport
-    using Statistics: mean
-
-    using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
-    using LuxLib: __apply_bias_activation
-    import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer,
-                    initialparameters, initialstates, parameterlength, statelength,
-                    inputsize, outputsize, update_state, trainmode, testmode, setup, apply,
-                    display_name, replicate
-    using LuxDeviceUtils: get_device
-
-    # @compact specific
-    using MacroTools: MacroTools, block, combinedef, splitdef
-
-    # @compact and stateful layers
-    using ConstructionBase: ConstructionBase
-
-    # For public keyword
-    using Compat: @compat
-end
->>>>>>> 7ae40a5a (Preferences for automatic eltype conversion)
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 using LuxLib: __apply_bias_activation
@@ -80,6 +39,7 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 include("preferences.jl")
 
 # Utilities
+include("custom_errors.jl")
 include("utils.jl")
 
 # Layer Implementations
@@ -104,6 +64,7 @@ include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
+include("helpers/match_eltype.jl")
 
 # AutoDiff
 include("chainrules.jl")

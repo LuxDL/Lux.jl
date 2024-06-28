@@ -1,13 +1,5 @@
 # This functionality is based off of the implementation in Fluxperimental.jl
 # https://github.com/FluxML/Fluxperimental.jl/blob/cc0e36fdd542cc6028bc69449645dc0390dd980b/src/compact.jl
-struct LuxCompactModelParsingException <: Exception
-    msg::String
-end
-
-function Base.showerror(io::IO, e::LuxCompactModelParsingException)
-    print(io, "LuxCompactModelParsingException(", e.msg, ")")
-end
-
 """
     @compact(kw...) do x
         ...

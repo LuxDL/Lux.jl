@@ -38,7 +38,7 @@ exhaustive list of preferences that Lux.jl uses.
 
 ## Automatic Eltype Conversion
 
-1. `automatic_eltype_conversion` - Preference controlling what happens when layers get
+1. `eltype_mismatch_handling` - Preference controlling what happens when layers get
    different eltypes as input:
 
     1. `none` - This is the default, where no automatic eltype conversion is done. Type

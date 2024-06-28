@@ -10,26 +10,34 @@ Any leaves of `x` that are arrays and allow in-place addition will be modified i
 @inline recursive_add!!(x, y) = recursive_map(__add!!, x, y)
 
 """
-    recursive_eltype(x)
+    recursive_eltype(x, unwrap_ad_types = Val(false))
 
 Recursively determine the element type of a nested structure `x`. This is equivalent to
-doing `fmap(eltype, x)`, but this implementation uses type stable code for common cases.
+doing `fmap(Lux.__eltype, x)`, but this implementation uses type stable code for common
+cases.
+
+For ambiguous inputs like `nothing` and `Val` types we return `Bool` as the eltype.
+
+If `unwrap_ad_types` is set to `Val(true)` then for tracing and operator overloading based
+ADs (ForwardDiff, ReverseDiff, Tracker), this function will return the eltype of the
+unwrapped value.
 """
-@inline function recursive_eltype(x::AbstractArray{T}) where {T}
-    isbitstype(T) && return eltype(x)
-    return mapreduce(recursive_eltype, promote_type, x)
-end
-@inline recursive_eltype(::Union{Nothing, Missing, Val}) = Bool
-@inline recursive_eltype(x::Number) = eltype(x)
-@inline function recursive_eltype(x::Union{Tuple, NamedTuple})
+@inline recursive_eltype(x) = recursive_eltype(x, Val(false))
+
+@inline recursive_eltype(x::AbstractArray, ::Val{false}) = eltype(x)
+@inline recursive_eltype(x::AbstractArray, ::Val{true}) = __eltype(x)
+@inline recursive_eltype(x::Number, ::Val{false}) = eltype(x)
+@inline recursive_eltype(x::Number, ::Val{true}) = __eltype(x)
+@inline recursive_eltype(::Union{Nothing, Missing, Val}, ::Val) = Bool
+@inline function recursive_eltype(x::Union{Tuple, NamedTuple}, val::Val)
     leaves = x isa Tuple ? x : values(x)
     length(leaves) == 0 && return Bool
-    return unrolled_mapreduce(recursive_eltype, promote_type, leaves)
+    return unrolled_mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves)
 end
-@inline function recursive_eltype(x)
-    leaves = Functors.fleaves(x)
+@inline function recursive_eltype(x, val::Val)
+    leaves = x isa Tuple ? x : (x isa NamedTuple ? values(x) : Functors.fleaves(x))
     length(leaves) == 0 && return Bool
-    return mapreduce(recursive_eltype, promote_type, leaves)
+    return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves)
 end
 
 """

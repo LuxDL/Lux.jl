@@ -283,13 +283,15 @@ end
 const _RNNCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
 function (rnn::RNNCell{true})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
-    h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state .+ ps.bias
+    y, hidden_state_ = __match_eltype(rnn, ps, st, x, hidden_state)
+    h_new = ps.weight_ih * y .+ ps.weight_hh * hidden_state_ .+ ps.bias
     h_new = fast_activation!!(rnn.activation, h_new)
     return (h_new, (h_new,)), st
 end
 
 function (rnn::RNNCell{false})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
-    h_new = ps.weight_ih * x .+ ps.weight_hh * hidden_state
+    y, hidden_state_ = __match_eltype(rnn, ps, st, x, hidden_state)
+    h_new = ps.weight_ih * y .+ ps.weight_hh * hidden_state_
     h_new = fast_activation!!(rnn.activation, h_new)
     return (h_new, (h_new,)), st
 end
@@ -461,18 +463,20 @@ const _LSTMCellInputType = Tuple{
 
 function (lstm::LSTMCell{true})(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
-    g = ps.weight_i * x .+ ps.weight_h * hidden_state .+ ps.bias
+    y, hidden_state_, memory_ = __match_eltype(lstm, ps, st, x, hidden_state, memory)
+    g = ps.weight_i * y .+ ps.weight_h * hidden_state_ .+ ps.bias
     input, forget, cell, output = multigate(g, Val(4))
-    memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
+    memory_new = @. sigmoid_fast(forget) * memory_ + sigmoid_fast(input) * tanh_fast(cell)
     hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
     return (hidden_state_new, (hidden_state_new, memory_new)), st
 end
 
 function (lstm::LSTMCell{false})(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
-    g = ps.weight_i * x .+ ps.weight_h * hidden_state
+    y, hidden_state_, memory_ = __match_eltype(lstm, ps, st, x, hidden_state, memory)
+    g = ps.weight_i * y .+ ps.weight_h * hidden_state_
     input, forget, cell, output = multigate(g, Val(4))
-    memory_new = @. sigmoid_fast(forget) * memory + sigmoid_fast(input) * tanh_fast(cell)
+    memory_new = @. sigmoid_fast(forget) * memory_ + sigmoid_fast(input) * tanh_fast(cell)
     hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
     return (hidden_state_new, (hidden_state_new, memory_new)), st
 end
@@ -606,25 +610,27 @@ end
 const _GRUCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
 function (gru::GRUCell{true})((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
-    gxs = multigate(ps.weight_i * x, Val(3))
-    ghbs = multigate(ps.weight_h * hidden_state .+ ps.bias_h, Val(3))
+    y, hidden_state_ = __match_eltype(gru, ps, st, x, hidden_state)
+    gxs = multigate(ps.weight_i * y, Val(3))
+    ghbs = multigate(ps.weight_h * hidden_state_ .+ ps.bias_h, Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghbs[1])
     z = @. sigmoid_fast(gxs[2] + ghbs[2])
     n = @. tanh_fast(gxs[3] + ps.bias_i + r * ghbs[3])
-    hidden_state_new = @. (1 - z) * n + z * hidden_state
+    hidden_state_new = @. (1 - z) * n + z * hidden_state_
 
     return (hidden_state_new, (hidden_state_new,)), st
 end
 
 function (gru::GRUCell{false})((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
-    gxs = multigate(ps.weight_i * x, Val(3))
-    ghs = multigate(ps.weight_h * hidden_state, Val(3))
+    y, hidden_state_ = __match_eltype(gru, ps, st, x, hidden_state)
+    gxs = multigate(ps.weight_i * y, Val(3))
+    ghs = multigate(ps.weight_h * hidden_state_, Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghs[1])
     z = @. sigmoid_fast(gxs[2] + ghs[2])
     n = @. tanh_fast(gxs[3] + r * ghs[3])
-    hidden_state_new = @. (1 - z) * n + z * hidden_state
+    hidden_state_new = @. (1 - z) * n + z * hidden_state_
 
     return (hidden_state_new, (hidden_state_new,)), st
 end

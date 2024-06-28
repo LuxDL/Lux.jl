@@ -89,15 +89,3 @@ end
 
 function __to_simplechains_adaptor end
 function __fix_input_dims_simplechain end
-
-struct SimpleChainsModelConversionError <: Exception
-    msg::String
-end
-
-function SimpleChainsModelConversionError(layer::AbstractExplicitLayer)
-    return SimpleChainsModelConversionError(lazy"Conversion to SimpleChains not supported for $(typeof(layer))")
-end
-
-function Base.showerror(io::IO, e::SimpleChainsModelConversionError)
-    print(io, "SimpleChainsModelConversionError(", e.msg, ")")
-end

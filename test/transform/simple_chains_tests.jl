@@ -106,13 +106,13 @@
     @test_throws ArgumentError ToSimpleChainsAdaptor(1)
 
     # Failures
-    @test_throws Lux.SimpleChainsModelConversionError adaptor(Conv(
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(Conv(
         (1, 1), 2 => 3; stride=(5, 5)))
-    @test_throws Lux.SimpleChainsModelConversionError adaptor(Dropout(0.2f0; dims=1))
-    @test_throws Lux.SimpleChainsModelConversionError adaptor(FlattenLayer())
-    @test_throws Lux.SimpleChainsModelConversionError adaptor(MaxPool(
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(Dropout(0.2f0; dims=1))
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(FlattenLayer())
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(MaxPool(
         (2, 2); stride=(1, 1)))
-    @test_throws Lux.SimpleChainsModelConversionError adaptor(ReshapeLayer((2, 3)))
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(ReshapeLayer((2, 3)))
 
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
         lux_model = Dense(10 => 5)
