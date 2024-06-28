@@ -149,9 +149,9 @@ julia> size.(first(model((x1, x2), ps, st)))
 ((1,), (1,))
 ```
 """
-@concrete struct Parallel{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct Parallel <: AbstractExplicitContainerLayer{(:layers,)}
     connection
-    layers::T
+    layers <: NamedTuple
     name
 end
 
@@ -346,10 +346,9 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
-@concrete struct PairwiseFusion{T <: NamedTuple} <:
-                 AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct PairwiseFusion <: AbstractExplicitContainerLayer{(:layers,)}
     connection
-    layers::T
+    layers <: NamedTuple
     name
 end
 
@@ -457,8 +456,8 @@ Chain(
           #        plus 7 states.
 ```
 """
-@concrete struct Chain{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
+@concrete struct Chain <: AbstractExplicitContainerLayer{(:layers,)}
+    layers <: NamedTuple
     name
 end
 

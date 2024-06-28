@@ -95,8 +95,8 @@ function Optimisers.adjust(ts::Lux.Experimental.TrainState; kwargs...)
 end
 
 # DistributedUtils
-@concrete struct DistributedOptimizer{B <: AbstractLuxDistributedBackend} <: AbstractRule
-    backend::B
+@concrete struct DistributedOptimizer <: AbstractRule
+    backend <: AbstractLuxDistributedBackend
     opt
 end
 

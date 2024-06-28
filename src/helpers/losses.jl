@@ -73,9 +73,8 @@ julia> logitbce_ls(y_model, y_bin) > logitbce(y_model, y_bin)
 true
 ```
 """
-@concrete struct BinaryCrossEntropyLoss{logits, L <: Union{Nothing, Real}} <:
-                 AbstractLossFunction
-    label_smoothing::L
+@concrete struct BinaryCrossEntropyLoss{logits} <: AbstractLossFunction
+    label_smoothing <: Union{Nothing, Real}
     agg
     epsilon
 end
@@ -192,8 +191,8 @@ julia> CrossEntropyLoss(label_smoothing=0.15)(y_model, y) ≈ 1.5776052f0
 true
 ```
 """
-@concrete struct CrossEntropyLoss{logits, L <: Union{Nothing, Real}} <: AbstractLossFunction
-    label_smoothing::L
+@concrete struct CrossEntropyLoss{logits} <: AbstractLossFunction
+    label_smoothing <: Union{Nothing, Real}
     dims
     agg
     epsilon
@@ -412,10 +411,10 @@ julia> KLDivergenceLoss(; epsilon=0)(p1, p2)
 Inf
 ```
 """
-@concrete struct KLDivergenceLoss{C <: CrossEntropyLoss} <: AbstractLossFunction
+@concrete struct KLDivergenceLoss <: AbstractLossFunction
     agg
     dims
-    celoss::C
+    celoss <: CrossEntropyLoss
 end
 
 function KLDivergenceLoss(; dims=1, agg=mean, epsilon=nothing, label_smoothing=nothing)
