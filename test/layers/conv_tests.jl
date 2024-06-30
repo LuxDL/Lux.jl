@@ -104,75 +104,39 @@ end
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            broken = false
-            try
-                layer(x, ps, st)
-                broken = false
-            catch
-                @warn "$mode Test broken for $layer"
-                broken = true
-            end
+            layer(x, ps, st)
+            @test size(ps.weight) == (3, 3, 2)
+            @test size(layer(x, ps, st)[1]) == (2, 2, 1)
 
-            if !broken
-                @test size(ps.weight) == (3, 3, 2)
-                @test size(layer(x, ps, st)[1]) == (2, 2, 1)
-
-                @jet layer(x, ps, st)
-                __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-            else
-                @test_broken !broken
-            end
+            @jet layer(x, ps, st)
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             x = rand(rng, Float32, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3), 6 => 2; groups=2)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            broken = false
-            try
-                layer(x, ps, st)
-                broken = false
-            catch
-                @warn "$mode Test broken for $layer"
-                broken = true
-            end
+            layer(x, ps, st)
+            @test size(ps.weight) == (3, 3, 3, 2)
+            @test size(layer(x, ps, st)[1]) == (2, 2, 2, 1)
 
-            if !broken
-                @test size(ps.weight) == (3, 3, 3, 2)
-                @test size(layer(x, ps, st)[1]) == (2, 2, 2, 1)
-
-                @jet layer(x, ps, st)
-                __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-            else
-                @test_broken !broken
-            end
+            @jet layer(x, ps, st)
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             x = rand(rng, Float32, 4, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3, 3), 6 => 2; groups=2)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            broken = false
-            try
-                layer(x, ps, st)
-                broken = false
-            catch
-                @warn "$mode Test broken for $layer"
-                broken = true
-            end
+            layer(x, ps, st)
+            @test size(ps.weight) == (3, 3, 3, 3, 2)
+            @test size(layer(x, ps, st)[1]) == (2, 2, 2, 2, 1)
 
-            if !broken
-                @test size(ps.weight) == (3, 3, 3, 3, 2)
-                @test size(layer(x, ps, st)[1]) == (2, 2, 2, 2, 1)
-
-                @jet layer(x, ps, st)
-                __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-            else
-                @test_broken !broken
-            end
+            @jet layer(x, ps, st)
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
 
             # Test that we cannot ask for non-integer multiplication factors
             layer = Conv((2, 2), 3 => 10; groups=2)
@@ -188,22 +152,10 @@ end
                 x = rand(rng, Float32, 16, 32, 1) |> aType
                 ps, st = Lux.setup(rng, layer) |> dev
 
-                broken = false
-                try
-                    layer(x, ps, st)
-                    broken = false
-                catch
-                    @warn "$mode Test broken for $layer"
-                    broken = true
-                end
-
-                if !broken
-                    @jet layer(x, ps, st)
-                    __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
-                else
-                    @test_broken !broken
-                end
+                layer(x, ps, st)
+                @jet layer(x, ps, st)
+                __f = (x, ps) -> sum(first(layer(x, ps, st)))
+                @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
             end
         end
 
@@ -288,29 +240,17 @@ end
                 display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
 
-                broken = false
-                try
-                    layer(x, ps, st)
-                    broken = false
-                catch
-                    @warn "$mode Test broken for $layer"
-                    broken = true
-                end
-
-                if !broken
-                    if kwarg.stride == 1
-                        @test size(layer(x, ps, st)[1]) == size(x)
-                    else
-                        @test size(layer(x, ps, st)[1])[1:(end - 2)] ==
-                              cld.(size(x)[1:(end - 2)], kwarg.stride)
-                    end
-
-                    @jet layer(x, ps, st)
-                    __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                    @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
+                layer(x, ps, st)
+                if kwarg.stride == 1
+                    @test size(layer(x, ps, st)[1]) == size(x)
                 else
-                    @test_broken !broken
+                    @test size(layer(x, ps, st)[1])[1:(end - 2)] ==
+                          cld.(size(x)[1:(end - 2)], kwarg.stride)
                 end
+
+                @jet layer(x, ps, st)
+                __f = (x, ps) -> sum(first(layer(x, ps, st)))
+                @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
             end
         end
 
@@ -325,7 +265,7 @@ end
 
             y = zeros(eltype(ps.weight), 5, 5, 1, 1) |> aType
             y[2:(end - 1), 2:(end - 1), 1, 1] = ps.weight
-            @test check_approx(y, layer(x, ps, st)[1])
+            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
 
@@ -335,7 +275,7 @@ end
 
             y = zeros(eltype(ps.weight), 5, 7, 1, 1) |> aType
             y[2:(end - 1), 4, 1, 1] = ps.weight
-            @test check_approx(y, layer(x, ps, st)[1])
+            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
 
@@ -345,7 +285,7 @@ end
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
             y[4, 2:(end - 1), 1, 1] = ps.weight
-            @test check_approx(y, layer(x, ps, st)[1])
+            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
 
@@ -355,7 +295,7 @@ end
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
             y[4, 2:(end - 1), 1, 1] = ps.weight
-            @test check_approx(y, layer(x, ps, st)[1])
+            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
         end
@@ -521,29 +461,17 @@ end
                 display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
 
-                broken = false
-                try
-                    layer(x, ps, st)
-                    broken = false
-                catch
-                    @warn "$mode Test broken for $layer"
-                    broken = true
-                end
-
-                if !broken
-                    if kwarg.stride == 1
-                        @test size(layer(x, ps, st)[1]) == size(x)
-                    else
-                        @test size(layer(x, ps, st)[1])[1:(end - 2)] ==
-                              cld.(size(x)[1:(end - 2)], kwarg.stride)
-                    end
-
-                    @jet layer(x, ps, st)
-                    __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                    @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
+                layer(x, ps, st)
+                if kwarg.stride == 1
+                    @test size(layer(x, ps, st)[1]) == size(x)
                 else
-                    @test_broken !broken
+                    @test size(layer(x, ps, st)[1])[1:(end - 2)] ==
+                          cld.(size(x)[1:(end - 2)], kwarg.stride)
                 end
+
+                @jet layer(x, ps, st)
+                __f = (x, ps) -> sum(first(layer(x, ps, st)))
+                @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1e-3 rtol=1e-3
             end
         end
 

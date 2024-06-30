@@ -73,11 +73,11 @@
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev
 
+            @inferred model(x, ps, st)
+            @inferred loss_function(model, x, ps, st)
             if mode == "amdgpu" && (model isa Conv || model isa LayerNorm)
-                @test_broken false
+                @test_broken @inferred Zygote.gradient(loss_function, model, x, ps, st)
             else
-                @inferred model(x, ps, st)
-                @inferred loss_function(model, x, ps, st)
                 @inferred Zygote.gradient(loss_function, model, x, ps, st)
             end
         end

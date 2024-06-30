@@ -16,7 +16,7 @@ end
 const EXTRA_PKGS = String[]
 
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
-    BACKEND_GROUP != "amdgpu" && push!(EXTRA_PKGS, "MPI")
+    push!(EXTRA_PKGS, "MPI")
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "NCCL")
 end
 ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
@@ -107,11 +107,6 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP) && BACKEND_GROUP
     include("setup_modes.jl")
 
     @testset "MODE: $(mode)" for (mode, aType, dev, ongpu) in MODES
-        if mode == "amdgpu"
-            # AMDGPU needs to cause a deadlock, needs to be investigated
-            @test_broken 1 == 2
-            continue
-        end
         backends = mode == "cuda" ? ("mpi", "nccl") : ("mpi",)
         for backend_type in backends
             np = backend_type == "nccl" ? min(nprocs, length(CUDA.devices())) : nprocs

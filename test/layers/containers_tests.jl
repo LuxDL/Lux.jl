@@ -13,7 +13,7 @@
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 reverse_diff_broken=true gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
         end
 
         @testset "concat size" begin
@@ -46,7 +46,7 @@ end
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 reverse_diff_broken=true gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
         end
 
         @testset "concat size" begin

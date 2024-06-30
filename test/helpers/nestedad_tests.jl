@@ -6,9 +6,6 @@
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
             aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
         models = (
@@ -84,9 +81,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
             aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
         models = (
@@ -166,9 +160,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         @testset "Structured Matrix: Issue LuxDL/Lux.jl#602" begin
             model = @compact(; potential=Dense(5 => 5, gelu)) do x
                 @return reshape(diag(only(Zygote.jacobian(potential, x))), size(x))
@@ -206,9 +197,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
                 Conv((3, 3), 4 => 1, gelu; pad=SamePad())),
@@ -278,9 +266,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         x = rand(rng, 3, 3) |> aType
         v = vec(rand(rng, 3, 3)) |> aType
 

@@ -316,16 +316,11 @@ end
                         @test length(y_) == 4
                         @test all(x -> size(x) == (5, 2), y_)
 
-                        if mode != "amdgpu"
-                            __f = p -> sum(first(rnn(x, p, st)))
-                            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+                        __f = p -> sum(first(rnn(x, p, st)))
+                        @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 
-                            __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
-                        else
-                            # This is just added as a stub to remember about this broken test
-                            @test_broken 1 + 1 == 1
-                        end
+                        __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
+                        @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
                     end
 
                     ordering isa BatchLastIndex && continue
@@ -346,16 +341,11 @@ end
                         @test length(y_) == 4
                         @test all(x -> size(x) == (5,), y_)
 
-                        if mode != "amdgpu"
-                            __f = p -> sum(first(rnn(x, p, st)))
-                            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+                        __f = p -> sum(first(rnn(x, p, st)))
+                        @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 
-                            __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
-                        else
-                            # This is just added as a stub to remember about this broken test
-                            @test_broken 1 + 1 == 1
-                        end
+                        __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
+                        @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
                     end
                 end
             end
