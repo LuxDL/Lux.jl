@@ -247,8 +247,7 @@ function WrappedFunction(f::F) where {F}
     # Not a depwarn but helpful to call this
     Base.depwarn("The current default of `:direct_call` will be replaced with \
                   `:runtime_check` from v0.6). Please make sure that the assumptions of \
-                  this function are correct or specific \
-                  `WrappedFunction{:direct_call}(f)`",
+                  this function are correct or specify `WrappedFunction{:direct_call}(f)`",
         :WrappedFunction)
     return WrappedFunction{:direct_call}(f)
 end

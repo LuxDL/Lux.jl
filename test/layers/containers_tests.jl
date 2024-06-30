@@ -4,7 +4,8 @@
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "zero sum" begin
-            layer = SkipConnection(WrappedFunction(zero), (a, b) -> a .+ b)
+            layer = SkipConnection(
+                WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)), .+)
             display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 10, 10, 10, 10) |> aType
@@ -36,7 +37,9 @@ end
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "zero sum" begin
-            layer = Parallel(+, WrappedFunction(zero), NoOpLayer())
+            layer = Parallel(
+                +, WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)),
+                NoOpLayer())
             @test :layer_1 in keys(layer) && :layer_2 in keys(layer)
             display(layer)
             ps, st = Lux.setup(rng, layer) .|> device

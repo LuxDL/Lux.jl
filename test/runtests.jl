@@ -73,8 +73,8 @@ using Lux
 end
 
 @testset "ReTestItem Tests" begin
-    for tag in LUX_TEST_GROUP
-        @info "Running tests for group: $tag"
+    for (i, tag) in enumerate(LUX_TEST_GROUP)
+        @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
         if tag == "all"
             ReTestItems.runtests(@__DIR__)
         else
@@ -84,7 +84,7 @@ end
 end
 
 # Distributed Tests
-if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP) && BACKEND_GROUP != "amdgpu"
+if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
     using MPI
 
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")

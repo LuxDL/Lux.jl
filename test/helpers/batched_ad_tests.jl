@@ -88,6 +88,7 @@ end
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs), backend in (AutoZygote(), AutoForwardDiff())
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
             function loss_function_batched(model, x, ps, st)

@@ -50,8 +50,9 @@
                        (loss_function1, loss_function2, loss_function3, loss_function4)
 
             for loss_fn in loss_fns
-                @test_nowarn loss_fn(model, X, ps, st)
-                @test loss_fn(model, X, ps, st) isa Number
+                l = loss_fn(model, X, ps, st)
+                @test l isa Number
+                @test isfinite(l) && !isnan(l)
 
                 _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
 
@@ -130,8 +131,9 @@ end
                        (loss_function1, loss_function2, loss_function3, loss_function4)
 
             for loss_fn in loss_fns
-                @test_nowarn loss_fn(model, X, ps, st)
-                @test loss_fn(model, X, ps, st) isa Number
+                l = loss_fn(model, X, ps, st)
+                @test l isa Number
+                @test isfinite(l) && !isnan(l)
 
                 _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
 
