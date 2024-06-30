@@ -1,7 +1,7 @@
 module LuxCore
 
 using Functors: Functors, fmap
-using Random: Random, AbstractRNG
+using Random: Random, AbstractRNG, Xoshiro
 using Setfield: Setfield
 
 # PRNG Handling
@@ -16,11 +16,7 @@ function replicate(rng::Random.TaskLocalRNG)
     return deepcopy(rng)
 end
 
-function _default_rng()
-    rng = Random.default_rng()
-    Random.seed!(rng, 1234)
-    return rng
-end
+@inline _default_rng() = Xoshiro(1234)
 
 """
     abstract type AbstractExplicitLayer
