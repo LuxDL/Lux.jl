@@ -702,6 +702,8 @@ function BidirectionalRNN(cell::AbstractRecurrentCell;
     backward_rnn_layer = backward_cell === nothing ? layer :
                          Recurrence(backward_cell; return_sequence=true, ordering)
     fuse_op = merge_mode === nothing ? nothing : Broadcast.BroadcastFunction(merge_mode)
-    return BidirectionalRNN(Parallel(
-        fuse_op, layer, Chain(ReverseSequence(), backward_rnn_layer, ReverseSequence())))
+    return BidirectionalRNN(Parallel(fuse_op;
+        forward_rnn=layer,
+        backward_rnn=Chain(;
+            rev1=ReverseSequence(), rnn=backward_rnn_layer, rev2=ReverseSequence())))
 end

@@ -402,17 +402,14 @@ end
             @test size(y_[1]) == (4,)
             @test all(x -> size(x) == (5, 2), y_[1])
 
-            if mode != "AMDGPU"
-                # gradients test failed after vcat
-                # __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
-                # @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+            __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
+            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 
-                __f = p -> sum(
-                    Base.Fix1(sum, abs2), first(first(bi_rnn_no_merge(x, p, st))))
-                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
-            else
-                # This is just added as a stub to remember about this broken test
+            __f = p -> begin
+                (y1, y2), st_ = bi_rnn_no_merge(x, p, st)
+                return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
             end
+            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 
             @testset "backward_cell: $_backward_cell" for _backward_cell in (
                 RNNCell, LSTMCell, GRUCell)
@@ -421,7 +418,6 @@ end
                 bi_rnn = BidirectionalRNN(cell; backward_cell=backward_cell)
                 bi_rnn_no_merge = BidirectionalRNN(
                     cell; backward_cell=backward_cell, merge_mode=nothing)
-                println("BidirectionalRNN:")
                 display(bi_rnn)
 
                 # Batched Time Series
@@ -441,18 +437,14 @@ end
                 @test size(y_[1]) == (4,)
                 @test all(x -> size(x) == (5, 2), y_[1])
 
-                if mode != "AMDGPU"
-                    # gradients test failed after vcat
-                    # __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
-                    # @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+                __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
+                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
 
-                    __f = p -> sum(
-                        Base.Fix1(sum, abs2), first(first(bi_rnn_no_merge(x, p, st))))
-                    @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
-                else
-                    # This is just added as a stub to remember about this broken test
-                    @test_broken 1 + 1 == 1
+                __f = p -> begin
+                    (y1, y2), st_ = bi_rnn_no_merge(x, p, st)
+                    return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
                 end
+                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
             end
         end
     end
