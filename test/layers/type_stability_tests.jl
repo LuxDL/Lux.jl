@@ -75,7 +75,7 @@
 
             @inferred model(x, ps, st)
             @inferred loss_function(model, x, ps, st)
-            if mode == "amdgpu" && (model isa Conv || model isa LayerNorm)
+            if mode == "amdgpu" && model isa Conv
                 @test_broken @inferred Zygote.gradient(loss_function, model, x, ps, st)
             else
                 @inferred Zygote.gradient(loss_function, model, x, ps, st)

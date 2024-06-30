@@ -19,6 +19,7 @@
                 BatchNorm(2), FlattenLayer(), Dense(18 => 1)))
 
         for (X, model) in zip(Xs, models)
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
             # smodel | ForwardDiff.jacobian
@@ -94,6 +95,7 @@ end
                 BatchNorm(2), FlattenLayer(), Dense(18 => 1)))
 
         for (X, model) in zip(Xs, models)
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model)
             ps = ps |> ComponentArray |> dev
             st = st |> dev
@@ -204,6 +206,7 @@ end
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs)
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
             vjp_input = first(model(X, ps, st))

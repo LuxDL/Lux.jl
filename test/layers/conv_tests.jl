@@ -265,7 +265,7 @@ end
 
             y = zeros(eltype(ps.weight), 5, 5, 1, 1) |> aType
             y[2:(end - 1), 2:(end - 1), 1, 1] = ps.weight
-            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
 
@@ -275,7 +275,7 @@ end
 
             y = zeros(eltype(ps.weight), 5, 7, 1, 1) |> aType
             y[2:(end - 1), 4, 1, 1] = ps.weight
-            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
 
@@ -285,7 +285,7 @@ end
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
             y[4, 2:(end - 1), 1, 1] = ps.weight
-            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
 
@@ -295,7 +295,7 @@ end
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
             y[4, 2:(end - 1), 1, 1] = ps.weight
-            @test y ≈ layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
             @jet layer(x, ps, st)
         end
