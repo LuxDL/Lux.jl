@@ -14,6 +14,12 @@ making it compatible with multiple GPU backends.
     Currently this works only for inference. We will eventually test automatic
     differentiation using Enzyme.jl
 
+!!! danger "Batching"
+
+    In most usecases, this form of batching via embedding the neural network inside a GPU
+    kernel is not recommended and will lead to suboptimal performance. Instead, batch the
+    input data and let Lux handle the batching internally.
+
 ```@example nn_in_gpu_kernels
 using Lux, LuxCUDA, Random
 using KernelAbstractions, StaticArrays

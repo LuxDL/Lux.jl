@@ -172,6 +172,7 @@ export default defineConfig({
             "/manual/": {
                 text: 'Manual', collapsed: false, items: [
                     { text: 'Lux Interface', link: '/manual/interface' },
+                    { text: 'Automatic Differentiation', link: '/manual/autodiff' },
                     { text: 'Debugging Lux Models', link: '/manual/debugging' },
                     { text: 'Custom Input Types', link: '/manual/dispatch_custom_input' },
                     { text: 'Freezing Parameters', link: '/manual/freezing_model_parameters' },
