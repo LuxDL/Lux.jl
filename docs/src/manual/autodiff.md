@@ -27,7 +27,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 [^cr]: Note that `ChainRules.jl` is not really an AD package, but we have first-class
        support for packages that use `rrules`.
 
-## Recommendations
+## [Recommendations](@id autodiff-recommendations)
 
   * For CPU Usacases:
 
