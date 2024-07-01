@@ -50,6 +50,12 @@ include("helpers/training.jl")
 # Experimental
 include("contrib/contrib.jl")
 
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
+include("transform/reactant.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -80,11 +86,6 @@ include("forwarddiff/jvp.jl")
 include("forwarddiff/nested_ad.jl")
 include("forwarddiff/batched_ad.jl")
 
-# Transform to and from other frameworks
-include("transform/types.jl")
-include("transform/flux.jl")
-include("transform/simplechains.jl")
-
 # Distributed Training
 include("distributed/backend.jl")
 include("distributed/public_api.jl")
@@ -114,6 +115,7 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoReactant
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
