@@ -42,6 +42,12 @@ include("preferences.jl")
 include("custom_errors.jl")
 include("utils.jl")
 
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
+include("transform/reactant.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -70,11 +76,6 @@ include("helpers/match_eltype.jl")
 include("chainrules.jl")
 include("enzymerules.jl")
 
-# Transform to and from other frameworks
-include("transform/types.jl")
-include("transform/flux.jl")
-include("transform/simplechains.jl")
-
 # Distributed Training
 include("distributed/backend.jl")
 include("distributed/public_api.jl")
@@ -102,6 +103,7 @@ export @compact, CompactLuxLayer
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoReactant
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,

@@ -12,7 +12,8 @@ end
     end
 
     # Load all trigger packages
-    import Lux, ComponentArrays, ReverseDiff, Flux, SimpleChains, Tracker, Zygote, Enzyme
+    import Lux, ComponentArrays, ReverseDiff, Flux, SimpleChains, Tracker, Zygote, Enzyme,
+           Reactant
 
     using ExplicitImports
 
