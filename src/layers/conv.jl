@@ -115,7 +115,7 @@ function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
-    y = __match_eltype(c, ps, st, x)
+    y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         fused_conv_bias_activation(
@@ -611,7 +611,7 @@ function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
 end
 
 @inline function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
-    y = __match_eltype(c, ps, st, x)
+    y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return (
@@ -742,7 +742,7 @@ end
 
 @inline function (c::ConvTranspose{N, false})(
         x::AbstractArray, ps, st::NamedTuple) where {N}
-    y = __match_eltype(c, ps, st, x)
+    y = match_eltype(c, ps, st, x)
     cdims = _conv_transpose_dims(
         y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return fast_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims)), st

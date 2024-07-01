@@ -134,7 +134,7 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         end
     end
 
-    x′ = __match_eltype(BN, ps, st, x)
+    x′ = match_eltype(BN, ps, st, x)
     y, stats = batchnorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
         _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var)),
         st.training, BN.activation, BN.momentum, BN.epsilon)
@@ -249,7 +249,7 @@ end
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = __match_eltype(GN, ps, st, x)
+    x′ = match_eltype(GN, ps, st, x)
     y = groupnorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
         GN.groups, GN.activation, GN.epsilon)
     return y, st
@@ -363,7 +363,7 @@ initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
 parameterlength(l::InstanceNorm) = ifelse(_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = __match_eltype(IN, ps, st, x)
+    x′ = match_eltype(IN, ps, st, x)
     y, stats = instancenorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
         st.training, IN.activation, IN.epsilon)
     return y, st
@@ -468,7 +468,7 @@ end
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 function (wn::WeightNorm)(x, ps, st::NamedTuple)
-    y = __match_eltype(wn, ps, st, x)
+    y = match_eltype(wn, ps, st, x)
     _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
     return Lux.apply(wn.layer, y, _merge(_ps, ps.unnormalized), st)
 end
@@ -589,7 +589,7 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = __match_eltype(l, ps, st, x)
+    x′ = match_eltype(l, ps, st, x)
     y = layernorm(x′, _getproperty(ps, Val(:scale)),
         _getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
     return y, st

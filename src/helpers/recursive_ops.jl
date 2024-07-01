@@ -98,7 +98,7 @@ for direct_call in (Number, Val, Nothing)
     @eval @inline recursive_map(f::F, x::$(direct_call), args...) where {F} = f(x, args...)
 end
 @inline function recursive_map(f::F, x::AbstractArray{T}, args...) where {F, T}
-    isbitstype(T) && return f(x, args...)
+    (T <: Number || isbitstype(T)) && return f(x, args...) # Not all Number types (BigFloat) are bitstype
     return f.(x, args...)
 end
 @inline function recursive_map(f::F, x::Tuple, args...) where {F}

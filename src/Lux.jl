@@ -109,6 +109,7 @@ export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss,
 export GenericLossFunction
 
 export f16, f32, f64
+export match_eltype
 
 export transform
 export FromFluxAdaptor, FluxLayer

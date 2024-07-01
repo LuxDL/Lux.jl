@@ -78,6 +78,12 @@ Lux.f32
 Lux.f64
 ```
 
+## Element Type Matching
+
+```@docs
+match_eltype
+```
+
 ## Stateful Layer
 
 ```@docs

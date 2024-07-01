@@ -361,7 +361,7 @@ end
 end
 
 @inline function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
-    y = __match_eltype(d, ps, st, x)
+    y = match_eltype(d, ps, st, x)
     return (
         fused_dense_bias_activation(
             d.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias)))),
@@ -446,11 +446,11 @@ statelength(d::Scale) = 0
 outputsize(d::Scale) = d.dims
 
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    y = __match_eltype(d, ps, st, x)
+    y = match_eltype(d, ps, st, x)
     return @.(d.activation(y .* ps.weight)), st
 end
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
-    y = __match_eltype(d, ps, st, x)
+    y = match_eltype(d, ps, st, x)
     return @.(d.activation(y * ps.weight + ps.bias)), st
 end
 

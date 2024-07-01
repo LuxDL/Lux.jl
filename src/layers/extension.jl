@@ -119,7 +119,7 @@ end
 end
 
 @inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
-    y = __match_eltype(de, ps, st, x)
+    y = match_eltype(de, ps, st, x)
     return (
         __apply_dynamic_expression(
             de, de.expression, de.operator_enum, y, ps.params, get_device(x)),
@@ -184,7 +184,7 @@ end
 Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
 function (l::FluxLayer)(x, ps, st)
-    y = __match_eltype(l, ps, st, x)
+    y = match_eltype(l, ps, st, x)
     return l.re(ps.p)(y), st
 end
 
@@ -237,12 +237,12 @@ end
 @inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 
 @inline function (sc::SimpleChainsLayer{false})(x, ps, st)
-    y = __match_eltype(sc, ps, st, x)
+    y = match_eltype(sc, ps, st, x)
     return __apply_simple_chain(sc.layer, y, ps.params, get_device(x)), st
 end
 
 @inline function (sc::SimpleChainsLayer{true})(x, ps, st)
-    y = __match_eltype(sc, ps, st, x)
+    y = match_eltype(sc, ps, st, x)
     return convert(Array, __apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
 end
 
