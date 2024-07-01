@@ -70,14 +70,15 @@
             model in model_list,
             input in inputs
 
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev
 
-            if mode == "amdgpu" && (model isa Conv || model isa LayerNorm)
-                @test_broken false
+            @inferred model(x, ps, st)
+            @inferred loss_function(model, x, ps, st)
+            if mode == "amdgpu" && (model isa Conv || model isa CrossCor)
+                @test_broken @inferred Zygote.gradient(loss_function, model, x, ps, st)
             else
-                @inferred model(x, ps, st)
-                @inferred loss_function(model, x, ps, st)
                 @inferred Zygote.gradient(loss_function, model, x, ps, st)
             end
         end

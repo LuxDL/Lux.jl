@@ -254,3 +254,44 @@ end
         @test nt.a == 1.0
     end
 end
+
+@testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:others] begin
+    using Functors
+
+    rng = StableRNG(12345)
+
+    c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
+        dense_3=Dense(5 => 1))
+
+    @test_nowarn fmap(println, c)
+
+    l = Dense(2 => 2)
+    new_model = fmap(x -> l, c)
+    @test new_model.layers.chain.layers.dense_1 == l
+    @test new_model.layers.chain.layers.dense_2 == l
+    @test new_model.layers.dense_3 == l
+end
+
+@testitem "Tracing AD: AoS to SoA" setup=[SharedTestSetup] tags=[:autodiff] begin
+    using ReverseDiff, Tracker
+
+    rng = StableRNG(1234)
+
+    x = rand(rng, Float32, 1, 128)
+    nn = Dense(1 => 1)
+    ps, st = Lux.setup(rng, nn)
+
+    x_t = Tracker.TrackedReal.(x)
+    y_t = LuxCore.stateless_apply(nn, x_t, ps)
+    @test y_t isa Tracker.TrackedArray
+
+    y_t = first(nn(x_t, ps, st))
+    @test y_t isa AbstractArray{<:Tracker.TrackedReal}
+
+    x_t = ReverseDiff.TrackedReal.(x, zero(x))
+    y_t = LuxCore.stateless_apply(nn, x_t, ps)
+    @test y_t isa ReverseDiff.TrackedArray
+
+    y_t = first(nn(x_t, ps, st))
+    @test y_t isa AbstractArray{<:ReverseDiff.TrackedReal}
+end

@@ -6,9 +6,6 @@
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
             aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
         models = (
@@ -22,6 +19,7 @@
                 BatchNorm(2), FlattenLayer(), Dense(18 => 1)))
 
         for (X, model) in zip(Xs, models)
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
             # smodel | ForwardDiff.jacobian
@@ -52,8 +50,9 @@
                        (loss_function1, loss_function2, loss_function3, loss_function4)
 
             for loss_fn in loss_fns
-                @test_nowarn loss_fn(model, X, ps, st)
-                @test loss_fn(model, X, ps, st) isa Number
+                l = loss_fn(model, X, ps, st)
+                @test l isa Number
+                @test isfinite(l) && !isnan(l)
 
                 _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
 
@@ -84,9 +83,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
             aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
         models = (
@@ -100,6 +96,7 @@ end
                 BatchNorm(2), FlattenLayer(), Dense(18 => 1)))
 
         for (X, model) in zip(Xs, models)
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model)
             ps = ps |> ComponentArray |> dev
             st = st |> dev
@@ -134,8 +131,9 @@ end
                        (loss_function1, loss_function2, loss_function3, loss_function4)
 
             for loss_fn in loss_fns
-                @test_nowarn loss_fn(model, X, ps, st)
-                @test loss_fn(model, X, ps, st) isa Number
+                l = loss_fn(model, X, ps, st)
+                @test l isa Number
+                @test isfinite(l) && !isnan(l)
 
                 _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
 
@@ -166,9 +164,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         @testset "Structured Matrix: Issue LuxDL/Lux.jl#602" begin
             model = @compact(; potential=Dense(5 => 5, gelu)) do x
                 @return reshape(diag(only(Zygote.jacobian(potential, x))), size(x))
@@ -206,9 +201,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
                 Conv((3, 3), 4 => 1, gelu; pad=SamePad())),
@@ -216,6 +208,7 @@ end
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs)
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
             vjp_input = first(model(X, ps, st))
@@ -278,9 +271,6 @@ end
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         x = rand(rng, 3, 3) |> aType
         v = vec(rand(rng, 3, 3)) |> aType
 

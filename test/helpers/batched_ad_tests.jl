@@ -4,9 +4,6 @@
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
                 Conv((3, 3), 4 => 2, gelu; pad=SamePad()), FlattenLayer(), Dense(18 => 2)),
@@ -84,9 +81,6 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # FIXME: AMDGPU takes too long right now
-        mode === "amdgpu" && continue
-
         models = (
             Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
                 Conv((3, 3), 4 => 2, gelu; pad=SamePad()), FlattenLayer(), Dense(18 => 2)),
@@ -94,6 +88,7 @@ end
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs), backend in (AutoZygote(), AutoForwardDiff())
+            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
             function loss_function_batched(model, x, ps, st)

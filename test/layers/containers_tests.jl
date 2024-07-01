@@ -4,7 +4,8 @@
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "zero sum" begin
-            layer = SkipConnection(WrappedFunction(zero), (a, b) -> a .+ b)
+            layer = SkipConnection(
+                WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)), .+)
             display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
             x = randn(rng, 10, 10, 10, 10) |> aType
@@ -13,7 +14,7 @@
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 reverse_diff_broken=true gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
         end
 
         @testset "concat size" begin
@@ -36,7 +37,9 @@ end
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
         @testset "zero sum" begin
-            layer = Parallel(+, WrappedFunction(zero), NoOpLayer())
+            layer = Parallel(
+                +, WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)),
+                NoOpLayer())
             @test :layer_1 in keys(layer) && :layer_2 in keys(layer)
             display(layer)
             ps, st = Lux.setup(rng, layer) .|> device
@@ -46,7 +49,7 @@ end
 
             @jet layer(x, ps, st)
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 reverse_diff_broken=true gpu_testing=$ongpu
+            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
         end
 
         @testset "concat size" begin
