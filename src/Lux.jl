@@ -52,6 +52,12 @@ include("contrib/contrib.jl")
 # Pretty Printing
 include("layers/display.jl")
 
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
+include("transform/reactant.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -74,11 +80,6 @@ include("helpers/size_propagator.jl")
 # AutoDiff
 include("autodiff/api.jl")
 include("autodiff/autodiff.jl")
-
-# Transform to and from other frameworks
-include("transform/types.jl")
-include("transform/flux.jl")
-include("transform/simplechains.jl")
 
 # Distributed Training
 include("distributed/backend.jl")
@@ -105,6 +106,7 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+export AutoReactant
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,

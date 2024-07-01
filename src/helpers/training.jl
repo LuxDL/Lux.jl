@@ -237,6 +237,10 @@ Perform a single training step. Computes the gradients using [`compute_gradients
 updates the parameters using [`apply_gradients!`](@ref). All backends supported via
 [`compute_gradients`](@ref) are supported here.
 
+## Additional Backends
+
+  - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+
 ## Return
 
 Returned values are the same as [`compute_gradients`](@ref). Note that despite the `!`,
@@ -252,6 +256,10 @@ function single_train_step! end
 Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
 updates the parameters using [`apply_gradients`](@ref). All backends supported via
 [`compute_gradients`](@ref) are supported here.
+
+## Additional Backends
+
+  - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
 
 In most cases you should use [`single_train_step!`](@ref) instead of this function.
 
