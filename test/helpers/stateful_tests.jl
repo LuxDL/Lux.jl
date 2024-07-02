@@ -12,8 +12,6 @@
 
     @test st isa NamedTuple{()}
 
-    @test_deprecated StatefulLuxLayer(model, ps, st)
-
     smodel = StatefulLuxLayer{false}(model, ps, st)
     display(smodel)
     @test smodel(1) isa Any
