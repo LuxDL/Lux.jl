@@ -21,8 +21,7 @@ will see how easy it is to pin-point the problematic layer.
 ```@example manual_debugging
 using Lux, Random
 
-model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)),
-    BatchNorm(1); disable_optimizations=true)
+model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)), BatchNorm(1))
 
 model_debug = Lux.Experimental.@debug_mode model
 ```
@@ -63,12 +62,12 @@ model = Chain(Dense(1 => 16, relu),
         Dense(16 => 3),  # [!code --]
         Dense(16 => 1),  # [!code ++]
         Dense(1 => 1)),
-    BatchNorm(1); disable_optimizations=true)
+    BatchNorm(1))
 ```
 
 ```@example manual_debugging
 model_fixed = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
-    BatchNorm(1); disable_optimizations=true)
+    BatchNorm(1))
 
 ps, st = Lux.setup(rng, model_fixed)
 
@@ -88,7 +87,7 @@ debug model. (or even disable it by setting it to `:none`)
 
 ```@example manual_debugging
 model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
-    BatchNorm(1); disable_optimizations=true)
+    BatchNorm(1))
 
 ps, st = Lux.setup(rng, model)
 
@@ -131,8 +130,7 @@ offending_layer(x) = 2 .* x
 ```
 
 ```@example manual_debugging
-model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), offending_layer),
-    BatchNorm(1); disable_optimizations=true)
+model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), offending_layer), BatchNorm(1))
 
 ps, st = Lux.setup(rng, model)
 

@@ -332,7 +332,7 @@ end
 
         @test_throws ArgumentError Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
-            d21=Dense(2 => 1), d2=Dense(2 => 1), disable_optimizations=false)
+            d21=Dense(2 => 1), d2=Dense(2 => 1))
 
         @testset "indexing and field access" begin
             encoder = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh))

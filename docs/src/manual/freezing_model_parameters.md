@@ -17,8 +17,7 @@ using Lux, Functors, Random
 
 rng = Xoshiro(0)
 
-model = Chain(Dense(3, 4), Chain(Dense(4, 4), Dropout(0.5f0), BatchNorm(4)),
-    Dense(4, 1); disable_optimizations=true)
+model = Chain(Dense(3, 4), Chain(Dense(4, 4), Dropout(0.5f0), BatchNorm(4)), Dense(4, 1))
 
 ps, st = Lux.setup(rng, model)
 

@@ -218,7 +218,7 @@ struct NoOpLayer <: AbstractExplicitLayer end
 
 """
     WrappedFunction{DC}(f)
-    WrappedFunction(f) -> WrappedFunction{:direct_call}(f)
+    WrappedFunction(f) -> WrappedFunction{:runtime_check}(f)
 
 Wraps a stateless and parameter less function. Might be used when a function is added to
 `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
@@ -229,8 +229,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 
   - `DC`: If `:runtime_check`, then we check if the function can be called with the input
     `x`, `ps`, and `st` using `hasmethod`. If `:direct_call`, we call `f(x)` directly.
-    For all other values, we call `f(x, ps, st)` which must return a tuple. **(In future
-    versions, we will default to `:runtime_check`)**
+    For all other values, we call `f(x, ps, st)` which must return a tuple.
   - `f`: Some function.
 
 ## Inputs
@@ -252,14 +251,7 @@ function WrappedFunction{call_mode}(f::F) where {call_mode, F}
     return WrappedFunction(static(call_mode), f)
 end
 
-function WrappedFunction(f::F) where {F}
-    # Not a depwarn but helpful to call this
-    Base.depwarn("The current default of `:direct_call` will be replaced with \
-                  `:runtime_check` from v1). Please make sure that the assumptions of \
-                  this function are correct or specify `WrappedFunction{:direct_call}(f)`",
-        :WrappedFunction)
-    return WrappedFunction{:direct_call}(f)
-end
+WrappedFunction(f::F) where {F} = WrappedFunction{:runtime_check}(f)
 
 function (wf::WrappedFunction{:direct_call})(x, ps, st::NamedTuple)
     return wrapped_function_call(wf.func, x, ps, st, True())
