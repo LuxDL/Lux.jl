@@ -57,9 +57,6 @@ end
 
 function __from_flux_adaptor end
 
-Base.@deprecate transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=false) adapt(
-    FromFluxAdaptor(preserve_ps_st, force_preserve), l)
-
 @inline function _maybe_flip_conv_weight(x::AbstractArray)
     return _maybe_flip_conv_weight(x, get_device_type(x))
 end
