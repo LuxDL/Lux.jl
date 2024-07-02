@@ -23,3 +23,11 @@ end
         return NamedTuple{keys(x)}(map((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u))
     return fmap((xᵢ, uᵢ) -> Lux.__dualify(Tag, T, xᵢ, uᵢ), x, u)
 end
+
+@inline Lux.__eltype(::ForwardDiff.Dual{T, V}) where {T, V} = V
+@inline Lux.__eltype(::AbstractArray{<:ForwardDiff.Dual{T, V}}) where {T, V} = V
+
+@inline function Lux.__convert_eltype(
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, V, N}}) where {Tag, T, V, N}
+    return ForwardDiff.Dual{Tag, T, N}.(x)
+end

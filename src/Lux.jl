@@ -17,7 +17,7 @@ using GPUArraysCore: GPUArraysCore
 using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
-using Preferences: @load_preference
+using Preferences: load_preference, has_preference
 using Random: Random, AbstractRNG
 using Reexport: @reexport
 using Statistics: mean
@@ -35,10 +35,11 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 
 @inline _is_extension_loaded(::Val) = false
 
-const DISABLE_AUTOMATIC_NESTED_AD_SWITCH = @load_preference("DisableAutomaticNestedADSwitching",
-    false)
+# Preferences
+include("preferences.jl")
 
 # Utilities
+include("custom_errors.jl")
 include("utils.jl")
 
 # Layer Implementations
@@ -63,6 +64,7 @@ include("helpers/autodiff.jl")
 include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
+include("helpers/match_eltype.jl")
 
 # AutoDiff
 include("chainrules.jl")
@@ -107,6 +109,7 @@ export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss,
 export GenericLossFunction
 
 export f16, f32, f64
+export match_eltype
 
 export transform
 export FromFluxAdaptor, FluxLayer

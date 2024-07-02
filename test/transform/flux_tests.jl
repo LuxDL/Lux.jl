@@ -325,8 +325,6 @@
         end
 
         @testset "Recurrent" begin
-            # @test_throws Lux.FluxModelConversionError transform(Flux.RNN(2 => 2))
-
             @testset "RNNCell" begin
                 model = Flux.RNNCell(2 => 3) |> fdev(dev)
                 x = rand(Float32, 2, 4) |> aType
@@ -336,7 +334,7 @@
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
 
-                @test_throws Lux.FluxModelConversionError toluxforce(model)
+                @test_throws Lux.FluxModelConversionException toluxforce(model)
 
                 model_lux = toluxpsst(model)
                 ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
@@ -353,7 +351,7 @@
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
 
-                @test_throws Lux.FluxModelConversionError toluxforce(model)
+                @test_throws Lux.FluxModelConversionException toluxforce(model)
 
                 model_lux = toluxpsst(model)
                 ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
@@ -370,7 +368,7 @@
 
                 @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
 
-                @test_throws Lux.FluxModelConversionError toluxforce(model)
+                @test_throws Lux.FluxModelConversionException toluxforce(model)
 
                 model_lux = toluxpsst(model)
                 ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
@@ -512,7 +510,7 @@
             accum(h, x) = (h + x, x)
             rnn = Flux.Recur(accum, 0)
 
-            @test_throws Lux.FluxModelConversionError tolux(rnn)
+            @test_throws Lux.FluxModelConversionException tolux(rnn)
         end
     end
 end

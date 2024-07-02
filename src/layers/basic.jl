@@ -356,15 +356,16 @@ outputsize(d::Dense) = (d.out_dims,)
     return vec(first(d(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
-    return (
-        fused_dense_bias_activation(
-            d.activation, ps.weight, x, _vec(_getproperty(ps, Val(:bias)))),
-        st)
-end
-
 @inline function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(first(d(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
+end
+
+@inline function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
+    y = match_eltype(d, ps, st, x)
+    return (
+        fused_dense_bias_activation(
+            d.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias)))),
+        st)
 end
 
 """
@@ -445,10 +446,12 @@ statelength(d::Scale) = 0
 outputsize(d::Scale) = d.dims
 
 function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
-    return @.(d.activation(x .* ps.weight)), st
+    y = match_eltype(d, ps, st, x)
+    return @.(d.activation(y .* ps.weight)), st
 end
 function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
-    return @.(d.activation(x * ps.weight + ps.bias)), st
+    y = match_eltype(d, ps, st, x)
+    return @.(d.activation(y * ps.weight + ps.bias)), st
 end
 
 """
@@ -719,7 +722,7 @@ Lux.initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k=2 ./ p.periods,)
 end
 
 @inline function (p::PeriodicEmbedding)(x::AbstractMatrix, ps, st::NamedTuple)
-    other_idxs = ChainRulesCore.@ignore_derivatives setdiff(axes(x, 1), p.idxs)
+    other_idxs = CRC.@ignore_derivatives setdiff(axes(x, 1), p.idxs)
     return (
         vcat(x[other_idxs, :], sinpi.(st.k .* x[p.idxs, :]), cospi.(st.k .* x[p.idxs, :])),
         st)

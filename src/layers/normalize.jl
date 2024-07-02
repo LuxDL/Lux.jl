@@ -134,7 +134,8 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         end
     end
 
-    y, stats = batchnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+    x′ = match_eltype(BN, ps, st, x)
+    y, stats = batchnorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
         _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var)),
         st.training, BN.activation, BN.momentum, BN.epsilon)
     return y, __update_bn_state(BN, st, stats)
@@ -248,7 +249,8 @@ end
 parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = groupnorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+    x′ = match_eltype(GN, ps, st, x)
+    y = groupnorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
         GN.groups, GN.activation, GN.epsilon)
     return y, st
 end
@@ -285,7 +287,7 @@ accordingly.
     `NNlib.fast_act(activation)`
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
-    
+
       + `init_bias`: Controls how the `bias` is initialized
       + `init_scale`: Controls how the `scale` is initialized
 
@@ -301,7 +303,7 @@ accordingly.
 ## Parameters
 
   - `affine=true`
-    
+
       + `bias`: Bias of shape `(chs,)`
       + `scale`: Scale of shape `(chs,)`
 
@@ -361,7 +363,8 @@ initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
 parameterlength(l::InstanceNorm) = ifelse(_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y, stats = instancenorm(x, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
+    x′ = match_eltype(IN, ps, st, x)
+    y, stats = instancenorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
         st.training, IN.activation, IN.epsilon)
     return y, st
 end
@@ -465,8 +468,9 @@ end
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 function (wn::WeightNorm)(x, ps, st::NamedTuple)
+    y = match_eltype(wn, ps, st, x)
     _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
-    return Lux.apply(wn.layer, x, _merge(_ps, ps.unnormalized), st)
+    return Lux.apply(wn.layer, y, _merge(_ps, ps.unnormalized), st)
 end
 
 @inbounds @generated function _get_normalized_parameters(
@@ -585,7 +589,8 @@ function initialparameters(rng::AbstractRNG, ln::LayerNorm)
 end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    y = layernorm(x, _getproperty(ps, Val(:scale)),
+    x′ = match_eltype(l, ps, st, x)
+    y = layernorm(x′, _getproperty(ps, Val(:scale)),
         _getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
     return y, st
 end

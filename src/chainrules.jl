@@ -14,6 +14,7 @@ CRC.@non_differentiable __set_refval!(::Any...)
 CRC.@non_differentiable __state_if_stateful(::Any)
 CRC.@non_differentiable __set_state!(::Any...)
 CRC.@non_differentiable __update_bn_state(::Any...)
+CRC.@non_differentiable __warn_mismatch(::Any...)
 
 # Utilities
 function CRC.rrule(::typeof(_eachslice), x, d::Val)

@@ -373,3 +373,5 @@ end
 @inline __add!!(::Nothing, ::Nothing) = nothing
 
 @inline __set_refval!(x, y) = (x[] = y)
+
+@inline __eltype(x) = eltype(x)

@@ -1,4 +1,4 @@
-using ReTestItems, Pkg, Test
+using ReTestItems, Pkg, Preferences, Test
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
@@ -36,10 +36,10 @@ using Lux
 @testset "Load Tests" begin
     @testset "Load Packages Tests" begin
         @test_throws ErrorException FromFluxAdaptor()(1)
-        showerror(stdout, Lux.FluxModelConversionError("cannot convert"))
+        showerror(stdout, Lux.FluxModelConversionException("cannot convert"))
 
         @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
-        showerror(stdout, Lux.SimpleChainsModelConversionError(Dense(2 => 2)))
+        showerror(stdout, Lux.SimpleChainsModelConversionException(Dense(2 => 2)))
 
         @test_throws ErrorException vector_jacobian_product(
             x -> x, AutoZygote(), rand(2), rand(2))
@@ -74,6 +74,7 @@ end
 
 @testset "ReTestItem Tests" begin
     for (i, tag) in enumerate(LUX_TEST_GROUP)
+        (tag == "distributed" || tag == "eltype_match") && continue
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
         if tag == "all"
             ReTestItems.runtests(@__DIR__)
@@ -120,5 +121,16 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
                 end
             end
         end
+    end
+end
+
+# Eltype Matching Tests
+if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
+    @testset "eltype_mismath_handling: $option" for option in (
+        "none", "warn", "convert", "error")
+        set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
+        run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+            --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
+        Test.@test true
     end
 end

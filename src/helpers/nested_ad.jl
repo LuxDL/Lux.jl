@@ -55,10 +55,9 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_gradient_call),
         grad_fn::G, f::F, x, y) where {G, F}
     # Check if we can use the faster implementation
-    if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-        if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+    if !(Lux._is_extension_loaded(Val(:ForwardDiff)) && AUTOMATIC_NESTED_AD_SWITCHING)
+        AUTOMATIC_NESTED_AD_SWITCHING &&
             @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
-        end
         # Use the AD itself for whatever reason
         return CRC.rrule_via_ad(
             cfg, __internal_ad_gradient_call_no_custom_rrule, grad_fn, f, x, y)
@@ -87,10 +86,9 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pullback_call),
         pullback_fn::P, f::F, x, y, u) where {P, F}
     # Check if we can use the faster implementation
-    if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-        if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+    if !(Lux._is_extension_loaded(Val(:ForwardDiff)) && AUTOMATIC_NESTED_AD_SWITCHING)
+        AUTOMATIC_NESTED_AD_SWITCHING &&
             @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
-        end
         # Use the AD itself for whatever reason
         return CRC.rrule_via_ad(
             cfg, __internal_ad_pullback_call_no_custom_rrule, pullback_fn, f, x, y, u)
@@ -132,10 +130,9 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jacobian_call),
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
     # Check if we can use the faster implementation
-    if !Lux._is_extension_loaded(Val(:ForwardDiff)) || DISABLE_AUTOMATIC_NESTED_AD_SWITCH
-        if !DISABLE_AUTOMATIC_NESTED_AD_SWITCH
+    if !(Lux._is_extension_loaded(Val(:ForwardDiff)) && AUTOMATIC_NESTED_AD_SWITCHING)
+        AUTOMATIC_NESTED_AD_SWITCHING &&
             @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
-        end
         # Use the AD itself for whatever reason
         return CRC.rrule_via_ad(
             cfg, __internal_ad_jacobian_call_no_custom_rrule, jac_fn, grad_fn, f, x, y)

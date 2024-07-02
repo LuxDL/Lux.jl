@@ -4,7 +4,7 @@ using ADTypes: ADTypes, AutoReverseDiff
 using ArrayInterface: ArrayInterface
 using Lux: Lux, LuxCPUDevice
 using Lux.Experimental: TrainingBackendCache, TrainState
-using ReverseDiff: ReverseDiff, TrackedArray, @grad_from_chainrules
+using ReverseDiff: ReverseDiff, TrackedArray, TrackedReal, @grad_from_chainrules
 
 # AoS to SoA conversion
 function Lux.apply(
@@ -21,6 +21,16 @@ end
 
 ## Prevent an infinite loop
 Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
+
+@inline Lux.__eltype(::TrackedArray{T}) where {T} = T
+@inline Lux.__eltype(::TrackedReal{T}) where {T} = T
+@inline Lux.__eltype(::AbstractArray{<:TrackedReal{T}}) where {T} = T
+
+@inline function Lux.__convert_eltype(::Type{T}, x::AbstractArray{<:TrackedReal}) where {T}
+    @warn "`Lux.__convert_eltype` doesn't support converting element types of ReverseDiff \
+           `TrackedReal` arrays. Currently this is a no-op." maxlog=1
+    return x
+end
 
 include("rules.jl")
 include("training.jl")

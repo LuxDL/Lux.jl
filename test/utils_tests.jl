@@ -198,7 +198,7 @@ end
 end
 
 @testitem "Recursive Utils" tags=[:others] begin
-    using Functors
+    using Functors, Tracker, ReverseDiff, ForwardDiff
 
     struct functorABC{A, B}
         a::A
@@ -225,6 +225,20 @@ end
         @test Lux.recursive_eltype(randn(3, 2)) == Float64
         @test Lux.recursive_eltype(nothing) == Bool
         @test Lux.recursive_eltype(3.0) == Float64
+
+        @testset "AD wrappers" begin
+            x = randn(3, 2)
+            @test Lux.recursive_eltype(x, Val(true)) == Float64
+
+            x_wrapped = (ForwardDiff.Dual.(x), ForwardDiff.Dual(2.0), ReverseDiff.track.(x),
+                ReverseDiff.track(2.0), ReverseDiff.track(x),
+                Tracker.param.(x), Tracker.param(x), Tracker.param(2.0))
+
+            for x in x_wrapped
+                @test Lux.recursive_eltype(x, Val(true)) == Float64
+                @test Lux.recursive_eltype(x, Val(false)) == eltype(x)
+            end
+        end
     end
 
     @testset "recursive_make_zero" begin

@@ -1,4 +1,4 @@
-# Debugging Lux Models
+# [Debugging Lux Models](@id debug-lux-layers)
 
 Debugging DNNs can be very painful. Especially with the gigantic stacktraces for Lux, it is
 even harder to pin-point to which particular layer errored out. This page describes some

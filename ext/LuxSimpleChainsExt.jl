@@ -3,7 +3,7 @@ module LuxSimpleChainsExt
 using ArgCheck: @argcheck
 using Lux
 using SimpleChains: SimpleChains
-using Lux: SimpleChainsModelConversionError, __to_simplechains_adaptor,
+using Lux: SimpleChainsModelConversionException, __to_simplechains_adaptor,
            __fix_input_dims_simplechain
 using Random: AbstractRNG
 
@@ -39,21 +39,21 @@ function Lux.__to_simplechains_adaptor(layer::Conv)
         return SimpleChains.Conv(__equivalent_simplechains_fn(layer.activation),
             layer.kernel_size, layer.out_chs)
     end
-    throw(SimpleChainsModelConversionError("Conv with non-standard parameters not \
-                                            supported."))
+    throw(SimpleChainsModelConversionException("Conv with non-standard parameters not \
+                                                supported."))
 end
 
 function Lux.__to_simplechains_adaptor(layer::Dropout)
     layer.dims isa Colon && return SimpleChains.Dropout(layer.p)
-    throw(SimpleChainsModelConversionError("Dropout with non-standard parameters not \
-                                            supported."))
+    throw(SimpleChainsModelConversionException("Dropout with non-standard parameters not \
+                                                supported."))
 end
 
 function Lux.__to_simplechains_adaptor(layer::FlattenLayer)
     if layer.N === nothing
-        throw(SimpleChainsModelConversionError("`FlattenLayer(nothing)` not supported. For \
-                                                `SimpleChains.Flatten` you must use \
-                                                `FlattenLayer(N::Int)`"))
+        throw(SimpleChainsModelConversionException("`FlattenLayer(nothing)` not supported. \
+                                                    For `SimpleChains.Flatten` you must \
+                                                    use `FlattenLayer(N::Int)`"))
     end
     return SimpleChains.Flatten(layer.N)
 end
@@ -62,11 +62,11 @@ function Lux.__to_simplechains_adaptor(layer::MaxPool)
     if layer.stride == layer.k && (!(layer.pad isa SamePad) && all(==(0), layer.pad))
         return SimpleChains.MaxPool(layer.k)
     end
-    throw(SimpleChainsModelConversionError("MaxPool with non-standard parameters not \
-                                            supported."))
+    throw(SimpleChainsModelConversionException("MaxPool with non-standard parameters not \
+                                                supported."))
 end
 
-Lux.__to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionError(layer))
+Lux.__to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionException(layer))
 
 function Lux.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
     return (; params=Array(SimpleChains.init_params(layer.layer; rng)))

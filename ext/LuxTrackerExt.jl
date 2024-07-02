@@ -6,7 +6,7 @@ using ChainRulesCore: ChainRulesCore
 using Lux: Lux, LuxCPUDevice
 using Lux.Experimental: TrainingBackendCache, TrainState
 using LuxCore: LuxCore
-using Tracker: Tracker, TrackedArray, @grad_from_chainrules
+using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
 
 const CRC = ChainRulesCore
 
@@ -48,8 +48,7 @@ function Lux.Experimental.compute_gradients(
 end
 
 # AoS to SoA conversion
-function Lux.apply(
-        m::Lux.AbstractExplicitLayer, x::AbstractArray{<:Tracker.TrackedReal}, ps, st)
+function Lux.apply(m::Lux.AbstractExplicitLayer, x::AbstractArray{<:TrackedReal}, ps, st)
     @warn "Lux.apply(m::Lux.AbstractExplicitLayer, \
            x::AbstractArray{<:Tracker.TrackedReal}, ps, st) input was corrected to \
            Lux.apply(m::Lux.AbstractExplicitLayer, x::Tracker.TrackedArray}, ps, st).\n\n\
@@ -61,6 +60,10 @@ end
 
 ## Prevent an infinite loop
 Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
+
+@inline Lux.__eltype(::TrackedArray{T}) where {T} = T
+@inline Lux.__eltype(::TrackedReal{T}) where {T} = T
+@inline Lux.__eltype(::AbstractArray{<:TrackedReal{T}}) where {T} = T
 
 # SimpleChains.jl: DON'T REPLACE THESE WITH @grad_from_chainrules
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)

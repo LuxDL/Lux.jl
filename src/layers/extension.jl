@@ -119,9 +119,10 @@ end
 end
 
 @inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
+    y = match_eltype(de, ps, st, x)
     return (
         __apply_dynamic_expression(
-            de, de.expression, de.operator_enum, x, ps.params, get_device(x)),
+            de, de.expression, de.operator_enum, y, ps.params, get_device(x)),
         st)
 end
 
@@ -182,7 +183,10 @@ end
 
 Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
-(l::FluxLayer)(x, ps, st) = l.re(ps.p)(x), st
+function (l::FluxLayer)(x, ps, st)
+    y = match_eltype(l, ps, st, x)
+    return l.re(ps.p)(y), st
+end
 
 Base.show(io::IO, ::MIME"text/plain", l::FluxLayer) = print(io, "FluxLayer($(l.layer))")
 
@@ -233,11 +237,13 @@ end
 @inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 
 @inline function (sc::SimpleChainsLayer{false})(x, ps, st)
-    return __apply_simple_chain(sc.layer, x, ps.params, get_device(x)), st
+    y = match_eltype(sc, ps, st, x)
+    return __apply_simple_chain(sc.layer, y, ps.params, get_device(x)), st
 end
 
 @inline function (sc::SimpleChainsLayer{true})(x, ps, st)
-    return convert(Array, __apply_simple_chain(sc.layer, x, ps.params, get_device(x))), st
+    y = match_eltype(sc, ps, st, x)
+    return convert(Array, __apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
 end
 
 @inline __apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
