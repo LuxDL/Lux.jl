@@ -26,6 +26,12 @@ Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
 @inline Lux.__eltype(::TrackedReal{T}) where {T} = T
 @inline Lux.__eltype(::AbstractArray{<:TrackedReal{T}}) where {T} = T
 
+@inline function Lux.__convert_eltype(::Type{T}, x::AbstractArray{<:TrackedReal}) where {T}
+    @warn "`Lux.__convert_eltype` doesn't support converting element types of ReverseDiff \
+           `TrackedReal` arrays. Currently this is a no-op." maxlog=1
+    return x
+end
+
 include("rules.jl")
 include("training.jl")
 

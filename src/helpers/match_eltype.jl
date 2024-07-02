@@ -69,14 +69,13 @@ for (T1, T2) in ((:Float64, :Integer), (:Float32, :Float64), (:Float32, :Integer
     error_msg = "Layer with `$(T1)` parameters and states received `$(T2)` input. This is \
                  not allowed because the preference `eltype_mismatch_handling` is set to \
                  `\"error\"`. To debug further, use `Lux.Experimental.@debug_mode`."
-    @eval function match_eltype(layer, t1::Type{<:$(T1)}, ::Type{<:$(T2)},
-            x::AbstractArray{<:Union{AbstractFloat, Integer}})
+    @eval function match_eltype(layer, t1::Type{<:$(T1)}, ::Type{<:$(T2)}, x::AbstractArray)
         @static if ELTYPE_MISMATCH_HANDLING == "warn"
-            @warn $(warn_msg) layer summary(x) maxlog=1
+            __warn_mismatch(layer, x, $(warn_msg))
             return x
         elseif ELTYPE_MISMATCH_HANDLING == "convert"
-            @warn $(convert_msg) layer summary(x) maxlog=1
-            return convert(AbstractArray{$(T1)}, x)
+            __warn_mismatch(layer, x, $(convert_msg))
+            return __convert_eltype($(T1), x)
         elseif ELTYPE_MISMATCH_HANDLING == "error"
             throw(EltypeMismatchException($(error_msg)))
         end
@@ -84,3 +83,9 @@ for (T1, T2) in ((:Float64, :Integer), (:Float32, :Float64), (:Float32, :Integer
 end
 
 @inline match_eltype(_, ::Type, ::Type, x::AbstractArray) = x
+
+@inline __convert_eltype(::Type{T}, x::AbstractArray) where {T} = broadcast(T, x)
+
+function __warn_mismatch(layer, x, warn_msg)
+    @warn warn_msg layer summary(x) maxlog=1
+end

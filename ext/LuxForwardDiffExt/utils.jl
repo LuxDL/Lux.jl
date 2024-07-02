@@ -26,3 +26,8 @@ end
 
 @inline Lux.__eltype(::ForwardDiff.Dual{T, V}) where {T, V} = V
 @inline Lux.__eltype(::AbstractArray{<:ForwardDiff.Dual{T, V}}) where {T, V} = V
+
+@inline function Lux.__convert_eltype(
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, V, N}}) where {Tag, T, V, N}
+    return ForwardDiff.Dual{Tag, T, N}.(x)
+end
