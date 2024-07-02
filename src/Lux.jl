@@ -84,12 +84,7 @@ include("transform/simplechains.jl")
 include("distributed/backend.jl")
 include("distributed/public_api.jl")
 
-# Deprecations
-include("deprecated.jl")
-
 # Layers
-export cpu, gpu  # deprecated
-
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale, PeriodicEmbedding
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,

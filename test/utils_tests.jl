@@ -31,17 +31,6 @@ end
     @test eltype(ComponentArray(Any[:a, 1], (FlatAxis(),))) == Any
 end
 
-@testitem "Deprecations" tags=[:others] begin
-    using Functors
-
-    model = NoOpLayer()
-    @test_deprecated Lux.Experimental.StatefulLuxLayer(model, (;), (;))
-
-    @test_deprecated Lux.Experimental.DebugLayer(model; location="model")
-    dmodel = Lux.Experimental.DebugLayer(model; location="model")
-    @test dmodel.location == KeyPath(:model)
-end
-
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
     rng = StableRNG(12345)
 
