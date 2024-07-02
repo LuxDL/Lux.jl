@@ -2,8 +2,8 @@
     @layer_map func layer ps st
 
 See the documentation of [`Lux.Experimental.layer_map`](@ref) for more details. This macro
-eliminates the need to the set the layer name, and uses the variable name as the starting
-point.
+eliminates the need to the set the layer name, and uses the variable name of layer as the
+starting point.
 
 ## Example
 
@@ -28,9 +28,9 @@ julia> # Makes parameters of Dense Layers inside Chain zero
        end;
 
 julia> _, ps_new, _ = Lux.Experimental.@layer_map zero_dense_params c ps st;
-zeroing params of c.layers.chain.layers.dense_1
-zeroing params of c.layers.chain.layers.dense_2
-zeroing params of c.layers.dense_3
+zeroing params of KeyPath(:c, :layers, :chain, :layers, :dense_1)
+zeroing params of KeyPath(:c, :layers, :chain, :layers, :dense_2)
+zeroing params of KeyPath(:c, :layers, :dense_3)
 
 julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
                     ps_new.chain.dense_2.weight, ps_new.chain.dense_2.bias,
@@ -39,14 +39,14 @@ true
 ```
 """
 macro layer_map(f, l, ps, st)
-    return quote
-        layer_map($(esc(f)), $(esc(l)), $(esc(ps)), $(esc(st)), $(string(l)))
+    quote
+        layer_map($(esc(f)), $(esc(l)), $(esc(ps)), $(esc(st)), $(Meta.quot(l)))
     end
 end
 
 @doc doc"""
     layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
-              name::String="model")
+              name::Symbol=:model)
 
 Map the function `f` over the model `l`, with the parameters `ps` and states `st`. This is
 different from `Functors.fmap` since it zips the layers, parameters, and states and invokes
@@ -55,7 +55,7 @@ the function on all of them together.
 ## Call Signature for `f`
 
   - Must take 4 inputs -- `AbstractExplicitLayer`, Corresponding Parameters, Corresponding
-    States, and the name of the layer.
+    States, and the `Functors.KeyPath` to the layer.
   - Must return a tuple of 3 elements -- `AbstractExplicitLayer`, new parameters and the new
     states.
 
@@ -64,19 +64,12 @@ the function on all of them together.
     We recommend using the macro `Lux.Experimental.@layer_map` instead of this function. It
     automatically sets the `name` of the layer to be the variable name.
 
-!!! danger "Deprecation Notice"
-
-    Starting `v1`, instead of the name of the layer, we will provide the [KeyPath to the
-    layer](https://fluxml.ai/Functors.jl/stable/api/#KeyPath). The current version of
-    providing a String has been deprecated.
-
 # Extended Help
 
 ## Example
 
 ```jldoctest
 julia> using Lux, Random
-
 
 julia> c = Parallel(
            +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
@@ -96,9 +89,9 @@ julia> # Makes parameters of Dense Layers inside Chain zero
        end;
 
 julia> _, ps_new, _ = Lux.Experimental.layer_map(zero_dense_params, c, ps, st);
-zeroing params of model.layers.chain.layers.dense_1
-zeroing params of model.layers.chain.layers.dense_2
-zeroing params of model.layers.dense_3
+zeroing params of KeyPath(:model, :layers, :chain, :layers, :dense_1)
+zeroing params of KeyPath(:model, :layers, :chain, :layers, :dense_2)
+zeroing params of KeyPath(:model, :layers, :dense_3)
 
 julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
                     ps_new.chain.dense_2.weight, ps_new.chain.dense_2.bias,
@@ -106,15 +99,10 @@ julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
 true
 ```
 """
-function layer_map(f::F, l, ps, st, name::String="model") where {F <: Function}
-    # TODO: In v1 deprecate passing the string
-    f_wrapper = @closure (kp, layer, ps_, st_) -> f(
-        layer, ps_, st_, __keypath_to_string(name, kp))
+function layer_map(f::F, l, ps, st, name::Symbol=:model) where {F <: Function}
+    f_wrapper = @closure (kp, layer, ps_, st_) -> f(layer, ps_, st_, KeyPath(name, kp))
     return fmap_with_path(f_wrapper, l, ps, st; walk=LayerWalkWithPath())
 end
-
-__keypath_to_string(kp::KeyPath) = join(kp.keys, ".")
-__keypath_to_string(str::String, kp::KeyPath) = "$(str).$(__keypath_to_string(kp))"
 
 struct LayerWalkWithPath <: Functors.AbstractWalk end
 

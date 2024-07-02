@@ -16,11 +16,6 @@ Pages = ["contrib.md"]
 
 ## Parameter Freezing
 
-!!! info
-
-    In the long term, this will be supported via
-    [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
-
 ```@docs
 Lux.Experimental.FrozenLayer
 Lux.Experimental.freeze
@@ -32,8 +27,8 @@ For detailed usage example look at the [manual page](@ref freezing-model-paramet
 ## Map over Layer
 
 ```@docs
-Lux.Experimental.layer_map
 Lux.Experimental.@layer_map
+Lux.Experimental.layer_map
 ```
 
 ## Debugging Functionality
