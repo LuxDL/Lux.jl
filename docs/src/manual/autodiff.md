@@ -44,7 +44,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
        option for GPU for the time-being. We are working on supporting `Enzyme.jl` for
        GPU as well.
 
-### Support Class
+## Support Class
 
   1. **Tier I**: These packages are fully supported and have been tested extensively. Often
      have special rules to enhance performance. Issues for these backends take the highest
@@ -56,4 +56,4 @@ Lux. Additionally, we provide some convenience functions for working with AD.
   3. **Tier III**: We don't know if these packages currently work with Lux. We'd love to
      add tests for these backends, but currently these are not our priority.
 
-### Footnotes
+## Footnotes
