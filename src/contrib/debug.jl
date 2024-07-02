@@ -50,19 +50,9 @@ See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
     location::KeyPath
 end
 
-function DebugLayer(layer::AbstractExplicitLayer;
-        nan_check::Union{Symbol, StaticSymbol, Val}=static(:both),
-        error_check::Union{StaticBool, Bool, Val{true}, Val{false}}=True(),
-        location::Union{KeyPath, String}=KeyPath())
+function DebugLayer(layer::AbstractExplicitLayer; nan_check::SymbolType=static(:both),
+        error_check::BoolType=True(), location::KeyPath=KeyPath())
     @argcheck dynamic(nan_check) in (:both, :forward, :backward, :none)
-
-    if location isa String
-        Base.depwarn(
-            "Using a String for location in DebugLayer is deprecated. Use \
-            `Functors.KeyPath` instead.", :DebugLayer)
-        location = KeyPath(Symbol.(split(location, "."))...)
-    end
-
     return DebugLayer(static(nan_check), static(error_check), layer, location)
 end
 
