@@ -180,7 +180,7 @@ export default defineConfig({
                     { text: 'Migrating from Flux', link: '/manual/migrate_from_flux' },
                     { text: 'Initializing Weights', link: '/manual/weight_initializers' },
                     { text: 'Distributed Training', link: '/manual/distributed_utils' },
-                    { text: 'Nested AD', link: '/manual/nested_autodiff' },
+                    { text: 'Nested AutoDiff', link: '/manual/nested_autodiff' },
                     { text: 'Preferences', link: '/manual/preferences' },
                     { text: 'Performance Pitfalls', link: '/manual/performance_pitfalls' },
                     { text: 'Lux In GPU Kernels', link: '/manual/nn_inside_gpu_kernels' },]
