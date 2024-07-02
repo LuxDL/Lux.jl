@@ -31,10 +31,12 @@ docs/src/tutorials/intermediate
 docs/src/tutorials/advanced
 *.log
 
-bench/benchmark_results.json
-benchmark
+benchmark/benchmark_results.json
+benchmark/old
+benchmark/trial
 *.cov
 
 jl_*
 LocalPreferences.toml
 data/
+
