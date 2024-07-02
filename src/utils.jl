@@ -17,7 +17,7 @@ const CRC = ChainRulesCore
 
 const BoolType = Union{StaticBool, Bool, Val{true}, Val{false}}
 const IntegerType = Union{Integer, StaticInteger}
-const SymbolType = Union{Symbol, StaticSymbol}
+const SymbolType = Union{Symbol, StaticSymbol, Val}
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)

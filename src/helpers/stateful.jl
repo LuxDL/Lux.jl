@@ -1,6 +1,5 @@
 """
-    StatefulLuxLayer(model, ps, st; st_fixed_type = Val(true))  # deprecated
-    StatefulLuxLayer{ST}(model, ps, st)
+    StatefulLuxLayer{FT}(model, ps, st)
 
 !!! warning
 
@@ -18,19 +17,19 @@ This is meant to be used in internal implementation of layers.
   - Facilitates Nested AD support in Lux. For more details on this feature, see the
     [Nested AD Manual Page](@ref nested_autodiff).
 
+## Static Parameters
+
+  - If `FT = true` then the type of the `state` is fixed, i.e.,
+    `typeof(last(model(x, ps, st))) == st`.
+  - If `FT = false` then type of the state might change. Note that while this works in all
+    cases, it will introduce type instability.
+
 ## Arguments
 
   - `model`: A Lux layer
   - `ps`: The parameters of the layer. This can be set to `nothing`, if the user provides
     the parameters on function call
   - `st`: The state of the layer
-
-## Keyword Arguments
-
-  - `st_fixed_type`: If `Val(true)`, then the type of the `state` is fixed, i.e.,
-    `typeof(last(model(x, ps, st))) == st`. If this is not the case, then `st_fixed_type`
-    must be set to `Val(false)`. If `st_fixed_type` is set to `Val(false)`, then type
-    stability is not guaranteed.
 
 ## Inputs
 
@@ -59,15 +58,6 @@ function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
     return StatefulLuxLayer(model, ps, st, st_any, static(ST))
 end
 
-function StatefulLuxLayer(model::AbstractExplicitLayer, st::NamedTuple; kwargs...)
-    return StatefulLuxLayer(model, nothing, st; kwargs...)
-end
-function StatefulLuxLayer(model::AbstractExplicitLayer, ps, st::NamedTuple;
-        st_fixed_type::Val{ST}=Val(true)) where {ST}
-    Base.depwarn("`st_fixed_type` is deprecated. Use `StatefulLuxLayer{ST}` instead.",
-        :StatefulLuxLayer)
-    return StatefulLuxLayer{ST}(model, ps, st)
-end
 function StatefulLuxLayer{true}(model::AbstractExplicitLayer, ps, st::NamedTuple)
     return StatefulLuxLayer{true}(model, ps, st, nothing)
 end
