@@ -22,11 +22,8 @@ Lux.convert_flux_model(l::Function; kwargs...) = Lux.WrappedFunction{:direct_cal
 function Lux.convert_flux_model(l::Flux.Chain; kwargs...)
     fn = x -> Lux.convert_flux_model(x; kwargs...)
     layers = map(fn, l.layers)
-    if layers isa NamedTuple
-        return Lux.Chain(layers; disable_optimizations=true)
-    else
-        return Lux.Chain(layers...; disable_optimizations=true)
-    end
+    layers isa NamedTuple && return Lux.Chain(layers)
+    return Lux.Chain(layers...)
 end
 
 function Lux.convert_flux_model(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)

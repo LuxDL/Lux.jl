@@ -87,7 +87,7 @@
         for dims in (static(10), (static(10),))
             adaptor = ToSimpleChainsAdaptor(dims)
 
-            simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly (potentially with `disable_optimizations = true`)." adaptor(lux_model)
+            simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly." adaptor(lux_model)
 
             ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
 
