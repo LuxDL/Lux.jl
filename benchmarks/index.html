@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Continuous Benchmarking</title>
+    <meta
+      name="description"
+      content="A benchmark dashboard application designed for Julia projects"
+    />
+    <link rel="icon" type="image/svg+xml" href="../dev/favicon-32x32.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes"
+    />
+    <style>
+      html {
+        font-family: BlinkMacSystemFont, -apple-system, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
+          Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        background-color: #fff;
+        font-size: 16px;
+      }
+      body {
+        color: #4a4a4a;
+        margin: 8px;
+        font-size: 1em;
+        font-weight: 400;
+      }
+      header {
+        margin-bottom: 8px;
+        display: flex;
+        flex-direction: column;
+      }
+      main {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+      a {
+        color: #3273dc;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      a:hover {
+        color: #000;
+      }
+      button {
+        color: #fff;
+        background-color: #3298dc;
+        border-color: transparent;
+        cursor: pointer;
+        text-align: center;
+      }
+      button:hover {
+        background-color: #2793da;
+        flex: none;
+      }
+      .spacer {
+        flex: auto;
+      }
+      .small {
+        font-size: 0.75rem;
+      }
+      footer {
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+      }
+      .header-label {
+        margin-right: 4px;
+      }
+      .benchmark-set {
+        margin: 8px 0;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .benchmark-title {
+        font-size: 2rem;
+        font-weight: 400;
+        word-break: break-word;
+        text-align: center;
+        text-transform: uppercase;
+        margin: 0;
+      }
+      .benchmark-subtitle {
+        font-size: 1.4rem;
+        font-weight: 400;
+        word-break: break-word;
+        text-align: center;
+        text-transform: uppercase;
+        margin: 0;
+      }
+      .chartCard {
+        margin: 10px;
+        width: 50vw;
+        height: 50vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header id="header">
+      <div class="header-item">
+        <strong class="header-label">Last Update:</strong>
+        <span id="last-update"></span>
+      </div>
+      <div class="header-item">
+        <strong class="header-label">Repository:</strong>
+        <a id="repository-link" rel="noopener"></a>
+      </div>
+    </header>
+    <main id="main"></main>
+    <footer>
+      <button id="dl-button">Download data as JSON</button>
+      <div class="spacer"></div>
+      <div class="small">
+        Powered by
+        <a
+          rel="noopener"
+          href="https://github.com/marketplace/actions/continuous-benchmark"
+          >github-action-benchmark</a
+        >
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="data.js"></script>
+    <script id="main-script">
+      "use strict";
+      (function () {
+        // Colors from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
+        const toolColors = {
+          cargo: "#dea584",
+          go: "#00add8",
+          benchmarkjs: "#f1e05a",
+          benchmarkluau: "#000080",
+          pytest: "#3572a5",
+          googlecpp: "#f34b7d",
+          catch2: "#f34b7d",
+          julia: "#a270ba",
+          jmh: "#b07219",
+          benchmarkdotnet: "#178600",
+          customBiggerIsBetter: "#38ff38",
+          customSmallerIsBetter: "#ff3838",
+          _: "#333333",
+        };
+        const availableColors = [
+          "#a270ba",
+          "#dea584",
+          "#00add8",
+          "#f1e05a",
+          "#000080",
+          "#3572a5",
+          "#f34b7d",
+          "#f34b7d",
+          "#b07219",
+          "#178600",
+          "#38ff38",
+          "#ff3838",
+          "#333333",
+        ];
+
+        function init() {
+          function collectBenchesPerTestCase(entries) {
+            const map = new Map();
+            for (const entry of entries) {
+              const { commit, date, tool, benches } = entry;
+              for (const bench of benches) {
+                const result = { commit, date, tool, bench };
+                const splitted_name = bench.name.split("/");
+                const model_name = splitted_name[0];
+                const device_name = splitted_name[1];
+                const op_name = splitted_name[2];
+                const prop_name = splitted_name[3];
+                const size_name = splitted_name[4];
+                if (map.get(model_name) === undefined) {
+                  map.set(model_name, new Map());
+                }
+                const map_main = map.get(model_name);
+                if (map_main.get(device_name) === undefined) {
+                  map_main.set(device_name, new Map());
+                }
+                const map_device = map_main.get(device_name);
+                if (map_device.get(op_name) === undefined) {
+                  map_device.set(op_name, new Map());
+                }
+                const map_op = map_device.get(op_name);
+                if (map_op.get(prop_name + "/" + size_name) === undefined) {
+                  map_op.set(prop_name + "/" + size_name, [result]);
+                } else {
+                  map_op.get(prop_name + "/" + size_name).push(result);
+                }
+              }
+            }
+            return map;
+          }
+
+          const data = window.BENCHMARK_DATA;
+
+          // Render header
+          document.getElementById("last-update").textContent = new Date(
+            data.lastUpdate
+          ).toString();
+          const repoLink = document.getElementById("repository-link");
+          repoLink.href = data.repoUrl;
+          repoLink.textContent = data.repoUrl;
+
+          // Render footer
+          document.getElementById("dl-button").onclick = () => {
+            const dataUrl = "data:," + JSON.stringify(data, null, 2);
+            const a = document.createElement("a");
+            a.href = dataUrl;
+            a.download = "benchmark_data.json";
+            a.click();
+          };
+
+          // Prepare data points for charts
+          return Object.keys(data.entries).map((name) => ({
+            name,
+            dataSet: collectBenchesPerTestCase(data.entries[name]),
+          }));
+        }
+
+        function renderAllChars(dataSets) {
+          function renderGraph(parent, name, dataset) {
+            const canvas = document.createElement("canvas");
+            canvas.width = 10;
+            parent.appendChild(canvas);
+
+            const datasets = [];
+            const data = {
+              labels: dataset
+                .entries()
+                .next()
+                .value[1].map((d) => d.commit.id.slice(0, 7)),
+              datasets,
+            };
+
+            const op_to_color = new Map();
+            var idx = 0;
+            for (const [op_name, op_data] of dataset.entries()) {
+              const splitit = op_name.split("/");
+              const prop_name = splitit[0];
+              const size_name = splitit[1];
+
+              if (op_to_color.get(prop_name) === undefined) {
+                op_to_color.set(
+                  prop_name,
+                  availableColors[idx % availableColors.length]
+                );
+                idx += 1;
+              }
+              const color = op_to_color.get(prop_name);
+              const benchdata = {
+                label: op_name,
+                data: op_data.map((d) => d.bench.value / 1e6),
+                borderColor: color,
+                fill: false,
+              };
+              datasets.push(benchdata);
+            }
+
+            const options = {
+              plugins: {
+                title: {
+                  display: true,
+                  text: name.toUpperCase(),
+                },
+                tooltips: {
+                  callbacks: {
+                    afterTitle: (items) => {
+                      const { index } = items[0];
+                      console.log(index);
+                      const data = dataset[index];
+                      return (
+                        "\n" +
+                        data.commit.message +
+                        "\n\n" +
+                        data.commit.timestamp +
+                        " committed by @" +
+                        data.commit.committer.username +
+                        "\n"
+                      );
+                    },
+                    label: function(context) {
+                      let label = context.dataset.label || '';
+                      console.log(context);
+                      const { range, unit } = dataset[context.index].bench;
+                      label += " " + unit;
+                      if (range) {
+                        label += " (" + range + ")";
+                      }
+                      return label;
+                    },
+                    afterLabel: (item) => {
+                      const { extra } = dataset[item.index].bench;
+                      return extra ? "\n" + extra : "";
+                    },
+                  },
+                },
+              },
+              scales: {
+                x: {
+                  title: {
+                    text: "commit",
+                    display: true,
+                  },
+                },
+                y: {
+                  title: {
+                    text: "Time (ms)",
+                    display: true,
+                  },
+                  beginAtZero: true,
+                },
+              },
+              onClick: (_mouseEvent, activeElems) => {
+                if (activeElems.length === 0) {
+                  return;
+                }
+                // XXX: Undocumented. How can we know the index?
+                const index = activeElems[0].datasetIndex;
+                var reqdData = '';
+                var i = 0;
+                for (const [x, data] of dataset.entries()) {
+                  if (i == index) {
+                    reqdData = data;
+                    break;
+                  }
+                  i += 1;
+                }
+                const url = reqdData[0].commit.url;
+                window.open(url, "_blank");
+              },
+            };
+
+            new Chart(canvas, {
+              type: "line",
+              data,
+              options,
+            });
+          }
+
+          function renderBenchSet(model_name, device_name, benchSet, main) {
+            const graphsElem = document.createElement("div");
+            graphsElem.className = "chartCard";
+            main.appendChild(graphsElem);
+
+            for (const [benchName, benches] of benchSet.entries()) {
+              renderGraph(
+                graphsElem,
+                model_name + " + " + device_name + " + " + benchName,
+                benches
+              );
+            }
+          }
+
+          const main = document.getElementById("main");
+          const div1 = document.createElement("div");
+          div1.className = "benchmark-set";
+          main.appendChild(div1);
+          const dataSet = dataSets[0].dataSet;
+          for (const [model_name, data_model] of dataSet.entries()) {
+            for (const [device_name, data_device] of data_model.entries()) {
+              renderBenchSet(model_name, device_name, data_device, div1);
+            }
+          }
+        }
+
+        renderAllChars(init()); // Start
+      })();
+    </script>
+  </body>
+</html>

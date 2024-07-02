@@ -1,0 +1,163 @@
+[
+    {
+        "branch": "ap/rework_benchmarking",
+        "commit": "3fc25760e27f79cd83d39643a30bac1ce798ec11",
+        "julia_cmd": "`/home/avikpal/.julia/juliaup/julia-1.10.3+0.x64.linux.gnu/bin/julia -C native -J/home/avikpal/.julia/juliaup/julia-1.10.3+0.x64.linux.gnu/lib/julia/sys.so --depwarn=yes -g1`",
+        "date": "2024-06-02T19:35:50.459",
+        "results": [
+            {
+                "median": 4.26e-6,
+                "allocs": 8,
+                "max": 4.26e-6,
+                "min": 4.26e-6,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/ReverseDiff (compiled)/(2, 2)",
+                "mean": 4.26e-6
+            },
+            {
+                "median": 3.2686e-5,
+                "allocs": 38,
+                "max": 3.2686e-5,
+                "min": 3.2686e-5,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/Zygote/(2, 2)",
+                "mean": 3.2686e-5
+            },
+            {
+                "median": 1.1942e-5,
+                "allocs": 137,
+                "max": 1.3479e-5,
+                "min": 9.638e-6,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/Tracker/(2, 2)",
+                "mean": 1.1941774198404336e-5
+            },
+            {
+                "median": 4.749e-6,
+                "allocs": 59,
+                "max": 5.657e-6,
+                "min": 3.282e-6,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/ReverseDiff/(2, 2)",
+                "mean": 4.748890252503879e-6
+            },
+            {
+                "median": 6.146e-6,
+                "allocs": 28,
+                "max": 8.101e-6,
+                "min": 4.33e-6,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/Flux/(2, 2)",
+                "mean": 6.1457885964912285e-6
+            },
+            {
+                "median": 4.0438e-5,
+                "allocs": 32,
+                "max": 4.0438e-5,
+                "min": 4.0438e-5,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/SimpleChains/(2, 2)",
+                "mean": 4.0438e-5
+            },
+            {
+                "median": 1.467e-6,
+                "allocs": 3,
+                "max": 1.467e-6,
+                "min": 1.467e-6,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/reverse/Enzyme/(2, 2)",
+                "mean": 1.467e-6
+            },
+            {
+                "median": 1.886e-6,
+                "allocs": 3,
+                "max": 2.305e-6,
+                "min": 9.07e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/forward/NamedTuple/(2, 2)",
+                "mean": 1.8859523481851025e-6
+            },
+            {
+                "median": 1.886e-6,
+                "allocs": 4,
+                "max": 2.374e-6,
+                "min": 9.07e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/forward/ComponentArray/(2, 2)",
+                "mean": 1.8859742674680693e-6
+            },
+            {
+                "median": 4.19e-6,
+                "allocs": 2,
+                "max": 4.9029e-5,
+                "min": 9.07e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/forward/Flux/(2, 2)",
+                "mean": 4.185827151783915e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 0,
+                "max": 1.886e-6,
+                "min": 9.07e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cpu/forward/SimpleChains/(2, 2)",
+                "mean": 1.396952433143358e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 0,
+                "max": 6.5861e-5,
+                "min": 4.89e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cuda/reverse/Zygote/(2, 2)",
+                "mean": 1.2841052999999999e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 0,
+                "max": 2.7657e-5,
+                "min": 4.88e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cuda/reverse/Tracker/(2, 2)",
+                "mean": 1.294482e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 0,
+                "max": 2.5841e-5,
+                "min": 4.89e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cuda/reverse/Flux/(2, 2)",
+                "mean": 1.3836502e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 0,
+                "max": 2.5143e-5,
+                "min": 4.89e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cuda/forward/NamedTuple/(2, 2)",
+                "mean": 1.2666138000000002e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 2,
+                "max": 2.633e-5,
+                "min": 4.89e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cuda/forward/ComponentArray/(2, 2)",
+                "mean": 1.3474475999999999e-6
+            },
+            {
+                "median": 1.397e-6,
+                "allocs": 0,
+                "max": 3.4082e-5,
+                "min": 8.38e-7,
+                "gctime": 0,
+                "benchmark": "Dense(2 => 2, identity)/cuda/forward/Flux/(2, 2)",
+                "mean": 1.3417216e-6
+            }
+        ]
+    }
+]
