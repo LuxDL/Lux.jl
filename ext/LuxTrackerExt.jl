@@ -63,6 +63,7 @@ Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
 
 @inline Lux.__eltype(::TrackedArray{T}) where {T} = T
 @inline Lux.__eltype(::TrackedReal{T}) where {T} = T
+@inline Lux.__eltype(::AbstractArray{<:TrackedReal{T}}) where {T} = T
 
 # SimpleChains.jl: DON'T REPLACE THESE WITH @grad_from_chainrules
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
