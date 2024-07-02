@@ -1,3 +1,10 @@
+module LuxPreferences
+
+using ArgCheck: @argcheck
+using Preferences: load_preference, has_preference, set_preferences!
+
+using ..Lux: Lux
+
 macro load_preference_with_choices(pref, default, choices)
     msg1 = "Invalid value for `$(pref)` preference: "
     msg2 = ". Valid choices are: $(choices)"
