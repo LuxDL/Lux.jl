@@ -34,10 +34,6 @@ end
 @testitem "Deprecations" tags=[:others] begin
     using Functors
 
-    @test_deprecated Lux.disable_stacktrace_truncation!()
-    @test_deprecated Lux.cpu(rand(2))
-    @test_deprecated Lux.gpu(rand(2))
-
     model = NoOpLayer()
     @test_deprecated Lux.Experimental.StatefulLuxLayer(model, (;), (;))
 
