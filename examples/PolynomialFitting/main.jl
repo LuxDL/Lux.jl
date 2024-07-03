@@ -55,12 +55,17 @@ opt = Adam(0.03f0)
 # functions provided by Lux.
 const loss_function = MSELoss()
 
+const dev_cpu = cpu_device()
+const dev_gpu = gpu_device()
+
+ps, st = Lux.setup(rng, model) |> dev_gpu
+
 # ## Training
 
 # First we will create a [`Training.TrainState`](@ref) which is essentially a
 # convenience wrapper over parameters, states and optimizer states.
 
-tstate = Training.TrainState(rng, model, opt)
+tstate = Training.TrainState(model, ps, st, opt)
 
 # Now we will use Zygote for our AD requirements.
 
@@ -78,9 +83,6 @@ function main(tstate::Training.TrainState, vjp, data, epochs)
     end
     return tstate
 end
-
-dev_cpu = cpu_device()
-dev_gpu = gpu_device()
 
 tstate = main(tstate, vjp_rule, (x, y), 250)
 y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])

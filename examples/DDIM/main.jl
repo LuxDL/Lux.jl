@@ -330,6 +330,7 @@ end
     @info "Building model"
     model = ddim(rng, (image_size, image_size); channels, block_depth, min_freq,
         max_freq, embedding_dims, min_signal_rate, max_signal_rate)
+    ps, st = Lux.setup(rng, model) |> gdev
 
     if inference_mode
         @argcheck saved_model_path!==nothing "`saved_model_path` must be specified for inference"
@@ -354,8 +355,7 @@ end
     tb_logger = TBLogger(tb_dir)
 
     tstate = Training.TrainState(
-        rng, model, AdamW(; eta=learning_rate_start, lambda=weight_decay);
-        transform_variables=gdev)
+        model, ps, st, AdamW(; eta=learning_rate_start, lambda=weight_decay))
 
     @info "Preparing dataset"
     ds = FlowersDataset(x -> preprocess_image(x, image_size), true)
