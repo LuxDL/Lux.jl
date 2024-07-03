@@ -2,7 +2,7 @@
     using Setfield, Functors
 
     function __occurs_in(kp::KeyPath, x::KeyPath)
-        length(kp) ≤ length(x) && return all(==(x[i], kp[i]) for i in 1:length(x))
+        length(kp) ≤ length(x) && return all(==(x[i], kp[i]) for i in 1:length(kp))
         return false
     end
 

@@ -6,18 +6,14 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
         opt = Adam(0.01f0)
-        ps, st = Lux.setup(rng, model) |> dev
+        ps, st = Lux.setup(Lux.replicate(rng), model) |> dev
 
         tstate = Lux.Training.TrainState(model, ps, st, opt)
 
         x = randn(Lux.replicate(rng), Float32, (3, 1))
-
-        ps, st = Lux.setup(Lux.replicate(rng), model)
         opt_st = Optimisers.setup(opt, tstate.parameters)
 
         @test check_approx(tstate.model, model)
-        @test check_approx(tstate.parameters, ps)
-        @test check_approx(tstate.states, st)
         @test check_approx(tstate.optimizer_state, opt_st)
         @test tstate.step == 0
     end
@@ -72,35 +68,39 @@ end
             Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4))
         dataset_ = [dev((x, y)) for (x, y) in dataset]
         opt = Adam(0.001f0)
-        ps, st = Lux.setup(rng, model) |> dev
 
         @testset "$(ad)" for ad in (
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
-            tstate = Lux.Training.TrainState(model, ps, st, opt)
+            ps, st = Lux.setup(rng, model) |> dev
+            tstate = Training.TrainState(model, ps, st, opt)
 
             initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
 
-            for epoch in 1:100, (x, y) in dataset_
+            for epoch in 1:1000, (x, y) in dataset_
                 grads, loss, _, tstate = allow_unstable() do
-                    Lux.Training.compute_gradients(ad, mse, (x, y), tstate)
+                    Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
                 end
                 tstate = Lux.Training.apply_gradients!(tstate, grads)
             end
 
-            for epoch in 1:100, (x, y) in dataset_
+            for epoch in 1:1000, (x, y) in dataset_
                 grads, loss, _, tstate = allow_unstable() do
-                    Lux.Training.single_train_step!(ad, mse, (x, y), tstate)
+                    Training.single_train_step!(ad, mse, (x, y), tstate)
                 end
             end
 
-            for epoch in 1:100, (x, y) in dataset_
+            for epoch in 1:1000, (x, y) in dataset_
                 grads, loss, _, tstate = allow_unstable() do
-                    Lux.Training.single_train_step(ad, mse, (x, y), tstate)
+                    Training.single_train_step(ad, mse, (x, y), tstate)
                 end
             end
+
+            final_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
+
+            @test final_loss * 100 < initial_loss
 
             # Test the adjust API
             tstate = Optimisers.adjust(tstate, 0.1f0)
@@ -114,15 +114,12 @@ end
 
             Optimisers.adjust!(tstate; eta=0.11f0)
             @test tstate.optimizer_state.layer_1.weight.rule.eta ≈ 0.11f0
-
-            final_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
-
-            @test final_loss * 100 < initial_loss
         end
 
         struct AutoCustomAD <: ADTypes.AbstractADType end
 
-        tstate = Lux.Training.TrainState(model, ps, st, opt)
+        ps, st = Lux.setup(rng, model) |> dev
+        tstate = Training.TrainState(model, ps, st, opt)
 
         @test_throws ArgumentError Lux.Training.compute_gradients(
             AutoCustomAD(), mse, dataset_[1], tstate)

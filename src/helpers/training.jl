@@ -45,11 +45,7 @@ Internal fields:
 end
 
 """
-    TrainState(rng::Random.AbstractRNG, model::LuxCore.AbstractExplicitLayer,
-        optimizer::Optimisers.AbstractRule;
-        transform_variables::Union{Function, AbstractDevice}=gpu_device())
-    TrainState(model::LuxCore.AbstractExplicitLayer, ps, st,
-        optimizer::Optimisers.AbstractRule)
+    TrainState(model::Lux.AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
 
 Constructor for [`TrainState`](@ref).
 
@@ -67,19 +63,6 @@ Constructor for [`TrainState`](@ref).
 
 [`TrainState`](@ref) object.
 """
-function TrainState(rng::AbstractRNG, model::AbstractExplicitLayer, optimizer::AbstractRule;
-        transform_variables=MLDataDevices.gpu_device())
-    Base.depwarn(
-        "`TrainState(rng::AbstractRNG, model::AbstractExplicitLayer, \
-         optimizer::Optimisers.AbstractRule; transform_variables::Union{Function, \
-         AbstractLuxDevice}=gpu_device())` has been deprecated in favor of \
-         `TrainState(model::AbstractExplicitLayer, ps, st, \
-         optimizer::Optimisers.AbstractRule)`",
-        :TrainState)
-    ps, st = LuxCore.setup(rng, model) .|> transform_variables
-    return TrainState(model, ps, st, optimizer)
-end
-
 function TrainState(
         model::AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
     st_opt = Optimisers.setup(optimizer, ps)

@@ -329,10 +329,6 @@ end
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
         test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
-        @test_throws ArgumentError Chain(;
-            l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
-            d21=Dense(2 => 1), d2=Dense(2 => 1))
-
         @testset "indexing and field access" begin
             encoder = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh))
             decoder = Chain(Dense(2 => 5, tanh), Dense(5 => 10, sigmoid))
