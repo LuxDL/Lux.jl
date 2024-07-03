@@ -14,7 +14,7 @@ end
 ## dispatches
 for f in (:__rand, :__randn)
     @eval @inline function WeightInitializers.$(f)(
-            rng::RNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
+            rng::RNG, ::Type{<:Complex{T}}, args::Integer...) where {T <: Number}
         real_part = WeightInitializers.$(f)(rng, rng.state, T, args...)
         imag_part = WeightInitializers.$(f)(rng, rng.state, T, args...)
         return Complex{T}.(real_part, imag_part)

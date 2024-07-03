@@ -3,7 +3,7 @@
 @inline _nfan(n_out, n_in) = n_in, n_out # In case of Dense kernels: arranged as matrices
 @inline _nfan(dims::Tuple) = _nfan(dims...)
 @inline _nfan(dims...) = prod(dims[1:(end - 2)]) .* (dims[end - 1], dims[end]) # In case of convolution kernels
-@inline _norm_cdf(x::T) where {T} = T(0.5) * (1 + erf(x / √2))
+@inline _norm_cdf(x::T) where {T} = T(0.5) * (1 + T(erf(x / √2))) # erf often doesn't respect the type
 
 @inline _default_rng() = Xoshiro(1234)
 
