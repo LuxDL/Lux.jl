@@ -6,7 +6,7 @@
 end
 
 @testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] begin
-    using CUDA, ExplicitImports
+    using ExplicitImports
 
     @test check_no_implicit_imports(WeightInitializers) === nothing
     @test check_no_stale_explicit_imports(WeightInitializers) === nothing

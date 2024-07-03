@@ -1,6 +1,3 @@
-__zeros(::AbstractRNG, ::Type{T}, dims::Integer...) where {T} = zeros(T, dims...)
-__ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T} = ones(T, dims...)
-
 for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand, :randn)
     name = Symbol(fname, T)
     docstring = __generic_docstring(string(name))
@@ -32,7 +29,7 @@ artificial intelligence and statistics_. 2010.
 function glorot_uniform(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     scale = T(gain) * sqrt(T(24) / sum(_nfan(dims...)))
-    return (rand(rng, T, dims...) .- T(1 // 2)) .* scale
+    return (__rand(rng, T, dims...) .- T(1 // 2)) .* scale
 end
 
 """
@@ -52,7 +49,7 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     std = T(gain) * sqrt(T(2) / sum(_nfan(dims...)))
-    return randn(rng, T, dims...) .* std
+    return __randn(rng, T, dims...) .* std
 end
 
 """
@@ -71,7 +68,7 @@ vision_. 2015.
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
     bound = √T(3) * T(gain) / sqrt(T(first(_nfan(dims...))))
-    return (rand(rng, T, dims...) .- T(1 // 2)) .* 2 * bound
+    return (__rand(rng, T, dims...) .- T(1 // 2)) .* 2 * bound
 end
 
 """
@@ -90,7 +87,7 @@ vision_. 2015.
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
     std = T(gain) / sqrt(T(first(_nfan(dims...))))
-    return randn(rng, T, dims...) .* std
+    return __randn(rng, T, dims...) .* std
 end
 
 """
@@ -109,7 +106,7 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
     end
     l = _norm_cdf((T(lo) - T(mean)) / T(std))
     u = _norm_cdf((T(hi) - T(mean)) / T(std))
-    xs = rand(rng, T, dims...)
+    xs = __rand(rng, T, dims...)
     broadcast!(xs, xs) do x
         x = x * 2(u - l) + (2l - 1)
         x = erfinv(x)
@@ -151,7 +148,7 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
     rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
 
-    mat = randn(rng, T, rows, cols)
+    mat = __randn(rng, T, rows, cols)
     Q, R = qr(mat)
     mat .= Q * sign.(Diagonal(R)) .* T(gain)
 
@@ -215,7 +212,7 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
 
-    sparse_array = randn(rng, T, dims...) .* T(std)
+    sparse_array = __randn(rng, T, dims...) .* T(std)
     fill!(view(sparse_array, 1:num_zeros, :), zero(T))
 
     return @allowscalar mapslices(shuffle, sparse_array; dims=1)

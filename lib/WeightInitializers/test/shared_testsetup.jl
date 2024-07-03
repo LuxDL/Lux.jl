@@ -12,8 +12,9 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
         [(StableRNG(12345), AbstractArray), (Random.GLOBAL_RNG, AbstractArray)])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
-    using CUDA
-    push!(RNGS_ARRTYPES, (CUDA.default_rng(), CuArray))
+    using CUDA, GPUArrays
+    append!(RNGS_ARRTYPES,
+        [(CUDA.default_rng(), CuArray), (GPUArrays.default_rng(CuArray), CuArray)])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
     using AMDGPU
@@ -29,6 +30,6 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
     push!(RNGS_ARRTYPES, (oneAPI.gpuarrays_rng(), oneArray))
 end
 
-export StableRNG, RNGS_ARRTYPES
+export StableRNG, RNGS_ARRTYPES, BACKEND_GROUP
 
 end

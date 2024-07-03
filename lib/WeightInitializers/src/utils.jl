@@ -35,3 +35,17 @@ end
     Return an `AbstractArray{$(dist_type)}` of the given `size` containing $(name).
     """
 end
+
+# Helpers for device agnostic initializers
+@inline function __zeros(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number}
+    return zeros(T, dims...)
+end
+@inline function __ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number}
+    return ones(T, dims...)
+end
+@inline function __rand(rng::AbstractRNG, ::Type{T}, args...) where {T <: Number}
+    return rand(rng, T, args...)
+end
+@inline function __randn(rng::AbstractRNG, ::Type{T}, args...) where {T <: Number}
+    return randn(rng, T, args...)
+end

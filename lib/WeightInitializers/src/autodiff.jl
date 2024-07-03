@@ -1,3 +1,8 @@
+# Wrappers
+for f in (:__zeros, :__ones, :__rand, :__randn)
+    @eval CRC.@non_differentiable $(f)(::Any...)
+end
+
 # Mark the functions as non-differentiable
 for f in [:zeros64, :ones64, :rand64, :randn64, :zeros32, :ones32, :rand32, :randn32,
     :zeros16, :ones16, :rand16, :randn16, :zerosC64, :onesC64, :randC64,
