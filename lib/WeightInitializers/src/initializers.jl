@@ -2,7 +2,7 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand
     name = Symbol(fname, T)
     docstring = __generic_docstring(string(name))
     TP = NUM_TO_FPOINT[Symbol(T)]
-    __fname = fname in (:ones, :zeros) ? Symbol("__", fname) : fname
+    __fname = Symbol("__", fname)
 
     @eval begin
         @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
