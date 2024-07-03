@@ -1,6 +1,6 @@
 module WeightInitializersoneAPIExt
 
-using oneAPI: oneArray
+using oneAPI: oneAPI, oneArray
 using GPUArrays: RNG
 using Random: Random
 using WeightInitializers: WeightInitializers

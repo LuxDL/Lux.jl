@@ -17,7 +17,7 @@ for f in (:__rand, :__randn)
             rng::RNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
         real_part = WeightInitializers.$(f)(rng, rng.state, T, args...)
         imag_part = WeightInitializers.$(f)(rng, rng.state, T, args...)
-        return Complex.(real_part, imag_part)
+        return Complex{T}.(real_part, imag_part)
     end
 end
 

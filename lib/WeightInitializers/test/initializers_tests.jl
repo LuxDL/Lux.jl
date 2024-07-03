@@ -16,7 +16,7 @@ end
 @testitem "Orthogonal Initialization" setup=[SharedTestSetup] begin
     using GPUArraysCore, LinearAlgebra
 
-    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in RNGS_ARRTYPES
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64) in RNGS_ARRTYPES
         # A matrix of dim = (m,n) with m > n should produce a QR decomposition.
         # In the other case, the transpose should be taken to compute the QR decomposition.
         for (rows, cols) in [(5, 3), (3, 5)]
@@ -35,11 +35,15 @@ end
         end
 
         @testset "Orthogonal Types $T" for T in (Float32, Float64)
+            !supports_fp64 && T == Float64 && continue
+
             @test eltype(orthogonal(rng, T, 3, 4; gain=1.5)) == T
             @test eltype(orthogonal(rng, T, 3, 4, 5; gain=1.5)) == T
         end
 
         @testset "Orthogonal AbstractArray Type $T" for T in (Float32, Float64)
+            !supports_fp64 && T == Float64 && continue
+
             @test orthogonal(rng, T, 3, 5) isa AbstractArray{T, 2}
             @test orthogonal(rng, T, 3, 5) isa arrtype{T, 2}
 
@@ -69,7 +73,7 @@ end
 @testitem "Sparse Initialization" setup=[SharedTestSetup] begin
     using Statistics
 
-    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in RNGS_ARRTYPES
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64) in RNGS_ARRTYPES
         # sparse_init should yield an error for non 2-d dimensions
         # sparse_init should yield no zero elements if sparsity < 0
         # sparse_init should yield all zero elements if sparsity > 1
@@ -93,10 +97,14 @@ end
         end
 
         @testset "sparse_init Types $T" for T in (Float16, Float32, Float64)
+            !supports_fp64 && T == Float64 && continue
+
             @test eltype(sparse_init(rng, T, 3, 4; sparsity=0.5)) == T
         end
 
         @testset "sparse_init AbstractArray Type $T" for T in (Float16, Float32, Float64)
+            !supports_fp64 && T == Float64 && continue
+
             @test sparse_init(T, 3, 5; sparsity=0.5) isa AbstractArray{T, 2}
             @test sparse_init(rng, T, 3, 5; sparsity=0.5) isa arrtype{T, 2}
 
@@ -122,10 +130,17 @@ end
 @testitem "Basic Initializations" setup=[SharedTestSetup] begin
     using LinearAlgebra, Statistics
 
-    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype) in RNGS_ARRTYPES
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64) in RNGS_ARRTYPES
         @testset "Sizes and Types: $init" for init in [
             zeros32, ones32, rand32, randn32, kaiming_uniform, kaiming_normal,
             glorot_uniform, glorot_normal, truncated_normal, identity_init]
+            !supports_fp64 &&
+                (init === zeros32 ||
+                 init === ones32 ||
+                 init === rand32 ||
+                 init === randn32) &&
+                continue
+
             # Sizes
             @test size(init(3)) == (3,)
             @test size(init(rng, 3)) == (3,)
@@ -151,6 +166,8 @@ end
             (randC32, ComplexF32), (rand64, Float64), (randC64, ComplexF64),
             (randn16, Float16), (randnC16, ComplexF16), (randn32, Float32),
             (randnC32, ComplexF32), (randn64, Float64), (randnC64, ComplexF64)]
+            !supports_fp64 && (fp == Float64 || fp == ComplexF64) && continue
+
             # Sizes
             @test size(init(3)) == (3,)
             @test size(init(rng, 3)) == (3,)
@@ -171,6 +188,8 @@ end
                 kaiming_uniform, kaiming_normal, glorot_uniform,
                 glorot_normal, truncated_normal, identity_init],
             T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+
+            !supports_fp64 && (T == Float64 || T == ComplexF64) && continue
 
             init === truncated_normal && !(T <: Real) && continue
 
@@ -206,6 +225,8 @@ end
 
         @testset "Kwargs types" for T in (
             Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+            !supports_fp64 && (T == Float64 || T == ComplexF64) && continue
+
             if (T <: Real)
                 @test eltype(truncated_normal(T, 2, 5; mean=0, std=1, lo=-2, hi=2)) == T
                 @test eltype(orthogonal(T, 2, 5; gain=1.0)) == T

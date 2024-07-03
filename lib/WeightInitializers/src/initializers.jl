@@ -108,9 +108,9 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
     u = _norm_cdf((T(hi) - T(mean)) / T(std))
     xs = __rand(rng, T, dims...)
     broadcast!(xs, xs) do x
-        x = x * 2(u - l) + (2l - 1)
+        x = x * 2(u - l) + (2l - one(T))
         x = erfinv(x)
-        return clamp(x * T(std) * √2 + T(mean), T(lo), T(hi))
+        return clamp(x * T(std) * √T(2) + T(mean), T(lo), T(hi))
     end
     return xs
 end

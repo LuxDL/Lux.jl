@@ -43,23 +43,20 @@ end
 @inline function __ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number}
     return ones(T, dims...)
 end
-@inline function __rand(rng::AbstractRNG, ::Type{T}, args...) where {T <: Number}
+@inline function __rand(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T <: Number}
     return rand(rng, T, args...)
 end
-@inline function __randn(rng::AbstractRNG, ::Type{T}, args...) where {T <: Number}
+@inline function __randn(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T <: Number}
     return randn(rng, T, args...)
 end
 
 ## Certain backends don't support sampling Complex numbers, so we avoid hitting those
 ## dispatches
-@inline function __rand(rng::AbstractRNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
-    real_part = __rand(rng, T, args...)
-    imag_part = __rand(rng, T, args...)
-    return Complex.(real_part, imag_part)
-end
-@inline function __randn(
-        rng::AbstractRNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
-    real_part = __randn(rng, T, args...)
-    imag_part = __randn(rng, T, args...)
-    return Complex.(real_part, imag_part)
+for f in (:__rand, :__randn)
+    @eval @inline function $(f)(
+            rng::AbstractRNG, ::Type{<:Complex{T}}, args::Integer...) where {T <: Number}
+        real_part = $(f)(rng, T, args...)
+        imag_part = $(f)(rng, T, args...)
+        return Complex{T}.(real_part, imag_part)
+    end
 end

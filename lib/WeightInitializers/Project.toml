@@ -24,7 +24,7 @@ WeightInitializersAMDGPUExt = ["AMDGPU", "GPUArrays"]
 WeightInitializersCUDAExt = ["CUDA", "GPUArrays"]
 WeightInitializersGPUArraysExt = "GPUArrays"
 WeightInitializersMetalExt = ["Metal", "GPUArrays"]
-WeightInitializersOneAPIExt = ["oneAPI", "GPUArrays"]
+WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]
 
 [compat]
 AMDGPU = "0.9.6"

@@ -9,25 +9,31 @@ const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
 RNGS_ARRTYPES = []
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
     append!(RNGS_ARRTYPES,
-        [(StableRNG(12345), AbstractArray), (Random.GLOBAL_RNG, AbstractArray)])
+        [(StableRNG(12345), AbstractArray, true), (Random.GLOBAL_RNG, AbstractArray, true)])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
     using CUDA, GPUArrays
     append!(RNGS_ARRTYPES,
-        [(CUDA.default_rng(), CuArray), (GPUArrays.default_rng(CuArray), CuArray)])
+        [(CUDA.default_rng(), CuArray, true),
+            (GPUArrays.default_rng(CuArray), CuArray, true)])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
     using AMDGPU
     append!(RNGS_ARRTYPES,
-        [(AMDGPU.rocrand_rng(), ROCArray), (AMDGPU.gpuarrays_rng(), ROCArray)])
+        [(AMDGPU.rocrand_rng(), ROCArray, true), (AMDGPU.gpuarrays_rng(), ROCArray, true)])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
     using Metal
-    push!(RNGS_ARRTYPES, (Metal.gpuarrays_rng(), MtlArray))
+    push!(RNGS_ARRTYPES, (Metal.gpuarrays_rng(), MtlArray, false))
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
     using oneAPI
-    push!(RNGS_ARRTYPES, (oneAPI.gpuarrays_rng(), oneArray))
+    using oneAPI: oneL0
+
+    supports_fp64 = oneL0.module_properties(first(oneAPI.devices())).fp64flags &
+                    oneL0.ZE_DEVICE_MODULE_FLAG_FP64 == oneL0.ZE_DEVICE_MODULE_FLAG_FP64
+
+    push!(RNGS_ARRTYPES, (oneAPI.gpuarrays_rng(), oneArray, supports_fp64))
 end
 
 export StableRNG, RNGS_ARRTYPES, BACKEND_GROUP
