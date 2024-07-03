@@ -57,7 +57,8 @@ end
     imag_part = __rand(rng, T, args...)
     return Complex.(real_part, imag_part)
 end
-@inline function __randn(rng::AbstractRNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
+@inline function __randn(
+        rng::AbstractRNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
     real_part = __randn(rng, T, args...)
     imag_part = __randn(rng, T, args...)
     return Complex.(real_part, imag_part)

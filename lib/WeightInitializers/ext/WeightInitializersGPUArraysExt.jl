@@ -10,4 +10,15 @@ for f in (:__zeros, :__ones, :__rand, :__randn)
     end
 end
 
+## Certain backends don't support sampling Complex numbers, so we avoid hitting those
+## dispatches
+for f in (:__rand, :__randn)
+    @eval @inline function WeightInitializers.$(f)(
+            rng::RNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
+        real_part = WeightInitializers.$(f)(rng, rng.state, T, args...)
+        imag_part = WeightInitializers.$(f)(rng, rng.state, T, args...)
+        return Complex.(real_part, imag_part)
+    end
+end
+
 end
