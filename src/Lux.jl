@@ -20,7 +20,7 @@ using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using NNlib: NNlib
 using Optimisers: Optimisers
-using Preferences: load_preference, has_preference, @load_preference
+using Preferences: load_preference, @load_preference
 using Random: Random, AbstractRNG
 using Reexport: @reexport
 using Statistics: mean

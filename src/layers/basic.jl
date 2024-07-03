@@ -239,7 +239,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Empty `NamedTuple()`
 """
 @concrete struct WrappedFunction{DC} <: AbstractExplicitLayer
-    func
+    func <: Function
 end
 
 WrappedFunction(f::F) where {F} = WrappedFunction{:runtime_check}(f)

@@ -45,9 +45,11 @@ SimpleChainsLayer{false}(
         layer_3 = Conv((5, 5), 6 => 16, relu),  # 2_416 parameters
         layer_4 = MaxPool((2, 2)),
         layer_5 = FlattenLayer{Int64}(3),
-        layer_6 = Dense(256 => 128, relu),  # 32_896 parameters
-        layer_7 = Dense(128 => 84, relu),  # 10_836 parameters
-        layer_8 = Dense(84 => 10),      # 850 parameters
+        layer_6 = Chain(
+            layer_1 = Dense(256 => 128, relu),  # 32_896 parameters
+            layer_2 = Dense(128 => 84, relu),  # 10_836 parameters
+            layer_3 = Dense(84 => 10),  # 850 parameters
+        ),
     ),
 )         # Total: 47_154 parameters,
           #        plus 0 states.
