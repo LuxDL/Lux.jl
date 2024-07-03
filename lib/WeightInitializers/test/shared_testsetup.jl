@@ -1,6 +1,6 @@
 @testsetup module SharedTestSetup
 
-using GPUArraysCore, Random, StableRNGs
+using GPUArrays, GPUArraysCore, Random, StableRNGs
 
 GPUArraysCore.allowscalar(false)
 
@@ -13,7 +13,7 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
             (Random.GLOBAL_RNG, AbstractArray, true, "cpu")])
 end
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
-    using CUDA, GPUArrays
+    using CUDA
     append!(RNGS_ARRTYPES,
         [(CUDA.default_rng(), CuArray, true, "cuda"),
             (GPUArrays.default_rng(CuArray), CuArray, true, "cuda")])
@@ -38,6 +38,6 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
     push!(RNGS_ARRTYPES, (oneAPI.gpuarrays_rng(), oneArray, supports_fp64, "oneapi"))
 end
 
-export StableRNG, RNGS_ARRTYPES, BACKEND_GROUP
+export StableRNG, RNGS_ARRTYPES, BACKEND_GROUP, GPUArrays
 
 end

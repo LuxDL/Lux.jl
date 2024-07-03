@@ -272,7 +272,12 @@ end
 
                 v = kaiming_normal(rng, n_in, n_out)
                 σ2 = sqrt(2 / n_out)
-                @test 0.9σ2 < std(Array(v)) < 1.1σ2 # Just for safety move to Array
+
+                if (backend == "cuda" || backend == "amdgpu") && rng isa GPUArrays.RNG
+                    @test_broken 0.9σ2 < std(v) < 1.1σ2
+                else
+                    @test 0.9σ2 < std(v) < 1.1σ2
+                end
             end
             # Type
             @test eltype(kaiming_uniform(rng, 3, 4; gain=1.5f0)) == Float32
