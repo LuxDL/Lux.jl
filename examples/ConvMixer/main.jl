@@ -77,12 +77,13 @@ end
     trainloader, testloader = get_dataloaders(batchsize)
 
     model = ConvMixer(; dim=hidden_dim, depth, kernel_size, patch_size)
+    ps, st = Lux.setup(rng, model) |> gdev
 
     opt = AdamW(; eta=lr_max, lambda=weight_decay)
     clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
     train_state = Training.TrainState(
-        rng, model, AdamW(; eta=lr_max, lambda=weight_decay); transform_variables=gdev)
+        model, ps, st, AdamW(; eta=lr_max, lambda=weight_decay))
 
     lr_schedule = linear_interpolation(
         [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0])

@@ -80,10 +80,10 @@ function train()
     dataloaders = load_datasets()
 
     dev = gpu_device()
-
     rng = Xoshiro(0)
+    ps, st = Lux.setup(rng, model) |> dev
 
-    train_state = Training.TrainState(rng, model, Adam(3.0f-4); transform_variables=dev)
+    train_state = Training.TrainState(model, ps, st, Adam(3.0f-4))
 
     ### Lets train the model
     nepochs = 10
