@@ -49,3 +49,16 @@ end
 @inline function __randn(rng::AbstractRNG, ::Type{T}, args...) where {T <: Number}
     return randn(rng, T, args...)
 end
+
+## Certain backends don't support sampling Complex numbers, so we avoid hitting those
+## dispatches
+@inline function __rand(rng::AbstractRNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
+    real_part = __rand(rng, T, args...)
+    imag_part = __rand(rng, T, args...)
+    return Complex.(real_part, imag_part)
+end
+@inline function __randn(rng::AbstractRNG, ::Type{<:Complex{T}}, args...) where {T <: Number}
+    real_part = __randn(rng, T, args...)
+    imag_part = __randn(rng, T, args...)
+    return Complex.(real_part, imag_part)
+end
