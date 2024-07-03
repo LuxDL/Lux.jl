@@ -16,7 +16,7 @@ end
 @testitem "Orthogonal Initialization" setup=[SharedTestSetup] begin
     using GPUArraysCore, LinearAlgebra
 
-    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64) in RNGS_ARRTYPES
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
         # A matrix of dim = (m,n) with m > n should produce a QR decomposition.
         # In the other case, the transpose should be taken to compute the QR decomposition.
         for (rows, cols) in [(5, 3), (3, 5)]
@@ -73,7 +73,7 @@ end
 @testitem "Sparse Initialization" setup=[SharedTestSetup] begin
     using Statistics
 
-    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64) in RNGS_ARRTYPES
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
         # sparse_init should yield an error for non 2-d dimensions
         # sparse_init should yield no zero elements if sparsity < 0
         # sparse_init should yield all zero elements if sparsity > 1
@@ -130,7 +130,7 @@ end
 @testitem "Basic Initializations" setup=[SharedTestSetup] begin
     using LinearAlgebra, Statistics
 
-    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64) in RNGS_ARRTYPES
+    @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
         @testset "Sizes and Types: $init" for init in [
             zeros32, ones32, rand32, randn32, kaiming_uniform, kaiming_normal,
             glorot_uniform, glorot_normal, truncated_normal, identity_init]
@@ -140,6 +140,11 @@ end
                  init === rand32 ||
                  init === randn32) &&
                 continue
+
+            if (backend == "oneapi" || backend == "metal") && init === truncated_normal
+                @test_broken size(init(rng, 3)) == (3,)  # `erfinv` not implemented
+                continue
+            end
 
             # Sizes
             @test size(init(3)) == (3,)
@@ -193,6 +198,11 @@ end
 
             init === truncated_normal && !(T <: Real) && continue
 
+            if (backend == "oneapi" || backend == "metal") && init === truncated_normal
+                @test_broken init(rng, T, 3) isa AbstractArray{T, 1}  # `erfinv` not implemented
+                continue
+            end
+
             @test init(T, 3) isa AbstractArray{T, 1}
             @test init(rng, T, 3) isa arrtype{T, 1}
             @test init(T, 3, 5) isa AbstractArray{T, 2}
@@ -210,6 +220,11 @@ end
         @testset "Closure: $init" for init in [
             kaiming_uniform, kaiming_normal, glorot_uniform,
             glorot_normal, truncated_normal, identity_init]
+            if (backend == "oneapi" || backend == "metal") && init === truncated_normal
+                @test_broken size(init(rng, 3)) == (3,)  # `erfinv` not implemented
+                continue
+            end
+
             cl = init(;)
             # Sizes
             @test size(cl(3)) == (3,)
