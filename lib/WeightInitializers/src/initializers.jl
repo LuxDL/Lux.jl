@@ -29,7 +29,10 @@ artificial intelligence and statistics_. 2010.
 function glorot_uniform(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     scale = T(gain) * sqrt(T(24) / sum(_nfan(dims...)))
-    return (__rand(rng, T, dims...) .- T(1 // 2)) .* scale
+    x = __rand(rng, T, dims...)
+    half = T(0.5)
+    @. x = (x - half) * scale
+    return x
 end
 
 """
@@ -49,7 +52,9 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     std = T(gain) * sqrt(T(2) / sum(_nfan(dims...)))
-    return __randn(rng, T, dims...) .* std
+    x = __randn(rng, T, dims...)
+    x .*= std
+    return x
 end
 
 """
@@ -68,7 +73,10 @@ vision_. 2015.
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
     bound = √T(3) * T(gain) / sqrt(T(first(_nfan(dims...))))
-    return (__rand(rng, T, dims...) .- T(1 // 2)) .* 2 * bound
+    x = __rand(rng, T, dims...)
+    half = T(0.5)
+    @. x = (x - half) * 2 * bound
+    return x
 end
 
 """
@@ -87,7 +95,9 @@ vision_. 2015.
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
     std = T(gain) / sqrt(T(first(_nfan(dims...))))
-    return __randn(rng, T, dims...) .* std
+    x = __randn(rng, T, dims...)
+    x .*= std
+    return x
 end
 
 """
@@ -212,7 +222,8 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
 
-    sparse_array = __randn(rng, T, dims...) .* T(std)
+    sparse_array = __randn(rng, T, dims...)
+    sparse_array .*= T(std)
     fill!(view(sparse_array, 1:num_zeros, :), zero(T))
 
     return @allowscalar mapslices(shuffle, sparse_array; dims=1)

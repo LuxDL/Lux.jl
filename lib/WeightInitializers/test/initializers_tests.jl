@@ -19,6 +19,11 @@ end
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
         # A matrix of dim = (m,n) with m > n should produce a QR decomposition.
         # In the other case, the transpose should be taken to compute the QR decomposition.
+        if backend == "oneapi" || backend == "metal"  # `qr` not implemented
+            @test_broken orthogonal(rng, 3, 5) isa arrtype{Float32, 2}
+            continue
+        end
+
         for (rows, cols) in [(5, 3), (3, 5)]
             v = orthogonal(rng, rows, cols)
             GPUArraysCore.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
@@ -96,7 +101,7 @@ end
             @test 0.9 * σ < std(v[v .!= 0]) < 1.1 * σ
         end
 
-        @testset "sparse_init Types $T" for T in (Float16, Float32, Float64)
+        @testset "sparse_init Type $T" for T in (Float16, Float32, Float64)
             !supports_fp64 && T == Float64 && continue
 
             @test eltype(sparse_init(rng, T, 3, 4; sparsity=0.5)) == T
@@ -198,7 +203,9 @@ end
 
             init === truncated_normal && !(T <: Real) && continue
 
-            if (backend == "oneapi" || backend == "metal") && init === truncated_normal
+            if (backend == "oneapi" || backend == "metal") &&
+               init === truncated_normal &&
+               T == Float32
                 @test_broken init(rng, T, 3) isa AbstractArray{T, 1}  # `erfinv` not implemented
                 continue
             end
