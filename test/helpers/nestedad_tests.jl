@@ -303,3 +303,28 @@ end
 
     @test_nowarn jacobian_vector_product(ftest, AutoForwardDiff(), nt, u)
 end
+
+@testitem "Nested AD: Issue #743 (eval + gradient)" setup=[SharedTestSetup] tags=[:autodiff] begin
+    using Zygote, Optimisers, Random, ForwardDiff, ComponentArrays
+
+    function loss_function(model, ps, st, x)
+        smodel = StatefulLuxLayer{true}(model, ps, st)
+        y_pred = smodel(x)
+        dy_pred = only(Zygote.gradient(sum ∘ smodel, x))
+        loss = sum(dy_pred .+ y_pred .^ 2 / 2)
+        return loss
+    end
+
+    rng = StableRNG(1234)
+    model = Chain(Dense(1 => 8, sigmoid), Dense(8 => 1))
+    ps, st = Lux.setup(rng, model)
+    x = randn(rng, Float32, 1, 12)
+
+    _, ∂ps, _, ∂x = Zygote.gradient(loss_function, model, ps, st, x)
+
+    ∂ps_fd = ForwardDiff.gradient(ps -> loss_function(model, ps, st, x), ComponentArray(ps))
+    ∂x_fd = ForwardDiff.gradient(x -> loss_function(model, ps, st, x), x)
+
+    @test ComponentArray(∂ps)≈∂ps_fd rtol=1e-3 atol=1e-3
+    @test ∂x≈∂x_fd rtol=1e-3 atol=1e-3
+end
