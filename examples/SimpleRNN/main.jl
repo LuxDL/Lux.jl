@@ -133,12 +133,14 @@ function main(model_type)
     ## Get the dataloaders
     (train_loader, val_loader) = get_dataloaders()
 
+    dev = gpu_device()
+
     ## Create the model
     model = model_type(2, 8, 1)
     rng = Xoshiro(0)
+    ps, st = Lux.setup(rng, model) |> dev
 
-    dev = gpu_device()
-    train_state = Training.TrainState(rng, model, Adam(0.01f0); transform_variables=dev)
+    train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
 
     for epoch in 1:25
         ## Train the model

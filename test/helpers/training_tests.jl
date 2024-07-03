@@ -6,8 +6,9 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
         opt = Adam(0.01f0)
+        ps, st = Lux.setup(rng, model) |> dev
 
-        tstate = Lux.Training.TrainState(Lux.replicate(rng), model, opt)
+        tstate = Lux.Training.TrainState(model, ps, st, opt)
 
         x = randn(Lux.replicate(rng), Float32, (3, 1))
 
@@ -35,9 +36,9 @@ end
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
         opt = Adam(0.01f0)
+        ps, st = Lux.setup(rng, model) |> dev
 
-        tstate = Lux.Training.TrainState(
-            Lux.replicate(rng), model, opt; transform_variables=dev)
+        tstate = Lux.Training.TrainState(model, ps, st, opt)
 
         x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
@@ -70,6 +71,7 @@ end
             Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4))
         dataset_ = [dev((x, y)) for (x, y) in dataset]
         opt = Adam(0.001f0)
+        ps, st = Lux.setup(rng, model) |> dev
 
         @testset "$(ad)" for ad in (
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
@@ -77,8 +79,7 @@ end
 
             @test_throws ArgumentError Lux.Training.__maybe_implemented_compute_gradients(ad)
 
-            tstate = Lux.Training.TrainState(
-                Lux.replicate(rng), model, opt; transform_variables=dev)
+            tstate = Lux.Training.TrainState(model, ps, st, opt)
 
             initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
 
@@ -118,8 +119,7 @@ end
 
         struct AutoCustomAD <: ADTypes.AbstractADType end
 
-        tstate = Lux.Training.TrainState(
-            Lux.replicate(rng), model, opt; transform_variables=dev)
+        tstate = Lux.Training.TrainState(model, ps, st, opt)
 
         @test_throws ArgumentError Lux.Training.compute_gradients(
             AutoCustomAD(), mse, dataset_[1], tstate)
