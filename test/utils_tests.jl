@@ -123,8 +123,8 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
-            BatchNorm(1); disable_optimizations=true)
+        model = Chain(
+            Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1))
 
         for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
             ps, st = Lux.setup(rng, model) |> device |> f

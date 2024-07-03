@@ -24,10 +24,10 @@ function add_vgg_benchmarks!()
             conv_bn((3, 3), 512 => 512, relu; pad=(1, 1), stride=(1, 1)),
             conv_bn((3, 3), 512 => 512, relu; pad=(1, 1), stride=(1, 1)),
             conv_bn((3, 3), 512 => 512, relu; pad=(1, 1), stride=(1, 1)),
-            MaxPool((2, 2)); disable_optimizations=true),
+            MaxPool((2, 2))),
         FlattenLayer(),
         Chain(Dense(512, 4096, relu), Dropout(0.5f0), Dense(4096, 4096, relu),
-            Dropout(0.5f0), Dense(4096, 10); name="Classifier"); disable_optimizations=true)
+            Dropout(0.5f0), Dense(4096, 10); name="Classifier"))
 
     flux_model = () -> Flux.Chain(
         Flux.Conv((3, 3), 3 => 64, relu; pad=(1, 1), stride=(1, 1)),

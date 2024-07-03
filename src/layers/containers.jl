@@ -398,20 +398,6 @@ of the internal layers.
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 
-## Optimizations
-
-Performs a few optimizations to generate reasonable architectures. Can be disabled using
-keyword argument `disable_optimizations`.
-
-  - All sublayers are recursively optimized.
-  - If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to
-    a [`WrappedFunction`](@ref)(`f`) which takes only one input.
-  - If the layer is a Chain, it is flattened.
-  - [`NoOpLayer`](@ref)s are removed.
-  - If there is only 1 layer (left after optimizations), then it is returned without the
-    `Chain` wrapper.
-  - If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
-
 ## Miscellaneous Properties
 
   - Allows indexing and field access syntax. We can access the `i`th layer by `m[i]` or

@@ -4,8 +4,8 @@
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)),
-            BatchNorm(1); disable_optimizations=true)
+        model = Chain(
+            Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)), BatchNorm(1))
 
         ps, st = Lux.setup(rng, model) |> device
         x = randn(rng, Float32, 1, 5) |> aType
@@ -29,8 +29,8 @@
         catch
         end
 
-        model_fixed = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
-            BatchNorm(1); disable_optimizations=true)
+        model_fixed = Chain(
+            Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1))
 
         ps, st = Lux.setup(rng, model_fixed) |> device
 
@@ -61,8 +61,8 @@ end
     end
 
     @testset "$mode: NaN Debugging" for (mode, aType, device, ongpu) in MODES
-        model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
-            BatchNorm(1); disable_optimizations=true)
+        model = Chain(
+            Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1))
 
         x = randn(rng, Float32, 1, 5) |> aType
         ps, st = Lux.setup(rng, model) |> device
@@ -85,8 +85,8 @@ end
         model_debug4 = Lux.Experimental.@debug_mode model nan_check=:none
         @test any(isnan, first(model_debug4(x, ps, st)) |> Array)
 
-        model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), offending_layer),
-            BatchNorm(1); disable_optimizations=true)
+        model = Chain(
+            Dense(1 => 16, relu), Chain(Dense(16 => 1), offending_layer), BatchNorm(1))
 
         ps, st = Lux.setup(rng, model) |> device
 

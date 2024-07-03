@@ -16,8 +16,7 @@ end
 
 function Lux.__fix_input_dims_simplechain(layers, input_dims)
     @warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this \
-           might fail. Please consider using `Chain` directly (potentially with \
-           `disable_optimizations = true`)."
+           might fail. Please consider using `Chain` directly."
     return __fix_input_dims_simplechain([layers], input_dims)
 end
 
