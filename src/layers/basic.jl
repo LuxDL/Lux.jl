@@ -252,9 +252,9 @@ function (wf::WrappedFunction)(x, ps, st::NamedTuple)
     return __maybe_direct_call(wf.func, x, ps, st, Val(false))
 end
 
-function (wf::WrappedFunction{:runtime_check})(x, ps, st::NamedTuple)
-    return __maybe_direct_call(
-        wf.func, x, ps, st, Val(!hasmethod(wf.func, (typeof(x), typeof(ps), typeof(st)))))
+@generated function (wf::WrappedFunction{:runtime_check, F})(x, ps, st::NamedTuple) where {F}
+    DC = hasmethod(F, (typeof(x), typeof(ps), typeof(st)))
+    return :(__maybe_direct_call(wf.func, x, ps, st, Val($(!DC))))
 end
 
 @inline __maybe_direct_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
