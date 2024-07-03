@@ -1,8 +1,13 @@
 @testitem "Layer Map" setup=[SharedTestSetup] tags=[:contrib] begin
-    using Setfield
+    using Setfield, Functors
+
+    function __occurs_in(kp::KeyPath, x::KeyPath)
+        length(kp) ≤ length(x) && return all(==(x[i], kp[i]) for i in 1:length(x))
+        return false
+    end
 
     function zero_dense_params_1(l, ps, st, name)
-        if l isa Dense && occursin("model.layers.chain", name)
+        if l isa Dense && __occurs_in(KeyPath(:model, :layers, :chain), name)
             @set! ps.weight = zero.(ps.weight)
             @set! ps.bias = zero.(ps.bias)
         end
@@ -10,7 +15,7 @@
     end
 
     function zero_dense_params_2(l, ps, st, name)
-        if l isa Dense && occursin("c.layers.chain", name)
+        if l isa Dense && __occurs_in(KeyPath(:c, :layers, :chain), name)
             @set! ps.weight = zero.(ps.weight)
             @set! ps.bias = zero.(ps.bias)
         end

@@ -44,7 +44,6 @@ end
             layer = Parallel(
                 +, WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)),
                 NoOpLayer())
-            @test :layer_1 in keys(layer) && :layer_2 in keys(layer)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, 10, 10, 10, 10) |> aType
@@ -342,8 +341,6 @@ end
             @test encoder[2] == encoder.layer_2
             @test autoencoder[1] == autoencoder.encoder
             @test autoencoder[2] == autoencoder.decoder
-            @test keys(encoder) == (:layer_1, :layer_2)
-            @test keys(autoencoder) == (:encoder, :decoder)
             @test autoencoder.layers isa NamedTuple
             @test autoencoder.encoder isa Chain
             @test_throws ArgumentError autoencoder.layer_1
@@ -351,13 +348,11 @@ end
     end
 
     @testset "constructors" begin
-        @test Chain([Dense(10 => 5, sigmoid)]) == Dense(10 => 5, sigmoid)
-
         f1(x, ps, st::NamedTuple) = (x .+ 1, st)
         f2(x) = x .+ 2
         model = Chain((Dense(2 => 3), Dense(3 => 2)), f1, f2, NoOpLayer())
 
-        @test length(model) == 4
+        @test length(model) == 5
 
         x = rand(Float32, 2, 5)
         ps, st = Lux.setup(rng, model)
