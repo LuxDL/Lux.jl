@@ -214,8 +214,7 @@ struct NoOpLayer <: AbstractExplicitLayer end
 @inline (noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
 
 """
-    WrappedFunction{DC}(f)
-    WrappedFunction(f) -> WrappedFunction{:runtime_check}(f)
+    WrappedFunction(f)
 
 Wraps a stateless and parameter less function. Might be used when a function is added to
 `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
@@ -224,9 +223,6 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 
 ## Arguments
 
-  - `DC`: If `:runtime_check`, then we check if the function can be called with the input
-    `x`, `ps`, and `st` using `hasmethod`. If `:direct_call`, we call `f(x)` directly.
-    For all other values, we call `f(x, ps, st)` which must return a tuple.
   - `f`: Some function.
 
 ## Inputs
@@ -238,33 +234,14 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-@concrete struct WrappedFunction{DC} <: AbstractExplicitLayer
+@concrete struct WrappedFunction <: AbstractExplicitLayer
     func <: Function
 end
 
-WrappedFunction(f::F) where {F} = WrappedFunction{:runtime_check}(f)
+(wf::WrappedFunction)(x, ps, st::NamedTuple{}) = wf.func(x), st
 
-function (wf::WrappedFunction{:direct_call})(x, ps, st::NamedTuple)
-    return __maybe_direct_call(wf.func, x, ps, st, Val(true))
-end
-
-function (wf::WrappedFunction)(x, ps, st::NamedTuple)
-    return __maybe_direct_call(wf.func, x, ps, st, Val(false))
-end
-
-@generated function (wf::WrappedFunction{:runtime_check, F})(
-        x, ps, st::NamedTuple) where {F}
-    DC = hasmethod(F, Tuple{typeof(x)})
-    return :(__maybe_direct_call(wf.func, x, ps, st, Val($(DC))))
-end
-
-@inline __maybe_direct_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
-@inline __maybe_direct_call(f, x, ps, st, ::Val{true}) = f(x), st
-
-function Base.show(io::IO, w::WrappedFunction{T}) where {T}
-    print(io, "WrappedFunction{$(Meta.quot(T))}(")
-    show(io, w.func)
-    print(io, ")")
+function Base.show(io::IO, w::WrappedFunction)
+    print(io, "WrappedFunction(", w.func, ")")
 end
 
 """
@@ -332,7 +309,7 @@ end
 function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias}
     if use_bias
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
-            bias=d.init_bias(rng, d.out_dims, 1)) #TODO: In v0.6 make it a vector
+            bias=d.init_bias(rng, d.out_dims))
     else
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
@@ -345,10 +322,6 @@ statelength(d::Dense) = 0
 
 outputsize(d::Dense) = (d.out_dims,)
 
-@inline function (d::Dense)(x::AbstractVector, ps, st::NamedTuple)
-    return vec(first(d(reshape(x, :, 1), ps, st))), st
-end
-
 @inline function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(first(d(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
 end
@@ -357,7 +330,7 @@ end
     y = match_eltype(d, ps, st, x)
     return (
         fused_dense_bias_activation(
-            d.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias)))),
+            d.activation, ps.weight, y, _getproperty(ps, Val(:bias))),
         st)
 end
 

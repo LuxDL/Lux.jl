@@ -16,7 +16,7 @@ function Lux.__from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) wh
     return Lux.FluxLayer(l)
 end
 
-Lux.__from_flux_adaptor(l::Function; kwargs...) = Lux.WrappedFunction{:direct_call}(l)
+Lux.__from_flux_adaptor(l::Function; kwargs...) = Lux.WrappedFunction(l)
 
 function Lux.__from_flux_adaptor(l::Flux.Chain; kwargs...)
     fn = x -> Lux.__from_flux_adaptor(x; kwargs...)
@@ -28,7 +28,7 @@ end
 function Lux.__from_flux_adaptor(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
-        bias = l.bias isa Bool ? nothing : reshape(copy(l.bias), out_dims, 1)
+        bias = l.bias isa Bool ? nothing : copy(l.bias)
         return Lux.Dense(in_dims => out_dims, l.σ; init_weight=Returns(copy(l.weight)),
             init_bias=Returns(bias), use_bias=!(l.bias isa Bool))
     else
