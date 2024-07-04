@@ -104,14 +104,14 @@
             ps, st = Lux.setup(rng, model) |> dev
 
             @test size(ps.w1.weight) == (128, 1)
-            @test size(ps.w1.bias) == (128, 1)
+            @test size(ps.w1.bias) == (128,)
             @test length(ps.w2) == nlayers
             for i in 1:nlayers
                 @test size(ps.w2[i].weight) == (128, 128)
-                @test size(ps.w2[i].bias) == (128, 1)
+                @test size(ps.w2[i].bias) == (128,)
             end
             @test size(ps.w3.weight) == (1, 128)
-            @test size(ps.w3.bias) == (1, 1)
+            @test size(ps.w3.bias) == (1,)
 
             x = randn(n_in, 32) |> aType
 

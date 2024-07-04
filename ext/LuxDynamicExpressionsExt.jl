@@ -34,7 +34,7 @@ function Lux.DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::N
         Parallel(nothing,
             ntuple(i -> DynamicExpressionsLayer(operator_enum, expressions[i],
                 name_fn(i), eval_options), length(expressions))...),
-        WrappedFunction{:direct_call}(Lux.Utils.stack1);
+        WrappedFunction(Lux.Utils.stack1);
         name="DynamicExpressionsLayer")
     #! format: on
 end
