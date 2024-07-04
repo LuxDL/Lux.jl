@@ -19,9 +19,9 @@ generic implementation.
 
   - Output Array with the same size as `x`
 """
-@inline fast_activation!!(::typeof(identity), x::AbstractArray) = x
+fast_activation!!(::typeof(identity), x::AbstractArray) = x
 
-@inline @generated function fast_activation!!(σ::F, x::AbstractArray) where {F}
+@generated function fast_activation!!(σ::F, x::AbstractArray) where {F}
     ArrayInterface.can_setindex(x) && :(return __fast_activation_impl!!(σ, x))
     return :(σ.(x))
 end

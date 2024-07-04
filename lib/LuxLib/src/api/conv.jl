@@ -27,7 +27,7 @@ reallocations by reusing the output buffer for multiple operations.
   - For Mixed-Precision Inputs on GPU, we type promote the inputs to the highest precision,
     with a warning.
 """
-@inline function fused_conv_bias_activation(
+function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::AbstractArray{<:Number, N}, cdims::ConvDims) where {F, N}
     return fused_conv_bias_activation(
@@ -35,7 +35,7 @@ reallocations by reusing the output buffer for multiple operations.
         __is_immutable_array_or_dual_val(x), b, __is_immutable_array_or_dual_val(b), cdims)
 end
 
-@inline function fused_conv_bias_activation(
+function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::Nothing, cdims::ConvDims) where {F, N}
     return fused_conv_bias_activation(
@@ -43,13 +43,13 @@ end
         __is_immutable_array_or_dual_val(x), b, __is_immutable_array_or_dual_val(b), cdims)
 end
 
-@inline function fused_conv_bias_activation(
+function fused_conv_bias_activation(
         σ::F, weight::AbstractArray, ::Val{false}, x::AbstractArray, ::Val{false},
         b::Union{Nothing, AbstractArray}, ::Val{false}, cdims::ConvDims) where {F}
     return _fused_conv_bias_activation_impl(σ, weight, x, b, cdims)
 end
 
-@inline function fused_conv_bias_activation(
+function fused_conv_bias_activation(
         σ::F, weight::AbstractArray, ::Val, x::AbstractArray, ::Val,
         b::Union{Nothing, AbstractArray}, ::Val, cdims::ConvDims) where {F}
     return _generic_conv_bias_activation(σ, weight, x, b, cdims)
