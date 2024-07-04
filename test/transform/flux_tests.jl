@@ -503,7 +503,7 @@
         @testset "Functions" begin
             @test tolux(Flux.flatten) isa Lux.FlattenLayer
             @test tolux(identity) isa Lux.NoOpLayer
-            @test tolux(+) isa Lux.WrappedFunction{:direct_call}
+            @test tolux(+) isa Lux.WrappedFunction
         end
 
         @testset "Unsupported Layers" begin

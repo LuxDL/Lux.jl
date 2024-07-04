@@ -4,8 +4,7 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "zero sum" begin
-            layer = SkipConnection(
-                WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)), .+)
+            layer = SkipConnection(WrappedFunction(Broadcast.BroadcastFunction(zero)), .+)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, Float32, 10, 10, 10, 10) |> aType
@@ -42,8 +41,7 @@ end
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "zero sum" begin
             layer = Parallel(
-                +, WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)),
-                NoOpLayer())
+                +, WrappedFunction(Broadcast.BroadcastFunction(zero)), NoOpLayer())
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, 10, 10, 10, 10) |> aType
@@ -344,7 +342,7 @@ end
     end
 
     @testset "constructors" begin
-        f1(x, ps, st::NamedTuple) = (x .+ 1, st)
+        f1(x) = x .+ 1
         f2(x) = x .+ 2
         model = Chain((Dense(2 => 3), Dense(3 => 2)), f1, f2, NoOpLayer())
 

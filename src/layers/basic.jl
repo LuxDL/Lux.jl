@@ -217,8 +217,7 @@ struct NoOpLayer <: AbstractExplicitLayer end
 (noop::NoOpLayer)(x, _, st::NamedTuple) = x, st
 
 """
-    WrappedFunction{DC}(f)
-    WrappedFunction(f) -> WrappedFunction{:runtime_check}(f)
+    WrappedFunction(f)
 
 Wraps a stateless and parameter less function. Might be used when a function is added to
 `Chain`. For example, `Chain(x -> relu.(x))` would not work and the right thing to do would
@@ -227,9 +226,6 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 
 ## Arguments
 
-  - `DC`: If `:runtime_check`, then we check if the function can be called with the input
-    `x`, `ps`, and `st` using `hasmethod`. If `:direct_call`, we call `f(x)` directly.
-    For all other values, we call `f(x, ps, st)` which must return a tuple.
   - `f`: Some function.
 
 ## Inputs
@@ -242,38 +238,13 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-struct WrappedFunction{DC, F} <: AbstractExplicitLayer
-    call_mode::StaticSymbol{DC}
-    func::F
+@concrete struct WrappedFunction <: AbstractExplicitLayer
+    func <: Function
 end
 
-function WrappedFunction{call_mode}(f::F) where {call_mode, F}
-    return WrappedFunction(static(call_mode), f)
-end
+(wf::WrappedFunction)(x, ps, st::NamedTuple{}) = wf.func(x), st
 
-WrappedFunction(f::F) where {F} = WrappedFunction{:runtime_check}(f)
-
-function (wf::WrappedFunction{:direct_call})(x, ps, st::NamedTuple)
-    return wrapped_function_call(wf.func, x, ps, st, True())
-end
-
-function (wf::WrappedFunction)(x, ps, st::NamedTuple)
-    return wrapped_function_call(wf.func, x, ps, st, False())
-end
-
-function (wf::WrappedFunction{:runtime_check})(x, ps, st::NamedTuple)
-    return wrapped_function_call(wf.func, x, ps, st,
-        static(!hasmethod(wf.func, (typeof(x), typeof(ps), typeof(st)))))
-end
-
-wrapped_function_call(f, x, ps, st, ::False) = f(x, ps, st)
-wrapped_function_call(f, x, _, st, ::True) = f(x), st
-
-function Base.show(io::IO, w::WrappedFunction{T}) where {T}
-    print(io, "WrappedFunction(", static(w.call_mode), ", ")
-    show(io, w.func)
-    print(io, ")")
-end
+Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform,
@@ -342,7 +313,7 @@ end
 function initialparameters(rng::AbstractRNG, d::Dense)
     if has_bias(d)
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
-            bias=d.init_bias(rng, d.out_dims, 1)) #TODO: In v1 make it a vector
+            bias=d.init_bias(rng, d.out_dims))
     else
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end
