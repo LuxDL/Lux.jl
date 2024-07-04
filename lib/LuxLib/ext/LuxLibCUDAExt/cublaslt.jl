@@ -125,7 +125,7 @@ function LuxLib._cublaslt_matmul_fused!(
     lthandle = Ref{CUBLAS.cublasLtHandle_t}()
     CUBLAS.cublasLtCreate(lthandle)
 
-    # Seach for the best algorithm
+    # Search for the best algorithm
     heuristic = Ref{CUBLAS.cublasLtMatmulHeuristicResult_t}()
     returnedResults = Ref{Cint}(0)
     CUBLAS.cublasLtMatmulAlgoGetHeuristic(

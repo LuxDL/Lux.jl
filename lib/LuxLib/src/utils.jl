@@ -27,7 +27,7 @@ EnzymeRules.inactive_noinl(::typeof(_copy_autodiff_barrier), ::Any...) = nothing
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
 
-# Droping ForwardDiff Gradients
+# Dropping ForwardDiff Gradients
 function _drop_forwarddiff_partials end
 
 _drop_forwarddiff_partials(x::AbstractArray) = x

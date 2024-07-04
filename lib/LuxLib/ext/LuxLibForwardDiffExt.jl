@@ -12,7 +12,7 @@ LuxLib.__has_dual(::AbstractArray{<:ForwardDiff.Dual}) = true
     return ForwardDiff.valtype(eltype(x))
 end
 
-# Convolutions: We might want to capture these furthur down in `conv!`
+# Convolutions: We might want to capture these further down in `conv!`
 # NOTE: In principle we can concatenate all of the partials along the batch dimension
 #       and cut down substantially on the time to compute jacobians.
 # Here we should be broadcasting with `Tag` for safety but that breaks GPU compilation.
