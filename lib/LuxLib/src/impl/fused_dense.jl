@@ -18,7 +18,7 @@ end
 # Turns out NVIDIA has been shipping a bunch of fused kernels for a while now. We use
 # fuse all the operations into a single kernel.
 
-@inline function __fused_dense_bias_activation_impl(
+@stable default_mode="warn" function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Union{Nothing, AbstractVector}) where {F}
     if act === identity

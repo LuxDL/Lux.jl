@@ -2,6 +2,7 @@ module LuxLib
 
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore, NoTangent
+using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastBroadcast: @..
 using FastClosures: @closure
