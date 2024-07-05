@@ -10,7 +10,7 @@
         return x, scale, bias
     end
 
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act" for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),

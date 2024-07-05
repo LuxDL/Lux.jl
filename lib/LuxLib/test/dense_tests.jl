@@ -1,7 +1,7 @@
 @testitem "Fused Dense Bias Activation" tags=[:common_ops] setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
         # These are not all possible combinations but rather a representative set to keep
         # CI timings under check
         @testset "$(Tw) x $(Tx)" for (Tw, Tx) in [
