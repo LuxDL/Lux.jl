@@ -1,4 +1,4 @@
-@testitem "Fused Conv Bias Activation" tags=[:nworkers, :common_ops] setup=[SharedTestSetup] begin
+@testitem "Fused Conv Bias Activation" tags=[:common_ops] setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
     _expand(N, i::Tuple) = i

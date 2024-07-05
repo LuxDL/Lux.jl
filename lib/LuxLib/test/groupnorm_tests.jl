@@ -1,4 +1,4 @@
-@testitem "Group Normalization" tags=[:singleworker, :normalization] setup=[SharedTestSetup] begin
+@testitem "Group Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
     rng = get_stable_rng(12345)
 
     function _setup_groupnorm(aType, T, sz, groups)

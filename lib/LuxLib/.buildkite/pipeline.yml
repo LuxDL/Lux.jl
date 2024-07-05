@@ -2,7 +2,7 @@ steps:
   # CUDA Tests
   - group: ":julia: CUDA GPU"
     steps:
-      - label: ":julia: Julia {{matrix.julia}} + {{matrix.test_group}} + CUDA GPU"
+      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -18,17 +18,12 @@ steps:
           cuda: "*"
         env:
           BACKEND_GROUP: "CUDA"
-          LUXLIB_TEST_GROUP: "{{matrix.test_group}}"
         if: build.message !~ /\[skip tests\]/
         timeout_in_minutes: 60
         matrix:
           setup:
             julia:
               - "1"
-            test_group:
-              - "normalization"
-              - "common_ops"
-              - "others"
 
   # Downstream CUDA Tests
   - group: ":telescope: Downstream CUDA"
@@ -84,7 +79,7 @@ steps:
   # AMDGPU Tests
   - group: ":julia: AMD GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + {{matrix.test_group}} + AMD GPU"
+      - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -100,7 +95,6 @@ steps:
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
           BACKEND_GROUP: "AMDGPU"
-          LUXLIB_TEST_GROUP: "{{matrix.test_group}}"
         agents:
           queue: "juliagpu"
           rocm: "*"
@@ -111,10 +105,6 @@ steps:
           setup:
             julia:
               - "1"
-            test_group:
-              - "normalization"
-              - "common_ops"
-              - "others"
 
   # Downstream AMDGPU Tests
   - group: ":telescope: Downstream AMD GPU"
