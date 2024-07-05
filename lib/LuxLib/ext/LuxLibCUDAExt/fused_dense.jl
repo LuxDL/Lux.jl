@@ -6,7 +6,7 @@
     return hasmethod(LuxLib._cublaslt_matmul_fused!, (Z, A, W, X, B))
 end
 
-function LuxLib.__fused_dense_bias_activation_impl(
+@stable default_mode="warn" function LuxLib.__fused_dense_bias_activation_impl(
         act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
         b::Union{Nothing, AnyCuVector}) where {F}
     y = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
