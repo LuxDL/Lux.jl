@@ -23,20 +23,18 @@
             track_stats in (true, false),
             act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
 
-            _f = (args...) -> batchnorm(args..., act; epsilon, training, momentum=T(0.9))
+            _f = (args...) -> batchnorm(args..., training, act, T(0.9), epsilon)
 
             epsilon = T(1e-5)
             x, scale, bias, rm, rv = _setup_batchnorm(aType, T, sz; track_stats, affine)
 
-            y, nt = batchnorm(
-                x, scale, bias, rm, rv, act; epsilon, training, momentum=T(0.9))
+            y, nt = batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
-            @inferred batchnorm(
-                x, scale, bias, rm, rv, act; epsilon, training, momentum=T(0.9))
+            @inferred batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
             # Stresses CI too much
-            T !== Float16 && @jet batchnorm(
-                x, scale, bias, rm, rv; act, epsilon, training, momentum=T(0.9))
+            T !== Float16 &&
+                @jet batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
@@ -49,7 +47,7 @@
             if __istraining(training) && affine
                 fp16 = T == Float16
                 __f = (args...) -> sum(first(batchnorm(
-                    x, args..., rm, rv, act; epsilon, training, momentum=T(0.9))))
+                    x, args..., rm, rv, training, act, T(0.9), epsilon)))
                 skip_fd = act === relu
                 @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 skip_finite_differences=$(skip_fd)
             end

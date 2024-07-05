@@ -16,22 +16,22 @@
             groups in (2, 3),
             act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
 
-            _f = (args...) -> groupnorm(args..., act; groups, epsilon)
+            _f = (args...) -> groupnorm(args..., groups, act, epsilon)
 
             epsilon = T(1e-5)
             x, scale, bias = _setup_groupnorm(aType, T, sz, groups)
             y = _f(x, scale, bias)
 
-            @inferred groupnorm(x, scale, bias, act; groups, epsilon)
+            @inferred groupnorm(x, scale, bias, groups, act, epsilon)
 
             # Stresses CI too much
-            T !== Float16 && @jet groupnorm(x, scale, bias, act; groups, epsilon)
+            T !== Float16 && @jet groupnorm(x, scale, bias, groups, act, epsilon)
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
 
             fp16 = T == Float16
-            __f = (args...) -> sum(groupnorm(x, args..., act; groups, epsilon))
+            __f = (args...) -> sum(groupnorm(x, args..., groups, act, epsilon))
             skip_fd = act === relu
             @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 skip_finite_differences=$(skip_fd)
         end

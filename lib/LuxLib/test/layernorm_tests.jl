@@ -20,12 +20,12 @@
 
             dims = Colon()
             epsilon = T(1e-5)
-            _f = (args...) -> layernorm(args..., act; dims, epsilon)
+            _f = (args...) -> layernorm(args..., act, dims, epsilon)
 
             x, scale, bias = _setup_layernorm(aType, T, x_shape, affine_shape)
 
-            @inferred layernorm(x, scale, bias, act; dims, epsilon)
-            @jet layernorm(x, scale, bias, act; dims, epsilon)
+            @inferred layernorm(x, scale, bias, act, dims, epsilon)
+            @jet layernorm(x, scale, bias, act, dims, epsilon)
 
             y = _f(x, scale, bias)
 

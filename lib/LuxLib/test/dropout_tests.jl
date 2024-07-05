@@ -11,9 +11,9 @@
 
             x = randn(rng, T, x_shape) |> aType
 
-            @inferred dropout(rng, x, T(0.5), Val(true); dims=Colon())
+            @inferred dropout(rng, x, T(0.5), Val(true), T(2), Colon())
 
-            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(true); dims=Colon())
+            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(true), T(2), Colon())
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -21,15 +21,15 @@
             @test size(mask_) == x_shape
             @test rng != rng_
 
-            __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true); dims=Colon())))
+            __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
 
             fp16 = T == Float16
             @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
-            @jet sum(first(dropout(rng, x, T(0.5), Val(true); dims=Colon())))
 
-            @inferred dropout(rng, x, T(0.5), Val(true); dims=Colon())
+            @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
+            @inferred dropout(rng, x, T(0.5), Val(true), T(2), Colon())
 
-            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false); dims=Colon())
+            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), Colon())
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -54,10 +54,10 @@ end
             mask = rand(T, x_shape) |> aType
 
             # Update mask
-            @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(true); dims=Colon())
+            @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true); dims=Colon())
+                rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -67,18 +67,18 @@ end
             @test mask != mask_
 
             __f = x -> sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true); dims=Colon())))
+                rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
 
             fp16 = T == Float16
             @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
             @jet sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true); dims=Colon())))
+                rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
 
             # Try using mask if possible (possible!!)
-            @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())
+            @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -88,18 +88,18 @@ end
             @test mask == mask_
 
             __f = x -> sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())))
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             fp16 = T == Float16
             @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
             @jet sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())))
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
 
             # Try using mask if possible (not possible!!)
-            @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())
+            @inferred dropout(rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -109,16 +109,16 @@ end
             @test mask != mask_
 
             __f = x -> sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())))
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             fp16 = T == Float16
             @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
             @jet sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false); dims=Colon())))
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             # Testing Mode
-            @inferred dropout(rng, x, mask, T(0.5), Val(false), Val(false); dims=Colon())
+            @inferred dropout(rng, x, mask, T(0.5), Val(false), Val(false), T(2), Colon())
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(false), Val(false); dims=Colon())
+                rng, x, mask, T(0.5), Val(false), Val(false), T(2), Colon())
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -134,7 +134,7 @@ end
 
     rng = get_stable_rng(12345)
 
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 

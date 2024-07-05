@@ -10,7 +10,7 @@ end
     using ExplicitImports
 
     @test check_no_implicit_imports(LuxLib) === nothing
-    @test check_no_stale_explicit_imports(LuxLib, ignore=(:TrackedVector,)) === nothing
+    @test check_no_stale_explicit_imports(LuxLib; ignore=(:TrackedVector,)) === nothing
     @test check_no_self_qualified_accesses(LuxLib) === nothing
     @test check_all_explicit_imports_via_owners(LuxLib) === nothing
     @test check_all_qualified_accesses_via_owners(LuxLib) === nothing
