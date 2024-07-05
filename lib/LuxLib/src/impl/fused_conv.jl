@@ -3,8 +3,8 @@
     T = promote_type(xT, wT)
     @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
            $(xT)]. Promoting to $(wT)." maxlog=1
-    return (__materialize_subarray(LuxLib._oftype_array(T, weight)),
-        __materialize_subarray(LuxLib._oftype_array(T, x)))
+    return (__materialize_subarray(_oftype_array(T, weight)),
+        __materialize_subarray(_oftype_array(T, x)))
 end
 @inline function __gpu_get_weight_input(::Type{T}, ::Type{T}, weight, x) where {T}
     return __materialize_subarray(weight), __materialize_subarray(x)
@@ -20,8 +20,8 @@ end
         @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
                $(xT)]. Promoting to $(yT)." maxlog=1
     end
-    return conv!(y, __materialize_subarray(LuxLib._oftype_array(yT, x)),
-        __materialize_subarray(LuxLib._oftype_array(yT, weight)), cdims)
+    return conv!(y, __materialize_subarray(_oftype_array(yT, x)),
+        __materialize_subarray(_oftype_array(yT, weight)), cdims)
 end
 
 @inline __conv(x, weight, cdims) = conv(
@@ -53,7 +53,7 @@ end
 @inline function __conv_bias_act(x_::AnyGPUArray{xT, N}, weight_::AnyGPUArray{wT, N},
         cdims, bias, act::F) where {xT, wT, N, F}
     weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
-    bias !== nothing && (bias = LuxLib._oftype_array(eltype(x), bias))
+    bias !== nothing && (bias = _oftype_array(eltype(x), bias))
     return __conv_bias_act_impl(x, weight, cdims, bias, act)
 end
 

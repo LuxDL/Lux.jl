@@ -4,7 +4,7 @@ using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
 using LuxLib: LuxLib
 using NNlib: NNlib
-using Tracker: Tracker, TrackedArray, TrackedVector, TrackedReal
+using Tracker: Tracker, TrackedArray, TrackedReal
 
 const CRC = ChainRulesCore
 

@@ -10,6 +10,8 @@ using GPUArraysCore: GPUArraysCore, AnyGPUArray
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
 using LuxCore: LuxCore
 using Markdown: @doc_str
+using NNlib: NNlib, ConvDims, conv, conv!, relu, sigmoid_fast, swish, σ, ∇conv_data,
+             ∇conv_filter
 using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
 using Statistics: Statistics, mean, var
