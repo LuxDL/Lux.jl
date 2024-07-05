@@ -62,7 +62,7 @@ end
     return _affine_normalize(act, x, μ, σ², scale, bias, epsilon), rμ, rσ²
 end
 
-@stable default_mode="warn" default_codegen_level="min" function _normalization(
+@stable default_mode="warn" function _normalization(
         x::AbstractArray, running_mean::Union{Nothing, <:AbstractVector},
         running_var::Union{Nothing, <:AbstractVector},
         scale::Union{Nothing, <:AbstractVector},

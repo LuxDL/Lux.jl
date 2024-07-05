@@ -46,8 +46,7 @@ function fused_dense_bias_activation(
     return __fused_dense_bias_activation_impl(σ, weight, x, b)
 end
 
-function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix, ::Val, x::AbstractMatrix,
+function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, ::Val, x::AbstractMatrix,
         ::Val, b::Union{Nothing, AbstractVector}, ::Val) where {F}
     return __generic_dense_bias_activation(σ, weight, x, b)
 end
