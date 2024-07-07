@@ -1,7 +1,7 @@
 # The cases here are manually split up else Zygote becomes type unstable.
 """
     fused_conv_bias_activation(σ::F, weight::AbstractArray, x::AbstractArray,
-        b::Union{Nothing, AbstractArray}, cdims::ConvDims) where {F}
+        b::Optional{<:AbstractArray}, cdims::ConvDims) where {F}
 
 Computes `σ.(conv(x, weight, cdims) .+ b)` with the best possible implementation available.
 This operation fuses operations into a single kernel if possible, and minimizes
@@ -45,12 +45,12 @@ end
 
 function fused_conv_bias_activation(
         σ::F, weight::AbstractArray, ::Val{false}, x::AbstractArray, ::Val{false},
-        b::Union{Nothing, AbstractArray}, ::Val{false}, cdims::ConvDims) where {F}
+        b::Optional{<:AbstractArray}, ::Val{false}, cdims::ConvDims) where {F}
     return _fused_conv_bias_activation_impl(σ, weight, x, b, cdims)
 end
 
 function fused_conv_bias_activation(
         σ::F, weight::AbstractArray, ::Val, x::AbstractArray, ::Val,
-        b::Union{Nothing, AbstractArray}, ::Val, cdims::ConvDims) where {F}
+        b::Optional{<:AbstractArray}, ::Val, cdims::ConvDims) where {F}
     return _generic_conv_bias_activation(σ, weight, x, b, cdims)
 end

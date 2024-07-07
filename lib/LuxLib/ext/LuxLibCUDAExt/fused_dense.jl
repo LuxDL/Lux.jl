@@ -7,8 +7,7 @@
 end
 
 @stable default_mode="warn" function LuxLib.__fused_dense_bias_activation_impl(
-        act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
-        b::Union{Nothing, AnyCuVector}) where {F}
+        act::F, weight::AnyCuMatrix, x::AnyCuMatrix, b::Optional{<:AnyCuVector}) where {F}
     y = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     if __might_use_cuBLASLt(y, act, weight, x, b)

@@ -20,6 +20,8 @@ using Statistics: Statistics, mean, var
 
 const CRC = ChainRulesCore
 
+const Optional{T} = Union{Nothing, T}
+
 include("utils.jl")
 
 # Low-Level Implementations

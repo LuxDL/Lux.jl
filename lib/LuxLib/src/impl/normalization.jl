@@ -52,17 +52,16 @@ end
 end
 
 @inline function _normalization_impl(
-        x::AbstractArray, running_mean::Union{Nothing, <:AbstractArray},
-        running_var::Union{Nothing, <:AbstractArray},
-        scale::Union{Nothing, <:AbstractArray}, bias::Union{Nothing, <:AbstractArray},
-        r::Val{reduce_dims}, training::Val, momentum,
-        epsilon, act::F=identity) where {reduce_dims, F}
+        x::AbstractArray, running_mean::Optional{<:AbstractArray},
+        running_var::Optional{<:AbstractArray}, scale::Optional{<:AbstractArray},
+        bias::Optional{<:AbstractArray}, r::Val{reduce_dims}, training::Val,
+        momentum, epsilon, act::F=identity) where {reduce_dims, F}
     (μ, σ²), (rμ, rσ²) = _get_batch_statistics(
         x, running_mean, running_var, r, training, momentum)
     return _affine_normalize(act, x, μ, σ², scale, bias, epsilon), rμ, rσ²
 end
 
-# See https://github.com/MilesCranmer/DispatchDoctor.jl/issues/46
+# FIXME: See https://github.com/MilesCranmer/DispatchDoctor.jl/issues/46
 @stable default_mode="warn" @inline _normalization(args...) = __normalization(args...)
 
 function CRC.rrule(
@@ -70,10 +69,9 @@ function CRC.rrule(
     return CRC.rrule_via_ad(cfg, __normalization, args...)
 end
 
-function __normalization(x::AbstractArray, running_mean::Union{Nothing, <:AbstractVector},
-        running_var::Union{Nothing, <:AbstractVector},
-        scale::Union{Nothing, <:AbstractVector},
-        bias::Union{Nothing, <:AbstractVector}, reduce_dims::Val,
+function __normalization(x::AbstractArray, running_mean::Optional{<:AbstractVector},
+        running_var::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, reduce_dims::Val,
         training::Val, momentum, epsilon, act::F=identity) where {F}
     x_, rμ, rσ² = _normalization_impl(x, _reshape_into_proper_shape(running_mean, x),
         _reshape_into_proper_shape(running_var, x), _reshape_into_proper_shape(scale, x),

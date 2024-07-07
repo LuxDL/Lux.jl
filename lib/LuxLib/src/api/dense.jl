@@ -1,7 +1,7 @@
 # The cases here are manually split up else Zygote becomes type unstable.
 """
     fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Union{Nothing, AbstractVector}) where {F}
+        b::Optional{<:AbstractVector}) where {F}
 
 Compute `σ.(weight * x .+ b)` with the best possible implementation available. Currently
 this implementation attempts to minimize reallocations by reusing the output buffer for
@@ -42,11 +42,11 @@ end
 
 function fused_dense_bias_activation(
         σ::F, weight::AbstractMatrix, ::Val{false}, x::AbstractMatrix,
-        ::Val{false}, b::Union{Nothing, AbstractVector}, ::Val{false}) where {F}
+        ::Val{false}, b::Optional{<:AbstractVector}, ::Val{false}) where {F}
     return __fused_dense_bias_activation_impl(σ, weight, x, b)
 end
 
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, ::Val, x::AbstractMatrix,
-        ::Val, b::Union{Nothing, AbstractVector}, ::Val) where {F}
+        ::Val, b::Optional{<:AbstractVector}, ::Val) where {F}
     return __generic_dense_bias_activation(σ, weight, x, b)
 end

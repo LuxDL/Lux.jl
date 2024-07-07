@@ -9,7 +9,7 @@
 # Our main implementations
 
 function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::AbstractMatrix,
-        bias::Union{Nothing, AbstractVector}) where {F}
+        bias::Optional{<:AbstractVector}) where {F}
     act === identity && return __matmuladd(weight, x, bias)
     return __apply_bias_activation(act, __matmul(weight, x), bias)
 end
@@ -20,7 +20,7 @@ end
 
 @stable default_mode="warn" function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Union{Nothing, AbstractVector}) where {F}
+        b::Optional{<:AbstractVector}) where {F}
     if act === identity
         b === nothing && return (weight * x)
         return __matmuladd(weight, x, b)

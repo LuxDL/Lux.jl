@@ -6,7 +6,7 @@ using ChainRulesCore: ChainRulesCore
 using DispatchDoctor: @stable
 using FastClosures: @closure
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint
-using LuxLib: LuxLib
+using LuxLib: LuxLib, Optional
 using NNlib: NNlib
 
 const CRC = ChainRulesCore

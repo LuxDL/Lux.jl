@@ -2,11 +2,11 @@ const TransOrAdjOrRegStridedCuMatrix{T} = Union{Transpose{T, <:StridedCuMatrix{T
     Adjoint{T, <:StridedCuMatrix{T}}, StridedCuMatrix{T}}
 
 function LuxLib._cublaslt_matmul_fused!(
-        @nospecialize(y::TransOrAdjOrRegStridedCuMatrix{<:Real}),
-        σ::F, @nospecialize(w::TransOrAdjOrRegStridedCuMatrix{<:Real}),
+        @nospecialize(y::TransOrAdjOrRegStridedCuMatrix{<:Real}), σ::F,
+        @nospecialize(w::TransOrAdjOrRegStridedCuMatrix{<:Real}),
         @nospecialize(x::TransOrAdjOrRegStridedCuMatrix{<:Real}),
-        b::Union{Nothing, StridedCuVector{<:Real}},
-        aux::Union{Nothing, StridedCuMatrix{<:Real}}=nothing) where {F}
+        b::Optional{<:StridedCuVector{<:Real}},
+        aux::Optional{<:StridedCuMatrix{<:Real}}=nothing) where {F}
     transy = y isa Transpose || y isa Adjoint
     transx = x isa Transpose || x isa Adjoint
     transw = w isa Transpose || x isa Adjoint
@@ -17,8 +17,8 @@ end
 function LuxLib._cublaslt_matmul_fused!(
         transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
         transw::Bool, @nospecialize(w::StridedCuMatrix{wT}), transx::Bool,
-        @nospecialize(x::StridedCuMatrix{xT}), b::Union{Nothing, StridedCuVector},
-        aux::Union{Nothing, StridedCuMatrix}) where {F, yT, wT, xT}
+        @nospecialize(x::StridedCuMatrix{xT}), b::Optional{<:StridedCuVector},
+        aux::Optional{<:StridedCuMatrix}) where {F, yT, wT, xT}
     bT = b === nothing ? Bool : eltype(b)
     auxT = aux === nothing ? Bool : eltype(aux)
     # cuBLASLt will give wrong results if the types are not correct. As a hack we are going
@@ -40,8 +40,8 @@ end
 function LuxLib._cublaslt_matmul_fused!(
         transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
         transw::Bool, @nospecialize(w::StridedCuMatrix{wxT}), transx::Bool,
-        @nospecialize(x::StridedCuMatrix{wxT}), b::Union{Nothing, StridedCuVector},
-        aux::Union{Nothing, StridedCuMatrix}) where {F, yT, wxT}
+        @nospecialize(x::StridedCuMatrix{wxT}), b::Optional{<:StridedCuVector},
+        aux::Optional{<:StridedCuMatrix}) where {F, yT, wxT}
     m = size(y, 1)
     n = size(y, 2)
     k = size(w, 2)

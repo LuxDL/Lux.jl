@@ -85,7 +85,7 @@ end
 
 @inline function __generic_conv_bias_activation(
         act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {F, N}
+        bias::Optional{<:AbstractArray}, cdims::ConvDims) where {F, N}
     return __apply_bias_activation(act, __conv(x, weight, cdims), bias)
 end
 
@@ -103,14 +103,14 @@ end
 
 @stable default_mode="warn" function __fused_conv_bias_activation_impl(
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
+        bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     return __conv_bias_act(x, weight, cdims, bias, act)
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fused_conv_bias_activation_impl),
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Union{Nothing, AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
+        bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     T = __get_concrete_fba_output_eltype(act, weight, x, bias)
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))

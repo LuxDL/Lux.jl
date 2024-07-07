@@ -73,7 +73,7 @@ end
 
 @inline function __get_concrete_fba_output_eltype(
         act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
-        b::Union{Nothing, <:AbstractArray}) where {F, Tw, Tx}
+        b::Optional{<:AbstractArray}) where {F, Tw, Tx}
     if b === nothing
         Ty = promote_type(Tw, Tx)
         Tact = Core.Compiler._return_type(act, Tuple{Ty})
@@ -90,7 +90,7 @@ EnzymeRules.inactive_noinl(::typeof(__get_concrete_fba_output_eltype), ::Any...)
 # Helper to add bias and apply activation function
 ## This is only meant to be used inside rrules
 @inline function __apply_bias_activation!!(
-        σ::F, x, bias::Union{Nothing, AbstractArray}, ::Val{cache}) where {F, cache}
+        σ::F, x, bias::Optional{<:AbstractArray}, ::Val{cache}) where {F, cache}
     if σ === identity
         bias === nothing && return x
         return __nonuniform_fast_broadcast!(+, x, bias)
