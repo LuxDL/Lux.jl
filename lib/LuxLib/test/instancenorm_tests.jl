@@ -1,4 +1,4 @@
-@testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
+@testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)

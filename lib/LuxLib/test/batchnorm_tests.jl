@@ -1,4 +1,4 @@
-@testitem "Batch Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
+@testitem "Batch Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
     rng = StableRNG(12345)
 
     function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
@@ -31,10 +31,7 @@
             y, nt = batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
             @inferred batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
-
-            # Stresses CI too much
-            T !== Float16 &&
-                @jet batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
+            @jet batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz

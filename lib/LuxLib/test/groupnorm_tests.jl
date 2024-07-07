@@ -1,7 +1,7 @@
-@testitem "Group Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
+@testitem "Group Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
     rng = StableRNG(12345)
 
-    function _setup_groupnorm(aType, T, sz, groups)
+    function _setup_groupnorm(aType, T, sz)
         x = __generate_fixed_array(T, sz) |> aType
         scale = __generate_fixed_array(T, sz[end - 1]) |> aType
         bias = __generate_fixed_array(T, sz[end - 1]) |> aType
@@ -19,13 +19,11 @@
             _f = (args...) -> groupnorm(args..., groups, act, epsilon)
 
             epsilon = T(1e-5)
-            x, scale, bias = _setup_groupnorm(aType, T, sz, groups)
+            x, scale, bias = _setup_groupnorm(aType, T, sz)
             y = _f(x, scale, bias)
 
             @inferred groupnorm(x, scale, bias, groups, act, epsilon)
-
-            # Stresses CI too much
-            T !== Float16 && @jet groupnorm(x, scale, bias, groups, act, epsilon)
+            @jet groupnorm(x, scale, bias, groups, act, epsilon)
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
