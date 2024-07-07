@@ -62,8 +62,15 @@ end
     return _affine_normalize(act, x, μ, σ², scale, bias, epsilon), rμ, rσ²
 end
 
-@stable default_mode="warn" function _normalization(
-        x::AbstractArray, running_mean::Union{Nothing, <:AbstractVector},
+# See https://github.com/MilesCranmer/DispatchDoctor.jl/issues/46
+@stable default_mode="warn" @inline _normalization(args...) = __normalization(args...)
+
+function CRC.rrule(
+        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(_normalization), args...)
+    return CRC.rrule_via_ad(cfg, __normalization, args...)
+end
+
+function __normalization(x::AbstractArray, running_mean::Union{Nothing, <:AbstractVector},
         running_var::Union{Nothing, <:AbstractVector},
         scale::Union{Nothing, <:AbstractVector},
         bias::Union{Nothing, <:AbstractVector}, reduce_dims::Val,
