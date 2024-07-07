@@ -1,13 +1,13 @@
 @testitem "Dropout" tags=[:common_ops] setup=[SharedTestSetup] begin
     using Statistics
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
-            T === Float16 && mode == "AMDGPU" && continue
+            T === Float16 && mode == "amdgpu" && continue
 
             x = randn(rng, T, x_shape) |> aType
 
@@ -42,13 +42,13 @@ end
 @testitem "Dropout with Preset Mask" tags=[:common_ops] setup=[SharedTestSetup] begin
     using Statistics
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
-            T === Float16 && mode == "AMDGPU" && continue
+            T === Float16 && mode == "amdgpu" && continue
 
             x = randn(rng, T, x_shape) |> aType
             mask = rand(T, x_shape) |> aType
@@ -132,13 +132,13 @@ end
 @testitem "Alpha Dropout" tags=[:common_ops] setup=[SharedTestSetup] begin
     using Statistics
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
-    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, on_gpu) in MODES
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
-            T === Float16 && mode == "AMDGPU" && continue
+            T === Float16 && mode == "amdgpu" && continue
 
             x = randn(rng, T, x_shape) |> aType
 

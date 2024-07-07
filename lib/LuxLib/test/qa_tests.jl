@@ -5,8 +5,7 @@
 end
 
 @testitem "Explicit Imports" tags=[:others] begin
-    import cuDNN, CUDA, ForwardDiff, ReverseDiff, Tracker, AMDGPU, NNlib
-
+    import ForwardDiff, ReverseDiff, Tracker, NNlib
     using ExplicitImports
 
     @test check_no_implicit_imports(LuxLib) === nothing

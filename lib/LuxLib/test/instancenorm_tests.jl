@@ -1,7 +1,7 @@
 @testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
     using Statistics
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     function _setup_instancenorm(aType, T, sz; affine::Bool=true)
         x = __generate_fixed_array(T, sz) |> aType

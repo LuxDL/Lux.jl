@@ -1,37 +1,37 @@
 @testsetup module SharedTestSetup
 import Reexport: @reexport
 
-using LuxLib, LuxCUDA, AMDGPU
-using LuxDeviceUtils
+using LuxLib, LuxDeviceUtils
 @reexport using LuxTestUtils, StableRNGs, Test, Zygote
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
-const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")
+const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
 
-cpu_testing() = BACKEND_GROUP == "All" || BACKEND_GROUP == "CPU"
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
+    using LuxCUDA
+end
+
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+    using AMDGPU
+end
+
+cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
-    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "CUDA") &&
+    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
            LuxDeviceUtils.functional(LuxCUDADevice)
 end
 function amdgpu_testing()
-    return (BACKEND_GROUP == "All" || BACKEND_GROUP == "AMDGPU") &&
+    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
            LuxDeviceUtils.functional(LuxAMDGPUDevice)
 end
 
 const MODES = begin
-    # Mode, Array Type, GPU?
-    cpu_mode = ("CPU", Array, false)
-    cuda_mode = ("CUDA", CuArray, true)
-    amdgpu_mode = ("AMDGPU", ROCArray, true)
-
     modes = []
-    cpu_testing() && push!(modes, cpu_mode)
-    cuda_testing() && push!(modes, cuda_mode)
-    amdgpu_testing() && push!(modes, amdgpu_mode)
+    cpu_testing() && push!(modes, ("cpu", Array, false))
+    cuda_testing() && push!(modes, ("cuda", CuArray, true))
+    amdgpu_testing() && push!(modes, ("amdgpu", ROCArray, true))
     modes
 end
-
-get_stable_rng(seed=12345) = StableRNG(seed)
 
 __istraining(::Val{training}) where {training} = training
 
@@ -41,6 +41,6 @@ __istraining(::Val{training}) where {training} = training
 end
 @inline __generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
 
-export cpu_testing, cuda_testing, amdgpu_testing, MODES, get_stable_rng, __istraining,
+export cpu_testing, cuda_testing, amdgpu_testing, MODES, StableRNG, __istraining,
        check_approx, @jet, @test_gradients, __generate_fixed_array
 end

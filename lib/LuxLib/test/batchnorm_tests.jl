@@ -1,5 +1,5 @@
 @testitem "Batch Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
         x = __generate_fixed_array(T, sz) |> aType

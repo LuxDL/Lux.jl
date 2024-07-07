@@ -1,5 +1,5 @@
 @testitem "Fused Conv Bias Activation" tags=[:common_ops] setup=[SharedTestSetup] begin
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     _expand(N, i::Tuple) = i
     _expand(N, i::Integer) = ntuple(_ -> i, N)
@@ -64,7 +64,7 @@
             __f = (σ, w, x, b, cdims) -> sum(
                 abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
-            if mode != "AMDGPU" && activation !== anonact
+            if mode != "amdgpu" && activation !== anonact
                 @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
             else
                 try
@@ -74,7 +74,7 @@
                     @test_broken false
                 end
             end
-            if mode === "AMDGPU"
+            if mode === "amdgpu"
                 @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_tracker=true skip_finite_differences=$(Tx !=
                                                                                                                                                                                      Tw)
             else
