@@ -3,7 +3,7 @@ import Reexport: @reexport
 
 using LuxLib, LuxCUDA, AMDGPU
 using LuxDeviceUtils
-@reexport using LuxTestUtils, StableRNGs, Test, TestSetExtensions, Zygote
+@reexport using LuxTestUtils, StableRNGs, Test, Zygote
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
 const BACKEND_GROUP = get(ENV, "BACKEND_GROUP", "All")

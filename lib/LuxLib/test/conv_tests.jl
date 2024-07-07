@@ -18,7 +18,7 @@
 
     anonact = x -> gelu(x)
 
-    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, on_gpu) in MODES
         # These are not all possible combinations but rather a representative set to keep
         # CI timings under check
         # Most of the actual tests happen upstream in Lux

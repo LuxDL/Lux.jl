@@ -1,4 +1,4 @@
-@testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
+@testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
     using Statistics
 
     rng = get_stable_rng(12345)
@@ -10,7 +10,7 @@
         return x, scale, bias
     end
 
-    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act" for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),

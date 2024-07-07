@@ -37,7 +37,7 @@
         end
     end
 
-    @testset ExtendedTestSet "$(mode): Jacobian Vector Products" for (mode, aType, on_gpu) in MODES
+    @testset "$(mode): Jacobian Vector Products" for (mode, aType, on_gpu) in MODES
         @testset "$(op)(; flipped = $flipped)" for flipped in (true, false),
             op in (depthwiseconv, conv)
 
@@ -96,7 +96,7 @@ end
 
     rng = get_stable_rng(12345)
 
-    @testset ExtendedTestSet "$mode: dropout" for (mode, aType, on_gpu) in MODES
+    @testset "$mode: dropout" for (mode, aType, on_gpu) in MODES
         x = randn(rng, Float32, 10, 2) |> aType
         x_dual = ForwardDiff.Dual.(x)
 

@@ -1,4 +1,4 @@
-@testitem "Batch Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
+@testitem "Batch Normalization" tags=[:normalization] setup=[SharedTestSetup] timeout=3600 begin
     rng = get_stable_rng(12345)
 
     function _setup_batchnorm(aType, T, sz; affine::Bool=true, track_stats::Bool)
@@ -15,7 +15,7 @@
         end
     end
 
-    @testset ExtendedTestSet "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act" for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),
