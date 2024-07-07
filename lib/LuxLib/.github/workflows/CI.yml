@@ -52,6 +52,16 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
+      - uses: DamianReeves/write-file-action@master
+        with:
+          path: "LocalPreferences.toml"
+          contents: |
+            [LuxTestUtils]
+            target_modules = ["LuxLib"]
+
+            [LuxLib]
+            instability_check = "error"
+          write-mode: overwrite
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
@@ -133,6 +143,16 @@ jobs:
           - 'others'
     steps:
       - uses: actions/checkout@v4
+      - uses: DamianReeves/write-file-action@master
+        with:
+          path: "LocalPreferences.toml"
+          contents: |
+            [LuxTestUtils]
+            target_modules = ["LuxLib"]
+
+            [LuxLib]
+            instability_check = "error"
+          write-mode: overwrite
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
