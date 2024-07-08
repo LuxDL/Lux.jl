@@ -1,7 +1,7 @@
 module LuxLibReverseDiffExt
 
 using ChainRulesCore: ChainRulesCore
-using LuxLib: LuxLib, Optional
+using LuxLib: LuxLib
 using NNlib: NNlib
 using ReverseDiff: ReverseDiff, TrackedArray, TrackedVector, TrackedReal,
                    @grad_from_chainrules

@@ -18,7 +18,13 @@ const LUXLIB_TEST_GROUP = get(ENV, "LUXLIB_TEST_GROUP", "all")
 @info "Running tests for group: $LUXLIB_TEST_GROUP"
 
 if LUXLIB_TEST_GROUP == "all"
-    ReTestItems.runtests(@__DIR__)
+    ReTestItems.runtests("common_ops")
+    ReTestItems.runtests("others")
+    ReTestItems.runtests("normalization"; nworkers=0)
 else
-    ReTestItems.runtests(@__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)])
+    ReTestItems.runtests("common_ops"; tags=[Symbol(LUXLIB_TEST_GROUP)])
+    ReTestItems.runtests("others"; tags=[Symbol(LUXLIB_TEST_GROUP)])
+    if LUXLIB_TEST_GROUP == "normalization"
+        ReTestItems.runtests("normalization"; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=0)
+    end
 end
