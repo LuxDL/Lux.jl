@@ -58,32 +58,19 @@
             @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
             @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-            # FIXME: GPU compilation of the gradients for mixed precision seems broken
-            Tw !== Tx && on_gpu && continue
-
             __f = (σ, w, x, b, cdims) -> sum(
                 abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
             if mode != "amdgpu" && activation !== anonact
                 @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
             else
-                try
-                    @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
-                    @test true
-                catch
-                    @test_broken false
-                end
+                @test (@inferred Zygote.gradient(
+                    __f, activation, weight, x, bias, cdims)) isa Tuple
             end
-            if mode === "amdgpu"
-                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_tracker=true skip_finite_differences=$(Tx !=
-                                                                                                                                                                                     Tw)
-            else
-                # FiniteDiffencing doesn't work great for MP because of how LuxTestUtils is
-                # implemented.
-                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
-                                                                                                                                                             Tw) skip_finite_differences=$(Tx !=
-                                                                                                                                                                                           Tw)
-            end
+
+            @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
+                                                                                                                                         Tw) skip_finite_differences=$(Tx !=
+                                                                                                                                                                       Tw)
         end
     end
 end

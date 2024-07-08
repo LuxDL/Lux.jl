@@ -7,8 +7,6 @@
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
-            T === Float16 && mode == "amdgpu" && continue
-
             x = randn(rng, T, x_shape) |> aType
 
             @inferred dropout(rng, x, T(0.5), Val(true), T(2), Colon())
@@ -23,8 +21,7 @@
 
             __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
 
-            fp16 = T == Float16
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
+            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
             @inferred dropout(rng, x, T(0.5), Val(true), T(2), Colon())
@@ -48,8 +45,6 @@ end
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
-            T === Float16 && mode == "amdgpu" && continue
-
             x = randn(rng, T, x_shape) |> aType
             mask = rand(T, x_shape) |> aType
 
@@ -69,8 +64,7 @@ end
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
 
-            fp16 = T == Float16
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
+            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
 
@@ -89,8 +83,7 @@ end
 
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
-            fp16 = T == Float16
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
+            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
@@ -110,8 +103,7 @@ end
 
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
-            fp16 = T == Float16
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
+            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             # Testing Mode
@@ -138,8 +130,6 @@ end
         for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
-            T === Float16 && mode == "amdgpu" && continue
-
             x = randn(rng, T, x_shape) |> aType
 
             @inferred alpha_dropout(rng, x, T(0.5), Val(true))
@@ -154,8 +144,7 @@ end
 
             __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
-            fp16 = T == Float16
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 gpu_testing=$on_gpu
+            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
             @inferred alpha_dropout(rng, x, T(0.5), Val(false))

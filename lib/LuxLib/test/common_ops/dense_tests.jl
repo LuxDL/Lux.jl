@@ -33,11 +33,9 @@
                 fp16 = Tx == Float16 || Tw == Float16
                 atol = fp16 ? 1.0f-1 : 1.0f-3
                 rtol = fp16 ? 1.0f-1 : 1.0f-3
-                # FiniteDiffencing doesn't work great for MP because of how LuxTestUtils is
-                # implemented.
-                @eval @test_gradients $__f $activation $w $x $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
-                                                                                                                                                 Tw) skip_finite_differences=$(Tx !=
-                                                                                                                                                                               Tw)
+                @eval @test_gradients $__f $activation $w $x $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
+                                                                                                                                 Tw) skip_finite_differences=$(Tx !=
+                                                                                                                                                               Tw)
             end
         end
     end
