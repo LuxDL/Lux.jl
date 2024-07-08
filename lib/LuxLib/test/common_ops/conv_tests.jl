@@ -1,5 +1,5 @@
-@testitem "Fused Conv Bias Activation" tags=[:nworkers, :common_ops] setup=[SharedTestSetup] begin
-    rng = get_stable_rng(12345)
+@testitem "Fused Conv Bias Activation" tags=[:common_ops] setup=[SharedTestSetup] begin
+    rng = StableRNG(12345)
 
     _expand(N, i::Tuple) = i
     _expand(N, i::Integer) = ntuple(_ -> i, N)
@@ -58,13 +58,10 @@
             @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
             @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-            # FIXME: GPU compilation of the gradients for mixed precision seems broken
-            Tw !== Tx && on_gpu && continue
-
             __f = (σ, w, x, b, cdims) -> sum(
                 abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
-            if mode != "AMDGPU" && activation !== anonact
+            if mode != "amdgpu" && activation !== anonact
                 @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
             else
                 try
@@ -74,16 +71,10 @@
                     @test_broken false
                 end
             end
-            if mode === "AMDGPU"
-                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_tracker=true skip_finite_differences=$(Tx !=
-                                                                                                                                                                                     Tw)
-            else
-                # FiniteDiffencing doesn't work great for MP because of how LuxTestUtils is
-                # implemented.
-                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
-                                                                                                                                                             Tw) skip_finite_differences=$(Tx !=
-                                                                                                                                                                                           Tw)
-            end
+
+            mp = Tx != Tw
+            skipt = (mp && on_gpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
+            @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(mp) skip_finite_differences=$(mp) skip_tracker=$(skipt)
         end
     end
 end

@@ -4,7 +4,7 @@ using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
 using LuxLib: LuxLib
 using NNlib: NNlib
-using Tracker: Tracker, TrackedArray, TrackedVector, TrackedReal
+using Tracker: Tracker, TrackedArray, TrackedReal
 
 const CRC = ChainRulesCore
 
@@ -43,5 +43,7 @@ end
 
 # api/dropout.jl
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(Tracker.data(x))
+
+LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal}) = Tracker.collect(x)
 
 end

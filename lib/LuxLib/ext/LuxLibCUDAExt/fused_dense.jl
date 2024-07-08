@@ -1,14 +1,13 @@
-@inline __length(x) = length(x)
-@inline __length(::Nothing) = nothing
+__length(x) = length(x)
+__length(::Nothing) = nothing
 
-@inline function __might_use_cuBLASLt(::Z, ::A, ::W, ::X, ::B) where {Z, A, W, X, B}
+function __might_use_cuBLASLt(::Z, ::A, ::W, ::X, ::B) where {Z, A, W, X, B}
     cuBLASLt_functional[] || return false
     return hasmethod(LuxLib._cublaslt_matmul_fused!, (Z, A, W, X, B))
 end
 
-function LuxLib.__fused_dense_bias_activation_impl(
-        act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
-        b::Union{Nothing, AnyCuVector}) where {F}
+@stable default_mode="warn" function LuxLib.__fused_dense_bias_activation_impl(
+        act::F, weight::AnyCuMatrix, x::AnyCuMatrix, b::Optional{<:AnyCuVector}) where {F}
     y = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     if __might_use_cuBLASLt(y, act, weight, x, b)

@@ -37,11 +37,10 @@ fallback is used which is not highly optimized.
     training by reducing internal covariate shift." International conference on machine
     learning. PMLR, 2015.
 """
-function batchnorm(x::AbstractArray{<:Real, N}, scale::Union{Nothing, <:AbstractVector},
-        bias::Union{Nothing, <:AbstractVector},
-        running_mean::Union{Nothing, <:AbstractVector},
-        running_var::Union{Nothing, <:AbstractVector}, training::Val,
-        σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
+function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, running_mean::Optional{<:AbstractVector},
+        running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
+        momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
     x_, xm, xv = _normalization(x, _drop_forwarddiff_partials(running_mean),
         _drop_forwarddiff_partials(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)

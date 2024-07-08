@@ -8,11 +8,11 @@ LuxLib.__has_dual(::ForwardDiff.Dual) = true
 LuxLib.__has_dual(::AbstractArray{<:ForwardDiff.Dual}) = true
 
 # dropout
-@inline function LuxLib._dropout_fptype(x::AbstractArray{<:ForwardDiff.Dual})
+function LuxLib._dropout_fptype(x::AbstractArray{<:ForwardDiff.Dual})
     return ForwardDiff.valtype(eltype(x))
 end
 
-# Convolutions: We might want to capture these furthur down in `conv!`
+# Convolutions: We might want to capture these further down in `conv!`
 # NOTE: In principle we can concatenate all of the partials along the batch dimension
 #       and cut down substantially on the time to compute jacobians.
 # Here we should be broadcasting with `Tag` for safety but that breaks GPU compilation.
@@ -73,21 +73,24 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
 end
 
 # Don't try to promote the input types
-@inline function LuxLib.__gpu_get_weight_input(
+function LuxLib.__gpu_get_weight_input(
         ::Type{T}, ::Type{<:ForwardDiff.Dual}, weight, x) where {T}
     return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
 end
-@inline function LuxLib.__gpu_get_weight_input(
+function LuxLib.__gpu_get_weight_input(
         ::Type{<:ForwardDiff.Dual}, ::Type{T}, weight, x) where {T}
     return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
 end
-@inline function LuxLib.__gpu_get_weight_input(
+function LuxLib.__gpu_get_weight_input(
         ::Type{<:ForwardDiff.Dual}, ::Type{<:ForwardDiff.Dual}, weight, x)
     return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
 end
 
-@inline function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})
+function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})
     return ForwardDiff.value.(x)
 end
+
+LuxLib.__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+LuxLib.__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 
 end

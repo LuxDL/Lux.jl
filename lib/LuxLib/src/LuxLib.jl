@@ -2,13 +2,16 @@ module LuxLib
 
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore, NoTangent
+using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastBroadcast: @..
 using FastClosures: @closure
-using GPUArraysCore: GPUArraysCore, AnyGPUArray
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
 using LuxCore: LuxCore
+using LuxDeviceUtils: LuxDeviceUtils, get_device, AbstractLuxGPUDevice, AbstractLuxDevice
 using Markdown: @doc_str
+using NNlib: NNlib, ConvDims, conv, conv!, relu, sigmoid_fast, swish, σ, ∇conv_data,
+             ∇conv_filter
 using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
 using Statistics: Statistics, mean, var
@@ -16,6 +19,8 @@ using Statistics: Statistics, mean, var
 @reexport using NNlib
 
 const CRC = ChainRulesCore
+
+const Optional{T} = Union{Nothing, T}
 
 include("utils.jl")
 

@@ -1,4 +1,4 @@
-@testitem "Efficient JVPs" tags=[:nworkers, :others] setup=[SharedTestSetup] begin
+@testitem "Efficient JVPs" tags=[:others] setup=[SharedTestSetup] begin
     using ForwardDiff, Zygote, ComponentArrays
 
     # Computes (∂f/∂x)u
@@ -91,10 +91,10 @@
     end
 end
 
-@testitem "ForwardDiff dropout" tags=[:nworkers, :common_ops] setup=[SharedTestSetup] begin
+@testitem "ForwardDiff dropout" tags=[:common_ops] setup=[SharedTestSetup] begin
     using ForwardDiff
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     @testset "$mode: dropout" for (mode, aType, on_gpu) in MODES
         x = randn(rng, Float32, 10, 2) |> aType

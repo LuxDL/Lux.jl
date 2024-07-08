@@ -108,17 +108,17 @@ end
 alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B) = (x, rng)
 
 # Mask Generation
-@inline _dropout_shape(s, ::Colon) = size(s)
-@inline function _dropout_shape(s, dims)
+_dropout_shape(s, ::Colon) = size(s)
+function _dropout_shape(s, dims)
     return tuple((i in dims ? si : 1 for (i, si) in enumerate(size(s)))...)
 end
 
-@inline _dropout_kernel(y, p, invp) = ifelse(y > p, invp, oftype(y, 0))
+_dropout_kernel(y, p, invp) = ifelse(y > p, invp, oftype(y, 0))
 
-@inline _alpha_dropout_kernel(noise, p, x, α) = @. ifelse(noise > p, x, α)
+_alpha_dropout_kernel(noise, p, x, α) = @. ifelse(noise > p, x, α)
 
 ## Zygote is otherwise type unstable
-@inline function CRC.rrule(::typeof(_alpha_dropout_kernel), noise, p, x, α)
+function CRC.rrule(::typeof(_alpha_dropout_kernel), noise, p, x, α)
     _cond = noise .> p
     y = ifelse.(_cond, x, α)
     _∇alpha_dropout_kernel = @closure Δ -> begin
@@ -127,12 +127,12 @@ end
     return y, _∇alpha_dropout_kernel
 end
 
-@inline _dropout_fptype(x) = float(real(eltype(x)))
+_dropout_fptype(x) = float(real(eltype(x)))
 
 CRC.@non_differentiable _dropout_fptype(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_dropout_fptype), ::Any...) = nothing
 
-@inline function _alpha_dropout_noise(rng, x)
+function _alpha_dropout_noise(rng, x)
     rng = LuxCore.replicate(rng)
     noise = similar(x, _dropout_fptype(x))
     rand!(rng, noise)
@@ -142,7 +142,7 @@ end
 CRC.@non_differentiable _alpha_dropout_noise(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 
-@inline function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
+function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
     realfptype = _dropout_fptype(x)
     y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
     y .= _dropout_kernel.(y, p, invp)

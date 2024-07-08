@@ -1,7 +1,7 @@
-@testitem "Instance Normalization" tags=[:singleworker, :normalization] setup=[SharedTestSetup] begin
+@testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
     using Statistics
 
-    rng = get_stable_rng(12345)
+    rng = StableRNG(12345)
 
     function _setup_instancenorm(aType, T, sz; affine::Bool=true)
         x = __generate_fixed_array(T, sz) |> aType
@@ -17,15 +17,16 @@
             affine in (true, false),
             act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
 
-            _f = (args...) -> instancenorm(args..., act; epsilon, training)
+            _f = (args...) -> instancenorm(args..., training, act, epsilon)
 
             epsilon = T(1e-5)
             x, scale, bias = _setup_instancenorm(aType, T, sz; affine)
 
-            y, nt = instancenorm(x, scale, bias, act; epsilon, training)
+            y, nt = instancenorm(x, scale, bias, training, act, epsilon)
 
-            @inferred instancenorm(x, scale, bias, act; epsilon, training)
-            @jet instancenorm(x, scale, bias, act; epsilon, training)
+            @inferred instancenorm(x, scale, bias, training, act, epsilon)
+            @jet instancenorm(x, scale, bias, training, act, epsilon)
+
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
 
@@ -40,7 +41,7 @@
             if __istraining(training) && affine
                 fp16 = T == Float16
                 __f = (args...) -> sum(first(instancenorm(
-                    x, args..., act; epsilon, training)))
+                    x, args..., training, act, epsilon)))
                 skip_fd = act === relu
                 @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
             end

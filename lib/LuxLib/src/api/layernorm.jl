@@ -30,9 +30,9 @@ Normalized Array of same size as `x`.
     preprint arXiv:1607.06450 (2016).
 """
 function layernorm(
-        x::AbstractArray{<:Number, N}, scale::Union{Nothing, AbstractArray{<:Number, N}},
-        bias::Union{Nothing, AbstractArray{<:Number, N}},
-        σ::F=identity, dims=Colon(), epsilon::Real=1.0f-5) where {N, F}
+        x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{<:Number, N}},
+        bias::Optional{<:AbstractArray{<:Number, N}}, σ::F=identity,
+        dims=Colon(), epsilon::Real=1.0f-5) where {N, F}
     _mean = mean(x; dims)
     _var = var(x; dims, mean=_mean, corrected=false)
     return _affine_normalize(σ, x, _mean, _var, scale, bias, epsilon)

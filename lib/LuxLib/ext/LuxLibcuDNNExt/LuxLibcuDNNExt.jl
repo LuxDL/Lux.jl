@@ -1,6 +1,6 @@
 module LuxLibcuDNNExt
 
-using LuxLib: LuxLib
+using LuxLib: LuxLib, Optional
 using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray
 using ChainRulesCore: ChainRulesCore
 using cuDNN: cuDNN, CUDNN_BN_MIN_EPSILON, cudnnBatchNormalizationBackward,
@@ -17,7 +17,7 @@ include("batchnorm.jl")
 const CUDNN_BN_ARRAY_TYPE = Union{
     CuArray{<:Union{Float32, Float64}, 2}, CuArray{<:Union{Float32, Float64}, 4},
     CuArray{<:Union{Float32, Float64}, 5}}
-const BNParamType = Union{Nothing, CuVector{<:Union{Float32, Float64}}}
+const BNParamType = Optional{<:CuVector{<:Union{Float32, Float64}}}
 
 function LuxLib.batchnorm(x::CUDNN_BN_ARRAY_TYPE, scale::BNParamType, bias::BNParamType,
         running_mean::BNParamType, running_var::BNParamType, training::Val,
@@ -27,7 +27,7 @@ function LuxLib.batchnorm(x::CUDNN_BN_ARRAY_TYPE, scale::BNParamType, bias::BNPa
     return LuxLib.fast_activation!!(σ, x_), (; running_mean=rm, running_var=rv)
 end
 
-@inline function LuxLib.batchnorm_cudnn(
+function LuxLib.batchnorm_cudnn(
         running_mean, running_var, scale, bias, x, momentum, eps, training)
     return LuxLib.batchnorm_cudnn(
         scale, bias, x, running_mean, running_var, momentum, training; ϵ=eps)

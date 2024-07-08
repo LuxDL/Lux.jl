@@ -1,15 +1,15 @@
 # Wrappers over Base & LinearAlgen implementations to use poly algs if needed
 ## We define a special __matmul function so that we can define ForwardDiff rules on it without
 ## type piracy
-@inline __matmul(A, B) = A * B
-@inline __matmul!(C, A, B) = mul!(C, A, B)
-@inline __matmuladd(A, B, C) = muladd(A, B, C)
-@inline __matmuladd(A, B, ::Nothing) = __matmul(A, B)
+__matmul(A, B) = A * B
+__matmul!(C, A, B) = mul!(C, A, B)
+__matmuladd(A, B, C) = muladd(A, B, C)
+__matmuladd(A, B, ::Nothing) = __matmul(A, B)
 
 # Our main implementations
 
 function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::AbstractMatrix,
-        bias::Union{Nothing, AbstractVector}) where {F}
+        bias::Optional{<:AbstractVector}) where {F}
     act === identity && return __matmuladd(weight, x, bias)
     return __apply_bias_activation(act, __matmul(weight, x), bias)
 end
@@ -18,9 +18,9 @@ end
 # Turns out NVIDIA has been shipping a bunch of fused kernels for a while now. We use
 # fuse all the operations into a single kernel.
 
-@inline function __fused_dense_bias_activation_impl(
+@stable default_mode="warn" function __fused_dense_bias_activation_impl(
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Union{Nothing, AbstractVector}) where {F}
+        b::Optional{<:AbstractVector}) where {F}
     if act === identity
         b === nothing && return (weight * x)
         return __matmuladd(weight, x, b)
@@ -33,7 +33,7 @@ end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fused_dense_bias_activation_impl), act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Union{AbstractVector, Nothing}) where {F}
+        x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
     T = __get_concrete_fba_output_eltype(act, weight, x, b)
 
     # Case I: Activation Function doesn't require caching the intermediate value
@@ -74,10 +74,10 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     return z, ∇__fused_dense_bias_activation_impl_cached
 end
 
-@inline function __matmul_bias_partials(∂y, weight, x, bias)
+function __matmul_bias_partials(∂y, weight, x, bias)
     return __matmul_bias_partials(∂y, __added_bias_gradient(bias, ∂y), weight, x, bias)
 end
-@inline function __matmul_bias_partials(∂y, ∂b, weight, x, bias)
+function __matmul_bias_partials(∂y, ∂b, weight, x, bias)
     ∂w = __matmul(∂y, x')
     ∂x = __matmul(weight', ∂y)
     return ∂w, ∂x, ∂b
