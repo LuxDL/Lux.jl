@@ -1,7 +1,7 @@
-@inline __length(x) = length(x)
-@inline __length(::Nothing) = nothing
+__length(x) = length(x)
+__length(::Nothing) = nothing
 
-@inline function __might_use_cuBLASLt(::Z, ::A, ::W, ::X, ::B) where {Z, A, W, X, B}
+function __might_use_cuBLASLt(::Z, ::A, ::W, ::X, ::B) where {Z, A, W, X, B}
     cuBLASLt_functional[] || return false
     return hasmethod(LuxLib._cublaslt_matmul_fused!, (Z, A, W, X, B))
 end

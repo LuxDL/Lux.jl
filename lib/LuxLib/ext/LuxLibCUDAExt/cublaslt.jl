@@ -143,7 +143,7 @@ function LuxLib._cublaslt_matmul_fused!(
     return 0
 end
 
-@inline function __epilogue_act(f::F, b, aux) where {F}
+function __epilogue_act(f::F, b, aux) where {F}
     if f === identity
         @assert aux===nothing "`aux` must be `nothing` for `identity` activation."
         if b === nothing

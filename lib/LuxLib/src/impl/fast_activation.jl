@@ -1,7 +1,7 @@
 # Specialized Implementation based off NNlib._fast_broadcast with added logic from
 # ArrayInterface
 # If we enter here, we already know that we can setindex into the array
-@stable default_mode="warn" @inline function __fast_activation_impl!!(
+@stable default_mode="warn" function __fast_activation_impl!!(
         σ::F, x::AbstractArray) where {F}
     return __fast_broadcast!(σ, x)
 end

@@ -9,11 +9,11 @@ using ReverseDiff: ReverseDiff, TrackedArray, TrackedVector, TrackedReal,
 const CRC = ChainRulesCore
 
 # Patches: Needs upstreaming (I don't know how to construct an MWE though)
-@inline function ReverseDiff.increment_deriv!(
+function ReverseDiff.increment_deriv!(
         t::Union{TrackedArray, TrackedReal}, ::CRC.NoTangent, i)
     return ReverseDiff.increment_deriv!(t, zero(eltype(ReverseDiff.value(t))), i)
 end
-@inline function ReverseDiff.decrement_deriv!(
+function ReverseDiff.decrement_deriv!(
         t::Union{TrackedArray, TrackedReal}, ::CRC.NoTangent, i)
     return ReverseDiff.decrement_deriv!(t, zero(eltype(ReverseDiff.value(t))), i)
 end
@@ -43,12 +43,12 @@ for pool in (:maxpool, :meanpool, :lpnormpool)
     @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::NNlib.PoolDims; kwargs...)
 end
 
-@inline LuxLib.__value(x::TrackedReal) = ReverseDiff.value(x)
-@inline LuxLib.__value(x::TrackedArray) = ReverseDiff.value(x)
-@inline LuxLib.__value(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
+LuxLib.__value(x::TrackedReal) = ReverseDiff.value(x)
+LuxLib.__value(x::TrackedArray) = ReverseDiff.value(x)
+LuxLib.__value(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
 
-@inline LuxLib.__aos_to_soa(x::TrackedArray) = x
-@inline function LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal})
+LuxLib.__aos_to_soa(x::TrackedArray) = x
+function LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal})
     return reshape(reduce(vcat, x), size(x))
 end
 

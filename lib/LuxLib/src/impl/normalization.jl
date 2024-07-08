@@ -17,26 +17,24 @@
     end
 end
 
-@inline __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
+__accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
 
 CRC.@non_differentiable __accum_size(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__accum_size), ::Any...) = nothing
 
-@inline function _get_batch_statistics(
+function _get_batch_statistics(
         x::AbstractArray, ::Nothing, ::Nothing, ::Val{rdims}, ::Val, momentum) where {rdims}
     μ = __aos_to_soa(mean(x; dims=rdims))
     σ² = __aos_to_soa(var(x; corrected=false, mean=μ, dims=rdims))
     return (μ, σ²), (nothing, nothing)
 end
 
-@inline function _get_batch_statistics(
-        ::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
+function _get_batch_statistics(::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
         ::Val{rdims}, ::Val{false}, momentum) where {rdims}
     return (rμ, rσ²), (rμ, rσ²)
 end
 
-@inline function _get_batch_statistics(
-        x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
+function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
         r::Val{rdims}, ::Val{true}, momentum) where {rdims}
     μ = __aos_to_soa(mean(x; dims=rdims))
     σ² = __aos_to_soa(var(x; corrected=false, mean=μ, dims=rdims))
@@ -45,8 +43,7 @@ end
     return (μ, σ²), (rμ, rσ²)
 end
 
-@inline function _normalization_impl(
-        x::AbstractArray, running_mean::Optional{<:AbstractArray},
+function _normalization_impl(x::AbstractArray, running_mean::Optional{<:AbstractArray},
         running_var::Optional{<:AbstractArray}, scale::Optional{<:AbstractArray},
         bias::Optional{<:AbstractArray}, r::Val{reduce_dims}, training::Val,
         momentum, epsilon, act::F=identity) where {reduce_dims, F}
@@ -56,7 +53,7 @@ end
 end
 
 # FIXME: See https://github.com/MilesCranmer/DispatchDoctor.jl/issues/46
-@stable default_mode="warn" @inline _normalization(args...) = __normalization(args...)
+@stable default_mode="warn" _normalization(args...)=__normalization(args...)
 
 function CRC.rrule(
         cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(_normalization), args...)

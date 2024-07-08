@@ -35,11 +35,11 @@ end
 
 __istraining(::Val{training}) where {training} = training
 
-@inline __generate_fixed_array(::Type{T}, sz...) where {T} = __generate_fixed_array(T, sz)
-@inline function __generate_fixed_array(::Type{T}, sz) where {T}
+__generate_fixed_array(::Type{T}, sz...) where {T} = __generate_fixed_array(T, sz)
+function __generate_fixed_array(::Type{T}, sz) where {T}
     return reshape(T.(collect(1:prod(sz)) ./ prod(sz)), sz...)
 end
-@inline __generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
+__generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
 
 export cpu_testing, cuda_testing, amdgpu_testing, MODES, StableRNG, __istraining,
        check_approx, @jet, @test_gradients, __generate_fixed_array

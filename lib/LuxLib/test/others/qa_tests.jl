@@ -1,7 +1,7 @@
 @testitem "Aqua: Quality Assurance" tags=[:others] begin
     using Aqua
 
-    Aqua.test_all(LuxLib; unbound_args=(; broken=true))  # GPUArraysCore.AnyGPUArray causes problem here
+    Aqua.test_all(LuxLib)
 end
 
 @testitem "Explicit Imports" tags=[:others] begin
