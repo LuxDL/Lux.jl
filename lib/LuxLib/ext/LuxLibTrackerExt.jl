@@ -44,4 +44,6 @@ end
 # api/dropout.jl
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(Tracker.data(x))
 
+LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal}) = Tracker.collect(x)
+
 end

@@ -1,9 +1,10 @@
 module LuxLibReverseDiffExt
 
 using ChainRulesCore: ChainRulesCore
-using LuxLib: LuxLib
+using LuxLib: LuxLib, Optional
 using NNlib: NNlib
-using ReverseDiff: ReverseDiff, TrackedArray, TrackedReal, @grad_from_chainrules
+using ReverseDiff: ReverseDiff, TrackedArray, TrackedVector, TrackedReal,
+                   @grad_from_chainrules
 
 const CRC = ChainRulesCore
 
@@ -40,6 +41,35 @@ end
 
 for pool in (:maxpool, :meanpool, :lpnormpool)
     @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::NNlib.PoolDims; kwargs...)
+end
+
+@inline LuxLib.__value(x::TrackedReal) = ReverseDiff.value(x)
+@inline LuxLib.__value(x::TrackedArray) = ReverseDiff.value(x)
+@inline LuxLib.__value(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
+
+@inline LuxLib.__aos_to_soa(x::TrackedArray) = x
+@inline function LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal})
+    return reshape(reduce(vcat, x), size(x))
+end
+
+# Normalization is type unstable for ReverseDiff so we skip dispatch doctor
+for xType in (AbstractArray, TrackedArray),
+    scType in (Nothing, AbstractVector, TrackedVector),
+    bType in (Nothing, AbstractVector, TrackedVector)
+
+    x_tracked = xType !== TrackedArray
+    sc_tracked = scType !== TrackedArray
+    b_tracked = bType !== TrackedArray
+
+    !x_tracked && !sc_tracked && !b_tracked && continue
+
+    @eval function LuxLib._normalization(
+            x::$xType, running_mean::$scType, running_var::$scType,
+            scale::$bType, bias::$bType, reduce_dims::Val,
+            training::Val, momentum, epsilon, act::F=identity) where {F}
+        return LuxLib.__normalization(x, running_mean, running_var, scale, bias,
+            reduce_dims, training, momentum, epsilon, act)
+    end
 end
 
 end

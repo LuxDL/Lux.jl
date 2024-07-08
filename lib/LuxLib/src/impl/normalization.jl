@@ -1,11 +1,11 @@
 # Generic Normalization Implementation
 @generated function _update_normalization_statistics(
-        x::AbstractArray{<:Number, N}, rμ::AbstractArray{<:Number, N},
+        x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
         rσ²::AbstractArray{<:Number, N}, μ::AbstractArray{<:Number, N},
         σ²::AbstractArray{<:Number, N}, momentum::Real,
-        r::Val{reduce_dims}) where {N, reduce_dims}
+        r::Val{reduce_dims}) where {T, N, reduce_dims}
     return quote
-        m = eltype(x)(__accum_size(x, r))
+        m = __value($(T)(__accum_size(x, r)))
         m_ = momentum * m / (m - one(m))
         $(if last(reduce_dims) != N
             :(μ = mean(μ; dims=N);
@@ -22,10 +22,10 @@ end
 CRC.@non_differentiable __accum_size(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__accum_size), ::Any...) = nothing
 
-@inline function _get_batch_statistics(x::AbstractArray, ::Nothing, ::Nothing,
-        ::Val{rdims}, ::Val{false}, momentum) where {rdims}
-    μ = mean(x; dims=rdims)
-    σ² = var(x; corrected=false, mean=μ, dims=rdims)
+@inline function _get_batch_statistics(
+        x::AbstractArray, ::Nothing, ::Nothing, ::Val{rdims}, ::Val, momentum) where {rdims}
+    μ = __aos_to_soa(mean(x; dims=rdims))
+    σ² = __aos_to_soa(var(x; corrected=false, mean=μ, dims=rdims))
     return (μ, σ²), (nothing, nothing)
 end
 
@@ -35,19 +35,13 @@ end
     return (rμ, rσ²), (rμ, rσ²)
 end
 
-@inline function _get_batch_statistics(x::AbstractArray, ::Nothing, ::Nothing,
-        ::Val{rdims}, ::Val{true}, momentum) where {rdims}
-    μ = mean(x; dims=rdims)
-    σ² = var(x; corrected=false, mean=μ, dims=rdims)
-    return (μ, σ²), (nothing, nothing)
-end
-
 @inline function _get_batch_statistics(
         x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
         r::Val{rdims}, ::Val{true}, momentum) where {rdims}
-    μ = mean(x; dims=rdims)
-    σ² = var(x; corrected=false, mean=μ, dims=rdims)
-    rμ, rσ² = _update_normalization_statistics(x, rμ, rσ², μ, σ², momentum, r)
+    μ = __aos_to_soa(mean(x; dims=rdims))
+    σ² = __aos_to_soa(var(x; corrected=false, mean=μ, dims=rdims))
+    rμ, rσ² = _update_normalization_statistics(
+        __value(x), __value(rμ), __value(rσ²), __value(μ), __value(σ²), momentum, r)
     return (μ, σ²), (rμ, rσ²)
 end
 

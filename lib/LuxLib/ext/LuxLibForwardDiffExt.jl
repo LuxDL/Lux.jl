@@ -90,4 +90,7 @@ end
     return ForwardDiff.value.(x)
 end
 
+@inline LuxLib.__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+@inline LuxLib.__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+
 end

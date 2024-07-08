@@ -197,3 +197,9 @@ function _cublaslt_matmul_fused! end
 
 @inline __materialize_subarray(x::AbstractArray) = x
 @inline __materialize_subarray(x::SubArray) = copy(x)
+
+@inline __value(x::Number) = x
+@inline __value(x::AbstractArray) = x
+
+# FIXME: Upstream this to ArrayInterface.jl
+@inline __aos_to_soa(x::AbstractArray) = x
