@@ -29,7 +29,13 @@ end
 @inline function __conv(
         x_::AnyGPUArray{xT, N}, weight_::AnyGPUArray{wT, N}, cdims) where {xT, wT, N}
     weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
-    return conv(x, weight, cdims)
+    T = promote_type(eltype(x), eltype(weight))
+    if eltype(x) !== eltype(weight)
+        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(weight)) and x: \
+               $(eltype(x))]. Promoting to $(eltype(x))." maxlog=1
+    end
+    return conv(__materialize_subarray(_oftype_array(T, x)),
+        __materialize_subarray(_oftype_array(T, weight)), cdims)
 end
 
 @inline __∇conv_data(x, weight, cdims) = ∇conv_data(
@@ -37,7 +43,13 @@ end
 @inline function __∇conv_data(
         x_::AnyGPUArray{xT, N}, weight_::AnyGPUArray{wT, N}, cdims) where {xT, wT, N}
     weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
-    return ∇conv_data(x, weight, cdims)
+    T = promote_type(eltype(x), eltype(weight))
+    if eltype(x) !== eltype(weight)
+        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(weight)) and x: \
+               $(eltype(x))]. Promoting to $(eltype(x))." maxlog=1
+    end
+    return ∇conv_data(__materialize_subarray(_oftype_array(T, x)),
+        __materialize_subarray(_oftype_array(T, weight)), cdims)
 end
 
 @inline __∇conv_filter(x, y, cdims) = ∇conv_filter(
@@ -45,7 +57,13 @@ end
 @inline function __∇conv_filter(
         x_::AnyGPUArray{xT, N}, y_::AnyGPUArray{yT, N}, cdims) where {xT, yT, N}
     y, x = __gpu_get_weight_input(yT, xT, y_, x_)
-    return ∇conv_filter(x, y, cdims)
+    T = promote_type(eltype(x), eltype(y))
+    if eltype(x) !== eltype(y)
+        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(y)) and x: \
+               $(eltype(x))]. Promoting to $(eltype(x))." maxlog=1
+    end
+    return ∇conv_filter(__materialize_subarray(_oftype_array(T, x)),
+        __materialize_subarray(_oftype_array(T, y)), cdims)
 end
 
 @inline __conv_bias_act(x, weight, cdims, bias, act::F) where {F} = __conv_bias_act_impl(
@@ -128,7 +146,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
 
     # In any case here we need the intermediate pre-activation values
     y = similar(x, T, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
-    conv!(y, x, weight, cdims)
+    __conv!(y, x, weight, cdims)
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
         z, y = __apply_bias_activation!!(act, y, bias, Val(true))

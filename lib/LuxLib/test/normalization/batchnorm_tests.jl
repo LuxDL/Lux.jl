@@ -35,7 +35,6 @@
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
-
             if rm !== nothing
                 @test size(nt.running_mean) == (size(x, length(sz) - 1),)
                 @test size(nt.running_var) == (size(x, length(sz) - 1),)

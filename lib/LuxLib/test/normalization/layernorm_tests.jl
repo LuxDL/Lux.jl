@@ -37,8 +37,8 @@
                 @test check_approx(std(y; dims), 1; atol=1e-1, rtol=1e-1)
             end
 
-            fp16 = T == Float16
             if affine_shape !== nothing
+                fp16 = T == Float16
                 __f = (args...) -> sum(_f(x, args...))
                 skip_fd = act === relu
                 @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
