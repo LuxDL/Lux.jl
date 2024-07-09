@@ -4,12 +4,16 @@ authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "0.1.17"
 
 [deps]
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [compat]
 Aqua = "0.8.4"
+ChainRulesCore = "1.24.0"
+DispatchDoctor = "0.4.7"
 ExplicitImports = "1.4.1"
 Functors = "0.4"
 Optimisers = "0.3"
