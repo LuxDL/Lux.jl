@@ -1,12 +1,9 @@
 module LuxCore
 
-using ChainRulesCore: ChainRulesCore, HasReverseMode, RuleConfig
 using DispatchDoctor: @stable
 using Functors: Functors, fmap
 using Random: Random, AbstractRNG, Xoshiro
 using Setfield: Setfield
-
-const CRC = ChainRulesCore
 
 # PRNG Handling
 """
@@ -183,16 +180,8 @@ this include:
     [documentation](https://github.com/MilesCranmer/DispatchDoctor.jl).
 """
 @stable default_mode="disable" function apply(model::AbstractExplicitLayer, x, ps, st)
-    return _apply(model, x, ps, st)
+    return model(x, ps, st)
 end
-
-# FIXME: See https://github.com/MilesCranmer/DispatchDoctor.jl/issues/46
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(apply),
-        model::AbstractExplicitLayer, x, ps, st)
-    return CRC.rrule_via_ad(cfg, _apply, model, x, ps, st)
-end
-
-_apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
 
 """
     stateless_apply(model, x, ps)
