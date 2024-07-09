@@ -40,7 +40,7 @@ LuxDeviceUtilsZygoteExt = "Zygote"
 LuxDeviceUtilsoneAPIExt = ["GPUArrays", "oneAPI"]
 
 [compat]
-AMDGPU = "0.8.4, 0.9"
+AMDGPU = "0.9.6"
 Adapt = "4"
 Aqua = "0.8.4"
 ArrayInterface = "7.11"
@@ -48,7 +48,7 @@ CUDA = "5.2"
 ChainRulesCore = "1.23"
 ChainRulesTestUtils = "1.13.0"
 ComponentArrays = "0.15.8"
-ExplicitImports = "1.4.1"
+ExplicitImports = "1.9.0"
 FillArrays = "1"
 ForwardDiff = "0.10.36"
 Functors = "0.4.4"
@@ -64,7 +64,6 @@ ReverseDiff = "1.15"
 SafeTestsets = "0.1"
 SparseArrays = "1.10"
 Test = "1.10"
-TestSetExtensions = "3"
 Tracker = "0.2.34"
 Zygote = "0.6.69"
 julia = "1.10"
@@ -86,9 +85,8 @@ ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-TestSetExtensions = "98d24dd4-01ad-11ea-1b02-c9a08f80db04"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Aqua", "ArrayInterface", "ChainRulesTestUtils", "ComponentArrays", "ExplicitImports", "FillArrays", "ForwardDiff", "LuxCore", "Pkg", "Random", "RecursiveArrayTools", "ReverseDiff", "SafeTestsets", "SparseArrays", "Test", "TestSetExtensions", "Tracker", "Zygote"]
+test = ["Aqua", "ArrayInterface", "ChainRulesTestUtils", "ComponentArrays", "ExplicitImports", "FillArrays", "ForwardDiff", "LuxCore", "Pkg", "Random", "RecursiveArrayTools", "ReverseDiff", "SafeTestsets", "SparseArrays", "Test", "Tracker", "Zygote"]

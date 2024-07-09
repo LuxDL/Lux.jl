@@ -1,4 +1,4 @@
-using LuxDeviceUtils, Random
+using LuxDeviceUtils, Random, Test
 
 @testset "CPU Fallback" begin
     @test !LuxDeviceUtils.functional(LuxoneAPIDevice)
