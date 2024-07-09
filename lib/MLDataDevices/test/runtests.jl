@@ -21,7 +21,7 @@ end
 @testset "LuxDeviceUtils Tests" begin
     file_names = BACKEND_GROUP == "all" ?
                  ["cuda_tests.jl", "amdgpu_tests.jl", "metal_tests.jl", "oneapi_tests.jl"] :
-                 [BACKEND_GROUP * "_tests.jl"]
+                 (BACKEND_GROUP == "cpu" ? [] : [BACKEND_GROUP * "_tests.jl"])
     @testset "$(file_name)" for file_name in file_names
         run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
              --startup-file=no --code-coverage=user $(@__DIR__)/$file_name`)

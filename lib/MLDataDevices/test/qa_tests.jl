@@ -1,4 +1,4 @@
-using Aqua, LuxDeviceUtils, Test
+using Aqua, ExplicitImports, LuxDeviceUtils, Test
 
 @testset "Aqua Tests" begin
     Aqua.test_all(LuxDeviceUtils)
