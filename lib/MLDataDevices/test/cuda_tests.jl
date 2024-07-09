@@ -1,4 +1,4 @@
-using LuxDeviceUtils, Random, Functors
+using LuxDeviceUtils, Random, Functors, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
