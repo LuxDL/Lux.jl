@@ -86,7 +86,7 @@ end
 
 @inline function (r::ReverseSequence{Nothing})(
         x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    return (isbitstype(T) ? reverse(x) : Iterators.reverse(x)), st
+    return reverse(x), st
 end
 
 @inline function (r::ReverseSequence{Nothing})(
@@ -96,7 +96,7 @@ end
 
 @inline function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
     r.dim == 1 && return reverse(x), st
-    throw(DimensionMismatch(lazy"Cannot specify a dimension other than 1 for AbstractVector{T}"))
+    throw(ArgumentError("Cannot specify a dimension other than 1 for AbstractVector{T}"))
 end
 
 @inline function (r::ReverseSequence)(

@@ -35,7 +35,7 @@
 
             @test layer(x, ps, st)[1] == aType(xr)
             @test layer(x2, ps, st)[1] == aType(x2rd1)
-            @test_throws DimensionMismatch layer2(x, ps2, st2)[1]
+            @test_throws ArgumentError layer2(x, ps2, st2)[1]
             @test layer3(x, ps3, st3)[1] == aType(xr)
             @test layer2(x2, ps2, st2)[1] == aType(x2rd2)
 
