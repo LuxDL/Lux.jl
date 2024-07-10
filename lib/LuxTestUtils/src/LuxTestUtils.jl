@@ -1,23 +1,19 @@
 module LuxTestUtils
 
-using ComponentArrays, Optimisers, Preferences, LuxCore, LuxDeviceUtils, Test
-using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
+using ADTypes: AutoFiniteDiff, AutoZygote
+using ChainRulesCore: ChainRulesCore
+using ComponentArrays: ComponentArray
+using FiniteDiff: FiniteDiff
+using ForwardDiff: ForwardDiff
+using Functors: Functors
+using LuxDeviceUtils: cpu_device, gpu_device, get_device
+using ReverseDiff: ReverseDiff
+using Test: Test, Error, Broken, Pass, Fail, get_testset
+using Tracker: Tracker
+using Zygote: Zygote
 
-const JET_TARGET_MODULES = Ref{Union{Nothing, Vector{String}}}(nothing)
-
-function __init__()
-    if @has_preference("target_modules")
-        prefs = @load_preference("target_modules")
-        @info "JET_TARGET_MODULES set to $prefs from preferences"
-        JET_TARGET_MODULES[] = prefs
-    end
-end
-
-function jet_target_modules!(list::Vector{String})
-    JET_TARGET_MODULES[] = list
-    @info "JET_TARGET_MODULES set to $list"
-    return list
-end
+const CRC = ChainRulesCore
+const FD = FiniteDiff
 
 try
     using JET: JET, JETTestFailure, get_reports, report_call, report_opt
@@ -27,14 +23,16 @@ catch
     global JET_TESTING_ENABLED = false
 end
 
+include("utils.jl")
+include("autodiff.jl")
 include("jet.jl")
 
+export AutoFiniteDiff, AutoZygote
+export test_gradients
 export @jet, jet_target_modules!
 
 # using ComponentArrays, Optimisers, Preferences, LuxCore, LuxDeviceUtils, Test
 # using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
-
-# import Test: Error, Broken, Pass, Fail, get_testset
 
 # # Approximate Equality
 # struct GradientComputationSkipped end
