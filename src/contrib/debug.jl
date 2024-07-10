@@ -45,7 +45,7 @@ See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 """
 @concrete struct DebugLayer{NaNCheck, ErrorCheck} <:
                  AbstractExplicitContainerLayer{(:layer,)}
-    layer
+    layer <: AbstractExplicitLayer
     location::KeyPath
 end
 

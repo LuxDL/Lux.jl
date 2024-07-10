@@ -1,5 +1,13 @@
 abstract type AbstractRecurrentCell{use_bias, train_state} <: AbstractExplicitLayer end
 
+const AbstractDebugRecurrentCell = Experimental.DebugLayer{
+    <:Any, <:Any, <:AbstractRecurrentCell}
+
+function ConstructionBase.constructorof(::Type{<:AbstractRecurrentCell{
+        use_bias, train_state}}) where {use_bias, train_state}
+    return AbstractRecurrentCell{use_bias, train_state}
+end
+
 # Fallback for vector inputs
 function (rnn::AbstractRecurrentCell)(x::AbstractVector, ps, st::NamedTuple)
     (y, carry), st_ = rnn(reshape(x, :, 1), ps, st)
@@ -82,16 +90,16 @@ automatically operate over a sequence of inputs.
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
-struct Recurrence{
-    R, C <: AbstractRecurrentCell, O <: AbstractTimeSeriesDataBatchOrdering} <:
-       AbstractExplicitContainerLayer{(:cell,)}
-    cell::C
-    ordering::O
+@concrete struct Recurrence{R} <: AbstractExplicitContainerLayer{(:cell,)}
+    cell <: Union{<:AbstractRecurrentCell, <:AbstractDebugRecurrentCell}
+    ordering <: AbstractTimeSeriesDataBatchOrdering
 end
+
+ConstructionBase.constructorof(::Type{<:Recurrence{R}}) where {R} = Recurrence{R}
 
 function Recurrence(cell; ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
         return_sequence::Bool=false)
-    return Recurrence{return_sequence, typeof(cell), typeof(ordering)}(cell, ordering)
+    return Recurrence{return_sequence}(cell, ordering)
 end
 
 _eachslice(x::AbstractArray, ::TimeLastIndex) = _eachslice(x, Val(ndims(x)))
@@ -164,9 +172,8 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
       + `cell`: Same as `cell`.
       + `carry`: The carry state of the `cell`.
 """
-struct StatefulRecurrentCell{C <: AbstractRecurrentCell} <:
-       AbstractExplicitContainerLayer{(:cell,)}
-    cell::C
+@concrete struct StatefulRecurrentCell <: AbstractExplicitContainerLayer{(:cell,)}
+    cell <: Union{<:AbstractRecurrentCell, <:AbstractDebugRecurrentCell}
 end
 
 function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)
@@ -643,8 +650,8 @@ function Base.show(io::IO, g::GRUCell{use_bias, TS}) where {use_bias, TS}
 end
 
 """
-    BidirectionalRNN(cell::AbstractRecurrentCell;
-        backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
+    BidirectionalRNN(cell::AbstractRecurrentCell,
+        backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing;
         merge_mode::Union{Function, Nothing}=vcat,
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
 
@@ -654,13 +661,13 @@ Bidirectional RNN wrapper.
 
   - `cell`: A recurrent cell. See [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref),
     for how the inputs/outputs of a recurrent cell must be structured.
-
-## Keyword Arguments
-
   - `backward_cell`: A optional backward recurrent cell. If `backward_cell` is `nothing`,
     the rnn layer instance passed as the `cell` argument will be used to generate the
     backward layer automatically. `in_dims` of `backward_cell` should be consistent with
     `in_dims` of `cell`
+
+## Keyword Arguments
+
   - `merge_mode`: Function by which outputs of the forward and backward RNNs will be combined.
     default value is `vcat`. If `nothing`, the outputs will not be combined.
   - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
@@ -694,8 +701,8 @@ end
 
 (rnn::BidirectionalRNN)(x, ps, st::NamedTuple) = rnn.model(x, ps, st)
 
-function BidirectionalRNN(cell::AbstractRecurrentCell;
-        backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing,
+function BidirectionalRNN(cell::AbstractRecurrentCell,
+        backward_cell::Union{AbstractRecurrentCell, Nothing}=nothing;
         merge_mode::Union{Function, Nothing}=vcat,
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex())
     layer = Recurrence(cell; return_sequence=true, ordering)

@@ -53,6 +53,12 @@ function _printable_children(l::Union{PairwiseFusion, Parallel})
     return merge((; l.connection), children.layers)
 end
 _printable_children(l::SkipConnection) = (; l.connection, l.layers)
+function _printable_children(l::BidirectionalRNN)
+    merge_mode = l.model.connection isa Broadcast.BroadcastFunction ? l.model.connection.f :
+                 nothing
+    return (; merge_mode, forward_cell=l.model.layers.forward_rnn.cell,
+        backward_cell=l.model.layers.backward_rnn.rnn.cell)
+end
 
 _show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
 _show_leaflike(x::AbstractExplicitLayer) = false

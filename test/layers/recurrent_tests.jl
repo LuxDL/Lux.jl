@@ -415,9 +415,8 @@ end
                 RNNCell, LSTMCell, GRUCell)
                 cell = _cell(3 => 5)
                 backward_cell = _backward_cell(3 => 5)
-                bi_rnn = BidirectionalRNN(cell; backward_cell=backward_cell)
-                bi_rnn_no_merge = BidirectionalRNN(
-                    cell; backward_cell=backward_cell, merge_mode=nothing)
+                bi_rnn = BidirectionalRNN(cell, backward_cell)
+                bi_rnn_no_merge = BidirectionalRNN(cell, backward_cell; merge_mode=nothing)
                 display(bi_rnn)
 
                 # Batched Time Series
