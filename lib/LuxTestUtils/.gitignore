@@ -1,7 +1,7 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
-/Manifest.toml
+Manifest.toml
 Manifest-v*.toml
 /deps/deps.jl
 /docs/build

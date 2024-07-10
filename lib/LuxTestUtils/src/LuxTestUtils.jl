@@ -1,8 +1,9 @@
 module LuxTestUtils
 
-using ADTypes: AutoFiniteDiff, AutoZygote
+using ADTypes: AutoEnzyme, AutoFiniteDiff, AutoZygote
 using ChainRulesCore: ChainRulesCore
 using ComponentArrays: ComponentArray
+using Enzyme: Enzyme
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
 using Functors: Functors
@@ -27,7 +28,7 @@ include("utils.jl")
 include("autodiff.jl")
 include("jet.jl")
 
-export AutoFiniteDiff, AutoZygote
+export AutoEnzyme, AutoFiniteDiff, AutoZygote
 export test_gradients
 export @jet, jet_target_modules!
 

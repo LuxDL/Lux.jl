@@ -51,11 +51,11 @@ function partial_function(f::F, idx::Int, args...) where {F}
 end
 
 function flatten_gradient_computable(f, nt::NamedTuple)
-    leaves = Functors.fleaves(nt)
-    if all(x -> x isa Number || x isa AbstractArray, leaves)
+    if needs_gradient(nt)
         _f = (x) -> f(NamedTuple(x))
         return _f, nt |> cpu_device() |> ComponentArray |> get_device(nt)
     end
     return nothing, nothing
 end
 
+needs_gradient(y) = all(Fix{2}(isa, AbstractArray), Functors.fleaves(y))
