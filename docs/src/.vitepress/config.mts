@@ -171,19 +171,41 @@ export default defineConfig({
             },
             "/manual/": {
                 text: 'Manual', collapsed: false, items: [
-                    { text: 'Lux Interface', link: '/manual/interface' },
-                    { text: 'Automatic Differentiation', link: '/manual/autodiff' },
-                    { text: 'Debugging Lux Models', link: '/manual/debugging' },
-                    { text: 'Custom Input Types', link: '/manual/dispatch_custom_input' },
-                    { text: 'Freezing Parameters', link: '/manual/freezing_model_parameters' },
-                    { text: 'GPU Management', link: '/manual/gpu_management' },
-                    { text: 'Migrating from Flux', link: '/manual/migrate_from_flux' },
-                    { text: 'Initializing Weights', link: '/manual/weight_initializers' },
-                    { text: 'Distributed Training', link: '/manual/distributed_utils' },
-                    { text: 'Nested AutoDiff', link: '/manual/nested_autodiff' },
-                    { text: 'Preferences', link: '/manual/preferences' },
-                    { text: 'Performance Pitfalls', link: '/manual/performance_pitfalls' },
-                    { text: 'Lux In GPU Kernels', link: '/manual/nn_inside_gpu_kernels' },]
+                    {
+                        text: 'Basics', items: [
+                            { text: 'Lux Interface', link: '/manual/interface' },
+                            { text: 'Freezing Parameters', link: '/manual/freezing_model_parameters' },
+                            { text: 'GPU Management', link: '/manual/gpu_management' },
+                            { text: 'Initializing Weights', link: '/manual/weight_initializers' },
+                        ]
+                    },
+                    {
+                        text: 'Automatic Differentiation', items: [
+                            { text: 'Automatic Differentiation', link: '/manual/autodiff' },
+                            { text: 'Nested AutoDiff', link: '/manual/nested_autodiff' },
+                        ]
+                    },
+                    {
+                        text: 'Debugging / Performance Enhancement Tools',
+                        items: [
+                            { text: 'Debugging Lux Models', link: '/manual/debugging' },
+                            { text: 'Performance Pitfalls', link: '/manual/performance_pitfalls' },
+                        ]
+                    },
+                    {
+                        text: 'Migration Guides', items: [
+                            { text: 'Migrating from Flux', link: '/manual/migrate_from_flux' },
+                        ]
+                    },
+                    {
+                        text: 'Advanced Usage', items: [
+                            { text: 'Custom Input Types', link: '/manual/dispatch_custom_input' },
+                            { text: 'Configuration via Preferences', link: '/manual/preferences' },
+                            { text: 'Distributed Training', link: '/manual/distributed_utils' },
+                            { text: 'Lux In GPU Kernels', link: '/manual/nn_inside_gpu_kernels' },
+                        ]
+                    },
+                ]
             },
             "/api/": {
                 text: 'API Reference', collapsed: false, items: [
