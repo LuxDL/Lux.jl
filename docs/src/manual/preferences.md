@@ -20,7 +20,7 @@ exhaustive list of preferences that Lux.jl uses.
 
 ## Nested Automatic Differentiation
 
-1. `automatic_nested_ad_switching` - Set this to `true` to disable automatic switching
+1. `automatic_nested_ad_switching` - Set this to `false` to disable automatic switching
    of backends for nested automatic differentiation. See the manual section on
    [nested automatic differentiation](@ref nested_autodiff) for more details.
 
