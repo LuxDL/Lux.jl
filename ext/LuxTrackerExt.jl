@@ -65,6 +65,11 @@ Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
 @inline Lux.__eltype(::TrackedReal{T}) where {T} = T
 @inline Lux.__eltype(::AbstractArray{<:TrackedReal{T}}) where {T} = T
 
+@inline Lux.__reverse(x::TrackedArray; dims=:) = ArrayInterface.aos_to_soa(reverse(x; dims))
+@inline function Lux.__reverse(x::AbstractArray{<:TrackedReal}; dims=:)
+    return ArrayInterface.aos_to_soa(reverse(x; dims))
+end
+
 # SimpleChains.jl: DON'T REPLACE THESE WITH @grad_from_chainrules
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue

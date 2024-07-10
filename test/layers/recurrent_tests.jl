@@ -374,3 +374,77 @@ end
         @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
     end
 end
+
+@testitem "Bidirectional" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+    rng = StableRNG(12345)
+
+    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+        @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
+            cell = _cell(3 => 5)
+            bi_rnn = BidirectionalRNN(cell)
+            bi_rnn_no_merge = BidirectionalRNN(cell; merge_mode=nothing)
+            display(bi_rnn)
+
+            # Batched Time Series
+            x = randn(rng, Float32, 3, 4, 2) |> aType
+            ps, st = Lux.setup(rng, bi_rnn) .|> device
+            y, st_ = bi_rnn(x, ps, st)
+            y_, st__ = bi_rnn_no_merge(x, ps, st)
+
+            @jet bi_rnn(x, ps, st)
+            @jet bi_rnn_no_merge(x, ps, st)
+
+            @test size(y) == (4,)
+            @test all(x -> size(x) == (10, 2), y)
+
+            @test length(y_) == 2
+            @test size(y_[1]) == size(y_[2])
+            @test size(y_[1]) == (4,)
+            @test all(x -> size(x) == (5, 2), y_[1])
+
+            __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
+            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+
+            __f = p -> begin
+                (y1, y2), st_ = bi_rnn_no_merge(x, p, st)
+                return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
+            end
+            @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+
+            @testset "backward_cell: $_backward_cell" for _backward_cell in (
+                RNNCell, LSTMCell, GRUCell)
+                cell = _cell(3 => 5)
+                backward_cell = _backward_cell(3 => 5)
+                bi_rnn = BidirectionalRNN(cell, backward_cell)
+                bi_rnn_no_merge = BidirectionalRNN(cell, backward_cell; merge_mode=nothing)
+                display(bi_rnn)
+
+                # Batched Time Series
+                x = randn(rng, Float32, 3, 4, 2) |> aType
+                ps, st = Lux.setup(rng, bi_rnn) .|> device
+                y, st_ = bi_rnn(x, ps, st)
+                y_, st__ = bi_rnn_no_merge(x, ps, st)
+
+                @jet bi_rnn(x, ps, st)
+                @jet bi_rnn_no_merge(x, ps, st)
+
+                @test size(y) == (4,)
+                @test all(x -> size(x) == (10, 2), y)
+
+                @test length(y_) == 2
+                @test size(y_[1]) == size(y_[2])
+                @test size(y_[1]) == (4,)
+                @test all(x -> size(x) == (5, 2), y_[1])
+
+                __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
+                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+
+                __f = p -> begin
+                    (y1, y2), st_ = bi_rnn_no_merge(x, p, st)
+                    return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
+                end
+                @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
+            end
+        end
+    end
+end

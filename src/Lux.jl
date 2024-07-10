@@ -42,6 +42,9 @@ include("preferences.jl")
 include("custom_errors.jl")
 include("utils.jl")
 
+# Experimental
+include("contrib/contrib.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -53,9 +56,6 @@ include("layers/extension.jl")
 
 # Pretty Printing
 include("layers/display.jl")
-
-# Experimental
-include("contrib/contrib.jl")
 
 # Helpful Functionalities
 include("helpers/stateful.jl")
@@ -93,7 +93,7 @@ export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
 export NoOpLayer, ReshapeLayer, SelectDim, FlattenLayer, WrappedFunction, ReverseSequence
-export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell
+export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell, BidirectionalRNN
 export SamePad, TimeLastIndex, BatchLastIndex
 
 export StatefulLuxLayer
