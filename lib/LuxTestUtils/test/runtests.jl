@@ -1,3 +1,3 @@
-using LuxTestUtils, Test
+using ReTestItems
 
-# Ensure that code loads correctly
+ReTestItems.runtests(@__DIR__)
