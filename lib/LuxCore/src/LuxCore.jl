@@ -1,5 +1,6 @@
 module LuxCore
 
+using DispatchDoctor: @stable
 using Functors: Functors, fmap
 using Random: Random, AbstractRNG, Xoshiro
 using Setfield: Setfield
@@ -171,8 +172,16 @@ this include:
     we can unpack the input in `apply` and pass it to the appropriate layer and then
     repack it before returning. See the Lux manual on Custom Input Types for a motivating
     example.
+
+!!! tip
+
+    `apply` is integrated with `DispatchDoctor.jl` that allows automatic verification of
+    type stability. By default this is "disable"d. For more information, see the
+    [documentation](https://github.com/MilesCranmer/DispatchDoctor.jl).
 """
-apply(model::AbstractExplicitLayer, x, ps, st) = model(x, ps, st)
+@stable default_mode="disable" function apply(model::AbstractExplicitLayer, x, ps, st)
+    return model(x, ps, st)
+end
 
 """
     stateless_apply(model, x, ps)
