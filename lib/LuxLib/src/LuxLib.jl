@@ -23,7 +23,6 @@ include("utils.jl")
 include("traits.jl")
 include("impl/Impl.jl")
 include("api/API.jl")
-include("deprecations.jl")
 
 @compat(public,
     (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp))
