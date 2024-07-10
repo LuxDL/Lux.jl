@@ -1,7 +1,7 @@
 module LuxCore
 
 using DispatchDoctor: @stable
-using Functors: Functors, fmap
+using Functors: Functors, fmap, fleaves
 using Random: Random, AbstractRNG, Xoshiro
 using Setfield: Setfield
 
@@ -307,7 +307,7 @@ function contains_lux_layer(l)
 end
 
 """
-    check_fmap_condition(cond, tmatch, x) -> Bool
+    check_fmap_condition(cond, tmatch::Union{Type, Nothing}, x) -> Bool
 
 `fmap`s into the structure `x` and see if `cond` is statisfied for any of the leaf elements.
 
@@ -322,17 +322,10 @@ end
 
 A Boolean Value
 """
-function check_fmap_condition(cond::C, tmatch, x) where {C}
-    tmatch !== nothing && x isa tmatch && return true
-    matched = Ref(false)
-    __check! = let matched = matched
-        l -> begin
-            cond(l) && (matched[] = true)
-            return l
-        end
-    end
-    fmap(__check!, x)
-    return matched[]
+check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, fleaves(x))
+function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
+    x isa T && return true
+    return check_fmap_condition(cond, nothing, x)
 end
 
 end
