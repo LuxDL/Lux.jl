@@ -13,7 +13,7 @@ using ConstructionBase: ConstructionBase
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
 using Functors: Functors, fmap
-using GPUArraysCore: GPUArraysCore
+using GPUArraysCore: GPUArraysCore, @allowscalar
 using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str

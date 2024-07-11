@@ -60,5 +60,11 @@ function __from_flux_adaptor end
 Base.@deprecate transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=false) adapt(
     FromFluxAdaptor(preserve_ps_st, force_preserve), l)
 
-# Extend for AMDGPU in extensions
-@inline _maybe_flip_conv_weight(x) = copy(x)
+@inline function _maybe_flip_conv_weight(x::AbstractArray)
+    return _maybe_flip_conv_weight(x, get_device(x))
+end
+@inline _maybe_flip_conv_weight(x::AbstractArray, _) = copy(x)
+@inline function _maybe_flip_conv_weight(x::AbstractArray, ::LuxAMDGPUDevice)
+    # This is a very rare operation, hence we dont mind allowing scalar operations
+    return @allowscalar reverse(x; dims=ntuple(identity, ndims(x) - 2))
+end
