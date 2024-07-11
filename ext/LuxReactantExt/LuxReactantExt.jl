@@ -8,7 +8,7 @@ using Functors: fmapstructure, fmap
 using Optimisers: Optimisers, Descent, Leaf
 using Random: AbstractRNG, Xoshiro
 using Reactant: Reactant
-using Lux: Lux, LuxEltypeAdaptor, AutoReactant
+using Lux: Lux, LuxEltypeAdaptor, ReactantBackend
 using Lux.Experimental: TrainingBackendCache, TrainState
 using LuxCore: LuxCore, AbstractExplicitLayer
 

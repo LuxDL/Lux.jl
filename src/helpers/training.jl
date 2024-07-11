@@ -239,14 +239,14 @@ updates the parameters using [`apply_gradients!`](@ref). All backends supported 
 
 ## Additional Backends
 
-  - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+  - [`ReactantBackend`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
 
 ## Return
 
 Returned values are the same as [`compute_gradients`](@ref). Note that despite the `!`,
 only the parameters in `ts` are updated inplace. Users should be using the returned `ts`
 object for further training steps, else there is no caching and performance will be
-suboptimal (and absolutely terrible for backends like `AutoReactant`).
+suboptimal (and absolutely terrible for backends like `ReactantBackend`).
 """
 function single_train_step! end
 
@@ -259,7 +259,7 @@ updates the parameters using [`apply_gradients`](@ref). All backends supported v
 
 ## Additional Backends
 
-  - [`AutoReactant`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+  - [`ReactantBackend`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
 
 In most cases you should use [`single_train_step!`](@ref) instead of this function.
 
