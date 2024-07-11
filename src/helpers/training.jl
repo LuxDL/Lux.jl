@@ -14,7 +14,7 @@ using LuxCore: LuxCore, AbstractLuxLayer
 """
     TrainState
 
-Training State containing:
+## Training State containing:
 
   - `model`: `Lux` model.
   - `parameters`: Trainable Variables of the `model`.
@@ -23,7 +23,7 @@ Training State containing:
   - `optimizer_state`: Optimizer State.
   - `step`: Number of updates of the parameters made.
 
-Internal fields:
+## Internal fields:
 
   - `cache`: Cached values. Implementations are free to use this for whatever they want.
   - `objective_function`: Objective function might be cached.
@@ -32,6 +32,12 @@ Internal fields:
 
     Constructing this object directly shouldn't be considered a stable API. Use the
     version with the Optimisers API.
+
+## Special Features
+
+To run inference using the current parameters and states simply call the TrainState with
+the input data as `tstate(data)`. This will automatically set `Lux.testmode`. However, note
+that `tstate.states` will not be updated with the new state.
 """
 @concrete struct TrainState
     cache
@@ -63,6 +69,10 @@ Constructor for [`TrainState`](@ref).
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
+end
+
+function (tstate::TrainState)(data)
+    return first(tstate.model(data, tstate.parameters, Lux.testmode(tstate.states)))
 end
 
 @concrete struct TrainingBackendCache
