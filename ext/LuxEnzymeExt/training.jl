@@ -1,10 +1,3 @@
-module LuxEnzymeExt
-
-using ADTypes: AutoEnzyme
-using Enzyme: Enzyme, Active, Const, Duplicated
-using Lux: Lux
-using Lux.Experimental: TrainingBackendCache, TrainState
-
 function Lux.Experimental.compute_gradients(
         ::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
     dps = Lux.recursive_make_zero(ts.parameters)
@@ -78,6 +71,4 @@ function Lux.Experimental.compute_gradients(::AutoEnzyme, obj_fn::F, data,
         ts.optimizer, ts.optimizer_state, ts.step)
 
     return dps, loss, stats, ts_new
-end
-
 end
