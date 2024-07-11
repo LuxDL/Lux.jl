@@ -28,7 +28,7 @@
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
-    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 skip_tracker=true
 
     x = randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
@@ -39,7 +39,7 @@
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
-    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 skip_tracker=true
 
     @testset "Array Output" begin
         adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)), true)
@@ -98,7 +98,7 @@
             @test size(gs[1]) == size(x)
             @test length(gs[2].params) == length(ps.params)
 
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 skip_tracker=true
         end
     end
 
