@@ -4,6 +4,12 @@ function __make_reactant_array(x::AbstractArray)
         return Reactant.ConcreteRArray(x)
     return __make_tracer(x)
 end
-__make_reactant_array(x) = __make_tracer(x)
+function __make_reactant_array(x)
+    return Lux.recursive_map(x) do xₗ
+        hasmethod(Reactant.ArrayToConcrete, Tuple{typeof(xₗ)}) &&
+            return Reactant.ConcreteRArray(xₗ)
+        return __make_tracer(xₗ)
+    end
+end
 
 __make_tracer(x) = Reactant.make_tracer(IdDict(), x, (), Reactant.ArrayToConcrete)
