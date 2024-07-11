@@ -13,7 +13,7 @@ using Lux.Experimental: TrainingBackendCache, TrainState
 using LuxCore: LuxCore, AbstractExplicitLayer
 
 include("utils.jl")
-include("train.jl")
+include("training.jl")
 include("optimizers.jl")
 
 end
