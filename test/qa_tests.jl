@@ -7,10 +7,6 @@
 end
 
 @testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
-    if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
-        using AMDGPU
-    end
-
     # Load all trigger packages
     import Lux, ComponentArrays, ReverseDiff, Flux, SimpleChains, Tracker, Zygote, Enzyme
 
