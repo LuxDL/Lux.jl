@@ -50,7 +50,7 @@ Adapt a Flux model `L` to Lux model. See [`FromFluxAdaptor`](@ref) for more deta
 """
 function Adapt.adapt(from::FromFluxAdaptor, L)
     if Base.get_extension(@__MODULE__, :LuxFluxExt) === nothing
-        error("`FromFluxAdaptor` requires Flux.jl to be loaded.")
+        error("`FromFluxAdaptor` requires `Flux.jl` to be loaded.")
     end
     return __from_flux_adaptor(L; from.preserve_ps_st, from.force_preserve)
 end

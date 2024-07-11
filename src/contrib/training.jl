@@ -31,6 +31,48 @@ Internal fields:
     step::Int
 end
 
+"""
+    TrainState(rng::Random.AbstractRNG, model::Lux.AbstractExplicitLayer,
+        optimizer::Optimisers.AbstractRule;
+        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
+    TrainState(model::Lux.AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
+
+Constructor for [`TrainState`](@ref).
+
+## Arguments
+
+  - `rng`: Random Number Generator.
+  - `ps`: Parameters of the model.
+  - `st`: States of the model.
+  - `model`: `Lux` model.
+  - `optimizer`: Optimizer from `Optimisers.jl`.
+  - `transform_variables`: Function to transform the variables of the model. Typically used
+    to transfer variables to GPU / CPU.
+
+## Returns
+
+[`TrainState`](@ref) object.
+"""
+function TrainState(
+        rng::AbstractRNG, model::AbstractExplicitLayer, optimizer::Optimisers.AbstractRule;
+        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
+    Base.depwarn(
+        "`TrainState(rng::AbstractRNG, model::AbstractExplicitLayer, \
+         optimizer::Optimisers.AbstractRule; transform_variables::Union{Function, \
+         AbstractLuxDevice}=gpu_device())` has been deprecated in favor of \
+         `TrainState(model::AbstractExplicitLayer, ps, st, \
+         optimizer::Optimisers.AbstractRule)`",
+        :TrainState)
+    ps, st = Lux.setup(rng, model) .|> transform_variables
+    return TrainState(model, ps, st, optimizer)
+end
+
+function TrainState(
+        model::AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
+    st_opt = Optimisers.setup(optimizer, ps)
+    return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
+end
+
 @concrete struct TrainingBackendCache{backend, first_try}
     dparameters
     extras
@@ -74,7 +116,11 @@ Update the parameters stored in `ts` using the gradients `grads`.
 
 $(APPLY_GRAD_DOCSTRING)
 """
-function apply_gradients end
+function apply_gradients(ts::TrainState, grads)
+    optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
+    return TrainState(ts.cache, ts.objective_function, ts.model, ps,
+        ts.states, ts.optimizer, optimizer_state, ts.step + 1)
+end
 
 """
     apply_gradients!(ts::TrainState, grads)
@@ -84,7 +130,11 @@ of [`apply_gradients`](@ref).
 
 $(APPLY_GRAD_DOCSTRING)
 """
-function apply_gradients! end
+function apply_gradients!(ts::TrainState, grads)
+    Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
+    return TrainState(ts.cache, ts.objective_function, ts.model, ts.parameters,
+        ts.states, ts.optimizer, ts.optimizer_state, ts.step + 1)
+end
 
 """
     compute_gradients(ad::ADTypes.AbstractADType, objective_function::Function, data,
@@ -219,4 +269,35 @@ for inplace in ("!", "")
         ts = $(apply_fn)(ts, grads)
         return grads, loss, stats, ts
     end
+end
+
+# Simple extension to the `adjust!` API
+function Optimisers.adjust!(ts::TrainState, eta::Real)
+    st_opt = ts.optimizer_state
+    Optimisers.adjust!(st_opt, eta)
+    optimizer = Optimisers.adjust(ts.optimizer, eta)
+    return TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+end
+
+function Optimisers.adjust!(ts::TrainState; kwargs...)
+    st_opt = ts.optimizer_state
+    Optimisers.adjust!(st_opt; kwargs...)
+    optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
+    return TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+end
+
+function Optimisers.adjust(ts::TrainState, eta::Real)
+    st_opt = Optimisers.adjust(ts.optimizer_state, eta)
+    optimizer = Optimisers.adjust(ts.optimizer, eta)
+    return TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+end
+
+function Optimisers.adjust(ts::TrainState; kwargs...)
+    st_opt = Optimisers.adjust(ts.optimizer_state; kwargs...)
+    optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
+    return TrainState(ts.cache, ts.objective_function, ts.model,
+        ts.parameters, ts.states, optimizer, st_opt, ts.step)
 end

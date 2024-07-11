@@ -177,8 +177,13 @@ API internally.
 """
 @concrete struct FluxLayer <: AbstractExplicitLayer
     layer
-    re
+    re <: Optimisers.Restructure
     init_parameters
+end
+
+function FluxLayer(l)
+    p, re = Optimisers.destructure(l)
+    return FluxLayer(l, re, Returns(copy(p)))
 end
 
 Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)

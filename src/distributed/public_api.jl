@@ -5,6 +5,7 @@ using Compat: @compat
 using ConcreteStructs: @concrete
 using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
 using LuxDeviceUtils: get_device
+using Optimisers: Optimisers
 
 const CRC = ChainRulesCore
 
@@ -253,16 +254,27 @@ averages the gradients across the processes using Allreduce.
 ## Arguments
 
   - `optimizer`: An Optimizer compatible with the Optimisers.jl package
-
-!!! danger
-
-    `Optimisers.jl` must be installed and loaded before using this.
 """
-function DistributedOptimizer(backend::AbstractLuxDistributedBackend, opt)
-    mod = Base.get_extension(@__MODULE__, :LuxOptimisersExt)
-    mod === nothing &&
-        error("`Optimisers.jl` must be installed and loaded before using this.")
-    return getproperty(mod, :DistributedOptimizer)(backend, opt)
+@concrete struct DistributedOptimizer <: Optimisers.AbstractRule
+    backend <: AbstractLuxDistributedBackend
+    opt <: Optimisers.AbstractRule
+end
+
+function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
+    y_avg = allreduce!(opt.backend, y, avg)
+    return Optimisers.apply!(opt.opt, state, x, y_avg)
+end
+
+Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
+
+function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
+    return DistributedOptimizer(opt.backend, Optimisers._adjust(opt.opt, nt))
+end
+
+function DistributedUtils.synchronize!!(
+        backend::AbstractLuxDistributedBackend, ps::Optimisers.Leaf; root::Int=0)
+    return Optimisers.Leaf(
+        ps.rule, DistributedUtils.synchronize!!(backend, ps.state; root), ps.frozen)
 end
 
 @compat(public,
