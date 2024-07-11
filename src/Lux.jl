@@ -47,6 +47,9 @@ include("utils.jl")
 # Training Helpers
 include("helpers/training.jl")
 
+# Compilers
+include("compilers.jl")
+
 # Experimental
 include("contrib/contrib.jl")
 
@@ -54,7 +57,6 @@ include("contrib/contrib.jl")
 include("transform/types.jl")
 include("transform/flux.jl")
 include("transform/simplechains.jl")
-include("transform/reactant.jl")
 
 # Layer Implementations
 include("layers/basic.jl")
@@ -115,7 +117,8 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
-export AutoReactant
+
+export ReactantBackend
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,

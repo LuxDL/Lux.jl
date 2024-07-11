@@ -1,9 +1,9 @@
 function Lux.Experimental.single_train_step!(
-        ::AutoReactant, obj_fn::F, data, ts::TrainState) where {F}
-    data = Lux.__make_reactant_array(data)
-    ps = Lux.__make_reactant_array(ts.parameters)
-    st = Lux.__make_reactant_array(ts.states)
-    st_opt = Lux.__make_reactant_array(ts.optimizer_state)
+        ::ReactantBackend, obj_fn::F, data, ts::TrainState) where {F}
+    data = __make_reactant_array(data)
+    ps = __make_reactant_array(ts.parameters)
+    st = __make_reactant_array(ts.states)
+    st_opt = __make_reactant_array(ts.optimizer_state)
 
     @info "First call to Reactant. Compiling the training function!" # TODO: Remove
 
@@ -33,9 +33,9 @@ function internal_grad_and_step!(
     return loss, st_updated, stats
 end
 
-function Lux.Experimental.single_train_step!(::AutoReactant, obj_fn::F, data,
+function Lux.Experimental.single_train_step!(::ReactantBackend, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:Reactant}, F}) where {F}
-    data = Lux.__make_reactant_array(data)
+    data = __make_reactant_array(data)
 
     @info "We have already compiled the function!" # TODO: Remove
 
