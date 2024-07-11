@@ -28,8 +28,7 @@ end
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
     tape = ReverseDiff.InstructionTape()
-    ps_tracked = Lux.recursive_map(
-        Lux.__Fix3(ReverseDiff.TrackedArray, tape), ts.parameters, dparams)
+    ps_tracked = Lux.recursive_map(Lux.__Fix3(TrackedArray, tape), ts.parameters, dparams)
 
     loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     loss.deriv = true
@@ -58,7 +57,7 @@ end
 ## Tape hasn't been compiled yet / Function mismatch so recompile
 @inline function __compiled_reverse_diff(obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
-    if Lux.statelength(ts.states) != 0
+    if LuxCore.statelength(ts.states) != 0
         throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for Lux \
                              models with non-empty state `st`."))
     end
@@ -69,7 +68,7 @@ end
             throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for \
                                  loss functions that return non-empty `stats`."))
         end
-        if Lux.statelength(st_) != 0
+        if LuxCore.statelength(st_) != 0
             throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for \
                                  models with non-empty state `st`."))
         end
@@ -86,16 +85,15 @@ end
     obj_fn_wrap = first ∘ obj_fn
 
     tape = ReverseDiff.InstructionTape()
-    ps_tracked = Lux.recursive_map(
-        Lux.__Fix3(ReverseDiff.TrackedArray, tape), ps_cache, dparams)
+    ps_tracked = Lux.recursive_map(Lux.__Fix3(TrackedArray, tape), ps_cache, dparams)
 
     loss = obj_fn_wrap(ts.model, ps_tracked, ts.states, data_cache)
     loss.deriv = true
     ReverseDiff.reverse_pass!(tape)
 
-    forward_executor = [ReverseDiff.FunctionWrapper{Nothing, Tuple{}}(ReverseDiff.ForwardExecutor(instruction))
+    forward_executor = [FunctionWrapper{Nothing, Tuple{}}(ForwardExecutor(instruction))
                         for instruction in tape]
-    reverse_executor = [ReverseDiff.FunctionWrapper{Nothing, Tuple{}}(ReverseDiff.ReverseExecutor(tape[i]))
+    reverse_executor = [FunctionWrapper{Nothing, Tuple{}}(ReverseExecutor(tape[i]))
                         for i in length(tape):-1:1]
 
     compiled_extras = (;

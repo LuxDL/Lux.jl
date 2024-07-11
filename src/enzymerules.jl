@@ -17,9 +17,9 @@ function EnzymeRules.augmented_primal(
 end
 
 function EnzymeRules.reverse(
-        cfg::EnzymeRules.ConfigWidth{1}, func::EnzymeRules.Const{typeof(__fused_agg)},
-        dret::EnzymeCore.Active, (cache_x, cache_y), agg_f::EnzymeRules.Const{typeof(sum)},
-        lfn::EnzymeRules.Const{<:LossFunctions.Traits.Loss},
+        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(__fused_agg)},
+        dret::EnzymeCore.Active, (cache_x, cache_y), agg_f::EnzymeCore.Const{typeof(sum)},
+        lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
         x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
     EnzymeRules.overwritten(cfg)[4] || (cache_x = x.val)
     EnzymeRules.overwritten(cfg)[5] || (cache_y = y.val)

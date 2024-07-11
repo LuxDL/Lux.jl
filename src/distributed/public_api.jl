@@ -271,10 +271,9 @@ function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
     return DistributedOptimizer(opt.backend, Optimisers._adjust(opt.opt, nt))
 end
 
-function DistributedUtils.synchronize!!(
+function synchronize!!(
         backend::AbstractLuxDistributedBackend, ps::Optimisers.Leaf; root::Int=0)
-    return Optimisers.Leaf(
-        ps.rule, DistributedUtils.synchronize!!(backend, ps.state; root), ps.frozen)
+    return Optimisers.Leaf(ps.rule, synchronize!!(backend, ps.state; root), ps.frozen)
 end
 
 @compat(public,

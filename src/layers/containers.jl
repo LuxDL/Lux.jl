@@ -72,14 +72,14 @@ function initialstates(
 end
 
 function (skip::SkipConnection)(x, ps, st::NamedTuple)
-    mx, st = Lux.apply(skip.layers, x, ps, st)
+    mx, st = apply(skip.layers, x, ps, st)
     return skip.connection(mx, x), st
 end
 
 function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(
         x, ps, st::NamedTuple)
-    mx, st1 = Lux.apply(skip.layers, x, ps.layers, st.layers)
-    y, st2 = Lux.apply(skip.connection, (mx, x), ps.connection, st.connection)
+    mx, st1 = apply(skip.layers, x, ps.layers, st.layers)
+    y, st2 = apply(skip.connection, (mx, x), ps.connection, st.connection)
     return y, (layers=st1, connection=st2)
 end
 
@@ -274,7 +274,7 @@ BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), n
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(
+        [:(($(y_symbols[i]), $(st_symbols[i])) = apply(
              layers.$(names[i]), x, ps.$(names[i]), st.$(names[i]))) for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
@@ -376,7 +376,7 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(
+        [:(($(y_symbols[i]), $(st_symbols[i])) = apply(
              layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
          $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
          for i in 1:N])
@@ -514,7 +514,7 @@ _flatten_model(x) = x
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = Lux.apply(
+    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = apply(
                  layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i])))
              for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
@@ -602,7 +602,7 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
     N = length(fields)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = Lux.apply(
+    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = apply(
                  layers.$(fields[i]), x, ps.$(fields[i]), st.$(fields[i]))) for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(res = max.($(Tuple(y_symbols)...))))
@@ -691,7 +691,7 @@ end
     IJ && push!(calls, :($(xs[1]) = x))
     for i in 1:N
         push!(calls,
-            :(($(xs[i + IJ]), $(sts[i])) = Lux.apply(
+            :(($(xs[i + IJ]), $(sts[i])) = apply(
                 model, $(IJ ? :(($(xs[i]), x)) : :x), ps, $(i == 1 ? :st : sts[i - 1]))))
     end
     return quote

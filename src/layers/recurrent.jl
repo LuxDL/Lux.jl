@@ -110,24 +110,24 @@ function _eachslice(::AbstractMatrix, ::BatchLastIndex)
 end
 
 @inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
-    return Lux.apply(r, _eachslice(x, r.ordering), ps, st)
+    return apply(r, _eachslice(x, r.ordering), ps, st)
 end
 
 function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    (out, carry), st = Lux.apply(r.cell, first(x), ps, st)
+    (out, carry), st = apply(r.cell, first(x), ps, st)
     for x_ in x[(begin + 1):end]
-        (out, carry), st = Lux.apply(r.cell, (x_, carry), ps, st)
+        (out, carry), st = apply(r.cell, (x_, carry), ps, st)
     end
     return out, st
 end
 
 @views function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
     function __recurrence_op(::Nothing, input)
-        (out, carry), state = Lux.apply(r.cell, input, ps, st)
+        (out, carry), state = apply(r.cell, input, ps, st)
         return [out], carry, state
     end
     function __recurrence_op((outputs, carry, state), input)
-        (out, carry), state = Lux.apply(r.cell, (input, carry), ps, state)
+        (out, carry), state = apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
     end
     results = foldl_init(__recurrence_op, x)
@@ -186,11 +186,11 @@ function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
 end
 
 function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, carry)
-    return Lux.apply(l, (x, carry), ps, st)
+    return apply(l, (x, carry), ps, st)
 end
 
 function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing)
-    return Lux.apply(l, x, ps, st)
+    return apply(l, x, ps, st)
 end
 
 @doc doc"""

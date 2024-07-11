@@ -500,7 +500,7 @@ function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
 end
 
 # Pretty printing the layer code
-function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
+function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
     setup_strings = obj.setup_strings
     local_name = obj.name
     if local_name !== nothing && local_name != ""
@@ -535,7 +535,7 @@ function Lux._big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing
         print(io, " ", block_to_print)
     end
     if indent == 0
-        Lux._big_finale(io, obj, 7)
+        _big_finale(io, obj, 7)
     else
         println(io, ",")
     end

@@ -65,9 +65,9 @@ struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicit
     end
 end
 
-function initialparameters(
+function LuxCore.initialparameters(
         rng::AbstractRNG, l::FrozenLayer{which_params}) where {which_params}
-    ps = initialparameters(rng, l.layer)
+    ps = LuxCore.initialparameters(rng, l.layer)
     ps_trainable = []
     for (k, v) in pairs(ps)
         (which_params === nothing || k in which_params) && continue
@@ -76,9 +76,10 @@ function initialparameters(
     return (; ps_trainable...)
 end
 
-function initialstates(rng::AbstractRNG, l::FrozenLayer{which_params}) where {which_params}
-    ps = initialparameters(rng, l.layer)
-    st = initialstates(rng, l.layer)
+function LuxCore.initialstates(
+        rng::AbstractRNG, l::FrozenLayer{which_params}) where {which_params}
+    ps = LuxCore.initialparameters(rng, l.layer)
+    st = LuxCore.initialstates(rng, l.layer)
     ps_frozen = []
     for (k, v) in pairs(ps)
         !(which_params === nothing || k in which_params) && continue
@@ -88,7 +89,7 @@ function initialstates(rng::AbstractRNG, l::FrozenLayer{which_params}) where {wh
 end
 
 function (f::FrozenLayer)(x, ps, st::NamedTuple)
-    y, st_ = f.layer(x, _merge(ps, st.frozen_params), st.states)
+    y, st_ = f.layer(x, Lux._merge(ps, st.frozen_params), st.states)
     st = merge(st, (; states=st_))
     return y, st
 end
@@ -122,7 +123,7 @@ function freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
     fl = freeze(l, which_params)
     ps_frozen = []
     ps_trainable = []
-    for (k, v) in _pairs(ps)
+    for (k, v) in Lux._pairs(ps)
         if which_params === nothing || k in which_params
             push!(ps_frozen, k => v)
         else

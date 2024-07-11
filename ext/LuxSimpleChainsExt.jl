@@ -1,10 +1,12 @@
 module LuxSimpleChainsExt
 
 using ArgCheck: @argcheck
-using Lux
+using LuxCore: LuxCore
 using SimpleChains: SimpleChains
-using Lux: SimpleChainsModelConversionException, __to_simplechains_adaptor,
-           __fix_input_dims_simplechain
+using Lux: Lux, SimpleChainsModelConversionException, SimpleChainsLayer,
+           __to_simplechains_adaptor, __fix_input_dims_simplechain, Chain, Conv, Dense,
+           Dropout, FlattenLayer, MaxPool, SamePad
+using LuxLib: NNlib
 using Random: AbstractRNG
 
 function Lux.__fix_input_dims_simplechain(layers::Vector, input_dims)
@@ -68,7 +70,7 @@ end
 
 Lux.__to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionException(layer))
 
-function Lux.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
+function LuxCore.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
     return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
 end
 

@@ -715,7 +715,7 @@ true
     periods
 end
 
-Lux.initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k=2 ./ p.periods,)
+initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k=2 ./ p.periods,)
 
 @inline function (p::PeriodicEmbedding)(x::AbstractVector, ps, st::NamedTuple)
     return vec(first(p(reshape(x, :, 1), ps, st))), st
