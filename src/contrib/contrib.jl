@@ -4,6 +4,7 @@ import ..Lux
 using ..Lux, LuxCore, LuxDeviceUtils, Random
 using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
+using LuxDeviceUtils: AbstractLuxDevice, gpu_device
 
 using ADTypes: ADTypes
 using ArgCheck: @argcheck
@@ -13,6 +14,7 @@ using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Functors: Functors, KeyPath, fmap_with_path, fmapstructure, functor
 using Markdown: @doc_str
+using Optimisers: Optimisers
 using Random: AbstractRNG, Random
 using Setfield: Setfield
 

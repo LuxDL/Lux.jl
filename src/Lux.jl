@@ -17,6 +17,7 @@ using GPUArraysCore: GPUArraysCore
 using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
+using Optimisers: Optimisers
 using Preferences: load_preference, has_preference
 using Random: Random, AbstractRNG
 using Reexport: @reexport
