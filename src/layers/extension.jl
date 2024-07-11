@@ -179,16 +179,7 @@ regular `Array` or not. Default is `false`.
 ## Arguments
 
   - `layer`: SimpleChains layer
-
-!!! note
-
-    If using `Tracker.jl`, the output will always be a regular `Array`.
-
-!!! danger
-
-    `Tracker.jl` sometimes produces incorrect gradients for `SimpleChains.jl` models. As
-    such please test your model with `FiniteDiff.jl` or `Zygote.jl` before using
-    `Tracker.jl` for your model.
+  - `lux_layer`: Potentially equivalent Lux layer that is used for printing
 """
 struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer}} <:
        AbstractExplicitLayer
