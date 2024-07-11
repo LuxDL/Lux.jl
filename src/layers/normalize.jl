@@ -470,7 +470,7 @@ initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 function (wn::WeightNorm)(x, ps, st::NamedTuple)
     y = match_eltype(wn, ps, st, x)
     _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
-    return Lux.apply(wn.layer, y, _merge(_ps, ps.unnormalized), st)
+    return apply(wn.layer, y, _merge(_ps, ps.unnormalized), st)
 end
 
 @inbounds @generated function _get_normalized_parameters(

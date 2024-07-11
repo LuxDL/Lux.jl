@@ -186,7 +186,7 @@ function FluxLayer(l)
     return FluxLayer(l, re, Returns(copy(p)))
 end
 
-Lux.initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
+initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
 
 function (l::FluxLayer)(x, ps, st)
     y = match_eltype(l, ps, st, x)

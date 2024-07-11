@@ -1,10 +1,10 @@
 module LuxMLUtilsExt
 
-using Lux: DistributedUtils
+using Lux: Lux, DistributedUtils
 using MLUtils: MLUtils, numobs
 
 function DistributedUtils.__construct_distributed_data_container(
-        backend::DistributedUtils.AbstractLuxDistributedBackend, data)
+        backend::Lux.AbstractLuxDistributedBackend, data)
     total_size = numobs(data)
     split_across = DistributedUtils.total_workers(backend)
     size_per_worker = Int(ceil(total_size / split_across))

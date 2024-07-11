@@ -5,7 +5,7 @@ using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore
 using Lux: Lux, LuxCPUDevice
 using Lux.Experimental: TrainingBackendCache, TrainState
-using LuxCore: LuxCore
+using LuxCore: LuxCore, AbstractExplicitLayer
 using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
 
 const CRC = ChainRulesCore
@@ -35,7 +35,7 @@ function Lux.Experimental.compute_gradients(::AutoTracker, obj_fn::F, data,
         TrainingBackendCache{:Tracker, false}(ts.cache.dparameters, nothing), obj_fn,
         ts.model, ts.parameters, st, ts.optimizer, ts.optimizer_state, ts.step)
 
-    return dparams, Tracker.value(loss), stats, ts_new
+    return dparams, loss.data, stats, ts_new
 end
 
 function Lux.Experimental.compute_gradients(
@@ -48,18 +48,18 @@ function Lux.Experimental.compute_gradients(
 end
 
 # AoS to SoA conversion
-function Lux.apply(m::Lux.AbstractExplicitLayer, x::AbstractArray{<:TrackedReal}, ps, st)
-    @warn "Lux.apply(m::Lux.AbstractExplicitLayer, \
+function LuxCore.apply(m::AbstractExplicitLayer, x::AbstractArray{<:TrackedReal}, ps, st)
+    @warn "LuxCore.apply(m::AbstractExplicitLayer, \
            x::AbstractArray{<:Tracker.TrackedReal}, ps, st) input was corrected to \
-           Lux.apply(m::Lux.AbstractExplicitLayer, x::Tracker.TrackedArray}, ps, st).\n\n\
+           LuxCore.apply(m::AbstractExplicitLayer, x::Tracker.TrackedArray}, ps, st).\n\n\
            1. If this was not the desired behavior overload the dispatch on `m`.\n\n\
            2. This might have performance implications. Check which layer was causing this \
               problem using `Lux.Experimental.@debug_mode`." maxlog=1
-    return Lux.apply(m, ArrayInterface.aos_to_soa(x), ps, st)
+    return LuxCore.apply(m, ArrayInterface.aos_to_soa(x), ps, st)
 end
 
 ## Prevent an infinite loop
-Lux.apply(m::Lux.AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
+LuxCore.apply(m::AbstractExplicitLayer, x::TrackedArray, ps, st) = m(x, ps, st)
 
 @inline Lux.__eltype(::TrackedArray{T}) where {T} = T
 @inline Lux.__eltype(::TrackedReal{T}) where {T} = T

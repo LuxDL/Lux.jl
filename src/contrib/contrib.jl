@@ -1,9 +1,7 @@
 module Experimental
 
-import ..Lux
-using ..Lux, LuxCore, LuxDeviceUtils, Random
-using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
-import ..Lux: _merge, _pairs, initialstates, initialparameters, apply
+using ..Lux: Lux
+using LuxCore: LuxCore, AbstractExplicitLayer, AbstractExplicitContainerLayer, apply
 using LuxDeviceUtils: AbstractLuxDevice, gpu_device
 
 using ADTypes: ADTypes

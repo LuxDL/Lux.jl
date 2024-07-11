@@ -6,7 +6,7 @@ function Lux.Experimental.compute_gradients(
         obj_fn, ts.model, ts.parameters, ts.states, data, Val(true))
 
     _, loss = Enzyme.autodiff(
-        Enzyme.ReverseWithPrimal, obj_fn_wrap, Active, Const(ts.model),
+        EnzymeCore.ReverseWithPrimal, obj_fn_wrap, Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     cache = TrainingBackendCache{:Enzyme, false}(
@@ -25,7 +25,7 @@ function Lux.Experimental.compute_gradients(
     dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
 
     _, loss = Enzyme.autodiff(
-        Enzyme.ReverseWithPrimal, ts.cache.extras.obj_fn, Active, Const(ts.model),
+        EnzymeCore.ReverseWithPrimal, ts.cache.extras.obj_fn, Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     ts_new = TrainState(
@@ -41,7 +41,8 @@ function Lux.Experimental.compute_gradients(ad::AutoEnzyme, obj_fn::F, data,
            function that is changing across function calls. This can lead to the \
            generation of slow code" maxlog=1
 
-    mode = Enzyme.ReverseModeSplit{true, true, 1, ntuple(Returns(false), 5), Enzyme.FFIABI}()
+    mode = EnzymeCore.ReverseModeSplit{
+        true, true, 1, ntuple(Returns(false), 5), Enzyme.FFIABI}()
     forward, reverse = Enzyme.autodiff_thunk(
         mode, Const{typeof(obj_fn)}, Active, Const{typeof(ts.model)},
         Duplicated{typeof(ts.parameters)}, Const{typeof(ts.states)}, Const{typeof(data)})
