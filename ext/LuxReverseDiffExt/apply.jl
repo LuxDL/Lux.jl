@@ -1,6 +1,6 @@
 # AoS to SoA conversion
 function Lux.apply(
-    m::Lux.AbstractExplicitLayer, x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st)
+        m::Lux.AbstractExplicitLayer, x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st)
     @warn "Lux.apply(m::Lux.AbstractExplicitLayer, \
            x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st) input was corrected to \
            Lux.apply(m::Lux.AbstractExplicitLayer, x::ReverseDiff.TrackedArray}, ps, \
