@@ -153,13 +153,13 @@ mjx-container {
 }
 
 mjx-container {
-    display: inline-block;
+    display: inline;
     margin: auto 2px -2px;
 }
 
 mjx-container>svg {
     margin: auto;
-    display: inline-block;
+    display: inline;
 }
 
 /**
