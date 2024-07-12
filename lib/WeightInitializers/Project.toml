@@ -4,6 +4,7 @@ authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "0.1.10"
 
 [deps]
+ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
@@ -29,6 +30,7 @@ WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]
 [compat]
 AMDGPU = "0.9.6"
 Aqua = "0.8.7"
+ArgCheck = "2.3.0"
 CUDA = "5.3.2"
 ChainRulesCore = "1.23"
 ConcreteStructs = "0.2.3"

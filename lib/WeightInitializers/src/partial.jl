@@ -7,7 +7,11 @@ end
 function Base.show(
         io::IO, ::MIME"text/plain", f::PartialWeightInitializationFunction{T}) where {T}
     print(io, "$(f.f)(")
-    f.rng !== nothing ? print(io, "$(f.rng), ") : print(io, "rng, ")
+    if f.rng !== nothing
+        print(io, "$(nameof(typeof(f.rng)))(...), ")
+    else
+        print(io, "rng, ")
+    end
     if T === Nothing
         print(io, "::Type{T}, ")
     else
@@ -27,7 +31,17 @@ function (f::PartialWeightInitializationFunction{<:Union{Nothing, Missing}})(
     f.rng === nothing && return f.f(args...; f.kwargs..., kwargs...)
     return f.f(f.rng, args...; f.kwargs..., kwargs...)
 end
+function (f::PartialWeightInitializationFunction{<:Union{Nothing, Missing}})(
+        rng::AbstractRNG, args...; kwargs...)
+    @argcheck f.rng === nothing
+    return f.f(rng, args...; f.kwargs..., kwargs...)
+end
 function (f::PartialWeightInitializationFunction{T})(args...; kwargs...) where {T <: Number}
     f.rng === nothing && return f.f(T, args...; f.kwargs..., kwargs...)
     return f.f(f.rng, T, args...; f.kwargs..., kwargs...)
+end
+function (f::PartialWeightInitializationFunction{T})(
+        rng::AbstractRNG, args...; kwargs...) where {T <: Number}
+    @argcheck f.rng === nothing
+    return f.f(rng, T, args...; f.kwargs..., kwargs...)
 end

@@ -53,14 +53,17 @@ end
             @test orthogonal(rng, T, 3, 5) isa arrtype{T, 2}
 
             cl = orthogonal(rng)
+            display(cl)
             @test cl(T, 3, 5) isa arrtype{T, 2}
 
             cl = orthogonal(rng, T)
+            display(cl)
             @test cl(3, 5) isa arrtype{T, 2}
         end
 
         @testset "Orthogonal Closure" begin
             cl = orthogonal(;)
+            display(cl)
 
             # Sizes
             @test size(cl(3, 4)) == (3, 4)
@@ -114,17 +117,22 @@ end
             @test sparse_init(rng, T, 3, 5; sparsity=0.5) isa arrtype{T, 2}
 
             cl = sparse_init(rng; sparsity=0.5)
+            display(cl)
             @test cl(T, 3, 5) isa arrtype{T, 2}
 
             cl = sparse_init(rng, T; sparsity=0.5)
+            display(cl)
             @test cl(3, 5) isa arrtype{T, 2}
         end
 
         @testset "sparse_init Closure" begin
             cl = sparse_init(; sparsity=0.5)
+            display(cl)
+
             # Sizes
             @test size(cl(3, 4)) == (3, 4)
             @test size(cl(rng, 3, 4)) == (3, 4)
+
             # Type
             @test eltype(cl(4, 2)) == Float32
             @test eltype(cl(rng, 4, 2)) == Float32
@@ -158,11 +166,14 @@ end
             @test size(init(rng, 3, 4)) == (3, 4)
             @test size(init(3, 4, 5)) == (3, 4, 5)
             @test size(init(rng, 3, 4, 5)) == (3, 4, 5)
+
             # Type
             @test eltype(init(rng, 4, 2)) == Float32
             @test eltype(init(4, 2)) == Float32
+
             # RNG Closure
             cl = init(rng)
+            display(cl)
             @test cl(3) isa arrtype{Float32, 1}
             @test cl(3, 5) isa arrtype{Float32, 2}
         end
@@ -185,13 +196,28 @@ end
             @test size(init(rng, 3, 4)) == (3, 4)
             @test size(init(3, 4, 5)) == (3, 4, 5)
             @test size(init(rng, 3, 4, 5)) == (3, 4, 5)
+
             # Type
             @test eltype(init(rng, 4, 2)) == fp
             @test eltype(init(4, 2)) == fp
+
             # RNG Closure
             cl = init(rng)
+            display(cl)
             @test cl(3) isa arrtype{fp, 1}
             @test cl(3, 5) isa arrtype{fp, 2}
+
+            # Kwargs closure
+            cl = init(;)
+            display(cl)
+            @test cl(rng, 3) isa arrtype{fp, 1}
+            @test cl(rng, 3, 5) isa arrtype{fp, 2}
+
+            # throw error on type as input
+            @test_throws ArgumentError init(Float32)
+            @test_throws ArgumentError init(Float32, 3, 5)
+            @test_throws ArgumentError init(rng, Float32)
+            @test_throws ArgumentError init(rng, Float32, 3, 5)
         end
 
         @testset "AbstractArray Type: $init $T" for init in [
@@ -216,12 +242,20 @@ end
             @test init(rng, T, 3, 5) isa arrtype{T, 2}
 
             cl = init(rng)
+            display(cl)
             @test cl(T, 3) isa arrtype{T, 1}
             @test cl(T, 3, 5) isa arrtype{T, 2}
 
             cl = init(rng, T)
+            display(cl)
             @test cl(3) isa arrtype{T, 1}
             @test cl(3, 5) isa arrtype{T, 2}
+
+            cl = init(T)
+            display(cl)
+            @test cl(3) isa Array{T, 1}
+            @test cl(3, 5) isa Array{T, 2}
+            @test cl(rng, 3, 5) isa arrtype{T, 2}
         end
 
         @testset "Closure: $init" for init in [
@@ -233,6 +267,8 @@ end
             end
 
             cl = init(;)
+            display(cl)
+
             # Sizes
             @test size(cl(3)) == (3,)
             @test size(cl(rng, 3)) == (3,)
@@ -240,6 +276,7 @@ end
             @test size(cl(rng, 3, 4)) == (3, 4)
             @test size(cl(3, 4, 5)) == (3, 4, 5)
             @test size(cl(rng, 3, 4, 5)) == (3, 4, 5)
+
             # Type
             @test eltype(cl(4, 2)) == Float32
             @test eltype(cl(rng, 4, 2)) == Float32

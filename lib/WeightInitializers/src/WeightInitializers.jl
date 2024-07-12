@@ -1,5 +1,6 @@
 module WeightInitializers
 
+using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using ConcreteStructs: @concrete
 using GPUArraysCore: @allowscalar

@@ -153,7 +153,7 @@ deep linear neural networks", ICLR 2014, https://arxiv.org/abs/1312.6120
 """
 function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=T(1.0)) where {T <: Number}
-    @assert length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
+    @argcheck length(dims)>1 "Creating vectors (length(dims) == 1) is not allowed"
 
     rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
     rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
@@ -353,6 +353,10 @@ for tp in ("16", "32", "64", "C16", "C32", "C64"), func in (:zeros, :ones, :rand
             return $initializer(_default_rng(), dims...; kwargs...)
         end
         function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T}
+            throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
+        end
+        function ($initializer)(
+                ::AbstractRNG, ::Type{T}, dims::Integer...; kwargs...) where {T}
             throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
         end
 
