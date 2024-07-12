@@ -26,27 +26,17 @@ multiple operations.
     fallback to the generic implementation.
   - For CUDA Arrays, this uses a special fused implementation via cuBLASLt.
 """
-function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix, x::AbstractMatrix, b::Nothing) where {F}
+function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
+        b::Optional{<:AbstractVector}) where {F}
     return fused_dense_bias_activation(
-        σ, weight, __is_immutable_array_or_dual_val(weight), x,
-        __is_immutable_array_or_dual_val(x), b, __is_immutable_array_or_dual_val(b))
+        σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)
 end
 
-function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix, x::AbstractMatrix, b::AbstractVector) where {F}
-    return fused_dense_bias_activation(
-        σ, weight, __is_immutable_array_or_dual_val(weight), x,
-        __is_immutable_array_or_dual_val(x), b, __is_immutable_array_or_dual_val(b))
-end
-
-function fused_dense_bias_activation(
-        σ::F, weight::AbstractMatrix, ::Val{false}, x::AbstractMatrix,
-        ::Val{false}, b::Optional{<:AbstractVector}, ::Val{false}) where {F}
-    return __fused_dense_bias_activation_impl(σ, weight, x, b)
-end
-
-function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, ::Val, x::AbstractMatrix,
-        ::Val, b::Optional{<:AbstractVector}, ::Val) where {F}
-    return __generic_dense_bias_activation(σ, weight, x, b)
+for (check, fop) in (
+    (false, :_fused_dense_bias_activation_impl), (true, :_generic_dense_bias_activation))
+    @eval function fused_dense_bias_activation(
+            σ::F, ::Val{$(check)}, weight::AbstractMatrix,
+            x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
+        return $(fop)(σ, weight, x, b)
+    end
 end
