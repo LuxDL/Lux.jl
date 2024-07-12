@@ -5,6 +5,8 @@ using LuxLib, LuxDeviceUtils
 @reexport using LuxTestUtils, StableRNGs, Test, Zygote
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
+LuxTestUtils.jet_target_modules!(["LuxLib"])
+
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
 
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"

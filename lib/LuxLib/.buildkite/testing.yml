@@ -12,8 +12,6 @@ steps:
               dirs:
                 - src
                 - ext
-        commands: |
-          printf "[LuxTestUtils]\ntarget_modules = [\"LuxLib\"]\n[LuxLib]\ninstability_check = \"error\"\n" > LocalPreferences.toml
         agents:
           queue: "juliagpu"
           cuda: "*"
@@ -64,8 +62,6 @@ steps:
               dirs:
                 - src
                 - ext
-        commands: |
-          printf "[LuxTestUtils]\ntarget_modules = [\"LuxLib\"]\n[LuxLib]\ninstability_check = \"error\"\n" > LocalPreferences.toml
         env:
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"

@@ -1,4 +1,6 @@
-using ReTestItems, Pkg
+using ReTestItems, Pkg, LuxTestUtils, Preferences
+
+Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const EXTRA_PKGS = String[]
