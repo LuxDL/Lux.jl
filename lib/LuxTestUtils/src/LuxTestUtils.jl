@@ -6,7 +6,7 @@ using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
 const JET_TARGET_MODULES = Ref{Union{Nothing, Vector{String}}}(nothing)
 
 function __init__()
-    JET_TARGET_MODULES[] = @load_preference("target_modules", nothing)
+    return JET_TARGET_MODULES[] = @load_preference("target_modules", nothing)
 end
 
 function jet_target_modules!(list::Vector{String})
@@ -87,8 +87,9 @@ macro jet(expr, args...)
             end
         end
 
-        if !target_modules_set && JET_TARGET_MODULES !== nothing
-            target_modules = getproperty.((__module__,), Tuple(Symbol.(JET_TARGET_MODULES)))
+        if !target_modules_set && JET_TARGET_MODULES[] !== nothing
+            target_modules = getproperty.(
+                (__module__,), Tuple(Symbol.(JET_TARGET_MODULES[])))
             push!(all_args, :(target_modules = $target_modules))
         end
 
