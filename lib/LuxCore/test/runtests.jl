@@ -209,6 +209,8 @@ end
         model = StructWithName(nothing)
 
         @test LuxCore.display_name(model) == "StructWithName"
+
+        @test LuxCore.display_name(rand(20)) == "Array"
     end
 
     @testset "initialparameter/initialstate for Default Containers" begin
