@@ -1,5 +1,6 @@
 module LuxCore
 
+using Compat: @compat
 using DispatchDoctor: @stable
 using Functors: Functors, fmap, fleaves
 using Random: Random, AbstractRNG, Xoshiro
@@ -327,5 +328,11 @@ function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     x isa T && return true
     return check_fmap_condition(cond, nothing, x)
 end
+
+@compat(public,
+    (replicate, trainmode, testmode, update_state, contains_lux_layer,
+        check_fmap_condition, AbstractExplicitLayer, AbstractExplicitContainerLayer,
+        initialparameters, initialstates, parameterlength, statelength,
+        inputsize, outputsize, setup, apply, stateless_apply, display_name))
 
 end
