@@ -1,0 +1,56 @@
+steps:
+  - group: ":telescope: Downstream CUDA"
+    steps:
+      - label: ":julia: {{matrix.repo}} (Julia 1 + CUDA GPU)"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - src
+                - ext
+        command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "CUDA"
+        agents:
+          queue: "juliagpu"
+          cuda: "*"
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            repo:
+              - "Lux"
+
+  - group: ":telescope: Downstream AMD GPU"
+    steps:
+      - label: ":julia: {{matrix.repo}} (Julia 1 + AMD GPU)"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+        command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "AMDGPU"
+        agents:
+          queue: "juliagpu"
+          rocm: "*"
+          rocmgpu: "*"
+        env:
+          JULIA_AMDGPU_CORE_MUST_LOAD: "1"
+          JULIA_AMDGPU_HIP_MUST_LOAD: "1"
+          JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            repo:
+              - "Boltz"
+              - "Lux"
+              - "LuxLib"
+
+env:
+  RETESTITEMS_NWORKERS: 8
+  RETESTITEMS_NWORKER_THREADS: 2
+  RETESTITEMS_TESTITEM_TIMEOUT: 3600
+  JULIA_PKG_SERVER: ""
+  JULIA_NUM_THREADS: 4
+  SECRET_CODECOV_TOKEN: "Kd5OoJmg0QG6UN1FXKiafA3WtSj7jOeC6dwD62AQrunXKZp9G8jifFJiHKN2kqfulE7Q3h+Fr2wo6ToIbF8yWVN0qya/VY90QVvVkBpr0KKW9ocIhGghHzeXRwlPk3p6Ws0dc52o6XMr6axps7bv8joKzMblrAbCBs9KZ1YSL+8rQKal5VolQtBV8Nz2DL7V4xqIhxHE9HoJq7Mi9hFaDEtU4DsxjlpNJbwnsLHx+qEK3TORK8RfM5UEDxhObkd2m7xPK0xdUSKGNK7dsJlnkPPlLwNVKYLQou960YiuLJhsXNDl/cnBEP5UX9hVzqzdyYzwwXg69G0Om7XTJVDO9A==;U2FsdGVkX1+0o0cndEEUKum97YC5iNiXqWqKD49nU3XJvdFh0eZn7oQA6eGwFpTWm2sJMvFIroKZ0PHrew9mCQ=="
