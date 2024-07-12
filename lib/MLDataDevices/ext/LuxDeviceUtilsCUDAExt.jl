@@ -35,6 +35,11 @@ function LuxDeviceUtils.get_device(x::CUDA.CUSPARSE.AbstractCuSparseArray)
     return LuxCUDADevice(CUDA.device(x.nzVal))
 end
 
+function LuxDeviceUtils._get_device_type(::Union{
+        <:CUDA.AnyCuArray, <:CUDA.CUSPARSE.AbstractCuSparseArray})
+    return LuxCUDADevice
+end
+
 # Set Device
 function LuxDeviceUtils.set_device!(::Type{LuxCUDADevice}, dev::CUDA.CuDevice)
     return CUDA.device!(dev)

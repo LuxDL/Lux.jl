@@ -27,6 +27,8 @@ LuxDeviceUtils.default_device_rng(::LuxoneAPIDevice) = GPUArrays.default_rng(one
 # Query Device from Array
 LuxDeviceUtils.get_device(::oneArray) = LuxoneAPIDevice()
 
+LuxDeviceUtils._get_device_type(::oneArray) = LuxoneAPIDevice
+
 # Device Transfer
 ## To GPU
 for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))

@@ -18,6 +18,8 @@ LuxDeviceUtils.default_device_rng(::LuxMetalDevice) = GPUArrays.default_rng(MtlA
 # Query Device from Array
 LuxDeviceUtils.get_device(::MtlArray) = LuxMetalDevice()
 
+LuxDeviceUtils._get_device_type(::MtlArray) = LuxMetalDevice
+
 # Device Transfer
 ## To GPU
 Adapt.adapt_storage(::LuxMetalDevice, x::AbstractArray) = Metal.mtl(x)

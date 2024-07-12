@@ -18,4 +18,8 @@ function LuxDeviceUtils.get_device(x::Union{VectorOfArray, DiffEqArray})
     return mapreduce(LuxDeviceUtils.get_device, LuxDeviceUtils.__combine_devices, x.u)
 end
 
+function LuxDeviceUtils._get_device_type(x::Union{VectorOfArray, DiffEqArray})
+    return mapreduce(LuxDeviceUtils._get_device_type, LuxDeviceUtils.__combine_devices, x.u)
+end
+
 end

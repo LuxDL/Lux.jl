@@ -12,6 +12,13 @@ end
     return LuxDeviceUtils.get_device(Tracker.data.(x))
 end
 
+@inline function LuxDeviceUtils._get_device_type(x::Tracker.TrackedArray)
+    return LuxDeviceUtils._get_device_type(Tracker.data(x))
+end
+@inline function LuxDeviceUtils._get_device_type(x::AbstractArray{<:Tracker.TrackedReal})
+    return LuxDeviceUtils._get_device_type(Tracker.data.(x))
+end
+
 @inline LuxDeviceUtils.__special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
 
 for T in (LuxAMDGPUDevice, LuxAMDGPUDevice{Nothing}, LuxCUDADevice,

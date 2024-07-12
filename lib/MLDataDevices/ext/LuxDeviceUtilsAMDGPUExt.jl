@@ -52,6 +52,8 @@ function LuxDeviceUtils.get_device(x::AMDGPU.AnyROCArray)
     return LuxDeviceUtils.get_device(parent_x)
 end
 
+LuxDeviceUtils._get_device_type(::AMDGPU.AnyROCArray) = LuxAMDGPUDevice
+
 # Set Device
 function LuxDeviceUtils.set_device!(::Type{LuxAMDGPUDevice}, dev::AMDGPU.HIPDevice)
     return AMDGPU.device!(dev)

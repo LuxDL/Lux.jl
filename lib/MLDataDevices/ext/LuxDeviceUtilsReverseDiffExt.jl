@@ -1,13 +1,11 @@
 module LuxDeviceUtilsReverseDiffExt
 
-using LuxDeviceUtils: LuxDeviceUtils
+using LuxDeviceUtils: LuxDeviceUtils, LuxCPUDevice
 using ReverseDiff: ReverseDiff
 
-@inline function LuxDeviceUtils.get_device(x::ReverseDiff.TrackedArray)
-    return LuxDeviceUtils.get_device(ReverseDiff.value(x))
-end
-@inline function LuxDeviceUtils.get_device(x::AbstractArray{<:ReverseDiff.TrackedReal})
-    return LuxDeviceUtils.get_device(ReverseDiff.value.(x))
-end
+LuxDeviceUtils.get_device(::ReverseDiff.TrackedArray) = LuxCPUDevice()
+LuxDeviceUtils.get_device(::AbstractArray{<:ReverseDiff.TrackedReal}) = LuxCPUDevice()
+LuxDeviceUtils._get_device_type(::ReverseDiff.TrackedArray) = LuxCPUDevice
+LuxDeviceUtils._get_device_type(::AbstractArray{<:ReverseDiff.TrackedReal}) = LuxCPUDevice
 
 end

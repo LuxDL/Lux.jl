@@ -13,7 +13,7 @@ export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
 export gpu_device, cpu_device
 export LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice, LuxoneAPIDevice
-export get_device
+export get_device, get_device_type
 
 abstract type AbstractLuxDevice <: Function end
 abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
@@ -345,6 +345,9 @@ device. Otherwise, we throw an error. If the object is device agnostic, we retur
 !!! note
 
     Trigger Packages must be loaded for this to return the correct device.
+
+See also [`get_device_type`](@ref) for a faster alternative that can be used for dispatch
+based on device type.
 """
 function get_device(x::AbstractArray{T}) where {T}
     !isbitstype(T) && return mapreduce(get_device, __combine_devices, x)
@@ -364,8 +367,9 @@ end
 for T in (Number, AbstractRNG, Val, Symbol, String)
     @eval get_device(::$(T)) = nothing
 end
-get_device(x::Tuple) = mapreduce(get_device, __combine_devices, x)
-get_device(x::NamedTuple) = mapreduce(get_device, __combine_devices, values(x))
+function get_device(x::Union{Tuple, NamedTuple})
+    return mapreduce(get_device, __combine_devices, values(x))
+end
 
 CRC.@non_differentiable get_device(::Any...)
 
@@ -373,8 +377,50 @@ function __combine_devices(dev1, dev2)
     dev1 === nothing && return dev2
     dev2 === nothing && return dev1
     dev1 != dev2 &&
-        throw(ArgumentError("Objects are on different devices: $dev1 and $dev2."))
+        throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
     return dev1
+end
+
+"""
+    get_device_type(x) -> Type{<:AbstractLuxDevice} | Exception | Type{Nothing}
+
+Similar to [`get_device`](@ref) but returns the type of the device instead of the device
+itself. This value is often a compile time constant and is recommended to be used instead
+of [`get_device`](@ref) where ever defining dispatches based on the device type.
+
+!!! note
+
+    Trigger Packages must be loaded for this to return the correct device.
+"""
+function get_device_type(x)
+    hasmethod(_get_device_type, Tuple{typeof(x)}) && return _get_device_type(x)
+    return mapreduce(get_device_type, __combine_devices, fleaves(x))
+end
+
+function _get_device_type(x::AbstractArray{T}) where {T}
+    (!isbitstype(T) && !(T <: Number)) &&
+        return mapreduce(_get_device_type, __combine_devices, x)
+    if hasmethod(parent, Tuple{typeof(x)})
+        parent_x = parent(x)
+        parent_x === x && return LuxCPUDevice
+        return get_device_type(parent_x)
+    end
+    return LuxCPUDevice
+end
+for T in (Number, AbstractRNG, Val, Symbol, String)
+    @eval _get_device_type(::$(T)) = Nothing
+end
+function _get_device_type(x::Union{Tuple, NamedTuple})
+    return mapreduce(_get_device_type, __combine_devices, values(x))
+end
+
+__combine_devices(::Type{Nothing}, ::Type{Nothing}) = nothing
+__combine_devices(::Type{Nothing}, ::Type{T}) where {T <: AbstractLuxDevice} = T
+__combine_devices(::Type{T}, ::Type{Nothing}) where {T <: AbstractLuxDevice} = T
+__combine_devices(::Type{T}, ::Type{T}) where {T <: AbstractLuxDevice} = T
+function __combine_devices(
+        ::Type{T1}, ::Type{T2}) where {T1 <: AbstractLuxDevice, T2 <: AbstractLuxDevice}
+    throw(ArgumentError("Objects are on devices with different types: $(T1) and $(T2)."))
 end
 
 # Set the device
@@ -382,7 +428,7 @@ const SET_DEVICE_DOCS = """
 Set the device for the given type. This is a no-op for `LuxCPUDevice`. For `LuxCUDADevice`
 and `LuxAMDGPUDevice`, it prints a warning if the corresponding trigger package is not
 loaded.
-    
+
 Currently, `LuxMetalDevice` and `LuxoneAPIDevice` doesn't support setting the device.
 """
 
