@@ -22,49 +22,12 @@ function Base.show(
     print(io, ")")
 end
 
-# ::Type{T} is already specified
-function (f::PartialWeightInitializationFunction{T, F, <:AbstractRNG})(
-        dims::Integer...; kwargs...) where {T <: Number, F}
-    return f.f(f.rng, T, dims...; f.kwargs..., kwargs...)
+function (f::PartialWeightInitializationFunction{<:Union{Nothing, Missing}})(
+        args...; kwargs...)
+    f.rng === nothing && return f.f(args...; f.kwargs..., kwargs...)
+    return f.f(f.rng, args...; f.kwargs..., kwargs...)
 end
-function (f::PartialWeightInitializationFunction{T, F, Nothing})(
-        rng::AbstractRNG; kwargs...) where {T <: Number, F}
-    return PartialWeightInitializationFunction{T}(f.f, rng, (; f.kwargs..., kwargs...))
-end
-function (f::PartialWeightInitializationFunction{T, F, Nothing})(
-        rng::AbstractRNG, dims::Integer...; kwargs...) where {T <: Number, F}
-    return f.f(rng, T, dims...; f.kwargs..., kwargs...)
-end
-
-# ::Type{T} is not needed
-function (f::PartialWeightInitializationFunction{Missing, F, <:AbstractRNG})(
-        dims::Integer...; kwargs...) where {F}
-    return f.f(f.rng, dims...; f.kwargs..., kwargs...)
-end
-function (f::PartialWeightInitializationFunction{Missing, F, Nothing})(
-        rng::AbstractRNG; kwargs...) where {F}
-    return PartialWeightInitializationFunction{Missing}(
-        f.f, rng, (; f.kwargs..., kwargs...))
-end
-function (f::PartialWeightInitializationFunction{Missing, F, Nothing})(
-        rng::AbstractRNG, dims::Integer...; kwargs...) where {F}
-    return f.f(rng, dims...; f.kwargs..., kwargs...)
-end
-
-# ::Type{T} is not specified
-function (f::PartialWeightInitializationFunction{Nothing, F, Union{<:AbstractRNG, Nothing}})(
-        ::Type{T}; kwargs...) where {T <: Number, F}
-    return PartialWeightInitializationFunction{T}(f.f, f.rng, (; f.kwargs..., kwargs...))
-end
-function (f::PartialWeightInitializationFunction{Nothing, F, <:AbstractRNG})(
-        ::Type{T}, dims::Integer...; kwargs...) where {T <: Number, F}
-    return f.f(f.rng, T, dims...; f.kwargs..., kwargs...)
-end
-function (f::PartialWeightInitializationFunction{Nothing, F, Nothing})(
-        rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: Number, F}
-    return PartialWeightInitializationFunction{T}(f.f, rng, (; f.kwargs..., kwargs...))
-end
-function (f::PartialWeightInitializationFunction{Nothing, F, Nothing})(
-        rng::AbstractRNG, ::Type{T}, dims::Integer...; kwargs...) where {T <: Number, F}
-    return f.f(rng, T, dims...; f.kwargs..., kwargs...)
+function (f::PartialWeightInitializationFunction{T})(args...; kwargs...) where {T <: Number}
+    f.rng === nothing && return f.f(T, args...; f.kwargs..., kwargs...)
+    return f.f(f.rng, T, args...; f.kwargs..., kwargs...)
 end
