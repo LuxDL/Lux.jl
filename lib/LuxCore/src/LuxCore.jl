@@ -18,7 +18,7 @@ function replicate(rng::Random.TaskLocalRNG)
     return deepcopy(rng)
 end
 
-@inline _default_rng() = Xoshiro(1234)
+_default_rng() = Xoshiro(1234)
 
 """
     abstract type AbstractExplicitLayer
@@ -62,18 +62,20 @@ function initialstates end
 for op in (:initialparameters, :initialstates)
     @eval begin
         $(op)(::AbstractRNG, ::Union{AbstractExplicitLayer, Nothing}) = NamedTuple()
-        function $(op)(rng::AbstractRNG, l::Union{NamedTuple, Tuple, AbstractArray})
-            return map(Base.Fix1($op, rng), l)
-        end
+        $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
-            contains_lux_layer(l) && return fmap(Base.Fix1($op, rng), l)
+            contains_lux_layer(l) && return fmap(Base.Fix1($op, rng), l; exclude=_fmap_leaf)
             throw(MethodError($op, (rng, l)))
         end
     end
 end
 
-@inline _getemptystate(::AbstractExplicitLayer) = NamedTuple()
-@inline _getemptystate(l::NamedTuple) = map(_getemptystate, l)
+_fmap_leaf(::AbstractExplicitLayer) = true
+_fmap_leaf(::Nothing) = true
+_fmap_leaf(x) = Functors.isleaf(x)
+
+_getemptystate(::AbstractExplicitLayer) = NamedTuple()
+_getemptystate(l::NamedTuple) = map(_getemptystate, l)
 
 """
     parameterlength(layer)
@@ -105,13 +107,9 @@ Return the input size of the layer.
 """
 function inputsize end
 
-@inline __size(x::AbstractVector{T}) where {T} = isbitstype(T) ? size(x) : __size.(x)
-@inline function __size(x::AbstractArray{T, N}) where {T, N}
-    return isbitstype(T) ? size(x)[1:(N - 1)] : __size.(x)
-end
-@inline __size(x::Tuple) = __size.(x)
-@inline __size(x::NamedTuple{fields}) where {fields} = NamedTuple{fields}(__size.(values(x)))
-@inline __size(x) = fmap(__size, x)
+_size(x::AbstractVector) = size(x)
+_size(x::AbstractArray) = size(x)[1:(ndims(x) - 1)]
+__size(x) = fmap(_size, x)
 
 """
     outputsize(layer, x, rng)
@@ -233,6 +231,8 @@ function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
+_fmap_leaf(::AbstractExplicitContainerLayer) = true
+
 function _getemptystate(l::AbstractExplicitContainerLayer{layers}) where {layers}
     length(layers) == 1 && return _getemptystate(getfield(l, first(layers)))
     return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
@@ -311,6 +311,7 @@ end
 A Boolean Value
 """
 check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, fleaves(x))
+check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{}) where {C} = any(cond, ())
 function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     x isa T && return true
     return check_fmap_condition(cond, nothing, x)
