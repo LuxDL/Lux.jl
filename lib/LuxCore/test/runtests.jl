@@ -250,7 +250,21 @@ end
     @testset "Quality Assurance" begin
         Aqua.test_all(LuxCore)
 
-        @test ExplicitImports.check_no_implicit_imports(LuxCore) === nothing
-        @test ExplicitImports.check_no_stale_explicit_imports(LuxCore) === nothing
+        @test check_no_implicit_imports(LuxCore) === nothing
+        @test check_no_stale_explicit_imports(LuxCore) === nothing
+        @test check_no_self_qualified_accesses(LuxCore) === nothing
+        @test check_all_explicit_imports_via_owners(LuxCore) === nothing
+        @test check_all_qualified_accesses_via_owners(LuxCore) === nothing
+        @test check_all_explicit_imports_are_public(LuxCore) === nothing
+    end
+
+    @testset "replicate" begin
+        rng = Random.default_rng()
+        @test LuxCore.replicate(rng) === rng
+        @test LuxCore.replicate(rng) == rng
+
+        rng = Xoshiro(1234)
+        @test LuxCore.replicate(rng) !== rng
+        @test LuxCore.replicate(rng) == rng
     end
 end
