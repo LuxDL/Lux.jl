@@ -1,17 +1,16 @@
 module WeightInitializers
 
-#! format: off
 using ChainRulesCore: ChainRulesCore
+using ConcreteStructs: @concrete
 using GPUArraysCore: @allowscalar
 using LinearAlgebra: LinearAlgebra, Diagonal, qr
-using PartialFunctions: :$
 using Random: Random, AbstractRNG, Xoshiro, shuffle
 using SpecialFunctions: SpecialFunctions, erf, erfinv
 using Statistics: Statistics, std
-#! format: on
 
 const CRC = ChainRulesCore
 
+include("partial.jl")
 include("utils.jl")
 include("initializers.jl")
 include("autodiff.jl")

@@ -318,33 +318,54 @@ end
 for initializer in (:glorot_uniform, :glorot_normal, :kaiming_uniform, :kaiming_normal,
     :truncated_normal, :orthogonal, :sparse_init, :identity_init)
     NType = ifelse(initializer === :truncated_normal, Real, Number)
-    @eval function ($initializer)(dims::Integer...; kwargs...)
-        return $initializer(_default_rng(), Float32, dims...; kwargs...)
+    @eval begin
+        function ($initializer)(dims::Integer...; kwargs...)
+            return $initializer(_default_rng(), Float32, dims...; kwargs...)
+        end
+        function ($initializer)(rng::AbstractRNG, dims::Integer...; kwargs...)
+            return $initializer(rng, Float32, dims...; kwargs...)
+        end
+        function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T <: $NType}
+            return $initializer(_default_rng(), T, dims...; kwargs...)
+        end
+
+        # Partial application
+        function ($initializer)(rng::AbstractRNG; kwargs...)
+            return PartialWeightInitializationFunction{Nothing}($initializer, rng, kwargs)
+        end
+        function ($initializer)(::Type{T}; kwargs...) where {T <: $NType}
+            return PartialWeightInitializationFunction{T}($initializer, nothing, kwargs)
+        end
+        function ($initializer)(rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: $NType}
+            return PartialWeightInitializationFunction{T}($initializer, rng, kwargs)
+        end
+        function ($initializer)(; kwargs...)
+            return PartialWeightInitializationFunction{Nothing}(
+                $initializer, nothing, kwargs)
+        end
     end
-    @eval function ($initializer)(rng::AbstractRNG, dims::Integer...; kwargs...)
-        return $initializer(rng, Float32, dims...; kwargs...)
-    end
-    @eval function ($initializer)(
-            ::Type{T}, dims::Integer...; kwargs...) where {T <: $NType}
-        return $initializer(_default_rng(), T, dims...; kwargs...)
-    end
-    @eval function ($initializer)(rng::AbstractRNG; kwargs...)
-        return __partial_apply($initializer, (rng, (; kwargs...)))
-    end
-    @eval function ($initializer)(
-            rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: $NType}
-        return __partial_apply($initializer, ((rng, T), (; kwargs...)))
-    end
-    @eval ($initializer)(; kwargs...) = __partial_apply($initializer, (; kwargs...))
 end
 
 for tp in ("16", "32", "64", "C16", "C32", "C64"), func in (:zeros, :ones, :randn, :rand)
     initializer = Symbol(func, tp)
-    @eval function ($initializer)(dims::Integer...; kwargs...)
-        return $initializer(_default_rng(), dims...; kwargs...)
+    @eval begin
+        function ($initializer)(dims::Integer...; kwargs...)
+            return $initializer(_default_rng(), dims...; kwargs...)
+        end
+        function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T}
+            throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
+        end
+
+        # Partial application
+        function ($initializer)(rng::AbstractRNG; kwargs...)
+            return PartialWeightInitializationFunction{Missing}($initializer, rng, kwargs)
+        end
+        function ($initializer)(rng::AbstractRNG, ::Type{T}; kwargs...) where {T}
+            throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
+        end
+        function ($initializer)(; kwargs...)
+            return PartialWeightInitializationFunction{Missing}(
+                $initializer, nothing, kwargs)
+        end
     end
-    @eval function ($initializer)(rng::AbstractRNG; kwargs...)
-        return __partial_apply($initializer, (rng, (; kwargs...)))
-    end
-    @eval ($initializer)(; kwargs...) = __partial_apply($initializer, (; kwargs...))
 end

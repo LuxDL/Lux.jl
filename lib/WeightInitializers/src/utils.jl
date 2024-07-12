@@ -7,9 +7,6 @@
 
 @inline _default_rng() = Xoshiro(1234)
 
-# This is needed if using `PartialFunctions.$` inside @eval block
-@inline __partial_apply(fn, inp) = fn$inp
-
 const NAME_TO_DIST = Dict(
     :zeros => "an AbstractArray of zeros", :ones => "an AbstractArray of ones",
     :randn => "random numbers from a standard normal distribution",
