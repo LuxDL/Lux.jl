@@ -3,7 +3,8 @@ module LuxForwardDiffExt
 using ArgCheck: @argcheck
 using ADTypes: AutoForwardDiff
 using ChainRulesCore: ChainRulesCore
-using Lux: Lux, get_device
+using Lux: Lux
+using LuxDeviceUtils: get_device
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: fmap
