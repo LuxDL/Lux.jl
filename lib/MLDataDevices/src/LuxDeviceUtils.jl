@@ -335,6 +335,17 @@ end
 
 @inline __special_aos(x::AbstractArray) = false
 
+const GET_DEVICE_ADMONITIONS = """
+!!! note
+
+    Trigger Packages must be loaded for this to return the correct device.
+
+!!! warning
+
+    RNG types currently don't participate in device determination. We will remove this
+    restriction in the future.
+"""
+
 # Query Device from Array
 """
     get_device(x) -> dev::AbstractLuxDevice | Exception | nothing
@@ -342,9 +353,7 @@ end
 If all arrays (on the leaves of the structure) are on the same device, we return that
 device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
 
-!!! note
-
-    Trigger Packages must be loaded for this to return the correct device.
+$(GET_DEVICE_ADMONITIONS)
 
 See also [`get_device_type`](@ref) for a faster alternative that can be used for dispatch
 based on device type.
@@ -358,9 +367,7 @@ Similar to [`get_device`](@ref) but returns the type of the device instead of th
 itself. This value is often a compile time constant and is recommended to be used instead
 of [`get_device`](@ref) where ever defining dispatches based on the device type.
 
-!!! note
-
-    Trigger Packages must be loaded for this to return the correct device.
+$(GET_DEVICE_ADMONITIONS)
 """
 function get_device_type end
 
@@ -391,7 +398,6 @@ for op in (:get_device, :get_device_type)
         end
     end
 
-    # FIXME: RNGs should be checked for device type
     for T in (Number, AbstractRNG, Val, Symbol, String)
         @eval $(_op)(::$(T)) = $(op == :get_device ? nothing : Nothing)
     end
