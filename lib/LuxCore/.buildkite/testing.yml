@@ -43,9 +43,7 @@ steps:
         matrix:
           setup:
             repo:
-              - "Boltz"
               - "Lux"
-              - "LuxLib"
 
 env:
   RETESTITEMS_NWORKERS: 8
