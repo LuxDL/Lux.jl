@@ -18,7 +18,7 @@ function __try_cublasLt_fused_matmul(act::F, weight::AnyCuMatrix, x::AnyCuMatrix
     else
         @warn "cuBLASLt not available. Falling back to generic implementation." maxlog=1
     end
-    return (z, y, retcode)
+    return (z, y, -1)
 end
 
 @stable default_mode="warn" function LuxLib.__fused_dense_bias_activation_impl(
