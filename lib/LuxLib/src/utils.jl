@@ -28,9 +28,9 @@ __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
 
 # Maybe typecast the array
-_oftype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
-_oftype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
-_oftype_array(::Type{T}, ::Nothing) where {T} = nothing
+_ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
+_ofeltype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
+_ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 
 ## This part is taken from NNlib.jl
 # This just saves typing `only.(only.(` many times:

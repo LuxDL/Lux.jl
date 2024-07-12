@@ -1,7 +1,7 @@
 module LuxLibTrackerAMDGPUExt
 
 using AMDGPU: AMDGPU
-using LuxLib: LuxLib
+using LuxLib: LuxLib, Optional
 using NNlib: NNlib, ConvDims, PoolDims
 using Tracker: Tracker, TrackedArray
 
@@ -58,19 +58,11 @@ end
 
 function LuxLib.__generic_conv_bias_activation(
         act::F, weight::ROCTrackedArray{Float64, N}, x::ROCTrackedArray{Float64, N},
-        bias::ROCTrackedArray{Float64, N}, cdims::ConvDims) where {N, F}
-    return LuxLib._oftype_array(Float64,
-        LuxLib.__generic_conv_bias_activation(
-            act, LuxLib._oftype_array(Float32, weight), LuxLib._oftype_array(Float32, x),
-            LuxLib._oftype_array(Float32, bias), cdims))
-end
-
-function LuxLib.__generic_conv_bias_activation(
-        act::F, weight::ROCTrackedArray{Float64, N}, x::ROCTrackedArray{Float64, N},
-        bias::Nothing, cdims::ConvDims) where {N, F}
-    return LuxLib._oftype_array(Float64,
-        LuxLib.__generic_conv_bias_activation(act, LuxLib._oftype_array(Float32, weight),
-            LuxLib._oftype_array(Float32, x), bias, cdims))
+        bias::Optional{<:ROCTrackedArray{Float64, N}}, cdims::ConvDims) where {N, F}
+    return LuxLib._ofeltype_array(Float64,
+        LuxLib.__generic_conv_bias_activation(act, LuxLib._ofeltype_array(Float32, weight),
+            LuxLib._ofeltype_array(Float32, x),
+            LuxLib._ofeltype_array(Float32, bias), cdims))
 end
 
 end

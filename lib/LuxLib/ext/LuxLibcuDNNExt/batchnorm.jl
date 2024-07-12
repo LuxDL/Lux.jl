@@ -41,18 +41,17 @@ function LuxLib.batchnorm_cudnn(g::DenseCuArray{<:Union{Float32, Float64}},
     Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
     T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ)
 
-    ĝ = LuxLib._oftype_array(T, g)
-    b̂ = LuxLib._oftype_array(T, b)
-    x̂ = LuxLib._oftype_array(T, x)
-
-    running_μ̂ = running_μ !== nothing ? LuxLib._oftype_array(T, running_μ) : running_μ
-    running_σ̂² = running_σ² !== nothing ? LuxLib._oftype_array(T, running_σ²) : running_σ²
+    ĝ = LuxLib._ofeltype_array(T, g)
+    b̂ = LuxLib._ofeltype_array(T, b)
+    x̂ = LuxLib._ofeltype_array(T, x)
+    running_μ̂ = LuxLib._ofeltype_array(T, running_μ)
+    running_σ̂² = LuxLib._ofeltype_array(T, running_σ²)
 
     y, xmean, xivar = LuxLib.batchnorm_cudnn(
         ĝ, b̂, x̂, running_μ̂, running_σ̂², args...; kwargs...)
 
-    return (LuxLib._oftype_array(T, y), LuxLib._oftype_array(T, xmean),
-        LuxLib._oftype_array(T, xivar))
+    return (LuxLib._ofeltype_array(T, y), LuxLib._ofeltype_array(T, xmean),
+        LuxLib._ofeltype_array(T, xivar))
 end
 
 function LuxLib.batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
@@ -139,18 +138,18 @@ function LuxLib.∇batchnorm_cudnn(g::DenseCuArray{<:Union{Float32, Float64}},
     Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
     T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ, eltype(∂y))
 
-    ĝ = LuxLib._oftype_array(T, g)
-    b̂ = LuxLib._oftype_array(T, b)
-    x̂ = LuxLib._oftype_array(T, x)
-    ∂ŷ = LuxLib._oftype_array(T, ∂y)
-    running_μ̂ = running_μ !== nothing ? LuxLib._oftype_array(T, running_μ) : running_μ
-    running_σ̂² = running_σ² !== nothing ? LuxLib._oftype_array(T, running_σ²) : running_σ²
+    ĝ = LuxLib._ofeltype_array(T, g)
+    b̂ = LuxLib._ofeltype_array(T, b)
+    x̂ = LuxLib._ofeltype_array(T, x)
+    ∂ŷ = LuxLib._ofeltype_array(T, ∂y)
+    running_μ̂ = LuxLib._ofeltype_array(T, running_μ)
+    running_σ̂² = LuxLib._ofeltype_array(T, running_σ²)
 
     ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
         ĝ, b̂, x̂, ∂ŷ, running_μ̂, running_σ̂², args...; kwargs...)
 
-    return (LuxLib._oftype_array(T, ∂g), LuxLib._oftype_array(T, ∂b),
-        LuxLib._oftype_array(T, ∂x))
+    return (LuxLib._ofeltype_array(T, ∂g), LuxLib._ofeltype_array(T, ∂b),
+        LuxLib._ofeltype_array(T, ∂x))
 end
 
 function LuxLib.∇batchnorm_cudnn(

@@ -4,8 +4,8 @@ function __get_conv_input_weight(
     T = promote_type(xT, wT)
     @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
            $(xT)]. Promoting to $(T)." maxlog=1
-    return (__materialize_subarray(_oftype_array(T, x)),
-        __materialize_subarray(_oftype_array(T, weight)))
+    return (__materialize_subarray(_ofeltype_array(T, x)),
+        __materialize_subarray(_ofeltype_array(T, weight)))
 end
 function __get_conv_input_weight(
         ::Type{<:AbstractLuxDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
@@ -31,8 +31,8 @@ function __conv!(::Type{<:AbstractLuxGPUDevice}, y::AbstractArray{yT, N},
         @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
                $(xT)]. Promoting to $(yT)." maxlog=1
     end
-    return conv!(y, __materialize_subarray(_oftype_array(yT, x)),
-        __materialize_subarray(_oftype_array(yT, weight)), cdims)
+    return conv!(y, __materialize_subarray(_ofeltype_array(yT, x)),
+        __materialize_subarray(_ofeltype_array(yT, weight)), cdims)
 end
 
 function __conv(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims)
@@ -57,7 +57,7 @@ function __conv_bias_act(x_::AbstractArray, weight_::AbstractArray, cdims::ConvD
         bias_::Optional{<:AbstractArray}, act::F) where {F}
     dev = get_device_type((x_, weight_, bias_))
     x, weight = __get_conv_input_weight(dev, eltype(x_), eltype(weight_), x_, weight_)
-    bias = bias_ === nothing ? bias : _oftype_array(eltype(x), bias_)
+    bias = _ofeltype_array(eltype(x), bias_)
     return __conv_bias_act_impl(dev, x, weight, cdims, bias, act)
 end
 
