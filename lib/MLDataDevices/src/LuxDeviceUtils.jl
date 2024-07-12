@@ -2,7 +2,7 @@ module LuxDeviceUtils
 
 using Adapt: Adapt
 using ChainRulesCore: ChainRulesCore, NoTangent
-using Functors: Functors, fmap
+using Functors: Functors, fmap, fleaves
 using LuxCore: LuxCore
 using Preferences: @delete_preferences!, @load_preference, @set_preferences!
 using Random: AbstractRNG, Random

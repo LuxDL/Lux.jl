@@ -25,7 +25,7 @@ end
 LuxDeviceUtils.default_device_rng(::LuxoneAPIDevice) = GPUArrays.default_rng(oneArray)
 
 # Query Device from Array
-LuxDeviceUtils.get_device(::oneArray) = LuxoneAPIDevice()
+LuxDeviceUtils._get_device(::oneArray) = LuxoneAPIDevice()
 
 LuxDeviceUtils._get_device_type(::oneArray) = LuxoneAPIDevice
 
