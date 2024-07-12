@@ -308,20 +308,17 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
 
     # Try to generate efficient code for the function body
-    label_exprs = []
+    has_return_macro = false
     flattened_expr = MacroTools.postwalk(sdef[:body]) do x
         if MacroTools.@capture(x, @return val_)
-            @gensym result label
-            push!(label_exprs, quote
-                @label $(label)
-                return $(result), (; $(vars...),)
-            end)
+            @gensym result
+            has_return_macro = true
             return quote
                 $(result) = $(val)
-                @goto $(label)
+                return $(result), (; $(vars...),)
             end
         end
-        if length(label_exprs) > 0 && MacroTools.@capture(x, return val_)
+        if has_return_macro && MacroTools.@capture(x, return val_)
             throw(LuxCompactModelParsingException("Encountered a return statement \
                                                    after the last @return statement. \
                                                    This is not supported."))
@@ -329,7 +326,7 @@ function supportself(fex::Expr, vars, splatted_kwargs)
         return x
     end
 
-    if length(label_exprs) == 0
+    if !has_return_macro
         @gensym fname
         @warn "No @return macro found in the function body. This will lead to the \
                generation of inefficient code."
@@ -339,10 +336,7 @@ function supportself(fex::Expr, vars, splatted_kwargs)
             return $(res), (; $(vars...),)
         end
     else
-        modified_body = quote
-            $(flattened_expr)
-            $(label_exprs...)
-        end
+        modified_body = flattened_expr
     end
     sdef[:body] = Expr(:let, Expr(:block, calls...), modified_body)
     sdef[:args] = args
