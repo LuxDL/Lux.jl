@@ -24,10 +24,15 @@ exhaustive list of preferences that Lux.jl uses.
    of backends for nested automatic differentiation. See the manual section on
    [nested automatic differentiation](@ref nested_autodiff) for more details.
 
-## GPU-Aware MPI Support
+## [GPU-Aware MPI Support](@id gpu-aware-mpi-preferences)
+
+If you are using a custom MPI build that supports CUDA or ROCM, you can use the following
+preferences with [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl):
 
 1. `cuda_aware_mpi` - Set this to `true` if your MPI build is CUDA aware.
 2. `rocm_aware_mpi` - Set this to `true` if your MPI build is ROCM aware.
+
+By default, both of these preferences are set to `false`.
 
 ## GPU Backend Selection
 
