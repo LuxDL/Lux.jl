@@ -127,7 +127,7 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), noise, p, x, α)
     return y, _∇alpha_dropout_kernel
 end
 
-_dropout_fptype(x) = float(real(eltype(x)))
+_dropout_fptype(x) = float(real(__value(eltype(x))))
 
 CRC.@non_differentiable _dropout_fptype(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_dropout_fptype), ::Any...) = nothing
@@ -143,13 +143,13 @@ CRC.@non_differentiable _alpha_dropout_noise(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 
 function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
-    realfptype = _dropout_fptype(x)
-    y = rand!(rng, similar(x, realfptype, _dropout_shape(x, dims)))
-    y .= _dropout_kernel.(y, p, invp)
+    y = rand!(rng, similar(x, _dropout_fptype(x), _dropout_shape(x, dims)))
+    @. y = _dropout_kernel(y, p, invp)
     return y
 end
 
 CRC.@non_differentiable _generate_dropout_mask(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_generate_dropout_mask), ::Any...) = nothing
+
 CRC.@non_differentiable _dropout_shape(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_dropout_shape), ::Any...) = nothing

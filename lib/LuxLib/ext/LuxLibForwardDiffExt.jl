@@ -8,11 +8,6 @@ using NNlib: NNlib
 LuxLib.__has_dual(::ForwardDiff.Dual) = true
 LuxLib.__has_dual(::AbstractArray{<:ForwardDiff.Dual}) = true
 
-# dropout
-function LuxLib._dropout_fptype(x::AbstractArray{<:ForwardDiff.Dual})
-    return ForwardDiff.valtype(eltype(x))
-end
-
 # Convolutions: We might want to capture these further down in `conv!`
 # NOTE: In principle we can concatenate all of the partials along the batch dimension
 #       and cut down substantially on the time to compute jacobians.
@@ -91,5 +86,6 @@ end
 
 LuxLib.__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 LuxLib.__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+LuxLib.__value(::Type{<:ForwardDiff.Dual{T}}) where {T} = LuxLib.__value(T)
 
 end

@@ -36,16 +36,12 @@ Tracker.@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
     return y, ∇selectdim
 end
 
-# api/dropout.jl
-LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(Tracker.data(x))
-function LuxLib._dropout_fptype(x::AbstractArray{<:TrackedReal})
-    return LuxLib._dropout_fptype(Tracker.data.(x))
-end
-
 LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal}) = Tracker.collect(x)
 
 LuxLib.__value(x::TrackedReal) = Tracker.data(x)
 LuxLib.__value(x::TrackedArray) = Tracker.data(x)
 LuxLib.__value(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
+
+LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
 
 end

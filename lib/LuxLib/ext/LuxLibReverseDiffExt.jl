@@ -18,9 +18,6 @@ function ReverseDiff.decrement_deriv!(
     return ReverseDiff.decrement_deriv!(t, zero(eltype(ReverseDiff.value(t))), i)
 end
 
-# api/dropout.jl
-LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(ReverseDiff.value(x))
-
 # Patch Conv for ReverseDiff
 for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
     xType in (:AbstractArray, :TrackedArray),
@@ -42,6 +39,8 @@ end
 LuxLib.__value(x::TrackedReal) = ReverseDiff.value(x)
 LuxLib.__value(x::TrackedArray) = ReverseDiff.value(x)
 LuxLib.__value(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
+
+LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
 
 LuxLib.__aos_to_soa(x::TrackedArray) = x
 function LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal})

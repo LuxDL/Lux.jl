@@ -184,5 +184,6 @@ __materialize_subarray(x::SubArray) = copy(x)
 
 __value(x::Number) = x
 __value(x::AbstractArray) = x
+__value(::Type{T}) where {T <: Number} = T
 
 __aos_to_soa(x::AbstractArray) = x # FIXME: Upstream this to ArrayInterface.jl
