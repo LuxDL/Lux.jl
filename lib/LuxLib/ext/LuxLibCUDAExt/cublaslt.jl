@@ -146,45 +146,27 @@ end
 function __epilogue_act(f::F, b, aux) where {F}
     if f === identity
         @assert aux===nothing "`aux` must be `nothing` for `identity` activation."
-        if b === nothing
-            return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, true
-        else
-            return CUBLAS.CUBLASLT_EPILOGUE_BIAS, true
-        end
+        b === nothing && return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, true
+        return CUBLAS.CUBLASLT_EPILOGUE_BIAS, true
     elseif f === NNlib.relu
         if b === nothing
-            if aux === nothing
-                return CUBLAS.CUBLASLT_EPILOGUE_RELU, true
-            else
-                return CUBLAS.CUBLASLT_EPILOGUE_RELU_AUX, true
-            end
+            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_RELU, true
+            return CUBLAS.CUBLASLT_EPILOGUE_RELU_AUX, true
         else
-            if aux === nothing
-                return CUBLAS.CUBLASLT_EPILOGUE_RELU_BIAS, true
-            else
-                return CUBLAS.CUBLASLT_EPILOGUE_RELU_AUX_BIAS, true
-            end
+            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_RELU_BIAS, true
+            return CUBLAS.CUBLASLT_EPILOGUE_RELU_AUX_BIAS, true
         end
     elseif f === NNlib.gelu
         if b === nothing
-            if aux === nothing
-                return CUBLAS.CUBLASLT_EPILOGUE_GELU, true
-            else
-                return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX, true
-            end
+            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_GELU, true
+            return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX, true
         else
-            if aux === nothing
-                return CUBLAS.CUBLASLT_EPILOGUE_GELU_BIAS, true
-            else
-                return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX_BIAS, true
-            end
+            aux === nothing && return CUBLAS.CUBLASLT_EPILOGUE_GELU_BIAS, true
+            return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX_BIAS, true
         end
     else
         @assert aux===nothing "`aux` must be `nothing` for `$(f)` activation."
-        if b === nothing
-            return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, false
-        else
-            return CUBLAS.CUBLASLT_EPILOGUE_BIAS, false
-        end
+        b === nothing && return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, false
+        return CUBLAS.CUBLASLT_EPILOGUE_BIAS, false
     end
 end

@@ -11,26 +11,6 @@ using NNlib: NNlib
 
 const CRC = ChainRulesCore
 
-const cuBLASLt_functional = Ref(true)
-
-function __init__()
-    try
-        # Test if cuBLASLt is functional
-        y = CUDA.zeros(Float32, 2, 2)
-        w = CUDA.rand(Float32, 2, 2)
-        x = CUDA.rand(Float32, 2, 2)
-        b = CUDA.rand(Float32, 2)
-        LuxLib._cublaslt_matmul_fused!(y, identity, w, x, b)
-    catch
-        cuBLASLt_functional[] = false
-    end
-
-    if CUDA.functional() && !cuBLASLt_functional[]
-        @warn "cuBLASLt is not functional on this system. We won't be able to use \
-               optimized implementations of certain matmul operations."
-    end
-end
-
 # Low level functions
 include("cublaslt.jl")
 
