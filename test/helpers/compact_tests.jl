@@ -360,6 +360,34 @@
             __f = (m, x, ps, st) -> sum(abs2, first(m(x, ps, st)))
             @inferred Zygote.gradient(__f, model, x, ps, st)
         end
+
+        @testset "Multiple @return" begin
+            model = @compact(; a=1) do x
+                if x > 0
+                    a += 1
+                    @return x
+                end
+                a -= 1
+                @return -1
+            end
+            ps, st = Lux.setup(rng, model)
+
+            @test st.a == 1
+
+            y1, st_ = model(2.0, ps, st)
+            @test y1 == 2
+            @test st_.a == 2
+
+            ∂x1 = only(Zygote.gradient(x -> sum(first(model(x, ps, st))), 2.0))
+            @test ∂x1 == 1
+
+            y2, st_ = model(-2.0, ps, st)
+            @test y2 == -1
+            @test st_.a == 0
+
+            ∂x2 = only(Zygote.gradient(x -> sum(first(model(x, ps, st))), -2.0))
+            @test ∂x2 === nothing
+        end
     end
 end
 
@@ -380,12 +408,6 @@ end
     @test_throws Lux.LuxCompactModelParsingException("expects only keyword arguments") @macroexpand @compact(2;
         a=1) do x
         @return x + a
-    end
-
-    @test_throws Lux.LuxCompactModelParsingException("Multiple @return macros found in the function body. This is not supported.") @macroexpand @compact(;
-        a=1) do x
-        @return x
-        @return 1
     end
 
     @test_throws Lux.LuxCompactModelParsingException("Encountered a return statement after the last @return statement. This is not supported.") @macroexpand @compact(;
