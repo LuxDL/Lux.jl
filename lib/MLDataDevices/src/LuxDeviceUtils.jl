@@ -349,38 +349,7 @@ device. Otherwise, we throw an error. If the object is device agnostic, we retur
 See also [`get_device_type`](@ref) for a faster alternative that can be used for dispatch
 based on device type.
 """
-function get_device(x)
-    hasmethod(_get_device, Tuple{typeof(x)}) && return _get_device(x)
-    return mapreduce(_get_device, __combine_devices, fleaves(x))
-end
-
-CRC.@non_differentiable get_device(::Any)
-
-function _get_device(x::AbstractArray{T}) where {T}
-    !isbitstype(T) && !(T <: Number) && return mapreduce(_get_device, __combine_devices, x)
-    if hasmethod(parent, Tuple{typeof(x)})
-        parent_x = parent(x)
-        parent_x === x && return LuxCPUDevice()
-        return _get_device(parent_x)
-    end
-    return LuxCPUDevice()
-end
-
-for T in (Number, AbstractRNG, Val, Symbol, String)
-    @eval _get_device(::$(T)) = nothing
-end
-function _get_device(x::Union{Tuple, NamedTuple})
-    length(x) == 0 && return nothing
-    return mapreduce(_get_device, __combine_devices, values(x))
-end
-
-function __combine_devices(dev1, dev2)
-    dev1 === nothing && return dev2
-    dev2 === nothing && return dev1
-    dev1 != dev2 &&
-        throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
-    return dev1
-end
+function get_device end
 
 """
     get_device_type(x) -> Type{<:AbstractLuxDevice} | Exception | Type{Nothing}
@@ -393,34 +362,53 @@ of [`get_device`](@ref) where ever defining dispatches based on the device type.
 
     Trigger Packages must be loaded for this to return the correct device.
 """
-function get_device_type(x)
-    hasmethod(_get_device_type, Tuple{typeof(x)}) && return _get_device_type(x)
-    return mapreduce(_get_device_type, __combine_devices, fleaves(x))
-end
+function get_device_type end
 
-CRC.@non_differentiable get_device_type(::Any)
+for op in (:get_device, :get_device_type)
+    _op = Symbol("_", op)
+    cpu_ret_val = op == :get_device ? LuxCPUDevice() : LuxCPUDevice
+    @eval begin
+        function $(op)(x)
+            hasmethod($(_op), Tuple{typeof(x)}) && return $(_op)(x)
+            return mapreduce($(_op), __combine_devices, fleaves(x))
+        end
 
-function _get_device_type(x::AbstractArray{T}) where {T}
-    (!isbitstype(T) && !(T <: Number)) &&
-        return mapreduce(_get_device_type, __combine_devices, x)
-    if hasmethod(parent, Tuple{typeof(x)})
-        parent_x = parent(x)
-        parent_x === x && return LuxCPUDevice
-        return get_device_type(parent_x)
+        CRC.@non_differentiable $op(::Any)
+
+        function $(_op)(x::AbstractArray{T}) where {T}
+            __recursible_array_eltype(T) && return mapreduce($(_op), __combine_devices, x)
+            if hasmethod(parent, Tuple{typeof(x)})
+                parent_x = parent(x)
+                parent_x === x && return $(cpu_ret_val)
+                return $(_op)(parent_x)
+            end
+            return $(cpu_ret_val)
+        end
+
+        function $(_op)(x::Union{Tuple, NamedTuple})
+            length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
+            return mapreduce($(_op), __combine_devices, values(x))
+        end
     end
-    return LuxCPUDevice
-end
-for T in (Number, AbstractRNG, Val, Symbol, String)
-    @eval _get_device_type(::$(T)) = Nothing
-end
-function _get_device_type(x::Union{Tuple, NamedTuple})
-    length(x) == 0 && return Nothing
-    return mapreduce(_get_device_type, __combine_devices, values(x))
+
+    # FIXME: RNGs should be checked for device type
+    for T in (Number, AbstractRNG, Val, Symbol, String)
+        @eval $(_op)(::$(T)) = $(op == :get_device ? nothing : Nothing)
+    end
 end
 
+__recursible_array_eltype(::Type{T}) where {T} = !isbitstype(T) && !(T <: Number)
+
+__combine_devices(::Nothing, ::Nothing) = nothing
 __combine_devices(::Type{Nothing}, ::Type{Nothing}) = nothing
+__combine_devices(::Nothing, dev::AbstractLuxDevice) = dev
 __combine_devices(::Type{Nothing}, ::Type{T}) where {T <: AbstractLuxDevice} = T
+__combine_devices(dev::AbstractLuxDevice, ::Nothing) = dev
 __combine_devices(::Type{T}, ::Type{Nothing}) where {T <: AbstractLuxDevice} = T
+function __combine_devices(dev1::AbstractLuxDevice, dev2::AbstractLuxDevice)
+    dev1 == dev2 && return dev1
+    throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
+end
 __combine_devices(::Type{T}, ::Type{T}) where {T <: AbstractLuxDevice} = T
 function __combine_devices(
         ::Type{T1}, ::Type{T2}) where {T1 <: AbstractLuxDevice, T2 <: AbstractLuxDevice}
