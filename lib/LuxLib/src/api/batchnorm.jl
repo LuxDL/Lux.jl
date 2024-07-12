@@ -41,12 +41,9 @@ function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector
         bias::Optional{<:AbstractVector}, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
         momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
-    x_, xm, xv = _normalization(x, _drop_forwarddiff_partials(running_mean),
-        _drop_forwarddiff_partials(running_var), scale, bias,
+    x_, xm, xv = _normalization(x, __value(running_mean), __value(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)
-    stats = (; running_mean=_drop_forwarddiff_partials(xm),
-        running_var=_drop_forwarddiff_partials(xv))
-    return (x_, stats)
+    return (x_, (; running_mean=__value(xm), running_var=__value(xv)))
 end
 
 @generated function _get_batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}

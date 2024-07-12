@@ -90,10 +90,6 @@ function LuxLib.__get_conv_input_weight(
     return LuxLib.__materialize_subarray(x), LuxLib.__materialize_subarray(weight)
 end
 
-function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})
-    return ForwardDiff.value.(x)
-end
-
 LuxLib.__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 LuxLib.__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 

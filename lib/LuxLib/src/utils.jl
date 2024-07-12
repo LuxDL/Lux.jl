@@ -27,16 +27,6 @@ EnzymeRules.inactive_noinl(::typeof(_copy_autodiff_barrier), ::Any...) = nothing
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
 
-# Dropping ForwardDiff Gradients
-function _drop_forwarddiff_partials end
-
-_drop_forwarddiff_partials(x::AbstractArray) = x
-_drop_forwarddiff_partials(::Nothing) = nothing
-_drop_forwarddiff_partials(x::Tuple) = _drop_forwarddiff_partials.(x)
-function _drop_forwarddiff_partials(x::NamedTuple{N}) where {N}
-    return NamedTuple{N}(map(_drop_forwarddiff_partials, values(x)))
-end
-
 # Maybe typecast the array
 _oftype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 _oftype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)

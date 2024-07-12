@@ -23,12 +23,12 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
 
     for bT in (Float32, Float64)
         @eval begin
-            function LuxLib.$fname(σ::F, weigjt::ROCArray{$(wT), N}, x::ROCArray{$(xT), N},
+            function LuxLib.$fname(σ::F, weight::ROCArray{$(wT), N}, x::ROCArray{$(xT), N},
                     b::ROCArray{$(bT), N}, cdims::NNlib.ConvDims) where {F, N}
-                @warn "MIOpen doesn't support Float64 convolutions, type-casting everything to \
-                    Float32 to avoid runtime errors" maxlog=1
+                @warn "MIOpen doesn't support Float64 convolutions, type-casting \
+                       everything to Float32 to avoid runtime errors" maxlog=1
                 return LuxLib._oftype_array(Float64,
-                    LuxLib.$fname(σ, LuxLib._oftype_array(Float32, weigjt),
+                    LuxLib.$fname(σ, LuxLib._oftype_array(Float32, weight),
                         LuxLib._oftype_array(Float32, x),
                         LuxLib._oftype_array(Float32, b), cdims))
             end
@@ -36,12 +36,12 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
     end
 
     @eval begin
-        function LuxLib.$fname(σ::F, weigjt::ROCArray{$(wT), N}, x::ROCArray{$(xT), N},
+        function LuxLib.$fname(σ::F, weight::ROCArray{$(wT), N}, x::ROCArray{$(xT), N},
                 b::Nothing, cdims::NNlib.ConvDims) where {F, N}
-            @warn "MIOpen doesn't support Float64 convolutions, type-casting everything to \
-                Float32 to avoid runtime errors" maxlog=1
+            @warn "MIOpen doesn't support Float64 convolutions, type-casting everything \
+                   to Float32 to avoid runtime errors" maxlog=1
             return LuxLib._oftype_array(Float64,
-                LuxLib.$fname(σ, LuxLib._oftype_array(Float32, weigjt),
+                LuxLib.$fname(σ, LuxLib._oftype_array(Float32, weight),
                     LuxLib._oftype_array(Float32, x), b, cdims))
         end
     end
