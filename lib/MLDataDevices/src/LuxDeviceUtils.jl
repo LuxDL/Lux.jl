@@ -337,7 +337,7 @@ end
 
 # Query Device from Array
 """
-    get_device(x) -> AbstractLuxDevice | Exception | Nothing
+    get_device(x) -> dev::AbstractLuxDevice | Exception | nothing
 
 If all arrays (on the leaves of the structure) are on the same device, we return that
 device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
@@ -349,29 +349,30 @@ device. Otherwise, we throw an error. If the object is device agnostic, we retur
 See also [`get_device_type`](@ref) for a faster alternative that can be used for dispatch
 based on device type.
 """
-function get_device(x::AbstractArray{T}) where {T}
-    !isbitstype(T) && return mapreduce(get_device, __combine_devices, x)
+function get_device(x)
+    hasmethod(_get_device, Tuple{typeof(x)}) && return _get_device(x)
+    return mapreduce(_get_device, __combine_devices, fleaves(x))
+end
+
+CRC.@non_differentiable get_device(::Any)
+
+function _get_device(x::AbstractArray{T}) where {T}
+    !isbitstype(T) && !(T <: Number) && return mapreduce(_get_device, __combine_devices, x)
     if hasmethod(parent, Tuple{typeof(x)})
         parent_x = parent(x)
         parent_x === x && return LuxCPUDevice()
-        return get_device(parent_x)
+        return _get_device(parent_x)
     end
     return LuxCPUDevice()
 end
-function get_device(x)
-    dev = Ref{Union{AbstractLuxDevice, Nothing}}(nothing)
-    _get_device(x) = (dev[] = __combine_devices(dev[], get_device(x)))
-    fmap(_get_device, x)
-    return dev[]
-end
-for T in (Number, AbstractRNG, Val, Symbol, String)
-    @eval get_device(::$(T)) = nothing
-end
-function get_device(x::Union{Tuple, NamedTuple})
-    return mapreduce(get_device, __combine_devices, values(x))
-end
 
-CRC.@non_differentiable get_device(::Any...)
+for T in (Number, AbstractRNG, Val, Symbol, String)
+    @eval _get_device(::$(T)) = nothing
+end
+function _get_device(x::Union{Tuple, NamedTuple})
+    length(x) == 0 && return nothing
+    return mapreduce(_get_device, __combine_devices, values(x))
+end
 
 function __combine_devices(dev1, dev2)
     dev1 === nothing && return dev2
@@ -394,8 +395,10 @@ of [`get_device`](@ref) where ever defining dispatches based on the device type.
 """
 function get_device_type(x)
     hasmethod(_get_device_type, Tuple{typeof(x)}) && return _get_device_type(x)
-    return mapreduce(get_device_type, __combine_devices, fleaves(x))
+    return mapreduce(_get_device_type, __combine_devices, fleaves(x))
 end
+
+CRC.@non_differentiable get_device_type(::Any)
 
 function _get_device_type(x::AbstractArray{T}) where {T}
     (!isbitstype(T) && !(T <: Number)) &&
@@ -411,6 +414,7 @@ for T in (Number, AbstractRNG, Val, Symbol, String)
     @eval _get_device_type(::$(T)) = Nothing
 end
 function _get_device_type(x::Union{Tuple, NamedTuple})
+    length(x) == 0 && return Nothing
     return mapreduce(_get_device_type, __combine_devices, values(x))
 end
 

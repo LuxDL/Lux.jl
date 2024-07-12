@@ -14,11 +14,13 @@ function Adapt.adapt_structure(to::AbstractLuxDevice, x::DiffEqArray)
     return DiffEqArray(map(Base.Fix1(adapt, to), x.u), x.t)
 end
 
-function LuxDeviceUtils.get_device(x::Union{VectorOfArray, DiffEqArray})
+function LuxDeviceUtils._get_device(x::Union{VectorOfArray, DiffEqArray})
+    length(x.u) == 0 && return nothing
     return mapreduce(LuxDeviceUtils.get_device, LuxDeviceUtils.__combine_devices, x.u)
 end
 
 function LuxDeviceUtils._get_device_type(x::Union{VectorOfArray, DiffEqArray})
+    length(x.u) == 0 && return Nothing
     return mapreduce(LuxDeviceUtils._get_device_type, LuxDeviceUtils.__combine_devices, x.u)
 end
 

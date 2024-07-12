@@ -16,7 +16,7 @@ end
 LuxDeviceUtils.default_device_rng(::LuxMetalDevice) = GPUArrays.default_rng(MtlArray)
 
 # Query Device from Array
-LuxDeviceUtils.get_device(::MtlArray) = LuxMetalDevice()
+LuxDeviceUtils._get_device(::MtlArray) = LuxMetalDevice()
 
 LuxDeviceUtils._get_device_type(::MtlArray) = LuxMetalDevice
 

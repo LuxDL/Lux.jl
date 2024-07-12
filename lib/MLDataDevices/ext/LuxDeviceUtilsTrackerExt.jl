@@ -5,10 +5,10 @@ using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDe
                       LuxoneAPIDevice
 using Tracker: Tracker
 
-@inline function LuxDeviceUtils.get_device(x::Tracker.TrackedArray)
+@inline function LuxDeviceUtils._get_device(x::Tracker.TrackedArray)
     return LuxDeviceUtils.get_device(Tracker.data(x))
 end
-@inline function LuxDeviceUtils.get_device(x::AbstractArray{<:Tracker.TrackedReal})
+@inline function LuxDeviceUtils._get_device(x::AbstractArray{<:Tracker.TrackedReal})
     return LuxDeviceUtils.get_device(Tracker.data.(x))
 end
 

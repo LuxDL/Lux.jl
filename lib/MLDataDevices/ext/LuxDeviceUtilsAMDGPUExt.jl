@@ -46,10 +46,10 @@ LuxDeviceUtils._get_device_id(dev::LuxAMDGPUDevice) = AMDGPU.device_id(dev.devic
 LuxDeviceUtils.default_device_rng(::LuxAMDGPUDevice) = AMDGPU.rocrand_rng()
 
 # Query Device from Array
-function LuxDeviceUtils.get_device(x::AMDGPU.AnyROCArray)
+function LuxDeviceUtils._get_device(x::AMDGPU.AnyROCArray)
     parent_x = parent(x)
     parent_x === x && return LuxAMDGPUDevice(AMDGPU.device(x))
-    return LuxDeviceUtils.get_device(parent_x)
+    return LuxDeviceUtils._get_device(parent_x)
 end
 
 LuxDeviceUtils._get_device_type(::AMDGPU.AnyROCArray) = LuxAMDGPUDevice

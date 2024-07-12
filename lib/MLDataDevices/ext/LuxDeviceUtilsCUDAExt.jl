@@ -26,12 +26,12 @@ LuxDeviceUtils._get_device_id(dev::LuxCUDADevice) = CUDA.deviceid(dev.device) + 
 LuxDeviceUtils.default_device_rng(::LuxCUDADevice) = CUDA.default_rng()
 
 # Query Device from Array
-function LuxDeviceUtils.get_device(x::CUDA.AnyCuArray)
+function LuxDeviceUtils._get_device(x::CUDA.AnyCuArray)
     parent_x = parent(x)
     parent_x === x && return LuxCUDADevice(CUDA.device(x))
     return LuxDeviceUtils.get_device(parent_x)
 end
-function LuxDeviceUtils.get_device(x::CUDA.CUSPARSE.AbstractCuSparseArray)
+function LuxDeviceUtils._get_device(x::CUDA.CUSPARSE.AbstractCuSparseArray)
     return LuxCUDADevice(CUDA.device(x.nzVal))
 end
 
