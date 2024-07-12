@@ -43,14 +43,10 @@ in the `@compact` block.
     presence of this macro, we need to rely on closures which can lead to performance
     penalties in the reverse pass.
 
-      + There cannot be more than one `@return` macro in the `@compact` block.
       + Having statements after the last `@return` macro might lead to incorrect code.
       + Don't do things like `@return return x`. This will generate non-sensical code like
         `<new var> = return x`. Essentially, `@return <expr>` supports any expression, that
         can be assigned to a variable.
-      + *Shortcomings*: Since multiple `@return` macros are not supported, there is no way
-        to use this currently for conditional return statements. Simply don't use the macro
-        for conditional return statements.
 
 # Extended Help
 
@@ -311,20 +307,21 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
 
-    @gensym fname res
     # Try to generate efficient code for the function body
-    has_return_macro = false
+    label_exprs = []
     flattened_expr = MacroTools.postwalk(sdef[:body]) do x
         if MacroTools.@capture(x, @return val_)
-            if has_return_macro
-                throw(LuxCompactModelParsingException("Multiple @return macros found \
-                                                       in the function body. This is not \
-                                                       supported."))
+            @gensym result label
+            push!(label_exprs, quote
+                @label $(label)
+                return $(result), (; $(vars...),)
+            end)
+            return quote
+                $(result) = $(val)
+                @goto $(label)
             end
-            has_return_macro = true
-            return :($(res) = $(val))
         end
-        if has_return_macro && MacroTools.@capture(x, return val_)
+        if length(label_exprs) > 0 && MacroTools.@capture(x, return val_)
             throw(LuxCompactModelParsingException("Encountered a return statement \
                                                    after the last @return statement. \
                                                    This is not supported."))
@@ -332,7 +329,8 @@ function supportself(fex::Expr, vars, splatted_kwargs)
         return x
     end
 
-    if !has_return_macro
+    if length(label_exprs) == 0
+        @gensym fname
         @warn "No @return macro found in the function body. This will lead to the \
                generation of inefficient code."
         modified_body = quote
@@ -343,7 +341,7 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     else
         modified_body = quote
             $(flattened_expr)
-            return $(res), (; $(vars...),)
+            $(label_exprs...)
         end
     end
     sdef[:body] = Expr(:let, Expr(:block, calls...), modified_body)
