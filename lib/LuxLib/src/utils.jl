@@ -17,7 +17,7 @@ _reshape_into_proper_shape(::Nothing, y) = nothing
 _reshape_into_proper_shape(x, y) = reshape(x, _get_reshape_dims(size(y), length(x)))
 
 # Copy and don't allow gradient propagation
-_copy_autodiff_barrier(x) = copy(x)
+_copy_autodiff_barrier(x) = copy(__value(x))
 _copy_autodiff_barrier(::Nothing) = nothing
 
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)

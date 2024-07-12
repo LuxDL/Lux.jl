@@ -18,10 +18,6 @@ function ReverseDiff.decrement_deriv!(
     return ReverseDiff.decrement_deriv!(t, zero(eltype(ReverseDiff.value(t))), i)
 end
 
-# utils.jl
-@grad_from_chainrules LuxLib._copy_autodiff_barrier(x::TrackedArray)
-@grad_from_chainrules LuxLib._copy_autodiff_barrier(x::TrackedReal)
-
 # api/dropout.jl
 LuxLib._dropout_fptype(x::TrackedArray) = LuxLib._dropout_fptype(ReverseDiff.value(x))
 
