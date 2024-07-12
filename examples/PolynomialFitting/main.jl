@@ -13,7 +13,7 @@ using CairoMakie
 # Generate 128 datapoints from the polynomial $y = x^2 - 2x$.
 function generate_data(rng::AbstractRNG)
     x = reshape(collect(range(-2.0f0, 2.0f0, 128)), (1, 128))
-    y = evalpoly.(x, ((0, -2, 1),)) .+ randn(rng, (1, 128)) .* 0.1f0
+    y = evalpoly.(x, ((0, -2, 1),)) .+ randn(rng, Float32, (1, 128)) .* 0.1f0
     return (x, y)
 end
 
