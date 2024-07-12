@@ -50,43 +50,30 @@ abstract type AbstractExplicitLayer end
 
 Generate the initial parameters of the layer `l`.
 """
-initialparameters(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-function initialparameters(rng::AbstractRNG, l::NamedTuple)
-    return map(Base.Fix1(initialparameters, rng), l)
-end
-initialparameters(::AbstractRNG, ::Nothing) = NamedTuple()
-function initialparameters(rng::AbstractRNG, l::Union{Tuple, AbstractArray})
-    any(Base.Fix2(isa, AbstractExplicitLayer), l) &&
-        return map(Base.Fix1(initialparameters, rng), l)
-    throw(MethodError(initialparameters, (rng, l)))
-end
-function initialparameters(rng::AbstractRNG, l)
-    contains_lux_layer(l) && return fmap(Base.Fix1(initialparameters, rng), l)
-    throw(MethodError(initialparameters, (rng, l)))
-end
+function initialparameters end
 
 """
     initialstates(rng::AbstractRNG, layer)
 
 Generate the initial states of the layer `l`.
 """
-initialstates(::AbstractRNG, ::AbstractExplicitLayer) = NamedTuple()
-initialstates(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1(initialstates, rng), l)
-initialstates(::AbstractRNG, ::Nothing) = NamedTuple()
-function initialstates(rng::AbstractRNG, l::Union{Tuple, AbstractArray})
-    any(Base.Fix2(isa, AbstractExplicitLayer), l) &&
-        return map(Base.Fix1(initialstates, rng), l)
-    throw(MethodError(initialstates, (rng, l)))
-end
-function initialstates(rng::AbstractRNG, l)
-    contains_lux_layer(l) && return fmap(Base.Fix1(initialstates, rng), l)
-    throw(MethodError(initialstates, (rng, l)))
+function initialstates end
+
+for op in (:initialparameters, :initialstates)
+    @eval begin
+        $(op)(::AbstractRNG, ::Union{AbstractExplicitLayer, Nothing}) = NamedTuple()
+        function $(op)(rng::AbstractRNG, l::Union{NamedTuple, Tuple, AbstractArray})
+            return map(Base.Fix1($op, rng), l)
+        end
+        function $(op)(rng::AbstractRNG, l)
+            contains_lux_layer(l) && return fmap(Base.Fix1($op, rng), l)
+            throw(MethodError($op, (rng, l)))
+        end
+    end
 end
 
 @inline _getemptystate(::AbstractExplicitLayer) = NamedTuple()
-@inline function _getemptystate(l::NamedTuple{fields}) where {fields}
-    return NamedTuple{fields}(map(_getemptystate, values(l)))
-end
+@inline _getemptystate(l::NamedTuple) = map(_getemptystate, l)
 
 """
     parameterlength(layer)
