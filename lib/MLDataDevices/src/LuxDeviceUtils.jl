@@ -383,7 +383,7 @@ for op in (:get_device, :get_device_type)
         CRC.@non_differentiable $op(::Any)
 
         function $(_op)(x::AbstractArray{T}) where {T}
-            __recursible_array_eltype(T) && return mapreduce($(_op), __combine_devices, x)
+            __recursible_array_eltype(T) && return mapreduce($(op), __combine_devices, x)
             if hasmethod(parent, Tuple{typeof(x)})
                 parent_x = parent(x)
                 parent_x === x && return $(cpu_ret_val)
@@ -394,7 +394,7 @@ for op in (:get_device, :get_device_type)
 
         function $(_op)(x::Union{Tuple, NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
-            return mapreduce($(_op), __combine_devices, values(x))
+            return mapreduce($(op), __combine_devices, values(x))
         end
     end
 
