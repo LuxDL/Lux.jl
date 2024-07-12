@@ -3,7 +3,17 @@ module LuxTestUtils
 using ComponentArrays, Optimisers, Preferences, LuxCore, LuxDeviceUtils, Test
 using ForwardDiff, ReverseDiff, Tracker, Zygote, FiniteDifferences
 
-const JET_TARGET_MODULES = @load_preference("target_modules", nothing)
+const JET_TARGET_MODULES = Ref{Union{Nothing, Vector{String}}}(nothing)
+
+function __init__()
+    JET_TARGET_MODULES[] = @load_preference("target_modules", nothing)
+end
+
+function jet_target_modules!(list::Vector{String})
+    JET_TARGET_MODULES[] = list
+    @info "JET_TARGET_MODULES set to $list"
+    return list
+end
 
 # JET Testing
 try
