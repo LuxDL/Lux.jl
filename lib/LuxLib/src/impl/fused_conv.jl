@@ -2,17 +2,17 @@
 function __get_conv_input_weight(
         ::Type{<:AbstractLuxGPUDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
     T = promote_type(xT, wT)
-    @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
-           $(xT)]. Promoting to $(T)." maxlog=1
+    @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
+           [x: $(xT)]. Promoting to $(T)." maxlog=1
     return (__materialize_subarray(_ofeltype_array(T, x)),
         __materialize_subarray(_ofeltype_array(T, weight)))
 end
 function __get_conv_input_weight(
-        ::Type{<:AbstractLuxDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
+        ::Type{<:AbstractLuxGPUDevice}, ::Type{T}, ::Type{T}, x, weight) where {T}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
 function __get_conv_input_weight(
-        ::Type{<:AbstractLuxDevice}, ::Type{T}, ::Type{T}, x, weight) where {T}
+        ::Type{<:AbstractLuxDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
 
@@ -28,8 +28,8 @@ function __conv!(::Type{<:AbstractLuxGPUDevice}, y::AbstractArray{yT, N},
         x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
         cdims::ConvDims) where {yT <: Number, xT <: Number, wT <: Number, N}
     if xT !== wT !== yT
-        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
-               $(xT)]. Promoting to $(yT)." maxlog=1
+        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
+               [x: $(xT)]. Promoting to $(yT)." maxlog=1
     end
     return conv!(y, __materialize_subarray(_ofeltype_array(yT, x)),
         __materialize_subarray(_ofeltype_array(yT, weight)), cdims)

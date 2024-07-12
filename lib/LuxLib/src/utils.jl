@@ -49,9 +49,9 @@ CRC.@non_differentiable __is_immutable_array_val(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_val), ::Any...) = nothing
 
 __has_dual(x) = false
-__is_immutable_array_or_dual_val(x) = Val(__is_immutable_array(x) || __has_dual(x))
+__is_immutable_array_or_dual(x) = __is_immutable_array(x) || __has_dual(x)
 function __is_immutable_array_or_dual_val(x::Tuple)
-    return Val(unrolled_any(__is_immutable_array_or_dual_val, x))
+    return Val(unrolled_any(__is_immutable_array_or_dual, x))
 end
 
 CRC.@non_differentiable __is_immutable_array_or_dual_val(::Any...)
