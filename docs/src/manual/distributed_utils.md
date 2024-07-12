@@ -59,16 +59,6 @@ opt_state = DistributedUtils.synchronize!!(backend, opt_state)
   `local_rank(backend) == 0`. This ensures that only the master process logs and serializes
   the model.
 
-## [GPU-Aware MPI](@id gpu-aware-mpi)
-
-If you are using a custom MPI build that supports CUDA or ROCM, you can use the following
-preferences with [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl):
-
-1. `LuxDistributedMPICUDAAware` - Set this to `true` if your MPI build is CUDA aware.
-2. `LuxDistributedMPIROCMAware` - Set this to `true` if your MPI build is ROCM aware.
-
-By default, both of these values are set to `false`.
-
 ## Migration Guide from `FluxMPI.jl`
 
 Let's compare the changes we need to make wrt the
@@ -96,7 +86,7 @@ And that's pretty much it!
 2. All of the functions now require a [communication backend](@ref communication-backends)
    as input.
 3. We don't automatically determine if the MPI Implementation is CUDA or ROCM aware. See
-   [GPU-aware MPI](@ref gpu-aware-mpi) for more information.
+   [GPU-aware MPI](@ref gpu-aware-mpi-preferences) for more information.
 4. Older [`Lux.gpu`](@ref) implementations used to "just work" with `FluxMPI.jl`. We expect
    [`gpu_device`](@ref) to continue working as expected, however, we recommend using
    [`gpu_device`](@ref) after calling [`DistributedUtils.initialize`](@ref) to avoid any
