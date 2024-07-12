@@ -79,10 +79,9 @@ function LuxLib.__get_conv_input_weight(
         ::Type{T}, x, weight) where {T}
     return LuxLib.__materialize_subarray(x), LuxLib.__materialize_subarray(weight)
 end
-function LuxLib.__get_conv_input_weight(
-        ::Type{<:AbstractLuxGPUDevice}, ::Type{T}, ::Type{<:ForwardDiff.Dual},
-        x, weight) where {T}
-    return LuxLib.__materialize_subarray(x) LuxLib.__materialize_subarray(weight)
+function LuxLib.__get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{T},
+        ::Type{<:ForwardDiff.Dual}, x, weight) where {T}
+    return LuxLib.__materialize_subarray(x), LuxLib.__materialize_subarray(weight)
 end
 function LuxLib.__get_conv_input_weight(
         ::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},

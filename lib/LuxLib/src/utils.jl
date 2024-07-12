@@ -179,9 +179,6 @@ end
 CRC.@non_differentiable __reset_BLAS_threads(::Int)
 EnzymeRules.inactive_noinl(::typeof(__reset_BLAS_threads), ::Int) = nothing
 
-# Defined in ext/LuxLibCUDAExt.jl
-function _cublaslt_matmul_fused! end
-
 __materialize_subarray(x::AbstractArray) = x
 __materialize_subarray(x::SubArray) = copy(x)
 

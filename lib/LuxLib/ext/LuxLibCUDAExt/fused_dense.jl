@@ -6,11 +6,10 @@ function __try_cublasLt_fused_matmul(act::F, weight::AnyCuMatrix, x::AnyCuMatrix
     z = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     y = z # aliased for now for type stability
-    if hasmethod(LuxLib._cublaslt_matmul_fused!,
+    if hasmethod(_cublaslt_matmul_fused!,
         (typeof(z), typeof(act), typeof(weight), typeof(x), typeof(b)))
         cache && (y = similar(z)) # break aliasing
-        retcode = LuxLib._cublaslt_matmul_fused!(
-            z, act, weight, x, b, ifelse(cache, y, nothing))
+        retcode = _cublaslt_matmul_fused!(z, act, weight, x, b, ifelse(cache, y, nothing))
         retcode == 0 && return (z, y, retcode)
         # cuBLASLt failed for the given inputs use the generic fallback
         @warn "cuBLASLt failed for the given inputs $(act), $(typeof(weight)) \
