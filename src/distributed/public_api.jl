@@ -100,7 +100,7 @@ end
 function bcast!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf; root::Int=0)
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
-    if send_dev === recv_dev
+    if send_dev == recv_dev
         return __bcast!(backend, sendbuf, recvbuf, send_dev; root)
     else
         sendbuf_ = sendbuf |> recv_dev
@@ -134,7 +134,7 @@ function allreduce!(
         backend::AbstractLuxDistributedBackend, sendbuf, recvbuf, op::F) where {F}
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
-    if send_dev === recv_dev
+    if send_dev == recv_dev
         return __allreduce!(backend, sendbuf, recvbuf, op, send_dev)
     else
         sendbuf_ = sendbuf |> recv_dev
@@ -167,7 +167,7 @@ function reduce!(backend::AbstractLuxDistributedBackend,
         sendbuf, recvbuf, op::F; root::Int=0) where {F}
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
-    if send_dev === recv_dev
+    if send_dev == recv_dev
         return __reduce!(backend, sendbuf, recvbuf, op, send_dev; root)
     else
         sendbuf_ = sendbuf |> recv_dev

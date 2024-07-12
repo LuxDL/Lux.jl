@@ -29,6 +29,7 @@ reset_gpu_device!
 supported_gpu_backends
 default_device_rng
 get_device
+get_device_type
 LuxDeviceUtils.loaded
 LuxDeviceUtils.functional
 ```

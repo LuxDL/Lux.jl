@@ -160,7 +160,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jac
 
             # FIXME: threading on CUDA cause unexpected errors on the first run to CUDNN
             #        when doing a algorithm lookup
-            ∂x, ∂y = if get_device(x) isa LuxCPUDevice
+            ∂x, ∂y = if get_device_type(x) <: LuxCPUDevice
                 tasks = map(i -> Threads.@spawn(map_fn(i)), 1:__numrows(Δ))
                 mapreduce(fetch, recursive_add!!, tasks)
             else
