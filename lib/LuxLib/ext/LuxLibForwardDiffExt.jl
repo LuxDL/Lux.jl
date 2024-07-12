@@ -2,6 +2,7 @@ module LuxLibForwardDiffExt
 
 using ForwardDiff: ForwardDiff
 using LuxLib: LuxLib
+using LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice
 using NNlib: NNlib
 
 LuxLib.__has_dual(::ForwardDiff.Dual) = true
@@ -73,17 +74,20 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
 end
 
 # Don't try to promote the input types
-function LuxLib.__gpu_get_weight_input(
-        ::Type{T}, ::Type{<:ForwardDiff.Dual}, weight, x) where {T}
-    return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
+function LuxLib.__get_conv_input_weight(
+        ::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},
+        ::Type{T}, x, weight) where {T}
+    return LuxLib.__materialize_subarray(x), LuxLib.__materialize_subarray(weight)
 end
-function LuxLib.__gpu_get_weight_input(
-        ::Type{<:ForwardDiff.Dual}, ::Type{T}, weight, x) where {T}
-    return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
+function LuxLib.__get_conv_input_weight(
+        ::Type{<:AbstractLuxGPUDevice}, ::Type{T}, ::Type{<:ForwardDiff.Dual},
+        x, weight) where {T}
+    return LuxLib.__materialize_subarray(x) LuxLib.__materialize_subarray(weight)
 end
-function LuxLib.__gpu_get_weight_input(
-        ::Type{<:ForwardDiff.Dual}, ::Type{<:ForwardDiff.Dual}, weight, x)
-    return LuxLib.__materialize_subarray(weight), LuxLib.__materialize_subarray(x)
+function LuxLib.__get_conv_input_weight(
+        ::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},
+        ::Type{<:ForwardDiff.Dual}, x, weight)
+    return LuxLib.__materialize_subarray(x), LuxLib.__materialize_subarray(weight)
 end
 
 function LuxLib._drop_forwarddiff_partials(x::AbstractArray{<:ForwardDiff.Dual})

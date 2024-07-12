@@ -25,7 +25,7 @@ end
         b === nothing && return (weight * x)
         return __matmuladd(weight, x, b)
     end
-    y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, nothing),
+    y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     __matmul!(y, weight, x)
     return __apply_bias_activation!!(act, y, b, Val(false))

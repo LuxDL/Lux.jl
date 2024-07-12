@@ -1,13 +1,19 @@
 # wrappers over NNlib implementations to handle mixed precision inputs
-function __gpu_get_weight_input(::Type{wT}, ::Type{xT}, weight, x) where {wT, xT}
+function __get_conv_input_weight(
+        ::Type{<:AbstractLuxGPUDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
     T = promote_type(xT, wT)
     @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT) and x: \
-           $(xT)]. Promoting to $(wT)." maxlog=1
-    return (__materialize_subarray(_oftype_array(T, weight)),
-        __materialize_subarray(_oftype_array(T, x)))
+           $(xT)]. Promoting to $(T)." maxlog=1
+    return (__materialize_subarray(_oftype_array(T, x)),
+        __materialize_subarray(_oftype_array(T, weight)))
 end
-function __gpu_get_weight_input(::Type{T}, ::Type{T}, weight, x) where {T}
-    return __materialize_subarray(weight), __materialize_subarray(x)
+function __get_conv_input_weight(
+        ::Type{<:AbstractLuxDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
+    return __materialize_subarray(x), __materialize_subarray(weight)
+end
+function __get_conv_input_weight(
+        ::Type{<:AbstractLuxDevice}, ::Type{T}, ::Type{T}, x, weight) where {T}
+    return __materialize_subarray(x), __materialize_subarray(weight)
 end
 
 __depthwiseconv(x, weight, cdims) = NNlib.depthwiseconv(x, weight, cdims)
@@ -29,56 +35,29 @@ function __conv!(::Type{<:AbstractLuxGPUDevice}, y::AbstractArray{yT, N},
         __materialize_subarray(_oftype_array(yT, weight)), cdims)
 end
 
-__conv(x, weight, cdims) = __conv(get_device_type((x, weight)), x, weight, cdims)
-function __conv(::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
-        weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
-    return conv(__materialize_subarray(x), __materialize_subarray(weight), cdims)
-end
-function __conv(::Type{<:AbstractLuxGPUDevice},
-        x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
-        cdims::ConvDims) where {xT <: Number, wT <: Number, N}
-    weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
+function __conv(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims)
+    x, weight = __get_conv_input_weight(
+        get_device_type((x_, weight_)), eltype(x_), eltype(weight_), x_, weight_)
     return conv(x, weight, cdims)
 end
 
-function __∇conv_data(x, weight, cdims)
-    return __∇conv_data(get_device_type((x, weight)), x, weight, cdims)
-end
-function __∇conv_data(::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
-        weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
-    return ∇conv_data(__materialize_subarray(x), __materialize_subarray(weight), cdims)
-end
-function __∇conv_data(::Type{<:AbstractLuxGPUDevice},
-        x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
-        cdims::ConvDims) where {xT <: Number, wT <: Number, N}
-    weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
+function __∇conv_data(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims)
+    x, weight = __get_conv_input_weight(
+        get_device_type((x_, weight_)), eltype(x_), eltype(weight_), x_, weight_)
     return ∇conv_data(x, weight, cdims)
 end
 
-__∇conv_filter(x, y, cdims) = __∇conv_filter(get_device_type((x, y)), x, y, cdims)
-function __∇conv_filter(::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
-        y::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
-    return ∇conv_filter(__materialize_subarray(x), __materialize_subarray(y), cdims)
-end
-function __∇conv_filter(::Type{<:AbstractLuxGPUDevice}, x_::AbstractArray{xT, N},
-        y_::AbstractArray{yT, N}, cdims::ConvDims) where {xT <: Number, yT <: Number, N}
-    y, x = __gpu_get_weight_input(yT, xT, y_, x_)
+function __∇conv_filter(x_::AbstractArray, y_::AbstractArray, cdims::ConvDims)
+    x, y = __get_conv_input_weight(
+        get_device_type((x_, y_)), eltype(x_), eltype(y_), x_, y_)
     return ∇conv_filter(x, y, cdims)
 end
 
-function __conv_bias_act(x, weight, cdims, bias, act::F) where {F}
-    return __conv_bias_act(get_device_type((x, weight)), x, weight, cdims, bias, act)
-end
-function __conv_bias_act(dev::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
-        weight::AbstractArray{<:Number, N}, cdims::ConvDims, bias, act::F) where {N, F}
-    return __conv_bias_act_impl(
-        dev, __materialize_subarray(x), __materialize_subarray(weight), cdims, bias, act)
-end
-function __conv_bias_act(dev::Type{<:AbstractLuxGPUDevice}, x_::AbstractArray{xT, N},
-        weight_::AbstractArray{wT, N}, cdims::ConvDims, bias,
-        act::F) where {xT <: Number, wT <: Number, N, F}
-    weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
-    bias !== nothing && (bias = _oftype_array(eltype(x), bias))
+function __conv_bias_act(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims,
+        bias_::Optional{<:AbstractArray}, act::F) where {F}
+    dev = get_device_type((x_, weight_, bias_))
+    x, weight = __get_conv_input_weight(dev, eltype(x_), eltype(weight_), x_, weight_)
+    bias = bias_ === nothing ? bias : _oftype_array(eltype(x), bias_)
     return __conv_bias_act_impl(dev, x, weight, cdims, bias, act)
 end
 
@@ -90,15 +69,12 @@ function __conv_bias_act_impl(
     return __apply_bias_activation!!(act, y, bias, Val(false))
 end
 function __conv_bias_act_impl(
-        ::Type{<:AbstractLuxGPUDevice}, x, weight, cdims, bias, act::F) where {F}
+        ::Type{<:LuxCUDADevice}, x, weight, cdims, bias, act::F) where {F}
     bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
     if act === identity || act === relu
         return NNlib.conv_bias_act(x, weight, cdims, bias, act)
     end
-    y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
-        NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
-    __conv!(y, x, weight, cdims)
-    return __apply_bias_activation!!(act, y, bias, Val(false))
+    return __conv_bias_act_impl(LuxCPUDevice, x, weight, cdims, bias, act)
 end
 
 # Our main implementations
