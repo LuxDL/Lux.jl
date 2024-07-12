@@ -71,10 +71,14 @@ end
             @test LuxCore.initialparameters(rng, NamedTuple()) == NamedTuple()
             @test_throws MethodError LuxCore.initialparameters(rng, ())
             @test LuxCore.initialparameters(rng, nothing) == NamedTuple()
+            @test LuxCore.initialparameters(rng, (nothing, layer)) ==
+                  (NamedTuple(), NamedTuple())
 
             @test LuxCore.initialstates(rng, NamedTuple()) == NamedTuple()
             @test_throws MethodError LuxCore.initialstates(rng, ())
             @test LuxCore.initialstates(rng, nothing) == NamedTuple()
+            @test LuxCore.initialparameters(rng, (nothing, layer)) ==
+                  (NamedTuple(), NamedTuple())
         end
     end
 
@@ -173,6 +177,7 @@ end
             @test new_model.layers.layer_2.out == 10
 
             @test LuxCore.outputsize(model, rand(5), rng) == (5,)
+            @test LuxCore.outputsize(model, rand(5, 2), rng) == (5,)
         end
 
         @testset "Method Ambiguity" begin
@@ -268,5 +273,10 @@ end
         rng = Xoshiro(1234)
         @test LuxCore.replicate(rng) !== rng
         @test LuxCore.replicate(rng) == rng
+    end
+
+    @testset "empty fleaves" begin
+        @test_broken length(fleaves(NamedTuple())) == 0  # upstream issue
+        @test !LuxCore.check_fmap_condition(isodd, nothing, NamedTuple())
     end
 end

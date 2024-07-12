@@ -71,7 +71,6 @@ for op in (:initialparameters, :initialstates)
 end
 
 _fmap_leaf(::AbstractExplicitLayer) = true
-_fmap_leaf(::Nothing) = true
 _fmap_leaf(x) = Functors.isleaf(x)
 
 _getemptystate(::AbstractExplicitLayer) = NamedTuple()
@@ -311,7 +310,7 @@ end
 A Boolean Value
 """
 check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, fleaves(x))
-check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{}) where {C} = any(cond, ())
+check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{()}) where {C} = any(cond, ())
 function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     x isa T && return true
     return check_fmap_condition(cond, nothing, x)
