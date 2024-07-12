@@ -266,14 +266,14 @@ end
 """
     testmode(st::NamedTuple)
 
-Make all occurances of `training` in state `st` -- `Val(false)`.
+Make all occurrences of `training` in state `st` -- `Val(false)`.
 """
 testmode(st::NamedTuple) = update_state(st, :training, Val(false))
 
 """
     trainmode(st::NamedTuple)
 
-Make all occurances of `training` in state `st` -- `Val(true)`.
+Make all occurrences of `training` in state `st` -- `Val(true)`.
 """
 trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
@@ -281,7 +281,7 @@ trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
     update_state(st::NamedTuple, key::Symbol, value;
         layer_check=_default_layer_check(key))
 
-Recursively update all occurances of the `key` in the state `st` with the `value`.
+Recursively update all occurrences of the `key` in the state `st` with the `value`.
 """
 function update_state(st::NamedTuple, key::Symbol, value;
         layer_check::LC=_default_layer_check(key)) where {LC}
@@ -310,7 +310,7 @@ end
 """
     check_fmap_condition(cond, tmatch::Union{Type, Nothing}, x) -> Bool
 
-`fmap`s into the structure `x` and see if `cond` is statisfied for any of the leaf elements.
+`fmap`s into the structure `x` and see if `cond` is satisfied for any of the leaf elements.
 
 ## Arguments
 

@@ -146,7 +146,7 @@ end
               st_.layer_2.layer_1.val == -1
     end
 
-    @testset "Functor Compatibilty" begin
+    @testset "Functor Compatibility" begin
         @testset "Basic Usage" begin
             model = Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
 
