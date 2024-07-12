@@ -8,7 +8,7 @@ using FastBroadcast: @..
 using FastClosures: @closure
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
 using LuxCore: LuxCore
-using LuxDeviceUtils: LuxDeviceUtils, get_device, AbstractLuxGPUDevice, AbstractLuxDevice
+using LuxDeviceUtils: get_device_type, AbstractLuxGPUDevice, AbstractLuxDevice
 using Markdown: @doc_str
 using NNlib: NNlib, ConvDims, conv, conv!, relu, sigmoid_fast, swish, σ, ∇conv_data,
              ∇conv_filter

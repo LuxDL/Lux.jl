@@ -12,13 +12,13 @@ end
 
 __depthwiseconv(x, weight, cdims) = NNlib.depthwiseconv(x, weight, cdims)
 
-__conv!(y, x, weight, cdims) = __conv!(get_device((y, x, weight)), y, x, weight, cdims)
-function __conv!(
-        ::AbstractLuxDevice, y::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+__conv!(y, x, weight, cdims) = __conv!(get_device_type((y, x, weight)), y, x, weight, cdims)
+function __conv!(::Type{<:AbstractLuxDevice}, y::AbstractArray{<:Number, N},
+        x::AbstractArray{<:Number, N},
         weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
     return conv!(y, __materialize_subarray(x), __materialize_subarray(weight), cdims)
 end
-function __conv!(::AbstractLuxGPUDevice, y::AbstractArray{yT, N},
+function __conv!(::Type{<:AbstractLuxGPUDevice}, y::AbstractArray{yT, N},
         x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
         cdims::ConvDims) where {yT <: Number, xT <: Number, wT <: Number, N}
     if xT !== wT !== yT
@@ -29,66 +29,68 @@ function __conv!(::AbstractLuxGPUDevice, y::AbstractArray{yT, N},
         __materialize_subarray(_oftype_array(yT, weight)), cdims)
 end
 
-__conv(x, weight, cdims) = __conv(get_device((x, weight)), x, weight, cdims)
-function __conv(::AbstractLuxDevice, x::AbstractArray{<:Number, N},
+__conv(x, weight, cdims) = __conv(get_device_type((x, weight)), x, weight, cdims)
+function __conv(::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
         weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
     return conv(__materialize_subarray(x), __materialize_subarray(weight), cdims)
 end
-function __conv(
-        ::AbstractLuxGPUDevice, x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
+function __conv(::Type{<:AbstractLuxGPUDevice},
+        x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
         cdims::ConvDims) where {xT <: Number, wT <: Number, N}
     weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
     return conv(x, weight, cdims)
 end
 
-__∇conv_data(x, weight, cdims) = __∇conv_data(get_device((x, weight)), x, weight, cdims)
-function __∇conv_data(::AbstractLuxDevice, x::AbstractArray{<:Number, N},
+function __∇conv_data(x, weight, cdims)
+    return __∇conv_data(get_device_type((x, weight)), x, weight, cdims)
+end
+function __∇conv_data(::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
         weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
     return ∇conv_data(__materialize_subarray(x), __materialize_subarray(weight), cdims)
 end
-function __∇conv_data(
-        ::AbstractLuxGPUDevice, x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
+function __∇conv_data(::Type{<:AbstractLuxGPUDevice},
+        x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
         cdims::ConvDims) where {xT <: Number, wT <: Number, N}
     weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
     return ∇conv_data(x, weight, cdims)
 end
 
-__∇conv_filter(x, y, cdims) = __∇conv_filter(get_device((x, y)), x, y, cdims)
-function __∇conv_filter(::AbstractLuxDevice, x::AbstractArray{<:Number, N},
+__∇conv_filter(x, y, cdims) = __∇conv_filter(get_device_type((x, y)), x, y, cdims)
+function __∇conv_filter(::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
         y::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
     return ∇conv_filter(__materialize_subarray(x), __materialize_subarray(y), cdims)
 end
-function __∇conv_filter(
-        ::AbstractLuxGPUDevice, x_::AbstractArray{xT, N}, y_::AbstractArray{yT, N},
-        cdims::ConvDims) where {xT <: Number, yT <: Number, N}
+function __∇conv_filter(::Type{<:AbstractLuxGPUDevice}, x_::AbstractArray{xT, N},
+        y_::AbstractArray{yT, N}, cdims::ConvDims) where {xT <: Number, yT <: Number, N}
     y, x = __gpu_get_weight_input(yT, xT, y_, x_)
     return ∇conv_filter(x, y, cdims)
 end
 
 function __conv_bias_act(x, weight, cdims, bias, act::F) where {F}
-    return __conv_bias_act(get_device((x, weight)), x, weight, cdims, bias, act)
+    return __conv_bias_act(get_device_type((x, weight)), x, weight, cdims, bias, act)
 end
-function __conv_bias_act(dev::AbstractLuxDevice, x::AbstractArray{<:Number, N},
+function __conv_bias_act(dev::Type{<:AbstractLuxDevice}, x::AbstractArray{<:Number, N},
         weight::AbstractArray{<:Number, N}, cdims::ConvDims, bias, act::F) where {N, F}
     return __conv_bias_act_impl(
         dev, __materialize_subarray(x), __materialize_subarray(weight), cdims, bias, act)
 end
-function __conv_bias_act(
-        dev::AbstractLuxGPUDevice, x_::AbstractArray{xT, N}, weight_::AbstractArray{wT, N},
-        cdims::ConvDims, bias, act::F) where {xT <: Number, wT <: Number, N, F}
+function __conv_bias_act(dev::Type{<:AbstractLuxGPUDevice}, x_::AbstractArray{xT, N},
+        weight_::AbstractArray{wT, N}, cdims::ConvDims, bias,
+        act::F) where {xT <: Number, wT <: Number, N, F}
     weight, x = __gpu_get_weight_input(wT, xT, weight_, x_)
     bias !== nothing && (bias = _oftype_array(eltype(x), bias))
     return __conv_bias_act_impl(dev, x, weight, cdims, bias, act)
 end
 
-function __conv_bias_act_impl(::AbstractLuxDevice, x, weight, cdims, bias, act::F) where {F}
+function __conv_bias_act_impl(
+        ::Type{<:AbstractLuxDevice}, x, weight, cdims, bias, act::F) where {F}
     y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
         NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
     __conv!(y, x, weight, cdims)
     return __apply_bias_activation!!(act, y, bias, Val(false))
 end
 function __conv_bias_act_impl(
-        ::AbstractLuxGPUDevice, x, weight, cdims, bias, act::F) where {F}
+        ::Type{<:AbstractLuxGPUDevice}, x, weight, cdims, bias, act::F) where {F}
     bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
     if act === identity || act === relu
         return NNlib.conv_bias_act(x, weight, cdims, bias, act)
