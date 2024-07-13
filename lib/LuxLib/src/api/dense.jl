@@ -33,7 +33,7 @@ function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractM
 end
 
 for (check, fop) in (
-    (false, :_fused_dense_bias_activation_impl), (true, :_generic_dense_bias_activation))
+    (false, :__fused_dense_bias_activation_impl), (true, :__generic_dense_bias_activation))
     @eval function fused_dense_bias_activation(
             σ::F, ::Val{$(check)}, weight::AbstractMatrix,
             x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
