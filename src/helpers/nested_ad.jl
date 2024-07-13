@@ -49,7 +49,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_gradient_call),
         grad_fn::G, f::F, x, y) where {G, F}
-    if !AUTOMATIC_NESTED_AD_SWITCHING
+    @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, __internal_ad_gradient_call_no_custom_rrule, grad_fn, f, x, y)
     end
@@ -76,7 +76,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pullback_call),
         pullback_fn::P, f::F, x, y, u) where {P, F}
-    if !AUTOMATIC_NESTED_AD_SWITCHING
+    @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, __internal_ad_pullback_call_no_custom_rrule, pullback_fn, f, x, y, u)
     end
@@ -110,7 +110,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jacobian_call),
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
-    if !AUTOMATIC_NESTED_AD_SWITCHING
+    @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, __internal_ad_jacobian_call_no_custom_rrule, jac_fn, grad_fn, f, x, y)
     end
