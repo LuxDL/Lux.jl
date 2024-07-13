@@ -399,7 +399,7 @@ for op in (:get_device, :get_device_type)
         end
     end
 
-    for T in (Number, AbstractRNG, Val, Symbol, String)
+    for T in (Number, AbstractRNG, Val, Symbol, String, Nothing)
         @eval $(_op)(::$(T)) = $(op == :get_device ? nothing : Nothing)
     end
 end
