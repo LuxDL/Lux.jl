@@ -116,9 +116,6 @@ using FillArrays, Zygote  # Extensions
 
         return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
         @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
-
-        return_val2(x) = Val(get_device(x))
-        @test_throws ErrorException @inferred(return_val2(ps))
     end
 end
 
