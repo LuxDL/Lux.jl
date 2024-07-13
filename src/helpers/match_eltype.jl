@@ -85,6 +85,10 @@ end
 @inline match_eltype(_, ::Type, ::Type, x::AbstractArray) = x
 
 @inline __convert_eltype(::Type{T}, x::AbstractArray) where {T} = broadcast(T, x)
+@inline function __convert_eltype(
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, V, N}}) where {Tag, T, V, N}
+    return ForwardDiff.Dual{Tag, T, N}.(x)
+end
 
 function __warn_mismatch(layer, x, warn_msg)
     @warn warn_msg layer summary(x) maxlog=1

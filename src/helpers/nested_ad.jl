@@ -1,8 +1,3 @@
-function __forwarddiff_jvp end # Defined in ForwardDiff.jl extension
-
-function __partials end  # DON'T REMOVE THIS (DEQs.jl is using it)
-function __dualify end
-
 #! format: off
 const AD_CONVERTIBLE_FUNCTIONS = [
     # Input Gradient/Jacobian
@@ -54,11 +49,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_gradient_call),
         grad_fn::G, f::F, x, y) where {G, F}
-    # Check if we can use the faster implementation
-    if !(_is_extension_loaded(Val(:ForwardDiff)) && AUTOMATIC_NESTED_AD_SWITCHING)
-        AUTOMATIC_NESTED_AD_SWITCHING &&
-            @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
-        # Use the AD itself for whatever reason
+    if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, __internal_ad_gradient_call_no_custom_rrule, grad_fn, f, x, y)
     end
@@ -85,23 +76,13 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pullback_call),
         pullback_fn::P, f::F, x, y, u) where {P, F}
-    # Check if we can use the faster implementation
-    if !(_is_extension_loaded(Val(:ForwardDiff)) && AUTOMATIC_NESTED_AD_SWITCHING)
-        AUTOMATIC_NESTED_AD_SWITCHING &&
-            @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
-        # Use the AD itself for whatever reason
+    if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, __internal_ad_pullback_call_no_custom_rrule, pullback_fn, f, x, y, u)
     end
 
     res = __internal_ad_pullback_call(pullback_fn, f, x, y, u)
-    ∇internal_pullback_capture = let pullback_fn = pullback_fn,
-        f = f,
-        x = x,
-        y = y,
-        u = u,
-        res = res
-
+    ∇nested_ad = let pullback_fn = pullback_fn, f = f, x = x, y = y, u = u, res = res
         Δ_ -> begin
             (Δ_ isa NoTangent || Δ_ isa ZeroTangent) &&
                 return ntuple(Returns(NoTangent()), 6)
@@ -115,7 +96,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pul
         end
     end
 
-    return res, ∇internal_pullback_capture
+    return res, ∇nested_ad
 end
 
 # Nested Jacobians
@@ -129,11 +110,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jacobian_call),
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
-    # Check if we can use the faster implementation
-    if !(_is_extension_loaded(Val(:ForwardDiff)) && AUTOMATIC_NESTED_AD_SWITCHING)
-        AUTOMATIC_NESTED_AD_SWITCHING &&
-            @warn "Load `ForwardDiff.jl` for better nested AD handling." maxlog=1
-        # Use the AD itself for whatever reason
+    if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, __internal_ad_jacobian_call_no_custom_rrule, jac_fn, grad_fn, f, x, y)
     end
@@ -200,4 +177,27 @@ end
     copyto!(view(y, (N * (k - 1) + 1):(N * k)), data)
     fill!(view(y, (N * k + 1):(N * K)), zero(T))
     return y
+end
+
+@inline function __partials(::Type{Tag}, x, i) where {Tag}
+    x isa ForwardDiff.Dual && return ForwardDiff.partials(Tag, x, i)
+    if x isa AbstractArray
+        bfn(xᵢ, iᵢ) = ForwardDiff.partials(Tag, xᵢ, iᵢ)
+        return bfn.(x, i)
+    end
+    map_fn = @closure(xᵢ->__partials(Tag, xᵢ, i))
+    (x isa Tuple || x isa NamedTuple) && return map(map_fn, x)
+    x isa CRC.AbstractTangent && return __partials(Tag, CRC.backing(x), i)
+    x === nothing && return nothing
+    return fmap(map_fn, x)
+end
+
+@inline function __dualify(::Type{Tag}, ::Type{T}, x, u) where {Tag, T}
+    if x isa AbstractArray
+        bfn(xᵢ, uᵢ) = ForwardDiff.Dual{Tag, T, 1}(xᵢ, ForwardDiff.Partials{1, T}(uᵢ))
+        return bfn.(x, tuple.(reshape(u, size(x))))
+    end
+    (x isa Tuple || x isa NamedTuple) &&
+        return map((xᵢ, uᵢ) -> __dualify(Tag, T, xᵢ, uᵢ), x, u)
+    return fmap((xᵢ, uᵢ) -> __dualify(Tag, T, xᵢ, uᵢ), x, u)
 end

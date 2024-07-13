@@ -1,44 +1,46 @@
 ## This function allows us the rewrite the function call to get the gradients for `p`
-@inline function Lux.__batched_jacobian(f::F, backend::AutoForwardDiff, x, p) where {F}
-    return Lux.__batched_jacobian_impl(Base.Fix2(f, p), backend, x)
+function __batched_jacobian(f::F, backend::AutoForwardDiff, x, p) where {F}
+    return __batched_jacobian_impl(Base.Fix2(f, p), backend, x)
 end
 
-function CRC.rrule(
-        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(Lux.__batched_jacobian),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__batched_jacobian),
         f::F, backend::AutoForwardDiff, x, y) where {F}
-    grad_fn = (f_internal, x, args...) -> begin
-        res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
-        return ∂f(one(res))[2:end]
+    grad_fn = let cfg = cfg
+        (f_internal, x, args...) -> begin
+            res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
+            return ∂f(one(res))[2:end]
+        end
     end
 
-    jac_fn = @closure (f_internal, x_in) -> Lux.__batched_jacobian_impl(
-        f_internal, backend, x_in)
-
-    res, pb_f = CRC.rrule_via_ad(
-        cfg, Lux.__internal_ad_jacobian_call, jac_fn, grad_fn, f, x, y)
-    ∇internal_nested_ad_capture = @closure Δ -> begin
-        ∂s = pb_f(tuple(Δ))
-        ∂x = ∂s[lastindex(∂s) - 1]
-        ∂y = ∂s[lastindex(∂s)]
-        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂x, ∂y)
+    jac_fn = let backend = backend
+        (f_internal, x_in) -> __batched_jacobian_impl(f_internal, backend, x_in)
     end
 
-    return res, ∇internal_nested_ad_capture
+    res, pb_f = CRC.rrule_via_ad(cfg, __internal_ad_jacobian_call, jac_fn, grad_fn, f, x, y)
+    ∇nested_ad = let pb_f = pb_f
+        Δ -> begin
+            ∂s = pb_f(tuple(Δ))
+            ∂x = ∂s[lastindex(∂s) - 1]
+            ∂y = ∂s[lastindex(∂s)]
+            return (NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y)
+        end
+    end
+    return res, ∇nested_ad
 end
 
-@inline function Lux.__batched_jacobian(f::F, backend::AutoForwardDiff, x) where {F}
-    return Lux.__batched_jacobian_impl(f, backend, x)
+@inline function __batched_jacobian(f::F, backend::AutoForwardDiff, x) where {F}
+    return __batched_jacobian_impl(f, backend, x)
 end
 
 ## Nested AD rewriting
-for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
-    @eval @inline function Lux.__batched_jacobian(f::$(fType), backend::AutoForwardDiff, x)
-        f_internal, y = Lux.__rewrite_ad_call(f)
-        return Lux.__batched_jacobian(f_internal, backend, x, y)
+for fType in AD_CONVERTIBLE_FUNCTIONS
+    @eval @inline function __batched_jacobian(f::$(fType), backend::AutoForwardDiff, x)
+        f_internal, y = __rewrite_ad_call(f)
+        return __batched_jacobian(f_internal, backend, x, y)
     end
 end
 
-function Lux.__batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) where {F, CK}
+function __batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) where {F, CK}
     x_size = size(x)
     __f = @closure x -> f(reshape(x, x_size))
     tag = backend.tag === nothing ? ForwardDiff.Tag(__f, eltype(x)) : backend.tag

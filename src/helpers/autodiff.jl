@@ -69,10 +69,6 @@ products efficiently using mixed-mode AD.
 function jacobian_vector_product(f::F, backend::AbstractADType, x, u) where {F}
     @argcheck backend isa AutoForwardDiff "Only `AutoForwardDiff` is supported for \
                                         `jacobian_vector_product`."
-    if !_is_extension_loaded(Val(:ForwardDiff))
-        error("`ForwardDiff.jl` must be loaded for `jacobian_vector_product` \
-               to work with `$(backend)`.")
-    end
     return __jacobian_vector_product_impl(f, backend, x, u)
 end
 
@@ -117,10 +113,6 @@ function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray) where
     if !(backend isa AutoForwardDiff) && !(backend isa AutoZygote)
         throw(AssertionError("Only `AutoForwardDiff` and `AutoZygote` are currently \
                               supported for `batched_jacobian`."))
-    end
-    if (backend isa AutoForwardDiff) && !_is_extension_loaded(Val(:ForwardDiff))
-        error("`ForwardDiff.jl` must be loaded for `batched_jacobian` to work with \
-               `$(backend)`.")
     end
     if (backend isa AutoZygote) && !_is_extension_loaded(Val(:Zygote))
         error("`Zygote.jl` must be loaded for `batched_jacobian` to work with \

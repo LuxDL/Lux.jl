@@ -71,6 +71,11 @@ include("helpers/match_eltype.jl")
 include("chainrules.jl")
 include("enzymerules.jl")
 
+# ForwardDiff.jl Integration
+include("forwarddiff/jvp.jl")
+include("forwarddiff/nested_ad.jl")
+include("forwarddiff/batched_ad.jl")
+
 # Transform to and from other frameworks
 include("transform/types.jl")
 include("transform/flux.jl")

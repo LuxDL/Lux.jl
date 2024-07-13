@@ -43,19 +43,12 @@ using Lux
 
         @test_throws ErrorException vector_jacobian_product(
             x -> x, AutoZygote(), rand(2), rand(2))
-        @test_throws ErrorException jacobian_vector_product(
-            x -> x, AutoForwardDiff(), rand(2), rand(2))
 
         @test_throws AssertionError batched_jacobian(x -> x, AutoEnzyme(), rand(2, 2))
-        @test_throws ErrorException batched_jacobian(x -> x, AutoForwardDiff(), rand(2, 2))
         @test_throws ErrorException batched_jacobian(x -> x, AutoZygote(), rand(2, 2))
     end
 
     @testset "Ext Loading Check" begin
-        @test !Lux._is_extension_loaded(Val(:ForwardDiff))
-        using ForwardDiff
-        @test Lux._is_extension_loaded(Val(:ForwardDiff))
-
         @test !Lux._is_extension_loaded(Val(:Zygote))
         using Zygote
         @test Lux._is_extension_loaded(Val(:Zygote))
