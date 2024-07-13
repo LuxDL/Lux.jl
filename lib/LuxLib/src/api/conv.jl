@@ -38,7 +38,8 @@ for (check, fop) in (
     (false, :_fused_conv_bias_activation_impl), (true, :_generic_conv_bias_activation))
     @eval function fused_conv_bias_activation(
             σ::F, ::Val{$(check)}, weight::AbstractArray{<:Number, N},
-            x::AbstractArray{<:Number, N}, b::Nothing, cdims::ConvDims) where {F, N}
+            x::AbstractArray{<:Number, N},
+            b::Optional{<:AbstractArray}, cdims::ConvDims) where {F, N}
         return $(fop)(σ, weight, x, b, cdims)
     end
 end

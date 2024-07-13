@@ -2,7 +2,7 @@ module LuxLibForwardDiffExt
 
 using ForwardDiff: ForwardDiff
 using LuxLib: LuxLib
-using LuxDeviceUtils: AbstractLuxDevice, AbstractLuxGPUDevice
+using LuxDeviceUtils: AbstractLuxGPUDevice
 using NNlib: NNlib
 
 LuxLib.__has_dual(::ForwardDiff.Dual) = true
@@ -80,6 +80,6 @@ end
 
 LuxLib.__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 LuxLib.__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
-LuxLib.__value(::Type{<:ForwardDiff.Dual{T}}) where {T} = LuxLib.__value(T)
+LuxLib.__value(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = LuxLib.__value(T)
 
 end
