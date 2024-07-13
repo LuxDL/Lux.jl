@@ -77,10 +77,12 @@
             @jet m(x, ps, st)
 
             if affine
-                __f = (x, ps) -> sum(first(m(x, ps, st)))
+                st_train = Lux.trainmode(st)
+                __f = (x, ps) -> sum(first(m(x, ps, st_train)))
                 @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
             else
-                __f = x -> sum(first(m(x, ps, st)))
+                st_train = Lux.trainmode(st)
+                __f = x -> sum(first(m(x, ps, st_train)))
                 @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu skip_finite_differences=true
             end
 
