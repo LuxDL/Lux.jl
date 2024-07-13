@@ -12,6 +12,7 @@ using ConcreteStructs: @concrete
 using ConstructionBase: ConstructionBase
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
+using ForwardDiff: ForwardDiff
 using Functors: Functors, fmap
 using GPUArraysCore: GPUArraysCore, @allowscalar
 using LossFunctions: LossFunctions
