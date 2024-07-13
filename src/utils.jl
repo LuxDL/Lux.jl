@@ -375,5 +375,7 @@ end
 @inline __set_refval!(x, y) = (x[] = y)
 
 @inline __eltype(x) = eltype(x)
+@inline __eltype(::ForwardDiff.Dual{T, V}) where {T, V} = V
+@inline __eltype(::AbstractArray{<:ForwardDiff.Dual{T, V}}) where {T, V} = V
 
 @inline __reverse(x; dims=:) = reverse(x; dims)

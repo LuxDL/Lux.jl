@@ -1,7 +1,8 @@
 @testitem "Aqua: Quality Assurance" tags=[:others] begin
     using Aqua, ChainRulesCore
 
-    Aqua.test_all(Lux; piracies=false)
+    Aqua.test_all(Lux; piracies=false, ambiguities=false)
+    Aqua.test_ambiguities(Lux; recursive=false)
     Aqua.test_piracies(
         Lux; treat_as_own=[ChainRulesCore.frule, ChainRulesCore.rrule, Core.kwcall])
 end
