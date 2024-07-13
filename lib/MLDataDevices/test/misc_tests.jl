@@ -152,3 +152,14 @@ end
                 transfers. Apply this function on the parameters and states generated \
                 using `Lux.setup`.") dev(my_layer)
 end
+
+@testset "get_device_type compile constant" begin
+    x = rand(10, 10)
+    ps = (; weight=x, bias=x, d=(x, x))
+
+    return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
+    @test @inferred(return_val(ps)) isa Val{typeof(cpu_device())}
+
+    return_val2(x) = Val(get_device(x))
+    @test @inferred(return_val2(ps)) isa Val{cpu_device()}
+end

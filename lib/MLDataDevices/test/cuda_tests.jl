@@ -45,6 +45,7 @@ using FillArrays, Zygote  # Extensions
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa LuxCUDADevice
+    @test get_device_type(ps_xpu) <: LuxCUDADevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -68,6 +69,7 @@ using FillArrays, Zygote  # Extensions
 
     ps_cpu = ps_xpu |> cpu_device()
     @test get_device(ps_cpu) isa LuxCPUDevice
+    @test get_device_type(ps_cpu) <: LuxCPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -99,27 +101,46 @@ using FillArrays, Zygote  # Extensions
 
     data = MyStruct(rand(10))
     @test get_device(data) isa LuxCPUDevice
+    @test get_device_type(data) <: LuxCPUDevice
     data_dev = data |> device
     if LuxDeviceUtils.functional(LuxCUDADevice)
         @test get_device(data_dev) isa LuxCUDADevice
+        @test get_device_type(data_dev) <: LuxCUDADevice
     else
         @test get_device(data_dev) isa LuxCPUDevice
+        @test get_device_type(data_dev) <: LuxCPUDevice
     end
 
     ps_mixed = (; a=rand(2), c=(rand(2), 1), st=MyStruct(rand(2)), b=device(rand(2)))
     @test get_device(ps_mixed.st) isa LuxCPUDevice
+    @test get_device_type(ps_mixed.st) <: LuxCPUDevice
     @test get_device(ps_mixed.c) isa LuxCPUDevice
+    @test get_device_type(ps_mixed.c) <: LuxCPUDevice
     @test_throws ArgumentError get_device(ps_mixed)
+    @test_throws ArgumentError get_device_type(ps_mixed)
 
     dev = gpu_device()
     x = rand(Float32, 10, 2)
     x_dev = x |> dev
     @test get_device(x_dev) isa parameterless_type(typeof(dev))
+    @test get_device_type(x_dev) <: parameterless_type(typeof(dev))
 
     if LuxDeviceUtils.functional(LuxCUDADevice)
         dev2 = gpu_device(length(CUDA.devices()))
         x_dev2 = x_dev |> dev2
         @test get_device(x_dev2) isa typeof(dev2)
+        @test get_device_type(x_dev2) <: parameterless_type(typeof(dev2))
+    end
+
+    @testset "get_device_type compile constant" begin
+        x = rand(10, 10) |> device
+        ps = (; weight=x, bias=x, d=(x, x))
+
+        return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
+        @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
+
+        return_val2(x) = Val(get_device(x))
+        @test_throws ErrorException @inferred(return_val2(ps))
     end
 end
 
@@ -127,8 +148,10 @@ end
     if LuxDeviceUtils.functional(LuxCUDADevice)
         x = rand(10, 10) |> LuxCUDADevice()
         @test get_device(x) isa LuxCUDADevice
+        @test get_device_type(x) <: LuxCUDADevice
         x_view = view(x, 1:5, 1:5)
         @test get_device(x_view) isa LuxCUDADevice
+        @test get_device_type(x_view) <: LuxCUDADevice
     end
 end
 

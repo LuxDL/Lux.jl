@@ -6,6 +6,7 @@ using Functors: Functors, fmap, fleaves
 using LuxCore: LuxCore
 using Preferences: @delete_preferences!, @load_preference, @set_preferences!
 using Random: AbstractRNG, Random
+using UnrolledUtilities: unrolled_mapreduce
 
 const CRC = ChainRulesCore
 
@@ -394,7 +395,7 @@ for op in (:get_device, :get_device_type)
 
         function $(_op)(x::Union{Tuple, NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
-            return mapreduce($(op), __combine_devices, values(x))
+            return unrolled_mapreduce($(op), __combine_devices, values(x))
         end
     end
 
@@ -406,7 +407,7 @@ end
 __recursible_array_eltype(::Type{T}) where {T} = !isbitstype(T) && !(T <: Number)
 
 __combine_devices(::Nothing, ::Nothing) = nothing
-__combine_devices(::Type{Nothing}, ::Type{Nothing}) = nothing
+__combine_devices(::Type{Nothing}, ::Type{Nothing}) = Nothing
 __combine_devices(::Nothing, dev::AbstractLuxDevice) = dev
 __combine_devices(::Type{Nothing}, ::Type{T}) where {T <: AbstractLuxDevice} = T
 __combine_devices(dev::AbstractLuxDevice, ::Nothing) = dev

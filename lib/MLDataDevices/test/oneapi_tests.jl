@@ -1,4 +1,5 @@
 using LuxDeviceUtils, Random, Test
+using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
     @test !LuxDeviceUtils.functional(LuxoneAPIDevice)
@@ -43,6 +44,7 @@ using FillArrays, Zygote  # Extensions
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa LuxoneAPIDevice
+    @test get_device_type(ps_xpu) <: LuxoneAPIDevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -66,6 +68,7 @@ using FillArrays, Zygote  # Extensions
 
     ps_cpu = ps_xpu |> cpu_device()
     @test get_device(ps_cpu) isa LuxCPUDevice
+    @test get_device_type(ps_cpu) <: LuxCPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -91,14 +94,28 @@ using FillArrays, Zygote  # Extensions
 
     ps_mixed = (; a=rand(2), b=device(rand(2)))
     @test_throws ArgumentError get_device(ps_mixed)
+    @test_throws ArgumentError get_device_type(ps_mixed)
+
+    @testset "get_device_type compile constant" begin
+        x = rand(10, 10) |> device
+        ps = (; weight=x, bias=x, d=(x, x))
+
+        return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
+        @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
+
+        return_val2(x) = Val(get_device(x))
+        @test @inferred(return_val2(ps)) isa Val{get_device(x)}
+    end
 end
 
 @testset "Wrapper Arrays" begin
     if LuxDeviceUtils.functional(LuxoneAPIDevice)
         x = rand(10, 10) |> LuxoneAPIDevice()
         @test get_device(x) isa LuxoneAPIDevice
+        @test get_device_type(x) <: LuxoneAPIDevice
         x_view = view(x, 1:5, 1:5)
         @test get_device(x_view) isa LuxoneAPIDevice
+        @test get_device_type(x_view) <: LuxoneAPIDevice
     end
 end
 

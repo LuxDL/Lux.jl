@@ -46,6 +46,7 @@ using FillArrays, Zygote  # Extensions
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa LuxAMDGPUDevice
+    @test get_device_type(ps_xpu) <: LuxAMDGPUDevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -69,6 +70,7 @@ using FillArrays, Zygote  # Extensions
 
     ps_cpu = ps_xpu |> cpu_device()
     @test get_device(ps_cpu) isa LuxCPUDevice
+    @test get_device_type(ps_cpu) <: LuxCPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -99,11 +101,24 @@ using FillArrays, Zygote  # Extensions
     x = rand(Float32, 10, 2)
     x_dev = x |> dev
     @test get_device(x_dev) isa parameterless_type(typeof(dev))
+    @test get_device_type(x_dev) <: parameterless_type(typeof(dev))
 
     if LuxDeviceUtils.functional(LuxAMDGPUDevice)
         dev2 = gpu_device(length(AMDGPU.devices()))
         x_dev2 = x_dev |> dev2
         @test get_device(x_dev2) isa typeof(dev2)
+        @test get_device_type(x_dev2) <: parameterless_type(typeof(dev2))
+    end
+
+    @testset "get_device_type compile constant" begin
+        x = rand(10, 10) |> device
+        ps = (; weight=x, bias=x, d=(x, x))
+
+        return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
+        @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
+
+        return_val2(x) = Val(get_device(x))
+        @test_throws ErrorException @inferred(return_val2(ps))
     end
 end
 
@@ -111,8 +126,10 @@ end
     if LuxDeviceUtils.functional(LuxAMDGPUDevice)
         x = rand(10, 10) |> LuxAMDGPUDevice()
         @test get_device(x) isa LuxAMDGPUDevice
+        @test get_device_type(x) <: LuxAMDGPUDevice
         x_view = view(x, 1:5, 1:5)
         @test get_device(x_view) isa LuxAMDGPUDevice
+        @test get_device_type(x_view) <: LuxAMDGPUDevice
     end
 end
 
