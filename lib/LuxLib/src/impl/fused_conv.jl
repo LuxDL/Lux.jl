@@ -48,28 +48,28 @@ function __conv!(::Type{<:AbstractLuxGPUDevice}, y::AbstractArray{yT, N},
         __materialize_subarray(_ofeltype_array(yT, weight)), cdims)
 end
 
-function __conv(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims)
-    x, weight = __get_conv_input_weight(
-        get_device_type((x_, weight_)), eltype(x_), eltype(weight_), x_, weight_)
+function __conv(
+        x_::AbstractArray{xT}, weight_::AbstractArray{wT}, cdims::ConvDims) where {xT, wT}
+    x, weight = __get_conv_input_weight(get_device_type((x_, weight_)), xT, wT, x_, weight_)
     return conv(x, weight, cdims)
 end
 
-function __∇conv_data(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims)
-    x, weight = __get_conv_input_weight(
-        get_device_type((x_, weight_)), eltype(x_), eltype(weight_), x_, weight_)
+function __∇conv_data(
+        x_::AbstractArray{xT}, weight_::AbstractArray{wT}, cdims::ConvDims) where {xT, wT}
+    x, weight = __get_conv_input_weight(get_device_type((x_, weight_)), xT, wT, x_, weight_)
     return ∇conv_data(x, weight, cdims)
 end
 
-function __∇conv_filter(x_::AbstractArray, y_::AbstractArray, cdims::ConvDims)
-    x, y = __get_conv_input_weight(
-        get_device_type((x_, y_)), eltype(x_), eltype(y_), x_, y_)
+function __∇conv_filter(
+        x_::AbstractArray{xT}, y_::AbstractArray{yT}, cdims::ConvDims) where {xT, yT}
+    x, y = __get_conv_input_weight(get_device_type((x_, y_)), xT, yT, x_, y_)
     return ∇conv_filter(x, y, cdims)
 end
 
-function __conv_bias_act(x_::AbstractArray, weight_::AbstractArray, cdims::ConvDims,
-        bias_::Optional{<:AbstractArray}, act::F) where {F}
+function __conv_bias_act(x_::AbstractArray{xT}, weight_::AbstractArray{wT}, cdims::ConvDims,
+        bias_::Optional{<:AbstractArray}, act::F) where {xT, wT, F}
     dev = get_device_type((x_, weight_, bias_))
-    x, weight = __get_conv_input_weight(dev, eltype(x_), eltype(weight_), x_, weight_)
+    x, weight = __get_conv_input_weight(dev, xT, wT, x_, weight_)
     bias = _ofeltype_array(eltype(x), bias_)
     return __conv_bias_act_impl(dev, x, weight, cdims, bias, act)
 end

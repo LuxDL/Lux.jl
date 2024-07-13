@@ -5,9 +5,8 @@
         return ntuple(i -> i == N - 1 ? ly : 1, N)
     elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
         return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
-    else
-        throw(ArgumentError("Invalid Dimensions!"))
     end
+    throw(ArgumentError("Invalid Dimensions!"))
 end
 
 CRC.@non_differentiable _get_reshape_dims(::Any...)
@@ -194,6 +193,8 @@ __value(::Type{T}) where {T <: Number} = T
 
 __value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 __value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
-__value(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = LuxLib.__value(T)
+__value(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = __value(T)
+
+__value(::Nothing) = nothing
 
 __aos_to_soa(x::AbstractArray) = x # FIXME: Upstream this to ArrayInterface.jl

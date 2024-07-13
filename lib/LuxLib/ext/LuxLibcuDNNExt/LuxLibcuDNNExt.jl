@@ -35,6 +35,7 @@ end
 
 function CRC.rrule(::typeof(LuxLib.batchnorm_cudnn), running_mean, running_var, scale,
         bias, x, momentum, epsilon, t::Val{training}) where {training}
+    # TODO: Transition this to an error in the future
     !training && @warn "`training=Val(false)` but gradient was called." maxlog=1
     y, xmean, xivar = LuxLib.batchnorm_cudnn(
         running_mean, running_var, scale, bias, x, momentum, epsilon, t)
