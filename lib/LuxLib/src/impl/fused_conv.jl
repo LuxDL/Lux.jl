@@ -11,6 +11,19 @@ function __get_conv_input_weight(
         ::Type{<:AbstractLuxGPUDevice}, ::Type{T}, ::Type{T}, x, weight) where {T}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
+function __get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},
+        ::Type{T}, x, weight) where {T}
+    return __materialize_subarray(x), __materialize_subarray(weight)
+end
+function __get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{T},
+        ::Type{<:ForwardDiff.Dual}, x, weight) where {T}
+    return __materialize_subarray(x), __materialize_subarray(weight)
+end
+function __get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},
+        ::Type{<:ForwardDiff.Dual}, x, weight)
+    return __materialize_subarray(x), __materialize_subarray(weight)
+end
+
 function __get_conv_input_weight(
         ::Type{<:AbstractLuxDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
     return __materialize_subarray(x), __materialize_subarray(weight)

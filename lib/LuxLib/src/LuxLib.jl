@@ -6,6 +6,7 @@ using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastBroadcast: @..
 using FastClosures: @closure
+using ForwardDiff: ForwardDiff
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
 using LuxCore: LuxCore
 using LuxDeviceUtils: get_device_type, LuxCUDADevice, LuxCPUDevice, AbstractLuxGPUDevice,
@@ -31,6 +32,7 @@ include("impl/normalization.jl")
 include("impl/fused_dense.jl")
 include("impl/fused_conv.jl")
 include("impl/fast_activation.jl")
+include("impl/forward_diff.jl")
 
 # User Facing
 include("api/batchnorm.jl")

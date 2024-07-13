@@ -49,6 +49,9 @@ CRC.@non_differentiable __is_immutable_array_val(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_val), ::Any...) = nothing
 
 __has_dual(x) = false
+__has_dual(::ForwardDiff.Dual) = true
+__has_dual(::AbstractArray{<:ForwardDiff.Dual}) = true
+
 __is_immutable_array_or_dual(x) = __is_immutable_array(x) || __has_dual(x)
 function __is_immutable_array_or_dual_val(x::Tuple)
     return Val(unrolled_any(__is_immutable_array_or_dual, x))
@@ -188,5 +191,9 @@ __materialize_subarray(x::SubArray) = copy(x)
 __value(x::Number) = x
 __value(x::AbstractArray) = x
 __value(::Type{T}) where {T <: Number} = T
+
+__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+__value(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = LuxLib.__value(T)
 
 __aos_to_soa(x::AbstractArray) = x # FIXME: Upstream this to ArrayInterface.jl
