@@ -31,11 +31,10 @@ for type in (:Gradient, :Jacobian)
     end
 
     rrule_call = if type == :Gradient
-        :((res, pb_f) = CRC.rrule_via_ad(
-            cfg, Lux.__internal_ad_gradient_call, grad_fn, f, x, y))
+        :((res, pb_f) = CRC.rrule_via_ad(cfg, __internal_ad_gradient_call, grad_fn, f, x, y))
     else
         :((res, pb_f) = CRC.rrule_via_ad(
-            cfg, Lux.__internal_ad_jacobian_call, ForwardDiff.$(fname), grad_fn, f, x, y))
+            cfg, __internal_ad_jacobian_call, ForwardDiff.$(fname), grad_fn, f, x, y))
     end
     ret_expr = type == :Gradient ? :(only(res)) : :(res)
     @eval begin
