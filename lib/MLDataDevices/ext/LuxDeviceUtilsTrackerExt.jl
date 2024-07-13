@@ -5,21 +5,16 @@ using LuxDeviceUtils: LuxDeviceUtils, LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDe
                       LuxoneAPIDevice
 using Tracker: Tracker
 
-@inline function LuxDeviceUtils._get_device(x::Tracker.TrackedArray)
-    return LuxDeviceUtils.get_device(Tracker.data(x))
-end
-@inline function LuxDeviceUtils._get_device(x::AbstractArray{<:Tracker.TrackedReal})
-    return LuxDeviceUtils.get_device(Tracker.data.(x))
-end
-
-@inline function LuxDeviceUtils._get_device_type(x::Tracker.TrackedArray)
-    return LuxDeviceUtils._get_device_type(Tracker.data(x))
-end
-@inline function LuxDeviceUtils._get_device_type(x::AbstractArray{<:Tracker.TrackedReal})
-    return LuxDeviceUtils._get_device_type(Tracker.data.(x))
+for op in (:_get_device, :_get_device_type)
+    @eval begin
+        LuxDeviceUtils.$op(x::Tracker.TrackedArray) = LuxDeviceUtils.$op(Tracker.data(x))
+        function LuxDeviceUtils.$op(x::AbstractArray{<:Tracker.TrackedReal})
+            return LuxDeviceUtils.$op(Tracker.data.(x))
+        end
+    end
 end
 
-@inline LuxDeviceUtils.__special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
+LuxDeviceUtils.__special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
 
 for T in (LuxAMDGPUDevice, LuxAMDGPUDevice{Nothing}, LuxCUDADevice,
     LuxCUDADevice{Nothing}, LuxMetalDevice, LuxoneAPIDevice)
