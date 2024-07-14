@@ -71,9 +71,7 @@ function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.Abstr
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
 
-function (tstate::TrainState)(data)
-    return first(tstate.model(data, tstate.parameters, Lux.testmode(tstate.states)))
-end
+(ts::TrainState)(data) = ts.model(data, ts.parameters, Lux.testmode(ts.states))
 
 @concrete struct TrainingBackendCache
     backend
