@@ -1,4 +1,4 @@
-function Lux.Experimental.single_train_step!(
+function Lux.Training.single_train_step!(
         backend::ReactantBackend, obj_fn::F, data, ts::TrainState) where {F}
     data = __make_reactant_array(data)
     ps = __make_reactant_array(ts.parameters)
@@ -21,21 +21,20 @@ function Lux.Experimental.single_train_step!(
 
     cache = TrainingBackendCache{:Reactant, false}(
         nothing, (; compiled_grad_and_step!, compiled_inference))
-    ts_new = Lux.Experimental.TrainState(
+    ts_new = Lux.Training.TrainState(
         cache, obj_fn, ts.model, ps, st_updated, ts.optimizer, st_opt, ts.step + 1)
 
     return nothing, loss, stats, ts_new
 end
 
-function Lux.Experimental.single_train_step!(::ReactantBackend, obj_fn::F, data,
+function Lux.Training.single_train_step!(::ReactantBackend, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:Reactant}, F}) where {F}
     data = __make_reactant_array(data)
 
     loss, st_updated, stats = ts.cache.extras.compiled_grad_and_step!(
         obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, data, ts.optimizer)
 
-    ts_new = Lux.Experimental.TrainState(
-        ts.cache, obj_fn, ts.model, ts.parameters, st_updated,
+    ts_new = Lux.Training.TrainState(ts.cache, obj_fn, ts.model, ts.parameters, st_updated,
         ts.optimizer, ts.optimizer_state, ts.step + 1)
 
     return nothing, loss, stats, ts_new
@@ -65,7 +64,8 @@ function (tstate::TrainState{<:TrainingBackendCache{:Reactant}})(data)
                function on the first call to `single_train_step!` or \
                `single_train_step`." maxlog=1
         Reactant.compile(LuxCore.apply,
-            (tstate.model, data_reactant, tstate.parameters, LuxCore.testmode(tstate.states)))
+            (tstate.model, data_reactant, tstate.parameters,
+                LuxCore.testmode(tstate.states)))
     end
     return compiled_inference(
         tstate.model, data_reactant, tstate.parameters, LuxCore.testmode(tstate.states))
