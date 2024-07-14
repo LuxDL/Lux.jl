@@ -19,7 +19,7 @@ using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using NNlib: NNlib
-using Optimisers: Optimisers
+using Optimisers: Optimisers, Leaf, Descent
 using Preferences: load_preference, has_preference
 using Random: Random, AbstractRNG
 using Reexport: @reexport
@@ -78,6 +78,7 @@ include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
 include("helpers/match_eltype.jl")
+include("helpers/simple_optimizers.jl")
 
 # AutoDiff
 include("chainrules.jl")
