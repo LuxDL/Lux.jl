@@ -49,6 +49,6 @@ include("deprecations.jl")
 
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
-export fast_activation!!, fast_broadcast!!
+export fast_activation!!
 
 end

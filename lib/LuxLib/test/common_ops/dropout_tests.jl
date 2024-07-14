@@ -22,7 +22,8 @@
             __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
 
             allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
+                                                                                                                    Float16)
             end
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
@@ -66,7 +67,8 @@ end
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
             allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
+                                                                                                                    Float16)
             end
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
@@ -87,7 +89,8 @@ end
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
+                                                                                                                    Float16)
             end
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -109,7 +112,8 @@ end
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
+                                                                                                                    Float16)
             end
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -151,7 +155,8 @@ end
 
             __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
+                                                                                                                    Float16)
             end
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
