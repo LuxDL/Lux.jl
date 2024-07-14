@@ -1,19 +1,12 @@
 module LuxReactantExt
 
-using Adapt: adapt
-using ArgCheck: @argcheck
-using ConcreteStructs: @concrete
 using Enzyme: Enzyme, Active, Const, Duplicated
-using Functors: fmapstructure, fmap
-using Optimisers: Optimisers, Descent, Leaf
-using Random: AbstractRNG, Xoshiro
 using Reactant: Reactant
-using Lux: Lux, LuxEltypeAdaptor, ReactantBackend
+using Lux: Lux, ReactantBackend
 using Lux.Experimental: TrainingBackendCache, TrainState
-using LuxCore: LuxCore, AbstractExplicitLayer
+using LuxCore: LuxCore
 
 include("utils.jl")
 include("training.jl")
-include("optimizers.jl")
 
 end

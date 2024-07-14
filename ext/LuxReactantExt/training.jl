@@ -49,7 +49,7 @@ function internal_grad_and_step!(
         Enzyme.ReverseWithPrimal, obj_fn, Active, Const(model),
         Duplicated(ps, dps), Const(st), Const(data))
 
-    simple_optimizers_apply!(optimizer, st_opt, ps, dps) # ps & st_opt are updated in-place
+    Lux.simple_optimizers_apply!(optimizer, st_opt, ps, dps) # ps & st_opt are updated in-place
 
     return loss, st_updated, stats
 end

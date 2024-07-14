@@ -14,7 +14,12 @@ using GPUArraysCore: @allowscalar
 using LossFunctions: LossFunctions
 using Markdown: @doc_str
 using NNlib: NNlib
+<<<<<<< HEAD
 using Optimisers: Optimisers
+=======
+using Optimisers: Optimisers, Leaf, Descent
+using Preferences: load_preference, has_preference
+>>>>>>> f68ad624 (refactor(reactant): move optimisers into main pkg)
 using Random: Random, AbstractRNG
 using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
 using Reexport: Reexport, @reexport
@@ -78,6 +83,7 @@ include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
 include("helpers/match_eltype.jl")
 include("helpers/size_propagator.jl")
+include("helpers/simple_optimizers.jl")
 
 # AutoDiff
 include("autodiff/api.jl")
