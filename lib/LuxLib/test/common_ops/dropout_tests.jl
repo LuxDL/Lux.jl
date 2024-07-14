@@ -21,7 +21,9 @@
 
             __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
 
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            allow_unstable() do
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            end
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
             @inferred dropout(rng, x, T(0.5), Val(true), T(2), Colon())
@@ -63,8 +65,9 @@ end
 
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
-
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            allow_unstable() do
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            end
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
 
@@ -83,7 +86,9 @@ end
 
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            allow_unstable() do
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            end
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
@@ -103,7 +108,9 @@ end
 
             __f = x -> sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            allow_unstable() do
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            end
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             # Testing Mode
@@ -143,8 +150,9 @@ end
             @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
 
             __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
-
-            @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            allow_unstable() do
+                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu
+            end
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
             @inferred alpha_dropout(rng, x, T(0.5), Val(false))

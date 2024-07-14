@@ -43,7 +43,9 @@
                 __f = (args...) -> sum(first(instancenorm(
                     x, args..., training, act, epsilon)))
                 skip_fd = act === relu
-                @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
+                allow_unstable() do
+                    @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
+                end
             end
         end
     end

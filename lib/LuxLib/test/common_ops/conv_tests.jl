@@ -74,7 +74,9 @@
 
             mp = Tx != Tw
             skipt = (mp && on_gpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
-            @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(mp) skip_finite_differences=$(mp) skip_tracker=$(skipt)
+            allow_unstable() do
+                @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(mp) skip_finite_differences=$(mp) skip_tracker=$(skipt)
+            end
         end
     end
 end

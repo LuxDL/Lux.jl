@@ -31,7 +31,9 @@
             fp16 = T == Float16
             __f = (args...) -> sum(groupnorm(x, args..., groups, act, epsilon))
             skip_fd = act === relu
-            @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 skip_finite_differences=$(skip_fd)
+            allow_unstable() do
+                @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=1.0f-2 rtol=1.0f-2 soft_fail=$fp16 skip_finite_differences=$(skip_fd)
+            end
         end
     end
 end
