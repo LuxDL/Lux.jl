@@ -19,13 +19,14 @@ generic implementation.
 
   - Output Array with the same size as `x`
 """
-fast_activation!!(::typeof(identity), x::AbstractArray) = x
-
 function fast_activation!!(σ::F, x::AbstractArray) where {F}
-    return fast_activation!!(Val(ArrayInterface.can_setindex(typeof(x))), σ, x)
+    return __fast_act_internal!!(Val(ArrayInterface.can_setindex(typeof(x))), σ, x)
 end
 
-function fast_activation!!(::Val{true}, σ::F, x::AbstractArray) where {F}
+__fast_act_internal!!(::Val{true}, ::typeof(identity), x::AbstractArray) = x
+__fast_act_internal!!(::Val{false}, ::typeof(identity), x::AbstractArray) = x
+
+function __fast_act_internal!!(::Val{true}, σ::F, x::AbstractArray) where {F}
     return __fast_activation_impl!!(σ, x)
 end
-fast_activation!!(::Val{false}, σ::F, x::AbstractArray) where {F} = σ.(x)
+__fast_act_internal!!(::Val{false}, σ::F, x::AbstractArray) where {F} = σ.(x)
