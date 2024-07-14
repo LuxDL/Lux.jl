@@ -6,9 +6,9 @@ function Lux.Experimental.single_train_step!(
     st_opt = __make_reactant_array(ts.optimizer_state)
 
     compiled_inference = if backend.input_prototype !== nothing
-        Reactant.compile(first ∘ LuxCore.apply,
+        Reactant.compile(LuxCore.apply,
             (ts.model, __make_reactant_array(backend.input_prototype),
-                ps, Lux.testmode(st)))
+                ps, LuxCore.testmode(st)))
     else
         nothing
     end
@@ -64,9 +64,9 @@ function (tstate::TrainState{<:TrainingBackendCache{:Reactant}})(data)
                `ReactantBackend(; input_prototype = data)` to compile the inference \
                function on the first call to `single_train_step!` or \
                `single_train_step`." maxlog=1
-        Reactant.compile(first ∘ LuxCore.apply,
-            (tstate.model, data_reactant, tstate.parameters, Lux.testmode(tstate.states)))
+        Reactant.compile(LuxCore.apply,
+            (tstate.model, data_reactant, tstate.parameters, LuxCore.testmode(tstate.states)))
     end
     return compiled_inference(
-        tstate.model, data_reactant, tstate.parameters, Lux.testmode(tstate.states))
+        tstate.model, data_reactant, tstate.parameters, LuxCore.testmode(tstate.states))
 end
