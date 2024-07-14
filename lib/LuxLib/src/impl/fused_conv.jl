@@ -74,8 +74,7 @@ function __conv_bias_act(x_::AbstractArray{xT}, weight_::AbstractArray{wT}, cdim
     return __conv_bias_act_impl(dev, x, weight, cdims, bias, act)
 end
 
-function __conv_bias_act_impl(
-        ::Type{<:AbstractLuxDevice}, x, weight, cdims, bias, act::F) where {F}
+function __conv_bias_act_impl(::Type, x, weight, cdims, bias, act::F) where {F}
     y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
         NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
     __conv!(y, x, weight, cdims)
@@ -87,7 +86,7 @@ function __conv_bias_act_impl(
     if act === identity || act === relu
         return NNlib.conv_bias_act(x, weight, cdims, bias, act)
     end
-    return __conv_bias_act_impl(LuxCPUDevice, x, weight, cdims, bias, act)
+    return __conv_bias_act_impl(Nothing, x, weight, cdims, bias, act)
 end
 
 # Our main implementations

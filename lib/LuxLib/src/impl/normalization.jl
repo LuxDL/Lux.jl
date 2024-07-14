@@ -8,8 +8,10 @@
         m = __value($(T)(__accum_size(x, r)))
         m_ = momentum * m / (m - one(m))
         $(if last(reduce_dims) != N
-            :(μ = mean(μ; dims=N);
-            σ² = mean(σ²; dims=N))
+            quote
+                μ = mean(μ; dims=N)
+                σ² = mean(σ²; dims=N)
+            end
         end)
         rμ = @. (1 - momentum) * rμ + momentum * μ
         rσ² = @. (1 - momentum) * rσ² + m_ * σ²
