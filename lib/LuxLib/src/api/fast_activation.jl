@@ -21,7 +21,11 @@ generic implementation.
 """
 fast_activation!!(::typeof(identity), x::AbstractArray) = x
 
-@generated function fast_activation!!(σ::F, x::AbstractArray) where {F}
-    ArrayInterface.can_setindex(x) && :(return __fast_activation_impl!!(σ, x))
-    return :(σ.(x))
+function fast_activation!!(σ::F, x::AbstractArray) where {F}
+    return fast_activation!!(Val(ArrayInterface.can_setindex(typeof(x))), σ, x)
 end
+
+function fast_activation!!(::Val{true}, σ::F, x::AbstractArray) where {F}
+    return __fast_activation_impl!!(σ, x)
+end
+fast_activation!!(::Val{false}, σ::F, x::AbstractArray) where {F} = σ.(x)
