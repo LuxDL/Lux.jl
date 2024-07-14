@@ -70,7 +70,7 @@ jobs:
     name: Downstream ${{ matrix.package.repo }}/${{ matrix.package.group }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && contains(github.event.pull_request.labels.*.name, 'run downstream test') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 240
     env:
       GROUP: ${{ matrix.package.group }}
     strategy:

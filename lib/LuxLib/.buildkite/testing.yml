@@ -39,8 +39,6 @@ steps:
         agents:
           queue: "juliagpu"
           cuda: "*"
-        env:
-          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
         matrix:
@@ -98,7 +96,6 @@ steps:
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
-          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
         matrix:
@@ -108,7 +105,7 @@ steps:
               - "Lux"
 
 env:
-  RETESTITEMS_NWORKERS: 8
+  RETESTITEMS_NWORKERS: 2
   RETESTITEMS_NWORKER_THREADS: 2
   RETESTITEMS_TESTITEM_TIMEOUT: 3600
   JULIA_PKG_SERVER: ""
