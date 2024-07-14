@@ -1,7 +1,7 @@
 module LuxLib
 
-using ArrayInterface: ArrayInterface
-using ChainRulesCore: ChainRulesCore, NoTangent
+using ArrayInterface: ArrayInterface, fast_scalar_indexing
+using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastBroadcast: @..

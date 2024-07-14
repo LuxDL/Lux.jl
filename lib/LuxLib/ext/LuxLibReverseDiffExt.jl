@@ -47,24 +47,4 @@ function LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal})
     return reshape(reduce(vcat, x), size(x))
 end
 
-# Normalization is type unstable for ReverseDiff so we skip dispatch doctor
-for xType in (AbstractArray, TrackedArray),
-    scType in (Nothing, AbstractVector, TrackedVector),
-    bType in (Nothing, AbstractVector, TrackedVector)
-
-    x_tracked = xType !== TrackedArray
-    sc_tracked = scType !== TrackedArray
-    b_tracked = bType !== TrackedArray
-
-    !x_tracked && !sc_tracked && !b_tracked && continue
-
-    @eval function LuxLib._normalization(
-            x::$xType, running_mean::$scType, running_var::$scType,
-            scale::$bType, bias::$bType, reduce_dims::Val,
-            training::Val, momentum, epsilon, act::F=identity) where {F}
-        return LuxLib.__normalization(x, running_mean, running_var, scale, bias,
-            reduce_dims, training, momentum, epsilon, act)
-    end
-end
-
 end

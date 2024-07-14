@@ -97,11 +97,11 @@ function __apply_bias_activation!!(
 end
 
 function __fast_broadcast(f::F, x, args...) where {F}
-    ArrayInterface.fast_scalar_indexing(x) && return @.. f(x, args...)
+    fast_scalar_indexing(x) && return @.. f(x, args...)
     return @. f(x, args...)
 end
 function __fast_broadcast!(f::F, x, args...) where {F}
-    if ArrayInterface.fast_scalar_indexing(x)
+    if fast_scalar_indexing(x)
         @.. x = f(x, args...)
     elseif __fails_inplace_bcast_gpu(f) && length(args) == 1
         y = first(args)
@@ -112,7 +112,7 @@ function __fast_broadcast!(f::F, x, args...) where {F}
     return x
 end
 function __nonuniform_fast_broadcast!(f::F, x, args...) where {F}
-    if ArrayInterface.fast_scalar_indexing(x)
+    if fast_scalar_indexing(x)
         if maximum(length, (x, args...)) > 100_000
             bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
             @simd ivdep for I in eachindex(bc)
@@ -147,7 +147,7 @@ function __added_bias_gradient(b::AbstractArray, Δ)
 end
 
 function __activation_gradient(Δ, out, act::F, x) where {F}
-    if ArrayInterface.fast_scalar_indexing(out)
+    if fast_scalar_indexing(out)
         return @.. Δ * only_derivative(out, act, x)
     end
     return @. Δ * only_derivative(out, act, x)
@@ -158,14 +158,14 @@ function __activation_gradient_simple(Δ, out, act::F, x) where {F}
 end
 
 # Needed for reverse over reverse mode AD
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
         ::typeof(__activation_gradient), Δ, out, act::F, x) where {F}
     return CRC.rrule_via_ad(cfg, __activation_gradient_simple, Δ, out, act, x)
 end
 
 # Reduce BLAS threads if we are going to use a native Julia implementation
 function __maybe_reduce_BLAS_threads(x::AbstractArray)::Int
-    if ArrayInterface.fast_scalar_indexing(x)
+    if fast_scalar_indexing(x)
         old_threads = BLAS.get_num_threads()
         BLAS.set_num_threads(1)
         return old_threads

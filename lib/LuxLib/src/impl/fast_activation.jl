@@ -6,7 +6,7 @@
     return __fast_broadcast!(σ, x)
 end
 
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
         ::typeof(__fast_activation_impl!!), σ::F, x::AbstractArray{T}) where {F, T}
     σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 
