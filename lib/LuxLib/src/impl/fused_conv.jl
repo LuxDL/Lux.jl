@@ -121,8 +121,8 @@ end
     return __conv_bias_act(x, weight, cdims, bias, act)
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
-        ::typeof(__fused_conv_bias_activation_impl),
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_conv_bias_activation_impl),
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     T = __get_concrete_fba_output_eltype(act, weight, x, bias)

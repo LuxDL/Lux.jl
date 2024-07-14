@@ -31,9 +31,10 @@ end
     return __apply_bias_activation!!(act, y, b, Val(false))
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
-        ::typeof(__fused_dense_bias_activation_impl), act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_dense_bias_activation_impl),
+        act::F, weight::AbstractMatrix, x::AbstractMatrix,
+        b::Optional{<:AbstractVector}) where {F}
     T = __get_concrete_fba_output_eltype(act, weight, x, b)
 
     # Case I: Activation Function doesn't require caching the intermediate value

@@ -6,8 +6,8 @@
     return __fast_broadcast!(σ, x)
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode},
-        ::typeof(__fast_activation_impl!!), σ::F, x::AbstractArray{T}) where {F, T}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fast_activation_impl!!),
+        σ::F, x::AbstractArray{T}) where {F, T}
     σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
