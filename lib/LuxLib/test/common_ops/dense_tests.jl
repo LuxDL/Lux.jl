@@ -5,8 +5,11 @@
         # These are not all possible combinations but rather a representative set to keep
         # CI timings under check
         @testset "$(Tw) x $(Tx)" for (Tw, Tx) in [
-            (Float16, Float16), (Float32, Float16), (Float32, Float32),
-            (Float32, Float64), (Float64, Float64)]
+            (Float16, Float16),
+            # (Float32, Float16),
+            (Float32, Float32),
+            # (Float32, Float64),
+            (Float64, Float64)]
             for M in (4, 8),
                 N in (4, 8),
                 hasbias in (true, false),

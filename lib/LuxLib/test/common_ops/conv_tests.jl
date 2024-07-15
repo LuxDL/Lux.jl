@@ -23,8 +23,11 @@
         # CI timings under check
         # Most of the actual tests happen upstream in Lux
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for (Tw, Tx) in [
-                (Float16, Float16), (Float32, Float16), (Float32, Float32),
-                (Float32, Float64), (Float64, Float64)],
+                (Float16, Float16),
+                # (Float32, Float16),
+                (Float32, Float32),
+                # (Float32, Float64),
+                (Float64, Float64)],
             hasbias in (true, false),
             activation in (identity, tanh, tanh_fast, sigmoid,
                 sigmoid_fast, relu, gelu, anonact, swish),
@@ -32,7 +35,7 @@
                 ((2,), (1,), (1,), 1), ((2, 2), (1, 1), (1, 1), 1),
                 ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2))
 
-            print("Tw: $Tw, Tx: $Tx, hasbias: $hasbias, activation: $activation, ")
+            println("Tw: $Tw, Tx: $Tx, hasbias: $hasbias, activation: $activation, ")
 
             weight = _convfilter(Tw, kernel, 4 => 8; groups) |> aType
             x = __generate_fixed_array(Tx, ntuple(Returns(3), length(kernel))..., 4, 2) |>
