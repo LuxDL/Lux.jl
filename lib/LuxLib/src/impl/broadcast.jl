@@ -28,7 +28,8 @@ _fast_broadcast!(::typeof(identity), x::AbstractArray) = x
 function __fast_broadcast_impl(::Type{T}, f::F, x::AbstractArray, args...) where {F, T}
     if unrolled_all(fast_scalar_indexing, (x, args...))
         bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
-        y = similar(x, eltype(bc))
+        RT = Core.Compiler._return_type(f, Tuple{T})
+        y = similar(x, ifelse(isconcretetype(RT), RT, T))
         @simd ivdep for I in eachindex(bc)
             @inbounds y[I] = bc[I]
         end
