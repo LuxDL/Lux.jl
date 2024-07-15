@@ -42,6 +42,10 @@ LuxLib.__value(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
 
 LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
 
+LuxLib.__has_tracked_value(::TrackedArray) = true
+LuxLib.__has_tracked_value(::AbstractArray{<:TrackedReal}) = true
+LuxLib.__has_tracked_value(::TrackedReal) = true
+
 LuxLib.__aos_to_soa(x::TrackedArray) = x
 function LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal})
     return reshape(reduce(vcat, x), size(x))

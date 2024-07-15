@@ -1,5 +1,3 @@
-const THREADING_THRESHOLD = 100_000
-
 const Optional{T} = Union{Nothing, T}
 
 # Bias Gradient -- can't be used inside gradient rules
@@ -114,17 +112,17 @@ end
 CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__get_concrete_fba_output_eltype), ::Any...) = nothing
 
-__has_tracked_value(::Any) = false
-
-CRC.@non_differentiable __has_tracked_value(::Any)
-EnzymeRules.inactive_noinl(::typeof(__has_tracked_value), ::Any) = nothing
-
 ## Copy and don't allow gradient propagation
 _copy_autodiff_barrier(x) = copy(__value(x))
 _copy_autodiff_barrier(::Nothing) = nothing
 
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
 EnzymeRules.inactive_noinl(::typeof(_copy_autodiff_barrier), ::Any...) = nothing
+
+__has_tracked_value(::Any) = false
+
+CRC.@non_differentiable __has_tracked_value(::Any)
+EnzymeRules.inactive_noinl(::typeof(__has_tracked_value), ::Any) = nothing
 
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector

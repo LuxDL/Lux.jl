@@ -36,12 +36,16 @@ Tracker.@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
     return y, ∇selectdim
 end
 
-LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal}) = Tracker.collect(x)
-
 LuxLib.__value(x::TrackedReal) = Tracker.data(x)
 LuxLib.__value(x::TrackedArray) = Tracker.data(x)
 LuxLib.__value(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
 
 LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
+
+LuxLib.__has_tracked_value(::TrackedArray) = true
+LuxLib.__has_tracked_value(::AbstractArray{<:TrackedReal}) = true
+LuxLib.__has_tracked_value(::TrackedReal) = true
+
+LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal}) = Tracker.collect(x)
 
 end

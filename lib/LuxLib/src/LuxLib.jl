@@ -4,7 +4,6 @@ using ArrayInterface: ArrayInterface, fast_scalar_indexing
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
-using FastBroadcast: @..
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
@@ -25,14 +24,6 @@ const CRC = ChainRulesCore
 
 include("utils.jl")
 
-# Low-Level Implementations
-include("impl/bias_activation.jl")
-include("impl/broadcast.jl")
-include("impl/fused_dense.jl")
-include("impl/fused_conv.jl")
-include("impl/forward_diff.jl")
-include("impl/normalization.jl")
-
 # User Facing
 include("api/batchnorm.jl")
 include("api/broadcast.jl")
@@ -42,6 +33,15 @@ include("api/instancenorm.jl")
 include("api/layernorm.jl")
 include("api/dense.jl")
 include("api/conv.jl")
+
+# Low-Level Implementations
+include("impl/bias_activation.jl")
+include("impl/broadcast.jl")
+include("impl/dropout.jl")
+include("impl/fused_dense.jl")
+include("impl/fused_conv.jl")
+include("impl/forward_diff.jl")
+include("impl/normalization.jl")
 
 include("deprecations.jl")
 

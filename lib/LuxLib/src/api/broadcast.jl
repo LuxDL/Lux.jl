@@ -18,15 +18,35 @@ generic implementation.
 ## Returns
 
   - Output Array with the same size as `x`
+
+!!! warning
+
+    This function is deprecated, use `fast_broadcast!!` instead
 """
 function fast_activation!!(σ::F, x::AbstractArray) where {F}
-    return __fast_act_internal!!(Val(ArrayInterface.can_setindex(typeof(x))), σ, x)
+    Base.depwarn("`fast_activation!!` is deprecated, use `fast_broadcast!!` instead",
+        :fast_activation!!)
+    return fast_broadcast!!(σ, x)
 end
 
-__fast_act_internal!!(::Val{true}, ::typeof(identity), x::AbstractArray) = x
-__fast_act_internal!!(::Val{false}, ::typeof(identity), x::AbstractArray) = x
+"""
+    fast_broadcast!!(f::F, x::AbstractArray, args...) where {F}
 
-function __fast_act_internal!!(::Val{true}, σ::F, x::AbstractArray) where {F}
-    return __fast_activation_impl!!(σ, x)
+if `x` is an immutable array, it computes `@. f(x, args...)`. Otherwise, it computes
+`@. x = f(x, args...)`.
+
+Additionally, whether `x` is updated in-place, depends on whether this function is being
+called inside a differentiated function.
+"""
+function fast_broadcast!!(f::F, x::AbstractArray, args...) where {F <: Function}
+    return fast_broadcast!!(Val(ArrayInterface.can_setindex(typeof(x))), f, x, args...)
 end
-__fast_act_internal!!(::Val{false}, σ::F, x::AbstractArray) where {F} = σ.(x)
+
+function fast_broadcast!!(
+        ::Val{true}, f::F, x::AbstractArray, args...) where {F <: Function}
+    return _fast_broadcast!(f, x, args...)
+end
+function fast_broadcast!!(
+        ::Val{false}, f::F, x::AbstractArray, args...) where {F <: Function}
+    return _fast_broadcast(f, x, args...)
+end
