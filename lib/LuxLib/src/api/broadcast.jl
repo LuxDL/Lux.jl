@@ -35,7 +35,6 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!
     return CRC.rrule_via_ad(cfg, fast_broadcast!!, σ, x)
 end
 
-
 """
     fast_broadcast!!(f::F, x::AbstractArray, args...) where {F}
 
@@ -50,12 +49,11 @@ called inside a differentiated function.
 end
 
 # Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_broadcast!!), args...)
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!), args...)
     return CRC.rrule_via_ad(cfg, _fast_broadcast!!, args...)
 end
 
-function _fast_broadcast!!(
-        f::F, x::AbstractArray, args...) where {F <: Function}
+function _fast_broadcast!!(f::F, x::AbstractArray, args...) where {F <: Function}
     return _fast_broadcast!!(Val(ArrayInterface.can_setindex(typeof(x))), f, x, args...)
 end
 

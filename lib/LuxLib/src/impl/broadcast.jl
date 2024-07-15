@@ -79,7 +79,7 @@ end
 
 # Special Cases where we don't need to go down the generic path
 ## rrule for activation functions -- we need to define this on `fast_broadcast!!`
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_broadcast!!),
         f::F, x::AbstractArray{T}) where {F, T}
     σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 

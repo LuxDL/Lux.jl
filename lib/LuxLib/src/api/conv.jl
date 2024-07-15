@@ -31,18 +31,17 @@ reallocations by reusing the output buffer for multiple operations.
     return _fused_conv_bias_activation(args...)
 end
 
+# Needed for Zygote type-stability
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv_bias_activation), args...)
+    return CRC.rrule_via_ad(cfg, _fused_conv_bias_activation, args...)
+end
+
 function _fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::Optional{<:AbstractArray{<:Number, N}}, cdims::ConvDims) where {F, N}
     return _fused_conv_bias_activation(
         σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b, cdims)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fused_conv_bias_activation),
-        σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        b::Optional{<:AbstractArray{<:Number, N}}, cdims::ConvDims) where {F, N}
-    return CRC.rrule_via_ad(cfg, _fused_conv_bias_activation, σ, weight, x, b, cdims)
 end
 
 for (check, fop) in (

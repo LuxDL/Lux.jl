@@ -30,17 +30,16 @@ multiple operations.
     return _fused_dense_bias_activation(args...)
 end
 
+# Needed for Zygote type-stability
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_dense_bias_activation), args...)
+    return CRC.rrule_via_ad(cfg, _fused_dense_bias_activation, args...)
+end
+
 function _fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
     return _fused_dense_bias_activation(
         σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_dense_bias_activation), σ::F,
-        weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
-    return CRC.rrule_via_ad(cfg, _fused_dense_bias_activation, σ, weight, x, b)
 end
 
 for (check, fop) in (

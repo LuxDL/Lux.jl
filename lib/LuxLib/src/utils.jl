@@ -22,7 +22,7 @@ _reshape_into_proper_shape(x, y) = reshape(x, _get_reshape_dims(size(y), length(
 
 ## Maybe typecast the array
 _ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
-_ofeltype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
+_ofeltype_array(::Type{T}, x::AbstractArray) where {T} = convert(AbstractArray{T}, x)
 _ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 
 __materialize_subarray(x::AbstractArray) = x
