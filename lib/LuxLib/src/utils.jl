@@ -9,7 +9,7 @@ function __reduce_sum(x::AbstractArray, y::AbstractArray)
     return __reduce_sum(get_device_type((x, y)), x, y)
 end
 function __reduce_sum(::Type{T}, x::AbstractArray, y::AbstractArray) where {T}
-    z = similar(x)
+    z = similar(x, promote_type(eltype(x), eltype(y)))
     sum!(z, y)
     return z
 end
