@@ -93,7 +93,7 @@ automatically operate over a sequence of inputs.
 !!! tip
 
     If Recurrence `return_sequence` arg is `true`, it will return a vector of
-    2d-matrix (sequence_length*(output_size * batch_size)),Use the following code
+    2d-matrix (sequence_length*(output_size * batch_size)), use the following code
     to input the output of each time step of RNN into other layers, which is
     similar to Keras's [TimeDistributed](https://keras.io/api/layers/recurrent_layers/time_distributed/)
 
