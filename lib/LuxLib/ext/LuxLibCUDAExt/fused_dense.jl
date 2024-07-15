@@ -21,7 +21,7 @@ function __try_cublasLt_fused_matmul(act::F, weight::AnyCuMatrix, x::AnyCuMatrix
     return (z, y, -1)
 end
 
-@stable default_mode="warn" function LuxLib.__fused_dense_bias_activation_impl(
+function LuxLib.__fused_dense_bias_activation_impl(
         act::F, weight::AnyCuMatrix, x::AnyCuMatrix, b::Optional{<:AnyCuVector}) where {F}
     (y, _, retcode) = __try_cublasLt_fused_matmul(act, weight, x, b, Val(false))
     retcode == 0 && return y

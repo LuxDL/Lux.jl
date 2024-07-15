@@ -23,7 +23,7 @@ generic implementation.
 
     This function is deprecated, use `fast_broadcast!!` instead
 """
-function fast_activation!!(σ::F, x::AbstractArray) where {F}
+@stable default_mode="warn" function fast_activation!!(σ::F, x::AbstractArray) where {F}
     Base.depwarn("`fast_activation!!` is deprecated, use `fast_broadcast!!` instead",
         :fast_activation!!)
     return fast_broadcast!!(σ, x)
@@ -38,7 +38,8 @@ if `x` is an immutable array, it computes `@. f(x, args...)`. Otherwise, it comp
 Additionally, whether `x` is updated in-place, depends on whether this function is being
 called inside a differentiated function.
 """
-function fast_broadcast!!(f::F, x::AbstractArray, args...) where {F <: Function}
+@stable default_mode="warn" function fast_broadcast!!(
+        f::F, x::AbstractArray, args...) where {F <: Function}
     return fast_broadcast!!(Val(ArrayInterface.can_setindex(typeof(x))), f, x, args...)
 end
 

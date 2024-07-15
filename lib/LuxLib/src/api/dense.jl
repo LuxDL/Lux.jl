@@ -26,7 +26,8 @@ multiple operations.
     fallback to the generic implementation.
   - For CUDA Arrays, this uses a special fused implementation via cuBLASLt.
 """
-function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
+@stable default_mode="warn" function fused_dense_bias_activation(
+        σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
     return fused_dense_bias_activation(
         σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)

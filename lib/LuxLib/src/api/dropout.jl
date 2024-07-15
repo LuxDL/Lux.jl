@@ -29,30 +29,33 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
 [1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
     overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
-function dropout(
+@stable default_mode="warn" function dropout(
         rng::AbstractRNG, x::AbstractArray, p::T, ::Val{true}, invp::T, dims) where {T}
     rng = LuxCore.replicate(rng)
     mask = _generate_dropout_mask(rng, x, p, invp; dims)
     return (x .* CRC.ignore_derivatives(mask), mask, rng)
 end
 
-function dropout(
+@stable default_mode="warn" function dropout(
         rng::AbstractRNG, x::AbstractArray, p::T, ::Val{false}, ::T, dims) where {T}
     return (x, x, rng)
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray,
+@stable default_mode="warn" function dropout(
+        rng::AbstractRNG, x::AbstractArray, ::AbstractArray,
         p::T, t::Val, ::Val{true}, invp::T, dims) where {T}
     return dropout(rng, x, p, t, invp, dims)
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
+@stable default_mode="warn" function dropout(
+        rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
         p::T, ::Val{true}, ::Val{false}, invp::T, dims) where {T, T1, T2, N}
     size(x) != size(mask) && return dropout(rng, x, p, Val(true), invp, dims)
     return x .* CRC.ignore_derivatives(mask), mask, rng
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
+@stable default_mode="warn" function dropout(
+        rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
         p::T, ::Val{false}, ::Val{false}, invp::T, dims) where {T, T1, T2, N}
     return (x, mask, rng)
 end
@@ -86,21 +89,27 @@ for a fixed dropout probability.
 [1] Klambauer, Günter, et al. "Self-normalizing neural networks." Advances in neural
 information processing systems 30 (2017).
 """
-function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, t::Val{true}) where {T}
+@stable default_mode="warn" function alpha_dropout(
+        rng::AbstractRNG, x::AbstractArray{T}, p, t::Val{true}) where {T}
     α = T(-1.7580993408473766)
     A = T(inv(sqrt((1 - p) * (1 + p * α^2))))
     B = T(-A * α * p)
     return alpha_dropout(rng, x, p, t, α, A, B)
 end
 
-function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, t::Val{false})
+@stable default_mode="warn" function alpha_dropout(
+        rng::AbstractRNG, x::AbstractArray, p, t::Val{false})
     return alpha_dropout(rng, x, p, t, 0, 0, 0)
 end
 
-function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
+@stable default_mode="warn" function alpha_dropout(
+        rng::AbstractRNG, x::AbstractArray, p, ::Val{true}, α, A, B)
     noise, rng = _alpha_dropout_noise(rng, x)
     y = _alpha_dropout_kernel(noise, p, x, α)
     return broadcast(muladd, A, y, B), rng
 end
 
-alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B) = (x, rng)
+@stable default_mode="warn" function alpha_dropout(
+        rng::AbstractRNG, x::AbstractArray, p, ::Val{false}, α, A, B)
+    return (x, rng)
+end

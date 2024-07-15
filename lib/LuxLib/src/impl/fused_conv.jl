@@ -114,7 +114,7 @@ function _fused_conv_bias_activation_impl(act::F, weight::AbstractArray, args...
     return ret
 end
 
-@stable default_mode="warn" function __fused_conv_bias_activation_impl(
+function __fused_conv_bias_activation_impl(
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     return __conv_bias_act(x, weight, cdims, bias, act)

@@ -27,7 +27,7 @@ reallocations by reusing the output buffer for multiple operations.
   - For Mixed-Precision Inputs on GPU, we type promote the inputs to the highest precision,
     with a warning.
 """
-function fused_conv_bias_activation(
+@stable default_mode="warn" function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::Optional{<:AbstractArray{<:Number, N}}, cdims::ConvDims) where {F, N}
     return fused_conv_bias_activation(

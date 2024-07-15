@@ -54,9 +54,7 @@ function _normalization_impl(x::AbstractArray, running_mean::Optional{<:Abstract
     return _affine_normalize(act, x, μ, σ², scale, bias, epsilon), rμ, rσ²
 end
 
-@stable default_mode="warn" _normalization(args...)=__normalization(args...)
-
-function __normalization(x::AbstractArray, running_mean::Optional{<:AbstractVector},
+function _normalization(x::AbstractArray, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, reduce_dims::Val,
         training::Val, momentum, epsilon, act::F=identity) where {F}
