@@ -23,11 +23,8 @@
         # CI timings under check
         # Most of the actual tests happen upstream in Lux
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for (Tw, Tx) in [
-                (Float16, Float16),
-                # (Float32, Float16),
-                (Float32, Float32),
-                # (Float32, Float64),
-                (Float64, Float64)],
+                (Float16, Float16), (Float32, Float16), (Float32, Float32),
+                (Float32, Float64), (Float64, Float64)],
             hasbias in (true, false),
             activation in (identity, tanh, tanh_fast, sigmoid,
                 sigmoid_fast, relu, gelu, anonact, swish),

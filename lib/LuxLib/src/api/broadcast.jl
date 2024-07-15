@@ -29,6 +29,13 @@ generic implementation.
     return fast_broadcast!!(σ, x)
 end
 
+## bypass a type instability
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!),
+        σ::F, x::AbstractArray{T}) where {F, T}
+    return CRC.rrule_via_ad(cfg, fast_broadcast!!, σ, x)
+end
+
+
 """
     fast_broadcast!!(f::F, x::AbstractArray, args...) where {F}
 
@@ -38,16 +45,25 @@ if `x` is an immutable array, it computes `@. f(x, args...)`. Otherwise, it comp
 Additionally, whether `x` is updated in-place, depends on whether this function is being
 called inside a differentiated function.
 """
-@stable default_mode="warn" function fast_broadcast!!(
-        f::F, x::AbstractArray, args...) where {F <: Function}
-    return fast_broadcast!!(Val(ArrayInterface.can_setindex(typeof(x))), f, x, args...)
+@stable default_mode="warn" function fast_broadcast!!(args...)
+    return _fast_broadcast!!(args...)
 end
 
-function fast_broadcast!!(
+# Needed for Zygote type-stability
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_broadcast!!), args...)
+    return CRC.rrule_via_ad(cfg, _fast_broadcast!!, args...)
+end
+
+function _fast_broadcast!!(
+        f::F, x::AbstractArray, args...) where {F <: Function}
+    return _fast_broadcast!!(Val(ArrayInterface.can_setindex(typeof(x))), f, x, args...)
+end
+
+function _fast_broadcast!!(
         ::Val{true}, f::F, x::AbstractArray, args...) where {F <: Function}
     return _fast_broadcast!(f, x, args...)
 end
-function fast_broadcast!!(
+function _fast_broadcast!!(
         ::Val{false}, f::F, x::AbstractArray, args...) where {F <: Function}
     return _fast_broadcast(f, x, args...)
 end

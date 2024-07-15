@@ -27,16 +27,27 @@ reallocations by reusing the output buffer for multiple operations.
   - For Mixed-Precision Inputs on GPU, we type promote the inputs to the highest precision,
     with a warning.
 """
-@stable default_mode="warn" function fused_conv_bias_activation(
+@stable default_mode="warn" function fused_conv_bias_activation(args...)
+    return _fused_conv_bias_activation(args...)
+end
+
+function _fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::Optional{<:AbstractArray{<:Number, N}}, cdims::ConvDims) where {F, N}
-    return fused_conv_bias_activation(
+    return _fused_conv_bias_activation(
         σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b, cdims)
+end
+
+# Needed for Zygote type-stability
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fused_conv_bias_activation),
+        σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+        b::Optional{<:AbstractArray{<:Number, N}}, cdims::ConvDims) where {F, N}
+    return CRC.rrule_via_ad(cfg, _fused_conv_bias_activation, σ, weight, x, b, cdims)
 end
 
 for (check, fop) in (
     (false, :_fused_conv_bias_activation_impl), (true, :_generic_conv_bias_activation))
-    @eval function fused_conv_bias_activation(
+    @eval function _fused_conv_bias_activation(
             σ::F, ::Val{$(check)}, weight::AbstractArray{<:Number, N},
             x::AbstractArray{<:Number, N},
             b::Optional{<:AbstractArray}, cdims::ConvDims) where {F, N}

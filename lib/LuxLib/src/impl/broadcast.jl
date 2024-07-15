@@ -103,9 +103,3 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!)
 
     return CRC.rrule_via_ad(cfg, broadcast, f, x)
 end
-
-## bypass a type instability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!),
-        σ::F, x::AbstractArray{T}) where {F, T}
-    return CRC.rrule_via_ad(cfg, fast_broadcast!!, σ, x)
-end
