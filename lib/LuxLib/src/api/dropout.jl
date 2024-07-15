@@ -151,6 +151,7 @@ EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
     y = rand!(rng, similar(x, _dropout_fptype(x), _dropout_shape(x, dims)))
     broadcast!(_dropout_kernel, y, y, p, invp)
+    return y
 end
 
 CRC.@non_differentiable _generate_dropout_mask(::Any...)

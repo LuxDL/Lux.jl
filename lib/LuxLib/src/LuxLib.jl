@@ -9,7 +9,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
 using LuxCore: LuxCore
-using LuxDeviceUtils: get_device_type, LuxCUDADevice, AbstractLuxGPUDevice,
+using LuxDeviceUtils: get_device_type, LuxCUDADevice, LuxCPUDevice, AbstractLuxGPUDevice,
                       AbstractLuxDevice
 using Markdown: @doc_str
 using NNlib: NNlib, ConvDims, conv, conv!, relu, sigmoid_fast, swish, σ, ∇conv_data,
@@ -22,8 +22,6 @@ using UnrolledUtilities: unrolled_any
 @reexport using NNlib
 
 const CRC = ChainRulesCore
-
-const Optional{T} = Union{Nothing, T}
 
 include("utils.jl")
 
