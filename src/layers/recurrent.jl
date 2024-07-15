@@ -89,6 +89,18 @@ automatically operate over a sequence of inputs.
         )
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
+
+!!! tip
+
+    If Recurrence `return_sequence` arg is `true`, it will return a vector of
+    2d-matrix (sequence_length*(output_size * batch_size)),Use the following code
+    to input the output of each time step of RNN into other layers, which is
+    similar to Keras's [TimeDistributed](https://keras.io/api/layers/recurrent_layers/time_distributed/)
+
+        broadcast_layer = @compact(; layer = Dense(3=>4)) do x::Union{NTuple{<:AbstractArray}, AbstractVector{<:AbstractArray}}
+            @return map(layer, x)
+        end
+        model = Chain(Recurrence(GRUCell(2=>3);return_sequence=true),broadcast_layer)
 """
 @concrete struct Recurrence{R} <: AbstractExplicitContainerLayer{(:cell,)}
     cell <: Union{<:AbstractRecurrentCell, <:AbstractDebugRecurrentCell}
@@ -694,6 +706,16 @@ Bidirectional RNN wrapper.
 ## States
 
   - Same as `cell` and `backward_cell`.
+
+!!! tip
+
+    Note that BidirectionalRNN `vcat`` the hidden state by default,
+    so you need to double the input dimension of the next layer.
+
+        broadcast_layer = @compact(; layer = Dense(2*hidden_size=>4)) do x::Union{NTuple{<:AbstractArray}, AbstractVector{<:AbstractArray}}
+            @return map(layer, x)
+        end
+        model = Chain(Recurrence(GRUCell(2=>hidden_size);return_sequence=true),broadcast_layer)
 """
 @concrete struct BidirectionalRNN <: AbstractExplicitContainerLayer{(:model,)}
     model <: Parallel
