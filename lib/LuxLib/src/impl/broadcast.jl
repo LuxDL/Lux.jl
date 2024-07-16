@@ -1,6 +1,19 @@
 function __activation_gradient(Δ, out, act::F, x) where {F}
+    if unrolled_all(fast_scalar_indexing, (Δ, out, x))  # All sizes are same
+        y = similar(out)
+        if x isa NotaNumber
+            @simd ivdep for i in eachindex(Δ, out)
+                @inbounds y[i] = only_derivative(out[i], act, x) * Δ[i]
+            end
+        else
+            @simd ivdep for i in eachindex(Δ, out, x)
+                @inbounds y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
+            end
+        end
+        return y
+    end
     only_deriv = @closure (Δᵢ, oᵢ, xᵢ) -> Δᵢ * only_derivative(oᵢ, act, xᵢ)
-    return _fast_broadcast(only_deriv, Δ, out, x)
+    return broadcast(only_deriv, Δ, out, x)
 end
 
 # Entry Points to the implementation
@@ -86,22 +99,24 @@ end
 ## rrule for activation functions -- we need to define this on `fast_broadcast!!`
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!),
         f::F, x::AbstractArray{T}) where {F, T}
-    σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
+    f === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
         x = fast_broadcast!!(f, x) # Safe to overwrite x
+        proj_x_no_cached = CRC.ProjectTo(x)
         ∇__fast_broadcast_impl_no_cached = @closure Δ -> begin
-            ∂x = __activation_gradient(Δ, x, σ, NotaNumber())
-            return NoTangent(), NoTangent(), ∂x
+            ∂x = __activation_gradient(Δ, x, f, NotaNumber())
+            return NoTangent(), NoTangent(), proj_x_no_cached(∂x)
         end
         return x, ∇__fast_broadcast_impl_no_cached
     end
 
     if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
         y = _fast_broadcast(f, x)
+        proj_x_cached = CRC.ProjectTo(x)
         ∇__fast_broadcast_impl_cached_crc = @closure Δ -> begin
-            ∂y = __activation_gradient(CRC.unthunk(Δ), y, f, x)
-            return NoTangent(), NoTangent(), ∂y
+            ∂x = __activation_gradient(CRC.unthunk(Δ), y, f, x)
+            return NoTangent(), NoTangent(), proj_x_cached(∂x)
         end
         return y, ∇__fast_broadcast_impl_cached_crc
     end
