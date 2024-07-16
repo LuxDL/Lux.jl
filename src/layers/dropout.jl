@@ -71,7 +71,7 @@ Dropout layer.
 ## Keyword Arguments
 
   - To apply dropout along certain dimension(s), specify the `dims` keyword. e.g.
-    `Dropout(p; dims = 3)` will randomly zero out entire channels on WHCN input
+    `Dropout(p; dims = (3,4))` will randomly zero out entire channels on WHCN input
     (also called 2D dropout).
 
 ## Inputs
