@@ -9,8 +9,7 @@
 !!! tip "Have More Questions?"
 
     For usage related questions, please use
-    [Github Discussions](https://github.com/LuxDL/Lux.jl/discussions) or
-    [JuliaLang Discourse (machine learning domain)](https://discourse.julialang.org/c/domain/ml/24/)
+    [Github Discussions](https://github.com/orgs/LuxDL/discussions)
     which allows questions and answers to be indexed. To report bugs use
-    [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a
-    [pull request](https://github.com/LuxDL/Lux.jl/pulls).
+    [Github Issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a
+    [Pull Request](https://github.com/LuxDL/Lux.jl/pulls).
