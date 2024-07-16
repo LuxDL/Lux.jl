@@ -40,7 +40,7 @@ Base.@deprecate __is_functional(x) functional(x)
 
 Checks if the trigger package for the device is loaded. Trigger packages are as follows:
 
-  - Both `CUDA.jl` and `cuDNN.jl` or just `LuxCUDA.jl` for NVIDIA CUDA Support.
+  - `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for NVIDIA CUDA Support.
   - `AMDGPU.jl` for AMD GPU ROCM Support.
   - `Metal.jl` for Apple Metal GPU Support.
   - `oneAPI.jl` for Intel oneAPI GPU Support.
@@ -236,7 +236,7 @@ function _get_gpu_device(; force_gpu_usage::Bool)
 
                  1. If no GPU is available, nothing needs to be done.
                  2. If GPU is available, load the corresponding trigger package.
-                     a. Both `CUDA.jl` and `cuDNN.jl` or just `LuxCUDA.jl` for  NVIDIA CUDA Support.
+                     a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
                      b. `AMDGPU.jl` for AMD GPU ROCM Support.
                      c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
                      d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog=1
@@ -321,8 +321,7 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
             fn = Base.Fix1(Adapt.adapt, D)
             return isbitstype(T) || __special_aos(x) ? fn(x) : map(D, x)
         end
-        (D::$(ldev))(x::Tuple) = map(D, x)
-        (D::$(ldev))(x::NamedTuple{F}) where {F} = NamedTuple{F}(D(values(x)))
+        (D::$(ldev))(x::Union{Tuple, NamedTuple}) = map(D, x)
         function (D::$(ldev))(x)
             Functors.isleaf(x) && return Adapt.adapt(D, x)
             return fmap(D, x)
