@@ -40,7 +40,7 @@ Base.@deprecate __is_functional(x) functional(x)
 
 Checks if the trigger package for the device is loaded. Trigger packages are as follows:
 
-  - Both `CUDA.jl` and `cuDNN.jl` or just `LuxCUDA.jl` for NVIDIA CUDA Support.     
+  - Both `CUDA.jl` and `cuDNN.jl` or just `LuxCUDA.jl` for NVIDIA CUDA Support.
   - `AMDGPU.jl` for AMD GPU ROCM Support.
   - `Metal.jl` for Apple Metal GPU Support.
   - `oneAPI.jl` for Intel oneAPI GPU Support.
@@ -82,8 +82,7 @@ for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
     end
 end
 
-for T in (CPUDevice, CUDADevice{Nothing},
-    AMDGPUDevice{Nothing}, MetalDevice, oneAPIDevice)
+for T in (CPUDevice, CUDADevice{Nothing}, AMDGPUDevice{Nothing}, MetalDevice, oneAPIDevice)
     @eval @inline _get_device_id(::$(T)) = nothing
 end
 
@@ -147,7 +146,7 @@ Selects GPU device based on the following criteria:
     `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal`, `oneAPI`
     and `CPU` backends, `device_id` is ignored and a warning is printed.
 
-!!! warning 
+!!! warning
 
     `gpu_device` won't select a CUDA device unless both CUDA.jl and cuDNN.jl are loaded.
     This is to ensure that deep learning operations work correctly.
@@ -457,8 +456,7 @@ $SET_DEVICE_DOCS
 $SET_DEVICE_DANGER
 """
 function set_device!(::Type{T}, dev_or_id) where {T <: AbstractDevice}
-    T === CUDADevice &&
-        @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting."
+    T === CUDADevice && @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting."
     T === AMDGPUDevice &&
         @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting."
     T === MetalDevice &&

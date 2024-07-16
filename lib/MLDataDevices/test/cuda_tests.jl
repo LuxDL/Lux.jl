@@ -5,8 +5,7 @@ using ArrayInterface: parameterless_type
     @test !DeviceUtils.functional(CUDADevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
-        force_gpu_usage=true)
+    @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     @test_throws Exception default_device_rng(CUDADevice(nothing))
     @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") DeviceUtils.set_device!(
         CUDADevice, nothing, 1)
@@ -24,8 +23,7 @@ using LuxCUDA
     else
         @info "LuxCUDA is NOT functional"
         @test gpu_device() isa CPUDevice
-        @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
-            force_gpu_usage=true)
+        @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     end
     @test DeviceUtils.GPU_DEVICE[] !== nothing
 end

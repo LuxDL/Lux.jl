@@ -1,8 +1,7 @@
 module DeviceUtilsTrackerExt
 
 using Adapt: Adapt
-using DeviceUtils: DeviceUtils, AMDGPUDevice, CUDADevice, MetalDevice,
-                      oneAPIDevice
+using DeviceUtils: DeviceUtils, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice
 using Tracker: Tracker
 
 for op in (:_get_device, :_get_device_type)

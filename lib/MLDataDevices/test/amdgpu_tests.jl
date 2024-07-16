@@ -5,8 +5,7 @@ using ArrayInterface: parameterless_type
     @test !DeviceUtils.functional(AMDGPUDevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
-        force_gpu_usage=true)
+    @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     @test_throws Exception default_device_rng(AMDGPUDevice(nothing))
     @test_logs (:warn, "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting.") DeviceUtils.set_device!(
         AMDGPUDevice, nothing, 1)
@@ -24,8 +23,7 @@ using AMDGPU
     else
         @info "AMDGPU is NOT functional"
         @test gpu_device() isa CPUDevice
-        @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
-            force_gpu_usage=true)
+        @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     end
     @test DeviceUtils.GPU_DEVICE[] !== nothing
 end
@@ -41,8 +39,7 @@ using FillArrays, Zygote  # Extensions
 
     device = gpu_device()
     aType = DeviceUtils.functional(AMDGPUDevice) ? ROCArray : Array
-    rngType = DeviceUtils.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG :
-              Random.AbstractRNG
+    rngType = DeviceUtils.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa AMDGPUDevice

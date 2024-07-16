@@ -5,8 +5,7 @@ using ArrayInterface: parameterless_type
     @test !DeviceUtils.functional(MetalDevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
-        force_gpu_usage=true)
+    @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     @test_throws Exception default_device_rng(MetalDevice())
 end
 
@@ -22,8 +21,7 @@ using Metal
     else
         @info "Metal is NOT functional"
         @test gpu_device() isa MetalDevice
-        @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
-            force_gpu_usage=true)
+        @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     end
     @test DeviceUtils.GPU_DEVICE[] !== nothing
 end
@@ -39,8 +37,7 @@ using FillArrays, Zygote  # Extensions
 
     device = gpu_device()
     aType = DeviceUtils.functional(MetalDevice) ? MtlArray : Array
-    rngType = DeviceUtils.functional(MetalDevice) ? Metal.GPUArrays.RNG :
-              Random.AbstractRNG
+    rngType = DeviceUtils.functional(MetalDevice) ? Metal.GPUArrays.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa MetalDevice
