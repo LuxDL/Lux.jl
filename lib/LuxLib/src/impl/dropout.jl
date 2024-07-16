@@ -1,6 +1,6 @@
 _dropout_shape(s, ::Colon) = size(s)
 function _dropout_shape(s, dims)
-    return tuple((i in dims ? si : 1 for (i, si) in enumerate(size(s)))...)
+    return ntuple(@closure(i -> ifelse(i ∈ dims, size(s, i), 1)), ndims(s))
 end
 
 CRC.@non_differentiable _dropout_shape(::Any...)
@@ -40,7 +40,8 @@ EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 _dropout_kernel(y, p, invp) = ifelse(y > p, invp, oftype(y, 0))
 
 function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
-    y = rand!(rng, similar(x, _dropout_fptype(x), _dropout_shape(x, dims)))
+    y = similar(x, _dropout_fptype(x), _dropout_shape(x, dims))
+    rand!(rng, y)
     broadcast!(_dropout_kernel, y, y, p, invp)
     return y
 end
