@@ -1,33 +1,33 @@
-using LuxDeviceUtils, Random, Test
+using DeviceUtils, Random, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !LuxDeviceUtils.functional(LuxAMDGPUDevice)
-    @test cpu_device() isa LuxCPUDevice
-    @test gpu_device() isa LuxCPUDevice
-    @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+    @test !DeviceUtils.functional(AMDGPUDevice)
+    @test cpu_device() isa CPUDevice
+    @test gpu_device() isa CPUDevice
+    @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
         force_gpu_usage=true)
-    @test_throws Exception default_device_rng(LuxAMDGPUDevice(nothing))
-    @test_logs (:warn, "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting.") LuxDeviceUtils.set_device!(
-        LuxAMDGPUDevice, nothing, 1)
+    @test_throws Exception default_device_rng(AMDGPUDevice(nothing))
+    @test_logs (:warn, "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting.") DeviceUtils.set_device!(
+        AMDGPUDevice, nothing, 1)
 end
 
 using AMDGPU
 
 @testset "Loaded Trigger Package" begin
-    @test LuxDeviceUtils.GPU_DEVICE[] === nothing
+    @test DeviceUtils.GPU_DEVICE[] === nothing
 
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+    if DeviceUtils.functional(AMDGPUDevice)
         @info "AMDGPU is functional"
-        @test gpu_device() isa LuxAMDGPUDevice
-        @test gpu_device(; force_gpu_usage=true) isa LuxAMDGPUDevice
+        @test gpu_device() isa AMDGPUDevice
+        @test gpu_device(; force_gpu_usage=true) isa AMDGPUDevice
     else
         @info "AMDGPU is NOT functional"
-        @test gpu_device() isa LuxCPUDevice
-        @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+        @test gpu_device() isa CPUDevice
+        @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
             force_gpu_usage=true)
     end
-    @test LuxDeviceUtils.GPU_DEVICE[] !== nothing
+    @test DeviceUtils.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
@@ -40,13 +40,13 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = LuxDeviceUtils.functional(LuxAMDGPUDevice) ? ROCArray : Array
-    rngType = LuxDeviceUtils.functional(LuxAMDGPUDevice) ? AMDGPU.rocRAND.RNG :
+    aType = DeviceUtils.functional(AMDGPUDevice) ? ROCArray : Array
+    rngType = DeviceUtils.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG :
               Random.AbstractRNG
 
     ps_xpu = ps |> device
-    @test get_device(ps_xpu) isa LuxAMDGPUDevice
-    @test get_device_type(ps_xpu) <: LuxAMDGPUDevice
+    @test get_device(ps_xpu) isa AMDGPUDevice
+    @test get_device_type(ps_xpu) <: AMDGPUDevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -60,7 +60,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+    if DeviceUtils.functional(AMDGPUDevice)
         @test ps_xpu.one_elem isa ROCArray
         @test ps_xpu.farray isa ROCArray
     else
@@ -69,8 +69,8 @@ using FillArrays, Zygote  # Extensions
     end
 
     ps_cpu = ps_xpu |> cpu_device()
-    @test get_device(ps_cpu) isa LuxCPUDevice
-    @test get_device_type(ps_cpu) <: LuxCPUDevice
+    @test get_device(ps_cpu) isa CPUDevice
+    @test get_device_type(ps_cpu) <: CPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -86,7 +86,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+    if DeviceUtils.functional(AMDGPUDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -103,7 +103,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(x_dev) isa parameterless_type(typeof(dev))
     @test get_device_type(x_dev) <: parameterless_type(typeof(dev))
 
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+    if DeviceUtils.functional(AMDGPUDevice)
         dev2 = gpu_device(length(AMDGPU.devices()))
         x_dev2 = x_dev |> dev2
         @test get_device(x_dev2) isa typeof(dev2)
@@ -120,18 +120,18 @@ using FillArrays, Zygote  # Extensions
 end
 
 @testset "Wrapped Arrays" begin
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
-        x = rand(10, 10) |> LuxAMDGPUDevice()
-        @test get_device(x) isa LuxAMDGPUDevice
-        @test get_device_type(x) <: LuxAMDGPUDevice
+    if DeviceUtils.functional(AMDGPUDevice)
+        x = rand(10, 10) |> AMDGPUDevice()
+        @test get_device(x) isa AMDGPUDevice
+        @test get_device_type(x) <: AMDGPUDevice
         x_view = view(x, 1:5, 1:5)
-        @test get_device(x_view) isa LuxAMDGPUDevice
-        @test get_device_type(x_view) <: LuxAMDGPUDevice
+        @test get_device(x_view) isa AMDGPUDevice
+        @test get_device_type(x_view) <: AMDGPUDevice
     end
 end
 
 @testset "Multiple Devices AMDGPU" begin
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+    if DeviceUtils.functional(AMDGPUDevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
@@ -156,9 +156,9 @@ end
 end
 
 @testset "setdevice!" begin
-    if LuxDeviceUtils.functional(LuxAMDGPUDevice)
+    if DeviceUtils.functional(AMDGPUDevice)
         for i in 1:10
-            @test_nowarn LuxDeviceUtils.set_device!(LuxAMDGPUDevice, nothing, i)
+            @test_nowarn DeviceUtils.set_device!(AMDGPUDevice, nothing, i)
         end
     end
 end

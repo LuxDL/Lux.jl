@@ -1,7 +1,7 @@
 import Pkg
 using SafeTestsets, Test
 
-const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "NONE"))
+const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 
 const EXTRA_PKGS = String[]
 
@@ -18,7 +18,7 @@ if !isempty(EXTRA_PKGS)
     Pkg.instantiate()
 end
 
-@testset "LuxDeviceUtils Tests" begin
+@testset "DeviceUtils Tests" begin
     file_names = BACKEND_GROUP == "all" ?
                  ["cuda_tests.jl", "amdgpu_tests.jl", "metal_tests.jl", "oneapi_tests.jl"] :
                  (BACKEND_GROUP == "cpu" ? [] : [BACKEND_GROUP * "_tests.jl"])

@@ -1,4 +1,4 @@
-module LuxDeviceUtils
+module DeviceUtils
 
 using Adapt: Adapt
 using ChainRulesCore: ChainRulesCore, NoTangent
@@ -13,19 +13,20 @@ const CRC = ChainRulesCore
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
 export gpu_device, cpu_device
-export LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice, LuxoneAPIDevice
+
+export CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice
 export get_device, get_device_type
 
-abstract type AbstractLuxDevice <: Function end
-abstract type AbstractLuxGPUDevice <: AbstractLuxDevice end
+abstract type AbstractDevice <: Function end
+abstract type AbstractGPUDevice <: AbstractDevice end
 
 """
-    functional(x::AbstractLuxDevice) -> Bool
-    functional(::Type{<:AbstractLuxDevice}) -> Bool
+    functional(x::AbstractDevice) -> Bool
+    functional(::Type{<:AbstractDevice}) -> Bool
 
 Checks if the device is functional. This is used to determine if the device can be used for
 computation. Note that even if the backend is loaded (as checked via
-[`LuxDeviceUtils.loaded`](@ref)), the device may not be functional.
+[`DeviceUtils.loaded`](@ref)), the device may not be functional.
 
 Note that while this function is not exported, it is considered part of the public API.
 """
@@ -34,12 +35,12 @@ Note that while this function is not exported, it is considered part of the publ
 Base.@deprecate __is_functional(x) functional(x)
 
 """
-    loaded(x::AbstractLuxDevice) -> Bool
-    loaded(::Type{<:AbstractLuxDevice}) -> Bool
+    loaded(x::AbstractDevice) -> Bool
+    loaded(::Type{<:AbstractDevice}) -> Bool
 
 Checks if the trigger package for the device is loaded. Trigger packages are as follows:
 
-  - `LuxCUDA.jl` for NVIDIA CUDA Support.
+  - Both `CUDA.jl` and `cuDNN.jl` or just `LuxCUDA.jl` for NVIDIA CUDA Support.     
   - `AMDGPU.jl` for AMD GPU ROCM Support.
   - `Metal.jl` for Apple Metal GPU Support.
   - `oneAPI.jl` for Intel oneAPI GPU Support.
@@ -48,17 +49,17 @@ Checks if the trigger package for the device is loaded. Trigger packages are as 
 
 Base.@deprecate __is_loaded(x) loaded(x)
 
-struct LuxCPUDevice <: AbstractLuxDevice end
-@kwdef struct LuxCUDADevice{D} <: AbstractLuxGPUDevice
+struct CPUDevice <: AbstractDevice end
+@kwdef struct CUDADevice{D} <: AbstractGPUDevice
     device::D = nothing
 end
-@kwdef struct LuxAMDGPUDevice{D} <: AbstractLuxGPUDevice
+@kwdef struct AMDGPUDevice{D} <: AbstractGPUDevice
     device::D = nothing
 end
-struct LuxMetalDevice <: AbstractLuxGPUDevice end
-struct LuxoneAPIDevice <: AbstractLuxGPUDevice end
+struct MetalDevice <: AbstractGPUDevice end
+struct oneAPIDevice <: AbstractGPUDevice end
 
-for dev in (LuxCPUDevice, LuxMetalDevice, LuxoneAPIDevice)
+for dev in (CPUDevice, MetalDevice, oneAPIDevice)
     msg = "`device_id` is not applicable for `$dev`."
     @eval begin
         _with_device(::Type{$dev}, ::Nothing) = $dev()
@@ -69,33 +70,33 @@ for dev in (LuxCPUDevice, LuxMetalDevice, LuxoneAPIDevice)
     end
 end
 
-@inline functional(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
-@inline loaded(::Union{LuxCPUDevice, Type{<:LuxCPUDevice}}) = true
+@inline functional(::Union{CPUDevice, Type{<:CPUDevice}}) = true
+@inline loaded(::Union{CPUDevice, Type{<:CPUDevice}}) = true
 
 for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    tpkg = name === :CPU ? "" : (name == :CUDA ? "Lux$(name)" : string(name))
-    ldev = eval(Symbol(:Lux, name, :Device))
+    tpkg = name === :CPU ? "" : string(name)
+    ldev = eval(Symbol(name, :Device))
     @eval begin
         @inline _get_device_name(::Union{$ldev, Type{<:$ldev}}) = $(string(name))
         @inline _get_triggerpkg_name(::Union{$ldev, Type{<:$ldev}}) = $(tpkg)
     end
 end
 
-for T in (LuxCPUDevice, LuxCUDADevice{Nothing},
-    LuxAMDGPUDevice{Nothing}, LuxMetalDevice, LuxoneAPIDevice)
+for T in (CPUDevice, CUDADevice{Nothing},
+    AMDGPUDevice{Nothing}, MetalDevice, oneAPIDevice)
     @eval @inline _get_device_id(::$(T)) = nothing
 end
 
-struct LuxDeviceSelectionException <: Exception end
+struct DeviceSelectionException <: Exception end
 
-function Base.showerror(io::IO, ::LuxDeviceSelectionException)
-    return print(io, "LuxDeviceSelectionException(No functional GPU device found!!)")
+function Base.showerror(io::IO, ::DeviceSelectionException)
+    return print(io, "DeviceSelectionException(No functional GPU device found!!)")
 end
 
 # Order is important here
-const GPU_DEVICES = (LuxCUDADevice, LuxAMDGPUDevice, LuxMetalDevice, LuxoneAPIDevice)
+const GPU_DEVICES = (CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
 
-const GPU_DEVICE = Ref{Union{Nothing, AbstractLuxDevice}}(nothing)
+const GPU_DEVICE = Ref{Union{Nothing, AbstractDevice}}(nothing)
 
 """
     reset_gpu_device!()
@@ -113,18 +114,13 @@ Return a tuple of supported GPU backends.
 !!! warning
 
     This is not the list of functional backends on the system, but rather backends which
-    `Lux.jl` supports.
-
-!!! danger
-
-    `Metal.jl` and `oneAPI.jl` support is **extremely** experimental and most things are not
-    expected to work.
+    `DeviceUtils.jl` supports.
 """
 @inline supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 
 """
     gpu_device(device_id::Union{Nothing, Integer}=nothing;
-        force_gpu_usage::Bool=false) -> AbstractLuxDevice()
+        force_gpu_usage::Bool=false) -> AbstractDevice()
 
 Selects GPU device based on the following criteria:
 
@@ -151,21 +147,28 @@ Selects GPU device based on the following criteria:
     `device_id` is only applicable for `CUDA` and `AMDGPU` backends. For `Metal`, `oneAPI`
     and `CPU` backends, `device_id` is ignored and a warning is printed.
 
+!!! warning 
+
+    `gpu_device` won't select a CUDA device unless both CUDA.jl and cuDNN.jl are loaded.
+    This is to ensure that deep learning operations work correctly.
+    Nonetheless, if cuDNN is not loaded you can still manually create a
+    `CUDADevice` object and use it (e.g. `dev = CUDADevice()`).
+
 ## Keyword Arguments
 
   - `force_gpu_usage::Bool`: If `true`, then an error is thrown if no functional GPU
     device is found.
 """
 function gpu_device(device_id::Union{Nothing, <:Integer}=nothing;
-        force_gpu_usage::Bool=false)::AbstractLuxDevice
+        force_gpu_usage::Bool=false)::AbstractDevice
     device_id == 0 && throw(ArgumentError("`device_id` is 1-indexed."))
 
     if GPU_DEVICE[] !== nothing
         dev = GPU_DEVICE[]
         if device_id === nothing
             force_gpu_usage &&
-                !(dev isa AbstractLuxGPUDevice) &&
-                throw(LuxDeviceSelectionException())
+                !(dev isa AbstractGPUDevice) &&
+                throw(DeviceSelectionException())
             return dev
         else
             selected_device_id = _get_device_id(dev)
@@ -228,24 +231,24 @@ function _get_gpu_device(; force_gpu_usage::Bool)
     end
 
     if force_gpu_usage
-        throw(LuxDeviceSelectionException())
+        throw(DeviceSelectionException())
     else
         @warn """No functional GPU backend found! Defaulting to CPU.
 
                  1. If no GPU is available, nothing needs to be done.
                  2. If GPU is available, load the corresponding trigger package.
-                     a. `LuxCUDA.jl` for NVIDIA CUDA Support.
+                     a. Both `CUDA.jl` and `cuDNN.jl` or just `LuxCUDA.jl` for  NVIDIA CUDA Support.
                      b. `AMDGPU.jl` for AMD GPU ROCM Support.
                      c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
                      d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog=1
-        return LuxCPUDevice
+        return CPUDevice
     end
 end
 
 """
     gpu_backend!() = gpu_backend!("")
     gpu_backend!(backend) = gpu_backend!(string(backend))
-    gpu_backend!(backend::AbstractLuxGPUDevice)
+    gpu_backend!(backend::AbstractGPUDevice)
     gpu_backend!(backend::String)
 
 Creates a `LocalPreferences.toml` file with the desired GPU backend.
@@ -257,7 +260,7 @@ If a new backend is successfully set, then the Julia session must be restarted f
 change to take effect.
 """
 gpu_backend!(backend) = gpu_backend!(string(backend))
-gpu_backend!(backend::AbstractLuxGPUDevice) = gpu_backend!(_get_device_name(backend))
+gpu_backend!(backend::AbstractGPUDevice) = gpu_backend!(_get_device_name(backend))
 gpu_backend!() = gpu_backend!("")
 function gpu_backend!(backend::String)
     if backend == ""
@@ -285,20 +288,20 @@ function gpu_backend!(backend::String)
 end
 
 """
-    cpu_device() -> LuxCPUDevice()
+    cpu_device() -> CPUDevice()
 
-Return a `LuxCPUDevice` object which can be used to transfer data to CPU.
+Return a `CPUDevice` object which can be used to transfer data to CPU.
 """
-@inline cpu_device() = LuxCPUDevice()
+@inline cpu_device() = CPUDevice()
 
 """
-    default_device_rng(::AbstractLuxDevice)
+    default_device_rng(::AbstractDevice)
 
 Returns the default RNG for the device. This can be used to directly generate parameters
 and states on the device using
 [WeightInitializers.jl](https://github.com/LuxDL/WeightInitializers.jl).
 """
-function default_device_rng(D::AbstractLuxDevice)
+function default_device_rng(D::AbstractDevice)
     return error("""`default_device_rng` not implemented for `$(typeof(D))`. This is \
            either because:
 
@@ -306,14 +309,14 @@ function default_device_rng(D::AbstractLuxDevice)
            2. The trigger package for the device ($(_get_device_name(D)).jl) is not loaded.
            """)
 end
-default_device_rng(::LuxCPUDevice) = Random.default_rng()
+default_device_rng(::CPUDevice) = Random.default_rng()
 
 # Dispatches for Different Data Structures
 # Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
 # For all other types we rely on fmap which means we lose type stability.
 # For Lux, typically models only has these 3 datastructures so we should be mostly fine.
 for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    ldev = Symbol("Lux$(dev)Device")
+    ldev = Symbol("$(dev)Device")
     @eval begin
         function (D::$(ldev))(x::AbstractArray{T}) where {T}
             fn = Base.Fix1(Adapt.adapt, D)
@@ -349,7 +352,7 @@ const GET_DEVICE_ADMONITIONS = """
 
 # Query Device from Array
 """
-    get_device(x) -> dev::AbstractLuxDevice | Exception | nothing
+    get_device(x) -> dev::AbstractDevice | Exception | Nothing
 
 If all arrays (on the leaves of the structure) are on the same device, we return that
 device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
@@ -362,7 +365,7 @@ based on device type.
 function get_device end
 
 """
-    get_device_type(x) -> Type{<:AbstractLuxDevice} | Exception | Type{Nothing}
+    get_device_type(x) -> Type{<:AbstractDevice} | Exception | Type{Nothing}
 
 Similar to [`get_device`](@ref) but returns the type of the device instead of the device
 itself. This value is often a compile time constant and is recommended to be used instead
@@ -374,7 +377,7 @@ function get_device_type end
 
 for op in (:get_device, :get_device_type)
     _op = Symbol("_", op)
-    cpu_ret_val = op == :get_device ? LuxCPUDevice() : LuxCPUDevice
+    cpu_ret_val = op == :get_device ? CPUDevice() : CPUDevice
     @eval begin
         function $(op)(x)
             hasmethod($(_op), Tuple{typeof(x)}) && return $(_op)(x)
@@ -408,27 +411,27 @@ __recursible_array_eltype(::Type{T}) where {T} = !isbitstype(T) && !(T <: Number
 
 __combine_devices(::Nothing, ::Nothing) = nothing
 __combine_devices(::Type{Nothing}, ::Type{Nothing}) = Nothing
-__combine_devices(::Nothing, dev::AbstractLuxDevice) = dev
-__combine_devices(::Type{Nothing}, ::Type{T}) where {T <: AbstractLuxDevice} = T
-__combine_devices(dev::AbstractLuxDevice, ::Nothing) = dev
-__combine_devices(::Type{T}, ::Type{Nothing}) where {T <: AbstractLuxDevice} = T
-function __combine_devices(dev1::AbstractLuxDevice, dev2::AbstractLuxDevice)
+__combine_devices(::Nothing, dev::AbstractDevice) = dev
+__combine_devices(::Type{Nothing}, ::Type{T}) where {T <: AbstractDevice} = T
+__combine_devices(dev::AbstractDevice, ::Nothing) = dev
+__combine_devices(::Type{T}, ::Type{Nothing}) where {T <: AbstractDevice} = T
+function __combine_devices(dev1::AbstractDevice, dev2::AbstractDevice)
     dev1 == dev2 && return dev1
     throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
 end
-__combine_devices(::Type{T}, ::Type{T}) where {T <: AbstractLuxDevice} = T
+__combine_devices(::Type{T}, ::Type{T}) where {T <: AbstractDevice} = T
 function __combine_devices(
-        ::Type{T1}, ::Type{T2}) where {T1 <: AbstractLuxDevice, T2 <: AbstractLuxDevice}
+        ::Type{T1}, ::Type{T2}) where {T1 <: AbstractDevice, T2 <: AbstractDevice}
     throw(ArgumentError("Objects are on devices with different types: $(T1) and $(T2)."))
 end
 
 # Set the device
 const SET_DEVICE_DOCS = """
-Set the device for the given type. This is a no-op for `LuxCPUDevice`. For `LuxCUDADevice`
-and `LuxAMDGPUDevice`, it prints a warning if the corresponding trigger package is not
+Set the device for the given type. This is a no-op for `CPUDevice`. For `CUDADevice`
+and `AMDGPUDevice`, it prints a warning if the corresponding trigger package is not
 loaded.
-
-Currently, `LuxMetalDevice` and `LuxoneAPIDevice` doesn't support setting the device.
+    
+Currently, `MetalDevice` and `oneAPIDevice` don't support setting the device.
 """
 
 const SET_DEVICE_DANGER = """
@@ -440,63 +443,56 @@ const SET_DEVICE_DANGER = """
 """
 
 """
-    set_device!(T::Type{<:AbstractLuxDevice}, dev_or_id)
+    set_device!(T::Type{<:AbstractDevice}, dev_or_id)
 
 $SET_DEVICE_DOCS
 
 ## Arguments
 
-  - `T::Type{<:AbstractLuxDevice}`: The device type to set.
+  - `T::Type{<:AbstractDevice}`: The device type to set.
   - `dev_or_id`: Can be the device from the corresponding package. For example for CUDA it
     can be a `CuDevice`. If it is an integer, it is the device id to set. This is
     `1`-indexed.
 
 $SET_DEVICE_DANGER
 """
-function set_device!(::Type{T}, dev_or_id) where {T <: AbstractLuxDevice}
-    T === LuxCUDADevice &&
+function set_device!(::Type{T}, dev_or_id) where {T <: AbstractDevice}
+    T === CUDADevice &&
         @warn "`CUDA.jl` hasn't been loaded. Ignoring the device setting."
-    T === LuxAMDGPUDevice &&
+    T === AMDGPUDevice &&
         @warn "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting."
-    T === LuxMetalDevice &&
+    T === MetalDevice &&
         @warn "Support for Multi Device Metal hasn't been implemented yet. Ignoring the device setting."
-    T === LuxoneAPIDevice &&
+    T === oneAPIDevice &&
         @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting."
-    T === LuxCPUDevice &&
-        @warn "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting."
+    T === CPUDevice &&
+        @warn "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting."
     return
 end
 
 """
-    set_device!(T::Type{<:AbstractLuxDevice}, ::Nothing, rank::Integer)
+    set_device!(T::Type{<:AbstractDevice}, ::Nothing, rank::Integer)
 
 $SET_DEVICE_DOCS
 
 ## Arguments
 
-  - `T::Type{<:AbstractLuxDevice}`: The device type to set.
+  - `T::Type{<:AbstractDevice}`: The device type to set.
   - `rank::Integer`: Local Rank of the process. This is applicable for distributed training and
     must be `0`-indexed.
 
 $SET_DEVICE_DANGER
 """
-function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractLuxDevice}
+function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractDevice}
     return set_device!(T, rank)
 end
 
 # Adapt Interface
-# In older versions we had corresponding Adapt functions, rn we directly dispatch on the
-# device type.
-for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    dev = Symbol(:Lux, name, :Device)
-    adaptor = Symbol(:Lux, name, :Adaptor)
-    @eval Base.@deprecate $(adaptor) $(dev) true
-end
 
-Adapt.adapt_storage(::LuxCPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
-Adapt.adapt_storage(::LuxCPUDevice, rng::AbstractRNG) = rng
+Adapt.adapt_storage(::CPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
+Adapt.adapt_storage(::CPUDevice, rng::AbstractRNG) = rng
 
-for T in (LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDevice, LuxoneAPIDevice)
+for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice)
     @eval begin
         function Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG)
             return default_device_rng(to)
@@ -505,15 +501,15 @@ for T in (LuxAMDGPUDevice, LuxCUDADevice, LuxMetalDevice, LuxoneAPIDevice)
     end
 end
 
-Adapt.adapt_storage(::LuxCPUDevice, x::AbstractRange) = x
+Adapt.adapt_storage(::CPUDevice, x::AbstractRange) = x
 # Prevent Ambiguity
-for T in (LuxAMDGPUDevice, LuxAMDGPUDevice{Nothing}, LuxCUDADevice,
-    LuxCUDADevice{Nothing}, LuxMetalDevice, LuxoneAPIDevice)
+for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
+    CUDADevice{Nothing}, MetalDevice, oneAPIDevice)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
 end
 
 # Chain Rules Core
-function CRC.rrule(::typeof(Adapt.adapt_storage), to::AbstractLuxDevice, x::AbstractArray)
+function CRC.rrule(::typeof(Adapt.adapt_storage), to::AbstractDevice, x::AbstractArray)
     ∇adapt_storage = let x = x
         Δ -> (NoTangent(), NoTangent(), (get_device(x))(Δ))
     end

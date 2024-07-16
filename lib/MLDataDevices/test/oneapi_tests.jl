@@ -1,31 +1,31 @@
-using LuxDeviceUtils, Random, Test
+using DeviceUtils, Random, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !LuxDeviceUtils.functional(LuxoneAPIDevice)
-    @test cpu_device() isa LuxCPUDevice
-    @test gpu_device() isa LuxCPUDevice
-    @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+    @test !DeviceUtils.functional(oneAPIDevice)
+    @test cpu_device() isa CPUDevice
+    @test gpu_device() isa CPUDevice
+    @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
         force_gpu_usage=true)
-    @test_throws Exception default_device_rng(LuxoneAPIDevice())
+    @test_throws Exception default_device_rng(oneAPIDevice())
 end
 
 using oneAPI
 
 @testset "Loaded Trigger Package" begin
-    @test LuxDeviceUtils.GPU_DEVICE[] === nothing
+    @test DeviceUtils.GPU_DEVICE[] === nothing
 
-    if LuxDeviceUtils.functional(LuxoneAPIDevice)
+    if DeviceUtils.functional(oneAPIDevice)
         @info "oneAPI is functional"
-        @test gpu_device() isa LuxoneAPIDevice
-        @test gpu_device(; force_gpu_usage=true) isa LuxoneAPIDevice
+        @test gpu_device() isa oneAPIDevice
+        @test gpu_device(; force_gpu_usage=true) isa oneAPIDevice
     else
         @info "oneAPI is NOT functional"
-        @test gpu_device() isa LuxoneAPIDevice
-        @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+        @test gpu_device() isa oneAPIDevice
+        @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
             force_gpu_usage=true)
     end
-    @test LuxDeviceUtils.GPU_DEVICE[] !== nothing
+    @test DeviceUtils.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
@@ -38,13 +38,13 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = LuxDeviceUtils.functional(LuxoneAPIDevice) ? oneArray : Array
-    rngType = LuxDeviceUtils.functional(LuxoneAPIDevice) ? oneAPI.GPUArrays.RNG :
+    aType = DeviceUtils.functional(oneAPIDevice) ? oneArray : Array
+    rngType = DeviceUtils.functional(oneAPIDevice) ? oneAPI.GPUArrays.RNG :
               Random.AbstractRNG
 
     ps_xpu = ps |> device
-    @test get_device(ps_xpu) isa LuxoneAPIDevice
-    @test get_device_type(ps_xpu) <: LuxoneAPIDevice
+    @test get_device(ps_xpu) isa oneAPIDevice
+    @test get_device_type(ps_xpu) <: oneAPIDevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -58,7 +58,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if LuxDeviceUtils.functional(LuxoneAPIDevice)
+    if DeviceUtils.functional(oneAPIDevice)
         @test ps_xpu.one_elem isa oneArray
         @test ps_xpu.farray isa oneArray
     else
@@ -67,8 +67,8 @@ using FillArrays, Zygote  # Extensions
     end
 
     ps_cpu = ps_xpu |> cpu_device()
-    @test get_device(ps_cpu) isa LuxCPUDevice
-    @test get_device_type(ps_cpu) <: LuxCPUDevice
+    @test get_device(ps_cpu) isa CPUDevice
+    @test get_device_type(ps_cpu) <: CPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -84,7 +84,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if LuxDeviceUtils.functional(LuxoneAPIDevice)
+    if DeviceUtils.functional(oneAPIDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -109,20 +109,20 @@ using FillArrays, Zygote  # Extensions
 end
 
 @testset "Wrapper Arrays" begin
-    if LuxDeviceUtils.functional(LuxoneAPIDevice)
-        x = rand(10, 10) |> LuxoneAPIDevice()
-        @test get_device(x) isa LuxoneAPIDevice
-        @test get_device_type(x) <: LuxoneAPIDevice
+    if DeviceUtils.functional(oneAPIDevice)
+        x = rand(10, 10) |> oneAPIDevice()
+        @test get_device(x) isa oneAPIDevice
+        @test get_device_type(x) <: oneAPIDevice
         x_view = view(x, 1:5, 1:5)
-        @test get_device(x_view) isa LuxoneAPIDevice
-        @test get_device_type(x_view) <: LuxoneAPIDevice
+        @test get_device(x_view) isa oneAPIDevice
+        @test get_device_type(x_view) <: oneAPIDevice
     end
 end
 
 @testset "setdevice!" begin
-    if LuxDeviceUtils.functional(LuxoneAPIDevice)
+    if DeviceUtils.functional(oneAPIDevice)
         @test_logs (:warn,
-            "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting.") LuxDeviceUtils.set_device!(
-            LuxoneAPIDevice, nothing, 1)
+            "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting.") DeviceUtils.set_device!(
+            oneAPIDevice, nothing, 1)
     end
 end

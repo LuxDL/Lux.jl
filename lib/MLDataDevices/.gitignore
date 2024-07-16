@@ -1,4 +1,5 @@
 Manifest.toml
+*.cov
 generated
 build
 .vscode

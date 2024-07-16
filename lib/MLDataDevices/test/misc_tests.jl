@@ -1,12 +1,12 @@
-using Adapt, LuxDeviceUtils, ComponentArrays, Random
+using Adapt, DeviceUtils, ComponentArrays, Random
 using ArrayInterface: parameterless_type
 using ChainRulesTestUtils: test_rrule
 using ReverseDiff, Tracker, ForwardDiff
 using SparseArrays, FillArrays, Zygote, RecursiveArrayTools
 using LuxCore
 
-@testset "https://github.com/LuxDL/LuxDeviceUtils.jl/issues/10 patch" begin
-    dev = LuxCPUDevice()
+@testset "https://github.com/LuxDL/DeviceUtils.jl/issues/10 patch" begin
+    dev = CPUDevice()
     ps = (; weight=randn(10, 1), bias=randn(1))
 
     ps_ca = ps |> ComponentArray
@@ -25,23 +25,23 @@ end
     x = randn(Float32, 10)
 
     x_rdiff = ReverseDiff.track(x)
-    @test get_device(x_rdiff) isa LuxCPUDevice
+    @test get_device(x_rdiff) isa CPUDevice
     x_rdiff = ReverseDiff.track.(x)
-    @test get_device(x_rdiff) isa LuxCPUDevice
+    @test get_device(x_rdiff) isa CPUDevice
 
     gdev = gpu_device()
 
     x_tracker = Tracker.param(x)
-    @test get_device(x_tracker) isa LuxCPUDevice
+    @test get_device(x_tracker) isa CPUDevice
     x_tracker = Tracker.param.(x)
-    @test get_device(x_tracker) isa LuxCPUDevice
+    @test get_device(x_tracker) isa CPUDevice
     x_tracker_dev = Tracker.param(x) |> gdev
     @test get_device(x_tracker_dev) isa parameterless_type(typeof(gdev))
     x_tracker_dev = Tracker.param.(x) |> gdev
     @test get_device(x_tracker_dev) isa parameterless_type(typeof(gdev))
 
     x_fdiff = ForwardDiff.Dual.(x)
-    @test get_device(x_fdiff) isa LuxCPUDevice
+    @test get_device(x_fdiff) isa CPUDevice
     x_fdiff_dev = ForwardDiff.Dual.(x) |> gdev
     @test get_device(x_fdiff_dev) isa parameterless_type(typeof(gdev))
 end
@@ -51,7 +51,7 @@ end
     test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred=true)
 
     gdev = gpu_device()
-    if !(gdev isa LuxMetalDevice)  # On intel devices causes problems
+    if !(gdev isa MetalDevice)  # On intel devices causes problems
         x = randn(10)
         ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt_storage, gdev, x)
         @test ∂dev === nothing
@@ -78,34 +78,34 @@ end
     gdev = gpu_device()
 
     diffeqarray = DiffEqArray([rand(10) for _ in 1:10], rand(10))
-    @test get_device(diffeqarray) isa LuxCPUDevice
+    @test get_device(diffeqarray) isa CPUDevice
 
     diffeqarray_dev = diffeqarray |> gdev
     @test get_device(diffeqarray_dev) isa parameterless_type(typeof(gdev))
 
     vecarray = VectorOfArray([rand(10) for _ in 1:10])
-    @test get_device(vecarray) isa LuxCPUDevice
+    @test get_device(vecarray) isa CPUDevice
 
     vecarray_dev = vecarray |> gdev
     @test get_device(vecarray_dev) isa parameterless_type(typeof(gdev))
 end
 
 @testset "CPU default rng" begin
-    @test default_device_rng(LuxCPUDevice()) isa Random.TaskLocalRNG
+    @test default_device_rng(CPUDevice()) isa Random.TaskLocalRNG
 end
 
 @testset "CPU setdevice!" begin
     @test_logs (:warn,
-        "Setting device for `LuxCPUDevice` doesn't make sense. Ignoring the device setting.") LuxDeviceUtils.set_device!(
-        LuxCPUDevice, nothing, 1)
+        "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting.") DeviceUtils.set_device!(
+        CPUDevice, nothing, 1)
 end
 
 @testset "get_device on Arrays" begin
     x = rand(10, 10)
     x_view = view(x, 1:5, 1:5)
 
-    @test get_device(x) isa LuxCPUDevice
-    @test get_device(x_view) isa LuxCPUDevice
+    @test get_device(x) isa CPUDevice
+    @test get_device(x_view) isa CPUDevice
 
     struct MyArrayType <: AbstractArray{Float32, 2}
         data::Array{Float32, 2}
@@ -113,22 +113,22 @@ end
 
     x_custom = MyArrayType(rand(10, 10))
 
-    @test get_device(x_custom) isa LuxCPUDevice
+    @test get_device(x_custom) isa CPUDevice
 end
 
 @testset "loaded and functional" begin
-    @test LuxDeviceUtils.loaded(LuxCPUDevice)
-    @test LuxDeviceUtils.functional(LuxCPUDevice)
+    @test DeviceUtils.loaded(CPUDevice)
+    @test DeviceUtils.functional(CPUDevice)
 end
 
 @testset "writing to preferences" begin
     @test_logs (:info,
         "Deleted the local preference for `gpu_backend`. Restart Julia to use the new backend.") gpu_backend!()
 
-    for backend in (:CUDA, :AMDGPU, :oneAPI, :Metal, LuxAMDGPUDevice(),
-        LuxCUDADevice(), LuxMetalDevice(), LuxoneAPIDevice())
+    for backend in (:CUDA, :AMDGPU, :oneAPI, :Metal, AMDGPUDevice(),
+        CUDADevice(), MetalDevice(), oneAPIDevice())
         backend_name = backend isa Symbol ? string(backend) :
-                       LuxDeviceUtils._get_device_name(backend)
+                       DeviceUtils._get_device_name(backend)
         @test_logs (:info,
             "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.") gpu_backend!(backend)
     end

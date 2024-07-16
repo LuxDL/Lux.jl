@@ -1,33 +1,33 @@
-using LuxDeviceUtils, Random, Functors, Test
+using DeviceUtils, Random, Functors, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !LuxDeviceUtils.functional(LuxCUDADevice)
-    @test cpu_device() isa LuxCPUDevice
-    @test gpu_device() isa LuxCPUDevice
-    @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+    @test !DeviceUtils.functional(CUDADevice)
+    @test cpu_device() isa CPUDevice
+    @test gpu_device() isa CPUDevice
+    @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
         force_gpu_usage=true)
-    @test_throws Exception default_device_rng(LuxCUDADevice(nothing))
-    @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") LuxDeviceUtils.set_device!(
-        LuxCUDADevice, nothing, 1)
+    @test_throws Exception default_device_rng(CUDADevice(nothing))
+    @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") DeviceUtils.set_device!(
+        CUDADevice, nothing, 1)
 end
 
 using LuxCUDA
 
 @testset "Loaded Trigger Package" begin
-    @test LuxDeviceUtils.GPU_DEVICE[] === nothing
+    @test DeviceUtils.GPU_DEVICE[] === nothing
 
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         @info "LuxCUDA is functional"
-        @test gpu_device() isa LuxCUDADevice
-        @test gpu_device(; force_gpu_usage=true) isa LuxCUDADevice
+        @test gpu_device() isa CUDADevice
+        @test gpu_device(; force_gpu_usage=true) isa CUDADevice
     else
         @info "LuxCUDA is NOT functional"
-        @test gpu_device() isa LuxCPUDevice
-        @test_throws LuxDeviceUtils.LuxDeviceSelectionException gpu_device(;
+        @test gpu_device() isa CPUDevice
+        @test_throws DeviceUtils.DeviceSelectionException gpu_device(;
             force_gpu_usage=true)
     end
-    @test LuxDeviceUtils.GPU_DEVICE[] !== nothing
+    @test DeviceUtils.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
@@ -40,12 +40,12 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = LuxDeviceUtils.functional(LuxCUDADevice) ? CuArray : Array
-    rngType = LuxDeviceUtils.functional(LuxCUDADevice) ? CUDA.RNG : Random.AbstractRNG
+    aType = DeviceUtils.functional(CUDADevice) ? CuArray : Array
+    rngType = DeviceUtils.functional(CUDADevice) ? CUDA.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
-    @test get_device(ps_xpu) isa LuxCUDADevice
-    @test get_device_type(ps_xpu) <: LuxCUDADevice
+    @test get_device(ps_xpu) isa CUDADevice
+    @test get_device_type(ps_xpu) <: CUDADevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -59,7 +59,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         @test ps_xpu.one_elem isa CuArray
         @test ps_xpu.farray isa CuArray
     else
@@ -68,8 +68,8 @@ using FillArrays, Zygote  # Extensions
     end
 
     ps_cpu = ps_xpu |> cpu_device()
-    @test get_device(ps_cpu) isa LuxCPUDevice
-    @test get_device_type(ps_cpu) <: LuxCPUDevice
+    @test get_device(ps_cpu) isa CPUDevice
+    @test get_device_type(ps_cpu) <: CPUDevice
     @test ps_cpu.a.c isa Array
     @test ps_cpu.b isa Array
     @test ps_cpu.a.c == ps.a.c
@@ -85,7 +85,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -100,22 +100,22 @@ using FillArrays, Zygote  # Extensions
     Functors.@functor MyStruct
 
     data = MyStruct(rand(10))
-    @test get_device(data) isa LuxCPUDevice
-    @test get_device_type(data) <: LuxCPUDevice
+    @test get_device(data) isa CPUDevice
+    @test get_device_type(data) <: CPUDevice
     data_dev = data |> device
-    if LuxDeviceUtils.functional(LuxCUDADevice)
-        @test get_device(data_dev) isa LuxCUDADevice
-        @test get_device_type(data_dev) <: LuxCUDADevice
+    if DeviceUtils.functional(CUDADevice)
+        @test get_device(data_dev) isa CUDADevice
+        @test get_device_type(data_dev) <: CUDADevice
     else
-        @test get_device(data_dev) isa LuxCPUDevice
-        @test get_device_type(data_dev) <: LuxCPUDevice
+        @test get_device(data_dev) isa CPUDevice
+        @test get_device_type(data_dev) <: CPUDevice
     end
 
     ps_mixed = (; a=rand(2), c=(rand(2), 1), st=MyStruct(rand(2)), b=device(rand(2)))
-    @test get_device(ps_mixed.st) isa LuxCPUDevice
-    @test get_device_type(ps_mixed.st) <: LuxCPUDevice
-    @test get_device(ps_mixed.c) isa LuxCPUDevice
-    @test get_device_type(ps_mixed.c) <: LuxCPUDevice
+    @test get_device(ps_mixed.st) isa CPUDevice
+    @test get_device_type(ps_mixed.st) <: CPUDevice
+    @test get_device(ps_mixed.c) isa CPUDevice
+    @test get_device_type(ps_mixed.c) <: CPUDevice
     @test_throws ArgumentError get_device(ps_mixed)
     @test_throws ArgumentError get_device_type(ps_mixed)
 
@@ -125,7 +125,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(x_dev) isa parameterless_type(typeof(dev))
     @test get_device_type(x_dev) <: parameterless_type(typeof(dev))
 
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         dev2 = gpu_device(length(CUDA.devices()))
         x_dev2 = x_dev |> dev2
         @test get_device(x_dev2) isa typeof(dev2)
@@ -145,18 +145,18 @@ using FillArrays, Zygote  # Extensions
 end
 
 @testset "Wrapped Arrays" begin
-    if LuxDeviceUtils.functional(LuxCUDADevice)
-        x = rand(10, 10) |> LuxCUDADevice()
-        @test get_device(x) isa LuxCUDADevice
-        @test get_device_type(x) <: LuxCUDADevice
+    if DeviceUtils.functional(CUDADevice)
+        x = rand(10, 10) |> CUDADevice()
+        @test get_device(x) isa CUDADevice
+        @test get_device_type(x) <: CUDADevice
         x_view = view(x, 1:5, 1:5)
-        @test get_device(x_view) isa LuxCUDADevice
-        @test get_device_type(x_view) <: LuxCUDADevice
+        @test get_device(x_view) isa CUDADevice
+        @test get_device_type(x_view) <: CUDADevice
     end
 end
 
 @testset "Multiple Devices CUDA" begin
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
@@ -183,7 +183,7 @@ end
 using SparseArrays
 
 @testset "CUDA Sparse Arrays" begin
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         ps = (; weight=sprand(Float32, 10, 10, 0.1), bias=sprand(Float32, 10, 0.1))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
@@ -208,9 +208,9 @@ using SparseArrays
 end
 
 @testset "setdevice!" begin
-    if LuxDeviceUtils.functional(LuxCUDADevice)
+    if DeviceUtils.functional(CUDADevice)
         for i in 1:10
-            @test_nowarn LuxDeviceUtils.set_device!(LuxCUDADevice, nothing, i)
+            @test_nowarn DeviceUtils.set_device!(CUDADevice, nothing, i)
         end
     end
 end
