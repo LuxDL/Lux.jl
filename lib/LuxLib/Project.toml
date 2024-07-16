@@ -33,7 +33,6 @@ LuxLibCUDAExt = "CUDA"
 LuxLibReverseDiffExt = "ReverseDiff"
 LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
 LuxLibTrackerExt = "Tracker"
-LuxLibTrackercuDNNExt = ["CUDA", "Tracker", "cuDNN"]
 LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]

@@ -4,7 +4,7 @@ using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
 using LuxLib: LuxLib
 using NNlib: NNlib
-using Tracker: Tracker, TrackedArray, TrackedReal
+using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector
 
 const CRC = ChainRulesCore
 
@@ -34,6 +34,20 @@ Tracker.@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
         return ∂x, nothing, nothing
     end
     return y, ∇selectdim
+end
+
+# cuDNN batchnorm -- the chain rule gets defined once cuDNN is loaded
+for RM in (:TrackedVector, :Nothing, :AbstractVector),
+    RV in (:TrackedVector, :Nothing, :AbstractVector),
+    S in (:TrackedVector, :Nothing, :AbstractVector),
+    B in (:TrackedVector, :Nothing, :AbstractVector),
+    XT in (:TrackedArray, :AbstractArray)
+
+    LuxLib.__is_tracked(RM, RV, S, B, XT) || continue
+
+    @eval Tracker.@grad_from_chainrules LuxLib.batchnorm_cudnn(
+        running_mean::$RM, running_var::$RV, scale::$S, bias::$B,
+        x::$XT, momentum::Real, eps::Real, training::Val)
 end
 
 LuxLib.__value(x::TrackedReal) = Tracker.data(x)
