@@ -45,7 +45,8 @@ function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::Abst
     return (μ, σ²), (rμ, rσ²)
 end
 
-function _normalization_impl(x::AbstractArray, running_mean::Optional{<:AbstractArray},
+@stable default_mode="warn" function _normalization_impl(
+        x::AbstractArray, running_mean::Optional{<:AbstractArray},
         running_var::Optional{<:AbstractArray}, scale::Optional{<:AbstractArray},
         bias::Optional{<:AbstractArray}, r::Val{reduce_dims}, training::Val,
         momentum, epsilon, act::F=identity) where {reduce_dims, F}
@@ -65,25 +66,30 @@ function _normalization(x::AbstractArray, running_mean::Optional{<:AbstractVecto
 end
 
 # Here we reorder the operations a bit for better performance
-function _affine_normalize(::typeof(identity), x::AbstractArray, xmean,
+@stable default_mode="warn" function _affine_normalize(
+        f::F, x::AbstractArray, xmean, xvar, scale, bias, epsilon::Real) where {F}
+    return __affine_normalize(f, x, xmean, xvar, scale, bias, epsilon)
+end
+
+function __affine_normalize(::typeof(identity), x::AbstractArray, xmean,
         xvar, ::Nothing, ::Nothing, epsilon::Real)
     _scale = @. inv(sqrt(xvar + epsilon))
     _bias = @. xmean * _scale
     return @. x * _scale - _bias
 end
-function _affine_normalize(act::F, x::AbstractArray, xmean, xvar,
+function __affine_normalize(act::F, x::AbstractArray, xmean, xvar,
         ::Nothing, ::Nothing, epsilon::Real) where {F}
     _scale = @. inv(sqrt(xvar + epsilon))
     _bias = @. xmean * _scale
     return @. act(x * _scale - _bias)
 end
-function _affine_normalize(::typeof(identity), x::AbstractArray, xmean, xvar,
+function __affine_normalize(::typeof(identity), x::AbstractArray, xmean, xvar,
         scale::AbstractArray, bias::AbstractArray, epsilon::Real)
     _scale = @. scale / sqrt(xvar + epsilon)
     _bias = @. bias - xmean * _scale
     return @. x * _scale + _bias
 end
-function _affine_normalize(act::F, x::AbstractArray, xmean, xvar, scale::AbstractArray,
+function __affine_normalize(act::F, x::AbstractArray, xmean, xvar, scale::AbstractArray,
         bias::AbstractArray, epsilon::Real) where {F}
     _scale = @. scale / sqrt(xvar + epsilon)
     _bias = @. bias - xmean * _scale

@@ -7,7 +7,7 @@
         @testset "$(Tw) x $(Tx)" for (Tw, Tx) in [
             (Float16, Float16), (Float32, Float16), (Float32, Float32),
             (Float32, Float64), (Float64, Float64)]
-            for M in (4, 8),
+            @testset "M=$M, N=$N, hasbias=$hasbias, activation=$activation" for M in (4, 8),
                 N in (4, 8),
                 hasbias in (true, false),
                 activation in (

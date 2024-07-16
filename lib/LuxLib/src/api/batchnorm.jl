@@ -37,16 +37,7 @@ fallback is used which is not highly optimized.
     training by reducing internal covariate shift." International conference on machine
     learning. PMLR, 2015.
 """
-@stable default_mode="warn" function batchnorm(args...)
-    return _batchnorm(args...)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batchnorm), args...)
-    return CRC.rrule_via_ad(cfg, _batchnorm, args...)
-end
-
-function _batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
+function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
         momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}

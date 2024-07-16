@@ -23,7 +23,7 @@ generic implementation.
 
     This function is deprecated, use `fast_broadcast!!` instead
 """
-@stable default_mode="warn" function fast_activation!!(σ::F, x::AbstractArray) where {F}
+function fast_activation!!(σ::F, x::AbstractArray) where {F}
     Base.depwarn("`fast_activation!!` is deprecated, use `fast_broadcast!!` instead",
         :fast_activation!!)
     return fast_broadcast!!(σ, x)
@@ -44,17 +44,14 @@ if `x` is an immutable array, it computes `@. f(x, args...)`. Otherwise, it comp
 Additionally, whether `x` is updated in-place, depends on whether this function is being
 called inside a differentiated function.
 """
-@stable default_mode="warn" function fast_broadcast!!(args...)
-    return _fast_broadcast!!(args...)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!), args...)
-    return CRC.rrule_via_ad(cfg, _fast_broadcast!!, args...)
-end
-
-function _fast_broadcast!!(f::F, x::AbstractArray, args...) where {F <: Function}
+function fast_broadcast!!(f::F, x::AbstractArray, args...) where {F <: Function}
     return _fast_broadcast!!(Val(ArrayInterface.can_setindex(typeof(x))), f, x, args...)
+end
+
+# Generic fallback. We define specialized fallbacks in the impl file
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!),
+        f::F, x::AbstractArray, args...) where {F}
+    return CRC.rrule_via_ad(cfg, broadcast, f, x, args...)
 end
 
 function _fast_broadcast!!(

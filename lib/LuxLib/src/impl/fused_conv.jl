@@ -82,7 +82,7 @@ function __conv_bias_act_impl(::Type, x, weight, cdims, bias, act::F) where {F}
 end
 function __conv_bias_act_impl(
         ::Type{<:LuxCUDADevice}, x, weight, cdims, bias, act::F) where {F}
-    bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
+    bias === nothing && return fast_broadcast!!(act, __conv(x, weight, cdims))
     if act === identity || act === relu
         return NNlib.conv_bias_act(x, weight, cdims, bias, act)
     end
@@ -114,7 +114,7 @@ function _fused_conv_bias_activation_impl(act::F, weight::AbstractArray, args...
     return ret
 end
 
-function __fused_conv_bias_activation_impl(
+@stable default_mode="warn" function __fused_conv_bias_activation_impl(
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
     return __conv_bias_act(x, weight, cdims, bias, act)

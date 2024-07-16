@@ -26,16 +26,7 @@ mean and variance.
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
-@stable default_mode="warn" function instancenorm(args...)
-    return _instancenorm(args...)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(instancenorm), args...)
-    return CRC.rrule_via_ad(cfg, _instancenorm, args...)
-end
-
-function _instancenorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
+function instancenorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, training::Val,
         σ::F=identity, epsilon::Real=1.0f-5) where {N, F}
     _test_valid_instancenorm_arguments(x)

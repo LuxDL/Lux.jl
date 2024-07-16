@@ -16,7 +16,6 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         env:
-          RETESTITEMS_NWORKERS: 8
           BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
@@ -65,7 +64,6 @@ steps:
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
-          RETESTITEMS_NWORKERS: 8
           BACKEND_GROUP: "AMDGPU"
         agents:
           queue: "juliagpu"

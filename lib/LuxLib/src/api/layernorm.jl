@@ -29,16 +29,7 @@ Normalized Array of same size as `x`.
 [1] Ba, Jimmy Lei, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer normalization." arXiv
     preprint arXiv:1607.06450 (2016).
 """
-@stable default_mode="warn" function layernorm(args...)
-    return _layernorm(args...)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(layernorm), args...)
-    return CRC.rrule_via_ad(cfg, _layernorm, args...)
-end
-
-function _layernorm(
+function layernorm(
         x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{<:Number, N}},
         bias::Optional{<:AbstractArray{<:Number, N}}, σ::F=identity,
         dims=Colon(), epsilon::Real=1.0f-5) where {N, F}

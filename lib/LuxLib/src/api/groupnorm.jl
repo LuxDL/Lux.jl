@@ -26,16 +26,7 @@ The normalized array is returned.
 [1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
     on computer vision (ECCV). 2018.
 """
-@stable default_mode="warn" function groupnorm(args...)
-    return _groupnorm(args...)
-end
-
-# Needed for Zygote type-stability
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(groupnorm), args...)
-    return CRC.rrule_via_ad(cfg, _groupnorm, args...)
-end
-
-function _groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
+function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, groups::Int,
         σ::F=identity, epsilon::Real=1.0f-5) where {F, N}
     _test_valid_groupnorm_arguments(x, scale, bias, groups)

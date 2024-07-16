@@ -4,7 +4,8 @@ function __activation_gradient(Δ, out, act::F, x) where {F}
 end
 
 # Entry Points to the implementation
-function _fast_broadcast(f::F, x::AbstractArray, args...) where {F}
+@stable default_mode="warn" function _fast_broadcast(
+        f::F, x::AbstractArray, args...) where {F}
     unrolled_any(__has_tracked_value, (x, args...)) && return broadcast(f, x, args...)
     return __fast_broadcast_impl(get_device_type((x, args...)), f, x, args...)
 end
@@ -16,7 +17,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_broadcast),
     return CRC.rrule_via_ad(cfg, broadcast, f, x, args...)
 end
 
-function _fast_broadcast!(f::F, x::AbstractArray, args...) where {F}
+@stable default_mode="warn" function _fast_broadcast!(
+        f::F, x::AbstractArray, args...) where {F}
     unrolled_any(__has_tracked_value, (x, args...)) && return broadcast!(f, x, x, args...)
     return __fast_broadcast_impl!(get_device_type((x, args...)), f, x, args...)
 end
@@ -25,10 +27,11 @@ _fast_broadcast!(::typeof(identity), x::AbstractArray) = x
 
 # Main Implementations: Generic Version
 ## OOP Version
-function __fast_broadcast_impl(::Type{T}, f::F, x::AbstractArray, args...) where {F, T}
+function __fast_broadcast_impl(
+        ::Type{LuxCPUDevice}, f::F, x::AbstractArray, args...) where {F}
     if unrolled_all(fast_scalar_indexing, (x, args...))
         bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
-        RT = Core.Compiler._return_type(f, Tuple{T})
+        RT = Core.Compiler._return_type(f, Tuple{eltype(x)})
         y = similar(x, ifelse(isconcretetype(RT), RT, eltype(x)))
         @simd ivdep for I in eachindex(bc)
             @inbounds y[I] = bc[I]
@@ -38,6 +41,7 @@ function __fast_broadcast_impl(::Type{T}, f::F, x::AbstractArray, args...) where
     return __fast_broadcast_impl(Nothing, f, x, args...)
 end
 
+# TODO: remove once https://github.com/FluxML/NNlib.jl/pull/597 lands
 for f in (sigmoid_fast, swish)
     comp_type = typeof(f ∘ +)
     @eval function __fast_broadcast_impl(::Type{<:AbstractLuxGPUDevice}, f::$(comp_type),
@@ -64,6 +68,7 @@ function __fast_broadcast_impl!(
     return __fast_broadcast_impl!(Nothing, f, x, args...)
 end
 
+# TODO: remove once https://github.com/FluxML/NNlib.jl/pull/597 lands
 for f in (sigmoid_fast, swish)
     comp_type = typeof(f ∘ +)
     @eval function __fast_broadcast_impl!(::Type{<:AbstractLuxGPUDevice}, f::$(comp_type),
@@ -79,7 +84,7 @@ end
 
 # Special Cases where we don't need to go down the generic path
 ## rrule for activation functions -- we need to define this on `fast_broadcast!!`
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_broadcast!!),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_broadcast!!),
         f::F, x::AbstractArray{T}) where {F, T}
     σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 
