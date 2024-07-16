@@ -28,13 +28,13 @@ multiple operations.
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
-    return _fused_dense_bias_activation(
+    return fused_dense_bias_activation(
         σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)
 end
 
 for (check, fop) in (
     (false, :__fused_dense_bias_activation_impl), (true, :__generic_dense_bias_activation))
-    @eval function _fused_dense_bias_activation(
+    @eval function fused_dense_bias_activation(
             σ::F, ::Val{$(check)}, weight::AbstractMatrix,
             x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
         return $(fop)(σ, weight, x, b)
