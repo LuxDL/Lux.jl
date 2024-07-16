@@ -323,7 +323,6 @@ end
                         @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
                     end
 
-                    ordering isa BatchLastIndex && continue
 
                     # Batched Time Series without data batches
                     @testset "typeof(x): $(typeof(x))" for x in (
