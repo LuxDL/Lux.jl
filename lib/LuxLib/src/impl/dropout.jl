@@ -1,6 +1,6 @@
 _dropout_shape(s, ::Colon) = size(s)
 function _dropout_shape(s, dims)
-    return ntuple(@closure(i -> ifelse(i ∈ dims, size(s, i), 1)), ndims(s))
+    return ntuple(@closure(i->ifelse(i ∈ dims, size(s, i), 1)), ndims(s))
 end
 
 CRC.@non_differentiable _dropout_shape(::Any...)
