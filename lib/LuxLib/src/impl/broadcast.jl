@@ -13,7 +13,7 @@ end
 _fast_broadcast(::typeof(identity), x::AbstractArray) = x
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_broadcast),
-        f::F, x::AbstractArray, args::AbstractArray...) where {F}
+        f::F, x::AbstractArray, args...) where {F}
     return CRC.rrule_via_ad(cfg, broadcast, f, x, args...)
 end
 
@@ -31,7 +31,7 @@ function __fast_broadcast_impl(
         ::Type{LuxCPUDevice}, f::F, x::AbstractArray, args...) where {F}
     if unrolled_all(fast_scalar_indexing, (x, args...))
         bc = Broadcast.instantiate(Broadcast.broadcasted(f, x, args...))
-        RT = Core.Compiler._return_type(f, Tuple{eltype(x)})
+        RT = Core.Compiler._return_type(f, Tuple{eltype(x), eltype.(args)...})
         y = similar(x, ifelse(isconcretetype(RT), RT, eltype(x)))
         @simd ivdep for I in eachindex(bc)
             @inbounds y[I] = bc[I]

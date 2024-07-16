@@ -6,19 +6,66 @@ end
 CRC.@non_differentiable _dropout_shape(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_dropout_shape), ::Any...) = nothing
 
-__alpha_dropout_kernel(x, noise, p, α) = ifelse(noise > p, x, α)
-_alpha_dropout_kernel(noise, p, x, α) = broadcast(__alpha_dropout_kernel, x, noise, p, α)
+function _alpha_dropout_kernel(noise::AbstractArray, p, x::AbstractArray, α, A, B)
+    return _alpha_dropout_kernel(get_device_type((noise, x)), noise, p, x, α, A, B)
+end
 
-__partial_alpha_dropout(Δ, c) = (1 - c) * Δ
-
-function CRC.rrule(::typeof(_alpha_dropout_kernel), noise, p, x, α)
-    _cond = broadcast(>, noise, p)
-    y = broadcast(ifelse, _cond, x, α)
-    _∇alpha_dropout_kernel = @closure Δ -> begin
-        ∂x = broadcast(*, Δ, _cond)
-        ∂α = sum(broadcast(__partial_alpha_dropout, Δ, _cond))
-        return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂α
+function _alpha_dropout_kernel(::Type{LuxCPUDevice}, noise::AbstractArray, p::Real,
+        x::AbstractArray, α::Real, A::Real, B::Real)
+    unrolled_all(fast_scalar_indexing, (noise, x)) ||
+        return _alpha_dropout_kernel(Nothing, noise, p, x, α, A, B)
+    res = similar(x, promote_type(typeof(p), typeof(α)))
+    @simd ivdep for i in eachindex(noise)
+        @inbounds res[i] = muladd(ifelse(noise[i] > p, x[i], α), A, B)
     end
+    return res
+end
+
+function _alpha_dropout_kernel(::Type{T}, noise::AbstractArray, p::Real,
+        x::AbstractArray, α::Real, A::Real, B::Real) where {T}
+    return @. muladd(ifelse(noise > p, x, α), A, B)
+end
+
+# We intentionally drop the gradients for p, A, B and alpha
+function CRC.rrule(::typeof(_alpha_dropout_kernel), ::Type{LuxCPUDevice},
+        noise::AbstractArray, p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
+    if !unrolled_all(fast_scalar_indexing, (noise, x))
+        return CRC.rrule(_alpha_dropout_kernel, Nothing, noise, p, x, α, A, B)
+    end
+
+    _cond = similar(noise, Bool)
+    y = similar(x, promote_type(typeof(p), typeof(α), typeof(A), typeof(B), eltype(x)))
+    @simd ivdep for i in eachindex(noise)
+        @inbounds _cond[i] = noise[i] > p
+        @inbounds y[i] = ifelse(_cond[i], x[i], α) * A + B
+    end
+
+    proj_x = CRC.ProjectTo(x)
+    _∇alpha_dropout_kernel = let _cond = _cond, proj_x = proj_x, x = x, noise = noise
+        Δ -> begin
+            ∂x = similar(x)
+            @simd ivdep for i in eachindex(noise)
+                @inbounds ∂x[i] = _cond[i] * Δ[i] * A
+            end
+            return (ntuple(Returns(NoTangent()), 4)..., proj_x(∂x),
+                ntuple(Returns(NoTangent()), 3)...)
+        end
+    end
+
+    return y, _∇alpha_dropout_kernel
+end
+
+function CRC.rrule(::typeof(_alpha_dropout_kernel), ::Type{T}, noise::AbstractArray,
+        p::Real, x::AbstractArray, α::Real, A::Real, B::Real) where {T}
+    _cond = broadcast(>, noise, p)
+    y = @. ifelse(_cond, x, α) * A + B
+
+    proj_x = CRC.ProjectTo(x)
+    _∇alpha_dropout_kernel = @closure Δ -> begin
+        ∂x = proj_x(@.(Δ*_cond*A))
+        return (ntuple(Returns(NoTangent()), 4)..., ∂x, ntuple(Returns(NoTangent()), 3)...)
+    end
+
     return y, _∇alpha_dropout_kernel
 end
 
@@ -37,14 +84,31 @@ end
 CRC.@non_differentiable _alpha_dropout_noise(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 
-_dropout_kernel(y, p, invp) = ifelse(y > p, invp, oftype(y, 0))
-
 function _generate_dropout_mask(rng::AbstractRNG, x, p, invp; dims)
     y = similar(x, _dropout_fptype(x), _dropout_shape(x, dims))
     rand!(rng, y)
-    broadcast!(_dropout_kernel, y, y, p, invp)
+    if fast_scalar_indexing(y)
+        @simd ivdep for i in eachindex(y)
+            @inbounds y[i] = (y[i] > p) * invp
+        end
+    else
+        @. y = (y > p) * invp
+    end
     return y
 end
 
 CRC.@non_differentiable _generate_dropout_mask(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_generate_dropout_mask), ::Any...) = nothing
+
+# dropout -- force don't compute some gradients
+__dropout_dot_mul(x::AbstractArray, mask::AbstractArray) = x .* mask
+
+function CRC.rrule(::typeof(__dropout_dot_mul), x::AbstractArray, mask::AbstractArray)
+    res = __dropout_dot_mul(x, mask)  # size(res) == size(x)
+    proj_x = CRC.ProjectTo(x)
+    ∇dropout_dot_mul = @closure Δ -> begin
+        ∂x = proj_x(__dropout_dot_mul(Δ, mask))
+        return NoTangent(), ∂x, NoTangent()
+    end
+    return res, ∇dropout_dot_mul
+end
