@@ -67,7 +67,7 @@ function __∇conv_filter(
 end
 
 function __conv_bias_act(x_::AbstractArray{xT}, weight_::AbstractArray{wT}, cdims::ConvDims,
-        bias_::Optional{<:AbstractArray}, act::F) where {xT, wT, F}
+        bias_::Optional{<:AbstractVector}, act::F) where {xT, wT, F}
     dev = get_device_type((x_, weight_, bias_))
     x, weight = __get_conv_input_weight(dev, xT, wT, x_, weight_)
     bias = _ofeltype_array(eltype(x), bias_)
@@ -78,13 +78,14 @@ function __conv_bias_act_impl(::Type, x, weight, cdims, bias, act::F) where {F}
     y = similar(x, __get_concrete_fba_output_eltype(act, weight, x, bias),
         NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
     __conv!(y, x, weight, cdims)
-    return __apply_bias_activation!!(act, y, bias, Val(false))
+    return __bias_activation_impl!!(act, y, bias)
 end
 function __conv_bias_act_impl(
         ::Type{<:LuxCUDADevice}, x, weight, cdims, bias, act::F) where {F}
     bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
     if act === identity || act === relu
-        return NNlib.conv_bias_act(x, weight, cdims, bias, act)
+        bias_ = __resize_bias_into_xdims(x, bias)
+        return NNlib.conv_bias_act(x, weight, cdims, bias_, act)
     end
     return __conv_bias_act_impl(Nothing, x, weight, cdims, bias, act)
 end
@@ -99,8 +100,8 @@ end
 
 function __generic_conv_bias_activation(
         act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractArray}, cdims::ConvDims) where {F, N}
-    return __apply_bias_activation(act, __conv(x, weight, cdims), bias)
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+    return __generic_bias_activation(act, __conv(x, weight, cdims), bias)
 end
 
 # This implementation is different from `conv_bias_act` in that it defines the proper rrules
@@ -116,17 +117,20 @@ end
 
 @stable default_mode="warn" function __fused_conv_bias_activation_impl(
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {wT, xT, N, F}
     return __conv_bias_act(x, weight, cdims, bias, act)
 end
 
-function CRC.rrule(
+@stable default_mode="warn" function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_conv_bias_activation_impl),
         act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Optional{<:AbstractArray}, cdims::ConvDims) where {wT, xT, N, F}
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {wT, xT, N, F}
     T = __get_concrete_fba_output_eltype(act, weight, x, bias)
+    proj_w = CRC.ProjectTo(weight)
+    proj_x = CRC.ProjectTo(x)
+    proj_b = CRC.ProjectTo(bias)
 
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
+    if __no_intermediate_needed(act, T)
         y = __conv_bias_act(x, weight, cdims, bias, act)
         ∇__fused_conv_bias_activation_impl_no_cached = @closure Δ -> begin
             old_threads = __maybe_reduce_BLAS_threads(weight)
@@ -134,7 +138,7 @@ function CRC.rrule(
             ∂y = act === identity ? Δ : __activation_gradient(Δ, y, act, NotaNumber())
             ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
-            return NoTangent(), NoTangent(), ∂w, ∂x, ∂b, NoTangent()
+            return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent()
         end
         return y, ∇__fused_conv_bias_activation_impl_no_cached
     end
@@ -143,27 +147,27 @@ function CRC.rrule(
     y = similar(x, T, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
     __conv!(y, x, weight, cdims)
 
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
-        z, y = __apply_bias_activation!!(act, y, bias, Val(true))
+    if __needs_intermediate_but_has_rrule(act, T)
+        z, y = __apply_bias_activation_cached!!(act, y, bias)
         ∇__fused_conv_bias_activation_impl_cached_crc = @closure Δ -> begin
             old_threads = __maybe_reduce_BLAS_threads(weight)
             Δ = CRC.unthunk(NNlib.colmajor(Δ))
             ∂y = __activation_gradient(Δ, z, act, y)
             ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
-            return NoTangent(), NoTangent(), ∂w, ∂x, ∂b, NoTangent()
+            return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent()
         end
         return z, ∇__fused_conv_bias_activation_impl_cached_crc
     end
 
-    z, pb_f = CRC.rrule_via_ad(cfg, __apply_bias_activation, act, y, bias)
+    z, pb_f = CRC.rrule_via_ad(cfg, __bias_activation_impl, act, y, bias)
     ∇__fused_conv_bias_activation_impl_cached = @closure Δ -> begin
         old_threads = __maybe_reduce_BLAS_threads(weight)
         Δ = NNlib.colmajor(Δ)
         _, _, ∂y, ∂b = pb_f(Δ)
         ∂w, ∂x, _ = __conv_bias_partials(∂y, ∂b, weight, x, bias, cdims)
         __reset_BLAS_threads(old_threads)
-        return NoTangent(), NoTangent(), ∂w, ∂x, ∂b, NoTangent()
+        return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent()
     end
 
     return z, ∇__fused_conv_bias_activation_impl_cached

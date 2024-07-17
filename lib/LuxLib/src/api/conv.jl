@@ -1,11 +1,12 @@
 # The cases here are manually split up else Zygote becomes type unstable.
 """
     fused_conv_bias_activation(σ::F, weight::AbstractArray, x::AbstractArray,
-        b::Optional{<:AbstractArray}, cdims::ConvDims) where {F}
+        b::Optional{<:AbstractVector}, cdims::ConvDims) where {F}
 
-Computes `σ.(conv(x, weight, cdims) .+ b)` with the best possible implementation available.
-This operation fuses operations into a single kernel if possible, and minimizes
-reallocations by reusing the output buffer for multiple operations.
+Computes `σ.(conv(x, weight, cdims) .+ b)` (`b` is not exactly broadcasted like this,
+rather it is reshaped and broadcasted to the penultimate dimension) with the best possible
+implementation available. This operation fuses operations into a single kernel if possible,
+and minimizes reallocations by reusing the output buffer for multiple operations.
 
 ## Arguments
 
@@ -29,7 +30,15 @@ reallocations by reusing the output buffer for multiple operations.
 """
 function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        b::Optional{<:AbstractArray{<:Number, N}}, cdims::ConvDims) where {F, N}
+        b::AbstractArray{<:Number, N}, cdims::ConvDims) where {F, N}
+    Base.depwarn("Passing `bias` as a N-D array is deprecated, pass it as a Vector instead",
+        :fused_conv_bias_activation)
+    return fused_conv_bias_activation(σ, weight, x, vec(b), cdims)
+end
+
+function fused_conv_bias_activation(
+        σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+        b::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
     return fused_conv_bias_activation(
         σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b, cdims)
 end
@@ -39,7 +48,7 @@ for (check, fop) in (
     @eval function fused_conv_bias_activation(
             σ::F, ::Val{$(check)}, weight::AbstractArray{<:Number, N},
             x::AbstractArray{<:Number, N},
-            b::Optional{<:AbstractArray}, cdims::ConvDims) where {F, N}
+            b::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
         return $(fop)(σ, weight, x, b, cdims)
     end
 end

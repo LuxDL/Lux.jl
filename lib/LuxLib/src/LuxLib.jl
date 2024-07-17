@@ -1,6 +1,6 @@
 module LuxLib
 
-using ArrayInterface: ArrayInterface, fast_scalar_indexing
+using ArrayInterface: ArrayInterface, fast_scalar_indexing, can_setindex
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
@@ -28,7 +28,6 @@ include("utils.jl")
 include("api/activation.jl")
 include("api/bias_activation.jl")
 include("api/batchnorm.jl")
-include("api/broadcast.jl")
 include("api/dropout.jl")
 include("api/groupnorm.jl")
 include("api/instancenorm.jl")
@@ -39,7 +38,6 @@ include("api/conv.jl")
 # Low-Level Implementations
 include("impl/activation.jl")
 include("impl/bias_activation.jl")
-include("impl/broadcast.jl")
 include("impl/dropout.jl")
 include("impl/fused_dense.jl")
 include("impl/fused_conv.jl")
@@ -51,5 +49,6 @@ include("deprecations.jl")
 export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
 export fast_activation!!
+export bias_activation, bias_activation!!
 
 end

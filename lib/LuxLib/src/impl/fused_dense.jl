@@ -9,7 +9,7 @@ __matmuladd(A, B, ::Nothing) = __matmul(A, B)
 function __generic_dense_bias_activation(act::F, weight::AbstractMatrix, x::AbstractMatrix,
         bias::Optional{<:AbstractVector}) where {F}
     act === identity && return __matmuladd(weight, x, bias)
-    return __apply_bias_activation(act, __matmul(weight, x), bias)
+    return __generic_bias_activation(act, __matmul(weight, x), bias)
 end
 
 # Why are we catching the implementation at this point and not in `bias_act!` like NNlib?
@@ -26,49 +26,46 @@ end
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     __matmul!(y, weight, x)
-    return __apply_bias_activation!!(act, y, b, Val(false))
+    return __bias_activation_impl!!(act, y, b)
 end
 
-function CRC.rrule(
+@stable default_mode="warn" function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_dense_bias_activation_impl),
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
     T = __get_concrete_fba_output_eltype(act, weight, x, b)
+    proj_w = CRC.ProjectTo(weight)
+    proj_x = CRC.ProjectTo(x)
+    proj_b = CRC.ProjectTo(b)
 
-    # Case I: Activation Function doesn't require caching the intermediate value
-    # See https://github.com/FluxML/NNlib.jl/blob/d85402aa39ddc6386d194e0dad88ab2e514ec5ea/src/bias_act.jl#L59-L60
-    if act === identity ||
-       isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
+    if __no_intermediate_needed(act, T)
         y = __fused_dense_bias_activation_impl(act, weight, x, b)
         ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
-            ∂y = act === identity ? CRC.unthunk(Δ) :
-                 __activation_gradient(CRC.unthunk(Δ), y, act, NotaNumber())
+            ∂y = __activation_gradient(CRC.unthunk(Δ), y, act, NotaNumber())
             ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-            return NoTangent(), NoTangent(), ∂w, ∂x, ∂b
+            return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
         end
         return y, ∇__fused_dense_bias_activation_impl_no_cached
     end
 
-    # Case II: We can't overwrite `y` directly, but we can use the direct ChainRules
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
+    if __needs_intermediate_but_has_rrule(act, T)
         y = __matmuladd(weight, x, b)
         z = _fast_activation(act, y)
         ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
             ∂y = __activation_gradient(CRC.unthunk(Δ), z, act, y)
             ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-            return NoTangent(), NoTangent(), ∂w, ∂x, ∂b
+            return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
         end
         return z, ∇__fused_dense_bias_activation_impl_cached_crc
     end
 
-    # Case III: Activation Function requires caching the intermediate value
     y = similar(weight, T, size(weight, 1), size(x, 2))
     __matmul!(y, weight, x)
-    z, pb_f = CRC.rrule_via_ad(cfg, __apply_bias_activation, act, y, b)
+    z, pb_f = CRC.rrule_via_ad(cfg, __bias_activation_impl, act, y, b)
     ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
         _, _, ∂y, ∂b = pb_f(Δ)
         ∂w, ∂x, _ = __matmul_bias_partials(∂y, ∂b, weight, x, b)
-        return NoTangent(), NoTangent(), ∂w, ∂x, ∂b
+        return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
     end
     return z, ∇__fused_dense_bias_activation_impl_cached
 end

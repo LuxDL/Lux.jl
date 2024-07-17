@@ -1,4 +1,5 @@
 # Used inside rrules
+__activation_gradient(Δ, out, ::typeof(identity), x) = Δ
 function __activation_gradient(Δ, out, act::F, x) where {F}
     if unrolled_all(fast_scalar_indexing, (Δ, out, x))  # All sizes are same
         y = similar(out)
@@ -55,12 +56,11 @@ end
 @stable default_mode="warn" function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!),
         σ::F, x::AbstractArray{T}) where {F, T}
-    ArrayInterface.can_setindex(typeof(x)) ||
-        return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
+    can_setindex(typeof(x)) || return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
 
     σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
 
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, NotaNumber}))
+    if __no_intermediate_needed(σ, T)
         _fast_activation!(σ, x) # Safe to overwrite x
         proj_x_no_cached = CRC.ProjectTo(x)
         ∇__fast_activation_impl_no_cached = @closure Δ -> begin
@@ -70,7 +70,7 @@ end
         return x, ∇__fast_activation_impl_no_cached
     end
 
-    if isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
+    if __needs_intermediate_but_has_rrule(σ, T)
         y = _fast_activation(σ, x)
         proj_x_cached = CRC.ProjectTo(x)
         ∇__fast_activation_impl_cached_crc = @closure Δ -> begin

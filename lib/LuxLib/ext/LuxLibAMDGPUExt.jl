@@ -2,7 +2,7 @@ module LuxLibAMDGPUExt
 
 using LuxLib: LuxLib
 using NNlib: NNlib
-using AMDGPU: AMDGPU, ROCArray
+using AMDGPU: AMDGPU, ROCArray, ROCVector
 
 const MIOPENFloat = Union{Float16, Float32}
 
@@ -24,7 +24,7 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
     for bT in (Float32, Float64)
         @eval begin
             function LuxLib.$fname(σ::F, weight::ROCArray{$(wT), N}, x::ROCArray{$(xT), N},
-                    b::ROCArray{$(bT), N}, cdims::NNlib.ConvDims) where {F, N}
+                    b::ROCVector{$(bT), N}, cdims::NNlib.ConvDims) where {F, N}
                 @warn "MIOpen doesn't support Float64 convolutions, type-casting \
                        everything to Float32 to avoid runtime errors" maxlog=1
                 return LuxLib._ofeltype_array(Float64,

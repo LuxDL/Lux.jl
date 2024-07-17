@@ -29,3 +29,7 @@
 @deprecate dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
     p::T, training::Val, um::Val; dims, invp::T=inv(p)) where {T, T1, T2, N} dropout(
     rng, x, mask, p, training, um, invp, dims)
+
+# bias activation. While this is not public, we used it in Lux
+@deprecate __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} __bias_activation_impl(
+    σ, x, bias) false

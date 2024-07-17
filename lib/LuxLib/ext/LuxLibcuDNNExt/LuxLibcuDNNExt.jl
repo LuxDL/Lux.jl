@@ -40,12 +40,15 @@ function CRC.rrule(::typeof(LuxLib.batchnorm_cudnn), running_mean, running_var, 
     !training && @warn "`training=Val(false)` but gradient was called." maxlog=1
     y, xmean, xivar = LuxLib.batchnorm_cudnn(
         running_mean, running_var, scale, bias, x, momentum, epsilon, t)
+    proj_g = CRC.ProjectTo(scale)
+    proj_b = CRC.ProjectTo(bias)
+    proj_x = CRC.ProjectTo(x)
     ∇batchnorm_cudnn_internal = @closure Δ -> begin
         ∂y = CRC.unthunk(first(Δ))
         ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
             scale, bias, x, ∂y, running_mean, running_var, xmean, xivar; ϵ=epsilon)
-        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), ∂g, ∂b,
-            ∂x, CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
+        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), proj_g(∂g),
+            proj_b(∂b), proj_x(∂x), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
     end
     return (y, xmean, xivar), ∇batchnorm_cudnn_internal
 end

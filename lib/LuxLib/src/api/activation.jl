@@ -20,7 +20,7 @@ generic implementation.
   - Output Array with the same size as `x`
 """
 function fast_activation!!(σ::F, x::AbstractArray) where {F}
-    return _fast_activation!!(Val(ArrayInterface.can_setindex(typeof(x))), σ, x)
+    return _fast_activation!!(__is_immutable_array_or_dual_val((x,)), σ, x)
 end
 
 function _fast_activation!!(::Val{true}, σ::F, x::AbstractArray) where {F}

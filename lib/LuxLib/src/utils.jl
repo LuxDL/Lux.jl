@@ -2,7 +2,14 @@ const Optional{T} = Union{Nothing, T}
 
 # Bias Gradient -- can't be used inside gradient rules
 __added_bias_gradient(::Nothing, Δ::AbstractArray) = NoTangent()
-__added_bias_gradient(b::AbstractArray, Δ::AbstractArray) = __reduce_sum(b, Δ)
+function __added_bias_gradient(
+        b::AbstractArray{<:Number, N}, Δ::AbstractArray{<:Number, N}) where {N}
+    return __reduce_sum(b, Δ)
+end
+function __added_bias_gradient(b::AbstractVector, Δ::AbstractArray)
+    b_ = __resize_bias_into_xdims(Δ, b)
+    return vec(__reduce_sum(b_, Δ))
+end
 
 # Operations that most AD won't be able to differentiate
 function __reduce_sum(x::AbstractArray, y::AbstractArray)
@@ -78,7 +85,7 @@ CRC.@non_differentiable __reset_BLAS_threads(::Int)
 EnzymeRules.inactive_noinl(::typeof(__reset_BLAS_threads), ::Int) = nothing
 
 ## Check no setindexing
-__is_immutable_array(x::AbstractArray) = !ArrayInterface.can_setindex(x)
+__is_immutable_array(x::AbstractArray) = !can_setindex(x)
 __is_immutable_array(::Nothing) = false
 __is_immutable_array_val(x) = Val(__is_immutable_array(x))
 
@@ -98,15 +105,20 @@ CRC.@non_differentiable __is_immutable_array_or_dual_val(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_or_dual_val), ::Any...) = nothing
 
 function __get_concrete_fba_output_eltype(act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
-        b::Optional{<:AbstractArray}) where {F, Tw, Tx}
+        b::Optional{<:AbstractVector}) where {F, Tw, Tx}
     if b === nothing
         Ty = promote_type(Tw, Tx)
         Tact = Core.Compiler._return_type(act, Tuple{Ty})
-        return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
+        return ifelse(isconcretetype(Tact), Tact, Ty)
     end
     Ty = promote_type(Tw, Tx, eltype(b))
     Tact = Core.Compiler._return_type(act, Tuple{Ty})
-    return isconcretetype(Tact) ? promote_type(Ty, Tact) : Ty
+    return ifelse(isconcretetype(Tact), Tact, Ty)
+end
+
+function __get_concrete_fba_output_eltype(
+        act::F, x::AbstractArray, b::Optional{<:AbstractVector}) where {F}
+    return __get_concrete_fba_output_eltype(act, x, x, b)
 end
 
 CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
@@ -135,3 +147,15 @@ only_derivative(y, f::F, x) where {F} = only(only(CRC.derivatives_given_output(y
 # This has no methods, used for testing whether `derivatives_given_output(Ω, f, x)`
 # is independent of `x`, as `_return_type` says `Union{}` when calling is an error.
 struct NotaNumber <: Real end
+
+# How to take activation gradients?
+# See https://github.com/FluxML/NNlib.jl/blob/d85402aa39ddc6386d194e0dad88ab2e514ec5ea/src/bias_act.jl#L59-L60
+function __no_intermediate_needed(f::F, ::Type{T}) where {F, T}
+    f === identity && return true
+    return isconcretetype(Core.Compiler._return_type(
+        only_derivative, Tuple{T, F, NotaNumber}))
+end
+
+function __needs_intermediate_but_has_rrule(f::F, ::Type{T}) where {F, T}
+    return isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
+end
