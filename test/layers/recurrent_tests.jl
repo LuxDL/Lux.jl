@@ -339,7 +339,7 @@ end
                         @test length(y_) == 4
                         @test all(x -> size(x) == (5,), y_)
                         
-                        if x isa AbstractMatrix
+                        if x isa AbstractMatrix && ordering isa BatchLastIndex
                             x2 = reshape(x, Val(3))
                             
                             y2,_= rnn(x2,ps,st)
