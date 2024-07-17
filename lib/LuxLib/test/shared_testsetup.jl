@@ -2,7 +2,7 @@
 import Reexport: @reexport
 
 using LuxLib, LuxDeviceUtils, DispatchDoctor
-@reexport using LuxTestUtils, StableRNGs, Test, Zygote
+@reexport using LuxTestUtils, StableRNGs, Test, Zygote, Enzyme
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
 LuxTestUtils.jet_target_modules!(["LuxLib"])

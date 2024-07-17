@@ -19,11 +19,26 @@
             @test size(mask_) == x_shape
             @test rng != rng_
 
-            __f = x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
+            __f = let rng = rng, T = T
+                x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
+            end
 
             allow_unstable() do
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
+            end
+
+            __f = @eval x -> sum(first(dropout(
+                $rng, x, $T(0.5), Val(true), $T(2), Colon())))
+            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
+
+            if !on_gpu
+                ∂x_zyg = only(Zygote.gradient(__f, x))
+                ∂x_enz = zero.(x)
+                Enzyme.autodiff(
+                    Reverse, sum ∘ first ∘ dropout, Const(rng), Duplicated(x, ∂x_enz),
+                    Const(T(0.5)), Const(Val(true)), Const(T(2)), Const(Colon()))
+                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
             end
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
@@ -40,6 +55,8 @@
 end
 
 @testitem "Dropout with Preset Mask" tags=[:common_ops] setup=[SharedTestSetup] begin
+    Enzyme.API.runtimeActivity!(true)  # TODO: remove in 1.0 after deprecation
+
     using Statistics
 
     rng = StableRNG(12345)
@@ -64,12 +81,33 @@ end
             @test rng != rng_
             @test mask != mask_
 
-            __f = x -> sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
+            __f = let rng = rng, mask = mask
+                x -> sum(first(dropout(
+                    rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
+            end
+
             allow_unstable() do
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
+
+            __f = @eval x -> sum(first(dropout(
+                $rng, x, $mask, $T(0.5), Val(true), Val(true), $T(2), Colon())))
+            @test begin
+                res = @inferred Zygote.gradient(__f, x)
+                only(res) isa AbstractArray
+            end
+
+            if !on_gpu
+                ∂x_zyg = only(Zygote.gradient(__f, x))
+                ∂x_enz = zero.(x)
+                Enzyme.autodiff(
+                    Reverse, sum ∘ first ∘ dropout, Const(rng), Duplicated(x, ∂x_enz),
+                    Const(mask), Const(T(0.5)), Const(Val(true)),
+                    Const(Val(true)), Const(T(2)), Const(Colon()))
+                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
+            end
+
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
 
@@ -86,12 +124,27 @@ end
             @test rng == rng_
             @test mask == mask_
 
-            __f = x -> sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
+            __f = let rng = rng, mask = mask
+                x -> sum(first(dropout(
+                    rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
+            end
+
             allow_unstable() do
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
+
+            __f = @eval x -> sum(first(dropout(
+                $rng, x, $mask, $T(0.5), Val(true), Val(false), $T(2), Colon())))
+            # Branching based on runtime activity
+            @test_broken size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
+
+            if !on_gpu
+                ∂x_zyg = only(Zygote.gradient(__f, x))
+                ∂x_enz = Enzyme.gradient(Reverse, __f, x)
+                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
+            end
+
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
@@ -109,12 +162,31 @@ end
             @test rng != rng_
             @test mask != mask_
 
-            __f = x -> sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
+            __f = let rng = rng, mask = mask
+                x -> sum(first(dropout(
+                    rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
+            end
+
             allow_unstable() do
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
+
+            __f = @eval x -> sum(first(dropout(
+                $rng, x, $mask, $T(0.5), Val(true), Val(false), $T(2), Colon())))
+            # Branching based on runtime activity
+            @test_broken size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
+
+            if !on_gpu
+                ∂x_zyg = only(Zygote.gradient(__f, x))
+                ∂x_enz = zero.(x)
+                Enzyme.autodiff(
+                    Reverse, sum ∘ first ∘ dropout, Const(rng), Duplicated(x, ∂x_enz),
+                    Const(mask), Const(T(0.5)), Const(Val(true)),
+                    Const(Val(false)), Const(T(2)), Const(Colon()))
+                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
+            end
+
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             # Testing Mode
@@ -153,11 +225,26 @@ end
 
             @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
 
-            __f = x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
+            __f = let rng = rng
+                x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
+            end
+
             allow_unstable() do
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
+
+            __f = @eval x -> sum(first(alpha_dropout($rng, x, $T(0.5), Val(true))))
+            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
+
+            if !on_gpu
+                ∂x_zyg = only(Zygote.gradient(__f, x))
+                ∂x_enz = zero.(x)
+                Enzyme.autodiff(Reverse, sum ∘ first ∘ alpha_dropout, Const(rng),
+                    Duplicated(x, ∂x_enz), Const(T(0.5)), Const(Val(true)))
+                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
+            end
+
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
 
             @inferred alpha_dropout(rng, x, T(0.5), Val(false))

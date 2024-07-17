@@ -43,7 +43,8 @@ CUDA = "5.3.2"
 ChainRulesCore = "1.23"
 ComponentArrays = "0.15.8"
 DispatchDoctor = "0.4.9"
-EnzymeCore = "0.7"
+Enzyme = "0.12.20"
+EnzymeCore = "0.7.7"
 ExplicitImports = "1.9.0"
 FastClosures = "0.3.2"
 ForwardDiff = "0.10.36"
@@ -71,6 +72,7 @@ julia = "1.10"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
@@ -84,4 +86,4 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Aqua", "ComponentArrays", "ExplicitImports", "LuxTestUtils", "Pkg", "Preferences", "ReTestItems", "ReverseDiff", "StableRNGs", "Test", "Tracker", "Zygote"]
+test = ["Aqua", "ComponentArrays", "Enzyme", "ExplicitImports", "LuxTestUtils", "Pkg", "Preferences", "ReTestItems", "ReverseDiff", "StableRNGs", "Test", "Tracker", "Zygote"]
