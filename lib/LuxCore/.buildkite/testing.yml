@@ -7,6 +7,9 @@ steps:
               version: "1"
           - JuliaCI/julia-coverage#v1:
               codecov: true
+              dirs:
+                - src
+                - ext
         command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "CUDA"
         agents:
           queue: "juliagpu"
@@ -26,6 +29,9 @@ steps:
               version: "1"
           - JuliaCI/julia-coverage#v1:
               codecov: true
+              dirs:
+                - src
+                - ext
         command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "AMDGPU"
         agents:
           queue: "juliagpu"
