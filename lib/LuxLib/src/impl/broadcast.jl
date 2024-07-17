@@ -1,21 +1,3 @@
-function __activation_gradient(Δ, out, act::F, x) where {F}
-    if unrolled_all(fast_scalar_indexing, (Δ, out, x))  # All sizes are same
-        y = similar(out)
-        if x isa NotaNumber
-            @simd ivdep for i in eachindex(Δ, out)
-                @inbounds y[i] = only_derivative(out[i], act, x) * Δ[i]
-            end
-        else
-            @simd ivdep for i in eachindex(Δ, out, x)
-                @inbounds y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
-            end
-        end
-        return y
-    end
-    only_deriv = @closure (Δᵢ, oᵢ, xᵢ) -> Δᵢ * only_derivative(oᵢ, act, xᵢ)
-    return broadcast(only_deriv, Δ, out, x)
-end
-
 # Entry Points to the implementation
 @stable default_mode="warn" function _fast_broadcast(
         f::F, x::AbstractArray, args...) where {F}

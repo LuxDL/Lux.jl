@@ -25,6 +25,7 @@ const CRC = ChainRulesCore
 include("utils.jl")
 
 # User Facing
+include("api/activation.jl")
 include("api/bias_activation.jl")
 include("api/batchnorm.jl")
 include("api/broadcast.jl")
@@ -36,6 +37,7 @@ include("api/dense.jl")
 include("api/conv.jl")
 
 # Low-Level Implementations
+include("impl/activation.jl")
 include("impl/bias_activation.jl")
 include("impl/broadcast.jl")
 include("impl/dropout.jl")

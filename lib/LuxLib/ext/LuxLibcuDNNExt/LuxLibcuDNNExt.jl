@@ -25,7 +25,7 @@ function LuxLib.batchnorm(x::CUDNN_BN_ARRAY_TYPE, scale::BNParamType, bias::BNPa
         σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F}
     rm, rv = LuxLib._get_batchnorm_statistics(x, running_mean, running_var, training)
     x_ = LuxLib.batchnorm_cudnn(rm, rv, scale, bias, x, momentum, epsilon, training)[1]
-    return LuxLib.fast_broadcast!!(σ, x_), (; running_mean=rm, running_var=rv)
+    return LuxLib.fast_activation!!(σ, x_), (; running_mean=rm, running_var=rv)
 end
 
 function LuxLib.batchnorm_cudnn(
