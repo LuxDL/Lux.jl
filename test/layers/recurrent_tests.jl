@@ -323,7 +323,6 @@ end
                         @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
                     end
 
-
                     # Batched Time Series without data batches
                     @testset "typeof(x): $(typeof(x))" for x in (
                         randn(rng, Float32, 3, 4) |> aType,
@@ -362,15 +361,6 @@ end
         res, _ = encoder(m2, ps, st)
 
         @test Array(vec(reduce(vcat, res))) ≈ [0.5, 0.5, 1.2, 2.0]
-    end
-end
-
-@testitem "RNN Error Checks" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
-
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        x = randn(rng, 2, 3) |> aType
-        @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
     end
 end
 
