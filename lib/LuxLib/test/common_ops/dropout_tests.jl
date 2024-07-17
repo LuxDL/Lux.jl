@@ -93,10 +93,7 @@ end
 
             __f = @eval x -> sum(first(dropout(
                 $rng, x, $mask, $T(0.5), Val(true), Val(true), $T(2), Colon())))
-            @test begin
-                res = @inferred Zygote.gradient(__f, x)
-                only(res) isa AbstractArray
-            end
+            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu
                 ∂x_zyg = only(Zygote.gradient(__f, x))
@@ -136,7 +133,7 @@ end
 
             __f = @eval x -> sum(first(dropout(
                 $rng, x, $mask, $T(0.5), Val(true), Val(false), $T(2), Colon())))
-            # Branching based on runtime activity
+            # Branching based on runtime values
             @test_broken size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu

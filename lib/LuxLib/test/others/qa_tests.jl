@@ -8,7 +8,7 @@
 end
 
 @testitem "Explicit Imports" tags=[:others] begin
-    import ForwardDiff, ReverseDiff, Tracker, NNlib
+    import ReverseDiff, Tracker, NNlib
     using ExplicitImports
 
     @test check_no_implicit_imports(LuxLib) === nothing

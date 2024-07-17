@@ -21,22 +21,18 @@ end
 
 function LuxLib.batchnorm_cudnn(
         g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
-        args...; kwargs...) where {T <: Union{Float32, Float64}}
+        args...; kwargs...) where {T <: CUDNNFloat}
     x = reshape(x, 1, 1, size(x, 1), size(x, 2))
     y, xμ, xσ⁻² = LuxLib.batchnorm_cudnn(g, b, x, args...; kwargs...)
     return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
 end
 
-function LuxLib.batchnorm_cudnn(g::DenseCuArray{<:Union{Float32, Float64}},
-        b::DenseCuArray{<:Union{Float32, Float64}},
-        x::Union{DenseCuArray{<:Union{Float32, Float64}, 4},
-            DenseCuArray{<:Union{Float32, Float64}, 5}},
-        running_μ,
-        running_σ²,
-        args...;
-        kwargs...)
-    @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the
-        highest precision type. Avoid this code-path if possible." maxlog=1
+function LuxLib.batchnorm_cudnn(
+        g::DenseCuArray{<:CUDNNFloat}, b::DenseCuArray{<:CUDNNFloat},
+        x::Union{DenseCuArray{<:CUDNNFloat, 4}, DenseCuArray{<:CUDNNFloat, 5}},
+        running_μ, running_σ², args...; kwargs...)
+    @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the \
+           highest precision type. Avoid this code-path if possible." maxlog=1
     Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
     Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
     T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ)
@@ -56,18 +52,14 @@ end
 
 function LuxLib.batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
         x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, running_μ,
-        running_σ², args...; kwargs...) where {T <: Union{Float32, Float64}}
+        running_σ², args...; kwargs...) where {T <: CUDNNFloat}
     return batchnorm_cudnn!(similar(x), g, b, x, running_μ, running_σ², args...; kwargs...)
 end
 
 function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArray{T},
         x::DenseCuArray{T}, running_μ, running_σ², momentum, ::Val{training};
-        α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: Union{Float32, Float64}, training}
+        α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: CUDNNFloat, training}
     dims = _wsize(x)
-    if ϵ < CUDNN_BN_MIN_EPSILON
-        @warn "eps $eps is too small for CuDNN, setting to CUDNN_BN_MIN_EPSILON=$CUDNN_BN_MIN_EPSILON"
-        ϵ = CUDNN_BN_MIN_EPSILON
-    end
 
     if running_μ === nothing || running_σ² === nothing
         running_μ !== running_σ² &&
@@ -119,21 +111,20 @@ end
 
 function LuxLib.∇batchnorm_cudnn(
         g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
-        ∂y::DenseCuArray{T, 2}, running_μ, running_σ², args...;
-        kwargs...) where {T <: Union{Float32, Float64}}
+        ∂y::DenseCuArray{T, 2}, running_μ, running_σ²,
+        args...; kwargs...) where {T <: CUDNNFloat}
     ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(g, b, reshape(x, 1, 1, size(x, 1), size(x, 2)),
         reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)),
         running_μ, running_σ², args...; kwargs...)
     return ∂g, ∂b, dropdims(∂x; dims=(1, 2))
 end
 
-function LuxLib.∇batchnorm_cudnn(g::DenseCuArray{<:Union{Float32, Float64}},
-        b::DenseCuArray{<:Union{Float32, Float64}},
-        x::DenseCuArray{<:Union{Float32, Float64}},
-        ∂y::DenseCuArray{<:Union{Float32, Float64}},
+function LuxLib.∇batchnorm_cudnn(
+        g::DenseCuArray{<:CUDNNFloat}, b::DenseCuArray{<:CUDNNFloat},
+        x::DenseCuArray{<:CUDNNFloat}, ∂y::DenseCuArray{<:CUDNNFloat},
         running_μ, running_σ², args...; kwargs...)
-    @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the
-        highest precision type. Avoid this code-path if possible." maxlog=1
+    @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the \
+           highest precision type. Avoid this code-path if possible."
     Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
     Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
     T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ, eltype(∂y))
@@ -154,7 +145,7 @@ end
 
 function LuxLib.∇batchnorm_cudnn(
         g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T}, ∂y::DenseCuArray{T},
-        running_μ, running_σ², args...; kwargs...) where {T <: Union{Float32, Float64}}
+        running_μ, running_σ², args...; kwargs...) where {T <: CUDNNFloat}
     ∂g = similar(g)
     ∂b = similar(b)
     ∂x = similar(x)
@@ -164,8 +155,8 @@ end
 
 function cudnnBNBackward!(
         ∂g::DenseCuArray{T}, g::DenseCuArray{T}, ∂b::DenseCuArray{T}, ∂x::DenseCuArray{T},
-        x::DenseCuArray{T}, ∂y::DenseCuArray{T}, running_μ, running_σ², xmean, xivar;
-        α=T(1), β=T(0), ϵ=T(1e-5), ∂α=T(1), ∂β=T(0)) where {T <: Union{Float32, Float64}}
+        x::DenseCuArray{T}, ∂y::DenseCuArray{T}, running_μ, running_σ², xmean,
+        xivar; α=T(1), β=T(0), ϵ=T(1e-5), ∂α=T(1), ∂β=T(0)) where {T <: CUDNNFloat}
     if running_μ === nothing && running_σ² === nothing
         running_μ = CU_NULL
         running_σ² = CU_NULL
@@ -179,11 +170,6 @@ function cudnnBNBackward!(
 
     xmean = xmean === nothing ? CU_NULL : xmean
     xivar = xivar === nothing ? CU_NULL : xivar
-
-    if ϵ < CUDNN_BN_MIN_EPSILON
-        @warn lazy"eps $eps is too small for CuDNN, setting to CUDNN_BN_MIN_EPSILON=$CUDNN_BN_MIN_EPSILON"
-        ϵ = CUDNN_BN_MIN_EPSILON
-    end
 
     return cudnnBatchNormalizationBackward(cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
         cuDNN.scalingParameter(T, α), cuDNN.scalingParameter(T, β),

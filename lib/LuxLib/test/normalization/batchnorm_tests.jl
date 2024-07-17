@@ -50,5 +50,26 @@
                 end
             end
         end
+
+        @testset "mixed precision" begin
+            # Needed specifically for cudnn batchnorm
+            x = rand(Float64, 4, 4, 6, 2) |> aType
+            scale = rand(Float32, 6) |> aType
+            bias = rand(Float32, 6) |> aType
+            running_mean = rand(Float32, 6) |> aType
+            running_var = rand(Float32, 6) |> aType
+
+            y, nt = batchnorm(x, scale, bias, running_mean, running_var,
+                Val(true), identity, 0.9f0, 1.0f-5)
+            @test y isa aType{Float64, 4}
+            @test nt.running_mean isa aType && length(nt.running_mean) == 6
+            @test nt.running_var isa aType && length(nt.running_var) == 6
+
+            __f = (args...) -> sum(first(batchnorm(
+                x, args..., running_mean, running_var, Val(true), identity, 0.9f0, 1.0f-5)))
+            allow_unstable() do
+                @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=true atol=1.0f-2 rtol=1.0f-2
+            end
+        end
     end
 end
