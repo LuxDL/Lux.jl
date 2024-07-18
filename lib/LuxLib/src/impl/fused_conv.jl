@@ -91,16 +91,20 @@ function __conv_bias_act_impl(
 end
 
 # Our main implementations
-function _generic_conv_bias_activation(act::F, weight::AbstractArray, args...) where {F}
+function _generic_conv_bias_activation(
+        act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
     old_threads = __maybe_reduce_BLAS_threads(weight)
-    ret = __generic_conv_bias_activation(act, weight, args...)
+    ret = __generic_conv_bias_activation(
+        get_device_type((weight, x)), act, weight, x, bias, cdims)
     __reset_BLAS_threads(old_threads)
     return ret
 end
 
 function __generic_conv_bias_activation(
-        act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+        ::Type{T}, act::F, weight::AbstractArray{<:Number, N},
+        x::AbstractArray{<:Number, N}, bias::Optional{<:AbstractVector},
+        cdims::ConvDims) where {T, F, N}
     return __generic_bias_activation(act, __conv(x, weight, cdims), bias)
 end
 
@@ -108,23 +112,26 @@ end
 # and fuses operations into a single kernel if it is possible. Unfortunately there are
 # certain configurations where CUDNN allows caching intermediates, but we don't do that rn.
 
-function _fused_conv_bias_activation_impl(act::F, weight::AbstractArray, args...) where {F}
+function _fused_conv_bias_activation_impl(
+        act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
     old_threads = __maybe_reduce_BLAS_threads(weight)
-    ret = __fused_conv_bias_activation_impl(act, weight, args...)
+    ret = __fused_conv_bias_activation_impl(
+        get_device_type((weight, x)), act, weight, x, bias, cdims)
     __reset_BLAS_threads(old_threads)
     return ret
 end
 
 @stable default_mode="warn" function __fused_conv_bias_activation_impl(
-        act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {wT, xT, N, F}
+        ::Type{T}, act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {T, wT, xT, N, F}
     return __conv_bias_act(x, weight, cdims, bias, act)
 end
 
 @stable default_mode="warn" function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_conv_bias_activation_impl),
-        act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {wT, xT, N, F}
+        ::Type{DT}, act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {DT, wT, xT, N, F}
     T = __get_concrete_fba_output_eltype(act, weight, x, bias)
     proj_w = CRC.ProjectTo(weight)
     proj_x = CRC.ProjectTo(x)
@@ -138,7 +145,8 @@ end
             ∂y = act === identity ? Δ : __activation_gradient(Δ, y, act, NotaNumber())
             ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
-            return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent()
+            return (NoTangent(), NoTangent(), NoTangent(),
+                proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent())
         end
         return y, ∇__fused_conv_bias_activation_impl_no_cached
     end
@@ -155,7 +163,8 @@ end
             ∂y = __activation_gradient(Δ, z, act, y)
             ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
-            return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent()
+            return (NoTangent(), NoTangent(), NoTangent(),
+                proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent())
         end
         return z, ∇__fused_conv_bias_activation_impl_cached_crc
     end
@@ -167,7 +176,8 @@ end
         _, _, ∂y, ∂b = pb_f(Δ)
         ∂w, ∂x, _ = __conv_bias_partials(∂y, ∂b, weight, x, bias, cdims)
         __reset_BLAS_threads(old_threads)
-        return NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent()
+        return (NoTangent(), NoTangent(), NoTangent(),
+            proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent())
     end
 
     return z, ∇__fused_conv_bias_activation_impl_cached
@@ -180,4 +190,33 @@ function __conv_bias_partials(∂y, ∂b, weight, x, bias, cdims)
     ∂x = __∇conv_data(∂y, weight, cdims)
     ∂w = __∇conv_filter(x, ∂y, cdims)
     return ∂w, ∂x, ∂b
+end
+
+# Special handling for AMDGPU: AMDGPU doesn't support Float64 convolutions, so we need to
+# type-cast everything
+for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
+    fname in (:__fused_conv_bias_activation_impl, :__generic_conv_bias_activation)
+
+    for bT in (Float32, Float64)
+        @eval begin
+            function LuxLib.$fname(D::Type{<:LuxAMDGPUDevice}, act::F,
+                    weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
+                    bias::Optional{<:AbstractVector{$(bT)}}, cdims::ConvDims) where {F, N}
+                @warn "MIOpen doesn't support Float64 convolutions, type-casting \
+                       everything to Float32 to avoid runtime errors" maxlog=1
+                return LuxLib._ofeltype_array(Float64,
+                    LuxLib.$fname(D, act, LuxLib._ofeltype_array(Float32, weight),
+                        LuxLib._ofeltype_array(Float32, x),
+                        LuxLib._ofeltype_array(Float32, bias), cdims))
+            end
+        end
+    end
+
+    @eval function LuxLib.$fname(
+            D::Type{<:LuxAMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
+            x::AbstractArray{$(xT), N}, ::Nothing, cdims::ConvDims) where {F, N}
+        return LuxLib._ofeltype_array(Float64,
+            LuxLib.$fname(D, act, LuxLib._ofeltype_array(Float32, weight),
+                LuxLib._ofeltype_array(Float32, x), nothing, cdims))
+    end
 end

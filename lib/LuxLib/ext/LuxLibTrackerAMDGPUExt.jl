@@ -56,13 +56,4 @@ for poolname in (:maxpool, :meanpool)
     end
 end
 
-function LuxLib.__generic_conv_bias_activation(
-        act::F, weight::ROCTrackedArray{Float64, N}, x::ROCTrackedArray{Float64, N},
-        bias::Optional{<:ROCTrackedArray{Float64, 1}}, cdims::ConvDims) where {N, F}
-    return LuxLib._ofeltype_array(Float64,
-        LuxLib.__generic_conv_bias_activation(act, LuxLib._ofeltype_array(Float32, weight),
-            LuxLib._ofeltype_array(Float32, x),
-            LuxLib._ofeltype_array(Float32, bias), cdims))
-end
-
 end
