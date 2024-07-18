@@ -2,9 +2,7 @@ module LuxLibAMDGPUExt
 
 using LuxLib: LuxLib
 using NNlib: NNlib
-using AMDGPU: AMDGPU, ROCArray, ROCVector
-
-const MIOPENFloat = Union{Float16, Float32}
+using AMDGPU: AMDGPU, ROCArray
 
 # NNlib incorrectly defines some of the broadcasting rules. Probably this should be
 # upstreamed to NNlib
@@ -12,7 +10,7 @@ const MIOPENFloat = Union{Float16, Float32}
     # Just define for dims = 6 , 7, 8 and hope no one uses it beyond that
     for f in [NNlib.relu, NNlib.relu6, NNlib.softplus, NNlib.σ, Base.tanh], N in (6, 7, 8)
         @eval function Base.materialize(bc::Broadcast.Broadcasted{
-                <:Any, <:Any, typeof($f), <:Tuple{ROCArray{<:MIOPENFloat, $N}}})
+                <:Any, <:Any, typeof($f), <:Tuple{ROCArray{<:Union{Float16, Float32}, $N}}})
             return copy(bc)
         end
     end

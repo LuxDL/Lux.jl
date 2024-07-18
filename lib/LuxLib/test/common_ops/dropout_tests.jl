@@ -19,6 +19,9 @@
             @test size(mask_) == x_shape
             @test rng != rng_
 
+            __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, Colon())))
+            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
+
             __f = let rng = rng, T = T
                 x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
             end
@@ -27,10 +30,6 @@
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
-
-            __f = @eval x -> sum(first(dropout(
-                $rng, x, $T(0.5), Val(true), $T(2), Colon())))
-            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu
                 ∂x_zyg = only(Zygote.gradient(__f, x))
@@ -81,6 +80,10 @@ end
             @test rng != rng_
             @test mask != mask_
 
+            __f = (x, mask) -> sum(first(dropout(
+                StableRNG(0), x, mask, 0.5, Val(true), Val(true), 2.0, Colon())))
+            @test size(first(@inferred(Zygote.gradient(__f, x, mask)))) == size(x)
+
             __f = let rng = rng, mask = mask
                 x -> sum(first(dropout(
                     rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
@@ -90,10 +93,6 @@ end
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
-
-            __f = @eval x -> sum(first(dropout(
-                $rng, x, $mask, $T(0.5), Val(true), Val(true), $T(2), Colon())))
-            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu
                 ∂x_zyg = only(Zygote.gradient(__f, x))
@@ -121,6 +120,11 @@ end
             @test rng == rng_
             @test mask == mask_
 
+            __f = (x, mask) -> sum(first(dropout(
+                StableRNG(0), x, mask, 0.5, Val(true), Val(false), 2.0, Colon())))
+            # Branching based on runtime values
+            @test_broken size(first(@inferred(Zygote.gradient(__f, x, mask)))) == size(x)
+
             __f = let rng = rng, mask = mask
                 x -> sum(first(dropout(
                     rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -130,11 +134,6 @@ end
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
-
-            __f = @eval x -> sum(first(dropout(
-                $rng, x, $mask, $T(0.5), Val(true), Val(false), $T(2), Colon())))
-            # Branching based on runtime values
-            @test_broken size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu
                 ∂x_zyg = only(Zygote.gradient(__f, x))
@@ -159,6 +158,11 @@ end
             @test rng != rng_
             @test mask != mask_
 
+            __f = (x, mask) -> sum(first(dropout(
+                StableRNG(0), x, mask, 0.5, Val(true), Val(false), 2.0, Colon())))
+            # Branching based on runtime activity
+            @test_broken size(first(@inferred(Zygote.gradient(__f, x, mask)))) == size(x)
+
             __f = let rng = rng, mask = mask
                 x -> sum(first(dropout(
                     rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -168,11 +172,6 @@ end
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
-
-            __f = @eval x -> sum(first(dropout(
-                $rng, x, $mask, $T(0.5), Val(true), Val(false), $T(2), Colon())))
-            # Branching based on runtime activity
-            @test_broken size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu
                 ∂x_zyg = only(Zygote.gradient(__f, x))
@@ -222,6 +221,9 @@ end
 
             @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
 
+            __f = x -> sum(first(alpha_dropout(StableRNG(0), x, 0.5, Val(true))))
+            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
+
             __f = let rng = rng
                 x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             end
@@ -230,9 +232,6 @@ end
                 @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
                                                                                                                     Float16)
             end
-
-            __f = @eval x -> sum(first(alpha_dropout($rng, x, $T(0.5), Val(true))))
-            @test size(only(@inferred(Zygote.gradient(__f, x)))) == size(x)
 
             if !on_gpu
                 ∂x_zyg = only(Zygote.gradient(__f, x))

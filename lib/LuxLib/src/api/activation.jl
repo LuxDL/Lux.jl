@@ -24,7 +24,7 @@ function fast_activation!!(σ::F, x::AbstractArray) where {F}
 end
 
 function _fast_activation!!(::Val{true}, σ::F, x::AbstractArray) where {F}
-    return _fast_activation!(σ, x)
+    return _fast_activation(σ, x)
 end
 
-_fast_activation!!(::Val{false}, σ::F, x::AbstractArray) where {F} = _fast_activation(σ, x)
+_fast_activation!!(::Val{false}, σ::F, x::AbstractArray) where {F} = _fast_activation!(σ, x)

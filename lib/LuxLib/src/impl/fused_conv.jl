@@ -84,7 +84,7 @@ function __conv_bias_act_impl(
         ::Type{<:LuxCUDADevice}, x, weight, cdims, bias, act::F) where {F}
     bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
     if act === identity || act === relu
-        bias_ = __resize_bias_into_xdims(x, bias)
+        bias_ = __reshape_bias_into_xdims(x, bias)
         return NNlib.conv_bias_act(x, weight, cdims, bias_, act)
     end
     return __conv_bias_act_impl(Nothing, x, weight, cdims, bias, act)
@@ -128,7 +128,7 @@ end
     return __conv_bias_act(x, weight, cdims, bias, act)
 end
 
-@stable default_mode="warn" function CRC.rrule(
+function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_conv_bias_activation_impl),
         ::Type{DT}, act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
         bias::Optional{<:AbstractVector}, cdims::ConvDims) where {DT, wT, xT, N, F}
@@ -204,19 +204,30 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
                     bias::Optional{<:AbstractVector{$(bT)}}, cdims::ConvDims) where {F, N}
                 @warn "MIOpen doesn't support Float64 convolutions, type-casting \
                        everything to Float32 to avoid runtime errors" maxlog=1
-                return LuxLib._ofeltype_array(Float64,
-                    LuxLib.$fname(D, act, LuxLib._ofeltype_array(Float32, weight),
-                        LuxLib._ofeltype_array(Float32, x),
-                        LuxLib._ofeltype_array(Float32, bias), cdims))
+                return _ofeltype_array(Float64,
+                    LuxLib.$fname(D, act, _ofeltype_array(Float32, weight),
+                        _ofeltype_array(Float32, x),
+                        _ofeltype_array(Float32, bias), cdims))
             end
+
+            CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof($fname),
+                D::Type{<:LuxAMDGPUDevice}, act::F,
+                weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
+                bias::Optional{<:AbstractVector{$(bT)}}, cdims::ConvDims) where {F, N}
         end
     end
 
-    @eval function LuxLib.$fname(
+    @eval begin
+        function LuxLib.$fname(
+                D::Type{<:LuxAMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
+                x::AbstractArray{$(xT), N}, ::Nothing, cdims::ConvDims) where {F, N}
+            return _ofeltype_array(Float64,
+                LuxLib.$fname(D, act, _ofeltype_array(Float32, weight),
+                    _ofeltype_array(Float32, x), nothing, cdims))
+        end
+
+        CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof($fname),
             D::Type{<:LuxAMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
             x::AbstractArray{$(xT), N}, ::Nothing, cdims::ConvDims) where {F, N}
-        return LuxLib._ofeltype_array(Float64,
-            LuxLib.$fname(D, act, LuxLib._ofeltype_array(Float32, weight),
-                LuxLib._ofeltype_array(Float32, x), nothing, cdims))
     end
 end

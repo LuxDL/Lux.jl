@@ -29,7 +29,7 @@ end
     return __bias_activation_impl!!(act, y, b)
 end
 
-@stable default_mode="warn" function CRC.rrule(
+function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__fused_dense_bias_activation_impl),
         act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}

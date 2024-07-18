@@ -6,8 +6,8 @@ function __added_bias_gradient(
         b::AbstractArray{<:Number, N}, Δ::AbstractArray{<:Number, N}) where {N}
     return __reduce_sum(b, Δ)
 end
-function __added_bias_gradient(b::AbstractVector, Δ::AbstractArray)
-    b_ = __resize_bias_into_xdims(Δ, b)
+function __added_bias_gradient(b::AbstractVector{<:Number}, Δ::AbstractArray{<:Number})
+    b_ = __reshape_bias_into_xdims(Δ, b)
     return vec(__reduce_sum(b_, Δ))
 end
 

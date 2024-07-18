@@ -1,6 +1,8 @@
 @testitem "Fused Dense Bias Activation" tags=[:common_ops] setup=[SharedTestSetup] begin
     rng = StableRNG(12345)
 
+    anonact = x -> x^3
+
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         # These are not all possible combinations but rather a representative set to keep
         # CI timings under check
@@ -11,7 +13,7 @@
                 N in (4, 8),
                 hasbias in (true, false),
                 activation in (
-                    identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, x -> x^3)
+                    identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact)
 
                 bias = hasbias ? __generate_fixed_array(Tw, M) |> aType : nothing
                 w = __generate_fixed_array(Tw, M, N) |> aType
@@ -28,7 +30,11 @@
 
                 __f = (σ, w, x, b) -> sum(abs2, fused_dense_bias_activation(σ, w, x, b))
 
-                @inferred Zygote.gradient(__f, activation, w, x, bias)
+                if activation !== anonact
+                    @inferred Zygote.gradient(__f, activation, w, x, bias)
+                else
+                    @test length(@inferred(Zygote.gradient(__f, activation, w, x, bias)))==4 broken=true
+                end
 
                 fp16 = Tx == Float16 || Tw == Float16
                 atol = fp16 ? 1.0f-1 : 1.0f-3

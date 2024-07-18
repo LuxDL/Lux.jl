@@ -30,7 +30,7 @@ end
 end
 
 ## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
-@stable default_mode="warn" function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
+function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(LuxLib.__fused_dense_bias_activation_impl), act::typeof(NNlib.gelu),
         weight::AnyCuMatrix, x::AnyCuMatrix, b::Optional{<:AnyCuVector})
     (z, y, retcode) = __try_cublasLt_fused_matmul(act, weight, x, b, Val(true))

@@ -35,9 +35,7 @@
             weight = _convfilter(Tw, kernel, 4 => 8; groups) |> aType
             x = __generate_fixed_array(Tx, ntuple(Returns(3), length(kernel))..., 4, 2) |>
                 aType
-            bias = hasbias ?
-                   aType(__generate_fixed_array(
-                Tx, ntuple(Returns(1), length(kernel))..., 8, 1)) : nothing
+            bias = hasbias ? aType(__generate_fixed_array(Tx, 8)) : nothing
 
             cdims = DenseConvDims(
                 x, weight; stride, padding=_calc_padding(padding, kernel, 1, stride),
@@ -45,7 +43,7 @@
 
             y = fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-            y_generic = LuxLib.__generic_conv_bias_activation(
+            y_generic = LuxLib._generic_conv_bias_activation(
                 activation, weight, x, bias, cdims)
 
             fp16 = Tx == Float16 || Tw == Float16

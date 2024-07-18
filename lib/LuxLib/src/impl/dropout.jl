@@ -29,8 +29,7 @@ end
 end
 
 # We intentionally drop the gradients for p, A, B and alpha
-@stable default_mode="warn" function CRC.rrule(
-        ::typeof(_alpha_dropout_kernel), ::Type{LuxCPUDevice},
+function CRC.rrule(::typeof(_alpha_dropout_kernel), ::Type{LuxCPUDevice},
         noise::AbstractArray, p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
     if !unrolled_all(fast_scalar_indexing, (noise, x))
         return CRC.rrule(_alpha_dropout_kernel, Nothing, noise, p, x, α, A, B)
@@ -58,8 +57,7 @@ end
     return y, _∇alpha_dropout_kernel
 end
 
-@stable default_mode="warn" function CRC.rrule(
-        ::typeof(_alpha_dropout_kernel), ::Type{T}, noise::AbstractArray,
+function CRC.rrule(::typeof(_alpha_dropout_kernel), ::Type{T}, noise::AbstractArray,
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real) where {T}
     _cond = broadcast(>, noise, p)
     y = @. ifelse(_cond, x, α) * A + B
@@ -112,8 +110,7 @@ EnzymeRules.inactive_noinl(::typeof(_generate_dropout_mask), ::Any...) = nothing
     return x .* mask
 end
 
-@stable default_mode="warn" function CRC.rrule(
-        ::typeof(__dropout_dot_mul), x::AbstractArray, mask::AbstractArray)
+function CRC.rrule(::typeof(__dropout_dot_mul), x::AbstractArray, mask::AbstractArray)
     res = __dropout_dot_mul(x, mask)  # size(res) == size(x)
     proj_x = CRC.ProjectTo(x)
     ∇dropout_dot_mul = @closure Δ -> begin

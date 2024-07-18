@@ -23,7 +23,7 @@ _fast_activation(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="warn" function _fast_activation(σ::F, x::AbstractArray) where {F}
     if fast_scalar_indexing(x)
-        RT = Core.Compiler._return_type(f, Tuple{eltype(x)})
+        RT = Core.Compiler._return_type(σ, Tuple{eltype(x)})
         y = similar(x, RT)
         @simd ivdep for I in eachindex(y, x)
             @inbounds y[I] = σ(x[I])
@@ -33,8 +33,7 @@ _fast_activation(::typeof(identity), x::AbstractArray) = x
     return broadcast(σ, x)
 end
 
-@stable default_mode="warn" function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_activation),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_activation),
         σ::F, x::AbstractArray{T}) where {F, T}
     return CRC.rrule_via_ad(cfg, broadcast, σ, x)
 end
@@ -53,8 +52,7 @@ _fast_activation!(::typeof(identity), x::AbstractArray) = x
 end
 
 # Define rrule for `fast_activation!!`
-@stable default_mode="warn" function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!),
         σ::F, x::AbstractArray{T}) where {F, T}
     can_setindex(typeof(x)) || return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
 

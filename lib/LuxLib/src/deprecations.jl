@@ -31,5 +31,6 @@
     rng, x, mask, p, training, um, invp, dims)
 
 # bias activation. While this is not public, we used it in Lux
-@deprecate __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} __bias_activation_impl(
-    σ, x, bias) false
+function __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F}
+    return __bias_activation_impl(σ, x, _vec(bias))
+end
