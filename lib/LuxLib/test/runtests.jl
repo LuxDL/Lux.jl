@@ -10,7 +10,13 @@ const EXTRA_PKGS = String[]
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
-    Pkg.add(EXTRA_PKGS)
+    for pkg in EXTRA_PKGS
+        if pkg == "AMDGPU"
+            Pkg.add(; name=pkg, rev="master") # FIXME: remove before merge
+        else
+            Pkg.add(; name=pkg)
+        end
+    end
     Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()

@@ -47,8 +47,8 @@ function CRC.rrule(::typeof(LuxLib.batchnorm_cudnn), running_mean, running_var, 
         ∂y = CRC.unthunk(first(Δ))
         ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
             scale, bias, x, ∂y, running_mean, running_var, xmean, xivar; ϵ=epsilon)
-        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), proj_g(∂g),
-            proj_b(∂b), proj_x(∂x), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
+        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), proj_g(∂g), proj_b(∂b),
+            proj_x(∂x), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
     end
     return (y, xmean, xivar), ∇batchnorm_cudnn_internal
 end
