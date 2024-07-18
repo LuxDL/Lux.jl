@@ -342,10 +342,10 @@ end
                         if x isa AbstractMatrix && ordering isa BatchLastIndex
                             x2 = reshape(x, Val(3))
                             
-                            y2,_= rnn(x2,ps,st)
+                            y2, _ = rnn(x2,ps,st)
                             @test y == vec(y2)
                             
-                            y2_,_= rnn_seq(x2, ps, st)
+                            y2_, _ = rnn_seq(x2, ps, st)
                             @test all(x -> x[1] == vec(x[2]), zip(y_,y2_))
                         end
 
