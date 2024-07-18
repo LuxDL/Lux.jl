@@ -323,8 +323,6 @@ end
                         @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
                     end
 
-                    ordering isa BatchLastIndex && continue
-
                     # Batched Time Series without data batches
                     @testset "typeof(x): $(typeof(x))" for x in (
                         randn(rng, Float32, 3, 4) |> aType,
@@ -340,6 +338,16 @@ end
                         @test size(y) == (5,)
                         @test length(y_) == 4
                         @test all(x -> size(x) == (5,), y_)
+                        
+                        if x isa AbstractMatrix && ordering isa BatchLastIndex
+                            x2 = reshape(x, Val(3))
+                            
+                            y2, _ = rnn(x2, ps, st)
+                            @test y == vec(y2)
+                            
+                            y2_, _ = rnn_seq(x2, ps, st)
+                            @test all(x -> x[1] == vec(x[2]), zip(y_, y2_))
+                        end
 
                         __f = p -> sum(first(rnn(x, p, st)))
                         @eval @test_gradients $__f $ps atol=1e-2 rtol=1e-2 gpu_testing=$ongpu
@@ -363,15 +371,6 @@ end
         res, _ = encoder(m2, ps, st)
 
         @test Array(vec(reduce(vcat, res))) ≈ [0.5, 0.5, 1.2, 2.0]
-    end
-end
-
-@testitem "RNN Error Checks" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
-
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        x = randn(rng, 2, 3) |> aType
-        @test_throws ErrorException Lux._eachslice(x, BatchLastIndex())
     end
 end
 

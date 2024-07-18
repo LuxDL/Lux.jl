@@ -104,10 +104,7 @@ end
 
 _eachslice(x::AbstractArray, ::TimeLastIndex) = _eachslice(x, Val(ndims(x)))
 _eachslice(x::AbstractArray, ::BatchLastIndex) = _eachslice(x, Val(ndims(x) - 1))
-function _eachslice(::AbstractMatrix, ::BatchLastIndex)
-    error("`BatchLastIndex` not supported for AbstractMatrix. You probably want to use \
-           `TimeLastIndex`.")
-end
+_eachslice(x::AbstractMatrix, ::BatchLastIndex) = _eachslice(x, Val(ndims(x)))
 
 @inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
     return apply(r, _eachslice(x, r.ordering), ps, st)
