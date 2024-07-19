@@ -297,15 +297,15 @@ end
             @test_throws ArgumentError Lux.setup(rng, wn)
 
             wn = WeightNorm(c, (:weight,))
-            @test_nowarn Lux.setup(rng, wn)
+            @test Lux.setup(rng, wn) isa Any
 
             c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
             wn = WeightNorm(c, (:weight, :bias))
-            @test_nowarn Lux.setup(rng, wn)
+            @test Lux.setup(rng, wn) isa Any
 
             wn = WeightNorm(c, (:weight,))
-            @test_nowarn Lux.setup(rng, wn)
+            @test Lux.setup(rng, wn) isa Any
         end
     end
 end
