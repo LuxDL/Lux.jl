@@ -6,12 +6,12 @@ using DispatchDoctor: @stable
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
+using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
 using LuxCore: LuxCore
 using LuxDeviceUtils: get_device_type, LuxAMDGPUDevice, LuxCUDADevice, LuxCPUDevice,
                       AbstractLuxGPUDevice, AbstractLuxDevice
 using Markdown: @doc_str
-using MultiBroadcastFusion: @fused_direct
 using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, sigmoid_fast, swish, σ, ∇conv_data,
              ∇conv_filter
 using Random: Random, AbstractRNG, rand!
@@ -22,6 +22,7 @@ using UnrolledUtilities: unrolled_any, unrolled_all
 @reexport using NNlib
 
 const CRC = ChainRulesCore
+const KA = KernelAbstractions
 
 include("utils.jl")
 

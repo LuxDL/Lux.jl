@@ -17,21 +17,23 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
     __update_statistics!(opmode, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, 1 - m1)
     return rμ2, rσ²2
 end
-function __update_statistics!(::AllocatedBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
-    @. rμ2 = m3 * rμ + m1 * μ
-    @. rσ²2 = m3 * rσ² + m2 * σ²
-end
-function __update_statistics!(::FusedBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
-    @fused_direct begin
-        @. rμ2 = m3 * rμ + m1 * μ
-        @. rσ²2 = m3 * rσ² + m2 * σ²
-    end
-end
 function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
     @simd ivdep for I in eachindex(rμ2, rσ²2)
         @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
         @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
     end
+end
+function __update_statistics!(::GPUBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
+    backend = KA.get_backend(rμ2)
+    kernel! = __update_statistics_kernel!(backend)
+    kernel!(rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3; ndrange=length(rμ2))
+end
+
+@kernel function __update_statistics_kernel!(rμ2, rσ²2, @Const(rμ), @Const(rσ²), @Const(μ),
+        @Const(σ²), @Const(m1), @Const(m2), @Const(m3))
+    I = @index(Global)
+    @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+    @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
 end
 
 CRC.@non_differentiable __update_statistics(::Any...)
