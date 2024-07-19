@@ -35,7 +35,7 @@ steps:
               dirs:
                 - src
                 - ext
-        command: julia --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "CUDA"
+        command: julia -g2 --code-coverage=user --color=yes --project .buildkite/scripts/downstream.jl "{{matrix.repo}}" "CUDA"
         agents:
           queue: "juliagpu"
           cuda: "*"
