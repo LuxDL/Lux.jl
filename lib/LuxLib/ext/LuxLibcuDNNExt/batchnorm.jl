@@ -124,7 +124,7 @@ function LuxLib.∇batchnorm_cudnn(
         x::DenseCuArray{<:CUDNNFloat}, ∂y::DenseCuArray{<:CUDNNFloat},
         running_μ, running_σ², args...; kwargs...)
     @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the \
-           highest precision type. Avoid this code-path if possible."
+           highest precision type. Avoid this code-path if possible." maxlog=1
     Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
     Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
     T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ, eltype(∂y))

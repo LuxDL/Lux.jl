@@ -15,9 +15,6 @@ end
 
 # Operations that most AD won't be able to differentiate
 function __reduce_sum(x::AbstractArray, y::AbstractArray)
-    return __reduce_sum(get_device_type((x, y)), x, y)
-end
-function __reduce_sum(::Type{T}, x::AbstractArray, y::AbstractArray) where {T}
     z = similar(x, promote_type(eltype(x), eltype(y)))
     sum!(z, y)
     return z
@@ -134,6 +131,8 @@ __has_tracked_value(::Any) = false
 CRC.@non_differentiable __has_tracked_value(::Any)
 EnzymeRules.inactive_noinl(::typeof(__has_tracked_value), ::Any) = nothing
 
+__has_autodiff_value(x) = __has_tracked_value(x) || __has_dual(x)
+
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
@@ -157,3 +156,35 @@ end
 function __needs_intermediate_but_has_rrule(f::F, ::Type{T}) where {F, T}
     return isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
 end
+
+# How to do a broadcast?
+#    1. Generic Broadcasting without Preallocation -- GenericBroadcastOp
+#    2. Generic Broadcasting with Fusion -- FusedBroadcastOp. Mostly for CUDA GPUs
+#    3. Loop Broadcasting -- LoopedArrayOp. This might still use broadcasting if needed
+
+abstract type AbstractInternalArrayOpMode end
+
+abstract type AbstractBroadcastOpMode <: AbstractInternalArrayOpMode end
+
+struct GenericBroadcastOp <: AbstractBroadcastOpMode end
+struct FusedBroadcastOp{dev} <: AbstractBroadcastOpMode end
+struct AllocatedBroadcastOp{dev} <: AbstractBroadcastOpMode end
+struct LoopedArrayOp <: AbstractInternalArrayOpMode
+    loop_vectorization::Bool
+end
+
+## NOTE: Ensure that this always gets compiled out! Else we will have terrible type
+##       inference.
+function internal_operation_mode(xs::Tuple)
+    unrolled_any(__has_autodiff_value, xs) && return GenericBroadcastOp()
+    dev = get_device_type(xs)
+    # TODO: Relax after https://github.com/CliMA/MultiBroadcastFusion.jl/issues/32
+    dev <: LuxCUDADevice && return FusedBroadcastOp{dev}()
+    dev <: AbstractLuxGPUDevice && return AllocatedBroadcastOp{dev}()
+    dev <: LuxCPUDevice && return LoopedArrayOp(false)
+    return GenericBroadcastOp()  # fallback for safety
+end
+internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))
+
+CRC.@non_differentiable internal_operation_mode(::Any...)
+EnzymeRules.inactive_noinl(::typeof(internal_operation_mode), ::Any...) = nothing

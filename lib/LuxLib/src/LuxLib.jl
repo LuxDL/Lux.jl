@@ -38,6 +38,7 @@ include("api/conv.jl")
 
 # Low-Level Implementations
 include("impl/activation.jl")
+include("impl/affine_normalize.jl")
 include("impl/bias_activation.jl")
 include("impl/dropout.jl")
 include("impl/fast_ops.jl")

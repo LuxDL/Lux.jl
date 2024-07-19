@@ -1,7 +1,8 @@
 # Used inside rrules
 __activation_gradient(Δ, out, ::typeof(identity), x) = Δ
 function __activation_gradient(Δ, out, act::F, x) where {F}
-    if unrolled_all(fast_scalar_indexing, (Δ, out, x))  # All sizes are same
+    opmode = internal_operation_mode((Δ, out, x))
+    if opmode isa LoopedArrayOp  # All sizes are same
         y = similar(out)
         if x isa NotaNumber
             @simd ivdep for i in eachindex(Δ, out)
@@ -22,7 +23,7 @@ end
 _fast_activation(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="warn" function _fast_activation(σ::F, x::AbstractArray) where {F}
-    if fast_scalar_indexing(x)
+    if internal_operation_mode(x) isa LoopedArrayOp
         RT = Core.Compiler._return_type(σ, Tuple{eltype(x)})
         y = similar(x, RT)
         @simd ivdep for I in eachindex(y, x)
@@ -41,7 +42,7 @@ end
 _fast_activation!(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="warn" function _fast_activation!(σ::F, x::AbstractArray) where {F}
-    if fast_scalar_indexing(x)
+    if internal_operation_mode(x) isa LoopedArrayOp
         @simd ivdep for I in eachindex(x)
             @inbounds x[I] = σ(x[I])
         end

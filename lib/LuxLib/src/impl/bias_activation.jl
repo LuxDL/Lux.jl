@@ -119,8 +119,9 @@ CRC.@opt_out rrule(::typeof(__bias_activation_impl!!), ::F, ::AbstractVector{<:N
 function __bias_activation_impl!(
         y::AbstractArray{<:Number, N}, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}
-    if unrolled_all(fast_scalar_indexing, (x, bias))
-        __bias_activation_impl_loop!(y, σ, x, bias)
+    opmode = internal_operation_mode((y, x, bias))
+    if opmode isa LoopedArrayOp
+        __bias_activation_impl_loop!(opmode, y, σ, x, bias)
         return y
     end
     bias_ = __reshape_bias_into_xdims(x, bias)
@@ -133,9 +134,8 @@ function __bias_activation_impl!(
     return y
 end
 
-function __bias_activation_impl_loop!(
-        y::AbstractArray{<:Number, N}, σ::F, x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {F, N}
+function __bias_activation_impl_loop!(::LoopedArrayOp, y::AbstractArray{<:Number, N}, σ::F,
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     sz_fn = Base.Fix1(size, x)
     x̃_dims = (prod(sz_fn, 1:(N - 2); init=1), sz_fn(N - 1), sz_fn(N))
     x̃ = reshape(x, x̃_dims)
@@ -162,8 +162,9 @@ function __apply_bias_activation_cached!!(
     @assert σ !== identity
     bias === nothing && return _fast_activation(σ, x), x
     if can_setindex(x)
-        if unrolled_all(fast_scalar_indexing, (x, bias))
-            __bias_activation_impl_loop!(x, identity, x, bias)
+        opmode = internal_operation_mode((x, bias))
+        if opmode isa LoopedArrayOp
+            __bias_activation_impl_loop!(opmode, x, identity, x, bias)
             return _fast_activation(σ, x), x
         end
         bias_ = __reshape_bias_into_xdims(x, bias)
