@@ -1,7 +1,9 @@
 const Optional{T} = Union{Nothing, T}
 
+const ∂∅ = NoTangent()
+
 # Bias Gradient -- can't be used inside gradient rules
-__added_bias_gradient(::Nothing, Δ::AbstractArray) = NoTangent()
+__added_bias_gradient(::Nothing, Δ::AbstractArray) = ∂∅
 function __added_bias_gradient(
         b::AbstractArray{<:Number, N}, Δ::AbstractArray{<:Number, N}) where {N}
     return __reduce_sum(b, Δ)

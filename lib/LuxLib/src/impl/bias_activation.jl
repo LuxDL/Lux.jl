@@ -10,7 +10,7 @@ function CRC.rrule(::typeof(__reshape_bias_into_xdims), x::AbstractArray{<:Numbe
         bias::AbstractVector{<:Number}) where {N}
     bias_r = __reshape_bias_into_xdims(x, bias)
     proj_bias = CRC.ProjectTo(bias)
-    return bias_r, Δ -> (NoTangent(), NoTangent(), proj_bias(vec(Δ)))
+    return bias_r, Δ -> (∂∅, ∂∅, proj_bias(vec(Δ)))
 end
 
 function __generic_bias_activation(
@@ -92,7 +92,7 @@ function CRC.rrule(
         ∇__bias_activation_impl_no_cached = @closure Δ -> begin
             ∂x = __activation_gradient(CRC.unthunk(Δ), y, σ, NotaNumber())
             ∂b = __added_bias_gradient(bias, ∂x)
-            return NoTangent(), NoTangent(), proj_x_no_cached(∂x), prob_b_no_cached(∂b)
+            return ∂∅, ∂∅, proj_x_no_cached(∂x), prob_b_no_cached(∂b)
         end
         return y, ∇__bias_activation_impl_no_cached
     end
@@ -104,7 +104,7 @@ function CRC.rrule(
         ∇__bias_activation_impl_cached_crc = @closure Δ -> begin
             ∂x = __activation_gradient(CRC.unthunk(Δ), z, σ, y)
             ∂b = __added_bias_gradient(bias, ∂x)
-            return NoTangent(), NoTangent(), proj_x_cached(∂x), proj_b_cached(∂b)
+            return ∂∅, ∂∅, proj_x_cached(∂x), proj_b_cached(∂b)
         end
         return y, ∇__bias_activation_impl_cached_crc
     end

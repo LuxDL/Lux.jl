@@ -49,8 +49,7 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), ::Type{LuxCPUDevice},
             @simd ivdep for i in eachindex(noise)
                 @inbounds ∂x[i] = _cond[i] * Δ[i] * A
             end
-            return (ntuple(Returns(NoTangent()), 4)..., proj_x(∂x),
-                ntuple(Returns(NoTangent()), 3)...)
+            return (ntuple(Returns(∂∅), 4)..., proj_x(∂x), ntuple(Returns(∂∅), 3)...)
         end
     end
 
@@ -65,7 +64,7 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), ::Type{T}, noise::AbstractAr
     proj_x = CRC.ProjectTo(x)
     _∇alpha_dropout_kernel = @closure Δ -> begin
         ∂x = proj_x(@.(Δ*_cond*A))
-        return (ntuple(Returns(NoTangent()), 4)..., ∂x, ntuple(Returns(NoTangent()), 3)...)
+        return (ntuple(Returns(∂∅), 4)..., ∂x, ntuple(Returns(∂∅), 3)...)
     end
 
     return y, _∇alpha_dropout_kernel
@@ -115,7 +114,7 @@ function CRC.rrule(::typeof(__dropout_dot_mul), x::AbstractArray, mask::Abstract
     proj_x = CRC.ProjectTo(x)
     ∇dropout_dot_mul = @closure Δ -> begin
         ∂x = proj_x(__dropout_dot_mul(Δ, mask))
-        return NoTangent(), ∂x, NoTangent()
+        return ∂∅, ∂x, ∂∅
     end
     return res, ∇dropout_dot_mul
 end

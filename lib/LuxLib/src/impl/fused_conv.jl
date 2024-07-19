@@ -145,8 +145,7 @@ function CRC.rrule(
             ∂y = act === identity ? Δ : __activation_gradient(Δ, y, act, NotaNumber())
             ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
-            return (NoTangent(), NoTangent(), NoTangent(),
-                proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent())
+            return (∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b), ∂∅)
         end
         return y, ∇__fused_conv_bias_activation_impl_no_cached
     end
@@ -163,8 +162,7 @@ function CRC.rrule(
             ∂y = __activation_gradient(Δ, z, act, y)
             ∂w, ∂x, ∂b = __conv_bias_partials(∂y, weight, x, bias, cdims)
             __reset_BLAS_threads(old_threads)
-            return (NoTangent(), NoTangent(), NoTangent(),
-                proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent())
+            return (∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b), ∂∅)
         end
         return z, ∇__fused_conv_bias_activation_impl_cached_crc
     end
@@ -176,8 +174,7 @@ function CRC.rrule(
         _, _, ∂y, ∂b = pb_f(Δ)
         ∂w, ∂x, _ = __conv_bias_partials(∂y, ∂b, weight, x, bias, cdims)
         __reset_BLAS_threads(old_threads)
-        return (NoTangent(), NoTangent(), NoTangent(),
-            proj_w(∂w), proj_x(∂x), proj_b(∂b), NoTangent())
+        return (∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b), ∂∅)
     end
 
     return z, ∇__fused_conv_bias_activation_impl_cached

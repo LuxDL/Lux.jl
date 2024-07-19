@@ -50,7 +50,7 @@ function CRC.rrule(
         ∇__fused_dense_bias_activation_impl_no_cached = @closure Δ -> begin
             ∂y = __activation_gradient(CRC.unthunk(Δ), y, act, NotaNumber())
             ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-            return NoTangent(), NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
+            return ∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b)
         end
         return y, ∇__fused_dense_bias_activation_impl_no_cached
     end
@@ -61,7 +61,7 @@ function CRC.rrule(
         ∇__fused_dense_bias_activation_impl_cached_crc = @closure Δ -> begin
             ∂y = __activation_gradient(CRC.unthunk(Δ), z, act, y)
             ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-            return NoTangent(), NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
+            return ∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b)
         end
         return z, ∇__fused_dense_bias_activation_impl_cached_crc
     end
@@ -72,7 +72,7 @@ function CRC.rrule(
     ∇__fused_dense_bias_activation_impl_cached = @closure Δ -> begin
         _, _, ∂y, ∂b = pb_f(Δ)
         ∂w, ∂x, _ = __matmul_bias_partials(∂y, ∂b, weight, x, b)
-        return NoTangent(), NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
+        return ∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b)
     end
     return z, ∇__fused_dense_bias_activation_impl_cached
 end
@@ -105,7 +105,7 @@ function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode}, ::Type{<:LuxCUDADevic
     ∇__fused_dense_bias_activation_impl_cublaslt = @closure Δ -> begin
         ∂y = __activation_gradient(CRC.unthunk(Δ), z, gelu, y)
         ∂w, ∂x, ∂b = __matmul_bias_partials(∂y, weight, x, b)
-        return NoTangent(), NoTangent(), NoTangent(), proj_w(∂w), proj_x(∂x), proj_b(∂b)
+        return ∂∅, ∂∅, ∂∅, proj_w(∂w), proj_x(∂x), proj_b(∂b)
     end
 
     return z, ∇__fused_dense_bias_activation_impl_cublaslt

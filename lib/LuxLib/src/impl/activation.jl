@@ -56,14 +56,14 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!
         σ::F, x::AbstractArray{T}) where {F, T}
     can_setindex(typeof(x)) || return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
 
-    σ === identity && return x, @closure(Δ->(NoTangent(), NoTangent(), Δ))
+    σ === identity && return x, @closure(Δ->(∂∅, ∂∅, Δ))
 
     if __no_intermediate_needed(σ, T)
         _fast_activation!(σ, x) # Safe to overwrite x
         proj_x_no_cached = CRC.ProjectTo(x)
         ∇__fast_activation_impl_no_cached = @closure Δ -> begin
             ∂x = __activation_gradient(Δ, x, σ, NotaNumber())
-            return NoTangent(), NoTangent(), proj_x_no_cached(∂x)
+            return ∂∅, ∂∅, proj_x_no_cached(∂x)
         end
         return x, ∇__fast_activation_impl_no_cached
     end
@@ -73,7 +73,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!
         proj_x_cached = CRC.ProjectTo(x)
         ∇__fast_activation_impl_cached_crc = @closure Δ -> begin
             ∂x = __activation_gradient(CRC.unthunk(Δ), y, σ, x)
-            return NoTangent(), NoTangent(), proj_x_cached(∂x)
+            return ∂∅, ∂∅, proj_x_cached(∂x)
         end
         return y, ∇__fast_activation_impl_cached_crc
     end
