@@ -45,10 +45,6 @@ __value(::Nothing) = nothing
 
 __aos_to_soa(x::AbstractArray) = x # FIXME: Upstream this to ArrayInterface.jl
 
-# fast sum -- no rrule defined
-__fast_sum(x::AbstractArray) = __fast_sum(get_device_type(x), x)
-__fast_sum(::Type{T}, x::AbstractArray) where {T} = sum(x)
-
 # Non-differentiable functions
 @inbounds function _get_reshape_dims(sx::NTuple{N, <:Int}, ly::Int) where {N}
     if ly == sx[N - 1]

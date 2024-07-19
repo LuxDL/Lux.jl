@@ -9,8 +9,8 @@
         m_ = momentum * m / (m - one(m))
         $(if last(reduce_dims) != N
             quote
-                μ = mean(μ; dims=N)
-                σ² = mean(σ²; dims=N)
+                μ = fast_mean(μ; dims=N)
+                σ² = fast_mean(σ²; dims=N)
             end
         end)
         rμ = @. (1 - momentum) * rμ + momentum * μ
@@ -26,8 +26,8 @@ EnzymeRules.inactive_noinl(::typeof(__accum_size), ::Any...) = nothing
 
 function _get_batch_statistics(
         x::AbstractArray, ::Nothing, ::Nothing, ::Val{rdims}, ::Val, momentum) where {rdims}
-    μ = __aos_to_soa(mean(x; dims=rdims))
-    σ² = __aos_to_soa(var(x; corrected=false, mean=μ, dims=rdims))
+    μ = __aos_to_soa(fast_mean(x; dims=rdims))
+    σ² = __aos_to_soa(fast_var(x; corrected=false, mean=μ, dims=rdims))
     return (μ, σ²), (nothing, nothing)
 end
 
@@ -38,8 +38,8 @@ end
 
 function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
         r::Val{rdims}, ::Val{true}, momentum) where {rdims}
-    μ = __aos_to_soa(mean(x; dims=rdims))
-    σ² = __aos_to_soa(var(x; corrected=false, mean=μ, dims=rdims))
+    μ = __aos_to_soa(fast_mean(x; dims=rdims))
+    σ² = __aos_to_soa(fast_var(x; corrected=false, mean=μ, dims=rdims))
     rμ, rσ² = _update_normalization_statistics(
         __value(x), __value(rμ), __value(rσ²), __value(μ), __value(σ²), momentum, r)
     return (μ, σ²), (rμ, rσ²)

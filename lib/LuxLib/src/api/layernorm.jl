@@ -33,7 +33,7 @@ function layernorm(
         x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{<:Number, N}},
         bias::Optional{<:AbstractArray{<:Number, N}}, σ::F=identity,
         dims=Colon(), epsilon::Real=1.0f-5) where {N, F}
-    _mean = mean(x; dims)
-    _var = var(x; dims, mean=_mean, corrected=false)
+    _mean = fast_mean(x; dims)
+    _var = fast_var(x; dims, mean=_mean, corrected=false)
     return _affine_normalize(σ, x, _mean, _var, scale, bias, epsilon)
 end
