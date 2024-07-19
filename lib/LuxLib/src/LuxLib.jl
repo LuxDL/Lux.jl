@@ -11,7 +11,7 @@ using LuxCore: LuxCore
 using LuxDeviceUtils: get_device_type, LuxAMDGPUDevice, LuxCUDADevice, LuxCPUDevice,
                       AbstractLuxGPUDevice, AbstractLuxDevice
 using Markdown: @doc_str
-using NNlib: NNlib, ConvDims, conv, conv!, relu, sigmoid_fast, swish, σ, ∇conv_data,
+using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, sigmoid_fast, swish, σ, ∇conv_data,
              ∇conv_filter
 using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
