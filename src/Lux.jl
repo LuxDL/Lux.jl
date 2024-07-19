@@ -104,7 +104,7 @@ export RNNCell, LSTMCell, GRUCell, Recurrence, StatefulRecurrentCell, Bidirectio
 export SamePad, TimeLastIndex, BatchLastIndex
 
 export StatefulLuxLayer
-export @compact, CompactLuxLayer
+export @compact, @init_fn, CompactLuxLayer
 
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian

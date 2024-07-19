@@ -366,16 +366,24 @@ end
 function ValueStorage(; kwargs...)
     ps_init_fns, st_init_fns = [], []
     for (key, val) in pairs(kwargs)
-        list = if val isa AbstractVector{<:AbstractArray{<:Number}}
-            ps_init_fns
+        list, returns = if val isa AbstractVector{<:AbstractArray{<:Number}}
+            ps_init_fns, true
         elseif val isa AbstractArray
-            isbitstype(eltype(val)) ? ps_init_fns : st_init_fns
+            if (isbitstype(eltype(val)) || eltype(val) <: Number)
+                ps_init_fns, true
+            else
+                st_init_fns, true
+            end
         elseif val isa NTuple{N, <:AbstractArray{<:Number}} where {N}
-            ps_init_fns
+            ps_init_fns, true
+        elseif val isa InitFn{:state}
+            st_init_fns, false
+        elseif val isa InitFn{:parameter}
+            ps_init_fns, false
         else
-            st_init_fns
+            st_init_fns, true
         end
-        push!(list, key => Returns(val))
+        push!(list, key => returns ? Returns(val) : val)
     end
     return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
 end
@@ -384,12 +392,30 @@ function (v::ValueStorage)(x, ps, st)
     throw(ArgumentError("`ValueStorage` isn't meant to be used as a layer!!!"))
 end
 
-function initialparameters(::AbstractRNG, v::ValueStorage)
-    return NamedTuple([n => fn() for (n, fn) in pairs(v.ps_init_fns)])
+function initialparameters(rng::AbstractRNG, v::ValueStorage)
+    return NamedTuple([n => (fn isa InitFn ? fn(rng) : fn())
+                       for (n, fn) in pairs(v.ps_init_fns)])
 end
 
-function initialstates(::AbstractRNG, v::ValueStorage)
-    return NamedTuple([n => fn() for (n, fn) in pairs(v.st_init_fns)])
+function initialstates(rng::AbstractRNG, v::ValueStorage)
+    return NamedTuple([n => (fn isa InitFn ? fn(rng) : fn())
+                       for (n, fn) in pairs(v.st_init_fns)])
+end
+
+@concrete struct InitFn{kind} <: Function
+    f <: Function
+end
+
+(f::InitFn)(args...) = f.f(args...)
+
+# TODO: Add docstrings
+macro init_fn(args...)
+    @argcheck 1 ≤ length(args) ≤ 2
+    kind = length(args) == 1 ? :parameter : args[2]
+    kind isa QuoteNode && (kind = kind.value)
+    fn = args[1]
+    @argcheck kind in (:parameter, :state)
+    return esc(:($(InitFn){$(Meta.quot(kind))}($(fn))))
 end
 
 @concrete struct CompactLuxLayer{dispatch} <:
