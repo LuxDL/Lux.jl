@@ -1,23 +1,42 @@
-# Generic Normalization Implementation
-@generated function _update_normalization_statistics(
+function __update_statistics(rμ, rσ², μ, σ², m1, m2)
+    return __update_statistics(get_device_type((rμ, rσ², μ, σ²)), rμ, rσ², μ, σ², m1, m2)
+end
+function __update_statistics(::Type{T}, rμ, rσ², μ, σ², m1, m2) where {T}
+    m3 = 1 - m1
+    rμ2 = similar(rμ, promote_type(eltype(rμ), eltype(μ), typeof(m3), typeof(m1)))
+    rσ²2 = similar(rσ², promote_type(eltype(rσ²), eltype(σ²), typeof(m2), typeof(m3)))
+    @fused_direct begin
+        @. rμ2 = m3 * rμ + m1 * μ
+        @. rσ²2 = m3 * rσ² + m2 * σ²
+    end
+    return rμ2, rσ²2
+end
+function __update_statistics(::Type{LuxCPUDevice}, rμ, rσ², μ, σ², m1, m2)
+    m3 = 1 - m1
+    rμ2 = similar(rμ, promote_type(eltype(rμ), eltype(μ), typeof(m3), typeof(m1)))
+    rσ²2 = similar(rσ², promote_type(eltype(rσ²), eltype(σ²), typeof(m2), typeof(m3)))
+    @simd ivdep for I in eachindex(rμ2, rσ²2)
+        @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+        @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+    end
+    return rμ2, rσ²2
+end
+
+function _update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
         rσ²::AbstractArray{<:Number, N}, μ::AbstractArray{<:Number, N},
         σ²::AbstractArray{<:Number, N}, momentum::Real,
         r::Val{reduce_dims}) where {T, N, reduce_dims}
-    return quote
-        m = __value($(T)(__accum_size(x, r)))
-        m_ = momentum * m / (m - one(m))
-        $(if last(reduce_dims) != N
-            quote
-                μ = fast_mean(μ; dims=N)
-                σ² = fast_mean(σ²; dims=N)
-            end
-        end)
-        rμ = @. (1 - momentum) * rμ + momentum * μ
-        rσ² = @. (1 - momentum) * rσ² + m_ * σ²
-        return rμ, rσ²
+    if last(reduce_dims) != N
+        μ = fast_mean(μ; dims=N)
+        σ² = fast_mean(σ²; dims=N)
     end
+    m = __value(T(__accum_size(x, r)))
+    return __update_statistics(rμ, rσ², μ, σ², momentum, momentum * m / (m - one(m)))
 end
+
+CRC.@non_differentiable _update_normalization_statistics(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_update_normalization_statistics), ::Any...) = nothing
 
 __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
 
