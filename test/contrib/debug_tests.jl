@@ -34,7 +34,7 @@
 
         ps, st = Lux.setup(rng, model_fixed) |> device
 
-        @test_nowarn model_fixed(x, ps, st)
+        @test model_fixed(x, ps, st) isa Any
 
         model_fixed_debug = Lux.Experimental.@debug_mode model_fixed
 

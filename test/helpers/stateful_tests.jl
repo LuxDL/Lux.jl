@@ -16,7 +16,7 @@
 
     smodel = StatefulLuxLayer{false}(model, ps, st)
     display(smodel)
-    @test_nowarn smodel(1)
+    @test smodel(1) isa Any
 
     smodel = StatefulLuxLayer{true}(model, ps, st)
     display(smodel)

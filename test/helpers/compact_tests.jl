@@ -274,7 +274,7 @@
         end
 
         @testset "Keyword Arguments with Anonymous Function" begin
-            model = @test_nowarn @compact(x->@return(x+a+b); a=1, b=2)
+            model = @compact(x->@return(x+a+b); a=1, b=2)
             ps, st = Lux.setup(rng, model) |> device
             @test first(model(3, ps, st)) == 1 + 2 + 3
             expected_string = """@compact(

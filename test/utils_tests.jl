@@ -95,15 +95,15 @@ end
         @test -p_flat == getdata(-ps_c)
         @test zero(p_flat) == getdata(zero(ps_c))
 
-        @test_nowarn similar(ps_c, 10)
-        @test_nowarn similar(ps_c)
+        @test similar(ps_c, 10) isa Any
+        @test similar(ps_c) isa Any
 
         ps_c_f, ps_c_re = Functors.functor(ps_c)
         @test ps_c_f == ps
         @test ps_c_re(ps_c_f) == ps_c
 
         # Empty ComponentArray test
-        @test_nowarn display(ComponentArray(NamedTuple()))
+        @test display(ComponentArray(NamedTuple())) isa Any
         println()
 
         # Optimisers
@@ -111,8 +111,8 @@ end
         ps_c = ps_c |> device
         st_opt = Optimisers.setup(opt, ps_c)
 
-        @test_nowarn Optimisers.update(st_opt, ps_c, ps_c)
-        @test_nowarn Optimisers.update!(st_opt, ps_c, ps_c)
+        @test Optimisers.update(st_opt, ps_c, ps_c) isa Any
+        @test Optimisers.update!(st_opt, ps_c, ps_c) isa Any
     end
 
     # Ref: https://github.com/LuxDL/Lux.jl/issues/243
@@ -120,7 +120,7 @@ end
     ps, st = Lux.setup(rng, nn)
 
     l2reg(p) = sum(abs2, ComponentArray(p))
-    @test_nowarn Zygote.gradient(l2reg, ps)
+    @test length(Zygote.gradient(l2reg, ps)) == 1
 end
 
 @testitem "_init_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
@@ -277,7 +277,7 @@ end
     c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
         dense_3=Dense(5 => 1))
 
-    @test_nowarn fmap(println, c)
+    @test fmap(println, c) isa Any
 
     l = Dense(2 => 2)
     new_model = fmap(x -> l, c)

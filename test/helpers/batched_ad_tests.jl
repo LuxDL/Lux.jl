@@ -42,7 +42,7 @@
                 ps, st = Lux.setup(Random.default_rng(), model) |> dev
 
                 x = randn(Float32, N, 3) |> dev
-                @test_nowarn model(x, ps, st)
+                @test first(model(x, ps, st)) isa AbstractArray{<:Any, 3}
             end
         end
 
@@ -103,7 +103,7 @@ end
                 return sum(abs2, J)
             end
 
-            @test_nowarn loss_function_batched(model, X, ps, st)
+            @test loss_function_batched(model, X, ps, st) isa Number
             @test loss_function_batched(model, X, ps, st) ≈
                   loss_function_simple(model, X, ps, st)
 

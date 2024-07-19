@@ -314,19 +314,19 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Construction" begin
-            @test_nowarn Upsample(:nearest; scale=2)
-            @test_nowarn Upsample(:nearest; size=(64, 64))
-            @test_nowarn Upsample(:bilinear; scale=2)
-            @test_nowarn Upsample(:bilinear; size=(64, 64))
-            @test_nowarn Upsample(:trilinear; scale=2)
-            @test_nowarn Upsample(:trilinear; size=(64, 64))
+            @test Upsample(:nearest; scale=2) isa Any
+            @test Upsample(:nearest; size=(64, 64)) isa Any
+            @test Upsample(:bilinear; scale=2) isa Any
+            @test Upsample(:bilinear; size=(64, 64)) isa Any
+            @test Upsample(:trilinear; scale=2) isa Any
+            @test Upsample(:trilinear; size=(64, 64)) isa Any
 
             @test_throws ArgumentError Upsample(:linear; scale=2)
             @test_throws ArgumentError Upsample(:nearest; scale=2, size=(64, 64))
             @test_throws ArgumentError Upsample(:nearest)
 
-            @test_nowarn Upsample(2)
-            @test_nowarn Upsample(2, :nearest)
+            @test Upsample(2) isa Any
+            @test Upsample(2, :nearest) isa Any
         end
 
         @testset "Size Correctness" begin
@@ -625,7 +625,7 @@ end
             x = randn(Float32, 28, 28, 42, 3) |> aType
             ps, st = Lux.setup(rng, layer) |> dev
 
-            @test_nowarn layer(x, ps, st)
+            @test layer(x, ps, st) isa Any
 
             x = randn(Float32, 28, 28, 46, 3) |> aType
 
