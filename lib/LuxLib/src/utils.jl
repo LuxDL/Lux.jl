@@ -159,7 +159,7 @@ end
 
 # How to do a broadcast?
 #    1. Generic Broadcasting without Preallocation -- GenericBroadcastOp
-#    2. Generic Broadcasting with Fusion -- GPUBroadcastOp
+#    2. Broadcasting with Fusion -- GPUBroadcastOp
 #    3. Loop Broadcasting -- LoopedArrayOp. This might still use broadcasting if needed
 
 abstract type AbstractInternalArrayOpMode end

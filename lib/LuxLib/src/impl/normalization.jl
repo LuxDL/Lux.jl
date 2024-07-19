@@ -27,6 +27,7 @@ function __update_statistics!(::GPUBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ
     backend = KA.get_backend(rμ2)
     kernel! = __update_statistics_kernel!(backend)
     kernel!(rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3; ndrange=length(rμ2))
+    KA.synchronize(backend)
 end
 
 @kernel function __update_statistics_kernel!(rμ2, rσ²2, @Const(rμ), @Const(rσ²), @Const(μ),
@@ -37,7 +38,7 @@ end
 end
 
 CRC.@non_differentiable __update_statistics(::Any...)
-EnzymeRules.inactive_noinl(::typeof(__update_statistics), ::Any...) = nothing
+# EnzymeRules.inactive_noinl(::typeof(__update_statistics), ::Any...) = nothing
 
 function _update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
