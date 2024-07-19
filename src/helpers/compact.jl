@@ -36,17 +36,23 @@ in the CompactLuxLayer.
 
 ## Special Syntax
 
-These are special macros which don't really exist, but they do carry special meaning if used
-in the `@compact` block.
-
-  - `@return`: This macro is used to return a value from the `@compact` block. Without the
-    presence of this macro, we need to rely on closures which can lead to performance
-    penalties in the reverse pass.
+  - `@return`: This macro doesn't really exist, but is used to return a value from the
+    `@compact` block. Without the presence of this macro, we need to rely on closures which
+    can lead to performance penalties in the reverse pass.
 
       + Having statements after the last `@return` macro might lead to incorrect code.
       + Don't do things like `@return return x`. This will generate non-sensical code like
         `<new var> = return x`. Essentially, `@return <expr>` supports any expression, that
         can be assigned to a variable.
+      + Since this macro doesn't "exist", it cannot be imported as `using Lux: @return`.
+        Simply use it in code, and `@compact` will understand it.
+
+  - `@init_fn`: Provide a function that will be used to initialize the layer's parameters or
+    state. See the docs of [`@init_fn`](@ref) for more details.
+
+  - `@non_trainable`: Mark a value as non-trainable. This bypasses the regular checks and
+    places the value into the state of the layer. See the docs of [`@non_trainable`](@ref)
+    for more details.
 
 # Extended Help
 
@@ -376,9 +382,9 @@ function ValueStorage(; kwargs...)
             end
         elseif val isa NTuple{N, <:AbstractArray{<:Number}} where {N}
             ps_init_fns, true
-        elseif val isa InitFn{:state}
+        elseif val isa __InitFn{:state}
             st_init_fns, false
-        elseif val isa InitFn{:parameter}
+        elseif val isa __InitFn{:parameter}
             ps_init_fns, false
         else
             st_init_fns, true
@@ -393,20 +399,20 @@ function (v::ValueStorage)(x, ps, st)
 end
 
 function initialparameters(rng::AbstractRNG, v::ValueStorage)
-    return NamedTuple([n => (fn isa InitFn ? fn(rng) : fn())
+    return NamedTuple([n => (fn isa __InitFn ? fn(rng) : fn())
                        for (n, fn) in pairs(v.ps_init_fns)])
 end
 
 function initialstates(rng::AbstractRNG, v::ValueStorage)
-    return NamedTuple([n => (fn isa InitFn ? fn(rng) : fn())
+    return NamedTuple([n => (fn isa __InitFn ? fn(rng) : fn())
                        for (n, fn) in pairs(v.st_init_fns)])
 end
 
-@concrete struct InitFn{kind} <: Function
+@concrete struct __InitFn{kind} <: Function
     f <: Function
 end
 
-(f::InitFn)(args...) = f.f(args...)
+(f::__InitFn)(args...) = f.f(args...)
 
 # TODO: Add docstrings
 macro init_fn(args...)
@@ -415,7 +421,16 @@ macro init_fn(args...)
     kind isa QuoteNode && (kind = kind.value)
     fn = args[1]
     @argcheck kind in (:parameter, :state)
-    return esc(:($(InitFn){$(Meta.quot(kind))}($(fn))))
+    return esc(:($(__InitFn){$(Meta.quot(kind))}($(fn))))
+end
+
+@concrete struct __NonTrainable
+    value
+end
+
+# TODO: Add docstrings
+macro non_trainable(x)
+    return esc(:($(__NonTrainable)($(x))))
 end
 
 @concrete struct CompactLuxLayer{dispatch} <:
@@ -561,9 +576,12 @@ function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
 end
 
 function __kwarg_descriptor(val)
+    val isa __NonTrainable && return "@non_trainable($(__kwarg_descriptor(val.value)))"
     val isa Number && return string(val)
     val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
     val isa Tuple && return "(" * join(map(__kwarg_descriptor, val), ", ") * ")"
+    val isa __InitFn{:parameter} && return "@init_fn($(__kwarg_descriptor(val.f)), parameter)"
+    val isa __InitFn{:state} && return "@init_fn($(__kwarg_descriptor(val.f)), state)"
     val isa Nothing && return "nothing"
     if val isa NamedTuple
         fields = fieldnames(typeof(val))
@@ -575,5 +593,5 @@ function __kwarg_descriptor(val)
         return "@NamedTuple{$(join(strs, ", "))" * (length(fields) > 3 ? ", ..." : "") * "}"
     end
     val isa Function && return sprint(show, val; context=(:compact => true, :limit => true))
-    return lazy"$(nameof(typeof(val)))(...)"
+    return "$(nameof(typeof(val)))(...)"
 end
