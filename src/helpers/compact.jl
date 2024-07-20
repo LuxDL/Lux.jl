@@ -49,7 +49,6 @@ in the CompactLuxLayer.
 
   - `@init_fn`: Provide a function that will be used to initialize the layer's parameters or
     state. See the docs of [`@init_fn`](@ref) for more details.
-
   - `@non_trainable`: Mark a value as non-trainable. This bypasses the regular checks and
     places the value into the state of the layer. See the docs of [`@non_trainable`](@ref)
     for more details.
@@ -372,24 +371,26 @@ end
 function ValueStorage(; kwargs...)
     ps_init_fns, st_init_fns = [], []
     for (key, val) in pairs(kwargs)
-        list, returns = if val isa AbstractVector{<:AbstractArray{<:Number}}
-            ps_init_fns, true
+        list, store_val = if val isa __NonTrainable
+            st_init_fns, Returns(val.value)
+        elseif val isa AbstractVector{<:AbstractArray{<:Number}}
+            ps_init_fns, Returns(val)
         elseif val isa AbstractArray
             if (isbitstype(eltype(val)) || eltype(val) <: Number)
-                ps_init_fns, true
+                ps_init_fns, Returns(val)
             else
-                st_init_fns, true
+                st_init_fns, Returns(val)
             end
         elseif val isa NTuple{N, <:AbstractArray{<:Number}} where {N}
-            ps_init_fns, true
+            ps_init_fns, Returns(val)
         elseif val isa __InitFn{:state}
-            st_init_fns, false
+            st_init_fns, val
         elseif val isa __InitFn{:parameter}
-            ps_init_fns, false
+            ps_init_fns, val
         else
-            st_init_fns, true
+            st_init_fns, Returns(val)
         end
-        push!(list, key => returns ? Returns(val) : val)
+        push!(list, key => store_val)
     end
     return ValueStorage(NamedTuple(ps_init_fns), NamedTuple(st_init_fns))
 end
@@ -414,7 +415,42 @@ end
 
 (f::__InitFn)(args...) = f.f(args...)
 
-# TODO: Add docstrings
+"""
+    @init_fn(fn, kind::Symbol = :parameter)
+
+Create an initializer function for a parameter or state to be used for in a Compact Lux
+Layer created using [`@compact`](@ref).
+
+## Arguments
+
+  - `fn`: The function to be used for initializing the parameter or state. This only takes
+    a single argument `rng`.
+  - `kind`: If set to `:parameter`, the initializer function will be used to initialize the
+    parameters of the layer. If set to `:state`, the initializer function will be used to
+    initialize the states of the layer.
+
+## Examples
+
+```jldoctest
+julia> using Lux, Random
+
+julia> r = @compact(w=@init_fn(rng->randn32(rng, 3, 2)),
+           b=@init_fn(rng->randn32(rng, 3), :state)) do x
+           @return w * x .+ b
+       end;
+
+julia> ps, st = Lux.setup(Xoshiro(0), r);
+
+julia> size(ps.w)
+(3, 2)
+
+julia> size(st.b)
+(3,)
+
+julia> size(r([1, 2], ps, st)[1])
+(3,)
+```
+"""
 macro init_fn(args...)
     @argcheck 1 ≤ length(args) ≤ 2
     kind = length(args) == 1 ? :parameter : args[2]
@@ -428,7 +464,42 @@ end
     value
 end
 
-# TODO: Add docstrings
+"""
+    @non_trainable(x)
+
+Mark a value as non-trainable. This bypasses the regular checks and places the value into
+the state of the layer.
+
+## Arguments
+
+  - `x`: The value to be marked as non-trainable.
+
+## Examples
+
+```jldoctest
+julia> using Lux, Random
+
+julia> r = @compact(w=ones(3), w_fixed=@non_trainable(rand(3))) do x
+           @return sum(w .* x .+ w_fixed)
+       end;
+
+julia> ps, st = Lux.setup(Xoshiro(0), r);
+
+julia> size(ps.w)
+(3,)
+
+julia> size(st.w_fixed)
+(3,)
+
+julia> res, st_ = r([1, 2, 3], ps, st);
+
+julia> st_.w_fixed == st.w_fixed
+true
+
+julia> res isa Number
+true
+```
+"""
 macro non_trainable(x)
     return esc(:($(__NonTrainable)($(x))))
 end
@@ -580,7 +651,8 @@ function __kwarg_descriptor(val)
     val isa Number && return string(val)
     val isa AbstractArray && return sprint(Base.array_summary, val, axes(val))
     val isa Tuple && return "(" * join(map(__kwarg_descriptor, val), ", ") * ")"
-    val isa __InitFn{:parameter} && return "@init_fn($(__kwarg_descriptor(val.f)), parameter)"
+    val isa __InitFn{:parameter} &&
+        return "@init_fn($(__kwarg_descriptor(val.f)), parameter)"
     val isa __InitFn{:state} && return "@init_fn($(__kwarg_descriptor(val.f)), state)"
     val isa Nothing && return "nothing"
     if val isa NamedTuple
