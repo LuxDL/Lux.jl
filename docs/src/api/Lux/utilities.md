@@ -94,6 +94,8 @@ StatefulLuxLayer
 
 ```@docs
 @compact
+@init_fn
+@non_trainable
 ```
 
 ## Truncated Stacktraces (Deprecated)
