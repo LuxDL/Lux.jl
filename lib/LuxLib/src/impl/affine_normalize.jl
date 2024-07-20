@@ -158,7 +158,11 @@ end
     (i, j, k, l) = @index(Global, NTuple)
     @inbounds denom = sqrt(σ²[1, 1, k, l] + ϵ)
     @inbounds denom² = denom * denom
-    @inbounds _sc = scale[1, j, k, 1] / denom
+    if scale !== nothing
+        @inbounds _sc = scale[1, j, k, 1] / denom
+    else
+        @inbounds _sc = inv(denom)
+    end
     @inbounds xμ = x[i, j, k, l] - μ[1, 1, k, l]
 
     @inbounds ∂x[i, j, k, l] = ∂y[i, j, k, l] * _sc
@@ -182,7 +186,7 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
         for K in axes(∂y, 3), L in axes(∂y, 4)
             denom = sqrt(σ²[1, 1, K, L] + ϵ)
             denom² = denom * denom
-            _sc = scale[1, J, K, 1] / denom
+            _sc = scale !== nothing ? (scale[1, J, K, 1] / denom) : inv(denom)
             for I in axes(∂y, 1)
                 xμ = x[I, J, K, L] - μ[1, 1, K, L]
 

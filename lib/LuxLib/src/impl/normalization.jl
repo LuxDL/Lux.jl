@@ -111,7 +111,8 @@ EnzymeRules.inactive_noinl(::typeof(_get_norm_reshape_dims), ::Any...) = nothing
 # code.
 function _groupnorm_impl(x::AbstractArray, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, reduce_dims::Val,
-        training::Val, epsilon, act::F=identity) where {F}
-    (μ, σ²), _ = _get_batch_statistics(x, nothing, nothing, reduce_dims, training, nothing)
+        epsilon, act::F=identity) where {F}
+    (μ, σ²), _ = _get_batch_statistics(
+        x, nothing, nothing, reduce_dims, Val(false), nothing)
     return _affine_normalize_gn(act, x, μ, σ², scale, bias, epsilon)
 end

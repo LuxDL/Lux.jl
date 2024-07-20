@@ -53,17 +53,20 @@
             @test y≈y_generic atol=atol rtol=rtol
             @test eltype(y) == promote_type(Tw, Tx)
 
-            @inferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
+            @test @inferred(fused_conv_bias_activation(
+                activation, weight, x, bias, cdims)) isa Any
             @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
             __f = (σ, w, x, b, cdims) -> sum(
                 abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
 
             if mode != "amdgpu" && activation !== anonact
-                @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+                @test @inferred(Zygote.gradient(
+                    __f, activation, weight, x, bias, cdims)) isa Any
             else
                 try
-                    @inferred Zygote.gradient(__f, activation, weight, x, bias, cdims)
+                    @test @inferred(Zygote.gradient(
+                        __f, activation, weight, x, bias, cdims)) isa Any
                     @test true
                 catch
                     @test_broken false

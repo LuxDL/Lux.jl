@@ -24,7 +24,7 @@
 
             y, nt = instancenorm(x, scale, bias, training, act, epsilon)
 
-            @inferred instancenorm(x, scale, bias, training, act, epsilon)
+            @test @inferred(instancenorm(x, scale, bias, training, act, epsilon)) isa Any
             @jet instancenorm(x, scale, bias, training, act, epsilon)
 
             @test y isa aType{T, length(sz)}

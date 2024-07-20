@@ -25,13 +25,13 @@
                 @test y ≈ y_generic
                 @test eltype(y) == promote_type(Tw, Tx)
 
-                @inferred fused_dense_bias_activation(activation, w, x, bias)
+                @test @inferred(fused_dense_bias_activation(activation, w, x, bias)) isa Any
                 @jet fused_dense_bias_activation(activation, w, x, bias)
 
                 __f = (σ, w, x, b) -> sum(abs2, fused_dense_bias_activation(σ, w, x, b))
 
                 if activation !== anonact
-                    @inferred Zygote.gradient(__f, activation, w, x, bias)
+                    @test @inferred(Zygote.gradient(__f, activation, w, x, bias)) isa Any
                 else
                     @test length(@inferred(Zygote.gradient(__f, activation, w, x, bias)))==4 broken=true
                 end

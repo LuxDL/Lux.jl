@@ -30,7 +30,8 @@
 
             y, nt = batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
-            @inferred batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
+            @test @inferred(batchnorm(
+                x, scale, bias, rm, rv, training, act, T(0.9), epsilon)) isa Any
             @jet batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
             @test y isa aType{T, length(sz)}
