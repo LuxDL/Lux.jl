@@ -58,7 +58,7 @@ end
 function _get_batchnorm_statistics(
         x::AbstractArray{T, N}, running_mean, running_var, ::Val{false}) where {T, N}
     dims = collect([1:(N - 2); N])
-    @assert !(running_mean === nothing ⊻ running_var === nothing)
+    @assert !((running_mean === nothing) ⊻ (running_var === nothing))
     running_mean === nothing && return fast_mean_var(x; dims, corrected=false)
     return running_mean, running_var
 end

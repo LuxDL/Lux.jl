@@ -94,7 +94,8 @@ end
                                                                                                                     Float16)
             end
 
-            if !on_gpu
+            # Upstream bug: https://github.com/EnzymeAD/Enzyme.jl/issues/1651
+            if !on_gpu && !(Sys.iswindows() && T == Float16)
                 ∂x_zyg = only(Zygote.gradient(__f, x))
                 ∂x_enz = zero.(x)
                 Enzyme.autodiff(
