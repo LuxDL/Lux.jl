@@ -1,6 +1,6 @@
 # This is the generic implementation. Helpful because we don't need to manually reshape
 # arrays and such.
-@stable default_mode="warn" function _affine_normalize(
+function _affine_normalize(
         f::F, x::AbstractArray, xmean, xvar, scale, bias, epsilon::Real) where {F}
     return __affine_normalize(f, x, xmean, xvar, scale, bias, epsilon)
 end

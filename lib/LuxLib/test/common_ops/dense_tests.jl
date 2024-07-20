@@ -51,9 +51,8 @@
                     else
                         Const(nothing)
                     end
-                    Enzyme.autodiff(
-                        Reverse, __f, Active, Const(activation), Duplicated(w, ∂w_enz),
-                        Duplicated(x, ∂x_enz), ∂b)
+                    Enzyme.autodiff(Reverse, __f, Active, Const(activation),
+                        Duplicated(w, ∂w_enz), Duplicated(x, ∂x_enz), ∂b)
 
                     @test ∂w_zyg≈∂w_enz rtol=rtol atol=atol
                     @test ∂x_zyg≈∂x_enz rtol=rtol atol=atol

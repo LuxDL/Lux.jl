@@ -33,7 +33,7 @@
                 ((2, 2), (0, 0), (2, 2), 1), ((2, 2), (0, 0), (1, 1), 2))
 
             weight = _convfilter(Tw, kernel, 4 => 8; groups) |> aType
-            x = __generate_fixed_array(Tx, ntuple(Returns(3), length(kernel))..., 4, 2) |>
+            x = __generate_fixed_array(Tx, ntuple(Returns(4), length(kernel))..., 4, 2) |>
                 aType
             bias = hasbias ? aType(__generate_fixed_array(Tx, 8)) : nothing
 

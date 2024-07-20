@@ -50,7 +50,8 @@ function _test_valid_groupnorm_arguments(
                              channels (N - 1 dim of the input array)."))
     end
     if size(x, N - 1) % groups != 0
-        throw(ArgumentError(lazy"Number of channels $(size(x, N - 1)) must be divisible by the number of groups $groups."))
+        throw(ArgumentError("Number of channels $(size(x, N - 1)) must be divisible by \
+                             the number of groups $groups."))
     end
     return nothing
 end

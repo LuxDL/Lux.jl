@@ -58,9 +58,9 @@ end
 function _get_batchnorm_statistics(
         x::AbstractArray{T, N}, running_mean, running_var, ::Val{false}) where {T, N}
     dims = collect([1:(N - 2); N])
-    rm = running_mean === nothing ? fast_mean(x; dims) : running_mean
-    rv = running_var === nothing ? fast_var(x; mean=rm, dims, corrected=false) : running_var
-    return rm, rv
+    @assert !(running_mean === nothing ⊻ running_var === nothing)
+    running_mean === nothing && return fast_mean_var(x; dims, corrected=false)
+    return running_mean, running_var
 end
 
 CRC.@non_differentiable _get_batchnorm_statistics(::Any...)

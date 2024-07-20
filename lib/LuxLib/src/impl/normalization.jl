@@ -61,9 +61,8 @@ __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
 
 function _get_batch_statistics(
         x::AbstractArray, ::Nothing, ::Nothing, ::Val{rdims}, ::Val, momentum) where {rdims}
-    μ = __aos_to_soa(fast_mean(x; dims=rdims))
-    σ² = __aos_to_soa(fast_var(x; corrected=false, mean=μ, dims=rdims))
-    return (μ, σ²), (nothing, nothing)
+    μ, σ² = fast_mean_var(x; dims=rdims, corrected=false)
+    return (__aos_to_soa(μ), __aos_to_soa(σ²)), (nothing, nothing)
 end
 
 function _get_batch_statistics(::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
@@ -73,15 +72,14 @@ end
 
 function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
         r::Val{rdims}, ::Val{true}, momentum) where {rdims}
-    μ = __aos_to_soa(fast_mean(x; dims=rdims))
-    σ² = __aos_to_soa(fast_var(x; corrected=false, mean=μ, dims=rdims))
+    μ, σ² = map(__aos_to_soa, fast_mean_var(x; dims=rdims, corrected=false))
     rμ, rσ² = _update_normalization_statistics(
         __value(x), __value(rμ), __value(rσ²), __value(μ), __value(σ²), momentum, r)
     return (μ, σ²), (rμ, rσ²)
 end
 
-@stable default_mode="warn" function _normalization(
-        x::AbstractArray, running_mean::Optional{<:AbstractVector},
+# NOTE: marking it as stable makes everything type unstable in the backward pass
+function _normalization(x::AbstractArray, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, reduce_dims::Val,
         training::Val, momentum, epsilon, act::F=identity) where {F}
