@@ -32,8 +32,8 @@
 
 # bias activation. While this is not public, we used it in Lux
 function __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F}
-    Base.depwarn("`__apply_bias_activation` is deprecated and will be removed in the next \
-                   release. Use `bias_activation` instead.",
+    __depwarn("`__apply_bias_activation` is deprecated and will be removed in the next \
+               release. Use `bias_activation` instead.",
         :__apply_bias_activation)
     return __bias_activation_impl(σ, x, _vec(bias))
 end

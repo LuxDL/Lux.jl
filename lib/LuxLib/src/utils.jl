@@ -133,6 +133,12 @@ EnzymeRules.inactive_noinl(::typeof(__has_tracked_value), ::Any) = nothing
 
 __has_autodiff_value(x) = __has_tracked_value(x) || __has_dual(x)
 
+## depwarn but marked non-differentiable to prevent type instability
+__depwarn(msg::String, f::Symbol) = Base.depwarn(msg, f)
+
+CRC.@non_differentiable __depwarn(::Any...)
+EnzymeRules.inactive_noinl(::typeof(__depwarn), ::Any...) = nothing
+
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)

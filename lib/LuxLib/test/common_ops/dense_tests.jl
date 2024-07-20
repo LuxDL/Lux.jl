@@ -45,14 +45,19 @@
 
                     ∂w_enz = Enzyme.make_zero(w)
                     ∂x_enz = Enzyme.make_zero(x)
-                    ∂b_enz = Enzyme.make_zero(bias)
+                    ∂b = if hasbias
+                        ∂b_enz = Enzyme.make_zero(bias)
+                        Duplicated(bias, ∂b_enz)
+                    else
+                        Const(nothing)
+                    end
                     Enzyme.autodiff(
                         Reverse, __f, Active, Const(activation), Duplicated(w, ∂w_enz),
-                        Duplicated(x, ∂x_enz), Duplicated(bias, ∂b_enz))
+                        Duplicated(x, ∂x_enz), ∂b)
 
                     @test ∂w_zyg≈∂w_enz rtol=rtol atol=atol
                     @test ∂x_zyg≈∂x_enz rtol=rtol atol=atol
-                    @test ∂b_zyg≈∂b_enz rtol=rtol atol=atol
+                    hasbias && @test ∂b_zyg≈∂b.dval rtol=rtol atol=atol
                 end
 
                 allow_unstable() do

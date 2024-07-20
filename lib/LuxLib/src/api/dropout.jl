@@ -46,11 +46,11 @@ end
 function dropout(rng::AbstractRNG, x::AbstractArray{T1, N}, mask::AbstractArray{T2, N},
         p::T, ::Val{true}, ::Val{false}, invp::T, dims) where {T, T1, T2, N}
     if _dropout_shape(x, dims) != size(mask)
-        Base.depwarn(
-            "`update_mask` is `Val(false)` but `mask` is not of the same \
-             size as `LuxLib._dropout_shape(x, dims)`. This has been \
-             deprecated and will be removed in the next release. Set \
-             `update_mask` to `Val(true)` to avoid this.", :dropout)
+        __depwarn("`update_mask` is `Val(false)` but `mask` is not of the same size as \
+                   `LuxLib._dropout_shape(x, dims)`. This has been deprecated and will be \
+                   removed in the next release. Set \`update_mask` to `Val(true)` to \
+                   avoid this.",
+            :dropout)
         mask, rng_new = _generate_dropout_mask(rng, x, p, invp; dims)
         return __dropout_dot_mul(x, mask), mask, rng_new
     end

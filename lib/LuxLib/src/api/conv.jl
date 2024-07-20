@@ -31,7 +31,7 @@ and minimizes reallocations by reusing the output buffer for multiple operations
 function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::AbstractArray{<:Number, N}, cdims::ConvDims) where {F, N}
-    Base.depwarn("Passing `bias` as a N-D array is deprecated, pass it as a Vector instead",
+    __depwarn("Passing `bias` as a N-D array is deprecated, pass it as a Vector instead",
         :fused_conv_bias_activation)
     return fused_conv_bias_activation(σ, weight, x, _vec(b), cdims)
 end
