@@ -14,7 +14,7 @@ withenv("JULIA_PKG_PRECOMPILE_AUTO" => 0, "GROUP" => group, "BACKEND_GROUP" => g
     try
         Pkg.develop(repo)
         println("+++ :julia: Running tests")
-        Pkg.test("$(repo)"; coverage=true)
+        Pkg.test("$(repo)"; coverage="user")
     catch err
         err isa Pkg.Resolve.ResolverError || rethrow()
         @info "Not compatible with this release. No problem." exception=err
