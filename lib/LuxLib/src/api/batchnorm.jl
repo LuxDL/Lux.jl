@@ -50,10 +50,9 @@ end
     return :($(Val(Tuple(collect([1:(N - 2); N])))))
 end
 
+# Currently used only in cuDNN
 function _get_batchnorm_statistics(x, running_mean, running_var, ::Val{true})
-    rm = _copy_autodiff_barrier(running_mean)
-    rv = _copy_autodiff_barrier(running_var)
-    return rm, rv
+    return _copy_autodiff_barrier(running_mean), _copy_autodiff_barrier(running_var)
 end
 
 function _get_batchnorm_statistics(
@@ -63,6 +62,8 @@ function _get_batchnorm_statistics(
     rv = running_var === nothing ? fast_var(x; mean=rm, dims, corrected=false) : running_var
     return rm, rv
 end
+
+CRC.@non_differentiable _get_batchnorm_statistics(::Any...)
 
 function batchnorm_cudnn end
 function ∇batchnorm_cudnn end

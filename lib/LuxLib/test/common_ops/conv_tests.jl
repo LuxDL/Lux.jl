@@ -70,6 +70,22 @@
                 end
             end
 
+            if !on_gpu
+                _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(
+                    __f, activation, weight, x, bias, cdims)
+
+                ∂w_enz = Enzyme.make_zero(weight)
+                ∂x_enz = Enzyme.make_zero(x)
+                ∂b_enz = Enzyme.make_zero(bias)
+                Enzyme.autodiff(
+                    Reverse, __f, Active, Const(activation), Duplicated(weight, ∂w_enz),
+                    Duplicated(x, ∂x_enz), Duplicated(bias, ∂b_enz), Const(cdims))
+
+                @test ∂w_zyg≈∂w_enz rtol=rtol atol=atol
+                @test ∂x_zyg≈∂x_enz rtol=rtol atol=atol
+                @test ∂b_zyg≈∂b_enz rtol=rtol atol=atol
+            end
+
             mp = Tx != Tw
             skipt = (mp && on_gpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
             allow_unstable() do

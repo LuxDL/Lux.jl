@@ -39,6 +39,22 @@
                 fp16 = Tx == Float16 || Tw == Float16
                 atol = fp16 ? 1.0f-1 : 1.0f-3
                 rtol = fp16 ? 1.0f-1 : 1.0f-3
+
+                if !on_gpu
+                    _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(__f, activation, w, x, bias)
+
+                    ∂w_enz = Enzyme.make_zero(w)
+                    ∂x_enz = Enzyme.make_zero(x)
+                    ∂b_enz = Enzyme.make_zero(bias)
+                    Enzyme.autodiff(
+                        Reverse, __f, Active, Const(activation), Duplicated(w, ∂w_enz),
+                        Duplicated(x, ∂x_enz), Duplicated(bias, ∂b_enz))
+
+                    @test ∂w_zyg≈∂w_enz rtol=rtol atol=atol
+                    @test ∂x_zyg≈∂x_enz rtol=rtol atol=atol
+                    @test ∂b_zyg≈∂b_enz rtol=rtol atol=atol
+                end
+
                 allow_unstable() do
                     @eval @test_gradients $__f $activation $w $x $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(Tx !=
                                                                                                                                      Tw) skip_finite_differences=$(Tx !=

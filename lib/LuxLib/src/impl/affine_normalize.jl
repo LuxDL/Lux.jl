@@ -1,3 +1,5 @@
+# This is the generic implementation. Helpful because we don't need to manually reshape
+# arrays and such.
 @stable default_mode="warn" function _affine_normalize(
         f::F, x::AbstractArray, xmean, xvar, scale, bias, epsilon::Real) where {F}
     return __affine_normalize(f, x, xmean, xvar, scale, bias, epsilon)
@@ -30,3 +32,7 @@ function __affine_normalize(act::F, x::AbstractArray, xmean, xvar, scale::Abstra
     _bias = @. bias - xmean * _scale
     return @. act(x * _scale + _bias)
 end
+
+# Specialized affine normalize that is generally faster that the above generic
+# implementation. We bypass julia's broadcasting mechanism if we can. We still might fall
+# back to the generic implementation if we must (like for ForwardDiff/Tracker/ReverseDiff)
