@@ -18,9 +18,9 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
     return rμ2, rσ²2
 end
 function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
-    @simd ivdep for I in eachindex(rμ2, rσ²2)
-        @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
-        @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+    @fastmath @inbounds @simd ivdep for I in eachindex(rμ2, rσ²2)
+        rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+        rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
     end
 end
 function __update_statistics!(::GPUBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
@@ -84,8 +84,34 @@ function _normalization(x::AbstractArray, running_mean::Optional{<:AbstractVecto
         bias::Optional{<:AbstractVector}, reduce_dims::Val,
         training::Val, momentum, epsilon, act::F=identity) where {F}
     (μ, σ²), (rμ, rσ²) = _get_batch_statistics(
-        x, _reshape_into_proper_shape(running_mean, x),
-        _reshape_into_proper_shape(running_var, x), reduce_dims, training, momentum)
-    return _affine_normalize(act, x, μ, σ², _reshape_into_proper_shape(scale, x),
-        _reshape_into_proper_shape(bias, x), epsilon), _vec(rμ), _vec(rσ²)
+        x, _reshape_into_normalization_shape(running_mean, x),
+        _reshape_into_normalization_shape(running_var, x), reduce_dims, training, momentum)
+    return _affine_normalize(act, x, μ, σ², _reshape_into_normalization_shape(scale, x),
+        _reshape_into_normalization_shape(bias, x), epsilon), _vec(rμ), _vec(rσ²)
+end
+
+_reshape_into_normalization_shape(::Nothing, y) = nothing
+function _reshape_into_normalization_shape(x, y)
+    return reshape(x, _get_norm_reshape_dims(size(y), length(x)))
+end
+
+@inbounds function _get_norm_reshape_dims(sx::NTuple{N, <:Int}, ly::Int) where {N}
+    if ly == sx[N - 1]
+        return ntuple(i -> i == N - 1 ? ly : 1, N)
+    elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
+        return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
+    end
+    throw(ArgumentError("Invalid Dimensions!"))
+end
+
+CRC.@non_differentiable _get_norm_reshape_dims(::Any...)
+EnzymeRules.inactive_noinl(::typeof(_get_norm_reshape_dims), ::Any...) = nothing
+
+# Generally you want to use `_normalization` but calling these functions lead to faster
+# code.
+function _groupnorm_impl(x::AbstractArray, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, reduce_dims::Val,
+        training::Val, epsilon, act::F=identity) where {F}
+    (μ, σ²), _ = _get_batch_statistics(x, nothing, nothing, reduce_dims, training, nothing)
+    return _affine_normalize_gn(act, x, μ, σ², scale, bias, epsilon)
 end

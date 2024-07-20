@@ -14,8 +14,8 @@ end
         ::LoopedArrayOp, noise::AbstractArray, p::Real,
         x::AbstractArray, α::Real, A::Real, B::Real)
     res = similar(x, promote_type(typeof(p), typeof(α)))
-    @simd ivdep for i in eachindex(noise)
-        @inbounds res[i] = muladd(ifelse(noise[i] > p, x[i], α), A, B)
+    @fastmath @inbounds @simd ivdep for i in eachindex(noise)
+        res[i] = muladd(ifelse(noise[i] > p, x[i], α), A, B)
     end
     return res
 end
@@ -32,17 +32,17 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), ::LoopedArrayOp, noise::Abst
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
     _cond = similar(noise, Bool)
     y = similar(x, promote_type(typeof(p), typeof(α), typeof(A), typeof(B), eltype(x)))
-    @simd ivdep for i in eachindex(noise)
-        @inbounds _cond[i] = noise[i] > p
-        @inbounds y[i] = ifelse(_cond[i], x[i], α) * A + B
+    @fastmath @inbounds @simd ivdep for i in eachindex(noise)
+        _cond[i] = noise[i] > p
+        y[i] = ifelse(_cond[i], x[i], α) * A + B
     end
 
     proj_x = CRC.ProjectTo(x)
     _∇alpha_dropout_kernel = let _cond = _cond, proj_x = proj_x, x = x, noise = noise
         Δ -> begin
             ∂x = similar(x)
-            @simd ivdep for i in eachindex(noise)
-                @inbounds ∂x[i] = _cond[i] * Δ[i] * A
+            @fastmath @inbounds @simd ivdep for i in eachindex(noise)
+                ∂x[i] = _cond[i] * Δ[i] * A
             end
             return (ntuple(Returns(∂∅), 4)..., proj_x(∂x), ntuple(Returns(∂∅), 3)...)
         end
@@ -87,8 +87,8 @@ EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
     rand!(rng, y)
     opmode = internal_operation_mode(y)
     if opmode isa LoopedArrayOp
-        @simd ivdep for i in eachindex(y)
-            @inbounds y[i] = (y[i] > p) * invp
+        @fastmath @inbounds @simd ivdep for i in eachindex(y)
+            y[i] = (y[i] > p) * invp
         end
     else
         @. y = (y > p) * invp

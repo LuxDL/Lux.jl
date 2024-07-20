@@ -141,16 +141,16 @@ function __bias_activation_impl_loop!(::LoopedArrayOp, y::AbstractArray{<:Number
     x̃ = reshape(x, x̃_dims)
     if σ === identity
         ỹ = reshape(y, x̃_dims)
-        @simd ivdep for j in axes(ỹ, 2)
+        @fastmath @inbounds @simd ivdep for j in axes(ỹ, 2)
             for i in axes(ỹ, 1), k in axes(ỹ, 3)
-                @inbounds ỹ[i, j, k] = x̃[i, j, k] + bias[j]
+                ỹ[i, j, k] = x̃[i, j, k] + bias[j]
             end
         end
     else
         ỹ = reshape(y, x̃_dims)
-        @simd ivdep for j in axes(ỹ, 2)
+        @fastmath @inbounds @simd ivdep for j in axes(ỹ, 2)
             for i in axes(ỹ, 1), k in axes(ỹ, 3)
-                @inbounds ỹ[i, j, k] = σ(x̃[i, j, k] + bias[j])
+                ỹ[i, j, k] = σ(x̃[i, j, k] + bias[j])
             end
         end
     end

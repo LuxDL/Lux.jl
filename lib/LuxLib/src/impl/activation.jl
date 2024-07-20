@@ -5,12 +5,12 @@ function __activation_gradient(Δ, out, act::F, x) where {F}
     if opmode isa LoopedArrayOp  # All sizes are same
         y = similar(out)
         if x isa NotaNumber
-            @simd ivdep for i in eachindex(Δ, out)
-                @inbounds y[i] = only_derivative(out[i], act, x) * Δ[i]
+            @fastmath @inbounds @simd ivdep for i in eachindex(Δ, out)
+                y[i] = only_derivative(out[i], act, x) * Δ[i]
             end
         else
-            @simd ivdep for i in eachindex(Δ, out, x)
-                @inbounds y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
+            @fastmath @inbounds @simd ivdep for i in eachindex(Δ, out, x)
+                y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
             end
         end
         return y
@@ -26,8 +26,8 @@ _fast_activation(::typeof(identity), x::AbstractArray) = x
     if internal_operation_mode(x) isa LoopedArrayOp
         RT = Core.Compiler._return_type(σ, Tuple{eltype(x)})
         y = similar(x, RT)
-        @simd ivdep for I in eachindex(y, x)
-            @inbounds y[I] = σ(x[I])
+        @fastmath @inbounds @simd ivdep for I in eachindex(y, x)
+            y[I] = σ(x[I])
         end
         return y
     end
@@ -43,8 +43,8 @@ _fast_activation!(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="warn" function _fast_activation!(σ::F, x::AbstractArray) where {F}
     if internal_operation_mode(x) isa LoopedArrayOp
-        @simd ivdep for I in eachindex(x)
-            @inbounds x[I] = σ(x[I])
+        @fastmath @inbounds @simd ivdep for I in eachindex(x)
+            x[I] = σ(x[I])
         end
         return x
     end

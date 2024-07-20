@@ -23,9 +23,6 @@ end
 # Simple Operations -- no rrules needed
 @generated _vec(x::T) where {T} = hasmethod(vec, (T,)) ? :(vec(x)) : :x
 
-_reshape_into_proper_shape(::Nothing, y) = nothing
-_reshape_into_proper_shape(x, y) = reshape(x, _get_reshape_dims(size(y), length(x)))
-
 ## Maybe typecast the array
 _ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 _ofeltype_array(::Type{T}, x::AbstractArray) where {T} = convert(AbstractArray{T}, x)
@@ -44,19 +41,10 @@ __value(::Nothing) = nothing
 
 __aos_to_soa(x::AbstractArray) = x # FIXME: Upstream this to ArrayInterface.jl
 
+__reshape(x::AbstractArray, dims...) = reshape(x, dims)
+__reshape(::Nothing, dims...) = nothing
+
 # Non-differentiable functions
-@inbounds function _get_reshape_dims(sx::NTuple{N, <:Int}, ly::Int) where {N}
-    if ly == sx[N - 1]
-        return ntuple(i -> i == N - 1 ? ly : 1, N)
-    elseif N > 2 && ly == sx[N - 1] * sx[N - 2]
-        return ntuple(i -> i == (N - 1) || i == (N - 2) ? sx[i] : 1, N)
-    end
-    throw(ArgumentError("Invalid Dimensions!"))
-end
-
-CRC.@non_differentiable _get_reshape_dims(::Any...)
-EnzymeRules.inactive_noinl(::typeof(_get_reshape_dims), ::Any...) = nothing
-
 ## Reduce BLAS threads if we are going to use a native Julia implementation
 function __maybe_reduce_BLAS_threads(x::AbstractArray)
     __maybe_reduce_BLAS_threads(get_device_type(x))
@@ -139,6 +127,12 @@ __depwarn(msg::String, f::Symbol) = Base.depwarn(msg, f)
 CRC.@non_differentiable __depwarn(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__depwarn), ::Any...) = nothing
 
+__eltype(::AbstractArray{T}) where {T} = T
+__eltype(::Nothing) = Bool
+
+CRC.@non_differentiable __eltype(::Any)
+EnzymeRules.inactive_noinl(::typeof(__eltype), ::Any) = nothing
+
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
@@ -181,6 +175,7 @@ end
 ## NOTE: Ensure that this always gets compiled out! Else we will have terrible type
 ##       inference.
 function internal_operation_mode(xs::Tuple)
+    xs = unrolled_filter(!isnothing, xs)
     unrolled_any(__has_autodiff_value, xs) && return GenericBroadcastOp()
     dev = get_device_type(xs)
     dev <: AbstractLuxGPUDevice && return GPUBroadcastOp{dev}()
