@@ -388,6 +388,60 @@
             ∂x2 = only(Zygote.gradient(x -> sum(first(model(x, ps, st))), -2.0))
             @test ∂x2 === nothing
         end
+
+        @testset "Init Functions" begin
+            model = @compact(; a=@init_fn(rng->randn(rng, 3, 2))) do x
+                @return a * x
+            end
+
+            ps, st = Lux.setup(rng, model) |> device
+            @test ps.a isa AbstractMatrix
+            @test size(ps.a) == (3, 2)
+
+            x = ones(2, 10) |> aType
+            y, _ = model(x, ps, st)
+            @test y isa AbstractMatrix
+            @test size(y) == (3, 10)
+
+            model = @compact(; a=@init_fn(rng->randn(rng, 3, 2), :parameter),
+                b=2, c=@init_fn(rng->randn(rng, 3), :state)) do x
+                @return a * x
+            end
+
+            ps, st = Lux.setup(rng, model) |> device
+            @test ps.a isa AbstractMatrix && st.b isa Number && st.c isa AbstractVector
+
+            x = ones(2, 10) |> aType
+            y, _ = model(x, ps, st)
+            @test y isa AbstractMatrix
+            @test size(y) == (3, 10)
+
+            @testset "Error Checks" begin
+                # This should work
+                model = @compact(; a=@init_fn(rng->randn(rng, 3, 2), parameter)) do x
+                    @return a * x
+                end
+
+                # This should not work
+                @test_throws ArgumentError @macroexpand(@init_fn(rng->randn(rng, 3, 2),
+                    param))
+            end
+        end
+
+        @testset "Non-Trainable" begin
+            model = @compact(; a=@non_trainable(randn(3, 2))) do x
+                @return a * x
+            end
+
+            ps, st = Lux.setup(rng, model) |> device
+            @test st.a isa AbstractMatrix
+            @test size(st.a) == (3, 2)
+
+            x = ones(2, 10) |> aType
+            y, _ = model(x, ps, st)
+            @test y isa AbstractMatrix
+            @test size(y) == (3, 10)
+        end
     end
 end
 
