@@ -134,6 +134,14 @@ __eltype(::Nothing) = Bool
 CRC.@non_differentiable __eltype(::Any)
 EnzymeRules.inactive_noinl(::typeof(__eltype), ::Any) = nothing
 
+__has_float16(::Type{T}) where {T} = T <: Float16
+__has_float16(::AbstractArray{T}) where {T} = __has_float16(T)
+__has_float16(::Float16) = true
+__has_float16(x) = false
+
+CRC.@non_differentiable __has_float16(::Any)
+EnzymeRules.inactive_noinl(::typeof(__has_float16), ::Any) = nothing
+
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)
@@ -178,6 +186,9 @@ end
 function internal_operation_mode(xs::Tuple)
     xs = unrolled_filter(!isnothing, xs)
     unrolled_any(__has_autodiff_value, xs) && return GenericBroadcastOp()
+    # Float16 is a bit iffy and reordering operations are not optimal for numerical
+    # stability so we use the generic implementation for now.
+    unrolled_any(__has_float16, xs) && return GenericBroadcastOp()
     dev = get_device_type(xs)
     dev <: AbstractLuxGPUDevice && return GPUBroadcastOp{dev}()
     dev <: LuxCPUDevice && return LoopedArrayOp(false)

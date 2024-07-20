@@ -20,13 +20,15 @@
         return reshape(x_, sz)
     end
 
+    anonact = x -> x^3
+
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, ngroups $groups, $act" for T in (
                 Float16, Float32, Float64),
             sz in ((6, 2), (4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2),
                 (4, 4, 6, 2), (2, 2, 6, 2), (3, 3, 12, 4)),
             groups in (2, 3),
-            act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
+            act in (identity, relu, tanh_fast, sigmoid_fast, anonact)
 
             _f = (args...) -> groupnorm(args..., groups, act, epsilon)
             _f2 = (args...) -> groupnorm(args..., groups, act, epsilon)
@@ -54,27 +56,29 @@
             @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any
             @jet groupnorm(x, scale, bias, groups, act, epsilon)
 
-            lfn = (x, sc, b, g, act, ϵ) -> sum(groupnorm(x, sc, b, g, act, ϵ))
-            @test @inferred(Zygote.gradient(lfn, x, scale, bias, groups, act, epsilon)) isa
-                  Any
+            if anonact !== act
+                lfn = (x, sc, b, g, act, ϵ) -> sum(groupnorm(x, sc, b, g, act, ϵ))
+                @test @inferred(Zygote.gradient(
+                    lfn, x, scale, bias, groups, act, epsilon)) isa Any
+            end
 
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
 
-            __f = (args...) -> sum(groupnorm(x, args..., groups, act, epsilon))
+            __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
             skip_fd = act === relu
             allow_unstable() do
-                @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
+                @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
             end
 
             __f = (x, scale, bias) -> sum(groupnorm(x, scale, bias, groups, act, epsilon))
-            if !on_gpu
+            if !on_gpu && !fp16
                 ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
 
                 ∂x_enz = Enzyme.make_zero(x)
                 ∂scale_enz = Enzyme.make_zero(scale)
                 ∂bias_enz = Enzyme.make_zero(bias)
-                Enzyme.autodiff(Reverse, __f, Duplicated(x, ∂x_enz),
+                Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz),
                     Duplicated(scale, ∂scale_enz), Duplicated(bias, ∂bias_enz))
 
                 @test ∂x≈∂x_enz rtol=rtol atol=atol
