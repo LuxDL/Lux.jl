@@ -56,26 +56,19 @@ function _affine_normalize_gn_impl(opmode::AbstractInternalArrayOpMode, f::F,
     return y
 end
 
-function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
-        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real) where {F}
+function __affine_normalize_gn_impl!(
+        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F, x::AbstractArray{<:Number, 4},
+        μ, σ², scale::Optional{<:AbstractArray{<:Number, 4}},
+        bias::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
     @fastmath @inbounds @simd ivdep for J in axes(y, 2)
         for K in axes(y, 3), L in axes(y, 4)
-            _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            _bc = -μ[1, 1, K, L] * _sc
-            for I in axes(y, 1)
-                y[I, J, K, L] = f(x[I, J, K, L] * _sc + _bc)
+            if scale !== nothing
+                _sc = scale[1, J, K, 1] / sqrt(σ²[1, 1, K, L] + ϵ)
+                _bc = bias[1, J, K, 1] - μ[1, 1, K, L] * _sc
+            else
+                _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+                _bc = -μ[1, 1, K, L] * _sc
             end
-        end
-    end
-end
-
-function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
-        x::AbstractArray{<:Number, 4}, μ, σ², scale::AbstractArray{<:Number, 4},
-        bias::AbstractArray{<:Number, 4}, ϵ::Real) where {F}
-    @fastmath @inbounds @simd ivdep for J in axes(y, 2)
-        for K in axes(y, 3), L in axes(y, 4)
-            _sc = scale[1, J, K, 1] / sqrt(σ²[1, 1, K, L] + ϵ)
-            _bc = bias[1, J, K, 1] - μ[1, 1, K, L] * _sc
             for I in axes(y, 1)
                 y[I, J, K, L] = f(x[I, J, K, L] * _sc + _bc)
             end
@@ -167,11 +160,11 @@ end
 
     @inbounds ∂x[i, j, k, l] = ∂y[i, j, k, l] * _sc
     @inbounds ∂μ[i, j, k, l] = -∂x[i, j, k, l]
-    @inbounds ∂σ²[i, j, k, l] -= ∂x[i, j, k, l] * xμ / (2 * denom²)
+    @inbounds ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * xμ / (2 * denom²)
 
     if scale !== nothing
-        @inbounds ∂sc[i, j, k, l] += ∂y[i, j, k, l] * xμ / denom
-        @inbounds ∂b[i, j, k, l] += ∂y[i, j, k, l]
+        @inbounds ∂sc[i, j, k, l] = ∂y[i, j, k, l] * xμ / denom
+        @inbounds ∂b[i, j, k, l] = ∂y[i, j, k, l]
     end
 end
 
@@ -181,6 +174,13 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
     ∂σ² = similar(σ²)
     ∂sc = scale === nothing ? ∂∅ : similar(scale)
     ∂b = bias === nothing ? ∂∅ : similar(bias)
+
+    fill!(∂μ, false)
+    fill!(∂σ², false)
+    if scale !== nothing
+        fill!(∂sc, false)
+        fill!(∂b, false)
+    end
 
     @fastmath @inbounds @simd ivdep for J in axes(∂y, 2)
         for K in axes(∂y, 3), L in axes(∂y, 4)

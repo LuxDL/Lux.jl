@@ -14,6 +14,7 @@ function __added_bias_gradient(b::AbstractVector{<:Number}, Δ::AbstractArray{<:
 end
 
 # Operations that most AD won't be able to differentiate
+__reduce_sum(::Nothing, ::NoTangent) = ∂∅
 function __reduce_sum(x::AbstractArray, y::AbstractArray)
     z = similar(x, promote_type(eltype(x), eltype(y)))
     sum!(z, y)
