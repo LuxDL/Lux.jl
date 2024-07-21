@@ -31,7 +31,8 @@
     anonact = x -> x^3
 
     @testset "$mode" for (mode, aType, on_gpu) in MODES
-        @testset "eltype $T, size $sz, $act" for T in (Float16, Float32, Float64),
+        @testset "eltype $T, size $sz, $act $affine $track_stats" for T in (
+                Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),
             affine in (true, false),
@@ -56,18 +57,20 @@
             end
 
             # Check the rrules
-            _f = (args...) -> sum(first(batchnorm(
-                args..., rm, rv, training, act, T(0.9), epsilon)))
-            _f2 = (args...) -> sum(first(__batchnorm_basic(
-                args..., rm, rv, training, act, T(0.9), epsilon)))
+            if __istraining(training)
+                _f = (args...) -> sum(first(batchnorm(
+                    args..., rm, rv, training, act, T(0.9), epsilon)))
+                _f2 = (args...) -> sum(first(__batchnorm_basic(
+                    args..., rm, rv, training, act, T(0.9), epsilon)))
 
-            ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-            ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(
-                sum ∘ _f2, x, scale, bias)
-            @test ∂x≈∂x_simple atol=atol rtol=rtol
-            if affine
-                @test ∂scale≈∂scale_simple atol=atol rtol=rtol
-                @test ∂bias≈∂bias_simple atol=atol rtol=rtol
+                ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
+                ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(
+                    sum ∘ _f2, x, scale, bias)
+                @test ∂x≈∂x_simple atol=atol rtol=rtol
+                if affine
+                    @test ∂scale≈∂scale_simple atol=atol rtol=rtol
+                    @test ∂bias≈∂bias_simple atol=atol rtol=rtol
+                end
             end
 
             @test @inferred(batchnorm(

@@ -1,6 +1,6 @@
 module LuxLibcuDNNExt
 
-using LuxLib: LuxLib, Optional
+using LuxLib: LuxLib, Optional, ∂∅
 using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray
 using ChainRulesCore: ChainRulesCore
 using cuDNN: cuDNN, cudnnBatchNormalizationBackward,
@@ -44,11 +44,9 @@ function CRC.rrule(::typeof(LuxLib.batchnorm_cudnn), running_mean, running_var, 
     proj_b = CRC.ProjectTo(bias)
     proj_x = CRC.ProjectTo(x)
     ∇batchnorm_cudnn_internal = @closure Δ -> begin
-        ∂y = CRC.unthunk(first(Δ))
-        ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
-            scale, bias, x, ∂y, running_mean, running_var, xmean, xivar; ϵ=epsilon)
-        return (CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent(), proj_g(∂g), proj_b(∂b),
-            proj_x(∂x), CRC.NoTangent(), CRC.NoTangent(), CRC.NoTangent())
+        ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(scale, bias, x, CRC.unthunk(first(Δ)),
+            running_mean, running_var, xmean, xivar; ϵ=epsilon)
+        return ∂∅, ∂∅, ∂∅, proj_g(∂g), proj_b(∂b), proj_x(∂x), ∂∅, ∂∅, ∂∅
     end
     return (y, xmean, xivar), ∇batchnorm_cudnn_internal
 end

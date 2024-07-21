@@ -1,8 +1,8 @@
 module LuxLibTrackerAMDGPUExt
 
 using AMDGPU: AMDGPU
-using LuxLib: LuxLib, Optional
-using NNlib: NNlib, ConvDims, PoolDims
+using LuxLib: LuxLib
+using NNlib: NNlib, PoolDims
 using Tracker: Tracker, TrackedArray
 
 const ROCTrackedArray{T, N} = TrackedArray{T, N, <:AMDGPU.ROCArray{T, N}}

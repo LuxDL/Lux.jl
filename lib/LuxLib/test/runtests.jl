@@ -10,13 +10,7 @@ const EXTRA_PKGS = String[]
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
-    for pkg in EXTRA_PKGS
-        if pkg == "AMDGPU"
-            Pkg.add(; name=pkg, rev="master") # FIXME: remove before merge
-        else
-            Pkg.add(; name=pkg)
-        end
-    end
+    Pkg.add(EXTRA_PKGS)
     Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()
@@ -26,6 +20,17 @@ const LUXLIB_TEST_GROUP = get(ENV, "LUXLIB_TEST_GROUP", "all")
 @info "Running tests for group: $LUXLIB_TEST_GROUP"
 const RETESTITEMS_NWORKERS = parse(Int, get(ENV, "RETESTITEMS_NWORKERS", "0"))
 
-ReTestItems.runtests(
-    @__DIR__; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]),
-    nworkers=ifelse(BACKEND_GROUP ∈ ("cuda", "amdgpu"), 0, RETESTITEMS_NWORKERS))
+if BACKEND_GROUP ∈ ("cuda", "amdgpu")
+    # Upstream bug: https://github.com/JuliaTesting/ReTestItems.jl/issues/164
+    if LUXLIB_TEST_GROUP == "all"
+        ReTestItems.runtests(@__DIR__; name=r"^(?!.*Normalization$).*")
+        ReTestItems.runtests(@__DIR__; name=r".*Normalization$", nworkers=0)
+    elseif LUXLIB_TEST_GROUP == "normalization"
+        ReTestItems.runtests(@__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=0)
+    else
+        ReTestItems.runtests(@__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)])
+    end
+else
+    ReTestItems.runtests(
+        @__DIR__; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]))
+end

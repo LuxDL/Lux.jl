@@ -96,7 +96,7 @@ end
             end
 
             # Upstream bug: https://github.com/EnzymeAD/Enzyme.jl/issues/1651
-            if !on_gpu && !(Sys.iswindows() && T == Float16)
+            if !on_gpu && !Sys.iswindows()
                 ∂x_zyg = only(Zygote.gradient(__f, x))
                 ∂x_enz = zero.(x)
                 Enzyme.autodiff(
@@ -138,7 +138,7 @@ end
                                                                                                                     Float16)
             end
 
-            if !on_gpu
+            if !on_gpu && !Sys.iswindows()
                 ∂x_zyg = only(Zygote.gradient(__f, x))
                 ∂x_enz = Enzyme.gradient(Reverse, __f, x)
                 @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
@@ -177,7 +177,8 @@ end
                                                                                                                     Float16)
             end
 
-            if !on_gpu
+            # Upstream bug: https://github.com/EnzymeAD/Enzyme.jl/issues/1651
+            if !on_gpu && !Sys.iswindows()
                 ∂x_zyg = only(Zygote.gradient(__f, x))
                 ∂x_enz = zero.(x)
                 Enzyme.autodiff(
