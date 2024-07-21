@@ -8,6 +8,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
+using LoopVectorization: @turbo
 using LuxCore: LuxCore
 using LuxDeviceUtils: get_device_type, LuxAMDGPUDevice, LuxCUDADevice, LuxCPUDevice,
                       AbstractLuxGPUDevice, AbstractLuxDevice
@@ -17,7 +18,10 @@ using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, sigmoid_fast, swish, σ, 
 using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
 using Statistics: Statistics, mean, var
+using Strided: Strided, @strided
+using SIMDTypes: SIMDTypes
 using UnrolledUtilities: unrolled_any, unrolled_all, unrolled_filter
+using VectorizedStatistics: vmean, vvar
 
 @reexport using NNlib
 

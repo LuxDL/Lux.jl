@@ -23,8 +23,7 @@ __generic_bias_activation(σ::F, x::AbstractArray{<:Number}, ::Nothing) where {F
 function __generic_bias_activation(
         σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     bias_ = __reshape_bias_into_xdims(x, bias)
-    # TODO: Call broadcast(σ ∘ +, x, bias) once https://github.com/FluxML/NNlib.jl/pull/597 lands
-    return @. σ(x + bias_)
+    return broadcast(σ ∘ +, x, bias_)
 end
 
 # Entry Points to the implementation
@@ -120,17 +119,19 @@ function __bias_activation_impl!(
         y::AbstractArray{<:Number, N}, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}
     opmode = internal_operation_mode((y, x, bias))
+    bias_ = __reshape_bias_into_xdims(x, bias)
     if opmode isa LoopedArrayOp
-        @strided @. y = σ(x + bias)
+        bc = Broadcast.instantiate(Broadcast.broadcasted(σ ∘ +, x, bias_))
+        @simd ivdep for I in eachindex(bc)
+            @inbounds y[I] = bc[I]
+        end
         return y
     end
-    bias_ = __reshape_bias_into_xdims(x, bias)
     if σ === identity
         broadcast!(+, y, x, bias_)
         return y
     end
-    # TODO: Call broadcast!(σ ∘ +, y, x, bias) once https://github.com/FluxML/NNlib.jl/pull/597 lands
-    @. y = σ(x + bias_)
+    broadcast!(σ ∘ +, y, x, bias)
     return y
 end
 
@@ -142,7 +143,7 @@ function __apply_bias_activation_cached!!(
     if can_setindex(x)
         opmode = internal_operation_mode((x, bias))
         if opmode isa LoopedArrayOp
-            @strided @. x += bias
+            y = broadcast(+, x, bias)
             return _fast_activation(σ, x), x
         end
         bias_ = __reshape_bias_into_xdims(x, bias)

@@ -1,7 +1,7 @@
 # Wrappers over Base & LinearAlgen implementations to use poly algs if needed
 __matmul(A, B) = A * B
 __matmul!(C, A, B) = mul!(C, A, B)
-__matmuladd(A, B, C) = muladd(A, B, C)
+__matmuladd(A, B, C) = A * B .+ C
 __matmuladd(A, B, ::Nothing) = __matmul(A, B)
 
 # Our main implementations
