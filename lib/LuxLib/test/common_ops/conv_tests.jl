@@ -65,8 +65,7 @@
                     __f, activation, weight, x, bias, cdims)) isa Any
             else
                 try
-                    @test @inferred(Zygote.gradient(
-                        __f, activation, weight, x, bias, cdims)) isa Any
+                    @inferred(Zygote.gradient(__f, activation, weight, x, bias, cdims))
                     @test true
                 catch
                     @test_broken false

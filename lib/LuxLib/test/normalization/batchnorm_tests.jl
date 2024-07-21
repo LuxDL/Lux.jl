@@ -15,20 +15,56 @@
         end
     end
 
+    # Bypassing all optimizations
+    function __batchnorm_basic(
+            x::AbstractArray{<:Real, N}, scale::LuxLib.Optional{<:AbstractVector},
+            bias::LuxLib.Optional{<:AbstractVector},
+            running_mean::LuxLib.Optional{<:AbstractVector},
+            running_var::LuxLib.Optional{<:AbstractVector}, training::Val,
+            σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
+        x_, xm, xv = LuxLib._normalization(
+            x, LuxLib.__value(running_mean), LuxLib.__value(running_var), scale, bias,
+            LuxLib._get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)
+        return (x_, (; running_mean=LuxLib.__value(xm), running_var=LuxLib.__value(xv)))
+    end
+
+    anonact = x -> x^3
+
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act" for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),
             affine in (true, false),
             track_stats in (true, false),
-            act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
+            act in (identity, relu, tanh_fast, sigmoid_fast, anonact)
 
-            _f = (args...) -> batchnorm(args..., training, act, T(0.9), epsilon)
-
-            epsilon = T(1e-5)
+            epsilon = eps(T)^(5 // 7)
             x, scale, bias, rm, rv = _setup_batchnorm(aType, T, sz; track_stats, affine)
 
             y, nt = batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
+            y_simple, nt_simple = __batchnorm_basic(
+                x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
+
+            fp16 = T == Float16
+            atol = fp16 ? 1.0f-2 : 1.0f-3
+            rtol = fp16 ? 1.0f-2 : 1.0f-3
+
+            @test y≈y_simple atol=atol rtol=rtol
+            @test nt.running_mean≈nt_simple.running_mean atol=atol rtol=rtol
+            @test nt.running_var≈nt_simple.running_var atol=atol rtol=rtol
+
+            # Check the rrules
+            _f = (args...) -> sum(first(batchnorm(
+                args..., rm, rv, training, act, T(0.9), epsilon)))
+            _f2 = (args...) -> sum(first(__batchnorm_basic(
+                args..., rm, rv, training, act, T(0.9), epsilon)))
+
+            ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
+            ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(
+                sum ∘ _f2, x, scale, bias)
+            @test ∂x≈∂x_simple atol=atol rtol=rtol
+            @test ∂scale≈∂scale_simple atol=atol rtol=rtol
+            @test ∂bias≈∂bias_simple atol=atol rtol=rtol
 
             @test @inferred(batchnorm(
                 x, scale, bias, rm, rv, training, act, T(0.9), epsilon)) isa Any
@@ -42,13 +78,19 @@
             end
 
             if __istraining(training) && affine
-                fp16 = T == Float16
                 __f = (args...) -> sum(first(batchnorm(
                     x, args..., rm, rv, training, act, T(0.9), epsilon)))
                 skip_fd = act === relu
                 allow_unstable() do
-                    @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 skip_finite_differences=$(skip_fd)
+                    @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_finite_differences=$(skip_fd)
                 end
+            end
+
+            if anonact !== act
+                lfn = (x, sc, b, rm, rv, tr, act, ϵ) -> sum(batchnorm(
+                    x, sc, b, rm, rv, tr, act, ϵ))
+                @test @inferred(Zygote.gradient(
+                    lfn, x, scale, bias, rm, rv, training, act, epsilon)) isa Any
             end
         end
 

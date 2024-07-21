@@ -10,16 +10,18 @@
         return x, scale, bias
     end
 
+    anonact = x -> x^3
+
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act" for T in (Float16, Float32, Float64),
             sz in ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
             training in (Val(true), Val(false)),
             affine in (true, false),
-            act in (identity, relu, tanh_fast, sigmoid_fast, x -> x^3)
+            act in (identity, relu, tanh_fast, sigmoid_fast, anonact)
 
             _f = (args...) -> instancenorm(args..., training, act, epsilon)
 
-            epsilon = T(1e-5)
+            epsilon = LuxLib.__default_epsilon(T)
             x, scale, bias = _setup_instancenorm(aType, T, sz; affine)
 
             y, nt = instancenorm(x, scale, bias, training, act, epsilon)
@@ -46,6 +48,12 @@
                 allow_unstable() do
                     @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
                 end
+            end
+
+            if anonact !== act
+                lfn = (x, sc, b, tr, act, ϵ) -> sum(instancenorm(x, sc, b, tr, act, ϵ))
+                @test @inferred(Zygote.gradient(
+                    lfn, x, scale, bias, training, act, epsilon)) isa Any
             end
         end
     end

@@ -142,7 +142,7 @@ __has_float16(x) = false
 CRC.@non_differentiable __has_float16(::Any)
 EnzymeRules.inactive_noinl(::typeof(__has_float16), ::Any) = nothing
 
-__default_epsilon(::Type{T}) where {T} = eps(T)^(5 / 7)
+__default_epsilon(::Type{T}) where {T} = T(eps(T)^(5 / 7))
 __default_epsilon(::AbstractArray{T}) where {T} = __default_epsilon(T)
 
 CRC.@non_differentiable __default_epsilon(::Any...)

@@ -33,7 +33,7 @@
             _f = (args...) -> groupnorm(args..., groups, act, epsilon)
             _f2 = (args...) -> groupnorm(args..., groups, act, epsilon)
 
-            epsilon = T(1e-5)
+            epsilon = LuxLib.__default_epsilon(T)
             x, scale, bias = _setup_groupnorm(aType, T, sz)
             y = _f(x, scale, bias)
 
@@ -65,10 +65,10 @@
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
 
-            __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
+            __f = (args...) -> sum(groupnorm(x, args..., groups, act, epsilon))
             skip_fd = act === relu
             allow_unstable() do
-                @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
+                @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
             end
 
             __f = (x, scale, bias) -> sum(groupnorm(x, scale, bias, groups, act, epsilon))

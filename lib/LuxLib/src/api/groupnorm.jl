@@ -29,8 +29,8 @@ The normalized array is returned.
     on computer vision (ECCV). 2018.
 """
 function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, groups::Int,
-        σ::F=identity, epsilon::Real=__default_epsilon(x))
+        bias::Optional{<:AbstractVector}, groups::Int, σ::F=identity,
+        epsilon::Real=__default_epsilon(x)) where {F, N}
     _test_valid_groupnorm_arguments(x, scale, bias, groups)
 
     sz = size(x)
