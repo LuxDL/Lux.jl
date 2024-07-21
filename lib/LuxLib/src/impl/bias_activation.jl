@@ -139,16 +139,16 @@ function __apply_bias_activation_cached!!(
         σ::F, x, bias::Optional{<:AbstractVector{<:Number}}) where {F}
     @assert σ !== identity
     bias === nothing && return _fast_activation(σ, x), x
+    bias_ = __reshape_bias_into_xdims(x, bias)
     if can_setindex(x)
         opmode = internal_operation_mode((x, bias))
         if opmode isa LoopedArrayOp
-            y = broadcast(+, x, bias)
+            y = broadcast(+, x, bias_)
             return _fast_activation(σ, x), x
         end
-        bias_ = __reshape_bias_into_xdims(x, bias)
         broadcast!(+, x, x, bias_)
         return _fast_activation(σ, x), x
     end
-    y = broadcast(+, x, __reshape_bias_into_xdims(x, bias))
+    y = broadcast(+, x, bias_)
     return _fast_activation(σ, y), y
 end

@@ -104,7 +104,7 @@ for (fbase, ffast) in ((NNlib.sigmoid_fast, sigmoid_fast_sleefpirates),
     (NNlib.softplus, softplus_sleefpirates), (NNlib.logsigmoid, logsigmoid_sleefpirates),
     (NNlib.elu, elu_sleefpirates), (NNlib.gelu, gelu_sleefpirates),
     (NNlib.swish, swish_sleefpirates), (NNlib.lisht, lisht_sleefpirates),
-    (NNlib.tanh, tanh_sleefpirates), (NNlib.tanh_fast, tanh_fast_sleefpirates))
+    (Base.tanh, tanh_sleefpirates), (NNlib.tanh_fast, tanh_fast_sleefpirates))
     @eval __sleefpirates_activation(::typeof($fbase)) = $ffast
 end
 __sleefpirates_activation(f::F) where {F} = f

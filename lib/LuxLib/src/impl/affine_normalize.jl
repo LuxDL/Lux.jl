@@ -177,36 +177,41 @@ end
     end
 end
 
-function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, bias, ϵ)
-    ∂x = similar(x)
-    ∂μ = similar(μ)
-    ∂σ² = similar(σ²)
-    ∂sc = scale === nothing ? ∂∅ : similar(scale)
-    ∂b = bias === nothing ? ∂∅ : similar(bias)
-
-    fill!(∂μ, false)
-    fill!(∂σ², false)
-    if scale !== nothing
-        fill!(∂sc, false)
-        fill!(∂b, false)
-    end
+function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², ::Nothing, ::Nothing, ϵ)
+    ∂x, ∂μ, ∂σ² = similar(x), zero.(μ), zero.(σ²)
+    half = eltype(∂σ²)(0.5)
 
     @simd ivdep for L in axes(∂y, 4)
-        for K in axes(∂y, 3), J in axes(∂y, 2)
-            @inbounds denom = sqrt(σ²[1, 1, K, L] + ϵ)
-            denom² = denom * denom
-            @inbounds _sc = scale !== nothing ? (scale[1, J, K, 1] / denom) : inv(denom)
-            for I in axes(∂y, 1)
+        for K in axes(∂y, 3)
+            @inbounds idenom = @fastmath inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            idenom² = idenom^2
+            for J in axes(∂y, 2), I in axes(∂y, 1)
                 @inbounds xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-                @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
+                @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
                 @inbounds ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                @inbounds ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ / (2 * denom²)
+                @inbounds ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
+            end
+        end
+    end
+end
 
-                if scale !== nothing
-                    @inbounds ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ / denom
-                    @inbounds ∂b[1, J, K, 1] += ∂y[I, J, K, L]
-                end
+function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, bias, ϵ)
+    ∂x, ∂μ, ∂σ², ∂sc, ∂b = similar(x), zero.(μ), zero.(σ²), zero.(scale), zero.(bias)
+    half = eltype(∂σ²)(0.5)
+
+    @simd ivdep for L in axes(∂y, 4)
+        for K in axes(∂y, 3)
+            @inbounds idenom = @fastmath inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            idenom² = idenom^2
+            for J in axes(∂y, 2), I in axes(∂y, 1)
+                @inbounds xμ = x[I, J, K, L] - μ[1, 1, K, L]
+
+                @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * scale[1, J, K, 1] * idenom
+                @inbounds ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+                @inbounds ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
+                @inbounds ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
+                @inbounds ∂b[1, J, K, 1] += ∂y[I, J, K, L]
             end
         end
     end
