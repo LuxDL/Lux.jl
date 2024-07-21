@@ -36,6 +36,10 @@
             atol = fp16 ? 1.0f-2 : 1.0f-3
             rtol = fp16 ? 1.0f-2 : 1.0f-3
 
+            fp16 = T == Float16
+            atol = fp16 ? 1.0f-2 : 1.0f-3
+            rtol = fp16 ? 1.0f-2 : 1.0f-3
+
             if __istraining(training) && affine
                 __f = (args...) -> sum(first(instancenorm(
                     x, args..., training, act, epsilon)))
