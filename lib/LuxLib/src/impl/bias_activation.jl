@@ -41,7 +41,7 @@ __bias_activation_impl(::typeof(identity), x::AbstractArray{<:Number}, ::Nothing
 function __bias_activation_impl(σ::F, x::AbstractArray{<:Number}, ::Nothing) where {F}
     return _fast_activation(σ, x)
 end
-@stable default_mode="warn" function __bias_activation_impl(
+@stable default_mode="disable" function __bias_activation_impl(
         σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     if unrolled_all(fast_scalar_indexing, (x, bias))
         y = similar(x, __get_concrete_fba_output_eltype(σ, x, bias))
@@ -73,7 +73,7 @@ __bias_activation_impl!!(::typeof(identity), x::AbstractArray{<:Number}, ::Nothi
 function __bias_activation_impl!!(σ::F, x::AbstractArray{<:Number}, ::Nothing) where {F}
     return fast_activation!!(σ, x)
 end
-@stable default_mode="warn" function __bias_activation_impl!!(
+@stable default_mode="disable" function __bias_activation_impl!!(
         σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     can_setindex(x) || return __bias_activation_impl(σ, x, bias)
     __bias_activation_impl!(x, σ, x, bias)
@@ -121,7 +121,7 @@ function __bias_activation_impl!(
         bias::AbstractVector{<:Number}) where {F, N}
     opmode = internal_operation_mode((y, x, bias))
     if opmode isa LoopedArrayOp
-        __bias_activation_impl_loop!(opmode, y, σ, x, bias)
+        @strided @. y = σ(x + bias)
         return y
     end
     bias_ = __reshape_bias_into_xdims(x, bias)
@@ -134,28 +134,6 @@ function __bias_activation_impl!(
     return y
 end
 
-function __bias_activation_impl_loop!(::LoopedArrayOp, y::AbstractArray{<:Number, N}, σ::F,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
-    sz_fn = Base.Fix1(size, x)
-    x̃_dims = (prod(sz_fn, 1:(N - 2); init=1), sz_fn(N - 1), sz_fn(N))
-    x̃ = reshape(x, x̃_dims)
-    if σ === identity
-        ỹ = reshape(y, x̃_dims)
-        @fastmath @inbounds @simd ivdep for j in axes(ỹ, 2)
-            for i in axes(ỹ, 1), k in axes(ỹ, 3)
-                ỹ[i, j, k] = x̃[i, j, k] + bias[j]
-            end
-        end
-    else
-        ỹ = reshape(y, x̃_dims)
-        @fastmath @inbounds @simd ivdep for j in axes(ỹ, 2)
-            for i in axes(ỹ, 1), k in axes(ỹ, 3)
-                ỹ[i, j, k] = σ(x̃[i, j, k] + bias[j])
-            end
-        end
-    end
-end
-
 # Useful in some of the rrule implementations
 function __apply_bias_activation_cached!!(
         σ::F, x, bias::Optional{<:AbstractVector{<:Number}}) where {F}
@@ -164,7 +142,7 @@ function __apply_bias_activation_cached!!(
     if can_setindex(x)
         opmode = internal_operation_mode((x, bias))
         if opmode isa LoopedArrayOp
-            __bias_activation_impl_loop!(opmode, x, identity, x, bias)
+            @strided @. x += bias
             return _fast_activation(σ, x), x
         end
         bias_ = __reshape_bias_into_xdims(x, bias)

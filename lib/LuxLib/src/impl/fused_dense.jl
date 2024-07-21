@@ -23,13 +23,10 @@ function __fused_dense_bias_activation_impl(
         get_device_type((weight, x)), act, weight, x, b)
 end
 
-@stable default_mode="warn" function __fused_dense_bias_activation_impl(
+@stable default_mode="disable" function __fused_dense_bias_activation_impl(
         ::Type{T}, act::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {T, F}
-    if act === identity
-        b === nothing && return (weight * x)
-        return __matmuladd(weight, x, b)
-    end
+    act === identity && return __matmuladd(weight, x, b)
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     __matmul!(y, weight, x)
@@ -80,7 +77,7 @@ end
 # Try to use cuBLASLt if available / possible. The function is defined once CUDA.jl is loaded
 function __attempt_cublasLt_fused_matmul end
 
-@stable default_mode="warn" function __fused_dense_bias_activation_impl(
+@stable default_mode="disable" function __fused_dense_bias_activation_impl(
         ::Type{<:LuxCUDADevice}, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
     (y, _, retcode) = __attempt_cublasLt_fused_matmul(act, weight, x, b, Val(false))

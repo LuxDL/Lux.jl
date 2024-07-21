@@ -10,7 +10,7 @@ function _alpha_dropout_kernel(noise::AbstractArray, p, x::AbstractArray, α, A,
     return _alpha_dropout_kernel(internal_operation_mode((noise, x)), noise, p, x, α, A, B)
 end
 
-@stable default_mode="warn" function _alpha_dropout_kernel(
+@stable default_mode="disable" function _alpha_dropout_kernel(
         ::LoopedArrayOp, noise::AbstractArray, p::Real,
         x::AbstractArray, α::Real, A::Real, B::Real)
     res = similar(x, promote_type(typeof(p), typeof(α)))
@@ -20,7 +20,7 @@ end
     return res
 end
 
-@stable default_mode="warn" function _alpha_dropout_kernel(
+@stable default_mode="disable" function _alpha_dropout_kernel(
         ::AbstractBroadcastOpMode, noise::AbstractArray,
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
     A′, B′, α = eltype(x)(A), eltype(x)(B), eltype(x)(α)
@@ -70,7 +70,7 @@ _dropout_fptype(x) = float(real(__value(eltype(x))))
 CRC.@non_differentiable _dropout_fptype(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_dropout_fptype), ::Any...) = nothing
 
-@stable default_mode="warn" function _alpha_dropout_noise(rng, x)
+@stable default_mode="disable" function _alpha_dropout_noise(rng, x)
     rng = LuxCore.replicate(rng)
     noise = similar(x, _dropout_fptype(x))
     rand!(rng, noise)
@@ -80,7 +80,7 @@ end
 CRC.@non_differentiable _alpha_dropout_noise(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 
-@stable default_mode="warn" function _generate_dropout_mask(
+@stable default_mode="disable" function _generate_dropout_mask(
         rng::AbstractRNG, x, p, invp; dims)
     rng = LuxCore.replicate(rng)
     y = similar(x, _dropout_fptype(x), _dropout_shape(x, dims))
@@ -100,7 +100,7 @@ CRC.@non_differentiable _generate_dropout_mask(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_generate_dropout_mask), ::Any...) = nothing
 
 # dropout -- force don't compute some gradients
-@stable default_mode="warn" function __dropout_dot_mul(
+@stable default_mode="disable" function __dropout_dot_mul(
         x::AbstractArray, mask::AbstractArray)
     return x .* mask
 end

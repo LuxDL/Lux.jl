@@ -22,7 +22,7 @@ end
 # Entry Points to the implementation
 _fast_activation(::typeof(identity), x::AbstractArray) = x
 
-@stable default_mode="warn" function _fast_activation(σ::F, x::AbstractArray) where {F}
+@stable default_mode="disable" function _fast_activation(σ::F, x::AbstractArray) where {F}
     if internal_operation_mode(x) isa LoopedArrayOp
         RT = Core.Compiler._return_type(σ, Tuple{eltype(x)})
         y = similar(x, RT)
@@ -41,7 +41,7 @@ end
 
 _fast_activation!(::typeof(identity), x::AbstractArray) = x
 
-@stable default_mode="warn" function _fast_activation!(σ::F, x::AbstractArray) where {F}
+@stable default_mode="disable" function _fast_activation!(σ::F, x::AbstractArray) where {F}
     if internal_operation_mode(x) isa LoopedArrayOp
         @fastmath @inbounds @simd ivdep for I in eachindex(x)
             x[I] = σ(x[I])
