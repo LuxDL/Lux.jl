@@ -33,7 +33,6 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [extensions]
-LuxLibAMDGPUExt = "AMDGPU"
 LuxLibCUDAExt = "CUDA"
 LuxLibReverseDiffExt = "ReverseDiff"
 LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
@@ -60,7 +59,7 @@ LuxCore = "0.1.13"
 LuxDeviceUtils = "0.1.26"
 LuxTestUtils = "0.1.18"
 Markdown = "1.10"
-NNlib = "0.9.13"
+NNlib = "0.9.21"
 Pkg = "1.10"
 Preferences = "1.4"
 Random = "1.10"
