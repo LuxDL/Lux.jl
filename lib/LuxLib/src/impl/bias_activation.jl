@@ -15,15 +15,13 @@ end
 
 function __generic_bias_activation(
         ::typeof(identity), x::AbstractArray{<:Number}, bias::AbstractVector{<:Number})
-    bias_ = __reshape_bias_into_xdims(x, bias)
-    return broadcast(+, x, bias_)
+    return broadcast(+, x, __reshape_bias_into_xdims(x, bias))
 end
 __generic_bias_activation(::typeof(identity), x::AbstractArray{<:Number}, ::Nothing) = x
 __generic_bias_activation(σ::F, x::AbstractArray{<:Number}, ::Nothing) where {F} = σ.(x)
 function __generic_bias_activation(
         σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
-    bias_ = __reshape_bias_into_xdims(x, bias)
-    return broadcast(σ ∘ +, x, bias_)
+    return broadcast(σ ∘ +, x, __reshape_bias_into_xdims(x, bias))
 end
 
 # Entry Points to the implementation
@@ -121,7 +119,8 @@ function __bias_activation_impl!(
     opmode = internal_operation_mode((y, x, bias))
     bias_ = __reshape_bias_into_xdims(x, bias)
     if opmode isa LoopedArrayOp
-        bc = Broadcast.instantiate(Broadcast.broadcasted(σ ∘ +, x, bias_))
+        σ_sleef = __sleefpirates_activation(σ)
+        bc = Broadcast.instantiate(Broadcast.broadcasted(σ_sleef ∘ +, x, bias_))
         @simd ivdep for I in eachindex(bc)
             @inbounds y[I] = bc[I]
         end
@@ -131,7 +130,7 @@ function __bias_activation_impl!(
         broadcast!(+, y, x, bias_)
         return y
     end
-    broadcast!(σ ∘ +, y, x, bias)
+    broadcast!(σ ∘ +, y, x, bias_)
     return y
 end
 

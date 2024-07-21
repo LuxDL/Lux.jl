@@ -24,10 +24,11 @@ _fast_activation(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="disable" function _fast_activation(σ::F, x::AbstractArray) where {F}
     if internal_operation_mode(x) isa LoopedArrayOp
-        RT = Core.Compiler._return_type(σ, Tuple{eltype(x)})
+        σ_sleef = __sleefpirates_activation(σ)
+        RT = Core.Compiler._return_type(σ_sleef, Tuple{eltype(x)})
         y = similar(x, RT)
         @simd ivdep for I in eachindex(y, x)
-            @inbounds y[I] = σ(x[I])
+            @inbounds y[I] = σ_sleef(x[I])
         end
         return y
     end
@@ -43,8 +44,9 @@ _fast_activation!(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="disable" function _fast_activation!(σ::F, x::AbstractArray) where {F}
     if internal_operation_mode(x) isa LoopedArrayOp
+        σ_sleef = __sleefpirates_activation(σ)
         @simd ivdep for I in eachindex(x)
-            @inbounds x[I] = σ(x[I])
+            @inbounds x[I] = σ_sleef(x[I])
         end
         return x
     end
@@ -81,3 +83,28 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!
 
     return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
 end
+
+# Specialized functions that use SLEEFPirates.jl to speed up the activation functions
+sigmoid_fast_sleefpirates(x) = SLEEFPirates.sigmoid_fast(x)
+softplus_sleefpirates(x) = SLEEFPirates.softplus(x)
+logsigmoid_sleefpirates(x) = -softplus_sleefpirates(-x)
+elu_sleefpirates(x, α=1) = SLEEFPirates.Elu(α)(x)
+gelu_sleefpirates(x) = SLEEFPirates.gelu(x)
+swish_sleefpirates(x) = Base.FastMath.mul_fast(x, sigmoid_fast_sleefpirates(x))
+lisht_sleefpirates(x) = Base.FastMath.mul_fast(x, tanh_fast_sleefpirates(x))
+tanh_sleefpirates(x) = SLEEFPirates.tanh(x)
+tanh_fast_sleefpirates(x) = SLEEFPirates.tanh_fast(x)
+
+# Convert to SLEEFPirates.jl
+__sleefpirates_activation(f::F, ::Type{T}) where {F, T} = f
+__sleefpirates_activation(f::F, ::Type{Float32}) where {F} = __sleefpirates_activation(f)
+__sleefpirates_activation(f::F, ::Type{Float64}) where {F} = __sleefpirates_activation(f)
+
+for (fbase, ffast) in ((NNlib.sigmoid_fast, sigmoid_fast_sleefpirates),
+    (NNlib.softplus, softplus_sleefpirates), (NNlib.logsigmoid, logsigmoid_sleefpirates),
+    (NNlib.elu, elu_sleefpirates), (NNlib.gelu, gelu_sleefpirates),
+    (NNlib.swish, swish_sleefpirates), (NNlib.lisht, lisht_sleefpirates),
+    (NNlib.tanh, tanh_sleefpirates), (NNlib.tanh_fast, tanh_fast_sleefpirates))
+    @eval __sleefpirates_activation(::typeof($fbase)) = $ffast
+end
+__sleefpirates_activation(f::F) where {F} = f

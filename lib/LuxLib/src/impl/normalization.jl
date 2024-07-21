@@ -18,9 +18,9 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
     return rμ2, rσ²2
 end
 function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
-    @inbounds @simd ivdep for I in eachindex(rμ2, rσ²2)
-        rμ2[I] = m3 * rμ[I] + m1 * μ[I]
-        rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+    @simd ivdep for I in eachindex(rμ2, rσ²2)
+        @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+        @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
     end
 end
 function __update_statistics!(::GPUBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
@@ -38,7 +38,6 @@ end
 end
 
 CRC.@non_differentiable __update_statistics(::Any...)
-# EnzymeRules.inactive_noinl(::typeof(__update_statistics), ::Any...) = nothing
 
 function _update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
@@ -54,8 +53,6 @@ function _update_normalization_statistics(
 end
 
 CRC.@non_differentiable _update_normalization_statistics(::Any...)
-# NOTE: The following leads to mixed activity not sure why
-# EnzymeRules.inactive_noinl(::typeof(_update_normalization_statistics), ::Any...) = nothing
 
 __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
 
