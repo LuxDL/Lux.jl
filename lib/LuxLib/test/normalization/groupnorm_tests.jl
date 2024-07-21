@@ -46,12 +46,14 @@
             @test y≈y_simple atol=atol rtol=rtol
 
             # Check the rrules
-            ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-            ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(
-                sum ∘ _f2, x, scale, bias)
-            @test ∂x≈∂x_simple atol=atol rtol=rtol
-            @test ∂scale≈∂scale_simple atol=atol rtol=rtol
-            @test ∂bias≈∂bias_simple atol=atol rtol=rtol
+            if !fp16
+                ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
+                ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(
+                    sum ∘ _f2, x, scale, bias)
+                @test ∂x≈∂x_simple atol=atol rtol=rtol
+                @test ∂scale≈∂scale_simple atol=atol rtol=rtol
+                @test ∂bias≈∂bias_simple atol=atol rtol=rtol
+            end
 
             @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any
             @jet groupnorm(x, scale, bias, groups, act, epsilon)

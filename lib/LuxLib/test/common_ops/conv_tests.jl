@@ -79,8 +79,7 @@
                 ∂w_enz = Enzyme.make_zero(weight)
                 ∂x_enz = Enzyme.make_zero(x)
                 ∂b = if hasbias
-                    ∂b_enz = Enzyme.make_zero(bias)
-                    Duplicated(bias, ∂b_enz)
+                    Duplicated(bias, Enzyme.make_zero(bias))
                 else
                     Const(nothing)
                 end

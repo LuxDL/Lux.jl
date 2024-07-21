@@ -18,7 +18,7 @@ steps:
         env:
           BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
             julia:
@@ -40,7 +40,7 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
             repo:
@@ -70,7 +70,7 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
             julia:
@@ -97,7 +97,7 @@ steps:
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
             repo:

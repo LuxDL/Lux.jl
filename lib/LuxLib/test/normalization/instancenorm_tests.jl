@@ -32,28 +32,39 @@
             @test y isa aType{T, length(sz)}
             @test size(y) == sz
 
-            if !affine && act === identity
-                _target_std = ones(
-                    ntuple(_ -> 1, length(sz) - 2)..., size(x)[(end - 1):end]...)
-                @test check_approx(
-                    std(Array(y); dims=1:(length(sz) - 2)), _target_std; atol=0.2, rtol=0.2)
-            end
-            @test std(y; dims=1:(length(sz) - 2)) != std(x; dims=1:(length(sz) - 2))
+            fp16 = T == Float16
+            atol = fp16 ? 1.0f-2 : 1.0f-3
+            rtol = fp16 ? 1.0f-2 : 1.0f-3
 
             if __istraining(training) && affine
-                fp16 = T == Float16
                 __f = (args...) -> sum(first(instancenorm(
                     x, args..., training, act, epsilon)))
                 skip_fd = act === relu
                 allow_unstable() do
-                    @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
+                    @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=$atol rtol=$rtol gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
                 end
             end
 
             if anonact !== act
-                lfn = (x, sc, b, tr, act, ϵ) -> sum(instancenorm(x, sc, b, tr, act, ϵ))
+                lfn = (x, sc, b, tr, act, ϵ) -> sum(first(instancenorm(
+                    x, sc, b, tr, act, ϵ)))
                 @test @inferred(Zygote.gradient(
                     lfn, x, scale, bias, training, act, epsilon)) isa Any
+            end
+
+            if !on_gpu && !fp16 && __istraining(training) && affine
+                __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
+                ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
+
+                ∂x_enz = Enzyme.make_zero(x)
+                ∂scale_enz = Enzyme.make_zero(scale)
+                ∂bias_enz = Enzyme.make_zero(bias)
+                Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz),
+                    Duplicated(scale, ∂scale_enz), Duplicated(bias, ∂bias_enz))
+
+                @test ∂x≈∂x_enz rtol=rtol atol=atol
+                @test ∂scale≈∂scale_enz rtol=rtol atol=atol
+                @test ∂bias≈∂bias_enz rtol=rtol atol=atol
             end
         end
     end

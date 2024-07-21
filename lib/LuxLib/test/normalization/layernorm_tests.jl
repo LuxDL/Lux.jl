@@ -39,12 +39,16 @@
                 @test check_approx(std(y; dims), 1; atol=1e-1, rtol=1e-1)
             end
 
+            fp16 = T == Float16
+            atol = fp16 ? 1.0f-2 : 1.0f-3
+            rtol = fp16 ? 1.0f-2 : 1.0f-3
+
             if affine_shape !== nothing
                 fp16 = T == Float16
                 __f = (args...) -> sum(_f(x, args...))
                 skip_fd = act === relu
                 allow_unstable() do
-                    @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
+                    @eval @test_gradients $__f $scale $bias soft_fail=$fp16 atol=$atol rtol=$rtol gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
                 end
             end
 
@@ -52,6 +56,26 @@
                 lfn = (x, sc, b, act, dim, ϵ) -> sum(layernorm(x, sc, b, act, dim, ϵ))
                 @test @inferred(Zygote.gradient(
                     lfn, x, scale, bias, act, dims, epsilon)) isa Any
+            end
+
+            if !on_gpu && !fp16
+                __f = (args...) -> sum(first(layernorm(args..., act, dims, epsilon)))
+                ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
+
+                ∂x_enz = Enzyme.make_zero(x)
+                (∂b, ∂sc) = if bias === nothing
+                    Const(nothing), Const(nothing)
+                else
+                    (Duplicated(bias, Enzyme.make_zero(bias)),
+                        Duplicated(scale, Enzyme.make_zero(scale)))
+                end
+                Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz), ∂sc, ∂b)
+
+                @test ∂x≈∂x_enz rtol=rtol atol=atol
+                if bias !== nothing
+                    @test ∂sc.dval≈∂scale rtol=rtol atol=atol
+                    @test ∂b.dval≈∂bias rtol=rtol atol=atol
+                end
             end
         end
     end
