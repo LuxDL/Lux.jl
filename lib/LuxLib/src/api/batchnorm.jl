@@ -1,6 +1,6 @@
 @doc doc"""
     batchnorm(x, scale, bias, running_mean, running_var, training, σ=identity,
-        momentum = 0.1f0, epsilon = 1f-5)
+        momentum = 0.1f0, epsilon = eps(eltype(x)) ^ (5 // 7))
 
 Batch Normalization. For details see [1].
 
@@ -18,7 +18,8 @@ accordingly.
   - `training`: Set to `Val(true)` if running in training mode
   - `σ`: Activation function (default: `identity`)
   - `momentum`: Momentum for updating running mean and variance (default: `0.1f0`)
-  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
+  - `epsilon`: Value added to the denominator for numerical stability
+    (default: `eps(eltype(x)) ^ (5 / 7)`)
 
 ## Returns
 
@@ -40,7 +41,7 @@ fallback is used which is not highly optimized.
 function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
-        momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
+        momentum::Real=0.1f0, epsilon::Real=__default_epsilon(x)) where {F, N}
     x_, xm, xv = _normalization(x, __value(running_mean), __value(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)
     return (x_, (; running_mean=__value(xm), running_var=__value(xv)))

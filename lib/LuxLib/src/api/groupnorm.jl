@@ -1,5 +1,6 @@
 @doc doc"""
-    groupnorm(x, scale, bias, groups, σ::F=identity, epsilon::Real=1.0f-5)
+    groupnorm(x, scale, bias, groups, σ::F=identity,
+        epsilon::Real=eps(eltype(x)) ^ (5 // 7))
 
 Group Normalization. For details see [1].
 
@@ -15,7 +16,8 @@ statistics.
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
   - `groups`: Number of groups
   - `σ`: Activation function (default: `identity`)
-  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
+  - `epsilon`: Value added to the denominator for numerical stability
+    (default: `eps(eltype(x)) ^ (5 / 7)`)
 
 ## Returns
 
@@ -28,7 +30,7 @@ The normalized array is returned.
 """
 function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, groups::Int,
-        σ::F=identity, epsilon::Real=1.0f-5) where {F, N}
+        σ::F=identity, epsilon::Real=__default_epsilon(x))
     _test_valid_groupnorm_arguments(x, scale, bias, groups)
 
     sz = size(x)

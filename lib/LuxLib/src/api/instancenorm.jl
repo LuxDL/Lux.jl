@@ -1,5 +1,6 @@
 @doc doc"""
-    instancenorm(x, scale, bias, training::Val, σ = identity, epsilon = 1f-5)
+    instancenorm(x, scale, bias, training::Val, σ = identity,
+        epsilon = eps(eltype(x)) ^ (5 // 7))
 
 Instance Normalization. For details see [1].
 
@@ -13,7 +14,8 @@ accordingly.
   - `scale`: Scale factor (``\gamma``) (can be `nothing`)
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
   - `σ`: Activation function (default: `identity`)
-  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
+  - `epsilon`: Value added to the denominator for numerical stability
+    (default: `eps(eltype(x)) ^ (5 / 7)`)
   - `training`: Set to `Val(true)` if running in training mode
 
 ## Returns
@@ -28,7 +30,7 @@ mean and variance.
 """
 function instancenorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, training::Val,
-        σ::F=identity, epsilon::Real=1.0f-5) where {N, F}
+        σ::F=identity, epsilon::Real=__default_epsilon(x)) where {N, F}
     _test_valid_instancenorm_arguments(x)
 
     x_, xm, xv = _normalization(x, nothing, nothing, scale, bias,

@@ -1,5 +1,6 @@
 @doc doc"""
-    layernorm(x, scale, bias, σ = identity, dims=Colon(), epsilon = 1f-5)
+    layernorm(x, scale, bias, σ = identity, dims=Colon(),
+        epsilon = eps(eltype(x)) ^ (5 / 7))
 
 Layer Normalization. For details see [1].
 
@@ -18,7 +19,8 @@ and applies the activation function `σ` elementwise to `y`.
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
   - `σ`: Activation function (default: `identity`)
   - `dims`: Dimensions along which the mean and std of `x` is computed (default: `Colon()`)
-  - `epsilon`: Value added to the denominator for numerical stability (default: `1f-5`)
+  - `epsilon`: Value added to the denominator for numerical stability
+    (default: `eps(eltype(x)) ^ (5 / 7)`)
 
 ## Returns
 
@@ -32,7 +34,7 @@ Normalized Array of same size as `x`.
 function layernorm(
         x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{<:Number, N}},
         bias::Optional{<:AbstractArray{<:Number, N}}, σ::F=identity,
-        dims=Colon(), epsilon::Real=1.0f-5) where {N, F}
+        dims=Colon(), epsilon::Real=__default_epsilon(x)) where {N, F}
     μ, σ² = fast_mean_var(x; dims, corrected=false)
     return _affine_normalize(σ, x, μ, σ², scale, bias, epsilon)
 end
