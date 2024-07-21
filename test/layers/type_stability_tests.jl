@@ -74,12 +74,13 @@
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev
 
-            @inferred model(x, ps, st)
-            @inferred loss_function(model, x, ps, st)
+            @test @inferred(model(x, ps, st)) isa Any
+            @test @inferred(loss_function(model, x, ps, st)) isa Any
             if mode == "amdgpu" && (model isa Conv || model isa CrossCor)
-                @test_broken @inferred Zygote.gradient(loss_function, model, x, ps, st)
+                @test_broken @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
+                             Any
             else
-                @inferred Zygote.gradient(loss_function, model, x, ps, st)
+                @test @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa Any
             end
         end
     end

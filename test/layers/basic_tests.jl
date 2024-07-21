@@ -107,7 +107,7 @@
             x = randn(rng, 2, 3) |> aType
 
             @test layer(x, ps, st)[1] ≈ x .* x
-            @inferred layer(x, ps, st)
+            @test @inferred(layer(x, ps, st)) isa Any
 
             f12(x, ps, st) = x .+ 1, st
 
@@ -117,7 +117,7 @@
             x = randn(rng, 2, 3) |> aType
 
             @test layer(x, ps, st)[1] ≈ x .+ 1
-            @inferred layer(x, ps, st)
+            @test @inferred(layer(x, ps, st)) isa Any
         end
 
         @testset "PeriodicEmbedding" begin

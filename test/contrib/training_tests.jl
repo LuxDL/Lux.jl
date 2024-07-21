@@ -168,7 +168,8 @@ end
     _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
-    @inferred Lux.Experimental.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)
+    @test @inferred(Lux.Experimental.compute_gradients(
+        AutoEnzyme(), mse, (x, x), tstate_new)) isa Any
 
     _, _, _, tstate_new2 = @inferred Lux.Experimental.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
