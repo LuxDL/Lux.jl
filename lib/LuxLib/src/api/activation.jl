@@ -10,13 +10,6 @@ generic implementation.
     This function doesn't replace `σ` with `NNlib.fast_act(σ, ...)`, that needs to be
     done by the user if needed.
 
-!!! tip
-
-    Certain activation functions are replaced with specialized implementations from
-    [SLEEFPirates.jl](https://github.com/JuliaSIMD/SLEEFPirates.jl). This might lead to
-    faster performance but can cause slight decrease in accuracy (in the floating point
-    limit).
-
 ## Arguments
 
   - `σ`: Activation function
