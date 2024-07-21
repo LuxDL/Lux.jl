@@ -60,7 +60,7 @@ function __affine_normalize_gn_impl!(
         ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F, x::AbstractArray{<:Number, 4},
         μ, σ², scale::Optional{<:AbstractArray{<:Number, 4}},
         bias::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
-    @fastmath @inbounds @simd ivdep for J in axes(y, 2)
+    @inbounds @simd ivdep for J in axes(y, 2)
         for K in axes(y, 3), L in axes(y, 4)
             if scale !== nothing
                 _sc = scale[1, J, K, 1] / sqrt(σ²[1, 1, K, L] + ϵ)
@@ -182,7 +182,7 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
         fill!(∂b, false)
     end
 
-    @fastmath @inbounds @simd ivdep for J in axes(∂y, 2)
+    @inbounds @simd ivdep for J in axes(∂y, 2)
         for K in axes(∂y, 3), L in axes(∂y, 4)
             denom = sqrt(σ²[1, 1, K, L] + ϵ)
             denom² = denom * denom
