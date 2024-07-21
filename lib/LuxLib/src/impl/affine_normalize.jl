@@ -56,24 +56,33 @@ function _affine_normalize_gn_impl(opmode::AbstractInternalArrayOpMode, f::F,
     return y
 end
 
-function __affine_normalize_gn_impl!(
-        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F, x::AbstractArray{<:Number, 4},
-        μ, σ², scale::Optional{<:AbstractArray{<:Number, 4}},
-        bias::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
-    @inbounds @simd ivdep for J in axes(y, 2)
-        for K in axes(y, 3), L in axes(y, 4)
-            if scale !== nothing
-                _sc = scale[1, J, K, 1] / sqrt(σ²[1, 1, K, L] + ϵ)
-                _bc = bias[1, J, K, 1] - μ[1, 1, K, L] * _sc
-            else
-                _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-                _bc = -μ[1, 1, K, L] * _sc
-            end
+function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
+        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real) where {F}
+    @simd ivdep for L in axes(y, 4)
+        for K in axes(y, 3), J in axes(y, 2)
+            @inbounds _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            @inbounds _bc = -μ[1, 1, K, L] * _sc
             for I in axes(y, 1)
-                y[I, J, K, L] = f(x[I, J, K, L] * _sc + _bc)
+                @inbounds y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
             end
         end
     end
+    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
+end
+
+function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
+        x::AbstractArray{<:Number, 4}, μ, σ², scale::AbstractArray{<:Number, 4},
+        bias::AbstractArray{<:Number, 4}, ϵ::Real) where {F}
+    @simd ivdep for L in axes(y, 4)
+        for K in axes(y, 3), J in axes(y, 2)
+            @inbounds _sc = scale[1, J, K, 1] / sqrt(σ²[1, 1, K, L] + ϵ)
+            @inbounds _bc = muladd(-μ[1, 1, K, L], _sc, bias[1, J, K, 1])
+            for I in axes(y, 1)
+                @inbounds y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
+            end
+        end
+    end
+    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
 end
 
 function __affine_normalize_gn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 4}, f::F,
@@ -96,7 +105,7 @@ end
         @inbounds _sc = inv(sqrt(σ²[1, 1, k, l] + ϵ))
         @inbounds _bc = -μ[1, 1, k, l] * _sc
     end
-    @inbounds y[i, j, k, l] = f(x[i, j, k, l] * _sc + _bc)
+    @inbounds y[i, j, k, l] = f(muladd(x[i, j, k, l], _sc, _bc))
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_affine_normalize_gn_impl),
@@ -182,21 +191,21 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
         fill!(∂b, false)
     end
 
-    @inbounds @simd ivdep for J in axes(∂y, 2)
-        for K in axes(∂y, 3), L in axes(∂y, 4)
-            denom = sqrt(σ²[1, 1, K, L] + ϵ)
+    @simd ivdep for L in axes(∂y, 4)
+        for K in axes(∂y, 3), J in axes(∂y, 2)
+            @inbounds denom = sqrt(σ²[1, 1, K, L] + ϵ)
             denom² = denom * denom
-            _sc = scale !== nothing ? (scale[1, J, K, 1] / denom) : inv(denom)
+            @inbounds _sc = scale !== nothing ? (scale[1, J, K, 1] / denom) : inv(denom)
             for I in axes(∂y, 1)
-                xμ = x[I, J, K, L] - μ[1, 1, K, L]
+                @inbounds xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-                ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
-                ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ / (2 * denom²)
+                @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
+                @inbounds ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+                @inbounds ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ / (2 * denom²)
 
                 if scale !== nothing
-                    ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ / denom
-                    ∂b[1, J, K, 1] += ∂y[I, J, K, L]
+                    @inbounds ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ / denom
+                    @inbounds ∂b[1, J, K, 1] += ∂y[I, J, K, L]
                 end
             end
         end

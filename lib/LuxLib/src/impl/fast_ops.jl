@@ -4,7 +4,7 @@ fast_mean(x::AbstractArray; dims=:) = fast_mean(internal_operation_mode(x), x; d
 fast_mean(opmode, x::AbstractArray; dims=:) = mean(x; dims)
 
 function fast_var(x::AbstractArray; mean=nothing, dims=:, corrected=true)
-    fast_var(internal_operation_mode(x), x; mean, dims, corrected)
+    return fast_var(internal_operation_mode(x), x; mean, dims, corrected)
 end
 function fast_var(opmode, x::AbstractArray; mean=nothing, dims=:, corrected=true)
     return var(x; mean, dims, corrected)
@@ -13,7 +13,6 @@ end
 function fast_mean_var(x::AbstractArray; dims=:, corrected=true)
     return fast_mean_var(internal_operation_mode(x), x; dims, corrected)
 end
-
 function fast_mean_var(opmode, x::AbstractArray; dims=:, corrected=true)
     μ = fast_mean(opmode, x; dims)
     σ² = fast_var(opmode, x; mean=μ, dims, corrected)

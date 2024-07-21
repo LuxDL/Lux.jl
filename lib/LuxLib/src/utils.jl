@@ -183,9 +183,7 @@ abstract type AbstractBroadcastOpMode <: AbstractInternalArrayOpMode end
 
 struct GenericBroadcastOp <: AbstractBroadcastOpMode end
 struct GPUBroadcastOp{dev} <: AbstractBroadcastOpMode end
-struct LoopedArrayOp <: AbstractInternalArrayOpMode
-    loop_vectorization::Bool
-end
+struct LoopedArrayOp <: AbstractInternalArrayOpMode end
 
 ## NOTE: Ensure that this always gets compiled out! Else we will have terrible type
 ##       inference.
@@ -197,7 +195,7 @@ function internal_operation_mode(xs::Tuple)
     unrolled_any(__has_float16, xs) && return GenericBroadcastOp()
     dev = get_device_type(xs)
     dev <: AbstractLuxGPUDevice && return GPUBroadcastOp{dev}()
-    dev <: LuxCPUDevice && return LoopedArrayOp(false)
+    dev <: LuxCPUDevice && return LoopedArrayOp()
     return GenericBroadcastOp()  # fallback for safety
 end
 internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))
