@@ -58,13 +58,11 @@ end
 
 function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
         x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real) where {F}
-    for L in axes(y, 4), K in axes(y, 3)
+    @turbo for L in axes(y, 4), K in axes(y, 3)
         @inbounds _sc = @fastmath inv(sqrt(σ²[1, 1, K, L] + ϵ))
         @inbounds _bc = -μ[1, 1, K, L] * _sc
-        for J in axes(y, 2)
-            @simd ivdep for I in axes(y, 1)
-                @inbounds y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
-            end
+        for J in axes(y, 2), I in axes(y, 1)
+            @inbounds y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
         end
     end
     _fast_activation!(f, y) # NOTE: don't fuse into the above loop
@@ -73,12 +71,12 @@ end
 function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
         x::AbstractArray{<:Number, 4}, μ, σ², scale::AbstractArray{<:Number, 4},
         bias::AbstractArray{<:Number, 4}, ϵ::Real) where {F}
-    for L in axes(y, 4), K in axes(y, 3)
+    @turbo for L in axes(y, 4), K in axes(y, 3)
         @inbounds idenom = @fastmath inv(sqrt(σ²[1, 1, K, L] + ϵ))
         for J in axes(y, 2)
             @inbounds _sc = scale[1, J, K, 1] * idenom
             @inbounds _bc = muladd(-μ[1, 1, K, L], _sc, bias[1, J, K, 1])
-            @simd ivdep for I in axes(y, 1)
+            for I in axes(y, 1)
                 @inbounds y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
             end
         end
@@ -182,17 +180,15 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², ::Nothi
     ∂x, ∂μ, ∂σ² = similar(x), zero.(μ), zero.(σ²)
     half = eltype(∂σ²)(0.5)
 
-    for L in axes(∂y, 4), K in axes(∂y, 3)
+    @turbo for L in axes(∂y, 4), K in axes(∂y, 3)
         @inbounds idenom = @fastmath inv(sqrt(σ²[1, 1, K, L] + ϵ))
         idenom² = idenom^2
-        for J in axes(∂y, 2)
-            @simd for I in axes(∂y, 1)
-                @inbounds xμ = x[I, J, K, L] - μ[1, 1, K, L]
+        for J in axes(∂y, 2), I in axes(∂y, 1)
+            @inbounds xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-                @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
-                @inbounds ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                @inbounds ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
-            end
+            @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
+            @inbounds ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+            @inbounds ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
         end
     end
 
@@ -203,12 +199,12 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
     ∂x, ∂μ, ∂σ², ∂sc, ∂b = similar(x), zero.(μ), zero.(σ²), zero.(scale), zero.(bias)
     half = eltype(∂σ²)(0.5)
 
-    for L in axes(∂y, 4), K in axes(∂y, 3)
+    @turbo for L in axes(∂y, 4), K in axes(∂y, 3)
         @inbounds idenom = @fastmath inv(sqrt(σ²[1, 1, K, L] + ϵ))
         idenom² = idenom^2
         for J in axes(∂y, 2)
             @inbounds _sc = scale[1, J, K, 1] * idenom
-            @simd for I in axes(∂y, 1)
+            for I in axes(∂y, 1)
                 @inbounds xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
                 @inbounds ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc

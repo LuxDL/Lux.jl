@@ -8,6 +8,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
+using LoopVectorization: @turbo
 using LuxCore: LuxCore
 using LuxDeviceUtils: get_device_type, LuxAMDGPUDevice, LuxCUDADevice, LuxCPUDevice,
                       AbstractLuxGPUDevice, AbstractLuxDevice
