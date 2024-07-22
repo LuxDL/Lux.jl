@@ -21,7 +21,7 @@ end
 
 function _fast_activation!(
         ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    @turbo for I in eachindex(y, x)
+    @simd ivdep for I in eachindex(y, x)
         @inbounds y[I] = σ(x[I])
     end
 end
