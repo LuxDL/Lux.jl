@@ -34,14 +34,21 @@ end
 _fast_activation(::typeof(identity), x::AbstractArray) = x
 
 @stable default_mode="disable" function _fast_activation(σ::F, x::AbstractArray) where {F}
-    y = similar(x, Core.Compiler._return_type(σ, Tuple{eltype(x)}))
-    _fast_activation!(internal_operation_mode(x), y, σ, x)
-    return y
+    return _fast_activation(internal_operation_mode(x), σ, x)
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_activation),
         σ::F, x::AbstractArray{T}) where {F, T}
     return CRC.rrule_via_ad(cfg, broadcast, σ, x)
+end
+
+_fast_activation(opmode, σ::F, x::AbstractArray) where {F} = broadcast(σ, x)
+
+function _fast_activation(opmode::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
+    RT = Core.Compiler._return_type(σ, Tuple{eltype(x)})
+    y = similar(x, ifelse(isconcretetype(RT), RT, eltype(x)))
+    _fast_activation!(opmode, y, σ, x)
+    return y
 end
 
 _fast_activation!(::typeof(identity), x::AbstractArray) = nothing

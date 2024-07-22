@@ -142,7 +142,7 @@ function __apply_bias_activation_cached!!(
     if can_setindex(x)
         opmode = internal_operation_mode((x, bias))
         if opmode isa LoopedArrayOp
-            bc = Broadcast.instantiate(Broadcast.broadcasted(σ ∘ +, x, bias_))
+            bc = Broadcast.instantiate(Broadcast.broadcasted(+, x, bias_))
             @simd ivdep for I in eachindex(bc)
                 @inbounds x[I] = bc[I]
             end
