@@ -97,7 +97,7 @@ EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
 end
 
 CRC.@non_differentiable _generate_dropout_mask(::Any...)
-EnzymeRules.inactive_noinl(::typeof(_generate_dropout_mask), ::Any...) = nothing
+EnzymeRules.inactive(::typeof(_generate_dropout_mask), ::Any...) = nothing
 
 # dropout -- force don't compute some gradients
 @stable default_mode="disable" function __dropout_dot_mul(
