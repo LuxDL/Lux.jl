@@ -155,4 +155,4 @@ If you found this library to be useful in academic work, then please cite:
 }
 ```
 
-Also consider starring [our github repo](https://github.com/LuxDL/Lux.jl/)
+Also consider starring [our github repo](https://github.com/LuxDL/Lux.jl/).

@@ -138,7 +138,7 @@ end
 
 @testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:contrib] begin
     using ADTypes, Optimisers
-    import Enzyme
+    using Enzyme
 
     mse = MSELoss()
     function mse2(model, ps, st, (x, y))
