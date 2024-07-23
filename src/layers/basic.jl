@@ -559,7 +559,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
     if use_bias
-        return __apply_bias_activation(b.activation, Wyx, ps.bias), st
+        return bias_activation!!(b.activation, Wyx, vec(ps.bias)), st
     else
         return fast_activation!!(b.activation, Wyx), st
     end

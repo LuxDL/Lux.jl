@@ -35,7 +35,7 @@ number of observations in a batch.
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -102,11 +102,8 @@ end
 function initialparameters(rng::AbstractRNG, c::Conv{N, use_bias}) where {N, use_bias}
     weight = _convfilter(
         rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
-    if use_bias
-        return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
-    else
-        return (; weight)
-    end
+    !use_bias && return (; weight)
+    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
 end
 
 function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
@@ -119,7 +116,7 @@ end
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, y, _getproperty(ps, Val(:bias)), cdims),
+            c.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias))), cdims),
         st)
 end
 
@@ -157,7 +154,7 @@ value.
 
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -196,8 +193,7 @@ function MaxPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
 end
 
 function (m::MaxPool{N, M})(x, ps, st::NamedTuple) where {N, M}
-    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
-    return maxpool(x, pdims), st
+    return maxpool(x, PoolDims(x, m.k; padding=m.pad, m.stride)), st
 end
 
 function Base.show(io::IO, m::MaxPool)
@@ -224,7 +220,7 @@ value.
 
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -263,8 +259,7 @@ function MeanPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
 end
 
 function (m::MeanPool{N, M})(x, ps, st::NamedTuple) where {N, M}
-    pdims = PoolDims(x, m.k; padding=m.pad, stride=m.stride)
-    return meanpool(x, pdims), st
+    return meanpool(x, PoolDims(x, m.k; padding=m.pad, m.stride)), st
 end
 
 function Base.show(io::IO, m::MeanPool)
@@ -434,8 +429,7 @@ struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
 end
 
 function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
-    pdims = compute_adaptive_pooling_dims(x, a.out)
-    return maxpool(x, pdims), st
+    return maxpool(x, compute_adaptive_pooling_dims(x, a.out)), st
 end
 
 function Base.show(io::IO, a::AdaptiveMaxPool)
@@ -599,11 +593,8 @@ end
 
 function initialparameters(rng::AbstractRNG, c::CrossCor{N, use_bias}) where {N, use_bias}
     weight = _convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight)
-    if use_bias
-        return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
-    else
-        return (; weight)
-    end
+    !use_bias && return (; weight)
+    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
 end
 
 function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
@@ -616,7 +607,7 @@ end
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, y, _getproperty(ps, Val(:bias)), cdims),
+            c.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias))), cdims),
         st)
 end
 
@@ -639,7 +630,7 @@ end
 @doc doc"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=true, 
+                  stride=1, pad=0, dilation=1, groups=1, use_bias=true,
                   allow_fast_activation=true)
 
 Standard convolutional transpose layer.
@@ -661,7 +652,7 @@ Standard convolutional transpose layer.
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
-    
+
       + a single integer for equal padding all around,
       + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
         dimension,
@@ -728,11 +719,8 @@ function initialparameters(
         rng::AbstractRNG, c::ConvTranspose{N, use_bias}) where {N, use_bias}
     weight = _convfilter(
         rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
-    if use_bias
-        return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1))
-    else
-        return (; weight)
-    end
+    !use_bias && return (; weight)
+    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
 end
 
 function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
@@ -740,20 +728,13 @@ function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
            (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::ConvTranspose{N, false})(
-        x::AbstractArray, ps, st::NamedTuple) where {N}
+@inline function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
     y = match_eltype(c, ps, st, x)
     cdims = _conv_transpose_dims(
         y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    return fast_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims)), st
-end
-
-@inline function (c::ConvTranspose{N, true})(x::AbstractArray, ps, st::NamedTuple) where {N}
-    cdims = _conv_transpose_dims(
-        x, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
-        __apply_bias_activation(
-            c.activation, _conv_transpose(x, ps.weight, cdims), ps.bias),
+        bias_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims),
+            _vec(_getproperty(ps, Val(:bias)))),
         st)
 end
 

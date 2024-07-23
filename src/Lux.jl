@@ -27,7 +27,6 @@ using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
-using LuxLib: __apply_bias_activation
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, display_name, replicate
