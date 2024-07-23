@@ -4,7 +4,7 @@ using ChainRulesCore: ChainRulesCore, NoTangent
 using DynamicExpressions: DynamicExpressions, Node, OperatorEnum, eval_grad_tree_array
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
-using Lux: Lux, NAME_TYPE, Chain, Parallel, WrappedFunction, DynamicExpressionsLayer
+using Lux: Lux, NAME_TYPE, Chain, Parallel, DynamicExpressionsLayer
 using LuxDeviceUtils: LuxCPUDevice
 
 const CRC = ChainRulesCore
