@@ -97,8 +97,7 @@ function Lux.convert_flux_model(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs
     groups = l.groups
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
-        _bias = l.bias isa Bool ? nothing :
-                reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
+        _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
             groups, init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
             init_bias=Returns(_bias), use_bias=!(l.bias isa Bool))
@@ -115,8 +114,7 @@ function Lux.convert_flux_model(
     groups = l.groups
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
-        _bias = l.bias isa Bool ? nothing :
-                reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
+        _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride,
             pad, l.dilation, groups, use_bias=!(l.bias isa Bool),
             init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
@@ -132,8 +130,7 @@ function Lux.convert_flux_model(l::Flux.CrossCor; preserve_ps_st::Bool=false, kw
     in_chs, out_chs = size(l.weight)[(end - 1):end]
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
-        _bias = l.bias isa Bool ? nothing :
-                reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
+        _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.CrossCor(k, in_chs => out_chs, l.σ; l.stride, pad,
             l.dilation, init_weight=Returns(copy(l.weight)),
             init_bias=Returns(_bias), use_bias=!(l.bias isa Bool))

@@ -189,7 +189,7 @@ end
             display(layer)
             ps, st = Lux.setup(rng, layer)
             @test ps.weight isa aType{Float64, 4}
-            @test ps.bias isa aType{Float16, 4}
+            @test ps.bias isa aType{Float16, 1}
         end
 
         @testset "Depthwise Conv" begin
@@ -449,7 +449,7 @@ end
             display(layer)
             ps, st = Lux.setup(rng, layer)
             @test ps.weight isa aType{Float64, 4}
-            @test ps.bias isa aType{Float16, 4}
+            @test ps.bias isa aType{Float16, 1}
         end
 
         @testset "CrossCor SamePad kernelsize $k" for k in (
