@@ -140,6 +140,8 @@ end
     using ADTypes, Optimisers
     using Enzyme
 
+    Enzyme.API.runtimeActivity!(true)
+
     mse = MSELoss()
     function mse2(model, ps, st, (x, y))
         z, st = model(x, ps, st)

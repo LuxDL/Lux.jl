@@ -536,7 +536,7 @@ end
 function initialparameters(rng::AbstractRNG, b::Bilinear{use_bias}) where {use_bias}
     if use_bias
         return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),
-            bias=b.init_bias(rng, b.out_dims, 1))
+            bias=b.init_bias(rng, b.out_dims, 1)) # TODO: In v1.0 make it a vector
     else
         return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),)
     end
@@ -558,11 +558,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))
     Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
-    if use_bias
-        return bias_activation!!(b.activation, Wyx, vec(ps.bias)), st
-    else
-        return fast_activation!!(b.activation, Wyx), st
-    end
+    return bias_activation!!(b.activation, Wyx, _vec(_getproperty(ps, Val(:bias)))), st
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)
