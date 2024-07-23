@@ -68,3 +68,13 @@
         end
     end
 end
+
+@testitem "Fused Dense Bias Activation: StaticArrays" tags=[:common_ops] begin
+    using StaticArrays
+
+    x = @SArray rand(2, 4)
+    weight = @SArray rand(3, 2)
+    bias = @SArray rand(3)
+
+    @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa SArray
+end

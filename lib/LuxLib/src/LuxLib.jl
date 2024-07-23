@@ -15,6 +15,7 @@ using Markdown: @doc_str
 using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, σ, ∇conv_data, ∇conv_filter
 using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
+using StaticArraysCore: StaticArraysCore, StaticVector
 using Statistics: Statistics, mean, var
 using UnrolledUtilities: unrolled_any, unrolled_all, unrolled_filter
 

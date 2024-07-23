@@ -1,8 +1,13 @@
 __reshape_bias_into_xdims(::AbstractArray, ::Nothing) = nothing
 __reshape_bias_into_xdims(::AbstractVector, bias::AbstractVector) = bias
-function __reshape_bias_into_xdims(
-        ::AbstractArray{<:Number, N}, bias::AbstractVector) where {N}
-    return reshape(bias, ntuple(i -> ifelse(i == N - 1, length(bias), 1), N))
+__reshape_bias_into_xdims(::AbstractVector, bias::StaticVector) = bias
+function __reshape_bias_into_xdims(x::AbstractArray, bias::AbstractVector)
+    return reshape(bias, ntuple(i -> ifelse(i == ndims(x) - 1, length(bias), 1), ndims(x)))
+end
+function __reshape_bias_into_xdims(x::AbstractArray, bias::StaticVector)
+    return StaticArraysCore.SArray{
+        Tuple{ntuple(i -> ifelse(i == ndims(x) - 1, length(bias), 1), ndims(x))...},
+        eltype(bias), ndims(x), length(bias)}(bias.data)
 end
 
 ## Needed for type stability
