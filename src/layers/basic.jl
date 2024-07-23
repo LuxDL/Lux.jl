@@ -326,7 +326,7 @@ outputsize(d::Dense) = (d.out_dims,)
 
 function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
-    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
+    bias = safe_getproperty(ps, Val(:bias))
     z = matrix_to_array(
         fused_dense_bias_activation(d.activation, ps.weight, make_abstract_matrix(y), bias),
         y)
@@ -505,7 +505,7 @@ end
 function initialparameters(rng::AbstractRNG, b::Bilinear)
     if has_bias(b)
         return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),
-            bias=b.init_bias(rng, b.out_dims, 1)) # TODO: In v1.0 make it a vector
+            bias=b.init_bias(rng, b.out_dims))
     else
         return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),)
     end
@@ -527,8 +527,7 @@ function (b::Bilinear)(
     Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
 
-    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
-    return (bias_activation!!(b.activation, Wyx, bias), st)
+    return bias_activation!!(b.activation, Wyx, safe_getproperty(ps, Val(:bias))), st
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)
