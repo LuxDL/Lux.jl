@@ -17,6 +17,7 @@ using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
 using StaticArraysCore: StaticArraysCore, StaticVector
 using Statistics: Statistics, mean, var
+using SLEEFPirates: SLEEFPirates
 using UnrolledUtilities: unrolled_any, unrolled_all, unrolled_filter
 
 @reexport using NNlib

@@ -21,8 +21,9 @@ end
 
 function _fast_activation!(
         ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
+    σ_sleef = sleefpirates_activation(σ)
     @simd ivdep for I in eachindex(y, x)
-        @inbounds y[I] = σ(x[I])
+        @inbounds y[I] = σ_sleef(x[I])
     end
 end
 function _fast_activation!(opmode, y::AbstractArray, σ::F, x::AbstractArray) where {F}
@@ -87,3 +88,35 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!
 
     return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
 end
+
+# Specialized functions that use SLEEFPirates.jl to speed up the activation functions
+sigmoid_fast_sleefpirates(x::Number) = SLEEFPirates.sigmoid_fast(x)
+softplus_sleefpirates(x::Number) = SLEEFPirates.softplus(x)
+logsigmoid_sleefpirates(x::Number) = -softplus_sleefpirates(-x)
+elu_sleefpirates(x::Number, α=1) = SLEEFPirates.Elu(α)(x)
+gelu_sleefpirates(x::Number) = SLEEFPirates.gelu(x)
+swish_sleefpirates(x::Number) = Base.FastMath.mul_fast(x, sigmoid_fast_sleefpirates(x))
+lisht_sleefpirates(x::Number) = Base.FastMath.mul_fast(x, tanh_fast_sleefpirates(x))
+tanh_sleefpirates(x::Number) = SLEEFPirates.tanh(x)
+tanh_fast_sleefpirates(x::Number) = SLEEFPirates.tanh_fast(x)
+
+# TODO: Add scalar rules for these functions via ChainRules and Enzyme
+
+# Convert to SLEEFPirates.jl
+function sleefpirates_activation(f::F, x::AbstractArray{T}) where {F, T}
+    internal_operation_mode(x) isa LoopedArrayOp || return f
+    return sleefpirates_activation(f, T)
+end
+
+sleefpirates_activation(f::F, ::Type{T}) where {F, T} = f
+sleefpirates_activation(f::F, ::Type{Float32}) where {F} = sleefpirates_activation(f)
+sleefpirates_activation(f::F, ::Type{Float64}) where {F} = sleefpirates_activation(f)
+
+for (fbase, ffast) in ((NNlib.sigmoid_fast, sigmoid_fast_sleefpirates),
+    (NNlib.softplus, softplus_sleefpirates), (NNlib.logsigmoid, logsigmoid_sleefpirates),
+    (NNlib.elu, elu_sleefpirates), (NNlib.gelu, gelu_sleefpirates),
+    (NNlib.swish, swish_sleefpirates), (NNlib.lisht, lisht_sleefpirates),
+    (Base.tanh, tanh_sleefpirates), (NNlib.tanh_fast, tanh_fast_sleefpirates))
+    @eval sleefpirates_activation(::typeof($fbase)) = $ffast
+end
+sleefpirates_activation(f::F) where {F} = f

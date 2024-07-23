@@ -125,7 +125,8 @@ function __bias_activation_impl!(
     opmode = internal_operation_mode((y, x, bias))
     bias_ = __reshape_bias_into_xdims(x, bias)
     if opmode isa LoopedArrayOp
-        bc = Broadcast.instantiate(Broadcast.broadcasted(σ ∘ +, x, bias_))
+        σ_sleef = sleefpirates_activation(σ)
+        bc = Broadcast.instantiate(Broadcast.broadcasted(σ_sleef ∘ +, x, bias_))
         @simd ivdep for I in eachindex(bc)
             @inbounds y[I] = bc[I]
         end
