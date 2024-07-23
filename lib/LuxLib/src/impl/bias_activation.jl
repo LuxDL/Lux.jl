@@ -21,7 +21,8 @@ __generic_bias_activation(::typeof(identity), x::AbstractArray{<:Number}, ::Noth
 __generic_bias_activation(σ::F, x::AbstractArray{<:Number}, ::Nothing) where {F} = σ.(x)
 function __generic_bias_activation(
         σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
-    return broadcast(σ ∘ +, x, __reshape_bias_into_xdims(x, bias))
+    bias_ = __reshape_bias_into_xdims(x, bias)
+    return @. σ(x + bias_)
 end
 
 # Entry Points to the implementation
