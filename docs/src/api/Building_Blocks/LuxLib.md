@@ -41,3 +41,10 @@ layernorm
 ```@docs
 fast_activation!!
 ```
+
+## Bias Activation
+
+```@docs
+bias_activation
+bias_activation!!
+```
