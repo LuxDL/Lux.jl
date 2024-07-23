@@ -265,8 +265,7 @@ function initialparameters(
 end
 
 function initialstates(rng::AbstractRNG, ::RNNCell)
-    # FIXME(@avik-pal): Take PRNGs seriously
-    randn(rng, 1)
+    randn(rng, 1) # FIXME(@avik-pal): Take PRNGs seriously
     return (rng=replicate(rng),)
 end
 
@@ -423,8 +422,7 @@ function initialparameters(rng::AbstractRNG,
 end
 
 function initialstates(rng::AbstractRNG, ::LSTMCell)
-    # FIXME(@avik-pal): Take PRNGs seriously
-    randn(rng, 1)
+    randn(rng, 1) # FIXME(@avik-pal): Take PRNGs seriously
     return (rng=replicate(rng),)
 end
 
@@ -592,8 +590,7 @@ function initialparameters(
 end
 
 function initialstates(rng::AbstractRNG, ::GRUCell)
-    # FIXME(@avik-pal): Take PRNGs seriously
-    randn(rng, 1)
+    randn(rng, 1) # FIXME(@avik-pal): Take PRNGs seriously
     return (rng=replicate(rng),)
 end
 
