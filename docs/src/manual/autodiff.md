@@ -31,12 +31,11 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
   * For CPU Usacases:
 
-    1. Use `Enzyme.jl`, this will be the fastest version and is also the most reliable.
-    2. If `Enzyme.jl` fails for some reason, (open an issue and) use `Zygote.jl`.
-    3. If `Zygote.jl` cannot be used, for example, if the code uses mutation, use
-       `ReverseDiff.jl`([possibly with compiled mode](https://juliadiff.org/ReverseDiff.jl/dev/api/#ReverseDiff.compile)).
-       But be aware that compiled mode might lead to incorrect gradients if the code
-       has control flow that depends on the data.
+    1. Use `Zygote.jl` for the best performance. This is the most reliable and fastest
+       option for CPU for the time-being. (We are working on faster Enzyme support for CPU)
+    2. Use `Enzyme.jl`, if there are mutations in the code and/or `Zygote.jl` fails.
+    3. If `Enzyme.jl` fails for some reason, (open an issue and) try
+       `ReverseDiff.jl` ([possibly with compiled mode](https://juliadiff.org/ReverseDiff.jl/dev/api/#ReverseDiff.compile)).
 
   * For GPU Usacases:
 
