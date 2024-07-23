@@ -3,7 +3,6 @@ module DeviceUtils
 using Adapt: Adapt
 using ChainRulesCore: ChainRulesCore, NoTangent
 using Functors: Functors, fmap, fleaves
-using LuxCore: LuxCore
 using Preferences: @delete_preferences!, @load_preference, @set_preferences!
 using Random: AbstractRNG, Random
 using UnrolledUtilities: unrolled_mapreduce
@@ -325,12 +324,6 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
         function (D::$(ldev))(x)
             Functors.isleaf(x) && return Adapt.adapt(D, x)
             return fmap(D, x)
-        end
-        function (::$(ldev))(NN::LuxCore.AbstractExplicitLayer)
-            @warn "Lux layers are stateless and hence don't participate in device \
-                   transfers. Apply this function on the parameters and states generated \
-                   using `Lux.setup`."
-            return NN
         end
     end
 end
