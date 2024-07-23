@@ -171,8 +171,7 @@ function initialparameters(rng::AbstractRNG, c::Conv)
     weight = init_conv_filter(
         rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, c.groups)
     has_bias(c) || return (; weight)
-    return (; weight,
-        bias=c.init_bias(rng, ntuple(_ -> 1, length(c.kernel_size))..., c.out_chs, 1)) # TODO: flatten in v1
+    return (; weight, bias=c.init_bias(rng, c.out_chs))
 end
 
 function parameterlength(c::Conv)
@@ -182,7 +181,7 @@ end
 function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
+    bias = safe_getproperty(ps, Val(:bias))
     return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
@@ -676,8 +675,7 @@ function initialparameters(rng::AbstractRNG, c::CrossCor)
     weight = init_conv_filter(
         rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, c.groups)
     has_bias(c) || return (; weight)
-    return (; weight,
-        bias=c.init_bias(rng, ntuple(_ -> 1, length(c.kernel_size))..., c.out_chs, 1)) # TODO: flatten in v1
+    return (; weight, bias=c.init_bias(rng, c.out_chs))
 end
 
 function parameterlength(c::CrossCor)
@@ -688,7 +686,7 @@ function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups); F=true)
-    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
+    bias = safe_getproperty(ps, Val(:bias))
     return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
@@ -801,8 +799,7 @@ function initialparameters(rng::AbstractRNG, c::ConvTranspose)
     weight = init_conv_filter(
         rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
     has_bias(c) || return (; weight)
-    return (; weight,
-        bias=c.init_bias(rng, ntuple(_ -> 1, length(c.kernel_size))..., c.out_chs, 1)) # TODO: flatten in v1
+    return (; weight, bias=c.init_bias(rng, c.out_chs))
 end
 
 function parameterlength(c::ConvTranspose)
@@ -812,7 +809,7 @@ end
 function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
+    bias = safe_getproperty(ps, Val(:bias))
     return bias_activation!!(c.activation, conv_transpose(y, ps.weight, cdims), bias), st
 end
 
