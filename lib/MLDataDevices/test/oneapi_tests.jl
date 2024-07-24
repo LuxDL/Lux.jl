@@ -21,7 +21,8 @@ using oneAPI
     else
         @info "oneAPI is NOT functional"
         @test gpu_device() isa oneAPIDevice
-        @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+        @test_throws MLDataDevices.DeviceSelectionException gpu_device(;
+            force_gpu_usage=true)
     end
     @test MLDataDevices.GPU_DEVICE[] !== nothing
 end

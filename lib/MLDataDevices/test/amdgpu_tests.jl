@@ -23,7 +23,8 @@ using AMDGPU
     else
         @info "AMDGPU is NOT functional"
         @test gpu_device() isa CPUDevice
-        @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+        @test_throws MLDataDevices.DeviceSelectionException gpu_device(;
+            force_gpu_usage=true)
     end
     @test MLDataDevices.GPU_DEVICE[] !== nothing
 end
@@ -39,7 +40,8 @@ using FillArrays, Zygote  # Extensions
 
     device = gpu_device()
     aType = MLDataDevices.functional(AMDGPUDevice) ? ROCArray : Array
-    rngType = MLDataDevices.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG : Random.AbstractRNG
+    rngType = MLDataDevices.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG :
+              Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa AMDGPUDevice
