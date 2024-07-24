@@ -119,8 +119,6 @@ tanh_sleefpirates(x::Number) = SLEEFPirates.tanh(x)
 
 tanh_fast_sleefpirates(x::Number) = SLEEFPirates.tanh_fast(x)
 
-# TODO: Add scalar rules for these functions via Enzyme
-
 for (f, dfdx) in [
     #! format: off
     (:sigmoid_fast_sleefpirates, :(conj(Base.FastMath.mul_fast(Ω, Base.FastMath.sub_fast(1, Ω))))),
@@ -145,6 +143,21 @@ for (f, dfdx) in [
         end
         return Ω, $pullback
     end
+end
+
+# Enzyme works for all of these except `gelu`.
+# See https://github.com/EnzymeAD/Enzyme.jl/issues/1671
+function EnzymeRules.augmented_primal(
+        cfg::EnzymeRules.ConfigWidth{1}, func::EnzymeCore.Const{typeof(gelu_sleefpirates)},
+        ::Type{<:EnzymeCore.Active}, x::EnzymeCore.Active{<:Number})
+    primal = EnzymeRules.needs_primal(cfg) ? func.val(x.val) : nothing
+    return EnzymeRules.AugmentedReturn(primal, nothing, nothing)
+end
+
+function EnzymeRules.reverse(
+        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu_sleefpirates)},
+        dret::EnzymeCore.Active, ::Nothing, x::EnzymeCore.Active{<:Number})
+    return (∂gelu_sleefpirates(x.val),)
 end
 
 # Convert to SLEEFPirates.jl
