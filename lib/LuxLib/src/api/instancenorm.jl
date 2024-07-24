@@ -33,8 +33,9 @@ function instancenorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVec
         σ::F=identity, epsilon::Real=__default_epsilon(x)) where {N, F}
     _test_valid_instancenorm_arguments(x)
 
-    x_, xm, xv = _normalization(x, nothing, nothing, scale, bias,
-        _get_instancenorm_reduce_dims(x), training, nothing, epsilon, σ)
+    x_, xm, xv = _normalization(
+        x, nothing, nothing, scale, bias, _get_instancenorm_reduce_dims(x),
+        training, nothing, epsilon, sleefpirates_activation(σ, x, scale, bias))
 
     return x_, (; running_mean=xm, running_var=xv)
 end

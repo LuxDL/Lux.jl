@@ -28,8 +28,8 @@ multiple operations.
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
-    return fused_dense_bias_activation(
-        σ, __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)
+    return fused_dense_bias_activation(sleefpirates_activation(σ, weight, x, b),
+        __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)
 end
 
 for (check, fop) in (

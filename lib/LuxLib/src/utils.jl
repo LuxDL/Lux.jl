@@ -1,5 +1,5 @@
 const Optional{T} = Union{Nothing, T}
-
+const Numeric = Union{AbstractArray{<:T}, T} where {T <: Number}
 const ∂∅ = NoTangent()
 
 # Bias Gradient -- can't be used inside gradient rules

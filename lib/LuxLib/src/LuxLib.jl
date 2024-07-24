@@ -18,7 +18,7 @@ using Reexport: @reexport
 using StaticArraysCore: StaticArraysCore, StaticVector
 using Statistics: Statistics, mean, var
 using SLEEFPirates: SLEEFPirates
-using UnrolledUtilities: unrolled_any, unrolled_all, unrolled_filter
+using UnrolledUtilities: unrolled_any, unrolled_all, unrolled_filter, unrolled_mapreduce
 
 @reexport using NNlib
 

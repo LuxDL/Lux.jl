@@ -36,5 +36,6 @@ function layernorm(
         bias::Optional{<:AbstractArray{<:Number, N}}, σ::F=identity,
         dims=Colon(), epsilon::Real=__default_epsilon(x)) where {N, F}
     μ, σ² = fast_mean_var(x; dims, corrected=false)
-    return _affine_normalize(σ, x, μ, σ², scale, bias, epsilon)
+    return _affine_normalize(
+        sleefpirates_activation(σ, x, scale, bias, μ, σ²), x, μ, σ², scale, bias, epsilon)
 end

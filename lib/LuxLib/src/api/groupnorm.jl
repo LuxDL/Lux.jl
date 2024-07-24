@@ -35,7 +35,8 @@ function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector
 
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
-    x_ = _groupnorm_impl(x_reshaped, scale, bias, _get_groupnorm_reduce_dims(x), epsilon, σ)
+    x_ = _groupnorm_impl(x_reshaped, scale, bias, _get_groupnorm_reduce_dims(x), epsilon,
+        sleefpirates_activation(σ, x, scale, bias, x_reshaped))
 
     return reshape(x_, sz)
 end
