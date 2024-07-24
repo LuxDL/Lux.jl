@@ -1,6 +1,8 @@
 @testitem "Instance Normalization" tags=[:normalization] setup=[SharedTestSetup] begin
     using Statistics
 
+    __istraining(::Val{training}) where {training} = training
+
     rng = StableRNG(12345)
 
     function _setup_instancenorm(aType, T, sz; affine::Bool=true)
