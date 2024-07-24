@@ -28,7 +28,7 @@ multiple operations.
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
-    return fused_dense_bias_activation(sleefpirates_activation(σ, weight, x, b),
+    return fused_dense_bias_activation(select_fastest_activation(σ, weight, x, b),
         __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b)
 end
 

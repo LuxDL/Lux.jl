@@ -37,5 +37,5 @@ function layernorm(
         dims=Colon(), epsilon::Real=__default_epsilon(x)) where {N, F}
     μ, σ² = fast_mean_var(x; dims, corrected=false)
     return _affine_normalize(
-        sleefpirates_activation(σ, x, scale, bias), x, μ, σ², scale, bias, epsilon)
+        select_fastest_activation(σ, x, scale, bias), x, μ, σ², scale, bias, epsilon)
 end

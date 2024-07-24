@@ -161,10 +161,18 @@ function EnzymeRules.reverse(
 end
 
 # Convert to SLEEFPirates.jl
-function sleefpirates_activation(f::F, xs...) where {F}
-    internal_operation_mode(xs) isa LoopedArrayOp || return f
-    return sleefpirates_activation(f, unrolled_mapreduce(__eltype, promote_type, xs))
+function select_fastest_activation(f::F, xs...) where {F}
+    return select_fastest_activation(
+        f, internal_operation_mode(xs), unrolled_mapreduce(__eltype, promote_type, xs))
 end
+
+select_fastest_activation(f::F, ::AbstractInternalArrayOpMode, ::Type{T}) where {F, T} = f
+function select_fastest_activation(f::F, ::LoopedArrayOp, ::Type{T}) where {F, T}
+    return sleefpirates_activation(f, T)
+end
+
+CRC.@non_differentiable select_fastest_activation(::Any...)
+EnzymeRules.inactive_noinl(::typeof(select_fastest_activation), ::Any...) = nothing
 
 sleefpirates_activation(f::F, ::Type{T}) where {F, T} = f
 sleefpirates_activation(f::F, ::Type{Float32}) where {F} = sleefpirates_activation(f)

@@ -34,7 +34,7 @@ function fused_conv_bias_activation(
     __depwarn("Passing `bias` as a N-D array is deprecated, pass it as a Vector instead",
         :fused_conv_bias_activation)
     return fused_conv_bias_activation(
-        sleefpirates_activation(σ, weight, x, b), weight, x, _vec(b), cdims)
+        select_fastest_activation(σ, weight, x, b), weight, x, _vec(b), cdims)
 end
 
 function fused_conv_bias_activation(

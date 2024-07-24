@@ -15,7 +15,7 @@ See also [`bias_activation!!`](@ref), [`fast_activation!!`](@ref).
 """
 function bias_activation(σ::F, x::AbstractArray, bias::Optional{<:AbstractVector}) where {F}
     _bias_act_check(x, bias)
-    return __bias_activation_impl(sleefpirates_activation(σ, x, bias), x, bias)
+    return __bias_activation_impl(select_fastest_activation(σ, x, bias), x, bias)
 end
 
 """
@@ -30,7 +30,7 @@ See also [`bias_activation`](@ref), [`fast_activation!!`](@ref).
 function bias_activation!!(
         σ::F, x::AbstractArray, bias::Optional{<:AbstractVector}) where {F}
     _bias_act_check(x, bias)
-    return __bias_activation_impl!!(sleefpirates_activation(σ, x, bias), x, bias)
+    return __bias_activation_impl!!(select_fastest_activation(σ, x, bias), x, bias)
 end
 
 _bias_act_check(x, b) = nothing

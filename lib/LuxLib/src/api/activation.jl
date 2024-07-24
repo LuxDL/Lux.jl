@@ -28,7 +28,7 @@ generic implementation.
 """
 function fast_activation!!(σ::F, x::AbstractArray) where {F}
     return _fast_activation!!(
-        __is_immutable_array_or_dual_val((x,)), sleefpirates_activation(σ, x), x)
+        __is_immutable_array_or_dual_val((x,)), select_fastest_activation(σ, x), x)
 end
 
 function _fast_activation!!(::Val{true}, σ::F, x::AbstractArray) where {F}
