@@ -1,4 +1,4 @@
-name = "DeviceUtils"
+name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
 version = "1.0.0"
@@ -26,18 +26,18 @@ cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 
 [extensions]
-DeviceUtilsAMDGPUExt = "AMDGPU"
-DeviceUtilsCUDAExt = "CUDA"
-DeviceUtilsFillArraysExt = "FillArrays"
-DeviceUtilsGPUArraysExt = "GPUArrays"
-DeviceUtilsMetalExt = ["GPUArrays", "Metal"]
-DeviceUtilsRecursiveArrayToolsExt = "RecursiveArrayTools"
-DeviceUtilsReverseDiffExt = "ReverseDiff"
-DeviceUtilsSparseArraysExt = "SparseArrays"
-DeviceUtilsTrackerExt = "Tracker"
-DeviceUtilsZygoteExt = "Zygote"
-DeviceUtilscuDNNExt = ["CUDA", "cuDNN"]
-DeviceUtilsoneAPIExt = ["GPUArrays", "oneAPI"]
+MLDataDevicesAMDGPUExt = "AMDGPU"
+MLDataDevicesCUDAExt = "CUDA"
+MLDataDevicesFillArraysExt = "FillArrays"
+MLDataDevicesGPUArraysExt = "GPUArrays"
+MLDataDevicesMetalExt = ["GPUArrays", "Metal"]
+MLDataDevicesRecursiveArrayToolsExt = "RecursiveArrayTools"
+MLDataDevicesReverseDiffExt = "ReverseDiff"
+MLDataDevicesSparseArraysExt = "SparseArrays"
+MLDataDevicesTrackerExt = "Tracker"
+MLDataDevicesZygoteExt = "Zygote"
+MLDataDevicescuDNNExt = ["CUDA", "cuDNN"]
+MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
 
 [compat]
 AMDGPU = "0.9.6"

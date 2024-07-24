@@ -2,7 +2,7 @@ module DeviceUtilsAMDGPUExt
 
 using Adapt: Adapt
 using AMDGPU: AMDGPU
-using DeviceUtils: DeviceUtils, AMDGPUDevice, CPUDevice, reset_gpu_device!
+using MLDataDevices: MLDataDevices, AMDGPUDevice, CPUDevice, reset_gpu_device!
 using Random: Random
 
 __init__() = reset_gpu_device!()
@@ -21,16 +21,16 @@ function _check_use_amdgpu!()
     return
 end
 
-DeviceUtils.loaded(::Union{AMDGPUDevice, <:Type{AMDGPUDevice}}) = true
-function DeviceUtils.functional(::Union{AMDGPUDevice, <:Type{AMDGPUDevice}})::Bool
+MLDataDevices.loaded(::Union{AMDGPUDevice, <:Type{AMDGPUDevice}}) = true
+function MLDataDevices.functional(::Union{AMDGPUDevice, <:Type{AMDGPUDevice}})::Bool
     _check_use_amdgpu!()
     return USE_AMD_GPU[]
 end
 
-function DeviceUtils._with_device(::Type{AMDGPUDevice}, ::Nothing)
+function MLDataDevices._with_device(::Type{AMDGPUDevice}, ::Nothing)
     return AMDGPUDevice(nothing)
 end
-function DeviceUtils._with_device(::Type{AMDGPUDevice}, id::Integer)
+function MLDataDevices._with_device(::Type{AMDGPUDevice}, id::Integer)
     id > length(AMDGPU.devices()) &&
         throw(ArgumentError("id = $id > length(AMDGPU.devices()) = $(length(AMDGPU.devices()))"))
     old_dev = AMDGPU.device()
@@ -40,30 +40,30 @@ function DeviceUtils._with_device(::Type{AMDGPUDevice}, id::Integer)
     return device
 end
 
-DeviceUtils._get_device_id(dev::AMDGPUDevice) = AMDGPU.device_id(dev.device)
+MLDataDevices._get_device_id(dev::AMDGPUDevice) = AMDGPU.device_id(dev.device)
 
 # Default RNG
-DeviceUtils.default_device_rng(::AMDGPUDevice) = AMDGPU.rocrand_rng()
+MLDataDevices.default_device_rng(::AMDGPUDevice) = AMDGPU.rocrand_rng()
 
 # Query Device from Array
-function DeviceUtils._get_device(x::AMDGPU.AnyROCArray)
+function MLDataDevices._get_device(x::AMDGPU.AnyROCArray)
     parent_x = parent(x)
     parent_x === x && return AMDGPUDevice(AMDGPU.device(x))
-    return DeviceUtils._get_device(parent_x)
+    return MLDataDevices._get_device(parent_x)
 end
 
-DeviceUtils._get_device_type(::AMDGPU.AnyROCArray) = AMDGPUDevice
+MLDataDevices._get_device_type(::AMDGPU.AnyROCArray) = AMDGPUDevice
 
 # Set Device
-function DeviceUtils.set_device!(::Type{AMDGPUDevice}, dev::AMDGPU.HIPDevice)
+function MLDataDevices.set_device!(::Type{AMDGPUDevice}, dev::AMDGPU.HIPDevice)
     return AMDGPU.device!(dev)
 end
-function DeviceUtils.set_device!(::Type{AMDGPUDevice}, id::Integer)
-    return DeviceUtils.set_device!(AMDGPUDevice, AMDGPU.devices()[id])
+function MLDataDevices.set_device!(::Type{AMDGPUDevice}, id::Integer)
+    return MLDataDevices.set_device!(AMDGPUDevice, AMDGPU.devices()[id])
 end
-function DeviceUtils.set_device!(::Type{AMDGPUDevice}, ::Nothing, rank::Integer)
+function MLDataDevices.set_device!(::Type{AMDGPUDevice}, ::Nothing, rank::Integer)
     id = mod1(rank + 1, length(AMDGPU.devices()))
-    return DeviceUtils.set_device!(AMDGPUDevice, id)
+    return MLDataDevices.set_device!(AMDGPUDevice, id)
 end
 
 # Device Transfer
@@ -71,7 +71,7 @@ end
 Adapt.adapt_storage(::AMDGPUDevice{Nothing}, x::AbstractArray) = AMDGPU.roc(x)
 function Adapt.adapt_storage(to::AMDGPUDevice, x::AbstractArray)
     old_dev = AMDGPU.device()  # remember the current device
-    dev = DeviceUtils.get_device(x)
+    dev = MLDataDevices.get_device(x)
     if !(dev isa AMDGPUDevice)
         AMDGPU.device!(to.device)
         x_new = AMDGPU.roc(x)

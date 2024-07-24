@@ -1,4 +1,4 @@
-module DeviceUtils
+module MLDataDevices
 
 using Adapt: Adapt
 using ChainRulesCore: ChainRulesCore, NoTangent
@@ -25,7 +25,7 @@ abstract type AbstractGPUDevice <: AbstractDevice end
 
 Checks if the device is functional. This is used to determine if the device can be used for
 computation. Note that even if the backend is loaded (as checked via
-[`DeviceUtils.loaded`](@ref)), the device may not be functional.
+[`MLDataDevices.loaded`](@ref)), the device may not be functional.
 
 Note that while this function is not exported, it is considered part of the public API.
 """
@@ -108,7 +108,7 @@ Return a tuple of supported GPU backends.
 !!! warning
 
     This is not the list of functional backends on the system, but rather backends which
-    `DeviceUtils.jl` supports.
+    `MLDataDevices.jl` supports.
 """
 @inline supported_gpu_backends() = map(_get_device_name, GPU_DEVICES)
 

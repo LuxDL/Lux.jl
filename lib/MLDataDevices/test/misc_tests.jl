@@ -1,10 +1,10 @@
-using Adapt, DeviceUtils, ComponentArrays, Random
+using Adapt, MLDataDevices, ComponentArrays, Random
 using ArrayInterface: parameterless_type
 using ChainRulesTestUtils: test_rrule
 using ReverseDiff, Tracker, ForwardDiff
 using SparseArrays, FillArrays, Zygote, RecursiveArrayTools
 
-@testset "https://github.com/LuxDL/DeviceUtils.jl/issues/10 patch" begin
+@testset "https://github.com/LuxDL/MLDataDevices.jl/issues/10 patch" begin
     dev = CPUDevice()
     ps = (; weight=randn(10, 1), bias=randn(1))
 
@@ -95,7 +95,7 @@ end
 
 @testset "CPU setdevice!" begin
     @test_logs (:warn,
-        "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting.") DeviceUtils.set_device!(
+        "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting.") MLDataDevices.set_device!(
         CPUDevice, nothing, 1)
 end
 
@@ -116,8 +116,8 @@ end
 end
 
 @testset "loaded and functional" begin
-    @test DeviceUtils.loaded(CPUDevice)
-    @test DeviceUtils.functional(CPUDevice)
+    @test MLDataDevices.loaded(CPUDevice)
+    @test MLDataDevices.functional(CPUDevice)
 end
 
 @testset "writing to preferences" begin
@@ -127,7 +127,7 @@ end
     for backend in (:CUDA, :AMDGPU, :oneAPI, :Metal, AMDGPUDevice(),
         CUDADevice(), MetalDevice(), oneAPIDevice())
         backend_name = backend isa Symbol ? string(backend) :
-                       DeviceUtils._get_device_name(backend)
+                       MLDataDevices._get_device_name(backend)
         @test_logs (:info,
             "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.") gpu_backend!(backend)
     end

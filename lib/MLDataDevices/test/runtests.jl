@@ -18,7 +18,7 @@ if !isempty(EXTRA_PKGS)
     Pkg.instantiate()
 end
 
-@testset "DeviceUtils Tests" begin
+@testset "MLDataDevices Tests" begin
     file_names = BACKEND_GROUP == "all" ?
                  ["cuda_tests.jl", "amdgpu_tests.jl", "metal_tests.jl", "oneapi_tests.jl"] :
                  (BACKEND_GROUP == "cpu" ? [] : [BACKEND_GROUP * "_tests.jl"])

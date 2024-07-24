@@ -1,29 +1,29 @@
-using DeviceUtils, Random, Test
+using MLDataDevices, Random, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !DeviceUtils.functional(oneAPIDevice)
+    @test !MLDataDevices.functional(oneAPIDevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+    @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     @test_throws Exception default_device_rng(oneAPIDevice())
 end
 
 using oneAPI
 
 @testset "Loaded Trigger Package" begin
-    @test DeviceUtils.GPU_DEVICE[] === nothing
+    @test MLDataDevices.GPU_DEVICE[] === nothing
 
-    if DeviceUtils.functional(oneAPIDevice)
+    if MLDataDevices.functional(oneAPIDevice)
         @info "oneAPI is functional"
         @test gpu_device() isa oneAPIDevice
         @test gpu_device(; force_gpu_usage=true) isa oneAPIDevice
     else
         @info "oneAPI is NOT functional"
         @test gpu_device() isa oneAPIDevice
-        @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+        @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     end
-    @test DeviceUtils.GPU_DEVICE[] !== nothing
+    @test MLDataDevices.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
@@ -36,8 +36,8 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = DeviceUtils.functional(oneAPIDevice) ? oneArray : Array
-    rngType = DeviceUtils.functional(oneAPIDevice) ? oneAPI.GPUArrays.RNG :
+    aType = MLDataDevices.functional(oneAPIDevice) ? oneArray : Array
+    rngType = MLDataDevices.functional(oneAPIDevice) ? oneAPI.GPUArrays.RNG :
               Random.AbstractRNG
 
     ps_xpu = ps |> device
@@ -56,7 +56,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if DeviceUtils.functional(oneAPIDevice)
+    if MLDataDevices.functional(oneAPIDevice)
         @test ps_xpu.one_elem isa oneArray
         @test ps_xpu.farray isa oneArray
     else
@@ -82,7 +82,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if DeviceUtils.functional(oneAPIDevice)
+    if MLDataDevices.functional(oneAPIDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -107,7 +107,7 @@ using FillArrays, Zygote  # Extensions
 end
 
 @testset "Wrapper Arrays" begin
-    if DeviceUtils.functional(oneAPIDevice)
+    if MLDataDevices.functional(oneAPIDevice)
         x = rand(10, 10) |> oneAPIDevice()
         @test get_device(x) isa oneAPIDevice
         @test get_device_type(x) <: oneAPIDevice
@@ -118,9 +118,9 @@ end
 end
 
 @testset "setdevice!" begin
-    if DeviceUtils.functional(oneAPIDevice)
+    if MLDataDevices.functional(oneAPIDevice)
         @test_logs (:warn,
-            "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting.") DeviceUtils.set_device!(
+            "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting.") MLDataDevices.set_device!(
             oneAPIDevice, nothing, 1)
     end
 end

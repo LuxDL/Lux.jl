@@ -2,7 +2,7 @@ module DeviceUtilscuDNNExt
 
 using CUDA: CUDA
 using cuDNN: cuDNN
-using DeviceUtils: DeviceUtils, CUDADevice, reset_gpu_device!
+using MLDataDevices: MLDataDevices, CUDADevice, reset_gpu_device!
 
 __init__() = reset_gpu_device!()
 
@@ -26,9 +26,9 @@ function _check_use_cuda!()
     return
 end
 
-DeviceUtils.loaded(::Union{CUDADevice, Type{<:CUDADevice}}) = true
+MLDataDevices.loaded(::Union{CUDADevice, Type{<:CUDADevice}}) = true
 
-function DeviceUtils.functional(::Union{CUDADevice, Type{<:CUDADevice}})::Bool
+function MLDataDevices.functional(::Union{CUDADevice, Type{<:CUDADevice}})::Bool
     _check_use_cuda!()
     return USE_CUDA_GPU[]
 end

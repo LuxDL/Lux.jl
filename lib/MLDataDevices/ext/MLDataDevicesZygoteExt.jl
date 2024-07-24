@@ -1,7 +1,7 @@
 module DeviceUtilsZygoteExt
 
 using Adapt: Adapt
-using DeviceUtils: AbstractDevice, CPUDevice
+using MLDataDevices: AbstractDevice, CPUDevice
 using Zygote: OneElement
 
 Adapt.adapt_structure(::CPUDevice, x::OneElement) = x

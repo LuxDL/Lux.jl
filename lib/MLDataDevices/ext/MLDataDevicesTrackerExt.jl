@@ -1,19 +1,19 @@
 module DeviceUtilsTrackerExt
 
 using Adapt: Adapt
-using DeviceUtils: DeviceUtils, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice
+using MLDataDevices: MLDataDevices, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice
 using Tracker: Tracker
 
 for op in (:_get_device, :_get_device_type)
     @eval begin
-        DeviceUtils.$op(x::Tracker.TrackedArray) = DeviceUtils.$op(Tracker.data(x))
-        function DeviceUtils.$op(x::AbstractArray{<:Tracker.TrackedReal})
-            return DeviceUtils.$op(Tracker.data.(x))
+        MLDataDevices.$op(x::Tracker.TrackedArray) = MLDataDevices.$op(Tracker.data(x))
+        function MLDataDevices.$op(x::AbstractArray{<:Tracker.TrackedReal})
+            return MLDataDevices.$op(Tracker.data.(x))
         end
     end
 end
 
-DeviceUtils.__special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
+MLDataDevices.__special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
 
 for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
     CUDADevice{Nothing}, MetalDevice, oneAPIDevice)

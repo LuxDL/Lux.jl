@@ -1,31 +1,31 @@
-using DeviceUtils, Random, Functors, Test
+using MLDataDevices, Random, Functors, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !DeviceUtils.functional(CUDADevice)
+    @test !MLDataDevices.functional(CUDADevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+    @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     @test_throws Exception default_device_rng(CUDADevice(nothing))
-    @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") DeviceUtils.set_device!(
+    @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") MLDataDevices.set_device!(
         CUDADevice, nothing, 1)
 end
 
 using LuxCUDA
 
 @testset "Loaded Trigger Package" begin
-    @test DeviceUtils.GPU_DEVICE[] === nothing
+    @test MLDataDevices.GPU_DEVICE[] === nothing
 
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         @info "LuxCUDA is functional"
         @test gpu_device() isa CUDADevice
         @test gpu_device(; force_gpu_usage=true) isa CUDADevice
     else
         @info "LuxCUDA is NOT functional"
         @test gpu_device() isa CPUDevice
-        @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+        @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     end
-    @test DeviceUtils.GPU_DEVICE[] !== nothing
+    @test MLDataDevices.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
@@ -38,8 +38,8 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = DeviceUtils.functional(CUDADevice) ? CuArray : Array
-    rngType = DeviceUtils.functional(CUDADevice) ? CUDA.RNG : Random.AbstractRNG
+    aType = MLDataDevices.functional(CUDADevice) ? CuArray : Array
+    rngType = MLDataDevices.functional(CUDADevice) ? CUDA.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa CUDADevice
@@ -57,7 +57,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         @test ps_xpu.one_elem isa CuArray
         @test ps_xpu.farray isa CuArray
     else
@@ -83,7 +83,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -101,7 +101,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(data) isa CPUDevice
     @test get_device_type(data) <: CPUDevice
     data_dev = data |> device
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         @test get_device(data_dev) isa CUDADevice
         @test get_device_type(data_dev) <: CUDADevice
     else
@@ -123,7 +123,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(x_dev) isa parameterless_type(typeof(dev))
     @test get_device_type(x_dev) <: parameterless_type(typeof(dev))
 
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         dev2 = gpu_device(length(CUDA.devices()))
         x_dev2 = x_dev |> dev2
         @test get_device(x_dev2) isa typeof(dev2)
@@ -143,7 +143,7 @@ using FillArrays, Zygote  # Extensions
 end
 
 @testset "Wrapped Arrays" begin
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         x = rand(10, 10) |> CUDADevice()
         @test get_device(x) isa CUDADevice
         @test get_device_type(x) <: CUDADevice
@@ -154,7 +154,7 @@ end
 end
 
 @testset "Multiple Devices CUDA" begin
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
@@ -181,7 +181,7 @@ end
 using SparseArrays
 
 @testset "CUDA Sparse Arrays" begin
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         ps = (; weight=sprand(Float32, 10, 10, 0.1), bias=sprand(Float32, 10, 0.1))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
@@ -206,9 +206,9 @@ using SparseArrays
 end
 
 @testset "setdevice!" begin
-    if DeviceUtils.functional(CUDADevice)
+    if MLDataDevices.functional(CUDADevice)
         for i in 1:10
-            @test_nowarn DeviceUtils.set_device!(CUDADevice, nothing, i)
+            @test_nowarn MLDataDevices.set_device!(CUDADevice, nothing, i)
         end
     end
 end

@@ -1,31 +1,31 @@
-using DeviceUtils, Random, Test
+using MLDataDevices, Random, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !DeviceUtils.functional(AMDGPUDevice)
+    @test !MLDataDevices.functional(AMDGPUDevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+    @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     @test_throws Exception default_device_rng(AMDGPUDevice(nothing))
-    @test_logs (:warn, "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting.") DeviceUtils.set_device!(
+    @test_logs (:warn, "`AMDGPU.jl` hasn't been loaded. Ignoring the device setting.") MLDataDevices.set_device!(
         AMDGPUDevice, nothing, 1)
 end
 
 using AMDGPU
 
 @testset "Loaded Trigger Package" begin
-    @test DeviceUtils.GPU_DEVICE[] === nothing
+    @test MLDataDevices.GPU_DEVICE[] === nothing
 
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         @info "AMDGPU is functional"
         @test gpu_device() isa AMDGPUDevice
         @test gpu_device(; force_gpu_usage=true) isa AMDGPUDevice
     else
         @info "AMDGPU is NOT functional"
         @test gpu_device() isa CPUDevice
-        @test_throws DeviceUtils.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+        @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
     end
-    @test DeviceUtils.GPU_DEVICE[] !== nothing
+    @test MLDataDevices.GPU_DEVICE[] !== nothing
 end
 
 using FillArrays, Zygote  # Extensions
@@ -38,8 +38,8 @@ using FillArrays, Zygote  # Extensions
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
     device = gpu_device()
-    aType = DeviceUtils.functional(AMDGPUDevice) ? ROCArray : Array
-    rngType = DeviceUtils.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG : Random.AbstractRNG
+    aType = MLDataDevices.functional(AMDGPUDevice) ? ROCArray : Array
+    rngType = MLDataDevices.functional(AMDGPUDevice) ? AMDGPU.rocRAND.RNG : Random.AbstractRNG
 
     ps_xpu = ps |> device
     @test get_device(ps_xpu) isa AMDGPUDevice
@@ -57,7 +57,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.rng_default isa rngType
     @test ps_xpu.rng == ps.rng
 
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         @test ps_xpu.one_elem isa ROCArray
         @test ps_xpu.farray isa ROCArray
     else
@@ -83,7 +83,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
     @test ps_cpu.rng == ps.rng
 
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -100,7 +100,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(x_dev) isa parameterless_type(typeof(dev))
     @test get_device_type(x_dev) <: parameterless_type(typeof(dev))
 
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         dev2 = gpu_device(length(AMDGPU.devices()))
         x_dev2 = x_dev |> dev2
         @test get_device(x_dev2) isa typeof(dev2)
@@ -117,7 +117,7 @@ using FillArrays, Zygote  # Extensions
 end
 
 @testset "Wrapped Arrays" begin
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         x = rand(10, 10) |> AMDGPUDevice()
         @test get_device(x) isa AMDGPUDevice
         @test get_device_type(x) <: AMDGPUDevice
@@ -128,7 +128,7 @@ end
 end
 
 @testset "Multiple Devices AMDGPU" begin
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
@@ -153,9 +153,9 @@ end
 end
 
 @testset "setdevice!" begin
-    if DeviceUtils.functional(AMDGPUDevice)
+    if MLDataDevices.functional(AMDGPUDevice)
         for i in 1:10
-            @test_nowarn DeviceUtils.set_device!(AMDGPUDevice, nothing, i)
+            @test_nowarn MLDataDevices.set_device!(AMDGPUDevice, nothing, i)
         end
     end
 end
