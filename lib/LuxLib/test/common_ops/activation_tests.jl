@@ -1,4 +1,6 @@
 @testitem "Activation Functions" tags=[:common_ops] setup=[SharedTestSetup] begin
+    rng = StableRNG(1234)
+
     apply_act(f::F, x) where {F} = sum(abs2, f.(x))
     apply_act_fast(f::F, x) where {F} = sum(abs2, fast_activation!!(f, copy(x)))
 
@@ -7,7 +9,7 @@
                 logsigmoid, gelu, swish, lisht, tanh, tanh_fast],
             T in [Float16, Float32, Float64]
 
-            x = rand(T, 4, 3) |> aType
+            x = rand(rng, T, 4, 3) |> aType
 
             y1 = apply_act(f, x)
             y2 = apply_act_fast(f, x)
