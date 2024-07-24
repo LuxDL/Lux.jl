@@ -1,4 +1,4 @@
-module DeviceUtilsTrackerExt
+module MLDataDevicesTrackerExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice

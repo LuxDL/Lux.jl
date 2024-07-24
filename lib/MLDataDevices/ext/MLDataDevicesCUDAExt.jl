@@ -1,4 +1,4 @@
-module DeviceUtilsCUDAExt
+module MLDataDevicesCUDAExt
 
 using Adapt: Adapt
 using CUDA: CUDA

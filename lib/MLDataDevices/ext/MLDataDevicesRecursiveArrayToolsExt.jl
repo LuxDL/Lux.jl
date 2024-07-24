@@ -1,4 +1,4 @@
-module DeviceUtilsRecursiveArrayToolsExt
+module MLDataDevicesRecursiveArrayToolsExt
 
 using Adapt: Adapt, adapt
 using MLDataDevices: MLDataDevices, AbstractDevice

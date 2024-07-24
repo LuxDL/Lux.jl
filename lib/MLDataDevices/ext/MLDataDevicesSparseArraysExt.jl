@@ -1,4 +1,4 @@
-module DeviceUtilsSparseArraysExt
+module MLDataDevicesSparseArraysExt
 
 using Adapt: Adapt
 using MLDataDevices: CPUDevice

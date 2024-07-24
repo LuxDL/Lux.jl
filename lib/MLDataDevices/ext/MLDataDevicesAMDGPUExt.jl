@@ -1,4 +1,4 @@
-module DeviceUtilsAMDGPUExt
+module MLDataDevicesAMDGPUExt
 
 using Adapt: Adapt
 using AMDGPU: AMDGPU

@@ -1,4 +1,4 @@
-module DeviceUtilsReverseDiffExt
+module MLDataDevicesReverseDiffExt
 
 using MLDataDevices: MLDataDevices
 using ReverseDiff: ReverseDiff

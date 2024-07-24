@@ -1,4 +1,4 @@
-module DeviceUtilsZygoteExt
+module MLDataDevicesZygoteExt
 
 using Adapt: Adapt
 using MLDataDevices: AbstractDevice, CPUDevice

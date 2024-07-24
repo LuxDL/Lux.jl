@@ -1,4 +1,4 @@
-module DeviceUtilscuDNNExt
+module MLDataDevicescuDNNExt
 
 using CUDA: CUDA
 using cuDNN: cuDNN

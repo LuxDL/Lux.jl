@@ -1,4 +1,4 @@
-module DeviceUtilsMetalExt
+module MLDataDevicesMetalExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays

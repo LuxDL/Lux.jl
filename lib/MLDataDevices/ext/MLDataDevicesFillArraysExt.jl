@@ -1,4 +1,4 @@
-module DeviceUtilsFillArraysExt
+module MLDataDevicesFillArraysExt
 
 using Adapt: Adapt
 using FillArrays: FillArrays, AbstractFill
