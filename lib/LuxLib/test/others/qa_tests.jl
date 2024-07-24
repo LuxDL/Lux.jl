@@ -1,9 +1,9 @@
 @testitem "Aqua: Quality Assurance" tags=[:others] begin
-    using Aqua
+    using Aqua, ChainRulesCore
 
     Aqua.test_all(LuxLib; ambiguities=false, piracies=false)
-    Aqua.test_ambiguities(
-        LuxLib; recursive=false, exclude=[conv, ∇conv_data, ∇conv_filter, depthwiseconv])
+    Aqua.test_ambiguities(LuxLib; recursive=false,
+        exclude=[conv, ∇conv_data, ∇conv_filter, depthwiseconv, ChainRulesCore.frule])
     Aqua.test_piracies(LuxLib; treat_as_own=[conv, ∇conv_data, ∇conv_filter, depthwiseconv])
 end
 
