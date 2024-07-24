@@ -5,13 +5,15 @@
 
 Standard convolutional layer.
 
-Image data should be stored in WHCN order (width, height, channels, batch). In other words,
-a `100 x 100` RGB image would be a `100 x 100 x 3 x 1` array, and a batch of 50 would be a
-`100 x 100 x 3 x 50` array. This has `N = 2` spatial dimensions, and needs a kernel size
-like `(5, 5)`, a 2-tuple of integers. To take convolutions along `N` feature dimensions,
-this layer expects as input an array with `ndims(x) == N + 2`, where
-`size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is the
-number of observations in a batch.
+!!! tip "Conv2D"
+
+    Image data should be stored in WHCN order (width, height, channels, batch). In other
+    words, a `100 x 100` RGB image would be a `100 x 100 x 3 x 1` array, and a batch of 50
+    would be a `100 x 100 x 3 x 50` array. This has `N = 2` spatial dimensions, and needs
+    a kernel size like `(5, 5)`, a 2-tuple of integers. To take convolutions along `N`
+    feature dimensions, this layer expects as input an array with `ndims(x) == N + 2`, where
+    `size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is
+    the number of observations in a batch.
 
 !!! warning
 
