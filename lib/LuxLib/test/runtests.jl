@@ -20,17 +20,5 @@ const LUXLIB_TEST_GROUP = get(ENV, "LUXLIB_TEST_GROUP", "all")
 @info "Running tests for group: $LUXLIB_TEST_GROUP"
 const RETESTITEMS_NWORKERS = parse(Int, get(ENV, "RETESTITEMS_NWORKERS", "0"))
 
-if BACKEND_GROUP ∈ ("cuda", "amdgpu")
-    # Upstream bug: https://github.com/JuliaTesting/ReTestItems.jl/issues/164
-    if LUXLIB_TEST_GROUP == "all"
-        ReTestItems.runtests(@__DIR__; name=r"^(?!.*Normalization$).*")
-        ReTestItems.runtests(@__DIR__; name=r".*Normalization$", nworkers=0)
-    elseif LUXLIB_TEST_GROUP == "normalization"
-        ReTestItems.runtests(@__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=0)
-    else
-        ReTestItems.runtests(@__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)])
-    end
-else
-    ReTestItems.runtests(
-        @__DIR__; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]))
-end
+ReTestItems.runtests(
+    @__DIR__; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]))
