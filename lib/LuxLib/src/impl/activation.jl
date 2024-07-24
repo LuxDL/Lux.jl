@@ -157,7 +157,7 @@ end
 function EnzymeRules.reverse(
         cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu_sleefpirates)},
         dret::EnzymeCore.Active, ::Nothing, x::EnzymeCore.Active{<:Number})
-    return (∂gelu_sleefpirates(x.val),)
+    return (dret.val * ∂gelu_sleefpirates(x.val),)
 end
 
 # Convert to SLEEFPirates.jl
