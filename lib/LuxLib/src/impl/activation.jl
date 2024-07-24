@@ -176,7 +176,6 @@ EnzymeRules.inactive_noinl(::typeof(select_fastest_activation), ::Any...) = noth
 
 sleefpirates_activation(f::F, ::Type{T}) where {F, T} = f
 sleefpirates_activation(f::F, ::Type{Float32}) where {F} = sleefpirates_activation(f)
-sleefpirates_activation(f::F, ::Type{Float64}) where {F} = sleefpirates_activation(f)
 
 for (fbase, ffast) in [
     #! format: off

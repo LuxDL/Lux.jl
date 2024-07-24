@@ -13,9 +13,9 @@ generic implementation.
 !!! tip
 
     Certain activation functions are replaced with specialized implementations from
-    [SLEEFPirates.jl](https://github.com/JuliaSIMD/SLEEFPirates.jl). This might lead to
-    faster performance but can cause slight decrease in accuracy (in the floating point
-    limit).
+    [SLEEFPirates.jl](https://github.com/JuliaSIMD/SLEEFPirates.jl) for FP32. This might
+    lead to faster performance but can cause slight decrease in accuracy (in the floating
+    point limit).
 
 ## Arguments
 
