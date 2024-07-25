@@ -65,7 +65,7 @@ function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, on_gpu)
     __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
     skip_fd = act === relu
     allow_unstable() do
-        @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
+        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
     end
 
     __f = (x, scale, bias) -> sum(groupnorm(x, scale, bias, groups, act, epsilon))

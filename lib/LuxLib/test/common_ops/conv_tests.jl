@@ -101,8 +101,8 @@ end
 @testitem "Fused Conv: Group 1" tags=[:common_ops] setup=[SharedTestSetup, ConvSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[1]
-            run_conv_testing(__generate_fixed_array, activation, kernel,
-                stride, padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+            run_conv_testing(__generate_fixed_array, activation, kernel, stride,
+                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
         end
     end
 end
@@ -110,8 +110,8 @@ end
 @testitem "Fused Conv: Group 2" tags=[:common_ops] setup=[SharedTestSetup, ConvSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[2]
-            run_conv_testing(__generate_fixed_array, activation, kernel,
-                stride, padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+            run_conv_testing(__generate_fixed_array, activation, kernel, stride,
+                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
         end
     end
 end
@@ -119,8 +119,8 @@ end
 @testitem "Fused Conv: Group 3" tags=[:common_ops] setup=[SharedTestSetup, ConvSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[3]
-            run_conv_testing(__generate_fixed_array, activation, kernel,
-                stride, padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+            run_conv_testing(__generate_fixed_array, activation, kernel, stride,
+                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
         end
     end
 end
@@ -128,8 +128,8 @@ end
 @testitem "Fused Conv: Group 4" tags=[:common_ops] setup=[SharedTestSetup, ConvSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[4]
-            run_conv_testing(__generate_fixed_array, activation, kernel,
-                stride, padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+            run_conv_testing(__generate_fixed_array, activation, kernel, stride,
+                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
         end
     end
 end
@@ -137,8 +137,8 @@ end
 @testitem "Fused Conv: Group 5" tags=[:common_ops] setup=[SharedTestSetup, ConvSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[5]
-            run_conv_testing(__generate_fixed_array, activation, kernel,
-                stride, padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+            run_conv_testing(__generate_fixed_array, activation, kernel, stride,
+                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
         end
     end
 end

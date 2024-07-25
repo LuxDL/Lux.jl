@@ -175,7 +175,7 @@ end
     end
 end
 
-@testitem "BatchNorm Mixed Precision" tags=[:normalization] setup=[SharedTestSetup] begin
+@testitem "Batch Norm: Mixed Precision" tags=[:normalization] setup=[SharedTestSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         x = rand(Float64, 4, 4, 6, 2) |> aType
         scale = rand(Float32, 6) |> aType
