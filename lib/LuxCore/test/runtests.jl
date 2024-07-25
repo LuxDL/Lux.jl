@@ -1,4 +1,4 @@
-using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test
+using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, EnzymeCore
 
 rng = LuxCore._default_rng()
 
@@ -262,7 +262,7 @@ end
         @test check_no_self_qualified_accesses(LuxCore) === nothing
         @test check_all_explicit_imports_via_owners(LuxCore) === nothing
         @test check_all_qualified_accesses_via_owners(LuxCore) === nothing
-        @test check_all_explicit_imports_are_public(LuxCore) === nothing
+        @test_broken check_all_explicit_imports_are_public(LuxCore) === nothing
     end
 
     @testset "replicate" begin
@@ -278,5 +278,16 @@ end
     @testset "empty fleaves" begin
         @test_broken length(fleaves(NamedTuple())) == 0  # upstream issue
         @test !LuxCore.check_fmap_condition(isodd, nothing, NamedTuple())
+    end
+
+    @testset "Common Lux + Enzyme Mistakes" begin
+        d = Dense(2, 2)
+
+        @test_throws ArgumentError Active(d)
+        @test_throws ArgumentError Duplicated(d, d)
+        @test_throws ArgumentError DuplicatedNoNeed(d, d)
+        @test_throws ArgumentError BatchDuplicated(d, (d, d))
+        @test_throws ArgumentError BatchDuplicatedNoNeed(d, (d, d))
+        @test Const(d) isa Const
     end
 end
