@@ -1,10 +1,13 @@
 @testitem "Aqua: Quality Assurance" tags=[:others] begin
-    using Aqua, ChainRulesCore
+    using Aqua, ChainRulesCore, EnzymeCore
+    using EnzymeCore: EnzymeRules
 
     Aqua.test_all(LuxLib; ambiguities=false, piracies=false)
     Aqua.test_ambiguities(LuxLib; recursive=false,
         exclude=[conv, ∇conv_data, ∇conv_filter, depthwiseconv, ChainRulesCore.frule])
-    Aqua.test_piracies(LuxLib; treat_as_own=[conv, ∇conv_data, ∇conv_filter, depthwiseconv])
+    Aqua.test_piracies(LuxLib;
+        treat_as_own=[conv, ∇conv_data, ∇conv_filter, depthwiseconv,
+            EnzymeRules.augmented_primal, EnzymeRules.reverse])
 end
 
 @testitem "Explicit Imports" tags=[:others] begin

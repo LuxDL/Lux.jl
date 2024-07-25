@@ -26,6 +26,7 @@ const CRC = ChainRulesCore
 const KA = KernelAbstractions
 
 include("utils.jl")
+include("patches.jl")
 
 # User Facing
 include("api/activation.jl")
