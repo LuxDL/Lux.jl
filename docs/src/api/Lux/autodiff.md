@@ -6,7 +6,7 @@
 Pages = ["autodiff.md"]
 ```
 
-## JVP & JVP Wrappers
+## JVP & VJP Wrappers
 
 ```@docs
 jacobian_vector_product
