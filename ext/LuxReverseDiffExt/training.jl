@@ -1,6 +1,6 @@
 @static if pkgversion(ADTypes) < v"1.5"
     # older versions did not have `compile` type parameter. Use slower type-unstable code
-    function Lux.Experimental.compute_gradients(
+    function Lux.Training.compute_gradients(
             ad::AutoReverseDiff, obj_fn::F, data, ts::TrainState) where {F}
         ad.compile && return __compiled_reverse_diff(obj_fn, data, ts)
         return __uncompiled_reverse_diff(obj_fn, data, ts)
@@ -8,7 +8,7 @@
 else
     for compiled in (false, true)
         fname = compiled ? :__compiled_reverse_diff : :__uncompiled_reverse_diff
-        @eval function Lux.Experimental.compute_gradients(
+        @eval function Lux.Training.compute_gradients(
                 ::AutoReverseDiff{$(compiled)}, obj_fn::F, data, ts::TrainState) where {F}
             return $(fname)(obj_fn, data, ts)
         end
