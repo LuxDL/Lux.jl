@@ -81,7 +81,7 @@ end
     opt = AdamW(; eta=lr_max, lambda=weight_decay)
     clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
-    train_state = Lux.Experimental.TrainState(
+    train_state = Training.TrainState(
         rng, model, AdamW(; eta=lr_max, lambda=weight_decay); transform_variables=gdev)
 
     lr_schedule = linear_interpolation(
@@ -97,7 +97,7 @@ end
             train_state = Optimisers.adjust!(train_state, lr)
             x = x |> gdev
             y = y |> gdev
-            (_, _, _, train_state) = Lux.Experimental.single_train_step!(
+            (_, _, _, train_state) = Training.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
         end
         ttime = time() - stime

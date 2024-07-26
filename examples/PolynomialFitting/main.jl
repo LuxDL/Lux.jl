@@ -49,7 +49,7 @@ opt = Adam(0.03f0)
 
 # ## Loss Function
 
-# We will use the `Lux.Training` API so we need to ensure that our loss function takes 4
+# We will use the `Training` API so we need to ensure that our loss function takes 4
 # inputs -- model, parameters, states and data. The function must return 3 values -- loss,
 # updated_state, and any computed statistics. This is already satisfied by the loss
 # functions provided by Lux.
@@ -57,10 +57,10 @@ const loss_function = MSELoss()
 
 # ## Training
 
-# First we will create a [`Lux.Experimental.TrainState`](@ref) which is essentially a
+# First we will create a [`Training.TrainState`](@ref) which is essentially a
 # convenience wrapper over parameters, states and optimizer states.
 
-tstate = Lux.Experimental.TrainState(rng, model, opt)
+tstate = Training.TrainState(rng, model, opt)
 
 # Now we will use Zygote for our AD requirements.
 
@@ -68,11 +68,10 @@ vjp_rule = AutoZygote()
 
 # Finally the training loop.
 
-function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
+function main(tstate::Training.TrainState, vjp, data, epochs)
     data = data .|> gpu_device()
     for epoch in 1:epochs
-        _, loss, _, tstate = Lux.Experimental.single_train_step!(
-            vjp, loss_function, data, tstate)
+        _, loss, _, tstate = Training.single_train_step!(vjp, loss_function, data, tstate)
         if epoch % 50 == 1 || epoch == epochs
             @printf "Epoch: %3d \t Loss: %.5g\n" epoch loss
         end

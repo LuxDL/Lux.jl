@@ -128,7 +128,7 @@ function train(model_function; cpu::Bool=false, kwargs...)
     ## Training
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
 
-    tstate = Lux.Experimental.TrainState(model, ps, st, Adam(0.001f0))
+    tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
     ### Lets train the model
     nepochs = 9
@@ -137,7 +137,7 @@ function train(model_function; cpu::Bool=false, kwargs...)
         for (x, y) in train_dataloader
             x = dev(x)
             y = dev(y)
-            _, _, _, tstate = Lux.Experimental.single_train_step!(
+            _, _, _, tstate = Training.single_train_step!(
                 AutoZygote(), logitcrossentropy, (x, y), tstate)
         end
         ttime = time() - stime
