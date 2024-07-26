@@ -28,8 +28,8 @@ using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
-                initialstates, parameterlength, statelength, outputsize, apply,
-                display_name, replicate
+                initialstates, parameterlength, statelength, inputsize, outputsize,
+                update_state, trainmode, testmode, setup, apply, display_name, replicate
 
 const CRC = ChainRulesCore
 
