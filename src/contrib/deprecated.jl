@@ -7,11 +7,10 @@ macro compact(exs...)
     return Lux.__compact_macro_impl(exs...)
 end
 
-function StatefulLuxLayer(args...; kwargs...)
-    Base.depwarn(
-        "Lux.Experimental.StatefulLuxLayer` has been promoted out of `Lux.Experimental` \
-         and is now available in `Lux`. In other words this has been deprecated and will \
-         be removed in v0.6. Use `Lux.StatefulLuxLayer` instead.",
-        :StatefulLuxLayer)
-    return Lux.StatefulLuxLayer(args...; kwargs...)
+Base.@deprecate StatefulLuxLayer(args...; kwargs...) Lux.StatefulLuxLayer(
+    args...; kwargs...) false
+
+for f in (:TrainState, :TrainingBackendCache, :single_train_step, :single_train_step!,
+    :apply_gradients, :apply_gradients!, :compute_gradients)
+    @eval Base.@deprecate $f(args...; kwargs...) Training.$f(args...; kwargs...) false
 end
