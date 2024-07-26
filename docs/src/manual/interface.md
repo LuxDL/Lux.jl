@@ -36,7 +36,7 @@ architecture cannot change.
     out [the Flux to Lux migration guide](@ref migrate-from-flux) first before proceeding.
 
 ```@example layer_interface
-using LuxCore, Random  # Importing `Lux` also gives you access to `LuxCore`
+using LuxCore, Random, WeightInitializers # Importing `Lux` also gives you access to `LuxCore`
 
 struct Linear{F1, F2} <: LuxCore.AbstractExplicitLayer
     in_dims::Int
@@ -45,8 +45,7 @@ struct Linear{F1, F2} <: LuxCore.AbstractExplicitLayer
     init_bias::F2
 end
 
-function Linear(in_dims::Int, out_dims::Int; init_weight=Lux.glorot_uniform,
-    init_bias=Lux.zeros32)
+function Linear(in_dims::Int, out_dims::Int; init_weight=glorot_uniform, init_bias=zeros32)
     return Linear{typeof(init_weight), typeof(init_bias)}(in_dims, out_dims, init_weight,
         init_bias)
 end
@@ -69,8 +68,8 @@ end
 LuxCore.initialstates(::AbstractRNG, ::Linear) = NamedTuple()
 ```
 
-You could also implement `Lux.parameterlength` and `Lux.statelength` to prevent wasteful
-reconstruction of the parameters and states.
+You could also implement `LuxCore.parameterlength` and `LuxCore.statelength` to prevent
+wasteful reconstruction of the parameters and states.
 
 ```@example layer_interface
 # This works
@@ -107,7 +106,7 @@ feel you need a refresher on that.
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-ps, st = Lux.setup(rng, l)
+ps, st = LuxCore.setup(rng, l)
 
 println("Parameter Length: ", LuxCore.parameterlength(l), "; State Length: ",
     LuxCore.statelength(l))
@@ -121,7 +120,7 @@ LuxCore.apply(l, x, ps, st) # or `l(x, ps, st)`
 
 If your layer comprises of other Lux layers, then it is a `Container Layer`. Note that you
 could treat it as a [`Singular Layer`](#singular-layer), and it is still fine. FWIW, if you
-cannot subtype your layer with `Lux.AbstractExplicitContainerLayer` then you
+cannot subtype your layer with `LuxCore.AbstractExplicitContainerLayer` then you
 should go down the [`Singular Layer`](#singular-layer) route. But subtyping allows us to
 bypass some of these common definitions. Let us now define a layer, which is basically a
 composition of two linear layers.
@@ -150,7 +149,7 @@ and we need to construct parameters and states for those. Let's construct these 
 model = ComposedLinear(Linear(2, 4), Linear(4, 2))
 display(model)
 
-ps, st = Lux.setup(rng, model)
+ps, st = LuxCore.setup(rng, model)
 
 println("Parameters: ", ps)
 println("States: ", st)
@@ -182,7 +181,7 @@ d = Dense(2, 3)
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-ps_default, st = Lux.setup(rng, d)
+ps_default, st = LuxCore.setup(rng, d)
 
 x = randn(rng, Float32, 2, 1)
 
