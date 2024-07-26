@@ -60,6 +60,7 @@ jobs:
       - uses: julia-actions/julia-runtest@v1
         env:
           LUX_TEST_GROUP: ${{ matrix.test_group }}
+          BACKEND_GROUP: "CPU"
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext
@@ -69,8 +70,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
           fail_ci_if_error: true
-
-env:
-  BACKEND_GROUP: "CPU"
-  RETESTITEMS_NWORKERS: 4
-  RETESTITEMS_NWORKER_THREADS: 2

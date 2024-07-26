@@ -157,10 +157,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
-          BACKEND_GROUP: "CPU"
           LUX_TEST_GROUP: ${{ matrix.test_group }}
-          RETESTITEMS_NWORKERS: 4
-          RETESTITEMS_NWORKER_THREADS: 2
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext
@@ -202,5 +199,3 @@ jobs:
 
 env:
   BACKEND_GROUP: "CPU"
-  RETESTITEMS_NWORKERS: 4
-  RETESTITEMS_NWORKER_THREADS: 2

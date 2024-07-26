@@ -1,4 +1,7 @@
 using ReTestItems, Pkg, Preferences, Test
+using InteractiveUtils, Hwloc
+
+@info sprint(io -> versioninfo(io; verbose=true))
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
@@ -65,15 +68,16 @@ using Lux
     end
 end
 
+const RETESTITEMS_NWORKERS = parse(
+    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 16))))
+
 @testset "ReTestItem Tests" begin
     for (i, tag) in enumerate(LUX_TEST_GROUP)
         (tag == "distributed" || tag == "eltype_match") && continue
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
-        if tag == "all"
-            ReTestItems.runtests(@__DIR__)
-        else
-            ReTestItems.runtests(@__DIR__; tags=[Symbol(tag)])
-        end
+
+        ReTestItems.runtests(@__DIR__; tags=(tag == "all" ? nothing : [Symbol(tag)]),
+            nworkers=RETESTITEMS_NWORKERS, testitem_timeout=3600)
     end
 end
 
