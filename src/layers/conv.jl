@@ -5,7 +5,7 @@
 
 Standard convolutional layer.
 
-!!! tip "Conv2D"
+!!! tip "Conv 2D"
 
     Image data should be stored in WHCN order (width, height, channels, batch). In other
     words, a `100 x 100` RGB image would be a `100 x 100 x 3 x 1` array, and a batch of 50
