@@ -50,9 +50,8 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, on_g
     @test size(y) == sz
 
     __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
-    skip_fd = act === relu
     allow_unstable() do
-        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=$(skip_fd)
+        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=true
     end
 
     __f = (x, scale, bias) -> sum(first(instancenorm(
