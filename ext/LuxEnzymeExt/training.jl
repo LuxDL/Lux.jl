@@ -1,8 +1,8 @@
-function Lux.Experimental.compute_gradients(
+function Lux.Training.compute_gradients(
         ::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
     dps = Lux.recursive_make_zero(ts.parameters)
 
-    obj_fn_wrap, st_wrap, stats_wrap = Lux.Experimental.__wrap_objective_function(
+    obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.__wrap_objective_function(
         obj_fn, ts.model, ts.parameters, ts.states, data, Val(true))
 
     _, loss = Enzyme.autodiff(
@@ -20,7 +20,7 @@ end
 const AUTODIFF_CACHE_TYPE = TrainingBackendCache{
     :Enzyme, false, PS, <:NamedTuple{(:obj_fn, :st_wrap, :stats_wrap)}} where {PS}
 
-function Lux.Experimental.compute_gradients(
+function Lux.Training.compute_gradients(
         ::AutoEnzyme, obj_fn::F, data, ts::TrainState{<:AUTODIFF_CACHE_TYPE, F}) where {F}
     dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
 
@@ -35,7 +35,7 @@ function Lux.Experimental.compute_gradients(
     return dps, loss, ts.cache.extras.stats_wrap[], ts_new
 end
 
-function Lux.Experimental.compute_gradients(ad::AutoEnzyme, obj_fn::F, data,
+function Lux.Training.compute_gradients(ad::AutoEnzyme, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:Enzyme, false}}) where {F}
     @warn "Detected calls to `compute_gradients(::AutoEnzyme, ...)` with objective \
            function that is changing across function calls. This can lead to the \
@@ -51,13 +51,13 @@ function Lux.Experimental.compute_gradients(ad::AutoEnzyme, obj_fn::F, data,
     ts_new = TrainState(cache, obj_fn, ts.model, ts.parameters, ts.states,
         ts.optimizer, ts.optimizer_state, ts.step)
 
-    return Lux.Experimental.compute_gradients(ad, obj_fn, data, ts_new)
+    return Lux.Training.compute_gradients(ad, obj_fn, data, ts_new)
 end
 
 const AUTODIFF_THUNK_CACHE_TYPE = TrainingBackendCache{
     :Enzyme, false, PS, <:NamedTuple{(:forward, :reverse)}} where {PS}
 
-function Lux.Experimental.compute_gradients(::AutoEnzyme, obj_fn::F, data,
+function Lux.Training.compute_gradients(::AutoEnzyme, obj_fn::F, data,
         ts::TrainState{<:AUTODIFF_THUNK_CACHE_TYPE, F}) where {F}
     dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
     params = Duplicated(ts.parameters, dps)

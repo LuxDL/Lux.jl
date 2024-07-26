@@ -4,7 +4,7 @@ using ADTypes: AutoTracker
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore
 using Lux: Lux, LuxCPUDevice
-using Lux.Experimental: TrainingBackendCache, TrainState
+using Lux.Training: TrainingBackendCache, TrainState
 using LuxCore: LuxCore, AbstractExplicitLayer
 using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
 
@@ -23,7 +23,7 @@ function __construct_tracked_params(ps, dps)
 end
 
 # Lux.Training
-function Lux.Experimental.compute_gradients(::AutoTracker, obj_fn::F, data,
+function Lux.Training.compute_gradients(::AutoTracker, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:Tracker, FT}}) where {F, FT}
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
     ps_tracked = __construct_tracked_params(ts.parameters, dparams)
@@ -38,13 +38,13 @@ function Lux.Experimental.compute_gradients(::AutoTracker, obj_fn::F, data,
     return dparams, loss.data, stats, ts_new
 end
 
-function Lux.Experimental.compute_gradients(
+function Lux.Training.compute_gradients(
         ::AutoTracker, obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
     ts_new = TrainState(
         TrainingBackendCache{:Tracker, true}(grads, nothing), obj_fn, ts.model,
         ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
-    return Lux.Experimental.compute_gradients(AutoTracker(), obj_fn, data, ts_new)
+    return Lux.Training.compute_gradients(AutoTracker(), obj_fn, data, ts_new)
 end
 
 # AoS to SoA conversion
