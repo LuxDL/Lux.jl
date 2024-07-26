@@ -1,26 +1,16 @@
 # [Lux Interface](@id lux-interface)
 
-!!! tip
+!!! tip "Lux.jl vs LuxCore.jl"
 
     If you just want to define compatibility with Lux without actually using any of the
     other functionality provided by Lux (like layers), it is recommended to depend on
     `LuxCore.jl` instead of `Lux.jl`. `LuxCore.jl` is a significantly lighter dependency.
 
-First let's set the expectations straight.
+Following this interface provides the ability for frameworks built on top of Lux to be cross
+compatible. Additionally, any new functionality built into Lux, will just work for your
+framework.
 
-- Do you **have to** follow the interface? *No*.
-- **Should you** follow it? *Probably yes*.
-- **Why?** It provides the ability for frameworks built on top of Lux to be cross
-  compatible. Additionally, any new functionality built into Lux, will just work for your
-  framework.
-
-!!! warning
-
-    The interface is optional for frameworks being developed independent of Lux. All
-    functionality in the core library (and officially supported ones) **must** adhere to
-    the interface
-
-!!! tip
+!!! tip "`@compact` macro"
 
     While writing out a custom struct and defining dispatches manually is a good way to
     understand the interface, it is not the most concise way. We recommend using the
@@ -46,17 +36,16 @@ architecture cannot change.
     out [the Flux to Lux migration guide](@ref migrate-from-flux) first before proceeding.
 
 ```@example layer_interface
-using Lux, Random
+using LuxCore, Random, WeightInitializers # Importing `Lux` also gives you access to `LuxCore`
 
-struct Linear{F1, F2} <: Lux.AbstractExplicitLayer
+struct Linear{F1, F2} <: LuxCore.AbstractExplicitLayer
     in_dims::Int
     out_dims::Int
     init_weight::F1
     init_bias::F2
 end
 
-function Linear(in_dims::Int, out_dims::Int; init_weight=Lux.glorot_uniform,
-    init_bias=Lux.zeros32)
+function Linear(in_dims::Int, out_dims::Int; init_weight=glorot_uniform, init_bias=zeros32)
     return Linear{typeof(init_weight), typeof(init_bias)}(in_dims, out_dims, init_weight,
         init_bias)
 end
@@ -71,31 +60,31 @@ etc. The recommended data structure for returning parameters is a NamedTuple, th
 anything satisfying the [Parameter Interface](#parameter-interface) is valid.
 
 ```@example layer_interface
-function Lux.initialparameters(rng::AbstractRNG, l::Linear)
+function LuxCore.initialparameters(rng::AbstractRNG, l::Linear)
     return (weight=l.init_weight(rng, l.out_dims, l.in_dims),
             bias=l.init_bias(rng, l.out_dims, 1))
 end
 
-Lux.initialstates(::AbstractRNG, ::Linear) = NamedTuple()
+LuxCore.initialstates(::AbstractRNG, ::Linear) = NamedTuple()
 ```
 
-You could also implement `Lux.parameterlength` and `Lux.statelength` to prevent wasteful
-reconstruction of the parameters and states.
+You could also implement `LuxCore.parameterlength` and `LuxCore.statelength` to prevent
+wasteful reconstruction of the parameters and states.
 
 ```@example layer_interface
 # This works
-println("Parameter Length: ", Lux.parameterlength(l), "; State Length: ",
-    Lux.statelength(l))
+println("Parameter Length: ", LuxCore.parameterlength(l), "; State Length: ",
+    LuxCore.statelength(l))
 
 # But still recommended to define these
-Lux.parameterlength(l::Linear) = l.out_dims * l.in_dims + l.out_dims
+LuxCore.parameterlength(l::Linear) = l.out_dims * l.in_dims + l.out_dims
 
-Lux.statelength(::Linear) = 0
+LuxCore.statelength(::Linear) = 0
 ```
 
-!!! tip
+!!! tip "No RNG in `initialparameters` and `initialstates`"
 
-    You might notice that we don't pass in a `PRNG` for these functions. If your parameter
+    You might notice that we don't pass in a `RNG` for these functions. If your parameter
     length and/or state length depend on a random number generator, you should think
     **really hard** about what you are trying to do and why.
 
@@ -117,27 +106,27 @@ feel you need a refresher on that.
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-ps, st = Lux.setup(rng, l)
+ps, st = LuxCore.setup(rng, l)
 
-println("Parameter Length: ", Lux.parameterlength(l), "; State Length: ",
-    Lux.statelength(l))
+println("Parameter Length: ", LuxCore.parameterlength(l), "; State Length: ",
+    LuxCore.statelength(l))
 
 x = randn(rng, Float32, 2, 1)
 
-Lux.apply(l, x, ps, st) # or `l(x, ps, st)`
+LuxCore.apply(l, x, ps, st) # or `l(x, ps, st)`
 ```
 
 ### [Container Layer](@id Container-Layer)
 
 If your layer comprises of other Lux layers, then it is a `Container Layer`. Note that you
 could treat it as a [`Singular Layer`](#singular-layer), and it is still fine. FWIW, if you
-cannot subtype your layer with `Lux.AbstractExplicitContainerLayer` then you
+cannot subtype your layer with `LuxCore.AbstractExplicitContainerLayer` then you
 should go down the [`Singular Layer`](#singular-layer) route. But subtyping allows us to
 bypass some of these common definitions. Let us now define a layer, which is basically a
 composition of two linear layers.
 
 ```@example layer_interface
-struct ComposedLinear{L1, L2} <: Lux.AbstractExplicitContainerLayer{(:linear_1, :linear_2)}
+struct ComposedLinear{L1, L2} <: LuxCore.AbstractExplicitContainerLayer{(:linear_1, :linear_2)}
     linear_1::L1
     linear_2::L2
 end
@@ -160,17 +149,17 @@ and we need to construct parameters and states for those. Let's construct these 
 model = ComposedLinear(Linear(2, 4), Linear(4, 2))
 display(model)
 
-ps, st = Lux.setup(rng, model)
+ps, st = LuxCore.setup(rng, model)
 
 println("Parameters: ", ps)
 println("States: ", st)
 
-println("Parameter Length: ", Lux.parameterlength(model), "; State Length: ",
-    Lux.statelength(model))
+println("Parameter Length: ", LuxCore.parameterlength(model), "; State Length: ",
+    LuxCore.statelength(model))
 
 x = randn(rng, Float32, 2, 1)
 
-Lux.apply(model, x, ps, st) # or `model(x, ps, st)`
+LuxCore.apply(model, x, ps, st) # or `model(x, ps, st)`
 ```
 
 ## Parameter Interface
@@ -180,7 +169,7 @@ We accept any parameter type as long as we can fetch the parameters using
 and `ComponentArray`s. Let us go through a concrete example of what it means. Consider
 [`Dense`](@ref) which expects two parameters named `weight` and `bias`.
 
-!!! info
+!!! note "Automatic Differentiation"
 
     If you are defining your own parameter type, it is your responsibility to make sure that
     it works with the AutoDiff System you are using.
@@ -192,7 +181,7 @@ d = Dense(2, 3)
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-ps_default, st = Lux.setup(rng, d)
+ps_default, st = LuxCore.setup(rng, d)
 
 x = randn(rng, Float32, 2, 1)
 
@@ -202,7 +191,7 @@ println("Result with `NamedTuple` parameters: ", first(d(x, ps_default, st)))
 Let, us define a custom parameter type with fields `myweight` and `mybias` but if we try to
 access `weight` we get back `myweight`, similar for `bias`.
 
-!!! warning
+!!! warning "Beware!"
 
     This is for demonstrative purposes, don't try this at home!
 

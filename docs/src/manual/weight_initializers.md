@@ -32,8 +32,8 @@ weights_cl = kaiming_normal(; gain=1.0)
 weights = weights_cl(2, 5)
 ```
 
-To generate weights directly on GPU, pass in a `CUDA.RNG`. (Note that this is currently
-implemented only for NVIDIA GPUs)
+To generate weights directly on GPU, pass in a `CUDA.RNG`. For a complete list of supported
+RNG types, see [Supported RNG Types](@ref Supported-RNG-Types-WeightInit).
 
 ```@example weight-init
 using LuxCUDA

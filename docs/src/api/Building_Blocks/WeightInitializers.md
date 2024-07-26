@@ -9,6 +9,22 @@ learning models.
 Pages = ["WeightInitializers.md"]
 ```
 
+## [Supported RNG Types](@id Supported-RNG-Types-WeightInit)
+
+| **RNG Type / Package**            | **Returned Array Type** | **Unsupported Functions**                        |
+| --------------------------------- | ----------------------- | ------------------------------------------------ |
+| `Random.jl`                       | `Array`                 |                                                  |
+| `StableRNGs.jl`                   | `Array`                 |                                                  |
+| `CUDA.default_rng()`              | `CuArray`               |                                                  |
+| `GPUArrays.default_rng(CuArray)`  | `CuArray`               |                                                  |
+| `AMDGPU.rocrand_rng()`            | `ROCArray`              |                                                  |
+| `AMDGPU.gpuarrays_rng()`          | `ROCArray`              |                                                  |
+| `GPUArrays.default_rng(ROCArray)` | `ROCArray`              |                                                  |
+| `Metal.gpuarrays_rng()`           | `MtlArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
+| `GPUArrays.default_rng(MtlArray)` | `MtlArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
+| `oneAPI.gpuarrays_rng()`          | `oneArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
+| `GPUArrays.default_rng(oneArray)` | `oneArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
+
 ## API Reference
 
 ### Main Functions
@@ -24,7 +40,11 @@ truncated_normal
 orthogonal
 ```
 
-### Commonly Used Wrappers
+### Other Convenience Functions
+
+!!! warning "Beware"
+
+    Unlike the other functions these ones don't take a type argument.
 
 ```@docs
 zeros16

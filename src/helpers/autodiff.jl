@@ -49,7 +49,7 @@ products efficiently using mixed-mode AD.
 
 | Supported Backends | Packages Needed  |
 | :----------------- | :--------------- |
-| `AutoForwardDiff`  | `ForwardDiff.jl` |
+| `AutoForwardDiff`  |                  |
 
 !!! warning
 
@@ -85,10 +85,10 @@ the following properties for `y = f(x)`:
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed  |
-|:------------------ |:---------------- |
-| `AutoForwardDiff`  | `ForwardDiff.jl` |
-| `AutoZygote`       | `Zygote.jl`      |
+| Supported Backends | Packages Needed |
+|:------------------ |:--------------- |
+| `AutoForwardDiff`  |                 |
+| `AutoZygote`       | `Zygote.jl`     |
 
 ## Arguments
 
