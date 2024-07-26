@@ -102,7 +102,7 @@ end
 end
 
 @testitem "Fused Dense: StaticArrays" tags=[:dense] begin
-    using StaticArrays
+    using StaticArrays, NNlib
 
     x = @SArray rand(2, 4)
     weight = @SArray rand(3, 2)
@@ -112,7 +112,7 @@ end
 end
 
 @testitem "Fused Dense: CPU No Scalar Indexing" tags=[:dense] begin
-    using JLArrays
+    using JLArrays, NNlib
 
     x = JLArray(rand(Float32, 2, 4))
     weight = JLArray(rand(Float32, 3, 2))

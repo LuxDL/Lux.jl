@@ -12,8 +12,6 @@ using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AbstractGPUDevice
 using NNlib: NNlib, ConvDims, σ
 
-@reexport using NNlib
-
 const Optional{T} = Union{Nothing, T}
 const Numeric = Union{AbstractArray{<:T}, T} where {T <: Number}
 const ∂∅ = NoTangent()

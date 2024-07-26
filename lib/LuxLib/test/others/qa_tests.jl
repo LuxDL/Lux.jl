@@ -1,5 +1,5 @@
 @testitem "Aqua: Quality Assurance" tags=[:others] begin
-    using Aqua, ChainRulesCore, EnzymeCore
+    using Aqua, ChainRulesCore, EnzymeCore, NNlib
     using EnzymeCore: EnzymeRules
 
     Aqua.test_all(
