@@ -1,4 +1,7 @@
 using ReTestItems, Pkg, LuxTestUtils, Preferences
+using InteractiveUtils
+
+@info sprint(io -> versioninfo(io; verbose=true))
 
 Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 

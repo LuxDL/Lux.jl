@@ -97,8 +97,7 @@ export _setup_groupnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_groupnorm_testing
 
 end
 
-@testitem "Group Norm: Group 1" tags=[:normalization] setup=[
-    SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Norm: Group 1" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[1]
             run_groupnorm_testing(
@@ -107,8 +106,7 @@ end
     end
 end
 
-@testitem "Group Norm: Group 2" tags=[:normalization] setup=[
-    SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Norm: Group 2" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[2]
             run_groupnorm_testing(
@@ -117,8 +115,7 @@ end
     end
 end
 
-@testitem "Group Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Norm: Group 3" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[3]
             run_groupnorm_testing(
@@ -127,8 +124,7 @@ end
     end
 end
 
-@testitem "Group Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Norm: Group 4" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[4]
             run_groupnorm_testing(
@@ -137,8 +133,7 @@ end
     end
 end
 
-@testitem "Group Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, GroupNormSetup] begin
+@testitem "Group Norm: Group 5" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[5]
             run_groupnorm_testing(

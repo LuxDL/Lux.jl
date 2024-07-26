@@ -1,4 +1,4 @@
-@testitem "Activation Functions" tags=[:common_ops] setup=[SharedTestSetup] begin
+@testitem "Activation Functions" tags=[:other_ops] setup=[SharedTestSetup] begin
     rng = StableRNG(1234)
 
     apply_act(f::F, x) where {F} = sum(abs2, f.(x))

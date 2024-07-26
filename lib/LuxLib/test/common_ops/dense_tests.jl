@@ -72,7 +72,7 @@ export ALL_TEST_CONFIGS, TEST_BLOCKS, run_dense_testing
 
 end
 
-@testitem "Fused Dense: Group 1" tags=[:common_ops] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 1" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[1]
             run_dense_testing(__generate_fixed_array, Tw, Tx, M, N,
@@ -81,7 +81,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 2" tags=[:common_ops] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 2" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[2]
             run_dense_testing(__generate_fixed_array, Tw, Tx, M, N,
@@ -90,7 +90,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 3" tags=[:common_ops] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 3" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[3]
             run_dense_testing(__generate_fixed_array, Tw, Tx, M, N,
@@ -99,7 +99,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 4" tags=[:common_ops] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 4" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[4]
             run_dense_testing(__generate_fixed_array, Tw, Tx, M, N,
@@ -108,7 +108,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 5" tags=[:common_ops] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 5" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[5]
             run_dense_testing(__generate_fixed_array, Tw, Tx, M, N,
@@ -117,7 +117,7 @@ end
     end
 end
 
-@testitem "Fused Dense: StaticArrays" tags=[:common_ops] begin
+@testitem "Fused Dense: StaticArrays" tags=[:dense] begin
     using StaticArrays
 
     x = @SArray rand(2, 4)

@@ -91,7 +91,7 @@
     end
 end
 
-@testitem "ForwardDiff dropout" tags=[:common_ops] setup=[SharedTestSetup] begin
+@testitem "ForwardDiff dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
     using ForwardDiff
 
     rng = StableRNG(12345)

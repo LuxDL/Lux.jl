@@ -34,8 +34,13 @@ jobs:
           - macos-latest
           - windows-latest
         test_group:
-          - 'normalization'
-          - 'common_ops'
+          - 'conv'
+          - 'dense'
+          - 'batch_norm'
+          - 'group_norm'
+          - 'instance_norm'
+          - 'layer_norm'
+          - 'other_ops'
           - 'others'
     steps:
       - uses: actions/checkout@v4
@@ -128,8 +133,13 @@ jobs:
         version:
           - "1"
         test_group:
-          - 'normalization'
-          - 'common_ops'
+          - 'conv'
+          - 'dense'
+          - 'batch_norm'
+          - 'group_norm'
+          - 'instance_norm'
+          - 'layer_norm'
+          - 'other_ops'
           - 'others'
     steps:
       - uses: actions/checkout@v4
@@ -183,5 +193,5 @@ jobs:
 env:
   BACKEND_GROUP: "CPU"
   RETESTITEMS_TESTITEM_TIMEOUT: 3600
-  RETESTITEMS_NWORKERS: 4
+  RETESTITEMS_NWORKERS: 2
   RETESTITEMS_NWORKER_THREADS: 2

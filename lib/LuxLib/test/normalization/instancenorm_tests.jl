@@ -83,7 +83,7 @@ export _setup_instancenorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_instancenorm_test
 
 end
 
-@testitem "Instance Norm: Group 1" tags=[:normalization] setup=[
+@testitem "Instance Norm: Group 1" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[1]
@@ -93,7 +93,7 @@ end
     end
 end
 
-@testitem "Instance Norm: Group 2" tags=[:normalization] setup=[
+@testitem "Instance Norm: Group 2" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[2]
@@ -103,7 +103,7 @@ end
     end
 end
 
-@testitem "Instance Norm: Group 3" tags=[:normalization] setup=[
+@testitem "Instance Norm: Group 3" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[3]
@@ -113,7 +113,7 @@ end
     end
 end
 
-@testitem "Instance Norm: Group 4" tags=[:normalization] setup=[
+@testitem "Instance Norm: Group 4" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[4]
@@ -123,7 +123,7 @@ end
     end
 end
 
-@testitem "Instance Norm: Group 5" tags=[:normalization] setup=[
+@testitem "Instance Norm: Group 5" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[5]

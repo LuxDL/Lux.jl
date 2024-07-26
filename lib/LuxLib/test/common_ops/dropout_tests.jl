@@ -1,4 +1,4 @@
-@testitem "Dropout" tags=[:common_ops] setup=[SharedTestSetup] begin
+@testitem "Dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)
@@ -53,7 +53,7 @@
     end
 end
 
-@testitem "Dropout with Preset Mask" tags=[:common_ops] setup=[SharedTestSetup] begin
+@testitem "Dropout with Preset Mask" tags=[:other_ops] setup=[SharedTestSetup] begin
     Enzyme.API.runtimeActivity!(true)  # TODO: remove in 1.0 after deprecation
 
     using Statistics
@@ -206,7 +206,7 @@ end
     end
 end
 
-@testitem "Alpha Dropout" tags=[:common_ops] setup=[SharedTestSetup] begin
+@testitem "Alpha Dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)

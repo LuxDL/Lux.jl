@@ -125,8 +125,7 @@ export _setup_batchnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_batchnorm_testing
 
 end
 
-@testitem "Batch Norm: Group 1" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
+@testitem "Batch Norm: Group 1" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[1]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
@@ -135,8 +134,7 @@ end
     end
 end
 
-@testitem "Batch Norm: Group 2" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
+@testitem "Batch Norm: Group 2" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[2]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
@@ -145,8 +143,7 @@ end
     end
 end
 
-@testitem "Batch Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
+@testitem "Batch Norm: Group 3" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[3]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
@@ -155,8 +152,7 @@ end
     end
 end
 
-@testitem "Batch Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
+@testitem "Batch Norm: Group 4" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[4]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
@@ -165,8 +161,7 @@ end
     end
 end
 
-@testitem "Batch Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
+@testitem "Batch Norm: Group 5" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[5]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
@@ -175,7 +170,7 @@ end
     end
 end
 
-@testitem "Batch Norm: Mixed Precision" tags=[:normalization] setup=[SharedTestSetup] begin
+@testitem "Batch Norm: Mixed Precision" tags=[:batch_norm] setup=[SharedTestSetup] begin
     @testset "$mode" for (mode, aType, on_gpu) in MODES
         x = rand(Float64, 4, 4, 6, 2) |> aType
         scale = rand(Float32, 6) |> aType
