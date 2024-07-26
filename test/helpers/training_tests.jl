@@ -76,12 +76,12 @@ end
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
 
-            @test_throws ArgumentError Lux.Experimental.__maybe_implemented_compute_gradients(ad)
+            @test_throws ArgumentError Lux.Training.__maybe_implemented_compute_gradients(ad)
 
-            @test_deprecated Lux.Training.TrainState(
+            @test_deprecated Lux.Experimental.TrainState(
                 Lux.replicate(rng), model, opt; transform_variables=dev)
 
-            tstate = Lux.Experimental.TrainState(
+            tstate = Lux.Training.TrainState(
                 Lux.replicate(rng), model, opt; transform_variables=dev)
 
             initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
@@ -93,10 +93,10 @@ end
             end
 
             (x, y) = first(dataset_)
-            @test_deprecated Lux.Training.compute_gradients(ad, mse, (x, y), tstate)
+            @test_deprecated Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
             grads, loss, _, tstate = Lux.Experimental.compute_gradients(
                 ad, mse, (x, y), tstate)
-            @test_deprecated Lux.Training.apply_gradients(tstate, grads)
+            @test_deprecated Lux.Experimental.apply_gradients(tstate, grads)
 
             for epoch in 1:100, (x, y) in dataset_
                 grads, loss, _, tstate = Lux.Experimental.single_train_step!(
