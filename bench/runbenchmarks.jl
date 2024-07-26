@@ -1,4 +1,4 @@
-using ADTypes: ADTypes, AutoEnzyme, AutoTracker, AutoReverseDiff, AutoZygote
+using ADTypes: ADTypes, AutoEnzyme, AutoTracker, AutoReverseDiff, AutoTapir, AutoZygote
 using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using ComponentArrays: ComponentArray
 using InteractiveUtils: versioninfo
@@ -18,8 +18,6 @@ using ReverseDiff: ReverseDiff
 using Tapir: Tapir
 using Tracker: Tracker
 using Zygote: Zygote
-
-struct AutoTapir <: ADTypes.AbstractReverseMode end
 
 BLAS.set_num_threads(min(4, Threads.nthreads()))
 
