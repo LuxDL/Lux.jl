@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.3.34"
+version = "0.3.35"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -52,6 +52,7 @@ FastClosures = "0.3.2"
 ForwardDiff = "0.10.36"
 Hwloc = "3.2.0"
 InteractiveUtils = "<0.0.1, 1"
+JLArrays = "0.1.5"
 KernelAbstractions = "0.9.22"
 LinearAlgebra = "1.10"
 LuxCore = "0.1.13"
@@ -84,6 +85,7 @@ Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 LuxDeviceUtils = "34f89e08-e1d5-43b4-8944-0b49ac560553"
 LuxTestUtils = "ac9de150-d08f-4546-94fb-7472b5760531"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -97,4 +99,4 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Aqua", "ComponentArrays", "Enzyme", "ExplicitImports", "Hwloc", "InteractiveUtils", "LuxTestUtils", "Pkg", "Preferences", "ReTestItems", "ReverseDiff", "StableRNGs", "StaticArrays", "Test", "Tracker", "Zygote"]
+test = ["Aqua", "ComponentArrays", "Enzyme", "ExplicitImports", "Hwloc", "InteractiveUtils", "JLArrays", "LuxTestUtils", "Pkg", "Preferences", "ReTestItems", "ReverseDiff", "StableRNGs", "StaticArrays", "Test", "Tracker", "Zygote"]

@@ -126,3 +126,14 @@ end
 
     @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa SArray
 end
+
+@testitem "Fused Dense: CPU No Scalar Indexing" tags=[:dense] begin
+    using JLArrays
+
+    x = JLArray(rand(Float32, 2, 4))
+    weight = JLArray(rand(Float32, 3, 2))
+    bias = JLArray(rand(Float32, 3))
+
+    @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa JLArray
+    @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
+end

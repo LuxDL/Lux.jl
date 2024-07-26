@@ -189,12 +189,14 @@ struct LoopedArrayOp <: AbstractInternalArrayOpMode end
 ##       inference.
 function internal_operation_mode(xs::Tuple)
     xs = unrolled_filter(!isnothing, xs)
-    unrolled_any(__has_autodiff_value, xs) && return GenericBroadcastOp()
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.
-    unrolled_any(__has_float16, xs) && return GenericBroadcastOp()
+    if unrolled_any(__has_autodiff_value, xs) || unrolled_any(__has_float16, xs)
+        return GenericBroadcastOp()
+    end
     dev = get_device_type(xs)
     dev <: AbstractLuxGPUDevice && return GPUBroadcastOp{dev}()
+    unrolled_any(!fast_scalar_indexing, xs) && return GenericBroadcastOp()
     dev <: LuxCPUDevice && return LoopedArrayOp()
     return GenericBroadcastOp()  # fallback for safety
 end
