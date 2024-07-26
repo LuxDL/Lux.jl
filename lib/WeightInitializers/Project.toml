@@ -1,7 +1,7 @@
 name = "WeightInitializers"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.10"
+version = "1.0.0"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
