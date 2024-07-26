@@ -138,8 +138,7 @@ function main(model_type)
     rng = Xoshiro(0)
 
     dev = gpu_device()
-    train_state = Lux.Experimental.TrainState(
-        rng, model, Adam(0.01f0); transform_variables=dev)
+    train_state = Training.TrainState(rng, model, Adam(0.01f0); transform_variables=dev)
 
     for epoch in 1:25
         ## Train the model
@@ -147,7 +146,7 @@ function main(model_type)
             x = x |> dev
             y = y |> dev
 
-            (_, loss, _, train_state) = Lux.Experimental.single_train_step!(
+            (_, loss, _, train_state) = Training.single_train_step!(
                 AutoZygote(), lossfn, (x, y), train_state)
 
             @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss

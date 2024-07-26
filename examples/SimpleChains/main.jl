@@ -62,20 +62,20 @@ end
 function train(model; rng=Xoshiro(0), kwargs...)
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
 
-    train_state = Lux.Experimental.TrainState(
+    train_state = Training.TrainState(
         rng, model, Adam(3.0f-4); transform_variables=identity)
 
     ### Warmup the model
     x_proto = randn(rng, Float32, 28, 28, 1, 1)
     y_proto = onehotbatch([1], 0:9)
-    Lux.Experimental.compute_gradients(AutoZygote(), loss, (x_proto, y_proto), train_state)
+    Training.compute_gradients(AutoZygote(), loss, (x_proto, y_proto), train_state)
 
     ### Lets train the model
     nepochs = 10
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
-            (gs, _, _, train_state) = Lux.Experimental.single_train_step!(
+            (gs, _, _, train_state) = Training.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
         end
         ttime = time() - stime

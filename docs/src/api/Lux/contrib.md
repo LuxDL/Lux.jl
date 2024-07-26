@@ -20,22 +20,6 @@ All features listed on this page are **experimental** which means:
 Pages = ["contrib.md"]
 ```
 
-## [Training](@id Training-API)
-
-Helper Functions making it easier to train `Lux.jl` models.
-
-Lux.Training is meant to be simple and provide extremely basic functionality. We provide
-basic building blocks which can be seamlessly composed to create complex training pipelines.
-
-```@docs
-Lux.Experimental.TrainState
-Lux.Experimental.compute_gradients
-Lux.Experimental.apply_gradients
-Lux.Experimental.apply_gradients!
-Lux.Experimental.single_train_step
-Lux.Experimental.single_train_step!
-```
-
 ## Parameter Freezing
 
 !!! info

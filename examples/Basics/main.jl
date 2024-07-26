@@ -303,9 +303,9 @@ println("Loss Value with ground true parameters: ", lossfn(W * x_samples .+ b, y
 
 # We will train the model using our training API.
 function train_model!(model, ps, st, opt, nepochs::Int)
-    tstate = Lux.Experimental.TrainState(model, ps, st, opt)
+    tstate = Training.TrainState(model, ps, st, opt)
     for i in 1:nepochs
-        grads, loss, _, tstate = Lux.Experimental.single_train_step!(
+        grads, loss, _, tstate = Training.single_train_step!(
             AutoZygote(), lossfn, (x_samples, y_samples), tstate)
         if i % 1000 == 1 || i == nepochs
             @printf "Loss Value after %6d iterations: %.8f\n" i loss

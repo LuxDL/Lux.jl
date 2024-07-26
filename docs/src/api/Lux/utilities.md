@@ -6,6 +6,22 @@
 Pages = ["utilities.md"]
 ```
 
+## [Training API](@id Training-API)
+
+Helper Functions making it easier to train `Lux.jl` models.
+
+Training is meant to be simple and provide extremely basic functionality. We provide
+basic building blocks which can be seamlessly composed to create complex training pipelines.
+
+```@docs
+Training.TrainState
+Training.compute_gradients
+Training.apply_gradients
+Training.apply_gradients!
+Training.single_train_step
+Training.single_train_step!
+```
+
 ## Loss Functions
 
 Loss Functions Objects take 2 forms of inputs:
@@ -14,7 +30,7 @@ Loss Functions Objects take 2 forms of inputs:
   2. `model`, `ps`, `st`, `(x, y)` where `model` is the model, `ps` are the parameters,
      `st` are the states and `(x, y)` are the input and target pair. Then it returns the
      loss, updated states, and an empty named tuple. This makes them compatible with the
-     [Experimental Training API](@ref Training-API).
+     [Training API](@ref Training-API).
 
 !!! warning
 

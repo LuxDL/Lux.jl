@@ -354,7 +354,7 @@ end
     @info "Logging Tensorboard logs to $(tb_dir). Run tensorboard with `tensorboard --logdir $(dirname(tb_dir))`"
     tb_logger = TBLogger(tb_dir)
 
-    tstate = Lux.Experimental.TrainState(
+    tstate = Training.TrainState(
         rng, model, AdamW(; eta=learning_rate_start, lambda=weight_decay);
         transform_variables=gdev)
 
@@ -378,7 +378,7 @@ end
         for (i, data) in enumerate(data_loader)
             step += 1
             data = data |> gdev
-            (_, _, stats, tstate) = Lux.Experimental.single_train_step!(
+            (_, _, stats, tstate) = Training.single_train_step!(
                 AutoZygote(), loss_function, data, tstate)
             image_losses[i] = stats.image_loss
             noise_losses[i] = stats.noise_loss

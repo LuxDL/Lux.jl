@@ -83,8 +83,7 @@ function train()
 
     rng = Xoshiro(0)
 
-    train_state = Lux.Experimental.TrainState(
-        rng, model, Adam(3.0f-4); transform_variables=dev)
+    train_state = Training.TrainState(rng, model, Adam(3.0f-4); transform_variables=dev)
 
     ### Lets train the model
     nepochs = 10
@@ -95,7 +94,7 @@ function train()
         for (x, y) in train_dataloader
             x = x |> dev
             y = y |> dev
-            (_, _, _, train_state) = Lux.Experimental.single_train_step!(
+            (_, _, _, train_state) = Training.single_train_step!(
                 AutoZygote(), loss, ((data_idx, x), y), train_state)
         end
         ttime = time() - stime
