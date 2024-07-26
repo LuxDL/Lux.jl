@@ -1,3 +1,14 @@
+module Training
+
+using ADTypes: ADTypes, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+using Compat: @compat
+using ConcreteStructs: @concrete
+using FastClosures: @closure
+using LuxCore: AbstractExplicitLayer
+using LuxDeviceUtils: AbstractLuxDevice, gpu_device
+using Optimisers: Optimisers
+using Random: AbstractRNG
+
 """
     TrainState
 
@@ -20,9 +31,9 @@ Internal fields:
     Constructing this object directly shouldn't be considered a stable API. Use the
     version with the Optimisers API.
 """
-@concrete struct TrainState{C, F}
-    cache::C
-    objective_function::F
+@concrete struct TrainState
+    cache
+    objective_function
     model
     parameters
     states
@@ -188,7 +199,8 @@ function compute_gradients(ad::ADTypes.AbstractADType, ::F, _, ::TrainState) whe
 end
 
 function __maybe_implemented_compute_gradients(::T) where {T <: ADTypes.AbstractADType}
-    throw(ArgumentError(lazy"Support for AD backend $(nameof(T)) has not been implemented yet!!!"))
+    throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented \
+                         yet!"))
 end
 
 for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
@@ -300,4 +312,12 @@ function Optimisers.adjust(ts::TrainState; kwargs...)
     optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
     return TrainState(ts.cache, ts.objective_function, ts.model,
         ts.parameters, ts.states, optimizer, st_opt, ts.step)
+end
+
+@compat(public,
+    (TrainState, apply_gradients, apply_gradients!,
+        compute_gradients, single_train_step, single_train_step!))
+
+export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+
 end

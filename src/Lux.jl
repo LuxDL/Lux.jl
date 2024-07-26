@@ -28,8 +28,8 @@ using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
-                initialstates, parameterlength, statelength, inputsize, outputsize,
-                update_state, trainmode, testmode, setup, apply, display_name, replicate
+                initialstates, parameterlength, statelength, outputsize, apply,
+                display_name, replicate
 
 const CRC = ChainRulesCore
 
@@ -43,6 +43,9 @@ include("preferences.jl")
 # Utilities
 include("custom_errors.jl")
 include("utils.jl")
+
+# Training Helpers
+include("helpers/training.jl")
 
 # Experimental
 include("contrib/contrib.jl")
@@ -106,6 +109,7 @@ export SamePad, TimeLastIndex, BatchLastIndex
 export StatefulLuxLayer
 export CompactLuxLayer
 export @compact, @init_fn, @non_trainable
+export Training
 
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
