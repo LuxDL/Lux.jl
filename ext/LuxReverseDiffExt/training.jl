@@ -1,30 +1,14 @@
-@static if pkgversion(ADTypes) < v"1.5"
-    # older versions did not have `compile` type parameter. Use slower type-unstable code
-    function Lux.Training.compute_gradients(
-            ad::AutoReverseDiff, obj_fn::F, data, ts::TrainState) where {F}
-        ad.compile && return __compiled_reverse_diff(obj_fn, data, ts)
-        return __uncompiled_reverse_diff(obj_fn, data, ts)
-    end
-else
-    for compiled in (false, true)
-        fname = compiled ? :__compiled_reverse_diff : :__uncompiled_reverse_diff
-        @eval function Lux.Training.compute_gradients(
-                ::AutoReverseDiff{$(compiled)}, obj_fn::F, data, ts::TrainState) where {F}
-            return $(fname)(obj_fn, data, ts)
-        end
-    end
-end
-
 # Uncompiled ReverseDiff
-@inline function __uncompiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
+@inline function Lux.Training.compute_gradients(
+        ad::AutoReverseDiff{false}, obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
     ts_new = TrainState(
         TrainingBackendCache{:ReverseDiff, true}(grads, nothing), obj_fn, ts.model,
         ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
-    return __uncompiled_reverse_diff(obj_fn, data, ts_new)
+    return Lux.Training.compute_gradients(ad, obj_fn, data, ts_new)
 end
 
-@inline function __uncompiled_reverse_diff(obj_fn::F, data,
+@inline function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
     tape = ReverseDiff.InstructionTape()
@@ -42,7 +26,8 @@ end
 end
 
 # Compiled ReverseDiff
-@inline function __compiled_reverse_diff(obj_fn::F, data, ts::TrainState) where {F}
+@inline function Lux.Training.compute_gradients(
+        ad::AutoReverseDiff{true}, obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
     data_cache = deepcopy(data)
     ps_cache = deepcopy(ts.parameters)
@@ -51,11 +36,11 @@ end
     ts_new = TrainState(
         TrainingBackendCache{:ReverseDiff, true}(grads, extras), nothing, ts.model,
         ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
-    return __compiled_reverse_diff(obj_fn, data, ts_new)
+    return Lux.Training.compute_gradients(ad, obj_fn, data, ts_new)
 end
 
 ## Tape hasn't been compiled yet / Function mismatch so recompile
-@inline function __compiled_reverse_diff(obj_fn::F, data,
+@inline function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     if LuxCore.statelength(ts.states) != 0
         throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for Lux \
@@ -106,7 +91,7 @@ end
     return dparams, ReverseDiff.value(loss), NamedTuple(), ts_new
 end
 
-@inline function __compiled_reverse_diff(obj_fn::F, data,
+@inline function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, false}, F}) where {F}
     (; ps_cache, data_cache, output) = ts.cache.extras
 
