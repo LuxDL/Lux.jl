@@ -1,7 +1,6 @@
 using Documenter, DocumenterVitepress, Pkg
 using Lux, LuxCore, LuxLib, WeightInitializers
-using LuxTestUtils, LuxDeviceUtils
-using MLDataDevices
+using LuxTestUtils, MLDataDevices
 using LuxCUDA
 
 using Optimisers # for some docstrings
@@ -56,7 +55,6 @@ pages = [
             "api/Lux/distributed_utils.md",
         ],
         "Accelerator Support" => [
-            "api/Accelerator_Support/LuxDeviceUtils.md",
             "api/Accelerator_Support/MLDataDevices.md"
         ],
         "Building Blocks" => [
@@ -80,8 +78,7 @@ makedocs(; sitename="Lux.jl Docs",
     authors="Avik Pal et al.",
     clean=true,
     doctest=false,  # We test it in the CI, no need to run it here
-    modules=[Lux, LuxCore, LuxLib, WeightInitializers,
-        LuxTestUtils, LuxDeviceUtils, MLDataDevices],
+    modules=[Lux, LuxCore, LuxLib, WeightInitializers, LuxTestUtils, MLDataDevices],
     linkcheck=true,
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     format=DocumenterVitepress.MarkdownVitepress(;
