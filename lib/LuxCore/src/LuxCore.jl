@@ -134,7 +134,7 @@ if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 `size(A)[1:(end - 1)]`. If this behavior is undesirable, provide a custom
 `outputsize(layer, x, rng)` implementation).
 
-!!! warning "Inconsistent Pre-1.0 Behavior"
+!!! warning "Changes from Pre-1.0 Behavior"
 
     Previously it was possible to override this function by defining `outputsize(layer)`.
     However, this can potentially introduce a bug that is hard to bypass. See
@@ -220,28 +220,35 @@ for the layer, and constructs the parameters and states using those.
 Users implementing their custom layer can extend the same functions as in
 [`AbstractLuxLayer`](@ref).
 
-!!! tip
+!!! tip "Advanced Structure Manipulation"
 
     Advanced structure manipulation of these layers post construction is possible via
     `Functors.fmap`. For a more flexible interface, we recommend using
     `Lux.Experimental.@layer_map`.
 
-!!! note
+!!! note "`fmap` Support"
 
     `fmap` support needs to be explicitly enabled by loading `Functors.jl` and
     `Setfield.jl`.
+
+!!! warning "Changes from Pre-1.0 Behavior"
+
+    Previously if `layers` was a singleton tuple, [`initialparameters`](@ref) and
+    [`initialstates`](@ref) would return the parameters and states for the single field
+    `layers`. From `v1.0.0` onwards, even for singleton tuples, the parameters/states
+    are wrapped in a `NamedTuple` with the same name as the field. See
+    [`AbstractLuxWrapperLayer`](@ref) to replicate the previous behavior of singleton
+    tuples.
 """
 abstract type AbstractLuxContainerLayer{layers} <: AbstractLuxLayer end
 
 function initialparameters(rng::AbstractRNG,
         l::AbstractLuxContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG,
         l::AbstractLuxContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
@@ -253,11 +260,42 @@ function statelength(l::AbstractLuxContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
-_isleaf(::AbstractLuxContainerLayer) = true
-
 function _getemptystate(l::AbstractLuxContainerLayer{layers}) where {layers}
-    length(layers) == 1 && return _getemptystate(getfield(l, first(layers)))
     return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
+end
+
+"""
+    abstract type AbstractLuxWrapperLayer{layer} <: AbstractLuxLayer
+
+See [`AbstractLuxContainerLayer`](@ref) for detailed documentation. This abstract type is
+very similar to [`AbstractLuxContainerLayer`](@ref) except that it allows for a single
+layer to be wrapped in a container.
+
+Additionally, on calling [`initialparameters`](@ref) and [`initialstates`](@ref), the
+parameters and states are **not** wrapped in a `NamedTuple` with the same name as the
+field.
+"""
+abstract type AbstractLuxWrapperLayer{layer} <: AbstractLuxLayer end
+
+function initialparameters(
+        rng::AbstractRNG, l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return initialparameters(rng, getfield(l, layer))
+end
+
+function initialstates(rng::AbstractRNG, l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return initialstates(rng, getfield(l, layer))
+end
+
+function parameterlength(l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return parameterlength(getfield(l, layer))
+end
+
+function statelength(l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return statelength(getfield(l, layer))
+end
+
+function _getemptystate(l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return _getemptystate(getfield(l, layer))
 end
 
 # Test Mode
@@ -333,6 +371,6 @@ end
         check_fmap_condition, initialparameters, initialstates, parameterlength,
         statelength, inputsize, outputsize, setup, apply, stateless_apply, display_name))
 
-export AbstractLuxLayer, AbstractLuxContainerLayer
+export AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
 
 end
