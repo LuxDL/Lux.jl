@@ -61,3 +61,10 @@ using:
 using GPUArraysCore
 GPUArraysCore.allowscalar(false)
 ```
+
+## Type Instabilities
+
+`Lux.jl` is integrated with `DispatchDoctor.jl` to catch type instabilities. You can easily
+enable it by setting the `instability_check` preference. This will help you catch type
+instabilities in your code. For more information on how to set preferences, check out
+[`set_dispatch_doctor_preferences`](@ref).

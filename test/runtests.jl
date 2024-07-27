@@ -131,3 +131,26 @@ if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
         Test.@test true
     end
 end
+
+# Set preferences tests
+if ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP)
+    @testset "DispatchDoctor Preferences" begin
+        @testset "set_dispatch_doctor_preferences!" begin
+            @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!("invalid")
+            @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!(;
+                luxcore="invalid")
+
+            Lux.set_dispatch_doctor_preferences!("disable")
+            @test Preferences.load_preference(LuxCore, "instability_check") == "disable"
+            @test Preferences.load_preference(LuxLib, "instability_check") == "disable"
+
+            Lux.set_dispatch_doctor_preferences!(; luxcore="warn", luxlib="error")
+            @test Preferences.load_preference(LuxCore, "instability_check") == "warn"
+            @test Preferences.load_preference(LuxLib, "instability_check") == "error"
+
+            Lux.set_dispatch_doctor_preferences!(; luxcore="error")
+            @test Preferences.load_preference(LuxCore, "instability_check") == "error"
+            @test Preferences.load_preference(LuxLib, "instability_check") == "disable"
+        end
+    end
+end

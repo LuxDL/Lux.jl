@@ -9,6 +9,8 @@ using Lux, Functors
                 Zygote, Statistics
 using LuxTestUtils: @jet, @test_gradients, check_approx
 
+LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
+
 # Some Helper Functions
 function get_default_rng(mode::String)
     dev = mode == "cpu" ? LuxCPUDevice() :

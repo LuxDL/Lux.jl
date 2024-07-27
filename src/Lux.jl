@@ -20,7 +20,7 @@ using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using NNlib: NNlib
 using Optimisers: Optimisers
-using Preferences: load_preference, has_preference
+using Preferences: load_preference, has_preference, set_preferences!
 using Random: Random, AbstractRNG
 using Reexport: @reexport
 using Statistics: mean
@@ -133,6 +133,7 @@ export MPIBackend, NCCLBackend, DistributedUtils
 # Unexported functions that are part of the public API
 @compat public Experimental
 @compat public xlogx, xlogy
+@compat public set_dispatch_doctor_preferences!
 @compat(public,
     (recursive_add!!, recursive_copyto!, recursive_eltype,
         recursive_make_zero, recursive_map, recursive_make_zero!!))
