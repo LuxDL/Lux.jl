@@ -114,6 +114,9 @@ end
         x = randn(rng, Float32, 5)
         ps, st = LuxCore.setup(rng, model)
 
+        @test fieldnames(typeof(ps)) == (:layers,)
+        @test fieldnames(typeof(st)) == (:layers,)
+
         @test LuxCore.parameterlength(ps) ==
               LuxCore.parameterlength(model) ==
               LuxCore.parameterlength(model.layers[1]) +
@@ -147,6 +150,31 @@ end
 
         # the layers just pass x along
         @test LuxCore.outputsize(model, x, rng) == (5,)
+
+        @test_nowarn println(model)
+    end
+
+    @testset "AbstractLuxWrapperLayer Interface" begin
+        model = ChainWrapper((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
+        x = randn(rng, Float32, 5)
+        ps, st = LuxCore.setup(rng, model)
+
+        @test fieldnames(typeof(ps)) == (:layer_1, :layer_2)
+        @test fieldnames(typeof(st)) == (:layer_1, :layer_2)
+
+        @test LuxCore.parameterlength(ps) ==
+              LuxCore.parameterlength(model) ==
+              LuxCore.parameterlength(model.layers.layer_1) +
+              LuxCore.parameterlength(model.layers.layer_2)
+        @test LuxCore.statelength(st) ==
+              LuxCore.statelength(model) ==
+              LuxCore.statelength(model.layers.layer_1) +
+              LuxCore.statelength(model.layers.layer_2)
+
+        @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
+
+        @test LuxCore.stateless_apply(model, x, ps) ==
+              first(LuxCore.apply(model, x, ps, st))
 
         @test_nowarn println(model)
     end
@@ -198,6 +226,33 @@ end
                 layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))))
 
             @test new_model isa Chain
+            @test new_model.layers.layer_1.in == 10
+            @test new_model.layers.layer_1.out == 5
+            @test new_model.layers.layer_2.in == 5
+            @test new_model.layers.layer_2.out == 10
+
+            @test LuxCore.outputsize(model, rand(5), rng) == (5,)
+            @test LuxCore.outputsize(model, rand(5, 2), rng) == (5,)
+
+            model = ChainWrapper((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
+
+            children, reconstructor = Functors.functor(model)
+
+            @test children isa NamedTuple
+            @test fieldnames(typeof(children)) == (:layers,)
+            @test children.layers isa NamedTuple
+            @test fieldnames(typeof(children.layers)) == (:layer_1, :layer_2)
+            @test children.layers.layer_1 isa Dense
+            @test children.layers.layer_2 isa Dense
+            @test children.layers.layer_1.in == 5
+            @test children.layers.layer_1.out == 10
+            @test children.layers.layer_2.in == 10
+            @test children.layers.layer_2.out == 5
+
+            new_model = reconstructor((;
+                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))))
+
+            @test new_model isa ChainWrapper
             @test new_model.layers.layer_1.in == 10
             @test new_model.layers.layer_1.out == 5
             @test new_model.layers.layer_2.in == 5
