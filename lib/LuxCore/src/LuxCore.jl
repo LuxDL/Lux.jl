@@ -127,21 +127,20 @@ end
 """
     outputsize(layer, x, rng)
 
-Return the output size of the layer. If `outputsize(layer)` is defined, that method
-takes precedence, else we compute the layer output to determine the final size.
+Return the output size of the layer.
 
 The fallback implementation of this function assumes the inputs were batched, i.e.,
 if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 `size(A)[1:(end - 1)]`. If this behavior is undesirable, provide a custom
 `outputsize(layer, x, rng)` implementation).
+
+!!! warning "Inconsistent Pre-1.0 Behavior"
+
+    Previously it was possible to override this function by defining `outputsize(layer)`.
+    However, this can potentially introduce a bug that is hard to bypass. See
+    [this PR](https://github.com/LuxDL/LuxCore.jl/pull/43) for more information.
 """
 function outputsize(layer, x, rng)
-    if hasmethod(outputsize, Tuple{typeof(layer)})
-        Base.depwarn(
-            "`outputsize(layer)` is deprecated, use `outputsize(layer, x, rng)` instead",
-            :outputsize)
-        return outputsize(layer)
-    end
     ps, st = setup(rng, layer)
     y = first(apply(layer, x, ps, st))
     return __size(y)
