@@ -5,7 +5,7 @@ using ADTypes: AutoZygote
 using ChainRulesCore: ChainRulesCore
 using ForwardDiff: ForwardDiff
 using Lux: Lux
-using LuxDeviceUtils: get_device_type, LuxCPUDevice
+using MLDataDevices: get_device_type, CPUDevice
 using Setfield: @set!
 using Zygote: Zygote
 

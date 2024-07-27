@@ -24,13 +24,13 @@ function preprocess(path, str)
     using InteractiveUtils
     InteractiveUtils.versioninfo()
 
-    if @isdefined(LuxDeviceUtils)
-        if @isdefined(CUDA) && LuxDeviceUtils.functional(LuxCUDADevice)
+    if @isdefined(MLDataDevices)
+        if @isdefined(CUDA) && MLDataDevices.functional(CUDADevice)
             println()
             CUDA.versioninfo()
         end
 
-        if @isdefined(AMDGPU) && LuxDeviceUtils.functional(LuxAMDGPUDevice)
+        if @isdefined(AMDGPU) && MLDataDevices.functional(AMDGPUDevice)
             println()
             AMDGPU.versioninfo()
         end

@@ -6,7 +6,6 @@ using ConcreteStructs: @concrete
 using FastClosures: @closure
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractExplicitLayer
-using LuxDeviceUtils: AbstractLuxDevice, gpu_device
 using Optimisers: Optimisers
 using Random: AbstractRNG
 

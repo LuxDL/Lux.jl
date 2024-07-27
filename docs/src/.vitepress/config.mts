@@ -79,7 +79,7 @@ export default defineConfig({
                     },
                     {
                         text: 'Accelerator Support', items: [
-                            { text: 'LuxDeviceUtils', link: '/api/Accelerator_Support/LuxDeviceUtils' }
+                            { text: 'MLDataDevices', link: '/api/Accelerator_Support/MLDataDevices' }
                         ]
                     },
                     {
@@ -220,7 +220,7 @@ export default defineConfig({
                     },
                     {
                         text: 'Accelerator Support', collapsed: false, items: [
-                            { text: 'LuxDeviceUtils', link: '/api/Accelerator_Support/LuxDeviceUtils' }]
+                            { text: 'MLDataDevices', link: '/api/Accelerator_Support/MLDataDevices' }]
                     },
                     {
                         text: 'Building Blocks', collapsed: false, items: [

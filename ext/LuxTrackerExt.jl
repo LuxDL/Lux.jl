@@ -3,7 +3,7 @@ module LuxTrackerExt
 using ADTypes: AutoTracker
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore
-using Lux: Lux, LuxCPUDevice
+using Lux: Lux, CPUDevice
 using Lux.Training: TrainingBackendCache, TrainState
 using LuxCore: LuxCore, AbstractExplicitLayer
 using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
@@ -75,8 +75,8 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
 
     @eval @grad_from_chainrules Lux.__apply_dynamic_expression(
-        de::Lux.DynamicExpressionsLayer, expr, operator_enum,
-        x::$(T1), ps::$(T2), dev::LuxCPUDevice)
+        de::Lux.DynamicExpressionsLayer, expr,
+        operator_enum, x::$(T1), ps::$(T2), dev::CPUDevice)
 end
 
 end

@@ -91,8 +91,7 @@ end
             end
 
             for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = Training.single_train_step(
-                    ad, mse, (x, y), tstate)
+                grads, loss, _, tstate = Training.single_train_step(ad, mse, (x, y), tstate)
             end
 
             final_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))

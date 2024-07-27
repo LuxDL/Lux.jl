@@ -26,7 +26,7 @@ using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
-@reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
+@reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, display_name, replicate

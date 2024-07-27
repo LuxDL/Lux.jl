@@ -127,7 +127,7 @@ end
 end
 
 function __apply_dynamic_expression(
-        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::LuxCPUDevice)
+        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::CPUDevice)
     __update_expression_constants!(expr, ps)
     return expr(x, operator_enum; de.turbo, de.bumper)
 end
@@ -135,7 +135,7 @@ end
 function __apply_dynamic_expression_rrule end
 
 function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsLayer,
-        expr, operator_enum, x, ps, ::LuxCPUDevice)
+        expr, operator_enum, x, ps, ::CPUDevice)
     if !_is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                computing gradient for `DynamicExpressionLayer`.")
@@ -242,7 +242,7 @@ end
     return convert(Array, __apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
 end
 
-@inline __apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
+@inline __apply_simple_chain(layer, x, ps, ::CPUDevice) = layer(x, ps)
 
 function __apply_simple_chain(layer, x, ps, dev)
     throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
@@ -250,7 +250,7 @@ function __apply_simple_chain(layer, x, ps, dev)
 end
 
 # Workaround for SimpleChains not being able to handle some input types
-function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
+function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::CPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
     # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     __∇apply_simple_chain = @closure Δ -> begin

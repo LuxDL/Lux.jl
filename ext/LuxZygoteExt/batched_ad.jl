@@ -17,7 +17,7 @@ function Lux.__batched_jacobian_impl(f::F, ::AutoZygote, x) where {F}
         prod(size(x)[1:(end - 1)]), size(x, ndims(x)))
     __fill_chunked_jacobian!(J, 1, f, pb_f, y, x)
 
-    if get_device_type(x) <: LuxCPUDevice  # Use threads
+    if get_device_type(x) <: CPUDevice  # Use threads
         tasks = map(2:size(J, 1)) do i
             Threads.@spawn begin
                 yᵢ, pb_fᵢ = Zygote.pullback(f, x)
