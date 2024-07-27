@@ -1,5 +1,5 @@
 using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, EnzymeCore,
-      MLDataDevices
+      MLDataDevices, Setfield
 
 rng = LuxCore._default_rng()
 

@@ -6,9 +6,7 @@ version = "1.0.0-DEV"
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
-Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
-Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [weakdeps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -22,8 +20,10 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 LuxCoreArrayInterfaceReverseDiffExt = ["ArrayInterface", "ReverseDiff"]
 LuxCoreArrayInterfaceTrackerExt = ["ArrayInterface", "Tracker"]
 LuxCoreChainRulesCoreExt = "ChainRulesCore"
-LuxCoreEnzymeCoreExt = "EnzymeCore"
+LuxCoreFunctorsExt = "Functors"
 LuxCoreMLDataDevicesExt = "MLDataDevices"
+LuxCoreEnzymeCoreExt = "EnzymeCore"
+LuxCoreSetfieldExt = "Setfield"
 
 [compat]
 ArrayInterface = "7.9"

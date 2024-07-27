@@ -2,9 +2,14 @@ module LuxCore
 
 using Compat: @compat
 using DispatchDoctor: @stable
-using Functors: Functors, fmap, fmap_with_path, fleaves
 using Random: Random, AbstractRNG, Xoshiro
-using Setfield: Setfield
+
+_is_extension_loaded(::Val) = false
+
+function _fmap end  # Defined in FunctorsExt
+function _fleaves end  # Defined in FunctorsExt
+function _isleaf end  # Defined in FunctorsExt
+function _setfield end  # Defined in SetfieldExt
 
 # PRNG Handling
 """
@@ -67,14 +72,17 @@ for op in (:initialparameters, :initialstates)
         $(op)(::AbstractRNG, ::Union{AbstractLuxLayer, Nothing}) = NamedTuple()
         $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
-            contains_lux_layer(l) && return fmap(Base.Fix1($op, rng), l; exclude=_fmap_leaf)
-            throw(MethodError($op, (rng, l)))
+            contains_lux_layer(l) || throw(MethodError($op, (rng, l)))
+            _is_extension_loaded(Val(:Functors)) &&
+                return _fmap(Base.Fix1($op, rng), l; exclude=_isleaf)
+            throw(ArgumentError("Support for arbitrary inputs to \
+                                 `initial(parameters|states)` requires `Functors.jl` to be \
+                                 loaded."))
         end
     end
 end
 
-_fmap_leaf(::AbstractLuxLayer) = true
-_fmap_leaf(x) = Functors.isleaf(x)
+_isleaf(::AbstractLuxLayer) = true
 
 _getemptystate(::AbstractLuxLayer) = NamedTuple()
 _getemptystate(l::NamedTuple) = map(_getemptystate, l)
@@ -111,7 +119,10 @@ function inputsize end
 
 _size(x::AbstractVector) = size(x)
 _size(x::AbstractArray) = size(x)[1:(ndims(x) - 1)]
-__size(x) = fmap(_size, x)
+function __size(x)
+    _is_extension_loaded(Val(:Functors)) && return _fmap(_size, x)
+    throw(ArgumentError("`__size` requires `Functors.jl` to be loaded."))
+end
 
 """
     outputsize(layer, x, rng)
@@ -215,6 +226,11 @@ Users implementing their custom layer can extend the same functions as in
     Advanced structure manipulation of these layers post construction is possible via
     `Functors.fmap`. For a more flexible interface, we recommend using
     `Lux.Experimental.@layer_map`.
+
+!!! note
+
+    `fmap` support needs to be explicitly enabled by loading `Functors.jl` and
+    `Setfield.jl`.
 """
 abstract type AbstractLuxContainerLayer{layers} <: AbstractLuxLayer end
 
@@ -238,22 +254,11 @@ function statelength(l::AbstractLuxContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
-_fmap_leaf(::AbstractLuxContainerLayer) = true
+_isleaf(::AbstractLuxContainerLayer) = true
 
 function _getemptystate(l::AbstractLuxContainerLayer{layers}) where {layers}
     length(layers) == 1 && return _getemptystate(getfield(l, first(layers)))
     return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
-end
-
-# Make AbstractExplicit Layers Functor Compatible
-function Functors.functor(::Type{<:AbstractLuxContainerLayer{layers}},
-        x) where {layers}
-    _children = NamedTuple{layers}(getproperty.((x,), layers))
-    recon_fn = (l, (c, n)) -> Setfield.set(l, Setfield.PropertyLens{n}(), c)
-    layer_reconstructor = let x = x, recon_fn = recon_fn, layers = layers
-        z -> reduce(recon_fn, zip(z, layers); init=x)
-    end
-    return _children, layer_reconstructor
 end
 
 # Test Mode
@@ -294,8 +299,7 @@ end
 Check if the structure `l` is a Lux AbstractLuxLayer or a container of such a layer.
 """
 function contains_lux_layer(l)
-    return check_fmap_condition(Base.Fix2(isa, AbstractLuxLayer),
-        AbstractLuxLayer, l)
+    return check_fmap_condition(Base.Fix2(isa, AbstractLuxLayer), AbstractLuxLayer, l)
 end
 
 """
@@ -314,7 +318,11 @@ end
 
 A Boolean Value
 """
-check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, fleaves(x))
+function check_fmap_condition(cond::C, ::Nothing, x) where {C}
+    _is_extension_loaded(Val(:Functors)) && return any(cond, _fleaves(x))
+    throw(ArgumentError("Support for arbitrary inputs to `check_fmap_condition` requires \
+                         `Functors.jl` to be loaded."))
+end
 check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{()}) where {C} = any(cond, ())
 function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     x isa T && return true
