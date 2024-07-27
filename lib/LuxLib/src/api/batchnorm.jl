@@ -42,7 +42,8 @@ function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector
         bias::Optional{<:AbstractVector}, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
         momentum::Real=0.1f0, epsilon::Real=__default_epsilon(x)) where {F, N}
-    x_, xm, xv = _normalization(x, __value(running_mean), __value(running_var), scale, bias,
+    x_, xm, xv = _batchnorm_impl(
+        x, __value(running_mean), __value(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon,
         select_fastest_activation(σ, x, scale, bias, running_mean, running_var))
     return (x_, (; running_mean=__value(xm), running_var=__value(xv)))

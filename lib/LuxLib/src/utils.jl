@@ -129,6 +129,7 @@ CRC.@non_differentiable __depwarn(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__depwarn), ::Any...) = nothing
 
 __eltype(::AbstractArray{T}) where {T} = T
+__eltype(::T) where {T <: Number} = T
 __eltype(::Nothing) = Bool
 
 CRC.@non_differentiable __eltype(::Any)
@@ -147,6 +148,12 @@ __default_epsilon(::AbstractArray{T}) where {T} = __default_epsilon(T)
 
 CRC.@non_differentiable __default_epsilon(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__default_epsilon), ::Any...) = nothing
+
+__unsafe_free!(x) = nothing
+__unsafe_free!(x::AbstractArray) = KA.unsafe_free!(x)
+
+CRC.@non_differentiable __unsafe_free!(::Any)
+EnzymeRules.inactive_noinl(::typeof(__unsafe_free!), ::Any) = nothing
 
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector

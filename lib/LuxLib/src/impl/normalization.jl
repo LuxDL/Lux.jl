@@ -113,3 +113,13 @@ function _groupnorm_impl(x::AbstractArray, scale::Optional{<:AbstractVector},
         x, nothing, nothing, reduce_dims, Val(false), nothing)
     return _affine_normalize_gn(act, x, μ, σ², scale, bias, epsilon)
 end
+
+function _batchnorm_impl(x::AbstractArray, running_mean::Optional{<:AbstractVector},
+        running_var::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, reduce_dims::Val,
+        training::Val, momentum, epsilon, act::F=identity) where {F}
+    (μ, σ²), (rμ, rσ²) = _get_batch_statistics(
+        x, _reshape_into_normalization_shape(running_mean, x),
+        _reshape_into_normalization_shape(running_var, x), reduce_dims, training, momentum)
+    return _affine_normalize_bn(act, x, μ, σ², scale, bias, epsilon), _vec(rμ), _vec(rσ²)
+end

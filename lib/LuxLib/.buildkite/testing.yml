@@ -61,9 +61,7 @@ steps:
                 - src
                 - ext
         env:
-          JULIA_AMDGPU_CORE_MUST_LOAD: "1"
-          JULIA_AMDGPU_HIP_MUST_LOAD: "1"
-          JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
+          RETESTITEMS_NWORKERS: 2
           BACKEND_GROUP: "AMDGPU"
         agents:
           queue: "juliagpu"
@@ -93,9 +91,7 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         env:
-          JULIA_AMDGPU_CORE_MUST_LOAD: "1"
-          JULIA_AMDGPU_HIP_MUST_LOAD: "1"
-          JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
+          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 240
         matrix:
