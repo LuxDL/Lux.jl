@@ -83,7 +83,7 @@ end
         end
 
         @testset "Default Fallbacks" begin
-            struct NoParamStateLayer <: LuxCore.AbstractLuxLayer end
+            struct NoParamStateLayer <: AbstractLuxLayer end
 
             layer = NoParamStateLayer()
             @test LuxCore.initialparameters(rng, layer) == NamedTuple()
@@ -265,7 +265,7 @@ end
         @testset "Method Ambiguity" begin
             # Needed if defining a layer that works with both Flux and Lux -- See DiffEqFlux.jl
             # See https://github.com/SciML/DiffEqFlux.jl/pull/750#issuecomment-1373874944
-            struct CustomLayer{M, P} <: LuxCore.AbstractLuxContainerLayer{(:model,)}
+            struct CustomLayer{M, P} <: AbstractLuxContainerLayer{(:model,)}
                 model::M
                 p::P
             end
@@ -279,13 +279,13 @@ end
     end
 
     @testset "Display Name" begin
-        struct StructWithoutName <: LuxCore.AbstractLuxLayer end
+        struct StructWithoutName <: AbstractLuxLayer end
 
         model = StructWithoutName()
 
         @test LuxCore.display_name(model) == "StructWithoutName"
 
-        struct StructWithName{N} <: LuxCore.AbstractLuxLayer
+        struct StructWithName{N} <: AbstractLuxLayer
             name::N
         end
 
