@@ -279,7 +279,7 @@ end
     end
 end
 
-@testitem "Recurrence" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+@testitem "Recurrence" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
@@ -374,7 +374,7 @@ end
     end
 end
 
-@testitem "Bidirectional" timeout=3000 setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+@testitem "Bidirectional" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
