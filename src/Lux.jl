@@ -22,7 +22,7 @@ using NNlib: NNlib
 using Optimisers: Optimisers
 using Preferences: load_preference, @load_preference
 using Random: Random, AbstractRNG
-using Reexport: @reexport
+using Reexport: Reexport, @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
@@ -30,7 +30,8 @@ import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialpa
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, display_name, replicate
 
-@reexport using LuxCore, LuxLib, MLDataDevices, NNlib, WeightInitializers
+@reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
+@eval Expr(:export, filter(x -> x !== :dropout, Reexport.exported_names(NNlib))...)
 
 const CRC = ChainRulesCore
 

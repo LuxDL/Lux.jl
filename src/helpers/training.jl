@@ -7,7 +7,6 @@ using FastClosures: @closure
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractExplicitLayer
 using Optimisers: Optimisers
-using Random: AbstractRNG
 
 """
     TrainState
