@@ -8,7 +8,7 @@
         opt = Adam(0.01f0)
         ps, st = Lux.setup(Lux.replicate(rng), model) |> dev
 
-        tstate = Lux.Training.TrainState(model, ps, st, opt)
+        tstate = Training.TrainState(model, ps, st, opt)
 
         x = randn(Lux.replicate(rng), Float32, (3, 1))
         opt_st = Optimisers.setup(opt, tstate.parameters)
@@ -34,7 +34,7 @@ end
         opt = Adam(0.01f0)
         ps, st = Lux.setup(rng, model) |> dev
 
-        tstate = Lux.Training.TrainState(model, ps, st, opt)
+        tstate = Training.TrainState(model, ps, st, opt)
 
         x = randn(Lux.replicate(rng), Float32, (3, 1)) |> aType
 
@@ -42,8 +42,8 @@ end
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
-            grads, _, _, _ = Lux.Training.compute_gradients(ad, _loss_function, x, tstate)
-            tstate_ = Lux.Training.apply_gradients(tstate, grads)
+            grads, _, _, _ = Training.compute_gradients(ad, _loss_function, x, tstate)
+            tstate_ = Training.apply_gradients(tstate, grads)
             @test tstate_.step == 1
             @test tstate != tstate_
         end
@@ -81,9 +81,9 @@ end
 
             for epoch in 1:1000, (x, y) in dataset_
                 grads, loss, _, tstate = allow_unstable() do
-                    Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
+                    Training.compute_gradients(ad, mse, (x, y), tstate)
                 end
-                tstate = Lux.Training.apply_gradients!(tstate, grads)
+                tstate = Training.apply_gradients!(tstate, grads)
             end
 
             for epoch in 1:1000, (x, y) in dataset_
@@ -121,7 +121,7 @@ end
         ps, st = Lux.setup(rng, model) |> dev
         tstate = Training.TrainState(model, ps, st, opt)
 
-        @test_throws ArgumentError Lux.Training.compute_gradients(
+        @test_throws ArgumentError Training.compute_gradients(
             AutoCustomAD(), mse, dataset_[1], tstate)
     end
 end
@@ -179,9 +179,9 @@ end
     x = randn(rng, Float32, 4, 32)
     opt = Adam(0.001f0)
 
-    tstate = Lux.Training.TrainState(model, ps, st, opt)
+    tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Lux.Training.compute_gradients(
+    _, _, _, tstate_new = @inferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
@@ -189,15 +189,15 @@ end
     model = Chain(Dense(4 => 3), Dense(3 => 4))
     ps, st = Lux.setup(rng, model)
 
-    tstate = Lux.Training.TrainState(model, ps, st, opt)
+    tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Lux.Training.compute_gradients(
+    _, _, _, tstate_new = @inferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
-    @test @inferred(Lux.Training.compute_gradients(
-        AutoEnzyme(), mse, (x, x), tstate_new)) isa Any
+    @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
+          Any
 
-    _, _, _, tstate_new2 = @inferred Lux.Training.compute_gradients(
+    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)
     @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
@@ -221,19 +221,19 @@ end
             Dense(32, 32, tanh), BatchNorm(32), Dense(32, 4))
         ps, st = Lux.setup(rng, model)
 
-        tstate = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
+        tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
         # Stateful models are not supported
-        @test_throws ArgumentError Lux.Training.compute_gradients(
+        @test_throws ArgumentError Training.compute_gradients(
             AutoReverseDiff(; compile=true), mse1, dataset[1], tstate)
 
         model = Chain(Dense(4, 32, tanh), Dense(32, 32, tanh), Dense(32, 4))
         ps, st = Lux.setup(rng, model)
 
-        tstate = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
+        tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
         # Loss functions that return non-empty `stats` are not supported
-        @test_throws ArgumentError Lux.Training.compute_gradients(
+        @test_throws ArgumentError Training.compute_gradients(
             AutoReverseDiff(; compile=true), mse2, dataset[1], tstate)
 
         struct StrangeModel <: Lux.AbstractExplicitLayer end
@@ -245,23 +245,23 @@ end
         model = StrangeModel()
         ps, st = Lux.setup(rng, model)
 
-        tstate = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
+        tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
         # Stateful models are not supported
-        @test_throws ArgumentError Lux.Training.compute_gradients(
+        @test_throws ArgumentError Training.compute_gradients(
             AutoReverseDiff(; compile=true), mse1, dataset[1], tstate)
     end
 
     model = Chain(Dense(4, 32, tanh), Dense(32, 32, tanh), Dense(32, 4))
     ps, st = Lux.setup(rng, model)
 
-    tstate = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
+    tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
     loss_initial = first(mse1(model, ps, st, dataset[1]))
     for i in 1:100
         for (x, y) in dataset
             _, _, _, tstate = allow_unstable() do
-                Lux.Training.single_train_step!(
+                Training.single_train_step!(
                     AutoReverseDiff(; compile=true), mse1, (x, y), tstate)
             end
         end
