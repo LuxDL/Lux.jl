@@ -18,4 +18,13 @@ function Functors.functor(::Type{<:LuxCore.AbstractLuxContainerLayer{layers}},
     return _children, layer_reconstructor
 end
 
+function Functors.functor(::Type{<:LuxCore.AbstractLuxWrapperLayer{layer}},
+        x) where {layer}
+    _children = NamedTuple{(layer,)}((getproperty(x, layer),))
+    layer_reconstructor = let x = x, layer = layer
+        z -> LuxCore._setfield(x, layer, getproperty(z, layer))
+    end
+    return _children, layer_reconstructor
+end
+
 end
