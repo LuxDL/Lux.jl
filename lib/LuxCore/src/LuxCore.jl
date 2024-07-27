@@ -6,10 +6,27 @@ using Random: Random, AbstractRNG, Xoshiro
 
 _is_extension_loaded(::Val) = false
 
-function _fmap end  # Defined in FunctorsExt
-function _fleaves end  # Defined in FunctorsExt
-function _isleaf end  # Defined in FunctorsExt
-function _setfield end  # Defined in SetfieldExt
+function __fmap end  # Defined in FunctorsExt
+function __fleaves end  # Defined in FunctorsExt
+function __isleaf end  # Defined in FunctorsExt
+
+for op in (:_fmap, :_fleaves, :_isleaf)
+    main_op = Symbol(:_, op)
+    err_msg = "`$op` requires `Functors.jl` to be loaded."
+    @eval begin
+        function $(op)(args...; kwargs...)
+            _is_extension_loaded(Val(:Functors)) || throw(ArgumentError($err_msg))
+            return $main_op(args...; kwargs...)
+        end
+    end
+end
+
+function __setfield end  # Defined in SetfieldExt
+
+function _setfield(args...; kwargs...)
+    _is_extension_loaded(Val(:Setfield)) && return __setfield(args...; kwargs...)
+    throw(ArgumentError("`_setfield` requires `Setfield.jl` to be loaded."))
+end
 
 # PRNG Handling
 """
@@ -73,11 +90,7 @@ for op in (:initialparameters, :initialstates)
         $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
             contains_lux_layer(l) || throw(MethodError($op, (rng, l)))
-            _is_extension_loaded(Val(:Functors)) &&
-                return _fmap(Base.Fix1($op, rng), l; exclude=_isleaf)
-            throw(ArgumentError("Support for arbitrary inputs to \
-                                 `initial(parameters|states)` requires `Functors.jl` to be \
-                                 loaded."))
+            return _fmap(Base.Fix1($op, rng), l; exclude=_isleaf)
         end
     end
 end
@@ -119,10 +132,7 @@ function inputsize end
 
 _size(x::AbstractVector) = size(x)
 _size(x::AbstractArray) = size(x)[1:(ndims(x) - 1)]
-function __size(x)
-    _is_extension_loaded(Val(:Functors)) && return _fmap(_size, x)
-    throw(ArgumentError("`__size` requires `Functors.jl` to be loaded."))
-end
+__size(x) = __fmap(_size, x)
 
 """
     outputsize(layer, x, rng)
@@ -355,11 +365,7 @@ end
 
 A Boolean Value
 """
-function check_fmap_condition(cond::C, ::Nothing, x) where {C}
-    _is_extension_loaded(Val(:Functors)) && return any(cond, _fleaves(x))
-    throw(ArgumentError("Support for arbitrary inputs to `check_fmap_condition` requires \
-                         `Functors.jl` to be loaded."))
-end
+check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, _fleaves(x))
 check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{()}) where {C} = any(cond, ())
 function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     x isa T && return true
