@@ -114,6 +114,12 @@ StatefulLuxLayer
 @non_trainable
 ```
 
+## Preferences
+
+```@docs
+Lux.set_dispatch_doctor_preferences!
+```
+
 ## Truncated Stacktraces (Deprecated)
 
 ```@docs
