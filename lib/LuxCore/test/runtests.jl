@@ -1,4 +1,5 @@
-using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, EnzymeCore
+using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, EnzymeCore,
+      MLDataDevices
 
 rng = LuxCore._default_rng()
 
@@ -289,5 +290,15 @@ end
         @test_throws ArgumentError BatchDuplicated(d, (d, d))
         @test_throws ArgumentError BatchDuplicatedNoNeed(d, (d, d))
         @test Const(d) isa Const
+    end
+
+    @testset "Device Transfer Warnings" begin
+        my_layer = Dense(2, 2)
+
+        dev = cpu_device()
+        @test_logs (
+            :warn, "Lux layers are stateless and hence don't participate in device \
+                    transfers. Apply this function on the parameters and states generated \
+                    using `LuxCore.setup`.") dev(my_layer)
     end
 end
