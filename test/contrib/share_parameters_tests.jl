@@ -29,7 +29,7 @@
         @test ps_2.d3.bias == ps_new_2.bias == ps_2.d2.l1.bias
 
         # Mix in ComponentArray
-        ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> dev
+        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> device
 
         ps_3 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 
@@ -54,7 +54,7 @@
         @test_throws ArgumentError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_1, ps_new_2))
 
-        ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> dev
+        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> device
 
         @test_throws ArgumentError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_ca_1, ps_new_2))

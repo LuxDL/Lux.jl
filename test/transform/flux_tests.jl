@@ -1,9 +1,9 @@
 @testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:fluxcompat] begin
     import Flux
 
-    from_flux = fdev(::Lux.LuxCPUDevice) = Flux.cpu
-    fdev(::Lux.LuxCUDADevice) = Base.Fix1(Flux.gpu, Flux.FluxCUDAAdaptor())
-    fdev(::Lux.LuxAMDGPUDevice) = Base.Fix1(Flux.gpu, Flux.FluxAMDAdaptor())
+    from_flux = fdev(::Lux.CPUDevice) = Flux.cpu
+    fdev(::Lux.CUDADevice) = Base.Fix1(Flux.gpu, Flux.FluxCUDAAdaptor())
+    fdev(::Lux.AMDGPUDevice) = Base.Fix1(Flux.gpu, Flux.FluxAMDAdaptor())
 
     toluxpsst = FromFluxAdaptor(; preserve_ps_st=true)
     tolux = FromFluxAdaptor()

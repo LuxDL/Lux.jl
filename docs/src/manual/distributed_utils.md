@@ -88,10 +88,10 @@ And that's pretty much it!
 3. We don't automatically determine if the MPI Implementation is CUDA or ROCM aware. See
    [GPU-aware MPI](@ref gpu-aware-mpi-preferences) for more information.
 4. Older [`Lux.gpu`](@ref) implementations used to "just work" with `FluxMPI.jl`. We expect
-   [`LuxDeviceUtils.gpu_device`](@ref) to continue working as expected, however, we
-   recommend using [`LuxDeviceUtils.gpu_device`](@ref) after calling
-   [`DistributedUtils.initialize`](@ref) to avoid any mismatch between the device set
-   via `DistributedUtils` and the device stores in `LuxCUDADevice` or `LuxAMDGPUDevice`
+   [`gpu_device`](@ref) to continue working as expected, however, we recommend using
+   [`gpu_device`](@ref) after calling [`DistributedUtils.initialize`](@ref) to avoid any
+   mismatch between the device set via `DistributedUtils` and the device stores in
+   `CUDADevice` or `AMDGPUDevice`.
 
 ## Known Shortcomings
 

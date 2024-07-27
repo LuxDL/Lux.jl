@@ -2,13 +2,13 @@ CUDA.allowscalar(false)
 
 function unsafe_free! end
 
-if LuxDeviceUtils.functional(LuxCUDADevice)
+if MLDataDevices.functional(CUDADevice)
     function unsafe_free!(x)
         return hasmethod(CUDA.unsafe_free!, Tuple{typeof(x)}) ? CUDA.unsafe_free!(x) :
                nothing
     end
     unsafe_free!(x::OneHotArray) = CUDA.unsafe_free!(x.indices)
-elseif LuxDeviceUtils.functional(LuxAMDGPUDevice)
+elseif MLDataDevices.functional(AMDGPUDevice)
     function unsafe_free!(x)
         return hasmethod(AMDGPU.unsafe_free!, Tuple{typeof(x)}) ? AMDGPU.unsafe_free!(x) :
                nothing
@@ -18,8 +18,8 @@ end
 
 function reclaim_all()
     GC.gc(true)
-    LuxDeviceUtils.functional(LuxCUDADevice) && CUDA.reclaim()
-    LuxDeviceUtils.functional(LuxAMDGPUDevice) && AMDGPU.reclaim()
+    MLDataDevices.functional(CUDADevice) && CUDA.reclaim()
+    MLDataDevices.functional(AMDGPUDevice) && AMDGPU.reclaim()
     return
 end
 
@@ -147,7 +147,7 @@ end
 get_loggable_values(meter::ProgressMeter) = getproperty.(meter.meters, :average)
 
 # Optimisers State
-function (dev::LuxDeviceUtils.AbstractLuxDevice)(l::Optimisers.Leaf)
+function (dev::MLDataDevices.AbstractDevice)(l::Optimisers.Leaf)
     @set! l.state = dev(l.state)
     return l
 end

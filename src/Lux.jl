@@ -20,11 +20,7 @@ using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
-# TODO: In v1 we remove the LuxDeviceUtils dependency and replace it with MLDataDevices
-@reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
-using MLDataDevices: MLDataDevices, AMDGPUDevice, CPUDevice
-using NNlib: NNlib
-
+@reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, replicate
