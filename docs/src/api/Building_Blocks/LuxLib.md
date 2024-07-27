@@ -24,7 +24,7 @@ fused_conv_bias_activation
 
 ```@docs
 alpha_dropout
-dropout
+LuxLib.dropout
 ```
 
 ## Normalization
