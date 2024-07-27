@@ -4,7 +4,7 @@ using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, Enzyme
 rng = LuxCore._default_rng()
 
 # Define some custom layers
-struct Dense <: LuxCore.AbstractLuxLayer
+struct Dense <: AbstractLuxLayer
     in::Int
     out::Int
 end
@@ -15,17 +15,27 @@ end
 
 (::Dense)(x, ps, st) = x, st  # Dummy Forward Pass
 
-struct Chain{L} <: LuxCore.AbstractLuxContainerLayer{(:layers,)}
+struct Chain{L} <: AbstractLuxContainerLayer{(:layers,)}
     layers::L
 end
 
 function (c::Chain)(x, ps, st)
-    y, st1 = c.layers[1](x, ps.layer_1, st.layer_1)
-    y, st2 = c.layers[2](y, ps.layer_2, st.layer_2)
-    return y, (layers = (st1, st2))
+    y, st1 = c.layers[1](x, ps.layers.layer_1, st.layers.layer_1)
+    y, st2 = c.layers[2](y, ps.layers.layer_2, st.layers.layer_2)
+    return y, (; layers = (; layer_1 = st1, layer_2 = st2))
 end
 
-struct Chain2{L1, L2} <: LuxCore.AbstractLuxContainerLayer{(:layer1, :layer2)}
+struct ChainWrapper{L} <: AbstractLuxWrapperLayer{:layers}
+    layers::L
+end
+
+function (c::ChainWrapper)(x, ps, st)
+    y, st1 = c.layers[1](x, ps.layer_1, st.layer_1)
+    y, st2 = c.layers[2](y, ps.layer_2, st.layer_2)
+    return y, (; layer_1 = st1, layer_2 = st2)
+end
+
+struct Chain2{L1, L2} <: AbstractLuxContainerLayer{(:layer1, :layer2)}
     layer1::L1
     layer2::L2
 end
