@@ -264,20 +264,28 @@ end
 
 Return `x * log(x)` for `x ≥ 0`, handling `x == 0` by taking the limit from above, to get
 zero.
+
+!!! warning "Deprecated"
+
+    Use `LogExpFunctions.xlogx` instead.
 """
 @inline function xlogx(x::Number)
-    result = x * log(x)
-    return ifelse(iszero(x), zero(result), result)
+    __depwarn("`Lux.xlogx` is deprecated, use `LogExpFunctions.xlogx` instead.", :xlogx)
+    return LogExpFunctions.xlogx(x)
 end
 
 """
     xlogy(x::Number, y::Number)
 
 Return `x * log(y)` for `y > 0`, and zero when `x == 0`.
+
+!!! warning "Deprecated"
+
+    Use `LogExpFunctions.xlogy` instead.
 """
-@inline function xlogy(x::Number, y::Number)
-    result = x * log(y)
-    return ifelse(iszero(x), zero(result), result)
+function xlogy(x::Number, y::Number)
+    __depwarn("`Lux.xlogy` is deprecated, use `LogExpFunctions.xlogy` instead.", :xlogy)
+    return LogExpFunctions.xlogy(x, y)
 end
 
 # Some functional forms of losses
@@ -295,7 +303,7 @@ Broadcast.broadcastable(f::__Fix3) = Ref(f)
 end
 
 @inline function __poisson_loss(x::T1, y::T2, ϵ) where {T1, T2}
-    return x - xlogy(y, x + __get_epsilon(T1, ϵ))
+    return x - LogExpFunctions.xlogy(y, x + __get_epsilon(T1, ϵ))
 end
 
 @inline function __msle_loss(x::T1, y::T2, ϵ) where {T1, T2}
@@ -379,3 +387,5 @@ end
 @inline __eltype(::AbstractArray{<:ForwardDiff.Dual{T, V}}) where {T, V} = V
 
 @inline __reverse(x; dims=:) = reverse(x; dims)
+
+__depwarn(msg, sym) = Base.depwarn(msg, sym)  # Prevents a type stability issue with Zygote

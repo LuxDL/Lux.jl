@@ -1,4 +1,5 @@
 @testitem "xlogx & xlogy" setup=[SharedTestSetup] tags=[:helpers] begin
+    # TODO: Remove in v1.0
     using Lux: xlogx, xlogy
     using ForwardDiff, Zygote, Enzyme
 

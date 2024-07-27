@@ -15,6 +15,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: Functors, fmap
 using GPUArraysCore: GPUArraysCore, @allowscalar
+using LogExpFunctions: LogExpFunctions
 using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str

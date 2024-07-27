@@ -14,6 +14,7 @@ CRC.@non_differentiable __state_if_stateful(::Any)
 CRC.@non_differentiable __set_state!(::Any...)
 CRC.@non_differentiable __update_bn_state(::Any...)
 CRC.@non_differentiable __warn_mismatch(::Any...)
+CRC.@non_differentiable __depwarn(::Any, ::Any)
 
 # Utilities
 function CRC.rrule(::typeof(_eachslice), x, d::Val)
@@ -87,34 +88,4 @@ end
         return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
     end
     return __fused_agg(sum, lfn, x, y), ∇lfn
-end
-
-function CRC.rrule(::typeof(xlogx), x::Number)
-    iszero(x) && return x, Δ -> (NoTangent(), ZeroTangent())
-    logx = log(x)
-    ∇xlogx = @closure Δ -> (NoTangent(), @thunk(Δ*(logx + true)))
-    return x * logx, ∇xlogx
-end
-
-function CRC.rrule(
-        ::typeof(Broadcast.broadcasted), ::typeof(xlogx), x::AbstractArray{<:Number})
-    logx = log.(x)
-    y = x .* logx
-    ∇xlogx = @closure Δ -> (NoTangent(), NoTangent(), @thunk(Δ.*(logx .+ true)))
-    return y, ∇xlogx
-end
-
-function CRC.rrule(::typeof(xlogy), x::Number, y::Number)
-    iszero(x) && return x, Δ -> (NoTangent(), ZeroTangent())
-    logy = log(y)
-    ∇xlogy = @closure Δ -> (NoTangent(), @thunk(Δ*logy), @thunk(Δ * x/y))
-    return x * logy, ∇xlogy
-end
-
-function CRC.rrule(::typeof(Broadcast.broadcasted), ::typeof(xlogy),
-        x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
-    logy = log.(y)
-    z = x .* logy
-    ∇xlogy = @closure Δ -> (NoTangent(), NoTangent(), @thunk(Δ.*logy), @thunk(Δ .* x./y))
-    return z, ∇xlogy
 end
