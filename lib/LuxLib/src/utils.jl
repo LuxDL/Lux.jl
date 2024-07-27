@@ -51,7 +51,7 @@ function __maybe_reduce_BLAS_threads(x::AbstractArray)
     __maybe_reduce_BLAS_threads(get_device_type(x))
 end
 __maybe_reduce_BLAS_threads(::Type{T}) where {T} = -1
-function __maybe_reduce_BLAS_threads(::Type{LuxCPUDevice})::Int
+function __maybe_reduce_BLAS_threads(::Type{CPUDevice})::Int
     old_threads = BLAS.get_num_threads()
     BLAS.set_num_threads(1)
     return old_threads
@@ -202,9 +202,9 @@ function internal_operation_mode(xs::Tuple)
         return GenericBroadcastOp()
     end
     dev = get_device_type(xs)
-    dev <: AbstractLuxGPUDevice && return GPUBroadcastOp{dev}()
+    dev <: AbstractGPUDevice && return GPUBroadcastOp{dev}()
     unrolled_any(!fast_scalar_indexing, xs) && return GenericBroadcastOp()
-    dev <: LuxCPUDevice && return LoopedArrayOp()
+    dev <: CPUDevice && return LoopedArrayOp()
     return GenericBroadcastOp()  # fallback for safety
 end
 internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))

@@ -78,7 +78,7 @@ end
 function __attempt_cublasLt_fused_matmul end
 
 @stable default_mode="disable" function __fused_dense_bias_activation_impl(
-        ::Type{<:LuxCUDADevice}, act::F, weight::AbstractMatrix,
+        ::Type{<:CUDADevice}, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
     (y, _, retcode) = __attempt_cublasLt_fused_matmul(act, weight, x, b, Val(false))
     retcode == 0 && return y
@@ -87,7 +87,7 @@ function __attempt_cublasLt_fused_matmul end
 end
 
 ## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
-function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode}, ::Type{<:LuxCUDADevice},
+function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode}, ::Type{<:CUDADevice},
         ::typeof(__fused_dense_bias_activation_impl), ::typeof(gelu),
         weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector})
     (z, y, retcode) = __attempt_cublasLt_fused_matmul(gelu, weight, x, b, Val(false))

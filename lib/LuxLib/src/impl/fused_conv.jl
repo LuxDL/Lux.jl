@@ -1,6 +1,6 @@
 # wrappers over NNlib implementations to handle mixed precision inputs
 function __get_conv_input_weight(
-        ::Type{<:AbstractLuxGPUDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
+        ::Type{<:AbstractGPUDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
     T = promote_type(xT, wT)
     @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
            [x: $(xT)]. Promoting to $(T)." maxlog=1
@@ -8,36 +8,36 @@ function __get_conv_input_weight(
         __materialize_subarray(_ofeltype_array(T, weight)))
 end
 function __get_conv_input_weight(
-        ::Type{<:AbstractLuxGPUDevice}, ::Type{T}, ::Type{T}, x, weight) where {T}
+        ::Type{<:AbstractGPUDevice}, ::Type{T}, ::Type{T}, x, weight) where {T}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
-function __get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},
+function __get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::Type{<:ForwardDiff.Dual},
         ::Type{T}, x, weight) where {T}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
-function __get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{T},
+function __get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::Type{T},
         ::Type{<:ForwardDiff.Dual}, x, weight) where {T}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
-function __get_conv_input_weight(::Type{<:AbstractLuxGPUDevice}, ::Type{<:ForwardDiff.Dual},
+function __get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::Type{<:ForwardDiff.Dual},
         ::Type{<:ForwardDiff.Dual}, x, weight)
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
 
 function __get_conv_input_weight(
-        ::Type{<:AbstractLuxDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
+        ::Type{<:AbstractDevice}, ::Type{xT}, ::Type{wT}, x, weight) where {xT, wT}
     return __materialize_subarray(x), __materialize_subarray(weight)
 end
 
 __depthwiseconv(x, weight, cdims) = NNlib.depthwiseconv(x, weight, cdims)
 
 __conv!(y, x, weight, cdims) = __conv!(get_device_type((y, x, weight)), y, x, weight, cdims)
-function __conv!(::Type{<:AbstractLuxDevice}, y::AbstractArray{<:Number, N},
+function __conv!(::Type{<:AbstractDevice}, y::AbstractArray{<:Number, N},
         x::AbstractArray{<:Number, N},
         weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
     return conv!(y, __materialize_subarray(x), __materialize_subarray(weight), cdims)
 end
-function __conv!(::Type{<:AbstractLuxGPUDevice}, y::AbstractArray{yT, N},
+function __conv!(::Type{<:AbstractGPUDevice}, y::AbstractArray{yT, N},
         x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
         cdims::ConvDims) where {yT <: Number, xT <: Number, wT <: Number, N}
     if xT !== wT !== yT
@@ -81,7 +81,7 @@ function __conv_bias_act_impl(::Type, x, weight, cdims, bias, act::F) where {F}
     return __bias_activation_impl!!(act, y, bias)
 end
 function __conv_bias_act_impl(
-        ::Type{<:LuxCUDADevice}, x, weight, cdims, bias, act::F) where {F}
+        ::Type{<:CUDADevice}, x, weight, cdims, bias, act::F) where {F}
     bias === nothing && return fast_activation!!(act, __conv(x, weight, cdims))
     if act === identity || act === relu
         bias_ = __reshape_bias_into_xdims(x, bias)
@@ -196,7 +196,7 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
 
     for bT in (Float32, Float64)
         @eval begin
-            function LuxLib.$fname(D::Type{<:LuxAMDGPUDevice}, act::F,
+            function LuxLib.$fname(D::Type{<:AMDGPUDevice}, act::F,
                     weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
                     bias::Optional{<:AbstractVector{$(bT)}}, cdims::ConvDims) where {F, N}
                 @warn "MIOpen doesn't support Float64 convolutions, type-casting \
@@ -207,16 +207,16 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
                         _ofeltype_array(Float32, bias), cdims))
             end
 
-            CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof($fname),
-                D::Type{<:LuxAMDGPUDevice}, act::F,
-                weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
+            CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode},
+                ::typeof($fname), D::Type{<:AMDGPUDevice},
+                act::F, weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
                 bias::Optional{<:AbstractVector{$(bT)}}, cdims::ConvDims) where {F, N}
         end
     end
 
     @eval begin
         function LuxLib.$fname(
-                D::Type{<:LuxAMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
+                D::Type{<:AMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
                 x::AbstractArray{$(xT), N}, ::Nothing, cdims::ConvDims) where {F, N}
             return _ofeltype_array(Float64,
                 LuxLib.$fname(D, act, _ofeltype_array(Float32, weight),
@@ -224,7 +224,7 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)],
         end
 
         CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof($fname),
-            D::Type{<:LuxAMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
+            D::Type{<:AMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
             x::AbstractArray{$(xT), N}, ::Nothing, cdims::ConvDims) where {F, N}
     end
 end

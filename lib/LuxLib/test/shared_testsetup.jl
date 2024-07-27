@@ -1,7 +1,7 @@
 @testsetup module SharedTestSetup
 import Reexport: @reexport
 
-using LuxLib, LuxDeviceUtils, DispatchDoctor
+using LuxLib, MLDataDevices, DispatchDoctor
 @reexport using LuxTestUtils, StableRNGs, Test, Zygote, Enzyme
 import LuxTestUtils: @jet, @test_gradients, check_approx
 
@@ -20,11 +20,11 @@ end
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           LuxDeviceUtils.functional(LuxCUDADevice)
+           MLDataDevices.functional(CUDADevice)
 end
 function amdgpu_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-           LuxDeviceUtils.functional(LuxAMDGPUDevice)
+           MLDataDevices.functional(AMDGPUDevice)
 end
 
 const MODES = begin
