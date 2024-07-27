@@ -16,7 +16,7 @@ using Markdown: @doc_str
 using Optimisers: Optimisers
 using Random: Random, AbstractRNG
 using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
-using Reexport: @reexport
+using Reexport: Reexport, @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
@@ -24,7 +24,8 @@ import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialpa
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, replicate
 
-@reexport using LuxCore, LuxLib, MLDataDevices, NNlib, WeightInitializers
+@reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
+@eval Expr(:export, filter(x -> x !== :dropout, Reexport.exported_names(NNlib))...)
 
 const CRC = ChainRulesCore
 

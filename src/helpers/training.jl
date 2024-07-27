@@ -9,7 +9,11 @@ using Random: AbstractRNG
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractExplicitLayer
+<<<<<<< HEAD
 using MLDataDevices: MLDataDevices
+=======
+using Optimisers: Optimisers
+>>>>>>> 30f27fd4 (fix: don't reexport NNlib.dropout)
 
 """
     TrainState
