@@ -38,7 +38,7 @@ fused_conv_bias_activation
 
 ```@docs
 alpha_dropout
-LuxLib.dropout
+dropout
 ```
 
 ## Fully Connected Layers
