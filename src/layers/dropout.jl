@@ -53,7 +53,7 @@ function AlphaDropout(p::T) where {T <: Real}
 end
 
 function (d::AlphaDropout)(x, ps, st::NamedTuple)
-    y, rng = alpha_LuxLib.dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
+    y, rng = alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
     return y, (; rng, st.training)
 end
 
@@ -176,7 +176,8 @@ end
 
 function (d::VariationalHiddenDropout)(x, ps, st::NamedTuple)
     _mask = st.mask === nothing ? x : st.mask
-    y, mask, rng = LuxLib.dropout(st.rng, x, _mask, d.p, st.training, st.update_mask, d.q, d.dims)
+    y, mask, rng = LuxLib.dropout(
+        st.rng, x, _mask, d.p, st.training, st.update_mask, d.q, d.dims)
     return y, merge(st, (; mask, rng, update_mask=Val(false)))
 end
 
