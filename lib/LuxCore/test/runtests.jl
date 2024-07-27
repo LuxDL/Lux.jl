@@ -1,5 +1,21 @@
-using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, EnzymeCore,
-      MLDataDevices, Setfield
+using LuxCore, Test
+
+@testset "Extension Loading Checks (Fail)" begin
+    @test !LuxCore._is_extension_loaded(Val(:Setfield))
+    @test !LuxCore._is_extension_loaded(Val(:Functors))
+    @test_throws ArgumentError LuxCore._setfield(1, 2, 3)
+    @test_throws ArgumentError LuxCore._fmap(identity, 1)
+    @test_throws ArgumentError LuxCore._fleaves(1)
+end
+
+using Functors, Setfield
+
+@testset "Extension Loading Checks (Pass)" begin
+    @test LuxCore._is_extension_loaded(Val(:Setfield))
+    @test LuxCore._is_extension_loaded(Val(:Functors))
+end
+
+using Aqua, ExplicitImports, Optimisers, Random, EnzymeCore, MLDataDevices
 
 rng = LuxCore._default_rng()
 
@@ -22,7 +38,7 @@ end
 function (c::Chain)(x, ps, st)
     y, st1 = c.layers[1](x, ps.layers.layer_1, st.layers.layer_1)
     y, st2 = c.layers[2](y, ps.layers.layer_2, st.layers.layer_2)
-    return y, (; layers = (; layer_1 = st1, layer_2 = st2))
+    return y, (; layers=(; layer_1=st1, layer_2=st2))
 end
 
 struct ChainWrapper{L} <: AbstractLuxWrapperLayer{:layers}
@@ -32,7 +48,7 @@ end
 function (c::ChainWrapper)(x, ps, st)
     y, st1 = c.layers[1](x, ps.layer_1, st.layer_1)
     y, st2 = c.layers[2](y, ps.layer_2, st.layer_2)
-    return y, (; layer_1 = st1, layer_2 = st2)
+    return y, (; layer_1=st1, layer_2=st2)
 end
 
 struct Chain2{L1, L2} <: AbstractLuxContainerLayer{(:layer1, :layer2)}
