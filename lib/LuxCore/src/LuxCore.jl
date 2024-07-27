@@ -24,29 +24,29 @@ end
 _default_rng() = Xoshiro(1234)
 
 """
-    abstract type AbstractExplicitLayer
+    abstract type AbstractLuxLayer
 
 Abstract Type for all Lux Layers
 
 Users implementing their custom layer, **must** implement
 
-  - `initialparameters(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This
+  - `initialparameters(rng::AbstractRNG, layer::CustomAbstractLuxLayer)` -- This
     returns a `NamedTuple` containing the trainable parameters for the layer.
-  - `initialstates(rng::AbstractRNG, layer::CustomAbstractExplicitLayer)` -- This returns a
+  - `initialstates(rng::AbstractRNG, layer::CustomAbstractLuxLayer)` -- This returns a
     NamedTuple containing the current state for the layer. For most layers this is typically
     empty. Layers that would potentially contain this include `BatchNorm`, `LSTM`, `GRU`,
     etc.
 
 Optionally:
 
-  - `parameterlength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
+  - `parameterlength(layer::CustomAbstractLuxLayer)` -- These can be automatically
     calculated, but it is recommended that the user defines these.
-  - `statelength(layer::CustomAbstractExplicitLayer)` -- These can be automatically
+  - `statelength(layer::CustomAbstractLuxLayer)` -- These can be automatically
     calculated, but it is recommended that the user defines these.
 
-See also [`AbstractExplicitContainerLayer`](@ref)
+See also [`AbstractLuxContainerLayer`](@ref)
 """
-abstract type AbstractExplicitLayer end
+abstract type AbstractLuxLayer end
 
 """
     initialparameters(rng::AbstractRNG, layer)
@@ -64,7 +64,7 @@ function initialstates end
 
 for op in (:initialparameters, :initialstates)
     @eval begin
-        $(op)(::AbstractRNG, ::Union{AbstractExplicitLayer, Nothing}) = NamedTuple()
+        $(op)(::AbstractRNG, ::Union{AbstractLuxLayer, Nothing}) = NamedTuple()
         $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
             contains_lux_layer(l) && return fmap(Base.Fix1($op, rng), l; exclude=_fmap_leaf)
@@ -73,10 +73,10 @@ for op in (:initialparameters, :initialstates)
     end
 end
 
-_fmap_leaf(::AbstractExplicitLayer) = true
+_fmap_leaf(::AbstractLuxLayer) = true
 _fmap_leaf(x) = Functors.isleaf(x)
 
-_getemptystate(::AbstractExplicitLayer) = NamedTuple()
+_getemptystate(::AbstractLuxLayer) = NamedTuple()
 _getemptystate(l::NamedTuple) = map(_getemptystate, l)
 
 """
@@ -84,7 +84,7 @@ _getemptystate(l::NamedTuple) = map(_getemptystate, l)
 
 Return the total number of parameters of the layer `l`.
 """
-function parameterlength(l::AbstractExplicitLayer)
+function parameterlength(l::AbstractLuxLayer)
     return parameterlength(initialparameters(_default_rng(), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
@@ -97,7 +97,7 @@ parameterlength(a::AbstractArray) = length(a)
 
 Return the total number of states of the layer `l`.
 """
-statelength(l::AbstractExplicitLayer) = statelength(initialstates(_default_rng(), l))
+statelength(l::AbstractLuxLayer) = statelength(initialstates(_default_rng(), l))
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
@@ -167,7 +167,7 @@ this include:
     type stability. By default this is "disable"d. For more information, see the
     [documentation](https://github.com/MilesCranmer/DispatchDoctor.jl).
 """
-@stable default_mode="disable" function apply(model::AbstractExplicitLayer, x, ps, st)
+@stable default_mode="disable" function apply(model::AbstractLuxLayer, x, ps, st)
     return model(x, ps, st)
 end
 
@@ -178,17 +178,17 @@ Calls `apply` and only returns the first argument. This function requires that `
 an empty state of `NamedTuple()`. Behavior of other kinds of models are undefined and it is
 the responsibility of the user to ensure that the model has an empty state.
 """
-function stateless_apply(model::AbstractExplicitLayer, x, ps)
+function stateless_apply(model::AbstractLuxLayer, x, ps)
     return first(apply(model, x, ps, _getemptystate(model)))
 end
 
 """
-    display_name(layer::AbstractExplicitLayer)
+    display_name(layer::AbstractLuxLayer)
 
 Printed Name of the `layer`. If the `layer` has a field `name` that is used, else the type
 name is used.
 """
-@generated function display_name(l::L) where {L <: AbstractExplicitLayer}
+@generated function display_name(l::L) where {L <: AbstractLuxLayer}
     hasfield(L, :name) &&
         return :(ifelse(l.name === nothing, $(string(nameof(L))), string(l.name)))
     return :($(string(nameof(L))))
@@ -197,13 +197,13 @@ display_name(::T) where {T} = string(nameof(T))
 
 # Abstract Container Layers
 """
-    abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer
+    abstract type AbstractLuxContainerLayer{layers} <: AbstractLuxLayer
 
 Abstract Container Type for certain Lux Layers. `layers` is a tuple containing fieldnames
 for the layer, and constructs the parameters and states using those.
 
 Users implementing their custom layer can extend the same functions as in
-[`AbstractExplicitLayer`](@ref).
+[`AbstractLuxLayer`](@ref).
 
 !!! tip
 
@@ -211,37 +211,37 @@ Users implementing their custom layer can extend the same functions as in
     `Functors.fmap`. For a more flexible interface, we recommend using
     `Lux.Experimental.@layer_map`.
 """
-abstract type AbstractExplicitContainerLayer{layers} <: AbstractExplicitLayer end
+abstract type AbstractLuxContainerLayer{layers} <: AbstractLuxLayer end
 
 function initialparameters(rng::AbstractRNG,
-        l::AbstractExplicitContainerLayer{layers}) where {layers}
+        l::AbstractLuxContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialparameters(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
 function initialstates(rng::AbstractRNG,
-        l::AbstractExplicitContainerLayer{layers}) where {layers}
+        l::AbstractLuxContainerLayer{layers}) where {layers}
     length(layers) == 1 && return initialstates(rng, getfield(l, layers[1]))
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
-function parameterlength(l::AbstractExplicitContainerLayer{layers}) where {layers}
+function parameterlength(l::AbstractLuxContainerLayer{layers}) where {layers}
     return sum(parameterlength, getfield.((l,), layers))
 end
 
-function statelength(l::AbstractExplicitContainerLayer{layers}) where {layers}
+function statelength(l::AbstractLuxContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
-_fmap_leaf(::AbstractExplicitContainerLayer) = true
+_fmap_leaf(::AbstractLuxContainerLayer) = true
 
-function _getemptystate(l::AbstractExplicitContainerLayer{layers}) where {layers}
+function _getemptystate(l::AbstractLuxContainerLayer{layers}) where {layers}
     length(layers) == 1 && return _getemptystate(getfield(l, first(layers)))
     return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
 end
 
 # Make AbstractExplicit Layers Functor Compatible
-function Functors.functor(::Type{<:AbstractExplicitContainerLayer{layers}},
+function Functors.functor(::Type{<:AbstractLuxContainerLayer{layers}},
         x) where {layers}
     _children = NamedTuple{layers}(getproperty.((x,), layers))
     recon_fn = (l, (c, n)) -> Setfield.set(l, Setfield.PropertyLens{n}(), c)
@@ -286,11 +286,11 @@ end
 """
     contains_lux_layer(l) -> Bool
 
-Check if the structure `l` is a Lux AbstractExplicitLayer or a container of such a layer.
+Check if the structure `l` is a Lux AbstractLuxLayer or a container of such a layer.
 """
 function contains_lux_layer(l)
-    return check_fmap_condition(Base.Fix2(isa, AbstractExplicitLayer),
-        AbstractExplicitLayer, l)
+    return check_fmap_condition(Base.Fix2(isa, AbstractLuxLayer),
+        AbstractLuxLayer, l)
 end
 
 """
@@ -316,9 +316,12 @@ function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     return check_fmap_condition(cond, nothing, x)
 end
 
+Base.@deprecate_binding AbstractExplicitLayer AbstractLuxLayer false
+Base.@deprecate_binding AbstractExplicitContainerLayer AbstractLuxContainerLayer false
+
 @compat(public,
     (replicate, trainmode, testmode, update_state, contains_lux_layer,
-        check_fmap_condition, AbstractExplicitLayer, AbstractExplicitContainerLayer,
+        check_fmap_condition, AbstractLuxLayer, AbstractLuxContainerLayer,
         initialparameters, initialstates, parameterlength, statelength,
         inputsize, outputsize, setup, apply, stateless_apply, display_name))
 

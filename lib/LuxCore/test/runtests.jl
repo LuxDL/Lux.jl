@@ -4,7 +4,7 @@ using Aqua, ExplicitImports, Functors, LuxCore, Optimisers, Random, Test, Enzyme
 rng = LuxCore._default_rng()
 
 # Define some custom layers
-struct Dense <: LuxCore.AbstractExplicitLayer
+struct Dense <: LuxCore.AbstractLuxLayer
     in::Int
     out::Int
 end
@@ -15,7 +15,7 @@ end
 
 (::Dense)(x, ps, st) = x, st  # Dummy Forward Pass
 
-struct Chain{L} <: LuxCore.AbstractExplicitContainerLayer{(:layers,)}
+struct Chain{L} <: LuxCore.AbstractLuxContainerLayer{(:layers,)}
     layers::L
 end
 
@@ -25,7 +25,7 @@ function (c::Chain)(x, ps, st)
     return y, (layers = (st1, st2))
 end
 
-struct Chain2{L1, L2} <: LuxCore.AbstractExplicitContainerLayer{(:layer1, :layer2)}
+struct Chain2{L1, L2} <: LuxCore.AbstractLuxContainerLayer{(:layer1, :layer2)}
     layer1::L1
     layer2::L2
 end
@@ -37,7 +37,7 @@ function (c::Chain2)(x, ps, st)
 end
 
 @testset "LuxCore.jl Tests" begin
-    @testset "AbstractExplicitLayer Interface" begin
+    @testset "AbstractLuxLayer Interface" begin
         @testset "Custom Layer" begin
             model = Dense(5, 6)
             x = randn(rng, Float32, 5)
@@ -57,7 +57,7 @@ end
         end
 
         @testset "Default Fallbacks" begin
-            struct NoParamStateLayer <: LuxCore.AbstractExplicitLayer end
+            struct NoParamStateLayer <: LuxCore.AbstractLuxLayer end
 
             layer = NoParamStateLayer()
             @test LuxCore.initialparameters(rng, layer) == NamedTuple()
@@ -83,7 +83,7 @@ end
         end
     end
 
-    @testset "AbstractExplicitContainerLayer Interface" begin
+    @testset "AbstractLuxContainerLayer Interface" begin
         model = Chain((; layer_1=Dense(5, 5), layer_2=Dense(5, 6)))
         x = randn(rng, Float32, 5)
         ps, st = LuxCore.setup(rng, model)
@@ -184,7 +184,7 @@ end
         @testset "Method Ambiguity" begin
             # Needed if defining a layer that works with both Flux and Lux -- See DiffEqFlux.jl
             # See https://github.com/SciML/DiffEqFlux.jl/pull/750#issuecomment-1373874944
-            struct CustomLayer{M, P} <: LuxCore.AbstractExplicitContainerLayer{(:model,)}
+            struct CustomLayer{M, P} <: LuxCore.AbstractLuxContainerLayer{(:model,)}
                 model::M
                 p::P
             end
@@ -198,13 +198,13 @@ end
     end
 
     @testset "Display Name" begin
-        struct StructWithoutName <: LuxCore.AbstractExplicitLayer end
+        struct StructWithoutName <: LuxCore.AbstractLuxLayer end
 
         model = StructWithoutName()
 
         @test LuxCore.display_name(model) == "StructWithoutName"
 
-        struct StructWithName{N} <: LuxCore.AbstractExplicitLayer
+        struct StructWithName{N} <: LuxCore.AbstractLuxLayer
             name::N
         end
 
