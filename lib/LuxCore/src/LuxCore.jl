@@ -125,7 +125,12 @@ if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 `outputsize(layer, x, rng)` implementation).
 """
 function outputsize(layer, x, rng)
-    hasmethod(outputsize, Tuple{typeof(layer)}) && return outputsize(layer)
+    if hasmethod(outputsize, Tuple{typeof(layer)})
+        Base.depwarn(
+            "`outputsize(layer)` is deprecated, use `outputsize(layer, x, rng)` instead",
+            :outputsize)
+        return outputsize(layer)
+    end
     ps, st = setup(rng, layer)
     y = first(apply(layer, x, ps, st))
     return __size(y)
