@@ -117,11 +117,17 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs
     if !on_gpu
         push!(backends, AutoReverseDiff())
         total_length ≤ 100 && push!(backends, AutoForwardDiff())
+        total_length ≤ 100 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
         ENZYME_TESTING_ENABLED && push!(backends, AutoEnzyme())
     end
-    total_length ≤ 100 && push!(backends, AutoFiniteDiff())
     push!(backends, AutoTracker())
+
+    intersect_backends = intersect(broken_backends, skip_backends)
+    if !isempty(intersect_backends)
+        throw(ArgumentError("`broken_backends` and `skip_backends` cannot contain the same \
+                             backends -- $(intersect_backends)."))
+    end
 
     # Test the gradients
     ∂args_gt = gradient(f, backends[1], args...)  # Should be Zygote in most cases
@@ -130,21 +136,14 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs
 
     @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
-            broken = backend in broken_backends
-            skip = backend in skip_backends
-            if broken && skip
-                throw(ArgumentError("`broken_backends` and `skip_backends` cannot contain \
-                                     the same backend."))
-            end
-
-            if broken
+            if backend in broken_backends
                 @test_broken begin
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
                     check_approx(∂args, ∂args_gt; kwargs...)
                 end
-            elseif skip
+            elseif backend in skip_backends
                 @test_skip begin
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)

@@ -5,6 +5,8 @@
 end
 
 @testitem "test_gradients" begin
+    using MetaTesting
+
     f(x, y, z) = x .+ sum(abs2, y.t) + sum(y.x.z)
 
     x = (; t=rand(10), x=(z=[2.0],))
@@ -13,11 +15,12 @@ end
 
     test_gradients(f, 1.0, x, nothing; skip_backends=[AutoTracker()])
 
-    @test_throws Test.TestSetException test_gradients(
-        f, 1.0, x, nothing; broken_backends=[AutoTracker()])
+    @test errors() do
+        test_gradients(f, 1.0, x, nothing; broken_backends=[AutoTracker()])
+    end
 
-    @test_throws Test.TestSetException test_gradients(f, 1.0, x, nothing;
-        broken_backends=[AutoTracker()], skip_backends=[AutoTracker()])
+    @test_throws ArgumentError test_gradients(f, 1.0, x, nothing;
+        broken_backends=[AutoTracker()], skip_backends=[AutoTracker(), AutoEnzyme()])
 end
 
 @testitem "test_gradients (CUDA.jl)" skip=:(using CUDA; !CUDA.functional()) begin

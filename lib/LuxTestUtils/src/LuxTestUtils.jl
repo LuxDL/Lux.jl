@@ -11,7 +11,6 @@ using Test: Test, Error, Broken, Pass, Fail, get_testset, @testset, @test, @test
 using ADTypes: AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff,
                AutoZygote
 using ChainRulesCore: ChainRulesCore
-using Enzyme: Enzyme
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
 using ReverseDiff: ReverseDiff
@@ -33,6 +32,7 @@ end
 
 # Check if Enzyme will work
 try
+    using Enzyme: Enzyme
     __ftest(x) = x
     Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
     global ENZYME_TESTING_ENABLED = true

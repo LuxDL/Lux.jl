@@ -21,6 +21,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ADTypes = "1.5.3"
+CUDA = "5.3"
 ChainRulesCore = "1.24.0"
 ComponentArrays = "0.15.14"
 DispatchDoctor = "0.4.12"
@@ -30,6 +31,7 @@ ForwardDiff = "0.10.36"
 Functors = "0.4.11"
 JET = "0.9.6"
 MLDataDevices = "1.0.0"
+MetaTesting = "0.1.0"
 ReTestItems = "1.24.0"
 ReverseDiff = "1.15.3"
 Test = "1.10"
@@ -39,8 +41,9 @@ julia = "1.10"
 
 [extras]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+MetaTesting = "9e32d19f-1e4f-477a-8631-b16c78aa0f56"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["CUDA", "ReTestItems", "Test"]
+test = ["CUDA", "MetaTesting", "ReTestItems", "Test"]
