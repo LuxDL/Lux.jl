@@ -82,9 +82,22 @@ function run_batchnorm_testing(
         skip_backends = []
         act === relu && push!(skip_backends, AutoFiniteDiff())
 
+        soft_fail = if fp16
+            if Sys.iswindows()
+                [AutoTracker(), AutoFiniteDiff(), AutoReverseDiff(), AutoForwardDiff()]
+            else
+                true
+            end
+        else
+            false
+        end
+
+        broken_backends = Sys.iswindows() && fp16 ? [AutoEnzyme()] : []
+
         __f = (args...) -> sum(first(batchnorm(
             args..., rm, rv, training, act, T(0.9), epsilon)))
-        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends, soft_fail=fp16)
+        test_gradients(
+            __f, x, scale, bias; atol, rtol, skip_backends, soft_fail, broken_backends)
     end
 
     if anonact !== act
