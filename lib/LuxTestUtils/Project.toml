@@ -38,8 +38,9 @@ Zygote = "0.6.70"
 julia = "1.10"
 
 [extras]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ReTestItems", "Test"]
+test = ["CUDA", "ReTestItems", "Test"]
