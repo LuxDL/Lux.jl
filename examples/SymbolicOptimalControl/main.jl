@@ -2,8 +2,8 @@
 
 # This tutorial is based on [SciMLSensitivity.jl tutorial](https://docs.sciml.ai/SciMLSensitivity/stable/examples/optimal_control/optimal_control/).
 # Instead of using a classical NN architecture, here we will combine the NN with a symbolic
-# expression from [DynamicExpressions.jl](https://symbolicml.org/DynamicExpressions.jl) (the
-# symbolic engine behind [SymbolicRegression.jl](https://astroautomata.com/SymbolicRegression.jl)
+# expression from [DynamicExpressions.jl](https://symbolicml.org/DynamicExpressions.jl/) (the
+# symbolic engine behind [SymbolicRegression.jl](https://astroautomata.com/SymbolicRegression.jl/)
 # and [PySR](https://github.com/MilesCranmer/PySR/)).
 
 # Here we will solve a classic optimal control problem with a universal differential

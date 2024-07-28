@@ -192,9 +192,9 @@ nothing; # hide
 
 Hutchinson Trace Estimation often shows up in machine learning literature to provide a fast
 estimate of the trace of a Jacobian Matrix. This is based off of
-[Hutchinson 1990](https://www.researchgate.net/publication/243668757_A_Stochastic_Estimator_of_the_Trace_of_the_Influence_Matrix_for_Laplacian_Smoothing_Splines) which
-computes the estimated trace of a matrix ``A \in \mathbb{R}^{D \times D}`` using random
-vectors ``v \in \mathbb{R}^{D}`` s.t. ``\mathbb{E}\left[v v^T\right] = I``.
+[Hutchinson 1990](https://www.nowozin.net/sebastian/blog/thoughts-on-trace-estimation-in-deep-learning.html)
+which computes the estimated trace of a matrix ``A \in \mathbb{R}^{D \times D}`` using
+random vectors ``v \in \mathbb{R}^{D}`` s.t. ``\mathbb{E}\left[v v^T\right] = I``.
 
 ```math
 \text{Tr}(A) = \mathbb{E}\left[v^T A v\right] = \frac{1}{V} \sum_{i = 1}^V v_i^T A v_i
