@@ -30,6 +30,7 @@ ForwardDiff = "0.10.36"
 Functors = "0.4.11"
 JET = "0.9.6"
 MLDataDevices = "1.0.0"
+ReTestItems = "1.24.0"
 ReverseDiff = "1.15.3"
 Test = "1.10"
 Tracker = "0.2.34"
@@ -37,10 +38,8 @@ Zygote = "0.6.70"
 julia = "1.10"
 
 [extras]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
 ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Documenter", "ExplicitImports", "ReTestItems"]
+test = ["ReTestItems", "Test"]

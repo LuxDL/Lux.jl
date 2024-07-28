@@ -25,7 +25,7 @@ function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
     Enzyme.autodiff(ad.mode, f, Enzyme.Active, args_activity...)
     return Tuple(map(enumerate(args)) do (i, x)
         needs_gradient(x) && return args_activity[i].dval
-        return CRC.ZeroTangent()
+        return CRC.NoTangent()
     end)
 end
 
@@ -78,6 +78,35 @@ function gradient(f::F, grad_fn::GFN, args...) where {F, GFN <: Function}
 end
 
 # Main Functionality to Test Gradient Correctness
+"""
+    test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs...)
+
+Test the gradients of `f` with respect to `args` using the specified backends.
+
+## Arguments
+
+  - `f`: The function to test the gradients of.
+  - `args`: The arguments to test the gradients of. Only `AbstractArray`s are considered
+    for gradient computation. Gradients wrt all other arguments are assumed to be
+    `NoTangent()`.
+
+## Keyword Arguments
+
+  - `skip_backends`: A list of backends to skip.
+  - `broken_backends`: A list of backends to treat as broken.
+  - `kwargs`: Additional keyword arguments to pass to `check_approx`.
+
+## Example
+
+```julia
+julia> f(x, y, z) = x .+ sum(abs2, y.t) + sum(y.x.z)
+
+julia> x = (; t=rand(10), x=(z=[2.0],))
+
+julia> test_gradients(f, 1.0, x, nothing)
+
+```
+"""
 function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs...)
     on_gpu = get_device_type(args) isa AbstractGPUDevice
     total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
@@ -102,14 +131,14 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs
     # Test the gradients
     ∂args_gt = gradient(f, backends[1], args...)  # Should be Zygote in most cases
 
-    @assert backends[1] ∉ broken_backends "first backend cannot be broken"
+    @assert backends[1]∉broken_backends "first backend cannot be broken"
 
     @testset "gradtest($(f))" begin
-        @testset "$(backends[1]) vs $(backend)" for backend in backends[2:end]
+        @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
             broken = backend in broken_backends
             @test begin
                 ∂args = allow_unstable() do
-                    gradient(f, backend, args...)
+                    return gradient(f, backend, args...)
                 end
                 check_approx(∂args, ∂args_gt; kwargs...)
             end broken=broken

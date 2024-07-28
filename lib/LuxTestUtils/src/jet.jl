@@ -7,7 +7,7 @@ const JET_TARGET_MODULES = Ref{Union{Nothing, Vector{String}}}(nothing)
 This sets `target_modules` for all JET tests when using [`@jet`](@ref).
 """
 function jet_target_modules!(list::Vector{String}; force::Bool=false)
-    if JET_TARGET_MODULES[] !== nothing && !force
+    if JET_TARGET_MODULES[] === nothing || (force && JET_TARGET_MODULES[] !== nothing)
         JET_TARGET_MODULES[] = list
         @info "JET_TARGET_MODULES set to $list"
         return list
