@@ -46,8 +46,7 @@ include("utils.jl")
 include("autodiff.jl")
 include("jet.jl")
 
-export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff,
-       AutoZygote
+export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
 export test_gradients
 export @jet, jet_target_modules!
 

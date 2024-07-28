@@ -79,8 +79,8 @@ end
 
 check_approx(x::Tuple, y::Tuple; kwargs...) = all(check_approx.(x, y; kwargs...))
 
-function check_approx(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
-        kwargs...) where {fields}
+function check_approx(
+        nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...) where {fields}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
     _check_approx(t::Tuple{Nothing, Nothing}) = true
     return all(_check_approx, zip(values(nt1), values(nt2)))
