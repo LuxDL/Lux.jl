@@ -47,9 +47,10 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
     @test y isa aType{T, length(sz)}
     @test size(y) == sz
 
-    if __is_training(training) && !fp16
+    if __is_training(training)
         __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
-        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends=[AutoFiniteDiff()])
+        soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
+        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
     end
 end
 

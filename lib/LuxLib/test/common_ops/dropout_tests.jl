@@ -27,7 +27,8 @@
                 x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
             end
             test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
+                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
+                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), Colon())
 
@@ -76,7 +77,8 @@ end
                     rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
             end
             test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
+                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
+                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
@@ -105,7 +107,8 @@ end
                     rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             end
             test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
+                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
+                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -135,7 +138,8 @@ end
                     rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             end
             test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
+                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
+                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -183,7 +187,8 @@ end
                 x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             end
             test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
+                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
+                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             @test @inferred(alpha_dropout(rng, x, T(0.5), Val(false))) isa Any

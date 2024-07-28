@@ -60,10 +60,9 @@ function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, ongpu)
     @test y isa aType{T, length(sz)}
     @test size(y) == sz
 
-    if !fp16
-        __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
-        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends=[AutoFiniteDiff()])
-    end
+    __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
+    soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
+    test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
 end
 
 const ALL_TEST_CONFIGS = Iterators.product([Float16, Float32, Float64],

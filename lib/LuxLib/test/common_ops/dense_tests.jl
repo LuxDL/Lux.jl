@@ -36,7 +36,8 @@ function run_dense_testing(gen_f, Tw, Tx, M, N, hasbias, activation, aType, mode
     __f_grad = let activation = activation
         (w, x, b) -> __f(activation, w, x, b)
     end
-    test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends)
+    test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends,
+        soft_fail=(fp16 ? [AutoFiniteDiff()] : []))
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(

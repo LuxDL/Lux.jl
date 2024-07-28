@@ -1,5 +1,5 @@
 @testsetup module BatchNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, Enzyme, NNlib
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
 function _setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = gen_f(T, sz) |> aType
@@ -78,13 +78,13 @@ function run_batchnorm_testing(
         @test size(nt.running_var) == (size(x, length(sz) - 1),)
     end
 
-    if __istraining(training) && affine && !fp16
+    if __istraining(training) && affine
         skip_backends = []
         act === relu && push!(skip_backends, AutoFiniteDiff())
 
         __f = (args...) -> sum(first(batchnorm(
             args..., rm, rv, training, act, T(0.9), epsilon)))
-        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends)
+        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends, soft_fail=fp16)
     end
 
     if anonact !== act

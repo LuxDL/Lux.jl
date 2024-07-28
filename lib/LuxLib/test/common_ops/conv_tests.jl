@@ -46,7 +46,8 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
         try
             @inferred(Zygote.gradient(__f, activation, weight, x, bias, cdims))
             @test true
-        catch
+        catch e
+            e isa ErrorException || rethrow()
             @test_broken false
         end
     end
@@ -60,7 +61,8 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
     mp && push!(skip_backends, AutoReverseDiff())
     ((mp && ongpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))) &&
         push!(skip_backends, AutoTracker())
-    test_gradients(__f_grad, weight, x, bias; atol, rtol, skip_backends)
+    test_gradients(__f_grad, weight, x, bias; atol, rtol, skip_backends,
+        soft_fail=(fp16 ? [AutoFiniteDiff()] : []))
 end
 
 anonact = x -> gelu(x)
