@@ -22,21 +22,3 @@ Utilities for testing [Lux.jl](http://lux.csail.mit.edu/).
 > This is a testing package. Hence, we don't use features like weak dependencies to reduce
   load times. It is recommended that you exclusively use this package for testing and not
   add a dependency to it in your main package Project.toml.
-
-## Passing Runtime Variables to Macro
-
-Macros operate on the syntax and hence can't directly take variable inputs. To get around
-this (and especially because you are not using this package in your core package), we can do
-the following:
-
-Say we want to mark the Float16 tests for the sum function as broken.
-
-```julia
-using LuxTestUtils
-
-for T in (Float16, Float32, Float64)
-    x = rand(T, 10, 1)
-    # Use `@eval` to interpolate the runtime variable `T` into the macro call
-    @eval @jet sum($x) call_broken=$(T == Float16)
-end
-```

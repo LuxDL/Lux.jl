@@ -53,9 +53,59 @@ end
 function flatten_gradient_computable(f, nt::NamedTuple)
     if needs_gradient(nt)
         _f = (x) -> f(NamedTuple(x))
-        return _f, nt |> cpu_device() |> ComponentArray |> get_device(nt)
+        xxx = nt |> cpu_device() |> ComponentArray |> get_device(nt)
+        eltype(xxx) == Any &&
+            error("eltype of the flattened vector is `Any`. Check your inputs.")
+        return _f, xxx
     end
     return nothing, nothing
 end
 
 needs_gradient(y) = all(Fix{2}(isa, AbstractArray), Functors.fleaves(y))
+
+__length(x) = 0
+__length(x::AbstractArray) = length(x)
+__length(::Number) = 1
+
+# Equality Checks
+struct GradientComputationSkipped end
+
+@generated function check_approx(x::X, y::Y; kwargs...) where {X, Y}
+    device = cpu_device()
+    (X == GradientComputationSkipped || Y == GradientComputationSkipped) && return :(true)
+    hasmethod(isapprox, (X, Y)) && return :(isapprox($(device)(x), $(device)(y); kwargs...))
+    return :($(device)(x) == $(device)(y))
+end
+
+check_approx(x::Tuple, y::Tuple; kwargs...) = all(check_approx.(x, y; kwargs...))
+
+function check_approx(nt1::NamedTuple{fields}, nt2::NamedTuple{fields};
+        kwargs...) where {fields}
+    _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
+    _check_approx(t::Tuple{Nothing, Nothing}) = true
+    return all(_check_approx, zip(values(nt1), values(nt2)))
+end
+
+function check_approx(t1::NTuple{N, T}, t2::NTuple{N, T}; kwargs...) where {N, T}
+    _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
+    _check_approx(t::Tuple{Nothing, Nothing}) = true
+    return all(_check_approx, zip(t1, t2))
+end
+
+function check_approx(ca::ComponentArray, nt::NamedTuple; kwargs...)
+    return check_approx(NamedTuple(ca), nt; kwargs...)
+end
+function check_approx(nt::NamedTuple, ca::ComponentArray; kwargs...)
+    return check_approx(nt, NamedTuple(ca); kwargs...)
+end
+
+check_approx(::Nothing, v::AbstractArray; kwargs...) = length(v) == 0
+check_approx(v::AbstractArray, ::Nothing; kwargs...) = length(v) == 0
+check_approx(v::NamedTuple, ::Nothing; kwargs...) = length(v) == 0
+check_approx(::Nothing, v::NamedTuple; kwargs...) = length(v) == 0
+check_approx(v::Tuple, ::Nothing; kwargs...) = length(v) == 0
+check_approx(::Nothing, v::Tuple; kwargs...) = length(v) == 0
+check_approx(x::AbstractArray, y::NamedTuple; kwargs...) = length(x) == 0 && length(y) == 0
+check_approx(x::NamedTuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y) == 0
+check_approx(x::AbstractArray, y::Tuple; kwargs...) = length(x) == 0 && length(y) == 0
+check_approx(x::Tuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y) == 0
