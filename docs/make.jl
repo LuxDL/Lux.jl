@@ -90,7 +90,6 @@ makedocs(; sitename="Lux.jl Docs",
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
         deploy_url="https://lux.csail.mit.edu", deploy_decision),
     draft=false,
-    warnonly=:linkcheck,  # Lately it has been failing quite a lot but those links are actually fine
     pages)
 
 deploydocs(; repo="github.com/LuxDL/Lux.jl.git",

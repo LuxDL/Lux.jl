@@ -595,7 +595,7 @@ true
 ## Special Note
 
 This function takes any of the
-[`LossFunctions.jl`](https://juliaml.github.io/LossFunctions.jl/stable) public functions
+[`LossFunctions.jl`](https://juliaml.github.io/LossFunctions.jl/stable/) public functions
 into the Lux Losses API with efficient aggregation.
 """
 @concrete struct GenericLossFunction <: AbstractLossFunction

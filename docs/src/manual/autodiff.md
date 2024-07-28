@@ -14,7 +14,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 | [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | Forward | ✔️     | ✔️     | ✔️                   | Tier I        |
 | [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | Reverse | ✔️     | ❌     | ❌                   | Tier II       |
 | [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | Reverse | ✔️     | ✔️     | ❌                   | Tier II       |
-| [`Tapir.jl`](https://github.com/withbayes/Tapir.jl)                | Reverse | ❓[^q] | ❌     | ❌                   | Tier III      |
+| [`Tapir.jl`](https://github.com/compintell/Tapir.jl)               | Reverse | ❓[^q] | ❌     | ❌                   | Tier III      |
 | [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | Forward | ❓[^q] | ❓[^q] | ❓[^q]               | Tier III      |
 
 [^e]: Currently Enzyme outperforms other AD packages in terms of CPU performance. However,

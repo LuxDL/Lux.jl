@@ -1,11 +1,13 @@
 # # Bayesian Neural Network
 
 # We borrow this tutorial from the
-# [official Turing Docs](https://turinglang.org/stable/tutorials/03-bayesian-neural-network/). We
-# will show how the explicit parameterization of Lux enables first-class composability with
-# packages which expect flattened out parameter vectors.
+# [official Turing Docs](https://turinglang.org/docs/tutorials/03-bayesian-neural-network/index.html).
+# We will show how the explicit parameterization of Lux enables first-class composability
+# with packages which expect flattened out parameter vectors.
 
-# We will use [Turing.jl](https://turinglang.org/stable/) with [Lux.jl](https://lux.csail.mit.edu/)
+# Note: The tutorial in the official Turing docs is now using Lux instead of Flux.
+
+# We will use [Turing.jl](https://turinglang.org/) with [Lux.jl](https://lux.csail.mit.edu/)
 # to implement implementing a classification algorithm. Lets start by importing the relevant
 # libraries.
 

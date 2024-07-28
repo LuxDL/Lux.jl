@@ -50,8 +50,8 @@ By default, both of these preferences are set to `false`.
 ## [Dispatch Doctor](@id dispatch-doctor-preference)
 
 1. `instability_check` - Preference controlling the dispatch doctor. See the documentation
-   on [`set_dispatch_doctor_preferences!`](@ref) for more details. The preferences need to
-   be set for `LuxCore` and `LuxLib` packages. Both of them default to `disable`.
+   on [`Lux.set_dispatch_doctor_preferences!`](@ref) for more details. The preferences need
+   to be set for `LuxCore` and `LuxLib` packages. Both of them default to `disable`.
    - Setting the `LuxCore` preference sets the check at the level of `LuxCore.apply`. This
      essentially activates the dispatch doctor for all Lux layers.
    - Setting the `LuxLib` preference sets the check at the level of functional layer of
