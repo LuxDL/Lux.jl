@@ -5,7 +5,7 @@
 end
 
 @testitem "test_gradients" begin
-    using MetaTesting
+    using MetaTesting, ComponentArrays
 
     f(x, y, z) = x .+ sum(abs2, y.t) + sum(y.x.z)
 
@@ -25,6 +25,10 @@ end
 
     test_gradients(f, 1.0, x, nothing; soft_fail=[AutoTracker()])
     test_gradients(f, 1.0, x, nothing; soft_fail=true)
+
+    x_ca = ComponentArray(x)
+
+    test_gradients(f, 1.0, x_ca, nothing)
 end
 
 @testitem "test_gradients (CUDA.jl)" skip=:(using CUDA; !CUDA.functional()) begin

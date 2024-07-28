@@ -39,17 +39,27 @@ function gradient(f::F, ::AutoTracker, args...) where {F}
     tracked_args = map(args) do x
         if needs_gradient(x)
             counter += 1
-            return Functors.fmap(Tracker.param, x)
+            return Functors.fmap(Tracker.param, x; exclude=_tracker_leaf)
         end
         return x
     end
+
     @assert counter>0 "No tracked arguments found in `gradient(f, AutoTracker, args...)`"
     Tracker.back!(f(tracked_args...))
+
     return Tuple(map(tracked_args) do x
-        needs_gradient(x) && return Functors.fmap(Tracker.grad, x)
+        if needs_gradient(x)
+            return Functors.fmap(__tracker_grad, x; exclude=_tracker_leaf)
+        end
         return CRC.NoTangent()
     end)
 end
+
+_tracker_leaf(x) = Functors.isleaf(x)
+_tracker_leaf(::ComponentArray) = true
+
+__tracker_grad(x) = Tracker.grad(x)
+__tracker_grad(x::ComponentArray) = ComponentArray(__tracker_grad(getdata(x)), getaxes(x))
 
 # ReverseDiff.jl
 function gradient(f::F, ::AutoReverseDiff, args...) where {F}
@@ -83,6 +93,15 @@ end
 
 Test the gradients of `f` with respect to `args` using the specified backends.
 
+| Backend        | ADType              | CPU | GPU | Notes             |
+|:-------------- |:------------------- |:--- |:--- |:----------------- |
+| Zygote.jl      | `AutoZygote()`      | ✔   | ✔   |                   |
+| Tracker.jl     | `AutoTracker()`     | ✔   | ✔   |                   |
+| ReverseDiff.jl | `AutoReverseDiff()` | ✔   | ✖   |                   |
+| ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 100`       |
+| FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 100`       |
+| Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
+
 ## Arguments
 
   - `f`: The function to test the gradients of.
@@ -94,7 +113,7 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 
   - `skip_backends`: A list of backends to skip.
   - `broken_backends`: A list of backends to treat as broken.
-  - `soft_fail`: If `true`, then the test will be recorded as a soft_fail test. This
+  - `soft_fail`: If `true`, then the test will be recorded as a `soft_fail` test. This
     overrides any `broken` kwargs. Alternatively, a list of backends can be passed to
     `soft_fail` to allow soft_fail tests for only those backends.
   - `kwargs`: Additional keyword arguments to pass to `check_approx`.
