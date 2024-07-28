@@ -1,4 +1,5 @@
 @testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
+    Enzyme.API.runtimeActivity!(true)
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -19,9 +20,9 @@
             @test d(x, psd, std)[1] == fd(x, ps, st)[1]
 
             @jet fd(x, ps, st)
-            __f = (x, ps) -> sum(first(fd(x, ps, st)))
 
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            __f = x -> sum(first(fd(x, ps, st)))
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "ComponentArray" begin
@@ -35,8 +36,9 @@
             @test m(x, ps, st)[1] == m(x, ps_c, st)[1]
 
             @jet m(x, ps_c, st)
+
             __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @eval @test_gradients $__f $x $ps_c atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x, ps_c; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "LuxDL/Lux.jl#427" begin
@@ -66,6 +68,7 @@ end
 @testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     using Lux.Experimental: FrozenLayer
 
+    Enzyme.API.runtimeActivity!(true)
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -85,7 +88,7 @@ end
 
         @jet fd(x, ps, st)
         __f = (x, ps) -> sum(first(fd(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         fd = Lux.Experimental.freeze(d, ())
         @test fd === d

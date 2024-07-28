@@ -2,32 +2,36 @@
 @testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "zero sum" begin
             layer = SkipConnection(
                 WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)), .+)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
-            x = randn(rng, 10, 10, 10, 10) |> aType
+            ps, st = Lux.setup(rng, layer) |> dev
+            x = randn(rng, Float32, 10, 10, 10, 10) |> aType
 
             @test layer(x, ps, st)[1] == x
 
             @jet layer(x, ps, st)
+
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "concat size" begin
             layer = SkipConnection(Dense(10, 10), (a, b) -> hcat(a, b))
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
-            x = randn(rng, 10, 2) |> aType
+            ps, st = Lux.setup(rng, layer) |> dev
+            x = randn(rng, Float32, 10, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
 
             @jet layer(x, ps, st)
+
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            # Method ambiguity for concatenation
+            test_gradients(
+                __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoReverseDiff()])
         end
     end
 end
@@ -35,70 +39,77 @@ end
 @testitem "Parallel" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "zero sum" begin
             layer = Parallel(
                 +, WrappedFunction{:direct_call}(Broadcast.BroadcastFunction(zero)),
                 NoOpLayer())
             @test :layer_1 in keys(layer) && :layer_2 in keys(layer)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, 10, 10, 10, 10) |> aType
 
             @test layer(x, ps, st)[1] == x
 
             @jet layer(x, ps, st)
+
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "concat size" begin
             layer = Parallel((a, b) -> cat(a, b; dims=2), Dense(10, 10), NoOpLayer())
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, 10, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
 
             @jet layer(x, ps, st)
+
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Parallel(hcat, Dense(10, 10), NoOpLayer())
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
 
             @jet layer(x, ps, st)
+
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            # Method ambiguity for concatenation
+            test_gradients(
+                __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoReverseDiff()])
         end
 
         @testset "vararg input" begin
             layer = Parallel(+, Dense(10, 2), Dense(5, 2), Dense(4, 2))
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1)) .|> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
 
             @jet layer(x, ps, st)
+
             __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-            @eval @test_gradients $__f $(x[1]) $(x[2]) $(x[3]) $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "named layers" begin
             layer = Parallel(+; d102=Dense(10, 2), d52=Dense(5, 2), d42=Dense(4, 2))
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1)) .|> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
 
             @jet layer(x, ps, st)
+
             __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-            @eval @test_gradients $__f $(x[1]) $(x[2]) $(x[3]) $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "connection is called once" begin
@@ -106,7 +117,7 @@ end
             f_cnt = (x...) -> (CNT[] += 1; +(x...))
             layer = Parallel(
                 f_cnt, WrappedFunction(sin), WrappedFunction(cos), WrappedFunction(tan))
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             Lux.apply(layer, 1, ps, st)
             @test CNT[] == 1
             @jet layer(1, ps, st)
@@ -129,7 +140,7 @@ end
             Base.:*(a::AbstractArray, b::Input) = a * b.x
 
             par = Parallel(+, L1(), L1())
-            ps, st = Lux.setup(rng, par) .|> device
+            ps, st = Lux.setup(rng, par) |> dev
 
             ip = Input(rand(Float32, 3, 3) |> aType)
             ip2 = Input(rand(Float32, 3, 3) |> aType)
@@ -156,26 +167,27 @@ end
 @testitem "PairwiseFusion" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = (rand(Float32, 1, 10), rand(Float32, 30, 10), rand(Float32, 10, 10)) .|> aType
         layer = PairwiseFusion(+, Dense(1, 30), Dense(30, 10))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         y, _ = layer(x, ps, st)
         @test size(y) == (10, 10)
 
         @jet layer(x, ps, st)
         __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-        @eval @test_gradients $__f $(x[1]) $(x[2]) $(x[3]) $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = PairwiseFusion(+; d1=Dense(1, 30), d2=Dense(30, 10))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         y, _ = layer(x, ps, st)
         @test size(y) == (10, 10)
         @jet layer(x, ps, st)
+
         __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-        @eval @test_gradients $__f $(x[1]) $(x[2]) $(x[3]) $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
 
         x = rand(1, 10)
         layer = PairwiseFusion(.+, Dense(1, 10), Dense(10, 1))
@@ -185,19 +197,20 @@ end
         @test size(y) == (1, 10)
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
             WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         @test layer((2, 10, 20, 40), ps, st)[1] == [125, 1728, 8000, 40]
 
         layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
             WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         @test layer(7, ps, st)[1] == [1000, 729, 343, 7]
     end
 end
@@ -205,10 +218,10 @@ end
 @testitem "BranchLayer" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         layer = BranchLayer(Dense(10, 10), Dense(10, 10))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
         (y1, y2), _ = layer(x, ps, st)
         @test size(y1) == (10, 1)
@@ -217,8 +230,9 @@ end
         @test y2 == layer.layers.layer_2(x, ps.layer_2, st.layer_2)[1]
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(sum, first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = BranchLayer(; d1=Dense(10, 10), d2=Dense(10, 10))
         display(layer)
@@ -231,80 +245,86 @@ end
         @test y2 == layer.layers.d2(x, ps.d2, st.d2)[1]
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(sum, first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
 @testitem "Chain" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         layer = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh), Dense(2 => 1))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (1, 1)
         @test Lux.outputsize(layer) == (1,)
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
         display(layer)
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (1, 1)
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
         display(layer)
         layer = layer[1:2]
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (2, 1)
         @test Lux.outputsize(layer) == (2,)
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
         display(layer)
         layer = layer[begin:(end - 1)]
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (2, 1)
         @test Lux.outputsize(layer) == (2,)
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
         display(layer)
         layer = layer[1]
-        ps, st = Lux.setup(rng, layer) .|> device
+        ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
         y, _ = layer(x, ps, st)
         @test size(y) == (5, 1)
         @test Lux.outputsize(layer) == (5,)
 
         @jet layer(x, ps, st)
+
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         @test_throws ArgumentError Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh),
@@ -350,11 +370,11 @@ end
 @testitem "Maxout" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "constructor" begin
             layer = Maxout(() -> NoOpLayer(), 4)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = rand(rng, Float32, 10, 1) |> aType
 
             @test layer(x, ps, st)[1] == x
@@ -370,14 +390,15 @@ end
 
             for layer in (layer1, layer2)
                 display(layer)
-                ps, st = Lux.setup(rng, layer) .|> device
+                ps, st = Lux.setup(rng, layer) |> dev
                 x = Float32.(collect(1:40)) |> aType
 
                 @test layer(x, ps, st)[1] == 2 .* x
 
                 @jet layer(x, ps, st)
+
                 __f = x -> sum(first(layer(x, ps, st)))
-                @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+                test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -386,21 +407,22 @@ end
             B = aType([0.2 0.7]')
             layer = Maxout(WrappedFunction(x -> A * x), WrappedFunction(x -> B * x))
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = [3.0 2.0] |> aType
             y = aType([0.5, 0.7]) .* x
 
             @test layer(x, ps, st)[1] == y
 
             @jet layer(x, ps, st)
+
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "params" begin
             layer = Maxout(() -> Dense(2, 4), 4)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = [10.0f0 3.0f0]' |> aType
 
             @test Lux.parameterlength(layer) ==
@@ -408,8 +430,9 @@ end
             @test size(layer(x, ps, st)[1]) == (4, 1)
 
             @jet layer(x, ps, st)
+
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-1 rtol=1.0f-1 gpu_testing=$ongpu
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -417,7 +440,7 @@ end
 @testitem "Repeated" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         LAYERS = [Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)),
             Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2))]
         REPEATS = [Val(4), Val(4), Val(4), Val(4)]
@@ -427,14 +450,15 @@ end
             LAYERS, REPEATS, INJECTION)
             layer = RepeatedLayer(layer; repeats, input_injection)
             display(layer)
-            ps, st = Lux.setup(rng, layer) .|> device
+            ps, st = Lux.setup(rng, layer) |> dev
             x = rand(rng, Float32, 2, 12) |> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 12)
 
             @jet layer(x, ps, st)
+
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
