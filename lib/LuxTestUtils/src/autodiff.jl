@@ -119,12 +119,13 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs
         if AutoForwardDiff() ∉ skip_backends && total_length ≤ 100
             push!(backends, AutoForwardDiff())
         end
+        if AutoFiniteDiff() ∉ skip_backends && total_length ≤ 100
+            push!(backends, AutoFiniteDiff())
+        end
+        # TODO: Move Enzyme out of here once it supports GPUs
         if AutoEnzyme() ∉ skip_backends && ENZYME_TESTING_ENABLED
             push!(backends, AutoEnzyme())
         end
-    end
-    if AutoFiniteDiff() ∉ skip_backends && total_length ≤ 100
-        push!(backends, AutoFiniteDiff())
     end
     AutoTracker() ∉ skip_backends && push!(backends, AutoTracker())
 
