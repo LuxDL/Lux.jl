@@ -113,36 +113,52 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs
 
     # Choose the backends to test
     backends = []
-    AutoZygote() ∉ skip_backends && push!(backends, AutoZygote())
+    push!(backends, AutoZygote())
     if !on_gpu
-        AutoReverseDiff() ∉ skip_backends && push!(backends, AutoReverseDiff())
-        if AutoForwardDiff() ∉ skip_backends && total_length ≤ 100
-            push!(backends, AutoForwardDiff())
-        end
-        if AutoFiniteDiff() ∉ skip_backends && total_length ≤ 100
-            push!(backends, AutoFiniteDiff())
-        end
+        push!(backends, AutoReverseDiff())
+        total_length ≤ 100 && push!(backends, AutoForwardDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
-        if AutoEnzyme() ∉ skip_backends && ENZYME_TESTING_ENABLED
-            push!(backends, AutoEnzyme())
-        end
+        ENZYME_TESTING_ENABLED && push!(backends, AutoEnzyme())
     end
-    AutoTracker() ∉ skip_backends && push!(backends, AutoTracker())
+    total_length ≤ 100 && push!(backends, AutoFiniteDiff())
+    push!(backends, AutoTracker())
 
     # Test the gradients
     ∂args_gt = gradient(f, backends[1], args...)  # Should be Zygote in most cases
 
-    @assert backends[1]∉broken_backends "first backend cannot be broken"
+    @assert (backends[1] ∉ broken_backends)&&(backends[1] ∉ skip_backends) "first backend cannot be broken or skipped"
 
     @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
             broken = backend in broken_backends
-            @test begin
-                ∂args = allow_unstable() do
-                    return gradient(f, backend, args...)
+            skip = backend in skip_backends
+            if broken && skip
+                throw(ArgumentError("`broken_backends` and `skip_backends` cannot contain \
+                                     the same backend."))
+            end
+
+            if broken
+                @test_broken begin
+                    ∂args = allow_unstable() do
+                        return gradient(f, backend, args...)
+                    end
+                    check_approx(∂args, ∂args_gt; kwargs...)
                 end
-                check_approx(∂args, ∂args_gt; kwargs...)
-            end broken=broken
+            elseif skip
+                @test_skip begin
+                    ∂args = allow_unstable() do
+                        return gradient(f, backend, args...)
+                    end
+                    check_approx(∂args, ∂args_gt; kwargs...)
+                end
+            else
+                @test begin
+                    ∂args = allow_unstable() do
+                        return gradient(f, backend, args...)
+                    end
+                    check_approx(∂args, ∂args_gt; kwargs...)
+                end
+            end
         end
     end
 end
