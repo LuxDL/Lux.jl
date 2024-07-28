@@ -24,5 +24,11 @@ Pages = ["LuxTestUtils.md"]
 ## Gradient Correctness
 
 ```@docs
-@test_gradients
+test_gradients
+```
+
+## Extensions to `@test`
+
+```@docs
+@test_softfail
 ```
