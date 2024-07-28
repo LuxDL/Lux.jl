@@ -5,7 +5,7 @@ using DispatchDoctor: allow_unstable
 using Functors: Functors
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
 using Test: Test, Error, Broken, Pass, Fail, get_testset, @testset, @test, @test_skip,
-            @test_broken, eval_test, Threw
+            @test_broken, eval_test, Threw, Returned
 
 # Autodiff
 using ADTypes: AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff,

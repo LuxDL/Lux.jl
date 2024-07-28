@@ -22,6 +22,9 @@ end
     @test_throws ArgumentError test_gradients(
         f, 1.0, x, nothing; broken_backends=[AutoTracker()],
         skip_backends=[AutoTracker(), AutoEnzyme()])
+
+    test_gradients(f, 1.0, x, nothing; soft_fail=[AutoTracker()])
+    test_gradients(f, 1.0, x, nothing; soft_fail=true)
 end
 
 @testitem "test_gradients (CUDA.jl)" skip=:(using CUDA; !CUDA.functional()) begin
@@ -36,7 +39,9 @@ end
     test_gradients(f, 1.0, x, nothing; skip_backends=[AutoTracker()])
 end
 
-@testitem "@softfail" begin
+@testitem "@test_softfail" begin
+    using MetaTesting
+
     @test errors() do
         @test_softfail 1 + 1
     end

@@ -10,11 +10,8 @@ If the test result is false then the test will be recorded as a broken test, els
 recorded as a pass.
 """
 macro test_softfail(ex)
-    # Build the test expression
-    Test.test_expr!("@test_softfail", ex)
-
+    Test.test_expr!("@test_softfail", ex) # Build the test expression
     result = Test.get_test_result(ex, __source__)
-
     ex = Expr(:inert, ex)
     result = quote
         do_softfail_test($result, $ex)
