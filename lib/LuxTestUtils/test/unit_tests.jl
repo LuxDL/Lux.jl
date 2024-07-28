@@ -35,3 +35,11 @@ end
 
     test_gradients(f, 1.0, x, nothing; skip_backends=[AutoTracker()])
 end
+
+@testitem "@softfail" begin
+    @test errors() do
+        @test_softfail 1 + 1
+    end
+    @test_softfail 1 + 1 == 2
+    @test_softfail 1 + 1 < 2
+end

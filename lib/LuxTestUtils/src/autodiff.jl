@@ -94,6 +94,8 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 
   - `skip_backends`: A list of backends to skip.
   - `broken_backends`: A list of backends to treat as broken.
+  - `softfail`: If `true`, then the test will be recorded as a softfail test. This overrides
+    any `broken` kwargs.
   - `kwargs`: Additional keyword arguments to pass to `check_approx`.
 
 ## Example
@@ -107,7 +109,8 @@ julia> test_gradients(f, 1.0, x, nothing)
 
 ```
 """
-function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs...)
+function test_gradients(
+        f, args...; skip_backends=[], broken_backends=[], softfail::Bool=false, kwargs...)
     on_gpu = get_device_type(args) <: AbstractGPUDevice
     total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
 
@@ -136,15 +139,22 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs
 
     @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
-            if backend in broken_backends
-                @test_broken begin
+            if backend in skip_backends
+                @test_skip begin
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
                     check_approx(∂args, ∂args_gt; kwargs...)
                 end
-            elseif backend in skip_backends
-                @test_skip begin
+            elseif softfail
+                @test_softfail begin
+                    ∂args = allow_unstable() do
+                        return gradient(f, backend, args...)
+                    end
+                    check_approx(∂args, ∂args_gt; kwargs...)
+                end
+            elseif backend in broken_backends
+                @test_broken begin
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end

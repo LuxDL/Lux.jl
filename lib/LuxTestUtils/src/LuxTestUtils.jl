@@ -5,7 +5,7 @@ using DispatchDoctor: allow_unstable
 using Functors: Functors
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
 using Test: Test, Error, Broken, Pass, Fail, get_testset, @testset, @test, @test_skip,
-            @test_broken
+            @test_broken, eval_test, Threw
 
 # Autodiff
 using ADTypes: AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff,
@@ -42,6 +42,7 @@ catch err
     global ENZYME_TESTING_ENABLED = false
 end
 
+include("test_softfail.jl")
 include("utils.jl")
 include("autodiff.jl")
 include("jet.jl")
@@ -49,5 +50,6 @@ include("jet.jl")
 export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
 export test_gradients
 export @jet, jet_target_modules!
+export @test_softfail
 
 end
