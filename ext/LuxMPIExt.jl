@@ -2,8 +2,8 @@ module LuxMPIExt
 
 using Lux: MPIBackend, NCCLBackend, DistributedUtils, __unwrap_val, MPI_CUDA_AWARE,
            MPI_ROCM_AWARE
-using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device,
-                      set_device!, functional
+using MLDataDevices: AbstractDevice, CUDADevice, AMDGPUDevice, cpu_device, set_device!,
+                     functional
 using MPI: MPI
 
 function DistributedUtils.__initialize(
@@ -14,21 +14,21 @@ function DistributedUtils.__initialize(
 
     local_rank = MPI.Comm_rank(MPI.COMM_WORLD)
 
-    if cuda_devices !== missing && functional(LuxCUDADevice)
+    if cuda_devices !== missing && functional(CUDADevice)
         if cuda_devices === nothing
-            set_device!(LuxCUDADevice, nothing, local_rank + 1)
+            set_device!(CUDADevice, nothing, local_rank + 1)
         else
-            set_device!(LuxCUDADevice, cuda_devices[local_rank + 1])
+            set_device!(CUDADevice, cuda_devices[local_rank + 1])
         end
     elseif force_cuda
         error(lazy"CUDA devices are not functional (or `LuxCUDA.jl` not loaded) and `force_cuda` is set to `true`. This is caused by backend: $(caller).")
     end
 
-    if amdgpu_devices !== missing && functional(LuxAMDGPUDevice)
+    if amdgpu_devices !== missing && functional(AMDGPUDevice)
         if amdgpu_devices === nothing
-            set_device!(LuxAMDGPUDevice, nothing, local_rank + 1)
+            set_device!(AMDGPUDevice, nothing, local_rank + 1)
         else
-            set_device!(LuxAMDGPUDevice, amdgpu_devices[local_rank + 1])
+            set_device!(AMDGPUDevice, amdgpu_devices[local_rank + 1])
         end
     elseif force_amdgpu
         error(lazy"AMDGPU devices are not functional (or `AMDGPU.jl` not loaded) and `force_amdgpu` is set to `true`. This is caused by backend: $(caller).")
@@ -45,19 +45,19 @@ DistributedUtils.total_workers(backend::MPIBackend) = MPI.Comm_size(backend.comm
 
 # Broadcast
 function DistributedUtils.__bcast!(
-        backend::MPIBackend, sendrecvbuf, dev::AbstractLuxDevice; root=0)
+        backend::MPIBackend, sendrecvbuf, dev::AbstractDevice; root=0)
     MPI.Bcast!(sendrecvbuf, backend.comm; root)
     return sendrecvbuf
 end
 
 function DistributedUtils.__bcast!(
-        backend::MPIBackend, sendbuf, recvbuf, dev::AbstractLuxDevice; root=0)
+        backend::MPIBackend, sendbuf, recvbuf, dev::AbstractDevice; root=0)
     return DistributedUtils.__bcast!(
         backend, ifelse(DistributedUtils.local_rank(backend) == root, sendbuf, recvbuf),
         dev; root)
 end
 
-for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
+for (aware, dType) in ((MPI_CUDA_AWARE, CUDADevice), (MPI_ROCM_AWARE, AMDGPUDevice))
     if !aware
         @eval begin
             function DistributedUtils.__bcast!(
@@ -84,7 +84,7 @@ end
 
 # Allreduce
 function DistributedUtils.__allreduce!(
-        backend::MPIBackend, sendrecvbuf, op::F, dev::AbstractLuxDevice) where {F}
+        backend::MPIBackend, sendrecvbuf, op::F, dev::AbstractDevice) where {F}
     mpiop = ifelse(op === DistributedUtils.avg, +, op)
     MPI.Allreduce!(sendrecvbuf, mpiop, backend.comm)
     if op === DistributedUtils.avg
@@ -94,7 +94,7 @@ function DistributedUtils.__allreduce!(
 end
 
 function DistributedUtils.__allreduce!(
-        backend::MPIBackend, sendbuf, recvbuf, op::F, dev::AbstractLuxDevice) where {F}
+        backend::MPIBackend, sendbuf, recvbuf, op::F, dev::AbstractDevice) where {F}
     mpiop = ifelse(op === DistributedUtils.avg, +, op)
     MPI.Allreduce!(sendbuf, recvbuf, mpiop, backend.comm)
     if op === DistributedUtils.avg
@@ -103,7 +103,7 @@ function DistributedUtils.__allreduce!(
     return recvbuf
 end
 
-for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
+for (aware, dType) in ((MPI_CUDA_AWARE, CUDADevice), (MPI_ROCM_AWARE, AMDGPUDevice))
     if !aware
         @eval begin
             function DistributedUtils.__allreduce!(
@@ -129,8 +129,8 @@ for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDG
 end
 
 # Reduce
-function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
-        dev::AbstractLuxDevice; root::Int) where {F}
+function DistributedUtils.__reduce!(
+        backend::MPIBackend, sendrecvbuf, op::F, dev::AbstractDevice; root::Int) where {F}
     mpiop = ifelse(op === DistributedUtils.avg, +, op)
     MPI.Reduce!(sendrecvbuf, mpiop, backend.comm; root)
     if op === DistributedUtils.avg
@@ -140,7 +140,7 @@ function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,
 end
 
 function DistributedUtils.__reduce!(backend::MPIBackend, sendbuf, recvbuf, op::F,
-        dev::AbstractLuxDevice; root::Int) where {F}
+        dev::AbstractDevice; root::Int) where {F}
     mpiop = ifelse(op === DistributedUtils.avg, +, op)
     MPI.Reduce!(sendbuf, recvbuf, mpiop, backend.comm; root)
     if op === DistributedUtils.avg
@@ -149,7 +149,7 @@ function DistributedUtils.__reduce!(backend::MPIBackend, sendbuf, recvbuf, op::F
     return recvbuf
 end
 
-for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
+for (aware, dType) in ((MPI_CUDA_AWARE, CUDADevice), (MPI_ROCM_AWARE, AMDGPUDevice))
     if !aware
         @eval begin
             function DistributedUtils.__reduce!(backend::MPIBackend, sendrecvbuf, op::F,

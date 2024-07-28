@@ -8,12 +8,6 @@ All features listed on this page are **experimental** which means:
    experimental sooner.
 3. None of the features are exported.
 
-!!! warning
-
-    Starting v"0.5.2" all Experimental features need to be accessed via
-    `Lux.Experimental.<feature>`. Direct access via `Lux.<feature>` will be removed in
-    v"0.6".
-
 ## Index
 
 ```@index
@@ -21,11 +15,6 @@ Pages = ["contrib.md"]
 ```
 
 ## Parameter Freezing
-
-!!! info
-
-    In the long term, this will be supported via
-    [Optimisers.jl](https://github.com/FluxML/Optimisers.jl/pull/49).
 
 ```@docs
 Lux.Experimental.FrozenLayer
@@ -38,8 +27,8 @@ For detailed usage example look at the [manual page](@ref freezing-model-paramet
 ## Map over Layer
 
 ```@docs
-Lux.Experimental.layer_map
 Lux.Experimental.@layer_map
+Lux.Experimental.layer_map
 ```
 
 ## Debugging Functionality
@@ -56,15 +45,3 @@ Lux.Experimental.DebugLayer
 ```@docs
 Lux.Experimental.share_parameters
 ```
-
-## StatefulLuxLayer
-
-[`Lux.StatefulLuxLayer`](@ref) used to be part of experimental features, but has been
-promoted to stable API. It is now available via `Lux.StatefulLuxLayer`. Change all uses of
-`Lux.Experimental.StatefulLuxLayer` to `Lux.StatefulLuxLayer`.
-
-## Compact Layer API
-
-[`Lux.@compact`](@ref) used to be part of experimental features, but has been promoted to
-stable API. It is now available via `Lux.@compact`. Change all uses of
-`Lux.Experimental.@compact` to `Lux.@compact`.

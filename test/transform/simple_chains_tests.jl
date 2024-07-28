@@ -28,7 +28,7 @@
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
-    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 skip_tracker=true
 
     x = randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
@@ -39,7 +39,7 @@
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
-    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+    @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 skip_tracker=true
 
     @testset "Array Output" begin
         adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)), true)
@@ -85,7 +85,7 @@
         for dims in (static(10), (static(10),))
             adaptor = ToSimpleChainsAdaptor(dims)
 
-            simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly (potentially with `disable_optimizations = true`)." adaptor(lux_model)
+            simple_chains_model = @test_warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this might fail. Please consider using `Chain` directly." adaptor(lux_model)
 
             ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
 
@@ -98,7 +98,7 @@
             @test size(gs[1]) == size(x)
             @test length(gs[2].params) == length(ps.params)
 
-            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3
+            @eval @test_gradients $__f $x $ps atol=1.0f-3 rtol=1.0f-3 skip_tracker=true
         end
     end
 

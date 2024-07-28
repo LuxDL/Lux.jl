@@ -1,12 +1,12 @@
-# [LuxDeviceUtils](@id LuxDeviceUtils-API)
+# [MLDataDevices](@id MLDataDevices-API)
 
-`LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across
+`MLDataDevices.jl` is a lightweight package defining rules for transferring data across
 devices. Most users should directly use Lux.jl instead.
 
 ## Index
 
 ```@index
-Pages = ["LuxDeviceUtils.md"]
+Pages = ["MLDataDevices.md"]
 ```
 
 ## Preferences
@@ -30,12 +30,12 @@ supported_gpu_backends
 default_device_rng
 get_device
 get_device_type
-LuxDeviceUtils.loaded
-LuxDeviceUtils.functional
+MLDataDevices.loaded
+MLDataDevices.functional
 ```
 
 ## Multi-GPU Support
 
 ```@docs
-LuxDeviceUtils.set_device!
+MLDataDevices.set_device!
 ```

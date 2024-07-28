@@ -11,8 +11,8 @@ using LuxTestUtils: @jet, @test_gradients, check_approx
 
 # Some Helper Functions
 function get_default_rng(mode::String)
-    dev = mode == "cpu" ? LuxCPUDevice() :
-          mode == "cuda" ? LuxCUDADevice() : mode == "amdgpu" ? LuxAMDGPUDevice() : nothing
+    dev = mode == "cpu" ? CPUDevice() :
+          mode == "cuda" ? CUDADevice() : mode == "amdgpu" ? AMDGPUDevice() : nothing
     rng = default_device_rng(dev)
     return rng isa TaskLocalRNG ? copy(rng) : deepcopy(rng)
 end

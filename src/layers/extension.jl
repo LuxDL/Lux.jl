@@ -54,7 +54,7 @@ DynamicExpressionsLayer(
         layer_1 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), x1 * cos(x2 - 3.2); turbo=Val{false}(), bumper=Val{false}()),  # 1 parameters
         layer_2 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1); turbo=Val{false}(), bumper=Val{false}()),  # 2 parameters
     ),
-    layer_2 = WrappedFunction{:direct_call}(Lux.__stack1),
+    layer_2 = WrappedFunction(__stack1),
 )         # Total: 3 parameters,
           #        plus 0 states.
 
@@ -127,7 +127,7 @@ end
 end
 
 function __apply_dynamic_expression(
-        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::LuxCPUDevice)
+        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::CPUDevice)
     __update_expression_constants!(expr, ps)
     return expr(x, operator_enum; de.turbo, de.bumper)
 end
@@ -135,7 +135,7 @@ end
 function __apply_dynamic_expression_rrule end
 
 function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsLayer,
-        expr, operator_enum, x, ps, ::LuxCPUDevice)
+        expr, operator_enum, x, ps, ::CPUDevice)
     if !_is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                computing gradient for `DynamicExpressionLayer`.")
@@ -210,16 +210,7 @@ regular `Array` or not. Default is `false`.
 ## Arguments
 
   - `layer`: SimpleChains layer
-
-!!! note
-
-    If using `Tracker.jl`, the output will always be a regular `Array`.
-
-!!! danger
-
-    `Tracker.jl` sometimes produces incorrect gradients for `SimpleChains.jl` models. As
-    such please test your model with FiniteDifferences or Zygote before using `Tracker.jl`
-    for your model.
+  - `lux_layer`: Potentially equivalent Lux layer that is used for printing
 """
 struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer}} <:
        AbstractExplicitLayer
@@ -251,7 +242,7 @@ end
     return convert(Array, __apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
 end
 
-@inline __apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
+@inline __apply_simple_chain(layer, x, ps, ::CPUDevice) = layer(x, ps)
 
 function __apply_simple_chain(layer, x, ps, dev)
     throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
@@ -259,7 +250,7 @@ function __apply_simple_chain(layer, x, ps, dev)
 end
 
 # Workaround for SimpleChains not being able to handle some input types
-function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
+function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::CPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
     # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     __∇apply_simple_chain = @closure Δ -> begin

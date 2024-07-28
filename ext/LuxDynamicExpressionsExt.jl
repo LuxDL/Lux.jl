@@ -4,8 +4,8 @@ using ChainRulesCore: ChainRulesCore, NoTangent
 using DynamicExpressions: DynamicExpressions, Node, OperatorEnum, eval_grad_tree_array
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
-using Lux: Lux, NAME_TYPE, Chain, Parallel, WrappedFunction, DynamicExpressionsLayer
-using LuxDeviceUtils: LuxCPUDevice
+using Lux: Lux, NAME_TYPE, Chain, Parallel, DynamicExpressionsLayer
+using MLDataDevices: CPUDevice
 
 const CRC = ChainRulesCore
 
@@ -22,7 +22,7 @@ function Lux.DynamicExpressionsLayer(
         Parallel(nothing,
             ntuple(i -> DynamicExpressionsLayer(operator_enum, expressions[i],
                 _name_fn(i), turbo, bumper), length(expressions))...),
-        WrappedFunction{:direct_call}(Lux.__stack1);
+        Lux.__stack1;
         name="DynamicExpressionsLayer")
     #! format: on
 end
@@ -48,7 +48,7 @@ end
 # Forward Diff rules
 function Lux.__apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum,
         x::AbstractMatrix{<:ForwardDiff.Dual{Tag, T, N}},
-        ps, ::LuxCPUDevice) where {T, N, Tag}
+        ps, ::CPUDevice) where {T, N, Tag}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -64,8 +64,7 @@ function Lux.__apply_dynamic_expression(de::DynamicExpressionsLayer, expr, opera
 end
 
 function Lux.__apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum, x,
-        ps::AbstractVector{<:ForwardDiff.Dual{Tag, T, N}},
-        ::LuxCPUDevice) where {T, N, Tag}
+        ps::AbstractVector{<:ForwardDiff.Dual{Tag, T, N}}, ::CPUDevice) where {T, N, Tag}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -82,7 +81,7 @@ end
 function Lux.__apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum,
         x::AbstractMatrix{<:ForwardDiff.Dual{Tag, T1, N}},
         ps::AbstractVector{<:ForwardDiff.Dual{Tag, T2, N}},
-        ::LuxCPUDevice) where {T1, T2, N, Tag}
+        ::CPUDevice) where {T1, T2, N, Tag}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 

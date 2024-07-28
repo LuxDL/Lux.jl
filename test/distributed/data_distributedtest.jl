@@ -14,8 +14,8 @@ if input_args[1] == "amdgpu"
 end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
-const dev = input_args[1] == "cpu" ? LuxCPUDevice() :
-            (input_args[1] == "cuda" ? LuxCUDADevice() : LuxAMDGPUDevice())
+const dev = input_args[1] == "cpu" ? CPUDevice() :
+            (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
 
 rng = Xoshiro(1234)
 

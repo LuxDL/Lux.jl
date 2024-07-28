@@ -225,7 +225,7 @@ nothing #hide
 
 hybrid_mlp = Chain(Dense(1 => 4, gelu),
     DynamicExpressionsLayer(OperatorEnum(; binary_operators=[+, -, *, /]), best_eq),
-    Dense(4 => 1); disable_optimizations=true)
+    Dense(4 => 1))
 
 # There you have it! It is that easy to take the fitted Symbolic Expression and combine it
 # with a neural network. Let's see how it performs before fintetuning.

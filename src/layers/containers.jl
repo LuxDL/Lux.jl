@@ -18,10 +18,6 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
       + A 2-argument function that takes `layer(input)` and the input OR
       + An AbstractExplicitLayer that takes `(layer(input), input)` as input
 
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
-
 ## Inputs
 
   - `x`: Will be passed directly to `layer`
@@ -101,10 +97,6 @@ with `connection`.
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
-
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -190,8 +182,6 @@ end
     return Expr(:block, calls...)
 end
 
-Base.keys(m::Parallel) = Base.keys(getfield(m, :layers))
-
 """
     BranchLayer(layers...)
     BranchLayer(; name=nothing, layers...)
@@ -205,10 +195,6 @@ outputs.
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
-
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -281,8 +267,6 @@ BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), n
     return Expr(:block, calls...)
 end
 
-Base.keys(m::BranchLayer) = Base.keys(getfield(m, :layers))
-
 """
     PairwiseFusion(connection, layers...; name=nothing)
     PairwiseFusion(connection; name=nothing, layers...)
@@ -303,10 +287,6 @@ x1 → layer1 → y1 ↘
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
-
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -385,11 +365,9 @@ end
     return Expr(:block, calls...)
 end
 
-Base.keys(m::PairwiseFusion) = Base.keys(getfield(m, :layers))
-
 """
-    Chain(layers...; name=nothing, disable_optimizations::Bool = false)
-    Chain(; layers..., name=nothing, disable_optimizations::Bool = false)
+    Chain(layers...; name=nothing)
+    Chain(; layers..., name=nothing)
 
 Collects multiple layers / functions to be called in sequence on a given input.
 
@@ -399,11 +377,6 @@ Collects multiple layers / functions to be called in sequence on a given input.
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
-
-## Keyword Arguments
-
-  - `disable_optimizations`: Prevents any structural optimization
-  - `name`: Name of the layer (optional)
 
 ## Inputs
 
@@ -425,20 +398,6 @@ of the internal layers.
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 
-## Optimizations
-
-Performs a few optimizations to generate reasonable architectures. Can be disabled using
-keyword argument `disable_optimizations`.
-
-  - All sublayers are recursively optimized.
-  - If a function `f` is passed as a layer and it doesn't take 3 inputs, it is converted to
-    a [`WrappedFunction`](@ref)(`f`) which takes only one input.
-  - If the layer is a Chain, it is flattened.
-  - [`NoOpLayer`](@ref)s are removed.
-  - If there is only 1 layer (left after optimizations), then it is returned without the
-    `Chain` wrapper.
-  - If there are no layers (left after optimizations), a [`NoOpLayer`](@ref) is returned.
-
 ## Miscellaneous Properties
 
   - Allows indexing and field access syntax. We can access the `i`th layer by `m[i]` or
@@ -454,6 +413,14 @@ Chain(
     layer_3 = Dense(3 => 2),            # 8 parameters
 )         # Total: 23 parameters,
           #        plus 7 states.
+
+julia> Chain(Dense(2, 3, relu), BatchNorm(3), Dense(3, 2); name="MyFancyChain")
+MyFancyChain(
+    layer_1 = Dense(2 => 3, relu),      # 9 parameters
+    layer_2 = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
+    layer_3 = Dense(3 => 2),            # 8 parameters
+)         # Total: 23 parameters,
+          #        plus 7 states.
 ```
 """
 @concrete struct Chain <: AbstractExplicitContainerLayer{(:layers,)}
@@ -461,51 +428,31 @@ Chain(
     name
 end
 
-function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false)
-    xs = disable_optimizations ? xs : _flatten_model(xs)
-    length(xs) == 0 && return NoOpLayer()
-    length(xs) == 1 && return first(xs)
-    return Chain(__named_tuple_layers(xs...), name)
+function Chain(xs...; name::NAME_TYPE=nothing)
+    return Chain(__named_tuple_layers(__wrap_functions_in_chain_call(xs)...), name)
 end
-
 Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
+Chain(nt::NamedTuple; name::NAME_TYPE=nothing) = Chain(nt, name)
+Chain(; name::NAME_TYPE=nothing, kwargs...) = Chain((; kwargs...); name)
 
-function Chain(nt::NamedTuple; disable_optimizations::Bool=true, name::NAME_TYPE=nothing)
-    if !disable_optimizations
-        throw(ArgumentError("Chain(::NamedTuple) is not compatible with disable_optimizations=true"))
-    end
-    return Chain(nt, name)
-end
-
-function Chain(; disable_optimizations::Bool=true, name::NAME_TYPE=nothing, kwargs...)
-    return Chain((; kwargs...); disable_optimizations, name)
-end
-
-function _flatten_model(layers::Union{AbstractVector, Tuple})
+@inline function __wrap_functions_in_chain_call(layers::Union{AbstractVector, Tuple})
     new_layers = []
     for l in layers
-        f = _flatten_model(l)
+        f = __wrap_functions_in_chain_call(l)
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
-            if !hasmethod(f, (Any, Any, NamedTuple))
-                f === identity && continue
-                push!(new_layers, WrappedFunction{:direct_call}(f))
-            else
-                push!(new_layers, WrappedFunction{:layer}(f))
-            end
-        elseif f isa Chain
-            append!(new_layers, f.layers)
-        elseif f isa NoOpLayer
-            continue
-        else
+            push!(new_layers, WrappedFunction(f))
+        elseif f isa AbstractExplicitLayer
             push!(new_layers, f)
+        else
+            throw("Encountered a non-AbstractExplicitLayer in Chain.")
         end
     end
     return layers isa AbstractVector ? new_layers : Tuple(new_layers)
 end
 
-_flatten_model(x) = x
+@inline __wrap_functions_in_chain_call(x) = x
 
 (c::Chain)(x, ps, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
@@ -521,8 +468,6 @@ _flatten_model(x) = x
     push!(calls, :(return $(x_symbols[N + 1]), st))
     return Expr(:block, calls...)
 end
-
-Base.keys(c::Chain) = Base.keys(getfield(c, :layers))
 
 Base.getindex(c::Chain, i::Int) = c.layers[i]
 Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))
@@ -609,8 +554,6 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
     push!(calls, :(return res, st))
     return Expr(:block, calls...)
 end
-
-Base.keys(m::Maxout) = Base.keys(getfield(m, :layers))
 
 """
     RepeatedLayer(model; repeats::Val = Val(10), input_injection::Val = Val(false))

@@ -16,7 +16,7 @@ end
 
     # Skip our own packages
     @test check_no_implicit_imports(
-        Lux; skip=(Base, Core, LuxCore, LuxDeviceUtils, LuxLib, WeightInitializers)) ===
+        Lux; skip=(Base, Core, LuxCore, MLDataDevices, LuxLib, WeightInitializers)) ===
           nothing
     @test check_no_stale_explicit_imports(
         Lux; ignore=(:inputsize, :setup, :testmode, :trainmode, :update_state)) === nothing

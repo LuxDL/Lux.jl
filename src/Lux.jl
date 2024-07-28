@@ -20,16 +20,18 @@ using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using NNlib: NNlib
 using Optimisers: Optimisers
-using Preferences: load_preference, has_preference
+using Preferences: load_preference, @load_preference
 using Random: Random, AbstractRNG
-using Reexport: @reexport
+using Reexport: Reexport, @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
-@reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, display_name, replicate
+
+@reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
+@eval Expr(:export, filter(x -> x !== :dropout, Reexport.exported_names(NNlib))...)
 
 const CRC = ChainRulesCore
 
@@ -89,12 +91,7 @@ include("transform/simplechains.jl")
 include("distributed/backend.jl")
 include("distributed/public_api.jl")
 
-# Deprecations
-include("deprecated.jl")
-
 # Layers
-export cpu, gpu  # deprecated
-
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale, PeriodicEmbedding
 export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
@@ -123,7 +120,6 @@ export GenericLossFunction
 export f16, f32, f64
 export match_eltype
 
-export transform
 export FromFluxAdaptor, FluxLayer
 export ToSimpleChainsAdaptor, SimpleChainsLayer
 export DynamicExpressionsLayer

@@ -91,7 +91,7 @@ And that's pretty much it!
    [`gpu_device`](@ref) to continue working as expected, however, we recommend using
    [`gpu_device`](@ref) after calling [`DistributedUtils.initialize`](@ref) to avoid any
    mismatch between the device set via `DistributedUtils` and the device stores in
-   `LuxCUDADevice` or `LuxAMDGPUDevice`.
+   `CUDADevice` or `AMDGPUDevice`.
 
 ## Known Shortcomings
 

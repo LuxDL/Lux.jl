@@ -113,21 +113,3 @@ StatefulLuxLayer
 @init_fn
 @non_trainable
 ```
-
-## Truncated Stacktraces (Deprecated)
-
-```@docs
-Lux.disable_stacktrace_truncation!
-```
-
-## Device Management / Data Transfer (Deprecated)
-
-```@docs
-Lux.cpu
-Lux.gpu
-```
-
-!!! warning
-
-    For detailed API documentation on Data Transfer check out the
-    [LuxDeviceUtils.jl](@ref LuxDeviceUtils-API)

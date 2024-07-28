@@ -27,21 +27,6 @@ end
     @test eltype(ComponentArray(Any[:a, 1], (FlatAxis(),))) == Any
 end
 
-@testitem "Deprecations" tags=[:others] begin
-    using Functors
-
-    @test_deprecated Lux.disable_stacktrace_truncation!()
-    @test_deprecated Lux.cpu(rand(2))
-    @test_deprecated Lux.gpu(rand(2))
-
-    model = NoOpLayer()
-    @test_deprecated Lux.Experimental.StatefulLuxLayer(model, (;), (;))
-
-    @test_deprecated Lux.Experimental.DebugLayer(model; location="model")
-    dmodel = Lux.Experimental.DebugLayer(model; location="model")
-    @test dmodel.location == KeyPath(:model)
-end
-
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
     rng = StableRNG(12345)
 
@@ -138,8 +123,8 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
-            BatchNorm(1); disable_optimizations=true)
+        model = Chain(
+            Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1))
 
         for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
             ps, st = Lux.setup(rng, model) |> device |> f

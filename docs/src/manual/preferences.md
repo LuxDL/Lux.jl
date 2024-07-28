@@ -38,8 +38,8 @@ By default, both of these preferences are set to `false`.
 
 1. `gpu_backend` - Set this to bypass the automatic backend selection and use a specific
    gpu backend. Valid options are "cuda", "rocm", "metal", and "oneapi". This preference
-   needs to be set for `LuxDeviceUtils` package. It is recommended to use
-   [`LuxDeviceUtils.gpu_backend!`](@ref) to set this preference.
+   needs to be set for `MLDataDevices` package. It is recommended to use
+   [`MLDataDevices.gpu_backend!`](@ref) to set this preference.
 
 ## [Automatic Eltype Conversion](@id automatic-eltypes-preference)
 

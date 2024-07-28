@@ -105,7 +105,7 @@ function initialparameters(rng::AbstractRNG, c::Conv{N, use_bias}) where {N, use
     weight = _convfilter(
         rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
     !use_bias && return (; weight)
-    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
+    return (; weight, bias=c.init_bias(rng, c.out_chs))
 end
 
 function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
@@ -118,7 +118,7 @@ end
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias))), cdims),
+            c.activation, ps.weight, y, _getproperty(ps, Val(:bias)), cdims),
         st)
 end
 
@@ -500,7 +500,7 @@ function set to `Base.Fix2(pixel_shuffle, r)`
   - Output of size `(r x W, r x H, C, N)` for 4D-arrays, and `(r x W, r x H, ..., C, N)`
     for D-dimensional data, where `D = ndims(x) - 2`
 """
-PixelShuffle(r::Int) = WrappedFunction{:direct_call}(Base.Fix2(pixel_shuffle, r))
+PixelShuffle(r::Int) = WrappedFunction(Base.Fix2(pixel_shuffle, r))
 
 @doc doc"""
     CrossCor(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
@@ -596,7 +596,7 @@ end
 function initialparameters(rng::AbstractRNG, c::CrossCor{N, use_bias}) where {N, use_bias}
     weight = _convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight)
     !use_bias && return (; weight)
-    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
+    return (; weight, bias=c.init_bias(rng, c.out_chs))
 end
 
 function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
@@ -609,7 +609,7 @@ end
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias))), cdims),
+            c.activation, ps.weight, y, _getproperty(ps, Val(:bias)), cdims),
         st)
 end
 
@@ -722,7 +722,7 @@ function initialparameters(
     weight = _convfilter(
         rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
     !use_bias && return (; weight)
-    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
+    return (; weight, bias=c.init_bias(rng, c.out_chs))
 end
 
 function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
@@ -736,7 +736,7 @@ end
         y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         bias_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims),
-            _vec(_getproperty(ps, Val(:bias)))),
+            _getproperty(ps, Val(:bias))),
         st)
 end
 

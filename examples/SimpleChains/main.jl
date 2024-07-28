@@ -61,9 +61,9 @@ end
 # ## Define the Training Loop
 function train(model; rng=Xoshiro(0), kwargs...)
     train_dataloader, test_dataloader = loadmnist(128, 0.9)
+    ps, st = Lux.setup(rng, model)
 
-    train_state = Training.TrainState(
-        rng, model, Adam(3.0f-4); transform_variables=identity)
+    train_state = Training.TrainState(model, ps, st, Adam(3.0f-4))
 
     ### Warmup the model
     x_proto = randn(rng, Float32, 28, 28, 1, 1)
