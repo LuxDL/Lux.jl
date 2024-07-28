@@ -1,5 +1,5 @@
-# Eventually we want to integrate these tests into `@test_gradients`. However, currently
-# we don't have the best coverage for Enzyme, so we test it separately.
+# With LuxTestUtils 1.1 we have inbuilt Enzyme.jl support in `test_gradients`. We should be
+# able to remove this, but this file is still helpful to catch errors in a localized way.
 @testsetup module EnzymeTestSetup
 using LuxTestUtils, Enzyme, Zygote, Test
 using Lux
@@ -80,11 +80,15 @@ end
         #       CUDA and AMDGPU.
         ongpu && continue
 
-        @testset "$(sprint(print, model))" for (model, x) in MODELS_LIST
+        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
             ps, st = Lux.setup(rng, model) |> dev
             x = x |> aType
 
-            test_enzyme_gradients(model, x, ps, st)
+            if LuxTestUtils.ENZYME_TESTING_ENABLED
+                test_enzyme_gradients(model, x, ps, st)
+            else
+                @test_broken false
+            end
         end
     end
 end
@@ -100,13 +104,17 @@ end
         #       CUDA and AMDGPU.
         ongpu && continue
 
-        @testset "$(sprint(print, model))" for (model, x) in MODELS_LIST
+        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
             ps, st = Lux.setup(rng, model)
             ps = ComponentArray(ps)
             st = st |> dev
             x = x |> aType
 
-            test_enzyme_gradients(model, x, ps, st)
+            if LuxTestUtils.ENZYME_TESTING_ENABLED
+                test_enzyme_gradients(model, x, ps, st)
+            else
+                @test_broken false
+            end
         end
     end
 end

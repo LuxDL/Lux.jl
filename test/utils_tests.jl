@@ -1,5 +1,5 @@
 @testitem "replicate" setup=[SharedTestSetup] tags=[:others] begin
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         _rng = get_default_rng(mode)
         @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
         @test randn(Lux.replicate(_rng), 10, 2)==randn(Lux.replicate(_rng), 10, 2) broken=(mode ==
@@ -45,7 +45,12 @@ end
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    function bcast_multigate(x)
+        x1, x2, x3 = Lux.multigate(x, Val(3))
+        return sum(x1) + sum(x3 .+ x2 .^ 2)
+    end
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = randn(rng, 10, 1) |> aType
         x1, x2 = Lux.multigate(x, Val(2))
 
@@ -63,18 +68,14 @@ end
         @jet Lux.multigate(x, Val(2))
 
         x = rand(6, 5) |> aType
-        __f = x -> begin
-            x1, x2, x3 = Lux.multigate(x, Val(3))
-            return sum(x1) + sum(x3 .+ x2 .^ 2)
-        end
-        res, (dx,) = Zygote.withgradient(__f, x)
+        res, (dx,) = Zygote.withgradient(bcast_multigate, x)
 
         @jet Lux.multigate(x, Val(3))
 
         @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
         @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])
 
-        @eval @test_gradients $__f $x atol=1.0f-3 rtol=1.0f-3 gpu_testing=$ongpu
+        test_gradients(bcast_multigate, x; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
@@ -83,7 +84,7 @@ end
 
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
         p_flat, re = Optimisers.destructure(ps)
         ps_c = ComponentArray(ps)
@@ -108,7 +109,7 @@ end
 
         # Optimisers
         opt = Adam(0.001f0)
-        ps_c = ps_c |> device
+        ps_c = ps_c |> dev
         st_opt = Optimisers.setup(opt, ps_c)
 
         @test Optimisers.update(st_opt, ps_c, ps_c) isa Any
@@ -126,10 +127,10 @@ end
 @testitem "_init_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
         x = randn(rng, Float32, 3, 2, 2)
-        @test Lux._init_hidden_state(rng, rnn, view(device(x), :, 1, :)) ==
+        @test Lux._init_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
               aType(zeros(Float32, 5, 2))
     end
 end
@@ -137,12 +138,12 @@ end
 @testitem "FP Conversions" setup=[SharedTestSetup] tags=[:others] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
             BatchNorm(1); disable_optimizations=true)
 
         for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
-            ps, st = Lux.setup(rng, model) |> device |> f
+            ps, st = Lux.setup(rng, model) |> dev |> f
 
             @test eltype(ps.layer_1.weight) == ftype
             @test eltype(ps.layer_1.bias) == ftype

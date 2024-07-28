@@ -17,14 +17,14 @@
         return String(take!(io))
     end
 
-    @testset "$mode: @compact" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode: @compact" for (mode, aType, dev, ongpu) in MODES
         @testset "Linear Layer" begin
             r = @compact(w=[1, 5, 10]) do x
                 @return sum(w .* x)
             end
-            ps, st = Lux.setup(rng, r) |> device
+            ps, st = Lux.setup(rng, r) |> dev
 
-            @test ps.w == ([1, 5, 10] |> device)
+            @test ps.w == ([1, 5, 10] |> dev)
             @test st == NamedTuple()
 
             x = [1, 1, 1] |> aType
@@ -51,7 +51,7 @@
                 @return act.(y .+ b)
             end
 
-            ps, st = Lux.setup(rng, d) |> device
+            ps, st = Lux.setup(rng, d) |> dev
             @test size(ps.W) == (7, 5)
             @test size(ps.b) == (7,)
             @test st.act == relu
@@ -101,7 +101,7 @@
                 @return out
             end
 
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
 
             @test size(ps.w1.weight) == (128, 1)
             @test size(ps.w1.bias) == (128, 1)
@@ -117,15 +117,14 @@
 
             @test size(first(model(x, ps, st))) == (1, 32)
 
-            ps2 = ps |> cpu_device() |> ComponentArray |> device
+            ps2 = ps |> cpu_device() |> ComponentArray |> dev
 
             @test size(first(model(x, ps2, st))) == (1, 32)
 
             @jet model(x, ps, st)
 
             __f = (x, ps) -> sum(first(model(x, ps, st)))
-
-            @eval @test_gradients $__f $x $ps gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "String Representations" begin
@@ -269,13 +268,13 @@
             model = @compact(a=_a; b=_b, c) do x
                 @return a + b * x + c * x^2
             end
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
             @test first(model(2, ps, st)) == _a + _b * 2 + c * 2^2
         end
 
         @testset "Keyword Arguments with Anonymous Function" begin
             model = @compact(x->@return(x+a+b); a=1, b=2)
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
             @test first(model(3, ps, st)) == 1 + 2 + 3
             expected_string = """@compact(
                 a = 1,
@@ -308,7 +307,7 @@
                 g(w1, w2) = 2 * w1 * w2
                 @return (w1 + w2) * g(a, a)
             end
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
             @test first(model(2, ps, st)) == (3 + 5) * 2 * 2 * 2
         end
 
@@ -322,7 +321,7 @@
             end
 
             model = ScaledDense1()
-            ps, st = Lux.setup(Xoshiro(0), model) |> device
+            ps, st = Lux.setup(Xoshiro(0), model) |> dev
             x = ones(5, 10) |> aType
 
             @test st.incr == 1
@@ -346,7 +345,7 @@
             end
 
             model = ScaledDense2()
-            ps, st = Lux.setup(Xoshiro(0), model) |> device
+            ps, st = Lux.setup(Xoshiro(0), model) |> dev
             x = ones(5, 10) |> aType
 
             @test st.incr == 1
@@ -394,7 +393,7 @@
                 @return a * x
             end
 
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
             @test ps.a isa AbstractMatrix
             @test size(ps.a) == (3, 2)
 
@@ -408,7 +407,7 @@
                 @return a * x
             end
 
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
             @test ps.a isa AbstractMatrix && st.b isa Number && st.c isa AbstractVector
 
             x = ones(2, 10) |> aType
@@ -433,7 +432,7 @@
                 @return a * x
             end
 
-            ps, st = Lux.setup(rng, model) |> device
+            ps, st = Lux.setup(rng, model) |> dev
             @test st.a isa AbstractMatrix
             @test size(st.a) == (3, 2)
 

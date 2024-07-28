@@ -25,13 +25,13 @@
         return l, ps, st
     end
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         c = Parallel(
             +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
             dense_3=Dense(5 => 1))
 
         rng = StableRNG(12345)
-        ps, st = Lux.setup(rng, c) .|> device
+        ps, st = Lux.setup(rng, c) .|> dev
 
         c_, ps_, st_ = Lux.Experimental.layer_map(zero_dense_params_1, c, ps, st)
 
@@ -59,7 +59,7 @@
 
         l = SimpleCustom(Dense(3 => 2), Conv((3,), 3 => 2))
 
-        ps, st = Lux.setup(rng, l) .|> device
+        ps, st = Lux.setup(rng, l) .|> dev
 
         l_, ps_, st_ = Lux.Experimental.@layer_map zero_dense_params_3 l ps st
 

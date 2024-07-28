@@ -3,11 +3,11 @@
 
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 3), Dense(1 => 1)),
             BatchNorm(1); disable_optimizations=true)
 
-        ps, st = Lux.setup(rng, model) |> device
+        ps, st = Lux.setup(rng, model) |> dev
         x = randn(rng, Float32, 1, 5) |> aType
 
         @test_throws DimensionMismatch model(x, ps, st)
@@ -32,7 +32,7 @@
         model_fixed = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
             BatchNorm(1); disable_optimizations=true)
 
-        ps, st = Lux.setup(rng, model_fixed) |> device
+        ps, st = Lux.setup(rng, model_fixed) |> dev
 
         @test model_fixed(x, ps, st) isa Any
 
@@ -60,12 +60,12 @@ end
         return y, ∇offending_layer
     end
 
-    @testset "$mode: NaN Debugging" for (mode, aType, device, ongpu) in MODES
+    @testset "$mode: NaN Debugging" for (mode, aType, dev, ongpu) in MODES
         model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)),
             BatchNorm(1); disable_optimizations=true)
 
         x = randn(rng, Float32, 1, 5) |> aType
-        ps, st = Lux.setup(rng, model) |> device
+        ps, st = Lux.setup(rng, model) |> dev
 
         model_debug = Lux.Experimental.@debug_mode model nan_check=:both
 
@@ -88,7 +88,7 @@ end
         model = Chain(Dense(1 => 16, relu), Chain(Dense(16 => 1), offending_layer),
             BatchNorm(1); disable_optimizations=true)
 
-        ps, st = Lux.setup(rng, model) |> device
+        ps, st = Lux.setup(rng, model) |> dev
 
         @test !any(isnan, first(model(x, ps, st)) |> Array)
 

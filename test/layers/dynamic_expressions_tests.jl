@@ -19,7 +19,7 @@
         y, st_ = layer(x, ps, st)
         @test eltype(y) == Float32
         __f = (x, p) -> sum(abs2, first(layer(x, p, st)))
-        @test_gradients __f x ps atol=1.0f-3 rtol=1.0f-3
+        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme()])
 
         # Particular ForwardDiff dispatches
         ps_ca = ComponentArray(ps)
@@ -40,7 +40,7 @@
         y, st_ = layer(x, ps, st)
         @test eltype(y) == Float64
         __f = (x, p) -> sum(abs2, first(layer(x, p, st)))
-        @test_gradients __f x ps atol=1.0e-3 rtol=1.0e-3
+        test_gradients(__f, x, ps; atol=1.0e-3, rtol=1.0e-3, skip_backends=[AutoEnzyme()])
     end
 
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES

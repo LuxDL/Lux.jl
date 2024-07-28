@@ -80,8 +80,12 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
 end
 
 Tracker.@grad function Lux.__apply_simple_chain(layer, x, ps, ::LuxCPUDevice)
+    Base.depwarn("`Tracker.jl` often produces incorrect gradients for `SimpleChains.jl` \
+                  models. In future versions of Lux.jl you will need to load `Zygote.jl` \
+                  to use `Tracker.jl` for your model.",
+        :__apply_simple_chain)
     @warn "`Tracker.jl` often produces incorrect gradients for `SimpleChains.jl` models. \
-           As such please test your model with FiniteDifferences or Zygote before using \
+           As such please test your model with `FiniteDiff.jl` or `Zygote.jl` before using \
            `Tracker.jl` for your model." maxlog=1
     y, pb_f = CRC.rrule(layer, Tracker.data(x), Tracker.data(ps))
     __∇apply_simple_chain = let pb_f = pb_f

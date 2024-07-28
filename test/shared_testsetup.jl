@@ -5,9 +5,14 @@ include("setup_modes.jl")
 import Reexport: @reexport
 
 using Lux, Functors
+
+# FIXME: remove after https://github.com/FluxML/Functors.jl/pull/87 is merged
+(::Functors.FlattenWalk)(f::F, ::NamedTuple{()}) where {F} = []
+(::Functors.FlattenWalk)(f::F, ::@NamedTuple{}) where {F} = []
+
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
-                Zygote, Statistics
-using LuxTestUtils: @jet, @test_gradients, check_approx
+                Zygote, Statistics, Enzyme
+using LuxTestUtils: check_approx
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 
@@ -31,8 +36,7 @@ function maybe_rewrite_to_crosscor(mode, model)
     return fmap(maybe_rewrite_to_crosscor, model)
 end
 
-export @jet, @test_gradients, check_approx
 export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
-       StableRNG, maybe_rewrite_to_crosscor
+       StableRNG, maybe_rewrite_to_crosscor, check_approx
 
 end

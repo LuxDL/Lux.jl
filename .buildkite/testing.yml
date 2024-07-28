@@ -63,6 +63,7 @@ steps:
                 - ext
         env:
           BACKEND_GROUP: "AMDGPU"
+          RETESTITEMS_NWORKERS: 2
         agents:
           queue: "juliagpu"
           rocm: "*"
@@ -91,9 +92,7 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         env:
-          JULIA_AMDGPU_CORE_MUST_LOAD: "1"
-          JULIA_AMDGPU_HIP_MUST_LOAD: "1"
-          JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
+          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
         matrix:
