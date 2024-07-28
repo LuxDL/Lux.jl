@@ -108,7 +108,7 @@ julia> test_gradients(f, 1.0, x, nothing)
 ```
 """
 function test_gradients(f, args...; skip_backends=[], broken_backends=[], kwargs...)
-    on_gpu = get_device_type(args) isa AbstractGPUDevice
+    on_gpu = get_device_type(args) <: AbstractGPUDevice
     total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
 
     # Choose the backends to test
