@@ -1,7 +1,6 @@
 @testsetup module LayerNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, Enzyme, NNlib, Statistics
-using LuxTestUtils: @jet, @test_gradients, check_approx
-using DispatchDoctor: allow_unstable
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics
+using LuxTestUtils: check_approx
 
 function _setup_layernorm(gen_f, aType, T, x_size, affine_shape)
     x = gen_f(T, x_size) |> aType
@@ -14,7 +13,7 @@ function _setup_layernorm(gen_f, aType, T, x_size, affine_shape)
     end
 end
 
-function run_layernorm_testing(gen_f, aType, T, x_size, affine_shape, act, on_gpu, mode)
+function run_layernorm_testing(gen_f, aType, T, x_size, affine_shape, act, ongpu, mode)
     dims = Colon()
     epsilon = LuxLib.__default_epsilon(T)
     _f = (args...) -> layernorm(args..., act, dims, epsilon)
@@ -39,37 +38,16 @@ function run_layernorm_testing(gen_f, aType, T, x_size, affine_shape, act, on_gp
     rtol = fp16 ? 1.0f-2 : 1.0f-3
 
     if affine_shape !== nothing
-        fp16 = T == Float16
         __f = (args...) -> sum(_f(args...))
-        skip_fd = act === relu
-        allow_unstable() do
-            @eval @test_gradients $__f $x $scale $bias soft_fail=$fp16 atol=$atol rtol=$rtol gpu_testing=$on_gpu skip_finite_differences=$(skip_fd)
-        end
+        test_gradients(__f, x, scale, bias; atol, rtol)
+    else
+        __f = x -> sum(_f(x, scale, bias))
+        test_gradients(__f, x; atol, rtol)
     end
 
     if anonact !== act
         lfn = (x, sc, b, act, dim, ϵ) -> sum(layernorm(x, sc, b, act, dim, ϵ))
         @test @inferred(Zygote.gradient(lfn, x, scale, bias, act, dims, epsilon)) isa Any
-    end
-
-    if !on_gpu && !fp16
-        __f = (args...) -> sum(first(layernorm(args..., act, dims, epsilon)))
-        ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
-
-        ∂x_enz = Enzyme.make_zero(x)
-        (∂b, ∂sc) = if bias === nothing
-            Const(nothing), Const(nothing)
-        else
-            (Duplicated(bias, Enzyme.make_zero(bias)),
-                Duplicated(scale, Enzyme.make_zero(scale)))
-        end
-        Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz), ∂sc, ∂b)
-
-        @test ∂x≈∂x_enz rtol=rtol atol=atol
-        if bias !== nothing
-            @test ∂sc.dval≈∂scale rtol=rtol atol=atol
-            @test ∂b.dval≈∂bias rtol=rtol atol=atol
-        end
     end
 end
 
@@ -93,46 +71,46 @@ export ALL_TEST_CONFIGS, TEST_BLOCKS, run_layernorm_testing
 end
 
 @testitem "Layer Norm: Group 1" tags=[:ilayer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[1]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, on_gpu, mode)
+                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
 
 @testitem "Layer Norm: Group 2" tags=[:ilayer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[2]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, on_gpu, mode)
+                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
 
 @testitem "Layer Norm: Group 3" tags=[:ilayer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[3]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, on_gpu, mode)
+                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
 
 @testitem "Layer Norm: Group 4" tags=[:ilayer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[4]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, on_gpu, mode)
+                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
 
 @testitem "Layer Norm: Group 5" tags=[:ilayer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[5]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, on_gpu, mode)
+                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end

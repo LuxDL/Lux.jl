@@ -1,7 +1,5 @@
 @testsetup module ConvSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, Enzyme, NNlib
-using LuxTestUtils: @jet, @test_gradients
-using DispatchDoctor: allow_unstable
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
 _expand(N, i::Tuple) = i
 _expand(N, i::Integer) = ntuple(_ -> i, N)
@@ -17,7 +15,7 @@ end
 _calc_padding(pad, ::NTuple{N}, dilation, stride) where {N} = _expand(Val(2 * N), pad)
 
 function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
-        hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+        hasbias, groups, Tw, Tx, aType, mode, ongpu)
     weight = _convfilter(gen_f, Tw, kernel, 4 => 8; groups) |> aType
     x = gen_f(Tx, ntuple(Returns(4), length(kernel))..., 4, 2) |> aType
     bias = hasbias ? aType(gen_f(Tx, 8)) : nothing
@@ -53,29 +51,16 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
         end
     end
 
-    if !on_gpu
-        _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(__f, activation, weight, x, bias, cdims)
-
-        ∂w_enz = Enzyme.make_zero(weight)
-        ∂x_enz = Enzyme.make_zero(x)
-        ∂b = if hasbias
-            Duplicated(bias, Enzyme.make_zero(bias))
-        else
-            Const(nothing)
-        end
-        Enzyme.autodiff(Reverse, __f, Active, Const(activation), Duplicated(weight, ∂w_enz),
-            Duplicated(x, ∂x_enz), ∂b, Const(cdims))
-
-        @test ∂w_zyg≈∂w_enz rtol=rtol atol=atol
-        @test ∂x_zyg≈∂x_enz rtol=rtol atol=atol
-        hasbias && @test ∂b_zyg≈∂b.dval rtol=rtol atol=atol
+    __f_grad = let activation = activation, cdims = cdims
+        (w, x, b) -> __f(activation, w, x, b, cdims)
     end
 
+    skip_backends = []
     mp = Tx != Tw
-    skipt = (mp && on_gpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
-    allow_unstable() do
-        @eval @test_gradients $__f $activation $weight $x $bias $cdims gpu_testing=$on_gpu atol=$atol rtol=$rtol skip_reverse_diff=$(mp) skip_finite_differences=$(mp) skip_tracker=$(skipt)
-    end
+    mp && push!(skip_backends, AutoReverseDiff())
+    ((mp && ongpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))) &&
+        push!(skip_backends, AutoTracker())
+    test_gradients(__f_grad, weight, x, bias; atol, rtol, skip_backends)
 end
 
 anonact = x -> gelu(x)
@@ -99,46 +84,46 @@ export _expand, _convfilter, _calc_padding, anonact, TEST_BLOCKS, run_conv_testi
 end
 
 @testitem "Fused Conv: Group 1" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[1]
             run_conv_testing(__generate_fixed_array, activation, kernel, stride,
-                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+                padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Conv: Group 2" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[2]
             run_conv_testing(__generate_fixed_array, activation, kernel, stride,
-                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+                padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Conv: Group 3" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[3]
             run_conv_testing(__generate_fixed_array, activation, kernel, stride,
-                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+                padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Conv: Group 4" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[4]
             run_conv_testing(__generate_fixed_array, activation, kernel, stride,
-                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+                padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Conv: Group 5" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[5]
             run_conv_testing(__generate_fixed_array, activation, kernel, stride,
-                padding, hasbias, groups, Tw, Tx, aType, mode, on_gpu)
+                padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
     end
 end

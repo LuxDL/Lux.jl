@@ -1,7 +1,5 @@
 @testsetup module InstanceNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, Enzyme, NNlib
-using LuxTestUtils: @jet, @test_gradients
-using DispatchDoctor: allow_unstable
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
 __is_training(::Val{training}) where {training} = training
 
@@ -14,7 +12,7 @@ end
 
 anonact = x -> x^3
 
-function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, on_gpu)
+function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongpu)
     _f = (args...) -> first(instancenorm(args..., training, act, epsilon))
 
     epsilon = LuxLib.__default_epsilon(T)
@@ -49,25 +47,9 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, on_g
     @test y isa aType{T, length(sz)}
     @test size(y) == sz
 
-    __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
-    allow_unstable() do
-        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=true
-    end
-
-    __f = (x, scale, bias) -> sum(first(instancenorm(
-        x, scale, bias, training, act, epsilon)))
-    if !on_gpu && !fp16 && __is_training(training)
-        ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
-
-        ∂x_enz = Enzyme.make_zero(x)
-        ∂scale_enz = Enzyme.make_zero(scale)
-        ∂bias_enz = Enzyme.make_zero(bias)
-        Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz),
-            Duplicated(scale, ∂scale_enz), Duplicated(bias, ∂bias_enz))
-
-        @test ∂x≈∂x_enz rtol=rtol atol=atol
-        @test ∂scale≈∂scale_enz rtol=rtol atol=atol
-        @test ∂bias≈∂bias_enz rtol=rtol atol=atol
+    if __is_training(training) && !fp16
+        __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
+        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends=[AutoFiniteDiff()])
     end
 end
 
@@ -84,50 +66,50 @@ end
 
 @testitem "Instance Norm: Group 1" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[1]
             run_instancenorm_testing(
-                __generate_fixed_array, T, sz, training, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Instance Norm: Group 2" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[2]
             run_instancenorm_testing(
-                __generate_fixed_array, T, sz, training, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Instance Norm: Group 3" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[3]
             run_instancenorm_testing(
-                __generate_fixed_array, T, sz, training, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Instance Norm: Group 4" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[4]
             run_instancenorm_testing(
-                __generate_fixed_array, T, sz, training, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Instance Norm: Group 5" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[5]
             run_instancenorm_testing(
-                __generate_fixed_array, T, sz, training, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
     end
 end

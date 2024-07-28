@@ -1,7 +1,5 @@
 @testsetup module GroupNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, Enzyme, NNlib
-using LuxTestUtils: @jet, @test_gradients
-using DispatchDoctor: allow_unstable
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
 function _setup_groupnorm(gen_f, aType, T, sz)
     x = gen_f(T, sz) |> aType
@@ -26,7 +24,7 @@ anonact = x -> x^3
 
 __istraining(::Val{training}) where {training} = training
 
-function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, on_gpu)
+function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, ongpu)
     _f = (args...) -> groupnorm(args..., groups, act, epsilon)
     _f2 = (args...) -> groupnorm(args..., groups, act, epsilon)
 
@@ -62,24 +60,9 @@ function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, on_gpu)
     @test y isa aType{T, length(sz)}
     @test size(y) == sz
 
-    __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
-    allow_unstable() do
-        @eval @test_gradients $__f $x $scale $bias gpu_testing=$on_gpu atol=$atol rtol=$rtol soft_fail=$fp16 skip_finite_differences=true
-    end
-
-    __f = (x, scale, bias) -> sum(groupnorm(x, scale, bias, groups, act, epsilon))
-    if !on_gpu && !fp16
-        ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
-
-        ∂x_enz = Enzyme.make_zero(x)
-        ∂scale_enz = Enzyme.make_zero(scale)
-        ∂bias_enz = Enzyme.make_zero(bias)
-        Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz),
-            Duplicated(scale, ∂scale_enz), Duplicated(bias, ∂bias_enz))
-
-        @test ∂x≈∂x_enz rtol=rtol atol=atol
-        @test ∂scale≈∂scale_enz rtol=rtol atol=atol
-        @test ∂bias≈∂bias_enz rtol=rtol atol=atol
+    if !fp16
+        __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
+        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends=[AutoFiniteDiff()])
     end
 end
 
@@ -97,46 +80,46 @@ export _setup_groupnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_groupnorm_testing
 end
 
 @testitem "Group Norm: Group 1" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[1]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 2" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[2]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 3" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[3]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 4" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[4]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 5" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[5]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, on_gpu)
+                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
         end
     end
 end

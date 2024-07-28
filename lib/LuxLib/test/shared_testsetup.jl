@@ -1,9 +1,8 @@
 @testsetup module SharedTestSetup
 import Reexport: @reexport
 
-using LuxLib, MLDataDevices, DispatchDoctor
-@reexport using LuxTestUtils, StableRNGs, Test, Zygote, Enzyme
-import LuxTestUtils: @jet, @test_gradients, check_approx
+using LuxLib, MLDataDevices
+@reexport using LuxTestUtils, StableRNGs, Test, Enzyme, Zygote
 
 LuxTestUtils.jet_target_modules!(["LuxLib"])
 
@@ -41,6 +40,6 @@ function __generate_fixed_array(::Type{T}, sz) where {T}
 end
 __generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
 
-export MODES, StableRNG, check_approx, @jet, @test_gradients, __generate_fixed_array,
-       allow_unstable
+export MODES, StableRNG, __generate_fixed_array
+
 end

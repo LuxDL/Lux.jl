@@ -11,7 +11,7 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
         dys = ntuple(i -> $(luxlibop)(partial_fn.(x1, i), x2, cdims; kwargs...), P)
 
         partials = ForwardDiff.Partials.(tuple.(dys...))
-        return ForwardDiff.Dual{Tag, V, P}.(y, partials)
+        return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
     end
 
     @eval function NNlib.$(op)(x1::AbstractArray{<:Real, N},
@@ -24,7 +24,7 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
         dys = ntuple(i -> $(luxlibop)(x1, partial_fn.(x2, i), cdims; kwargs...), P)
 
         partials = ForwardDiff.Partials.(tuple.(dys...))
-        return ForwardDiff.Dual{Tag, V, P}.(y, partials)
+        return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
     end
 
     @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, Vₓ, P}, N},
@@ -45,6 +45,6 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
         end
 
         partials = ForwardDiff.Partials.(tuple.(dys₁...))
-        return ForwardDiff.Dual{Tag, promote_type(Vₓ, Vₚ), P}.(y, partials)
+        return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
     end
 end

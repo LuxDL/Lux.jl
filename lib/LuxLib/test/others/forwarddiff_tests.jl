@@ -1,5 +1,6 @@
 @testitem "Efficient JVPs" tags=[:others] setup=[SharedTestSetup] begin
     using ForwardDiff, Zygote, ComponentArrays
+    using LuxTestUtils: check_approx
 
     # Computes (∂f/∂x)u
     function jvp_forwarddiff(f::F, x, u) where {F}
@@ -23,9 +24,9 @@
     jvp_forwarddiff_concrete(f::F, x, u) where {F} = ForwardDiff.jacobian(f, x) * vec(u)
     jvp_zygote(f::F, x, u) where {F} = only(Zygote.jacobian(f, x)) * vec(u)
 
-    function test_jvp_computation(f::F, x, u, on_gpu, nested=false) where {F}
+    function test_jvp_computation(f::F, x, u, ongpu, nested=false) where {F}
         jvp₁ = jvp_forwarddiff(f, x, u)
-        if !(x isa ComponentArray && on_gpu)
+        if !(x isa ComponentArray && ongpu)
             # ComponentArray + ForwardDiff on GPU don't play nice
             jvp₂ = jvp_forwarddiff_concrete(f, x, u)
             @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
@@ -37,11 +38,11 @@
         end
     end
 
-    @testset "$(mode): Jacobian Vector Products" for (mode, aType, on_gpu) in MODES
+    @testset "$(mode): Jacobian Vector Products" for (mode, aType, ongpu) in MODES
         @testset "$(op)(; flipped = $flipped)" for flipped in (true, false),
             op in (depthwiseconv, conv)
 
-            op === depthwiseconv && on_gpu && continue
+            op === depthwiseconv && ongpu && continue
 
             input_dims = [(2, 4, 2, 1, 3), (4, 4, 1, 3), (4, 4, 3, 2), (4, 1, 3), (4, 3, 2)]
             weight_dims = if op === depthwiseconv
@@ -58,10 +59,10 @@
                 uw = randn(Float32, size(w)...) |> aType
                 u = randn(Float32, length(x) + length(w)) |> aType
 
-                test_jvp_computation(x -> op(x, w; flipped), x, ux, on_gpu)
-                test_jvp_computation(w -> op(x, w; flipped), w, uw, on_gpu)
+                test_jvp_computation(x -> op(x, w; flipped), x, ux, ongpu)
+                test_jvp_computation(w -> op(x, w; flipped), w, uw, ongpu)
                 test_jvp_computation(
-                    xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u, on_gpu)
+                    xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u, ongpu)
 
                 op === depthwiseconv && continue
 
@@ -69,22 +70,22 @@
                 # functions. Also implicitly tests nested AD
                 test_jvp_computation(
                     x -> only(Zygote.gradient(w -> sum(abs2, op(x, w; flipped)), w)),
-                    x, ux, on_gpu, true)
+                    x, ux, ongpu, true)
                 test_jvp_computation(
                     x -> only(Zygote.gradient(x -> sum(abs2, op(x, w; flipped)), x)),
-                    x, ux, on_gpu, true)
+                    x, ux, ongpu, true)
                 test_jvp_computation(
                     w -> only(Zygote.gradient(x -> sum(abs2, op(x, w; flipped)), x)),
-                    w, uw, on_gpu, true)
+                    w, uw, ongpu, true)
                 test_jvp_computation(
                     w -> only(Zygote.gradient(w -> sum(abs2, op(x, w; flipped)), w)),
-                    w, uw, on_gpu, true)
+                    w, uw, ongpu, true)
                 test_jvp_computation(
                     xw -> only(Zygote.gradient(
                         xw -> sum(abs2, op(xw.x, xw.w; flipped)), xw)),
                     ComponentArray(; x, w),
                     u,
-                    on_gpu,
+                    ongpu,
                     true)
             end
         end
@@ -93,17 +94,19 @@ end
 
 @testitem "ForwardDiff dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
     using ForwardDiff
+    using LuxTestUtils: check_approx
 
     rng = StableRNG(12345)
 
-    @testset "$mode: dropout" for (mode, aType, on_gpu) in MODES
+    @testset "$mode: dropout" for (mode, aType, ongpu) in MODES
         x = randn(rng, Float32, 10, 2) |> aType
         x_dual = ForwardDiff.Dual.(x)
 
         @test_nowarn dropout(rng, x_dual, 0.5f0, Val(true), 2.0f0, :)
 
-        x_dropout = dropout(rng, x, 0.5f0, Val(true); dims=:)[1]
-        x_dual_dropout = ForwardDiff.value.(dropout(rng, x_dual, 0.5f0, Val(true); dims=:)[1])
+        x_dropout = dropout(rng, x, 0.5f0, Val(true), 2.0f0, :)[1]
+        x_dual_dropout = ForwardDiff.value.(dropout(
+            rng, x_dual, 0.5f0, Val(true), 2.0f0, :)[1])
 
         @test check_approx(x_dropout, x_dual_dropout)
     end

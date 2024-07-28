@@ -1,10 +1,8 @@
 @testitem "Dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
-    using Statistics
-
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
-        for T in (Float16, Float32, Float64),
+    @testset "$mode" for (mode, aType, ongpu) in MODES
+        @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             x = randn(rng, T, x_shape) |> aType
@@ -19,29 +17,17 @@
             @test size(mask_) == x_shape
             @test rng != rng_
 
+            @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
+            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), Colon())) isa Any
+
             __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, Colon())))
             @test @inferred(Zygote.gradient(__f, x)) isa Any
 
             __f = let rng = rng, T = T
                 x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
             end
-
-            allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
-                                                                                                                    Float16)
-            end
-
-            if !on_gpu
-                ∂x_zyg = only(Zygote.gradient(__f, x))
-                ∂x_enz = zero.(x)
-                Enzyme.autodiff(
-                    Reverse, sum ∘ first ∘ dropout, Const(rng), Duplicated(x, ∂x_enz),
-                    Const(T(0.5)), Const(Val(true)), Const(T(2)), Const(Colon()))
-                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
-            end
-
-            @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
-            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), Colon())) isa Any
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), Colon())
 
@@ -60,8 +46,8 @@ end
 
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
-        for T in (Float16, Float32, Float64),
+    @testset "$mode" for (mode, aType, ongpu) in MODES
+        @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             x = randn(rng, T, x_shape) |> aType
@@ -89,22 +75,8 @@ end
                 x -> sum(first(dropout(
                     rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
             end
-
-            allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
-                                                                                                                    Float16)
-            end
-
-            # Upstream bug: https://github.com/EnzymeAD/Enzyme.jl/issues/1651
-            if !on_gpu && !Sys.iswindows()
-                ∂x_zyg = only(Zygote.gradient(__f, x))
-                ∂x_enz = zero.(x)
-                Enzyme.autodiff(
-                    Reverse, sum ∘ first ∘ dropout, Const(rng), Duplicated(x, ∂x_enz),
-                    Const(mask), Const(T(0.5)), Const(Val(true)),
-                    Const(Val(true)), Const(T(2)), Const(Colon()))
-                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
-            end
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), Colon())))
@@ -132,17 +104,8 @@ end
                 x -> sum(first(dropout(
                     rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             end
-
-            allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
-                                                                                                                    Float16)
-            end
-
-            if !on_gpu && !Sys.iswindows()
-                ∂x_zyg = only(Zygote.gradient(__f, x))
-                ∂x_enz = Enzyme.gradient(Reverse, __f, x)
-                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
-            end
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -171,22 +134,8 @@ end
                 x -> sum(first(dropout(
                     rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
             end
-
-            allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
-                                                                                                                    Float16)
-            end
-
-            # Upstream bug: https://github.com/EnzymeAD/Enzyme.jl/issues/1651
-            if !on_gpu && !Sys.iswindows()
-                ∂x_zyg = only(Zygote.gradient(__f, x))
-                ∂x_enz = zero.(x)
-                Enzyme.autodiff(
-                    Reverse, sum ∘ first ∘ dropout, Const(rng), Duplicated(x, ∂x_enz),
-                    Const(mask), Const(T(0.5)), Const(Val(true)),
-                    Const(Val(false)), Const(T(2)), Const(Colon()))
-                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
-            end
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), Colon())))
@@ -211,8 +160,8 @@ end
 
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
-        for T in (Float16, Float32, Float64),
+    @testset "$mode" for (mode, aType, ongpu) in MODES
+        @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             x = randn(rng, T, x_shape) |> aType
@@ -225,7 +174,7 @@ end
             @test size(y) == x_shape
             @test rng != rng_
 
-            @test_broken isapprox(std(y), std(x); atol=1.0f-2, rtol=1.0f-2)
+            @test_broken std(y)≈std(x) atol=1.0f-2 rtol=1.0f-2
 
             __f = x -> sum(first(alpha_dropout(StableRNG(0), x, 0.5, Val(true))))
             @test @inferred(Zygote.gradient(__f, x)) isa Any
@@ -233,19 +182,8 @@ end
             __f = let rng = rng
                 x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             end
-
-            allow_unstable() do
-                @eval @test_gradients $__f $x atol=1.0f-2 rtol=1.0f-2 gpu_testing=$on_gpu skip_finite_differences=$(T ==
-                                                                                                                    Float16)
-            end
-
-            if !on_gpu
-                ∂x_zyg = only(Zygote.gradient(__f, x))
-                ∂x_enz = zero.(x)
-                Enzyme.autodiff(Reverse, sum ∘ first ∘ alpha_dropout, Const(rng),
-                    Duplicated(x, ∂x_enz), Const(T(0.5)), Const(Val(true)))
-                @test ∂x_zyg≈∂x_enz atol=1.0f-3 rtol=1.0f-3
-            end
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=(T == Float16 ? [AutoFiniteDiff()] : []))
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             @test @inferred(alpha_dropout(rng, x, T(0.5), Val(false))) isa Any

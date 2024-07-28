@@ -1,7 +1,5 @@
 @testsetup module BatchNormSetup
 using LuxLib, LuxTestUtils, Random, Test, Zygote, Enzyme, NNlib
-using LuxTestUtils: @jet, @test_gradients
-using DispatchDoctor: allow_unstable
 
 function _setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = gen_f(T, sz) |> aType
@@ -35,7 +33,7 @@ anonact = x -> x^3
 __istraining(::Val{training}) where {training} = training
 
 function run_batchnorm_testing(
-        gen_f, T, sz, training, affine, track_stats, act, aType, mode, on_gpu)
+        gen_f, T, sz, training, affine, track_stats, act, aType, mode, ongpu)
     epsilon = eps(T)^(5 // 7)
     x, scale, bias, rm, rv = _setup_batchnorm(gen_f, aType, T, sz; track_stats, affine)
 
@@ -80,13 +78,13 @@ function run_batchnorm_testing(
         @test size(nt.running_var) == (size(x, length(sz) - 1),)
     end
 
-    if __istraining(training) && affine
+    if __istraining(training) && affine && !fp16
+        skip_backends = []
+        act === relu && push!(skip_backends, AutoFiniteDiff())
+
         __f = (args...) -> sum(first(batchnorm(
-            x, args..., rm, rv, training, act, T(0.9), epsilon)))
-        skip_fd = act === relu
-        allow_unstable() do
-            @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=$fp16 atol=$atol rtol=$rtol skip_finite_differences=$(skip_fd)
-        end
+            args..., rm, rv, training, act, T(0.9), epsilon)))
+        test_gradients(__f, x, scale, bias; atol, rtol, skip_backends)
     end
 
     if anonact !== act
@@ -94,22 +92,6 @@ function run_batchnorm_testing(
             x, sc, b, rm, rv, tr, act, ϵ)))
         @test @inferred(Zygote.gradient(
             lfn, x, scale, bias, rm, rv, training, act, epsilon)) isa Any
-    end
-
-    if !on_gpu && !fp16 && __istraining(training) && affine
-        __f = (args...) -> sum(first(batchnorm(
-            args..., rm, rv, training, act, T(0.9), epsilon)))
-        ∂x, ∂scale, ∂bias = Zygote.gradient(__f, x, scale, bias)
-
-        ∂x_enz = Enzyme.make_zero(x)
-        ∂scale_enz = Enzyme.make_zero(scale)
-        ∂bias_enz = Enzyme.make_zero(bias)
-        Enzyme.autodiff(Reverse, __f, Active, Duplicated(x, ∂x_enz),
-            Duplicated(scale, ∂scale_enz), Duplicated(bias, ∂bias_enz))
-
-        @test ∂x≈∂x_enz rtol=rtol atol=atol
-        @test ∂scale≈∂scale_enz rtol=rtol atol=atol
-        @test ∂bias≈∂bias_enz rtol=rtol atol=atol
     end
 end
 
@@ -126,52 +108,52 @@ export _setup_batchnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_batchnorm_testing
 end
 
 @testitem "Batch Norm: Group 1" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[1]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, on_gpu)
+                affine, track_stats, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Batch Norm: Group 2" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[2]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, on_gpu)
+                affine, track_stats, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Batch Norm: Group 3" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[3]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, on_gpu)
+                affine, track_stats, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Batch Norm: Group 4" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[4]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, on_gpu)
+                affine, track_stats, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Batch Norm: Group 5" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[5]
             run_batchnorm_testing(__generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, on_gpu)
+                affine, track_stats, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Batch Norm: Mixed Precision" tags=[:batch_norm] setup=[SharedTestSetup] begin
-    @testset "$mode" for (mode, aType, on_gpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu) in MODES
         x = rand(Float64, 4, 4, 6, 2) |> aType
         scale = rand(Float32, 6) |> aType
         bias = rand(Float32, 6) |> aType
@@ -185,9 +167,7 @@ end
         @test nt.running_var isa aType && length(nt.running_var) == 6
 
         __f = (args...) -> sum(first(batchnorm(
-            x, args..., running_mean, running_var, Val(true), identity, 0.9f0, 1.0f-5)))
-        allow_unstable() do
-            @eval @test_gradients $__f $scale $bias gpu_testing=$on_gpu soft_fail=true atol=1.0f-2 rtol=1.0f-2
-        end
+            args..., running_mean, running_var, Val(true), identity, 0.9f0, 1.0f-5)))
+        test_gradients(__f, x, scale, bias; atol=1.0f-3, rtol=1.0f-3)
     end
 end
