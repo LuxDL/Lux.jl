@@ -13,7 +13,7 @@ using Random: AbstractRNG
 """
     TrainState
 
-Training State containing:
+## Training State containing:
 
   - `model`: `Lux` model.
   - `parameters`: Trainable Variables of the `model`.
@@ -22,7 +22,7 @@ Training State containing:
   - `optimizer_state`: Optimizer State.
   - `step`: Number of updates of the parameters made.
 
-Internal fields:
+## Internal fields:
 
   - `cache`: Cached values. Implementations are free to use this for whatever they want.
   - `objective_function`: Objective function might be cached.
@@ -31,6 +31,12 @@ Internal fields:
 
     Constructing this object directly shouldn't be considered a stable API. Use the
     version with the Optimisers API.
+
+## Special Features
+
+To run inference using the current parameters and states simply call the TrainState with
+the input data as `tstate(data)`. This will automatically set `Lux.testmode`. However, note
+that `tstate.states` will not be updated with the new state.
 """
 @concrete struct TrainState
     cache
@@ -85,6 +91,8 @@ function TrainState(
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
+
+(ts::TrainState)(data) = ts.model(data, ts.parameters, Lux.testmode(ts.states))
 
 @concrete struct TrainingBackendCache{backend, first_try}
     dparameters
@@ -252,12 +260,16 @@ Perform a single training step. Computes the gradients using [`compute_gradients
 updates the parameters using [`apply_gradients!`](@ref). All backends supported via
 [`compute_gradients`](@ref) are supported here.
 
+## Additional Backends
+
+  - [`ReactantBackend`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
+
 ## Return
 
 Returned values are the same as [`compute_gradients`](@ref). Note that despite the `!`,
 only the parameters in `ts` are updated inplace. Users should be using the returned `ts`
 object for further training steps, else there is no caching and performance will be
-suboptimal (and absolutely terrible for backends like `AutoReactant`).
+suboptimal (and absolutely terrible for backends like `ReactantBackend`).
 """
 function single_train_step! end
 
@@ -267,6 +279,10 @@ function single_train_step! end
 Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
 updates the parameters using [`apply_gradients`](@ref). All backends supported via
 [`compute_gradients`](@ref) are supported here.
+
+## Additional Backends
+
+  - [`ReactantBackend`](@ref): Compiles the training loop to MLIR/XLA via `Reactant.jl`.
 
 In most cases you should use [`single_train_step!`](@ref) instead of this function.
 

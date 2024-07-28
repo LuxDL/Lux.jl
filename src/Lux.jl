@@ -19,7 +19,7 @@ using LossFunctions: LossFunctions
 using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using NNlib: NNlib
-using Optimisers: Optimisers
+using Optimisers: Optimisers, Leaf, Descent
 using Preferences: load_preference, has_preference
 using Random: Random, AbstractRNG
 using Reexport: @reexport
@@ -47,8 +47,16 @@ include("utils.jl")
 # Training Helpers
 include("helpers/training.jl")
 
+# Compilers
+include("compilers.jl")
+
 # Experimental
 include("contrib/contrib.jl")
+
+# Transform to and from other frameworks
+include("transform/types.jl")
+include("transform/flux.jl")
+include("transform/simplechains.jl")
 
 # Layer Implementations
 include("layers/basic.jl")
@@ -70,6 +78,7 @@ include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
 include("helpers/match_eltype.jl")
+include("helpers/simple_optimizers.jl")
 
 # AutoDiff
 include("chainrules.jl")
@@ -79,11 +88,6 @@ include("enzymerules.jl")
 include("forwarddiff/jvp.jl")
 include("forwarddiff/nested_ad.jl")
 include("forwarddiff/batched_ad.jl")
-
-# Transform to and from other frameworks
-include("transform/types.jl")
-include("transform/flux.jl")
-include("transform/simplechains.jl")
 
 # Distributed Training
 include("distributed/backend.jl")
@@ -114,6 +118,8 @@ export Training
 export jacobian_vector_product, vector_jacobian_product
 export batched_jacobian
 export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
+
+export ReactantBackend
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
        HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
