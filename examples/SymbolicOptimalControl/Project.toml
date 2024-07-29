@@ -21,7 +21,7 @@ SymbolicUtils = "d1185830-fcd6-423d-90d6-eec64667417b"
 [compat]
 CairoMakie = "0.12"
 ComponentArrays = "0.15.11"
-DynamicExpressions = "0.16.0, 0.17, 0.18"
+DynamicExpressions = "0.16.0, 0.17, 0.18, 0.19"
 Latexify = "0.16.2"
 Literate = "2"
 Lux = "0.5"
