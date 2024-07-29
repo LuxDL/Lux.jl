@@ -11,7 +11,7 @@ end
 
 # Enzyme.jl
 function gradient(f::F, ::AutoEnzyme{Nothing}, args...) where {F}
-    return gradient(f, AutoEnzyme(Enzyme.Reverse), args...)
+    return gradient(f, AutoEnzyme(; mode=Enzyme.Reverse), args...)
 end
 
 function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
@@ -22,7 +22,7 @@ function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
         needs_gradient(x) && return Enzyme.Duplicated(x, Enzyme.make_zero(x))
         return Enzyme.Const(x)
     end
-    Enzyme.autodiff(ad.mode, f, Enzyme.Active, args_activity...)
+    Enzyme.autodiff(ad.mode, Enzyme.Const(f), Enzyme.Active, args_activity...)
     return Tuple(map(enumerate(args)) do (i, x)
         needs_gradient(x) && return args_activity[i].dval
         return CRC.NoTangent()
