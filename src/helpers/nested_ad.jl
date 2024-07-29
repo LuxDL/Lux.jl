@@ -11,6 +11,12 @@ const AD_CONVERTIBLE_FUNCTIONS = [
 ]
 #! format: on
 
+function _zygote_rule_config()
+    _is_extension_loaded(Val(:Zygote)) && return __zygote_rule_config()
+    throw(ArgumentError("`Zygote.jl` is not loaded."))
+end
+function __zygote_rule_config end
+
 ## Written like this to avoid dynamic dispatch from Zygote
 # Input Gradient / Jacobian
 @inline __rewrite_ad_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F} = (
@@ -47,6 +53,12 @@ for fname in (:__internal_ad_gradient_call, :__internal_ad_gradient_call_no_cust
     end
 end
 
+function CRC.rrule(
+        ::typeof(__internal_ad_gradient_call), grad_fn::G, f::F, x, y) where {G, F}
+    return CRC.rrule_via_ad(
+        _zygote_rule_config(), __internal_ad_gradient_call, grad_fn, f, x, y)
+end
+
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_gradient_call),
         grad_fn::G, f::F, x, y) where {G, F}
     @static if !AUTOMATIC_NESTED_AD_SWITCHING
@@ -72,6 +84,12 @@ for fname in (:__internal_ad_pullback_call, :__internal_ad_pullback_call_no_cust
     @eval @inline function $fname(pullback_fn::P, f::F, x, y, u) where {P, F}
         return only(last(pullback_fn(Base.Fix2(f, y), x))(u))
     end
+end
+
+function CRC.rrule(
+        ::typeof(__internal_ad_pullback_call), pullback_fn::P, f::F, x, y, u) where {P, F}
+    return CRC.rrule_via_ad(
+        _zygote_rule_config(), __internal_ad_pullback_call, pullback_fn, f, x, y, u)
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_pullback_call),
@@ -106,6 +124,12 @@ for fname in (:__internal_ad_jacobian_call, :__internal_ad_jacobian_call_no_cust
             jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
         return jac_fn(Base.Fix2(f, y), x)
     end
+end
+
+function CRC.rrule(::typeof(__internal_ad_jacobian_call), jac_fn::J,
+        grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
+    return CRC.rrule_via_ad(
+        _zygote_rule_config(), __internal_ad_jacobian_call, jac_fn, grad_fn, f, x, y)
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jacobian_call),

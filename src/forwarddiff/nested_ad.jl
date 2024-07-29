@@ -39,6 +39,12 @@ for type in (:Gradient, :Jacobian)
     ret_expr = type == :Gradient ? :(only(res)) : :(res)
     @eval begin
         function CRC.rrule(
+                func::typeof($(internal_fname)), f::F, jc_cfg::ForwardDiff.$(cfgname),
+                chk::Val, x::AbstractArray, y) where {F}
+            return CRC.rrule_via_ad(_zygote_rule_config(), func, f, jc_cfg, chk, x, y)
+        end
+
+        function CRC.rrule(
                 cfg::RuleConfig{>:HasReverseMode}, ::typeof($(internal_fname)), f::F,
                 jc_cfg::ForwardDiff.$(cfgname), chk::Val, x::AbstractArray, y) where {F}
             grad_fn = let cfg = cfg

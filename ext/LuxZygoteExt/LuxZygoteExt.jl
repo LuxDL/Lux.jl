@@ -13,6 +13,8 @@ const CRC = ChainRulesCore
 
 @inline Lux._is_extension_loaded(::Val{:Zygote}) = true
 
+@inline Lux.__zygote_rule_config() = Zygote.ZygoteRuleConfig()
+
 include("training.jl")
 include("batched_ad.jl")
 include("nested_ad.jl")

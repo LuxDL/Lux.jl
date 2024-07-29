@@ -2,6 +2,7 @@ module LuxReverseDiffExt
 
 using ADTypes: ADTypes, AutoReverseDiff
 using ArrayInterface: ArrayInterface
+using ForwardDiff: ForwardDiff
 using FunctionWrappers: FunctionWrapper
 using Lux: Lux, LuxCPUDevice
 using Lux.Training: TrainingBackendCache, TrainState
