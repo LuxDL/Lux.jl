@@ -1,3 +1,4 @@
+# TODO: move to LuxCore
 # AoS to SoA conversion
 function LuxCore.apply(
         m::AbstractExplicitLayer, x::AbstractArray{<:ReverseDiff.TrackedReal}, ps, st)
