@@ -11,7 +11,7 @@ using Lux, Functors
 (::Functors.FlattenWalk)(f::F, ::@NamedTuple{}) where {F} = []
 
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
-                Zygote, Statistics, Enzyme
+                Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
 using LuxTestUtils: check_approx
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])

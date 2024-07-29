@@ -24,7 +24,8 @@
     ∂y1 = ForwardDiff.derivative(Base.Fix1(xlogy, 2.0), 3.0)
     ∂x2, ∂y2 = Zygote.gradient(xlogy, 2.0, 3.0)
     if LuxTestUtils.ENZYME_TESTING_ENABLED
-        ((∂x3, ∂y3),) = Enzyme.autodiff(Enzyme.Reverse, xlogy, Active, Active(2.0), Active(3.0))
+        ((∂x3, ∂y3),) = Enzyme.autodiff(
+            Enzyme.Reverse, xlogy, Active, Active(2.0), Active(3.0))
         @test ∂x1 ≈ ∂x2 ≈ ∂x3
         @test ∂y1 ≈ ∂y2 ≈ ∂y3
     else

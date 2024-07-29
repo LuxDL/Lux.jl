@@ -43,6 +43,7 @@ end
 
         for ad in (AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
+            !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             grads, _, _, _ = Lux.Experimental.compute_gradients(
                 ad, _loss_function, x, tstate)
@@ -75,6 +76,7 @@ end
         @testset "$(ad)" for ad in (
             AutoZygote(), AutoTracker(), AutoReverseDiff(), AutoEnzyme())
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
+            !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
             @test_throws ArgumentError Lux.Training.__maybe_implemented_compute_gradients(ad)
 

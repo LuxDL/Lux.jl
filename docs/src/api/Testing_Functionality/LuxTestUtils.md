@@ -19,6 +19,7 @@ Pages = ["LuxTestUtils.md"]
 
 ```@docs
 @jet
+LuxTestUtils.jet_target_modules!
 ```
 
 ## Gradient Correctness

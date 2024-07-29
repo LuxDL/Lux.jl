@@ -218,8 +218,8 @@ regular `Array` or not. Default is `false`.
 !!! danger
 
     `Tracker.jl` sometimes produces incorrect gradients for `SimpleChains.jl` models. As
-    such please test your model with FiniteDifferences or Zygote before using `Tracker.jl`
-    for your model.
+    such please test your model with `FiniteDiff.jl` or `Zygote.jl` before using
+    `Tracker.jl` for your model.
 """
 struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer}} <:
        AbstractExplicitLayer

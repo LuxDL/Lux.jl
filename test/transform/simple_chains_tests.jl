@@ -103,7 +103,7 @@
             # See https://github.com/LuxDL/Lux.jl/issues/644
             test_gradients(
                 __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()],
-                soft_fail=[AutoForwardDiff(), AutoFiniteDiff()])
+                soft_fail=[AutoForwardDiff(), AutoFiniteDiff(), AutoTracker()])
         end
     end
 
