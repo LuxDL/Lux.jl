@@ -29,6 +29,10 @@ end
     x_ca = ComponentArray(x)
 
     test_gradients(f, 1.0, x_ca, nothing)
+
+    x_2 = (; t=x.t', x=(z=x.x.z',))
+
+    test_gradients(f, 1.0, x_2, nothing)
 end
 
 @testitem "test_gradients (CUDA.jl)" skip=:(using CUDA; !CUDA.functional()) begin

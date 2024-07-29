@@ -48,15 +48,13 @@ function gradient(f::F, ::AutoTracker, args...) where {F}
     Tracker.back!(f(tracked_args...))
 
     return Tuple(map(tracked_args) do x
-        if needs_gradient(x)
-            return Functors.fmap(__tracker_grad, x; exclude=_tracker_leaf)
-        end
+        needs_gradient(x) && return Functors.fmap(__tracker_grad, x; exclude=_tracker_leaf)
         return CRC.NoTangent()
     end)
 end
 
 _tracker_leaf(x) = Functors.isleaf(x)
-_tracker_leaf(::ComponentArray) = true
+_tracker_leaf(::AbstractArray) = true
 
 __tracker_grad(x) = Tracker.grad(x)
 __tracker_grad(x::ComponentArray) = ComponentArray(__tracker_grad(getdata(x)), getaxes(x))
