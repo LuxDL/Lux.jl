@@ -1,8 +1,4 @@
 @testitem "Nested AD: Input Gradient/Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
-
-    Base.isfinite(::Nothing) = true
-
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -56,30 +52,23 @@
 
                 _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
 
-                @test ∂x !== nothing && !iszero(∂x) && all(isfinite, ∂x)
+                @test ∂x !== nothing &&
+                      !iszero(∂x) &&
+                      all(x -> x === nothing || isfinite(x), ∂x)
                 @test ∂ps !== nothing &&
                       !iszero(ComponentArray(∂ps |> cpu_device())) &&
-                      all(isfinite, ComponentArray(∂ps |> cpu_device()))
+                      all(x -> x === nothing || isfinite(x),
+                          ComponentArray(∂ps |> cpu_device()))
 
-                ongpu && continue
-
-                ∂x_fd = FiniteDifferences.grad(
-                    central_fdm(5, 1), x -> loss_fn(model, x, ps, st), X)[1]
-                ∂ps_fd = FiniteDifferences.grad(
-                    central_fdm(5, 1), p -> loss_fn(model, X, p, st), ps)[1]
-
-                @test ∂x≈∂x_fd rtol=1e-3 atol=1e-3
-                @test check_approx(∂ps, ∂ps_fd; rtol=1e-3, atol=1e-3)
+                test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
+                    atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
+                    skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
             end
         end
     end
 end
 
 @testitem "Nested AD: Parameter Gradient/Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
-
-    Base.isfinite(::Nothing) = true
-
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -137,30 +126,22 @@ end
 
                 _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
 
-                @test ∂x !== nothing && !iszero(∂x) && all(isfinite, ∂x)
+                @test ∂x !== nothing &&
+                      !iszero(∂x) &&
+                      all(x -> x === nothing || isfinite(x), ∂x)
                 @test ∂ps !== nothing &&
                       !iszero(∂ps |> cpu_device()) &&
-                      all(isfinite, ∂ps |> cpu_device())
+                      all(x -> x === nothing || isfinite(x), ∂ps |> cpu_device())
 
-                ongpu && continue
-
-                ∂x_fd = FiniteDifferences.grad(
-                    central_fdm(5, 1), x -> loss_fn(model, x, ps, st), X)[1]
-                ∂ps_fd = FiniteDifferences.grad(
-                    central_fdm(5, 1), p -> loss_fn(model, X, p, st), ps)[1]
-
-                @test ∂x≈∂x_fd rtol=1e-3 atol=1e-3
-                @test check_approx(∂ps, ∂ps_fd; rtol=1e-3, atol=1e-3)
+                test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
+                    atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
+                    skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
             end
         end
     end
 end
 
 @testitem "Nested AD: Structured Matrix LuxDL/Lux.jl#602" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote
-
-    Base.isfinite(::Nothing) = true
-
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -172,32 +153,17 @@ end
             ps, st = Lux.setup(rng, model) |> dev
             x = randn(rng, Float32, 5, 5) |> aType
 
-            ∂x, ∂ps, _ = Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ model, x, ps, st)
+            __f = let model = model, st = st
+                (x, ps) -> sum(abs2, first(model(x, ps, st)))
+            end
 
-            ps_cpu = ps |> cpu_device()
-            st_cpu = st |> cpu_device()
-            x_cpu = x |> cpu_device()
-
-            # Use FiniteDiff on CPU
-            ∂x_fd = FiniteDifferences.grad(
-                central_fdm(5, 1), x -> sum(abs2, first(model(x, ps_cpu, st_cpu))), x_cpu)[1]
-            ∂ps_fd = FiniteDifferences.grad(
-                central_fdm(5, 1), p -> sum(abs2, first(model(x_cpu, p, st_cpu))), ps_cpu)[1]
-
-            ∂x_cpu = ∂x |> cpu_device()
-            ∂ps_cpu = ∂ps |> cpu_device()
-
-            @test ∂x_cpu≈∂x_fd rtol=1e-3 atol=1e-3
-            @test check_approx(∂ps_cpu, ∂ps_fd; rtol=1e-3, atol=1e-3)
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
         end
     end
 end
 
 @testitem "Nested AD: VJP & JVP" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ComponentArrays, FiniteDifferences, ForwardDiff, LinearAlgebra, Zygote, ADTypes
-
-    Base.isfinite(::Nothing) = true
-
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -264,7 +230,7 @@ end
 end
 
 @testitem "VJP/JVP Interface Test" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ForwardDiff, Functors, Zygote, ADTypes
+    using Functors, ADTypes
 
     rng = StableRNG(1234)
 
@@ -303,8 +269,6 @@ end
 end
 
 @testitem "Nested AD: Issue #743 (eval + gradient)" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using Zygote, Optimisers, Random, ForwardDiff, ComponentArrays
-
     function loss_function(model, ps, st, x)
         smodel = StatefulLuxLayer{true}(model, ps, st)
         y_pred = smodel(x)
@@ -318,11 +282,10 @@ end
     ps, st = Lux.setup(rng, model)
     x = randn(rng, Float32, 1, 12)
 
-    _, ∂ps, _, ∂x = Zygote.gradient(loss_function, model, ps, st, x)
+    __f = let model = model, st = st
+        (x, ps) -> loss_function(model, ps, st, x)
+    end
 
-    ∂ps_fd = ForwardDiff.gradient(ps -> loss_function(model, ps, st, x), ComponentArray(ps))
-    ∂x_fd = ForwardDiff.gradient(x -> loss_function(model, ps, st, x), x)
-
-    @test ComponentArray(∂ps)≈∂ps_fd rtol=1e-3 atol=1e-3
-    @test ∂x≈∂x_fd rtol=1e-3 atol=1e-3
+    test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+        skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
 end
