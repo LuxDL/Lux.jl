@@ -2,12 +2,16 @@
 # VectorizedStatistics.jl, we can will specialize the CPU dispatches to use them.
 fast_mean(x::AbstractArray; dims=:) = fast_mean(internal_operation_mode(x), x; dims)
 fast_mean(opmode, x::AbstractArray; dims=:) = mean(x; dims)
+fast_mean(::LoopedArrayOp, x::AbstractArray; dims=:) = vmean(x; dims, multithreaded=true)
 
 function fast_var(x::AbstractArray; mean=nothing, dims=:, corrected=true)
     return fast_var(internal_operation_mode(x), x; mean, dims, corrected)
 end
 function fast_var(opmode, x::AbstractArray; mean=nothing, dims=:, corrected=true)
     return var(x; mean, dims, corrected)
+end
+function fast_var(::LoopedArrayOp, x::AbstractArray; mean=nothing, dims=:, corrected=true)
+    return vvar(x; mean, dims, corrected, multithreaded=true)
 end
 
 function fast_mean_var(x::AbstractArray; dims=:, corrected=true)
