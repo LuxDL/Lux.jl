@@ -11,20 +11,81 @@ function _alpha_dropout_kernel(noise::AbstractArray, p, x::AbstractArray, α, A,
 end
 
 @stable default_mode="disable" function _alpha_dropout_kernel(
-        ::LoopedArrayOp, noise::AbstractArray, p::Real,
-        x::AbstractArray, α::Real, A::Real, B::Real)
-    res = similar(x, promote_type(typeof(p), typeof(α)))
-    @tturbo for I in indices((noise, x, res))
-        res[I] = ifelse(noise[I] > p, x[I], α) * A + B
-    end
-    return res
-end
-
-@stable default_mode="disable" function _alpha_dropout_kernel(
         ::AbstractBroadcastOpMode, noise::AbstractArray,
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
     A′, B′, α = eltype(x)(A), eltype(x)(B), eltype(x)(α)
     return @. muladd(ifelse(noise > p, x, α), A′, B′)
+end
+
+@stable default_mode="disable" function _alpha_dropout_kernel(
+        opmode::LoopedArrayOp, noise::AbstractArray, p::Real,
+        x::AbstractArray, α::Real, A::Real, B::Real)
+    res = similar(x, promote_type(typeof(p), typeof(α)))
+    _alpha_dropout_kernel!(res, opmode, noise, p, x, α, A, B)
+    return res
+end
+
+function _alpha_dropout_kernel!(res::AbstractArray, ::LoopedArrayOp, noise::AbstractArray,
+        p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
+    @tturbo for I in indices((noise, x, res))
+        res[I] = ifelse(noise[I] > p, x[I], α) * A + B
+    end
+    return nothing
+end
+
+function EnzymeRules.augmented_primal(
+        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(_alpha_dropout_kernel!)},
+        ::Type{RT}, res::EnzymeCore.Annotation{<:AbstractArray},
+        opmode::EnzymeCore.Const{LoopedArrayOp}, noise::EnzymeCore.Const{<:AbstractArray},
+        p::EnzymeCore.Annotation{<:Real}, x::EnzymeCore.Annotation{<:AbstractArray},
+        α::EnzymeCore.Annotation{<:Real}, A::EnzymeCore.Annotation{<:Real},
+        B::EnzymeCore.Annotation{<:Real}) where {RT}
+    _cond = similar(noise.val, Bool)
+    @tturbo for I in indices((noise.val, res.val, _cond))
+        _cond[I] = noise.val[I] > p.val
+        res.val[I] = ifelse(_cond[I], x.val[I], α.val) * A.val + B.val
+    end
+
+    primal = EnzymeRules.needs_primal(cfg) ? res.val : nothing
+    shadow = EnzymeRules.needs_shadow(cfg) ? res.dval : nothing
+
+    return EnzymeRules.AugmentedReturn(primal, shadow, (_cond,))
+end
+
+function EnzymeRules.reverse(
+        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(_alpha_dropout_kernel!)},
+        ::Type{RT}, (_cond,), res::EnzymeCore.Annotation{<:AbstractArray},
+        opmode::EnzymeCore.Const{LoopedArrayOp}, noise::EnzymeCore.Const{<:AbstractArray},
+        p::EnzymeCore.Annotation{<:Real}, x::EnzymeCore.Annotation{<:AbstractArray},
+        α::EnzymeCore.Annotation{<:Real}, A::EnzymeCore.Annotation{<:Real},
+        B::EnzymeCore.Annotation{<:Real}) where {RT}
+    dress = res.dval
+    dxs = (typeof(x) <: EnzymeCore.Const) ? dCs : x.dval
+
+    if EnzymeRules.width(cfg) == 1
+        dress = (dress,)
+        dxs = (dxs,)
+    end
+
+    for (dres, dx) in zip(dress, dxs)
+        if !(typeof(res) <: EnzymeCore.Const) && dres !== res.val
+            if !(typeof(x) <: EnzymeCore.Const) && dx !== x.val
+                @tturbo for I in indices((dx, dres, _cond))
+                    dx[I] = _cond[I] * dres[I] * A.val
+                end
+            end
+
+            dres .= 0
+        end
+    end
+
+    # NOTE: we drop the gradients for the scalars p, A, B and alpha
+    dp = typeof(p) <: EnzymeCore.Const ? nothing : zero(p.val)
+    dα = typeof(α) <: EnzymeCore.Const ? nothing : zero(α.val)
+    dA = typeof(A) <: EnzymeCore.Const ? nothing : zero(A.val)
+    dB = typeof(B) <: EnzymeCore.Const ? nothing : zero(B.val)
+
+    return (nothing, nothing, nothing, dp, nothing, dα, dA, dB)
 end
 
 # We intentionally drop the gradients for p, A, B and alpha
@@ -38,10 +99,10 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), ::LoopedArrayOp, noise::Abst
     end
 
     proj_x = CRC.ProjectTo(x)
-    _∇alpha_dropout_kernel = let _cond = _cond, proj_x = proj_x, x = x, noise = noise
+    _∇alpha_dropout_kernel = let _cond = _cond, proj_x = proj_x, x = x
         Δ -> begin
             ∂x = similar(x)
-            @tturbo for I in indices((noise, x, ∂x, _cond))
+            @tturbo for I in indices((∂x, _cond, Δ))
                 ∂x[I] = _cond[I] * Δ[I] * A
             end
             return (ntuple(Returns(∂∅), 4)..., proj_x(∂x), ntuple(Returns(∂∅), 3)...)

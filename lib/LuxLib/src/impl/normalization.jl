@@ -19,8 +19,8 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
 end
 function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
     @tturbo for I in indices((rμ2, rσ²2))
-        @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
-        @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+        rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+        rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
     end
 end
 function __update_statistics!(::GPUBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
