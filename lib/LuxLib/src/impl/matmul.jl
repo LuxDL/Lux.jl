@@ -18,6 +18,22 @@ function matmuladd(
     return C
 end
 
+function CRC.rrule(::typeof(matmuladd), opmode::LoopedArrayOp,
+        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+    proj_A = CRC.ProjectTo(A)
+    proj_B = CRC.ProjectTo(B)
+    proj_bias = CRC.ProjectTo(bias)
+    ∇matmuladd = @closure Δ -> begin
+        Δ_ = CRC.unthunk(Δ)
+        ∂A = CRC.@thunk(proj_A(matmul(opmode, Δ_, B')))
+        ∂B = CRC.@thunk(proj_B(matmul(opmode, A', Δ_)))
+        ∂bias = CRC.@thunk(proj_bias(__added_bias_gradient(bias, Δ_)))
+        return ∂∅, ∂∅, ∂A, ∂B, ∂bias
+    end
+    return matmuladd(opmode, A, B, bias), ∇matmuladd
+end
+
+matmuladd!(C, A, B, ::Nothing) = matmul!(C, A, B)
 function matmuladd!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     matmuladd!(C, internal_operation_mode((A, B, bias)), A, B, bias)
@@ -58,6 +74,19 @@ function matmul(opmode::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
     C = similar(A, promote_type(eltype(A), eltype(B)), size(A, 1), size(B, 2))
     matmul!(C, opmode, A, B)
     return C
+end
+
+function CRC.rrule(
+        ::typeof(matmul), opmode::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
+    proj_A = CRC.ProjectTo(A)
+    proj_B = CRC.ProjectTo(B)
+    ∇matmul = @closure Δ -> begin
+        Δ_ = CRC.unthunk(Δ)
+        ∂A = CRC.@thunk(proj_A(matmul(opmode, Δ_, B')))
+        ∂B = CRC.@thunk(proj_B(matmul(opmode, A', Δ_)))
+        return ∂∅, ∂∅, ∂A, ∂B
+    end
+    return matmul(opmode, A, B), ∇matmul
 end
 
 function matmul!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
