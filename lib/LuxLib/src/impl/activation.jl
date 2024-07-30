@@ -19,15 +19,50 @@ function __activation_gradient(Δ, out, act::F, x) where {F}
     return broadcast(only_deriv, Δ, out, x)
 end
 
+function _fast_activation!(opmode, y::AbstractArray, σ::F, x::AbstractArray) where {F}
+    broadcast!(σ, y, x)
+    return
+end
 function _fast_activation!(
         ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
     @tturbo for I in indices((y, x))
         y[I] = σ(x[I])
     end
 end
-function _fast_activation!(opmode, y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    broadcast!(σ, y, x)
-    return
+
+function _fast_activation_no_turbo!(
+        ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
+    @simd ivdep for I in eachindex(y, x)
+        y[I] = σ(x[I])
+    end
+end
+
+function EnzymeRules.augmented_primal(
+        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(_fast_activation!)},
+        ::Type{RT}, opmode::EnzymeCore.Const{LoopedArrayOp},
+        y::EnzymeCore.Duplicated{<:AbstractArray}, σ::EnzymeCore.Const{F},
+        x::EnzymeCore.Duplicated{<:AbstractArray}) where {F, RT}
+    dx = one.(x.val)
+    dy = zero.(y.val)
+    EnzymeCore.autodiff(EnzymeCore.Forward, _fast_activation_no_turbo!,
+        opmode, EnzymeCore.Duplicated(y.val, dy),
+        EnzymeCore.Const(σ.val), EnzymeCore.Duplicated(x.val, dx))
+
+    primal = EnzymeRules.needs_primal(cfg) ? y.val : nothing
+    shadow = EnzymeRules.needs_shadow(cfg) ? y.dval : nothing
+
+    return EnzymeRules.AugmentedReturn(primal, shadow, (dy,))
+end
+
+function EnzymeRules.reverse(
+        ::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(_fast_activation!)},
+        ::Type{RT}, (dy,), opmode::EnzymeCore.Const{LoopedArrayOp},
+        y::EnzymeCore.Duplicated{<:AbstractArray}, σ::EnzymeCore.Const{F},
+        x::EnzymeCore.Duplicated{<:AbstractArray}) where {F, RT}
+    @tturbo for I in indices((y.dval, x.dval, dy))
+        y.dval[I] = x.dval[I] * dy[I]
+    end
+    return nothing, nothing, nothing, nothing
 end
 
 # Entry Points to the implementation
@@ -155,9 +190,15 @@ function EnzymeRules.augmented_primal(
 end
 
 function EnzymeRules.reverse(
-        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu_sleefpirates)},
+        ::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu_sleefpirates)},
         dret::EnzymeCore.Active, ::Nothing, x::EnzymeCore.Active{<:Number})
     return (dret.val * ∂gelu_sleefpirates(x.val),)
+end
+
+function EnzymeRules.forward(::EnzymeCore.Const{typeof(gelu_sleefpirates)},
+        ::Type{<:EnzymeCore.Duplicated}, x::EnzymeCore.Duplicated{<:Number})
+    return EnzymeCore.Duplicated(
+        gelu_sleefpirates(x.val), x.dval * ∂gelu_sleefpirates(x.val))
 end
 
 # Convert to SLEEFPirates.jl

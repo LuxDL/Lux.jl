@@ -27,6 +27,7 @@
             @test @inferred(Zygote.gradient(apply_act, f, x)) isa Any
 
             test_gradients(Base.Fix1(apply_act, f), x; atol, rtol)
+            test_gradients(Base.Fix1(apply_act_fast, f), x; atol, rtol)
 
             ∂x1 = Zygote.gradient(apply_act, f, x)[2]
             ∂x2 = Zygote.gradient(apply_act_fast, f, x)[2]
