@@ -55,36 +55,28 @@ function _affine_normalize_bn(opmode::AbstractInternalArrayOpMode, f::F,
         x::AbstractArray{T, N}, μ, σ², scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, ϵ::Real) where {F, T, N}
     x_ = reshape(x, :, size(x, N - 1), size(x, N))
-    μ_ = reshape(μ, 1, size(x, N - 1), 1)
-    σ²_ = reshape(σ², 1, size(x, N - 1), 1)
-    scale_ = __reshape(scale, 1, size(x, N - 1), 1)
-    bias_ = __reshape(bias, 1, size(x, N - 1), 1)
-
     return reshape(
-        _affine_normalize_bn_impl(opmode, f, x_, μ_, σ²_, scale_, bias_, ϵ), size(x))
+        _affine_normalize_bn_impl(opmode, f, x_, vec(μ), vec(σ²), scale, bias, ϵ), size(x))
 end
 
 function __affine_normalize_bn_impl!(
         ::LoopedArrayOp, y::AbstractArray{<:Number, 3}, f::F, x::AbstractArray{<:Number, 3},
-        μ, σ², scale::Optional{<:AbstractArray{<:Number, 3}},
-        bias::Optional{<:AbstractArray{<:Number, 3}},
-        ϵ::Real, _sc::Optional{<:AbstractVector}=nothing,
-        _bc::Optional{<:AbstractVector}=nothing) where {F}
+        μ, σ², scale::Optional{<:AbstractVector}, bias::Optional{<:AbstractVector},
+        ϵ::Real, _sc::Optional{<:AbstractVector}=nothing) where {F}
     N = size(y, 2)
     _scale = _sc === nothing ?
              similar(x, promote_type(__eltype(scale), __eltype(σ²), __eltype(ϵ)), N) : _sc
-    _bias = _bc === nothing ?
-            similar(x, promote_type(__eltype(bias), __eltype(_scale), __eltype(ϵ)), N) : _bc
+    _bias = similar(x, promote_type(__eltype(bias), __eltype(_scale), __eltype(ϵ)), N)
 
     if scale !== nothing
-        @tturbo for J in indices((_scale, scale, σ², _bias, μ, bias), (1, 2, 2, 1, 2, 2))
-            _scale[J] = scale[1, J, 1] / sqrt(σ²[1, J, 1] + ϵ)
-            _bias[J] = -μ[1, J, 1] * _scale[J] + bias[1, J, 1]
+        @tturbo for J in indices((_scale, _bias))
+            _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
+            _bias[J] = -μ[J] * _scale[J] + bias[J]
         end
     else
-        @tturbo for J in indices((_scale, σ², μ, _bias), (1, 2, 2, 1))
-            _scale[J] = inv(sqrt(σ²[1, J, 1] + ϵ))
-            _bias[J] = -μ[1, J, 1] * _scale[J]
+        @tturbo for J in indices((_scale, _bias))
+            _scale[J] = inv(sqrt(σ²[J] + ϵ))
+            _bias[J] = -μ[J] * _scale[J]
         end
     end
 
@@ -99,17 +91,15 @@ end
 
 function __affine_normalize_bn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 3},
         f::F, x::AbstractArray{<:Number, 3}, μ, σ²,
-        scale::Optional{<:AbstractArray{<:Number, 3}},
-        bias::Optional{<:AbstractArray{<:Number, 3}},
-        ϵ::Real, _sc::Optional{<:AbstractVector}=nothing,
-        _bc::Optional{<:AbstractVector}=nothing) where {F}
+        scale::Optional{<:AbstractVector}, bias::Optional{<:AbstractVector},
+        ϵ::Real, _sc::Optional{<:AbstractVector}=nothing) where {F}
     backend = KA.get_backend(y)
     if _sc === nothing
         kernel! = __affine_normalize_bn_kernel!(backend)
         kernel!(y, f, x, μ, σ², scale, bias, ϵ; ndrange=size(y))
     else
         kernel! = __affine_normalize_bn_kernel_cached!(backend)
-        kernel!(y, _sc, _bc, f, x, μ, σ², scale, bias, ϵ; ndrange=size(y))
+        kernel!(y, _sc, f, x, μ, σ², scale, bias, ϵ; ndrange=size(y))
     end
     KA.synchronize(backend)
 end
@@ -119,42 +109,39 @@ end
         @Const(μ), @Const(σ²), @Const(scale), @Const(bias), @Const(ϵ))
     (i, j, k) = @index(Global, NTuple)
     if scale !== nothing
-        @inbounds _sc = scale[1, j, 1] / sqrt(σ²[1, j, 1] + ϵ)
-        @inbounds _bc = muladd(-μ[1, j, 1], _sc, bias[1, j, 1])
+        @inbounds _sc = scale[j] / sqrt(σ²[j] + ϵ)
+        @inbounds _bc = muladd(-μ[j], _sc, bias[j])
     else
-        @inbounds _sc = inv(sqrt(σ²[1, j, 1] + ϵ))
-        @inbounds _bc = -μ[1, j, 1] * _sc
+        @inbounds _sc = inv(sqrt(σ²[j] + ϵ))
+        @inbounds _bc = -μ[j] * _sc
     end
     @inbounds y[i, j, k] = f(muladd(x[i, j, k], _sc, _bc))
 end
 
 @kernel function __affine_normalize_bn_kernel_cached!(
-        y::AbstractArray{<:Number, 3}, _sc::AbstractArray{<:Number, 3},
-        _bc::AbstractArray{<:Number, 3}, @Const(f), @Const(x),
-        @Const(μ), @Const(σ²), @Const(scale), @Const(bias), @Const(ϵ))
+        y::AbstractArray{<:Number, 3}, _sc::AbstractVector{<:Number}, @Const(f),
+        @Const(x), @Const(μ), @Const(σ²), @Const(scale), @Const(bias), @Const(ϵ))
     (i, j, k) = @index(Global, NTuple)
     if scale !== nothing
-        @inbounds _sc[j] = scale[1, j, 1] / sqrt(σ²[1, j, 1] + ϵ)
-        @inbounds _bc[j] = muladd(-μ[1, j, 1], _sc[1, j, 1], bias[1, j, 1])
+        @inbounds _sc[j] = scale[j] / sqrt(σ²[j] + ϵ)
+        @inbounds _bc = muladd(-μ[j], _sc[j], bias[j])
     else
-        @inbounds _sc[j] = inv(sqrt(σ²[1, j, 1] + ϵ))
-        @inbounds _bc[j] = -μ[1, j, 1] * _sc[1, j, 1]
+        @inbounds _sc[j] = inv(sqrt(σ²[j] + ϵ))
+        @inbounds _bc = -μ[j] * _sc[j]
     end
-    @inbounds y[i, j, k] = f(muladd(x[i, j, k], _sc[1, j, 1], _bc[1, j, 1]))
+    @inbounds y[i, j, k] = f(muladd(x[i, j, k], _sc[j], _bc))
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_affine_normalize_bn_impl),
         opmode::AbstractInternalArrayOpMode, f::F,
-        x::AbstractArray{T, N}, μ, σ², scale::Optional{<:AbstractArray},
-        bias::Optional{<:AbstractArray}, ϵ::Real) where {F, T, N}
+        x::AbstractArray{T, N}, μ, σ², scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, ϵ::Real) where {F, T, N}
     y = similar(x,
         promote_type(
             __eltype(x), __eltype(μ), __eltype(σ²), __eltype(scale), __eltype(bias)))
     _sc = similar(
         x, promote_type(__eltype(scale), __eltype(σ²), __eltype(ϵ)), size(x, N - 1))
-    _bc = similar(
-        x, promote_type(__eltype(bias), __eltype(_sc), __eltype(ϵ)), size(x, N - 1))
-    __affine_normalize_bn_impl!(opmode, y, identity, x, μ, σ², scale, bias, ϵ, _sc, _bc)
+    __affine_normalize_bn_impl!(opmode, y, identity, x, μ, σ², scale, bias, ϵ, _sc)
     z, ∇activation = CRC.rrule_via_ad(cfg, fast_activation!!, f, y)
 
     proj_x = CRC.ProjectTo(x)
@@ -191,10 +178,10 @@ function ∇affine_normalize_bn_impl(::GPUBroadcastOp, ∂y, x, μ, σ², scale,
     kernel!(∂x, ∂μ, ∂σ², ∂sc, ∂b, ∂y, x, μ, σ², scale, bias, ϵ, _sc; ndrange=size(∂x))
     KA.synchronize(backend)
 
-    ∂μ_ = __reduce_sum(μ, ∂μ)
-    ∂σ²_ = __reduce_sum(σ², ∂σ²)
-    ∂sc_ = __reduce_sum(scale, ∂sc)
-    ∂b_ = __reduce_sum(bias, ∂b)
+    ∂μ_ = vec(__reduce_sum(reshape(μ, 1, :, 1), ∂μ))
+    ∂σ²_ = vec(__reduce_sum(reshape(σ², 1, :, 1), ∂σ²))
+    ∂sc_ = vec(__reduce_sum(reshape(scale, 1, :, 1), ∂sc))
+    ∂b_ = vec(__reduce_sum(reshape(bias, 1, :, 1), ∂b))
 
     __unsafe_free!(∂μ)
     __unsafe_free!(∂σ²)
@@ -209,13 +196,13 @@ end
         @Const(σ²), @Const(scale), @Const(bias), @Const(ϵ), @Const(_sc))
     (i, j, k) = @index(Global, NTuple)
     if scale !== nothing
-        @inbounds idenom = inv(sqrt(σ²[1, j, 1] + ϵ))
+        @inbounds idenom = inv(sqrt(σ²[j] + ϵ))
     else
         @inbounds idenom = _sc[j]
     end
     idenom² = idenom^2
 
-    @inbounds xμ = x[i, j, k] - μ[1, j, 1]
+    @inbounds xμ = x[i, j, k] - μ[j]
 
     @inbounds ∂x[i, j, k] = ∂y[i, j, k] * _sc[j]
     @inbounds ∂μ[i, j, k] = -∂x[i, j, k]
@@ -233,15 +220,15 @@ function ∇affine_normalize_bn_impl(
     half = eltype(∂σ²)(0.5)
 
     @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
-        idenom = _sc[1, J, 1]
+        idenom = _sc[J]
         idenom² = idenom^2
 
         for I in indices(∂y, 1)
-            xμ = x[I, J, K] - μ[1, J, 1]
+            xμ = x[I, J, K] - μ[J]
 
             ∂x[I, J, K] = ∂y[I, J, K] * idenom
-            ∂μ[1, J, 1] -= ∂x[I, J, K]
-            ∂σ²[1, J, 1] -= ∂x[I, J, K] * xμ * half * idenom²
+            ∂μ[J] -= ∂x[I, J, K]
+            ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
         end
     end
 
@@ -253,17 +240,17 @@ function ∇affine_normalize_bn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
     half = eltype(∂σ²)(0.5)
 
     @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
-        idenom = inv(sqrt(σ²[1, J, 1] + ϵ))
+        idenom = inv(sqrt(σ²[J] + ϵ))
         idenom² = idenom^2
 
         for I in indices(∂y, 1)
-            xμ = x[I, J, K] - μ[1, J, 1]
+            xμ = x[I, J, K] - μ[J]
 
-            ∂x[I, J, K] = ∂y[I, J, K] * _sc[1, J, 1]
-            ∂μ[1, J, 1] -= ∂x[I, J, K]
-            ∂σ²[1, J, 1] -= ∂x[I, J, K] * xμ * half * idenom²
-            ∂sc[1, J, 1] += ∂y[I, J, K] * xμ * idenom
-            ∂b[1, J, 1] += ∂y[I, J, K]
+            ∂x[I, J, K] = ∂y[I, J, K] * _sc[J]
+            ∂μ[J] -= ∂x[I, J, K]
+            ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
+            ∂sc[J] += ∂y[I, J, K] * xμ * idenom
+            ∂b[J] += ∂y[I, J, K]
         end
     end
 
