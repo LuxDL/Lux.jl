@@ -198,7 +198,9 @@ function internal_operation_mode(xs::Tuple)
     xs = unrolled_filter(!isnothing, xs)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.
-    if unrolled_any(__has_autodiff_value, xs) || unrolled_any(__has_float16, xs)
+    if unrolled_any(__has_autodiff_value, xs) ||
+       unrolled_any(__has_float16, xs) ||
+       unrolled_any(Base.Fix2(isa, StaticArray), xs)
         return GenericBroadcastOp()
     end
     dev = get_device_type(xs)
