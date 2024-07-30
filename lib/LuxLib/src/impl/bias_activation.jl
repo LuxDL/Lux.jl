@@ -123,14 +123,19 @@ function __bias_activation_impl!(
         y::AbstractArray{<:Number, N}, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}
     opmode = internal_operation_mode((y, x, bias))
-    bias_ = __reshape_bias_into_xdims(x, bias)
     if opmode isa LoopedArrayOp
-        bc = Broadcast.instantiate(Broadcast.broadcasted(σ ∘ +, x, bias_))
-        @simd ivdep for I in eachindex(bc)
-            @inbounds y[I] = bc[I]
+        x_ = reshape(x, :, size(x, N - 1), size(x, N))
+        y_ = reshape(y, :, size(y, N - 1), size(y, N))
+        @tturbo for K in indices(x_, 3),
+            J in indices((x_, bias), (2, 1)),
+            I in indices(y_, 1)
+
+            y_[I, J, K] = x_[I, J, K] + bias[J]
         end
+        _fast_activation!(σ, y) # NOTE: don't fuse into the above loop
         return y
     end
+    bias_ = __reshape_bias_into_xdims(x, bias)
     if σ === identity
         broadcast!(+, y, x, bias_)
         return y
@@ -144,19 +149,21 @@ function __apply_bias_activation_cached!!(
         σ::F, x, bias::Optional{<:AbstractVector{<:Number}}) where {F}
     @assert σ !== identity
     bias === nothing && return _fast_activation(σ, x), x
-    bias_ = __reshape_bias_into_xdims(x, bias)
     if can_setindex(x)
         opmode = internal_operation_mode((x, bias))
         if opmode isa LoopedArrayOp
-            bc = Broadcast.instantiate(Broadcast.broadcasted(+, x, bias_))
-            @simd ivdep for I in eachindex(bc)
-                @inbounds x[I] = bc[I]
+            x_ = reshape(x, :, size(x, N - 1), size(x, N))
+            @tturbo for K in indices(x_, 3),
+                J in indices((x_, bias), (2, 1)),
+                I in indices(x_, 1)
+
+                x_[I, J, K] = x_[I, J, K] + bias[J]
             end
             return _fast_activation(σ, x), x
         end
-        broadcast!(+, x, x, bias_)
+        broadcast!(+, x, x, __reshape_bias_into_xdims(x, bias))
         return _fast_activation(σ, x), x
     end
-    y = broadcast(+, x, bias_)
+    y = broadcast(+, x, __reshape_bias_into_xdims(x, bias))
     return _fast_activation(σ, y), y
 end

@@ -8,6 +8,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
+using LoopVectorization: indices, @tturbo
 using LuxCore: LuxCore
 using Markdown: @doc_str
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
@@ -48,6 +49,7 @@ include("impl/fast_ops.jl")
 include("impl/fused_dense.jl")
 include("impl/fused_conv.jl")
 include("impl/forward_diff.jl")
+include("impl/matmul.jl")
 include("impl/normalization.jl")
 
 include("deprecations.jl")

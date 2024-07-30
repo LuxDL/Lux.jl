@@ -9,8 +9,8 @@ function __activation_gradient(Δ, out, act::F, x) where {F}
                 @inbounds y[i] = only_derivative(out[i], act, x) * Δ[i]
             end
         else
-            @simd ivdep for i in eachindex(Δ, out, x)
-                @inbounds y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
+            @simd ivdep for I in eachindex(Δ, out, x)
+                @inbounds y[I] = only_derivative(out[I], act, x[I]) * Δ[I]
             end
         end
         return y
@@ -21,8 +21,8 @@ end
 
 function _fast_activation!(
         ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    @simd ivdep for I in eachindex(y, x)
-        @inbounds y[I] = σ(x[I])
+    @tturbo for I in indices((y, x))
+        y[I] = σ(x[I])
     end
 end
 function _fast_activation!(opmode, y::AbstractArray, σ::F, x::AbstractArray) where {F}

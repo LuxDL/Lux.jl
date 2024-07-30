@@ -18,7 +18,7 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
     return rμ2, rσ²2
 end
 function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
-    @simd ivdep for I in eachindex(rμ2, rσ²2)
+    @tturbo for I in indices((rμ2, rσ²2))
         @inbounds rμ2[I] = m3 * rμ[I] + m1 * μ[I]
         @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
     end
