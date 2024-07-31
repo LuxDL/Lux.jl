@@ -12,10 +12,13 @@ using Setfield: Setfield
 
 Creates a copy of the `rng` state depending on its type.
 """
-replicate(rng::AbstractRNG) = deepcopy(rng)
+@generated function replicate(rng::T) where {T <: AbstractRNG}
+    hasmethod(copy, (T,)) && return :(copy(rng))
+    return :(deepcopy(rng))
+end
 function replicate(rng::Random.TaskLocalRNG)
     @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`." maxlog=1
-    return deepcopy(rng)
+    return rng
 end
 
 _default_rng() = Xoshiro(1234)
