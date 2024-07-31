@@ -45,7 +45,7 @@ end
 end
 
 function _test_valid_instancenorm_arguments(::AbstractArray{T, N}) where {T, N}
-    N > 2 || throw(ArgumentError("`ndims(x) = $(N)` must be at least 2."))
+    N > 2 || throw(ArgumentError("`ndims(x) = $(N)` must be at least > 2."))
     return nothing
 end
 

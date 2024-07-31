@@ -17,6 +17,9 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
     __update_statistics!(opmode, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, 1 - m1)
     return rμ2, rσ²2
 end
+
+CRC.@non_differentiable __update_statistics(::Any...)
+
 function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
     @tturbo for I in indices((rμ2, rσ²2))
         rμ2[I] = m3 * rμ[I] + m1 * μ[I]
@@ -37,7 +40,7 @@ end
     @inbounds rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
 end
 
-CRC.@non_differentiable __update_statistics(::Any...)
+EnzymeRules.inactive(::typeof(__update_statistics!), ::Any...) = nothing
 
 function _update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
