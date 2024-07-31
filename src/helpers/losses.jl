@@ -609,6 +609,30 @@ function __unsafe_apply_loss(loss::GenericLossFunction, ŷ, y)
     return __fused_agg(loss.agg, loss.loss_fn, ŷ, y)
 end
 
+@concrete struct SAMLoss <: AbstractLossFunction
+    loss_fn
+    ρ
+end
+
+function SAMLoss(loss_fn; ρ=0.05)
+    return SAMLoss(loss_fn, ρ)
+end
+
+
+function (loss::SAMLoss)(model, ps, st, (x, y))
+    ŷ, st_ = model(x, ps, st)
+    return loss.loss_fn(ŷ, y)
+end
+
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, SL::typeof(SAMLoss), model, ps, st, (x, y))
+    grad = Zygote.gradient(ps->SL.loss_fn(model(x, ps, st)[1], y), ps)
+    ϵ = SL.ρ * grad / (norm(grad) + eps)
+
+    return SL.loss_fn(model(x, ps, st)[1], y), Zygote.gradient(ps->SL.loss_fn(model(x, ps, st)[1], y), ps .+ ϵ) 
+end
+
+
+
 ```@meta
 DocTestFilters = nothing
 ```
