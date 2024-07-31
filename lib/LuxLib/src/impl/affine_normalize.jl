@@ -68,25 +68,33 @@ function __affine_normalize_bn_impl!(
              similar(x, promote_type(__eltype(scale), __eltype(σ²), __eltype(ϵ)), N) : _sc
     _bias = similar(x, promote_type(__eltype(bias), __eltype(_scale), __eltype(ϵ)), N)
 
-    if scale !== nothing
-        @tturbo for J in indices((_scale, _bias))
-            _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
-            _bias[J] = -μ[J] * _scale[J] + bias[J]
-        end
-    else
-        @tturbo for J in indices((_scale, _bias))
-            _scale[J] = inv(sqrt(σ²[J] + ϵ))
-            _bias[J] = -μ[J] * _scale[J]
-        end
-    end
+    __compute_bn_scale_bias!(_scale, _bias, scale, bias, μ, σ², ϵ)
+    __apply_bn_scale_bias!(y, _scale, _bias, x)
+    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
+end
 
+function __compute_bn_scale_bias!(_scale, _bias, ::Nothing, ::Nothing, μ, σ², ϵ)
+    @tturbo for J in indices((_scale, _bias))
+        _scale[J] = inv(sqrt(σ²[J] + ϵ))
+        _bias[J] = -μ[J] * _scale[J]
+    end
+end
+
+function __compute_bn_scale_bias!(
+        _scale, _bias, scale::AbstractVector, bias::AbstractVector, μ, σ², ϵ)
+    @tturbo for J in indices((_scale, _bias))
+        _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
+        _bias[J] = -μ[J] * _scale[J] + bias[J]
+    end
+end
+
+function __apply_bn_scale_bias!(y, _scale, _bias, x)
     @tturbo for K in indices((x, y), 3),
         J in indices((x, y, _scale, _bias), (2, 2, 1, 1)),
         I in indices((x, y), 1)
 
         y[I, J, K] = x[I, J, K] * _scale[J] + _bias[J]
     end
-    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
 end
 
 function __affine_normalize_bn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 3},
@@ -180,8 +188,8 @@ function ∇affine_normalize_bn_impl(::GPUBroadcastOp, ∂y, x, μ, σ², scale,
 
     ∂μ_ = vec(__reduce_sum(reshape(μ, 1, :, 1), ∂μ))
     ∂σ²_ = vec(__reduce_sum(reshape(σ², 1, :, 1), ∂σ²))
-    ∂sc_ = vec(__reduce_sum(reshape(scale, 1, :, 1), ∂sc))
-    ∂b_ = vec(__reduce_sum(reshape(bias, 1, :, 1), ∂b))
+    ∂sc_ = _vec(__reduce_sum(__reshape(scale, 1, :, 1), ∂sc))
+    ∂b_ = _vec(__reduce_sum(__reshape(bias, 1, :, 1), ∂b))
 
     __unsafe_free!(∂μ)
     __unsafe_free!(∂σ²)
@@ -272,8 +280,17 @@ function _affine_normalize_gn(opmode::AbstractInternalArrayOpMode, f::F,
         _affine_normalize_gn_impl(opmode, f, x_, μ_, σ²_, scale_, bias_, ϵ), size(x))
 end
 
-function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
-        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real) where {F}
+function __affine_normalize_gn_impl!(opmode::LoopedArrayOp, y::AbstractArray{<:Number, 4},
+        f::F, x::AbstractArray{<:Number, 4}, μ, σ²,
+        scale::Optional{<:AbstractArray{<:Number, 4}},
+        bias::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
+    __affine_normalize_gn_impl!(opmode, y, nothing, x, μ, σ², scale, bias, ϵ)
+    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
+end
+
+function __affine_normalize_gn_impl!(
+        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, ::Nothing,
+        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real)
     @tturbo for L in indices(y, 4), K in indices(y, 3)
         _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         _bc = -μ[1, 1, K, L] * _sc
@@ -281,12 +298,12 @@ function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number,
             y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
         end
     end
-    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
 end
 
-function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number, 4}, f::F,
+function __affine_normalize_gn_impl!(
+        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, ::Nothing,
         x::AbstractArray{<:Number, 4}, μ, σ², scale::AbstractArray{<:Number, 4},
-        bias::AbstractArray{<:Number, 4}, ϵ::Real) where {F}
+        bias::AbstractArray{<:Number, 4}, ϵ::Real)
     @tturbo for L in indices(y, 4), K in indices(y, 3)
         idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         for J in indices(y, 2)
@@ -297,7 +314,6 @@ function __affine_normalize_gn_impl!(::LoopedArrayOp, y::AbstractArray{<:Number,
             end
         end
     end
-    _fast_activation!(f, y) # NOTE: don't fuse into the above loop
 end
 
 function __affine_normalize_gn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 4}, f::F,
