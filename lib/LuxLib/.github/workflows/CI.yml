@@ -42,9 +42,6 @@ jobs:
           - 'layer_norm'
           - 'other_ops'
           - 'others'
-        exclude:
-          - os: macos-latest
-            test_group: 'conv'  # Never terminates
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
