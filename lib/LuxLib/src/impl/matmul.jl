@@ -33,6 +33,14 @@ end
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
     if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+        if size(A, 2) != size(B, 1)
+            throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
+        end
+
+        if length(bias) != size(A, 1)
+            throw(DimensionMismatch(lazy"bias has length $(length(bias)) but A has shape ($(size(A, 1)), $(size(A, 2)))"))
+        end
+
         @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
             Cmn = zero(eltype(C))
             for k in indices((A, B), (2, 1))
@@ -72,6 +80,10 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
     if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+        if size(A, 2) != size(B, 1)
+            throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
+        end
+
         @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
             Cmn = zero(eltype(C))
             for k in indices((A, B), (2, 1))
