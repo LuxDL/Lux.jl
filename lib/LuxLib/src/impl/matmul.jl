@@ -32,7 +32,7 @@ function matmuladd!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    if size(C, 1) * size(A, 2) * size(B, 2) ≤ 2097152  # 128 ^ 3
+    if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
         @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
             Cmn = zero(eltype(C))
             for k in indices((A, B), (2, 1))
@@ -71,7 +71,7 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
     return
 end
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
-    if size(C, 1) * size(A, 2) * size(B, 2) ≤ 2097152  # 128 ^ 3
+    if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
         @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
             Cmn = zero(eltype(C))
             for k in indices((A, B), (2, 1))
