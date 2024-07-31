@@ -65,7 +65,6 @@ Split up `x` into `N` equally sized chunks (along dimension `1`).
     return ntuple(i -> _gate(x, size(x, 1) ÷ N, i), N)
 end
 
-# Val utilities
 __unwrap_val(::Val{T}) where {T} = T
 
 # Indexing into NamedTuple

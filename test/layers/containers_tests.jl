@@ -189,10 +189,10 @@ end
         __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
         test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
 
-        x = rand(1, 10)
+        x = rand(1, 10) |> aType
         layer = PairwiseFusion(.+, Dense(1, 10), Dense(10, 1))
         display(layer)
-        ps, st = Lux.setup(rng, layer)
+        ps, st = Lux.setup(rng, layer) |> dev
         y, _ = layer(x, ps, st)
         @test size(y) == (1, 10)
 
