@@ -60,8 +60,11 @@ function EnzymeRules.reverse(
         y::EnzymeCore.Duplicated{<:AbstractArray}, σ::EnzymeCore.Const{F},
         x::EnzymeCore.Duplicated{<:AbstractArray}) where {F, RT}
     @tturbo for I in indices((y.dval, x.dval, dy))
-        y.dval[I] = x.dval[I] * dy[I]
+        x.dval[I] = y.dval[I] * dy[I]
     end
+
+    x.dval !== y.dval && fill!(y.dval, false)
+
     return nothing, nothing, nothing, nothing
 end
 

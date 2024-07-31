@@ -122,26 +122,36 @@ CRC.@opt_out rrule(::typeof(__bias_activation_impl!!), ::F, ::AbstractVector{<:N
 function __bias_activation_impl!(
         y::AbstractArray{<:Number, N}, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}
-    opmode = internal_operation_mode((y, x, bias))
-    if opmode isa LoopedArrayOp
-        x_ = reshape(x, :, size(x, N - 1), size(x, N))
-        y_ = reshape(y, :, size(y, N - 1), size(y, N))
-        @tturbo for K in indices(x_, 3),
-            J in indices((x_, bias), (2, 1)),
-            I in indices(y_, 1)
+    return __bias_activation_impl!(y, internal_operation_mode((y, x, bias)), σ, x, bias)
+end
 
-            y_[I, J, K] = x_[I, J, K] + bias[J]
-        end
-        _fast_activation!(σ, y) # NOTE: don't fuse into the above loop
-        return y
+function __bias_activation_impl!(y::AbstractArray{<:Number, N}, opmode::LoopedArrayOp, σ::F,
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+    __bias_add_impl!(y, opmode, x, bias)
+    _fast_activation!(σ, y) # NOTE: don't fuse into the above loop
+    return
+end
+
+function __bias_add_impl!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp,
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+    x_ = reshape(x, :, size(x, N - 1), size(x, N))
+    y_ = reshape(y, :, size(y, N - 1), size(y, N))
+    @tturbo for K in indices(x_, 3), J in indices((x_, bias), (2, 1)), I in indices(y_, 1)
+        y_[I, J, K] = x_[I, J, K] + bias[J]
     end
+    return
+end
+
+function __bias_activation_impl!(
+        y::AbstractArray{<:Number, N}, ::AbstractInternalArrayOpMode, σ::F,
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     bias_ = __reshape_bias_into_xdims(x, bias)
     if σ === identity
         broadcast!(+, y, x, bias_)
-        return y
+    else
+        broadcast!(σ ∘ +, y, x, bias_)
     end
-    broadcast!(σ ∘ +, y, x, bias_)
-    return y
+    return
 end
 
 # Useful in some of the rrule implementations
@@ -166,4 +176,60 @@ function __apply_bias_activation_cached!!(
     end
     y = broadcast(+, x, __reshape_bias_into_xdims(x, bias))
     return _fast_activation(σ, y), y
+end
+
+# Enzyme Rule to bypass the loop vectorization error
+function EnzymeRules.augmented_primal(
+        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__bias_add_impl!)},
+        ::Type{RT}, y::EnzymeCore.Annotation{<:AbstractArray{<:Number, N}},
+        opmode::EnzymeCore.Const{LoopedArrayOp},
+        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, N}},
+        bias::EnzymeCore.Annotation{<:AbstractVector}) where {N, RT}
+    if typeof(y) <: EnzymeCore.Duplicated || typeof(y) <: EnzymeCore.BatchDuplicated
+        __bias_add_impl!(y.val, opmode.val, x.val, bias.val)
+    end
+
+    primal = EnzymeRules.needs_primal(cfg) ? y.val : nothing
+    shadow = EnzymeRules.needs_shadow(cfg) ? y.dval : nothing
+
+    return EnzymeRules.AugmentedReturn(primal, shadow, nothing)
+end
+
+function EnzymeRules.reverse(
+        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__bias_add_impl!)},
+        ::Type{RT}, ::Nothing, y::EnzymeCore.Annotation{<:AbstractArray{<:Number, N}},
+        opmode::EnzymeCore.Const{LoopedArrayOp},
+        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, N}},
+        bias::EnzymeCore.Annotation{<:AbstractVector}) where {N, RT}
+    dys = y.dval
+    dxs = x.dval
+    dbs = bias.dval
+
+    if EnzymeRules.width(cfg) == 1
+        dys = (dys,)
+        dxs = (dxs,)
+        dbs = (dbs,)
+    end
+
+    for (dy, dx, db) in zip(dys, dxs, dbs)
+        if !(typeof(y) <: EnzymeCore.Const) && dy !== y.val
+            if !(typeof(x) <: EnzymeCore.Const) && dx !== x.val && dx !== dy
+                copyto!(dx, dy)
+            end
+
+            if !(typeof(bias) <: EnzymeCore.Const) && db !== bias.val
+                dy_ = reshape(dy, :, size(dy, N - 1), size(dy, N))
+                @tturbo for K in indices(dy_, 3),
+                    J in indices((dy_, db), (2, 1)),
+                    I in indices(dy_, 1)
+
+                    db[J] += dy_[I, J, K]
+                end
+            end
+
+            dx !== dy && fill!(dy, false)
+        end
+    end
+
+    return nothing, nothing, nothing, nothing
 end

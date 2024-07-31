@@ -22,7 +22,7 @@ multiple operations.
     backends or backends that support mutation. Backends like `Tracker` and `ReverseDiff`
     fallback to the generic implementation.
   - For CUDA Arrays, this uses a special fused implementation via cuBLASLt.
-  - For small CPU Arrays (dims < 256), we use LoopVectorization.jl.
+  - For small CPU Arrays, we use LoopVectorization.jl.
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}

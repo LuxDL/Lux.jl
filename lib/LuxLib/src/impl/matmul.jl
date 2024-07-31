@@ -22,17 +22,17 @@ matmuladd!(C, A, B, ::Nothing) = matmul!(C, A, B)
 function matmuladd!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     matmuladd!(C, internal_operation_mode((A, B, bias)), A, B, bias)
-    return nothing
+    return
 end
 function matmuladd!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
         A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     C .= bias
     mul!(C, A, B, true, true)
-    return nothing
+    return
 end
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    if unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+    if size(C, 1) * size(A, 2) * size(B, 2) ≤ 2097152  # 128 ^ 3
         @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
             Cmn = zero(eltype(C))
             for k in indices((A, B), (2, 1))
@@ -40,11 +40,11 @@ function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
             end
             C[m, n] = Cmn + bias[m]
         end
-        return nothing
+        return
     end
     C .= bias
     mul!(C, A, B, true, true)
-    return nothing
+    return
 end
 
 function matmul(A::AbstractMatrix, B::AbstractVector)
@@ -63,15 +63,15 @@ end
 
 function matmul!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     matmul!(C, internal_operation_mode((A, B)), A, B)
-    return nothing
+    return
 end
 function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
         A::AbstractMatrix, B::AbstractMatrix)
     mul!(C, A, B)
-    return nothing
+    return
 end
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
-    if unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+    if size(C, 1) * size(A, 2) * size(B, 2) ≤ 2097152  # 128 ^ 3
         @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
             Cmn = zero(eltype(C))
             for k in indices((A, B), (2, 1))
@@ -79,10 +79,10 @@ function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::Abstr
             end
             C[m, n] = Cmn
         end
-        return nothing
+        return
     end
     mul!(C, A, B)
-    return nothing
+    return
 end
 
 # ChainRules
