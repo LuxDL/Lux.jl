@@ -422,3 +422,23 @@ end
         @test MSLELoss(; agg=sum)(2.0, 0.0) ≈ Lux.__msle_loss(2.0, 0.0, nothing)
     end
 end
+
+@testitem "SAM" setup=[SharedTestSetup] tags=[:helpers] begin
+    using Zygote
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        @testset "SAM" begin
+            y = [1, 2, 3, 4] |> aType
+            ŷ = [5.0, 6.0, 7.0, 8.0] |> aType
+
+            @test SAMLoss(MSELoss())(ŷ, y) ≈ 16.0
+            @test SAMLoss(MSELoss())(y, 0.5 .* y) ≈ 1.875
+
+            @jet SAMLoss(MSELoss())(ŷ, y)
+            @test @inferred(Zygote.gradient(MSELoss(), ŷ, y)) isa Any
+
+            __f = Base.Fix2(SAMLoss(), y)
+            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+        end
+    end
+end

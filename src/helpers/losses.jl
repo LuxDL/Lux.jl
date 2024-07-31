@@ -624,11 +624,15 @@ function (loss::SAMLoss)(model, ps, st, (x, y))
     return loss.loss_fn(ŷ, y)
 end
 
+function __unsafe_apply_loss(loss::SAMLoss, ŷ, y)
+    return loss.loss_fn(ŷ, y)
+end
+
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, SL::typeof(SAMLoss), model, ps, st, (x, y))
-    grad = Zygote.gradient(ps->SL.loss_fn(model(x, ps, st)[1], y), ps)
+    grad = Zygote.gradient(pars->SL.loss_fn(model(x, pars, st)[1], y), ps)
     ϵ = SL.ρ * grad / (norm(grad) + eps)
 
-    return SL.loss_fn(model(x, ps, st)[1], y), Zygote.gradient(ps->SL.loss_fn(model(x, ps, st)[1], y), ps .+ ϵ) 
+    return SL.loss_fn(model(x, ps, st)[1], y), Zygote.gradient(pars->SL.loss_fn(model(x, pars, st)[1], y), ps .+ ϵ) 
 end
 
 
