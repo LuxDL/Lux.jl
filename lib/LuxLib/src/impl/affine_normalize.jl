@@ -73,28 +73,159 @@ function __affine_normalize_bn_impl!(
     _fast_activation!(f, y) # NOTE: don't fuse into the above loop
 end
 
-function __compute_bn_scale_bias!(_scale, _bias, ::Nothing, ::Nothing, μ, σ², ϵ)
-    @tturbo for J in indices((_scale, _bias))
-        _scale[J] = inv(sqrt(σ²[J] + ϵ))
-        _bias[J] = -μ[J] * _scale[J]
+function __compute_bn_scale_bias!(_scale, _bias, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, μ, σ², ϵ)
+    if scale === nothing
+        @tturbo for J in indices((_scale, _bias))
+            _scale[J] = inv(sqrt(σ²[J] + ϵ))
+            _bias[J] = -μ[J] * _scale[J]
+        end
+    else
+        @tturbo for J in indices((_scale, _bias))
+            _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
+            _bias[J] = -μ[J] * _scale[J] + bias[J]
+        end
     end
 end
 
-function __compute_bn_scale_bias!(
-        _scale, _bias, scale::AbstractVector, bias::AbstractVector, μ, σ², ϵ)
-    @tturbo for J in indices((_scale, _bias))
-        _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
-        _bias[J] = -μ[J] * _scale[J] + bias[J]
+function __compute_bn_scale_bias_no_turbo!(_scale, _bias, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, μ, σ², ϵ)
+    if scale === nothing
+        @simd ivdep for J in eachindex(_scale, _bias)
+            _scale[J] = inv(sqrt(σ²[J] + ϵ))
+            _bias[J] = -μ[J] * _scale[J]
+        end
+    else
+        @simd ivdep for J in eachindex(_scale, _bias)
+            _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
+            _bias[J] = -μ[J] * _scale[J] + bias[J]
+        end
     end
 end
 
-function __apply_bn_scale_bias!(y, _scale, _bias, x)
+function EnzymeRules.augmented_primal(
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__compute_bn_scale_bias!)},
+        ::Type{RT}, _scale::EnzymeCore.Annotation{<:AbstractVector},
+        _bias::EnzymeCore.Annotation{<:AbstractVector},
+        scale::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
+        bias::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
+        μ::EnzymeCore.Annotation{<:AbstractVector},
+        σ²::EnzymeCore.Annotation{<:AbstractVector},
+        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
+    fwd, rev = EnzymeCore.autodiff_thunk(EnzymeCore.ReverseSplitWithPrimal,
+        EnzymeCore.Const{typeof(__compute_bn_scale_bias_no_turbo!)},
+        EnzymeCore.Const, typeof(_scale), typeof(_bias),
+        typeof(scale), typeof(bias), typeof(μ), typeof(σ²), typeof(ϵ))
+
+    tape, result, shadow_result = fwd(EnzymeCore.Const(__compute_bn_scale_bias_no_turbo!),
+        _scale, _bias, scale, bias, μ, σ², ϵ)
+
+    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
+end
+
+function EnzymeRules.reverse(
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__compute_bn_scale_bias!)},
+        ::Type{RT}, (tape, rev), _scale::EnzymeCore.Annotation{<:AbstractVector},
+        _bias::EnzymeCore.Annotation{<:AbstractVector},
+        scale::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
+        bias::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
+        μ::EnzymeCore.Annotation{<:AbstractVector},
+        σ²::EnzymeCore.Annotation{<:AbstractVector},
+        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
+    return only(rev(EnzymeCore.Const(__compute_bn_scale_bias_no_turbo!),
+        _scale, _bias, scale, bias, μ, σ², ϵ, tape))
+end
+
+function __apply_bn_scale_bias!(y::AbstractArray{<:Number, 3}, _scale::AbstractVector,
+        _bias::AbstractVector, x::AbstractArray{<:Number, 3})
     @tturbo for K in indices((x, y), 3),
         J in indices((x, y, _scale, _bias), (2, 2, 1, 1)),
         I in indices((x, y), 1)
 
         y[I, J, K] = x[I, J, K] * _scale[J] + _bias[J]
     end
+end
+
+function EnzymeRules.augmented_primal(
+        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__apply_bn_scale_bias!)},
+        ::Type{RT}, y::EnzymeCore.Annotation{<:AbstractArray{<:Number, 3}},
+        scale::EnzymeCore.Annotation{<:AbstractVector},
+        bias::EnzymeCore.Annotation{<:AbstractVector},
+        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, 3}}) where {RT}
+    if typeof(y) <: EnzymeCore.Duplicated || typeof(y) <: EnzymeCore.BatchDuplicated
+        __apply_bn_scale_bias!(y.val, scale.val, bias.val, x.val)
+    end
+
+    primal = EnzymeRules.needs_primal(cfg) ? y.val : nothing
+    shadow = EnzymeRules.needs_shadow(cfg) ? y.dval : nothing
+
+    cache_x = (EnzymeRules.overwritten(cfg)[5] &&
+               !(typeof(y) <: EnzymeCore.Const) &&
+               !(typeof(scale) <: EnzymeCore.Const)) ? copy(x.val) : nothing
+
+    return EnzymeRules.AugmentedReturn(primal, shadow, (cache_x,))
+end
+
+function EnzymeRules.reverse(
+        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__apply_bn_scale_bias!)},
+        ::Type{RT}, (cache_x,), y::EnzymeCore.Annotation{<:AbstractArray{<:Number, 3}},
+        scale::EnzymeCore.Annotation{<:AbstractVector},
+        bias::EnzymeCore.Annotation{<:AbstractVector},
+        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, 3}}) where {RT}
+    if !(typeof(y) <: EnzymeCore.Const) && !(typeof(x) <: EnzymeCore.Const)
+        if !EnzymeRules.overwritten(cfg)[5]
+            cache_x = x.val
+        end
+    end
+
+    dys = y.dval
+    dxs = (typeof(x) <: EnzymeCore.Const) ? dys : x.dval
+    dscales = (typeof(scale) <: EnzymeCore.Const) ? dys : scale.dval
+    dbiases = (typeof(bias) <: EnzymeCore.Const) ? dys : bias.dval
+
+    if EnzymeRules.width(cfg) == 1
+        dys = (dys,)
+        dxs = (dxs,)
+        dscales = (dscales,)
+        dbiases = (dbiases,)
+    end
+
+    for (dy, dx, dscale, dbias) in zip(dys, dxs, dscales, dbiases)
+        if !(typeof(y) <: EnzymeCore.Const) && dy !== y.val
+            if !(typeof(x) <: EnzymeCore.Const) && dx !== x.val
+                @tturbo for K in indices((dx, dy), 3),
+                    J in indices((dx, dy), 2),
+                    I in indices((dx, dy), 1)
+
+                    dx[I, J, K] = dy[I, J, K] * scale.val[J]
+                end
+            end
+
+            if !(typeof(scale) <: EnzymeCore.Const) && dscale !== scale.val
+                fill!(dscale, false)
+                @tturbo for K in indices((dx, dy), 3),
+                    J in indices((dx, dy), 2),
+                    I in indices((dx, dy), 1)
+
+                    dscale[J] += dy[I, J, K] * x.val[I, J, K]
+                end
+            end
+
+            if !(typeof(bias) <: EnzymeCore.Const) && dbias !== bias.val
+                fill!(dbias, false)
+                @tturbo for K in indices((dx, dy), 3),
+                    J in indices((dx, dy), 2),
+                    I in indices((dx, dy), 1)
+
+                    dbias[J] += dy[I, J, K]
+                end
+            end
+
+            fill!(dy, false)
+        end
+    end
+
+    return ntuple(Returns(nothing), 4)
 end
 
 function __affine_normalize_bn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 3},
@@ -316,6 +447,74 @@ function __affine_normalize_gn_impl!(
     end
 end
 
+@inbounds function __affine_normalize_gn_impl_no_turbo!(
+        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, ::Nothing,
+        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real)
+    for L in indices(y, 4), K in indices(y, 3)
+        _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+        _bc = -μ[1, 1, K, L] * _sc
+        for J in indices(y, 2)
+            @simd ivdep for I in indices(y, 1)
+                y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
+            end
+        end
+    end
+end
+
+@inbounds function __affine_normalize_gn_impl_no_turbo!(
+        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, ::Nothing,
+        x::AbstractArray{<:Number, 4}, μ, σ², scale::AbstractArray{<:Number, 4},
+        bias::AbstractArray{<:Number, 4}, ϵ::Real)
+    for L in indices(y, 4), K in indices(y, 3)
+        idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+        for J in indices(y, 2)
+            _sc = scale[1, J, K, 1] * idenom
+            _bc = muladd(-μ[1, 1, K, L], _sc, bias[1, J, K, 1])
+            @simd ivdep for I in indices(y, 1)
+                y[I, J, K, L] = muladd(x[I, J, K, L], _sc, _bc)
+            end
+        end
+    end
+end
+
+function EnzymeRules.augmented_primal(
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__affine_normalize_gn_impl!)},
+        ::Type{RT}, opmode::EnzymeCore.Const{LoopedArrayOp},
+        y::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        n::EnzymeCore.Const{Nothing},
+        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        μ::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        σ²::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        scale::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
+        bias::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
+        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
+    fwd, rev = EnzymeCore.autodiff_thunk(EnzymeCore.ReverseSplitWithPrimal,
+        EnzymeCore.Const{typeof(__affine_normalize_gn_impl_no_turbo!)},
+        EnzymeCore.Const, typeof(opmode), typeof(y), typeof(n), typeof(x),
+        typeof(μ), typeof(σ²), typeof(scale), typeof(bias), typeof(ϵ))
+
+    tape, result, shadow_result = fwd(
+        EnzymeCore.Const(__affine_normalize_gn_impl_no_turbo!),
+        opmode, y, n, x, μ, σ², scale, bias, ϵ)
+
+    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
+end
+
+function EnzymeRules.reverse(
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__affine_normalize_gn_impl!)},
+        ::Type{RT}, (tape, rev), opmode::EnzymeCore.Const{LoopedArrayOp},
+        y::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        n::EnzymeCore.Const{Nothing},
+        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        μ::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        σ²::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
+        scale::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
+        bias::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
+        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
+    return only(rev(EnzymeCore.Const(__affine_normalize_gn_impl_no_turbo!),
+        opmode, y, n, x, μ, σ², scale, bias, ϵ, tape))
+end
+
 function __affine_normalize_gn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 4}, f::F,
         x::AbstractArray{<:Number, 4}, μ, σ², scale::Optional{<:AbstractArray},
         bias::Optional{<:AbstractArray}, ϵ::Real) where {F}
@@ -450,14 +649,17 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
         idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         idenom² = idenom^2
 
-        for J in indices(∂y, 2), I in indices(∂y, 1)
-            xμ = x[I, J, K, L] - μ[1, 1, K, L]
+        for J in indices(∂y, 2)
+            _sc = scale[1, J, K, 1] * idenom
+            for I in indices(∂y, 1)
+                xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-            ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
-            ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-            ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
-            ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
-            ∂b[1, J, K, 1] += ∂y[I, J, K, L]
+                ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
+                ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+                ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
+                ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
+                ∂b[1, J, K, 1] += ∂y[I, J, K, L]
+            end
         end
     end
 

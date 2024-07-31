@@ -155,8 +155,8 @@ function __bias_activation_impl!(
 end
 
 # Useful in some of the rrule implementations
-function __apply_bias_activation_cached!!(
-        σ::F, x, bias::Optional{<:AbstractVector{<:Number}}) where {F}
+function __apply_bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},
+        bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
     @assert σ !== identity
     bias === nothing && return _fast_activation(σ, x), x
     if can_setindex(x)
