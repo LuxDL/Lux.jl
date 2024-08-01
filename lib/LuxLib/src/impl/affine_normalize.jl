@@ -103,38 +103,7 @@ function __compute_bn_scale_bias_no_turbo!(_scale, _bias, scale::Optional{<:Abst
     end
 end
 
-function EnzymeRules.augmented_primal(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__compute_bn_scale_bias!)},
-        ::Type{RT}, _scale::EnzymeCore.Annotation{<:AbstractVector},
-        _bias::EnzymeCore.Annotation{<:AbstractVector},
-        scale::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
-        bias::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
-        μ::EnzymeCore.Annotation{<:AbstractVector},
-        σ²::EnzymeCore.Annotation{<:AbstractVector},
-        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
-    fwd, rev = EnzymeCore.autodiff_thunk(EnzymeCore.ReverseSplitWithPrimal,
-        EnzymeCore.Const{typeof(__compute_bn_scale_bias_no_turbo!)},
-        EnzymeCore.Const, typeof(_scale), typeof(_bias),
-        typeof(scale), typeof(bias), typeof(μ), typeof(σ²), typeof(ϵ))
-
-    tape, result, shadow_result = fwd(EnzymeCore.Const(__compute_bn_scale_bias_no_turbo!),
-        _scale, _bias, scale, bias, μ, σ², ϵ)
-
-    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
-end
-
-function EnzymeRules.reverse(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__compute_bn_scale_bias!)},
-        ::Type{RT}, (tape, rev), _scale::EnzymeCore.Annotation{<:AbstractVector},
-        _bias::EnzymeCore.Annotation{<:AbstractVector},
-        scale::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
-        bias::EnzymeCore.Annotation{<:Optional{<:AbstractVector}},
-        μ::EnzymeCore.Annotation{<:AbstractVector},
-        σ²::EnzymeCore.Annotation{<:AbstractVector},
-        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
-    return only(rev(EnzymeCore.Const(__compute_bn_scale_bias_no_turbo!),
-        _scale, _bias, scale, bias, μ, σ², ϵ, tape))
-end
+@enzyme_reverse_alternative __compute_bn_scale_bias! __compute_bn_scale_bias_no_turbo!
 
 function __apply_bn_scale_bias!(y::AbstractArray{<:Number, 3}, _scale::AbstractVector,
         _bias::AbstractVector, x::AbstractArray{<:Number, 3})
@@ -477,43 +446,7 @@ end
     end
 end
 
-function EnzymeRules.augmented_primal(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__affine_normalize_gn_impl!)},
-        ::Type{RT}, opmode::EnzymeCore.Const{LoopedArrayOp},
-        y::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        n::EnzymeCore.Const{Nothing},
-        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        μ::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        σ²::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        scale::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
-        bias::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
-        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
-    fwd, rev = EnzymeCore.autodiff_thunk(EnzymeCore.ReverseSplitWithPrimal,
-        EnzymeCore.Const{typeof(__affine_normalize_gn_impl_no_turbo!)},
-        EnzymeCore.Const, typeof(opmode), typeof(y), typeof(n), typeof(x),
-        typeof(μ), typeof(σ²), typeof(scale), typeof(bias), typeof(ϵ))
-
-    tape, result, shadow_result = fwd(
-        EnzymeCore.Const(__affine_normalize_gn_impl_no_turbo!),
-        opmode, y, n, x, μ, σ², scale, bias, ϵ)
-
-    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
-end
-
-function EnzymeRules.reverse(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__affine_normalize_gn_impl!)},
-        ::Type{RT}, (tape, rev), opmode::EnzymeCore.Const{LoopedArrayOp},
-        y::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        n::EnzymeCore.Const{Nothing},
-        x::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        μ::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        σ²::EnzymeCore.Annotation{<:AbstractArray{<:Number, 4}},
-        scale::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
-        bias::EnzymeCore.Annotation{<:Optional{<:AbstractArray{<:Number, 4}}},
-        ϵ::EnzymeCore.Annotation{<:AbstractFloat}) where {RT}
-    return only(rev(EnzymeCore.Const(__affine_normalize_gn_impl_no_turbo!),
-        opmode, y, n, x, μ, σ², scale, bias, ϵ, tape))
-end
+@enzyme_reverse_alternative __affine_normalize_gn_impl! __affine_normalize_gn_impl_no_turbo!
 
 function __affine_normalize_gn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 4}, f::F,
         x::AbstractArray{<:Number, 4}, μ, σ², scale::Optional{<:AbstractArray},

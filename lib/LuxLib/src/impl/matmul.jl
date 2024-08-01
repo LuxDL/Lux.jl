@@ -149,50 +149,6 @@ function CRC.rrule(::typeof(matmuladd), opmode::LoopedArrayOp,
 end
 
 # EnzymeRules
-## `matmul!`
-function EnzymeRules.augmented_primal(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmul_loopvec!)},
-        ::Type{RT}, C::EnzymeCore.Annotation{<:AbstractMatrix},
-        A::EnzymeCore.Annotation{<:AbstractMatrix},
-        B::EnzymeCore.Annotation{<:AbstractMatrix}) where {RT}
-    fwd, rev = EnzymeCore.autodiff_thunk(
-        EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof(__matmul_generic!)},
-        EnzymeCore.Const, typeof(C), typeof(A), typeof(B))
+@enzyme_reverse_alternative __matmul_loopvec! __matmul_generic!
 
-    tape, result, shadow_result = fwd(EnzymeCore.Const(__matmul_generic!), C, A, B)
-
-    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
-end
-
-function EnzymeRules.reverse(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmul_loopvec!)},
-        ::Type{RT}, (tape, rev), C::EnzymeCore.Annotation{<:AbstractMatrix},
-        A::EnzymeCore.Annotation{<:AbstractMatrix},
-        B::EnzymeCore.Annotation{<:AbstractMatrix}) where {RT}
-    return only(rev(EnzymeCore.Const(__matmul_generic!), C, A, B, tape))
-end
-
-## `matmuladd!`
-function EnzymeRules.augmented_primal(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmuladd_loopvec!)},
-        ::Type{RT}, C::EnzymeCore.Annotation{<:AbstractMatrix},
-        A::EnzymeCore.Annotation{<:AbstractMatrix},
-        B::EnzymeCore.Annotation{<:AbstractMatrix},
-        bias::EnzymeCore.Annotation{<:AbstractVector}) where {RT}
-    fwd, rev = EnzymeCore.autodiff_thunk(
-        EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof(__matmuladd_generic!)},
-        EnzymeCore.Const, typeof(C), typeof(A), typeof(B), typeof(bias))
-
-    tape, result, shadow_result = fwd(EnzymeCore.Const(__matmuladd_generic!), C, A, B, bias)
-
-    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
-end
-
-function EnzymeRules.reverse(
-        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmuladd_loopvec!)},
-        ::Type{RT}, (tape, rev), C::EnzymeCore.Annotation{<:AbstractMatrix},
-        A::EnzymeCore.Annotation{<:AbstractMatrix},
-        B::EnzymeCore.Annotation{<:AbstractMatrix},
-        bias::EnzymeCore.Annotation{<:AbstractVector}) where {RT}
-    return only(rev(EnzymeCore.Const(__matmuladd_generic!), C, A, B, bias, tape))
-end
+@enzyme_reverse_alternative __matmuladd_loopvec! __matmuladd_generic!

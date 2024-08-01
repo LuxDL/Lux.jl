@@ -213,3 +213,27 @@ internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))
 
 CRC.@non_differentiable internal_operation_mode(::Any...)
 EnzymeRules.inactive_noinl(::typeof(internal_operation_mode), ::Any...) = nothing
+
+# Switches function `foo` with function `bar`. To be used when Enzyme cannot differentiate
+# through `foo` but supports `bar`. Use with caution, avoid multiple dispatch on `foo`.
+# Also the function should always return `nothing`
+macro enzyme_reverse_alternative(f₁, f₂)
+    return esc(quote
+        function EnzymeRules.augmented_primal(
+                ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(f₁))},
+                ::Type{RT}, args...) where {RT}
+            fwd, rev = EnzymeCore.autodiff_thunk(EnzymeCore.ReverseSplitWithPrimal,
+                EnzymeCore.Const{typeof($(f₂))}, EnzymeCore.Const, typeof.(args)...)
+
+            tape, result, shadow_result = fwd(EnzymeCore.Const($(f₂)), args...)
+
+            return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
+        end
+
+        function EnzymeRules.reverse(
+                ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(f₁))},
+                ::Type{RT}, (tape, rev), args...) where {RT}
+            return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
+        end
+    end)
+end
