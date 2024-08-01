@@ -6,8 +6,7 @@
 ## custom types in extensions tends to be a PITA
 """
     DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::Node...;
-        name::NAME_TYPE=nothing, turbo::Union{Bool, Val}=Val(false),
-        bumper::Union{Bool, Val}=Val(false))
+        name::NAME_TYPE=nothing, eval_options::EvalOptions=EvalOptions())
     DynamicExpressionsLayer(operator_enum::OperatorEnum,
         expressions::AbstractVector{<:Node}; kwargs...)
 
@@ -25,11 +24,14 @@ For details about these expressions, refer to the
 ## Keyword Arguments
 
   - `name`: Name of the layer
-  - `turbo`: Use LoopVectorization.jl for faster evaluation
-  - `bumper`: Use Bumper.jl for faster evaluation
+  - `turbo`: Use LoopVectorization.jl for faster evaluation **(Deprecated)**
+  - `bumper`: Use Bumper.jl for faster evaluation **(Deprecated)**
+  - `eval_options`: EvalOptions from `DynamicExpressions.jl`
 
 These options are simply forwarded to `DynamicExpressions.jl`'s `eval_tree_array`
 and `eval_grad_tree_array` function.
+
+# Extended Help
 
 ## Example
 
@@ -48,15 +50,7 @@ x1 * cos(x2 - 3.2)
 julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
 ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)
 
-julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2)
-DynamicExpressionsLayer(
-    layer_1 = Parallel(
-        layer_1 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), x1 * cos(x2 - 3.2); turbo=Val{false}(), bumper=Val{false}()),  # 1 parameters
-        layer_2 = DynamicExpressionsLayer(DynamicExpressions.OperatorEnumModule.OperatorEnum{Tuple{typeof(+), typeof(-), typeof(*)}, Tuple{typeof(cos)}}((+, -, *), (cos,)), ((x2 - (x1 * x2)) + 2.5) - (1.0 * x1); turbo=Val{false}(), bumper=Val{false}()),  # 2 parameters
-    ),
-    layer_2 = WrappedFunction{:direct_call}(Lux.__stack1),
-)         # Total: 3 parameters,
-          #        plus 0 states.
+julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2);
 
 julia> ps, st = Lux.setup(Random.default_rng(), layer)
 ((layer_1 = (layer_1 = (params = Float32[3.2],), layer_2 = (params = Float32[2.5, 1.0],)), layer_2 = NamedTuple()), (layer_1 = (layer_1 = NamedTuple(), layer_2 = NamedTuple()), layer_2 = NamedTuple()))
@@ -86,13 +80,12 @@ true
     operator_enum
     expression
     name = nothing
-    turbo = Val(false)
-    bumper = Val(false)
+    eval_options
 end
 
 function Base.show(io::IO, l::DynamicExpressionsLayer)
     print(io,
-        "DynamicExpressionsLayer($(l.operator_enum), $(l.expression); turbo=$(l.turbo), bumper=$(l.bumper))")
+        "DynamicExpressionsLayer($(l.operator_enum), $(l.expression); eval_options=$(l.eval_options))")
 end
 
 function initialparameters(::AbstractRNG, layer::DynamicExpressionsLayer)
@@ -106,7 +99,7 @@ function __update_expression_constants!(expression, ps)
     # case we just warn the user
     params = filter(node -> node.degree == 0 && node.constant, expression)
     foreach(enumerate(params)) do (i, node)
-        !(node.val isa typeof(ps[i])) &&
+        (node.val isa typeof(ps[i])) ||
             @warn lazy"node.val::$(typeof(node.val)) != ps[$i]::$(typeof(ps[i])). Type of node.val takes precedence. Fix the input expression if this is unintended." maxlog=1
         return node.val = ps[i]
     end
@@ -118,6 +111,8 @@ end
     return vec(y), st_
 end
 
+# NOTE: Unfortunately we can't use `get_device_type` since it causes problems with
+#       ReverseDiff
 @inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
     y = match_eltype(de, ps, st, x)
     return (
@@ -126,10 +121,15 @@ end
         st)
 end
 
+function __apply_dynamic_expression_internal end
+
 function __apply_dynamic_expression(
         de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::LuxCPUDevice)
-    __update_expression_constants!(expr, ps)
-    return expr(x, operator_enum; de.turbo, de.bumper)
+    if !_is_extension_loaded(Val(:DynamicExpressions))
+        error("`DynamicExpressions.jl` is not loaded. Please load it before using \
+               `DynamicExpressionsLayer`.")
+    end
+    return __apply_dynamic_expression_internal(de, expr, operator_enum, x, ps)
 end
 
 function __apply_dynamic_expression_rrule end
@@ -138,7 +138,7 @@ function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsL
         expr, operator_enum, x, ps, ::LuxCPUDevice)
     if !_is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
-               computing gradient for `DynamicExpressionLayer`.")
+               `DynamicExpressionsLayer`.")
     end
     return __apply_dynamic_expression_rrule(de, expr, operator_enum, x, ps)
 end
