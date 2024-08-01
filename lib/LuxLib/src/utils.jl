@@ -222,8 +222,9 @@ macro enzyme_reverse_alternative(f₁, f₂)
         function EnzymeRules.augmented_primal(
                 ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(f₁))},
                 ::Type{RT}, args...) where {RT}
-            fwd, rev = EnzymeCore.autodiff_thunk(EnzymeCore.ReverseSplitWithPrimal,
-                EnzymeCore.Const{typeof($(f₂))}, EnzymeCore.Const, typeof.(args)...)
+            fwd, rev = EnzymeCore.autodiff_thunk(
+                EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof($(f₂))},
+                EnzymeCore.Const, typeof.(args)...)
 
             tape, result, shadow_result = fwd(EnzymeCore.Const($(f₂)), args...)
 
