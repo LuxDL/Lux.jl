@@ -384,12 +384,13 @@ function __affine_normalize_gn_impl!(opmode::LoopedArrayOp, y::AbstractArray{<:N
         f::F, x::AbstractArray{<:Number, 4}, μ, σ²,
         scale::Optional{<:AbstractArray{<:Number, 4}},
         bias::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
-    __affine_normalize_gn_impl_loopvec!(opmode, y, x, μ, σ², scale, bias, ϵ)
+    __affine_normalize_gn_impl_loopvec!(y, x, μ, σ², scale, bias, ϵ)
     _fast_activation!(f, y) # NOTE: don't fuse into the above loop
 end
 
-function __affine_normalize_gn_impl_loopvec!(::LoopedArrayOp, y::AbstractArray{<:Number, 4},
-        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real)
+function __affine_normalize_gn_impl_loopvec!(
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+        μ, σ², ::Nothing, ::Nothing, ϵ::Real)
     @tturbo for L in indices(y, 4), K in indices(y, 3)
         _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         _bc = -μ[1, 1, K, L] * _sc
@@ -400,8 +401,8 @@ function __affine_normalize_gn_impl_loopvec!(::LoopedArrayOp, y::AbstractArray{<
 end
 
 function __affine_normalize_gn_impl_loopvec!(
-        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4}, μ,
-        σ², scale::AbstractArray{<:Number, 4}, bias::AbstractArray{<:Number, 4}, ϵ::Real)
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4}, μ, σ²,
+        scale::AbstractArray{<:Number, 4}, bias::AbstractArray{<:Number, 4}, ϵ::Real)
     @tturbo for L in indices(y, 4), K in indices(y, 3)
         idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         for J in indices(y, 2)
@@ -415,8 +416,8 @@ function __affine_normalize_gn_impl_loopvec!(
 end
 
 @inbounds function __affine_normalize_gn_impl_no_turbo!(
-        ::LoopedArrayOp, y::AbstractArray{<:Number, 4},
-        x::AbstractArray{<:Number, 4}, μ, σ², ::Nothing, ::Nothing, ϵ::Real)
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+        μ, σ², ::Nothing, ::Nothing, ϵ::Real)
     for L in indices(y, 4), K in indices(y, 3)
         _sc = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         _bc = -μ[1, 1, K, L] * _sc
@@ -429,8 +430,8 @@ end
 end
 
 @inbounds function __affine_normalize_gn_impl_no_turbo!(
-        ::LoopedArrayOp, y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4}, μ,
-        σ², scale::AbstractArray{<:Number, 4}, bias::AbstractArray{<:Number, 4}, ϵ::Real)
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4}, μ, σ²,
+        scale::AbstractArray{<:Number, 4}, bias::AbstractArray{<:Number, 4}, ϵ::Real)
     for L in indices(y, 4), K in indices(y, 3)
         idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
         for J in indices(y, 2)
@@ -443,7 +444,7 @@ end
     end
 end
 
-@enzyme_reverse_alternative __affine_normalize_gn_impl! __affine_normalize_gn_impl_no_turbo!
+@enzyme_reverse_alternative __affine_normalize_gn_impl_loopvec! __affine_normalize_gn_impl_no_turbo!
 
 function __affine_normalize_gn_impl!(::GPUBroadcastOp, y::AbstractArray{<:Number, 4}, f::F,
         x::AbstractArray{<:Number, 4}, μ, σ², scale::Optional{<:AbstractArray},
