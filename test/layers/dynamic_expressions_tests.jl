@@ -1,5 +1,5 @@
 @testitem "Dynamic Expressions" setup=[SharedTestSetup] tags=[:others] begin
-    using DynamicExpressions, ForwardDiff, ComponentArrays
+    using DynamicExpressions, ForwardDiff, ComponentArrays, Bumper
 
     operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos])
 
@@ -9,8 +9,11 @@
     expr_1 = x1 * cos(x2 - 3.2)
     expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
 
-    for exprs in ((expr_1,), (expr_1, expr_2), ([expr_1, expr_2],))
-        layer = DynamicExpressionsLayer(operators, exprs...)
+    for exprs in ((expr_1,), (expr_1, expr_2), ([expr_1, expr_2],)),
+        turbo in (Val(false), Val(true)),
+        bumper in (Val(false), Val(true))
+
+        layer = DynamicExpressionsLayer(operators, exprs...; turbo, bumper)
         ps, st = Lux.setup(Random.default_rng(), layer)
 
         x = [1.0f0 2.0f0 3.0f0
