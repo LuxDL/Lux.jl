@@ -8,7 +8,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
-using LoopVectorization: indices, @tturbo
+using LoopVectorization: LoopVectorization, indices, @tturbo
 using LuxCore: LuxCore
 using Markdown: @doc_str
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
