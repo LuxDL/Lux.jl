@@ -33,23 +33,34 @@ end
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
     if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
-        if size(A, 2) != size(B, 1)
-            throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
-        end
-
-        if length(bias) != size(A, 1)
-            throw(DimensionMismatch(lazy"bias has length $(length(bias)) but A has shape ($(size(A, 1)), $(size(A, 2)))"))
-        end
-
-        @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
-            Cmn = zero(eltype(C))
-            for k in indices((A, B), (2, 1))
-                Cmn += A[m, k] * B[k, n]
-            end
-            C[m, n] = Cmn + bias[m]
-        end
+        __matmuladd_loopvec!(C, A, B, bias)
         return
     end
+    __matmuladd_generic!(C, A, B, bias)
+    return
+end
+
+function __matmuladd_loopvec!(
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+    if size(A, 2) != size(B, 1)
+        throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
+    end
+
+    if length(bias) != size(A, 1)
+        throw(DimensionMismatch(lazy"bias has length $(length(bias)) but A has shape ($(size(A, 1)), $(size(A, 2)))"))
+    end
+
+    @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
+        Cmn = zero(eltype(C))
+        for k in indices((A, B), (2, 1))
+            Cmn += A[m, k] * B[k, n]
+        end
+        C[m, n] = Cmn + bias[m]
+    end
+end
+
+function __matmuladd_generic!(
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     C .= bias
     mul!(C, A, B, true, true)
     return
@@ -80,19 +91,28 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
     if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
-        if size(A, 2) != size(B, 1)
-            throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
-        end
-
-        @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
-            Cmn = zero(eltype(C))
-            for k in indices((A, B), (2, 1))
-                Cmn += A[m, k] * B[k, n]
-            end
-            C[m, n] = Cmn
-        end
+        __matmul_loopvec!(C, A, B)
         return
     end
+    __matmul_generic!(C, A, B)
+    return
+end
+
+function __matmul_loopvec!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+    if size(A, 2) != size(B, 1)
+        throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
+    end
+
+    @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
+        Cmn = zero(eltype(C))
+        for k in indices((A, B), (2, 1))
+            Cmn += A[m, k] * B[k, n]
+        end
+        C[m, n] = Cmn
+    end
+end
+
+function __matmul_generic!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     mul!(C, A, B)
     return
 end
@@ -131,158 +151,48 @@ end
 # EnzymeRules
 ## `matmul!`
 function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.ConfigWidth, func::EnzymeCore.Const{typeof(matmul!)},
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmul_loopvec!)},
         ::Type{RT}, C::EnzymeCore.Annotation{<:AbstractMatrix},
-        opmode::EnzymeCore.Const{LoopedArrayOp},
         A::EnzymeCore.Annotation{<:AbstractMatrix},
         B::EnzymeCore.Annotation{<:AbstractMatrix}) where {RT}
-    if typeof(C) <: EnzymeCore.Duplicated || typeof(C) <: EnzymeCore.BatchDuplicated
-        func.val(C.val, A.val, B.val)
-    end
+    fwd, rev = EnzymeCore.autodiff_thunk(
+        EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof(__matmul_generic!)},
+        EnzymeCore.Const, typeof(C), typeof(A), typeof(B))
 
-    primal = EnzymeRules.needs_primal(cfg) ? C.val : nothing
-    shadow = EnzymeRules.needs_shadow(cfg) ? C.dval : nothing
+    tape, result, shadow_result = fwd(EnzymeCore.Const(__matmul_generic!), C, A, B)
 
-    cache_A = (EnzymeRules.overwritten(cfg)[3] &&
-               !(typeof(C) <: EnzymeCore.Const) &&
-               !(typeof(B) <: EnzymeCore.Const)) ? copy(A.val) : nothing
-    cache_B = (EnzymeRules.overwritten(cfg)[4] &&
-               !(typeof(C) <: EnzymeCore.Const) &&
-               !(typeof(A) <: EnzymeCore.Const)) ? copy(B.val) : nothing
-
-    return EnzymeRules.AugmentedReturn(primal, shadow, (cache_A, cache_B))
+    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
 end
 
 function EnzymeRules.reverse(
-        cfg::EnzymeRules.ConfigWidth, func::EnzymeCore.Const{typeof(matmul!)},
-        ::Type{RT}, cache, C::EnzymeCore.Annotation{<:AbstractMatrix},
-        opmode::EnzymeCore.Const{LoopedArrayOp},
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmul_loopvec!)},
+        ::Type{RT}, (tape, rev), C::EnzymeCore.Annotation{<:AbstractMatrix},
         A::EnzymeCore.Annotation{<:AbstractMatrix},
         B::EnzymeCore.Annotation{<:AbstractMatrix}) where {RT}
-    cache_A, cache_B = cache
-
-    if !(typeof(B) <: EnzymeCore.Const) && !(typeof(C) <: EnzymeCore.Const)
-        if !EnzymeRules.overwritten(cfg)[3]
-            cache_A = A.val
-        end
-    end
-
-    if !(typeof(A) <: EnzymeCore.Const) && !(typeof(C) <: EnzymeCore.Const)
-        if !EnzymeRules.overwritten(cfg)[3]
-            cache_B = B.val
-        end
-    end
-
-    dCs = C.dval
-    dAs = (typeof(A) <: EnzymeCore.Const) ? dCs : A.dval
-    dBs = (typeof(B) <: EnzymeCore.Const) ? dCs : B.dval
-
-    if EnzymeRules.width(cfg) == 1
-        dCs = (dCs,)
-        dAs = (dAs,)
-        dBs = (dBs,)
-    end
-
-    for (dC, dA, dB) in zip(dCs, dAs, dBs)
-        if !(typeof(C) <: EnzymeCore.Const) && dC !== C.val
-            if !(typeof(A) <: EnzymeCore.Const) && dA !== A.val
-                func.val(dA, opmode.val, dC, B.val')
-            end
-
-            if !(typeof(B) <: EnzymeCore.Const) && dB !== B.val
-                func.val(dB, opmode.val, A.val', dC)
-            end
-
-            dC .= 0
-        end
-    end
-
-    return ntuple(Returns(nothing), 4)
+    return only(rev(EnzymeCore.Const(__matmul_generic!), C, A, B, tape))
 end
 
 ## `matmuladd!`
 function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.ConfigWidth, func::EnzymeCore.Const{typeof(matmuladd!)},
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmuladd_loopvec!)},
         ::Type{RT}, C::EnzymeCore.Annotation{<:AbstractMatrix},
-        opmode::EnzymeCore.Const{LoopedArrayOp},
         A::EnzymeCore.Annotation{<:AbstractMatrix},
         B::EnzymeCore.Annotation{<:AbstractMatrix},
         bias::EnzymeCore.Annotation{<:AbstractVector}) where {RT}
-    if typeof(C) <: EnzymeCore.Duplicated || typeof(C) <: EnzymeCore.BatchDuplicated
-        func.val(C.val, A.val, B.val, bias.val)
-    end
+    fwd, rev = EnzymeCore.autodiff_thunk(
+        EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof(__matmuladd_generic!)},
+        EnzymeCore.Const, typeof(C), typeof(A), typeof(B), typeof(bias))
 
-    primal = EnzymeRules.needs_primal(cfg) ? C.val : nothing
-    shadow = EnzymeRules.needs_shadow(cfg) ? C.dval : nothing
+    tape, result, shadow_result = fwd(EnzymeCore.Const(__matmuladd_generic!), C, A, B, bias)
 
-    cache_A = (EnzymeRules.overwritten(cfg)[3] &&
-               !(typeof(C) <: EnzymeCore.Const) &&
-               !(typeof(B) <: EnzymeCore.Const)) ? copy(A.val) : nothing
-    cache_B = (EnzymeRules.overwritten(cfg)[4] &&
-               !(typeof(C) <: EnzymeCore.Const) &&
-               !(typeof(A) <: EnzymeCore.Const)) ? copy(B.val) : nothing
-    cache_bias = (EnzymeRules.overwritten(cfg)[5] && !(typeof(C) <: EnzymeCore.Const)) ?
-                 copy(bias.val) : nothing
-
-    return EnzymeRules.AugmentedReturn(primal, shadow, (cache_A, cache_B, cache_bias))
+    return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
 end
 
 function EnzymeRules.reverse(
-        cfg::EnzymeRules.ConfigWidth, func::EnzymeCore.Const{typeof(matmuladd!)},
-        ::Type{RT}, cache, C::EnzymeCore.Annotation{<:AbstractMatrix},
-        opmode::EnzymeCore.Const{LoopedArrayOp},
+        ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(__matmuladd_loopvec!)},
+        ::Type{RT}, (tape, rev), C::EnzymeCore.Annotation{<:AbstractMatrix},
         A::EnzymeCore.Annotation{<:AbstractMatrix},
         B::EnzymeCore.Annotation{<:AbstractMatrix},
         bias::EnzymeCore.Annotation{<:AbstractVector}) where {RT}
-    cache_A, cache_B, cache_bias = cache
-
-    if !(typeof(B) <: EnzymeCore.Const) && !(typeof(C) <: EnzymeCore.Const)
-        if !EnzymeRules.overwritten(cfg)[3]
-            cache_A = A.val
-        end
-    end
-
-    if !(typeof(A) <: EnzymeCore.Const) && !(typeof(C) <: EnzymeCore.Const)
-        if !EnzymeRules.overwritten(cfg)[4]
-            cache_B = B.val
-        end
-    end
-
-    if !(typeof(C) <: EnzymeCore.Const)
-        if !EnzymeRules.overwritten(cfg)[5]
-            cache_bias = bias.val
-        end
-    end
-
-    dCs = C.dval
-    dAs = (typeof(A) <: EnzymeCore.Const) ? dCs : A.dval
-    dBs = (typeof(B) <: EnzymeCore.Const) ? dCs : B.dval
-    dbiases = (typeof(bias) <: EnzymeCore.Const) ? dCs : bias.dval
-
-    if EnzymeRules.width(cfg) == 1
-        dCs = (dCs,)
-        dAs = (dAs,)
-        dBs = (dBs,)
-        dbiases = (dbiases,)
-    end
-
-    for (dC, dA, dB, dbias) in zip(dCs, dAs, dBs, dbiases)
-        if !(typeof(C) <: EnzymeCore.Const) && dC !== C.val
-            if !(typeof(A) <: EnzymeCore.Const) && dA !== A.val
-                matmul!(dA, opmode.val, dC, B.val')
-            end
-
-            if !(typeof(B) <: EnzymeCore.Const) && dB !== B.val
-                matmul!(dB, opmode.val, A.val', dC)
-            end
-
-            if !(typeof(bias) <: EnzymeCore.Const) && dbias !== bias.val
-                sum!(dbias, dC)
-            end
-
-            dC .= 0
-        end
-    end
-
-    return ntuple(Returns(nothing), 5)
+    return only(rev(EnzymeCore.Const(__matmuladd_generic!), C, A, B, bias, tape))
 end
