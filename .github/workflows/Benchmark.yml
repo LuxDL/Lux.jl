@@ -47,7 +47,7 @@ jobs:
       - name: Run benchmark
         run: |
           cd bench
-          julia --project --threads=2 --color=yes -e '
+          julia --project --threads=4 --color=yes -e '
             using Pkg;
             Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
             Pkg.instantiate();
