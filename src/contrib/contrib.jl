@@ -23,6 +23,7 @@ include("freeze.jl")
 include("share_parameters.jl")
 include("debug.jl")
 include("deprecated.jl")
+include("cassette.jl")
 
 @compat public layer_map, @layer_map
 @compat public FrozenLayer, freeze, unfreeze
