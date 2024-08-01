@@ -33,7 +33,6 @@ end
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
     if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2))) &&
-       unrolled_all(≤(1024), (size(C, 1), size(A, 2), size(B, 2))) &&
        LoopVectorization.check_args(C, A, B)
         __matmuladd_loopvec!(C, A, B, bias)
         return
@@ -93,7 +92,6 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
     if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2))) &&
-       unrolled_all(≤(1024), (size(C, 1), size(A, 2), size(B, 2))) &&
        LoopVectorization.check_args(C, A, B)
         __matmul_loopvec!(C, A, B)
         return
