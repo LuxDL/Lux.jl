@@ -39,6 +39,7 @@ layernorm
 ## Apply Activation
 
 ```@docs
+fast_activation
 fast_activation!!
 ```
 
