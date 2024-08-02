@@ -1,0 +1,501 @@
+        2 ```@meta
+     1131 EditURL = "../../../../examples/PolynomialFitting/main.jl"
+      505 ```
+      751 
+      258 # Fitting a Polynomial using MLP
+      252 
+      250 In this tutorial we will fit a MultiLayer Perceptron (MLP) on data generated from a
+      500 polynomial.
+        3 
+        - ## Package Imports
+        4 
+        - ````julia
+        1 using Lux, LuxAMDGPU, LuxCUDA, Optimisers, Random, Statistics, Zygote
+        - using CairoMakie, MakiePublication
+        - ````
+        - 
+        - ## Dataset
+        - 
+        - Generate 128 datapoints from the polynomial $y = x^2 - 2x$.
+        - 
+        - ````julia
+        - function generate_data(rng::AbstractRNG)
+        -     x = reshape(collect(range(-2.0f0, 2.0f0, 128)), (1, 128))
+        -     y = evalpoly.(x, ((0, -2, 1),)) .+ randn(rng, (1, 128)) .* 0.1f0
+        -     return (x, y)
+        - end
+        - ````
+        - 
+        - ````
+        - generate_data (generic function with 1 method)
+        - ````
+        - 
+        - Initialize the random number generator and fetch the dataset.
+        - 
+        - ````julia
+        - rng = MersenneTwister()
+        - Random.seed!(rng, 12345)
+        - 
+        - (x, y) = generate_data(rng)
+        - ````
+        - 
+        - ````
+        - (Float32[-2.0 -1.968504 -1.9370079 -1.9055119 -1.8740157 -1.8425196 -1.8110236 -1.7795275 -1.7480315 -1.7165354 -1.6850394 -1.6535434 -1.6220472 -1.5905511 -1.5590551 -1.527559 -1.496063 -1.464567 -1.4330709 -1.4015749 -1.3700787 -1.3385826 -1.3070866 -1.2755905 -1.2440945 -1.2125984 -1.1811024 -1.1496063 -1.1181102 -1.0866141 -1.0551181 -1.023622 -0.992126 -0.96062994 -0.92913383 -0.8976378 -0.86614174 -0.8346457 -0.8031496 -0.77165353 -0.7401575 -0.70866144 -0.6771653 -0.6456693 -0.61417323 -0.5826772 -0.5511811 -0.51968503 -0.48818898 -0.4566929 -0.42519686 -0.39370078 -0.36220473 -0.33070865 -0.2992126 -0.26771653 -0.23622048 -0.20472442 -0.17322835 -0.14173229 -0.11023622 -0.07874016 -0.047244094 -0.015748031 0.015748031 0.047244094 0.07874016 0.11023622 0.14173229 0.17322835 0.20472442 0.23622048 0.26771653 0.2992126 0.33070865 0.36220473 0.39370078 0.42519686 0.4566929 0.48818898 0.51968503 0.5511811 0.5826772 0.61417323 0.6456693 0.6771653 0.70866144 0.7401575 0.77165353 0.8031496 0.8346457 0.8661417
+        - ````
+        - 
+        - Let's visualize the dataset
+        - 
+        - ````julia
+        - with_theme(theme_web()) do
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        - 
+        -     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+        -     s = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
+        -         strokecolor=:black, strokewidth=1)
+        - 
+        -     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
+        - 
+        -     return fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=408 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAMwCAIAAAC/VA7OAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdd1xTV/8H8G8SCBtFUAQEEZAtigvBBY5aV6sVq1XrbKtSR0WttVQ7tI4661ZaR/s4+rhbcdUNgoLIEpGlgIAgQ2aYSZ4/bp80hhVWEpLP+9U/wrkn535z5fn98uHcew5LKBQSAAAAAAAAqB62vAsAAAAAAAAA+UAgBAAAAAAAUFEIhAAAAAAAACoKgRAAAAAAAEBFIRACAAAAAACoKARCAAAAAAAAFYVACAAAAAAAoKIQCAEAAAAAAFQUAiEAAAAAAICKQiAEAAAAAABQUQiEAAAAAAAAKgqBEAAAAAAAQEUhEAIAAAAAAKgoBEIAAAAAAAAVhUAIAAAAAACgohAIAQAAAAAAVBQCIQAAAAAAgIpCIAQAAAAAAFBRCIQAAAAAAAAqCoEQAAAAAABARSEQAgAAAAAAqCgEQgAAAAAAABWFQAgAAAAAAKCiEAgBAAAAAABUFAIhAAAAAACAikIgBAAAAAAAUFEIhAAAAAAAACoKgRAAAAAAAEBFIRACAAAAAACoKARCAAAAAAAAFaUm7wLaABaLJe8SAAAAAABARQmFwtYbHDOEAAAAAAAAKgozhNJq1VwOAAAAAAAgQQb3KmKGEAAAAAAAQEUhEAIAAAAAAKgoBEIAAAAAAAAVhUAIAAAAAACgohAIAQAAAAAAVBQCIQAAAAAAgIpCIAQAAAAAAFBRCIQAAAAAAAAqCoEQAAAAAABARanJu4A2w8zMTPQ6IyNDjpUAAAAAAAC0CJZQKJR3DYqOxWJJtOCiAQAAAABAa2OSSKumD8wQSis9PV3eJQAAAAAAALQkzBA2TAa5HAAAAAAAQIIMkggWlQEAAAAAAFBRCI
+        - ```
+        - 
+        - ## Neural Network
+        - 
+        - For this problem, you should not be using a neural network. But let's still do that!
+        - 
+        - ````julia
+        - model = Chain(Dense(1 => 16, relu), Dense(16 => 1))
+        - ````
+        - 
+        - ````
+        - Chain(
+        -     layer_1 = Dense(1 => 16, relu),     # 32 parameters
+        -     layer_2 = Dense(16 => 1),           # 17 parameters
+        - )         # Total: 49 parameters,
+        -           #        plus 0 states.
+        - ````
+        - 
+        - ## Optimizer
+        - 
+        - We will use Adam from Optimisers.jl
+        - 
+        - ````julia
+        - opt = Adam(0.03f0)
+        - ````
+        - 
+        - ````
+        - Adam(0.03, (0.9, 0.999), 1.0e-8)
+        - ````
+        - 
+        - ## Loss Function
+        - 
+        - We will use the `Lux.Training` API so we need to ensure that our loss function takes 4
+        - inputs -- model, parameters, states and data. The function must return 3 values -- loss,
+        - updated_state, and any computed statistics.
+        - 
+        - ````julia
+        - function loss_function(model, ps, st, data)
+        -     y_pred, st = Lux.apply(model, data[1], ps, st)
+        -     mse_loss = mean(abs2, y_pred .- data[2])
+        -     return mse_loss, st, ()
+        - end
+        - ````
+        - 
+        - ````
+        - loss_function (generic function with 1 method)
+        - ````
+        - 
+        - ## Training
+        - 
+        - First we will create a [`Lux.Experimental.TrainState`](@ref) which is essentially a
+        - convenience wrapper over parameters, states and optimizer states.
+        - 
+        - ````julia
+        - tstate = Lux.Training.TrainState(rng, model, opt)
+        - ````
+        - 
+        - ````
+        - Lux.Experimental.TrainState{Lux.Chain{@NamedTuple{layer_1::Lux.Dense{true, typeof(NNlib.relu), typeof(WeightInitializers.glorot_uniform), typeof(WeightInitializers.zeros32)}, layer_2::Lux.Dense{true, typeof(identity), typeof(WeightInitializers.glorot_uniform), typeof(WeightInitializers.zeros32)}}, Nothing}, @NamedTuple{layer_1::@NamedTuple{weight::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, bias::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}}, layer_2::@NamedTuple{weight::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, bias::CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}}}, @NamedTuple{layer_1::@NamedTuple{}, layer_2::@NamedTuple{}}, @NamedTuple{layer_1::@NamedTuple{weight::Optimisers.Leaf{Optimisers.Adam, Tuple{CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, Tuple{Float32, Float32}}}, bias::Optimisers.Leaf{Optimisers.Adam, Tuple{CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, CUDA.CuArray{Float32, 2, CUDA.Mem.DeviceBuffer}, Tuple{Float32, Float32}}
+        - ````
+        - 
+        - Now we will use Zygote for our AD requirements.
+        - 
+        - ````julia
+        - vjp_rule = Lux.Training.AutoZygote()
+        - ````
+        - 
+        - ````
+        - ADTypes.AutoZygote()
+        - ````
+        - 
+        - Finally the training loop.
+        - 
+        - ````julia
+        - function main(tstate::Lux.Experimental.TrainState, vjp, data, epochs)
+        -     data = data .|> gpu_device()
+        -     for epoch in 1:epochs
+        -         grads, loss, stats, tstate = Lux.Training.compute_gradients(
+        -             vjp, loss_function, data, tstate)
+        -         println("Epoch: $(epoch) || Loss: $(loss)")
+        -         tstate = Lux.Training.apply_gradients(tstate, grads)
+        -     end
+        -     return tstate
+        - end
+        - 
+        - dev_cpu = cpu_device()
+        - dev_gpu = gpu_device()
+        - 
+        - tstate = main(tstate, vjp_rule, (x, y), 250)
+        - y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])
+        - ````
+        - 
+        - ````
+        - Epoch: 1 || Loss: 9.437286
+        - Epoch: 2 || Loss: 8.2403145
+        - Epoch: 3 || Loss: 7.272186
+        - Epoch: 4 || Loss: 6.440497
+        - Epoch: 5 || Loss: 5.779891
+        - Epoch: 6 || Loss: 5.2047963
+        - Epoch: 7 || Loss: 4.6438646
+        - Epoch: 8 || Loss: 4.1009765
+        - Epoch: 9 || Loss: 3.5842276
+        - Epoch: 10 || Loss: 3.0952895
+        - Epoch: 11 || Loss: 2.627097
+        - Epoch: 12 || Loss: 2.1862953
+        - Epoch: 13 || Loss: 1.7833813
+        - Epoch: 14 || Loss: 1.4276705
+        - Epoch: 15 || Loss: 1.1278901
+        - Epoch: 16 || Loss: 0.8912643
+        - Epoch: 17 || Loss: 0.72214925
+        - Epoch: 18 || Loss: 0.6177964
+        - Epoch: 19 || Loss: 0.567441
+        - Epoch: 20 || Loss: 0.5528006
+        - Epoch: 21 || Loss: 0.54526407
+        - Epoch: 22 || Loss: 0.5216087
+        - Epoch: 23 || Loss: 0.4714206
+        - Epoch: 24 || Loss: 0.39734545
+        - Epoch: 25 || Loss: 0.31375986
+        - Epoch: 26 || Loss: 0.24187219
+        - Epoch: 27 || Loss: 0.20290527
+        - Epoch: 28 || Loss: 0.19959348
+        - Epoch: 29 || Loss: 0.21451162
+        - Epoch: 30 || Loss: 0.22456717
+        - Epoch: 31 || Loss: 0.21715236
+        - Epoch: 32 || Loss: 0.19464815
+        - Epoch: 33 || Loss: 0.1664155
+        - Epoch: 34 || Loss: 0.14228874
+        - Epoch: 35 || Loss: 0.12939155
+        - Epoch: 36 || Loss: 0.1301918
+        - Epoch: 37 || Loss: 0.14076465
+        - Epoch: 38 || Loss: 0.15167932
+        - Epoch: 39 || Loss: 0.15347701
+        - Epoch: 40 || Loss: 0.14318193
+        - Epoch: 41 || Loss: 0.12611514
+        - Epoch: 42 || Loss: 0.112170435
+        - Epoch: 43 || Loss: 0.10849798
+        - Epoch: 44 || Loss: 0.1137617
+        - Epoch: 45 || Loss: 0.11936337
+        - Epoch: 46 || Loss: 0.117823
+        - Epoch: 47 || Loss: 0.10915323
+        - Epoch: 48 || Loss: 0.098590896
+        - Epoch: 49 || Loss: 0.09082538
+        - Epoch: 50 || Loss: 0.087147035
+        - Epoch: 51 || Loss: 0.08622832
+        - Epoch: 52 || Loss: 0.08622973
+        - Epoch: 53 || Loss: 0.085530385
+        - Epoch: 54 || Loss: 0.08291393
+        - Epoch: 55 || Loss: 0.07825732
+        - Epoch: 56 || Loss: 0.073229566
+        - Epoch: 57 || Loss: 0.07023199
+        - Epoch: 58 || Loss: 0.0701554
+        - Epoch: 59 || Loss: 0.07143194
+        - Epoch: 60 || Loss: 0.071555845
+        - Epoch: 61 || Loss: 0.069587514
+        - Epoch: 62 || Loss: 0.06666217
+        - Epoch: 63 || Loss: 0.06428631
+        - Epoch: 64 || Loss: 0.06296849
+        - Epoch: 65 || Loss: 0.062316783
+        - Epoch: 66 || Loss: 0.061772693
+        - Epoch: 67 || Loss: 0.060823
+        - Epoch: 68 || Loss: 0.05914469
+        - Epoch: 69 || Loss: 0.05689253
+        - Epoch: 70 || Loss: 0.054883227
+        - Epoch: 71 || Loss: 0.0537643
+        - Epoch: 72 || Loss: 0.053308148
+        - Epoch: 73 || Loss: 0.0526734
+        - Epoch: 74 || Loss: 0.051505834
+        - Epoch: 75 || Loss: 0.05012176
+        - Epoch: 76 || Loss: 0.048935946
+        - Epoch: 77 || Loss: 0.048054636
+        - Epoch: 78 || Loss: 0.04741905
+        - Epoch: 79 || Loss: 0.046911888
+        - Epoch: 80 || Loss: 0.046285834
+        - Epoch: 81 || Loss: 0.045360662
+        - Epoch: 82 || Loss: 0.044322744
+        - Epoch: 83 || Loss: 0.043517463
+        - Epoch: 84 || Loss: 0.042977504
+        - Epoch: 85 || Loss: 0.042446084
+        - Epoch: 86 || Loss: 0.041766338
+        - Epoch: 87 || Loss: 0.041002233
+        - Epoch: 88 || Loss: 0.040248558
+        - Epoch: 89 || Loss: 0.0395771
+        - Epoch: 90 || Loss: 0.039049447
+        - Epoch: 91 || Loss: 0.03859891
+        - Epoch: 92 || Loss: 0.03808047
+        - Epoch: 93 || Loss: 0.037465587
+        - Epoch: 94 || Loss: 0.036884867
+        - Epoch: 95 || Loss: 0.03640618
+        - Epoch: 96 || Loss: 0.035972435
+        - Epoch: 97 || Loss: 0.03552942
+        - Epoch: 98 || Loss: 0.035066094
+        - Epoch: 99 || Loss: 0.03456869
+        - Epoch: 100 || Loss: 0.034074888
+        - Epoch: 101 || Loss: 0.03364233
+        - Epoch: 102 || Loss: 0.03325042
+        - Epoch: 103 || Loss: 0.032836616
+        - Epoch: 104 || Loss: 0.032399796
+        - Epoch: 105 || Loss: 0.031972982
+        - Epoch: 106 || Loss: 0.031572804
+        - Epoch: 107 || Loss: 0.03120111
+        - Epoch: 108 || Loss: 0.03084888
+        - Epoch: 109 || Loss: 0.03048884
+        - Epoch: 110 || Loss: 0.030120958
+        - Epoch: 111 || Loss: 0.029775549
+        - Epoch: 112 || Loss: 0.02945882
+        - Epoch: 113 || Loss: 0.029151225
+        - Epoch: 114 || Loss: 0.028845022
+        - Epoch: 115 || Loss: 0.028538823
+        - Epoch: 116 || Loss: 0.028234474
+        - Epoch: 117 || Loss: 0.027946869
+        - Epoch: 118 || Loss: 0.027675712
+        - Epoch: 119 || Loss: 0.027405275
+        - Epoch: 120 || Loss: 0.027136253
+        - Epoch: 121 || Loss: 0.026882473
+        - Epoch: 122 || Loss: 0.026639266
+        - Epoch: 123 || Loss: 0.026401386
+        - Epoch: 124 || Loss: 0.02617064
+        - Epoch: 125 || Loss: 0.025938522
+        - Epoch: 126 || Loss: 0.02572281
+        - Epoch: 127 || Loss: 0.025518771
+        - Epoch: 128 || Loss: 0.025322644
+        - Epoch: 129 || Loss: 0.02513091
+        - Epoch: 130 || Loss: 0.024942286
+        - Epoch: 131 || Loss: 0.0247594
+        - Epoch: 132 || Loss: 0.02458672
+        - Epoch: 133 || Loss: 0.024420775
+        - Epoch: 134 || Loss: 0.024257956
+        - Epoch: 135 || Loss: 0.02409814
+        - Epoch: 136 || Loss: 0.023943134
+        - Epoch: 137 || Loss: 0.023793655
+        - Epoch: 138 || Loss: 0.023649428
+        - Epoch: 139 || Loss: 0.023508642
+        - Epoch: 140 || Loss: 0.023370301
+        - Epoch: 141 || Loss: 0.02323602
+        - Epoch: 142 || Loss: 0.023102943
+        - Epoch: 143 || Loss: 0.022969872
+        - Epoch: 144 || Loss: 0.022837315
+        - Epoch: 145 || Loss: 0.02270551
+        - Epoch: 146 || Loss: 0.022576945
+        - Epoch: 147 || Loss: 0.022451565
+        - Epoch: 148 || Loss: 0.022330796
+        - Epoch: 149 || Loss: 0.022213
+        - Epoch: 150 || Loss: 0.022099711
+        - Epoch: 151 || Loss: 0.021988861
+        - Epoch: 152 || Loss: 0.02188043
+        - Epoch: 153 || Loss: 0.021773625
+        - Epoch: 154 || Loss: 0.021668155
+        - Epoch: 155 || Loss: 0.021564314
+        - Epoch: 156 || Loss: 0.021462029
+        - Epoch: 157 || Loss: 0.02136144
+        - Epoch: 158 || Loss: 0.021262243
+        - Epoch: 159 || Loss: 0.021164786
+        - Epoch: 160 || Loss: 0.021066664
+        - Epoch: 161 || Loss: 0.020964298
+        - Epoch: 162 || Loss: 0.020862548
+        - Epoch: 163 || Loss: 0.020759964
+        - Epoch: 164 || Loss: 0.02065739
+        - Epoch: 165 || Loss: 0.020555114
+        - Epoch: 166 || Loss: 0.020453054
+        - Epoch: 167 || Loss: 0.020350574
+        - Epoch: 168 || Loss: 0.020250954
+        - Epoch: 169 || Loss: 0.020152334
+        - Epoch: 170 || Loss: 0.020054808
+        - Epoch: 171 || Loss: 0.019958146
+        - Epoch: 172 || Loss: 0.01986237
+        - Epoch: 173 || Loss: 0.019767538
+        - Epoch: 174 || Loss: 0.01967417
+        - Epoch: 175 || Loss: 0.019583078
+        - Epoch: 176 || Loss: 0.019495409
+        - Epoch: 177 || Loss: 0.019408155
+        - Epoch: 178 || Loss: 0.019321665
+        - Epoch: 179 || Loss: 0.01923624
+        - Epoch: 180 || Loss: 0.019151898
+        - Epoch: 181 || Loss: 0.019067638
+        - Epoch: 182 || Loss: 0.018984612
+        - Epoch: 183 || Loss: 0.018894821
+        - Epoch: 184 || Loss: 0.018804064
+        - Epoch: 185 || Loss: 0.018712908
+        - Epoch: 186 || Loss: 0.018624134
+        - Epoch: 187 || Loss: 0.018536221
+        - Epoch: 188 || Loss: 0.018447855
+        - Epoch: 189 || Loss: 0.01836152
+        - Epoch: 190 || Loss: 0.018275112
+        - Epoch: 191 || Loss: 0.01818954
+        - Epoch: 192 || Loss: 0.018104801
+        - Epoch: 193 || Loss: 0.018019522
+        - Epoch: 194 || Loss: 0.017934186
+        - Epoch: 195 || Loss: 0.017849233
+        - Epoch: 196 || Loss: 0.017764835
+        - Epoch: 197 || Loss: 0.017681066
+        - Epoch: 198 || Loss: 0.017597083
+        - Epoch: 199 || Loss: 0.017513052
+        - Epoch: 200 || Loss: 0.01742848
+        - Epoch: 201 || Loss: 0.01734446
+        - Epoch: 202 || Loss: 0.017261535
+        - Epoch: 203 || Loss: 0.017179884
+        - Epoch: 204 || Loss: 0.017098371
+        - Epoch: 205 || Loss: 0.017017188
+        - Epoch: 206 || Loss: 0.016938237
+        - Epoch: 207 || Loss: 0.016860109
+        - Epoch: 208 || Loss: 0.01678314
+        - Epoch: 209 || Loss: 0.01670637
+        - Epoch: 210 || Loss: 0.016630001
+        - Epoch: 211 || Loss: 0.016554337
+        - Epoch: 212 || Loss: 0.01647957
+        - Epoch: 213 || Loss: 0.01640434
+        - Epoch: 214 || Loss: 0.016325183
+        - Epoch: 215 || Loss: 0.016241403
+        - Epoch: 216 || Loss: 0.016156781
+        - Epoch: 217 || Loss: 0.016071733
+        - Epoch: 218 || Loss: 0.015988383
+        - Epoch: 219 || Loss: 0.015906291
+        - Epoch: 220 || Loss: 0.015825361
+        - Epoch: 221 || Loss: 0.0157451
+        - Epoch: 222 || Loss: 0.015666464
+        - Epoch: 223 || Loss: 0.015587145
+        - Epoch: 224 || Loss: 0.015508637
+        - Epoch: 225 || Loss: 0.015430698
+        - Epoch: 226 || Loss: 0.015353283
+        - Epoch: 227 || Loss: 0.015276806
+        - Epoch: 228 || Loss: 0.0152013665
+        - Epoch: 229 || Loss: 0.015126852
+        - Epoch: 230 || Loss: 0.015053339
+        - Epoch: 231 || Loss: 0.014980167
+        - Epoch: 232 || Loss: 0.014908046
+        - Epoch: 233 || Loss: 0.014836828
+        - Epoch: 234 || Loss: 0.014766604
+        - Epoch: 235 || Loss: 0.014697792
+        - Epoch: 236 || Loss: 0.014630599
+        - Epoch: 237 || Loss: 0.014563925
+        - Epoch: 238 || Loss: 0.014499273
+        - Epoch: 239 || Loss: 0.014434949
+        - Epoch: 240 || Loss: 0.014371637
+        - Epoch: 241 || Loss: 0.0143090505
+        - Epoch: 242 || Loss: 0.014247168
+        - Epoch: 243 || Loss: 0.014186028
+        - Epoch: 244 || Loss: 0.0141260605
+        - Epoch: 245 || Loss: 0.0140673
+        - Epoch: 246 || Loss: 0.0140092
+        - Epoch: 247 || Loss: 0.01395304
+        - Epoch: 248 || Loss: 0.013899149
+        - Epoch: 249 || Loss: 0.013845779
+        - Epoch: 250 || Loss: 0.013793555
+        - 
+        - ````
+        - 
+        - Let's plot the results
+        - 
+        - ````julia
+        - with_theme(theme_web()) do
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+        - 
+        -     l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
+        -     s1 = scatter!(ax, x[1, :], y[1, :]; markersize=8, color=:orange,
+        -         strokecolor=:black, strokewidth=1)
+        -     s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=8,
+        -         color=:green, strokecolor=:black, strokewidth=1)
+        - 
+        -     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
+        - 
+        -     return fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=408 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAMwCAIAAAC/VA7OAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdeVyUVdsH8N+wb4IICgIqsi9uiKJImoimaaYlrpmm9uSSaaI+bmnmimvmnva6VG5ppSUplkmigLgAkqKIgggGsqnsyzDvH7fNM8IAA8IMy+/74Y/hnDPnXPcdyVycc58jkkgkICIiIiIioqZHTdUBEBERERERkWowISQiIiIiImqimBASERERERE1UUwIiYiIiIiImigmhERERERERE0UE0IiIiIiIqImigkhERERERFRE8WEkIiIiIiIqIliQkhERERERNREMSEkIiIiIiJqopgQEhERERERNVFMCImIiIiIiJooJoRERERERERNFBNCIiIiIiKiJooJIRERERERURPFhJCIiIiIiKiJYkJIRERERETURDEhJCIiIiIiaqKYEBIRERERETVRTAiJiIiIiIiaKCaERERERERETRQTQiIiIiIioiaKCSEREREREVETxYSQiIiIiIioiWJCSERERERE1EQxISQiIiIiImqimBASERERERE1UUwIiYiIiIiImigmhERERERERE0UE0IiIiIiIqImSkPVATQAIpFI1SEQEREREVETJZFI6q5zzhASERERERE1UZwhVFSd5uVERERERERlKGGtImcIiYiIiIiImigmhERERERERE0UE0IiIiIiIqImigkhERERERFRE8WEkIiIiIiIqIliQkhERERERNREMSEkIiIiIiJqopgQEhERERERNVFMCImIiIiIiJooDVUH0GBYWlpKXycnJ6swEiIiIiIiolohkkgkqo6hvhOJRGVKeNOIiIiIiKiuCZlInWYfnCFUVFJSkqpDICIiIiIiqk2cIayaEvJyIiIiIiKiMpSQiX
+        - ```
+        - 
+        - ## Appendix
+        - 
+        - ````julia
+        - using InteractiveUtils
+        - InteractiveUtils.versioninfo()
+        - if @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end
+        - if @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end
+        - ````
+        - 
+        - ````
+        - Julia Version 1.10.2
+        - Commit bd47eca2c8a (2024-03-01 10:14 UTC)
+        - Build Info:
+        -   Official https://julialang.org/ release
+        - Platform Info:
+        -   OS: Linux (x86_64-linux-gnu)
+        -   CPU: 48 × AMD EPYC 7402 24-Core Processor
+        -   WORD_SIZE: 64
+        -   LIBM: libopenlibm
+        -   LLVM: libLLVM-15.0.7 (ORCJIT, znver2)
+        - Threads: 48 default, 0 interactive, 24 GC (on 2 virtual cores)
+        - Environment:
+        -   LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+        -   JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6
+        -   JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-14/julialang/lux-dot-jl/docs/Project.toml
+        -   JULIA_AMDGPU_LOGGING_ENABLED = true
+        -   JULIA_DEBUG = Literate
+        -   JULIA_CPU_THREADS = 2
+        -   JULIA_NUM_THREADS = 48
+        -   JULIA_LOAD_PATH = @:@v#.#:@stdlib
+        -   JULIA_CUDA_HARD_MEMORY_LIMIT = 25%
+        - 
+        - CUDA runtime 12.3, artifact installation
+        - CUDA driver 12.3
+        - NVIDIA driver 545.23.8
+        - 
+        - CUDA libraries: 
+        - - CUBLAS: 12.3.4
+        - - CURAND: 10.3.4
+        - - CUFFT: 11.0.12
+        - - CUSOLVER: 11.5.4
+        - - CUSPARSE: 12.2.0
+        - - CUPTI: 21.0.0
+        - - NVML: 12.0.0+545.23.8
+        - 
+        - Julia packages: 
+        - - CUDA: 5.2.0
+        - - CUDA_Driver_jll: 0.7.0+1
+        - - CUDA_Runtime_jll: 0.11.1+0
+        - 
+        - Toolchain:
+        - - Julia: 1.10.2
+        - - LLVM: 15.0.7
+        - 
+        - Environment:
+        - - JULIA_CUDA_HARD_MEMORY_LIMIT: 25%
+        - 
+        - 1 device:
+        -   0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 4.224 GiB / 4.750 GiB available)
+        - ┌ Warning: LuxAMDGPU is loaded but the AMDGPU is not functional.
+        - └ @ LuxAMDGPU ~/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6/packages/LuxAMDGPU/sGa0S/src/LuxAMDGPU.jl:19
+        - 
+        - ````
+        - 
+        - ---
+        - 
+        - *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+        - 

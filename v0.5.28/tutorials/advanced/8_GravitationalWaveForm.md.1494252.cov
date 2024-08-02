@@ -1,0 +1,548 @@
+    74588 ```@meta
+   196689 EditURL = "../../../../examples/GravitationalWaveForm/main.jl"
+   372358 ```
+     2630 
+     2838 # Training a Neural ODE to Model Gravitational Waveforms
+      283 
+   324770 This code is adapted from [Astroinformatics/ScientificMachineLearning](https://github.com/Astroinformatics/ScientificMachineLearning/blob/c93aac3a460d70b4cce98836b677fd9b732e94b7/neuralode_gw.ipynb)
+     5041 
+   143319 The code has been minimally adapted from
+   217812 [Keith et. al. 2021](https://arxiv.org/abs/2102.12695) which originally used Flux.jl
+       73 
+   143350 ## Package Imports
+   143319 
+        0 ````julia
+   143286 using Lux, ComponentArrays, LineSearches, LuxAMDGPU, LuxCUDA, OrdinaryDiffEq, Optimization,
+        -       OptimizationOptimJL, Printf, Random, SciMLSensitivity
+       64 using CairoMakie
+      232 
+       84 CUDA.allowscalar(false)
+        - ````
+      113 
+      146 ## Define some Utility Functions
+      126 
+      126 ::: tip
+        - 
+        - This section can be skipped. It defines functions to simulate the model, however, from a
+       40 scientific machine learning perspective, isn't super relevant.
+       84 
+       42 :::
+       42 
+       42 We need a very crude 2-body path. Assume the 1-body motion is a newtonian 2-body position
+        - vector $r = r_1 - r_2$ and use Newtonian formulas to get $r_1$, $r_2$ (e.g. Theoretical
+        - Mechanics of Particles and Continua 4.3)
+       20 
+       64 ````julia
+        - function one2two(path, m₁, m₂)
+       42     M = m₁ + m₂
+       42     r₁ = m₂ / M .* path
+        -     r₂ = -m₁ / M .* path
+       42     return r₁, r₂
+       42 end
+        - ````
+        - 
+        - ````
+        - one2two (generic function with 1 method)
+        - ````
+        - 
+        - Next we define a function to perform the change of variables:
+        - $$(\chi(t),\phi(t)) \mapsto (x(t),y(t))$$
+        - 
+        - ````julia
+        - @views function soln2orbit(soln, model_params=nothing)
+        -     @assert size(soln, 1) ∈ [2, 4] "size(soln,1) must be either 2 or 4"
+        - 
+        -     if size(soln, 1) == 2
+        -         χ = soln[1, :]
+        -         ϕ = soln[2, :]
+        - 
+        -         @assert length(model_params)==3 "model_params must have length 3 when size(soln,2) = 2"
+        -         p, M, e = model_params
+        -     else
+        -         χ = soln[1, :]
+        -         ϕ = soln[2, :]
+        -         p = soln[3, :]
+        -         e = soln[4, :]
+        -     end
+       20 
+       31     r = p ./ (1 .+ e .* cos.(χ))
+       31     x = r .* cos.(ϕ)
+        -     y = r .* sin.(ϕ)
+       53 
+       42     orbit = vcat(x', y')
+        0     return orbit
+        0 end
+        - ````
+        0 
+        0 ````
+        - soln2orbit (generic function with 2 methods)
+       53 ````
+        - 
+       20 This function uses second-order one-sided difference stencils at the endpoints;
+        - see https://doi.org/10.1090/S0025-5718-1988-0935077-0
+        - 
+        - ````julia
+        - function d_dt(v::AbstractVector, dt)
+        -     a = -3 / 2 * v[1] + 2 * v[2] - 1 / 2 * v[3]
+        -     b = (v[3:end] .- v[1:(end - 2)]) / 2
+        -     c = 3 / 2 * v[end] - 2 * v[end - 1] + 1 / 2 * v[end - 2]
+        -     return [a; b; c] / dt
+        - end
+        - ````
+        - 
+        - ````
+        - d_dt (generic function with 1 method)
+        - ````
+        - 
+        - This function uses second-order one-sided difference stencils at the endpoints;
+        - see https://doi.org/10.1090/S0025-5718-1988-0935077-0
+        - 
+        - ````julia
+        - function d2_dt2(v::AbstractVector, dt)
+        -     a = 2 * v[1] - 5 * v[2] + 4 * v[3] - v[4]
+        -     b = v[1:(end - 2)] .- 2 * v[2:(end - 1)] .+ v[3:end]
+        -     c = 2 * v[end] - 5 * v[end - 1] + 4 * v[end - 2] - v[end - 3]
+        -     return [a; b; c] / (dt^2)
+        - end
+        - ````
+        - 
+        - ````
+        - d2_dt2 (generic function with 1 method)
+        - ````
+        - 
+        - Now we define a function to compute the trace-free moment tensor from the orbit
+        - 
+        - ````julia
+        - function orbit2tensor(orbit, component, mass=1)
+        -     x = orbit[1, :]
+        -     y = orbit[2, :]
+        - 
+        -     Ixx = x .^ 2
+        -     Iyy = y .^ 2
+        -     Ixy = x .* y
+        -     trace = Ixx .+ Iyy
+        - 
+        -     if component[1] == 1 && component[2] == 1
+        -         tmp = Ixx .- trace ./ 3
+        -     elseif component[1] == 2 && component[2] == 2
+        -         tmp = Iyy .- trace ./ 3
+        -     else
+        -         tmp = Ixy
+        -     end
+        - 
+        -     return mass .* tmp
+        - end
+        - 
+        - function h_22_quadrupole_components(dt, orbit, component, mass=1)
+        -     mtensor = orbit2tensor(orbit, component, mass)
+        -     mtensor_ddot = d2_dt2(mtensor, dt)
+        -     return 2 * mtensor_ddot
+        - end
+        - 
+        - function h_22_quadrupole(dt, orbit, mass=1)
+        -     h11 = h_22_quadrupole_components(dt, orbit, (1, 1), mass)
+        -     h22 = h_22_quadrupole_components(dt, orbit, (2, 2), mass)
+        -     h12 = h_22_quadrupole_components(dt, orbit, (1, 2), mass)
+        -     return h11, h12, h22
+        - end
+        - 
+        - function h_22_strain_one_body(dt::T, orbit) where {T}
+        -     h11, h12, h22 = h_22_quadrupole(dt, orbit)
+        - 
+        -     h₊ = h11 - h22
+        -     hₓ = T(2) * h12
+        - 
+        -     scaling_const = √(T(π) / 5)
+        -     return scaling_const * h₊, -scaling_const * hₓ
+        - end
+        - 
+        - function h_22_quadrupole_two_body(dt, orbit1, mass1, orbit2, mass2)
+        -     h11_1, h12_1, h22_1 = h_22_quadrupole(dt, orbit1, mass1)
+        -     h11_2, h12_2, h22_2 = h_22_quadrupole(dt, orbit2, mass2)
+        -     h11 = h11_1 + h11_2
+        -     h12 = h12_1 + h12_2
+        -     h22 = h22_1 + h22_2
+        -     return h11, h12, h22
+        - end
+        - 
+        - function h_22_strain_two_body(dt::T, orbit1, mass1, orbit2, mass2) where {T}
+        -     # compute (2,2) mode strain from orbits of BH 1 of mass1 and BH2 of mass 2
+        - 
+        -     @assert abs(mass1 + mass2 - 1.0)<1e-12 "Masses do not sum to unity"
+        - 
+        -     h11, h12, h22 = h_22_quadrupole_two_body(dt, orbit1, mass1, orbit2, mass2)
+        - 
+        -     h₊ = h11 - h22
+        -     hₓ = T(2) * h12
+        - 
+        -     scaling_const = √(T(π) / 5)
+        -     return scaling_const * h₊, -scaling_const * hₓ
+        - end
+        - 
+        - function compute_waveform(dt::T, soln, mass_ratio, model_params=nothing) where {T}
+        -     @assert mass_ratio≤1 "mass_ratio must be <= 1"
+        -     @assert mass_ratio≥0 "mass_ratio must be non-negative"
+        - 
+        -     orbit = soln2orbit(soln, model_params)
+        -     if mass_ratio > 0
+        -         m₂ = inv(T(1) + mass_ratio)
+        -         m₁ = mass_ratio * m₂
+        - 
+        -         orbit₁, orbit₂ = one2two(orbit, m₁, m₂)
+        -         waveform = h_22_strain_two_body(dt, orbit1, mass1, orbit2, mass2)
+        -     else
+        -         waveform = h_22_strain_one_body(dt, orbit)
+        -     end
+        -     return waveform
+        - end
+        - ````
+        - 
+        - ````
+        - compute_waveform (generic function with 2 methods)
+        - ````
+        - 
+        - ## Simulating the True Model
+        - 
+        - `RelativisticOrbitModel` defines system of odes which describes motion of point like
+        - particle in schwarzschild background, uses
+        - 
+        - $$u[1] = \chi$$
+        - $$u[2] = \phi$$
+        - 
+        - where, $p$, $M$, and $e$ are constants
+        - 
+        - ````julia
+        - function RelativisticOrbitModel(u, (p, M, e), t)
+        -     χ, ϕ = u
+        - 
+        -     numer = (p - 2 - 2 * e * cos(χ)) * (1 + e * cos(χ))^2
+        -     denom = sqrt((p - 2)^2 - 4 * e^2)
+        - 
+        -     χ̇ = numer * sqrt(p - 6 - 2 * e * cos(χ)) / (M * (p^2) * denom)
+        -     ϕ̇ = numer / (M * (p^(3 / 2)) * denom)
+        - 
+        -     return [χ̇, ϕ̇]
+        - end
+        - 
+        - mass_ratio = 0.0         # test particle
+        - u0 = Float64[π, 0.0]     # initial conditions
+        - datasize = 250
+        - tspan = (0.0f0, 6.0f4)   # timespace for GW waveform
+        - tsteps = range(tspan[1], tspan[2]; length=datasize)  # time at each timestep
+        - dt_data = tsteps[2] - tsteps[1]
+        - dt = 100.0
+        - const ode_model_params = [100.0, 1.0, 0.5]; # p, M, e
+        - ````
+        - 
+        - Let's simulate the true model and plot the results using `OrdinaryDiffEq.jl`
+        - 
+        - ````julia
+        - prob = ODEProblem(RelativisticOrbitModel, u0, tspan, ode_model_params)
+        - soln = Array(solve(prob, RK4(); saveat=tsteps, dt, adaptive=false))
+        - waveform = first(compute_waveform(dt_data, soln, mass_ratio, ode_model_params))
+        - 
+        - begin
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
+        - 
+        -     l = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
+        -     s = scatter!(ax, tsteps, waveform; markershape=:circle,
+        -         markersize=12, markeralpha=0.25, alpha=0.5)
+        - 
+        -     axislegend(ax, [[l, s]], ["Waveform Data"])
+        - 
+        -     fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=450 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAOECAIAAAA+D1+tAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdeZwU9Zk/8G8dfc/03DMw3LeAKCCKMRqjIHifPzTisTGJ2ZDdJK9E47EmJvtyjVlF1zXrEaOi8YhGDRJFQUTwQBEPEEE5hmNmmPvq6bu6rt8fNdR8q7qnmRmG7m/3fN6vvPIaqovuGovurqee5/s8nK7rBAAAAAAAAIYfPtsHAAAAAAAAANmBgBAAAAAAAGCYQkAIAAAAAAAwTCEgBAAAAAAAGKYQEAIAAAAAAAxTCAgBAAAAAACGKQSEAAAAAAAAwxQCQgAAAAAAgGEKASEAAAAAAMAwhYAQAAAAAABgmEJACAAAAAAAMEwhIAQAAAAAABimEBACAAAAAAAMUwgIAQAAAAAAhikEhAAAAAAAAMMUAkIAAAAAAIBhCgEhAAAAAADAMIWAEAAAAAAAYJhCQAgAAAAAADBMISAEAAAAAAAYphAQAgAAAAAADFMICAEAAAAAAIYpBIQAAAAAAADDFAJCAAAAAACAYQoBIQAAAAAAwDCFgBAAAAAAAGCYQkAIAAAAAAAwTCEgBAAAAAAAGKYQEAIAAAAAAAxTCAgBAAAAAACGKTHbBwAZwnFctg8BAAAAAAAGTNf1Y/fkyBACAAAAAAAMU8gQDi/H9O5Cf0QikY6ODp/PV1ZWlt0jgaMhSVJLS4vL5aqqqsr2scDgKYrS2NgoimJ1dXW2jwWOSl1dHSFk7Nix2T4QOCqNjY2KolRXV4siLs9yWEtLiyRJVVVVLpcr28cCg9fR0RGJRMrKynw+X3aPJANVfsgQAgAAAAAADFMICAEAAAAAAIYpBIQAAAAAAADDFAJCAAAAAACAYQoBIQAAAAAAwDCFgBAAAAAAAGCYQk
+        - ```
+        - 
+        - ## Defiing a Neural Network Model
+        - 
+        - Next, we define the neural network model that takes 1 input (time) and has two outputs.
+        - We'll make a function `ODE_model` that takes the initial conditions, neural network
+        - parameters and a time as inputs and returns the derivatives.
+        - 
+        - It is typically never recommended to use globals but incase you do use them, make sure
+        - to mark them as `const`.
+        - 
+        - We will deviate from the standard Neural Network initialization and use
+        - `WeightInitializers.jl`,
+        - 
+        - ````julia
+        - const nn = Chain(Base.Fix1(broadcast, cos),
+        -     Dense(1 => 32, cos; init_weight=truncated_normal(; std=1e-4)),
+        -     Dense(32 => 32, cos; init_weight=truncated_normal(; std=1e-4)),
+        -     Dense(32 => 2; init_weight=truncated_normal(; std=1e-4)))
+        - ps, st = Lux.setup(Xoshiro(), nn)
+        - ````
+        - 
+        - ````
+        - ((layer_1 = NamedTuple(), layer_2 = (weight = Float32[-0.00012671232; 0.00011095702; 9.695963f-5; 2.5564552f-5; 6.691555f-5; 0.00016692445; -0.00012779863; -0.0001308962; -0.000109686196; -2.5287678f-5; 7.873027f-5; 3.16921f-5; -0.00011276013; -6.4894443f-6; -0.00010267977; -0.00018340611; -0.00010876258; 3.2328582f-5; -4.288698f-5; 6.450599f-5; -1.9291472f-5; 3.582464f-5; 7.3881376f-5; 0.00018050286; -3.7595106f-5; 1.4104758f-6; -1.744277f-6; 6.564395f-5; -0.00010229381; 0.00010377445; 5.8461173f-5; 0.00025080855;;], bias = Float32[0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0;;]), layer_3 = (weight = Float32[-3.6855945f-5 -0.00013526966 4.3416832f-5 9.903772f-5 -2.9680796f-5 -7.268016f-5 -3.8834503f-5 0.00012714976 -6.940435f-5 2.9406812f-5 -6.800673f-6 2.4557105f-5 0.00019060177 0.00018507177 5.8248588f-5 4.0043975f-5 6.079383f-5 2.3224977f-5 -2.974558f-6 -5.1213756f-5 8.8000466f-5 0.0001362088
+        - ````
+        - 
+        - Similar to most DL frameworks, Lux defaults to using `Float32`, however, in this case we
+        - need Float64
+        - 
+        - ````julia
+        - const params = ComponentArray{Float64}(ps)
+        - 
+        - const nn_model = StatefulLuxLayer(nn, st)
+        - ````
+        - 
+        - ````
+        - Lux.StatefulLuxLayer{true, Lux.Chain{@NamedTuple{layer_1::Lux.WrappedFunction{Base.Fix1{typeof(broadcast), typeof(cos)}}, layer_2::Lux.Dense{true, typeof(cos), PartialFunctions.PartialFunction{nothing, nothing, typeof(WeightInitializers.truncated_normal), Tuple{}, @NamedTuple{std::Float64}}, typeof(WeightInitializers.zeros32)}, layer_3::Lux.Dense{true, typeof(cos), PartialFunctions.PartialFunction{nothing, nothing, typeof(WeightInitializers.truncated_normal), Tuple{}, @NamedTuple{std::Float64}}, typeof(WeightInitializers.zeros32)}, layer_4::Lux.Dense{true, typeof(identity), PartialFunctions.PartialFunction{nothing, nothing, typeof(WeightInitializers.truncated_normal), Tuple{}, @NamedTuple{std::Float64}}, typeof(WeightInitializers.zeros32)}}, Nothing}, Nothing, @NamedTuple{layer_1::@NamedTuple{}, layer_2::@NamedTuple{}, layer_3::@NamedTuple{}, layer_4::@NamedTuple{}}}(Chain(), nothing, (layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple(), layer_4 = NamedTuple()), nothing)
+        - ````
+        - 
+        - Now we define a system of odes which describes motion of point like particle with
+        - Newtonian physics, uses
+        - 
+        - $$u[1] = \chi$$
+        - $$u[2] = \phi$$
+        - 
+        - where, $p$, $M$, and $e$ are constants
+        - 
+        - ````julia
+        - function ODE_model(u, nn_params, t)
+        -     χ, ϕ = u
+        -     p, M, e = ode_model_params
+        - 
+        -     # In this example we know that `st` is am empty NamedTuple hence we can safely ignore
+        -     # it, however, in general, we should use `st` to store the state of the neural network.
+        -     y = 1 .+ nn_model([first(u)], nn_params)
+        - 
+        -     numer = (1 + e * cos(χ))^2
+        -     denom = M * (p^(3 / 2))
+        - 
+        -     χ̇ = (numer / denom) * y[1]
+        -     ϕ̇ = (numer / denom) * y[2]
+        - 
+        -     return [χ̇, ϕ̇]
+        - end
+        - ````
+        - 
+        - ````
+        - ODE_model (generic function with 1 method)
+        - ````
+        - 
+        - Let us now simulate the neural network model and plot the results. We'll use the untrained
+        - neural network parameters to simulate the model.
+        - 
+        - ````julia
+        - prob_nn = ODEProblem(ODE_model, u0, tspan, params)
+        - soln_nn = Array(solve(prob_nn, RK4(); u0, p=params, saveat=tsteps, dt, adaptive=false))
+        - waveform_nn = first(compute_waveform(dt_data, soln_nn, mass_ratio, ode_model_params))
+        - 
+        - begin
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
+        - 
+        -     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
+        -     s1 = scatter!(ax, tsteps, waveform; markershape=:circle, markersize=12,
+        -         markeralpha=0.25, alpha=0.5, strokewidth=2)
+        - 
+        -     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
+        -     s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
+        -         markersize=12, markeralpha=0.25, alpha=0.5, strokewidth=2)
+        - 
+        -     axislegend(ax, [[l1, s1], [l2, s2]],
+        -         ["Waveform Data", "Waveform Neural Net (Untrained)"]; position=:lb)
+        - 
+        -     fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=450 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAOECAIAAAA+D1+tAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdd3xT1fsH8HOzm+492HtToOxVKMUypBQU+CJfQfyBAiIiQxBFVEBkiaDi+IqyRBSRvfeQWZCyyyizk5Y2TdOsm3t/f9xyc9Omg9HkNv28/zr35CR5eIW298lzBsWyLAEAAAAAAIDKR+LsAAAAAAAAAMA5kBACAAAAAABUUkgIAQAAAAAAKikkhAAAAAAAAJUUEkIAAAAAAIBKCgkhAAAAAABAJYWEEAAAAAAAoJJCQggAAAAAAFBJISEEAAAAAACopJAQAgAAAAAAVFJICAEAAAAAACopJIQAAAAAAACVFBJCAAAAAACASgoJIQAAAAAAQCWFhBAAAAAAAKCSQkIIAAAAAABQSSEhBAAAAAAAqKSQEAIAAAAAAFRSSAgBAAAAAAAqKSSEAAAAAAAAlRQSQgAAAAAAgEoKCSEAAAAAAEAlhYQQAAAAAACgkkJCCAAAAAAAUEkhIQQAAAAAAKikkBACAAAAAABUUkgIAQAAAAAAKikkhAAAAAAAAJUUEkIAAAAAAIBKCgkhAAAAAABAJSVzdgDgIBRFOTsEAAAAAAB4aizLlt+Lo0IIAAAAAABQSaFCWLmU67cLZaHT6bKystzd3f39/Z0bCTwPo9GYnp6uVCqDg4OdHQs8O5qmU1JSZDJZWFiYs2OB53L//n1CSPXq1Z0dCDyXlJQUmqbDwsJkMtyeVWDp6elGozE4OFipVDo7Fnh2WVlZOp3O39/f3d3duZE4YJYfKoQAAAAAAACVFBJCAAAAAACASgoJIQAAAAAAQCWFhBAAAAAAAKCSQkIIAAAAAABQSSEhBAAAAAAAqKSQEAIAAAAAAFRSSAgBAAAAAAAqKS
+        - ```
+        - 
+        - ## Setting Up for Training the Neural Network
+        - 
+        - Next, we define the objective (loss) function to be minimized when training the neural
+        - differential equations.
+        - 
+        - ````julia
+        - function loss(θ)
+        -     pred = Array(solve(prob_nn, RK4(); u0, p=θ, saveat=tsteps, dt, adaptive=false))
+        -     pred_waveform = first(compute_waveform(dt_data, pred, mass_ratio, ode_model_params))
+        -     loss = sum(abs2, waveform .- pred_waveform)
+        -     return loss, pred_waveform
+        - end
+        - ````
+        - 
+        - ````
+        - loss (generic function with 1 method)
+        - ````
+        - 
+        - Warmup the loss function
+        - 
+        - ````julia
+        - loss(params)
+        - ````
+        - 
+        - ````
+        - (0.17571132098685055, [-0.024263698912430732, -0.02347886854097633, -0.02269403816952172, -0.021367952476563857, -0.01947290600756741, -0.016968685540941084, -0.01380250024208472, -0.009906026488757321, -0.005197684048546006, 0.00041770011149693063, 0.007039669284209465, 0.014751172407687113, 0.02357093703364375, 0.03332510714464247, 0.04336910475843729, 0.051930202430447596, 0.05471715195285251, 0.042651990322909346, 0.002191379405029738, -0.06609280035801755, -0.11038054735869053, -0.07651465796330077, -0.00687682290791332, 0.03893683700158144, 0.05441275813903517, 0.05303197015043559, 0.04485678432723132, 0.034783517387474455, 0.024856756793705893, 0.015835171203319825, 0.007931286193223749, 0.001142015957066695, -0.004614887259662091, -0.009441565148810586, -0.013436977256135458, -0.016685810966278747, -0.01925999635460698, -0.021215722125639935, -0.022595653731411258, -0.023429860967164155, -0.023736820172785042, -0.02352378823477836, -0.02278810719842814, -0.02151487412023696, -0.019679105459435825, -0
+        - ````
+        - 
+        - Now let us define a callback function to store the loss over time
+        - 
+        - ````julia
+        - const losses = Float64[]
+        - 
+        - function callback(θ, l, pred_waveform)
+        -     push!(losses, l)
+        -     @printf "Training %10s Iteration: %5d %10s Loss: %.10f\n" "" length(losses) "" l
+        -     return false
+        - end
+        - ````
+        - 
+        - ````
+        - callback (generic function with 1 method)
+        - ````
+        - 
+        - ## Training the Neural Network
+        - 
+        - Training uses the BFGS optimizers. This seems to give good results because the Newtonian
+        - model seems to give a very good initial guess
+        - 
+        - ````julia
+        - adtype = Optimization.AutoZygote()
+        - optf = Optimization.OptimizationFunction((x, p) -> loss(x), adtype)
+        - optprob = Optimization.OptimizationProblem(optf, params)
+        - res = Optimization.solve(
+        -     optprob, BFGS(; initial_stepnorm=0.01, linesearch=LineSearches.BackTracking());
+        -     callback, maxiters=1000)
+        - ````
+        - 
+        - ````
+        - retcode: Success
+        - u: ComponentVector{Float64}(layer_1 = Float64[], layer_2 = (weight = [-0.00012671231525015767; 0.00011095702211599397; 9.695962944530505e-5; 2.5564551833657428e-5; 6.69155488139194e-5; 0.0001669244520596869; -0.00012779863027385658; -0.00013089619460510626; -0.00010968619608318892; -2.5287677999548194e-5; 7.873027061573648e-5; 3.169209958286489e-5; -0.00011276012810406911; -6.489444331230667e-6; -0.00010267976904268306; -0.00018340611131852585; -0.00010876257874766656; 3.2328582165058917e-5; -4.2886978917485906e-5; 6.450599175876861e-5; -1.9291472199236942e-5; 3.582463978087486e-5; 7.388137601078065e-5; 0.00018050285871134333; -3.759510582306568e-5; 1.4104757610757492e-6; -1.7442770285930989e-6; 6.56439515295489e-5; -0.00010229380859518952; 0.00010377445141785412; 5.846117346662741e-5; 0.0002508085453882155;;], bias = [-3.298796036970251e-17; 6.591709479337832e-17; 3.770521450919637e-17; 1.152474395720579e-17; 8.336272496291363e-17; 2.4133641062261276e-16; -4.8901547507722926e-17; -5.519885842556849e-17; -1.
+        - ````
+        - 
+        - ## Visualizing the Results
+        - 
+        - Let us now plot the loss over time
+        - 
+        - ````julia
+        - begin
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Iteration", ylabel="Loss")
+        - 
+        -     lines!(ax, losses; linewidth=4, alpha=0.75)
+        -     scatter!(ax, 1:length(losses), losses; markershape=:circle,
+        -         markersize=12, markeralpha=0.25, strokewidth=2)
+        - 
+        -     fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=450 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAOECAIAAAA+D1+tAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdeXydZZ03/utkbZN0b5OUQijdE4EOsijICMgiFBAXcMHt5bh0dETBR8cfg68ZB5XneRQcxtHXC8ZxVMRRXEbAyqLAOEBlEx9UmjR0obS2Wdp0S5M0OUnO748wpTbnbpM0uc/2fv+Vc11n+ZY2JZ/e9/X9JlKpVAAAAKDwFGW6AAAAADJDIAQAAChQAiEAAECBEggBAAAKlEAIAABQoARCAACAAiUQAgAAFCiBEAAAoEAJhAAAAAVKIAQAAChQAiEAAECBEggBAAAKlEAIAABQoARCAACAAiUQAgAAFCiBEAAAoEAJhAAAAAVKIAQAAChQAiEAAECBEggBAAAKlEAIAABQoARCAACAAiUQAgAAFCiBEAAAoEAJhAAAAAVKIAQAAChQAiEAAECBEggBAAAKlEAIAABQoARCAACAAlWS6QIYo0QikekSAACACZdKpSbuzV0hBAAAKFCuEOa2Cf3XAhhffX19ra2tpaWlc+fOzXQtkJM2b94cQqirq8t0IZCTWlpakslkbW1tWVlZpmuBkYrhrkBXCAEAAAqUQAgAAFCgBEIAAIACJRACAAAUKIEQAACgQAmEAAAABUogBAAAKFACIQAAQIESCAEAAAqUQAgAAFCgBEIAAIACJRACAAAUKIEQAACgQAmEAAAABUogBAAAKFACIQAAQIESCAEAAAqUQAgAAFCgBEIAAIACJRACAAAUKIEQAACgQJVkugByWH9//3PPPdfS0tLd3T1t2rSFCxcuXrw400UBAAAjJRAyFqtXr7711lsfeOCBffv2Hbw+b968t7/97ddee21dXV2magMAAEbILaOMTkdHx1ve8pazzz77Jz
+        - ```
+        - 
+        - Finally let us visualize the results
+        - 
+        - ````julia
+        - prob_nn = ODEProblem(ODE_model, u0, tspan, res.u)
+        - soln_nn = Array(solve(prob_nn, RK4(); u0, p=res.u, saveat=tsteps, dt, adaptive=false))
+        - waveform_nn_trained = first(compute_waveform(
+        -     dt_data, soln_nn, mass_ratio, ode_model_params))
+        - 
+        - begin
+        -     fig = Figure()
+        -     ax = CairoMakie.Axis(fig[1, 1]; xlabel="Time", ylabel="Waveform")
+        - 
+        -     l1 = lines!(ax, tsteps, waveform; linewidth=2, alpha=0.75)
+        -     s1 = scatter!(ax, tsteps, waveform; markershape=:circle,
+        -         markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
+        - 
+        -     l2 = lines!(ax, tsteps, waveform_nn; linewidth=2, alpha=0.75)
+        -     s2 = scatter!(ax, tsteps, waveform_nn; markershape=:circle,
+        -         markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
+        - 
+        -     l3 = lines!(ax, tsteps, waveform_nn_trained; linewidth=2, alpha=0.75)
+        -     s3 = scatter!(ax, tsteps, waveform_nn_trained; markershape=:circle,
+        -         markeralpha=0.25, alpha=0.5, strokewidth=2, markersize=12)
+        - 
+        -     axislegend(ax, [[l1, s1], [l2, s2], [l3, s3]],
+        -         ["Waveform Data", "Waveform Neural Net (Untrained)", "Waveform Neural Net"];
+        -         position=:lb)
+        - 
+        -     fig
+        - end
+        - ````
+        - 
+        - ```@raw html
+        - <img width=600 height=450 style='object-fit: contain; height: auto;' src="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABLAAAAOECAIAAAA+D1+tAAAABmJLR0QA/wD/AP+gvaeTAAAgAElEQVR4nOzdd3wUdfoH8Gdmtm96TyChh96RXgRBFBCxnlIs5ynYT9Tzd6ecZ4WTs+Gp2D0VUVGa6HGICILSIfSWQEJ6SE+2z8z398cmM5NkKQrZ3Ww+79e9Xved2Znsc6+9hHn2+3yfL8cYIwAAAAAAAGh9+EAHAAAAAAAAAIGBhBAAAAAAAKCVQkIIAAAAAADQSiEhBAAAAAAAaKWQEAIAAAAAALRSSAgBAAAAAABaKSSEAAAAAAAArRQSQgAAAAAAgFYKCSEAAAAAAEArhYQQAAAAAACglUJCCAAAAAAA0EohIQQAAAAAAGilkBACAAAAAAC0UkgIAQAAAAAAWikkhAAAAAAAAK0UEkIAAAAAAIBWCgkhAAAAAABAK4WEEAAAAAAAoJVCQggAAAAAANBKISEEAAAAAABopZAQAgAAAAAAtFJICAEAAAAAAFopJIQAAAAAAACtFBJCAAAAAACAVgoJIQAAAAAAQCuFhBAAAAAAAKCVQkIIAAAAAADQSiEhBAAAAAAAaKWQEAIAAAAAALRSSAgBAAAAAABaKV2gAwA/4Tgu0CEAAAAAAMBvxhhrvh+OGUIAAAAAAIBWCjOErUuzfrtwIWw2W1lZmdVqjY2NDWwkcDFcLldxcbHRaExMTAx0LPD7iaJYUFCg0+lSUlICHQtclNOnTxNRWlpaoAOBi1JQUCCKYkpKik6Hx7MWrLi42OVyJSYmGo3GQMcCv19ZWZnNZouNjbVarYGNxA9VfpghBAAAAAAAaKWQEAIAAAAAALRSSAgBAAAAAABaKSSEAAAAAAAArRQSQgAAAAAAgFYKCSEAAAAAAEArhYQQAAAAAACglUJCCAAAAA
+        - ```
+        - 
+        - ## Appendix
+        - 
+        - ````julia
+        - using InteractiveUtils
+        - InteractiveUtils.versioninfo()
+        - if @isdefined(LuxCUDA) && CUDA.functional(); println(); CUDA.versioninfo(); end
+        - if @isdefined(LuxAMDGPU) && LuxAMDGPU.functional(); println(); AMDGPU.versioninfo(); end
+        - ````
+        - 
+        - ````
+        - Julia Version 1.10.2
+        - Commit bd47eca2c8a (2024-03-01 10:14 UTC)
+        - Build Info:
+        -   Official https://julialang.org/ release
+        - Platform Info:
+        -   OS: Linux (x86_64-linux-gnu)
+        -   CPU: 48 × AMD EPYC 7402 24-Core Processor
+        -   WORD_SIZE: 64
+        -   LIBM: libopenlibm
+        -   LLVM: libLLVM-15.0.7 (ORCJIT, znver2)
+        - Threads: 48 default, 0 interactive, 24 GC (on 2 virtual cores)
+        - Environment:
+        -   LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+        -   JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6
+        -   JULIA_PROJECT = /var/lib/buildkite-agent/builds/gpuci-11/julialang/lux-dot-jl/docs/Project.toml
+        -   JULIA_AMDGPU_LOGGING_ENABLED = true
+        -   JULIA_DEBUG = Literate
+        -   JULIA_CPU_THREADS = 2
+        -   JULIA_NUM_THREADS = 48
+        -   JULIA_LOAD_PATH = @:@v#.#:@stdlib
+        -   JULIA_CUDA_HARD_MEMORY_LIMIT = 25%
+        - 
+        - CUDA runtime 12.3, artifact installation
+        - CUDA driver 12.4
+        - NVIDIA driver 550.54.14
+        - 
+        - CUDA libraries: 
+        - - CUBLAS: 12.3.4
+        - - CURAND: 10.3.4
+        - - CUFFT: 11.0.12
+        - - CUSOLVER: 11.5.4
+        - - CUSPARSE: 12.2.0
+        - - CUPTI: 21.0.0
+        - - NVML: 12.0.0+550.54.14
+        - 
+        - Julia packages: 
+        - - CUDA: 5.2.0
+        - - CUDA_Driver_jll: 0.7.0+1
+        - - CUDA_Runtime_jll: 0.11.1+0
+        - 
+        - Toolchain:
+        - - Julia: 1.10.2
+        - - LLVM: 15.0.7
+        - 
+        - Environment:
+        - - JULIA_CUDA_HARD_MEMORY_LIMIT: 25%
+        - 
+        - 1 device:
+        -   0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 3.631 GiB / 4.750 GiB available)
+        - ┌ Warning: LuxAMDGPU is loaded but the AMDGPU is not functional.
+        - └ @ LuxAMDGPU ~/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6/packages/LuxAMDGPU/sGa0S/src/LuxAMDGPU.jl:19
+        - 
+        - ````
+        - 
+        - ---
+        - 
+        - *This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+        - 
