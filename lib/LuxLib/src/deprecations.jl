@@ -1,4 +1,4 @@
-# Deprecations for version 0.4
+# Deprecations for version 1.0
 ## normalization
 @deprecate batchnorm(x, scale, bias, running_mean, running_var, σ::F=identity;
     momentum::Real, training::Val, epsilon::Real) where {F} batchnorm(
@@ -30,10 +30,12 @@
     p::T, training::Val, um::Val; dims, invp::T=inv(p)) where {T, T1, T2, N} dropout(
     rng, x, mask, p, training, um, invp, dims)
 
-# bias activation. While this is not public, we used it in Lux
-function __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F}
-    __depwarn("`__apply_bias_activation` is deprecated and will be removed in the next \
-               release. Use `bias_activation` instead.",
-        :__apply_bias_activation)
-    return __bias_activation_impl(σ, x, _vec(bias))
-end
+## conv
+@deprecate fused_conv_bias_activation(
+    σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+    b::AbstractArray{<:Number, N}, cdims::ConvDims) where {F, N} fused_conv_bias_activation(
+    σ, weight, x, _vec(b), cdims)
+
+## bias activation. While this is not public, we used it in Lux
+@deprecate __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} bias_activation(
+    σ, x, _vec(bias))
