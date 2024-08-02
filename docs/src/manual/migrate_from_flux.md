@@ -49,9 +49,9 @@ should be implemented. A summary of the differences would be:
 * Lux relies on the user to define `Lux.initialparameters` and `Lux.initialstates` to
   distinguish between trainable parameters (called "parameters") and non-trainable
   parameters (called "states"). Additionally, Lux layers define the model architecture,
-  hence device transfer utilities like [`gpu_device`](@ref), [`cpu_device`](@ref), etc.
-  cannot be applied on Lux layers, instead they need to be applied on the parameters and
-  states.
+  hence device transfer utilities like [`LuxDeviceUtils.gpu_device`](@ref),
+  [`LuxDeviceUtils.cpu_device`](@ref), etc. cannot be applied on Lux layers, instead they
+  need to be applied on the parameters and states.
 
 Let's work through a concrete example to demonstrate this. We will implement a very simple
 layer that computes ``A \times B \times x`` where ``A`` is not trainable and ``B`` is

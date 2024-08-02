@@ -3,6 +3,15 @@
 `LuxDeviceUtils.jl` is a lightweight package defining rules for transferring data across
 devices. Most users should directly use Lux.jl instead.
 
+!!! note "Transition to `MLDataDevices.jl`"
+
+    Currently this package is in maintenance mode and won't receive any new features,
+    however, we will backport bug fixes till Lux `v1.0` is released. Post that this package
+    should be considered deprecated and users should switch to `MLDataDevices.jl`.
+
+    For more information on `MLDataDevices.jl` checkout the
+    [MLDataDevices.jl Documentation](@ref MLDataDevices-API).
+
 ## Index
 
 ```@index
@@ -12,24 +21,24 @@ Pages = ["LuxDeviceUtils.md"]
 ## Preferences
 
 ```@docs
-gpu_backend!
+LuxDeviceUtils.gpu_backend!
 ```
 
 ## Data Transfer
 
 ```@docs
-cpu_device
-gpu_device
+LuxDeviceUtils.cpu_device
+LuxDeviceUtils.gpu_device
 ```
 
 ## Miscellaneous
 
 ```@docs
-reset_gpu_device!
-supported_gpu_backends
-default_device_rng
-get_device
-get_device_type
+LuxDeviceUtils.reset_gpu_device!
+LuxDeviceUtils.supported_gpu_backends
+LuxDeviceUtils.default_device_rng
+LuxDeviceUtils.get_device
+LuxDeviceUtils.get_device_type
 LuxDeviceUtils.loaded
 LuxDeviceUtils.functional
 ```
