@@ -32,17 +32,21 @@ function matmuladd!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2))) &&
+    dims = (size(C, 1), size(A, 2), size(B, 2))
+    if unrolled_any(≤(2048), dims) &&
+       unrolled_all(≤(10_000), dims) &&
        LoopVectorization.check_args(C, A, B)
-        __matmuladd_loopvec!(C, A, B, bias)
+        __matmuladd_octavian!(C, A, B, bias)
         return
     end
     __matmuladd_generic!(C, A, B, bias)
     return
 end
 
-function __matmuladd_loopvec!(
+function __matmuladd_octavian!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+    # NOTE: Octavian doesn't do size checks.
+    #       See https://github.com/JuliaLinearAlgebra/Octavian.jl/issues/109
     if size(A, 2) != size(B, 1)
         throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
     end
@@ -51,13 +55,11 @@ function __matmuladd_loopvec!(
         throw(DimensionMismatch(lazy"bias has length $(length(bias)) but A has shape ($(size(A, 1)), $(size(A, 2)))"))
     end
 
-    @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
-        Cmn = zero(eltype(C))
-        for k in indices((A, B), (2, 1))
-            Cmn += A[m, k] * B[k, n]
-        end
-        C[m, n] = Cmn + bias[m]
+    @tturbo for n in indices(C, 2), m in indices(C, 1)
+        C[m, n] = bias[m]
     end
+    Octavian.matmul!(C, A, B, true, true)
+    return
 end
 
 function __matmuladd_generic!(
@@ -91,27 +93,25 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
     return
 end
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
-    if unrolled_any(≤(256), (size(C, 1), size(A, 2), size(B, 2))) &&
+    dims = (size(C, 1), size(A, 2), size(B, 2))
+    if unrolled_any(≤(2048), dims) &&
+       unrolled_all(≤(10_000), dims) &&
        LoopVectorization.check_args(C, A, B)
-        __matmul_loopvec!(C, A, B)
+        __matmul_octavian!(C, A, B)
         return
     end
     __matmul_generic!(C, A, B)
     return
 end
 
-function __matmul_loopvec!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+function __matmul_octavian!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+    # NOTE: Octavian doesn't do size checks.
+    #       See https://github.com/JuliaLinearAlgebra/Octavian.jl/issues/109
     if size(A, 2) != size(B, 1)
         throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
     end
-
-    @tturbo for n in indices((C, B), 2), m in indices((C, A), 1)
-        Cmn = zero(eltype(C))
-        for k in indices((A, B), (2, 1))
-            Cmn += A[m, k] * B[k, n]
-        end
-        C[m, n] = Cmn
-    end
+    Octavian.matmul!(C, A, B)
+    return
 end
 
 function __matmul_generic!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
@@ -151,6 +151,6 @@ function CRC.rrule(::typeof(matmuladd), opmode::LoopedArrayOp,
 end
 
 # EnzymeRules
-@enzyme_reverse_alternative __matmul_loopvec! __matmul_generic!
+@enzyme_reverse_alternative __matmul_octavian! __matmul_generic!
 
-@enzyme_reverse_alternative __matmuladd_loopvec! __matmuladd_generic!
+@enzyme_reverse_alternative __matmuladd_octavian! __matmuladd_generic!

@@ -14,6 +14,7 @@ using Markdown: @doc_str
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
                      AbstractGPUDevice, AbstractDevice
 using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, σ, ∇conv_data, ∇conv_filter
+using Octavian: Octavian
 using Random: Random, AbstractRNG, rand!
 using Reexport: @reexport
 using Setfield: @set!
