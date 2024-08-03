@@ -15,7 +15,16 @@ See also [`bias_activation!!`](@ref), [`fast_activation!!`](@ref).
 """
 function bias_activation(σ::F, x::AbstractArray, bias::Optional{<:AbstractVector}) where {F}
     _bias_act_check(x, bias)
-    return __bias_activation_impl(select_fastest_activation(σ, x, bias), x, bias)
+    return _bias_activation_impl(select_fastest_activation(σ, x, bias),
+        attempt_fast_implementation((x, bias)), x, bias)
+end
+
+for (fast_mode, fop) in (
+    (True, :__bias_activation_impl), (False, :__generic_bias_activation))
+    @eval function _bias_activation_impl(σ::F, ::$(fast_mode), x::AbstractArray,
+            bias::Optional{<:AbstractVector}) where {F}
+        return $(fop)(σ, x, bias)
+    end
 end
 
 """
@@ -30,7 +39,16 @@ See also [`bias_activation`](@ref), [`fast_activation!!`](@ref).
 function bias_activation!!(
         σ::F, x::AbstractArray, bias::Optional{<:AbstractVector}) where {F}
     _bias_act_check(x, bias)
-    return __bias_activation_impl!!(select_fastest_activation(σ, x, bias), x, bias)
+    return _bias_activation_impl!!(select_fastest_activation(σ, x, bias),
+        attempt_fast_implementation((x, bias)), x, bias)
+end
+
+for (fast_mode, fop) in (
+    (True, :__bias_activation_impl!!), (False, :__generic_bias_activation))
+    @eval function _bias_activation_impl!!(σ::F, ::$(fast_mode), x::AbstractArray,
+            bias::Optional{<:AbstractVector}) where {F}
+        return $(fop)(σ, x, bias)
+    end
 end
 
 _bias_act_check(x, b) = nothing
