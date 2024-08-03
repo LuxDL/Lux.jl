@@ -117,6 +117,10 @@ __unsafe_free!(x::AbstractArray) = KA.unsafe_free!(x)
 CRC.@non_differentiable __unsafe_free!(::Any)
 EnzymeRules.inactive_noinl(::typeof(__unsafe_free!), ::Any) = nothing
 
+__known_fixed(x) = known(x)  # will drop gradients. needed for type stability in Zygote
+
+CRC.@non_differentiable __known_fixed(::Any)
+
 # Meta Programming Utilities
 __is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 __is_tracked(args...) = any(__is_tracked, args)

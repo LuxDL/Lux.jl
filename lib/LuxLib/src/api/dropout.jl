@@ -47,8 +47,8 @@ function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
     return dropout(rng, x, mask, p, static(update_mask), static(training), invp, dims)
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray,
-        p::T, training::StaticBool, ::True, invp::T, dims) where {T}
+function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray, p::T,
+        training::StaticBool, ::True, invp::T, dims) where {T}
     return dropout(rng, x, p, training, invp, dims)
 end
 

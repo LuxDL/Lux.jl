@@ -56,11 +56,11 @@ end
 
 CRC.@non_differentiable _update_normalization_statistics(::Any...)
 
-__accum_size(x, reduce_dims) = prod(Base.Fix1(size, x), known(reduce_dims))
+__accum_size(x, reduce_dims) = prod(Base.Fix1(size, x), __known_fixed(reduce_dims))
 
 function _get_batch_statistics(
         x::AbstractArray, ::Nothing, ::Nothing, reduce_dims, _, momentum)
-    μ, σ² = fast_mean_var(x; dims=known(reduce_dims), corrected=false)
+    μ, σ² = fast_mean_var(x; dims=__known_fixed(reduce_dims), corrected=false)
     return (ArrayInterface.aos_to_soa(μ), ArrayInterface.aos_to_soa(σ²)), (nothing, nothing)
 end
 
@@ -72,7 +72,7 @@ end
 function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray,
         rσ²::AbstractArray, reduce_dims, ::True, momentum)
     μ, σ² = map(ArrayInterface.aos_to_soa,
-        fast_mean_var(x; dims=known(reduce_dims), corrected=false))
+        fast_mean_var(x; dims=__known_fixed(reduce_dims), corrected=false))
     rμ, rσ² = _update_normalization_statistics(
         remove_tracking(x), remove_tracking(rμ), remove_tracking(rσ²),
         remove_tracking(μ), remove_tracking(σ²), momentum, reduce_dims)
