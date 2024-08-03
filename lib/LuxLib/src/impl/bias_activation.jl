@@ -57,6 +57,34 @@ end
 function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__bias_activation_impl), σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+    T = __get_concrete_fba_output_eltype(σ, x, bias)
+
+    if __no_intermediate_needed(σ, T)
+        y = __bias_activation_impl(σ, x, bias)
+        proj_x_no_cached = CRC.ProjectTo(x)
+        proj_b_no_cached = CRC.ProjectTo(bias)
+        ∇__bias_activation_impl_no_cached = @closure Δ -> begin
+            ∂x = __activation_gradient(CRC.unthunk(Δ), y, σ, NotaNumber())
+            ∂b = __added_bias_gradient(bias, ∂x)
+            return ∂∅, ∂∅, proj_x_no_cached(∂x), proj_b_no_cached(∂b)
+        end
+        return y, ∇__bias_activation_impl_no_cached
+    end
+
+    if __needs_intermediate_but_has_rrule(σ, T)
+        tmp = similar(x, promote_type(__eltype(x), __eltype(bias)))
+        __bias_add_impl!(tmp, internal_operation_mode((x, bias)), x, bias)
+        y = _fast_activation(σ, tmp)
+        proj_x = CRC.ProjectTo(x)
+        proj_b = CRC.ProjectTo(bias)
+        ∇__bias_activation_impl_cached_crc = @closure Δ -> begin
+            ∂x = __activation_gradient(CRC.unthunk(Δ), y, σ, tmp)
+            ∂b = __added_bias_gradient(bias, ∂x)
+            return ∂∅, ∂∅, proj_x(∂x), proj_b(∂b)
+        end
+        return y, ∇__bias_activation_impl_cached_crc
+    end
+
     return CRC.rrule_via_ad(cfg, __generic_bias_activation, σ, x, bias)
 end
 
@@ -86,6 +114,8 @@ end
 function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(__bias_activation_impl!!), σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+    can_setindex(x) || return CRC.rrule_via_ad(cfg, __bias_activation_impl, σ, x, bias)
+
     T = __get_concrete_fba_output_eltype(σ, x, bias)
 
     if __no_intermediate_needed(σ, T)
@@ -101,11 +131,11 @@ function CRC.rrule(
     end
 
     if __needs_intermediate_but_has_rrule(σ, T)
-        y, z = __apply_bias_activation_cached!!(σ, x, bias)
+        y, tmp = __apply_bias_activation_cached!!(σ, x, bias)
         proj_x_cached = CRC.ProjectTo(x)
         proj_b_cached = CRC.ProjectTo(bias)
         ∇__bias_activation_impl_cached_crc = @closure Δ -> begin
-            ∂x = __activation_gradient(CRC.unthunk(Δ), z, σ, y)
+            ∂x = __activation_gradient(CRC.unthunk(Δ), y, σ, tmp)
             ∂b = __added_bias_gradient(bias, ∂x)
             return ∂∅, ∂∅, proj_x_cached(∂x), proj_b_cached(∂b)
         end
@@ -129,6 +159,13 @@ function __bias_activation_impl!(y::AbstractArray{<:Number, N}, opmode::LoopedAr
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     __bias_add_impl!(y, opmode, x, bias)
     _fast_activation!(σ, y) # NOTE: don't fuse into the above loop
+    return
+end
+
+function __bias_add_impl!(y::AbstractArray{<:Number, N}, ::AbstractInternalArrayOpMode,
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+    bias_ = __reshape_bias_into_xdims(x, bias)
+    broadcast!(+, y, x, bias_)
     return
 end
 
