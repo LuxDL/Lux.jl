@@ -1,7 +1,7 @@
 # Used inside rrules
 __activation_gradient(Δ, out, ::typeof(identity), x) = Δ
 function __activation_gradient(Δ, out, act::F, x) where {F}
-    opmode = internal_operation_mode((Δ, out, x))
+    opmode = internal_operation_mode((Δ, out))
     if opmode isa LoopedArrayOp  # All sizes are same
         y = similar(out)
         if x isa NotaNumber
@@ -77,6 +77,20 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(_fast_activation),
         σ::F, x::AbstractArray{T}) where {F, T}
+    opmode = internal_operation_mode(x)
+
+    opmode isa LoopedArrayOp || return CRC.rrule_via_ad(cfg, broadcast, σ, x) # No need to do anything
+
+    if __needs_intermediate_but_has_rrule(σ, T)
+        y = _fast_activation(opmode, σ, x)
+        proj_x_cached = CRC.ProjectTo(x)
+        ∇fast_activation = @closure Δ -> begin
+            ∂x = __activation_gradient(CRC.unthunk(Δ), y, σ, x)
+            return ∂∅, ∂∅, proj_x_cached(∂x)
+        end
+        return y, ∇fast_activation
+    end
+
     return CRC.rrule_via_ad(cfg, broadcast, σ, x)
 end
 
@@ -123,7 +137,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fast_activation!!
         return y, ∇__fast_activation_impl_cached_crc
     end
 
-    return CRC.rrule_via_ad(cfg, _fast_activation, σ, x)
+    return CRC.rrule_via_ad(cfg, broadcast, σ, x)
 end
 
 # Specialized functions that use SLEEFPirates.jl to speed up the activation functions

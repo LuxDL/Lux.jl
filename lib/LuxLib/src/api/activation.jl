@@ -59,4 +59,6 @@ broadcasting.
 
   - Output Array with the same size as `x`
 """
-fast_activation(σ::F, x::AbstractArray) where {F} = _fast_activation(σ, x)
+function fast_activation(σ::F, x::AbstractArray) where {F}
+    return _fast_activation(select_fastest_activation(σ, x), x)
+end
