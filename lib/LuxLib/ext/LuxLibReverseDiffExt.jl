@@ -37,11 +37,10 @@ for pool in (:maxpool, :meanpool, :lpnormpool)
     @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::NNlib.PoolDims; kwargs...)
 end
 
-LuxLib.__value(x::TrackedReal) = ReverseDiff.value(x)
-LuxLib.__value(x::TrackedArray) = ReverseDiff.value(x)
-LuxLib.__value(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
-
-LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
+LuxLib.remove_tracking(x::TrackedReal) = ReverseDiff.value(x)
+LuxLib.remove_tracking(x::TrackedArray) = ReverseDiff.value(x)
+LuxLib.remove_tracking(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
+LuxLib.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = LuxLib.remove_tracking(T)
 
 LuxLib.is_tracked(::Type{<:TrackedReal}) = True()
 

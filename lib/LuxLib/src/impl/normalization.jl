@@ -51,7 +51,7 @@ function _update_normalization_statistics(
         μ = fast_mean(μ; dims=N)
         σ² = fast_mean(σ²; dims=N)
     end
-    m = __value(T(__accum_size(x, r)))
+    m = remove_tracking(T(__accum_size(x, r)))
     return __update_statistics(rμ, rσ², μ, σ², momentum, momentum * m / (m - one(m)))
 end
 
@@ -74,7 +74,8 @@ function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::Abst
         r::Val{rdims}, ::Val{true}, momentum) where {rdims}
     μ, σ² = map(ArrayInterface.aos_to_soa, fast_mean_var(x; dims=rdims, corrected=false))
     rμ, rσ² = _update_normalization_statistics(
-        __value(x), __value(rμ), __value(rσ²), __value(μ), __value(σ²), momentum, r)
+        remove_tracking(x), remove_tracking(rμ), remove_tracking(rσ²),
+        remove_tracking(μ), remove_tracking(σ²), momentum, r)
     return (μ, σ²), (rμ, rσ²)
 end
 

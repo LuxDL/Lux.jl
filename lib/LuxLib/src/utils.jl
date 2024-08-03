@@ -32,13 +32,13 @@ _ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 __materialize_subarray(x::AbstractArray) = x
 __materialize_subarray(x::SubArray) = copy(x)
 
-__value(x::Number) = x
-__value(x::AbstractArray) = x
-__value(::Type{T}) where {T <: Number} = T
-__value(x::ForwardDiff.Dual) = ForwardDiff.value(x)
-__value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
-__value(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = __value(T)
-__value(::Nothing) = nothing
+remove_tracking(x::Number) = x
+remove_tracking(x::AbstractArray) = x
+remove_tracking(::Type{T}) where {T <: Number} = T
+remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
+remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
+remove_tracking(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = remove_tracking(T)
+remove_tracking(::Nothing) = nothing
 
 __reshape(x::AbstractArray, dims...) = reshape(x, dims)
 __reshape(::Nothing, dims...) = nothing
@@ -87,7 +87,7 @@ CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
 EnzymeRules.inactive_noinl(::typeof(__get_concrete_fba_output_eltype), ::Any...) = nothing
 
 ## Copy and don't allow gradient propagation
-_copy_autodiff_barrier(x) = copy(__value(x))
+_copy_autodiff_barrier(x) = copy(remove_tracking(x))
 _copy_autodiff_barrier(::Nothing) = nothing
 
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)

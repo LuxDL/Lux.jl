@@ -23,9 +23,10 @@ function __batchnorm_basic(
         running_var::LuxLib.Optional{<:AbstractVector}, training::Val,
         σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
     x_, xm, xv = LuxLib._normalization(
-        x, LuxLib.__value(running_mean), LuxLib.__value(running_var), scale, bias,
-        LuxLib._get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)
-    return (x_, (; running_mean=LuxLib.__value(xm), running_var=LuxLib.__value(xv)))
+        x, LuxLib.remove_tracking(running_mean), LuxLib.remove_tracking(running_var),
+        scale, bias, LuxLib._get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)
+    return (x_,
+        (; running_mean=LuxLib.remove_tracking(xm), running_var=LuxLib.remove_tracking(xv)))
 end
 
 anonact = x -> x^3

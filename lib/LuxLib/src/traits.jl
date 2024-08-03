@@ -30,7 +30,7 @@ static_isa(x, ::Type{T}) where {T} = static(isa(x, T))
 #   - Doesn't Has Dual Numbers
 attempt_fast_implementation(x) = attempt_fast_implementation((x,))
 function attempt_fast_implementation(xs::Tuple)
-    return unrolled_all(is_mutable_array, xs) & unrolled_all(!has_dual, xs)
+    return unrolled_all(is_mutable_array, xs) & unrolled_all(!has_autodiff_value, xs)
 end
 
 CRC.@non_differentiable attempt_fast_implementation(::Any...)

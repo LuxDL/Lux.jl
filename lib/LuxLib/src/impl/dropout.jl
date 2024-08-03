@@ -126,7 +126,7 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), ::AbstractBroadcastOpMode,
     return y, _∇alpha_dropout_kernel
 end
 
-_dropout_fptype(x) = float(real(__value(eltype(x))))
+_dropout_fptype(x) = float(real(remove_tracking(eltype(x))))
 
 CRC.@non_differentiable _dropout_fptype(::Any...)
 EnzymeRules.inactive_noinl(::typeof(_dropout_fptype), ::Any...) = nothing

@@ -51,11 +51,10 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
         x::$XT, momentum::Real, eps::Real, training::Val)
 end
 
-LuxLib.__value(x::TrackedReal) = Tracker.data(x)
-LuxLib.__value(x::TrackedArray) = Tracker.data(x)
-LuxLib.__value(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
-
-LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
+LuxLib.remove_tracking(x::TrackedReal) = Tracker.data(x)
+LuxLib.remove_tracking(x::TrackedArray) = Tracker.data(x)
+LuxLib.remove_tracking(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
+LuxLib.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = LuxLib.remove_tracking(T)
 
 LuxLib.is_tracked(::Type{<:TrackedReal}) = True()
 

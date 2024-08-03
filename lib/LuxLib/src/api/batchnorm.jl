@@ -43,10 +43,10 @@ function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector
         running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
         momentum::Real=0.1f0, epsilon::Real=__default_epsilon(x)) where {F, N}
     x_, xm, xv = _batchnorm_impl(
-        x, __value(running_mean), __value(running_var), scale, bias,
+        x, remove_tracking(running_mean), remove_tracking(running_var), scale, bias,
         _get_batchnorm_reduce_dims(x), training, momentum, epsilon,
         select_fastest_activation(σ, x, scale, bias, running_mean, running_var))
-    return (x_, (; running_mean=__value(xm), running_var=__value(xv)))
+    return (x_, (; running_mean=remove_tracking(xm), running_var=remove_tracking(xv)))
 end
 
 @generated function _get_batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
