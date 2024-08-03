@@ -2,35 +2,36 @@
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+        @testset "$T, $x_shape, $dims" for T in (Float16, Float32, Float64),
+            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1)),
+            dims in (Colon(), 1, (1, 2))
 
             x = randn(rng, T, x_shape) |> aType
 
-            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), Colon())) isa Any
+            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
 
-            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(true), T(2), Colon())
+            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(true), T(2), dims)
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
             @test mask_ isa aType{T, length(x_shape)}
-            @test size(mask_) == x_shape
+            !(dims isa Colon) && @test size(mask_) == x_shape
             @test rng != rng_
 
-            @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
-            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), Colon())) isa Any
+            @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
+            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
 
-            __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, Colon())))
+            __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, dims)))
             @test @inferred(Zygote.gradient(__f, x)) isa Any
 
             __f = let rng = rng, T = T
-                x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), Colon())))
+                x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
             end
             test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
                 soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
                 broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
-            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), Colon())
+            y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), dims)
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
