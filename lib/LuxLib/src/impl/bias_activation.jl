@@ -46,7 +46,7 @@ function __bias_activation_impl(σ::F, x::AbstractArray{<:Number}, ::Nothing) wh
 end
 @stable default_mode="disable" function __bias_activation_impl(
         σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
-    if unrolled_all(fast_scalar_indexing, (x, bias))
+    if unrolled_all(ArrayInterface.fast_scalar_indexing, (x, bias))
         y = similar(x, __get_concrete_fba_output_eltype(σ, x, bias))
         __bias_activation_impl!(y, σ, x, bias)
         return y

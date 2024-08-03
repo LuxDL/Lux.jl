@@ -1,11 +1,11 @@
 module LuxLib
 
-using ArrayInterface: ArrayInterface, fast_scalar_indexing, can_setindex
+using ArrayInterface: ArrayInterface, can_setindex
 using DispatchDoctor: @stable
 using FastClosures: @closure
 using Reexport: @reexport
 using StaticArraysCore: StaticArraysCore, StaticArray, StaticVector
-using Static: Static, True, False, static
+using Static: Static, True, False, static, known
 using UnrolledUtilities: unrolled_filter, unrolled_mapreduce
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
@@ -33,8 +33,8 @@ using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, σ, ∇conv_data, ∇conv
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
 
-include("traits.jl")
 include("utils.jl")
+include("traits.jl")
 include("patches.jl")
 
 # User Facing

@@ -4,6 +4,7 @@ using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
 using LuxLib: LuxLib
 using NNlib: NNlib
+using Static: True
 using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector
 
 const CRC = ChainRulesCore
@@ -56,10 +57,6 @@ LuxLib.__value(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
 
 LuxLib.__value(::Type{<:TrackedReal{T}}) where {T} = LuxLib.__value(T)
 
-LuxLib.__has_tracked_value(::TrackedArray) = true
-LuxLib.__has_tracked_value(::AbstractArray{<:TrackedReal}) = true
-LuxLib.__has_tracked_value(::TrackedReal) = true
-
-LuxLib.__aos_to_soa(x::AbstractArray{<:TrackedReal}) = Tracker.collect(x)
+LuxLib.is_tracked(::Type{<:TrackedReal}) = True()
 
 end

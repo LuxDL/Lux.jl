@@ -62,7 +62,7 @@ __accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
 function _get_batch_statistics(
         x::AbstractArray, ::Nothing, ::Nothing, ::Val{rdims}, ::Val, momentum) where {rdims}
     μ, σ² = fast_mean_var(x; dims=rdims, corrected=false)
-    return (__aos_to_soa(μ), __aos_to_soa(σ²)), (nothing, nothing)
+    return (ArrayInterface.aos_to_soa(μ), ArrayInterface.aos_to_soa(σ²)), (nothing, nothing)
 end
 
 function _get_batch_statistics(::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
@@ -72,7 +72,7 @@ end
 
 function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
         r::Val{rdims}, ::Val{true}, momentum) where {rdims}
-    μ, σ² = map(__aos_to_soa, fast_mean_var(x; dims=rdims, corrected=false))
+    μ, σ² = map(ArrayInterface.aos_to_soa, fast_mean_var(x; dims=rdims, corrected=false))
     rμ, rσ² = _update_normalization_statistics(
         __value(x), __value(rμ), __value(rσ²), __value(μ), __value(σ²), momentum, r)
     return (μ, σ²), (rμ, rσ²)

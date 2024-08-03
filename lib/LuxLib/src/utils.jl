@@ -40,8 +40,6 @@ __value(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 __value(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = __value(T)
 __value(::Nothing) = nothing
 
-__aos_to_soa(x::AbstractArray) = x # FIXME: Upstream this to ArrayInterface.jl
-
 __reshape(x::AbstractArray, dims...) = reshape(x, dims)
 __reshape(::Nothing, dims...) = nothing
 
@@ -95,18 +93,10 @@ _copy_autodiff_barrier(::Nothing) = nothing
 CRC.@non_differentiable _copy_autodiff_barrier(::Any)
 EnzymeRules.inactive_noinl(::typeof(_copy_autodiff_barrier), ::Any...) = nothing
 
-__has_tracked_value(::Any) = false
-
-CRC.@non_differentiable __has_tracked_value(::Any)
-EnzymeRules.inactive_noinl(::typeof(__has_tracked_value), ::Any) = nothing
-
-__has_autodiff_value(x) = __has_tracked_value(x) || __has_dual(x)
-
 ## depwarn but marked non-differentiable to prevent type instability
 __depwarn(msg::String, f::Symbol) = Base.depwarn(msg, f)
 
 CRC.@non_differentiable __depwarn(::Any...)
-EnzymeRules.inactive_noinl(::typeof(__depwarn), ::Any...) = nothing
 
 __eltype(::AbstractArray{T}) where {T} = T
 __eltype(::T) where {T <: Number} = T
@@ -114,14 +104,6 @@ __eltype(::Nothing) = Bool
 
 CRC.@non_differentiable __eltype(::Any)
 EnzymeRules.inactive_noinl(::typeof(__eltype), ::Any) = nothing
-
-__has_float16(::Type{T}) where {T} = T <: Float16
-__has_float16(::AbstractArray{T}) where {T} = __has_float16(T)
-__has_float16(::Float16) = true
-__has_float16(x) = false
-
-CRC.@non_differentiable __has_float16(::Any)
-EnzymeRules.inactive_noinl(::typeof(__has_float16), ::Any) = nothing
 
 __default_epsilon(::Type{T}) where {T} = T(eps(T)^(5 / 7))
 __default_epsilon(::AbstractArray{T}) where {T} = __default_epsilon(T)
@@ -158,41 +140,6 @@ end
 function __needs_intermediate_but_has_rrule(f::F, ::Type{T}) where {F, T}
     return isconcretetype(Core.Compiler._return_type(only_derivative, Tuple{T, F, T}))
 end
-
-# How to do a broadcast?
-#    1. Generic Broadcasting without Preallocation -- GenericBroadcastOp
-#    2. Broadcasting with Fusion -- GPUBroadcastOp
-#    3. Loop Broadcasting -- LoopedArrayOp. This might still use broadcasting if needed
-
-abstract type AbstractInternalArrayOpMode end
-
-abstract type AbstractBroadcastOpMode <: AbstractInternalArrayOpMode end
-
-struct GenericBroadcastOp <: AbstractBroadcastOpMode end
-struct GPUBroadcastOp{dev} <: AbstractBroadcastOpMode end
-struct LoopedArrayOp <: AbstractInternalArrayOpMode end
-
-## NOTE: Ensure that this always gets compiled out! Else we will have terrible type
-##       inference.
-function internal_operation_mode(xs::Tuple)
-    xs = unrolled_filter(!isnothing, xs)
-    # Float16 is a bit iffy and reordering operations are not optimal for numerical
-    # stability so we use the generic implementation for now.
-    if unrolled_any(__has_autodiff_value, xs) ||
-       unrolled_any(__has_float16, xs) ||
-       unrolled_any(Base.Fix2(isa, StaticArray), xs)
-        return GenericBroadcastOp()
-    end
-    dev = get_device_type(xs)
-    dev <: AbstractGPUDevice && return GPUBroadcastOp{dev}()
-    unrolled_any(!fast_scalar_indexing, xs) && return GenericBroadcastOp()
-    dev <: CPUDevice && return LoopedArrayOp()
-    return GenericBroadcastOp()  # fallback for safety
-end
-internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))
-
-CRC.@non_differentiable internal_operation_mode(::Any...)
-EnzymeRules.inactive_noinl(::typeof(internal_operation_mode), ::Any...) = nothing
 
 # Switches function `foo` with function `bar`. To be used when Enzyme cannot differentiate
 # through `foo` but supports `bar`. Use with caution, avoid multiple dispatch on `foo`.
