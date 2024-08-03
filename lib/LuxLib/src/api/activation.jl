@@ -28,14 +28,12 @@ generic implementation.
 """
 function fast_activation!!(σ::F, x::AbstractArray) where {F}
     return _fast_activation!!(
-        __is_immutable_array_or_dual_val((x,)), select_fastest_activation(σ, x), x)
+        attempt_fast_implementation(x), select_fastest_activation(σ, x), x)
 end
 
-function _fast_activation!!(::Val{true}, σ::F, x::AbstractArray) where {F}
-    return _fast_activation(σ, x)
-end
+_fast_activation!!(::False, σ::F, x::AbstractArray) where {F} = _fast_activation(σ, x)
 
-function _fast_activation!!(::Val{false}, σ::F, x::AbstractArray) where {F}
+function _fast_activation!!(::True, σ::F, x::AbstractArray) where {F}
     _fast_activation!(σ, x)
     return x
 end

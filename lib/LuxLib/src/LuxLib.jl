@@ -1,33 +1,39 @@
 module LuxLib
 
 using ArrayInterface: ArrayInterface, fast_scalar_indexing, can_setindex
-using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using DispatchDoctor: @stable
-using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
+using Reexport: @reexport
+using StaticArraysCore: StaticArraysCore, StaticArray, StaticVector
+using Static: Static, True, False, static
+using UnrolledUtilities: unrolled_filter, unrolled_mapreduce
+
+using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
+using EnzymeCore: EnzymeCore, EnzymeRules
 using ForwardDiff: ForwardDiff
+
 using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
+
 using LinearAlgebra: LinearAlgebra, BLAS, mul!
-using LoopVectorization: LoopVectorization, indices, @tturbo
-using LuxCore: LuxCore
 using Markdown: @doc_str
+using Random: Random, AbstractRNG, rand!
+using Statistics: Statistics, mean, var
+
+using LoopVectorization: LoopVectorization, indices, @tturbo
+using Octavian: Octavian
+using SLEEFPirates: SLEEFPirates
+
+using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
                      AbstractGPUDevice, AbstractDevice
 using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, σ, ∇conv_data, ∇conv_filter
-using Octavian: Octavian
-using Random: Random, AbstractRNG, rand!
-using Reexport: @reexport
-using Setfield: @set!
-using StaticArraysCore: StaticArraysCore, StaticArray, StaticVector
-using Statistics: Statistics, mean, var
-using SLEEFPirates: SLEEFPirates
-using UnrolledUtilities: unrolled_any, unrolled_all, unrolled_filter, unrolled_mapreduce
 
 @reexport using NNlib
 
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
 
+include("traits.jl")
 include("utils.jl")
 include("patches.jl")
 

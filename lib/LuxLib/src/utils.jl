@@ -68,26 +68,6 @@ end
 CRC.@non_differentiable __reset_BLAS_threads(::Int)
 EnzymeRules.inactive_noinl(::typeof(__reset_BLAS_threads), ::Int) = nothing
 
-## Check no setindexing
-__is_immutable_array(x::AbstractArray) = !can_setindex(x)
-__is_immutable_array(::Nothing) = false
-__is_immutable_array_val(x) = Val(__is_immutable_array(x))
-
-CRC.@non_differentiable __is_immutable_array_val(::Any...)
-EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_val), ::Any...) = nothing
-
-__has_dual(x) = false
-__has_dual(::ForwardDiff.Dual) = true
-__has_dual(::AbstractArray{<:ForwardDiff.Dual}) = true
-
-__is_immutable_array_or_dual(x) = __is_immutable_array(x) || __has_dual(x)
-function __is_immutable_array_or_dual_val(x::Tuple)
-    return Val(unrolled_any(__is_immutable_array_or_dual, x))
-end
-
-CRC.@non_differentiable __is_immutable_array_or_dual_val(::Any...)
-EnzymeRules.inactive_noinl(::typeof(__is_immutable_array_or_dual_val), ::Any...) = nothing
-
 function __get_concrete_fba_output_eltype(act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
         b::Optional{<:AbstractVector}) where {F, Tw, Tx}
     if b === nothing
@@ -237,4 +217,19 @@ macro enzyme_reverse_alternative(f₁, f₂)
             return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
         end
     end)
+end
+
+# UnrolledUtilities.jl has these functions. But we need to support Static so we make some
+# specialized versions
+inferred_length(::Type{<:NTuple{N, Any}}) where {N} = N
+
+@generated function unrolled_any(f::F, xs) where {F}
+    L = inferred_length(xs)
+    L == 1 && return :(f(xs[1]))
+    return Expr(:call, :|, (:(f(xs[$i])) for i in 1:L)...)
+end
+@generated function unrolled_all(f::F, xs) where {F}
+    L = inferred_length(xs)
+    L == 1 && return :(f(xs[1]))
+    return Expr(:call, :&, (:(f(xs[$i])) for i in 1:L)...)
 end

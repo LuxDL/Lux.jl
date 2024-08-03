@@ -32,13 +32,13 @@ function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
     return fused_conv_bias_activation(select_fastest_activation(σ, weight, x, b),
-        __is_immutable_array_or_dual_val((weight, x, b)), weight, x, b, cdims)
+        attempt_fast_implementation((weight, x, b)), weight, x, b, cdims)
 end
 
-for (check, fop) in (
-    (false, :_fused_conv_bias_activation_impl), (true, :_generic_conv_bias_activation))
+for (fast_mode, fop) in (
+    (True, :_fused_conv_bias_activation_impl), (False, :_generic_conv_bias_activation))
     @eval function fused_conv_bias_activation(
-            σ::F, ::Val{$(check)}, weight::AbstractArray{<:Number, N},
+            σ::F, ::$(fast_mode), weight::AbstractArray{<:Number, N},
             x::AbstractArray{<:Number, N},
             b::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
         return $(fop)(σ, weight, x, b, cdims)
