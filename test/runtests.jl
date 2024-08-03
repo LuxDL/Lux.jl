@@ -76,7 +76,7 @@ const RETESTITEMS_NWORKERS = parse(
         (tag == "distributed" || tag == "eltype_match") && continue
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
 
-        ReTestItems.runtests(@__DIR__; tags=(tag == "all" ? nothing : [Symbol(tag)]),
+        ReTestItems.runtests(Lux; tags=(tag == "all" ? nothing : [Symbol(tag)]),
             nworkers=RETESTITEMS_NWORKERS, testitem_timeout=3600)
     end
 end

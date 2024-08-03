@@ -5,11 +5,6 @@ include("setup_modes.jl")
 import Reexport: @reexport
 
 using Lux, Functors
-
-# FIXME: remove after https://github.com/FluxML/Functors.jl/pull/87 is merged
-(::Functors.FlattenWalk)(f::F, ::NamedTuple{()}) where {F} = []
-(::Functors.FlattenWalk)(f::F, ::@NamedTuple{}) where {F} = []
-
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
 using LuxTestUtils: check_approx
