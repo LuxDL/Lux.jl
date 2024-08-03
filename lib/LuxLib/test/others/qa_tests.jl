@@ -10,8 +10,7 @@
             EnzymeRules.augmented_primal, EnzymeRules.reverse])
 end
 
-@testitem "Explicit Imports" tags=[:others] begin
-    import ReverseDiff, Tracker, NNlib
+@testitem "Explicit Imports" tags=[:others] setup=[SharedTestSetup] begin
     using ExplicitImports
 
     @test check_no_implicit_imports(LuxLib) === nothing

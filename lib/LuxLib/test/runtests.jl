@@ -28,29 +28,31 @@ const RETESTITEMS_NWORKER_THREADS = parse(Int,
 
 @info "Running tests for group: $LUXLIB_TEST_GROUP with $RETESTITEMS_NWORKERS workers"
 
+using LuxLib
+
 if BACKEND_GROUP ∈ ("all", "cuda", "amdgpu")
     if LUXLIB_TEST_GROUP == "all"
         ReTestItems.runtests(
-            @__DIR__; name=r"^(?!.*(Group Norm: Group \d+|Instance Norm: Group \d+)).*$",
+            LuxLib; name=r"^(?!.*(Group Norm: Group \d+|Instance Norm: Group \d+)).*$",
             nworkers=RETESTITEMS_NWORKERS,
             nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)
         # See https://github.com/JuliaTesting/ReTestItems.jl/issues/164
-        ReTestItems.runtests(@__DIR__; tags=[:group_norm], nworkers=0,
+        ReTestItems.runtests(LuxLib; tags=[:group_norm], nworkers=0,
             nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)
-        ReTestItems.runtests(@__DIR__; tags=[:instance_norm], nworkers=0,
+        ReTestItems.runtests(LuxLib; tags=[:instance_norm], nworkers=0,
             nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)
     elseif LUXLIB_TEST_GROUP ∉ ("group_norm", "instance_norm")
         ReTestItems.runtests(
-            @__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=RETESTITEMS_NWORKERS,
+            LuxLib; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=RETESTITEMS_NWORKERS,
             nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)
     else
         # See https://github.com/JuliaTesting/ReTestItems.jl/issues/164
-        ReTestItems.runtests(@__DIR__; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=0,
+        ReTestItems.runtests(LuxLib; tags=[Symbol(LUXLIB_TEST_GROUP)], nworkers=0,
             nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)
     end
 else
     ReTestItems.runtests(
-        @__DIR__; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]),
+        LuxLib; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]),
         nworkers=RETESTITEMS_NWORKERS,
         nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)
 end
