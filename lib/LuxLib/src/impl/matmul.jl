@@ -55,10 +55,11 @@ function __matmuladd_octavian!(
         throw(DimensionMismatch(lazy"bias has length $(length(bias)) but A has shape ($(size(A, 1)), $(size(A, 2)))"))
     end
 
+    Octavian.matmul!(C, A, B)
     @tturbo for n in indices(C, 2), m in indices(C, 1)
-        C[m, n] = bias[m]
+        C[m, n] += bias[m]
     end
-    Octavian.matmul!(C, A, B, true, true)
+
     return
 end
 
