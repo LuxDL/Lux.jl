@@ -56,7 +56,6 @@ function __maybe_reduce_BLAS_threads(::Type{CPUDevice})::Int
 end
 
 CRC.@non_differentiable __maybe_reduce_BLAS_threads(::AbstractArray)
-EnzymeRules.inactive_noinl(::typeof(__maybe_reduce_BLAS_threads), ::AbstractArray) = nothing
 
 function __reset_BLAS_threads(old_threads::Int)
     old_threads ≥ 1 && BLAS.set_num_threads(old_threads)
@@ -64,7 +63,6 @@ function __reset_BLAS_threads(old_threads::Int)
 end
 
 CRC.@non_differentiable __reset_BLAS_threads(::Int)
-EnzymeRules.inactive_noinl(::typeof(__reset_BLAS_threads), ::Int) = nothing
 
 function __get_concrete_fba_output_eltype(act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
         b::Optional{<:AbstractVector}) where {F, Tw, Tx}
@@ -84,7 +82,6 @@ function __get_concrete_fba_output_eltype(
 end
 
 CRC.@non_differentiable __get_concrete_fba_output_eltype(::Any...)
-EnzymeRules.inactive_noinl(::typeof(__get_concrete_fba_output_eltype), ::Any...) = nothing
 
 ## Copy and don't allow gradient propagation
 _copy_autodiff_barrier(x) = copy(remove_tracking(x))
@@ -103,19 +100,16 @@ __eltype(::T) where {T <: Number} = T
 __eltype(::Nothing) = Bool
 
 CRC.@non_differentiable __eltype(::Any)
-EnzymeRules.inactive_noinl(::typeof(__eltype), ::Any) = nothing
 
 __default_epsilon(::Type{T}) where {T} = T(eps(T)^(5 / 7))
 __default_epsilon(::AbstractArray{T}) where {T} = __default_epsilon(T)
 
 CRC.@non_differentiable __default_epsilon(::Any...)
-EnzymeRules.inactive_noinl(::typeof(__default_epsilon), ::Any...) = nothing
 
 __unsafe_free!(x) = nothing
 __unsafe_free!(x::AbstractArray) = KA.unsafe_free!(x)
 
 CRC.@non_differentiable __unsafe_free!(::Any)
-EnzymeRules.inactive_noinl(::typeof(__unsafe_free!), ::Any) = nothing
 
 __known_fixed(x) = known(x)  # will drop gradients. needed for type stability in Zygote
 

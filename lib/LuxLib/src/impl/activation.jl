@@ -230,7 +230,6 @@ function select_fastest_activation(f::F, ::LoopedArrayOp, ::Type{T}) where {F, T
 end
 
 CRC.@non_differentiable select_fastest_activation(::Any...)
-EnzymeRules.inactive_noinl(::typeof(select_fastest_activation), ::Any...) = nothing
 
 sleefpirates_activation(f::F, ::Type{T}) where {F, T} = f
 sleefpirates_activation(f::F, ::Type{Float32}) where {F} = sleefpirates_activation(f)
@@ -252,4 +251,3 @@ end
 sleefpirates_activation(f::F) where {F} = f
 
 CRC.@non_differentiable sleefpirates_activation(::Any...)
-EnzymeRules.inactive_noinl(::typeof(sleefpirates_activation), ::Any...) = nothing

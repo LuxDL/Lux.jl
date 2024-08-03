@@ -4,7 +4,6 @@ function _dropout_shape(s, dims)
 end
 
 CRC.@non_differentiable _dropout_shape(::Any...)
-EnzymeRules.inactive_noinl(::typeof(_dropout_shape), ::Any...) = nothing
 
 function _alpha_dropout_kernel(noise::AbstractArray, p, x::AbstractArray, α, A, B)
     return _alpha_dropout_kernel(internal_operation_mode((noise, x)), noise, p, x, α, A, B)
@@ -129,7 +128,6 @@ end
 _dropout_fptype(x) = float(real(remove_tracking(eltype(x))))
 
 CRC.@non_differentiable _dropout_fptype(::Any...)
-EnzymeRules.inactive_noinl(::typeof(_dropout_fptype), ::Any...) = nothing
 
 @stable default_mode="disable" function _alpha_dropout_noise(rng, x)
     rng = LuxCore.replicate(rng)

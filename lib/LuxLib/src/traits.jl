@@ -34,7 +34,6 @@ function attempt_fast_implementation(xs::Tuple)
 end
 
 CRC.@non_differentiable attempt_fast_implementation(::Any...)
-EnzymeRules.inactive_noinl(::typeof(attempt_fast_implementation), ::Any...) = nothing
 
 function use_generic_broadcasting(xs::Tuple)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
@@ -74,4 +73,3 @@ end
 internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))
 
 CRC.@non_differentiable internal_operation_mode(::Any...)
-EnzymeRules.inactive_noinl(::typeof(internal_operation_mode), ::Any...) = nothing

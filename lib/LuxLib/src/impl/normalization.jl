@@ -106,7 +106,6 @@ end
 end
 
 CRC.@non_differentiable _get_norm_reshape_dims(::Any...)
-EnzymeRules.inactive_noinl(::typeof(_get_norm_reshape_dims), ::Any...) = nothing
 
 # Generally you want to use `_normalization` but calling these functions lead to faster
 # code.

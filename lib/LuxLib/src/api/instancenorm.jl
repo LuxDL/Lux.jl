@@ -50,4 +50,3 @@ function _test_valid_instancenorm_arguments(::AbstractArray{T, N}) where {T, N}
 end
 
 CRC.@non_differentiable _test_valid_instancenorm_arguments(::Any...)
-EnzymeRules.inactive_noinl(::typeof(_test_valid_instancenorm_arguments), ::Any...) = nothing

@@ -43,4 +43,3 @@ function _bias_act_check(x::AbstractArray{<:Number, N}, bias::AbstractVector) wh
 end
 
 CRC.@non_differentiable _bias_act_check(::Any, ::Any)
-EnzymeRules.inactive_noinl(::typeof(_bias_act_check), ::Any, ::Any) = nothing
