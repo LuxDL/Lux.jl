@@ -44,8 +44,7 @@ using Lux, Random, Optimisers, Zygote
 # using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
 
 # Seeding
-rng = Random.default_rng()
-Random.seed!(rng, 0)
+rng = Xoshiro(0)
 
 # Construct the layer
 model = Chain(BatchNorm(128), Dense(128, 256, tanh), BatchNorm(256),
