@@ -435,7 +435,7 @@ end
             @test SAMLoss(MSELoss())(y, 0.5 .* y) ≈ 1.875
 
             @jet SAMLoss(MSELoss())(ŷ, y)
-            @test @inferred(Zygote.gradient(MSELoss(), ŷ, y)) isa Any
+            @test @inferred(Zygote.gradient(SAMLoss(MSELoss()), ŷ, y)) isa Any
 
             __f = Base.Fix2(SAMLoss(), y)
             test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
