@@ -42,7 +42,7 @@ function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector
 end
 
 @generated function _get_groupnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
-    return :($(Val(Tuple(collect(1:(N - 1))))))
+    return :($(static.(Tuple(collect(1:(N - 1))))))
 end
 
 function _test_valid_groupnorm_arguments(

@@ -1,5 +1,5 @@
 @testsetup module BatchNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
 
 function _setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = gen_f(T, sz) |> aType
@@ -23,8 +23,8 @@ function __batchnorm_basic(
         running_var::LuxLib.Optional{<:AbstractVector}, training::Val,
         σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
     x_, xm, xv = LuxLib._normalization(
-        x, LuxLib.remove_tracking(running_mean), LuxLib.remove_tracking(running_var),
-        scale, bias, LuxLib._get_batchnorm_reduce_dims(x), training, momentum, epsilon, σ)
+        x, LuxLib.remove_tracking(running_mean), LuxLib.remove_tracking(running_var), scale,
+        bias, LuxLib._get_batchnorm_reduce_dims(x), static(training), momentum, epsilon, σ)
     return (x_,
         (; running_mean=LuxLib.remove_tracking(xm), running_var=LuxLib.remove_tracking(xv)))
 end

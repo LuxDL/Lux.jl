@@ -1,5 +1,5 @@
 @doc doc"""
-    instancenorm(x, scale, bias, training::Val, σ = identity,
+    instancenorm(x, scale, bias, training::Union{Val, StaticBool}, σ = identity,
         epsilon = eps(eltype(x)) ^ (5 // 7))
 
 Instance Normalization. For details see [1].
@@ -29,19 +29,19 @@ mean and variance.
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
 function instancenorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, training::Val,
+        bias::Optional{<:AbstractVector}, training::Union{Val, StaticBool},
         σ::F=identity, epsilon::Real=__default_epsilon(x)) where {N, F}
     _test_valid_instancenorm_arguments(x)
 
     x_, xm, xv = _normalization(
         x, nothing, nothing, scale, bias, _get_instancenorm_reduce_dims(x),
-        training, nothing, epsilon, select_fastest_activation(σ, x, scale, bias))
+        static(training), nothing, epsilon, select_fastest_activation(σ, x, scale, bias))
 
     return x_, (; running_mean=xm, running_var=xv)
 end
 
 @generated function _get_instancenorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
-    return :($(Val(Tuple([1:(N - 2)]...))))
+    return :($(static.(Tuple([1:(N - 2)]...))))
 end
 
 function _test_valid_instancenorm_arguments(::AbstractArray{T, N}) where {T, N}

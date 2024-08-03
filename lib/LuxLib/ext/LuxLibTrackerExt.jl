@@ -4,7 +4,7 @@ using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
 using LuxLib: LuxLib
 using NNlib: NNlib
-using Static: True
+using Static: True, StaticBool
 using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector
 
 const CRC = ChainRulesCore
@@ -47,8 +47,8 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
     LuxLib.__is_tracked(RM, RV, S, B, XT) || continue
 
     @eval Tracker.@grad_from_chainrules LuxLib.batchnorm_cudnn(
-        running_mean::$RM, running_var::$RV, scale::$S, bias::$B,
-        x::$XT, momentum::Real, eps::Real, training::Val)
+        running_mean::$RM, running_var::$RV, scale::$S, bias::$B, x::$XT,
+        momentum::Real, eps::Real, training::Union{Val, StaticBool})
 end
 
 LuxLib.remove_tracking(x::TrackedReal) = Tracker.data(x)

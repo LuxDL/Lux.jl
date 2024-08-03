@@ -14,19 +14,19 @@ function __update_statistics(opmode, rμ, rσ², μ, σ², m1, m2)
     m3 = 1 - m1
     rμ2 = similar(rμ, promote_type(eltype(rμ), eltype(μ), typeof(m3), typeof(m1)))
     rσ²2 = similar(rσ², promote_type(eltype(rσ²), eltype(σ²), typeof(m2), typeof(m3)))
-    __update_statistics!(opmode, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, 1 - m1)
+    __update_statistics!(rμ2, rσ²2, opmode, rμ, rσ², μ, σ², m1, m2, 1 - m1)
     return rμ2, rσ²2
 end
 
 CRC.@non_differentiable __update_statistics(::Any...)
 
-function __update_statistics!(::LoopedArrayOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
+function __update_statistics!(rμ2, rσ²2, ::LoopedArrayOp, rμ, rσ², μ, σ², m1, m2, m3)
     @tturbo for I in indices((rμ2, rσ²2))
         rμ2[I] = m3 * rμ[I] + m1 * μ[I]
         rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
     end
 end
-function __update_statistics!(::GPUBroadcastOp, rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3)
+function __update_statistics!(rμ2, rσ²2, ::GPUBroadcastOp, rμ, rσ², μ, σ², m1, m2, m3)
     backend = KA.get_backend(rμ2)
     kernel! = __update_statistics_kernel!(backend)
     kernel!(rμ2, rσ²2, rμ, rσ², μ, σ², m1, m2, m3; ndrange=length(rμ2))
@@ -45,45 +45,45 @@ EnzymeRules.inactive(::typeof(__update_statistics!), ::Any...) = nothing
 function _update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
         rσ²::AbstractArray{<:Number, N}, μ::AbstractArray{<:Number, N},
-        σ²::AbstractArray{<:Number, N}, momentum::Real,
-        r::Val{reduce_dims}) where {T, N, reduce_dims}
+        σ²::AbstractArray{<:Number, N}, momentum::Real, reduce_dims) where {T, N}
     if last(reduce_dims) != N
         μ = fast_mean(μ; dims=N)
         σ² = fast_mean(σ²; dims=N)
     end
-    m = remove_tracking(T(__accum_size(x, r)))
+    m = remove_tracking(T(__accum_size(x, reduce_dims)))
     return __update_statistics(rμ, rσ², μ, σ², momentum, momentum * m / (m - one(m)))
 end
 
 CRC.@non_differentiable _update_normalization_statistics(::Any...)
 
-__accum_size(x, ::Val{dims}) where {dims} = prod(Base.Fix1(size, x), dims)
+__accum_size(x, reduce_dims) = prod(Base.Fix1(size, x), known(reduce_dims))
 
 function _get_batch_statistics(
-        x::AbstractArray, ::Nothing, ::Nothing, ::Val{rdims}, ::Val, momentum) where {rdims}
-    μ, σ² = fast_mean_var(x; dims=rdims, corrected=false)
+        x::AbstractArray, ::Nothing, ::Nothing, reduce_dims, _, momentum)
+    μ, σ² = fast_mean_var(x; dims=known(reduce_dims), corrected=false)
     return (ArrayInterface.aos_to_soa(μ), ArrayInterface.aos_to_soa(σ²)), (nothing, nothing)
 end
 
-function _get_batch_statistics(::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
-        ::Val{rdims}, ::Val{false}, momentum) where {rdims}
+function _get_batch_statistics(
+        ::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray, _, ::False, momentum)
     return (rμ, rσ²), (rμ, rσ²)
 end
 
-function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray,
-        r::Val{rdims}, ::Val{true}, momentum) where {rdims}
-    μ, σ² = map(ArrayInterface.aos_to_soa, fast_mean_var(x; dims=rdims, corrected=false))
+function _get_batch_statistics(x::AbstractArray, rμ::AbstractArray,
+        rσ²::AbstractArray, reduce_dims, ::True, momentum)
+    μ, σ² = map(ArrayInterface.aos_to_soa,
+        fast_mean_var(x; dims=known(reduce_dims), corrected=false))
     rμ, rσ² = _update_normalization_statistics(
         remove_tracking(x), remove_tracking(rμ), remove_tracking(rσ²),
-        remove_tracking(μ), remove_tracking(σ²), momentum, r)
+        remove_tracking(μ), remove_tracking(σ²), momentum, reduce_dims)
     return (μ, σ²), (rμ, rσ²)
 end
 
 # NOTE: marking it as stable makes everything type unstable in the backward pass
 function _normalization(x::AbstractArray, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, reduce_dims::Val,
-        training::Val, momentum, epsilon, act::F=identity) where {F}
+        bias::Optional{<:AbstractVector}, reduce_dims,
+        training::StaticBool, momentum, epsilon, act::F=identity) where {F}
     (μ, σ²), (rμ, rσ²) = _get_batch_statistics(
         x, _reshape_into_normalization_shape(running_mean, x),
         _reshape_into_normalization_shape(running_var, x), reduce_dims, training, momentum)
@@ -111,17 +111,15 @@ EnzymeRules.inactive_noinl(::typeof(_get_norm_reshape_dims), ::Any...) = nothing
 # Generally you want to use `_normalization` but calling these functions lead to faster
 # code.
 function _groupnorm_impl(x::AbstractArray, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, reduce_dims::Val,
-        epsilon, act::F=identity) where {F}
-    (μ, σ²), _ = _get_batch_statistics(
-        x, nothing, nothing, reduce_dims, Val(false), nothing)
+        bias::Optional{<:AbstractVector}, reduce_dims, epsilon, act::F=identity) where {F}
+    (μ, σ²), _ = _get_batch_statistics(x, nothing, nothing, reduce_dims, False(), nothing)
     return _affine_normalize_gn(act, x, μ, σ², scale, bias, epsilon)
 end
 
 function _batchnorm_impl(x::AbstractArray, running_mean::Optional{<:AbstractVector},
         running_var::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, reduce_dims::Val,
-        training::Val, momentum, epsilon, act::F=identity) where {F}
+        bias::Optional{<:AbstractVector}, reduce_dims,
+        training::StaticBool, momentum, epsilon, act::F=identity) where {F}
     (μ, σ²), (rμ, rσ²) = _get_batch_statistics(
         x, _reshape_into_normalization_shape(running_mean, x),
         _reshape_into_normalization_shape(running_var, x), reduce_dims, training, momentum)

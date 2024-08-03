@@ -57,8 +57,8 @@ function LuxLib.batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
 end
 
 function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArray{T},
-        x::DenseCuArray{T}, running_μ, running_σ², momentum, ::Val{training};
-        α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: CUDNNFloat, training}
+        x::DenseCuArray{T}, running_μ, running_σ², momentum,
+        training::StaticBool; α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: CUDNNFloat}
     dims = _wsize(x)
 
     if running_μ === nothing || running_σ² === nothing
@@ -73,7 +73,7 @@ function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArra
     gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
         cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
 
-    if training
+    if known(training)
         mean = fill!(similar(x, dims), zero(T))
         ivar = fill!(similar(x, dims), one(T))
 

@@ -1,6 +1,6 @@
 @doc doc"""
-    batchnorm(x, scale, bias, running_mean, running_var, training, σ=identity,
-        momentum = 0.1f0, epsilon = eps(eltype(x)) ^ (5 // 7))
+    batchnorm(x, scale, bias, running_mean, running_var, training::Union{Val, StaticBool},
+        σ=identity, momentum = 0.1f0, epsilon = eps(eltype(x)) ^ (5 // 7))
 
 Batch Normalization. For details see [1].
 
@@ -40,26 +40,27 @@ fallback is used which is not highly optimized.
 """
 function batchnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, running_mean::Optional{<:AbstractVector},
-        running_var::Optional{<:AbstractVector}, training::Val, σ::F=identity,
+        running_var::Optional{<:AbstractVector},
+        training::Union{Val, StaticBool}, σ::F=identity,
         momentum::Real=0.1f0, epsilon::Real=__default_epsilon(x)) where {F, N}
     x_, xm, xv = _batchnorm_impl(
         x, remove_tracking(running_mean), remove_tracking(running_var), scale,
-        bias, _get_batchnorm_reduce_dims(x), training, momentum, epsilon,
+        bias, _get_batchnorm_reduce_dims(x), static(training), momentum, epsilon,
         select_fastest_activation(σ, x, scale, bias, running_mean, running_var))
     return (x_, (; running_mean=remove_tracking(xm), running_var=remove_tracking(xv)))
 end
 
 @generated function _get_batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
-    return :($(Val(Tuple(collect([1:(N - 2); N])))))
+    return :($(static.(Tuple(collect([1:(N - 2); N])))))
 end
 
 # Currently used only in cuDNN
-function _get_batchnorm_statistics(x, running_mean, running_var, ::Val{true})
+function _get_batchnorm_statistics(x, running_mean, running_var, ::True)
     return _copy_autodiff_barrier(running_mean), _copy_autodiff_barrier(running_var)
 end
 
 function _get_batchnorm_statistics(
-        x::AbstractArray{T, N}, running_mean, running_var, ::Val{false}) where {T, N}
+        x::AbstractArray{T, N}, running_mean, running_var, ::False) where {T, N}
     dims = collect([1:(N - 2); N])
     @assert !((running_mean === nothing) ⊻ (running_var === nothing))
     running_mean === nothing && return fast_mean_var(x; dims, corrected=false)

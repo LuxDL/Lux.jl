@@ -172,14 +172,15 @@ __length(x) = length(x)
 __length(::Nothing) = nothing
 
 function LuxLib.__attempt_cublasLt_fused_matmul(act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
-        b::Optional{<:AnyCuVector}, ::Val{cache}) where {F, cache}
+        b::Optional{<:AnyCuVector}, cache::StaticBool) where {F}
     z = similar(x, LuxLib.__get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     y = z # aliased for now for type stability
     if hasmethod(_cublaslt_matmul_fused!,
         (typeof(z), typeof(act), typeof(weight), typeof(x), typeof(b)))
-        cache && (y = similar(z)) # break aliasing
-        retcode = _cublaslt_matmul_fused!(z, act, weight, x, b, ifelse(cache, y, nothing))
+        known(cache) && (y = similar(z)) # break aliasing
+        retcode = _cublaslt_matmul_fused!(
+            z, act, weight, x, b, ifelse(known(cache), y, nothing))
         retcode == 0 && return (z, y, retcode)
         # cuBLASLt failed for the given inputs use the generic fallback
         warn_msg = LazyString(

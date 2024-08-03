@@ -5,7 +5,7 @@ using DispatchDoctor: @stable
 using FastClosures: @closure
 using Reexport: @reexport
 using StaticArraysCore: StaticArraysCore, StaticArray, StaticVector
-using Static: Static, True, False, static, known
+using Static: Static, StaticBool, True, False, static, known
 using UnrolledUtilities: unrolled_filter, unrolled_mapreduce
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig

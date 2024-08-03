@@ -34,8 +34,17 @@ end
     y = similar(weight, __get_concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     matmuladd!(y, weight, x, b)
-    _fast_activation!(act, y)
+    _fast_activation!(act, y)  # TODO: in certain cases we can fuse the activation into the matmul
     return y
+end
+
+@stable default_mode="disable" function __fused_dense_bias_activation_impl(
+        ::Type{<:CUDADevice}, act::F, weight::AbstractMatrix,
+        x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
+    (y, _, retcode) = __attempt_cublasLt_fused_matmul(act, weight, x, b, False())
+    retcode == 0 && return y
+    matmul!(y, weight, x)
+    return __bias_activation_impl!!(act, y, b)
 end
 
 function CRC.rrule(
@@ -79,23 +88,12 @@ function CRC.rrule(
     return z, ∇__fused_dense_bias_activation_impl_cached
 end
 
-# Try to use cuBLASLt if available / possible. The function is defined once CUDA.jl is loaded
-function __attempt_cublasLt_fused_matmul end
-
-@stable default_mode="disable" function __fused_dense_bias_activation_impl(
-        ::Type{<:CUDADevice}, act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
-    (y, _, retcode) = __attempt_cublasLt_fused_matmul(act, weight, x, b, Val(false))
-    retcode == 0 && return y
-    matmul!(y, weight, x)
-    return __bias_activation_impl!!(act, y, b)
-end
-
 ## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
-function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode}, ::Type{<:CUDADevice},
-        ::typeof(__fused_dense_bias_activation_impl), ::typeof(gelu),
-        weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector})
-    (z, y, retcode) = __attempt_cublasLt_fused_matmul(gelu, weight, x, b, Val(false))
+function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(__fused_dense_bias_activation_impl),
+        ::Type{<:CUDADevice}, ::typeof(gelu), weight::AbstractMatrix,
+        x::AbstractMatrix, b::Optional{<:AbstractVector})
+    (z, y, retcode) = __attempt_cublasLt_fused_matmul(gelu, weight, x, b, True())
     if retcode == -1 # Generic Fallback: break aliasing in _apply_bias_activation!!
         matmul!(z, weight, x)
         z, y = __apply_bias_activation_cached!!(gelu, z, b)
@@ -116,8 +114,11 @@ end
 function matmul_bias_partials(∂y, weight, x, bias)
     return matmul_bias_partials(∂y, __added_bias_gradient(bias, ∂y), weight, x, bias)
 end
-function matmul_bias_partials(∂y, ∂b, weight, x, bias)
+function matmul_bias_partials(∂y, ∂b, weight, x, _)
     ∂w = matmul(∂y, x')
     ∂x = matmul(weight', ∂y)
     return ∂w, ∂x, ∂b
 end
+
+# Try to use cuBLASLt if available / possible. The function is defined once CUDA.jl is loaded
+function __attempt_cublasLt_fused_matmul end
