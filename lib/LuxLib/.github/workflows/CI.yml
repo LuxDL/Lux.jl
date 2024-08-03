@@ -24,6 +24,7 @@ jobs:
     name: Julia ${{ matrix.version }} - ${{ matrix.test_group }} - ${{ matrix.os }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -78,16 +79,25 @@ jobs:
     name: Downstream ${{ matrix.package.repo }}/${{ matrix.package.group }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 240
+    timeout-minutes: 60
     env:
       GROUP: ${{ matrix.package.group }}
+      LUX_TEST_GROUP: ${{ matrix.package.group }}
     strategy:
       fail-fast: false
       matrix:
         julia-version: ["1"]
         os: [ubuntu-latest]
         package:
-          - { user: LuxDL, repo: Lux.jl, group: All }
+          - { user: LuxDL, repo: Lux.jl, group: "core_layers" }
+          - { user: LuxDL, repo: Lux.jl, group: "contrib" }
+          - { user: LuxDL, repo: Lux.jl, group: "helpers" }
+          - { user: LuxDL, repo: Lux.jl, group: "distributed" }
+          - { user: LuxDL, repo: Lux.jl, group: "normalize_layers" }
+          - { user: LuxDL, repo: Lux.jl, group: "others" }
+          - { user: LuxDL, repo: Lux.jl, group: "autodiff" }
+          - { user: LuxDL, repo: Lux.jl, group: "recurrent_layers" }
+          - { user: LuxDL, repo: Lux.jl, group: "eltype_match" }
           - { user: LuxDL, repo: Boltz.jl, group: All }
     steps:
       - uses: actions/checkout@v4
@@ -130,6 +140,7 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
     name: Downgrade Julia ${{ matrix.version }} - ${{ matrix.test_group }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
