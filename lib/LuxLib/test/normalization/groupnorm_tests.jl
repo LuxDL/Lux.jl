@@ -1,11 +1,14 @@
 @testsetup module GroupNormSetup
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
-function _setup_groupnorm(gen_f, aType, T, sz)
+function _setup_groupnorm(gen_f, aType, T, sz, affine)
     x = gen_f(T, sz) |> aType
-    scale = gen_f(T, sz[end - 1]) |> aType
-    bias = gen_f(T, sz[end - 1]) |> aType
-    return x, scale, bias
+    if affine
+        scale = gen_f(T, sz[end - 1]) |> aType
+        bias = gen_f(T, sz[end - 1]) |> aType
+        return x, scale, bias
+    end
+    return x, nothing, nothing
 end
 
 # Bypassing all optimizations
@@ -24,12 +27,12 @@ anonact = x -> x^3
 
 __istraining(::Val{training}) where {training} = training
 
-function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, ongpu)
+function run_groupnorm_testing(gen_f, T, sz, groups, affine, act, aType, mode, ongpu)
     _f = (args...) -> groupnorm(args..., groups, act, epsilon)
     _f2 = (args...) -> groupnorm(args..., groups, act, epsilon)
 
     epsilon = LuxLib.__default_epsilon(T)
-    x, scale, bias = _setup_groupnorm(gen_f, aType, T, sz)
+    x, scale, bias = _setup_groupnorm(gen_f, aType, T, sz, affine)
     y = _f(x, scale, bias)
 
     y_simple = _f2(x, scale, bias)
@@ -45,8 +48,10 @@ function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, ongpu)
         ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
         ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f2, x, scale, bias)
         @test ∂x≈∂x_simple atol=atol rtol=rtol
-        @test ∂scale≈∂scale_simple atol=atol rtol=rtol
-        @test ∂bias≈∂bias_simple atol=atol rtol=rtol
+        if affine
+            @test ∂scale≈∂scale_simple atol=atol rtol=rtol
+            @test ∂bias≈∂bias_simple atol=atol rtol=rtol
+        end
     end
 
     @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any
@@ -60,15 +65,22 @@ function run_groupnorm_testing(gen_f, T, sz, groups, act, aType, mode, ongpu)
     @test y isa aType{T, length(sz)}
     @test size(y) == sz
 
-    __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
     soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
-    test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+
+    if affine
+        __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
+        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+    else
+        __f = (args...) -> sum(groupnorm(args..., scale, bias, groups, act, epsilon))
+        test_gradients(__f, x; atol, rtol, soft_fail)
+    end
 end
 
 const ALL_TEST_CONFIGS = Iterators.product([Float16, Float32, Float64],
     ((6, 2), (4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2),
         (4, 4, 6, 2), (2, 2, 6, 2), (3, 3, 12, 4)),
     (2, 3),
+    (true, false),
     (identity, relu, tanh_fast, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
@@ -80,45 +92,45 @@ end
 
 @testitem "Group Norm: Group 1" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[1]
+        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[1]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
+                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 2" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[2]
+        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[2]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
+                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 3" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[3]
+        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[3]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
+                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 4" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[4]
+        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[4]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
+                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 5" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, act) in TEST_BLOCKS[5]
+        @testset "eltype $T, size $sz, $groups $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[5]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, act, aType, mode, ongpu)
+                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
