@@ -277,7 +277,7 @@ end
     end
 
     @testset "empty fleaves" begin
-        @test_broken length(fleaves(NamedTuple())) == 0  # upstream issue
+        @test length(fleaves(NamedTuple())) == 0
         @test !LuxCore.check_fmap_condition(isodd, nothing, NamedTuple())
     end
 

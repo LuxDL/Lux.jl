@@ -1,0 +1,19 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
+MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+Aqua = "0.8.7"
+EnzymeCore = "0.7.7"
+ExplicitImports = "1.9.0"
+Functors = "0.4.12"
+MLDataDevices = "1.0.0"
+Optimisers = "0.3.3"
+Random = "1.10"
+Test = "1.10"
