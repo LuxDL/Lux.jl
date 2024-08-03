@@ -1,6 +1,7 @@
 module LuxLib
 
 using ArrayInterface: ArrayInterface, can_setindex
+using Compat: @compat
 using DispatchDoctor: @stable
 using FastClosures: @closure
 using Reexport: @reexport
@@ -66,5 +67,8 @@ export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
 export fast_activation, fast_activation!!
 export bias_activation, bias_activation!!
+
+@compat(public,
+    (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp))
 
 end

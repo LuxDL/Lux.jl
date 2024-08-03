@@ -15,7 +15,7 @@
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
             @test mask_ isa aType{T, length(x_shape)}
-            !(dims isa Colon) && @test size(mask_) == x_shape
+            dims isa Colon && @test size(mask_) == x_shape
             @test rng != rng_
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))

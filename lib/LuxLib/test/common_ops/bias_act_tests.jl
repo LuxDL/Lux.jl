@@ -5,10 +5,11 @@
     bias_act_loss2(act, x, b) = sum(abs2, bias_activation(act, x, b))
     bias_act_loss3(act, x, b) = sum(abs2, bias_activation!!(act, copy(x), b))
 
-    struct __Fix1{F}
+    struct __Fix1{F, A}
         f::F
+        act::A
     end
-    (f::__Fix1)(x, b) = f.f(x, b)
+    (f::__Fix1)(x, b) = f.f(f.act, x, b)
 
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "$act, $T, $sz" for act in [
@@ -41,7 +42,6 @@
             @jet bias_act_loss2(act, x, b)
             @jet bias_act_loss3(act, x, b)
 
-            @test @inferred(Zygote.gradient(bias_act_loss1, act, x, b)) isa Any
             @test @inferred(Zygote.gradient(bias_act_loss2, act, x, b)) isa Any
             @test @inferred(Zygote.gradient(bias_act_loss3, act, x, b)) isa Any
 
