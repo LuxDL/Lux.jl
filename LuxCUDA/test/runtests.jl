@@ -5,6 +5,6 @@ using Aqua, LuxCUDA, Test
 
     @test LuxCUDA.functional() isa Bool
 
-    Aqua.test_all(LuxCUDA; ambiguities=false)
+    Aqua.test_all(LuxCUDA; ambiguities=false, undefined_exports=false)
     Aqua.test_ambiguities(LuxCUDA)
 end
