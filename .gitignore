@@ -38,3 +38,5 @@ benchmark
 jl_*
 LocalPreferences.toml
 data/
+
+benchmarks/results
