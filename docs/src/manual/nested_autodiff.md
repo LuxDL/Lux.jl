@@ -224,9 +224,8 @@ are not affected by the randomness in the sample.
 function hutchinson_trace_vjp(model, x, ps, st, v)
     smodel = StatefulLuxLayer{true}(model, ps, st)
     vjp = vector_jacobian_product(smodel, AutoZygote(), x, v)
-    # ⊠ is the shorthand for `NNlib.batched_mul`
-    return sum(reshape(vjp, 1, :, size(vjp, ndims(vjp))) ⊠
-               reshape(v, :, 1, size(v, ndims(v))))
+    return sum(batched_matmul(reshape(vjp, 1, :, size(vjp, ndims(vjp))),
+               reshape(v, :, 1, size(v, ndims(v)))))
 end
 ```
 
@@ -239,9 +238,8 @@ computing hutchinson trace.
 function hutchinson_trace_jvp(model, x, ps, st, v)
     smodel = StatefulLuxLayer{true}(model, ps, st)
     jvp = jacobian_vector_product(smodel, AutoForwardDiff(), x, v)
-    # ⊠ is the shorthand for `NNlib.batched_mul`
-    return sum(reshape(v, 1, :, size(v, ndims(v))) ⊠
-               reshape(jvp, :, 1, size(jvp, ndims(jvp))))
+    return sum(batched_matmul(reshape(v, 1, :, size(v, ndims(v))),
+               reshape(jvp, :, 1, size(jvp, ndims(jvp)))))
 end
 ```
 
