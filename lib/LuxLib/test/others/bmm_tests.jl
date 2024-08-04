@@ -53,11 +53,11 @@ end
                 B = randn(rng, TB, 5, 7, 3) |> aType
                 C = randn(rng, 7, 6, 3) |> aType
 
-                @test batched_mul(A, B) ≈ bmm_test(A, B)
-                @test batched_mul(batched_transpose(A), batched_transpose(B)) ≈
+                @test batched_matmul(A, B) ≈ bmm_test(A, B)
+                @test batched_matmul(batched_transpose(A), batched_transpose(B)) ≈
                       bmm_test(A, B; transA=true, transB=true)
-                @test batched_mul(batched_transpose(A), C) ≈ bmm_test(A, C; transA=true)
-                @test batched_mul(A, batched_transpose(A)) ≈ bmm_test(A, A; transB=true)
+                @test batched_matmul(batched_transpose(A), C) ≈ bmm_test(A, C; transA=true)
+                @test batched_matmul(A, batched_transpose(A)) ≈ bmm_test(A, A; transB=true)
             end
 
             @testset "complex" begin
@@ -65,11 +65,13 @@ end
                 cB = randn(rng, Complex{TB}, 5, 7, 3) |> aType
                 cC = randn(rng, Complex{Float64}, 7, 6, 3) |> aType
 
-                @test batched_mul(cA, cB) ≈ bmm_adjtest(cA, cB)
-                @test batched_mul(batched_adjoint(cA), batched_adjoint(cB)) ≈
+                @test batched_matmul(cA, cB) ≈ bmm_adjtest(cA, cB)
+                @test batched_matmul(batched_adjoint(cA), batched_adjoint(cB)) ≈
                       bmm_adjtest(cA, cB; adjA=true, adjB=true)
-                @test batched_mul(batched_adjoint(cA), cC) ≈ bmm_adjtest(cA, cC; adjA=true)
-                @test batched_mul(cA, batched_adjoint(cA)) ≈ bmm_adjtest(cA, cA; adjB=true)
+                @test batched_matmul(batched_adjoint(cA), cC) ≈
+                      bmm_adjtest(cA, cC; adjA=true)
+                @test batched_matmul(cA, batched_adjoint(cA)) ≈
+                      bmm_adjtest(cA, cA; adjB=true)
 
                 @testset "Integers" begin
                     TBi = TB == Float64 ? Int64 : Int32
@@ -77,15 +79,15 @@ end
                     iB = TB.(rand(rng, 1:99, 5, 7, 3)) |> aType
                     iC = zeros(Int, 7, 6, 3) |> aType
 
-                    @test batched_mul(iA, iB) == bmm_adjtest(iA, iB)
-                    @test batched_mul(cA, iB) ≈ bmm_adjtest(cA, iB)
+                    @test batched_matmul(iA, iB) == bmm_adjtest(iA, iB)
+                    @test batched_matmul(cA, iB) ≈ bmm_adjtest(cA, iB)
                 end
             end
 
             @testset "Errors" begin
-                @test_throws DimensionMismatch batched_mul(
+                @test_throws DimensionMismatch batched_matmul(
                     aType(rand(rng, 2, 2, 2)), aType(rand(rng, TB, 2, 2, 10)))
-                @test_throws DimensionMismatch batched_mul(
+                @test_throws DimensionMismatch batched_matmul(
                     aType(rand(rng, 2, 2, 2)), aType(rand(rng, TB, 10, 2, 2)))
                 @test_throws Exception batched_mul!(
                     aType(zeros(2, 2, 10)), aType(rand(rng, 2, 2, 2)),
@@ -101,10 +103,10 @@ end
                         A = randn(rng, ty(Float64), 4, 4, 4) |> aType
                         B = randn(rng, ty(TB), 4, 4, 4) |> aType
 
-                        @test batched_mul(fun(A), PermutedDimsArray(B, perm)) ≈
-                              batched_mul(fun(A), permutedims(B, perm))
-                        @test batched_mul(fun(PermutedDimsArray(A, perm)), B) ≈
-                              batched_mul(fun(permutedims(A, perm)), B)
+                        @test batched_matmul(fun(A), PermutedDimsArray(B, perm)) ≈
+                              batched_matmul(fun(A), permutedims(B, perm))
+                        @test batched_matmul(fun(PermutedDimsArray(A, perm)), B) ≈
+                              batched_matmul(fun(permutedims(A, perm)), B)
                     end
                 end
             end
@@ -112,7 +114,7 @@ end
             @testset "PermutedDimsArray output" begin
                 A′ = randn(rng, 4, 3, 2) |> aType
                 B′ = batched_adjoint(randn(rng, TB, 5, 3, 2)) |> aType
-                C1 = batched_mul(A′, B′) # size 4,5,2
+                C1 = batched_matmul(A′, B′) # size 4,5,2
                 C2 = PermutedDimsArray(zeros(5, 2, 4), (3, 1, 2)) |> aType # size 4,5,2
 
                 @test C1 ≈ batched_mul!(C2, A′, B′) # Float64: "Debug: transposing C = A * B into Cᵀ = Bᵀ * Aᵀ"
@@ -120,8 +122,8 @@ end
 
                 @testset "Trivial batches for B" begin
                     D′ = randn(rng, TB, 3, 5, 1) |> aType
-                    @test size(batched_mul(A′, D′)) == (4, 5, 2)
-                    @test batched_mul(A′, D′) ≈ half_batched_mul(A′, D′)
+                    @test size(batched_matmul(A′, D′)) == (4, 5, 2)
+                    @test batched_matmul(A′, D′) ≈ half_batched_mul(A′, D′)
                 end
             end
 
@@ -163,7 +165,7 @@ end
 
                     C = cat(A[:, :, 1] * B[:, :, 1], A[:, :, 2] * B[:, :, 2],
                         A[:, :, 3] * B[:, :, 3]; dims=3)
-                    @test batched_mul(A, B) ≈ C
+                    @test batched_matmul(A, B) ≈ C
 
                     α, β = rand(rng, TB), rand(rng, TB)
                     D = rand(rng, TB, size(C)) |> aType
@@ -255,7 +257,7 @@ end
     end
 end
 
-@testitem "batched_mul(ndims < 3)" tags=[:batched_ops] setup=[
+@testitem "batched_matmul(ndims < 3)" tags=[:batched_ops] setup=[
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
@@ -265,14 +267,14 @@ end
             M = aType(rand(rng, TB, 3, 3)) .+ im
             V = aType(rand(rng, TB, 3))
 
-            # These are all reshaped and sent to batched_mul(3-array, 3-array)
-            @test batched_mul(A, M) ≈ cat([A[:, :, k] * M for k in 1:3]...; dims=3)
-            @test batched_mul(A, M') ≈ cat([A[:, :, k] * M' for k in 1:3]...; dims=3)
+            # These are all reshaped and sent to batched_matmul(3-array, 3-array)
+            @test batched_matmul(A, M) ≈ cat([A[:, :, k] * M for k in 1:3]...; dims=3)
+            @test batched_matmul(A, M') ≈ cat([A[:, :, k] * M' for k in 1:3]...; dims=3)
             @test A ⊠ transpose(M) ≈
                   cat([A[:, :, k] * transpose(M) for k in 1:3]...; dims=3)
 
-            @test batched_mul(M, A) ≈ cat([M * A[:, :, k] for k in 1:3]...; dims=3)
-            @test batched_mul(M', A) ≈ cat([M' * A[:, :, k] for k in 1:3]...; dims=3)
+            @test batched_matmul(M, A) ≈ cat([M * A[:, :, k] for k in 1:3]...; dims=3)
+            @test batched_matmul(M', A) ≈ cat([M' * A[:, :, k] for k in 1:3]...; dims=3)
             @test transpose(M) ⊠ A ≈
                   cat([transpose(M) * A[:, :, k] for k in 1:3]...; dims=3)
 
@@ -287,7 +289,7 @@ end
 @testitem "BMM AutoDiff" tags=[:batched_ops] setup=[SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
-    fn(A, B) = sum(batched_mul(A, B))
+    fn(A, B) = sum(batched_matmul(A, B))
     fn_vec(A, B) = sum(batched_vec(A, B))
 
     @testset "$mode" for (mode, aType, ongpu) in MODES

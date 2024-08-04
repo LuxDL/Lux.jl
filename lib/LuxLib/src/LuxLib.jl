@@ -20,8 +20,9 @@ using Markdown: @doc_str
 using Random: Random, AbstractRNG, rand!
 using Statistics: Statistics, mean, var
 
-using LoopVectorization: LoopVectorization, indices, @tturbo
+using LoopVectorization: LoopVectorization, indices, @turbo, @tturbo
 using Octavian: Octavian
+using Polyester: @batch
 using SLEEFPirates: SLEEFPirates
 
 using LuxCore: LuxCore
@@ -40,8 +41,9 @@ include("patches.jl")
 
 # User Facing
 include("api/activation.jl")
-include("api/bias_activation.jl")
+include("api/batched_mul.jl")
 include("api/batchnorm.jl")
+include("api/bias_activation.jl")
 include("api/dropout.jl")
 include("api/groupnorm.jl")
 include("api/instancenorm.jl")
@@ -52,6 +54,7 @@ include("api/conv.jl")
 # Low-Level Implementations
 include("impl/activation.jl")
 include("impl/affine_normalize.jl")
+include("impl/batched_mul.jl")
 include("impl/bias_activation.jl")
 include("impl/dropout.jl")
 include("impl/fast_ops.jl")
@@ -67,6 +70,7 @@ export batchnorm, groupnorm, instancenorm, layernorm, alpha_dropout, dropout
 export fused_dense_bias_activation, fused_conv_bias_activation
 export fast_activation, fast_activation!!
 export bias_activation, bias_activation!!
+export batched_matmul
 
 @compat(public,
     (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp))

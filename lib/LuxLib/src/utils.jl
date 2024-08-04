@@ -178,3 +178,8 @@ end
     L == 1 && return :(f(xs[1]))
     return Expr(:call, :&, (:(f(xs[$i])) for i in 1:L)...)
 end
+
+# Extracting single batch views
+batchview(x::AbstractArray{<:Any, 3}, k::Int) = view(x, :, :, k)
+batchview(x::NNlib.BatchedTranspose, k::Int) = transpose(batchview(parent(x), k))
+batchview(x::NNlib.BatchedAdjoint, k::Int) = adjoint(batchview(parent(x), k))

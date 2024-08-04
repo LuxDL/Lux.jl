@@ -3,6 +3,7 @@ function fast_scalar_indexing(::T) where {T <: AbstractArray}
     return static(ArrayInterface.fast_scalar_indexing(T))
 end
 fast_scalar_indexing(::Nothing) = True()
+fast_scalar_indexing(x::NNlib.BatchedAdjOrTrans) = fast_scalar_indexing(parent(x))
 
 is_mutable_array(::T) where {T <: AbstractArray} = static(can_setindex(T))
 is_mutable_array(::Nothing) = True()
