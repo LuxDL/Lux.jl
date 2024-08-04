@@ -556,7 +556,7 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     @argcheck size(x, 2) == size(y, 2)
 
     Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))
-    Wyx = reshape(batched_mul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
+    Wyx = reshape(batched_matmul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
     return bias_activation!!(b.activation, Wyx, _vec(_getproperty(ps, Val(:bias)))), st
 end

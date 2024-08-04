@@ -8,10 +8,24 @@ Backend for Lux.jl
 Pages = ["LuxLib.md"]
 ```
 
-## Fully Connected Layers
+## Apply Activation
 
 ```@docs
-fused_dense_bias_activation
+fast_activation
+fast_activation!!
+```
+
+## Batched Operations
+
+```@docs
+batched_matmul
+```
+
+## Bias Activation
+
+```@docs
+bias_activation
+bias_activation!!
 ```
 
 ## Convolutional Layers
@@ -27,6 +41,12 @@ alpha_dropout
 dropout
 ```
 
+## Fully Connected Layers
+
+```@docs
+fused_dense_bias_activation
+```
+
 ## Normalization
 
 ```@docs
@@ -34,18 +54,4 @@ batchnorm
 groupnorm
 instancenorm
 layernorm
-```
-
-## Apply Activation
-
-```@docs
-fast_activation
-fast_activation!!
-```
-
-## Bias Activation
-
-```@docs
-bias_activation
-bias_activation!!
 ```
