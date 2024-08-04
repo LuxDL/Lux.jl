@@ -37,7 +37,6 @@ const KA = KernelAbstractions
 
 include("utils.jl")
 include("traits.jl")
-include("patches.jl")
 
 # User Facing
 include("api/activation.jl")

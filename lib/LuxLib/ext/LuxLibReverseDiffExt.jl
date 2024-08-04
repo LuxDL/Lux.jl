@@ -31,12 +31,19 @@ for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
 end
 
 # batched_mul
-for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
-    LuxLib.__is_tracked(T1, T2) || continue
+@grad_from_chainrules NNlib.batched_mul(
+    x::TrackedArray{<:Any, <:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
+@grad_from_chainrules NNlib.batched_mul(
+    x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Any, 3})
+@grad_from_chainrules NNlib.batched_mul(
+    x::AbstractArray{<:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
 
-    @eval @grad_from_chainrules NNlib.batched_mul(x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
-    @eval @grad_from_chainrules LuxLib.batched_matmul(x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
-end
+@grad_from_chainrules LuxLib.batched_matmul(
+    x::TrackedArray{<:Any, <:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
+@grad_from_chainrules LuxLib.batched_matmul(
+    x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Any, 3})
+@grad_from_chainrules LuxLib.batched_matmul(
+    x::AbstractArray{<:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
 
 # Currently falls back to mapreduce and has a terrible performance
 @grad_from_chainrules Base.sum(::typeof(abs2), x::TrackedArray; kwargs...)
