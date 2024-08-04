@@ -60,9 +60,9 @@
                       all(x -> x === nothing || isfinite(x),
                           ComponentArray(∂ps |> cpu_device()))
 
-                test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
-                    atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
-                    skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+                test_gradients(
+                    (x, ps) -> loss_fn(model, x, ps, st), X, ps; atol=1.0f-3, rtol=1.0f-1,
+                    soft_fail=[AutoForwardDiff()], skip_backends=[AutoEnzyme()])
             end
         end
     end
@@ -133,9 +133,9 @@ end
                       !iszero(∂ps |> cpu_device()) &&
                       all(x -> x === nothing || isfinite(x), ∂ps |> cpu_device())
 
-                test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
-                    atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
-                    skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+                test_gradients(
+                    (x, ps) -> loss_fn(model, x, ps, st), X, ps; atol=1.0f-3, rtol=1.0f-1,
+                    soft_fail=[AutoForwardDiff()], skip_backends=[AutoEnzyme()])
             end
         end
     end
@@ -157,8 +157,8 @@ end
                 (x, ps) -> sum(abs2, first(model(x, ps, st)))
             end
 
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+            test_gradients(
+                __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme()])
         end
     end
 end
@@ -286,6 +286,5 @@ end
         (x, ps) -> loss_function(model, ps, st, x)
     end
 
-    test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-        skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+    test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoEnzyme()])
 end
