@@ -161,14 +161,33 @@ for func in (NNlib.batched_mul!, __batched_matmul_loopvec_impl!)
                 dBs = (dBs,)
             end
 
+            # NOTE: The implementation here is memory efficient and non-allocating. However,
+            #       for maximum performance we would want to reuse the parallel batched_mul
+            #       followed by a reduction.
             for (dC, dA, dB) in zip(dCs, dAs, dBs)
                 if !(typeof(C) <: EnzymeCore.Const) && dC !== C.val
                     if !(typeof(A) <: EnzymeCore.Const) && dA !== A.val
-                        $(func)(dA, dC, NNlib.batched_adjoint(B.val), true, true)
+                        if size(dA, 3) == 1 && size(B.val, 3) != 1
+                            B′ = NNlib.batched_adjoint(B.val)
+                            dA′ = batchview(dA, 1)
+                            for L in indices(B′, 3)
+                                mul!(dA′, batchview(dC, L), batchview(B′, L), true, true)
+                            end
+                        else
+                            $(func)(dA, dC, NNlib.batched_adjoint(B.val), true, true)
+                        end
                     end
 
                     if !(typeof(B) <: EnzymeCore.Const) && dB !== B.val
-                        $(func)(dB, NNlib.batched_adjoint(A.val), dC, true, true)
+                        if size(dB, 3) == 1 && size(A.val, 3) != 1
+                            A′ = NNlib.batched_adjoint(A.val)
+                            dB′ = batchview(dB, 1)
+                            for L in indices(A′, 3)
+                                mul!(dB′, batchview(A′, L), batchview(dC, L), true, true)
+                            end
+                        else
+                            $(func)(dB, NNlib.batched_adjoint(A.val), dC, true, true)
+                        end
                     end
 
                     dC .= 0

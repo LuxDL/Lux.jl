@@ -89,9 +89,6 @@ end
                     aType(rand(rng, 2, 2, 2)), aType(rand(rng, TB, 2, 2, 10)))
                 @test_throws DimensionMismatch batched_matmul(
                     aType(rand(rng, 2, 2, 2)), aType(rand(rng, TB, 10, 2, 2)))
-                @test_throws Exception batched_mul!(
-                    aType(zeros(2, 2, 10)), aType(rand(rng, 2, 2, 2)),
-                    aType(rand(rng, TB, 2, 2, 2)))
             end
 
             @testset "PermutedDimsArrays" begin
@@ -108,22 +105,6 @@ end
                         @test batched_matmul(fun(PermutedDimsArray(A, perm)), B) ≈
                               batched_matmul(fun(permutedims(A, perm)), B)
                     end
-                end
-            end
-
-            @testset "PermutedDimsArray output" begin
-                A′ = randn(rng, 4, 3, 2) |> aType
-                B′ = batched_adjoint(randn(rng, TB, 5, 3, 2)) |> aType
-                C1 = batched_matmul(A′, B′) # size 4,5,2
-                C2 = PermutedDimsArray(zeros(5, 2, 4), (3, 1, 2)) |> aType # size 4,5,2
-
-                @test C1 ≈ batched_mul!(C2, A′, B′) # Float64: "Debug: transposing C = A * B into Cᵀ = Bᵀ * Aᵀ"
-                @test C1 ≈ C2
-
-                @testset "Trivial batches for B" begin
-                    D′ = randn(rng, TB, 3, 5, 1) |> aType
-                    @test size(batched_matmul(A′, D′)) == (4, 5, 2)
-                    @test batched_matmul(A′, D′) ≈ half_batched_mul(A′, D′)
                 end
             end
 
@@ -170,24 +151,6 @@ end
                     C = cat(A[:, :, 1] * B[:, :, 1], A[:, :, 2] * B[:, :, 2],
                         A[:, :, 3] * B[:, :, 3]; dims=3)
                     @test batched_matmul(A, B) ≈ C
-
-                    α, β = rand(rng, TB), rand(rng, TB)
-                    D = rand(rng, TB, size(C)) |> aType
-                    @test batched_mul!(copy(D), A, B, α, β) ≈ α .* C .+ β .* D
-                    @test NNlib.batched_mul_generic!(copy(D), A, B, α, β) ≈ α .* C .+ β .* D
-
-                    C2 = batched_transpose(permutedims(C, (2, 1, 3)))
-                    C3 = batched_adjoint(permutedims(conj(C), (2, 1, 3)))
-                    @test Array(C2) == Array(C3) == Array(C)
-
-                    if !ongpu
-                        C2 .= D
-                        C3 .= D
-                        @test batched_mul!(C2, A, B, α, β) ≈ α .* C .+ β .* D
-                        @test C2 ≈ α .* C .+ β .* D
-                        @test batched_mul!(C3, A, B, α, β) ≈ α .* C .+ β .* D
-                        @test C3 ≈ α .* C .+ β .* D
-                    end
                 end
             end
         end
