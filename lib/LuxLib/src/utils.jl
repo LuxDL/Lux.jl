@@ -191,3 +191,11 @@ end
 function expand_batchdim(x::LinearAlgebra.Transpose)
     return NNlib.BatchedTranspose(reshape(parent(x), size(parent(x))..., 1))
 end
+
+function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
+    proj_x = CRC.ProjectTo(x)
+    ∇expand_batchdim = @closure Δ -> begin
+        return ∂∅, proj_x(view(Δ, :, :, 1))
+    end
+    return expand_batchdim(x), ∇expand_batchdim
+end

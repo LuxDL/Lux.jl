@@ -20,8 +20,12 @@ end
 
 function __batched_matmul_impl(
         ::True, ::Type{CPUDevice}, A::AbstractArray{<:Any, 3}, B::AbstractArray{<:Any, 3})
-    @assert size(A, 3) == size(B, 3) || size(A, 3) == 1 || size(B, 3) == 1
-    C = similar(A, size(A, 1), size(B, 2), max(size(A, 3), size(B, 3)))
+    if (size(A, 3) != size(B, 3) && size(A, 3) != 1 && size(B, 3) != 1) ||
+       (size(A, 2) != size(B, 1))
+        throw(DimensionMismatch(lazy"size(A) = $(size(A)), size(B) = $(size(B)) inconsistent for batched_matmul."))
+    end
+    C = similar(A, promote_type(eltype(A), eltype(B)), size(A, 1),
+        size(B, 2), max(size(A, 3), size(B, 3)))
     __batched_matmul_impl!(C, internal_operation_mode((C, A, B)), A, B)
     return C
 end
@@ -43,29 +47,34 @@ function __batched_matmul_impl!(C::AbstractArray{<:Any, 3}, ::LoopedArrayOp,
 end
 
 function __batched_matmul_loopvec_impl!(
-        C::AbstractArray{<:Any, 3}, A::AbstractArray{<:Any, 3}, B::AbstractArray{<:Any, 3})
+        C::AbstractArray{<:Any, 3}, A::AbstractArray{<:Any, 3},
+        B::AbstractArray{<:Any, 3}, α::Number=true, β::Number=false)
     if size(A, 3) == size(B, 3)
         @batch for L in indices((C, A, B), 3)
-            __serial_loopvec_matmul!(batchview(C, L), batchview(A, L), batchview(B, L))
+            __serial_loopvec_matmul!(
+                batchview(C, L), batchview(A, L), batchview(B, L), α, β)
         end
     elseif size(A, 3) == 1
         @batch for L in indices((C, B), 3)
-            __serial_loopvec_matmul!(batchview(C, L), batchview(A, 1), batchview(B, L))
+            __serial_loopvec_matmul!(
+                batchview(C, L), batchview(A, 1), batchview(B, L), α, β)
         end
     else # has to be size(B, 3) == 1
         @batch for L in indices((C, A), 3)
-            __serial_loopvec_matmul!(batchview(C, L), batchview(A, L), batchview(B, 1))
+            __serial_loopvec_matmul!(
+                batchview(C, L), batchview(A, L), batchview(B, 1), α, β)
         end
     end
 end
 
-function __serial_loopvec_matmul!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
+function __serial_loopvec_matmul!(
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
     @turbo for K in indices((C, B), 2), J in indices((C, A), 1)
         Cⱼₖ = zero(eltype(C))
         for I in indices((A, B), (2, 1))
             Cⱼₖ += A[J, I] * B[I, K]
         end
-        C[J, K] = Cⱼₖ
+        C[J, K] = α * Cⱼₖ + β * C[J, K]
     end
 end
 
