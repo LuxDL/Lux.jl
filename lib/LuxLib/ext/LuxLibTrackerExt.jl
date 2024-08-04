@@ -15,6 +15,8 @@ for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
 
     @eval Tracker.@grad_from_chainrules NNlib.batched_mul(
         x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
+    @eval Tracker.@grad_from_chainrules LuxLib.batched_matmul(
+        x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
 end
 
 # NNlib: gather
