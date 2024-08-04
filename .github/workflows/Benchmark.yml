@@ -1,6 +1,8 @@
 name: Benchmarks
-
 permissions:
+  contents: write # contents permission to update benchmark contents in gh-pages branch
+  statuses: read
+  deployments: write # deployments permission to deploy GitHub pages website
   pull-requests: write
 
 on:
@@ -12,7 +14,9 @@ on:
       - "ext/**"
       - "test/**"
       - "Project.toml"
-      - "bench/**"
+      - "benchmarks/**/*"
+      - ".buildkite/**/*"
+      - ".github/workflows/Benchmark.yml"
   push:
     branches:
       - main
@@ -21,53 +25,44 @@ on:
       - "ext/**"
       - "test/**"
       - "Project.toml"
-      - "bench/**"
-
-concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: only if it is a pull request build.
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+      - "benchmarks/**/*"
+      - ".buildkite/**/*"
+      - ".github/workflows/Benchmark.yml"
 
 jobs:
   benchmark:
+    if: ${{ !contains(github.event.head_commit.message, '[skip benchmarks]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+      - name: Download Buildkite Artifacts
+        id: download
+        uses: EnricoMi/download-buildkite-artifact-action@v1
         with:
-          version: '1'
-          arch: x64
-      - uses: actions/cache@v4
-        env:
-          cache-name: cache-artifacts
-        with:
-          path: ~/.julia/artifacts
-          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-test-${{ env.cache-name }}-
-            ${{ runner.os }}-test-
-            ${{ runner.os }}-
-      - name: Run benchmark
-        run: |
-          cd bench
-          julia --project --threads=4 --color=yes -e '
-            using Pkg;
-            Pkg.develop(PackageSpec(path=joinpath(pwd(), "..")));
-            Pkg.instantiate();
-            include("runbenchmarks.jl")'
-      - name: Parse & Upload Benchmark Results
+          buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
+          ignore_build_states: blocked,canceled,skipped,not_run,failed
+          ignore_job_states: timed_out,failed
+          output_path: artifacts
+
+      - name: Locate Benchmarks Artifact
+        id: locate
+        if: ${{ steps.download.outputs.download-state == 'success' }}
+        run: echo "path=$(find artifacts -type f -name combinedbenchmarks.json 2>/dev/null)" >> $GITHUB_OUTPUT
+
+      - name: Upload Benchmark Results
+        if: ${{ steps.locate.outputs.path != '' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
-          name: Benchmark Results
+          name: KomaMRI Benchmarks
           tool: 'julia'
-          output-file-path: bench/benchmark_results.json
-          summary-always: true
+          output-file-path: ${{ steps.locate.outputs.path }}
+          benchmark-data-dir-path: "continuous-benchmarks"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # comment-on-alert: true
           comment-always: true
-          alert-threshold: "200%"
-          fail-on-alert: true
-          benchmark-data-dir-path: benchmarks
+          summary-always: true
+          alert-threshold: "150%"
+          fail-on-alert: false
           auto-push: ${{ github.event_name != 'pull_request' }}
 
   airspeed-velocity:
