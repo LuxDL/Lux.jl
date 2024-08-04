@@ -77,24 +77,24 @@ function __compute_bn_scale_bias!(_scale, _bias, scale::Optional{<:AbstractVecto
         bias::Optional{<:AbstractVector}, μ, σ², ϵ)
     if scale === nothing
         if LoopVectorization.check_args(_scale, _bias)
-            @batch for J in indices((_scale, _bias))
+            @tturbo for J in indices((_scale, _bias))
                 _scale[J] = inv(sqrt(σ²[J] + ϵ))
                 _bias[J] = -μ[J] * _scale[J]
             end
         else
-            @tturbo for J in indices((_scale, _bias))
+            @batch for J in indices((_scale, _bias))
                 _scale[J] = inv(sqrt(σ²[J] + ϵ))
                 _bias[J] = -μ[J] * _scale[J]
             end
         end
     else
         if LoopVectorization.check_args(_scale, _bias)
-            @batch for J in indices((_scale, _bias))
+            @tturbo for J in indices((_scale, _bias))
                 _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
                 _bias[J] = -μ[J] * _scale[J] + bias[J]
             end
         else
-            @tturbo for J in indices((_scale, _bias))
+            @batch for J in indices((_scale, _bias))
                 _scale[J] = scale[J] / sqrt(σ²[J] + ϵ)
                 _bias[J] = -μ[J] * _scale[J] + bias[J]
             end
