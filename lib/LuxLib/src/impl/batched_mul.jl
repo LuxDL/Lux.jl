@@ -13,9 +13,9 @@ function __batched_matmul_impl(::True, ::Type{AMDGPUDevice}, A::AbstractArray{<:
     @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
            AMDGPUDevice" maxlog=1
     @assert size(A, 3) == size(B, 3) || size(A, 3) == 1 || size(B, 3) == 1
-    size(A, 3) == size(B, 3) && return stack(*, eachslice(A; dims=3), eachslice(B; dims=3))
-    size(A, 2) == 1 && stack(map(Base.Fix1(*, view(A, :, :, 1)), eachslice(B; dims=3)))
-    return stack(map(Base.Fix2(*, view(B, :, :, 1)), eachslice(A; dims=3)))
+    size(A, 3) == size(B, 3) && return stack(*, batchview(A), batchview(B))
+    size(A, 2) == 1 && stack(map(Base.Fix1(*, batchview(A, 1)), batchview(B)))
+    return stack(map(Base.Fix2(*, batchview(B, 1)), batchview(A)))
 end
 
 function __batched_matmul_impl(

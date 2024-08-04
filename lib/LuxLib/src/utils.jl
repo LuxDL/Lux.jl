@@ -184,6 +184,8 @@ batchview(x::AbstractArray{<:Any, 3}, k::Int) = view(x, :, :, k)
 batchview(x::NNlib.BatchedTranspose, k::Int) = transpose(batchview(parent(x), k))
 batchview(x::NNlib.BatchedAdjoint, k::Int) = adjoint(batchview(parent(x), k))
 
+batchview(x::AbstractArray{<:Any, 3}) = map(Base.Fix1(batchview, x), 1:size(x, 3))
+
 expand_batchdim(x::AbstractMatrix) = reshape(x, size(x)..., 1)
 function expand_batchdim(x::LinearAlgebra.Adjoint)
     return NNlib.BatchedAdjoint(reshape(parent(x), size(parent(x))..., 1))
