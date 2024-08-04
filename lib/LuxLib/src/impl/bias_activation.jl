@@ -275,20 +275,11 @@ function EnzymeRules.reverse(
 
             if !(typeof(bias) <: EnzymeCore.Const) && db !== bias.val
                 dy_ = reshape(dy, :, size(dy, N - 1), size(dy, N))
-                if LoopVectorization.check_args(dy_, db)
-                    @tturbo for K in indices(dy_, 3),
-                        J in indices((dy_, db), (2, 1)),
-                        I in indices(dy_, 1)
+                @tturbo warn_check_args=false for K in indices(dy_, 3),
+                    J in indices((dy_, db), (2, 1)),
+                    I in indices(dy_, 1)
 
-                        db[J] += dy_[I, J, K]
-                    end
-                else
-                    @inbounds for K in indices(dy_, 3),
-                        J in indices((dy_, db), (2, 1)),
-                        I in indices(dy_, 1)
-
-                        db[J] += dy_[I, J, K]
-                    end
+                    db[J] += dy_[I, J, K]
                 end
             end
 
