@@ -25,8 +25,14 @@ function _fast_activation!(opmode, y::AbstractArray, σ::F, x::AbstractArray) wh
 end
 function _fast_activation!(
         ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    @tturbo for I in indices((y, x))
-        y[I] = σ(x[I])
+    if LoopVectorization.check_args(y, x)
+        @tturbo for I in indices((y, x))
+            y[I] = σ(x[I])
+        end
+    else
+        @batch for I in indices((y, x))
+            y[I] = σ(x[I])
+        end
     end
 end
 
@@ -59,8 +65,14 @@ function EnzymeRules.reverse(
         ::Type{RT}, (dy,), opmode::EnzymeCore.Const{LoopedArrayOp},
         y::EnzymeCore.Duplicated{<:AbstractArray}, σ::EnzymeCore.Const{F},
         x::EnzymeCore.Duplicated{<:AbstractArray}) where {F, RT}
-    @tturbo for I in indices((y.dval, x.dval, dy))
-        x.dval[I] = y.dval[I] * dy[I]
+    if LoopVectorization.check_args(y.dval, x.dval, dy)
+        @tturbo for I in indices((y.dval, x.dval, dy))
+            x.dval[I] = y.dval[I] * dy[I]
+        end
+    else
+        @batch for I in indices((y.dval, x.dval, dy))
+            x.dval[I] = y.dval[I] * dy[I]
+        end
     end
 
     x.dval !== y.dval && fill!(y.dval, false)

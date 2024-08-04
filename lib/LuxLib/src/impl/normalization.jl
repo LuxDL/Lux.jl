@@ -21,9 +21,16 @@ end
 CRC.@non_differentiable __update_statistics(::Any...)
 
 function __update_statistics!(rμ2, rσ²2, ::LoopedArrayOp, rμ, rσ², μ, σ², m1, m2, m3)
-    @tturbo for I in indices((rμ2, rσ²2))
-        rμ2[I] = m3 * rμ[I] + m1 * μ[I]
-        rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+    if LoopVectorization.check_args(rμ2, rσ²2, rμ, rσ², μ, σ²)
+        @tturbo for I in indices((rμ2, rσ²2))
+            rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+            rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+        end
+    else
+        @batch for I in indices((rμ2, rσ²2))
+            rμ2[I] = m3 * rμ[I] + m1 * μ[I]
+            rσ²2[I] = m3 * rσ²[I] + m2 * σ²[I]
+        end
     end
 end
 function __update_statistics!(rμ2, rσ²2, ::GPUBroadcastOp, rμ, rσ², μ, σ², m1, m2, m3)

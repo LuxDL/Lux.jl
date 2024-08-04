@@ -34,6 +34,10 @@ end
 
 function __batched_matmul_impl!(C::AbstractArray{<:Any, 3}, ::LoopedArrayOp,
         A::AbstractArray{<:Any, 3}, B::AbstractArray{<:Any, 3})
+    if !LoopVectorization.check_args(batchview(C, 1), batchview(A, 1), batchview(B, 1))
+        batched_mul!(C, A, B)
+        return
+    end
     __batched_matmul_loopvec_impl!(C, A, B)
     return
 end
@@ -56,10 +60,6 @@ function __batched_matmul_loopvec_impl!(
 end
 
 function __serial_loopvec_matmul!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
-    if !LoopVectorization.check_args(C, A, B)
-        Octavian.matmul_serial!(C, A, B)
-        return
-    end
     @turbo for K in indices((C, B), 2), J in indices((C, A), 1)
         Cⱼₖ = zero(eltype(C))
         for I in indices((A, B), (2, 1))

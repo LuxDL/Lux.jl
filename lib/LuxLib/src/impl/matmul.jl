@@ -56,10 +56,7 @@ function __matmuladd_octavian!(
     end
 
     Octavian.matmul!(C, A, B)
-    @tturbo for n in indices(C, 2), m in indices(C, 1)
-        C[m, n] += bias[m]
-    end
-
+    __bias_add_impl!(C, internal_operation_mode((C, bias)), C, bias)
     return
 end
 

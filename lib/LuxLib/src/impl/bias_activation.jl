@@ -173,8 +173,19 @@ function __bias_add_impl!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
     x_ = reshape(x, :, size(x, N - 1), size(x, N))
     y_ = reshape(y, :, size(y, N - 1), size(y, N))
-    @tturbo for K in indices(x_, 3), J in indices((x_, bias), (2, 1)), I in indices(y_, 1)
-        y_[I, J, K] = x_[I, J, K] + bias[J]
+    if LoopVectorization.check_args(x_, y_, bias)
+        @tturbo for K in indices(x_, 3),
+            J in indices((x_, bias), (2, 1)),
+            I in indices(y_, 1)
+
+            y_[I, J, K] = x_[I, J, K] + bias[J]
+        end
+    else
+        @batch for K in indices(x_, 3), J in indices((x_, bias), (2, 1))
+            @simd ivdep for I in indices(y_, 1)
+                y_[I, J, K] = x_[I, J, K] + bias[J]
+            end
+        end
     end
     return
 end
@@ -200,11 +211,19 @@ function __apply_bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},
         opmode = internal_operation_mode((x, bias))
         if opmode isa LoopedArrayOp
             x_ = reshape(x, :, size(x, N - 1), size(x, N))
-            @tturbo for K in indices(x_, 3),
-                J in indices((x_, bias), (2, 1)),
-                I in indices(x_, 1)
+            if LoopVectorization.check_args(x_, bias)
+                @tturbo for K in indices(x_, 3),
+                    J in indices((x_, bias), (2, 1)),
+                    I in indices(x_, 1)
 
-                x_[I, J, K] = x_[I, J, K] + bias[J]
+                    x_[I, J, K] = x_[I, J, K] + bias[J]
+                end
+            else
+                @batch for K in indices(x_, 3), J in indices((x_, bias), (2, 1))
+                    @simd ivdep for I in indices(x_, 1)
+                        x_[I, J, K] = x_[I, J, K] + bias[J]
+                    end
+                end
             end
             return _fast_activation(σ, x), x
         end
@@ -256,11 +275,20 @@ function EnzymeRules.reverse(
 
             if !(typeof(bias) <: EnzymeCore.Const) && db !== bias.val
                 dy_ = reshape(dy, :, size(dy, N - 1), size(dy, N))
-                @tturbo for K in indices(dy_, 3),
-                    J in indices((dy_, db), (2, 1)),
-                    I in indices(dy_, 1)
+                if LoopVectorization.check_args(dy_, db)
+                    @tturbo for K in indices(dy_, 3),
+                        J in indices((dy_, db), (2, 1)),
+                        I in indices(dy_, 1)
 
-                    db[J] += dy_[I, J, K]
+                        db[J] += dy_[I, J, K]
+                    end
+                else
+                    @inbounds for K in indices(dy_, 3),
+                        J in indices((dy_, db), (2, 1)),
+                        I in indices(dy_, 1)
+
+                        db[J] += dy_[I, J, K]
+                    end
                 end
             end
 

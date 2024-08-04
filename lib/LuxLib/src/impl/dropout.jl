@@ -26,8 +26,14 @@ end
 
 function _alpha_dropout_kernel!(res::AbstractArray, ::LoopedArrayOp, noise::AbstractArray,
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
-    @tturbo for I in indices((noise, x, res))
-        res[I] = ifelse(noise[I] > p, x[I], α) * A + B
+    if LoopVectorization.check_args(noise, x, res)
+        @tturbo for I in indices((noise, x, res))
+            res[I] = ifelse(noise[I] > p, x[I], α) * A + B
+        end
+    else
+        @batch for I in indices((noise, x, res))
+            res[I] = ifelse(noise[I] > p, x[I], α) * A + B
+        end
     end
     return nothing
 end
@@ -40,9 +46,16 @@ function EnzymeRules.augmented_primal(
         α::EnzymeCore.Annotation{<:Real}, A::EnzymeCore.Annotation{<:Real},
         B::EnzymeCore.Annotation{<:Real}) where {RT}
     _cond = similar(noise.val, Bool)
-    @tturbo for I in indices((noise.val, res.val, _cond))
-        _cond[I] = noise.val[I] > p.val
-        res.val[I] = ifelse(_cond[I], x.val[I], α.val) * A.val + B.val
+    if LoopVectorization.check_args(noise.val, res.val, _cond)
+        @tturbo for I in indices((noise.val, res.val, _cond))
+            _cond[I] = noise.val[I] > p.val
+            res.val[I] = ifelse(_cond[I], x.val[I], α.val) * A.val + B.val
+        end
+    else
+        @batch for I in indices((noise.val, res.val, _cond))
+            _cond[I] = noise.val[I] > p.val
+            res.val[I] = ifelse(_cond[I], x.val[I], α.val) * A.val + B.val
+        end
     end
 
     primal = EnzymeRules.needs_primal(cfg) ? res.val : nothing
@@ -69,8 +82,14 @@ function EnzymeRules.reverse(
     for (dres, dx) in zip(dress, dxs)
         if !(typeof(res) <: EnzymeCore.Const) && dres !== res.val
             if !(typeof(x) <: EnzymeCore.Const) && dx !== x.val
-                @tturbo for I in indices((dx, dres, _cond))
-                    dx[I] = _cond[I] * dres[I] * A.val
+                if LoopVectorization.check_args(dx, dres, _cond)
+                    @tturbo for I in indices((dx, dres, _cond))
+                        dx[I] = _cond[I] * dres[I] * A.val
+                    end
+                else
+                    @batch for I in indices((dx, dres, _cond))
+                        dx[I] = _cond[I] * dres[I] * A.val
+                    end
                 end
             end
 
@@ -92,17 +111,30 @@ function CRC.rrule(::typeof(_alpha_dropout_kernel), ::LoopedArrayOp, noise::Abst
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
     _cond = similar(noise, Bool)
     y = similar(x, promote_type(typeof(p), typeof(α), typeof(A), typeof(B), eltype(x)))
-    @tturbo for I in indices((noise, x, y, _cond))
-        _cond[I] = noise[I] > p
-        y[I] = ifelse(_cond[I], x[I], α) * A + B
+    if LoopVectorization.check_args(noise, x, y, _cond)
+        @tturbo for I in indices((noise, x, y, _cond))
+            _cond[I] = noise[I] > p
+            y[I] = ifelse(_cond[I], x[I], α) * A + B
+        end
+    else
+        @batch for I in indices((noise, x, y, _cond))
+            _cond[I] = noise[I] > p
+            y[I] = ifelse(_cond[I], x[I], α) * A + B
+        end
     end
 
     proj_x = CRC.ProjectTo(x)
     _∇alpha_dropout_kernel = let _cond = _cond, proj_x = proj_x, x = x
         Δ -> begin
             ∂x = similar(x)
-            @tturbo for I in indices((∂x, _cond, Δ))
-                ∂x[I] = _cond[I] * Δ[I] * A
+            if LoopVectorization.check_args(∂x, _cond, Δ)
+                @tturbo for I in indices((∂x, _cond, Δ))
+                    ∂x[I] = _cond[I] * Δ[I] * A
+                end
+            else
+                @batch for I in indices((∂x, _cond, Δ))
+                    ∂x[I] = _cond[I] * Δ[I] * A
+                end
             end
             return (ntuple(Returns(∂∅), 4)..., proj_x(∂x), ntuple(Returns(∂∅), 3)...)
         end
@@ -146,8 +178,14 @@ EnzymeRules.inactive_noinl(::typeof(_alpha_dropout_noise), ::Any...) = nothing
     rand!(rng, y)
     opmode = internal_operation_mode(y)
     if opmode isa LoopedArrayOp
-        @tturbo for I in indices(y)
-            y[I] = (y[I] > p) * invp
+        if LoopVectorization.check_args(y)
+            @tturbo for I in indices(y)
+                y[I] = (y[I] > p) * invp
+            end
+        else
+            @batch for I in indices(y)
+                y[I] = (y[I] > p) * invp
+            end
         end
     else
         @. y = (y > p) * invp

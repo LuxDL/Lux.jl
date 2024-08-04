@@ -162,7 +162,7 @@ end
                     A = tA(rand(rng, TB, sA..., 3)) |> aType
                     B = tB(rand(rng, TB, sB..., 3)) |> aType
 
-                    if size(A, 2) != size(B, 1) || size(A, 3) != 3 || size(B, 3) != 3 
+                    if size(A, 2) != size(B, 1) || size(A, 3) != 3 || size(B, 3) != 3
                         @test true # avoid a warning in ReTestItems.jl
                         continue
                     end
