@@ -42,6 +42,7 @@ jobs:
           - 'instance_norm'
           - 'layer_norm'
           - 'other_ops'
+          - 'batched_ops'
           - 'others'
         exclude:
           - os: macos-latest
@@ -154,6 +155,7 @@ jobs:
           - 'instance_norm'
           - 'layer_norm'
           - 'other_ops'
+          - 'batched_ops'
           - 'others'
     steps:
       - uses: actions/checkout@v4

@@ -13,7 +13,8 @@ const CRC = ChainRulesCore
 for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
     LuxLib.__is_tracked(T1, T2) || continue
 
-    @eval Tracker.@grad_from_chainrules NNlib.batched_mul(x::$T1, y::$T2)
+    @eval Tracker.@grad_from_chainrules NNlib.batched_mul(
+        x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
 end
 
 # NNlib: gather
