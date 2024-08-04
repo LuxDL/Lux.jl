@@ -1,0 +1,99 @@
+steps:
+  - group: ":racehorse: Benchmarks"
+    steps:
+      - label: ":racehorse: CPU: {{matrix.threads}} thread(s)"
+        matrix:
+          setup:
+            threads:
+              - "2"
+              - "4"
+              - "8"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "benchmark"
+        env:
+          BENCHMARK_GROUP: CPU
+          JULIA_NUM_THREADS: "{{matrix.threads}}"
+        timeout_in_minutes: 120
+
+      - label: ":racehorse: AMDGPU"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("---:julia: Add AMDGPU to benchmarks environment")
+              using Pkg
+              Pkg.add("AMDGPU")'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "juliagpu"  # Technifcally we should run on the same machine
+          rocm: "*"
+        env:
+          BENCHMARK_GROUP: AMDGPU
+          JULIA_NUM_THREADS: 8
+        timeout_in_minutes: 120
+
+      - label: ":racehorse: CUDA"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("---:julia: Add CUDA to benchmarks environment")
+              using Pkg
+              Pkg.add("CUDA")'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "juliagpu"  # Technifcally we should run on the same machine
+          cuda: "*"
+        env:
+          BENCHMARK_GROUP: CUDA
+          JULIA_NUM_THREADS: 8
+        timeout_in_minutes: 120
+
+      - wait: ~
+
+      - label: "Combine benchmarks"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          buildkite-agent artifact download "benchmarks/results/*" .
+
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.instantiate()'
+
+          julia --project=benchmarks -e 'println("--- :julia: Combining Benchmarks")
+              include("benchmarks/aggregate.jl")'
+        artifact_paths:
+          - "benchmarks/results/combinedbenchmarks.json"
+        agents:
+          queue: "juliagpu"
+        timeout_in_minutes: 10
