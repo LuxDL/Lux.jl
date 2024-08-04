@@ -69,12 +69,22 @@ end
 
 function __serial_loopvec_matmul!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
-    @turbo for K in indices((C, B), 2), J in indices((C, A), 1)
-        Cⱼₖ = zero(eltype(C))
-        for I in indices((A, B), (2, 1))
-            Cⱼₖ += A[J, I] * B[I, K]
+    if !iszero(β) # Secial case this because Base.FastMath.mul_fast(NaN, false) = NaN
+        @turbo for K in indices((C, B), 2), J in indices((C, A), 1)
+            Cⱼₖ = zero(eltype(C))
+            for I in indices((A, B), (2, 1))
+                Cⱼₖ += A[J, I] * B[I, K]
+            end
+            C[J, K] = α * Cⱼₖ + β * C[J, K]
         end
-        C[J, K] = α * Cⱼₖ + β * C[J, K]
+    else
+        @turbo for K in indices((C, B), 2), J in indices((C, A), 1)
+            Cⱼₖ = zero(eltype(C))
+            for I in indices((A, B), (2, 1))
+                Cⱼₖ += A[J, I] * B[I, K]
+            end
+            C[J, K] = α * Cⱼₖ
+        end
     end
 end
 
