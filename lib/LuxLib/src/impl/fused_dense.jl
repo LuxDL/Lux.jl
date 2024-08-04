@@ -39,7 +39,7 @@ end
 end
 
 @stable default_mode="disable" function __fused_dense_bias_activation_impl(
-        ::Type{<:CUDADevice}, act::F, weight::AbstractMatrix,
+        ::Type{CUDADevice}, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
     (y, _, retcode) = __attempt_cublasLt_fused_matmul(act, weight, x, b, False())
     retcode == 0 && return y
@@ -91,7 +91,7 @@ end
 ## Special Reverse Pass for gelu activation. All other cases, we don't need special handling
 function CRC.rrule(::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(__fused_dense_bias_activation_impl),
-        ::Type{<:CUDADevice}, ::typeof(gelu), weight::AbstractMatrix,
+        ::Type{CUDADevice}, ::typeof(gelu), weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector})
     (z, y, retcode) = __attempt_cublasLt_fused_matmul(gelu, weight, x, b, True())
     if retcode == -1 # Generic Fallback: break aliasing in _apply_bias_activation!!

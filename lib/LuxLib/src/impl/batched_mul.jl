@@ -8,8 +8,7 @@ function __batched_matmul_impl(::True, ::Type{<:AbstractGPUDevice},
     return batched_mul(A, B)  # GPU versions are well optimized
 end
 
-function __batched_matmul_impl(
-        ::True, ::Type{<:AMDGPUDevice}, A::AbstractArray{<:Complex, 3},
+function __batched_matmul_impl(::True, ::Type{AMDGPUDevice}, A::AbstractArray{<:Complex, 3},
         B::AbstractArray{<:Complex, 3})
     @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
            AMDGPUDevice" maxlog=1
