@@ -186,58 +186,31 @@ function EnzymeRules.reverse(
     for (dy, dx, dscale, dbias) in zip(dys, dxs, dscales, dbiases)
         if !(typeof(y) <: EnzymeCore.Const) && dy !== y.val
             if !(typeof(x) <: EnzymeCore.Const) && dx !== x.val
-                if LoopVectorization.check_args(dx, dy, scale.val, dscale)
-                    @tturbo for K in indices((dx, dy), 3),
-                        J in indices((dx, dy), 2),
-                        I in indices((dx, dy), 1)
+                @tturbo warn_check_args=false for K in indices((dx, dy), 3),
+                    J in indices((dx, dy), 2),
+                    I in indices((dx, dy), 1)
 
-                        dx[I, J, K] = dy[I, J, K] * scale.val[J]
-                    end
-                else
-                    @batch for K in indices((dx, dy), 3),
-                        J in indices((dx, dy), 2),
-                        I in indices((dx, dy), 1)
-
-                        dx[I, J, K] = dy[I, J, K] * scale.val[J]
-                    end
+                    dx[I, J, K] = dy[I, J, K] * scale.val[J]
                 end
             end
 
             if !(typeof(scale) <: EnzymeCore.Const) && dscale !== scale.val
                 fill!(dscale, false)
-                if LoopVectorization.check_args(dx, dy, scale.val, dscale)
-                    @tturbo for K in indices((dx, dy), 3),
-                        J in indices((dx, dy), 2),
-                        I in indices((dx, dy), 1)
+                @tturbo warn_check_args=false for K in indices((dx, dy), 3),
+                    J in indices((dx, dy), 2),
+                    I in indices((dx, dy), 1)
 
-                        dscale[J] += dy[I, J, K] * x.val[I, J, K]
-                    end
-                else
-                    @batch for K in indices((dx, dy), 3),
-                        J in indices((dx, dy), 2),
-                        I in indices((dx, dy), 1)
-
-                        dscale[J] += dy[I, J, K] * x.val[I, J, K]
-                    end
+                    dscale[J] += dy[I, J, K] * x.val[I, J, K]
                 end
             end
 
             if !(typeof(bias) <: EnzymeCore.Const) && dbias !== bias.val
                 fill!(dbias, false)
-                if LoopVectorization.check_args(dx, dy, scale.val, dscale)
-                    @tturbo for K in indices((dx, dy), 3),
-                        J in indices((dx, dy), 2),
-                        I in indices((dx, dy), 1)
+                @tturbo warn_check_args=false for K in indices((dx, dy), 3),
+                    J in indices((dx, dy), 2),
+                    I in indices((dx, dy), 1)
 
-                        dbias[J] += dy[I, J, K]
-                    end
-                else
-                    @batch for K in indices((dx, dy), 3),
-                        J in indices((dx, dy), 2),
-                        I in indices((dx, dy), 1)
-
-                        dbias[J] += dy[I, J, K]
-                    end
+                    dbias[J] += dy[I, J, K]
                 end
             end
 
@@ -378,31 +351,16 @@ function ∇affine_normalize_bn_impl(
     ∂x, ∂μ, ∂σ² = similar(x), zero.(μ), zero.(σ²)
     half = eltype(∂σ²)(0.5)
 
-    if LoopVectorization.check_args(∂y, x, μ, σ², _sc)
-        @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = _sc[J]
-            idenom² = idenom^2
+    @tturbo warn_check_args=false for K in indices(∂y, 3), J in indices(∂y, 2)
+        idenom = _sc[J]
+        idenom² = idenom^2
 
-            for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
+        for I in indices(∂y, 1)
+            xμ = x[I, J, K] - μ[J]
 
-                ∂x[I, J, K] = ∂y[I, J, K] * idenom
-                ∂μ[J] -= ∂x[I, J, K]
-                ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
-            end
-        end
-    else
-        @batch for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = _sc[J]
-            idenom² = idenom^2
-
-            @simd for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
-
-                ∂x[I, J, K] = ∂y[I, J, K] * idenom
-                ∂μ[J] -= ∂x[I, J, K]
-                ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
-            end
+            ∂x[I, J, K] = ∂y[I, J, K] * idenom
+            ∂μ[J] -= ∂x[I, J, K]
+            ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
         end
     end
 
@@ -413,35 +371,18 @@ function ∇affine_normalize_bn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
     ∂x, ∂μ, ∂σ², ∂sc, ∂b = similar(x), zero.(μ), zero.(σ²), zero.(scale), zero.(bias)
     half = eltype(∂σ²)(0.5)
 
-    if LoopVectorization.check_args(∂y, x, μ, σ², scale, bias, ϵ, _sc)
-        @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = inv(sqrt(σ²[J] + ϵ))
-            idenom² = idenom^2
+    @tturbo warn_check_args=false for K in indices(∂y, 3), J in indices(∂y, 2)
+        idenom = inv(sqrt(σ²[J] + ϵ))
+        idenom² = idenom^2
 
-            for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
+        for I in indices(∂y, 1)
+            xμ = x[I, J, K] - μ[J]
 
-                ∂x[I, J, K] = ∂y[I, J, K] * _sc[J]
-                ∂μ[J] -= ∂x[I, J, K]
-                ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
-                ∂sc[J] += ∂y[I, J, K] * xμ * idenom
-                ∂b[J] += ∂y[I, J, K]
-            end
-        end
-    else
-        @batch for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = inv(sqrt(σ²[J] + ϵ))
-            idenom² = idenom^2
-
-            @simd for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
-
-                ∂x[I, J, K] = ∂y[I, J, K] * _sc[J]
-                ∂μ[J] -= ∂x[I, J, K]
-                ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
-                ∂sc[J] += ∂y[I, J, K] * xμ * idenom
-                ∂b[J] += ∂y[I, J, K]
-            end
+            ∂x[I, J, K] = ∂y[I, J, K] * _sc[J]
+            ∂μ[J] -= ∂x[I, J, K]
+            ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
+            ∂sc[J] += ∂y[I, J, K] * xμ * idenom
+            ∂b[J] += ∂y[I, J, K]
         end
     end
 
@@ -664,33 +605,16 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², ::Nothi
     ∂x, ∂μ, ∂σ² = similar(x), zero.(μ), zero.(σ²)
     half = eltype(∂σ²)(0.5)
 
-    if LoopVectorization.check_args(∂y, x, μ, σ², ϵ)
-        @tturbo for L in indices(∂y, 4), K in indices(∂y, 3)
-            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            idenom² = idenom^2
+    @tturbo warn_check_args=false for L in indices(∂y, 4), K in indices(∂y, 3)
+        idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+        idenom² = idenom^2
 
-            for J in indices(∂y, 2), I in indices(∂y, 1)
-                xμ = x[I, J, K, L] - μ[1, 1, K, L]
+        for J in indices(∂y, 2), I in indices(∂y, 1)
+            xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-                ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
-                ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
-            end
-        end
-    else
-        @batch for L in indices(∂y, 4), K in indices(∂y, 3)
-            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            idenom² = idenom^2
-
-            for J in indices(∂y, 2)
-                @simd for I in indices(∂y, 1)
-                    xμ = x[I, J, K, L] - μ[1, 1, K, L]
-
-                    ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
-                    ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                    ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
-                end
-            end
+            ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
+            ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+            ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
         end
     end
 
@@ -701,40 +625,20 @@ function ∇affine_normalize_gn_impl(::LoopedArrayOp, ∂y, x, μ, σ², scale, 
     ∂x, ∂μ, ∂σ², ∂sc, ∂b = similar(x), zero.(μ), zero.(σ²), zero.(scale), zero.(bias)
     half = eltype(∂σ²)(0.5)
 
-    if LoopVectorization.check_args(∂y, x, μ, σ², scale, bias, ϵ)
-        @tturbo for L in indices(∂y, 4), K in indices(∂y, 3)
-            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            idenom² = idenom^2
+    @tturbo warn_check_args=false for L in indices(∂y, 4), K in indices(∂y, 3)
+        idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+        idenom² = idenom^2
 
-            for J in indices(∂y, 2)
-                _sc = scale[1, J, K, 1] * idenom
-                for I in indices(∂y, 1)
-                    xμ = x[I, J, K, L] - μ[1, 1, K, L]
+        for J in indices(∂y, 2)
+            _sc = scale[1, J, K, 1] * idenom
+            for I in indices(∂y, 1)
+                xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-                    ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
-                    ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                    ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
-                    ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
-                    ∂b[1, J, K, 1] += ∂y[I, J, K, L]
-                end
-            end
-        end
-    else
-        @batch for L in indices(∂y, 4), K in indices(∂y, 3)
-            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            idenom² = idenom^2
-
-            for J in indices(∂y, 2)
-                _sc = scale[1, J, K, 1] * idenom
-                @simd for I in indices(∂y, 1)
-                    xμ = x[I, J, K, L] - μ[1, 1, K, L]
-
-                    ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
-                    ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
-                    ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
-                    ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
-                    ∂b[1, J, K, 1] += ∂y[I, J, K, L]
-                end
+                ∂x[I, J, K, L] = ∂y[I, J, K, L] * _sc
+                ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+                ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
+                ∂sc[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
+                ∂b[1, J, K, 1] += ∂y[I, J, K, L]
             end
         end
     end
