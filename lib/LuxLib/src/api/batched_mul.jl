@@ -6,11 +6,11 @@ documentation on `NNlib.batched_mul`. This function is mostly a wrapper around `
 but attempts to be faster on CPUs.
 """
 function batched_matmul(x::AbstractMatrix, y::AbstractArray{<:Any, 3})
-    return batched_matmul(reshape(x, size(x)..., 1), y)
+    return batched_matmul(expand_batchdim(x), y)
 end
 
 function batched_matmul(x::AbstractArray{<:Any, 3}, y::AbstractMatrix)
-    return batched_matmul(x, reshape(y, size(y)..., 1))
+    return batched_matmul(x, expand_batchdim(y))
 end
 
 function batched_matmul(x::AbstractArray{<:Any, 3}, y::AbstractArray{<:Any, 3})

@@ -28,7 +28,8 @@ using SLEEFPirates: SLEEFPirates
 using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
                      AbstractGPUDevice, AbstractDevice
-using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, σ, ∇conv_data, ∇conv_filter
+using NNlib: NNlib, ConvDims, conv, conv!, relu, gelu, σ, ∇conv_data, ∇conv_filter,
+             batched_mul, batched_adjoint, batched_mul!
 
 @reexport using NNlib
 

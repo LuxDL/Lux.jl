@@ -179,7 +179,15 @@ end
     return Expr(:call, :&, (:(f(xs[$i])) for i in 1:L)...)
 end
 
-# Extracting single batch views
+# Working with batches
 batchview(x::AbstractArray{<:Any, 3}, k::Int) = view(x, :, :, k)
 batchview(x::NNlib.BatchedTranspose, k::Int) = transpose(batchview(parent(x), k))
 batchview(x::NNlib.BatchedAdjoint, k::Int) = adjoint(batchview(parent(x), k))
+
+expand_batchdim(x::AbstractMatrix) = reshape(x, size(x)..., 1)
+function expand_batchdim(x::LinearAlgebra.Adjoint)
+    return NNlib.BatchedAdjoint(reshape(parent(x), size(parent(x))..., 1))
+end
+function expand_batchdim(x::LinearAlgebra.Transpose)
+    return NNlib.BatchedTranspose(reshape(parent(x), size(parent(x))..., 1))
+end

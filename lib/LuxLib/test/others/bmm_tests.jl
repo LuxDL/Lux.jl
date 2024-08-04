@@ -150,18 +150,21 @@ end
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
+    sizes = []
+    for sA in [(1, 1), (1, 3), (3, 1), (3, 3)], sB in [(1, 1), (1, 3), (3, 1), (3, 3)]
+        sA[2] == sB[1] && push!(sizes, (sA, sB))
+    end
+
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "Float64 × $(TB)" for TB in [Float64, ComplexF64]
             @testset "trivial dimensions & unit strides" begin
                 @testset "$tA(rand$((sA...,3))) ⊠ $tB(rand$((sB...,3)))" for tA in [
                         identity, batched_adjoint, batched_transpose, perm_12, perm_23],
-                    sA in [(1, 1), (1, 3), (3, 1), (3, 3)],
                     tB in [identity, batched_adjoint, batched_transpose, perm_12, perm_23],
-                    sB in [(1, 1), (1, 3), (3, 1), (3, 3)]
+                    (sA, sB) in sizes
 
                     A = tA(rand(rng, TB, sA..., 3)) |> aType
                     B = tB(rand(rng, TB, sB..., 3)) |> aType
-                    size(A, 2) == size(B, 1) && size(A, 3) == size(B, 3) == 3 || continue
 
                     C = cat(A[:, :, 1] * B[:, :, 1], A[:, :, 2] * B[:, :, 2],
                         A[:, :, 3] * B[:, :, 3]; dims=3)
