@@ -55,3 +55,9 @@ groupnorm
 instancenorm
 layernorm
 ```
+
+## Helper Functions
+
+```@docs
+LuxLib.internal_operation_mode
+```

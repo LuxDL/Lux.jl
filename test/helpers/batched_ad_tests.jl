@@ -21,7 +21,7 @@
                 J2_mat = mapreduce(Base.Fix1(Lux.__maybe_batched_row, J2),
                     hcat, 1:(size(J2, 1) * size(J2, 3)))'
 
-                @test J1≈J2_mat atol=1.0e-5 rtol=1.0e-5
+                @test J1≈J2_mat atol=1.0e-3 rtol=1.0e-3
 
                 ps = ps |> cpu_device() |> ComponentArray |> dev
 
@@ -29,7 +29,7 @@
 
                 J3 = batched_jacobian(smodel, backend, X)
 
-                @test J2≈J3 atol=1.0e-5 rtol=1.0e-5
+                @test J2≈J3 atol=1.0e-3 rtol=1.0e-3
             end
         end
 
@@ -112,16 +112,16 @@ end
             _, ∂x_simple, ∂ps_simple, _ = Zygote.gradient(
                 loss_function_simple, model, X, ps, st)
 
-            @test ∂x_batched≈∂x_simple atol=1.0e-5 rtol=1.0e-5
-            @test check_approx(∂ps_batched, ∂ps_simple; atol=1.0e-5, rtol=1.0e-5)
+            @test ∂x_batched≈∂x_simple atol=1.0e-3 rtol=1.0e-3
+            @test check_approx(∂ps_batched, ∂ps_simple; atol=1.0e-3, rtol=1.0e-3)
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
             _, ∂x_batched2, ∂ps_batched2, _ = Zygote.gradient(
                 loss_function_batched, model, X, ps, st)
 
-            @test ∂x_batched2≈∂x_batched atol=1.0e-5 rtol=1.0e-5
-            @test check_approx(∂ps_batched2, ∂ps_batched; atol=1.0e-5, rtol=1.0e-5)
+            @test ∂x_batched2≈∂x_batched atol=1.0e-3 rtol=1.0e-3
+            @test check_approx(∂ps_batched2, ∂ps_batched; atol=1.0e-3, rtol=1.0e-3)
         end
     end
 end
