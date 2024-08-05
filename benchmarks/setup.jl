@@ -46,31 +46,34 @@ function benchmark_forward_pass!(suite::BenchmarkGroup, group::String, tag, mode
     dev = group_to_backend(group)
 
     suite[tag]["Forward"]["Lux"] = @benchmarkable begin
-        @suppress Lux.apply($model, x, ps, st_test)
+        Lux.apply($model, x, ps, st_test)
         synchronize($dev)
     end setup=begin
         (x, ps, st) = general_setup($model, $x_dims) |> $dev
         st_test = Lux.testmode(st)
+        Lux.apply($model, x, ps, st_test) # Warm up
     end
 
     if simple_chains !== nothing && group == "CPU"
-        simple_chains_model = @suppress simple_chains(model)
+        simple_chains_model = simple_chains(model)
         suite[tag]["Forward"]["SimpleChains"] = @benchmarkable begin
-            @suppress Lux.apply($simple_chains_model, x, ps_simple_chains, st_simple_chains)
+            Lux.apply($simple_chains_model, x, ps_simple_chains, st_simple_chains)
         end setup=begin
             (x, ps_simple_chains, st_simple_chains) = general_setup(
                 $simple_chains_model, $x_dims)
+            Lux.apply($simple_chains_model, x, ps_simple_chains, st_simple_chains) # Warm up
         end
     end
 
     if flux_model !== nothing
         suite[tag]["Forward"]["Flux"] = @benchmarkable begin
-            @suppress fmodel(x)
+            fmodel(x)
             synchronize($dev)
         end setup=begin
             fdev = group_to_flux_backend($group)
             x = randn(StableRNG(0), Float32, $x_dims) |> fdev
             fmodel = $(flux_model()) |> fdev
+            fmodel(x) # Warm up
         end
     end
 end
@@ -82,7 +85,7 @@ function benchmark_reverse_pass!(suite::BenchmarkGroup, group::String, backends,
     end
 
     if simple_chains !== nothing && group == "CPU"
-        simple_chains_model = @suppress simple_chains(model)
+        simple_chains_model = simple_chains(model)
         benchmark_reverse_pass_simple_chains!(suite, tag, simple_chains_model, x_dims)
     end
 
@@ -96,10 +99,11 @@ function benchmark_reverse_pass!(
     dev = group_to_backend(group)
 
     suite[tag]["Reverse"]["Zygote"] = @benchmarkable begin
-        @suppress Zygote.gradient(sumabs2, $model, x, ps, st)
+        Zygote.gradient(sumabs2, $model, x, ps, st)
         synchronize($dev)
     end setup=begin
         (x, ps, st) = general_setup($model, $x_dims) |> $dev
+        Zygote.gradient(sumabs2, $model, x, ps, st) # Warm up
     end
 end
 
@@ -113,23 +117,25 @@ function benchmark_reverse_pass!(
     dev = group_to_backend(group)
 
     suite[tag]["Reverse"]["Enzyme"] = @benchmarkable begin
-        @suppress Enzyme.autodiff(
-            Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
+        Enzyme.autodiff(Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
             Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps), Enzyme.Const(st))
         synchronize($dev)
     end setup=begin
         (x, ps, st) = general_setup($model, $x_dims) |> $dev
         dps = Enzyme.make_zero(ps)
         dx = Enzyme.make_zero(x)
+        Enzyme.autodiff(Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
+            Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps), Enzyme.Const(st)) # Warm up
     end
 end
 
 function benchmark_reverse_pass_simple_chains!(
         suite::BenchmarkGroup, tag::String, model, x_dims)
     suite[tag]["Reverse"]["SimpleChains"] = @benchmarkable begin
-        @suppress Zygote.gradient(sumabs2, $model, x, ps_simple_chains, st_simple_chains)
+        Zygote.gradient(sumabs2, $model, x, ps_simple_chains, st_simple_chains)
     end setup=begin
         (x, ps_simple_chains, st_simple_chains) = general_setup($model, $x_dims)
+        Zygote.gradient(sumabs2, $model, x, ps_simple_chains, st_simple_chains) # Warm up
     end
 end
 
@@ -138,12 +144,13 @@ function benchmark_reverse_pass_flux!(
     dev = group_to_backend(group)
 
     suite[tag]["Reverse"]["Flux"] = @benchmarkable begin
-        @suppress fmodel(x)
+        Zygote.gradient(sumabs2, fmodel, x)
         synchronize($dev)
     end setup=begin
         fdev = group_to_flux_backend($group)
         x = randn(StableRNG(0), Float32, $x_dims) |> fdev
         fmodel = $(model)() |> fdev
+        Zygote.gradient(sumabs2, fmodel, x) # Warm up
     end
 end
 

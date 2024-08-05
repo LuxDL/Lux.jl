@@ -2,7 +2,6 @@ using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using InteractiveUtils: versioninfo
 using LinearAlgebra: BLAS
 using Statistics: median
-using Suppressor: @suppress
 using ThreadPinning: pinthreads
 
 pinthreads(:cores)
@@ -13,8 +12,6 @@ BLAS.set_num_threads(max(BLAS.get_num_threads(), Threads.nthreads() ÷ 2))
 @info "BLAS threads: $(BLAS.get_num_threads())"
 
 const SUITE = BenchmarkGroup()
-BenchmarkTools.DEFAULT_PARAMETERS.gcsample = false
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1
 
 # To run benchmarks on a specific GPU backend, add AMDGPU / CUDA / Metal / oneAPI
 # to benchmarks/Project.toml and change BENCHMARK_GROUP to the backend name
