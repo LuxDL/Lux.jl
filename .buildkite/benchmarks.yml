@@ -36,7 +36,7 @@ steps:
               using Pkg
               Pkg.develop([PackageSpec(path=pwd())])'
 
-          julia --project=benchmarks -e 'println("---:julia: Add AMDGPU to benchmarks environment")
+          julia --project=benchmarks -e 'println("--- :julia: Add AMDGPU to benchmarks environment")
               using Pkg
               Pkg.add("AMDGPU")'
 
@@ -61,9 +61,9 @@ steps:
               using Pkg
               Pkg.develop([PackageSpec(path=pwd())])'
 
-          julia --project=benchmarks -e 'println("---:julia: Add CUDA to benchmarks environment")
+          julia --project=benchmarks -e 'println("--- :julia: Add CUDA to benchmarks environment")
               using Pkg
-              Pkg.add("CUDA")'
+              Pkg.add("LuxCUDA")'
 
           julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
               include("benchmarks/runbenchmarks.jl")'
