@@ -86,11 +86,11 @@ steps:
         command: |
           buildkite-agent artifact download "benchmarks/results/*" .
 
-          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+          julia -e 'println("--- :julia: Instantiating project")
               using Pkg
-              Pkg.instantiate()'
+              Pkg.add("BenchmarkTools")
 
-          julia --project=benchmarks -e 'println("--- :julia: Combining Benchmarks")
+              println("--- :julia: Combining Benchmarks")
               include("benchmarks/aggregate.jl")'
         artifact_paths:
           - "benchmarks/results/combinedbenchmarks.json"
