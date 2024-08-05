@@ -1,13 +1,7 @@
 steps:
   - group: ":racehorse: Benchmarks"
     steps:
-      - label: ":racehorse: CPU: {{matrix.threads}} thread(s)"
-        matrix:
-          setup:
-            threads:
-              - "2"
-              - "4"
-              - "8"
+      - label: ":racehorse: CPU: 8 thread(s)"
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -21,13 +15,15 @@ steps:
         artifact_paths:
           - "benchmarks/results/*"
         agents:
-          queue: "benchmark"
+          queue: "juliaecosystem"
+          num_cpus: 4
+          arch: "aarch64"
         env:
           BENCHMARK_GROUP: CPU
-          JULIA_NUM_THREADS: "{{matrix.threads}}"
+          JULIA_NUM_THREADS: 8
         timeout_in_minutes: 120
 
-      - label: ":racehorse: AMDGPU"
+      - label: ":racehorse: CPU: 32 thread(s)"
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -36,20 +32,18 @@ steps:
               using Pkg
               Pkg.develop([PackageSpec(path=pwd())])'
 
-          julia --project=benchmarks -e 'println("--- :julia: Add AMDGPU to benchmarks environment")
-              using Pkg
-              Pkg.add("AMDGPU")'
-
           julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
               include("benchmarks/runbenchmarks.jl")'
         artifact_paths:
           - "benchmarks/results/*"
         agents:
-          queue: "juliagpu"  # Technifcally we should run on the same machine
-          rocm: "*"
+          queue: "juliaecosystem"
+          sandbox_capable: true
+          exclusive: true
+          arch: "x86_64"
         env:
-          BENCHMARK_GROUP: AMDGPU
-          JULIA_NUM_THREADS: 8
+          BENCHMARK_GROUP: CPU
+          JULIA_NUM_THREADS: 32
         timeout_in_minutes: 120
 
       - label: ":racehorse: CUDA"
@@ -70,8 +64,9 @@ steps:
         artifact_paths:
           - "benchmarks/results/*"
         agents:
-          queue: "juliagpu"  # Technifcally we should run on the same machine
+          queue: "benchmark"
           cuda: "*"
+          gpu: "rtx4070"
         env:
           BENCHMARK_GROUP: CUDA
           JULIA_NUM_THREADS: 8

@@ -1,7 +1,5 @@
 function add_dense_benchmarks!(suite::BenchmarkGroup, group::String)
-    for n in (16, 128, 512, 2048), act in (identity, relu, gelu)
-        n > 512 && group == "AMDGPU" && continue
-
+    for n in (16, 128, 512,), act in (identity, relu, gelu)
         layer = Dense(n => n, act)
         simple_chains = n ≤ 200 ? Lux.ToSimpleChainsAdaptor((static(n),)) : nothing
         flux_model = () -> Flux.Dense(n => n, act)
@@ -17,16 +15,10 @@ function add_dense_benchmarks!(suite::BenchmarkGroup, group::String)
 end
 
 function add_conv_benchmarks!(suite::BenchmarkGroup, group::String)
-    for ch in (2, 4, 32, 128), act in (identity, relu, gelu)
-        ch > 32 && group == "AMDGPU" && continue
+    for ch in (2, 4, 32, 64), act in (identity, relu, gelu)
+        layer = Conv((3, 3), ch => ch, act)
+        flux_model = () -> Flux.Conv((3, 3), ch => ch, act)
 
-        if group == "AMDGPU"
-            layer = CrossCor((3, 3), ch => ch, act)
-            flux_model = () -> Flux.CrossCor((3, 3), ch => ch, act)
-        else
-            layer = Conv((3, 3), ch => ch, act)
-            flux_model = () -> Flux.Conv((3, 3), ch => ch, act)
-        end
         simple_chains = ch ≤ 16 ?
                         Lux.ToSimpleChainsAdaptor((static(64), static(64), static(ch))) :
                         nothing

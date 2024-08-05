@@ -4,8 +4,8 @@ using Flux: Flux
 using Lux: Lux, BatchNorm, Chain, Conv, CrossCor, Dense, Dropout, FlattenLayer, MaxPool
 using LuxDeviceUtils: LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
 using NNlib: relu, gelu
+using Random: Random
 using SimpleChains: SimpleChains, static
-using StableRNGs: StableRNG
 
 # AD Backends
 using Enzyme: Enzyme
@@ -34,7 +34,7 @@ function group_to_flux_backend(group::String)
 end
 
 function general_setup(model, x_dims)
-    rng = StableRNG(0)
+    rng = Random.default_rng()  # don't use any other rng
     ps, st = Lux.setup(rng, model)
     x_dims === nothing && return ps, st
     x = randn(rng, Float32, x_dims)
@@ -73,6 +73,7 @@ function benchmark_forward_pass!(suite::BenchmarkGroup, group::String, tag, mode
             fdev = group_to_flux_backend($group)
             x = randn(StableRNG(0), Float32, $x_dims) |> fdev
             fmodel = $(flux_model()) |> fdev
+            Flux.testmode!(fmodel, true)
             fmodel(x) # Warm up
         end
     end
@@ -159,8 +160,6 @@ function setup_benchmarks(suite::BenchmarkGroup, backend::String, num_cpu_thread
     # Common Layers
     add_dense_benchmarks!(suite, backend)
     add_conv_benchmarks!(suite, backend)
-
-    # Normalization Layers
 
     # Full Models
     add_vgg16_benchmarks!(suite, backend)
