@@ -1,13 +1,13 @@
 using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using InteractiveUtils: versioninfo
 using LinearAlgebra: BLAS
-using Statistics: median
+using Statistics: minimum
 using Suppressor: @suppress
 using ThreadPinning: pinthreads
 
 pinthreads(:cores)
 
-BLAS.set_num_threads(max(BLAS.get_num_threads(), Threads.nthreads() ÷ 2))
+BLAS.set_num_threads(Threads.nthreads() ÷ 2)
 
 @info sprint(versioninfo)
 @info "BLAS threads: $(BLAS.get_num_threads())"
@@ -52,8 +52,8 @@ mkpath(filepath)
 filename = BENCHMARK_GROUP == "CPU" ?
            string("CPUbenchmarks", BENCHMARK_CPU_THREADS, "threads.json") :
            string(BENCHMARK_GROUP, "benchmarks.json")
-BenchmarkTools.save(joinpath(filepath, filename), median(results))
+BenchmarkTools.save(joinpath(filepath, filename), minimum(results))
 
-display(median(results))
+display(minimum(results))
 
 @info "Saved results to $(joinpath(filepath, filename))"
