@@ -121,7 +121,7 @@ jobs:
           echo 'A plot of the benchmark results have been uploaded as an artifact to the workflow run for this PR.' >> body.md
           echo 'Go to "Actions"->"Benchmark a pull request"->[the most recent run]->"Artifacts" (at the bottom).' >> body.md
       - name: Find Comment
-        uses: peter-evans/find-comment@v2
+        uses: peter-evans/find-comment@v3
         id: fcbenchmark
         with:
           issue-number: ${{ github.event.pull_request.number }}
