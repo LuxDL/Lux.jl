@@ -1,5 +1,5 @@
 function add_dense_benchmarks!(suite::BenchmarkGroup, group::String)
-    for n in (16, 128, 512,), act in (identity, relu, gelu)
+    for n in (16, 128, 512), act in (identity, relu, gelu)
         layer = Dense(n => n, act)
         simple_chains = n ≤ 200 ? Lux.ToSimpleChainsAdaptor((static(n),)) : nothing
         flux_model = () -> Flux.Dense(n => n, act)
