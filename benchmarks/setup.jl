@@ -71,7 +71,7 @@ function benchmark_forward_pass!(suite::BenchmarkGroup, group::String, tag, mode
             synchronize($dev)
         end setup=begin
             fdev = group_to_flux_backend($group)
-            x = randn(StableRNG(0), Float32, $x_dims) |> fdev
+            x = randn(Random.default_rng(), Float32, $x_dims) |> fdev
             fmodel = $(flux_model()) |> fdev
             Flux.testmode!(fmodel, true)
             fmodel(x) # Warm up
@@ -149,7 +149,7 @@ function benchmark_reverse_pass_flux!(
         synchronize($dev)
     end setup=begin
         fdev = group_to_flux_backend($group)
-        x = randn(StableRNG(0), Float32, $x_dims) |> fdev
+        x = randn(Random.default_rng(), Float32, $x_dims) |> fdev
         fmodel = $(model)() |> fdev
         Zygote.gradient(sumabs2, fmodel, x) # Warm up
     end
