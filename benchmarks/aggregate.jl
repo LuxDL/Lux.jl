@@ -1,14 +1,14 @@
 using BenchmarkTools
 
-const GPU_BACKENDS = ["AMDGPU", "CUDA"]
-const NUM_CPU_THREADS = [2, 4, 8]
+const GPU_BACKENDS = ["CUDA"]
+const NUM_CPU_THREADS = [8, 128]
 
-# Start with CPU benchmarks for 2 threads and add other results
-const CPU_results_2threads_filepath = joinpath(
-    @__DIR__, "results", "CPUbenchmarks2threads.json")
-@assert(ispath(CPU_results_2threads_filepath))
+# Start with CPU benchmarks for 4 threads and add other results
+const CPU_results_8threads_filepath = joinpath(
+    @__DIR__, "results", "CPUbenchmarks8threads.json")
+@assert(ispath(CPU_results_8threads_filepath))
 
-const RESULTS = BenchmarkTools.load(CPU_results_2threads_filepath)[1]
+const RESULTS = BenchmarkTools.load(CPU_results_8threads_filepath)[1]
 @assert RESULTS isa BenchmarkTools.BenchmarkGroup
 
 for benchmark in keys(RESULTS), mode in keys(RESULTS[benchmark])
