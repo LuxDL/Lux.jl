@@ -1,4 +1,4 @@
-function add_vgg_benchmarks!()
+function add_vgg16_benchmarks!(suite::BenchmarkGroup, group::String)
     # Julia Fails to Specialize on Large NTs, so split it up
     function conv_bn(ksize, (in_chs, out_chs)::Pair, args...; kwargs...)
         return Chain(
@@ -6,6 +6,7 @@ function add_vgg_benchmarks!()
             name="ConvBN")
     end
 
+    #! format: off
     vgg16 = Chain(
         Chain(conv_bn((3, 3), 3 => 64, relu; pad=(1, 1), stride=(1, 1)),
             conv_bn((3, 3), 64 => 64, relu; pad=(1, 1), stride=(1, 1)),
@@ -29,6 +30,7 @@ function add_vgg_benchmarks!()
         Chain(Dense(512, 4096, relu), Dropout(0.5f0), Dense(4096, 4096, relu),
             Dropout(0.5f0), Dense(4096, 10); name="Classifier"); disable_optimizations=true)
 
+
     flux_model = () -> Flux.Chain(
         Flux.Conv((3, 3), 3 => 64, relu; pad=(1, 1), stride=(1, 1)),
         Flux.BatchNorm(64), Flux.Conv((3, 3), 64 => 64, relu; pad=(1, 1), stride=(1, 1)),
@@ -49,16 +51,15 @@ function add_vgg_benchmarks!()
         Flux.Conv((3, 3), 512 => 512, relu; pad=(1, 1), stride=(1, 1)), Flux.BatchNorm(512),
         Flux.MaxPool((2, 2)), Flux.flatten, Flux.Dense(512, 4096, relu), Flux.Dropout(0.5),
         Flux.Dense(4096, 4096, relu), Flux.Dropout(0.5), Flux.Dense(4096, 10))
+    #! format: on
 
     for bsize in (2, 16, 64)
-        benchmark_forward_pass(
-            "vgg16", "(32, 32, 3, $bsize)", vgg16, (32, 32, 3, bsize); flux_model)
-        benchmark_reverse_pass(
-            "vgg16", "(32, 32, 3, $bsize)", (AutoTracker(), AutoZygote()),
+        benchmark_forward_pass!(
+            suite, group, "vgg16(32, 32, 3, $bsize)", vgg16, (32, 32, 3, bsize);
+            flux_model)
+
+        benchmark_reverse_pass!(
+            suite, group, [AutoZygote(), AutoEnzyme()], "vgg16(32, 32, 3, $bsize)",
             vgg16, (32, 32, 3, bsize); flux_model)
     end
-
-    return
 end
-
-add_vgg_benchmarks!()
