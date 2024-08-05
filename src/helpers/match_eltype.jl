@@ -41,11 +41,9 @@ For `"convert"` only the following conversions are done:
 """
 function match_eltype end
 
-@static if LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
-    match_eltype(layer, ps, st, x) = x
-    function match_eltype(layer, ps, st, x, args...)
-        return (x, args...)
-    end
+@static if ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
+    @inline match_eltype(layer, ps, st, x) = x
+    @inline match_eltype(layer, ps, st, x, args...) = (x, args...)
 else
     function match_eltype(layer, ps, st, x)
         fn = let elType = recursive_eltype((ps, st), Val(true)), layer = layer
