@@ -2,6 +2,7 @@ using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
 using InteractiveUtils: versioninfo
 using LinearAlgebra: BLAS
 using Statistics: median
+using Suppressor: @suppress
 using ThreadPinning: pinthreads
 
 pinthreads(:cores)
@@ -27,9 +28,11 @@ end
 
 if BENCHMARK_GROUP == "AMDGPU"
     using AMDGPU # ] add AMDGPU to benchmarks/Project.toml
+    AMDGPU.versioninfo()
     @info "Running AMDGPU benchmarks" maxlog=1
 elseif BENCHMARK_GROUP == "CUDA"
-    using CUDA # ] add CUDA to benchmarks/Project.toml
+    using LuxCUDA # ] add LuxCUDA to benchmarks/Project.toml
+    CUDA.versioninfo()
     @info "Running CUDA benchmarks" maxlog=1
 else
     @info "Running CPU benchmarks with $(BENCHMARK_CPU_THREADS) thread(s)" maxlog=1
@@ -37,6 +40,7 @@ end
 
 # Main benchmark files
 include("setups/layers.jl")
+include("setups/models.jl")
 
 include("setup.jl")
 setup_benchmarks(SUITE, BENCHMARK_GROUP, BENCHMARK_CPU_THREADS)

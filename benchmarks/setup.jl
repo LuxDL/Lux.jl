@@ -1,9 +1,9 @@
 using ADTypes: ADTypes, AutoEnzyme, AutoZygote
 using Adapt: adapt
 using Flux: Flux
-using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
+using Lux: Lux, BatchNorm, Chain, Conv, CrossCor, Dense, Dropout, FlattenLayer, MaxPool
 using LuxDeviceUtils: LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
-using NNlib: relu
+using NNlib: relu, gelu
 using SimpleChains: SimpleChains, static
 using StableRNGs: StableRNG
 
@@ -55,7 +55,7 @@ function benchmark_forward_pass!(suite::BenchmarkGroup, group::String, tag, mode
     end
 
     if simple_chains !== nothing && group == "CPU"
-        simple_chains_model = simple_chains(model)
+        simple_chains_model = @suppress simple_chains(model)
         suite[tag]["Forward"]["SimpleChains"] = @benchmarkable begin
             Lux.apply($simple_chains_model, x, ps_simple_chains, st_simple_chains)
         end setup=begin
@@ -85,7 +85,7 @@ function benchmark_reverse_pass!(suite::BenchmarkGroup, group::String, backends,
     end
 
     if simple_chains !== nothing && group == "CPU"
-        simple_chains_model = simple_chains(model)
+        simple_chains_model = @suppress simple_chains(model)
         benchmark_reverse_pass_simple_chains!(suite, tag, simple_chains_model, x_dims)
     end
 
@@ -158,8 +158,10 @@ end
 function setup_benchmarks(suite::BenchmarkGroup, backend::String, num_cpu_threads::Int64)
     # Common Layers
     add_dense_benchmarks!(suite, backend)
+    add_conv_benchmarks!(suite, backend)
 
     # Normalization Layers
 
     # Full Models
+    add_vgg16_benchmarks!(suite, backend)
 end

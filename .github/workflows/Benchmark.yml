@@ -53,14 +53,13 @@ jobs:
         if: ${{ steps.locate.outputs.path != '' }}
         uses: benchmark-action/github-action-benchmark@v1
         with:
-          name: KomaMRI Benchmarks
+          name: LuxDL Benchmarks
           tool: 'julia'
           output-file-path: ${{ steps.locate.outputs.path }}
+          summary-always: true
           benchmark-data-dir-path: "continuous-benchmarks"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # comment-on-alert: true
           comment-always: true
-          summary-always: true
           alert-threshold: "150%"
           fail-on-alert: false
           auto-push: ${{ github.event_name != 'pull_request' }}
