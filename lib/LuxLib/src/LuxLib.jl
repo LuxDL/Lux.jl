@@ -25,6 +25,7 @@ include("impl/Impl.jl")
 
 include("api/API.jl")
 
+export batched_matmul
 export fast_activation, fast_activation!!
 
 @compat(public,

@@ -2,6 +2,9 @@ module Impl
 
 using DispatchDoctor: @stable
 using FastClosures: @closure
+using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
+                     AbstractGPUDevice, AbstractDevice
+using NNlib: NNlib
 using Static: True, False
 using UnrolledUtilities: unrolled_mapreduce
 
@@ -25,5 +28,6 @@ const LV = LoopVectorization
 const ∂∅ = NoTangent()
 
 include("activation.jl")
+include("batched_mul.jl")
 
 end
