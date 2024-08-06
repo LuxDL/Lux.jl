@@ -2,10 +2,12 @@ module Impl
 
 using DispatchDoctor: @stable
 using FastClosures: @closure
+using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
                      AbstractGPUDevice, AbstractDevice
 using NNlib: NNlib
-using Static: True, False
+using Random: Random, AbstractRNG, rand!
+using Static: StaticBool, True, False
 using UnrolledUtilities: unrolled_mapreduce
 
 using KernelAbstractions: KernelAbstractions
@@ -29,5 +31,6 @@ const ∂∅ = NoTangent()
 
 include("activation.jl")
 include("batched_mul.jl")
+include("dropout.jl")
 
 end
