@@ -155,6 +155,22 @@ function benchmark_reverse_pass_flux!(
     end
 end
 
+# loadparams custom
+loadparams!(args...) = BenchmarkTools.loadparams!(args...), true
+
+function loadparams!(group::BenchmarkGroup, paramsgroup::BenchmarkGroup, fields...)
+    has_all_groups = true
+    for (k, v) in group
+        if haskey(paramsgroup, k)
+            _, _has_all_groups = loadparams!(v, paramsgroup[k], fields...)
+            !_has_all_groups && (has_all_groups = false)
+        else
+            has_all_groups = false
+        end
+    end
+    return group, has_all_groups
+end
+
 # Final Setup. Main entry point for benchmarks
 function setup_benchmarks(suite::BenchmarkGroup, backend::String, num_cpu_threads::Int64)
     # Common Layers
