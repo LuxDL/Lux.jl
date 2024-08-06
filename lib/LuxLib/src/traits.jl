@@ -1,4 +1,15 @@
-# Various Array Traits
+module Traits
+
+using ArrayInterface: ArrayInterface, can_setindex
+using ChainRulesCore: ChainRulesCore
+using ForwardDiff: ForwardDiff
+using NNlib: NNlib
+using Static: True, False, static
+using StaticArraysCore: StaticArray
+
+using ..LuxLib: Numeric
+using ..Utils
+
 function fast_scalar_indexing(::T) where {T <: AbstractArray}
     return static(ArrayInterface.fast_scalar_indexing(T))
 end
@@ -7,6 +18,8 @@ fast_scalar_indexing(x::NNlib.BatchedAdjOrTrans) = fast_scalar_indexing(parent(x
 
 is_mutable_array(::T) where {T <: AbstractArray} = static(can_setindex(T))
 is_mutable_array(::Nothing) = True()
+
+ChainRulesCore.@non_differentiable is_mutable_array(::Any...)
 
 for op in (:has_dual, :has_float16, :is_tracked)
     @eval $op(::Nothing) = False()
@@ -31,17 +44,32 @@ static_isa(x, ::Type{T}) where {T} = static(isa(x, T))
 #   - Doesn't Has Dual Numbers
 attempt_fast_implementation(x) = attempt_fast_implementation((x,))
 function attempt_fast_implementation(xs::Tuple)
-    return unrolled_all(is_mutable_array, xs) & unrolled_all(!has_autodiff_value, xs)
+    return Utils.unrolled_all(is_mutable_array, xs) &
+           Utils.unrolled_all(!has_autodiff_value, xs)
 end
 
-CRC.@non_differentiable attempt_fast_implementation(::Any...)
+ChainRulesCore.@non_differentiable attempt_fast_implementation(::Any...)
 
 function use_generic_broadcasting(xs::Tuple)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.
-    return unrolled_any(has_autodiff_value, xs) |
-           unrolled_any(has_float16, xs) |
-           unrolled_any(static_isa(StaticArray), xs)
+    return Utils.unrolled_any(has_autodiff_value, xs) |
+           Utils.unrolled_any(has_float16, xs) |
+           Utils.unrolled_any(static_isa(StaticArray), xs)
+end
+
+activation_intermediate_not_needed(::typeof(identity), x) = True()
+
+function activation_intermediate_not_needed(::F, ::Type{T}) where {F, T}
+    return static(isconcretetype(Core.Compiler._return_type(
+        Utils.only_derivative, Tuple{T, F, NotaNumber})))
+end
+
+function activation_has_rrule(::F, ::Type{T}) where {F, T}
+    return static(isconcretetype(Core.Compiler._return_type(
+        Utils.only_derivative, Tuple{T, F, T})))
+end
+
 end
 
 # How to do an internal operation?
@@ -87,13 +115,14 @@ Currently supported modes are:
 """
 function internal_operation_mode(xs::Tuple)
     xs = unrolled_filter(!isnothing, xs)
-    known(use_generic_broadcasting(xs)) && return GenericBroadcastOp()
+    known(Traits.use_generic_broadcasting(xs)) && return GenericBroadcastOp()
 
     dev = get_device_type(xs)
     dev <: AbstractGPUDevice && return GPUBroadcastOp{dev}()
 
     # This check needs to be done after the GPU Check
-    known(unrolled_any(!fast_scalar_indexing, xs)) && return GenericBroadcastOp()
+    known(Utils.unrolled_any(!Traits.fast_scalar_indexing, xs)) &&
+        return GenericBroadcastOp()
     return LoopedArrayOp()
 end
 internal_operation_mode(x::AbstractArray) = internal_operation_mode((x,))

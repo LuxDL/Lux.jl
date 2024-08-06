@@ -26,17 +26,7 @@ generic implementation.
 
   - Output Array with the same size as `x`
 """
-function fast_activation!!(σ::F, x::AbstractArray) where {F}
-    return _fast_activation!!(
-        attempt_fast_implementation(x), select_fastest_activation(σ, x), x)
-end
-
-_fast_activation!!(::False, σ::F, x::AbstractArray) where {F} = _fast_activation(σ, x)
-
-function _fast_activation!!(::True, σ::F, x::AbstractArray) where {F}
-    _fast_activation!(σ, x)
-    return x
-end
+fast_activation!!(σ::F, x::AbstractArray) where {F} = Impl.activation!!(σ, x)
 
 """
     fast_activation(σ::F, x::AbstractArray) where {F}
@@ -59,6 +49,4 @@ broadcasting.
 
   - Output Array with the same size as `x`
 """
-function fast_activation(σ::F, x::AbstractArray) where {F}
-    return _fast_activation(select_fastest_activation(σ, x), x)
-end
+fast_activation(σ::F, x::AbstractArray) where {F} = Impl.activation(σ, x)
