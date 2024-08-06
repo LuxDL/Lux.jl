@@ -43,9 +43,7 @@ function match_eltype end
 
 @static if ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
     @inline match_eltype(layer, ps, st, x) = x
-    @inline function match_eltype(layer, ps, st, x, args...)
-        return (x, args...)
-    end
+    @inline match_eltype(layer, ps, st, x, args...) = (x, args...)
 else
     @inline function match_eltype(layer, ps, st, x)
         fn = let elType = recursive_eltype((ps, st), Val(true)), layer = layer

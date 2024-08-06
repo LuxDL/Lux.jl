@@ -30,6 +30,18 @@ steps:
                 command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
                 agents:
                   queue: "juliagpu"
+            - path:
+                - "src/"
+                - "ext/"
+                - "test/"
+                - "Project.toml"
+                - ".buildkite/"
+                - "benchmarks/"
+              if: build.pull_request.labels includes "run benchmarks"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/benchmarks.yml"
+                agents:
+                  queue: "juliagpu"
 
   - label: "Triggering Pipelines (Main Branch / Tag)"
     if: build.branch == "main" || build.tag != null
@@ -38,3 +50,4 @@ steps:
     command: |
       buildkite-agent pipeline upload .buildkite/testing.yml
       buildkite-agent pipeline upload .buildkite/documentation.yml
+      buildkite-agent pipeline upload .buildkite/benchmarks.yml
