@@ -175,8 +175,8 @@ function LuxLib.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix
     b::Optional{<:AnyCuVector}, ::False) where {F}
     z = similar(x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
-    retcode = LuxLib.cublasLt_fused_dense!(z, act, weight, x, b)
-    return (z, nothing, retcode)
+    LuxLib.cublasLt_fused_dense!(z, act, weight, x, b)
+    return z, nothing
 end
 
 function LuxLib.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
@@ -184,8 +184,8 @@ function LuxLib.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix
     z = similar(x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     y = similar(z)
-    retcode = LuxLib.cublasLt_fused_dense!(z, act, weight, x, b, y)
-    return (z, y, retcode)
+    LuxLib.cublasLt_fused_dense!(z, act, weight, x, b, y)
+    return z, y
 end
 
 function LuxLib.cublasLt_fused_dense!(
@@ -194,7 +194,7 @@ function LuxLib.cublasLt_fused_dense!(
     if hasmethod(cublaslt_matmul_fused!,
         (typeof(z), typeof(act), typeof(weight), typeof(x), typeof(b), typeof(y)))
         retcode = cublaslt_matmul_fused!(z, act, weight, x, b, y)
-        retcode == 0 && return retcode
+        retcode == 0 && return
         warn_msg = LazyString(
             "cuBLASLt failed for the given inputs ", act, ", ", typeof(weight),
             " [", size(weight), "], ", typeof(x), " [", size(x), "], ",
@@ -203,5 +203,15 @@ function LuxLib.cublasLt_fused_dense!(
     else
         @warn "cuBLASLt not available. Falling back to generic implementation." maxlog=1
     end
-    return -1
+    # Generic fallback
+    if y === nothing
+        LinearAlgebra.mul!(z, weight, x)
+        broadcast!(act ∘ +, z, z, reshape(b, :, 1))
+        return
+    else
+        LinearAlgebra.mul!(y, weight, x)
+        broadcast!(+, y, y, reshape(b, :, 1))
+        broadcast!(act, z, y)
+        return
+    end
 end

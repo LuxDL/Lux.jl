@@ -35,19 +35,15 @@ end
 function fused_dense!(
         y::AbstractMatrix, ::GPUBroadcastOp{CUDADevice}, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
-    retcode = cublasLt_fused_dense!(y, act, weight, x, b)
-    retcode == 0 && return y
-    fused_dense!(y, GenericBroadcastOp(), act, weight, x, b)
-    return y
+    cublasLt_fused_dense!(y, act, weight, x, b)
+    return nothing
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:HasReverseMode}, ::typeof(fused_dense),
         opmode::AbstractInternalArrayOpMode, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
     T = Utils.concrete_bias_act_output_eltype(act, weight, x, b)
-    𝒫weight = CRC.ProjectTo(weight)
-    𝒫x = CRC.ProjectTo(x)
-    𝒫b = CRC.ProjectTo(b)
+    𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
     if Utils.known(Traits.activation_intermediate_not_needed(act, T))
         y = fused_dense(opmode, act, weight, x, b)
@@ -85,15 +81,9 @@ end
 function CRC.rrule(
         ::typeof(fused_dense), ::GPUBroadcastOp{CUDADevice}, ::typeof(NNlib.gelu),
         weight::AbstractMatrix, x::AbstractMatrix, b::Optional{<:AbstractVector})
-    z, y, retcode = cublasLt_fused_dense(NNlib.gelu, weight, x, b, True())
-    if retcode == -1 # Generic Fallback: break aliasing in _apply_bias_activation!!
-        matmul!(z, weight, x)
-        z, y = bias_activation_cached!!(gelu, z, b)
-    end
+    z, y = cublasLt_fused_dense(NNlib.gelu, weight, x, b, True())
+    𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
-    𝒫weight = CRC.ProjectTo(weight)
-    𝒫x = CRC.ProjectTo(x)
-    𝒫b = CRC.ProjectTo(b)
     ∇fused_dense = @closure Δ -> begin
         ∂y = ∇activation(CRC.unthunk(Δ), z, gelu, y)
         ∂w, ∂x, ∂b = ∇matmul_bias(∂y, weight, x, b)
