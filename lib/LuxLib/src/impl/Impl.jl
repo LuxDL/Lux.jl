@@ -1,25 +1,30 @@
 module Impl
 
+using ArrayInterface: ArrayInterface, aos_to_soa
 using DispatchDoctor: @stable
 using FastClosures: @closure
-using LinearAlgebra: LinearAlgebra, mul!
-using LuxCore: LuxCore
-using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
-                     AbstractGPUDevice, AbstractDevice
-using NNlib: NNlib, ConvDims
-using Random: Random, AbstractRNG, rand!
-using Static: StaticBool, True, False
 using StaticArraysCore: StaticVector, SArray
+using Static: StaticBool, True, False
 using UnrolledUtilities: unrolled_mapreduce
 
-using KernelAbstractions: KernelAbstractions
+using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
+using EnzymeCore: EnzymeCore, EnzymeRules
+using ForwardDiff: ForwardDiff
+
+using KernelAbstractions: KernelAbstractions, @kernel, @Const
 
 using LoopVectorization: LoopVectorization, @turbo, @tturbo, indices
 using Octavian: Octavian
 using Polyester: @batch
 
-using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
-using EnzymeCore: EnzymeCore, EnzymeRules
+using LinearAlgebra: LinearAlgebra, mul!
+using Random: Random, AbstractRNG, rand!
+using Statistics: Statistics, mean, var
+
+using LuxCore: LuxCore
+using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
+                     AbstractGPUDevice, AbstractDevice
+using NNlib: NNlib, ConvDims
 
 using ..LuxLib: Numeric, Optional, internal_operation_mode, AbstractInternalArrayOpMode,
                 GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
@@ -41,5 +46,6 @@ include("conv.jl")
 include("dense.jl")
 include("dropout.jl")
 include("matmul.jl")
+include("normalization.jl")
 
 end

@@ -33,3 +33,38 @@ function reduce_sum(x::AbstractArray, y::AbstractArray)
     sum!(z, y)
     return z
 end
+
+function mean_var(x::AbstractArray; dims=:, corrected::Bool=true)
+    μ = mean(x; dims)
+    return μ, var(x; dims, corrected, mean=μ)
+end
+
+function CRC.rrule(
+        ::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool=true)
+    μ, σ² = mean_var(x; dims, corrected, mean)
+
+    𝒫x = CRC.ProjectTo(x)
+    ∇mean_var = @closure Δ -> begin
+        ∂μ, ∂σ² = CRC.unthunk(Δ)
+        n = dims_denom(x, dims)
+        ∂x₁ = unsum(x, CRC.unthunk(∂μ) / n, dims)
+        pre = 2 // (dims_denom(x, dims) - corrected)
+        ∂x₂ = pre .* CRC.unthunk(∂σ²) .* (x .- μ)
+        return NoTangent(), 𝒫x(add!!(∂x₁, ∂x₂))
+    end
+
+    return (μ, σ²), ∇mean_var
+end
+
+add!!(x, y) = add!!(Traits.is_mutable_array(x), x, y)
+add!!(::True, x, y) = x .+= y
+add!!(::False, x, y) = x .+ y
+
+dims_denom(x, dims) = size(x, dims)
+dims_denom(x, ::Colon) = length(x)
+function dims_denom(x, dims::Union{Tuple, AbstractArray})
+    return mapreduce(Base.Fix1(size, x), Base.mul_prod, unique(dims); init=1)
+end
+
+unsum(x, dy, _) = broadcast(last ∘ tuple, x, dy)
+unsum(x, dy, ::Colon) = broadcast(last ∘ tuple, x, Ref(dy))

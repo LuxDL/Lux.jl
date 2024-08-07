@@ -22,7 +22,7 @@ multiple operations.
     fallback to the generic implementation.
   - For CUDA Arrays, this uses a special fused implementation via cuBLASLt.
   - For small CPU Arrays, we use LoopVectorization.jl. On `x86_64` we use Octavian for
-    medium sized matrices. This is overwritten if special BLAS implementations are loaded
+    medium sized matrices. This is overridden if special BLAS implementations are loaded
     (currently `MKL`, `AppleAccelerate`, and `BLISBLAS`).
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,

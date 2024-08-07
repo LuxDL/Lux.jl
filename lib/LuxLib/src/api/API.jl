@@ -17,6 +17,8 @@ include("bias_activation.jl")
 include("conv.jl")
 include("dense.jl")
 include("dropout.jl")
+include("instancenorm.jl")
+include("layernorm.jl")
 
 export alpha_dropout, dropout
 export bias_activation, bias_activation!!
