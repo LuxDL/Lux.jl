@@ -8,6 +8,7 @@ using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
 using NNlib: NNlib
 using Random: Random, AbstractRNG, rand!
 using Static: StaticBool, True, False
+using StaticArraysCore: StaticVector, SArray
 using UnrolledUtilities: unrolled_mapreduce
 
 using KernelAbstractions: KernelAbstractions
@@ -18,7 +19,7 @@ using Polyester: @batch
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using EnzymeCore: EnzymeCore, EnzymeRules
 
-using ..LuxLib: Numeric, internal_operation_mode, AbstractInternalArrayOpMode,
+using ..LuxLib: Numeric, Optional, internal_operation_mode, AbstractInternalArrayOpMode,
                 GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
 using ..Utils
 using ..System
@@ -32,6 +33,8 @@ const ∂∅ = NoTangent()
 
 include("activation.jl")
 include("batched_mul.jl")
+include("bias_activation.jl")
+include("common_ops.jl")
 include("dropout.jl")
 
 end

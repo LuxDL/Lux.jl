@@ -1,19 +1,16 @@
 # Entry Points
 function activation!!(σ::F, x::AbstractArray) where {F}
-    return activation!!(internal_operation_mode(x), Traits.is_mutable_array(x),
-        select_fastest_activation(σ, x), x)
+    return activation!!(internal_operation_mode(x), Traits.is_mutable_array(x), σ, x)
 end
 
 activation!(::typeof(identity), ::AbstractArray) = nothing
 function activation!(σ::F, x::AbstractArray) where {F}
-    activation!(x, internal_operation_mode(x), select_fastest_activation(σ, x), x)
+    activation!(x, internal_operation_mode(x), σ, x)
     return nothing
 end
 
 activation(::typeof(identity), x::AbstractArray) = x
-function activation(σ::F, x::AbstractArray) where {F}
-    return activation(internal_operation_mode(x), select_fastest_activation(σ, x), x)
-end
+activation(σ::F, x::AbstractArray) where {F} = activation(internal_operation_mode(x), σ, x)
 
 # Core Implementation
 function activation!!(
@@ -27,7 +24,8 @@ end
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
-        opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray{T}) where {F, T}
+        opmode::AbstractInternalArrayOpMode, ::True,
+        σ::F, x::AbstractArray{T}) where {F, T}
     if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
         activation!(x, opmode, σ, x)
         𝒫x_no_intermediate = CRC.ProjectTo(x)
@@ -63,7 +61,7 @@ end
         opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}) where {F, T}
     RT = Core.Compiler._return_type(σ, Tuple{T})
     y = similar(x, ifelse(isconcretetype(RT), RT, T))
-    activation!(opmode, y, σ, x)
+    activation!(y, opmode, σ, x)
     return y
 end
 
@@ -279,6 +277,7 @@ for (fbase, ffast) in [
 ]
     @eval fast_act(::typeof($fbase)) = $ffast
 end
+fast_act(f::F) where {F} = f
 
 CRC.@non_differentiable fast_act(::Any...)
 

@@ -25,9 +25,6 @@ include("impl/Impl.jl")
 include("api/API.jl")
 include("deprecations.jl")
 
-export batched_matmul
-export fast_activation, fast_activation!!
-
 @compat(public,
     (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp))
 
