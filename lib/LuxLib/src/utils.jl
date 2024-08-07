@@ -8,12 +8,14 @@ using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
 using MLDataDevices: get_device_type, CPUDevice
 using NNlib: NNlib
-using Static: Static
+using Static: Static, False
 
 using ..LuxLib: Optional
 
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
+
+is_extension_loaded(::Val) = False()
 
 # Simple Operations -- no rrules needed
 vec(x::Number) = x

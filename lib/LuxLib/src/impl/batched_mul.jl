@@ -43,7 +43,9 @@ end
 
 function batched_matmul!(z::AbstractArray{<:Number, 3}, ::LoopedArrayOp,
         x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
-    if !LV.check_args(Utils.batchview(z, 1), Utils.batchview(x, 1), Utils.batchview(y, 1))
+    if !LV.check_args(
+        Utils.batchview(z, 1), Utils.batchview(x, 1), Utils.batchview(y, 1)) ||
+       known(System.special_blas_loaded())
         NNlib.batched_mul!(z, x, y)
         return
     end

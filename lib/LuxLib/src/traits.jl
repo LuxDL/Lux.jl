@@ -61,6 +61,30 @@ end
 
 end
 
+module System
+
+using Static: True, False
+
+using ..Utils
+
+# TODO: Add extension checks
+
+function special_blas_loaded()
+    return Utils.is_extension_loaded(Val(:MKL)) |
+           Utils.is_extension_loaded(Val(:Accelerate)) |
+           Utils.is_extension_loaded(Val(:BLISBLAS))
+end
+
+function use_octavian()
+    @static if Sys.ARCH == :x86_64  # Mostly from benchmarking we reach this point
+        return !special_blas_loaded()
+    else
+        return False()
+    end
+end
+
+end
+
 # How to do an internal operation?
 #    1. Generic Broadcasting without Preallocation -- GenericBroadcastOp
 #    2. Broadcasting with Fusion -- GPUBroadcastOp

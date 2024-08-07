@@ -21,6 +21,7 @@ using EnzymeCore: EnzymeCore, EnzymeRules
 using ..LuxLib: Numeric, internal_operation_mode, AbstractInternalArrayOpMode,
                 GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
 using ..Utils
+using ..System
 using ..Traits
 
 const CRC = ChainRulesCore
