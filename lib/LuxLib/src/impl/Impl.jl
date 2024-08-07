@@ -2,6 +2,7 @@ module Impl
 
 using DispatchDoctor: @stable
 using FastClosures: @closure
+using LinearAlgebra: LinearAlgebra, mul!
 using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
                      AbstractGPUDevice, AbstractDevice
@@ -14,6 +15,7 @@ using UnrolledUtilities: unrolled_mapreduce
 using KernelAbstractions: KernelAbstractions
 
 using LoopVectorization: LoopVectorization, @turbo, @tturbo, indices
+using Octavian: Octavian
 using Polyester: @batch
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
@@ -35,6 +37,8 @@ include("activation.jl")
 include("batched_mul.jl")
 include("bias_activation.jl")
 include("common_ops.jl")
+include("dense.jl")
 include("dropout.jl")
+include("matmul.jl")
 
 end

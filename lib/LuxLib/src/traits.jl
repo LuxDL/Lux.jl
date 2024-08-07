@@ -63,25 +63,30 @@ end
 
 module System
 
+using ChainRulesCore: ChainRulesCore
 using Static: True, False
 
 using ..Utils
 
-# TODO: Add extension checks
+const CRC = ChainRulesCore
 
-function special_blas_loaded()
+function explicit_blas_loaded()
     return Utils.is_extension_loaded(Val(:MKL)) |
-           Utils.is_extension_loaded(Val(:Accelerate)) |
+           Utils.is_extension_loaded(Val(:AppleAccelerate)) |
            Utils.is_extension_loaded(Val(:BLISBLAS))
 end
 
+CRC.@non_differentiable explicit_blas_loaded()
+
 function use_octavian()
     @static if Sys.ARCH == :x86_64  # Mostly from benchmarking we reach this point
-        return !special_blas_loaded()
+        return !explicit_blas_loaded()
     else
         return False()
     end
 end
+
+CRC.@non_differentiable use_octavian()
 
 end
 

@@ -45,7 +45,7 @@ function batched_matmul!(z::AbstractArray{<:Number, 3}, ::LoopedArrayOp,
         x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
     if !LV.check_args(
         Utils.batchview(z, 1), Utils.batchview(x, 1), Utils.batchview(y, 1)) ||
-       known(System.special_blas_loaded())
+       known(System.explicit_blas_loaded())
         NNlib.batched_mul!(z, x, y)
         return
     end
@@ -58,39 +58,18 @@ function batched_matmul_loopvec_impl!(
         y::AbstractArray{<:Number, 3}, α::Number=true, β::Number=false)
     if size(x, 3) == size(y, 3)
         @batch for L in indices((z, x, y), 3)
-            serial_loopvec_matmul!(
+            serial_matmul_loopvec!(
                 Utils.batchview(z, L), Utils.batchview(x, L), Utils.batchview(y, L), α, β)
         end
     elseif size(x, 3) == 1
         @batch for L in indices((z, y), 3)
-            serial_loopvec_matmul!(
+            serial_matmul_loopvec!(
                 Utils.batchview(z, L), Utils.batchview(x, 1), Utils.batchview(y, L), α, β)
         end
     else # has to be size(y, 3) == 1
         @batch for L in indices((z, x), 3)
-            serial_loopvec_matmul!(
+            serial_matmul_loopvec!(
                 Utils.batchview(z, L), Utils.batchview(x, L), Utils.batchview(y, 1), α, β)
-        end
-    end
-end
-
-function serial_loopvec_matmul!(
-        z::AbstractMatrix, x::AbstractMatrix, y::AbstractMatrix, α::Number, β::Number)
-    if !iszero(β) # Secial case this because Base.FastMath.mul_fast(NaN, false) = NaN
-        @turbo for K in indices((z, x, y), 2), J in indices((z, x, y), 1)
-            zⱼₖ = zero(eltype(z))
-            for I in indices((x, y), (2, 1))
-                zⱼₖ += x[J, I] * y[I, K]
-            end
-            z[J, K] = α * zⱼₖ + β * z[J, K]
-        end
-    else
-        @turbo for K in indices((z, x, y), 2), J in indices((z, x, y), 1)
-            zⱼₖ = zero(eltype(z))
-            for I in indices((x, y), (2, 1))
-                zⱼₖ += x[J, I] * y[I, K]
-            end
-            z[J, K] = α * zⱼₖ
         end
     end
 end
