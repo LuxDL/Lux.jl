@@ -1,6 +1,7 @@
 module LuxLib
 
 using Compat: @compat
+using Random: AbstractRNG
 using Reexport: @reexport
 using Static: Static, StaticBool, True, False, static, known
 using UnrolledUtilities: unrolled_filter, unrolled_mapreduce

@@ -39,17 +39,6 @@ has_autodiff_value(x) = is_tracked(x) | has_dual(x)
 static_isa(::Type{T}) where {T} = Base.Fix2(static_isa, T)
 static_isa(x, ::Type{T}) where {T} = static(isa(x, T))
 
-# Current Checks. If any of these are false, we fallback to the generic implementation.
-#   - Is Mutable
-#   - Doesn't Has Dual Numbers
-attempt_fast_implementation(x) = attempt_fast_implementation((x,))
-function attempt_fast_implementation(xs::Tuple)
-    return Utils.unrolled_all(is_mutable_array, xs) &
-           Utils.unrolled_all(!has_autodiff_value, xs)
-end
-
-ChainRulesCore.@non_differentiable attempt_fast_implementation(::Any...)
-
 function use_generic_broadcasting(xs::Tuple)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.

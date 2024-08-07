@@ -1,25 +1,20 @@
 # Entry Point
 function batched_matmul(x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
-    return batched_matmul(Traits.attempt_fast_implementation((x, y)), x, y)
+    return batched_matmul(internal_operation_mode((x, y)), x, y)
 end
 
 function batched_matmul(
-        ::False, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+        ::GenericBroadcastOp, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
     return NNlib.batched_mul(x, y)
 end
 
-function batched_matmul(
-        ::True, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
-    return batched_matmul(get_device_type((x, y)), x, y)
-end
-
-function batched_matmul(::Type{<:AbstractGPUDevice}, x::AbstractArray{<:Number, 3},
-        y::AbstractArray{<:Number, 3})
+function batched_matmul(::GPUBroadcastOp{<:AbstractGPUDevice},
+        x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
     return NNlib.batched_mul(x, y)  # GPU versions are well optimized
 end
 
-function batched_matmul(
-        ::Type{AMDGPUDevice}, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul(::GPUBroadcastOp{AMDGPUDevice},
+        x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
     @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
            AMDGPUDevice" maxlog=1
     @assert size(x, 3) == size(y, 3) || size(x, 3) == 1 || size(y, 3) == 1
@@ -29,14 +24,14 @@ function batched_matmul(
 end
 
 function batched_matmul(
-        ::Type{CPUDevice}, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+        opmode::LoopedArrayOp, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
     if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
        (size(x, 2) != size(y, 1))
         throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
     end
     z = similar(x, promote_type(eltype(x), eltype(y)), size(x, 1),
         size(y, 2), max(size(x, 3), size(y, 3)))
-    batched_matmul!(z, internal_operation_mode((z, x, y)), x, y)
+    batched_matmul!(z, opmode, x, y)
     return z
 end
 
@@ -118,7 +113,7 @@ end
 # This is type-piracy but needed to fix a blocking issue. TODO: upstream to NNlib
 # Enzyme causes a "active variables passed by value to jl_new_task are not yet supported"
 # warning without this patch.
-for func in (NNlib.batched_mul!, __batched_matmul_loopvec_impl!)
+for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
     @eval begin
         function EnzymeRules.augmented_primal(
                 cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(func))},

@@ -1,37 +1,35 @@
 # Entry Points
 function activation!!(σ::F, x::AbstractArray) where {F}
-    return activation!!(
-        Traits.attempt_fast_implementation(x), select_fastest_activation(σ, x), x)
+    return activation!!(internal_operation_mode(x), Traits.is_mutable_array(x),
+        select_fastest_activation(σ, x), x)
 end
 
 activation!(::typeof(identity), ::AbstractArray) = nothing
 function activation!(σ::F, x::AbstractArray) where {F}
-    activation!(Traits.attempt_fast_implementation(x), select_fastest_activation(σ, x), x)
+    activation!(x, internal_operation_mode(x), select_fastest_activation(σ, x), x)
     return nothing
 end
 
 activation(::typeof(identity), x::AbstractArray) = x
 function activation(σ::F, x::AbstractArray) where {F}
-    return activation(
-        Traits.attempt_fast_implementation(x), select_fastest_activation(σ, x), x)
+    return activation(internal_operation_mode(x), select_fastest_activation(σ, x), x)
 end
 
 # Core Implementation
-activation!!(::False, σ::F, x::AbstractArray) where {F} = activation(False(), σ, x)
-function activation!!(::True, σ::F, x::AbstractArray) where {F}
-    return activation!!(True(), Traits.is_mutable_array(x), σ, x)
+function activation!!(
+        opmode::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray) where {F}
+    return activation(opmode, σ, x)
 end
-activation!!(::True, ::False, σ::F, x::AbstractArray) where {F} = activation(True(), σ, x)
 @stable default_mode="disable" function activation!!(
-        ::True, ::True, σ::F, x::AbstractArray) where {F}
-    activation!(True(), σ, x)
+        opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray) where {F}
+    activation!(x, opmode, σ, x)
     return x
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
-        ::True, ::True, σ::F, x::AbstractArray{T}) where {F, T}
+        opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray{T}) where {F, T}
     if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
-        activation!(True(), σ, x)
+        activation!(x, opmode, σ, x)
         𝒫x_no_intermediate = CRC.ProjectTo(x)
         ∇activation_no_intermediate_rrule = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), x, σ, Utils.NotaNumber())
@@ -41,7 +39,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
     end
 
     if Utils.known(Traits.activation_has_rrule(σ, T))
-        y = activation(True(), σ, x)
+        y = activation(opmode, σ, x)
         𝓟x_cached = CRC.ProjectTo(x)
         ∇activation_rrule = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), y, σ, x)
@@ -50,17 +48,12 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
         return y, ∇activation_rrule
     end
 
-    res, ∇activation_from_ad = CRC.rrule_via_ad(cfg, activation, True(), σ, x)
+    res, ∇activation_from_ad = CRC.rrule_via_ad(cfg, activation, opmode, σ, x)
     ∇activation_fallback = @closure Δ -> begin
-        ∂f, _, ∂σ, ∂x = ∇activation_from_ad(Δ)
-        return ∂f, ∂∅, ∂∅, ∂σ, ∂x
+        _, ∂opmode, ∂σ, ∂x = ∇activation_from_ad(Δ)
+        return ∂∅, ∂opmode, ∂∅, ∂σ, ∂x
     end
-    return res, ∇activation_fallback
-end
-
-activation(::False, σ::F, x::AbstractArray) where {F} = broadcast(σ, x)
-function activation(::True, σ::F, x::AbstractArray) where {F}
-    return activation(internal_operation_mode(x), σ, x)
+    return res, ∇activation_from_ad
 end
 
 function activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) where {F}
@@ -94,20 +87,12 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
     return z, ∇activation_fallback
 end
 
-function activation!(::False, σ::F, x::AbstractArray) where {F}
-    broadcast!(σ, x, x)
-    return
-end
-function activation!(::True, σ::F, x::AbstractArray) where {F}
-    return activation!(internal_operation_mode(x), x, σ, x)
-end
-
 function activation!(
-        ::AbstractInternalArrayOpMode, y::AbstractArray, σ::F, x::AbstractArray) where {F}
+        y::AbstractArray, ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) where {F}
     broadcast!(σ, y, x)
     return
 end
-function activation!(::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
+function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
     if LV.check_args(y, x)
         @tturbo for I in indices((y, x))
             y[I] = σ(x[I])
@@ -120,7 +105,7 @@ function activation!(::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray)
 end
 
 function activation_no_turbo!(
-        ::LoopedArrayOp, y::AbstractArray, σ::F, x::AbstractArray) where {F}
+        y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
     @simd ivdep for I in eachindex(y, x)
         y[I] = σ(x[I])
     end
@@ -128,20 +113,22 @@ end
 
 function EnzymeRules.augmented_primal(
         cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(activation!)},
-        ::Type{EnzymeCore.Const{Nothing}}, opmode::EnzymeCore.Const{LoopedArrayOp},
-        y::EnzymeCore.Duplicated{<:AbstractArray}, σ::EnzymeCore.Const{F},
+        ::Type{EnzymeCore.Const{Nothing}}, y::EnzymeCore.Duplicated{<:AbstractArray},
+        opmode::EnzymeCore.Const{LoopedArrayOp}, σ::EnzymeCore.Const{F},
         x::EnzymeCore.Duplicated{<:AbstractArray}) where {F}
     dx = one.(x.val)
     dy = zero.(y.val)
-    EnzymeCore.autodiff(EnzymeCore.Forward, activation_no_turbo!, opmode,
-        EnzymeCore.Duplicated(y.val, dy), σ, EnzymeCore.Duplicated(x.val, dx))
+    EnzymeCore.autodiff(
+        EnzymeCore.Forward, activation_no_turbo!, EnzymeCore.Duplicated(y.val, dy),
+        opmode, σ, EnzymeCore.Duplicated(x.val, dx))
     return EnzymeRules.AugmentedReturn(nothing, nothing, (dy,))
 end
 
 function EnzymeRules.reverse(
         ::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(activation!)},
-        ::Type{EnzymeCore.Const{Nothing}}, (dy,), opmode::EnzymeCore.Const{LoopedArrayOp},
-        y::EnzymeCore.Duplicated{<:AbstractArray}, σ::EnzymeCore.Const{F},
+        ::Type{EnzymeCore.Const{Nothing}}, (dy,),
+        y::EnzymeCore.Duplicated{<:AbstractArray},
+        opmode::EnzymeCore.Const{LoopedArrayOp}, σ::EnzymeCore.Const{F},
         x::EnzymeCore.Duplicated{<:AbstractArray}) where {F}
     if LV.check_args(y.dval, x.dval, dy)
         @tturbo for I in indices((y.dval, x.dval, dy))
@@ -167,15 +154,15 @@ function ∇activation(::AbstractInternalArrayOpMode, Δ, out, act::F, x) where 
     ∇act = @closure (Δᵢ, oᵢ, xᵢ) -> Δᵢ * Utils.only_derivative(oᵢ, act, xᵢ)
     return broadcast(∇act, Δ, out, x)
 end
-function ∇activation(::LoopedArrayOp, Δ, out, act::F, x) where {F}
+@inbounds function ∇activation(::LoopedArrayOp, Δ, out, act::F, x) where {F}
     y = similar(out)
     if x isa Utils.NotaNumber
-        @simd ivdep for i in eachindex(Δ, out)
-            @inbounds y[i] = Utils.only_derivative(out[i], act, x) * Δ[i]
+        @batch for i in indices((Δ, out))
+            y[i] = Utils.only_derivative(out[i], act, x) * Δ[i]
         end
     else
-        @batch for i in eachindex(Δ, out)
-            @inbounds y[i] = Utils.only_derivative(out[i], act, x[i]) * Δ[i]
+        @batch for i in indices((Δ, out, x))
+            y[i] = Utils.only_derivative(out[i], act, x[i]) * Δ[i]
         end
     end
     return y

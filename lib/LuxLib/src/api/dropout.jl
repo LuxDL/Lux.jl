@@ -1,4 +1,4 @@
-doc"""
+"""
     dropout(rng::AbstractRNG, x, p, training::Union{Val, StaticBool}, invp, dims)
     dropout(rng::AbstractRNG, x, mask, p, training::Union{Val, StaticBool},
         update_mask::Union{Val, StaticBool}, invp, dims)
