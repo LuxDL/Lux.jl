@@ -5,7 +5,7 @@ using CUDA: CUDA, CUBLAS, StridedCuMatrix, StridedCuVector, CuPtr, AnyCuMatrix, 
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint
 using LuxLib: LuxLib, Optional
 using NNlib: NNlib
-using Static: StaticBool, known
+using Static: True, False, known
 
 # Low level functions
 include("cublaslt.jl")

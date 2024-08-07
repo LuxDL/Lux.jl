@@ -59,7 +59,7 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::GPUBroadcastOp{CUDADevice},
         A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    retcode = cublasLt_fused_dense!(C, identity, A, B, bias, False())
+    retcode = cublasLt_fused_dense!(C, identity, A, B, bias)
     retcode == -1 || return
     matmuladd!(C, GenericBroadcastOp(), A, B, bias)
     return
