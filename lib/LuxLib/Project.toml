@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.3.40"
+version = "0.3.41"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -29,14 +29,20 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 UnrolledUtilities = "0fe1646c-419e-43be-ac14-22321958931b"
 
 [weakdeps]
+AppleAccelerate = "13e28ba4-7ad8-5781-acae-3021b1ed3924"
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
+BLISBLAS = "6f275bd8-fec0-4d39-945b-7e95a765fa1e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
 [extensions]
+LuxLibAppleAccelerateExt = "AppleAccelerate"
+LuxLibBLISBLASExt = "BLISBLAS"
 LuxLibCUDAExt = "CUDA"
+LuxLibMKLExt = "MKL"
 LuxLibReverseDiffExt = "ReverseDiff"
 LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
 LuxLibTrackerExt = "Tracker"
