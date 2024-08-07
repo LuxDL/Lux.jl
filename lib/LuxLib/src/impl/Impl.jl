@@ -6,7 +6,7 @@ using LinearAlgebra: LinearAlgebra, mul!
 using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
                      AbstractGPUDevice, AbstractDevice
-using NNlib: NNlib
+using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG, rand!
 using Static: StaticBool, True, False
 using StaticArraysCore: StaticVector, SArray
@@ -37,6 +37,7 @@ include("activation.jl")
 include("batched_mul.jl")
 include("bias_activation.jl")
 include("common_ops.jl")
+include("conv.jl")
 include("dense.jl")
 include("dropout.jl")
 include("matmul.jl")

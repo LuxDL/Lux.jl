@@ -23,7 +23,15 @@ vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
 
 ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
-ofeltype_array(::Type{T}, x::AbstractArray) where {T} = convert(AbstractArray{T}, x)
+function ofeltype_array(
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T, N}}) where {Tag, T, N}
+    return x
+end
+ofeltype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
+function ofeltype_array(
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T2, N}}) where {Tag, T, T2, N}
+    return ForwardDiff.Dual{Tag, T, N}.(x)
+end
 ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 
 contiguous(x::AbstractArray) = x
@@ -49,6 +57,17 @@ struct NotaNumber <: Real end
 only_derivative(y, f::F, x) where {F} = only(only(CRC.derivatives_given_output(y, f, x)))
 
 # Non-differentiable functions
+eltype_mismatch(::Type, ::Type) = True()
+eltype_mismatch(::Type{T}, ::Type{T}) where {T} = False()
+function eltype_mismatch(::Type{T}, ::Type{<:ForwardDiff.Dual{Tag, T, N}}) where {Tag, T, N}
+    return False()
+end
+function eltype_mismatch(::Type{<:ForwardDiff.Dual{Tag, T, N}}, ::Type{T}) where {Tag, T, N}
+    return False()
+end
+
+CRC.@non_differentiable eltype_mismatch(::Any...)
+
 ## Reduce BLAS threads if we are going to use a native Julia implementation
 maybe_reduce_BLAS_threads(x::AbstractArray) = maybe_reduce_BLAS_threads(get_device_type(x))
 maybe_reduce_BLAS_threads(::Type{T}) where {T} = -1
