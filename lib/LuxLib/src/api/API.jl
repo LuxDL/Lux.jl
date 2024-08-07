@@ -1,9 +1,10 @@
 module API
 
 using ChainRulesCore: ChainRulesCore
+using Markdown: @doc_str
 using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG
-using Static: Static, StaticBool, True, False
+using Static: Static, StaticBool, True, False, static
 
 using ..LuxLib: Optional
 using ..Impl
@@ -26,6 +27,8 @@ export batched_matmul
 export fast_activation, fast_activation!!
 export fused_conv_bias_activation
 export fused_dense_bias_activation
+export instancenorm
+export layernorm
 
 end
 

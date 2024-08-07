@@ -94,9 +94,8 @@ function compute_batch_statistics(
     return (rμ, rσ²), (rμ, rσ²)
 end
 
-function compute_batch_statistics(
-        x::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray, reduce_dims,
-        ::True, momentum)
+function compute_batch_statistics(x::AbstractArray, rμ::AbstractArray,
+        rσ²::AbstractArray, reduce_dims, ::True, momentum)
     μ, σ² = mean_var(x; dims=Utils.known(reduce_dims), corrected=false)
     rμ, rσ² = update_normalization_statistics(x, rμ, rσ², μ, σ², momentum, reduce_dims)
     return (rμ, rσ²), (μ, σ²)
@@ -105,14 +104,15 @@ end
 # Main Implementation
 ## The idea here is to be generic. This is useful for testing the more optimized
 ## implementations as well.
-function normalization(x::AbstractArray, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, reduce_dims,
-        training::StaticBool, momentum, epsilon, act::F=identity) where {F}
-    (μ, σ²), (rμ, rσ²) = compute_batch_statistics(x, reshape_norm_dims(x, rμ),
-        reshape_norm_dims(x, rσ²), reduce_dims, training, momentum)
-    return affine_normalize(act, x, μ, σ², reshape_norm_dims(x, scale),
-        reshape_norm_dims(x, bias), epsilon), (rμ, rσ²)
+function normalization(
+        x::AbstractArray, rμ::Optional{<:AbstractVector}, rσ²::Optional{<:AbstractVector},
+        scale::Optional{<:AbstractVector}, bias::Optional{<:AbstractVector},
+        reduce_dims, training::StaticBool, momentum, epsilon, act::F=identity) where {F}
+    (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
+        x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
+        reduce_dims, training, momentum)
+    γ, β = reshape_norm_dims(x, scale), reshape_norm_dims(x, bias)
+    return affine_normalize(act, x, μ, σ², γ, β, epsilon), rμ, rσ²
 end
 
 reshape_norm_dims(_, ::Nothing) = nothing
@@ -128,3 +128,24 @@ reshape_norm_dims(y, x) = reshape(x, get_norm_reshape_dims(size(y), length(x)))
 end
 
 CRC.@non_differentiable get_norm_reshape_dims(::Any...)
+
+# Entry Points
+## LayerNorm
+function layernorm(x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{T, N}},
+        bias::Optional{<:AbstractArray{T, N}}, act::F, dims, epsilon::Real) where {T, N, F}
+    μ, σ² = mean_var(x; dims, corrected=false)
+    return affine_normalize(act, x, μ, σ², scale, bias, epsilon)
+end
+
+## InstanceNorm
+function instancenorm(x::AbstractArray{<:Number, N}, rμ::Optional{<:AbstractVector},
+        rσ²::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, training::StaticBool,
+        momentum, epsilon, act::F) where {N, F}
+    return normalization(x, rμ, rσ², scale, bias, instancenorm_reduce_dims(x),
+        training, momentum, epsilon, act)
+end
+
+instancenorm_reduce_dims(::AbstractArray{T, N}) where {T, N} = ntuple(static, N - 2)
+
+CRC.@non_differentiable instancenorm_reduce_dims(::Any...)
