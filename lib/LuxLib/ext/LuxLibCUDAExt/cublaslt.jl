@@ -171,15 +171,15 @@ end
 len(x) = length(x)
 len(::Nothing) = nothing
 
-function LuxLib.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
-    b::Optional{<:AnyCuVector}, ::False) where {F}
+function LuxLib.Impl.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
+        b::Optional{<:AnyCuVector}, ::False) where {F}
     z = similar(x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     LuxLib.cublasLt_fused_dense!(z, act, weight, x, b)
     return z, nothing
 end
 
-function LuxLib.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
+function LuxLib.Impl.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
         b::Optional{<:AnyCuVector}, ::True) where {F}
     z = similar(x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
@@ -188,7 +188,7 @@ function LuxLib.cublasLt_fused_dense(act::F, weight::AnyCuMatrix, x::AnyCuMatrix
     return z, y
 end
 
-function LuxLib.cublasLt_fused_dense!(
+function LuxLib.Impl.cublasLt_fused_dense!(
         z::AbstractMatrix, act::F, weight::AnyCuMatrix, x::AnyCuMatrix,
         b::Optional{<:AnyCuVector}, y::Optional{<:AbstractMatrix}=nothing) where {F}
     if hasmethod(cublaslt_matmul_fused!,

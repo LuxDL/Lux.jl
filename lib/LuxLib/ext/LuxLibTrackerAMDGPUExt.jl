@@ -1,7 +1,6 @@
 module LuxLibTrackerAMDGPUExt
 
 using AMDGPU: AMDGPU
-using LuxLib: LuxLib
 using NNlib: NNlib, PoolDims
 using Tracker: Tracker, TrackedArray
 

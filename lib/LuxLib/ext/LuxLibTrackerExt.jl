@@ -1,22 +1,19 @@
 module LuxLibTrackerExt
 
-using ChainRulesCore: ChainRulesCore
 using FastClosures: @closure
-using LuxLib: LuxLib
+using LuxLib: LuxLib, Utils, Traits
 using NNlib: NNlib
 using Static: True, StaticBool
 using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector
 
-const CRC = ChainRulesCore
-
 # NNlib: batched_mul
 for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
-    LuxLib.__is_tracked(T1, T2) || continue
+    Utils.is_tracked(T1, T2) || continue
 
     @eval Tracker.@grad_from_chainrules NNlib.batched_mul(
-        x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
-    @eval Tracker.@grad_from_chainrules LuxLib.batched_matmul(
-        x::$T1{<:Any, 3}, y::$T2{<:Any, 3})
+        x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
+    @eval Tracker.@grad_from_chainrules LuxLib.Impl.batched_matmul(
+        x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
 end
 
 # NNlib: gather
@@ -40,25 +37,13 @@ Tracker.@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
     return y, ∇selectdim
 end
 
-# cuDNN batchnorm -- the chain rule gets defined once cuDNN is loaded
-for RM in (:TrackedVector, :Nothing, :AbstractVector),
-    RV in (:TrackedVector, :Nothing, :AbstractVector),
-    S in (:TrackedVector, :Nothing, :AbstractVector),
-    B in (:TrackedVector, :Nothing, :AbstractVector),
-    XT in (:TrackedArray, :AbstractArray)
+# Utils extensions
+Utils.remove_tracking(x::TrackedReal) = Tracker.data(x)
+Utils.remove_tracking(x::TrackedArray) = Tracker.data(x)
+Utils.remove_tracking(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
+Utils.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = Utils.remove_tracking(T)
 
-    LuxLib.__is_tracked(RM, RV, S, B, XT) || continue
-
-    @eval Tracker.@grad_from_chainrules LuxLib.batchnorm_cudnn(
-        running_mean::$RM, running_var::$RV, scale::$S, bias::$B, x::$XT,
-        momentum::Real, eps::Real, training::Union{Val, StaticBool})
-end
-
-LuxLib.remove_tracking(x::TrackedReal) = Tracker.data(x)
-LuxLib.remove_tracking(x::TrackedArray) = Tracker.data(x)
-LuxLib.remove_tracking(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
-LuxLib.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = LuxLib.remove_tracking(T)
-
-LuxLib.is_tracked(::Type{<:TrackedReal}) = True()
+# Traits extensions
+Traits.is_tracked(::Type{<:TrackedReal}) = True()
 
 end
