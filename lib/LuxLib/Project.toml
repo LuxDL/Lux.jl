@@ -43,10 +43,10 @@ LuxLibAppleAccelerateExt = "AppleAccelerate"
 LuxLibBLISBLASExt = "BLISBLAS"
 LuxLibCUDAExt = "CUDA"
 LuxLibMKLExt = "MKL"
-LuxLibReverseDiffExt = "ReverseDiff"
-LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
+# LuxLibReverseDiffExt = "ReverseDiff"
+# LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
 LuxLibTrackerExt = "Tracker"
-LuxLibcuDNNExt = ["CUDA", "cuDNN"]
+# LuxLibcuDNNExt = ["CUDA", "cuDNN"]
 
 [compat]
 AMDGPU = "0.9.6, 1"

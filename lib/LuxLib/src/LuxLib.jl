@@ -9,7 +9,7 @@ using UnrolledUtilities: unrolled_filter
 using ChainRulesCore: ChainRulesCore, NoTangent
 
 using LuxCore: LuxCore
-using MLDataDevices: get_device_type
+using MLDataDevices: get_device_type, AbstractGPUDevice
 using NNlib: NNlib, ConvDims, σ
 
 @reexport using NNlib
