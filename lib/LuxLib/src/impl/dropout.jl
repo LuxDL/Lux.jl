@@ -9,7 +9,7 @@ dropout(rng::AbstractRNG, x::AbstractArray, ::T, ::False, ::T, dims) where {T} =
 
 function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
         p::T, training::StaticBool, ::True, invp::T, dims) where {T}
-    return dropout(rng, x, mask, p, training, invp, dims)
+    return dropout(rng, x, p, training, invp, dims)
 end
 
 function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray,

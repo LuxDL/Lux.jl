@@ -138,6 +138,13 @@ end
 
 # Core Implementation
 function bias_activation!(
+        y::AbstractArray{<:Number, N}, opmode::AbstractInternalArrayOpMode,
+        σ::F, x::AbstractArray{<:Number, N}, ::Nothing) where {F, N}
+    activation!(y, opmode, σ, x)
+    return
+end
+
+function bias_activation!(
         y::AbstractArray{<:Number, N}, opmode::AbstractInternalArrayOpMode, σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     if σ === identity

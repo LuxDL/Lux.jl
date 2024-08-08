@@ -8,7 +8,7 @@ using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
 using MLDataDevices: get_device_type, CPUDevice
 using NNlib: NNlib
-using Static: Static, False
+using Static: Static, False, True
 
 using ..LuxLib: Optional
 

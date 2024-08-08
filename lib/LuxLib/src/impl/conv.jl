@@ -61,7 +61,7 @@ function conv_bias_act(::Type, x, weight, cdims, bias, act::F) where {F}
     y = similar(x, Utils.concrete_bias_act_output_eltype(act, weight, x, bias),
         NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
     conv!(y, x, weight, cdims)
-    bias_activation!(y, internal_operation_mode(y, bias), act, y, bias)
+    bias_activation!(y, internal_operation_mode((y, bias)), act, y, bias)
     return y
 end
 
@@ -89,7 +89,7 @@ end
 function fused_conv(opmode::GenericBroadcastOp, act::F,
         weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
-    return bias_activation(opmode, act, conv(x, weight, cdims), bias)
+    return bias_activation(act, conv(x, weight, cdims), bias)
 end
 
 @stable default_mode="disable" function fused_conv(::AbstractInternalArrayOpMode, act::F,
