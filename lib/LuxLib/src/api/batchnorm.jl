@@ -26,12 +26,6 @@ accordingly.
 Normalized Array of same size as `x`. And a Named Tuple containing the updated running
 mean and variance.
 
-## Performance Considerations
-
-If the input array is `2D`, `4D`, or `5D` `CuArray` with element types `Float16`, `Float32`
-and `Float64`, then the CUDNN code path will be used. In all other cases, a broadcasting
-fallback is used which is not highly optimized.
-
 ## References
 
 [1] Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network

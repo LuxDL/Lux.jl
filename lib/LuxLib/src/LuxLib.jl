@@ -3,14 +3,14 @@ module LuxLib
 using Compat: @compat
 using Random: AbstractRNG
 using Reexport: @reexport
-using Static: Static, StaticBool, True, False, static, known
-using UnrolledUtilities: unrolled_filter, unrolled_mapreduce
+using Static: Static, known
+using UnrolledUtilities: unrolled_filter
 
 using ChainRulesCore: ChainRulesCore, NoTangent
 
 using LuxCore: LuxCore
-using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, CPUDevice,
-                     AbstractGPUDevice, AbstractDevice
+using MLDataDevices: get_device_type
+using NNlib: NNlib, ConvDims, σ
 
 @reexport using NNlib
 

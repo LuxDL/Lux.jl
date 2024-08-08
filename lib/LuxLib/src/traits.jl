@@ -64,7 +64,7 @@ end
 module System
 
 using ChainRulesCore: ChainRulesCore
-using Static: True, False
+using Static: False
 
 using ..Utils
 

@@ -4,7 +4,7 @@ using ChainRulesCore: ChainRulesCore
 using Markdown: @doc_str
 using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG
-using Static: Static, StaticBool, True, False, static
+using Static: Static, StaticBool, static
 
 using ..LuxLib: Optional
 using ..Impl
