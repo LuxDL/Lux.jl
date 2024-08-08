@@ -26,7 +26,7 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
 ## References
 
 [1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
-    overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
+overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
 function dropout(rng::AbstractRNG, x::AbstractArray, p::T,
         training::Union{Val, StaticBool}, invp::T, dims) where {T}

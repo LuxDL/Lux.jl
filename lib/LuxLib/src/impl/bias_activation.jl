@@ -236,7 +236,7 @@ function EnzymeRules.reverse(
     return nothing, nothing, nothing, nothing
 end
 
-# Soem helper functions for the rrule
+# Some helper functions for the rrule
 function bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
     @assert σ !== identity

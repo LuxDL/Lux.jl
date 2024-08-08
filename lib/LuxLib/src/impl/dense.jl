@@ -13,7 +13,7 @@ end
 
 function fused_dense(opmode::GenericBroadcastOp, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
-    return bias_activation(opmode, act, matmul(opmode, weight, x), b)
+    return bias_activation(act, matmul(opmode, weight, x), b)
 end
 
 @stable default_mode="disable" function fused_dense(

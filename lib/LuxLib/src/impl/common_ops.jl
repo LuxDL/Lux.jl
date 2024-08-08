@@ -39,8 +39,7 @@ function mean_var(x::AbstractArray; dims=:, corrected::Bool=true)
     return μ, var(x; dims, corrected, mean=μ)
 end
 
-function CRC.rrule(
-        ::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool=true)
+function CRC.rrule(::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool=true)
     μ, σ² = mean_var(x; dims, corrected)
 
     𝒫x = CRC.ProjectTo(x)
