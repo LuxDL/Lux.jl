@@ -1,7 +1,7 @@
 module LuxLibReverseDiffExt
 
 using ChainRulesCore: ChainRulesCore
-using LuxLib: LuxLib
+using LuxLib: LuxLib, Utils, Traits
 using NNlib: NNlib
 using ReverseDiff: ReverseDiff, TrackedArray, TrackedVector, TrackedReal,
                    @grad_from_chainrules
@@ -24,7 +24,7 @@ for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
     xType in (:AbstractArray, :TrackedArray),
     wType in (:AbstractArray, :TrackedArray)
 
-    LuxLib.__is_tracked(xType, wType) || continue
+    Utils.is_tracked(T1, T2) || continue
 
     @eval @grad_from_chainrules NNlib.$(func)(
         x::$(xType), w::$(wType), cdims::NNlib.ConvDims; kwargs...)
@@ -38,11 +38,11 @@ end
 @grad_from_chainrules NNlib.batched_mul(
     x::AbstractArray{<:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
 
-@grad_from_chainrules LuxLib.batched_matmul(
+@grad_from_chainrules LuxLib.Impl.batched_matmul(
     x::TrackedArray{<:Any, <:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
-@grad_from_chainrules LuxLib.batched_matmul(
+@grad_from_chainrules LuxLib.Impl.batched_matmul(
     x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Any, 3})
-@grad_from_chainrules LuxLib.batched_matmul(
+@grad_from_chainrules LuxLib.Impl.batched_matmul(
     x::AbstractArray{<:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
 
 # Currently falls back to mapreduce and has a terrible performance
@@ -52,11 +52,13 @@ for pool in (:maxpool, :meanpool, :lpnormpool)
     @eval @grad_from_chainrules NNlib.$(pool)(x::TrackedArray, ::NNlib.PoolDims; kwargs...)
 end
 
-LuxLib.remove_tracking(x::TrackedReal) = ReverseDiff.value(x)
-LuxLib.remove_tracking(x::TrackedArray) = ReverseDiff.value(x)
-LuxLib.remove_tracking(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
-LuxLib.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = LuxLib.remove_tracking(T)
+# Utils extensions
+Utils.remove_tracking(x::TrackedReal) = ReverseDiff.value(x)
+Utils.remove_tracking(x::TrackedArray) = ReverseDiff.value(x)
+Utils.remove_tracking(x::AbstractArray{<:TrackedReal}) = ReverseDiff.value.(x)
+Utils.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = Utils.remove_tracking(T)
 
-LuxLib.is_tracked(::Type{<:TrackedReal}) = True()
+# Traits extensions
+Traits.is_tracked(::Type{<:TrackedReal}) = True()
 
 end
