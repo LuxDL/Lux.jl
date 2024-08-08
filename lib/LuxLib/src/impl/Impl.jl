@@ -4,14 +4,14 @@ using ArrayInterface: ArrayInterface, aos_to_soa
 using DispatchDoctor: @stable
 using FastClosures: @closure
 using StaticArraysCore: StaticVector, SArray
-using Static: StaticBool, True, False
+using Static: StaticBool, True, False, static
 using UnrolledUtilities: unrolled_mapreduce
 
 using ChainRulesCore: ChainRulesCore, NoTangent, HasReverseMode, RuleConfig
 using EnzymeCore: EnzymeCore, EnzymeRules
 using ForwardDiff: ForwardDiff
 
-using KernelAbstractions: KernelAbstractions, @kernel, @Const
+using KernelAbstractions: KernelAbstractions, @kernel, @Const, @index
 
 using LoopVectorization: LoopVectorization, @turbo, @tturbo, indices
 using Octavian: Octavian
@@ -40,11 +40,13 @@ const ∂∅ = NoTangent()
 
 include("activation.jl")
 include("batched_mul.jl")
+include("batchnorm.jl")
 include("bias_activation.jl")
 include("common_ops.jl")
 include("conv.jl")
 include("dense.jl")
 include("dropout.jl")
+include("groupnorm.jl")
 include("matmul.jl")
 include("normalization.jl")
 

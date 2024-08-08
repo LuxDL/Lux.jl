@@ -41,7 +41,7 @@ end
 
 function CRC.rrule(
         ::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool=true)
-    μ, σ² = mean_var(x; dims, corrected, mean)
+    μ, σ² = mean_var(x; dims, corrected)
 
     𝒫x = CRC.ProjectTo(x)
     ∇mean_var = @closure Δ -> begin

@@ -1,4 +1,7 @@
 # Deprecations for version 1.0
+import .API: batchnorm, groupnorm, instancenorm, layernorm, dropout,
+             fused_conv_bias_activation
+
 ## normalization
 @deprecate batchnorm(x, scale, bias, running_mean, running_var, σ::F=identity;
     momentum::Real, training::Val, epsilon::Real) where {F} batchnorm(

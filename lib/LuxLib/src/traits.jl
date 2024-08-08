@@ -47,7 +47,7 @@ function use_generic_broadcasting(xs::Tuple)
            Utils.unrolled_any(static_isa(StaticArray), xs)
 end
 
-activation_intermediate_not_needed(::typeof(identity), x) = True()
+activation_intermediate_not_needed(::typeof(identity), ::Type) = True()
 
 function activation_intermediate_not_needed(::F, ::Type{T}) where {F, T}
     return static(isconcretetype(Core.Compiler._return_type(

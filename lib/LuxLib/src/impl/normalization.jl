@@ -75,7 +75,7 @@ function update_normalization_statistics(
         μ = mean(μ; dims=N)
         σ² = mean(σ²; dims=N)
     end
-    m = Utils.remove_tracking(T(__accum_size(x, reduce_dims)))
+    m = Utils.remove_tracking(T(accum_size(x, reduce_dims)))
     return update_running_statistics(rμ, rσ², μ, σ², momentum, momentum * m / (m - one(m)))
 end
 

@@ -29,8 +29,8 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 UnrolledUtilities = "0fe1646c-419e-43be-ac14-22321958931b"
 
 [weakdeps]
-AppleAccelerate = "13e28ba4-7ad8-5781-acae-3021b1ed3924"
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
+AppleAccelerate = "13e28ba4-7ad8-5781-acae-3021b1ed3924"
 BLISBLAS = "6f275bd8-fec0-4d39-945b-7e95a765fa1e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"

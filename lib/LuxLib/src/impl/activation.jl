@@ -102,7 +102,7 @@ function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray)
     end
 end
 
-function activation_no_turbo!(
+function activation_simd_loop!(
         y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
     @simd ivdep for I in eachindex(y, x)
         y[I] = σ(x[I])
@@ -117,7 +117,7 @@ function EnzymeRules.augmented_primal(
     dx = one.(x.val)
     dy = zero.(y.val)
     EnzymeCore.autodiff(
-        EnzymeCore.Forward, activation_no_turbo!, EnzymeCore.Duplicated(y.val, dy),
+        EnzymeCore.Forward, activation_simd_loop!, EnzymeCore.Duplicated(y.val, dy),
         opmode, σ, EnzymeCore.Duplicated(x.val, dx))
     return EnzymeRules.AugmentedReturn(nothing, nothing, (dy,))
 end
