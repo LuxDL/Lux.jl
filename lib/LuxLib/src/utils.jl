@@ -10,7 +10,7 @@ using MLDataDevices: get_device_type, CPUDevice
 using NNlib: NNlib
 using Static: Static, False, True
 
-using ..LuxLib: Optional
+using ..LuxLib: Optional, ∂∅
 
 const CRC = ChainRulesCore
 const KA = KernelAbstractions

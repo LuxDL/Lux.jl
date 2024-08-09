@@ -34,16 +34,16 @@ end
 @grad_from_chainrules NNlib.batched_mul(
     x::TrackedArray{<:Any, <:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
 @grad_from_chainrules NNlib.batched_mul(
-    x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Any, 3})
+    x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Number, 3})
 @grad_from_chainrules NNlib.batched_mul(
-    x::AbstractArray{<:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
+    x::AbstractArray{<:Number, 3}, y::TrackedArray{<:Any, <:Any, 3})
 
 @grad_from_chainrules LuxLib.Impl.batched_matmul(
     x::TrackedArray{<:Any, <:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
 @grad_from_chainrules LuxLib.Impl.batched_matmul(
-    x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Any, 3})
+    x::TrackedArray{<:Any, <:Any, 3}, y::AbstractArray{<:Number, 3})
 @grad_from_chainrules LuxLib.Impl.batched_matmul(
-    x::AbstractArray{<:Any, 3}, y::TrackedArray{<:Any, <:Any, 3})
+    x::AbstractArray{<:Number, 3}, y::TrackedArray{<:Any, <:Any, 3})
 
 # Currently falls back to mapreduce and has a terrible performance
 @grad_from_chainrules Base.sum(::typeof(abs2), x::TrackedArray; kwargs...)

@@ -82,13 +82,13 @@ function batchnorm_affine_normalize_internal!(
          γ′
     β′ = similar(x, promote_type(Utils.eltype(β), Utils.eltype(σ²), Utils.eltype(ϵ)), N)
 
-    compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
+    compute_batchnorm_scale_bias_loopvec!(γ′, β′, γ, β, μ, σ², ϵ)
     apply_batchnorm_scale_bias!(y, γ′, β′, x)
     activation!(y, opmode, act, y)
     return
 end
 
-function compute_batchnorm_scale_bias!(γ′, β′, ::Nothing, ::Nothing, μ, σ², ϵ)
+function compute_batchnorm_scale_bias_loopvec!(γ′, β′, ::Nothing, ::Nothing, μ, σ², ϵ)
     if LV.check_args(γ′, β′, μ, σ², ϵ)
         @tturbo for J in indices((γ′, β′, μ, σ²))
             γ′[J] = inv(sqrt(σ²[J] + ϵ))
@@ -102,7 +102,7 @@ function compute_batchnorm_scale_bias!(γ′, β′, ::Nothing, ::Nothing, μ, �
     end
 end
 
-function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
+function compute_batchnorm_scale_bias_loopvec!(γ′, β′, γ, β, μ, σ², ϵ)
     if LV.check_args(γ′, β′, γ, β, μ, σ², ϵ)
         @tturbo for J in indices((γ′, β′, γ, β, μ, σ²))
             γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
@@ -130,7 +130,7 @@ function compute_batchnorm_scale_bias_simd_loop!(γ′, β′, γ, β, μ, σ²,
     end
 end
 
-Utils.@enzyme_reverse_alternative compute_batchnorm_scale_bias! compute_batchnorm_scale_bias_simd_loop!
+Utils.@enzyme_reverse_alternative compute_batchnorm_scale_bias_loopvec! compute_batchnorm_scale_bias_simd_loop!
 
 function apply_batchnorm_scale_bias!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3})
@@ -150,7 +150,7 @@ function apply_batchnorm_scale_bias!(y::AbstractArray{<:Number, 3}, γ′::Abstr
     end
 end
 
-function apply_batchnorm_scale_bias_no_turbo!(
+function apply_batchnorm_scale_bias_simd_loop!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3})
     for K in indices((x, y), 3), J in indices((x, y, γ′, β′), (2, 2, 1, 1))
@@ -160,7 +160,7 @@ function apply_batchnorm_scale_bias_no_turbo!(
     end
 end
 
-Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias! apply_batchnorm_scale_bias_no_turbo!
+Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias! apply_batchnorm_scale_bias_simd_loop!
 
 function batchnorm_affine_normalize_internal!(
         y::AbstractArray{<:Number, 3}, ::GPUBroadcastOp, act::F,
@@ -217,12 +217,10 @@ function CRC.rrule(
     γ′ = similar(
         x, promote_type(Utils.eltype(γ), Utils.eltype(σ²), Utils.eltype(ϵ)), size(x, N - 1))
 
-    batchnorm_affine_normalize_internal!(y, opmode, act, x, μ, σ², γ, β, ϵ, γ′)
+    batchnorm_affine_normalize_internal!(y, opmode, identity, x, μ, σ², γ, β, ϵ, γ′)
     z, ∇activation = CRC.rrule_via_ad(cfg, activation!!, act, y)
 
-    𝒫x = CRC.ProjectTo(x)
-    𝒫μ = CRC.ProjectTo(μ)
-    𝒫σ² = CRC.ProjectTo(σ²)
+    𝒫x, 𝒫μ, 𝒫σ² = CRC.ProjectTo(x), CRC.ProjectTo(μ), CRC.ProjectTo(σ²)
     𝒫γ = γ === nothing ? identity : CRC.ProjectTo(γ)
     𝒫β = β === nothing ? identity : CRC.ProjectTo(β)
 

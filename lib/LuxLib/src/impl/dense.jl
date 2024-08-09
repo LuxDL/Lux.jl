@@ -68,9 +68,9 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:HasReverseMode}, ::typeof(fused_dense),
 
     y = similar(weight, T, size(weight, 1), size(x, 2))
     matmul!(y, opmode, weight, x)
-    z, ∇bias_activation = CRC.rrule_via_ad(cfg, bias_activation, opmode, act, y, b)
+    z, ∇bias_activation = CRC.rrule_via_ad(cfg, bias_activation, act, y, b)
     ∇fused_dense_fallback = @closure Δ -> begin
-        _, _, _, ∂y, ∂b = ∇bias_activation(Δ)
+        _, _, ∂y, ∂b = ∇bias_activation(Δ)
         ∂w, ∂x, _ = ∇matmul_bias(∂y, ∂b, weight, x, b)
         return ∂∅, ∂∅, ∂∅, 𝒫weight(∂w), 𝒫x(∂x), 𝒫b(∂b)
     end

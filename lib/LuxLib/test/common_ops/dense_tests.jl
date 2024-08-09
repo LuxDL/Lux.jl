@@ -9,11 +9,7 @@ function run_dense_testing(gen_f, Tw, Tx, M, N, hasbias, activation, aType, mode
     x = gen_f(Tx, N, 3) |> aType
 
     y = fused_dense_bias_activation(activation, w, x, bias)
-    if bias === nothing
-        y_generic = activation.(w * x)
-    else
-        y_generic = activation.(w * x .+ bias)
-    end
+    y_generic = bias === nothing ? activation.(w * x) : activation.(w * x .+ bias)
 
     @test y ≈ y_generic
     @test eltype(y) == promote_type(Tw, Tx)

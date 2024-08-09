@@ -26,7 +26,7 @@ using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, AbstractGPUDevic
                      AbstractDevice
 using NNlib: NNlib, ConvDims
 
-using ..LuxLib: Optional, internal_operation_mode, AbstractInternalArrayOpMode,
+using ..LuxLib: Optional, ∂∅, internal_operation_mode, AbstractInternalArrayOpMode,
                 GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
 using ..Utils
 using ..System
@@ -35,8 +35,6 @@ using ..Traits
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
 const LV = LoopVectorization
-
-const ∂∅ = NoTangent()
 
 include("activation.jl")
 include("batched_mul.jl")
@@ -52,3 +50,5 @@ include("matmul.jl")
 include("normalization.jl")
 
 end
+
+CRC.@non_differentiable Impl.select_fastest_activation(::Any...)
