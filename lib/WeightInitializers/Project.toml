@@ -28,7 +28,7 @@ WeightInitializersMetalExt = ["Metal", "GPUArrays"]
 WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]
 
 [compat]
-AMDGPU = "0.9.6"
+AMDGPU = "0.9.6, 1"
 Aqua = "0.8.7"
 ArgCheck = "2.3.0"
 CUDA = "5.3.2"
