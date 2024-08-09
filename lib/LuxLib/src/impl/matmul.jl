@@ -62,14 +62,14 @@ function matmuladd!(C::AbstractMatrix, ::GPUBroadcastOp{CUDADevice},
     return
 end
 
-function matmuladd!(C::AbstractMatrix, opmode::LoopedArrayOp,
-        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    matmuladd!(C, opmode, System.use_octavian(), A, B, bias)
+function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
+        B::AbstractMatrix, bias::AbstractVector)
+    matmuladd_cpu!(C, System.use_octavian(), A, B, bias)
     return
 end
 
-function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, ::False,
-        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+function matmuladd_cpu!(C::AbstractMatrix, ::False, A::AbstractMatrix,
+        B::AbstractMatrix, bias::AbstractVector)
     if LV.check_args(C, A, B) &&
        Utils.unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
         matmuladd_loopvec!(C, A, B, bias)
@@ -79,8 +79,8 @@ function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, ::False,
     return
 end
 
-function matmuladd!(C::AbstractMatrix, opmode::LoopedArrayOp, ::True,
-        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+function matmuladd_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix,
+        B::AbstractMatrix, bias::AbstractVector)
     if LV.check_args(C, A, B)
         dims = (size(C, 1), size(A, 2), size(B, 2))
         if Utils.unrolled_all(≤(256), dims)
@@ -106,13 +106,11 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
     return
 end
 
-function matmul!(
-        C::AbstractMatrix, opmode::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
-    return matmul!(C, opmode, System.use_octavian(), A, B)
+function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
+    return matmul_cpu!(C, System.use_octavian(), A, B)
 end
 
-function matmul!(
-        C::AbstractMatrix, ::LoopedArrayOp, ::True, A::AbstractMatrix, B::AbstractMatrix)
+function matmul_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix, B::AbstractMatrix)
     dims = (size(C, 1), size(A, 2), size(B, 2))
     if LV.check_args(C, A, B)
         if Utils.unrolled_all(≤(16), dims)
@@ -127,8 +125,7 @@ function matmul!(
     return
 end
 
-function matmul!(
-        C::AbstractMatrix, ::LoopedArrayOp, ::False, A::AbstractMatrix, B::AbstractMatrix)
+function matmul_cpu!(C::AbstractMatrix, ::False, A::AbstractMatrix, B::AbstractMatrix)
     if LV.check_args(C, A, B) &&
        Utils.unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
         matmul_loopvec!(C, A, B, true, false)
@@ -203,12 +200,11 @@ end
 
 # ChainRules
 function CRC.rrule(::typeof(matmul), A::AbstractMatrix, B::AbstractMatrix)
-    𝒫A = CRC.ProjectTo(A)
-    𝒫B = CRC.ProjectTo(B)
-    ∇matmul = @closure Δ -> begin
-        Δ_ = CRC.unthunk(Δ)
-        ∂A = CRC.@thunk(𝒫A(matmul(Δ_, B')))
-        ∂B = CRC.@thunk(𝒫B(matmul(A', Δ_)))
+    𝒫A, 𝒫B = CRC.ProjectTo(A), CRC.ProjectTo(B)
+    ∇matmul = @closure Δ′ -> begin
+        Δ = CRC.unthunk(Δ′)
+        ∂A = CRC.@thunk(𝒫A(matmul(Δ, B')))
+        ∂B = CRC.@thunk(𝒫B(matmul(A', Δ)))
         return ∂∅, ∂A, ∂B
     end
     return matmul(A, B), ∇matmul
@@ -216,14 +212,12 @@ end
 
 function CRC.rrule(
         ::typeof(matmuladd), A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    𝒫A = CRC.ProjectTo(A)
-    𝒫B = CRC.ProjectTo(B)
-    𝒫bias = CRC.ProjectTo(bias)
-    ∇matmuladd = @closure Δ -> begin
-        Δ_ = CRC.unthunk(Δ)
-        ∂A = CRC.@thunk(𝒫A(matmul(Δ_, B')))
-        ∂B = CRC.@thunk(𝒫B(matmul(A', Δ_)))
-        ∂bias = CRC.@thunk(𝒫bias(∇bias_add(bias, Δ_)))
+    𝒫A, 𝒫B, 𝒫bias = CRC.ProjectTo(A), CRC.ProjectTo(B), CRC.ProjectTo(bias)
+    ∇matmuladd = @closure Δ′ -> begin
+        Δ = CRC.unthunk(Δ′)
+        ∂A = CRC.@thunk(𝒫A(matmul(Δ, B')))
+        ∂B = CRC.@thunk(𝒫B(matmul(A', Δ)))
+        ∂bias = CRC.@thunk(𝒫bias(∇bias_add(bias, Δ)))
         return ∂∅, ∂A, ∂B, ∂bias
     end
     return matmuladd(A, B, bias), ∇matmuladd

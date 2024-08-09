@@ -1,11 +1,14 @@
 # Difference from the NNlib version: We expose the mean and inv_variance computed in the
 # cudnn call, since they can be used at other places like forward mode AD
-wsize(x::AbstractArray{T, N}) where {T, N} = (size(x, N - 1),)
+wsize(x::AbstractArray{T, N}, ::False) where {T, N} = (size(x, N - 1),)
+function wsize(x::AbstractArray{T, N}, ::True) where {T, N}
+    return ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
+end
 
 # Try to avoid hitting this in the first place. An easy workaround is to store the
 # gamma and bias parameters in states so that they are never trained
 function Impl.batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, args...)
-    affine_sz = wsize(x)
+    affine_sz = wsize(x, False())
     γ = CUDA.ones(eltype(x), affine_sz)
     β = CUDA.zeros(eltype(x), affine_sz)
 
@@ -24,24 +27,6 @@ function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
     return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
 end
 
-function Impl.batchnorm_cudnn(
-        γ::DenseCuVector{<:cuDNNFloat}, β::DenseCuVector{<:cuDNNFloat},
-        x::Union{DenseCuArray{<:cuDNNFloat, 4}, DenseCuArray{<:cuDNNFloat, 5}},
-        rμ::Optional{<:DenseCuVector{<:cuDNNFloat}},
-        rσ²::Optional{<:DenseCuVector{<:cuDNNFloat}}, args...)
-    @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the \
-           highest precision type. Avoid this code-path if possible." maxlog=1
-    xT = Utils.eltype(x)
-    T = promote_type(eltype(γ), eltype(β), xT, Utils.eltype(rμ), Utils.eltype(rσ²))
-
-    y, xμ, xσ⁻² = Impl.batchnorm_cudnn(
-        Utils.ofeltype_array(T, γ), Utils.ofeltype_array(T, β), Utils.ofeltype_array(T, x),
-        Utils.ofeltype_array(T, rμ), Utils.ofeltype_array(T, rσ²), args...)
-
-    return (Utils.ofeltype_array(xT, y), Utils.ofeltype_array(xT, xμ),
-        Utils.ofeltype_array(xT, xσ⁻²))
-end
-
 function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
         x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, rμ::Optional{<:DenseCuVector{T}},
         rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat}
@@ -51,10 +36,15 @@ function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
 end
 
 function batchnorm_cudnn!(
-        y::DenseCuArray{T}, γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T},
-        rμ::Optional{<:DenseCuVector{T}}, rσ²::Optional{<:DenseCuVector{T}},
+        y::DenseCuArray{T}, γ′::DenseCuVector{T}, β′::DenseCuVector{T}, x::DenseCuArray{T},
+        rμ′::Optional{<:DenseCuVector{T}}, rσ²′::Optional{<:DenseCuVector{T}},
         m, ϵ, training::StaticBool) where {T <: cuDNNFloat}
-    dims = wsize(x)
+    dims = wsize(x, True())
+
+    γ = reshape(γ′, dims)
+    β = reshape(β′, dims)
+    rμ = Utils.reshape(rμ′, dims)
+    rσ² = Utils.reshape(rσ²′, dims)
 
     if rμ === nothing || rσ² === nothing
         rμ !== rσ² && throw(ArgumentError("both or neither of rμ and rσ² must be nothing"))
@@ -87,7 +77,7 @@ end
 
 function Impl.∇batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
         rμ::Optional{<:DenseCuVector}, rσ²::Optional{<:DenseCuVector}, args...)
-    affine_sz = wsize(x)
+    affine_sz = wsize(x, False())
     γ = CUDA.ones(eltype(x), affine_sz)
     β = CUDA.zeros(eltype(x), affine_sz)
 
@@ -111,26 +101,6 @@ function Impl.∇batchnorm_cudnn(
 end
 
 function Impl.∇batchnorm_cudnn(
-        γ::DenseCuVector{<:cuDNNFloat}, β::DenseCuVector{<:cuDNNFloat},
-        x::DenseCuArray{<:cuDNNFloat, N}, ∂y::DenseCuArray{<:cuDNNFloat, N},
-        rμ::Optional{<:DenseCuVector{<:cuDNNFloat}},
-        rσ²::Optional{<:DenseCuVector{<:cuDNNFloat}}, args...) where {N}
-    @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the \
-           highest precision type. Avoid this code-path if possible." maxlog=1
-
-    T = promote_type(
-        eltype(γ), eltype(β), eltype(x), eltype(∂y), Utils.eltype(rμ), Utils.eltype(rσ²))
-
-    ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(
-        Utils.ofeltype_array(T, γ), Utils.ofeltype_array(T, β),
-        Utils.ofeltype_array(T, x), Utils.ofeltype_array(T, ∂y),
-        Utils.ofeltype_array(T, rμ), Utils.ofeltype_array(T, rσ²), args...)
-
-    return (Utils.ofeltype_array(eltype(γ), ∂γ), Utils.ofeltype_array(eltype(β), ∂β),
-        Utils.ofeltype_array(eltype(x), ∂x))
-end
-
-function Impl.∇batchnorm_cudnn(
         γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T, N},
         ∂y::DenseCuArray{T, N}, rμ::Optional{<:DenseCuVector{T}},
         rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat, N}
@@ -139,11 +109,20 @@ function Impl.∇batchnorm_cudnn(
     return ∂γ, ∂β, ∂x
 end
 
-function ∇batchnorm_cudnn!(∂γ::DenseCuVector{T}, γ::DenseCuVector{T}, ∂β::DenseCuVector{T},
+function ∇batchnorm_cudnn!(
+        ∂γ′::DenseCuVector{T}, γ′::DenseCuVector{T}, ∂β′::DenseCuVector{T},
         ∂x::DenseCuArray{T, N}, x::DenseCuArray{T, N}, ∂y::DenseCuArray{T, N},
-        rμ::Optional{<:DenseCuVector{T}}, rσ²::Optional{<:DenseCuVector{T}},
+        rμ′::Optional{<:DenseCuVector{T}}, rσ²′::Optional{<:DenseCuVector{T}},
         xμ::Optional{<:DenseCuArray{<:cuDNNFloat, N}},
         xσ⁻²::Optional{<:DenseCuArray{<:cuDNNFloat, N}}, ϵ) where {T <: cuDNNFloat, N}
+    dims = wsize(x, True())
+
+    ∂γ = reshape(∂γ′, dims)
+    γ = reshape(γ′, dims)
+    ∂β = reshape(∂β′, dims)
+    rμ = Utils.reshape(rμ′, dims)
+    rσ² = Utils.reshape(rσ²′, dims)
+
     if rμ === nothing && rσ² === nothing
         rμ = CU_NULL
         rσ² = CU_NULL
@@ -152,8 +131,8 @@ function ∇batchnorm_cudnn!(∂γ::DenseCuVector{T}, γ::DenseCuVector{T}, ∂�
     xd = cudnnTensorDescriptor(x)
     ∂yd = cudnnTensorDescriptor(∂y)
     ∂xd = cudnnTensorDescriptor(∂x)
-    γd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(wsize(x))),
-        cuDNN.dim4(wsize(x), Val(CUDNN_TENSOR_NCHW)))
+    γd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
+        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
 
     xμ = xμ === nothing ? CU_NULL : xμ
     xσ⁻² = xσ⁻² === nothing ? CU_NULL : xσ⁻²

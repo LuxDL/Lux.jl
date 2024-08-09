@@ -8,7 +8,7 @@ using cuDNN: cuDNN, cudnnBatchNormalizationBackward,
              cudnnBatchNormalizationForwardTraining, cudnnTensorDescriptor,
              CUDNN_TENSOR_NCHW, cudnnDataType
 using FastClosures: @closure
-using Static: StaticBool
+using Static: StaticBool, False, True
 
 const CRC = ChainRulesCore
 
@@ -17,13 +17,10 @@ const cuDNNFloat = Union{Float32, Float64}
 include("batchnorm.jl")
 
 # api/batchnorm.jl
-const CUDNN_BN_ARRAY_TYPE = Union{
-    CuArray{<:cuDNNFloat, 2}, CuArray{<:cuDNNFloat, 4}, CuArray{<:cuDNNFloat, 5}}
-const BNParamType = Optional{<:CuVector{<:cuDNNFloat}}
-
-function Impl.batchnorm(
-        x::CUDNN_BN_ARRAY_TYPE, γ::BNParamType, β::BNParamType, rμ::BNParamType,
-        rσ²::BNParamType, training::StaticBool, σ::F, m::Real, ϵ::Real) where {F}
+function Impl.batchnorm(x::Union{<:CuArray{T, 2}, <:CuArray{T, 4}, <:CuArray{T, 5}},
+        γ::Optional{<:CuVector{T}}, β::Optional{<:CuVector{T}},
+        rμ::Optional{<:CuVector{T}}, rσ²::Optional{<:CuVector{T}},
+        training::StaticBool, σ::F, m::Real, ϵ::Real) where {T <: cuDNNFloat, F}
     rμₙ, rσ²ₙ = Impl.get_batchnorm_statistics(x, rμ, rσ², training)
     y = Impl.batchnorm_cudnn(γ, β, x, rμₙ, rσ²ₙ, m, ϵ, training)[1]
     return Impl.activation!!(σ, y), vec(rμₙ), vec(rσ²ₙ)

@@ -101,7 +101,7 @@ function activation_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
             y[I] = σ(x[I])
         end
     else
-        @batch for I in indices((y, x))
+        @inbounds @batch for I in indices((y, x))
             y[I] = σ(x[I])
         end
     end
@@ -109,7 +109,7 @@ end
 
 function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
     @simd ivdep for I in eachindex(y, x)
-        y[I] = σ(x[I])
+        @inbounds y[I] = σ(x[I])
     end
 end
 
@@ -121,8 +121,7 @@ function ∇activation(Δ, out, act::F, x) where {F}
     return ∇activation(internal_operation_mode((Δ, out)), Δ, out, act, x)
 end
 function ∇activation(::AbstractInternalArrayOpMode, Δ, out, act::F, x) where {F}
-    ∇act = @closure (Δᵢ, oᵢ, xᵢ) -> Δᵢ * Utils.only_derivative(oᵢ, act, xᵢ)
-    return broadcast(∇act, Δ, out, x)
+    return @. Δ * Utils.only_derivative(out, act, x)
 end
 @inbounds function ∇activation(::LoopedArrayOp, Δ, out, act::F, x) where {F}
     y = similar(out)
@@ -194,6 +193,7 @@ for (f, dfdx) in [
     (:logsigmoid, :(sigmoid_fast(-x))),
     (:gelu, :(∇gelu(x))),
     (:swish, :(Base.FastMath.add_fast(Ω, Base.FastMath.mul_fast(sigmoid_fast(x), Base.FastMath.sub_fast(1, Ω))))),
+    (:lisht, :(Base.FastMath.add_fast(x, Base.FastMath.mul_fast(tanh_fast(x), Base.FastMath.sub_fast(1, Ω))))),
     (:tanh, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω))))),
     (:tanh_fast, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω)))))
     #! format: on
