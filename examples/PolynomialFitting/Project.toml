@@ -1,10 +1,10 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
-AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -14,10 +14,10 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ADTypes = "0.2, 1"
+AMDGPU = "0.8.4, 0.9, 1"
 CairoMakie = "0.12"
 Literate = "2"
 Lux = "0.5"
-AMDGPU = "0.8.4, 0.9"
 LuxCUDA = "0.3"
 Optimisers = "0.3"
 Statistics = "1"
