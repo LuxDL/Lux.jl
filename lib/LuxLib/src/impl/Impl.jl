@@ -26,11 +26,9 @@ using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, AbstractGPUDevic
                      AbstractDevice
 using NNlib: NNlib, ConvDims
 
-using ..LuxLib: Optional, ∂∅, internal_operation_mode, AbstractInternalArrayOpMode,
-                GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
-using ..Utils
-using ..System
-using ..Traits
+using ..LuxLib: Optional, Numeric, ∂∅, internal_operation_mode, AbstractInternalArrayOpMode,
+                GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp, Utils, Traits, System,
+                get_utils
 
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
@@ -50,5 +48,3 @@ include("matmul.jl")
 include("normalization.jl")
 
 end
-
-CRC.@non_differentiable Impl.select_fastest_activation(::Any...)

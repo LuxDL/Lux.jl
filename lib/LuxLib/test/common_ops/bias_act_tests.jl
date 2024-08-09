@@ -1,7 +1,7 @@
 @testitem "Bias Activation" tags=[:other_ops] setup=[SharedTestSetup] begin
     rng = StableRNG(1234)
 
-    bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.__reshape_bias_into_xdims(x, b)))
+    bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.Impl.reshape_bias(x, b)))
     bias_act_loss2(act, x, b) = sum(abs2, bias_activation(act, x, b))
     bias_act_loss3(act, x, b) = sum(abs2, bias_activation!!(act, copy(x), b))
 

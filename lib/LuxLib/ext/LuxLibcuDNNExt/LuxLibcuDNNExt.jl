@@ -26,7 +26,7 @@ function Impl.batchnorm(
         rσ²::BNParamType, training::StaticBool, σ::F, m::Real, ϵ::Real) where {F}
     rμₙ, rσ²ₙ = Impl.get_batchnorm_statistics(x, rμ, rσ², training)
     y = Impl.batchnorm_cudnn(γ, β, x, rμₙ, rσ²ₙ, m, ϵ, training)[1]
-    return Impl.activation!!(σ, y), rμₙ, rσ²ₙ
+    return Impl.activation!!(σ, y), vec(rμₙ), vec(rσ²ₙ)
 end
 
 function CRC.rrule(

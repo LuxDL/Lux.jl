@@ -34,12 +34,12 @@ const MODES = begin
     modes
 end
 
-__generate_fixed_array(::Type{T}, sz...) where {T} = __generate_fixed_array(T, sz)
-function __generate_fixed_array(::Type{T}, sz) where {T}
+generate_fixed_array(::Type{T}, sz...) where {T} = generate_fixed_array(T, sz)
+function generate_fixed_array(::Type{T}, sz) where {T}
     return reshape(T.(collect(1:prod(sz)) ./ prod(sz)), sz...)
 end
-__generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
+generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
 
-export MODES, StableRNG, __generate_fixed_array
+export MODES, StableRNG, generate_fixed_array
 
 end

@@ -7,8 +7,8 @@ end
 
 dropout(rng::AbstractRNG, x::AbstractArray, ::T, ::False, ::T, dims) where {T} = (x, x, rng)
 
-function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        p::T, training::StaticBool, ::True, invp::T, dims) where {T}
+function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray, p::T,
+        training::StaticBool, ::True, invp::T, dims) where {T}
     return dropout(rng, x, p, training, invp, dims)
 end
 
@@ -26,9 +26,9 @@ function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
     return dropout_dot_mul(x, mask), mask, rng
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray,
-        p::T, ::False, ::False, invp::T, dims) where {T}
-    return (x, x, rng)
+function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
+        ::T, ::False, ::False, invp::T, dims) where {T}
+    return (x, mask, rng)
 end
 
 ## alpha_dropout
@@ -141,6 +141,16 @@ function alpha_dropout!(res::AbstractArray, ::LoopedArrayOp, noise::AbstractArra
     end
 end
 
+function alpha_dropout_simd_loop!(
+        res::AbstractArray{T}, ::LoopedArrayOp, noise::AbstractArray{T},
+        p::Real, x::AbstractArray{T}, α::Real, A::Real, B::Real) where {T}
+    @simd ivdep for I in indices((noise, x, res))
+        res[I] = ifelse(noise[I] > p, x[I], α) * A + B
+    end
+end
+
+Utils.@enzyme_reverse_alternative alpha_dropout! alpha_dropout_simd_loop!
+
 dropout_fptype(x) = float(real(Utils.remove_tracking(eltype(x))))
 
 CRC.@non_differentiable dropout_fptype(::Any...)
@@ -153,22 +163,19 @@ CRC.@non_differentiable dropout_fptype(::Any...)
 end
 
 CRC.@non_differentiable generate_alpha_dropout_noise(::Any...)
-EnzymeRules.inactive_noinl(::typeof(generate_alpha_dropout_noise), ::Any...) = nothing
 
 @stable default_mode="disable" function generate_dropout_mask(
         rng::AbstractRNG, x, p, invp, dims)
     rng = LuxCore.replicate(rng)
     y = similar(Utils.remove_tracking(x), dropout_fptype(x), dropout_shape(x, dims))
     rand!(rng, y)
-    generate_dropout_mask!(y, internal_operation_mode(y), rng, x, p, invp, dims)
+    generate_dropout_mask!(y, internal_operation_mode(y), x, p, invp)
     return y, rng
 end
 
 CRC.@non_differentiable generate_dropout_mask(::Any...)
-EnzymeRules.inactive(::typeof(generate_dropout_mask), ::Any...) = nothing
 
-function generate_dropout_mask!(
-        y::AbstractArray, ::LoopedArrayOp, rng::AbstractRNG, x, p, invp, dims)
+function generate_dropout_mask!(y::AbstractArray, ::LoopedArrayOp, x, p, invp)
     if LV.check_args(y)
         @tturbo for I in indices(y)
             y[I] = (y[I] > p) * invp
@@ -180,8 +187,16 @@ function generate_dropout_mask!(
     end
 end
 
-function generate_dropout_mask!(
-        y::AbstractArray, ::AbstractInternalArrayOpMode, rng::AbstractRNG, x, p, invp, dims)
+function generate_dropout_mask_simd_loop!(
+        y::AbstractArray{T}, ::LoopedArrayOp, x, p, invp) where {T}
+    @simd ivdep for I in indices(y)
+        y[I] = (y[I] > p) * invp
+    end
+end
+
+Utils.@enzyme_reverse_alternative generate_dropout_mask! generate_dropout_mask_simd_loop!
+
+function generate_dropout_mask!(y::AbstractArray, ::AbstractInternalArrayOpMode, x, p, invp)
     @. y = (y > p) * invp
     return
 end

@@ -114,11 +114,10 @@ function EnzymeRules.augmented_primal(
         ::Type{EnzymeCore.Const{Nothing}}, y::EnzymeCore.Duplicated{<:AbstractArray},
         opmode::EnzymeCore.Const{LoopedArrayOp}, σ::EnzymeCore.Const{F},
         x::EnzymeCore.Duplicated{<:AbstractArray}) where {F}
-    dx = one.(x.val)
     dy = zero.(y.val)
     EnzymeCore.autodiff(
         EnzymeCore.Forward, activation_simd_loop!, EnzymeCore.Duplicated(y.val, dy),
-        opmode, σ, EnzymeCore.Duplicated(x.val, dx))
+        opmode, σ, EnzymeCore.Duplicated(x.val, one.(x.val)))
     return EnzymeRules.AugmentedReturn(nothing, nothing, (dy,))
 end
 

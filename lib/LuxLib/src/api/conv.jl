@@ -30,6 +30,6 @@ and minimizes reallocations by reusing the output buffer for multiple operations
 function fused_conv_bias_activation(
         σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         b::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
-    return Impl.fused_conv(
-        Impl.select_fastest_activation(σ, weight, x, b), weight, x, b, cdims)
+    σ′ = get_impl(:select_fastest_activation)(σ, weight, x, b)
+    return get_impl(:fused_conv)(σ′, weight, x, b, cdims)
 end

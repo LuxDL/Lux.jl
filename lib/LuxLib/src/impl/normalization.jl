@@ -1,17 +1,17 @@
 # In most cases this implementation should not be preferred. But this is nice to have
 # because it works for arbitrary dimensions
-function affine_normalize(act::F, x::AbstractArray, μ::AbstractArray,
-        σ²::AbstractArray, ::Nothing, ::Nothing, ϵ::Real) where {F}
-    γ = @. inv(sqrt(σ² + ϵ))
-    β = @. μ * γ
-    return @. act(x * γ + β)
+function affine_normalize(act::F, x::AbstractArray, μ::Numeric, σ²::Numeric,
+        ::Nothing, ::Nothing, ϵ::Real) where {F}
+    γ′ = @. inv(sqrt(σ² + ϵ))
+    β′ = @. -μ * γ′
+    return @. act(x * γ′ + β′)
 end
 
-function affine_normalize(act::F, x::AbstractArray, μ::AbstractArray, σ²::AbstractArray,
-        scale::AbstractArray, bias::AbstractArray, ϵ::Real) where {F}
-    γ = @. scale / sqrt(σ² + ϵ)
-    β = @. bias - μ * γ
-    return @. act(x * γ + β)
+function affine_normalize(act::F, x::AbstractArray, μ::Numeric, σ²::Numeric,
+        γ::AbstractArray, β::AbstractArray, ϵ::Real) where {F}
+    γ′ = @. γ / sqrt(σ² + ϵ)
+    β′ = @. β - μ * γ′
+    return @. act(x * γ′ + β′)
 end
 
 # Deal with statistics
@@ -106,12 +106,12 @@ end
 ## implementations as well.
 function normalization(
         x::AbstractArray, rμ::Optional{<:AbstractVector}, rσ²::Optional{<:AbstractVector},
-        scale::Optional{<:AbstractVector}, bias::Optional{<:AbstractVector},
-        reduce_dims, training::StaticBool, momentum, epsilon, act::F=identity) where {F}
+        γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, reduce_dims,
+        training::StaticBool, momentum, epsilon, act::F=identity) where {F}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
         reduce_dims, training, momentum)
-    γ, β = reshape_norm_dims(x, scale), reshape_norm_dims(x, bias)
+    γ, β = reshape_norm_dims(x, γ), reshape_norm_dims(x, β)
     return affine_normalize(act, x, μ, σ², γ, β, epsilon), rμ, rσ²
 end
 
@@ -131,21 +131,21 @@ CRC.@non_differentiable get_norm_reshape_dims(::Any...)
 
 # Entry Points
 ## LayerNorm
-function layernorm(
-        x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{<:Number, N}},
-        bias::Optional{<:AbstractArray{<:Number, N}},
+function layernorm(x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractArray{<:Number, N}},
+        β::Optional{<:AbstractArray{<:Number, N}},
         act::F, dims, epsilon::Real) where {N, F}
     μ, σ² = mean_var(x; dims, corrected=false)
-    return affine_normalize(act, x, μ, σ², scale, bias, epsilon)
+    return affine_normalize(act, x, μ, σ², γ, β, epsilon)
 end
 
 ## InstanceNorm
 function instancenorm(x::AbstractArray{<:Number, N}, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, training::StaticBool,
+        rσ²::Optional{<:AbstractVector}, γ::Optional{<:AbstractVector},
+        β::Optional{<:AbstractVector}, training::StaticBool,
         momentum, epsilon, act::F) where {N, F}
-    return normalization(x, rμ, rσ², scale, bias, instancenorm_reduce_dims(x),
-        training, momentum, epsilon, act)
+    y, rμₙ, rσ²ₙ = normalization(
+        x, rμ, rσ², γ, β, instancenorm_reduce_dims(x), training, momentum, epsilon, act)
+    return y, get_utils(:vec)(rμₙ), get_utils(:vec)(rσ²ₙ)
 end
 
 instancenorm_reduce_dims(::AbstractArray{T, N}) where {T, N} = ntuple(static, N - 2)

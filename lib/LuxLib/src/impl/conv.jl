@@ -1,17 +1,19 @@
 function get_conv_input_weight(x, weight)
     return get_conv_input_weight(get_device_type((x, weight)),
-        Utils.eltype_mismatch(eltype(x), eltype(weight)), x, weight)
+        get_utils(:eltype_mismatch)(eltype(x), eltype(weight)), x, weight)
 end
 function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::False, x, weight)
     T = promote_type(eltype(x), eltype(weight))
-    @warn "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(weight))] \
-           and [x: $(eltype(x))]. Promoting to $(T)." maxlog=1
-    return (Utils.contiguous(Utils.ofeltype_array(T, x)),
-        Utils.contiguous(Utils.ofeltype_array(T, weight)))
+    get_utils(:safe_warning)(
+        "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(weight))] \
+         and [x: $(eltype(x))]. Promoting to $(T).",
+        1)
+    return (get_utils(:contiguous)(get_utils(:ofeltype_array)(T, x)),
+        get_utils(:contiguous)(get_utils(:ofeltype_array)(T, weight)))
 end
 
 function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::True, x, weight)
-    return Utils.contiguous(x), Utils.contiguous(weight)
+    return get_utils(:contiguous)(x), get_utils(:contiguous)(weight)
 end
 
 get_conv_input_weight(::Type{<:AbstractDevice}, ::StaticBool, x, weight) = x, weight
@@ -29,11 +31,13 @@ function conv!(y::AbstractArray{yT, N}, ::Type{<:AbstractGPUDevice},
         x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
         cdims::ConvDims) where {yT <: Number, xT <: Number, wT <: Number, N}
     if xT !== wT !== yT
-        @warn "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
-               [x: $(xT)]. Promoting to $(yT)." maxlog=1
+        get_utils(:safe_warning)(
+            "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
+             [x: $(xT)]. Promoting to $(yT).", 1)
     end
-    return NNlib.conv!(y, Utils.contiguous(Utils.ofeltype_array(yT, x)),
-        Utils.contiguous(Utils.ofeltype_array(yT, weight)), cdims)
+    NNlib.conv!(y, get_utils(:contiguous)(get_utils(:ofeltype_array)(yT, x)),
+        get_utils(:contiguous)(get_utils(:ofeltype_array)(yT, weight)), cdims)
+    return
 end
 
 function conv(x′, weight′, cdims::ConvDims)
@@ -53,12 +57,12 @@ end
 
 function conv_bias_act(x′, weight′, cdims::ConvDims, bias′, act::F) where {F}
     x, weight = get_conv_input_weight(x′, weight′)
-    bias = Utils.ofeltype_array(promote_type(eltype(x), eltype(weight)), bias′)
+    bias = get_utils(:ofeltype_array)(promote_type(eltype(x), eltype(weight)), bias′)
     return conv_bias_act(get_device_type((x, weight, bias)), x, weight, cdims, bias, act)
 end
 
 function conv_bias_act(::Type, x, weight, cdims, bias, act::F) where {F}
-    y = similar(x, Utils.concrete_bias_act_output_eltype(act, weight, x, bias),
+    y = similar(x, get_utils(:concrete_bias_act_output_eltype)(act, weight, x, bias),
         NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, ndims(x)))
     conv!(y, x, weight, cdims)
     bias_activation!(y, internal_operation_mode((y, bias)), act, y, bias)
@@ -69,7 +73,7 @@ function conv_bias_act(::Type{CUDADevice}, x, weight, cdims, ::Nothing, act::F) 
     return activation!!(act, conv(x, weight, cdims))
 end
 function conv_bias_act(::Type{CUDADevice}, x, weight, cdims, bias′, act::F) where {F}
-    if act === identity || act === relu
+    if act === identity || act === NNlib.relu
         bias = reshape_bias(x, bias′)
         return NNlib.conv_bias_act(x, weight, cdims, bias, act)
     end
@@ -80,14 +84,14 @@ end
 function fused_conv(
         act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
-    old_threads = Utils.maybe_reduce_BLAS_threads(weight)
+    old_threads = get_utils(:maybe_reduce_BLAS_threads)(weight)
     y = fused_conv(internal_operation_mode((weight, x, bias)), act, weight, x, bias, cdims)
-    Utils.reset_BLAS_threads(old_threads)
+    get_utils(:reset_BLAS_threads)(old_threads)
     return y
 end
 
-function fused_conv(opmode::GenericBroadcastOp, act::F,
-        weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+function fused_conv(::GenericBroadcastOp, act::F, weight::AbstractArray{<:Number, N},
+        x::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
     return bias_activation(act, conv(x, weight, cdims), bias)
 end
@@ -105,7 +109,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
     T = Utils.concrete_bias_act_output_eltype(act, weight, x, bias)
     𝒫w, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
-    if Utils.no_intermediate_needed(act, T)
+    if Utils.known(Traits.activation_intermediate_not_needed(act, T))
         y = conv_bias_act(x, weight, cdims, bias, act)
         ∇fused_conv_no_cached = @closure Δ -> begin
             return ∇fused_conv(
@@ -118,7 +122,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
     y = similar(x, T, NNlib.output_size(cdims)..., NNlib.channels_out(cdims), size(x, N))
     conv!(y, x, weight, cdims)
 
-    if Utils.needs_intermediate_but_has_rrule(act, T)
+    if Utils.known(Traits.activation_has_rrule(act, T))
         z, tmp = bias_activation_cached!!(act, y, bias)
         ∇fused_conv_cached = @closure Δ -> begin
             return ∇fused_conv(Δ, weight, x, bias, cdims, z, tmp, 𝒫w, 𝒫x, 𝒫b, act)
@@ -145,11 +149,11 @@ CRC.@opt_out rrule(
     ::Optional{<:AbstractVector}, ::ConvDims) where {F, N}
 
 function ∇fused_conv(Δ′, weight, x, bias, cdims::ConvDims, z, tmp, 𝒫w, 𝒫x, 𝒫b, act)
-    old_threads = Utils.maybe_reduce_BLAS_threads(weight)
+    old_threads = get_utils(:maybe_reduce_BLAS_threads)(weight)
     Δ = CRC.unthunk(NNlib.colmajor(Δ′))
-    ∂y = activation_gradient(Δ, z, act, tmp)
+    ∂y = ∇activation(Δ, z, act, tmp)
     ∂w, ∂x, ∂b = ∇conv_bias(∂y, weight, x, bias, cdims)
-    Utils.reset_BLAS_threads(old_threads)
+    get_utils(:reset_BLAS_threads)(old_threads)
     return ∂∅, ∂∅, ∂∅, 𝒫w(∂w), 𝒫x(∂x), 𝒫b(∂b), ∂∅
 end
 
@@ -157,7 +161,7 @@ function ∇conv_bias(∂y, weight, x, bias, cdims::ConvDims)
     return ∇conv_bias(∂y, ∇bias_add(bias, ∂y), weight, x, bias, cdims)
 end
 function ∇conv_bias(∂y, ∂b, weight, x, _, cdims::ConvDims)
-    return ∇conv_data(∂y, weight, cdims), ∇conv_filter(x, ∂y, cdims), ∂b
+    return ∇conv_filter(x, ∂y, cdims), ∇conv_data(∂y, weight, cdims), ∂b
 end
 
 # Special handling for AMDGPU: AMDGPU doesn't support Float64 convolutions, so we need to
@@ -170,9 +174,9 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)]
                     bias::AbstractVector{$(bT)}, cdims::ConvDims) where {F, N}
                 @warn "MIOpen doesn't support Float64 convolutions, type-casting \
                     everything to Float32 to avoid runtime errors" maxlog=1
-                return fused_conv(opmode, act, Utils.ofeltype_array(Float32, weight),
-                    Utils.ofeltype_array(Float32, x),
-                    Utils.ofeltype_array(Float32, bias), cdims)
+                ofeltype_array = get_utils(:ofeltype_array)
+                return fused_conv(opmode, act, ofeltype_array(Float32, weight),
+                    ofeltype_array(Float32, x), ofeltype_array(Float32, bias), cdims)
             end
 
             CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
@@ -186,8 +190,9 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)]
         function fused_conv(opmode::GPUBroadcastOp{AMDGPUDevice}, act::F,
                 weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
                 ::Nothing, cdims::ConvDims) where {F, N}
-            return fused_conv(opmode, act, Utils.ofeltype_array(Float32, weight),
-                Utils.ofeltype_array(Float32, x), nothing, cdims)
+            ofeltype_array = get_utils(:ofeltype_array)
+            return fused_conv(opmode, act, ofeltype_array(Float32, weight),
+                ofeltype_array(Float32, x), nothing, cdims)
         end
 
         CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),

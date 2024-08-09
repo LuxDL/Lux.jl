@@ -36,9 +36,11 @@ function batchnorm(x::AbstractArray{T, N}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, training::Union{Val, StaticBool},
         act::F=identity, momentum::Real=0.1f0,
-        epsilon::Real=Utils.default_epsilon(x)) where {F, T, N}
-    y, rμ, rσ² = Impl.batchnorm(x, γ, β, rμ, rσ², static(training),
-        Impl.select_fastest_activation(act, x, γ, β, rμ, rσ²), momentum, epsilon)
+        epsilon::Real=get_utils(:default_epsilon)(x)) where {F, T, N}
+    σ = get_impl(:select_fastest_activation)(act, x, γ, β, rμ, rσ²)
+    y, rμ, rσ² = get_impl(:batchnorm)(
+        x, γ, β, rμ, rσ², static(training), σ, momentum, epsilon)
     return (y,
-        (; running_mean=Utils.remove_tracking(rμ), running_var=Utils.remove_tracking(rσ²)))
+        (; running_mean=get_utils(:remove_tracking)(rμ),
+            running_var=get_utils(:remove_tracking)(rσ²)))
 end

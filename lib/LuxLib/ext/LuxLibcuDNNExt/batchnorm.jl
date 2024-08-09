@@ -1,8 +1,6 @@
 # Difference from the NNlib version: We expose the mean and inv_variance computed in the
 # cudnn call, since they can be used at other places like forward mode AD
-function wsize(x::AbstractArray{T, N}) where {T, N}
-    return ntuple(i -> ifelse(i == N - 1, size(x, N - 1), 1), N)
-end
+wsize(x::AbstractArray{T, N}) where {T, N} = (size(x, N - 1),)
 
 # Try to avoid hitting this in the first place. An easy workaround is to store the
 # gamma and bias parameters in states so that they are never trained

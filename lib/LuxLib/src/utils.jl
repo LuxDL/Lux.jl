@@ -18,10 +18,6 @@ const KA = KernelAbstractions
 is_extension_loaded(::Val) = False()
 
 # Simple Operations -- no rrules needed
-vec(x::Number) = x
-vec(x::AbstractArray) = Base.vec(x)
-vec(::Nothing) = nothing
-
 ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 function ofeltype_array(
         ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T, N}}) where {Tag, T, N}
@@ -47,6 +43,19 @@ remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 remove_tracking(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = remove_tracking(T)
 remove_tracking(::Nothing) = nothing
+
+# Need rrule for type stability
+vec(x::Number) = x
+vec(x::AbstractArray) = Base.vec(x)
+vec(::Nothing) = nothing
+
+function CRC.rrule(::typeof(vec), x::AbstractArray)
+    res = vec(x)
+    ∇vec = @closure Δ -> begin
+        return ∂∅, CRC.ProjectTo(x)(Δ)
+    end
+    return res, ∇vec
+end
 
 ## This part is taken from NNlib.jl
 # This has no methods, used for testing whether `derivatives_given_output(Ω, f, x)`
@@ -174,6 +183,16 @@ function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
     return expand_batchdim(x), ∇expand_batchdim
 end
 
+function safe_warning(msg::String, maxlog::Int)
+    if maxlog < 0
+        @warn msg
+    else
+        @warn msg maxlog=maxlog
+    end
+end
+
+CRC.@non_differentiable safe_warning(::Any...)
+
 # Switches function `foo` with function `bar`. To be used when Enzyme cannot differentiate
 # through `foo` but supports `bar`. Use with caution, avoid multiple dispatch on `foo`.
 # Also the function should always return `nothing`
@@ -200,3 +219,16 @@ macro enzyme_reverse_alternative(f₁, f₂)
 end
 
 end
+
+# Accessing properties of modules leads to type instability in Zygote reverse pass
+module_getproperty(m::Module, s::Symbol) = getproperty(m, s)
+
+CRC.@non_differentiable module_getproperty(::Module, ::Symbol)
+
+get_impl(s::Symbol) = module_getproperty(Impl, s)
+
+CRC.@non_differentiable get_impl(::Symbol)
+
+get_utils(s::Symbol) = module_getproperty(Utils, s)
+
+CRC.@non_differentiable get_utils(::Symbol)

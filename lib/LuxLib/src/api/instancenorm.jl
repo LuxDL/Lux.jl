@@ -28,15 +28,14 @@ mean and variance.
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
-function instancenorm(x::AbstractArray{T, N}, scale::Optional{<:AbstractArray{T, N}},
-        bias::Optional{<:AbstractArray{T, N}}, σ::F=identity,
-        epsilon::Real=Utils.default_epsilon(x),
-        training::Union{Val, StaticBool}=Val(false)) where {T, N, F}
+function instancenorm(x::AbstractArray, scale::Optional{<:AbstractVector},
+        bias::Optional{<:AbstractVector}, training::Union{Val, StaticBool}=Val(false),
+        σ::F=identity, epsilon::Real=get_utils(:default_epsilon)(x)) where {F}
     assert_valid_instancenorm_arguments(x)
 
-    y, xμ, xσ² = Impl.normalization(
-        x, nothing, nothing, scale, bias, static(training), nothing,
-        epsilon, Impl.select_fastest_activation(σ, x, scale, bias))
+    σ′ = get_impl(:select_fastest_activation)(σ, x, scale, bias)
+    y, xμ, xσ² = get_impl(:instancenorm)(
+        x, nothing, nothing, scale, bias, static(training), nothing, epsilon, σ′)
 
     return y, (; running_mean=xμ, running_var=xσ²)
 end

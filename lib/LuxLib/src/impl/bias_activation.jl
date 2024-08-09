@@ -26,6 +26,14 @@ function bias_activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{
     return broadcast(σ ∘ +, x, reshape_bias(x, bias))
 end
 
+# Prevent ambiguity
+@stable default_mode="disable" function bias_activation(
+        opmode::LoopedArrayOp, ::typeof(identity),
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+    y = similar(x, Utils.concrete_bias_act_output_eltype(identity, x, bias))
+    bias_activation!(y, opmode, identity, x, bias)
+    return y
+end
 @stable default_mode="disable" function bias_activation(
         opmode::LoopedArrayOp, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}
@@ -91,6 +99,12 @@ function bias_activation!!(opmode::AbstractInternalArrayOpMode, ::False, σ::F,
     return bias_activation(opmode, σ, x, bias)
 end
 
+function bias_activation!!(
+        opmode::GenericBroadcastOp, ::True, σ::F, x::AbstractArray{<:Number, N},
+        bias::AbstractVector{<:Number}) where {F, N}
+    return bias_activation(opmode, σ, x, bias)
+end
+
 @stable default_mode="disable" function bias_activation!!(
         opmode::AbstractInternalArrayOpMode, ::True, σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
@@ -110,7 +124,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         ∇bias_activation_no_intermediate = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), x, σ, Utils.NotaNumber())
             ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, 𝒫x_no_intermediate(∂x), 𝒫bias_no_intermediate(∂b)
+            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x_no_intermediate(∂x), 𝒫bias_no_intermediate(∂b)
         end
         return x, ∇bias_activation_no_intermediate
     end
@@ -122,7 +136,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         ∇bias_activation_rrule = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), y, σ, tmp)
             ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, 𝓟x_cached(∂x), 𝓟bias_cached(∂b)
+            return ∂∅, ∂∅, ∂∅, ∂∅, 𝓟x_cached(∂x), 𝓟bias_cached(∂b)
         end
         return y, ∇bias_activation_rrule
     end

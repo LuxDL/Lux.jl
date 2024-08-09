@@ -2,7 +2,7 @@
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics
 using LuxTestUtils: check_approx
 
-function _setup_layernorm(gen_f, aType, T, x_size, affine_shape)
+function setup_layernorm(gen_f, aType, T, x_size, affine_shape)
     x = gen_f(T, x_size) |> aType
     if affine_shape !== nothing
         scale = gen_f(T, (affine_shape..., 1)) |> aType
@@ -15,10 +15,10 @@ end
 
 function run_layernorm_testing(gen_f, aType, T, x_size, affine_shape, act, ongpu, mode)
     dims = Colon()
-    epsilon = LuxLib.__default_epsilon(T)
+    epsilon = LuxLib.Utils.default_epsilon(T)
     _f = (args...) -> layernorm(args..., act, dims, epsilon)
 
-    x, scale, bias = _setup_layernorm(gen_f, aType, T, x_size, affine_shape)
+    x, scale, bias = setup_layernorm(gen_f, aType, T, x_size, affine_shape)
 
     @test @inferred(layernorm(x, scale, bias, act, dims, epsilon)) isa Any
     @jet layernorm(x, scale, bias, act, dims, epsilon)
@@ -75,7 +75,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[1]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
+                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
@@ -84,7 +84,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[2]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
+                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
@@ -93,7 +93,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[3]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
+                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
@@ -102,7 +102,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[4]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
+                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end
@@ -111,7 +111,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[5]
             run_layernorm_testing(
-                __generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
+                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
     end
 end

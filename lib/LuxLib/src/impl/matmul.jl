@@ -52,8 +52,7 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
         A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    C .= bias
-    matmul_generic!(C, A, B, true, true)
+    matmuladd_generic!(C, A, B, bias)
     return
 end
 
@@ -76,20 +75,19 @@ function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, ::False,
         matmuladd_loopvec!(C, A, B, bias)
         return
     end
-    matmuladd!(C, GenericBroadcastOp(), A, B, bias)
+    matmuladd_generic!(C, A, B, bias)
     return
 end
 
 function matmuladd!(C::AbstractMatrix, opmode::LoopedArrayOp, ::True,
         A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     if LV.check_args(C, A, B)
-        if Utils.unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+        dims = (size(C, 1), size(A, 2), size(B, 2))
+        if Utils.unrolled_all(≤(256), dims)
             matmuladd_loopvec!(C, A, B, bias)
             return
-        elseif Utils.unrolled_any(≤(2048), size(C), size(A), size(B)) &&
-               Utils.unrolled_all(≤(10_000), size(C), size(A), size(B))
-            matmuladd_octavian!(C, A, B, true, false)
-            bias_add!(C, opmode, C, bias)
+        elseif Utils.unrolled_any(≤(2048), dims) && Utils.unrolled_all(≤(10_000), dims)
+            matmuladd_octavian!(C, A, B, bias)
             return
         end
     end
@@ -189,6 +187,20 @@ function matmuladd_loopvec!(
     return
 end
 
+function matmuladd_generic!(
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+    C .= bias
+    matmul_generic!(C, A, B, true, true)
+    return
+end
+
+function matmuladd_octavian!(
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+    matmul_octavian!(C, A, B, true, false)
+    bias_add!(C, internal_operation_mode((C, bias)), C, bias)
+    return
+end
+
 # ChainRules
 function CRC.rrule(::typeof(matmul), A::AbstractMatrix, B::AbstractMatrix)
     𝒫A = CRC.ProjectTo(A)
@@ -221,3 +233,6 @@ end
 Utils.@enzyme_reverse_alternative matmul_octavian! matmul_generic!
 Utils.@enzyme_reverse_alternative serial_matmul_loopvec! matmul_generic!
 Utils.@enzyme_reverse_alternative matmul_loopvec! matmul_generic!
+
+Utils.@enzyme_reverse_alternative matmuladd_octavian! matmuladd_generic!
+Utils.@enzyme_reverse_alternative matmuladd_loopvec! matmuladd_generic!

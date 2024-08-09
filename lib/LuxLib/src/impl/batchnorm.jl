@@ -30,8 +30,8 @@ function batchnorm(x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractVector}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
         batchnorm_reduce_dims(x), training, momentum)
-    return (
-        batchnorm_affine_normalize(act, x, μ, σ², γ, β, ϵ), Utils.vec(rμ), Utils.vec(rσ²))
+    return (batchnorm_affine_normalize(act, x, μ, σ², γ, β, ϵ),
+        get_utils(:vec)(rμ), get_utils(:vec)(rσ²))
 end
 
 function batchnorm_affine_normalize(
@@ -42,7 +42,7 @@ function batchnorm_affine_normalize(
         internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ)
 end
 
-function batchnorm_affine_normalize(
+@stable default_mode="disable" function batchnorm_affine_normalize(
         ::GenericBroadcastOp, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
@@ -50,7 +50,7 @@ function batchnorm_affine_normalize(
         act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ)
 end
 
-function batchnorm_affine_normalize(
+@stable default_mode="disable" function batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
@@ -257,7 +257,7 @@ function ∇batchnorm_affine_normalize!(
         μ::AbstractVector, σ²::AbstractVector, ::Nothing, ϵ::Real, γ′::AbstractVector)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂μ, ∂σ², ∂y, x, μ, σ², γ, β, ϵ)
+    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ², ϵ)
         @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
             idenom = γ′[J]
             idenom² = idenom^2
@@ -301,7 +301,7 @@ function ∇batchnorm_affine_normalize!(
 
                 ∂x[I, J, K] = ∂y[I, J, K] * γ′[J]
                 ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
-                ∂γ[I, J, K] = ∂x[I, J, K] * xμ * idenom
+                ∂γ[I, J, K] = ∂y[I, J, K] * xμ * idenom
             end
         end
     else
@@ -314,7 +314,7 @@ function ∇batchnorm_affine_normalize!(
 
                 ∂x[I, J, K] = ∂y[I, J, K] * γ′[J]
                 ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
-                ∂γ[I, J, K] = ∂x[I, J, K] * xμ * idenom
+                ∂γ[I, J, K] = ∂y[I, J, K] * xμ * idenom
             end
         end
     end
@@ -348,6 +348,6 @@ end
     @inbounds ∂σ²[i, j, k] = -∂x[i, j, k] * xμ * idenom² / 2
 
     if γ !== nothing
-        @inbounds ∂γ[i, j, k] = ∂x[i, j, k] * xμ * idenom
+        @inbounds ∂γ[i, j, k] = ∂y[i, j, k] * xμ * idenom
     end
 end

@@ -6,9 +6,7 @@ using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG
 using Static: Static, StaticBool, static
 
-using ..LuxLib: Optional
-using ..Impl
-using ..Utils
+using ..LuxLib: Optional, get_impl, get_utils
 
 const CRC = ChainRulesCore
 

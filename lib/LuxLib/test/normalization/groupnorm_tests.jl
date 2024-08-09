@@ -1,7 +1,7 @@
 @testsetup module GroupNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
 
-function _setup_groupnorm(gen_f, aType, T, sz, affine)
+function setup_groupnorm(gen_f, aType, T, sz, affine)
     x = gen_f(T, sz) |> aType
     if affine
         scale = gen_f(T, sz[end - 1]) |> aType
@@ -12,27 +12,27 @@ function _setup_groupnorm(gen_f, aType, T, sz, affine)
 end
 
 # Bypassing all optimizations
-function __groupnorm_basic(
+function groupnorm_fallback(
         x::AbstractArray{<:Real, N}, scale::LuxLib.Optional{<:AbstractVector},
         bias::LuxLib.Optional{<:AbstractVector}, groups::Int,
         σ::F=identity, epsilon::Real=1.0f-5) where {F, N}
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
-    x_ = LuxLib._normalization(x_reshaped, nothing, nothing, scale, bias,
-        LuxLib._get_groupnorm_reduce_dims(x), Val(false), nothing, epsilon, σ)[1]
-    return reshape(x_, sz)
+    y, _, _ = LuxLib.Impl.normalization(x_reshaped, nothing, nothing, scale, bias,
+        LuxLib.Impl.groupnorm_reduce_dims(x), False(), nothing, epsilon, σ)
+    return reshape(y, sz)
 end
 
 anonact = x -> x^3
 
-__istraining(::Val{training}) where {training} = training
+is_training(::Val{training}) where {training} = training
 
 function run_groupnorm_testing(gen_f, T, sz, groups, affine, act, aType, mode, ongpu)
     _f = (args...) -> groupnorm(args..., groups, act, epsilon)
-    _f2 = (args...) -> groupnorm(args..., groups, act, epsilon)
+    _f2 = (args...) -> groupnorm_fallback(args..., groups, act, epsilon)
 
-    epsilon = LuxLib.__default_epsilon(T)
-    x, scale, bias = _setup_groupnorm(gen_f, aType, T, sz, affine)
+    epsilon = LuxLib.Utils.default_epsilon(T)
+    x, scale, bias = setup_groupnorm(gen_f, aType, T, sz, affine)
     y = _f(x, scale, bias)
 
     y_simple = _f2(x, scale, bias)
@@ -83,7 +83,7 @@ const ALL_TEST_CONFIGS = Iterators.product([Float16, Float32, Float64],
 const TEST_BLOCKS = collect(Iterators.partition(
     ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
 
-export _setup_groupnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_groupnorm_testing
+export setup_groupnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_groupnorm_testing
 
 end
 
@@ -91,7 +91,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[1]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
+                generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
@@ -100,7 +100,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[2]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
+                generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
@@ -109,7 +109,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[3]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
+                generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
@@ -118,7 +118,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[4]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
+                generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
@@ -127,7 +127,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[5]
             run_groupnorm_testing(
-                __generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
+                generate_fixed_array, T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end

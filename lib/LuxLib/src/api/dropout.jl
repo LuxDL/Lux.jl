@@ -30,13 +30,14 @@ overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
 function dropout(rng::AbstractRNG, x::AbstractArray, p::T,
         training::Union{Val, StaticBool}, invp::T, dims) where {T}
-    return Impl.dropout(rng, x, p, static(training), invp, dims)
+    return get_impl(:dropout)(rng, x, p, static(training), invp, dims)
 end
 
 function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        p::T, update_mask::Union{Val, StaticBool},
-        training::Union{Val, StaticBool}, invp::T, dims) where {T}
-    return Impl.dropout(rng, x, mask, p, static(update_mask), static(training), invp, dims)
+        p::T, training::Union{Val, StaticBool},
+        update_mask::Union{Val, StaticBool}, invp::T, dims) where {T}
+    return get_impl(:dropout)(
+        rng, x, mask, p, static(training), static(update_mask), invp, dims)
 end
 
 """
@@ -70,10 +71,10 @@ information processing systems 30 (2017).
 """
 function alpha_dropout(
         rng::AbstractRNG, x::AbstractArray, p, training::Union{Val, StaticBool})
-    return Impl.alpha_dropout(rng, x, p, static(training))
+    return get_impl(:alpha_dropout)(rng, x, p, static(training))
 end
 
 function alpha_dropout(
         rng::AbstractRNG, x::AbstractArray, p, training::Union{Val, StaticBool}, α, A, B)
-    return Impl.alpha_dropout(rng, x, p, static(training), α, A, B)
+    return get_impl(:alpha_dropout)(rng, x, p, static(training), α, A, B)
 end
