@@ -1,8 +1,24 @@
 function get_conv_input_weight(x, weight)
-    return get_conv_input_weight(get_device_type((x, weight)),
-        get_utils(:eltype_mismatch)(eltype(x), eltype(weight)), x, weight)
+    return get_conv_input_weight(get_device_type((x, weight)), x, weight)
 end
-function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::False, x, weight)
+
+for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)]
+    @eval function get_conv_input_weight(
+            ::Type{<:AMDGPUDevice}, x::AbstractArray{$(xT)}, weight::AbstractArray{$(wT)})
+        @warn "MIOpen doesn't support Float64 convolutions, type-casting \
+               everything to Float32 to avoid runtime errors" maxlog=1
+        ofeltype_array = get_utils(:ofeltype_array)
+        return get_conv_input_weight(get_utils(:ofeltype_array)(Float32, x),
+            get_utils(:ofeltype_array)(Float32, weight))
+    end
+end
+
+function get_conv_input_weight(::Type{Device}, x, weight) where {Device <: AbstractDevice}
+    return get_conv_input_weight(
+        Device, get_utils(:eltype_mismatch)(eltype(x), eltype(weight)), x, weight)
+end
+
+function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::True, x, weight)
     T = promote_type(eltype(x), eltype(weight))
     get_utils(:safe_warning)(
         "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(weight))] \
@@ -12,12 +28,14 @@ function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::False, x, weight)
         get_utils(:contiguous)(get_utils(:ofeltype_array)(T, weight)))
 end
 
-function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::True, x, weight)
+function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::False, x, weight)
     return get_utils(:contiguous)(x), get_utils(:contiguous)(weight)
 end
 
 get_conv_input_weight(::Type{<:AbstractDevice}, ::StaticBool, x, weight) = x, weight
 
+# Define some wrappers over NNlib operations. Useful once we ship our own versions
+# with Kernel Abstractions and Loop Vectorization
 function conv!(y, x, weight, cdims::ConvDims)
     return conv!(y, get_device_type((y, x, weight)), x, weight, cdims)
 end
@@ -162,41 +180,4 @@ function ∇conv_bias(∂y, weight, x, bias, cdims::ConvDims)
 end
 function ∇conv_bias(∂y, ∂b, weight, x, _, cdims::ConvDims)
     return ∇conv_filter(x, ∂y, cdims), ∇conv_data(∂y, weight, cdims), ∂b
-end
-
-# Special handling for AMDGPU: AMDGPU doesn't support Float64 convolutions, so we need to
-# type-cast everything
-for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)]
-    for bT in (Float32, Float64)
-        @eval begin
-            function fused_conv(opmode::GPUBroadcastOp{AMDGPUDevice}, act::F,
-                    weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
-                    bias::AbstractVector{$(bT)}, cdims::ConvDims) where {F, N}
-                @warn "MIOpen doesn't support Float64 convolutions, type-casting \
-                    everything to Float32 to avoid runtime errors" maxlog=1
-                ofeltype_array = get_utils(:ofeltype_array)
-                return fused_conv(opmode, act, ofeltype_array(Float32, weight),
-                    ofeltype_array(Float32, x), ofeltype_array(Float32, bias), cdims)
-            end
-
-            CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
-                opmode::GPUBroadcastOp{AMDGPUDevice}, act::F,
-                weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
-                bias::Optional{<:AbstractVector{$(bT)}}, cdims::ConvDims) where {F, N}
-        end
-    end
-
-    @eval begin
-        function fused_conv(opmode::GPUBroadcastOp{AMDGPUDevice}, act::F,
-                weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
-                ::Nothing, cdims::ConvDims) where {F, N}
-            ofeltype_array = get_utils(:ofeltype_array)
-            return fused_conv(opmode, act, ofeltype_array(Float32, weight),
-                ofeltype_array(Float32, x), nothing, cdims)
-        end
-
-        CRC.@opt_out rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
-            opmode::GPUBroadcastOp{AMDGPUDevice}, act::F, weight::AbstractArray{$(wT), N},
-            x::AbstractArray{$(xT), N}, ::Nothing, cdims::ConvDims) where {F, N}
-    end
 end
