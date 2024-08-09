@@ -6,7 +6,7 @@ function Lux.Training.compute_gradients(
         obj_fn, ts.model, ts.parameters, ts.states, data, Val(true))
 
     _, loss = Enzyme.autodiff(
-        EnzymeCore.ReverseWithPrimal, obj_fn_wrap, Active, Const(ts.model),
+        EnzymeCore.ReverseWithPrimal, Const(obj_fn_wrap), Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     cache = TrainingBackendCache{:Enzyme, false}(
@@ -25,8 +25,8 @@ function Lux.Training.compute_gradients(
     dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
 
     _, loss = Enzyme.autodiff(
-        EnzymeCore.ReverseWithPrimal, ts.cache.extras.obj_fn, Active, Const(ts.model),
-        Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
+        EnzymeCore.ReverseWithPrimal, Const(ts.cache.extras.obj_fn), Active,
+        Const(ts.model), Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
     ts_new = TrainState(
         ts.cache, obj_fn, ts.model, ts.parameters, ts.cache.extras.st_wrap[],

@@ -1,7 +1,7 @@
 using ReTestItems, Pkg, Preferences, Test
 using InteractiveUtils, Hwloc
 
-@info sprint(io -> versioninfo(io; verbose=true))
+@info sprint(versioninfo)
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
