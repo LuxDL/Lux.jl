@@ -12,7 +12,7 @@ function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
     return dropout(rng, x, p, training, invp, dims)
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray,
+function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
         p::T, ::True, ::False, invp::T, dims) where {T}
     if dropout_shape(x, dims) != size(mask)
         Utils.depwarn(
@@ -158,7 +158,7 @@ EnzymeRules.inactive_noinl(::typeof(generate_alpha_dropout_noise), ::Any...) = n
 @stable default_mode="disable" function generate_dropout_mask(
         rng::AbstractRNG, x, p, invp, dims)
     rng = LuxCore.replicate(rng)
-    y = similar(x, dropout_fptype(x), dropout_shape(x, dims))
+    y = similar(Utils.remove_tracking(x), dropout_fptype(x), dropout_shape(x, dims))
     rand!(rng, y)
     generate_dropout_mask!(y, internal_operation_mode(y), rng, x, p, invp, dims)
     return y, rng

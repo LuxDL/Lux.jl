@@ -155,9 +155,10 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                     if !(typeof(A) <: EnzymeCore.Const) && dA !== A.val
                         if size(dA, 3) == 1 && size(B.val, 3) != 1
                             B′ = NNlib.batched_adjoint(B.val)
-                            dA′ = batchview(dA, 1)
+                            dA′ = Utils.batchview(dA, 1)
                             for L in indices(B′, 3)
-                                mul!(dA′, batchview(dC, L), batchview(B′, L), true, true)
+                                mul!(dA′, Utils.batchview(dC, L),
+                                    Utils.batchview(B′, L), true, true)
                             end
                         else
                             $(func)(dA, dC, NNlib.batched_adjoint(B.val), true, true)
@@ -167,9 +168,10 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                     if !(typeof(B) <: EnzymeCore.Const) && dB !== B.val
                         if size(dB, 3) == 1 && size(A.val, 3) != 1
                             A′ = NNlib.batched_adjoint(A.val)
-                            dB′ = batchview(dB, 1)
+                            dB′ = Utils.batchview(dB, 1)
                             for L in indices(A′, 3)
-                                mul!(dB′, batchview(A′, L), batchview(dC, L), true, true)
+                                mul!(dB′, Utils.batchview(A′, L),
+                                    Utils.batchview(dC, L), true, true)
                             end
                         else
                             $(func)(dB, NNlib.batched_adjoint(A.val), dC, true, true)

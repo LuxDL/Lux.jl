@@ -37,6 +37,20 @@ Tracker.@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
     return y, ∇selectdim
 end
 
+# Impl: batchnorm_cudnn
+## cuDNN batchnorm -- the chain rule gets defined once cuDNN is loaded
+for RM in (:TrackedVector, :Nothing, :AbstractVector),
+    RV in (:TrackedVector, :Nothing, :AbstractVector),
+    S in (:TrackedVector, :Nothing, :AbstractVector),
+    B in (:TrackedVector, :Nothing, :AbstractVector),
+    XT in (:TrackedArray, :AbstractArray)
+
+    Utils.is_tracked(RM, RV, S, B, XT) || continue
+
+    @eval Tracker.@grad_from_chainrules LuxLib.Impl.batchnorm_cudnn(
+        γ::$RM, β::$RV, x::$XT, rμ::$RM, rσ²::$RV, m::Real, ϵ::Real, training::StaticBool)
+end
+
 # Utils extensions
 Utils.remove_tracking(x::TrackedReal) = Tracker.data(x)
 Utils.remove_tracking(x::TrackedArray) = Tracker.data(x)

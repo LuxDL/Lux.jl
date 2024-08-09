@@ -1,4 +1,5 @@
-function batchnorm_cudnn end
+function batchnorm_cudnn end   # Defined in LuxLibcuDNNExt
+function ∇batchnorm_cudnn end  # Defined in LuxLibcuDNNExt
 
 function batchnorm_reduce_dims(::AbstractArray{T, N}) where {T, N}
     return (ntuple(static, N - 2)..., static(N))

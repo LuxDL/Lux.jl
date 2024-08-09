@@ -1,17 +1,17 @@
 # Difference from the NNlib version: We expose the mean and inv_variance computed in the
 # cudnn call, since they can be used at other places like forward mode AD
-function _wsize(x::AbstractArray{T, N}) where {T, N}
-    return ntuple(i -> i == N - 1 ? size(x, N - 1) : 1, N)
+function wsize(x::AbstractArray{T, N}) where {T, N}
+    return ntuple(i -> ifelse(i == N - 1, size(x, N - 1), 1), N)
 end
 
-function LuxLib.batchnorm_cudnn(γ::Nothing, β::Nothing, x::DenseCuArray, args...; kwargs...)
-    affine_sz = _wsize(x)
-    # Try to avoid hitting this in the first place. An easy workaround is to store the
-    # gamma and bias parameters in states so that they are never trained
-    g = fill!(similar(x, affine_sz), one(eltype(x)))
-    b = fill!(similar(x, affine_sz), zero(eltype(x)))
+# Try to avoid hitting this in the first place. An easy workaround is to store the
+# gamma and bias parameters in states so that they are never trained
+function Impl.batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, args...)
+    affine_sz = wsize(x)
+    γ = CUDA.ones(eltype(x), affine_sz)
+    β = CUDA.zeros(eltype(x), affine_sz)
 
-    y, xμ, xσ⁻² = LuxLib.batchnorm_cudnn(g, b, x, args...; kwargs...)
+    y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, args...)
 
     CUDA.unsafe_free!(g)
     CUDA.unsafe_free!(b)
@@ -19,160 +19,149 @@ function LuxLib.batchnorm_cudnn(γ::Nothing, β::Nothing, x::DenseCuArray, args.
     return y, xμ, xσ⁻²
 end
 
-function LuxLib.batchnorm_cudnn(
-        g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
-        args...; kwargs...) where {T <: CUDNNFloat}
+function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
+        x::DenseCuArray{T, 2}, args...) where {T <: cuDNNFloat}
     x = reshape(x, 1, 1, size(x, 1), size(x, 2))
-    y, xμ, xσ⁻² = LuxLib.batchnorm_cudnn(g, b, x, args...; kwargs...)
+    y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, args...)
     return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
 end
 
-function LuxLib.batchnorm_cudnn(
-        g::DenseCuArray{<:CUDNNFloat}, b::DenseCuArray{<:CUDNNFloat},
-        x::Union{DenseCuArray{<:CUDNNFloat, 4}, DenseCuArray{<:CUDNNFloat, 5}},
-        running_μ, running_σ², args...; kwargs...)
+function Impl.batchnorm_cudnn(
+        γ::DenseCuVector{<:cuDNNFloat}, β::DenseCuVector{<:cuDNNFloat},
+        x::Union{DenseCuArray{<:cuDNNFloat, 4}, DenseCuArray{<:cuDNNFloat, 5}},
+        rμ::Optional{<:DenseCuVector{<:cuDNNFloat}},
+        rσ²::Optional{<:DenseCuVector{<:cuDNNFloat}}, args...)
     @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the \
            highest precision type. Avoid this code-path if possible." maxlog=1
-    Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
-    Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
-    T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ)
+    xT = Utils.eltype(x)
+    T = promote_type(eltype(g), eltype(b), xT, Utils.eltype(rμ), Utils.eltype(rσ²))
 
-    ĝ = LuxLib._ofeltype_array(T, g)
-    b̂ = LuxLib._ofeltype_array(T, b)
-    x̂ = LuxLib._ofeltype_array(T, x)
-    running_μ̂ = LuxLib._ofeltype_array(T, running_μ)
-    running_σ̂² = LuxLib._ofeltype_array(T, running_σ²)
+    y, xμ, xσ⁻² = Impl.batchnorm_cudnn(
+        Utils.ofeltype_array(T, γ), Utils.ofeltype_array(T, β), Utils.ofeltype_array(T, x),
+        Utils.ofeltype_array(T, rμ), Utils.ofeltype_array(T, rσ²), args...)
 
-    y, xmean, xivar = LuxLib.batchnorm_cudnn(
-        ĝ, b̂, x̂, running_μ̂, running_σ̂², args...; kwargs...)
-
-    return (LuxLib._ofeltype_array(T, y), LuxLib._ofeltype_array(T, xmean),
-        LuxLib._ofeltype_array(T, xivar))
+    return (Utils.ofeltype_array(xT, y), Utils.ofeltype_array(xT, xμ),
+        Utils.ofeltype_array(xT, xσ⁻²))
 end
 
-function LuxLib.batchnorm_cudnn(g::DenseCuArray{T}, b::DenseCuArray{T},
-        x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, running_μ,
-        running_σ², args...; kwargs...) where {T <: CUDNNFloat}
-    return batchnorm_cudnn!(similar(x), g, b, x, running_μ, running_σ², args...; kwargs...)
+function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
+        x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, rμ::Optional{<:DenseCuVector{T}},
+        rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat}
+    y = similar(x)
+    μ, σ⁻² = batchnorm_cudnn!(y, γ, β, x, rμ, rσ², args...)
+    return y, μ, σ⁻²
 end
 
-function batchnorm_cudnn!(y::DenseCuArray{T}, g::DenseCuArray{T}, b::DenseCuArray{T},
-        x::DenseCuArray{T}, running_μ, running_σ², momentum,
-        training::StaticBool; α=T(1), β=T(0), ϵ=T(1e-5)) where {T <: CUDNNFloat}
-    dims = _wsize(x)
+function batchnorm_cudnn!(
+        y::DenseCuArray{T}, γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T},
+        rμ::Optional{<:DenseCuVector{T}}, rσ²::Optional{<:DenseCuVector{T}},
+        m, ϵ, training::StaticBool) where {T <: cuDNNFloat}
+    dims = wsize(x)
 
-    if running_μ === nothing || running_σ² === nothing
-        running_μ !== running_σ² &&
-            throw(ArgumentError("both or neither of running_μ and running_σ² must be nothing"))
-        running_μ = CU_NULL
-        running_σ² = CU_NULL
+    if rμ === nothing || rσ² === nothing
+        rμ !== rσ² && throw(ArgumentError("both or neither of rμ and rσ² must be nothing"))
+        rμ = CU_NULL
+        rσ² = CU_NULL
     end
 
     xd = cudnnTensorDescriptor(x)
     yd = cudnnTensorDescriptor(y)
-    gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
+    γβd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
         cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
 
-    if known(training)
-        mean = fill!(similar(x, dims), zero(T))
-        ivar = fill!(similar(x, dims), one(T))
+    if Utils.known(training)
+        μ = CUDA.zeros(T, dims)
+        σ⁻² = CUDA.ones(T, dims)
 
-        cudnnBatchNormalizationForwardTraining(
-            cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL, cuDNN.scalingParameter(T, α),
-            cuDNN.scalingParameter(T, β), xd, x, yd, y, gd, g,
-            b, momentum, running_μ, running_σ², ϵ, mean, ivar)
+        cudnnBatchNormalizationForwardTraining(cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
+            cuDNN.scalingParameter(T, true), cuDNN.scalingParameter(T, false),
+            xd, x, yd, y, γβd, γ, β, m, rμ, rσ², ϵ, μ, σ⁻²)
 
-        return y, mean, ivar
+        return μ, σ⁻²
     else
         cudnnBatchNormalizationForwardInference(
-            cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL, cuDNN.scalingParameter(T, α),
-            cuDNN.scalingParameter(T, β), xd, x, yd, y, gd, g, b, running_μ, running_σ², ϵ)
+            cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL, cuDNN.scalingParameter(T, true),
+            cuDNN.scalingParameter(T, false), xd, x, yd, y, γβd, γ, β, rμ, rσ², ϵ)
 
-        return y, similar(x, zero.(dims)), similar(x, zero.(dims))
+        return similar(x, zero.(dims)), similar(x, zero.(dims))
     end
 end
 
-function LuxLib.∇batchnorm_cudnn(g::Nothing, b::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
-        running_μ, running_σ², args...; kwargs...)
-    affine_sz = _wsize(x)
-    g = fill!(similar(x, affine_sz), 1)
-    b = fill!(similar(x, affine_sz), 0)
+function Impl.∇batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
+        rμ::Optional{<:DenseCuVector}, rσ²::Optional{<:DenseCuVector}, args...)
+    affine_sz = wsize(x)
+    γ = CUDA.ones(eltype(x), affine_sz)
+    β = CUDA.zeros(eltype(x), affine_sz)
 
-    ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
-        g, b, x, ∂y, running_μ, running_σ², args...; kwargs...)
+    ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(γ, β, x, ∂y, rμ, rσ², args...)
 
-    CUDA.unsafe_free!(g)
-    CUDA.unsafe_free!(b)
-    CUDA.unsafe_free!(∂g)
-    CUDA.unsafe_free!(∂b)
+    CUDA.unsafe_free!(γ)
+    CUDA.unsafe_free!(β)
+    CUDA.unsafe_free!(∂γ)
+    CUDA.unsafe_free!(∂β)
 
     return nothing, nothing, ∂x
 end
 
-function LuxLib.∇batchnorm_cudnn(
-        g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T, 2},
-        ∂y::DenseCuArray{T, 2}, running_μ, running_σ²,
-        args...; kwargs...) where {T <: CUDNNFloat}
-    ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(g, b, reshape(x, 1, 1, size(x, 1), size(x, 2)),
-        reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)),
-        running_μ, running_σ², args...; kwargs...)
-    return ∂g, ∂b, dropdims(∂x; dims=(1, 2))
+function Impl.∇batchnorm_cudnn(
+        γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T, 2},
+        ∂y::DenseCuArray{T, 2}, rμ::Optional{<:DenseCuVector{T}},
+        rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat}
+    ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(γ, β, reshape(x, 1, 1, size(x, 1), size(x, 2)),
+        reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)), rμ, rσ², args...)
+    return ∂γ, ∂β, dropdims(∂x; dims=(1, 2))
 end
 
-function LuxLib.∇batchnorm_cudnn(
-        g::DenseCuArray{<:CUDNNFloat}, b::DenseCuArray{<:CUDNNFloat},
-        x::DenseCuArray{<:CUDNNFloat}, ∂y::DenseCuArray{<:CUDNNFloat},
-        running_μ, running_σ², args...; kwargs...)
+function Impl.∇batchnorm_cudnn(
+        γ::DenseCuVector{<:cuDNNFloat}, β::DenseCuVector{<:cuDNNFloat},
+        x::DenseCuArray{<:cuDNNFloat, N}, ∂y::DenseCuArray{<:cuDNNFloat, N},
+        rμ::Optional{<:DenseCuVector{<:cuDNNFloat}},
+        rσ²::Optional{<:DenseCuVector{<:cuDNNFloat}}, args...) where {N}
     @warn "CUDNN ∇batchnorm called with non-uniform eltypes. Promoting everything to the \
            highest precision type. Avoid this code-path if possible." maxlog=1
-    Tᵣₘ = running_μ === nothing ? Bool : eltype(running_μ)
-    Tᵣᵥ = running_σ² === nothing ? Bool : eltype(running_σ²)
-    T = promote_type(eltype(g), eltype(b), eltype(x), Tᵣₘ, Tᵣᵥ, eltype(∂y))
 
-    ĝ = LuxLib._ofeltype_array(T, g)
-    b̂ = LuxLib._ofeltype_array(T, b)
-    x̂ = LuxLib._ofeltype_array(T, x)
-    ∂ŷ = LuxLib._ofeltype_array(T, ∂y)
-    running_μ̂ = LuxLib._ofeltype_array(T, running_μ)
-    running_σ̂² = LuxLib._ofeltype_array(T, running_σ²)
+    T = promote_type(
+        eltype(γ), eltype(β), eltype(x), eltype(∂y), Utils.eltype(rμ), Utils.eltype(rσ²))
 
-    ∂g, ∂b, ∂x = LuxLib.∇batchnorm_cudnn(
-        ĝ, b̂, x̂, ∂ŷ, running_μ̂, running_σ̂², args...; kwargs...)
+    ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(
+        Utils.ofeltype_array(T, γ), Utils.ofeltype_array(T, β),
+        Utils.ofeltype_array(T, x), Utils.ofeltype_array(T, ∂y),
+        Utils.ofeltype_array(T, rμ), Utils.ofeltype_array(T, rσ²), args...)
 
-    return (LuxLib._ofeltype_array(T, ∂g), LuxLib._ofeltype_array(T, ∂b),
-        LuxLib._ofeltype_array(T, ∂x))
+    return (Utils.ofeltype_array(eltype(γ), ∂γ), Utils.ofeltype_array(eltype(β), ∂β),
+        Utils.ofeltype_array(eltype(x), ∂x))
 end
 
-function LuxLib.∇batchnorm_cudnn(
-        g::DenseCuArray{T}, b::DenseCuArray{T}, x::DenseCuArray{T}, ∂y::DenseCuArray{T},
-        running_μ, running_σ², args...; kwargs...) where {T <: CUDNNFloat}
-    ∂g = similar(g)
-    ∂b = similar(b)
-    ∂x = similar(x)
-    cudnnBNBackward!(∂g, g, ∂b, ∂x, x, ∂y, running_μ, running_σ², args...; kwargs...)
-    return (∂g, ∂b, ∂x)
+function Impl.∇batchnorm_cudnn(
+        γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T, N},
+        ∂y::DenseCuArray{T, N}, rμ::Optional{<:DenseCuVector{T}},
+        rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat, N}
+    ∂γ, ∂β, ∂x = similar(γ), similar(β), similar(x)
+    ∇batchnorm_cudnn!(∂γ, γ, ∂β, ∂x, x, ∂y, rμ, rσ², args...)
+    return ∂γ, ∂β, ∂x
 end
 
-function cudnnBNBackward!(
-        ∂g::DenseCuArray{T}, g::DenseCuArray{T}, ∂b::DenseCuArray{T}, ∂x::DenseCuArray{T},
-        x::DenseCuArray{T}, ∂y::DenseCuArray{T}, running_μ, running_σ², xmean,
-        xivar; α=T(1), β=T(0), ϵ=T(1e-5), ∂α=T(1), ∂β=T(0)) where {T <: CUDNNFloat}
-    if running_μ === nothing && running_σ² === nothing
-        running_μ = CU_NULL
-        running_σ² = CU_NULL
+function ∇batchnorm_cudnn!(∂γ::DenseCuVector{T}, γ::DenseCuVector{T}, ∂β::DenseCuVector{T},
+        ∂x::DenseCuArray{T, N}, x::DenseCuArray{T, N}, ∂y::DenseCuArray{T, N},
+        rμ::Optional{<:DenseCuVector{T}}, rσ²::Optional{<:DenseCuVector{T}},
+        xμ::Optional{<:DenseCuArray{<:cuDNNFloat, N}},
+        xσ⁻²::Optional{<:DenseCuArray{<:cuDNNFloat, N}}, ϵ) where {T <: cuDNNFloat, N}
+    if rμ === nothing && rσ² === nothing
+        rμ = CU_NULL
+        rσ² = CU_NULL
     end
 
     xd = cudnnTensorDescriptor(x)
     ∂yd = cudnnTensorDescriptor(∂y)
     ∂xd = cudnnTensorDescriptor(∂x)
-    gd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(_wsize(x))),
-        cuDNN.dim4(_wsize(x), Val(CUDNN_TENSOR_NCHW)))
+    γd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(wsize(x))),
+        cuDNN.dim4(wsize(x), Val(CUDNN_TENSOR_NCHW)))
 
-    xmean = xmean === nothing ? CU_NULL : xmean
-    xivar = xivar === nothing ? CU_NULL : xivar
+    xμ = xμ === nothing ? CU_NULL : xμ
+    xσ⁻² = xσ⁻² === nothing ? CU_NULL : xσ⁻²
 
     return cudnnBatchNormalizationBackward(cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
-        cuDNN.scalingParameter(T, α), cuDNN.scalingParameter(T, β),
-        cuDNN.scalingParameter(T, ∂α), cuDNN.scalingParameter(T, ∂β),
-        xd, x, ∂yd, ∂y, ∂xd, ∂x, gd, g, ∂g, ∂b, ϵ, xmean, xivar)
+        cuDNN.scalingParameter(T, true), cuDNN.scalingParameter(T, false),
+        cuDNN.scalingParameter(T, true), cuDNN.scalingParameter(T, false),
+        xd, x, ∂yd, ∂y, ∂xd, ∂x, γd, γ, ∂γ, ∂β, ϵ, xμ, xσ⁻²)
 end
