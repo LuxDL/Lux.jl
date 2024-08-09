@@ -41,11 +41,10 @@ function Lux.Training.compute_gradients(ad::AutoEnzyme, obj_fn::F, data,
            function that is changing across function calls. This can lead to the \
            generation of slow code" maxlog=1
 
-    mode = EnzymeCore.ReverseModeSplit{
-        true, true, 1, ntuple(Returns(false), 5), Enzyme.FFIABI}()
     forward, reverse = Enzyme.autodiff_thunk(
-        mode, Const{typeof(obj_fn)}, Active, Const{typeof(ts.model)},
-        Duplicated{typeof(ts.parameters)}, Const{typeof(ts.states)}, Const{typeof(data)})
+        EnzymeCore.ReverseSplitWithPrimal, Const{typeof(obj_fn)}, Active,
+        Const{typeof(ts.model)}, Duplicated{typeof(ts.parameters)},
+        Const{typeof(ts.states)}, Const{typeof(data)})
 
     cache = TrainingBackendCache{:Enzyme, false}(ts.cache.dparameters, (; forward, reverse))
     ts_new = TrainState(cache, obj_fn, ts.model, ts.parameters, ts.states,
