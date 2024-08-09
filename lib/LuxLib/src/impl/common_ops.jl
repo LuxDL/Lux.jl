@@ -8,7 +8,7 @@ function reshape_bias(x::AbstractArray, bias::AbstractVector)
     return reshape(bias, reshaped_bias_dims(x, bias))
 end
 function reshape_bias(x::AbstractArray{<:Any, N}, bias::StaticVector) where {N}
-    return SArray{Tuple{reshaed_bias_dims(x, bias)...}, eltype(bias), N, length(bias)}(bias.data)
+    return SArray{Tuple{reshaped_bias_dims(x, bias)...}, eltype(bias), N, length(bias)}(bias.data)
 end
 
 ## Needed for type stability
