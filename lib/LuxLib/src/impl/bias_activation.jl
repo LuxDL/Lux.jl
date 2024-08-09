@@ -202,9 +202,10 @@ end
 function EnzymeRules.reverse(
         cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(bias_add!)},
         ::Type{EnzymeCore.Const{Nothing}}, ::Nothing,
-        y::EnzymeCore.Duplicated{<:AbstractArray},
-        opmode::EnzymeCore.Const{LoopedArrayOp}, x::EnzymeCore.Duplicated{<:AbstractArray},
-        bias::EnzymeCore.Duplicated{<:AbstractVector})
+        y::EnzymeCore.Duplicated{<:AbstractArray{T1, N}},
+        opmode::EnzymeCore.Const{LoopedArrayOp},
+        x::EnzymeCore.Duplicated{<:AbstractArray{T2, N}},
+        bias::EnzymeCore.Duplicated{<:AbstractVector}) where {T1, T2, N}
     dys = y.dval
     dxs = x.dval
     dbs = bias.dval

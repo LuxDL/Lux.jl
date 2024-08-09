@@ -131,8 +131,10 @@ CRC.@non_differentiable get_norm_reshape_dims(::Any...)
 
 # Entry Points
 ## LayerNorm
-function layernorm(x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{T, N}},
-        bias::Optional{<:AbstractArray{T, N}}, act::F, dims, epsilon::Real) where {T, N, F}
+function layernorm(
+        x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractArray{<:Number, N}},
+        bias::Optional{<:AbstractArray{<:Number, N}},
+        act::F, dims, epsilon::Real) where {N, F}
     μ, σ² = mean_var(x; dims, corrected=false)
     return affine_normalize(act, x, μ, σ², scale, bias, epsilon)
 end

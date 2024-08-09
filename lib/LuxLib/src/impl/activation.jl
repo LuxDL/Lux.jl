@@ -51,7 +51,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
         _, ∂opmode, ∂σ, ∂x = ∇activation_from_ad(Δ)
         return ∂∅, ∂opmode, ∂∅, ∂σ, ∂x
     end
-    return res, ∇activation_from_ad
+    return res, ∇activation_fallback
 end
 
 function activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) where {F}

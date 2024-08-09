@@ -26,12 +26,12 @@ CRC.@non_differentiable get_batchnorm_statistics(::Any...)
 function batchnorm(x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, training::StaticBool,
-        act::F, momentum::Real, epsilon::Real) where {F, N}
+        act::F, momentum::Real, ϵ::Real) where {F, N}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
         batchnorm_reduce_dims(x), training, momentum)
-    return (batchnorm_affine_normalize(act, x, μ, σ², γ, β, epsilon),
-        Utils.vec(rμ), Utils.vec(rσ²))
+    return (
+        batchnorm_affine_normalize(act, x, μ, σ², γ, β, ϵ), Utils.vec(rμ), Utils.vec(rσ²))
 end
 
 function batchnorm_affine_normalize(
