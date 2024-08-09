@@ -9,7 +9,7 @@ function run_dense_testing(gen_f, Tw, Tx, M, N, hasbias, activation, aType, mode
     x = gen_f(Tx, N, 3) |> aType
 
     y = fused_dense_bias_activation(activation, w, x, bias)
-    y_generic = LuxLib.__generic_dense_bias_activation(activation, w, x, bias)
+    y_generic = activation.(w * x .+ bias)
 
     @test y ≈ y_generic
     @test eltype(y) == promote_type(Tw, Tx)
@@ -43,8 +43,8 @@ end
 const ALL_TEST_CONFIGS = Iterators.product(
     ((Float16, Float16), (Float32, Float16), (Float32, Float32),
         (Float32, Float64), (Float64, Float64)),
-    (4, 8),
-    (4, 8),
+    (4, 32, 1024),
+    (4, 32, 1024),
     (true, false),
     (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact))
 

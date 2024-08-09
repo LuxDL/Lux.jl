@@ -43,12 +43,12 @@ end
 
 function ∇conv_data(x′, weight′, cdims::ConvDims)
     x, weight = get_conv_input_weight(x′, weight′)
-    return ∇conv_data(x, weight, cdims)
+    return NNlib.∇conv_data(x, weight, cdims)
 end
 
 function ∇conv_filter(x′, y′, cdims::ConvDims)
     x, y = get_conv_input_weight(x′, y′)
-    return ∇conv_filter(x, y, cdims)
+    return NNlib.∇conv_filter(x, y, cdims)
 end
 
 function conv_bias_act(x′, weight′, cdims::ConvDims, bias′, act::F) where {F}

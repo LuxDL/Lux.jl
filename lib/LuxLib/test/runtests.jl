@@ -1,7 +1,7 @@
 using ReTestItems, Pkg, LuxTestUtils, Preferences
 using InteractiveUtils, Hwloc
 
-@info sprint(io -> versioninfo(io; verbose=true))
+@info sprint(versioninfo)
 
 Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 

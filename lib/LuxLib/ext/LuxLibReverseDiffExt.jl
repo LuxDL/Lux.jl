@@ -24,7 +24,7 @@ for func in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter),
     xType in (:AbstractArray, :TrackedArray),
     wType in (:AbstractArray, :TrackedArray)
 
-    Utils.is_tracked(T1, T2) || continue
+    Utils.is_tracked(xType, wType) || continue
 
     @eval @grad_from_chainrules NNlib.$(func)(
         x::$(xType), w::$(wType), cdims::NNlib.ConvDims; kwargs...)
