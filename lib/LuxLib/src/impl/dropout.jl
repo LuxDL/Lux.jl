@@ -169,13 +169,18 @@ CRC.@non_differentiable generate_alpha_dropout_noise(::Any...)
     rng = LuxCore.replicate(rng)
     y = similar(Utils.remove_tracking(x), dropout_fptype(x), dropout_shape(x, dims))
     rand!(rng, y)
-    generate_dropout_mask!(y, internal_operation_mode(y), x, p, invp)
+    generate_dropout_mask!(y, internal_operation_mode(y), p, invp)
     return y, rng
 end
 
 CRC.@non_differentiable generate_dropout_mask(::Any...)
 
-function generate_dropout_mask!(y::AbstractArray, ::LoopedArrayOp, x, p, invp)
+function generate_dropout_mask!(y::AbstractArray, ::LoopedArrayOp, p, invp)
+    generate_dropout_mask_loop!(y, p, invp)
+    return
+end
+
+function generate_dropout_mask_loop!(y::AbstractArray, p, invp)
     if LV.check_args(y)
         @tturbo for I in indices(y)
             y[I] = (y[I] > p) * invp
@@ -187,16 +192,15 @@ function generate_dropout_mask!(y::AbstractArray, ::LoopedArrayOp, x, p, invp)
     end
 end
 
-function generate_dropout_mask_simd_loop!(
-        y::AbstractArray{T}, ::LoopedArrayOp, x, p, invp) where {T}
+function generate_dropout_mask_simd_loop!(y::AbstractArray{T}, p, invp) where {T}
     @simd ivdep for I in indices(y)
         y[I] = (y[I] > p) * invp
     end
 end
 
-Utils.@enzyme_reverse_alternative generate_dropout_mask! generate_dropout_mask_simd_loop!
+Utils.@enzyme_reverse_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
 
-function generate_dropout_mask!(y::AbstractArray, ::AbstractInternalArrayOpMode, x, p, invp)
+function generate_dropout_mask!(y::AbstractArray, ::AbstractInternalArrayOpMode, p, invp)
     @. y = (y > p) * invp
     return
 end

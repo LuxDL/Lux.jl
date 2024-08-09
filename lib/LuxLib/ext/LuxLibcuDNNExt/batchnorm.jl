@@ -11,8 +11,8 @@ function Impl.batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, args...)
 
     y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, args...)
 
-    CUDA.unsafe_free!(g)
-    CUDA.unsafe_free!(b)
+    CUDA.unsafe_free!(γ)
+    CUDA.unsafe_free!(β)
 
     return y, xμ, xσ⁻²
 end
@@ -32,7 +32,7 @@ function Impl.batchnorm_cudnn(
     @warn "CUDNN batchnorm called with non-uniform eltypes. Promoting everything to the \
            highest precision type. Avoid this code-path if possible." maxlog=1
     xT = Utils.eltype(x)
-    T = promote_type(eltype(g), eltype(b), xT, Utils.eltype(rμ), Utils.eltype(rσ²))
+    T = promote_type(eltype(γ), eltype(β), xT, Utils.eltype(rμ), Utils.eltype(rσ²))
 
     y, xμ, xσ⁻² = Impl.batchnorm_cudnn(
         Utils.ofeltype_array(T, γ), Utils.ofeltype_array(T, β), Utils.ofeltype_array(T, x),

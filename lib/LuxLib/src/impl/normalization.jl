@@ -36,6 +36,12 @@ end
 CRC.@non_differentiable update_running_statistics(::Any...)
 
 function update_running_statistics!(rμₙ, rσ²ₙ, ::LoopedArrayOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
+    update_running_statistics_loop!(rμₙ, rσ²ₙ, LoopedArrayOp(), rμ, rσ², μ, σ², m₁, m₂, m₃)
+    return
+end
+
+function update_running_statistics_loop!(
+        rμₙ, rσ²ₙ, ::LoopedArrayOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
     if LV.check_args(rμₙ, rσ²ₙ, rμ, rσ², μ, σ²)
         @tturbo for I in indices((rμₙ, rσ²ₙ))
             rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
@@ -48,6 +54,16 @@ function update_running_statistics!(rμₙ, rσ²ₙ, ::LoopedArrayOp, rμ, rσ�
         end
     end
 end
+
+function update_running_statistics_simd_loop!(
+        rμₙ, rσ²ₙ, ::LoopedArrayOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
+    @simd ivdep for I in indices((rμₙ, rσ²ₙ))
+        rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
+        rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
+    end
+end
+
+Utils.@enzyme_reverse_alternative update_running_statistics_loop! update_running_statistics_simd_loop!
 
 function update_running_statistics!(rμₙ, rσ²ₙ, ::GPUBroadcastOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
     backend = KA.get_backend(rμₙ)
@@ -64,8 +80,6 @@ end
     @inbounds rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
     @inbounds rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
 end
-
-EnzymeRules.inactive(::typeof(update_running_statistics!), ::Any...) = nothing
 
 function update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},

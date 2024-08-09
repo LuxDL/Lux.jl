@@ -122,8 +122,10 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
         opmode::AbstractInternalArrayOpMode, act::F,
-        weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
+        weight′::AbstractArray{<:Number, N}, x′::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+    weight, x = get_conv_input_weight(weight′, x′)
+
     T = Utils.concrete_bias_act_output_eltype(act, weight, x, bias)
     𝒫w, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(bias)
 

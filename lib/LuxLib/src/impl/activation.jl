@@ -91,6 +91,11 @@ function activation!(
     return
 end
 function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
+    activation_loop!(y, σ, x)
+    return
+end
+
+function activation_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
     if LV.check_args(y, x)
         @tturbo for I in indices((y, x))
             y[I] = σ(x[I])
@@ -102,45 +107,13 @@ function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray)
     end
 end
 
-function activation_simd_loop!(
-        y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
+function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
     @simd ivdep for I in eachindex(y, x)
         y[I] = σ(x[I])
     end
 end
 
-function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(activation!)},
-        ::Type{EnzymeCore.Const{Nothing}}, y::EnzymeCore.Duplicated{<:AbstractArray},
-        opmode::EnzymeCore.Const{LoopedArrayOp}, σ::EnzymeCore.Const{F},
-        x::EnzymeCore.Duplicated{<:AbstractArray}) where {F}
-    dy = zero.(y.val)
-    EnzymeCore.autodiff(
-        EnzymeCore.Forward, activation_simd_loop!, EnzymeCore.Duplicated(y.val, dy),
-        opmode, σ, EnzymeCore.Duplicated(x.val, one.(x.val)))
-    return EnzymeRules.AugmentedReturn(nothing, nothing, (dy,))
-end
-
-function EnzymeRules.reverse(
-        ::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(activation!)},
-        ::Type{EnzymeCore.Const{Nothing}}, (dy,),
-        y::EnzymeCore.Duplicated{<:AbstractArray},
-        opmode::EnzymeCore.Const{LoopedArrayOp}, σ::EnzymeCore.Const{F},
-        x::EnzymeCore.Duplicated{<:AbstractArray}) where {F}
-    if LV.check_args(y.dval, x.dval, dy)
-        @tturbo for I in indices((y.dval, x.dval, dy))
-            x.dval[I] = y.dval[I] * dy[I]
-        end
-    else
-        @batch for I in indices((y.dval, x.dval, dy))
-            x.dval[I] = y.dval[I] * dy[I]
-        end
-    end
-
-    x.dval !== y.dval && fill!(y.dval, false)
-
-    return nothing, nothing, nothing, nothing
-end
+Utils.@enzyme_reverse_alternative activation_loop! activation_simd_loop!
 
 # Gradient for activations
 ∇activation(Δ, _, ::typeof(identity), x) = Δ

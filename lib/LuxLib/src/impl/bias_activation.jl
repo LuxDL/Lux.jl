@@ -61,8 +61,8 @@ function CRC.rrule(
 
     if Utils.known(Traits.activation_has_rrule(σ, T))
         tmp = similar(x, T)
-        bias_activation!(tmp, opmode, σ, x, bias)
-        y = activation(opmode, σ, x)
+        bias_add!(tmp, opmode, x, bias)
+        y = activation(opmode, σ, tmp)
         𝓟x_cached = CRC.ProjectTo(x)
         𝓟bias_cached = CRC.ProjectTo(bias)
         ∇bias_activation_rrule = @closure Δ -> begin
@@ -184,79 +184,36 @@ end
 
 function bias_add!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
-    y_ = reshape(y, :, size(y, N - 1), size(y, N))
-    x_ = reshape(x, :, size(x, N - 1), size(x, N))
-    if LV.check_args(y_, x_, bias)
-        @tturbo for K in indices(x_, 3),
-            J in indices((x_, bias), (2, 1)),
-            I in indices(y_, 1)
+    bias_add_loop!(reshape(y, :, size(y, N - 1), size(y, N)),
+        reshape(x, :, size(x, N - 1), size(x, N)), bias)
+    return
+end
 
-            y_[I, J, K] = x_[I, J, K] + bias[J]
+function bias_add_loop!(y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
+        bias::AbstractVector{<:Number})
+    if LV.check_args(y, x, bias)
+        @tturbo for K in indices(x, 3), J in indices((x, bias), (2, 1)), I in indices(y, 1)
+            y[I, J, K] = x[I, J, K] + bias[J]
         end
     else
-        @batch for K in indices(x_, 3), J in indices((x_, bias), (2, 1))
-            @simd ivdep for I in indices(y_, 1)
-                y_[I, J, K] = x_[I, J, K] + bias[J]
+        @inbounds @batch for K in indices(x, 3), J in indices((x, bias), (2, 1))
+            @simd ivdep for I in indices(y, 1)
+                y[I, J, K] = x[I, J, K] + bias[J]
             end
         end
     end
 end
 
-function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(bias_add!)},
-        ::Type{EnzymeCore.Const{Nothing}}, y::EnzymeCore.Duplicated{<:AbstractArray},
-        opmode::EnzymeCore.Const{LoopedArrayOp}, x::EnzymeCore.Duplicated{<:AbstractArray},
-        bias::EnzymeCore.Duplicated{<:AbstractVector})
-    if typeof(y) <: EnzymeCore.Duplicated || typeof(y) <: EnzymeCore.BatchDuplicated
-        bias_add!(y.val, opmode.val, x.val, bias.val)
-    end
-    return EnzymeRules.AugmentedReturn(nothing, nothing, nothing)
-end
-
-function EnzymeRules.reverse(
-        cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof(bias_add!)},
-        ::Type{EnzymeCore.Const{Nothing}}, ::Nothing,
-        y::EnzymeCore.Duplicated{<:AbstractArray{T1, N}},
-        opmode::EnzymeCore.Const{LoopedArrayOp},
-        x::EnzymeCore.Duplicated{<:AbstractArray{T2, N}},
-        bias::EnzymeCore.Duplicated{<:AbstractVector}) where {T1, T2, N}
-    dys = y.dval
-    dxs = x.dval
-    dbs = bias.dval
-
-    if EnzymeRules.width(cfg) == 1
-        dys = (dys,)
-        dxs = (dxs,)
-        dbs = (dbs,)
-    end
-
-    for (dy, dx, db) in zip(dys, dxs, dbs)
-        if !(typeof(y) <: EnzymeCore.Const) && dy !== y.val
-            if !(typeof(x) <: EnzymeCore.Const) && dx !== x.val && dx !== dy
-                copyto!(dx, dy)
-            end
-
-            if !(typeof(bias) <: EnzymeCore.Const) && db !== bias.val
-                dy_ = reshape(dy, :, size(dy, N - 1), size(dy, N))
-                if LV.check_args(dy_, bias)
-                    @turbo for K in indices(dy_, 3),
-                        J in indices((dy_, db), (2, 1)),
-                        I in indices(dy_, 1)
-
-                        db[J] += dy_[I, J, K]
-                    end
-                else
-                    db_ = reshape(db, 1, :, 1)
-                    sum!(db_, dy_)
-                end
-            end
-
-            dx !== dy && fill!(dy, false)
+function bias_add_simd_loop!(y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
+        bias::AbstractVector{<:Number})
+    @inbounds for K in indices(x, 3), J in indices((x, bias), (2, 1))
+        @simd ivdep for I in indices(y, 1)
+            y[I, J, K] = x[I, J, K] + bias[J]
         end
     end
-
-    return nothing, nothing, nothing, nothing
 end
+
+Utils.@enzyme_reverse_alternative bias_add_loop! bias_add_simd_loop!
 
 # Some helper functions for the rrule
 function bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},

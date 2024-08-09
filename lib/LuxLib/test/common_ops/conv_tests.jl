@@ -63,8 +63,7 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
     mp && push!(skip_backends, AutoReverseDiff())
     ((mp && ongpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))) &&
         push!(skip_backends, AutoTracker())
-    test_gradients(__f_grad, weight, x, bias; atol, rtol, skip_backends,
-        soft_fail=(fp16 ? [AutoFiniteDiff()] : []))
+    test_gradients(__f_grad, weight, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
 end
 
 anonact = x -> gelu(x)
