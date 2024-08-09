@@ -1,7 +1,7 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -40,7 +40,7 @@ MLDataDevicescuDNNExt = ["CUDA", "cuDNN"]
 MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
 
 [compat]
-AMDGPU = "0.9.6"
+AMDGPU = "0.9.6, 1"
 Adapt = "4"
 Aqua = "0.8.4"
 ArrayInterface = "7.11"
