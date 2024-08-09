@@ -1,10 +1,10 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
+AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
-AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 LuxCUDA = "d0bbae9a-e099-4d5b-a835-1c6931763bda"
 MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
@@ -18,10 +18,10 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ADTypes = "0.2, 1"
+AMDGPU = "0.8.4, 0.9, 1"
 ComponentArrays = "0.13, 0.14, 0.15"
 Literate = "2"
 Lux = "0.5"
-AMDGPU = "0.8.4, 0.9"
 LuxCUDA = "0.2, 0.3"
 MLDatasets = "0.5, 0.7"
 MLUtils = "0.2, 0.3, 0.4"
