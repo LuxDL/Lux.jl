@@ -13,6 +13,8 @@ pinthreads(:cores)
 const BENCHMARK_GROUP = get(ENV, "BENCHMARK_GROUP", "CPU")
 @info "Running benchmarks for $BENCHMARK_GROUP"
 
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 20
+
 if BENCHMARK_GROUP == "CPU"
     if Sys.isapple() && (Sys.ARCH == :aarch64 || Sys.ARCH == :arm64)
         @info "Running benchmarks on Apple with ARM CPUs. Using `AppleAccelerate.jl`."
@@ -32,7 +34,7 @@ BLAS.set_num_threads(Threads.nthreads() ÷ 2)
 
 const SUITE = BenchmarkGroup()
 
-const TUNE_BENCHMARKS = parse(Bool, get(ENV, "TUNE_BENCHMARKS", "true"))
+const TUNE_BENCHMARKS = parse(Bool, get(ENV, "TUNE_BENCHMARKS", "false"))
 const BENCHMARK_CPU_THREADS = Threads.nthreads()
 
 # Number of CPU threads to benchmarks on

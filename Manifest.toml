@@ -443,7 +443,7 @@ version = "0.1.27"
 
 [[deps.LuxLib]]
 deps = ["ArrayInterface", "ChainRulesCore", "Compat", "DispatchDoctor", "EnzymeCore", "FastClosures", "ForwardDiff", "Hwloc", "KernelAbstractions", "LinearAlgebra", "LoopVectorization", "LuxCore", "MLDataDevices", "Markdown", "NNlib", "Octavian", "Polyester", "Random", "Reexport", "SLEEFPirates", "Static", "StaticArraysCore", "Statistics", "UnrolledUtilities"]
-git-tree-sha1 = "de7897e80e4547b25c55a9c9aba80e7033e0cab2"
+git-tree-sha1 = "c662c613707c4f9fc61e1535c30b06cef5b69e2f"
 repo-rev = "ap/simpler_internals"
 repo-url = "https://github.com/LuxDL/LuxLib.jl.git"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
