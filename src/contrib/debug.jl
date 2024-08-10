@@ -63,7 +63,7 @@ end
 
 function (d::DebugLayer{NaNCheck, ErrorCheck})(x, ps, st) where {NaNCheck, ErrorCheck}
     CRC.ignore_derivatives() do
-        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmapstructure(Utils.size, x))."
+        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(Utils.structure(x))."
         @info lazy"Running Layer: $(d.layer) at location $(d.location)!"
         if NaNCheck ∈ (:both, :forward)
             check_nan_and_throw(x, "input", d.layer, d.location)
@@ -78,7 +78,7 @@ function (d::DebugLayer{NaNCheck, ErrorCheck})(x, ps, st) where {NaNCheck, Error
             check_nan_and_throw(y, "output", d.layer, d.location)
             check_nan_and_throw(stₙ, "states", d.layer, d.location)
         end
-        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(fmapstructure(Utils.size, y))."
+        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(Utils.structure(y))."
     end
     return y, stₙ
 end

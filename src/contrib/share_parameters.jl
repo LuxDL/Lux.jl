@@ -46,49 +46,53 @@ julia> ps.d3.l2.weight === ps.d1.weight &&
            ps.d2.bias === ps.d3.l1.bias
 true
 ```
+
+!!! danger "ComponentArrays"
+
+    ComponentArrays doesn't allow sharing parameters. Converting the returned parameters
+    to a ComponentArray will silently cause the parameter sharing to be undone.
 """
 function share_parameters(ps, sharing)
-    _assert_disjoint_sharing_list(sharing)
-    lens = map(_construct_lens, sharing)
+    assert_disjoint_sharing_list(sharing)
+    lens = map(construct_property_lens, sharing)
     ps_extracted = get.((ps,), first.(lens))
-    return _share_parameters(ps, ps_extracted, lens)
+    return unsafe_share_parameters(ps, ps_extracted, lens)
 end
 
-function share_parameters(ps, sharing, new_parameters)
-    _assert_disjoint_sharing_list(sharing)
-    if !(length(sharing) == length(new_parameters))
-        throw(ArgumentError("The length of sharing and new_parameters must be equal"))
-    end
-    return _share_parameters(ps, new_parameters, map(_construct_lens, sharing))
+function share_parameters(ps, sharing, new_ps)
+    assert_disjoint_sharing_list(sharing)
+    @argcheck length(sharing)!=length(new_ps) "The length of sharing and new_ps must be equal"
+    return unsafe_share_parameters(ps, new_ps, map(construct_property_lens, sharing))
 end
 
-function _share_parameters(ps, new_parameters, lens)
-    for (new_ps, lens_group) in zip(new_parameters, lens), cur_lens in lens_group
+function unsafe_share_parameters(ps, new_ps, lens)
+    for (new_ps, lens_group) in zip(new_ps, lens), cur_lens in lens_group
         ps = _safe_update_parameter(ps, cur_lens, new_ps)
     end
     return ps
 end
 
 function _safe_update_parameter(ps, lens, new_ps)
-    new_ps_st = fmapstructure(Lux.__size, new_ps)
-    ps_st = fmapstructure(Lux.__size, get(ps, lens))
+    new_ps_st = Utils.structure(new_ps)
+    ps_st = Utils.structure(get(ps, lens))
     if new_ps_st != ps_st
-        msg = lazy"The structure of the new parameters must be the same as the old parameters for lens $(lens)!!! The new parameters have a structure: $new_ps_st while the old parameters have a structure: $ps_st. This could potentially be caused since `Lux.__size` is not appropriately defined for type $(typeof(new_ps))."
+        msg = lazy"The structure of the new parameters must be the same as the old parameters for lens $(lens)!!! The new parameters have a structure: $(new_ps_st) while the old parameters have a structure: $(ps_st). This could potentially be caused since `Lux.Utils.structure` is not appropriately defined for type $(typeof(new_ps))."
         throw(ArgumentError(msg))
     end
     return Setfield.set(ps, lens, new_ps)
 end
 
-function _assert_disjoint_sharing_list(sharing)
+function assert_disjoint_sharing_list(sharing)
     for i in eachindex(sharing), j in (i + 1):length(sharing)
         if !isdisjoint(sharing[i], sharing[j])
-            throw(ArgumentError(lazy"sharing[$i] ($(sharing[i])) and sharing[$j] ($(sharing[j])) must be disjoint"))
+            throw(AssertionError("sharing[$i] ($(sharing[i])) and sharing[$j] \
+                                  ($(sharing[j])) must be disjoint"))
         end
     end
 end
 
-@inline _construct_lens(x) = _construct_lens.(x)
-@inline function _construct_lens(x::String)
+@inline construct_property_lens(x) = construct_property_lens.(x)
+@inline function construct_property_lens(x::String)
     return foldr(
         Setfield.ComposedLens, map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, ".")))
 end

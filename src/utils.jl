@@ -2,12 +2,15 @@ module Utils
 
 using ArgCheck: @argcheck
 using ChainRulesCore: @non_differentiable
+using Functors: fmapstructure
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)
 size(x::T) where {T} = hasmethod(Base.size, Tuple{T}) ? Base.size(x) : nothing
 
 @non_differentiable size(::Any)
+
+structure(x) = fmapstructure(size, x)
 
 # Can we convert this to a NamedTuple?
 can_named_tuple(::NamedTuple) = true
@@ -265,19 +268,12 @@ end
 
 @inline __expanddims1(x) = reshape(x, 1, size(x)...)
 
-# Used in freezing
-## Extend for custom types
-
-
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing
 
 @inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
-
-@inline __size(x::AbstractArray) = size(x)
-@inline __size(x::T) where {T} = hasmethod(size, Tuple{T}) ? size(x) : nothing
 
 # helpers for the loss functions
 """
