@@ -1,39 +1,31 @@
-# Deprecations for v0.6
+# Deprecations for v1
 """
     cpu(x)
 
 Transfer `x` to CPU.
 
-!!! danger
+!!! danger "Deprecation Notice"
 
     This function has been deprecated. Use [`cpu_device`](@ref) instead.
 """
-function cpu(x)
-    Base.depwarn("`cpu` has been deprecated and will be removed in v0.6. Use \
-        `cpu_device` instead.", :cpu)
-    return (cpu_device())(x)
-end
+function cpu end
+
+@deprecate cpu(x) (cpu_device())(x)
 
 """
     gpu(x)
 
 Transfer `x` to GPU determined by the backend set using [`Lux.gpu_backend!`](@ref).
 
-!!! danger
+!!! danger "Deprecation Notice"
 
     This function has been deprecated. Use [`gpu_device`](@ref) instead. Using this function
     inside performance critical code will cause massive slowdowns due to type inference
     failure.
 """
-function gpu(x)
-    @warn "Using `gpu` inside performance critical code will cause massive slowdowns due \
-        to type inference failure. Please update your code to use `gpu_device` \
-        API." maxlog=1
+function gpu end
 
-    Base.depwarn("`gpu` has been deprecated and will be removed in v0.6. Use \
-        `gpu_device` instead.", :gpu)
-    return (gpu_device())(x)
-end
+@deprecate gpu(x) (gpu_device())(x)
 
 """
     disable_stacktrace_truncation!(; disable::Bool=true)
@@ -42,14 +34,14 @@ An easy way to update `TruncatedStacktraces.VERBOSE` without having to load it m
 
 Effectively does `TruncatedStacktraces.VERBOSE[] = disable`
 
-!!! danger
+!!! danger "Deprecation Notice"
 
-    This function is now deprecated and will be removed in v0.6.
+    This function is now deprecated and will be removed in v1.
 """
 function disable_stacktrace_truncation!(; disable::Bool=true)
     Base.depwarn(
         "`disable_stacktrace_truncation!` is not needed anymore, as stacktraces are \
-        truncated by default. This function is now deprecated and will be removed in v0.6.",
+        truncated by default. This function is now deprecated and will be removed in v1.",
         :disable_stacktrace_truncation)
     return
 end
