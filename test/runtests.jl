@@ -72,7 +72,7 @@ end
 const RETESTITEMS_NWORKERS = parse(
     Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
 
-@testset "ReTestItem Tests" begin
+@testset "Lux.jl Tests" begin
     for (i, tag) in enumerate(LUX_TEST_GROUP)
         (tag == "distributed" || tag == "eltype_match") && continue
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
@@ -105,7 +105,7 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
 
     include("setup_modes.jl")
 
-    @testset "MODE: $(mode)" for (mode, aType, dev, ongpu) in MODES
+    @testset "distributed tests: $(mode)" for (mode, aType, dev, ongpu) in MODES
         backends = mode == "cuda" ? ("mpi", "nccl") : ("mpi",)
         for backend_type in backends
             np = backend_type == "nccl" ? min(nprocs, length(CUDA.devices())) : nprocs
