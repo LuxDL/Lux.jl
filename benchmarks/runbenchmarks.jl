@@ -7,6 +7,11 @@ using ThreadPinning: pinthreads
 
 pinthreads(:cores)
 
+if Sys.isapple() && Sys.ARCH == :aarch64
+    @warn "Running benchmarks on Apple with ARM CPUs. Using AppleAccelerate.jl."
+    using AppleAccelerate
+end
+
 BLAS.set_num_threads(Threads.nthreads() ÷ 2)
 
 @info sprint(versioninfo)
