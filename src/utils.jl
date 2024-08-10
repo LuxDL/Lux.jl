@@ -1,3 +1,10 @@
+module Utils
+
+size(x::AbstractArray) = size(x)
+size(x::T) where {T} = hasmethod(Base.size, Tuple{T}) ? Base.size(x) : nothing
+
+end
+
 # Training Check
 """
     istraining(::Val{training})
