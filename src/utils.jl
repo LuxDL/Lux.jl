@@ -1,7 +1,60 @@
 module Utils
 
-size(x::AbstractArray) = size(x)
+using ArgCheck: @argcheck
+using ChainRulesCore: @non_differentiable
+
+# Aliased `size` from Base
+size(x::AbstractArray) = Base.size(x)
 size(x::T) where {T} = hasmethod(Base.size, Tuple{T}) ? Base.size(x) : nothing
+
+@non_differentiable size(::Any)
+
+# Can we convert this to a NamedTuple?
+can_named_tuple(::NamedTuple) = true
+can_named_tuple(::T) where {T} = can_named_tuple(T)
+function can_named_tuple(::Type{T}) where {T}
+    return Core.Compiler._return_type(named_tuple, Tuple{T}) !== Union{}
+end
+
+@non_differentiable can_named_tuple(::Any)
+
+# Convert to a NamedTuple
+@inline named_tuple(nt::NamedTuple) = nt
+@inline function named_tuple(x::T) where {T}
+    NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
+    if NT === Union{} || NT === NamedTuple
+        error("`NamedTuple` is not defined for type `$(T)`. Please define \
+               `Lux.Utils.named_tuple(::$(T))` method (or preferably \
+               `NamedTuple(::$(T))`).")
+    end
+    return NamedTuple(x)
+end
+
+# A more generalized version of `merge` that works with non-NamedTuples
+merge(nt₁::NamedTuple, nt₂::NamedTuple) = Base.merge(nt₁, nt₂)
+function merge(p, nt::NamedTuple)
+    can_named_tuple(p) && return merge(named_tuple(p), nt)
+    @argcheck length(p) == 0
+    return nt
+end
+function merge(nt::NamedTuple, p)
+    can_named_tuple(p) && return merge(nt, named_tuple(p))
+    @argcheck length(p) == 0
+    return nt
+end
+function merge(x, y)
+    can_named_tuple(x) && return merge(named_tuple(x), y)
+    can_named_tuple(y) && return merge(x, named_tuple(y))
+    length(x) == 0 && return y
+    length(y) == 0 && return x
+    throw(ArgumentError(lazy"Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define `merge` method for these types."))
+end
+
+# Used in freezing
+@inline function pairs(x)
+    can_named_tuple(x) && return Base.pairs(Utils.named_tuple(x))
+    return Base.pairs(x)
+end
 
 end
 
@@ -158,26 +211,6 @@ in the backward pass.
 @inline foldl_init(op, x) = foldl_init(op, x, nothing)
 @inline foldl_init(op, x, init) = foldl(op, x; init)
 
-# Merging Exotic Types
-_merge(nt1::NamedTuple, nt2::NamedTuple) = merge(nt1, nt2)
-function _merge(p, nt::NamedTuple)
-    __can_named_tuple(p) && return _merge(__named_tuple(p), nt)
-    @argcheck length(p) == 0
-    return nt
-end
-function _merge(nt::NamedTuple, p)
-    __can_named_tuple(p) && return _merge(nt, __named_tuple(p))
-    @argcheck length(p) == 0
-    return nt
-end
-function _merge(x, y)
-    __can_named_tuple(x) && return _merge(__named_tuple(x), y)
-    __can_named_tuple(y) && return _merge(x, __named_tuple(y))
-    length(x) == 0 && return y
-    length(y) == 0 && return x
-    throw(ArgumentError(lazy"Cannot merge $(x)::$(typeof(x)) and $(y)::$(typeof(y)). Define `_merge` method for these types."))
-end
-
 # Utility Functions to Convert Parameter and State Types
 struct LuxEltypeAdaptor{T} end
 
@@ -234,26 +267,7 @@ end
 
 # Used in freezing
 ## Extend for custom types
-@inline function _pairs(x)
-    __can_named_tuple(x) && return pairs(__named_tuple(x))
-    return pairs(x)
-end
 
-@inline __named_tuple(nt::NamedTuple) = nt
-@inline function __named_tuple(x::T) where {T}
-    NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
-    if NT === Union{} || NT === NamedTuple
-        error("`NamedTuple` is not defined for type `$(T)`. Please define \
-               `Lux.__named_tuple(::$(T))` method (or preferably `NamedTuple(::$(T))`).")
-    end
-    return NamedTuple(x)
-end
-
-@inline __can_named_tuple(::NamedTuple) = true
-@inline __can_named_tuple(::T) where {T} = __can_named_tuple(T)
-@inline function __can_named_tuple(::Type{T}) where {T}
-    return Core.Compiler._return_type(__named_tuple, Tuple{T}) !== Union{}
-end
 
 @inline _vec(x::AbstractArray) = vec(x)
 @inline _vec(::Nothing) = nothing

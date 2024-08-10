@@ -34,6 +34,7 @@ import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialpa
 const CRC = ChainRulesCore
 
 const NAME_TYPE = Union{Nothing, String, Symbol}
+const Optional{T} = Union{T, Nothing}
 
 @inline _is_extension_loaded(::Val) = false
 

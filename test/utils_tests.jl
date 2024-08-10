@@ -184,18 +184,18 @@ end
 
     abc = ABC(1, 2)
 
-    @test_throws ErrorException Lux.__named_tuple(abc)
-    @test_throws MethodError Lux._pairs(abc)
+    @test_throws ErrorException Lux.Utils.named_tuple(abc)
+    @test_throws MethodError Lux.Utils.pairs(abc)
 
     Base.NamedTuple(abc::ABC) = (a=abc.a, b=abc.b)
 
-    @test Lux.__named_tuple(abc) == (a=1, b=2)
-    @test Lux._pairs(abc) == pairs((a=1, b=2))
+    @test Lux.Utils.named_tuple(abc) == (a=1, b=2)
+    @test Lux.Utils.pairs(abc) == pairs((a=1, b=2))
 
-    @test Lux._merge(1.0, []) == 1.0
-    @test Lux._merge([], 1.0) == 1.0
-    @test_throws ArgumentError Lux._merge([2.0], 1)
-    @test Lux._merge(abc, abc) == (a=1, b=2)
+    @test Lux.Utils.merge(1.0, []) == 1.0
+    @test Lux.Utils.merge([], 1.0) == 1.0
+    @test_throws ArgumentError Lux.Utils.merge([2.0], 1)
+    @test Lux.Utils.merge(abc, abc) == (a=1, b=2)
 end
 
 @testitem "Recursive Utils" tags=[:others] begin
