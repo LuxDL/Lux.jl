@@ -183,8 +183,8 @@ end
 
 function matmuladd_generic!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    C .= bias
-    matmul_generic!(C, A, B, true, true)
+    matmul_generic!(C, A, B, true, false)
+    bias_add!(C, internal_operation_mode((C, bias)), C, bias)
     return
 end
 
