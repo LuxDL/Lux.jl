@@ -12,17 +12,7 @@ julia> using Lux, Random
 
 julia> c = Parallel(
            +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
-           dense_3=Dense(5 => 1))
-Parallel(
-    connection = +,
-    chain = Chain(
-        dense_1 = Dense(2 => 3),        # 9 parameters
-        bn = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
-        dense_2 = Dense(3 => 5),        # 20 parameters
-    ),
-    dense_3 = Dense(5 => 1),            # 6 parameters
-)         # Total: 41 parameters,
-          #        plus 7 states.
+           dense_3=Dense(5 => 1));
 
 julia> rng = Random.default_rng();
 
@@ -49,7 +39,7 @@ true
 ```
 """
 macro layer_map(f, l, ps, st)
-    quote
+    return quote
         layer_map($(esc(f)), $(esc(l)), $(esc(ps)), $(esc(st)), $(string(l)))
     end
 end
@@ -69,16 +59,18 @@ the function on all of them together.
   - Must return a tuple of 3 elements -- `AbstractExplicitLayer`, new parameters and the new
     states.
 
-!!! note
+!!! tip "Use `Lux.Experimental.@layer_map` instead"
 
-    Starting `v0.6`, instead of the name of the layer, we will provide the [KeyPath to the
+    We recommend using the macro `Lux.Experimental.@layer_map` instead of this function. It
+    automatically sets the `name` of the layer to be the variable name.
+
+!!! danger "Deprecation Notice"
+
+    Starting `v1`, instead of the name of the layer, we will provide the [KeyPath to the
     layer](https://fluxml.ai/Functors.jl/stable/api/#KeyPath). The current version of
     providing a String has been deprecated.
 
-!!! tip
-
-    We recommend using the macro `Lux.@layer_map` instead of this function. It automatically
-    sets the `name` of the layer to be the variable name.
+# Extended Help
 
 ## Example
 
@@ -88,17 +80,7 @@ julia> using Lux, Random
 
 julia> c = Parallel(
            +; chain=Chain(; dense_1=Dense(2 => 3), bn=BatchNorm(3), dense_2=Dense(3 => 5)),
-           dense_3=Dense(5 => 1))
-Parallel(
-    connection = +,
-    chain = Chain(
-        dense_1 = Dense(2 => 3),        # 9 parameters
-        bn = BatchNorm(3, affine=true, track_stats=true),  # 6 parameters, plus 7
-        dense_2 = Dense(3 => 5),        # 20 parameters
-    ),
-    dense_3 = Dense(5 => 1),            # 6 parameters
-)         # Total: 41 parameters,
-          #        plus 7 states.
+           dense_3=Dense(5 => 1));
 
 julia> rng = Random.default_rng();
 
@@ -125,7 +107,7 @@ true
 ```
 """
 function layer_map(f::F, l, ps, st, name::String="model") where {F <: Function}
-    # TODO: In v0.6 deprecate passing the string
+    # TODO: In v1 deprecate passing the string
     f_wrapper = @closure (kp, layer, ps_, st_) -> f(
         layer, ps_, st_, __keypath_to_string(name, kp))
     return fmap_with_path(f_wrapper, l, ps, st; walk=LayerWalkWithPath())
