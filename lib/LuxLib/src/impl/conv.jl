@@ -3,16 +3,17 @@ function get_conv_input_weight(x, weight)
 end
 
 function get_conv_input_weight(::Type{Device}, x, weight) where {Device <: AbstractDevice}
+    eltype_fn = get_utils(:eltype)
     return get_conv_input_weight(
-        Device, get_utils(:eltype_mismatch)(eltype(x), eltype(weight)), x, weight)
+        Device, get_utils(:eltype_mismatch)(eltype_fn(x), eltype_fn(weight)), x, weight)
 end
 
 function get_conv_input_weight(::Type{<:AbstractGPUDevice}, ::True, x, weight)
-    T = promote_type(eltype(x), eltype(weight))
+    eltype_fn = get_utils(:eltype)
+    T = promote_type(eltype_fn(x), eltype_fn(weight))
     get_utils(:safe_warning)(
-        "Mixed Precision Inputs received for GPU convolution [weight: $(eltype(weight))] \
-         and [x: $(eltype(x))]. Promoting to $(T).",
-        1)
+        "Mixed Precision Inputs received for GPU convolution [weight: \
+         $(eltype_fn(weight))] and [x: $(eltype_fn(x))]. Promoting to $(T).", 1)
     return (get_utils(:contiguous)(get_utils(:ofeltype_array)(T, x)),
         get_utils(:contiguous)(get_utils(:ofeltype_array)(T, weight)))
 end
@@ -64,7 +65,8 @@ end
 
 function conv_bias_act(x′, weight′, cdims::ConvDims, bias′, act::F) where {F}
     x, weight = get_conv_input_weight(x′, weight′)
-    bias = get_utils(:ofeltype_array)(promote_type(eltype(x), eltype(weight)), bias′)
+    eltype_fn = get_utils(:eltype)
+    bias = get_utils(:ofeltype_array)(promote_type(eltype_fn(x), eltype_fn(weight)), bias′)
     return conv_bias_act(get_device_type((x, weight, bias)), x, weight, cdims, bias, act)
 end
 

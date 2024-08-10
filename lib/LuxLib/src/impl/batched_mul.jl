@@ -21,10 +21,9 @@ function batched_matmul(::GPUBroadcastOp{AMDGPUDevice},
     end
     @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
            AMDGPUDevice" maxlog=1
-    @assert size(x, 3) == size(y, 3) || size(x, 3) == 1 || size(y, 3) == 1
     size(x, 3) == size(y, 3) && return stack(*, Utils.batchview(x), Utils.batchview(y))
-    size(x, 2) == 1 && stack(map(Base.Fix1(*, Utils.batchview(x, 1)), Utils.batchview(y)))
-    return stack(map(Base.Fix2(*, Utils.batchview(y, 1)), Utils.batchview(x)))
+    size(x, 3) == 1 && return stack(Base.Fix1(*, Utils.batchview(x, 1)), Utils.batchview(y))
+    return stack(Base.Fix2(*, Utils.batchview(y, 1)), Utils.batchview(x))
 end
 
 function batched_matmul(

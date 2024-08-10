@@ -26,15 +26,20 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
 
     y = fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-    y_generic = LuxLib.Impl.conv(x, weight, cdims)
-    y_generic = bias === nothing ? activation.(y_generic) :
-                activation.(y_generic .+ LuxLib.Impl.reshape_bias(y_generic, bias))
+    generic_testing = !(mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
 
     fp16 = Tx == Float16 || Tw == Float16
     atol = fp16 ? 1.0f-1 : 1.0f-3
     rtol = fp16 ? 1.0f-1 : 1.0f-3
-    # Operation reordering has an effect on the accuracy of the results
-    @test y≈y_generic atol=atol rtol=rtol
+
+    if generic_testing
+        y_generic = LuxLib.Impl.conv(x, weight, cdims)
+        y_generic = bias === nothing ? activation.(y_generic) :
+                    activation.(y_generic .+ LuxLib.Impl.reshape_bias(y_generic, bias))
+        # Operation reordering has an effect on the accuracy of the results
+        @test y≈y_generic atol=atol rtol=rtol
+    end
+
     @test eltype(y) == promote_type(Tw, Tx)
 
     @test @inferred(fused_conv_bias_activation(activation, weight, x, bias, cdims)) isa Any

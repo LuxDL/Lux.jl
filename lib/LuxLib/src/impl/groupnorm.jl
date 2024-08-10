@@ -30,7 +30,7 @@ end
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
-    reshape_calls = if typeof(γ) != Nothing
+    reshape_calls = if γ != Nothing
         quote
             γ′ = reshape(γ, 1, size(x, N - 2), size(x, N - 1), 1)
             β′ = reshape(β, 1, size(x, N - 2), size(x, N - 1), 1)
@@ -79,7 +79,7 @@ function affine_normalize_loopvec!(
         y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
         μ::AbstractArray{<:Number, 4},
         σ²::AbstractArray{<:Number, 4}, ::Nothing, ::Nothing, ϵ::Real)
-    if LV.check_args(y, x, μ, σ², ϵ)
+    if LV.check_args(y, x, μ, σ²)
         @tturbo for L in indices(y, 4), K in indices(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
@@ -104,7 +104,7 @@ function affine_normalize_loopvec!(
         y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
         μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
         γ::AbstractArray{<:Number, 4}, β::AbstractArray{<:Number, 4}, ϵ::Real)
-    if LV.check_args(y, x, μ, σ², γ, β, ϵ)
+    if LV.check_args(y, x, μ, σ², γ, β)
         @tturbo for L in indices(y, 4), K in indices(y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             for J in indices(y, 2)
@@ -237,7 +237,7 @@ function ∇groupnorm_affine_normalize!(
         μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4}, ::Nothing, ϵ::Real)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ², ϵ)
+    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ²)
         @tturbo for L in indices(∂y, 4), K in indices(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
@@ -273,7 +273,7 @@ function ∇groupnorm_affine_normalize!(
         σ²::AbstractArray{<:Number, 4}, γ::AbstractArray{<:Number, 4}, ϵ::Real)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ, ϵ)
+    if LV.check_args(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ)
         @tturbo for L in indices(∂y, 4), K in indices(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
@@ -324,7 +324,6 @@ end
         ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(γ), @Const(ϵ))
     (i, j, k, l) = @index(Global, NTuple)
     @inbounds idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
-    @inbounds idenom² = denom^2
 
     if γ !== nothing
         @inbounds γ′ = γ[1, j, k, 1] * idenom
@@ -332,12 +331,12 @@ end
         @inbounds γ′ = idenom
     end
 
-    @inbounds xμ = x[i, j, k, l] - μ[1, 1, k, l]
+    @inbounds xμ_d = (x[i, j, k, l] - μ[1, 1, k, l]) * idenom
 
     @inbounds ∂x[i, j, k, l] = ∂y[i, j, k, l] * γ′
-    @inbounds ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * xμ * idenom²
+    @inbounds ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * xμ_d * idenom / 2
 
     if γ !== nothing
-        @inbounds ∂γ[i, j, k, l] = ∂y[i, j, k, l] * xμ * idenom
+        @inbounds ∂γ[i, j, k, l] = ∂y[i, j, k, l] * xμ_d
     end
 end

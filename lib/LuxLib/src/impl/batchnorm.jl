@@ -90,7 +90,7 @@ function batchnorm_affine_normalize_internal!(
 end
 
 function compute_batchnorm_scale_bias_loopvec!(γ′, β′, ::Nothing, ::Nothing, μ, σ², ϵ)
-    if LV.check_args(γ′, β′, μ, σ², ϵ)
+    if LV.check_args(γ′, β′, μ, σ²)
         @tturbo for J in indices((γ′, β′, μ, σ²))
             γ′[J] = inv(sqrt(σ²[J] + ϵ))
             β′[J] = -μ[J] * γ′[J]
@@ -104,7 +104,7 @@ function compute_batchnorm_scale_bias_loopvec!(γ′, β′, ::Nothing, ::Nothin
 end
 
 function compute_batchnorm_scale_bias_loopvec!(γ′, β′, γ, β, μ, σ², ϵ)
-    if LV.check_args(γ′, β′, γ, β, μ, σ², ϵ)
+    if LV.check_args(γ′, β′, γ, β, μ, σ²)
         @tturbo for J in indices((γ′, β′, γ, β, μ, σ²))
             γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
             β′[J] = β[J] - μ[J] * γ′[J]
@@ -259,7 +259,7 @@ function ∇batchnorm_affine_normalize!(
         μ::AbstractVector, σ²::AbstractVector, ::Nothing, ϵ::Real, γ′::AbstractVector)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ², ϵ)
+    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ²)
         @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
             idenom = γ′[J]
             idenom² = idenom^2
@@ -293,7 +293,7 @@ function ∇batchnorm_affine_normalize!(
         σ²::AbstractVector, γ::AbstractVector, ϵ::Real, γ′::AbstractVector)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ, ϵ)
+    if LV.check_args(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ)
         @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
             idenom = inv(sqrt(σ²[J] + ϵ))
             idenom² = idenom^2
