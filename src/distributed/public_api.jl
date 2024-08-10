@@ -38,11 +38,11 @@ Possible values for `backend` are:
 """
 function initialize(backend::Type{<:AbstractLuxDistributedBackend}; kwargs...)
     initialized(backend) && return
-    __initialize(backend; kwargs...)
+    force_initialize(backend; kwargs...)
     return
 end
 
-function __initialize end
+function force_initialize end
 
 """
     get_distributed_backend(backend::Type{<:AbstractLuxDistributedBackend})
@@ -61,10 +61,10 @@ Get the distributed backend for the given backend type. Possible values are:
 function get_distributed_backend(backend::Type{<:AbstractLuxDistributedBackend})
     initialized(backend) ||
         error("Backend `$(backend)` is not initialized. Call `DistributedUtils.initialize` first.")
-    return __get_distributed_backend(backend)
+    return unsafe_get_distributed_backend(backend)
 end
 
-function __get_distributed_backend end
+function unsafe_get_distributed_backend end
 
 CRC.@non_differentiable get_distributed_backend(::Any...)
 
@@ -94,23 +94,24 @@ Backend Agnostic API to broadcast the given buffer `sendrecvbuf` or `sendbuf` to
 workers into `recvbuf`. The value at `root` will be broadcasted to all other workers.
 """
 function bcast!(backend::AbstractLuxDistributedBackend, sendrecvbuf; root::Int=0)
-    return __bcast!(backend, sendrecvbuf, get_device(sendrecvbuf); root)
+    bcast_impl!(backend, sendrecvbuf, get_device(sendrecvbuf); root)
+    return
 end
 
 function bcast!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf; root::Int=0)
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
     if send_dev == recv_dev
-        return __bcast!(backend, sendbuf, recvbuf, send_dev; root)
+        bcast_impl!(backend, sendbuf, recvbuf, send_dev; root)
     else
         sendbuf_ = sendbuf |> recv_dev
         @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
-        __bcast!(backend, sendbuf_, recvbuf, recv_dev; root)
-        return recvbuf
+        bcast_impl!(backend, sendbuf_, recvbuf, recv_dev; root)
     end
+    return
 end
 
-function __bcast! end
+function bcast_impl! end
 
 CRC.@non_differentiable bcast!(::Any...)
 
@@ -127,7 +128,7 @@ Backend Agnostic API to perform an allreduce operation on the given buffer `send
 workers.
 """
 function allreduce!(backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F) where {F}
-    return __allreduce!(backend, sendrecvbuf, op, get_device(sendrecvbuf))
+    return allreduce_impl!(backend, sendrecvbuf, op, get_device(sendrecvbuf))
 end
 
 function allreduce!(
@@ -135,16 +136,16 @@ function allreduce!(
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
     if send_dev == recv_dev
-        return __allreduce!(backend, sendbuf, recvbuf, op, send_dev)
+        allreduce_impl!(backend, sendbuf, recvbuf, op, send_dev)
     else
         sendbuf_ = sendbuf |> recv_dev
         @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
-        __allreduce!(backend, sendbuf_, recvbuf, op, recv_dev)
-        return recvbuf
+        allreduce_impl!(backend, sendbuf_, recvbuf, op, recv_dev)
     end
+    return
 end
 
-function __allreduce! end
+function allreduce_impl! end
 
 CRC.@non_differentiable allreduce!(::Any...)
 
@@ -160,7 +161,7 @@ workers.
 """
 function reduce!(
         backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F; root::Int=0) where {F}
-    return __reduce!(backend, sendrecvbuf, op, get_device(sendrecvbuf); root)
+    return reduce_impl!(backend, sendrecvbuf, op, get_device(sendrecvbuf); root)
 end
 
 function reduce!(backend::AbstractLuxDistributedBackend,
@@ -168,16 +169,16 @@ function reduce!(backend::AbstractLuxDistributedBackend,
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
     if send_dev == recv_dev
-        return __reduce!(backend, sendbuf, recvbuf, op, send_dev; root)
+        reduce_impl!(backend, sendbuf, recvbuf, op, send_dev; root)
     else
         sendbuf_ = sendbuf |> recv_dev
         @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
-        __reduce!(backend, sendbuf_, recvbuf, op, recv_dev; root)
-        return recvbuf
+        reduce_impl!(backend, sendbuf_, recvbuf, op, recv_dev; root)
     end
+    return
 end
 
-function __reduce! end
+function reduce_impl! end
 
 CRC.@non_differentiable reduce!(::Any...)
 
@@ -221,7 +222,7 @@ end
 with `MLUtils` interface and is used to partition the dataset across the available
 processes.
 
-!!! danger
+!!! danger "Load `MLUtils.jl`"
 
     `MLUtils.jl` must be installed and loaded before using this.
 """
@@ -235,10 +236,10 @@ function DistributedDataContainer(backend::AbstractLuxDistributedBackend, data)
         error("`MLUtils.jl` must be installed and loaded before using \
                `DistributedDataContainer`.")
     end
-    return __construct_distributed_data_container(backend, data)
+    return construct_distributed_data_container(backend, data)
 end
 
-function __construct_distributed_data_container end
+function construct_distributed_data_container end
 
 Base.length(ddc::DistributedDataContainer) = length(ddc.idxs)
 
