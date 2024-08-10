@@ -44,6 +44,7 @@ include("preferences.jl")
 # Utilities
 include("custom_errors.jl")
 include("utils.jl")
+include("extended_ops.jl")
 
 # Training Helpers
 include("helpers/training.jl")
@@ -131,9 +132,11 @@ export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
 
+export LuxOps
+
 # Unexported functions that are part of the public API
 @compat public Experimental
-@compat public xlogx, xlogy
+@compat public xlogx, xlogy # TODO: deprecated in v1.0
 @compat public set_dispatch_doctor_preferences!
 @compat(public,
     (recursive_add!!, recursive_copyto!, recursive_eltype,

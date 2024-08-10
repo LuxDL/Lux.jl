@@ -45,3 +45,7 @@ function disable_stacktrace_truncation!(; disable::Bool=true)
         :disable_stacktrace_truncation)
     return
 end
+
+# Other deprecated functions
+@deprecate xlogx(x::Number) LuxOps.xlogx(x)
+@deprecate xlogy(x::Number, y::Number) LuxOps.xlogy(x, y)

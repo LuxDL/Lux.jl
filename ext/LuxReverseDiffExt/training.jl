@@ -12,7 +12,7 @@ end
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
     tape = ReverseDiff.InstructionTape()
-    ps_tracked = Lux.recursive_map(Lux.__Fix3(TrackedArray, tape), ts.parameters, dparams)
+    ps_tracked = Lux.recursive_map(Utils.Fix3(TrackedArray, tape), ts.parameters, dparams)
 
     loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     loss.deriv = true
@@ -70,7 +70,7 @@ end
     obj_fn_wrap = first ∘ obj_fn
 
     tape = ReverseDiff.InstructionTape()
-    ps_tracked = Lux.recursive_map(Lux.__Fix3(TrackedArray, tape), ps_cache, dparams)
+    ps_tracked = Lux.recursive_map(Utils.Fix3(TrackedArray, tape), ps_cache, dparams)
 
     loss = obj_fn_wrap(ts.model, ps_tracked, ts.states, data_cache)
     loss.deriv = true

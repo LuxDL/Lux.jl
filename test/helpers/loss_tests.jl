@@ -1,31 +1,30 @@
-@testitem "xlogx & xlogy" setup=[SharedTestSetup] tags=[:helpers] begin
-    using Lux: xlogx, xlogy
+@testitem "LuxOps.xlogx & LuxOps.xlogy" setup=[SharedTestSetup] tags=[:helpers] begin
     using ForwardDiff, Zygote, Enzyme
 
-    @test iszero(xlogx(0))
-    @test isnan(xlogx(NaN))
-    @test xlogx(2) ≈ 2.0 * log(2.0)
+    @test iszero(LuxOps.xlogx(0))
+    @test isnan(LuxOps.xlogx(NaN))
+    @test LuxOps.xlogx(2) ≈ 2.0 * log(2.0)
 
-    ∂x1 = ForwardDiff.derivative(xlogx, 2.0)
-    ∂x2 = Zygote.gradient(xlogx, 2.0)[1]
+    ∂x1 = ForwardDiff.derivative(LuxOps.xlogx, 2.0)
+    ∂x2 = Zygote.gradient(LuxOps.xlogx, 2.0)[1]
     @test ∂x1 ≈ ∂x2
 
-    @test @inferred(xlogx(2)) isa Number
-    @test @inferred(xlogx(0)) isa Number
-    @jet xlogx(2)
+    @test @inferred(LuxOps.xlogx(2)) isa Number
+    @test @inferred(LuxOps.xlogx(0)) isa Number
+    @jet LuxOps.xlogx(2)
 
-    @test iszero(xlogy(0, 1))
-    @test isnan(xlogy(NaN, 1))
-    @test isnan(xlogy(1, NaN))
-    @test isnan(xlogy(NaN, NaN))
-    @test xlogy(2, 3) ≈ 2.0 * log(3.0)
+    @test iszero(LuxOps.xlogy(0, 1))
+    @test isnan(LuxOps.xlogy(NaN, 1))
+    @test isnan(LuxOps.xlogy(1, NaN))
+    @test isnan(LuxOps.xlogy(NaN, NaN))
+    @test LuxOps.xlogy(2, 3) ≈ 2.0 * log(3.0)
 
-    ∂x1 = ForwardDiff.derivative(Base.Fix2(xlogy, 3.0), 2.0)
-    ∂y1 = ForwardDiff.derivative(Base.Fix1(xlogy, 2.0), 3.0)
-    ∂x2, ∂y2 = Zygote.gradient(xlogy, 2.0, 3.0)
+    ∂x1 = ForwardDiff.derivative(Base.Fix2(LuxOps.xlogy, 3.0), 2.0)
+    ∂y1 = ForwardDiff.derivative(Base.Fix1(LuxOps.xlogy, 2.0), 3.0)
+    ∂x2, ∂y2 = Zygote.gradient(LuxOps.xlogy, 2.0, 3.0)
     if LuxTestUtils.ENZYME_TESTING_ENABLED
         ((∂x3, ∂y3),) = Enzyme.autodiff(
-            Enzyme.Reverse, xlogy, Active, Active(2.0), Active(3.0))
+            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))
         @test ∂x1 ≈ ∂x2 ≈ ∂x3
         @test ∂y1 ≈ ∂y2 ≈ ∂y3
     else
@@ -34,24 +33,24 @@
         @test_broken false
     end
 
-    @test @inferred(xlogy(2, 3)) isa Number
-    @test @inferred(xlogy(0, 1)) isa Number
-    @jet xlogy(2, 3)
+    @test @inferred(LuxOps.xlogy(2, 3)) isa Number
+    @test @inferred(LuxOps.xlogy(0, 1)) isa Number
+    @jet LuxOps.xlogy(2, 3)
 
     if LuxTestUtils.ENZYME_TESTING_ENABLED
         @test @inferred(Enzyme.autodiff(
-            Enzyme.Reverse, xlogy, Active, Active(2.0), Active(3.0))) isa Any
+            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))) isa Any
     else
         @test_broken false
     end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
-        __f = sum ∘ Broadcast.BroadcastFunction(xlogx)
+        __f = sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogx)
         test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
 
         y = rand(10) |> aType
-        __f = sum ∘ Broadcast.BroadcastFunction(xlogy)
+        __f = sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogy)
         test_gradients(__f, x, y; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
     end
 end
