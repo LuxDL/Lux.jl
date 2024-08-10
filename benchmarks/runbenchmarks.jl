@@ -1,4 +1,5 @@
 using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
+using CpuId: CpuId
 using InteractiveUtils: versioninfo
 using LinearAlgebra: BLAS
 using Statistics: median
@@ -10,11 +11,17 @@ pinthreads(:cores)
 # To run benchmarks on a specific GPU backend, add AMDGPU / CUDA / Metal / oneAPI
 # to benchmarks/Project.toml and change BENCHMARK_GROUP to the backend name
 const BENCHMARK_GROUP = get(ENV, "BENCHMARK_GROUP", "CPU")
+@info "Running benchmarks for $BENCHMARK_GROUP"
 
 if BENCHMARK_GROUP == "CPU"
     if Sys.isapple() && (Sys.ARCH == :aarch64 || Sys.ARCH == :arm64)
-        @info "Running benchmarks on Apple with ARM CPUs. Using AppleAccelerate.jl."
-        using AppleAccelerate
+        @info "Running benchmarks on Apple with ARM CPUs. Using `AppleAccelerate.jl`."
+        using AppleAccelerate: AppleAccelerate
+    end
+
+    if Sys.ARCH == :x86_64 && occursin("intel", lowercase(CpuId.cpubrand()))
+        @info "Running benchmarks on Intel CPUs. Loading `MKL.jl`."
+        using MKL: MKL
     end
 end
 
@@ -25,9 +32,7 @@ BLAS.set_num_threads(Threads.nthreads() ÷ 2)
 
 const SUITE = BenchmarkGroup()
 
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 30
-
-const FORCE_BENCHMARK_TUNING = parse(Bool, get(ENV, "FORCE_BENCHMARK_TUNING", "false"))
+const TUNE_BENCHMARKS = parse(Bool, get(ENV, "TUNE_BENCHMARKS", "true"))
 const BENCHMARK_CPU_THREADS = Threads.nthreads()
 
 # Number of CPU threads to benchmarks on
@@ -65,17 +70,21 @@ params_filename = BENCHMARK_GROUP == "CPU" ?
                   string("CPUbenchmarks", BENCHMARK_CPU_THREADS, "threads_params.json") :
                   string(BENCHMARK_GROUP, "benchmarks_params.json")
 
-try
-    params_file_url = "https://raw.githubusercontent.com/LuxDL/Lux.jl/gh-pages/benchmark-params/$(params_filename)"
-    @info "Downloaded params file from $params_file_url"
-    global download_path = download(params_file_url, params_filename)
-catch err
-    @error "Failed to download params file from \
-            https://raw.githubusercontent.com/LuxDL/Lux.jl/gh-pages/benchmark-params/$(params_filename)" err
+if !TUNE_BENCHMARKS
+    try
+        params_file_url = "https://raw.githubusercontent.com/LuxDL/Lux.jl/gh-pages/benchmark-params/$(params_filename)"
+        @info "Downloaded params file from $params_file_url"
+        global download_path = download(params_file_url, params_filename)
+    catch err
+        @error "Failed to download params file from \
+                https://raw.githubusercontent.com/LuxDL/Lux.jl/gh-pages/benchmark-params/$(params_filename)" err
+        global download_path = nothing
+    end
+else
     global download_path = nothing
 end
 
-if download_path !== nothing && !FORCE_BENCHMARK_TUNING
+if download_path !== nothing && !TUNE_BENCHMARKS
     @info "Loading params from $download_path"
     _, has_all_groups = loadparams!(
         SUITE, BenchmarkTools.load(download_path)[1], :evals)
