@@ -2,9 +2,9 @@ macro compact(exs...)
     Base.depwarn(
         "Lux.Experimental.@compact` has been promoted out of `Lux.Experimental` and is now \
          available in `Lux`. In other words this has been deprecated and will be removed \
-         in v0.6. Use `Lux.@compact` instead.",
+         in v1. Use `Lux.@compact` instead.",
         Symbol("@compact"))
-    return Lux.__compact_macro_impl(exs...)
+    return Lux.compact_macro_impl(exs...)
 end
 
 Base.@deprecate StatefulLuxLayer(args...; kwargs...) Lux.StatefulLuxLayer(

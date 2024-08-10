@@ -204,11 +204,11 @@ used inside a `Chain`.
     account for the total number of parameters printed at the bottom.
 """
 macro compact(_exs...)
-    return __compact_macro_impl(_exs...)
+    return compact_macro_impl(_exs...)
 end
 
 # Needed for the deprecation path
-function __compact_macro_impl(_exs...)
+function compact_macro_impl(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs
     if isempty(_exs)
         msg = "expects at least two expressions: a function and at least one keyword"
