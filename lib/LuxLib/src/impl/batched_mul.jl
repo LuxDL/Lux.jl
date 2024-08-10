@@ -15,6 +15,10 @@ end
 
 function batched_matmul(::GPUBroadcastOp{AMDGPUDevice},
         x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+    if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
+       (size(x, 2) != size(y, 1))
+        throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
+    end
     @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
            AMDGPUDevice" maxlog=1
     @assert size(x, 3) == size(y, 3) || size(x, 3) == 1 || size(y, 3) == 1

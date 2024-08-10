@@ -16,7 +16,7 @@ function groupnorm_affine_normalize(
         internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ)
 end
 
-@stable default_mode="disable" function groupnorm_affine_normalize(
+function groupnorm_affine_normalize(
         ::GenericBroadcastOp, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
@@ -24,21 +24,35 @@ end
         act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ)
 end
 
-@stable default_mode="disable" function groupnorm_affine_normalize(
+@generated function groupnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
-    x′ = reshape(x, :, size(x, N - 2), size(x, N - 1), size(x, N))
-    μ′ = reshape(μ, 1, 1, size(x, N - 1), size(x, N))
-    σ²′ = reshape(σ², 1, 1, size(x, N - 1), size(x, N))
-    γ′ = get_utils(:reshape)(γ, 1, size(x, N - 2), size(x, N - 1), 1)
-    β′ = get_utils(:reshape)(β, 1, size(x, N - 2), size(x, N - 1), 1)
+    reshape_calls = if typeof(γ) != Nothing
+        quote
+            γ′ = reshape(γ, 1, size(x, N - 2), size(x, N - 1), 1)
+            β′ = reshape(β, 1, size(x, N - 2), size(x, N - 1), 1)
+        end
+    else
+        quote
+            γ′ = nothing
+            β′ = nothing
+        end
+    end
 
-    return reshape(
-        groupnorm_affine_normalize_internal(opmode, act, x′, μ′, σ²′, γ′, β′, ϵ), size(x))
+    return quote
+        x′ = reshape(x, :, size(x, N - 2), size(x, N - 1), size(x, N))
+        μ′ = reshape(μ, 1, 1, size(x, N - 1), size(x, N))
+        σ²′ = reshape(σ², 1, 1, size(x, N - 1), size(x, N))
+        $(reshape_calls)
+        return reshape(
+            groupnorm_affine_normalize_internal(opmode, act, x′, μ′, σ²′, γ′, β′, ϵ),
+            size(x))
+    end
 end
 
-function groupnorm_affine_normalize_internal(opmode::AbstractInternalArrayOpMode, act::F,
+@stable default_mode="disable" function groupnorm_affine_normalize_internal(
+        opmode::AbstractInternalArrayOpMode, act::F,
         x::AbstractArray{<:Number, 4}, μ::AbstractArray{<:Number, 4},
         σ²::AbstractArray{<:Number, 4}, γ::Optional{<:AbstractArray{<:Number, 4}},
         β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
@@ -181,7 +195,8 @@ function CRC.rrule(
         promote_type(Utils.eltype(x), Utils.eltype(μ), Utils.eltype(σ²),
             Utils.eltype(γ), Utils.eltype(β)))
     groupnorm_affine_normalize_internal!(y, opmode, identity, x, μ, σ², γ, β, ϵ)
-    z, ∇activation = CRC.rrule_via_ad(cfg, activation!!, f, y)
+    z, ∇activation = CRC.rrule_via_ad(
+        cfg, activation!!, opmode, Traits.is_mutable_array(y), f, y)
 
     𝒫x, 𝒫μ, 𝒫σ² = CRC.ProjectTo(x), CRC.ProjectTo(μ), CRC.ProjectTo(σ²)
     𝒫γ = γ === nothing ? identity : CRC.ProjectTo(γ)
@@ -306,13 +321,13 @@ end
 @kernel function ∇groupnorm_affine_normalize_kernel!(
         ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(γ), @Const(ϵ))
     (i, j, k, l) = @index(Global, NTuple)
-    @inbounds idenom = sqrt(σ²[1, 1, k, l] + ϵ)
-    @inbounds idenom² = idenom^2
+    @inbounds idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
+    @inbounds idenom² = denom^2
 
     if γ !== nothing
-        @inbounds γ′ = γ[1, j, k, 1] / idenom
+        @inbounds γ′ = γ[1, j, k, 1] * idenom
     else
-        @inbounds γ′ = inv(idenom)
+        @inbounds γ′ = idenom
     end
 
     @inbounds xμ = x[i, j, k, l] - μ[1, 1, k, l]

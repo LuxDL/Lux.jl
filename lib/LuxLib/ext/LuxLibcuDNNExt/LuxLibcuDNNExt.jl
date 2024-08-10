@@ -23,7 +23,7 @@ function Impl.batchnorm(x::Union{<:CuArray{T, 2}, <:CuArray{T, 4}, <:CuArray{T, 
         training::StaticBool, σ::F, m::Real, ϵ::Real) where {T <: cuDNNFloat, F}
     rμₙ, rσ²ₙ = Impl.get_batchnorm_statistics(x, rμ, rσ², training)
     y = Impl.batchnorm_cudnn(γ, β, x, rμₙ, rσ²ₙ, m, ϵ, training)[1]
-    return Impl.activation!!(σ, y), vec(rμₙ), vec(rσ²ₙ)
+    return Impl.activation!!(σ, y), Utils.vec(rμₙ), Utils.vec(rσ²ₙ)
 end
 
 function CRC.rrule(

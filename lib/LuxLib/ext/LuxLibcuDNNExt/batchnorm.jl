@@ -43,8 +43,8 @@ function batchnorm_cudnn!(
 
     γ = reshape(γ′, dims)
     β = reshape(β′, dims)
-    rμ = Utils.reshape(rμ′, dims)
-    rσ² = Utils.reshape(rσ²′, dims)
+    rμ = Utils.reshape(rμ′, dims...)
+    rσ² = Utils.reshape(rσ²′, dims...)
 
     if rμ === nothing || rσ² === nothing
         rμ !== rσ² && throw(ArgumentError("both or neither of rμ and rσ² must be nothing"))
@@ -120,8 +120,8 @@ function ∇batchnorm_cudnn!(
     ∂γ = reshape(∂γ′, dims)
     γ = reshape(γ′, dims)
     ∂β = reshape(∂β′, dims)
-    rμ = Utils.reshape(rμ′, dims)
-    rσ² = Utils.reshape(rσ²′, dims)
+    rμ = Utils.reshape(rμ′, dims...)
+    rσ² = Utils.reshape(rσ²′, dims...)
 
     if rμ === nothing && rσ² === nothing
         rμ = CU_NULL

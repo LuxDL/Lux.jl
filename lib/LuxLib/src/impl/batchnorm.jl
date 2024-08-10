@@ -13,7 +13,8 @@ function get_batchnorm_statistics(::AbstractArray, rμ::Optional{<:AbstractVecto
 end
 
 function get_batchnorm_statistics(x::AbstractArray, ::Nothing, ::Nothing, ::False)
-    return mean_var(x; dims=Utils.known(batchnorm_reduce_dims(x)), corrected=false)
+    μ, σ² = mean_var(x; dims=Utils.known(batchnorm_reduce_dims(x)), corrected=false)
+    return Utils.vec(μ), Utils.vec(σ²)
 end
 
 function get_batchnorm_statistics(
@@ -42,7 +43,7 @@ function batchnorm_affine_normalize(
         internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ)
 end
 
-@stable default_mode="disable" function batchnorm_affine_normalize(
+function batchnorm_affine_normalize(
         ::GenericBroadcastOp, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
@@ -50,7 +51,7 @@ end
         act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ)
 end
 
-@stable default_mode="disable" function batchnorm_affine_normalize(
+function batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{<:Number, N},
         μ::AbstractArray{<:Number, N}, σ²::AbstractArray{<:Number, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real) where {F, N}
@@ -60,7 +61,7 @@ end
         size(x))
 end
 
-function batchnorm_affine_normalize_internal(
+@stable default_mode="disable" function batchnorm_affine_normalize_internal(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{<:Number, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, ϵ::Real) where {F}
@@ -218,7 +219,8 @@ function CRC.rrule(
         x, promote_type(Utils.eltype(γ), Utils.eltype(σ²), Utils.eltype(ϵ)), size(x, N - 1))
 
     batchnorm_affine_normalize_internal!(y, opmode, identity, x, μ, σ², γ, β, ϵ, γ′)
-    z, ∇activation = CRC.rrule_via_ad(cfg, activation!!, act, y)
+    z, ∇activation = CRC.rrule_via_ad(
+        cfg, activation!!, opmode, Traits.is_mutable_array(y), act, y)
 
     𝒫x, 𝒫μ, 𝒫σ² = CRC.ProjectTo(x), CRC.ProjectTo(μ), CRC.ProjectTo(σ²)
     𝒫γ = γ === nothing ? identity : CRC.ProjectTo(γ)
@@ -265,7 +267,7 @@ function ∇batchnorm_affine_normalize!(
             for I in indices(∂y, 1)
                 xμ = x[I, J, K] - μ[J]
 
-                ∂x[I, J, K] = ∂y[I, J, K] * idenomx
+                ∂x[I, J, K] = ∂y[I, J, K] * idenom
                 ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
             end
         end

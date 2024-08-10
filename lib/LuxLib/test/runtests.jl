@@ -21,7 +21,7 @@ end
 
 const LUXLIB_TEST_GROUP = get(ENV, "LUXLIB_TEST_GROUP", "all")
 const RETESTITEMS_NWORKERS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 16))))
+    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
 const RETESTITEMS_NWORKER_THREADS = parse(Int,
     get(ENV, "RETESTITEMS_NWORKER_THREADS",
         string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))))

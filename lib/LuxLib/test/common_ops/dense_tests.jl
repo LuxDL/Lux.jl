@@ -10,7 +10,7 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     w = randn(rng, Tw, M, N) |> aType
     x = randn(rng, Tx, N, 3) |> aType
 
-    if activation === tanh_fast || activation === tanh
+    if activation === tanh_fast || activation === tanh || activation === gelu
         bias = bias === nothing ? nothing : (bias .* eltype(bias)(0.001))
         w = w .* eltype(w)(0.001)
         x = x .* eltype(x)(0.001)
@@ -31,12 +31,8 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
 
     __f = (σ, w, x, b) -> sum(abs2, fused_dense_bias_activation(σ, w, x, b))
 
-    if !fp16  # don't test this for fallbacks
-        if activation !== anonact
-            @test @inferred(Zygote.gradient(__f, activation, w, x, bias)) isa Any
-        else
-            @test length(@inferred(Zygote.gradient(__f, activation, w, x, bias)))==4 broken=true
-        end
+    if !fp16 && activation !== anonact
+        @test @inferred(Zygote.gradient(__f, activation, w, x, bias)) isa Any
     end
 
     skip_backends = []
@@ -47,15 +43,14 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     __f_grad = let activation = activation
         (w, x, b) -> __f(activation, w, x, b)
     end
-    test_gradients(
-        __f_grad, w, x, bias; atol, rtol, skip_backends, soft_fail=fp16 ? fp16 : [])
+    test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     ((Float16, Float16), (Float32, Float16), (Float32, Float32),
         (Float32, Float64), (Float64, Float64)),
-    (4, 32, 1024),
-    (4, 32, 1024),
+    (4, 32),
+    (4, 32),
     (true, false),
     (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact))
 

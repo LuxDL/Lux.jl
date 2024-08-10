@@ -33,7 +33,7 @@ ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 contiguous(x::AbstractArray) = x
 contiguous(x::SubArray) = copy(x)
 
-reshape(x::AbstractArray, dims...) = Base.reshape(x, dims)
+reshape(x::AbstractArray, dims...) = Base.reshape(x, dims...)
 reshape(::Nothing, dims...) = nothing
 
 remove_tracking(x::Number) = x

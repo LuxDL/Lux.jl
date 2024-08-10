@@ -42,19 +42,18 @@ end
     return y
 end
 
-function CRC.rrule(
-        cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation), opmode::LoopedArrayOp,
-        σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
+        opmode::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{<:Number, N},
+        bias::AbstractVector{<:Number}) where {F, N}
     T = Utils.concrete_bias_act_output_eltype(σ, x, bias)
+    𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
     if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
         y = bias_activation(opmode, σ, x, bias)
-        𝒫x_no_intermediate = CRC.ProjectTo(x)
-        𝒫bias_no_intermediate = CRC.ProjectTo(bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), y, σ, Utils.NotaNumber())
             ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, 𝒫x_no_intermediate(∂x), 𝒫bias_no_intermediate(∂b)
+            return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
         end
         return y, ∇bias_activation_no_intermediate
     end
@@ -63,17 +62,20 @@ function CRC.rrule(
         tmp = similar(x, T)
         bias_add!(tmp, opmode, x, bias)
         y = activation(opmode, σ, tmp)
-        𝓟x_cached = CRC.ProjectTo(x)
-        𝓟bias_cached = CRC.ProjectTo(bias)
         ∇bias_activation_rrule = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), y, σ, tmp)
             ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, 𝓟x_cached(∂x), 𝓟bias_cached(∂b)
+            return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
         end
         return y, ∇bias_activation_rrule
     end
 
-    return CRC.rrule_via_ad(cfg, bias_activation, GenericBroadcastOp(), σ, x, bias)
+    y, ∇broadcast = CRC.rrule_via_ad(cfg, broadcast, σ ∘ +, x, reshape_bias(x, bias))
+    ∇bias_activation_rrule = @closure Δ -> begin
+        _, _, ∂x, ∂bias = ∇broadcast(Δ)
+        return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(vec(∂bias))
+    end
+    return y, ∇bias_activation_rrule
 end
 
 bias_activation!!(::typeof(identity), x::AbstractVector{<:Number}, ::Nothing) = x
@@ -116,27 +118,24 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         opmode::AbstractInternalArrayOpMode, ::True, σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     T = Utils.concrete_bias_act_output_eltype(σ, x, bias)
+    𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
     if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
         bias_activation!(x, opmode, σ, x, bias)
-        𝒫x_no_intermediate = CRC.ProjectTo(x)
-        𝒫bias_no_intermediate = CRC.ProjectTo(bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), x, σ, Utils.NotaNumber())
             ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x_no_intermediate(∂x), 𝒫bias_no_intermediate(∂b)
+            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
         end
         return x, ∇bias_activation_no_intermediate
     end
 
     if Utils.known(Traits.activation_has_rrule(σ, T))
         y, tmp = bias_activation_cached!!(σ, x, bias)
-        𝓟x_cached = CRC.ProjectTo(x)
-        𝓟bias_cached = CRC.ProjectTo(bias)
         ∇bias_activation_rrule = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), y, σ, tmp)
             ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, ∂∅, 𝓟x_cached(∂x), 𝓟bias_cached(∂b)
+            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
         end
         return y, ∇bias_activation_rrule
     end
@@ -144,8 +143,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
     res, ∇bias_activation_from_ad = CRC.rrule_via_ad(
         cfg, bias_activation, opmode, σ, x, bias)
     ∇bias_activation_fallback = @closure Δ -> begin
-        _, ∂opmode, ∂σ, ∂x, ∂b = ∇bias_activation_from_ad(Δ)
-        return ∂∅, ∂opmode, ∂∅, ∂σ, ∂x, ∂b
+        _, _, _, ∂x, ∂b = ∇bias_activation_from_ad(Δ)
+        return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
     end
     return res, ∇bias_activation_fallback
 end
