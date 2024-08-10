@@ -1,17 +1,17 @@
 """
-    FrozenLayer(l::AbstractExplicitLayer, which_params::Union{Tuple, Nothing})
+    FrozenLayer(l::AbstractExplicitLayer, which_params::Optional{Tuple})
 
 Freeze the parameters with name `which_params` of the layer `l`.
 
-!!! tip
+!!! tip "Use `Lux.Experimental.freeze` instead"
 
     It is always recommended to use the [`Lux.Experimental.freeze`](@ref) function instead
     of directly using the `FrozenLayer` constructor.
 
-!!! warning
+!!! warning "No checks for `which_params`"
 
     There are no checks for `which_params`. For example, if the original layer has
-    parameters named `(:weight, :bias)`, and `which_params`is set to`(:myweight,)`
+    parameters named `(:weight, :bias)`, and `which_params` is set to `(:myweight,)`
     then none of the parameters are frozen and no error is thrown.
 
 ## Arguments
@@ -20,14 +20,7 @@ Freeze the parameters with name `which_params` of the layer `l`.
   - `which_params`: Parameter Names to be Frozen. Can be set to `nothing`, in which case all
     parameters are frozen.
 
-## Input
-
-  - `x`: Input to the layer `l`.
-
-## Returns
-
-  - Output of the inner layer `l`
-  - Updated State
+# Extended Help
 
 ## Parameters
 
@@ -41,7 +34,8 @@ Freeze the parameters with name `which_params` of the layer `l`.
 ## Note on Internal Layer Implementation
 
 The inner layer should work with `NamedTuple` parameters. In order to support custom
-parameter types, users need to implement `Lux._merge(::CustomParamType, ::NamedTuple)`.
+parameter types, users need to implement `Lux.Utils.merge(::CustomParamType, ::NamedTuple)`
+or extend `Lux.Utils.named_tuple(::CustomParamType)` to return a `NamedTuple`.
 
 ## Example
 
@@ -55,8 +49,7 @@ See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).
 struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicitLayer
     layer::L
 
-    function FrozenLayer(
-            l::AbstractExplicitLayer, which_params::Union{Tuple, Nothing}=nothing)
+    function FrozenLayer(l::AbstractExplicitLayer, which_params::Optional{Tuple}=nothing)
         if which_params !== nothing && length(which_params) == 0
             @warn "Layer `FrozenLayer($l, (,))` is same as `l`, returning `l`."
             return l
@@ -89,41 +82,38 @@ function LuxCore.initialstates(
 end
 
 function (f::FrozenLayer)(x, ps, st::NamedTuple)
-    y, st_ = f.layer(x, Lux._merge(ps, st.frozen_params), st.states)
-    st = merge(st, (; states=st_))
-    return y, st
+    y, stₙ = f.layer(x, Lux.Utils.merge(ps, st.frozen_params), st.states)
+    return y, merge(st, (; states=stₙ))
 end
 
 function Base.show(io::IO, f::FrozenLayer{which_params}) where {which_params}
-    if which_params === nothing
-        return print(io, "FrozenLayer(", f.layer, ")")
-    end
+    which_params === nothing && return print(io, "FrozenLayer(", f.layer, ")")
     print(io, "FrozenLayer(", f.layer, ", ", which_params, ")")
 end
 
 """
-    freeze(l::AbstractExplicitLayer, which_params::Union{Tuple, Nothing} = nothing)
+    freeze(l::AbstractExplicitLayer, which_params::Optional{Tuple} = nothing)
 
 Constructs a version of `l` with `which_params` frozen. If `which_params` is nothing,
 then all parameters are frozen.
 """
-function freeze(l::AbstractExplicitLayer, which_params::Union{Tuple, Nothing}=nothing)
+function freeze(l::AbstractExplicitLayer, which_params::Optional{Tuple}=nothing)
     return FrozenLayer(l, which_params)
 end
 
 """
     freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
-           which_params::Union{Tuple, Nothing} = nothing)
+        which_params::Optional{Tuple} = nothing)
 
 Construct a [`Lux.Experimental.FrozenLayer`](@ref) for `l` with the current parameters and
 states. If `which_params` is nothing, then all parameters are frozen.
 """
-function freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
-        which_params::Union{Tuple, Nothing}=nothing)
+function freeze(
+        l::AbstractExplicitLayer, ps, st::NamedTuple, which_params::Optional{Tuple}=nothing)
     fl = freeze(l, which_params)
     ps_frozen = []
     ps_trainable = []
-    for (k, v) in Lux._pairs(ps)
+    for (k, v) in Utils.pairs(ps)
         if which_params === nothing || k in which_params
             push!(ps_frozen, k => v)
         else
