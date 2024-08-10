@@ -5,7 +5,7 @@ using InteractiveUtils, Hwloc
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
-    "normalize_layers", "others", "autodiff", "recurrent_layers"]
+    "normalize_layers", "others", "autodiff", "recurrent_layers", "fluxcompat"]
 
 __INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", __INPUT_TEST_GROUP[1])
@@ -22,7 +22,7 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, "MPI")
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "NCCL")
 end
-("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
+("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
 
@@ -69,7 +69,7 @@ using Lux
 end
 
 const RETESTITEMS_NWORKERS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 16))))
+    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
 
 @testset "ReTestItem Tests" begin
     for (i, tag) in enumerate(LUX_TEST_GROUP)
