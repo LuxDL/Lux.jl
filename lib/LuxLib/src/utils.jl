@@ -154,11 +154,6 @@ inferred_length(::Type{<:NTuple{N, Any}}) where {N} = N
     L == 1 && return :(f(xs[1]))
     return Expr(:call, :|, (:(f(xs[$i])) for i in 1:L)...)
 end
-@generated function unrolled_all(f::F, xs) where {F}
-    L = inferred_length(xs)
-    L == 1 && return :(f(xs[1]))
-    return Expr(:call, :&, (:(f(xs[$i])) for i in 1:L)...)
-end
 
 # Working with batches
 batchview(x::AbstractArray{<:Any, 3}, k::Int) = view(x, :, :, k)

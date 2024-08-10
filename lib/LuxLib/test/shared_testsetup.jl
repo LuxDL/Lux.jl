@@ -6,6 +6,23 @@ using LuxLib, MLDataDevices
 
 LuxTestUtils.jet_target_modules!(["LuxLib"])
 
+const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default"))
+
+if LUXLIB_BLAS_BACKEND == "default"
+    @info "Using default BLAS backend: OpenBLAS"
+elseif LUXLIB_BLAS_BACKEND == "appleaccelerate"
+    @info "Using AppleAccelerate BLAS backend"
+    using AppleAccelerate
+elseif LUXLIB_BLAS_BACKEND == "blis"
+    @info "Using BLIS BLAS backend"
+    using BLISBLAS
+elseif LUXLIB_BLAS_BACKEND == "mkl"
+    @info "Using MKL BLAS backend"
+    using MKL
+else
+    error("Unknown BLAS backend: $(LUXLIB_BLAS_BACKEND)")
+end
+
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
 
 if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"

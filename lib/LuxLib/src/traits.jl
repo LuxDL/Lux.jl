@@ -64,6 +64,7 @@ end
 module System
 
 using ChainRulesCore: ChainRulesCore
+using Hwloc: Hwloc
 using Static: False
 
 using ..Utils
@@ -87,6 +88,24 @@ function use_octavian()
 end
 
 CRC.@non_differentiable use_octavian()
+
+const L1CacheSize::Int = minimum(Hwloc.l1cache_sizes(); init=0)
+const L2CacheSize::Int = minimum(Hwloc.l2cache_sizes(); init=0)
+const L3CacheSize::Int = minimum(Hwloc.l3cache_sizes(); init=0)
+
+# NOTE: some systems might not have L3 cache, so we check whether it fits in L(N - 1) cache
+fits_in_l1cache(xs::AbstractArray...) = sum(sizeof, xs) ≤ L1CacheSize
+CRC.@non_differentiable fits_in_l1cache(::Any...)
+
+function fits_in_l2cache(xs::AbstractArray...)
+    return fits_in_l1cache(xs...) || sum(sizeof, xs) ≤ L2CacheSize
+end
+CRC.@non_differentiable fits_in_l2cache(::Any...)
+
+function fits_in_l3cache(xs::AbstractArray...)
+    return fits_in_l2cache(xs...) || sum(sizeof, xs) ≤ L3CacheSize
+end
+CRC.@non_differentiable fits_in_l3cache(::Any...)
 
 end
 

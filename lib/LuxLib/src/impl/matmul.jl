@@ -70,8 +70,7 @@ end
 
 function matmuladd_cpu!(C::AbstractMatrix, ::False, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    if LV.check_args(C, A, B) &&
-       Utils.unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+    if LV.check_args(C, A, B) && System.fits_in_l1cache(C, A, B)
         matmuladd_loopvec!(C, A, B, bias)
         return
     end
@@ -82,11 +81,10 @@ end
 function matmuladd_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
     if LV.check_args(C, A, B)
-        dims = (size(C, 1), size(A, 2), size(B, 2))
-        if Utils.unrolled_all(≤(256), dims)
+        if System.fits_in_l1cache(C, A, B)
             matmuladd_loopvec!(C, A, B, bias)
             return
-        elseif Utils.unrolled_any(≤(2048), dims) && Utils.unrolled_all(≤(10_000), dims)
+        elseif System.fits_in_l3cache(C, A, B)
             matmuladd_octavian!(C, A, B, bias)
             return
         end
@@ -113,10 +111,10 @@ end
 function matmul_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix, B::AbstractMatrix)
     dims = (size(C, 1), size(A, 2), size(B, 2))
     if LV.check_args(C, A, B)
-        if Utils.unrolled_all(≤(16), dims)
+        if System.fits_in_l1cache(C, A, B)
             serial_matmul_loopvec!(C, A, B, true, false)
             return
-        elseif Utils.unrolled_any(≤(2048), dims) && Utils.unrolled_all(≤(10_000), dims)
+        elseif System.fits_in_l3cache(C, A, B)
             matmul_octavian!(C, A, B, true, false)
             return
         end
@@ -126,8 +124,7 @@ function matmul_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix, B::AbstractMa
 end
 
 function matmul_cpu!(C::AbstractMatrix, ::False, A::AbstractMatrix, B::AbstractMatrix)
-    if LV.check_args(C, A, B) &&
-       Utils.unrolled_all(≤(256), (size(C, 1), size(A, 2), size(B, 2)))
+    if LV.check_args(C, A, B) && System.fits_in_l1cache(C, A, B)
         matmul_loopvec!(C, A, B, true, false)
         return
     end

@@ -8,6 +8,10 @@ Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const EXTRA_PKGS = String[]
 
+const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default"))
+@assert LUXLIB_BLAS_BACKEND in ("default", "appleaccelerate", "blis", "mkl")
+@info "Running tests with BLAS backend: $(LUXLIB_BLAS_BACKEND)"
+
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
 
