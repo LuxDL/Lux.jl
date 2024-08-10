@@ -21,7 +21,7 @@ Convert a Flux Model to Lux Model.
 
 ## Example
 
-```jldoctest
+```julia
 julia> import Flux
 
 julia> using Adapt, Lux, Random

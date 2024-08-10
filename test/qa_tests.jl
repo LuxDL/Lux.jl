@@ -11,7 +11,7 @@ end
 
 @testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
     # Load all trigger packages
-    import Lux, ComponentArrays, ReverseDiff, Flux, SimpleChains, Tracker, Zygote, Enzyme
+    import Lux, ComponentArrays, ReverseDiff, SimpleChains, Tracker, Zygote, Enzyme
     using ExplicitImports
 
     # Skip our own packages
@@ -33,7 +33,6 @@ end
 
     doctestexpr = quote
         using SimpleChains: static
-        using Flux: Flux
         using DynamicExpressions
         using Adapt, Lux, Random, Optimisers, Zygote
     end
