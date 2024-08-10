@@ -1,4 +1,4 @@
-@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:fluxcompat] begin
     import Flux
 
     from_flux = fdev(::Lux.LuxCPUDevice) = Flux.cpu

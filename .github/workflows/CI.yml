@@ -43,6 +43,7 @@ jobs:
           - "autodiff"
           - "recurrent_layers"
           - "eltype_match"
+          - "fluxcompat"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -146,6 +147,7 @@ jobs:
           - "autodiff"
           - "recurrent_layers"
           - "eltype_match"
+          - "fluxcompat"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
