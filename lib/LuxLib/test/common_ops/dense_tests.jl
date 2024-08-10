@@ -1,12 +1,20 @@
 @testsetup module DenseSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs
 
 anonact = x -> x^3
 
-function run_dense_testing(gen_f, Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
-    bias = hasbias ? gen_f(Tw, M) |> aType : nothing
-    w = gen_f(Tw, M, N) |> aType
-    x = gen_f(Tx, N, 3) |> aType
+function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
+    rng = StableRNG(1234)
+
+    bias = hasbias ? randn(rng, Tw, M) |> aType : nothing
+    w = randn(rng, Tw, M, N) |> aType
+    x = randn(rng, Tx, N, 3) |> aType
+
+    if activation === tanh_fast || activation === tanh
+        bias = bias === nothing ? nothing : (bias .* eltype(bias)(0.001))
+        w = w .* eltype(w)(0.001)
+        x = x .* eltype(x)(0.001)
+    end
 
     y = fused_dense_bias_activation(activation, w, x, bias)
     y_generic = bias === nothing ? activation.(w * x) : activation.(w * x .+ bias)
@@ -61,8 +69,7 @@ end
 @testitem "Fused Dense: Group 1" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[1]
-            run_dense_testing(
-                generate_fixed_array, Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
+            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
@@ -70,8 +77,7 @@ end
 @testitem "Fused Dense: Group 2" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[2]
-            run_dense_testing(
-                generate_fixed_array, Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
+            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
@@ -79,8 +85,7 @@ end
 @testitem "Fused Dense: Group 3" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[3]
-            run_dense_testing(
-                generate_fixed_array, Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
+            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
@@ -88,8 +93,7 @@ end
 @testitem "Fused Dense: Group 4" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[4]
-            run_dense_testing(
-                generate_fixed_array, Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
+            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
@@ -97,8 +101,7 @@ end
 @testitem "Fused Dense: Group 5" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[5]
-            run_dense_testing(
-                generate_fixed_array, Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
+            run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
