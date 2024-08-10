@@ -7,9 +7,15 @@ using ThreadPinning: pinthreads
 
 pinthreads(:cores)
 
-if Sys.isapple() && Sys.ARCH == :aarch64
-    @warn "Running benchmarks on Apple with ARM CPUs. Using AppleAccelerate.jl."
-    using AppleAccelerate
+# To run benchmarks on a specific GPU backend, add AMDGPU / CUDA / Metal / oneAPI
+# to benchmarks/Project.toml and change BENCHMARK_GROUP to the backend name
+const BENCHMARK_GROUP = get(ENV, "BENCHMARK_GROUP", "CPU")
+
+if BENCHMARK_GROUP == "CPU"
+    if Sys.isapple() && (Sys.ARCH == :aarch64 || Sys.ARCH == :arm64)
+        @info "Running benchmarks on Apple with ARM CPUs. Using AppleAccelerate.jl."
+        using AppleAccelerate
+    end
 end
 
 BLAS.set_num_threads(Threads.nthreads() ÷ 2)
@@ -19,11 +25,8 @@ BLAS.set_num_threads(Threads.nthreads() ÷ 2)
 
 const SUITE = BenchmarkGroup()
 
-BenchmarkTools.DEFAULT_PARAMETERS.seconds = 10
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 30
 
-# To run benchmarks on a specific GPU backend, add AMDGPU / CUDA / Metal / oneAPI
-# to benchmarks/Project.toml and change BENCHMARK_GROUP to the backend name
-const BENCHMARK_GROUP = get(ENV, "BENCHMARK_GROUP", "CPU")
 const FORCE_BENCHMARK_TUNING = parse(Bool, get(ENV, "FORCE_BENCHMARK_TUNING", "false"))
 const BENCHMARK_CPU_THREADS = Threads.nthreads()
 
