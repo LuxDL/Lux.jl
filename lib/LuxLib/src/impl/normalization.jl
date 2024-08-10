@@ -105,13 +105,17 @@ end
 
 function compute_batch_statistics(
         ::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray, _, ::False, momentum)
-    return (rμ, rσ²), (rμ, rσ²)
+    remove_tracking = get_utils(:remove_tracking)
+    return (remove_tracking(rμ), remove_tracking(rσ²)), (rμ, rσ²)
 end
 
 function compute_batch_statistics(x::AbstractArray, rμ::AbstractArray,
         rσ²::AbstractArray, reduce_dims, ::True, momentum)
     μ, σ² = mean_var(x; dims=Utils.known(reduce_dims), corrected=false)
-    rμ, rσ² = update_normalization_statistics(x, rμ, rσ², μ, σ², momentum, reduce_dims)
+    remove_tracking = get_utils(:remove_tracking)
+    rμ, rσ² = update_normalization_statistics(
+        remove_tracking(x), remove_tracking(rμ), remove_tracking(rσ²),
+        remove_tracking(μ), remove_tracking(σ²), momentum, reduce_dims)
     return (aos_to_soa(μ), aos_to_soa(σ²)), (rμ, rσ²)
 end
 
