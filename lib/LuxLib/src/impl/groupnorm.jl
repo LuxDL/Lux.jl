@@ -1,5 +1,7 @@
 groupnorm_reduce_dims(::AbstractArray{T, N}) where {T, N} = ntuple(static, N - 1)
 
+CRC.@non_differentiable groupnorm_reduce_dims(::Any)
+
 function groupnorm(x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, groups::Int, act::F, ϵ::Real) where {F, N}
     x′ = reshape(x, size(x)[1:(N - 2)]..., size(x, N - 1) ÷ groups, groups, size(x, N))

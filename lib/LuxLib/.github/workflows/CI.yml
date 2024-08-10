@@ -99,6 +99,7 @@ jobs:
           - { user: LuxDL, repo: Lux.jl, group: "autodiff" }
           - { user: LuxDL, repo: Lux.jl, group: "recurrent_layers" }
           - { user: LuxDL, repo: Lux.jl, group: "eltype_match" }
+          - { user: LuxDL, repo: Lux.jl, group: "fluxcompat" }
           - { user: LuxDL, repo: Boltz.jl, group: All }
     steps:
       - uses: actions/checkout@v4
