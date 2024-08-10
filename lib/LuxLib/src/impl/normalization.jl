@@ -112,7 +112,7 @@ function compute_batch_statistics(x::AbstractArray, rμ::AbstractArray,
         rσ²::AbstractArray, reduce_dims, ::True, momentum)
     μ, σ² = mean_var(x; dims=Utils.known(reduce_dims), corrected=false)
     rμ, rσ² = update_normalization_statistics(x, rμ, rσ², μ, σ², momentum, reduce_dims)
-    return (μ, σ²), (rμ, rσ²)
+    return (aos_to_soa(μ), aos_to_soa(σ²)), (rμ, rσ²)
 end
 
 # Main Implementation
