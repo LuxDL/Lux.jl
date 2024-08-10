@@ -1,7 +1,6 @@
 module LuxMPIExt
 
-using Lux: MPIBackend, NCCLBackend, DistributedUtils, __unwrap_val, MPI_CUDA_AWARE,
-           MPI_ROCM_AWARE
+using Lux: MPIBackend, NCCLBackend, DistributedUtils, MPI_CUDA_AWARE, MPI_ROCM_AWARE, Utils
 using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device,
                       set_device!, functional
 using MPI: MPI
@@ -155,8 +154,8 @@ end
 for (aware, dType) in ((MPI_CUDA_AWARE, LuxCUDADevice), (MPI_ROCM_AWARE, LuxAMDGPUDevice))
     if !aware
         @eval begin
-            function DistributedUtils.reduce_impl!(backend::MPIBackend, sendrecvbuf, op::F,
-                    ::$dType; root::Int) where {F}
+            function DistributedUtils.reduce_impl!(
+                    backend::MPIBackend, sendrecvbuf, op::F, ::$dType; root::Int) where {F}
                 cdev = cpu_device()
                 sendrecvbufₙ = sendrecvbuf |> cdev
                 DistributedUtils.reduce_impl!(backend, sendrecvbufₙ, op, cdev; root)

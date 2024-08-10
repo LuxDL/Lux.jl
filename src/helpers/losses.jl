@@ -2,19 +2,135 @@
 ```@meta
 DocTestFilters = r"[0-9\.]+f0"
 ```
+module LossFunctionImpl
+
+using ArrayInterface: fast_scalar_indexing
+using ChainRulesCore: ChainRulesCore, NoTangent, @non_differentiable, @thunk
+using EnzymeCore: EnzymeCore, EnzymeRules
+using FastClosures: @closure
+using LossFunctions: LossFunctions
+using Statistics: mean
+using UnrolledUtilities: unrolled_all
+
+using ..LuxOps: xlogx, xlogy
+
+const CRC = ChainRulesCore
+
+# Match the sizes of the inputs to the loss function
+function check_sizes(ŷ::AbstractArray, y::AbstractArray)
+    for d in 1:max(ndims(ŷ), ndims(y))
+        if size(ŷ, d) != size(y, d)
+            throw(DimensionMismatch("loss function expects size(ŷ) = $(size(ŷ)) to match \
+                                     size(y) = $(size(y))"))
+        end
+    end
+end
+check_sizes(_, __) = nothing
+
+@non_differentiable check_sizes(::Any, ::Any)
+
+# Aggregation. We are able to define custom aggregation fast paths
+fused_agg(::typeof(mean), op::OP, x) where {OP} = fused_agg(sum, op, x) / length(x)
+function fused_agg(::typeof(mean), lfn::LossFunctions.Traits.Loss, x, y)
+    return fused_agg(sum, lfn, x, y) / length(x)
+end
+
+fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
+fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
+
+fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x::Number, y::Number) = lfn(x, y)
+function fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
+    unrolled_all(fast_scalar_indexing, (x, y)) && return sum(lfn, x, y)
+    # mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y) leads to slowdowns, better to
+    # allocate a new array
+    return sum(lfn.(x, y))
+end
+
+fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
+fused_agg(f::F, op::OP, args...) where {F, OP} = f(op.(args...))
+
+function CRC.rrule(::typeof(fused_agg), ::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
+    ∇fused_agg = @closure Δ -> begin
+        ∂x = @thunk LossFunctions.deriv.(Ref(lfn), x, y) .* Δ
+        return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
+    end
+    return fused_agg(sum, lfn, x, y), ∇fused_agg
+end
+
+function EnzymeRules.augmented_primal(
+        cfg::EnzymeRules.ConfigWidth{1}, func::EnzymeCore.Const{typeof(fused_agg)},
+        ::Type{<:EnzymeCore.Active}, agg_f::EnzymeCore.Const{typeof(sum)},
+        lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
+        x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
+    primal = EnzymeRules.needs_primal(cfg) ? func.val(agg_f.val, lfn.val, x.val, y.val) :
+             nothing
+
+    cache_x = EnzymeRules.overwritten(cfg)[4] ? copy(x.val) : nothing
+    cache_y = EnzymeRules.overwritten(cfg)[5] ? copy(y.val) : nothing
+
+    return EnzymeRules.AugmentedReturn(primal, nothing, (cache_x, cache_y))
+end
+
+function EnzymeRules.reverse(
+        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(fused_agg)},
+        dret::EnzymeCore.Active, (cache_x, cache_y), agg_f::EnzymeCore.Const{typeof(sum)},
+        lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
+        x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
+    EnzymeRules.overwritten(cfg)[4] || (cache_x = x.val)
+    EnzymeRules.overwritten(cfg)[5] || (cache_y = y.val)
+
+    if !(typeof(x) <: EnzymeCore.Const)
+        @. x.dval = LossFunctions.deriv(lfn.val, cache_x, cache_y) * dret.val
+    end
+
+    return ntuple(Returns(nothing), 4)
+end
+
+get_ϵ(::Type{T}, ϵ::Real) where {T} = T(ϵ)
+get_ϵ(::Type{T}, ::Nothing) where {T} = eps(float(T))
+
+get_loss_dims(::AbstractVector) = Colon()
+get_loss_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
+
+# Functional forms of losses
+function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
+    return (1 - y) * x^2 + y * max(promote_type(T1, T2)(0), margin - x)^2
+end
+
+poisson_loss(x::T1, y::T2, ϵ) where {T1, T2} = x - xlogy(y, x + get_ϵ(T1, ϵ))
+
+function msle_loss(x::T1, y::T2, ϵ) where {T1, T2}
+    ϵ = get_ϵ(promote_type(T1, T2), ϵ)
+    return log((x + ϵ) / (y + ϵ))^2
+end
+
+label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
+function label_smoothing(label_smoothing::Real, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
+end
+
+label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
+function label_smoothing_binary(label_smoothing::Real, y, ::Type{T}) where {T}
+    label_smoothing = T(label_smoothing)
+    return y .* (1 - label_smoothing) .+ label_smoothing ./ 2
+end
+
+end
+
 abstract type AbstractLossFunction <: Function end
 
 function (loss::AbstractLossFunction)(model::AbstractExplicitLayer, ps, st, (x, y))
-    ŷ, st_ = model(x, ps, st)
-    return loss(ŷ, y), st_, (;)
+    ŷ, stₙ = model(x, ps, st)
+    return loss(ŷ, y), stₙ, (;)
 end
 
 function (loss::AbstractLossFunction)(ŷ, y)
-    __check_sizes(ŷ, y)
-    return __unsafe_apply_loss(loss, ŷ, y)
+    LossFunctionImpl.check_sizes(ŷ, y)
+    return unsafe_apply_loss(loss, ŷ, y)
 end
 
-function __unsafe_apply_loss end
+function unsafe_apply_loss end
 
 @doc doc"""
     BinaryCrossEntropyLoss(; agg = mean, epsilon = nothing,
@@ -40,6 +156,8 @@ $\in [0, 1]$, then the value of $\tilde{y}$ is:
 $$\tilde{y} = (1 - \alpha) * y + \alpha * 0.5$$
 
 where $\alpha$ is the value of `label_smoothing`.
+
+# Extended Help
 
 ## Example
 
@@ -83,18 +201,18 @@ function BinaryCrossEntropyLoss(;
         agg=mean, epsilon=nothing, label_smoothing::Union{Nothing, Real}=nothing,
         logits::Union{Bool, Val}=Val(false))
     label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
-    return BinaryCrossEntropyLoss{__unwrap_val(logits)}(label_smoothing, agg, epsilon)
+    return BinaryCrossEntropyLoss{Utils.unwrap_val(logits)}(label_smoothing, agg, epsilon)
 end
 
 for logits in (true, false)
-    return_expr = logits ? :(return loss.agg((1 .- y_smooth) .* ŷ .- logsigmoid.(ŷ))) :
-                  :(return loss.agg(-xlogy.(y_smooth, ŷ .+ ϵ) .-
-                                    xlogy.(1 .- y_smooth, 1 .- ŷ .+ ϵ)))
+    return_expr = logits ? :(return loss.agg((1 .- ỹ) .* ŷ .- logsigmoid.(ŷ))) :
+                  :(return loss.agg(-LossFunctionImpl.xlogy.(ỹ, ŷ .+ ϵ) .-
+                                    LossFunctionImpl.xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ)))
 
-    @eval function __unsafe_apply_loss(loss::BinaryCrossEntropyLoss{$(logits)}, ŷ, y)
+    @eval function unsafe_apply_loss(loss::BinaryCrossEntropyLoss{$(logits)}, ŷ, y)
         T = promote_type(eltype(ŷ), eltype(y))
-        ϵ = __get_epsilon(T, loss.epsilon)
-        y_smooth = __label_smoothing_binary(loss.label_smoothing, y, T)
+        ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
+        ỹ = LossFunctionImpl.label_smoothing_binary(loss.label_smoothing, y, T)
         $(return_expr)
     end
 end
@@ -134,13 +252,13 @@ international conference on computer vision. 2017.
     epsilon = nothing
 end
 
-@inline function __unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
+@inline function unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     γ = loss.gamma isa Integer ? loss.gamma : T(loss.gamma)
-    ϵ = __get_epsilon(T, loss.epsilon)
+    ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
     ŷϵ = ŷ .+ ϵ
     p_t = y .* ŷϵ + (1 .- y) .* (1 .- ŷϵ)
-    return __fused_agg(loss.agg, -, (1 .- p_t) .^ γ .* log.(p_t))
+    return LossFunctionImpl.fused_agg(loss.agg, -, (1 .- p_t) .^ γ .* log.(p_t))
 end
 
 @doc doc"""
@@ -163,6 +281,8 @@ $\tilde{y}$ is calculated as:
 $$\tilde{y} = (1 - \alpha) * y + \alpha * \text{size along dim}$$
 
 where $\alpha$ is the value of `label_smoothing`.
+
+# Extended Help
 
 ## Example
 
@@ -202,20 +322,20 @@ function CrossEntropyLoss(;
         dims=1, agg=mean, epsilon=nothing, label_smoothing::Union{Nothing, Real}=nothing,
         logits::Union{Bool, Val}=Val(false))
     label_smoothing !== nothing && @argcheck 0 ≤ label_smoothing ≤ 1
-    return CrossEntropyLoss{__unwrap_val(logits)}(label_smoothing, dims, agg, epsilon)
+    return CrossEntropyLoss{Utils.unwrap_val(logits)}(label_smoothing, dims, agg, epsilon)
 end
 
 for logits in (true, false)
     return_expr = logits ?
-                  :(return __fused_agg(
-        loss.agg, -, sum(y_smooth .* logsoftmax(ŷ; loss.dims); loss.dims))) :
-                  :(return __fused_agg(
-        loss.agg, -, sum(xlogy.(y_smooth, ŷ .+ ϵ); loss.dims)))
+                  :(return LossFunctionImpl.fused_agg(
+        loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims))) :
+                  :(return LossFunctionImpl.fused_agg(
+        loss.agg, -, sum(LossFunctionImpl.xlogy.(ỹ, ŷ .+ ϵ); loss.dims)))
 
-    @eval function __unsafe_apply_loss(loss::CrossEntropyLoss{$(logits)}, ŷ, y)
+    @eval function unsafe_apply_loss(loss::CrossEntropyLoss{$(logits)}, ŷ, y)
         T = promote_type(eltype(ŷ), eltype(y))
-        ϵ = __get_epsilon(T, loss.epsilon)
-        y_smooth = __label_smoothing(loss.label_smoothing, y, T)
+        ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
+        ỹ = LossFunctionImpl.label_smoothing(loss.label_smoothing, y, T)
         $(return_expr)
     end
 end
@@ -256,12 +376,12 @@ conference on 3D vision (3DV). Ieee, 2016.
     agg = mean
 end
 
-function __unsafe_apply_loss(loss::DiceCoeffLoss, ŷ, y)
+function unsafe_apply_loss(loss::DiceCoeffLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     α = T(loss.smooth)
 
     yŷ = y .* ŷ
-    dims = __get_dims(yŷ)
+    dims = LossFunctionImpl.get_loss_dims(yŷ)
 
     num = T(2) .* sum(yŷ; dims) .+ α
     den = sum(abs2, ŷ; dims) .+ sum(abs2, y; dims) .+ α
@@ -312,10 +432,10 @@ international conference on computer vision. 2017.
     epsilon = nothing
 end
 
-@inline function __unsafe_apply_loss(loss::FocalLoss, ŷ, y)
+@inline function unsafe_apply_loss(loss::FocalLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     γ = loss.gamma isa Integer ? loss.gamma : T(loss.gamma)
-    ϵ = __get_epsilon(T, loss.epsilon)
+    ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
     ŷϵ = ŷ .+ ϵ
     return loss.agg(sum(-y .* (1 .- ŷϵ) .^ γ .* log.(ŷϵ); loss.dims))
 end
@@ -370,8 +490,8 @@ true
 ```
 """
 function HuberLoss(; delta::Union{Nothing, AbstractFloat}=nothing, agg=mean)
-    delta = ifelse(delta === nothing, Float16(1), delta)
-    return GenericLossFunction(LossFunctions.HuberLoss(delta); agg)
+    return GenericLossFunction(
+        LossFunctions.HuberLoss(ifelse(delta === nothing, Float16(1), delta)); agg)
 end
 
 @doc doc"""
@@ -422,9 +542,9 @@ function KLDivergenceLoss(; dims=1, agg=mean, epsilon=nothing, label_smoothing=n
     return KLDivergenceLoss(agg, dims, celoss)
 end
 
-function __unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
-    cross_entropy = __unsafe_apply_loss(loss.celoss, ŷ, y)
-    entropy = loss.agg(sum(xlogx.(y); loss.dims)) # Intentional broadcasting for Zygote type stability
+function unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
+    cross_entropy = unsafe_apply_loss(loss.celoss, ŷ, y)
+    entropy = loss.agg(sum(LossFunctionImpl.xlogx.(y); loss.dims)) # Intentional broadcasting for Zygote type stability
     return entropy + cross_entropy
 end
 
@@ -495,7 +615,7 @@ true
 ```
 """
 function MSLELoss(; agg=mean, epsilon=nothing)
-    return GenericLossFunction(__Fix3(__msle_loss, epsilon); agg)
+    return GenericLossFunction(Utils.Fix3(__msle_loss, epsilon); agg)
 end
 
 @doc doc"""
@@ -516,7 +636,7 @@ true
 ```
 """
 function PoissonLoss(; agg=mean, epsilon=nothing)
-    return GenericLossFunction(__Fix3(__poisson_loss, epsilon); agg)
+    return GenericLossFunction(Utils.Fix3(__poisson_loss, epsilon); agg)
 end
 
 @doc doc"""
@@ -549,7 +669,7 @@ recognition (CVPR'06). Vol. 2. IEEE, 2006.
 """
 function SiameseContrastiveLoss(; margin::Real=true, agg=mean)
     @argcheck margin ≥ 0
-    return GenericLossFunction(__Fix3(__siamese_contrastive_loss, margin); agg)
+    return GenericLossFunction(Utils.Fix3(__siamese_contrastive_loss, margin); agg)
 end
 
 @doc doc"""
@@ -605,8 +725,8 @@ end
 
 GenericLossFunction(loss_fn; agg=mean) = GenericLossFunction(loss_fn, agg)
 
-function __unsafe_apply_loss(loss::GenericLossFunction, ŷ, y)
-    return __fused_agg(loss.agg, loss.loss_fn, ŷ, y)
+function unsafe_apply_loss(loss::GenericLossFunction, ŷ, y)
+    return LossFunctionImpl.fused_agg(loss.agg, loss.loss_fn, ŷ, y)
 end
 
 ```@meta

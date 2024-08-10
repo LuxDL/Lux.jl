@@ -68,8 +68,17 @@ SquaredHingeLoss
 Lux.foldl_init
 Lux.istraining
 Lux.multigate
-Lux.xlogy
-Lux.xlogx
+```
+
+## LuxOps Module
+
+```@docs
+LuxOps
+```
+
+```@docs
+LuxOps.xlogx
+LuxOps.xlogy
 ```
 
 ## Recursive Operations

@@ -8,7 +8,6 @@ CRC.@non_differentiable _conv_transpose_dims(::Any...)
 CRC.@non_differentiable _calc_padding(::Any...)
 CRC.@non_differentiable Base.printstyled(::Any...) # TODO: Move to ChainRules.jl
 CRC.@non_differentiable fieldcount(::Any) # TODO: Move to ChainRules.jl
-CRC.@non_differentiable __check_sizes(ŷ::Any, y::Any)
 CRC.@non_differentiable __set_refval!(::Any...)
 CRC.@non_differentiable __state_if_stateful(::Any)
 CRC.@non_differentiable __set_state!(::Any...)

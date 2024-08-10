@@ -230,7 +230,7 @@ struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer
         return new{ToArray, typeof(layer), typeof(lux_layer)}(layer, lux_layer)
     end
     function SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
-        return new{__unwrap_val(ToArray), typeof(layer), Nothing}(layer, nothing)
+        return new{Utils.unwrap_val(ToArray), typeof(layer), Nothing}(layer, nothing)
     end
 end
 
