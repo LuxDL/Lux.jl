@@ -172,10 +172,10 @@ end
 end
 
 @testitem "Edge Cases" tags=[:others] begin
-    @test Lux.__size(nothing) === nothing
-    @test Lux.__size(1) === ()
-    @test Lux.__size(1.0) === ()
-    @test Lux.__size([1, 2]) === (2,)
+    @test Lux.Utils.size(nothing) === nothing
+    @test Lux.Utils.size(1) === ()
+    @test Lux.Utils.size(1.0) === ()
+    @test Lux.Utils.size([1, 2]) === (2,)
 
     struct ABC
         a

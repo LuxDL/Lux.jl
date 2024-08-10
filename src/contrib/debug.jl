@@ -2,17 +2,14 @@
     DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
         error_check::Bool=true, location::KeyPath=KeyPath())
 
-!!! danger
-
-    This layer is only meant to be used for debugging. If used for actual training or
-    inference, will lead to extremely bad performance.
-
 A wrapper over Lux layers that adds checks for NaNs and errors. This is useful for
 debugging.
 
 ## Arguments
 
   - `layer`: The layer to be wrapped.
+
+# Extended Help
 
 ## Keyword Arguments
 
@@ -23,23 +20,24 @@ debugging.
   - `location`: The location of the layer. Use [`Lux.Experimental.@debug_mode`](@ref) to
     construct this layer to populate this value correctly.
 
-## Inputs
+## Input / Output
 
-  - `x`: The input to the layer.
-
-## Outputs
-
-  - `y`: The output of the layer.
-  - `st`: The updated states of the layer.
+Inputs and outputs are the same as the `layer` unless one of the `nan_check` or
+`error_check` criteria is met.
 
 If `nan_check` is enabled and NaNs are detected then a `DomainError` is thrown. If
 `error_check` is enabled, then any errors in the layer are thrown with useful information to
 track where the error originates.
 
-!!! warning
+!!! warning "ChainRules Compatible Reverse Mode AD Tools"
 
     `nan_check` for the backward mode only works with ChainRules Compatible Reverse Mode AD
     Tools currently.
+
+!!! danger "Disable After Debugging"
+
+    This layer is only meant to be used for debugging. If used for actual training or
+    inference, will lead to extremely bad performance.
 
 See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 """
@@ -65,31 +63,31 @@ end
 
 function (d::DebugLayer{NaNCheck, ErrorCheck})(x, ps, st) where {NaNCheck, ErrorCheck}
     CRC.ignore_derivatives() do
-        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmapstructure(Lux.__size, x))"
+        @info lazy"Input Type: $(typeof(x)) | Input Structure: $(fmapstructure(Utils.size, x))."
         @info lazy"Running Layer: $(d.layer) at location $(d.location)!"
         if NaNCheck ∈ (:both, :forward)
-            __check_nan_and_throw(x, "input", d.layer, d.location)
-            __check_nan_and_throw(ps, "parameters", d.layer, d.location)
-            __check_nan_and_throw(st, "states", d.layer, d.location)
+            check_nan_and_throw(x, "input", d.layer, d.location)
+            check_nan_and_throw(ps, "parameters", d.layer, d.location)
+            check_nan_and_throw(st, "states", d.layer, d.location)
         end
     end
-    y, st_ = __debug_layer_internal(
+    y, stₙ = debug_layer_impl(
         d.layer, x, ps, st, d.location, ErrorCheck, NaNCheck ∈ (:both, :backward))
     CRC.ignore_derivatives() do
         if NaNCheck ∈ (:both, :forward)
-            __check_nan_and_throw(y, "output", d.layer, d.location)
-            __check_nan_and_throw(st_, "states", d.layer, d.location)
+            check_nan_and_throw(y, "output", d.layer, d.location)
+            check_nan_and_throw(stₙ, "states", d.layer, d.location)
         end
-        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(fmapstructure(Lux.__size, y))"
+        @info lazy"Output Type: $(typeof(y)) | Output Structure: $(fmapstructure(Utils.size, y))."
     end
-    return y, st_
+    return y, stₙ
 end
 
-function __check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
+function check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
     function err(kp, x)
         loc_str = kp == KeyPath() ? " " : " (@ $(kp)) "
         return DomainError(
-            x, "NaNs detected in $(str)$(loc_str)of layer $(layer) at location $(location)")
+            x, "NaNs detected in $(str)$(loc_str) of layer $(layer) at location $(location).")
     end
 
     function nan_check(kp, x)
@@ -101,34 +99,34 @@ function __check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
     return fmap_with_path(nan_check, x)
 end
 
-function __debug_layer_internal(layer, x, ps, st, location, EC, NC)
-    y, st_ = try
+function debug_layer_impl(layer, x, ps, st, location, EC, NC)
+    y, stₙ = try
         apply(layer, x, ps, st)
     catch
-        EC && @error "Layer $(layer) failed!! This layer is present at location $(location)"
+        EC && @error "Layer $(layer) failed!! This layer is present at location $(location)."
         rethrow()
     end
-    return y, st_
+    return y, stₙ
 end
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(__debug_layer_internal), layer, x, ps, st, location, EC, NC)
+        ::typeof(debug_layer_impl), layer, x, ps, st, location, EC, NC)
     result, ∇debug_layer_internal = CRC.rrule_via_ad(cfg, apply, layer, x, ps, st)
-    syms = ["LuxCore.apply", "layer", "x", "ps", "st"]
+    syms = ("LuxCore.apply", "layer", "x", "ps", "st")
     function ∇debug_layer_internal_with_checks(Δ)
-        NC && __check_nan_and_throw(Δ, "pullback input", layer, location)
+        NC && check_nan_and_throw(Δ, "pullback input", layer, location)
 
         gs = try
             ∇debug_layer_internal(Δ)
         catch
             EC &&
-                @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)"
+                @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)."
             rethrow()
         end
 
         if NC
             for (i, g) in enumerate(gs)
-                __check_nan_and_throw(g, "pullback output ($(syms[i]))", layer, location)
+                check_nan_and_throw(g, "pullback output ($(syms[i]))", layer, location)
             end
         end
 

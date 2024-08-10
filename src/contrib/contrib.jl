@@ -1,6 +1,6 @@
 module Experimental
 
-using ..Lux: Lux
+using ..Lux: Lux, Training, Utils
 using LuxCore: LuxCore, AbstractExplicitLayer, AbstractExplicitContainerLayer, apply
 
 using ADTypes: ADTypes
@@ -14,7 +14,6 @@ using Markdown: @doc_str
 using Optimisers: Optimisers
 using Random: AbstractRNG, Random
 using Setfield: Setfield
-using ..Training: Training
 
 const CRC = ChainRulesCore
 
