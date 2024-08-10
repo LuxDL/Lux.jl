@@ -4,8 +4,9 @@ using InteractiveUtils, Hwloc
 @info sprint(versioninfo)
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
-const ALL_LUX_TEST_GROUPS = ["core_layers", "contrib", "helpers", "distributed",
-    "normalize_layers", "others", "autodiff", "recurrent_layers", "fluxcompat"]
+const ALL_LUX_TEST_GROUPS = [
+    "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
+    "others", "autodiff", "recurrent_layers", "fluxcompat"]
 
 __INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", __INPUT_TEST_GROUP[1])
