@@ -86,8 +86,8 @@ end
 function check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
     function err(kp, x)
         loc_str = kp == KeyPath() ? " " : " (@ $(kp)) "
-        return DomainError(
-            x, "NaNs detected in $(str)$(loc_str) of layer $(layer) at location $(location).")
+        return DomainError(x,
+            "NaNs detected in $(str)$(loc_str) of layer $(layer) at location $(location).")
     end
 
     function nan_check(kp, x)
@@ -103,7 +103,8 @@ function debug_layer_impl(layer, x, ps, st, location, EC, NC)
     y, stₙ = try
         apply(layer, x, ps, st)
     catch
-        EC && @error "Layer $(layer) failed!! This layer is present at location $(location)."
+        EC &&
+            @error "Layer $(layer) failed!! This layer is present at location $(location)."
         rethrow()
     end
     return y, stₙ
