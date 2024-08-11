@@ -8,7 +8,7 @@ using ReverseDiff: ReverseDiff, ForwardExecutor, ReverseExecutor, TrackedArray, 
 
 using Lux: Lux, Utils
 using Lux.Training: TrainingBackendCache, TrainState
-using LuxCore: LuxCore, AbstractExplicitLayer
+using LuxCore: LuxCore
 using MLDataDevices: CPUDevice
 
 include("utils.jl")

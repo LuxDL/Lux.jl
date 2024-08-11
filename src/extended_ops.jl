@@ -186,7 +186,7 @@ function ∇multigate(Δ, x::AbstractArray, ::Val{N}) where {N}
         if Δᵢ isa CRC.AbstractZero
             fill!(∂xᵢ, false)
         else
-            copyto!(∂xᵢ, Δᵢ)
+            ∂xᵢ .= Δᵢ
         end
     end
     return CRC.ProjectTo(x)(∂x)
