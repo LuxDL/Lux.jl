@@ -108,7 +108,7 @@ end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         y = onehotbatch([1, 1, 0, 0], 0:1) |> dev
-        y_smoothed = Lux.__label_smoothing(0.1, y, Float32)
+        y_smoothed = Lux.LossFunctionImpl.label_smoothing(0.1, y, Float32)
 
         ŷ = [0.1 0.9; 0.9 0.1; 0.9 0.1; 0.1 0.9]' |> dev
         v = log(0.1 / 0.9)
@@ -123,7 +123,7 @@ end
         logylp = [0.0 v]' |> dev
 
         ya = onehotbatch([1, 1, 1, 0, 0], 0:1) |> dev
-        ya_smoothed = Lux.__label_smoothing(2sf, ya, Float32)
+        ya_smoothed = Lux.LossFunctionImpl.label_smoothing(2sf, ya, Float32)
         y_same = Float32.(ya)
         y_sim = y_same .* (1 - 2 * sf) .+ sf
         y_dis = copy(y_sim)
@@ -418,6 +418,7 @@ end
     @testset "Scalar Loss" begin
         @test MSELoss(; agg=sum)(1.0, 1.0) == 0.0
         @test MSELoss(; agg=sum)(2.0, 0.0) == 4.0
-        @test MSLELoss(; agg=sum)(2.0, 0.0) ≈ Lux.__msle_loss(2.0, 0.0, nothing)
+        @test MSLELoss(; agg=sum)(2.0, 0.0) ≈
+              Lux.LossFunctionImpl.msle_loss(2.0, 0.0, nothing)
     end
 end

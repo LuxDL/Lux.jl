@@ -544,7 +544,7 @@ end
 
 function unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
     cross_entropy = unsafe_apply_loss(loss.celoss, ŷ, y)
-    entropy = loss.agg(sum(LossFunctionImpl.xlogx.(y); loss.dims)) # Intentional broadcasting for Zygote type stability
+    entropy = loss.agg(sum(LuxOps.xlogx.(y); loss.dims)) # Intentional broadcasting for Zygote type stability
     return entropy + cross_entropy
 end
 

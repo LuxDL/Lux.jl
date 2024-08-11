@@ -1,5 +1,6 @@
 module Utils
 
+using ArrayInterface: ArrayInterface
 using ArgCheck: @argcheck
 using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
@@ -113,6 +114,26 @@ end
 
 @non_differentiable warn_mismatch(::Any, ::Any, ::Any)
 
+zero(x) = Base.zero(x)
+zero(::Nothing) = nothing
+zero(x::Val) = x
+
+zero!!(x::Number) = Base.zero(x)
+function zero!!(x::AbstractArray{<:Number})
+    fill!(x, false)
+    return x
+end
+zero!!(::Nothing) = nothing
+zero!!(x::Val) = x
+
+function add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
+    ArrayInterface.can_setindex(x) || return x .+ y
+    @. x += y
+    return x
+end
+add!!(x::Number, y::Number) = x + y
+add!!(::Nothing, ::Nothing) = nothing
+
 end
 
 # Convolution
@@ -198,22 +219,5 @@ __expanddims1(x) = reshape(x, 1, size(x)...)
 function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
-
-__zero(x) = zero(x)
-__zero(::Nothing) = nothing
-__zero(x::Val) = x
-
-__zero!!(x::Number) = zero(x)
-__zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
-__zero!!(::Nothing) = nothing
-__zero!!(x::Val) = x
-
-function __add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
-    ArrayInterface.can_setindex(x) || return x .+ y
-    @. x += y
-    return x
-end
-__add!!(x::Number, y::Number) = x + y
-__add!!(::Nothing, ::Nothing) = nothing
 
 __set_refval!(x, y) = (x[] = y)

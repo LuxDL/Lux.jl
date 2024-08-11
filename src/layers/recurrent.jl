@@ -10,15 +10,15 @@ end
 
 # Fallback for vector inputs
 function (rnn::AbstractRecurrentCell)(x::AbstractVector, ps, st::NamedTuple)
-    (y, carry), st_ = rnn(reshape(x, :, 1), ps, st)
-    return (vec(y), vec.(carry)), st_
+    (y, carry), stₙ = rnn(reshape(x, :, 1), ps, st)
+    return (vec(y), vec.(carry)), stₙ
 end
 
 function (rnn::AbstractRecurrentCell)((x, carry), ps, st::NamedTuple)
-    x_ = reshape(x, :, 1)
-    carry_ = map(Base.Fix2(reshape, (:, 1)), carry)
-    (y, carry_new), st_ = rnn((x_, carry_), ps, st)
-    return (vec(y), vec.(carry_new)), st_
+    xₙ = reshape(x, :, 1)
+    carryₙ = map(Base.Fix2(reshape, (:, 1)), carry)
+    (y, carry₂), stₙ = rnn((xₙ, carryₙ), ps, st)
+    return (vec(y), vec.(carry₂)), stₙ
 end
 
 abstract type AbstractTimeSeriesDataBatchOrdering end
@@ -40,7 +40,7 @@ LuxOps.eachslice(x::AbstractMatrix, ::BatchLastIndex) = LuxOps.eachslice(x, Val(
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) to
 automatically operate over a sequence of inputs.
 
-!!! warning
+!!! warning "Relation to `Flux.Recur`"
 
     This is completely distinct from `Flux.Recur`. It doesn't make the `cell` stateful,
     rather allows operating on an entire sequence of inputs at once. See
@@ -58,6 +58,8 @@ automatically operate over a sequence of inputs.
   - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
     `BatchLastIndex()`. Alternatively can be set to `TimeLastIndex()`.
 
+# Extended Help
+
 ## Inputs
 
   - If `x` is a
@@ -71,14 +73,6 @@ automatically operate over a sequence of inputs.
 
   - Output of the `cell` for the entire sequence.
   - Update state of the `cell`.
-
-## Parameters
-
-  - Same as `cell`.
-
-## States
-
-  - Same as `cell`.
 
 !!! tip
 
@@ -108,28 +102,28 @@ function Recurrence(cell; ordering::AbstractTimeSeriesDataBatchOrdering=BatchLas
     return Recurrence{return_sequence}(cell, ordering)
 end
 
-@inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
+function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
     return apply(r, LuxOps.eachslice(x, r.ordering), ps, st)
 end
 
 function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
     (out, carry), st = apply(r.cell, first(x), ps, st)
-    for x_ in x[(begin + 1):end]
-        (out, carry), st = apply(r.cell, (x_, carry), ps, st)
+    for xᵢ in x[(begin + 1):end]
+        (out, carry), st = apply(r.cell, (xᵢ, carry), ps, st)
     end
     return out, st
 end
 
-@views function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
-    function __recurrence_op(::Nothing, input)
+function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+    function recur_op(::Nothing, input)
         (out, carry), state = apply(r.cell, input, ps, st)
         return [out], carry, state
     end
-    function __recurrence_op((outputs, carry, state), input)
+    function recur_op((outputs, carry, state), input)
         (out, carry), state = apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
     end
-    results = LuxOps.foldl_init(__recurrence_op, x)
+    results = LuxOps.foldl_init(recur_op, x)
     return first(results), last(results)
 end
 
@@ -138,10 +132,6 @@ end
 
 Wraps a recurrent cell (like [`RNNCell`](@ref), [`LSTMCell`](@ref), [`GRUCell`](@ref)) and
 makes it stateful.
-
-!!! tip
-
-    This is very similar to `Flux.Recur`
 
 To avoid undefined behavior, once the processing of a single sequence of data is complete,
 update the state with `Lux.update_state(st, :carry, nothing)`.
@@ -160,10 +150,6 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
   - Output of the `cell` for the entire sequence.
   - Update state of the `cell` and updated `carry`.
 
-## Parameters
-
-  - Same as `cell`.
-
 ## States
 
   - NamedTuple containing:
@@ -180,8 +166,8 @@ function initialstates(rng::AbstractRNG, r::StatefulRecurrentCell)
 end
 
 function (r::StatefulRecurrentCell)(x, ps, st::NamedTuple)
-    (out, carry), st_ = applyrecurrentcell(r.cell, x, ps, st.cell, st.carry)
-    return out, (; cell=st_, carry)
+    (out, carry), stₙ = applyrecurrentcell(r.cell, x, ps, st.cell, st.carry)
+    return out, (; cell=stₙ, carry)
 end
 
 function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, carry)
@@ -193,9 +179,8 @@ function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing)
 end
 
 @doc doc"""
-    RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true,
-            train_state::Bool=false, init_bias=zeros32, init_weight=glorot_uniform,
-            init_state=ones32)
+    RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true, train_state::Bool=false,
+        init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
@@ -219,7 +204,8 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
   - Case 1b: Only a single input `x` of shape `(in_dims, batch_size)`, `train_state` is set
              to `true` - Repeats `hidden_state` from parameters to match the shape of `x`
              and proceeds to Case 2.
-  - Case 2: Tuple `(x, (h, ))` is provided, then the output and a tuple containing the updated hidden state is returned.
+  - Case 2: Tuple `(x, (h, ))` is provided, then the output and a tuple containing the
+            updated hidden state is returned.
 
 ## Returns
   - Tuple containing
@@ -266,18 +252,13 @@ function initialparameters(
     return ps
 end
 
-function initialstates(rng::AbstractRNG, ::RNNCell)
-    # FIXME(@avik-pal): Take PRNGs seriously
-    randn(rng, 1)
-    return (rng=replicate(rng),)
-end
+initialstates(rng::AbstractRNG, ::RNNCell) = (rng=Utils.sample_replicate(rng),)
 
 function (rnn::RNNCell{use_bias, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    st = merge(st, (; rng))
     hidden_state = _init_hidden_state(rng, rnn, x)
-    return rnn((x, (hidden_state,)), ps, st)
+    return rnn((x, (hidden_state,)), ps, merge(st, (; rng)))
 end
 
 function (rnn::RNNCell{use_bias, true})(
@@ -291,14 +272,14 @@ const _RNNCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 function (rnn::RNNCell{true})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
     y, hidden_state_ = match_eltype(rnn, ps, st, x, hidden_state)
     h_new = ps.weight_ih * y .+ ps.weight_hh * hidden_state_ .+ ps.bias
-    h_new = fast_activation!!(rnn.activation, h_new)
+    h_new = fastₙactivation!!(rnn.activation, h_new)
     return (h_new, (h_new,)), st
 end
 
 function (rnn::RNNCell{false})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
     y, hidden_state_ = match_eltype(rnn, ps, st, x, hidden_state)
     h_new = ps.weight_ih * y .+ ps.weight_hh * hidden_state_
-    h_new = fast_activation!!(rnn.activation, h_new)
+    h_new = fastₙactivation!!(rnn.activation, h_new)
     return (h_new, (h_new,)), st
 end
 
