@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.5.63"
+version = "0.5.64-DEV"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -86,7 +86,7 @@ Functors = "0.4.12"
 GPUArraysCore = "0.1.6"
 LinearAlgebra = "1.10"
 LossFunctions = "0.11.1"
-LuxCore = "0.1.16"
+LuxCore = "0.1.24"
 LuxDeviceUtils = "0.1.26"
 LuxLib = "0.3.40"
 MLUtils = "0.4.3"
