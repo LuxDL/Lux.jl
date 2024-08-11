@@ -86,21 +86,21 @@ julia> y, st_new = model(x, ps, st)
 end
 
 function (r::ReverseSequence{Nothing})(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    return Utils.reverse(x), st
+    return get_utils(:reverse)(x), st
 end
 
 function (r::ReverseSequence{Nothing})(
         x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return Utils.reverse(x; dims=ndims(x) - 1), st
+    return get_utils(:reverse)(x; dims=ndims(x) - 1), st
 end
 
 function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    r.dim == 1 && return Utils.reverse(x), st
+    r.dim == 1 && return get_utils(:reverse)(x), st
     throw(ArgumentError("Cannot specify a dimension other than 1 for AbstractVector{T}"))
 end
 
 function (r::ReverseSequence)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return Utils.reverse(x; dims=r.dim), st
+    return get_utils(:reverse)(x; dims=r.dim), st
 end
 
 """
@@ -362,10 +362,8 @@ end
 
 function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
-    return (
-        fused_dense_bias_activation(
-            d.activation, ps.weight, y, Utils.vec(LuxOps.getproperty(ps, Val(:bias)))),
-        st)
+    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    return (fused_dense_bias_activation(d.activation, ps.weight, y, bias), st)
 end
 
 """
@@ -558,9 +556,8 @@ function (b::Bilinear)(
     Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
 
-    return (
-        bias_activation!!(b.activation, Wyx, Utils.vec(LuxOps.getproperty(ps, Val(:bias)))),
-        st)
+    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    return (bias_activation!!(b.activation, Wyx, bias), st)
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)

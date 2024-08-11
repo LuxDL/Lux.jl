@@ -103,7 +103,7 @@ function Recurrence(cell; ordering::AbstractTimeSeriesDataBatchOrdering=BatchLas
 end
 
 function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
-    return apply(r, LuxOps.eachslice(x, r.ordering), ps, st)
+    return apply(r, get_ops(:eachslice)(x, r.ordering), ps, st)
 end
 
 function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
@@ -123,7 +123,7 @@ function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTu
         (out, carry), state = apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
     end
-    results = LuxOps.foldl_init(recur_op, x)
+    results = get_ops(:foldl_init)(recur_op, x)
     return first(results), last(results)
 end
 
@@ -271,8 +271,8 @@ function (rnn::RNNCell)(
         (x, (hidden_state,))::Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}},
         ps, st::NamedTuple)
     y, hidden_stateₙ = match_eltype(rnn, ps, st, x, hidden_state)
-    z = fused_dense_bias_activation(
-        identity, ps.weight_hh, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias)))
+    bias = get_ops(:getproperty)(ps, Val(:bias))
+    z = fused_dense_bias_activation(identity, ps.weight_hh, hidden_stateₙ, bias)
     hₙ = fast_activation!!(rnn.activation, LuxLib.Impl.matmul(ps.weight_ih, y) .+ z)
     return (hₙ, (hₙ,)), st
 end
@@ -439,11 +439,11 @@ const _LSTMCellInputType = Tuple{
 function (lstm::LSTMCell)(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
-    z = fused_dense_bias_activation(
-        identity, ps.weight_h, hidden_stateₙ, Utils.vec(LuxOps.getproperty(ps, Val(:bias))))
+    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    z = fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ, bias)
     g = LuxLib.Impl.matmul(ps.weight_i, y) .+ z
 
-    input, forget, cell, output = LuxOps.multigate(g, Val(4))
+    input, forget, cell, output = get_ops(:multigate)(g, Val(4))
     memory₂ = @. sigmoid_fast(forget) * memoryₙ + sigmoid_fast(input) * tanh_fast(cell)
     hidden_state₂ = @. sigmoid_fast(output) * tanh_fast(memory₂)
     return (hidden_state₂, (hidden_state₂, memory₂)), st
@@ -576,15 +576,14 @@ const _GRUCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
 function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ = match_eltype(gru, ps, st, x, hidden_state)
-    gxs = LuxOps.multigate(ps.weight_i * y, Val(3))
-    ghbs = LuxOps.multigate(
-        fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ,
-            Utils.vec(LuxOps.getproperty(ps, Val(:bias_h)))),
-        Val(3))
+    gxs = get_ops(:multigate)(ps.weight_i * y, Val(3))
+    bias_h = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias_h)))
+    ghbs = get_ops(:multigate)(
+        fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ, bias_h), Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghbs[1])
     z = @. sigmoid_fast(gxs[2] + ghbs[2])
-    n = gru_cell_compute(gxs[3], r, ghbs[3], LuxOps.getproperty(ps, Val(:bias_i)))
+    n = gru_cell_compute(gxs[3], r, ghbs[3], get_ops(:getproperty)(ps, Val(:bias_i)))
     hidden_state₂ = @. (1 - z) * n + z * hidden_stateₙ
 
     return (hidden_state₂, (hidden_state₂,)), st
