@@ -3,9 +3,10 @@ module DistributedUtils
 using ChainRulesCore: ChainRulesCore
 using Compat: @compat
 using ConcreteStructs: @concrete
-using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
-using LuxDeviceUtils: get_device
 using Optimisers: Optimisers
+
+using ..Lux: AbstractLuxDistributedBackend, MPIBackend, NCCLBackend
+using MLDataDevices: get_device
 
 const CRC = ChainRulesCore
 

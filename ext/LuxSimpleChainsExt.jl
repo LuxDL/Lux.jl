@@ -1,13 +1,14 @@
 module LuxSimpleChainsExt
 
 using ArgCheck: @argcheck
-using LuxCore: LuxCore
 using SimpleChains: SimpleChains
+using Random: AbstractRNG
+
+using LuxCore: LuxCore
 using Lux: Lux, SimpleChainsModelConversionException, SimpleChainsLayer,
            make_simplechain_network, fix_simplechain_input_dims, Chain, Conv, Dense,
            Dropout, FlattenLayer, MaxPool, SamePad
 using NNlib: NNlib
-using Random: AbstractRNG
 
 function Lux.fix_simplechain_input_dims(layers::Vector, input_dims)
     L = Tuple(layers)

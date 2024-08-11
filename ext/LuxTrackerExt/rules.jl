@@ -2,12 +2,12 @@
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
 
-    @eval function Lux.apply_simple_chain(layer, x::$(T1), ps::$(T2), dev::LuxCPUDevice)
+    @eval function Lux.apply_simple_chain(layer, x::$(T1), ps::$(T2), dev::CPUDevice)
         return Tracker.track(Lux.apply_simple_chain, layer, x, ps, dev)
     end
 end
 
-Tracker.@grad function Lux.apply_simple_chain(layer, x, ps, ::LuxCPUDevice)
+Tracker.@grad function Lux.apply_simple_chain(layer, x, ps, ::CPUDevice)
     Base.depwarn("`Tracker.jl` often produces incorrect gradients for `SimpleChains.jl` \
                   models. In future versions of Lux.jl you will need to load `Zygote.jl` \
                   to use `Tracker.jl` for your model.",
@@ -31,6 +31,6 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue
 
     @eval @grad_from_chainrules Lux.apply_dynamic_expression(
-        de::Lux.DynamicExpressionsLayer, expr, operator_enum,
-        x::$(T1), ps::$(T2), dev::LuxCPUDevice)
+        de::Lux.DynamicExpressionsLayer, expr,
+        operator_enum, x::$(T1), ps::$(T2), dev::CPUDevice)
 end

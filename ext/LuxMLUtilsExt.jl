@@ -1,7 +1,8 @@
 module LuxMLUtilsExt
 
-using Lux: Lux, DistributedUtils
 using MLUtils: MLUtils
+
+using Lux: Lux, DistributedUtils
 
 function DistributedUtils.construct_distributed_data_container(
         backend::Lux.AbstractLuxDistributedBackend, data)

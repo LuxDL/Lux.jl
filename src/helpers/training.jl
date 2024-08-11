@@ -1,14 +1,15 @@
 module Training
 
-using ADTypes: ADTypes, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
+using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
+using Optimisers: Optimisers, AbstractRule
+using Random: AbstractRNG
+
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractExplicitLayer
-using LuxDeviceUtils: AbstractLuxDevice, gpu_device
-using Optimisers: Optimisers
-using Random: AbstractRNG
+using MLDataDevices: MLDataDevices
 
 """
     TrainState
@@ -46,7 +47,7 @@ end
 """
     TrainState(rng::Random.AbstractRNG, model::LuxCore.AbstractExplicitLayer,
         optimizer::Optimisers.AbstractRule;
-        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
+        transform_variables::Union{Function, AbstractDevice}=gpu_device())
     TrainState(model::LuxCore.AbstractExplicitLayer, ps, st,
         optimizer::Optimisers.AbstractRule)
 
@@ -66,9 +67,8 @@ Constructor for [`TrainState`](@ref).
 
 [`TrainState`](@ref) object.
 """
-function TrainState(
-        rng::AbstractRNG, model::AbstractExplicitLayer, optimizer::Optimisers.AbstractRule;
-        transform_variables::Union{Function, AbstractLuxDevice}=gpu_device())
+function TrainState(rng::AbstractRNG, model::AbstractExplicitLayer, optimizer::AbstractRule;
+        transform_variables=MLDataDevices.gpu_device())
     Base.depwarn(
         "`TrainState(rng::AbstractRNG, model::AbstractExplicitLayer, \
          optimizer::Optimisers.AbstractRule; transform_variables::Union{Function, \
@@ -151,7 +151,7 @@ function apply_gradients!(ts::TrainState, grads)
 end
 
 """
-    compute_gradients(ad::ADTypes.AbstractADType, objective_function::Function, data,
+    compute_gradients(ad::AbstractADType, objective_function::Function, data,
         ts::TrainState)
 
 Compute the gradients of the objective function wrt parameters stored in `ts`.
@@ -197,11 +197,11 @@ A 4-Tuple containing:
     returned in step `i + 1` might be aliased by the old gradients. If you want to prevent
     this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
-function compute_gradients(ad::ADTypes.AbstractADType, ::F, _, ::TrainState) where {F}
+function compute_gradients(ad::AbstractADType, ::F, _, ::TrainState) where {F}
     return check_if_compute_gradients_implemented(ad)
 end
 
-function check_if_compute_gradients_implemented(::T) where {T <: ADTypes.AbstractADType}
+function check_if_compute_gradients_implemented(::T) where {T <: AbstractADType}
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented \
                          yet!"))
 end

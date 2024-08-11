@@ -117,14 +117,14 @@ function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
     y = match_eltype(de, ps, st, x)
     return (
         apply_dynamic_expression(
-            de, de.expression, de.operator_enum, y, ps.params, get_device(x)),
+            de, de.expression, de.operator_enum, y, ps.params, MLDataDevices.get_device(x)),
         st)
 end
 
 function apply_dynamic_expression_internal end
 
 function apply_dynamic_expression(
-        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::LuxCPUDevice)
+        de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::CPUDevice)
     if !is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                `DynamicExpressionsLayer`.")
@@ -135,7 +135,7 @@ end
 function ∇apply_dynamic_expression end
 
 function CRC.rrule(::typeof(apply_dynamic_expression), de::DynamicExpressionsLayer,
-        expr, operator_enum, x, ps, ::LuxCPUDevice)
+        expr, operator_enum, x, ps, ::CPUDevice)
     if !is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                `DynamicExpressionsLayer`.")
@@ -241,17 +241,18 @@ end
 
 initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 
-function (sc::SimpleChainsLayer{false})(x, ps, st)
+function (sc::SimpleChainsLayer)(x, ps, st)
     y = match_eltype(sc, ps, st, x)
-    return apply_simple_chain(sc.layer, y, ps.params, get_device(x)), st
+    return (
+        simple_chain_output(
+            sc, apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x))),
+        st)
 end
 
-function (sc::SimpleChainsLayer{true})(x, ps, st)
-    y = match_eltype(sc, ps, st, x)
-    return convert(Array, apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
-end
+simple_chain_output(::SimpleChainsLayer{false}, y) = y
+simple_chain_output(::SimpleChainsLayer{true}, y) = convert(Array, y)
 
-apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
+apply_simple_chain(layer, x, ps, ::CPUDevice) = layer(x, ps)
 
 function apply_simple_chain(layer, x, ps, dev)
     throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
@@ -259,12 +260,13 @@ function apply_simple_chain(layer, x, ps, dev)
 end
 
 # Workaround for SimpleChains not being able to handle some input types
-function CRC.rrule(::typeof(apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
+function CRC.rrule(::typeof(apply_simple_chain), layer, x, ps, ::CPUDevice)
+    𝒫x, 𝒫ps = CRC.ProjectTo(x), CRC.ProjectTo(ps)
     res, pb = CRC.rrule(layer, x, ps)
     # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     ∇apply_simple_chain = @closure Δ -> begin
-        ∂layer, ∂x, ∂ps = pb(convert(Array, Δ))
-        return NoTangent(), ∂layer, ∂x, ∂ps, NoTangent()
+        _, ∂x, ∂ps = pb(convert(Array, Δ))
+        return NoTangent(), NoTangent(), 𝒫x(∂x), 𝒫ps(∂ps), NoTangent()
     end
     return res, ∇apply_simple_chain
 end

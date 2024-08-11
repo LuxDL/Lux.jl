@@ -10,7 +10,7 @@ Transfer `x` to CPU.
 """
 function cpu end
 
-@deprecate cpu(x) (cpu_device())(x)
+@deprecate cpu(x) (MLDataDevices.cpu_device())(x)
 
 """
     gpu(x)
@@ -25,7 +25,7 @@ Transfer `x` to GPU determined by the backend set using [`Lux.gpu_backend!`](@re
 """
 function gpu end
 
-@deprecate gpu(x) (gpu_device())(x)
+@deprecate gpu(x) (MLDataDevices.gpu_device())(x)
 
 """
     disable_stacktrace_truncation!(; disable::Bool=true)

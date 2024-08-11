@@ -129,9 +129,9 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian
             #        when doing a algorithm lookup
             ∂x, ∂y = if get_device_type(x) <: CPUDevice
                 tasks = map(i -> Threads.@spawn(map_fn(i)), 1:numrows(Δ))
-                mapreduce(fetch, recursive_add!!, tasks)
+                mapreduce(fetch, Lux.recursive_add!!, tasks)
             else
-                mapreduce(map_fn, recursive_add!!, 1:numrows(Δ))
+                mapreduce(map_fn, Lux.recursive_add!!, 1:numrows(Δ))
             end
 
             𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
