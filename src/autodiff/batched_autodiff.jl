@@ -1,57 +1,59 @@
-## This function allows us the rewrite the function call to get the gradients for `p`
-function __batched_jacobian(f::F, backend::AutoForwardDiff, x, p) where {F}
-    return __batched_jacobian_impl(Base.Fix2(f, p), backend, x)
+function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray) where {F}
+    return batched_jacobian_impl(f, backend, x)
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__batched_jacobian),
-        f::F, backend::AutoForwardDiff, x, y) where {F}
+for fType in AD_CONVERTIBLE_FUNCTIONS
+    @eval function batched_jacobian(f::$(fType), backend::AbstractADType, x::AbstractArray)
+        f̂, y = rewrite_autodiff_call(f)
+        return batched_jacobian(f̂, backend, x, y)
+    end
+end
+
+function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray, y) where {F}
+    return batched_jacobian_impl(Base.Fix2(f, y), backend, x)
+end
+
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian),
+        f::F, backend::AbstractADType, x::AbstractArray, y) where {F}
     grad_fn = let cfg = cfg
-        (f_internal, x, args...) -> begin
-            res, ∂f = CRC.rrule_via_ad(cfg, f_internal, x, args...)
+        (f̂, x, args...) -> begin
+            res, ∂f = CRC.rrule_via_ad(cfg, f̂, x, args...)
             return ∂f(one(res))[2:end]
         end
     end
 
     jac_fn = let backend = backend
-        (f_internal, x_in) -> __batched_jacobian_impl(f_internal, backend, x_in)
+        (f̂, x̃) -> batched_jacobian_impl(f̂, backend, x̃)
     end
 
-    res, pb_f = CRC.rrule_via_ad(cfg, __internal_ad_jacobian_call, jac_fn, grad_fn, f, x, y)
-    ∇nested_ad = let pb_f = pb_f
-        Δ -> begin
-            ∂s = pb_f(tuple(Δ))
+    res, ∇autodiff_jacobian = CRC.rrule_via_ad(
+        cfg, autodiff_jacobian, jac_fn, grad_fn, f, x, y)
+    ∇batched_jacobian = let ∇autodiff_jacobian = ∇autodiff_jacobian
+        Δ̂ -> begin
+            Δ = CRC.unthunk(Δ̂)
+            ∂s = ∇autodiff_jacobian(tuple(Δ))
             ∂x = ∂s[lastindex(∂s) - 1]
             ∂y = ∂s[lastindex(∂s)]
-            return (NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y)
+            return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
         end
     end
-    return res, ∇nested_ad
+    return res, ∇batched_jacobian
 end
 
-function __batched_jacobian(f::F, backend::AutoForwardDiff, x) where {F}
-    return __batched_jacobian_impl(f, backend, x)
-end
-
-## Nested AD rewriting
-for fType in AD_CONVERTIBLE_FUNCTIONS
-    @eval function __batched_jacobian(f::$(fType), backend::AutoForwardDiff, x)
-        f_internal, y = __rewrite_ad_call(f)
-        return __batched_jacobian(f_internal, backend, x, y)
-    end
-end
-
-function __batched_jacobian_impl(f::F, backend::AutoForwardDiff{CK}, x) where {F, CK}
+# ForwardDiff.jl Implementation
+function batched_jacobian_impl(
+        f::F, backend::AutoForwardDiff{CK}, x::AbstractArray) where {F, CK}
     x_size = size(x)
-    __f = @closure x -> f(reshape(x, x_size))
-    tag = backend.tag === nothing ? ForwardDiff.Tag(__f, eltype(x)) : backend.tag
+    f̂ = @closure x -> f(reshape(x, x_size))
+    tag = backend.tag === nothing ? ForwardDiff.Tag(f̂, eltype(x)) : backend.tag
     chunksize = (CK === nothing || CK ≤ 0) ?
                 ForwardDiff.Chunk{min(prod(size(x)[1:(end - 1)]), 8)}() :
                 ForwardDiff.Chunk{CK}()
-    return __batched_forwarddiff_jacobian(
-        __f, reshape(x, :, size(x, ndims(x))), typeof(tag), chunksize)
+    return batched_forwarddiff_jacobian(
+        f̂, reshape(x, :, size(x, ndims(x))), typeof(tag), chunksize)
 end
 
-@views function __batched_forwarddiff_jacobian(f::F, x::AbstractMatrix{T}, ::Type{Tag},
+@views function batched_forwarddiff_jacobian(f::F, x::AbstractMatrix{T}, ::Type{Tag},
         ck::ForwardDiff.Chunk{CK}) where {F, T, Tag, CK}
     N, B = size(x)
     @argcheck CK ≤ N
@@ -61,7 +63,7 @@ end
     dual_type = ForwardDiff.Dual{Tag, eltype(x), CK}
     partials_type = ForwardDiff.Partials{CK, eltype(x)}
 
-    J_partial = __batched_forwarddiff_jacobian_chunk!!(
+    J_partial = batched_forwarddiff_jacobian_chunk!!(
         nothing, f, x, Tag, ck, dual_type, partials_type, 1)
 
     nchunks == 1 && remainder == 0 && return J_partial
@@ -70,7 +72,7 @@ end
     J[:, 1:CK, :] .= J_partial
 
     Threads.@threads for i in 2:nchunks
-        __batched_forwarddiff_jacobian_chunk!!(
+        batched_forwarddiff_jacobian_chunk!!(
             J[:, ((i - 1) * CK + 1):(i * CK), :], f, x, Tag,
             ck, dual_type, partials_type, (i - 1) * CK + 1)
     end
@@ -78,14 +80,14 @@ end
     # for the remainder term we could construct a new Dual and Partial but that causes
     # problems on GPU. So we just do some extra work here.
     if remainder > 0
-        __batched_forwarddiff_jacobian_chunk!!(J[:, (end - CK + 1):end, :], f, x, Tag,
+        batched_forwarddiff_jacobian_chunk!!(J[:, (end - CK + 1):end, :], f, x, Tag,
             ck, dual_type, partials_type, N - CK + 1)
     end
 
     return J
 end
 
-@views function __batched_forwarddiff_jacobian_chunk!!(
+@views function batched_forwarddiff_jacobian_chunk!!(
         J_partial::Union{Nothing, AbstractArray{<:Real, 3}}, f::F,
         x::AbstractMatrix{T}, ::Type{Tag}, ::ForwardDiff.Chunk{CK}, ::Type{Dual},
         ::Type{Partials}, idx::Int) where {F, T, Tag, CK, Dual, Partials}

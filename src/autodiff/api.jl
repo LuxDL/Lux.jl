@@ -26,17 +26,19 @@ products efficiently using mixed-mode AD.
 
   - `v`: The Vector Jacobian Product.
 """
-function vector_jacobian_product(f::F, backend::AbstractADType, x, u) where {F}
-    @argcheck backend isa AutoZygote "Only `AutoZygote` is supported for \
-                                    `vector_jacobian_product`."
+function vector_jacobian_product end
+
+function vector_jacobian_product(::F, backend::AbstractADType, _, __) where {F}
+    throw(ArgumentError("`vector_jacobian_product` is not implemented for `$(backend)`."))
+end
+
+function vector_jacobian_product(f::F, backend::AutoZygote, x, u) where {F}
     if !is_extension_loaded(Val(:Zygote))
         error("`Zygote.jl` must be loaded for `vector_jacobian_product` \
                to work with `$(backend)`.")
     end
-    return __vector_jacobian_product_impl(f, backend, x, u)
+    return AutoDiffInternalImpl.vector_jacobian_product(f, backend, x, u)
 end
-
-function __vector_jacobian_product_impl end
 
 @doc doc"""
     jacobian_vector_product(f, backend::AbstractADType, x, u)
@@ -66,13 +68,15 @@ products efficiently using mixed-mode AD.
 
   - `v`: The Jacobian Vector Product.
 """
-function jacobian_vector_product(f::F, backend::AbstractADType, x, u) where {F}
-    @argcheck backend isa AutoForwardDiff "Only `AutoForwardDiff` is supported for \
-                                        `jacobian_vector_product`."
-    return __jacobian_vector_product_impl(f, backend, x, u)
+function jacobian_vector_product end
+
+function jacobian_vector_product(::F, backend::AbstractADType, _, __) where {F}
+    throw(ArgumentError("`jacobian_vector_product` is not implemented for `$(backend)`."))
 end
 
-function __jacobian_vector_product_impl end
+function jacobian_vector_product(f::F, backend::AutoForwardDiff, x, u) where {F}
+    return AutoDiffInternalImpl.jacobian_vector_product(f, backend, x, u)
+end
 
 """
     batched_jacobian(f, backend::AbstractADType, x::AbstractArray)
@@ -108,18 +112,20 @@ the following properties for `y = f(x)`:
     For example, if `f` contains operations like batch normalization, then the result will
     be incorrect.
 """
-function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray) where {F}
-    ndims(x) ≤ 1 && error("`batched_jacobian` only supports batched inputs (ndims(x) > 1).")
-    if !(backend isa AutoForwardDiff) && !(backend isa AutoZygote)
-        throw(AssertionError("Only `AutoForwardDiff` and `AutoZygote` are currently \
-                              supported for `batched_jacobian`."))
-    end
-    if (backend isa AutoZygote) && !is_extension_loaded(Val(:Zygote))
+function batched_jacobian end
+
+function batched_jacobian(::F, backend::AbstractADType, x::AbstractArray) where {F}
+    throw(ArgumentError("`batched_jacobian` is not implemented for `$(backend)`."))
+end
+
+function batched_jacobian(f::F, backend::AutoForwardDiff, x::AbstractArray) where {F}
+    return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
+end
+
+function batched_jacobian(f::F, backend::AutoZygote, x::AbstractArray) where {F}
+    if !is_extension_loaded(Val(:Zygote))
         error("`Zygote.jl` must be loaded for `batched_jacobian` to work with \
                `$(backend)`.")
     end
-    return __batched_jacobian(f, backend, x)
+    return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
 end
-
-function __batched_jacobian end
-function __batched_jacobian_impl end
