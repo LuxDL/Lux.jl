@@ -160,7 +160,7 @@ function PrettyPrinting.printable_children(l::Parallel)
 end
 
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
-    return Parallel(connection, __named_tuple_layers(layers...), name)
+    return Parallel(connection, Utils.named_tuple_layers(layers...), name)
 end
 
 function Parallel(connection; name::NAME_TYPE=nothing, kwargs...)
@@ -262,7 +262,7 @@ struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)
 end
 
 function BranchLayer(layers...; name::NAME_TYPE=nothing)
-    return BranchLayer(__named_tuple_layers(layers...), name)
+    return BranchLayer(Utils.named_tuple_layers(layers...), name)
 end
 
 BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), name)
@@ -359,7 +359,7 @@ function PrettyPrinting.printable_children(l::PairwiseFusion)
 end
 
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)
-    return PairwiseFusion(connection, __named_tuple_layers(layers...), name)
+    return PairwiseFusion(connection, Utils.named_tuple_layers(layers...), name)
 end
 
 function PairwiseFusion(connection; name::NAME_TYPE=nothing, kwargs...)
@@ -473,7 +473,7 @@ function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false
     xs = disable_optimizations ? xs : flatten_lux_chain(xs)
     length(xs) == 0 && return NoOpLayer()
     length(xs) == 1 && return first(xs)
-    return Chain(__named_tuple_layers(xs...), name)
+    return Chain(Utils.named_tuple_layers(xs...), name)
 end
 
 Chain(xs::AbstractVector; kwargs...) = Chain(xs...; kwargs...)
@@ -599,7 +599,7 @@ struct Maxout{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
     layers::T
 end
 
-Maxout(layers...) = Maxout(__named_tuple_layers(layers...))
+Maxout(layers...) = Maxout(Utils.named_tuple_layers(layers...))
 Maxout(; kwargs...) = Maxout((; kwargs...))
 Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
 
