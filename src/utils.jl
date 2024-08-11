@@ -10,7 +10,7 @@ using Functors: fmapstructure
 using MLDataDevices: get_device
 using Random: AbstractRNG
 
-using LuxCore: LuxCore
+using LuxCore: LuxCore, AbstractExplicitLayer
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)
@@ -168,8 +168,8 @@ set_refval!(x, y) = (x[] = y)
 @non_differentiable set_refval!(::Any...)
 EnzymeRules.inactive(::typeof(set_refval!), ::Any...) = nothing
 
+function named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
+    return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
 
-function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
-    return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end

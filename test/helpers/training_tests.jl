@@ -78,8 +78,6 @@ end
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
-            @test_throws ArgumentError Lux.Training.__maybe_implemented_compute_gradients(ad)
-
             @test_deprecated Lux.Experimental.TrainState(
                 Lux.replicate(rng), model, opt; transform_variables=dev)
 

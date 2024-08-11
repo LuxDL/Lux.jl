@@ -183,7 +183,7 @@ function multigate(x::AbstractArray, ::Val{N}) where {N}
     return ntuple(i -> Utils.gate(x, size(x, 1) ÷ N, i), N)
 end
 
-function ∇multigate(Δ::AbstractArray, x::AbstractArray, ::Val{N}) where {N}
+function ∇multigate(Δ, x::AbstractArray, ::Val{N}) where {N}
     ∂x = similar(x, eltype(x), axes(x))
     foreach(multigate(∂x, Val(N)), Δ) do ∂xᵢ, Δᵢ
         if Δᵢ isa CRC.AbstractZero
