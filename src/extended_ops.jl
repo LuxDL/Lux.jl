@@ -7,11 +7,12 @@ GPUArrays.
 """
 module LuxOps
 
-using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk
+using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk, @non_differentiable
 using Compat: @compat
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
 using MLDataDevices: get_device_type, AbstractGPUDevice, AbstractDevice
+using Static: StaticBool, known
 
 using ..Utils: Utils
 
@@ -200,8 +201,23 @@ function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
     return multigate(x, c), ∇multigate_internal
 end
 
-# Public API
+"""
+    istraining(::Val{training})
+    istraining(::StaticBool)
+    istraining(::Bool)
+    istraining(st::NamedTuple)
 
-@compat(public, (xlogx, xlogy, getproperty, eachslice, foldl_init, multigate))
+Returns `true` if `training` is `true` or if `st` contains a `training` field with value
+`true`. Else returns `false`.
+"""
+istraining(::Val{training}) where {training} = training
+istraining(training::StaticBool) = known(training)
+istraining(training::Bool) = training
+istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.training)
+
+CRC.@non_differentiable istraining(::Any)
+
+# Public API
+@compat(public, (xlogx, xlogy, getproperty, eachslice, foldl_init, multigate, istraining))
 
 end

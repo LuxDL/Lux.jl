@@ -62,12 +62,6 @@ SquaredHingeLoss
     For API documentation on Initialization check out the
     [WeightInitializers.jl](@ref WeightInitializers-API)
 
-## Miscellaneous Utilities
-
-```@docs
-Lux.istraining
-```
-
 ## LuxOps Module
 
 ```@docs
@@ -80,6 +74,7 @@ LuxOps.foldl_init
 LuxOps.getproperty
 LuxOps.xlogx
 LuxOps.xlogy
+LuxOps.istraining
 ```
 
 ## Recursive Operations

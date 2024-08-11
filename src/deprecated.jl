@@ -50,6 +50,7 @@ end
 @deprecate xlogx(x::Number) LuxOps.xlogx(x)
 @deprecate xlogy(x::Number, y::Number) LuxOps.xlogy(x, y)
 @deprecate foldl_init(args...) LuxOps.foldl_init(args...)
+@deprecate istraining(args...) LuxOps.istraining(args...)
 
 # While the ones below aren't public, we ended up using them at quite a few places
 @deprecate _getproperty(args...) LuxOps.getproperty(args...)

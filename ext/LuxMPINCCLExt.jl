@@ -20,7 +20,7 @@ function DistributedUtils.unsafe_get_distributed_backend(::Type{NCCLBackend})
     unique_id = NCCL.UniqueID()  # Generate on all ranks to know the type
     mpi_backend = DistributedUtils.unsafe_get_distributed_backend(MPIBackend)
     buf = [unique_id.internal...]
-    DistributedUtils.bcast_impl!(mpi_backend, buf; root=0)
+    DistributedUtils.bcast!(mpi_backend, buf; root=0)
     @set! unique_id.internal = Tuple(buf)
 
     nranks = DistributedUtils.total_workers(mpi_backend)

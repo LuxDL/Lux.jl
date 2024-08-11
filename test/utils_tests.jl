@@ -8,13 +8,17 @@
 end
 
 @testitem "istraining" tags=[:others] begin
-    @test Lux.istraining(Val(true))
-    @test !Lux.istraining(Val(false))
-    @test !Lux.istraining((training=Val(false),))
-    @test Lux.istraining((training=Val(true),))
-    @test !Lux.istraining((no_training=1,))
-    @test Lux.istraining((training=true,))
-    @test !Lux.istraining((training=false,))
+    using Static
+
+    @test LuxOps.istraining(Val(true))
+    @test !LuxOps.istraining(Val(false))
+    @test !LuxOps.istraining((training=Val(false),))
+    @test LuxOps.istraining((training=Val(true),))
+    @test !LuxOps.istraining((no_training=1,))
+    @test LuxOps.istraining((training=true,))
+    @test !LuxOps.istraining((training=false,))
+    @test LuxOps.istraining(static(true))
+    @test !LuxOps.istraining(static(false))
 end
 
 @testitem "ComponentArrays edge cases" tags=[:others] begin

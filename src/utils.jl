@@ -95,19 +95,6 @@ end
 
 end
 
-# Training Check
-"""
-    istraining(::Val{training})
-    istraining(::Bool)
-    istraining(st::NamedTuple)
-
-Returns `true` if `training` is `true` or if `st` contains a `training` field with value
-`true`. Else returns `false`.
-"""
-@inline istraining(::Val{training}) where {training} = training
-@inline istraining(training::Bool) = training
-@inline istraining(st::NamedTuple) = hasproperty(st, :training) && istraining(st.training)
-
 # Convolution
 function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
         ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
@@ -147,7 +134,6 @@ end
         hidden_state::AbstractVector, x::AbstractMatrix)
     return repeat(hidden_state, 1, size(x, 2))
 end
-
 
 # Indexing into NamedTuple
 function _index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
