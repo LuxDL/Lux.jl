@@ -40,7 +40,6 @@ is_extension_loaded(::Val) = false
 include("preferences.jl")
 
 # Utilities
-include("piracies.jl")
 include("custom_errors.jl")
 include("utils.jl")
 include("extended_ops.jl")
