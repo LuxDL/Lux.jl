@@ -92,6 +92,8 @@ function print_wrapper_model(io::IO, desc::String, model::AbstractExplicitLayer)
     print(io, ")")
 end
 
+tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
+
 end
 
 function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitContainerLayer)

@@ -154,7 +154,7 @@ julia> size.(first(model((x1, x2), ps, st)))
 end
 
 function PrettyPrinting.printable_children(l::Parallel)
-    children = PrettyPrinting.printable_children(l.layers)
+    children = Functors.children(l)
     l.connection === nothing && return children.layers
     return merge((; l.connection), children.layers)
 end
@@ -353,7 +353,7 @@ end
 end
 
 function PrettyPrinting.printable_children(l::PairwiseFusion)
-    children = PrettyPrinting.printable_children(l.layers)
+    children = Functors.children(l)
     l.connection === nothing && return children.layers
     return merge((; l.connection), children.layers)
 end
