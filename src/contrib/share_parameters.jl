@@ -61,7 +61,7 @@ end
 
 function share_parameters(ps, sharing, new_ps)
     assert_disjoint_sharing_list(sharing)
-    @argcheck length(sharing)!=length(new_ps) "The length of sharing and new_ps must be equal"
+    @argcheck length(sharing)==length(new_ps) "The length of sharing and new_ps must be equal"
     return unsafe_share_parameters(ps, new_ps, map(construct_property_lens, sharing))
 end
 
