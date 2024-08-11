@@ -113,8 +113,8 @@ function layer_map(f::F, l, ps, st, name::String="model") where {F <: Function}
     return fmap_with_path(f_wrapper, l, ps, st; walk=LayerWalkWithPath())
 end
 
-@inline __keypath_to_string(kp::KeyPath) = join(kp.keys, ".")
-@inline __keypath_to_string(str::String, kp::KeyPath) = "$(str).$(__keypath_to_string(kp))"
+__keypath_to_string(kp::KeyPath) = join(kp.keys, ".")
+__keypath_to_string(str::String, kp::KeyPath) = "$(str).$(__keypath_to_string(kp))"
 
 struct LayerWalkWithPath <: Functors.AbstractWalk end
 

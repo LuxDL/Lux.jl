@@ -146,7 +146,9 @@ end
 
 norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
 
-norm_except(x; dims=Colon()) = norm(x; dims=get_norm_except_dims(ndims(x), dims))
+function norm_except(x::AbstractArray{T, N}; dims::Union{Int, Tuple}=N) where {T, N}
+    return norm(x; dims=get_norm_except_dims(ndims(x), dims))
+end
 
 get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
 get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)

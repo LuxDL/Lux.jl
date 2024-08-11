@@ -15,7 +15,6 @@ using ForwardDiff: ForwardDiff
 using Functors: Functors, fmap
 using GPUArraysCore: GPUArraysCore, @allowscalar
 using LossFunctions: LossFunctions
-using MacroTools: MacroTools, block, combinedef, splitdef
 using Markdown: @doc_str
 using NNlib: NNlib
 using Optimisers: Optimisers
@@ -36,7 +35,7 @@ const CRC = ChainRulesCore
 const NAME_TYPE = Union{Nothing, String, Symbol}
 const Optional{T} = Union{T, Nothing}
 
-@inline is_extension_loaded(::Val) = false
+is_extension_loaded(::Val) = false
 
 # Preferences
 include("preferences.jl")

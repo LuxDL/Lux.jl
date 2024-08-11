@@ -18,7 +18,7 @@ end
 
 const CRC = ChainRulesCore
 
-@inline Lux.is_extension_loaded(::Val{:DynamicExpressions}) = true
+Lux.is_extension_loaded(::Val{:DynamicExpressions}) = true
 
 function Lux.DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::Node...;
         name::NAME_TYPE=nothing, eval_options::EvalOptionsTypes=missing,

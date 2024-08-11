@@ -1,5 +1,5 @@
 # Uncompiled ReverseDiff
-@inline function Lux.Training.compute_gradients(
+function Lux.Training.compute_gradients(
         ad::AutoReverseDiff{false}, obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
     ts_new = TrainState(
@@ -8,7 +8,7 @@
     return Lux.Training.compute_gradients(ad, obj_fn, data, ts_new)
 end
 
-@inline function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, data,
+function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
     tape = ReverseDiff.InstructionTape()
@@ -26,7 +26,7 @@ end
 end
 
 # Compiled ReverseDiff
-@inline function Lux.Training.compute_gradients(
+function Lux.Training.compute_gradients(
         ad::AutoReverseDiff{true}, obj_fn::F, data, ts::TrainState) where {F}
     grads = Lux.recursive_make_zero(ts.parameters)
     data_cache = deepcopy(data)
@@ -40,7 +40,7 @@ end
 end
 
 ## Tape hasn't been compiled yet / Function mismatch so recompile
-@inline function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
+function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
     if LuxCore.statelength(ts.states) != 0
         throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for Lux \
@@ -91,7 +91,7 @@ end
     return dparams, ReverseDiff.value(loss), NamedTuple(), ts_new
 end
 
-@inline function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
+function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:ReverseDiff, false}, F}) where {F}
     (; ps_cache, data_cache, output) = ts.cache.extras
 

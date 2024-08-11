@@ -106,14 +106,14 @@ function update_de_expression_constants!(expression, ps)
     return
 end
 
-@inline function (de::DynamicExpressionsLayer)(x::AbstractVector, ps, st)
+function (de::DynamicExpressionsLayer)(x::AbstractVector, ps, st)
     y, stₙ = de(reshape(x, :, 1), ps, st)
     return vec(y), stₙ
 end
 
 # NOTE: Unfortunately we can't use `get_device_type` since it causes problems with
 #       ReverseDiff
-@inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
+function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
     y = match_eltype(de, ps, st, x)
     return (
         apply_dynamic_expression(
@@ -239,19 +239,19 @@ function Base.show(
     PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
 end
 
-@inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
+initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 
-@inline function (sc::SimpleChainsLayer{false})(x, ps, st)
+function (sc::SimpleChainsLayer{false})(x, ps, st)
     y = match_eltype(sc, ps, st, x)
     return apply_simple_chain(sc.layer, y, ps.params, get_device(x)), st
 end
 
-@inline function (sc::SimpleChainsLayer{true})(x, ps, st)
+function (sc::SimpleChainsLayer{true})(x, ps, st)
     y = match_eltype(sc, ps, st, x)
     return convert(Array, apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
 end
 
-@inline apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
+apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
 
 function apply_simple_chain(layer, x, ps, dev)
     throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \

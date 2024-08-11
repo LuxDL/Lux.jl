@@ -252,7 +252,7 @@ international conference on computer vision. 2017.
     epsilon = nothing
 end
 
-@inline function unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
+function unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     γ = loss.gamma isa Integer ? loss.gamma : T(loss.gamma)
     ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)
@@ -432,7 +432,7 @@ international conference on computer vision. 2017.
     epsilon = nothing
 end
 
-@inline function unsafe_apply_loss(loss::FocalLoss, ŷ, y)
+function unsafe_apply_loss(loss::FocalLoss, ŷ, y)
     T = promote_type(eltype(ŷ), eltype(y))
     γ = loss.gamma isa Integer ? loss.gamma : T(loss.gamma)
     ϵ = LossFunctionImpl.get_ϵ(T, loss.epsilon)

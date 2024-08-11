@@ -62,15 +62,15 @@ function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}
         nt -> StatefulLuxLayer{FT}(nt.model, nt.ps, nt.st, nt.st_any))
 end
 
-@inline function LuxCore.parameterlength(m::StatefulLuxLayer)
+function LuxCore.parameterlength(m::StatefulLuxLayer)
     m.ps === nothing && return LuxCore.parameterlength(m.model)
     return LuxCore.parameterlength(m.ps)
 end
-@inline function LuxCore.statelength(m::StatefulLuxLayer{FT}) where {FT}
+function LuxCore.statelength(m::StatefulLuxLayer{FT}) where {FT}
     FT && return LuxCore.statelength(m.st)
     return LuxCore.statelength(m.st_any)
 end
-@inline LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
+LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
 
 function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {FT}
     return StatefulLuxLayer{FT}
@@ -92,26 +92,28 @@ function StatefulLuxLayer{false}(model::AbstractExplicitLayer, ps, st::NamedTupl
     return StatefulLuxLayer{false}(model, ps, nothing, st)
 end
 
-@inline __get_state(s::StatefulLuxLayer{true}) = s.st
-@inline __get_state(s::StatefulLuxLayer{false}) = s.st_any
+get_state(s::StatefulLuxLayer{true}) = s.st
+get_state(s::StatefulLuxLayer{false}) = s.st_any
 
-@inline function __set_state!(
+CRC.@non_differentiable get_state(::Any)
+
+function set_state!(
         s::StatefulLuxLayer{true, M, psType, stType}, st::stType) where {M, psType, stType}
     s.st = st
 end
-function __set_state!(::StatefulLuxLayer{true, M, psType, stType},
+function set_state!(::StatefulLuxLayer{true, M, psType, stType},
         ::stType2) where {M, psType, stType, stType2}
     throw(ArgumentError("Output state from the model has type `$(stType2)`, but expected \
-        `$(stType)`. Construct the Stateful layer as `StatefulLuxLayer{false}` instead \
-        of `StatefulLuxLayer{true}`."))
+                         `$(stType)`. Construct the Stateful layer as \
+                         `StatefulLuxLayer{false}` instead of `StatefulLuxLayer{true}`."))
 end
-@inline __set_state!(s::StatefulLuxLayer{false}, st) = (s.st_any = st)
+set_state!(s::StatefulLuxLayer{false}, st) = (s.st_any = st)
 
-CRC.@non_differentiable __set_state!(::Any...)
+CRC.@non_differentiable set_state!(::Any...)
 
 function (s::StatefulLuxLayer)(x, p=s.ps)
-    y, st = apply(s.model, x, p, __get_state(s))
-    __set_state!(s, st)
+    y, st = apply(s.model, x, p, get_state(s))
+    set_state!(s, st)
     return y
 end
 

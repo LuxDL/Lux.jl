@@ -5,7 +5,7 @@ using LuxTestUtils, Enzyme, Zygote, Test
 using Lux
 using LuxTestUtils: check_approx
 
-@inline generic_loss_function(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))
+generic_loss_function(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))
 
 function compute_enzyme_gradient(model, x, ps, st)
     dx = Enzyme.make_zero(x)

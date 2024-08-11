@@ -6,23 +6,23 @@ end
 # Nested AD Handling
 for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
     @eval begin
-        @inline function Zygote.gradient(f::$fType, x)
+        function Zygote.gradient(f::$fType, x)
             f_internal, y = Lux.__rewrite_ad_call(f)
             return Lux.__internal_ad_gradient_call(Zygote.gradient, f_internal, x, y)
         end
 
-        @inline function Zygote.jacobian(f::$fType, x::AbstractArray)
+        function Zygote.jacobian(f::$fType, x::AbstractArray)
             f_internal, y = Lux.__rewrite_ad_call(f)
             return Lux.__internal_ad_jacobian_call(
                 Zygote.jacobian, Zygote.gradient, f_internal, x, y)
         end
 
-        @inline function Lux.__vector_jacobian_product_impl(f::$fType, ::AutoZygote, x, u)
+        function Lux.__vector_jacobian_product_impl(f::$fType, ::AutoZygote, x, u)
             f_internal, y = Lux.__rewrite_ad_call(f)
             return Lux.__internal_ad_pullback_call(Zygote.pullback, f_internal, x, y, u)
         end
 
-        @eval @inline function Lux.__batched_jacobian(f::$(fType), backend::AutoZygote, x)
+        @eval function Lux.__batched_jacobian(f::$(fType), backend::AutoZygote, x)
             f_internal, y = Lux.__rewrite_ad_call(f)
             jac_fn = let backend = backend
                 (f, x_in) -> Lux.__batched_jacobian_impl(f, backend, x_in)

@@ -53,7 +53,7 @@ end
 
 Return `x * log(y)` for `y > 0`, and zero when `x == 0`.
 """
-@inline function xlogy(x::Number, y::Number)
+function xlogy(x::Number, y::Number)
     result = x * log(y)
     return ifelse(iszero(x), zero(result), result)
 end

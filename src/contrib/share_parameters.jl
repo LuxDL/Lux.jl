@@ -91,8 +91,8 @@ function assert_disjoint_sharing_list(sharing)
     end
 end
 
-@inline construct_property_lens(x) = construct_property_lens.(x)
-@inline function construct_property_lens(x::String)
+construct_property_lens(x) = construct_property_lens.(x)
+function construct_property_lens(x::String)
     return foldr(
         Setfield.ComposedLens, map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, ".")))
 end

@@ -42,18 +42,18 @@ For `"convert"` only the following conversions are done:
 function match_eltype end
 
 @static if ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
-    @inline match_eltype(layer, ps, st, x) = x
-    @inline function match_eltype(layer, ps, st, x, args...)
+    match_eltype(layer, ps, st, x) = x
+    function match_eltype(layer, ps, st, x, args...)
         return (x, args...)
     end
 else
-    @inline function match_eltype(layer, ps, st, x)
+    function match_eltype(layer, ps, st, x)
         fn = let elType = recursive_eltype((ps, st), Val(true)), layer = layer
             arr -> match_eltype(layer, elType, Utils.eltype(arr), arr)
         end
         return recursive_map(fn, x)
     end
-    @inline function match_eltype(layer, ps, st, x, args...)
+    function match_eltype(layer, ps, st, x, args...)
         fn = let elType = recursive_eltype((ps, st), Val(true)), layer = layer
             arr -> match_eltype(layer, elType, Utils.eltype(arr), arr)
         end
@@ -82,4 +82,4 @@ for (T1, T2) in ((:Float64, :Integer), (:Float32, :Float64), (:Float32, :Integer
     end
 end
 
-@inline match_eltype(_, ::Type, ::Type, x::AbstractArray) = x
+match_eltype(_, ::Type, ::Type, x::AbstractArray) = x

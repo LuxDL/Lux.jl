@@ -13,26 +13,29 @@ const AD_CONVERTIBLE_FUNCTIONS = [
 
 ## Written like this to avoid dynamic dispatch from Zygote
 # Input Gradient / Jacobian
-@inline __rewrite_ad_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F} = (
-    f, f.inner.ps)
-@inline __rewrite_ad_call(f::ComposedFunction{<:StatefulLuxLayer, F}) where {F} = (
-    @closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps)
-@inline __rewrite_ad_call(f::StatefulLuxLayer) = f, f.ps
+__rewrite_ad_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F} = (f, f.inner.ps)
+function __rewrite_ad_call(f::ComposedFunction{<:StatefulLuxLayer, F}) where {F}
+    (@closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps)
+end
+__rewrite_ad_call(f::StatefulLuxLayer) = f, f.ps
 
 # Parameter Gradient / Jacobian
-@inline __rewrite_ad_call(f::ComposedFunction{F, <:Base.Fix1{<:StatefulLuxLayer}}) where {F} = (
-    @closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x)
-@inline __rewrite_ad_call(f::ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, F}) where {F} = (
-    @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x)
-@inline __rewrite_ad_call(f::Base.Fix1{<:StatefulLuxLayer}) = (
-    @closure((ps, x)->f.f(x, ps)), f.x)
+function __rewrite_ad_call(f::ComposedFunction{
+        F, <:Base.Fix1{<:StatefulLuxLayer}}) where {F}
+    (@closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x)
+end
+function __rewrite_ad_call(f::ComposedFunction{
+        <:Base.Fix1{<:StatefulLuxLayer}, F}) where {F}
+    (@closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x)
+end
+__rewrite_ad_call(f::Base.Fix1{<:StatefulLuxLayer}) = (@closure((ps, x)->f.f(x, ps)), f.x)
 
 ## Break ambiguity
 for op in [ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
     ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
     ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
     ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}]
-    @eval @inline function __rewrite_ad_call(::$op)
+    @eval function __rewrite_ad_call(::$op)
         error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer layers")
     end
 end
@@ -42,7 +45,7 @@ end
 ## To compute the gradient of `f(x, y)` wrt y, just reorder the arguments with a wrapper
 ## over `f`
 for fname in (:__internal_ad_gradient_call, :__internal_ad_gradient_call_no_custom_rrule)
-    @eval @inline function $fname(grad_fn::G, f::F, x, y) where {G, F}
+    @eval function $fname(grad_fn::G, f::F, x, y) where {G, F}
         return grad_fn(Base.Fix2(f, y), x)
     end
 end
@@ -69,7 +72,7 @@ end
 
 # Nested Pullbacks
 for fname in (:__internal_ad_pullback_call, :__internal_ad_pullback_call_no_custom_rrule)
-    @eval @inline function $fname(pullback_fn::P, f::F, x, y, u) where {P, F}
+    @eval function $fname(pullback_fn::P, f::F, x, y, u) where {P, F}
         return only(last(pullback_fn(Base.Fix2(f, y), x))(u))
     end
 end
@@ -102,8 +105,7 @@ end
 # Nested Jacobians
 ## `grad_fn` is not needed for the forward pass, we need it for the reverse pass HVP
 for fname in (:__internal_ad_jacobian_call, :__internal_ad_jacobian_call_no_custom_rrule)
-    @eval @inline function $fname(
-            jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
+    @eval function $fname(jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
         return jac_fn(Base.Fix2(f, y), x)
     end
 end
@@ -152,7 +154,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__internal_ad_jac
 end
 
 # Convert a structured Matrix to a General Matrix if it doesn't have fast scalar indexing
-@inline function __compactify_if_structured_matrix(
+function __compactify_if_structured_matrix(
         J::AbstractArray{T1, N}, Δ::AbstractArray{T2}) where {T1, T2, N}
     @argcheck N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
     if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
@@ -163,11 +165,11 @@ end
     return reshape(Δ, size(J))
 end
 
-@inline __numrows(x::AbstractMatrix) = size(x, 1)
-@inline __numrows(x::AbstractArray{T, 3}) where {T} = size(x, 1) * size(x, 3)
+__numrows(x::AbstractMatrix) = size(x, 1)
+__numrows(x::AbstractArray{T, 3}) where {T} = size(x, 1) * size(x, 3)
 
-@inline __maybe_batched_row(x::AbstractMatrix, i::Integer) = view(x, i, :)
-@inline function __maybe_batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
+__maybe_batched_row(x::AbstractMatrix, i::Integer) = view(x, i, :)
+function __maybe_batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
     M, N, K = size(x)
     k = (i - 1) ÷ M + 1
     i = mod1(i, M)
@@ -179,7 +181,7 @@ end
     return y
 end
 
-@inline function __partials(::Type{Tag}, x, i) where {Tag}
+function __partials(::Type{Tag}, x, i) where {Tag}
     x isa ForwardDiff.Dual && return ForwardDiff.partials(Tag, x, i)
     if x isa AbstractArray
         bfn(xᵢ, iᵢ) = ForwardDiff.partials(Tag, xᵢ, iᵢ)
@@ -192,7 +194,7 @@ end
     return fmap(map_fn, x)
 end
 
-@inline function __dualify(::Type{Tag}, ::Type{T}, x, u) where {Tag, T}
+function __dualify(::Type{Tag}, ::Type{T}, x, u) where {Tag, T}
     if x isa AbstractArray
         bfn(xᵢ, uᵢ) = ForwardDiff.Dual{Tag, T, 1}(xᵢ, ForwardDiff.Partials{1, T}(uᵢ))
         return bfn.(x, tuple.(reshape(u, size(x))))

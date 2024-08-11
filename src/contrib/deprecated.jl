@@ -4,7 +4,7 @@ macro compact(exs...)
          available in `Lux`. In other words this has been deprecated and will be removed \
          in v1. Use `Lux.@compact` instead.",
         Symbol("@compact"))
-    return Lux.compact_macro_impl(exs...)
+    return Lux.CompactMacroImpl.compact_macro_impl(exs...)
 end
 
 Base.@deprecate StatefulLuxLayer(args...; kwargs...) Lux.StatefulLuxLayer(

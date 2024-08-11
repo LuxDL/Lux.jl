@@ -91,7 +91,7 @@ end
     extras
 end
 
-@inline training_backend(::TrainingBackendCache{backend}) where {backend} = backend
+training_backend(::TrainingBackendCache{backend}) where {backend} = backend
 
 function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     println(io, "TrainState")
@@ -215,7 +215,7 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     end
 end
 
-@inline function generate_wrappers(::F, m, ps, st, data, ::Val{false}) where {F}
+function generate_wrappers(::F, m, ps, st, data, ::Val{false}) where {F}
     @warn "Detected function wrapper generation with function being updated between calls. \
            This will generate type-unstable code. A possible reason for this is \
            `TrainState` was compiled (first call to `compute_gradients`) with function \
@@ -225,13 +225,12 @@ end
 end
 
 # Run the code when trying to compile the function for the first time.
-@inline function generate_wrappers(
-        objective_function::F, m, ps, st, data, ::Val{true}) where {F}
+function generate_wrappers(objective_function::F, m, ps, st, data, ::Val{true}) where {F}
     _, stₙ, statsₙ = objective_function(m, ps, st, data)
     return Ref{typeof(stₙ)}(stₙ), Ref{typeof(statsₙ)}(statsₙ)
 end
 
-@inline function wrap_objective_function(
+function wrap_objective_function(
         objective_function::F, m, ps, st, data, first_try::Val) where {F}
     st_updated, stats = generate_wrappers(objective_function, m, ps, st, data, first_try)
 
