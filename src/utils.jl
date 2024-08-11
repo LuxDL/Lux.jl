@@ -6,6 +6,7 @@ using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
 using ForwardDiff: Dual
 using Functors: fmapstructure
+using MLDataDevices: get_device
 using Random: AbstractRNG
 
 using LuxCore: LuxCore
@@ -134,6 +135,14 @@ end
 add!!(x::Number, y::Number) = x + y
 add!!(::Nothing, ::Nothing) = nothing
 
+function init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+    return rnn.init_state(rng, rnn.out_dims, Base.size(x, 2)) |> get_device(x)
+end
+
+function init_trainable_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
+    return repeat(hidden_state, 1, Base.size(x, 2))
+end
+
 end
 
 # Convolution
@@ -165,14 +174,6 @@ function _calc_padding(::SamePad, k::NTuple, dilation, stride)
     pad_amt = @. k_eff - 1
     # In case amount of padding is odd we need to apply different amounts to each side.
     return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
-end
-
-function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
-    return rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> get_device(x)
-end
-
-function _init_trainable_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
-    return repeat(hidden_state, 1, size(x, 2))
 end
 
 # Backend Integration
