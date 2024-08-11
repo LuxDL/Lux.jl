@@ -42,9 +42,9 @@
 
         # Input Checks
         non_disjoint_sharing = (("d2.l2", "d1"), ("d1", "d2.l1"))
-        @test_throws ArgumentError Lux.Experimental.share_parameters(
+        @test_throws AssertionError Lux.Experimental.share_parameters(
             ps, non_disjoint_sharing)
-        @test_throws ArgumentError Lux.Experimental.share_parameters(
+        @test_throws AssertionError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_1,))
 
         # Parameter Structure Mismatch
@@ -53,12 +53,12 @@
         ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2, 1)) |>
                    dev
 
-        @test_throws ArgumentError Lux.Experimental.share_parameters(
+        @test_throws AssertionError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_1, ps_new_2))
 
         ps_new_ca_1 = ComponentArray(ps_new_1 |> LuxCPUDevice()) |> dev
 
-        @test_throws ArgumentError Lux.Experimental.share_parameters(
+        @test_throws AssertionError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_ca_1, ps_new_2))
     end
 end

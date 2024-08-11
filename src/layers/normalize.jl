@@ -1,7 +1,10 @@
 abstract type AbstractNormalizationLayer{affine, track_stats} <: AbstractExplicitLayer end
 
-@inline _affine(l::AbstractNormalizationLayer{A, T}) where {A, T} = A
-@inline _track_stats(l::AbstractNormalizationLayer{A, T}) where {A, T} = T
+has_affine(::AbstractNormalizationLayer{A, T}) where {A, T} = A
+is_tracking_stats(::AbstractNormalizationLayer{A, T}) where {A, T} = T
+
+CRC.@non_differentiable has_affine(::Any)
+CRC.@non_differentiable is_tracking_stats(::Any)
 
 @doc doc"""
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
@@ -30,11 +33,13 @@ slice and normalises the input accordingly.
   - `allow_fast_activation`: If `true`, then certain activations can be approximated with
     a faster version. The new activation function will be given by
     `NNlib.fast_act(activation)`
-  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+  - If `affine=true`, it also applies a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
-    
+
       + `init_bias`: Controls how the `bias` is initialized
       + `init_scale`: Controls how the `scale` is initialized
+
+# Extended Help
 
 ## Inputs
 
@@ -48,7 +53,7 @@ slice and normalises the input accordingly.
 ## Parameters
 
   - `affine=true`
-    
+
       + `bias`: Bias of shape `(chs,)`
       + `scale`: Scale of shape `(chs,)`
 
@@ -57,12 +62,12 @@ slice and normalises the input accordingly.
 ## States
 
   - Statistics if `track_stats=true`
-    
+
       + `running_mean`: Running mean of shape `(chs,)`
       + `running_var`: Running variance of shape `(chs,)`
 
   - Statistics if `track_stats=false`
-    
+
       + `running_mean`: nothing
       + `running_var`: nothing
   - `training`: Used to check if training/inference mode
@@ -108,7 +113,7 @@ function BatchNorm(chs::Int, activation=identity; init_bias=zeros32,
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm)
-    if _affine(l)
+    if has_affine(l)
         return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
     else
         return NamedTuple()
@@ -116,7 +121,7 @@ function initialparameters(rng::AbstractRNG, l::BatchNorm)
 end
 
 function initialstates(rng::AbstractRNG, l::BatchNorm)
-    if _track_stats(l)
+    if is_tracking_stats(l)
         return (running_mean=zeros32(rng, l.chs),
             running_var=ones32(rng, l.chs), training=Val(true))
     else
@@ -124,8 +129,8 @@ function initialstates(rng::AbstractRNG, l::BatchNorm)
     end
 end
 
-parameterlength(l::BatchNorm) = ifelse(_affine(l), l.chs * 2, 0)
-statelength(l::BatchNorm) = ifelse(_track_stats(l), l.chs * 2, 0) + 1
+parameterlength(l::BatchNorm) = ifelse(has_affine(l), l.chs * 2, 0)
+statelength(l::BatchNorm) = ifelse(is_tracking_stats(l), l.chs * 2, 0) + 1
 
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     CRC.ignore_derivatives() do
@@ -140,21 +145,21 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         LuxOps.getproperty(st, Val(:running_mean)),
         LuxOps.getproperty(st, Val(:running_var)),
         st.training, BN.activation, BN.momentum, BN.epsilon)
-    return y, __update_bn_state(BN, st, stats)
+    return y, update_batchnorm_state(BN, st, stats)
 end
 
-function __update_bn_state(BN::BatchNorm, st::NamedTuple, stats)
-    if _track_stats(BN)
-        st = merge(st, (; running_mean=stats.running_mean, running_var=stats.running_var))
-    end
+function update_batchnorm_state(BN::BatchNorm, st::NamedTuple, stats)
+    is_tracking_stats(BN) && return merge(st, (; stats.running_mean, stats.running_var))
     return st
 end
+
+CRC.@non_differentiable update_batchnorm_state(::Any...)
 
 function Base.show(io::IO, l::BatchNorm)
     print(io, "BatchNorm($(l.chs)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    print(io, ", affine=$(_affine(l))")
-    print(io, ", track_stats=$(_track_stats(l))")
+    print(io, ", affine=$(has_affine(l))")
+    print(io, ", track_stats=$(is_tracking_stats(l))")
     return print(io, ")")
 end
 
@@ -186,6 +191,8 @@ end
 
       + `init_bias`: Controls how the `bias` is initialized
       + `init_scale`: Controls how the `scale` is initialized
+
+# Extended Help
 
 ## Inputs
 
@@ -245,10 +252,11 @@ function GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm)
-    return _affine(l) ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) : (;)
+    return has_affine(l) ? (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) :
+           (;)
 end
 
-parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
+parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
@@ -260,7 +268,7 @@ end
 function Base.show(io::IO, l::GroupNorm)
     print(io, "GroupNorm($(l.chs), $(l.groups)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    print(io, ", affine=$(_affine(l))")
+    print(io, ", affine=$(has_affine(l))")
     return print(io, ")")
 end
 
@@ -354,7 +362,7 @@ function InstanceNorm(
 end
 
 function initialparameters(rng::AbstractRNG, l::InstanceNorm)
-    if _affine(l)
+    if has_affine(l)
         return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
     else
         return (scale=nothing, bias=nothing)
@@ -362,7 +370,7 @@ function initialparameters(rng::AbstractRNG, l::InstanceNorm)
 end
 
 initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
-parameterlength(l::InstanceNorm) = ifelse(_affine(l), l.chs * 2, 0)
+parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
@@ -374,7 +382,7 @@ end
 function Base.show(io::IO, l::InstanceNorm)
     print(io, "InstanceNorm($(l.chs)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    print(io, ", affine=$(_affine(l))")
+    print(io, ", affine=$(has_affine(l))")
     return print(io, ")")
 end
 
@@ -435,14 +443,6 @@ function WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol
     return WeightNorm{which_params}(layer; dims)
 end
 
-@inline _norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
-@inline function _norm_except(
-        x::AbstractArray{T, N}; dims::Union{Int, Tuple}=N) where {T, N}
-    return _norm(x; dims=_get_norm_except_dims(N, dims))
-end
-@inline _get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
-@inline _get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
-
 function initialparameters(
         rng::AbstractRNG, wn::WeightNorm{which_params}) where {which_params}
     ps_layer = initialparameters(rng, wn.layer)
@@ -453,7 +453,11 @@ function initialparameters(
         v = ps_layer[k]
         if k in which_params
             if all(iszero, v)
-                throw(ArgumentError(lazy"Parameter $(k) is completely zero. This will result in NaN gradients. Either remove this parameter from `which_params` or modify the initialization in the actual layer. Typically this is controlled using the `init_$(k)` keyword argument."))
+                throw(ArgumentError("Parameter $(k) is completely zero. This will result \
+                                     in NaN gradients. Either remove this parameter from \
+                                     `which_params` or modify the initialization in the \
+                                     actual layer. Typically this is controlled using the \
+                                     `init_$(k)` keyword argument."))
             end
             dim = wn.dims === nothing ? ndims(v) : wn.dims[i]
             push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v; dims=dim))
@@ -471,11 +475,11 @@ initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
 
 function (wn::WeightNorm)(x, ps, st::NamedTuple)
     y = match_eltype(wn, ps, st, x)
-    _ps = _get_normalized_parameters(wn, wn.dims, ps.normalized)
-    return apply(wn.layer, y, Utils.merge(_ps, ps.unnormalized), st)
+    psₙ = get_weight_normalized_parameters(wn, wn.dims, ps.normalized)
+    return apply(wn.layer, y, Utils.merge(psₙ, ps.unnormalized), st)
 end
 
-@inbounds @generated function _get_normalized_parameters(
+@inbounds @generated function get_weight_normalized_parameters(
         ::WeightNorm{which_params}, dims::T, ps) where {T, which_params}
     parameter_names = string.(which_params)
     v_parameter_names = Symbol.(parameter_names .* "_v")
@@ -484,9 +488,9 @@ end
 
     function get_norm_except_invoke(i)
         return if T <: Tuple
-            :(_norm_except(ps.$(v_parameter_names[i]); dims=dims[$i]))
+            :(Utils.norm_except(ps.$(v_parameter_names[i]); dims=dims[$i]))
         else
-            :(_norm_except(ps.$(v_parameter_names[i])))
+            :(Utils.norm_except(ps.$(v_parameter_names[i])))
         end
     end
 
@@ -524,7 +528,7 @@ y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
 
 where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
-!!! warning
+!!! warning "Inconsistent Defaults till v0.5.0"
 
     As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
     `affine::Bool=true` as the default. Now the doc reflects the code, so please check
@@ -547,6 +551,8 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
       + `init_bias`: Controls how the `bias` is initialized
       + `init_scale`: Controls how the `scale` is initialized
+
+# Extended Help
 
 ## Inputs
 
@@ -582,7 +588,7 @@ function LayerNorm(shape::NTuple{N, <:Int}, activation=identity; epsilon::T=1.0f
 end
 
 function initialparameters(rng::AbstractRNG, ln::LayerNorm)
-    if _affine(ln)
+    if has_affine(ln)
         return (bias=ln.init_bias(rng, ln.shape..., 1),
             scale=ln.init_scale(rng, ln.shape..., 1))
     else
@@ -600,6 +606,6 @@ end
 function Base.show(io::IO, l::LayerNorm)
     print(io, "LayerNorm($(l.shape)")
     (l.activation == identity) || print(io, ", $(l.activation)")
-    print(io, ", affine=$(_affine(l)), dims=$(l.dims)")
+    print(io, ", affine=$(has_affine(l)), dims=$(l.dims)")
     return print(io, ")")
 end

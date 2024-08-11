@@ -1,5 +1,5 @@
 # Weight Norm Patch
-Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
+Utils.norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
 
 # multigate chain rules
 Utils.gate(x::Tracker.TrackedVector, h::Int, n::Int) = x[Utils.gate(h, n)]
