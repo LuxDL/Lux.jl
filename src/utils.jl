@@ -143,6 +143,15 @@ function init_trainable_hidden_state(hidden_state::AbstractVector, x::AbstractMa
     return repeat(hidden_state, 1, Base.size(x, 2))
 end
 
+norm(x; dims=Colon()) = sqrt.(sum(abs2, x; dims))
+
+norm_except(x; dims=Colon()) = norm(x; dims=get_norm_except_dims(ndims(x), dims))
+
+get_norm_except_dims(N, dim::Int) = filter(i -> i != dim, 1:N)
+get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
+
+@non_differentiable get_norm_except_dims(::Any...)
+
 end
 
 # Convolution

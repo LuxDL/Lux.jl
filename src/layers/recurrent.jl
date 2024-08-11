@@ -439,7 +439,7 @@ function (lstm::LSTMCell)(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
     z = fused_dense_bias_activation(
-        identity, ps.weight_hh, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias)))
+        identity, ps.weight_h, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias)))
     g = LuxLib.Impl.matmul(ps.weight_i, y) .+ z
 
     input, forget, cell, output = LuxOps.multigate(g, Val(4))

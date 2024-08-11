@@ -206,17 +206,17 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, device, ongpu) in MODES
-        @testset "_norm_except" begin
+        @testset "Utils.norm_except" begin
             z = randn(rng, Float32, 3, 3, 4, 2) |> aType
 
-            @test size(Lux._norm(z; dims=(1, 2))) == (1, 1, 4, 2)
-            @test size(Lux._norm_except(z; dims=1)) == (3, 1, 1, 1)
-            @test Lux._norm_except(z; dims=2) == Lux._norm(z; dims=(1, 3, 4))
-            @test size(Lux._norm_except(z; dims=(1, 2))) == (3, 3, 1, 1)
-            @test Lux._norm_except(z; dims=(1, 2)) == Lux._norm(z; dims=(3, 4))
+            @test size(Lux.Utils.norm(z; dims=(1, 2))) == (1, 1, 4, 2)
+            @test size(Lux.Utils.norm_except(z; dims=1)) == (3, 1, 1, 1)
+            @test Lux.Utils.norm_except(z; dims=2) == Lux.Utils.norm(z; dims=(1, 3, 4))
+            @test size(Lux.Utils.norm_except(z; dims=(1, 2))) == (3, 3, 1, 1)
+            @test Lux.Utils.norm_except(z; dims=(1, 2)) == Lux.Utils.norm(z; dims=(3, 4))
 
-            @jet Lux._norm_except(z)
-            __f = z -> sum(Lux._norm_except(z; dims=(3, 4)))
+            @jet Lux.Utils.norm_except(z)
+            __f = z -> sum(Lux.Utils.norm_except(z; dims=(3, 4)))
             @jet __f(z)
         end
 
