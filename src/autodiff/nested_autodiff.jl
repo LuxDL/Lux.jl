@@ -39,7 +39,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient),
         grad_fn::G, f::F, x, y) where {G, F}
-    @static if !Lux.AUTOMATIC_NESTED_AD_SWITCHING
+    @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(cfg, autodiff_gradient_no_custom_rrule, grad_fn, f, x, y)
     end
 
@@ -67,7 +67,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_pullback),
         pb_f::P, f::F, x, y, u) where {P, F}
-    @static if !Lux.AUTOMATIC_NESTED_AD_SWITCHING
+    @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(cfg, autodiff_pullback_no_custom_rrule, pb_f, f, x, y, u)
     end
 
@@ -100,7 +100,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian),
         jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
-    @static if !Lux.AUTOMATIC_NESTED_AD_SWITCHING
+    @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
             cfg, autodiff_jacobian_no_custom_rrule, jac_fn, grad_fn, f, x, y)
     end

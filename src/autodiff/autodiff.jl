@@ -10,6 +10,7 @@ using Functors: fmap
 using MLDataDevices: get_device, get_device_type, CPUDevice
 
 using ..Lux: Lux, StatefulLuxLayer
+using ..LuxPreferences: AUTOMATIC_NESTED_AD_SWITCHING
 
 const CRC = ChainRulesCore
 

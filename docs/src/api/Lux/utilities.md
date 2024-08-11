@@ -75,6 +75,7 @@ LuxOps.getproperty
 LuxOps.xlogx
 LuxOps.xlogy
 LuxOps.istraining
+LuxOps.multigate
 ```
 
 ## Recursive Operations

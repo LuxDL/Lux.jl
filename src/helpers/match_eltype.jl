@@ -41,7 +41,7 @@ For `"convert"` only the following conversions are done:
 """
 function match_eltype end
 
-@static if ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
+@static if LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
     match_eltype(layer, ps, st, x) = x
     function match_eltype(layer, ps, st, x, args...)
         return (x, args...)
@@ -70,13 +70,13 @@ for (T1, T2) in ((:Float64, :Integer), (:Float32, :Float64), (:Float32, :Integer
                  not allowed because the preference `eltype_mismatch_handling` is set to \
                  `\"error\"`. To debug further, use `Lux.Experimental.@debug_mode`."
     @eval function match_eltype(layer, ::Type{<:$(T1)}, ::Type{<:$(T2)}, x::AbstractArray)
-        @static if ELTYPE_MISMATCH_HANDLING == "warn"
+        @static if LuxPreferences.ELTYPE_MISMATCH_HANDLING == "warn"
             Utils.warn_mismatch(layer, x, $(warn_msg))
             return x
-        elseif ELTYPE_MISMATCH_HANDLING == "convert"
+        elseif LuxPreferences.ELTYPE_MISMATCH_HANDLING == "convert"
             Utils.warn_mismatch(layer, x, $(convert_msg))
             return Utils.ofeltype_array($(T1), x)
-        elseif ELTYPE_MISMATCH_HANDLING == "error"
+        elseif LuxPreferences.ELTYPE_MISMATCH_HANDLING == "error"
             throw(EltypeMismatchException($(error_msg)))
         end
     end
