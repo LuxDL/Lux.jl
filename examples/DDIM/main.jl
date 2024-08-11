@@ -147,8 +147,7 @@ function ddim(rng::AbstractRNG, args...; min_signal_rate=0.02f0,
     end
 end
 
-@inline function __diffusion_schedules(
-        diffusion_times::AbstractArray{T, 4}, min_signal_rate::T,
+function __diffusion_schedules(diffusion_times::AbstractArray{T, 4}, min_signal_rate::T,
         max_signal_rate::T) where {T <: Real}
     start_angle = acos(max_signal_rate)
     end_angle = acos(min_signal_rate)
@@ -161,7 +160,7 @@ end
     return noise_rates, signal_rates
 end
 
-@inline function __denoise(
+function __denoise(
         unet, noisy_images::AbstractArray{T, 4}, noise_rates::AbstractArray{T, 4},
         signal_rates::AbstractArray{T, 4}) where {T <: Real}
     pred_noises = unet((noisy_images, noise_rates .^ 2))

@@ -1,4 +1,4 @@
-@inline function Lux.__batched_jacobian(f::F, backend::AutoZygote, x) where {F}
+function Lux.__batched_jacobian(f::F, backend::AutoZygote, x) where {F}
     return Lux.__batched_jacobian_impl(f, backend, x)
 end
 

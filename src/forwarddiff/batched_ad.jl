@@ -28,13 +28,13 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(__batched_jacobia
     return res, ∇nested_ad
 end
 
-@inline function __batched_jacobian(f::F, backend::AutoForwardDiff, x) where {F}
+function __batched_jacobian(f::F, backend::AutoForwardDiff, x) where {F}
     return __batched_jacobian_impl(f, backend, x)
 end
 
 ## Nested AD rewriting
 for fType in AD_CONVERTIBLE_FUNCTIONS
-    @eval @inline function __batched_jacobian(f::$(fType), backend::AutoForwardDiff, x)
+    @eval function __batched_jacobian(f::$(fType), backend::AutoForwardDiff, x)
         f_internal, y = __rewrite_ad_call(f)
         return __batched_jacobian(f_internal, backend, x, y)
     end

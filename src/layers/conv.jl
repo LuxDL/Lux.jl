@@ -176,7 +176,7 @@ function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
            (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
+function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
@@ -670,7 +670,7 @@ function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
     return prod(c.kernel_size) * c.in_chs * c.out_chs + (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
+function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
@@ -800,7 +800,7 @@ function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
            (use_bias ? c.out_chs : 0)
 end
 
-@inline function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
+function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
     y = match_eltype(c, ps, st, x)
     cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (

@@ -102,7 +102,7 @@ function Lux.convert_flux_model(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs
         _bias = l.bias isa Bool ? nothing :
                 reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
         return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
-            groups, init_weight=Returns(Lux._maybe_flip_conv_weight(l.weight)),
+            groups, init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
             init_bias=Returns(_bias), use_bias=!(l.bias isa Bool))
     else
         return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
@@ -121,7 +121,7 @@ function Lux.convert_flux_model(
                 reshape(copy(l.bias), ntuple(_ -> 1, length(k))..., out_chs, 1)
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride,
             pad, l.dilation, groups, use_bias=!(l.bias isa Bool),
-            init_weight=Returns(Lux._maybe_flip_conv_weight(l.weight)),
+            init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
             init_bias=Returns(_bias))
     else
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
