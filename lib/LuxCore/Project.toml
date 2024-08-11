@@ -1,7 +1,7 @@
 name = "LuxCore"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "0.1.23"
+version = "0.1.24"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -11,16 +11,22 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [weakdeps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 EnzymeCore = "f151be2c-9106-41f4-ab19-57ee4f262869"
+MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 
 [extensions]
+LuxCoreArrayInterfaceReverseDiffExt = ["ArrayInterface", "ReverseDiff"]
+LuxCoreArrayInterfaceTrackerExt = ["ArrayInterface", "Tracker"]
 LuxCoreChainRulesCoreExt = "ChainRulesCore"
-LuxCoreMLDataDevicesExt = "MLDataDevices"
 LuxCoreEnzymeCoreExt = "EnzymeCore"
+LuxCoreMLDataDevicesExt = "MLDataDevices"
 
 [compat]
+ArrayInterface = "7.9"
 ChainRulesCore = "1.24"
 Compat = "4.15.0"
 DispatchDoctor = "0.4.10"
@@ -28,5 +34,7 @@ EnzymeCore = "0.7.7"
 Functors = "0.4.12"
 MLDataDevices = "1"
 Random = "1.10"
+ReverseDiff = "1.15"
 Setfield = "1"
+Tracker = "0.2.34"
 julia = "1.10"
