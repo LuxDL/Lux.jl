@@ -27,11 +27,11 @@ include("setup_modes.jl")
         @test eltype(y) == Float64  # We don't change the eltype
 
         @testset "Operator Overloading AD: $(typeof(x_arr))" for x_arr in x_ad_arrs
-            @test Lux.__eltype(first(model(x_arr, ps, st))) == Float64
+            @test Lux.Utils.eltype(first(model(x_arr, ps, st))) == Float64
         end
 
         dx, dps, _ = Zygote.gradient(sum ∘ first ∘ model, x, ps, st)
-        @test Lux.__eltype(dx) == Float64
+        @test Lux.Utils.eltype(dx) == Float64
         @test Lux.recursive_eltype(dps, Val(true)) == Float32
     end
 
@@ -51,14 +51,14 @@ include("setup_modes.jl")
             y = first(model(x_arr, ps, st))
 
             if eltype(x_arr) <: ReverseDiff.TrackedReal
-                @test Lux.__eltype(y) == Float64
+                @test Lux.Utils.eltype(y) == Float64
             else
-                @test Lux.__eltype(y) == Float32
+                @test Lux.Utils.eltype(y) == Float32
             end
         end
 
         dx, dps, _ = Zygote.gradient(sum ∘ first ∘ model, x, ps, st)
-        @test Lux.__eltype(dx) == Float64
+        @test Lux.Utils.eltype(dx) == Float64
         @test Lux.recursive_eltype(dps, Val(true)) == Float32
     end
 end

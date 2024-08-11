@@ -10,9 +10,7 @@ function __construct_tracked_params(ps, dps)
     return Lux.recursive_map(map_fn, ps, dps)
 end
 
-Lux.__eltype(::TrackedArray{T}) where {T} = T
-Lux.__eltype(::TrackedReal{T}) where {T} = T
-Lux.__eltype(::AbstractArray{<:TrackedReal{T}}) where {T} = T
+Utils.eltype(::Type{<:TrackedReal{T}}) where {T} = T
 
 Utils.reverse(x::TrackedArray; dims=:) = ArrayInterface.aos_to_soa(reverse(x; dims))
 function Utils.reverse(x::AbstractArray{<:TrackedReal}; dims=:)

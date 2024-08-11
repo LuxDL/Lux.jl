@@ -7,13 +7,13 @@ common cases.
 
 Any leaves of `x` that are arrays and allow in-place addition will be modified in place.
 """
-@inline recursive_add!!(x, y) = recursive_map(__add!!, x, y)
+recursive_add!!(x, y) = recursive_map(__add!!, x, y)
 
 """
     recursive_eltype(x, unwrap_ad_types = Val(false))
 
 Recursively determine the element type of a nested structure `x`. This is equivalent to
-doing `fmap(Lux.__eltype, x)`, but this implementation uses type stable code for common
+doing `fmap(Lux.Utils.eltype, x)`, but this implementation uses type stable code for common
 cases.
 
 For ambiguous inputs like `nothing` and `Val` types we return `Bool` as the eltype.
@@ -22,19 +22,20 @@ If `unwrap_ad_types` is set to `Val(true)` then for tracing and operator overloa
 ADs (ForwardDiff, ReverseDiff, Tracker), this function will return the eltype of the
 unwrapped value.
 """
-@inline recursive_eltype(x) = recursive_eltype(x, Val(false))
+recursive_eltype(x) = recursive_eltype(x, Val(false))
+recursive_eltype(x, val::Val) = recursive_eltype(x, static(val))
 
-@inline recursive_eltype(x::AbstractArray, ::Val{false}) = eltype(x)
-@inline recursive_eltype(x::AbstractArray, ::Val{true}) = __eltype(x)
-@inline recursive_eltype(x::Number, ::Val{false}) = eltype(x)
-@inline recursive_eltype(x::Number, ::Val{true}) = __eltype(x)
-@inline recursive_eltype(::Union{Nothing, Missing, Val}, ::Val) = Bool
-@inline function recursive_eltype(x::Union{Tuple, NamedTuple}, val::Val)
+recursive_eltype(x::AbstractArray, ::False) = eltype(x)
+recursive_eltype(x::AbstractArray, ::True) = Utils.eltype(x)
+recursive_eltype(x::Number, ::False) = eltype(x)
+recursive_eltype(x::Number, ::True) = Utils.eltype(x)
+recursive_eltype(::Union{Nothing, Missing, Val}, ::StaticBool) = Bool
+function recursive_eltype(x::Union{Tuple, NamedTuple}, val::StaticBool)
     leaves = x isa Tuple ? x : values(x)
     length(leaves) == 0 && return Bool
     return unrolled_mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves)
 end
-@inline function recursive_eltype(x, val::Val)
+function recursive_eltype(x, val::StaticBool)
     leaves = x isa Tuple ? x : (x isa NamedTuple ? values(x) : Functors.fleaves(x))
     length(leaves) == 0 && return Bool
     return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves)
@@ -48,7 +49,7 @@ Recursively create a zero value for a nested structure `x`. This is equivalent t
 
 See also [`Lux.recursive_make_zero!!`](@ref).
 """
-@inline recursive_make_zero(x) = recursive_map(__zero, x)
+recursive_make_zero(x) = recursive_map(__zero, x)
 
 """
     recursive_make_zero!!(x)
@@ -58,7 +59,7 @@ in-place zeroing will be modified in place.
 
 See also [`Lux.recursive_make_zero`](@ref) for fully out-of-place version.
 """
-@inline recursive_make_zero!!(x) = recursive_map(__zero!!, x)
+recursive_make_zero!!(x) = recursive_map(__zero!!, x)
 
 """
     recursive_copyto!(x, y)
@@ -67,7 +68,7 @@ Recursively copy the leaves of two nested structures `x` and `y`. In Functor lan
 is equivalent to doing `fmap(copyto!, x, y)`, but this implementation uses type stable code
 for common cases. Note that any immutable leaf will lead to an error.
 """
-@inline recursive_copyto!(x, y) = recursive_map(copyto!, x, y)
+recursive_copyto!(x, y) = recursive_map(copyto!, x, y)
 
 """
     recursive_map(f, x, args...)
@@ -95,25 +96,25 @@ For the following types it directly defines recursion rules:
 function recursive_map end
 
 for direct_call in (Number, Val, Nothing)
-    @eval @inline recursive_map(f::F, x::$(direct_call), args...) where {F} = f(x, args...)
+    @eval recursive_map(f::F, x::$(direct_call), args...) where {F} = f(x, args...)
 end
-@inline function recursive_map(f::F, x::AbstractArray{T}, args...) where {F, T}
+function recursive_map(f::F, x::AbstractArray{T}, args...) where {F, T}
     (T <: Number || isbitstype(T)) && return f(x, args...) # Not all Number types (BigFloat) are bitstype
     return f.(x, args...)
 end
-@inline function recursive_map(f::F, x::Tuple, args...) where {F}
+function recursive_map(f::F, x::Tuple, args...) where {F}
     map_fn = let f = f
         (args_...) -> recursive_map(f, args_...)
     end
     return map(map_fn, x, args...)
 end
-@inline function recursive_map(f::F, x::NamedTuple{fields}, args...) where {F, fields}
+function recursive_map(f::F, x::NamedTuple{fields}, args...) where {F, fields}
     map_fn = let f = f
         (args_...) -> recursive_map(f, args_...)
     end
     return NamedTuple{fields}(unrolled_map(map_fn, values(x), values.(args)...))
 end
-@inline recursive_map(f::F, x, args...) where {F} = fmap(f, x, args...)
+recursive_map(f::F, x, args...) where {F} = fmap(f, x, args...)
 
 @compat(public,
     (recursive_add!!, recursive_copyto!, recursive_eltype,

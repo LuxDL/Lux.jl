@@ -3,6 +3,7 @@ module Utils
 using ArgCheck: @argcheck
 using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
+using ForwardDiff: Dual
 using Functors: fmapstructure
 using Random: AbstractRNG
 
@@ -26,8 +27,8 @@ end
 @non_differentiable can_named_tuple(::Any)
 
 # Convert to a NamedTuple
-@inline named_tuple(nt::NamedTuple) = nt
-@inline function named_tuple(x::T) where {T}
+named_tuple(nt::NamedTuple) = nt
+function named_tuple(x::T) where {T}
     NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
     if NT === Union{} || NT === NamedTuple
         error("`NamedTuple` is not defined for type `$(T)`. Please define \
@@ -58,7 +59,7 @@ function merge(x, y)
 end
 
 # Used in freezing
-@inline function pairs(x)
+function pairs(x)
     can_named_tuple(x) && return Base.pairs(Utils.named_tuple(x))
     return Base.pairs(x)
 end
@@ -97,6 +98,21 @@ function index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fi
     return NamedTuple{fields[idxs]}(values(nt)[idxs])
 end
 
+eltype(x) = eltype(Base.eltype(x))
+eltype(::Type{T}) where {T} = T
+eltype(::Type{<:Dual{T, V}}) where {T, V} = V
+
+ofeltype_array(::Type{T}, x::AbstractArray) where {T} = broadcast(T, x)
+function ofeltype_array(::Type{T}, x::AbstractArray{<:Dual{Tag, V, N}}) where {Tag, T, V, N}
+    return Dual{Tag, T, N}.(x)
+end
+
+function warn_mismatch(layer, x, warn_msg::AbstractString)
+    @warn warn_msg layer summary(x) maxlog=1
+end
+
+@non_differentiable warn_mismatch(::Any, ::Any, ::Any)
+
 end
 
 # Convolution
@@ -111,7 +127,7 @@ end
 _expand(N, i::Tuple) = i
 _expand(N, i::Integer) = ntuple(_ -> i, N)
 
-@inline __tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
+__tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
 
 # Padding
 struct SamePad end
@@ -130,18 +146,17 @@ function _calc_padding(::SamePad, k::NTuple, dilation, stride)
     return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
 end
 
-@inline function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+function _init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
     return rnn.init_state(rng, rnn.out_dims, size(x, 2)) |> get_device(x)
 end
 
-@inline function _init_trainable_hidden_state(
-        hidden_state::AbstractVector, x::AbstractMatrix)
+function _init_trainable_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
     return repeat(hidden_state, 1, size(x, 2))
 end
 
 # Backend Integration
 ## Convolution
-@inline _conv_transpose(x, weight, cdims) = LuxLib.__∇conv_data(x, weight, cdims)
+_conv_transpose(x, weight, cdims) = LuxLib.__∇conv_data(x, weight, cdims)
 
 function _conv_transpose_dims(
         x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
@@ -166,7 +181,7 @@ function _conv_transpose_dims(
 end
 
 ## Adaptive Pooling
-@inline function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
+function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
     insize = size(x)[1:(end - 2)]
     stride = insize .÷ outsize
     k = insize .- (outsize .- 1) .* stride
@@ -224,33 +239,29 @@ end
 
 # Stack using vcat and mapreduce
 # FIXME: Just use `stack` once the rrule is fixed upstream
-@inline __stack1(xs) = mapfoldl(__expanddims1, vcat, xs)
+__stack1(xs) = mapfoldl(__expanddims1, vcat, xs)
 
-@inline __expanddims1(x) = reshape(x, 1, size(x)...)
+__expanddims1(x) = reshape(x, 1, size(x)...)
 
-@inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
+function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
 
-@inline __zero(x) = zero(x)
-@inline __zero(::Nothing) = nothing
-@inline __zero(x::Val) = x
+__zero(x) = zero(x)
+__zero(::Nothing) = nothing
+__zero(x::Val) = x
 
-@inline __zero!!(x::Number) = zero(x)
-@inline __zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
-@inline __zero!!(::Nothing) = nothing
-@inline __zero!!(x::Val) = x
+__zero!!(x::Number) = zero(x)
+__zero!!(x::AbstractArray{<:Number}) = fill!(x, zero(eltype(x)))
+__zero!!(::Nothing) = nothing
+__zero!!(x::Val) = x
 
-@inline function __add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
+function __add!!(x::AbstractArray{<:Number}, y::AbstractArray{<:Number})
     ArrayInterface.can_setindex(x) || return x .+ y
     @. x += y
     return x
 end
-@inline __add!!(x::Number, y::Number) = x + y
-@inline __add!!(::Nothing, ::Nothing) = nothing
+__add!!(x::Number, y::Number) = x + y
+__add!!(::Nothing, ::Nothing) = nothing
 
-@inline __set_refval!(x, y) = (x[] = y)
-
-@inline __eltype(x) = eltype(x)
-@inline __eltype(::ForwardDiff.Dual{T, V}) where {T, V} = V
-@inline __eltype(::AbstractArray{<:ForwardDiff.Dual{T, V}}) where {T, V} = V
+__set_refval!(x, y) = (x[] = y)

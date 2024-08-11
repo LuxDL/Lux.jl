@@ -22,7 +22,7 @@ using NNlib: NNlib
 using Optimisers: Optimisers
 using Preferences: load_preference, has_preference, set_preferences!
 using Random: Random, AbstractRNG
-using Static: True, False, static
+using Static: StaticBool, True, False, static
 using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
