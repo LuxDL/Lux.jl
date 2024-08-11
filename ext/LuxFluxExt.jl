@@ -4,7 +4,7 @@ using ArgCheck: @argcheck
 using Flux: Flux
 using Lux: Lux, FluxModelConversionException, LuxOps
 
-function Lux.__from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
+function Lux.convert_flux_model(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
     @warn "Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
 
     if !preserve_ps_st
@@ -16,10 +16,10 @@ function Lux.__from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) wh
     return Lux.FluxLayer(l)
 end
 
-Lux.__from_flux_adaptor(l::Function; kwargs...) = Lux.WrappedFunction{:direct_call}(l)
+Lux.convert_flux_model(l::Function; kwargs...) = Lux.WrappedFunction{:direct_call}(l)
 
-function Lux.__from_flux_adaptor(l::Flux.Chain; kwargs...)
-    fn = x -> Lux.__from_flux_adaptor(x; kwargs...)
+function Lux.convert_flux_model(l::Flux.Chain; kwargs...)
+    fn = x -> Lux.convert_flux_model(x; kwargs...)
     layers = map(fn, l.layers)
     if layers isa NamedTuple
         return Lux.Chain(layers; disable_optimizations=true)
@@ -28,7 +28,7 @@ function Lux.__from_flux_adaptor(l::Flux.Chain; kwargs...)
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
+function Lux.convert_flux_model(l::Flux.Dense; preserve_ps_st::Bool=false, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
         bias = l.bias isa Bool ? nothing : reshape(copy(l.bias), out_dims, 1)
@@ -39,7 +39,7 @@ function Lux.__from_flux_adaptor(l::Flux.Dense; preserve_ps_st::Bool=false, kwar
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
+function Lux.convert_flux_model(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
         return Lux.Scale(size(l.scale), l.σ; init_weight=Returns(copy(l.scale)),
             init_bias=Returns(copy(l.bias)), use_bias=!(l.bias isa Bool))
@@ -48,17 +48,17 @@ function Lux.__from_flux_adaptor(l::Flux.Scale; preserve_ps_st::Bool=false, kwar
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Maxout; kwargs...)
-    return Lux.Maxout(Lux.__from_flux_adaptor.(l.layers; kwargs...)...)
+function Lux.convert_flux_model(l::Flux.Maxout; kwargs...)
+    return Lux.Maxout(Lux.convert_flux_model.(l.layers; kwargs...)...)
 end
 
-function Lux.__from_flux_adaptor(l::Flux.SkipConnection; kwargs...)
+function Lux.convert_flux_model(l::Flux.SkipConnection; kwargs...)
     connection = l.connection isa Function ? l.connection :
-                 Lux.__from_flux_adaptor(l.connection; kwargs...)
-    return Lux.SkipConnection(Lux.__from_flux_adaptor(l.layers; kwargs...), connection)
+                 Lux.convert_flux_model(l.connection; kwargs...)
+    return Lux.SkipConnection(Lux.convert_flux_model(l.layers; kwargs...), connection)
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
+function Lux.convert_flux_model(l::Flux.Bilinear; preserve_ps_st::Bool=false, kwargs...)
     out, in1, in2 = size(l.weight)
     if preserve_ps_st
         return Lux.Bilinear((in1, in2) => out, l.σ; init_weight=Returns(copy(l.weight)),
@@ -68,8 +68,8 @@ function Lux.__from_flux_adaptor(l::Flux.Bilinear; preserve_ps_st::Bool=false, k
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Parallel; kwargs...)
-    fn = x -> Lux.__from_flux_adaptor(x; kwargs...)
+function Lux.convert_flux_model(l::Flux.Parallel; kwargs...)
+    fn = x -> Lux.convert_flux_model(x; kwargs...)
     layers = map(fn, l.layers)
     if layers isa NamedTuple
         return Lux.Parallel(l.connection; layers...)
@@ -78,13 +78,13 @@ function Lux.__from_flux_adaptor(l::Flux.Parallel; kwargs...)
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.PairwiseFusion; kwargs...)
+function Lux.convert_flux_model(l::Flux.PairwiseFusion; kwargs...)
     @warn "Flux.PairwiseFusion and Lux.PairwiseFusion are semantically different. Using \
            `FluxLayer` as a fallback." maxlog=1
     return Lux.FluxLayer(l)
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
+function Lux.convert_flux_model(l::Flux.Embedding; preserve_ps_st::Bool=true, kwargs...)
     out_dims, in_dims = size(l.weight)
     if preserve_ps_st
         return Lux.Embedding(in_dims => out_dims; init_weight=Returns(copy(l.weight)))
@@ -93,7 +93,7 @@ function Lux.__from_flux_adaptor(l::Flux.Embedding; preserve_ps_st::Bool=true, k
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
+function Lux.convert_flux_model(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs...)
     k = size(l.weight)[1:(end - 2)]
     in_chs, out_chs = size(l.weight)[(end - 1):end]
     groups = l.groups
@@ -110,7 +110,7 @@ function Lux.__from_flux_adaptor(l::Flux.Conv; preserve_ps_st::Bool=false, kwarg
     end
 end
 
-function Lux.__from_flux_adaptor(
+function Lux.convert_flux_model(
         l::Flux.ConvTranspose; preserve_ps_st::Bool=false, kwargs...)
     k = size(l.weight)[1:(end - 2)]
     out_chs, in_chs = size(l.weight)[(end - 1):end]
@@ -129,7 +129,7 @@ function Lux.__from_flux_adaptor(
     end
 end
 
-function Lux.__from_flux_adaptor(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
+function Lux.convert_flux_model(l::Flux.CrossCor; preserve_ps_st::Bool=false, kwargs...)
     k = size(l.weight)[1:(end - 2)]
     in_chs, out_chs = size(l.weight)[(end - 1):end]
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
@@ -145,43 +145,43 @@ function Lux.__from_flux_adaptor(l::Flux.CrossCor; preserve_ps_st::Bool=false, k
     end
 end
 
-Lux.__from_flux_adaptor(l::Flux.AdaptiveMaxPool; kwargs...) = Lux.AdaptiveMaxPool(l.out)
+Lux.convert_flux_model(l::Flux.AdaptiveMaxPool; kwargs...) = Lux.AdaptiveMaxPool(l.out)
 
-Lux.__from_flux_adaptor(l::Flux.AdaptiveMeanPool; kwargs...) = Lux.AdaptiveMeanPool(l.out)
+Lux.convert_flux_model(l::Flux.AdaptiveMeanPool; kwargs...) = Lux.AdaptiveMeanPool(l.out)
 
-Lux.__from_flux_adaptor(::Flux.GlobalMaxPool; kwargs...) = Lux.GlobalMaxPool()
+Lux.convert_flux_model(::Flux.GlobalMaxPool; kwargs...) = Lux.GlobalMaxPool()
 
-Lux.__from_flux_adaptor(::Flux.GlobalMeanPool; kwargs...) = Lux.GlobalMeanPool()
+Lux.convert_flux_model(::Flux.GlobalMeanPool; kwargs...) = Lux.GlobalMeanPool()
 
-function Lux.__from_flux_adaptor(l::Flux.MaxPool; kwargs...)
+function Lux.convert_flux_model(l::Flux.MaxPool; kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     return Lux.MaxPool(l.k; l.stride, pad)
 end
 
-function Lux.__from_flux_adaptor(l::Flux.MeanPool; kwargs...)
+function Lux.convert_flux_model(l::Flux.MeanPool; kwargs...)
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     return Lux.MeanPool(l.k; l.stride, pad)
 end
 
-Lux.__from_flux_adaptor(l::Flux.Dropout; kwargs...) = Lux.Dropout(l.p; l.dims)
+Lux.convert_flux_model(l::Flux.Dropout; kwargs...) = Lux.Dropout(l.p; l.dims)
 
-function Lux.__from_flux_adaptor(l::Flux.LayerNorm; kwargs...)
+function Lux.convert_flux_model(l::Flux.LayerNorm; kwargs...)
     @warn "Flux.LayerNorm and Lux.LayerNorm are semantically different specifications. \
            Using `FluxLayer` as a fallback." maxlog=1
     return Lux.FluxLayer(l)
 end
 
-Lux.__from_flux_adaptor(::typeof(identity); kwargs...) = Lux.NoOpLayer()
+Lux.convert_flux_model(::typeof(identity); kwargs...) = Lux.NoOpLayer()
 
-Lux.__from_flux_adaptor(::typeof(Flux.flatten); kwargs...) = Lux.FlattenLayer()
+Lux.convert_flux_model(::typeof(Flux.flatten); kwargs...) = Lux.FlattenLayer()
 
-Lux.__from_flux_adaptor(l::Flux.PixelShuffle; kwargs...) = Lux.PixelShuffle(l.r)
+Lux.convert_flux_model(l::Flux.PixelShuffle; kwargs...) = Lux.PixelShuffle(l.r)
 
-function Lux.__from_flux_adaptor(l::Flux.Upsample{mode}; kwargs...) where {mode}
+function Lux.convert_flux_model(l::Flux.Upsample{mode}; kwargs...) where {mode}
     return Lux.Upsample(mode; l.scale, l.size)
 end
 
-function Lux.__from_flux_adaptor(
+function Lux.convert_flux_model(
         l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     out_dims, in_dims = size(l.Wi)
     if preserve_ps_st
@@ -196,7 +196,7 @@ function Lux.__from_flux_adaptor(
     end
 end
 
-function Lux.__from_flux_adaptor(
+function Lux.convert_flux_model(
         l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     _out_dims, in_dims = size(l.Wi)
     out_dims = _out_dims ÷ 4
@@ -215,7 +215,7 @@ function Lux.__from_flux_adaptor(
     end
 end
 
-function Lux.__from_flux_adaptor(
+function Lux.convert_flux_model(
         l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     _out_dims, in_dims = size(l.Wi)
     out_dims = _out_dims ÷ 3
@@ -233,7 +233,7 @@ function Lux.__from_flux_adaptor(
     end
 end
 
-function Lux.__from_flux_adaptor(
+function Lux.convert_flux_model(
         l::Flux.BatchNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
@@ -253,7 +253,7 @@ function Lux.__from_flux_adaptor(
     return Lux.BatchNorm(l.chs, l.λ; l.affine, l.track_stats, epsilon=l.ϵ, l.momentum)
 end
 
-function Lux.__from_flux_adaptor(
+function Lux.convert_flux_model(
         l::Flux.GroupNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         @argcheck !l.track_stats
@@ -269,7 +269,7 @@ end
 
 const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
 
-function Lux.__from_flux_adaptor(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
+function Lux.convert_flux_model(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
     throw(FluxModelConversionException("Transformation of type $(T) is not supported."))
 end
 

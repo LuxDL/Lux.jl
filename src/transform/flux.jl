@@ -3,7 +3,7 @@
 
 Convert a Flux Model to Lux Model.
 
-!!! warning
+!!! warning "`active` field"
 
     This always ignores the `active` field of some of the Flux layers. This is almost never
     going to be supported.
@@ -52,10 +52,10 @@ function Adapt.adapt(from::FromFluxAdaptor, L)
     if Base.get_extension(@__MODULE__, :LuxFluxExt) === nothing
         error("`FromFluxAdaptor` requires `Flux.jl` to be loaded.")
     end
-    return __from_flux_adaptor(L; from.preserve_ps_st, from.force_preserve)
+    return convert_flux_model(L; from.preserve_ps_st, from.force_preserve)
 end
 
-function __from_flux_adaptor end
+function convert_flux_model end
 
 Base.@deprecate transform(l; preserve_ps_st::Bool=false, force_preserve::Bool=false) adapt(
     FromFluxAdaptor(preserve_ps_st, force_preserve), l)

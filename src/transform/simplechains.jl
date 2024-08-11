@@ -26,7 +26,7 @@ performed using SimpleChains.
 ## Example
 
 ```jldoctest
-julia> import SimpleChains: static
+julia> import SimpleChains
 
 julia> using Adapt, Lux, Random
 
@@ -34,7 +34,7 @@ julia> lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
            Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
            Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)));
 
-julia> adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
+julia> adaptor = ToSimpleChainsAdaptor((28, 28, 1))
 ToSimpleChainsAdaptor{Tuple{Static.StaticInt{28}, Static.StaticInt{28}, Static.StaticInt{1}}}((static(28), static(28), static(1)), false)
 
 julia> simple_chains_model = adapt(adaptor, lux_model) # or adaptor(lux_model)
@@ -66,9 +66,7 @@ struct ToSimpleChainsAdaptor{ID} <: AbstractFromLuxAdaptor
 
     function ToSimpleChainsAdaptor(input_dims, convert_to_array::Bool=false)
         input_dims isa Number && (input_dims = (input_dims,))
-        if input_dims isa Tuple{Vararg{Integer}}
-            throw(ArgumentError("`input_dims` must be a Tuple of `static` integers."))
-        end
+        input_dims isa Tuple{Vararg{Integer}} && (input_dims = static(input_dims))
         return new{typeof(input_dims)}(input_dims, convert_to_array)
     end
 end
@@ -83,9 +81,9 @@ function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
     if Base.get_extension(@__MODULE__, :LuxSimpleChainsExt) === nothing
         error("`ToSimpleChainsAdaptor` requires `SimpleChains.jl` to be loaded.")
     end
-    sc_layer = __fix_input_dims_simplechain(__to_simplechains_adaptor(L), to.input_dims)
+    sc_layer = fix_simplechain_input_dims(make_simplechain_network(L), to.input_dims)
     return SimpleChainsLayer{to.convert_to_array}(sc_layer, L)
 end
 
-function __to_simplechains_adaptor end
-function __fix_input_dims_simplechain end
+function make_simplechain_network end
+function fix_simplechain_input_dims end
