@@ -3,7 +3,7 @@
 !!! info
 
     Starting from `v0.5`, Lux has transitioned to a new GPU management system. The old
-    system using `cpu` and `gpu` functions is still in place but will be removed in `v0.6`.
+    system using `cpu` and `gpu` functions is still in place but will be removed in `v1`.
     Using the  old functions might lead to performance regressions if used inside
     performance critical code.
 

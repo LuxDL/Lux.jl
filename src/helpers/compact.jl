@@ -598,6 +598,8 @@ end
 @inline __state_if_stateful(st_new::StatefulLuxLayer{true}) = st_new.st
 @inline __state_if_stateful(st_new::StatefulLuxLayer{false}) = st_new.st_any
 
+CRC.@non_differentiable __state_if_stateful(::Any)
+
 # Shortcut for potential chain rules bug?
 function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
     y, _ = m.f(m.layers, x, ps, st)

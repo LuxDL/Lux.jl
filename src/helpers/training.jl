@@ -91,7 +91,7 @@ end
     extras
 end
 
-@inline __backend(::TrainingBackendCache{backend}) where {backend} = backend
+@inline training_backend(::TrainingBackendCache{backend}) where {backend} = backend
 
 function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     println(io, "TrainState")
@@ -102,7 +102,8 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     print(io, "    step: ", ts.step)
     if ts.cache !== nothing
         if ts.cache isa TrainingBackendCache
-            print(io, "\n    cache: $(nameof(typeof(ts.cache))){$(__backend(ts.cache))}")
+            print(io,
+                "\n    cache: $(nameof(typeof(ts.cache))){$(training_backend(ts.cache))}")
         else
             print(io, "\n    cache: $(nameof(typeof(ts.cache)))")
         end
@@ -197,10 +198,10 @@ A 4-Tuple containing:
     this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
 function compute_gradients(ad::ADTypes.AbstractADType, ::F, _, ::TrainState) where {F}
-    return __maybe_implemented_compute_gradients(ad)
+    return check_if_compute_gradients_implemented(ad)
 end
 
-function __maybe_implemented_compute_gradients(::T) where {T <: ADTypes.AbstractADType}
+function check_if_compute_gradients_implemented(::T) where {T <: ADTypes.AbstractADType}
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented \
                          yet!"))
 end
@@ -209,13 +210,12 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     adtype = Symbol(:Auto, package)
     msg = "Load `$(package)` with `using $(package)`/`import $(package)` before using this \
            function!"
-    @eval function __maybe_implemented_compute_gradients(::ADTypes.$(adtype))
+    @eval function check_if_compute_gradients_implemented(::$(adtype))
         throw(ArgumentError($msg))
     end
 end
 
-@inline function __generate_wrappers(
-        objective_function::F, m, ps, st, data, ::Val{false}) where {F}
+@inline function generate_wrappers(::F, m, ps, st, data, ::Val{false}) where {F}
     @warn "Detected function wrapper generation with function being updated between calls. \
            This will generate type-unstable code. A possible reason for this is \
            `TrainState` was compiled (first call to `compute_gradients`) with function \
@@ -225,20 +225,20 @@ end
 end
 
 # Run the code when trying to compile the function for the first time.
-@inline function __generate_wrappers(
+@inline function generate_wrappers(
         objective_function::F, m, ps, st, data, ::Val{true}) where {F}
-    _, st_, stats_ = objective_function(m, ps, st, data)
-    return Ref{typeof(st_)}(st_), Ref{typeof(stats_)}(stats_)
+    _, stₙ, statsₙ = objective_function(m, ps, st, data)
+    return Ref{typeof(stₙ)}(stₙ), Ref{typeof(statsₙ)}(statsₙ)
 end
 
-@inline function __wrap_objective_function(
+@inline function wrap_objective_function(
         objective_function::F, m, ps, st, data, first_try::Val) where {F}
-    st_updated, stats = __generate_wrappers(objective_function, m, ps, st, data, first_try)
+    st_updated, stats = generate_wrappers(objective_function, m, ps, st, data, first_try)
 
     wrapped_objective_function = @closure (model, ps, st, data) -> begin
         loss, st_, stats_ = objective_function(model, ps, st, data)
-        Lux.__set_refval!(st_updated, st_)
-        Lux.__set_refval!(stats, stats_)
+        Lux.Utils.set_refval!(st_updated, st_)
+        Lux.Utils.set_refval!(stats, stats_)
         return loss
     end
 

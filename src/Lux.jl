@@ -10,7 +10,6 @@ using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig, Zer
 using Compat: @compat
 using ConcreteStructs: @concrete
 using ConstructionBase: ConstructionBase
-using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: Functors, fmap
@@ -30,7 +29,7 @@ using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
-                update_state, trainmode, testmode, setup, apply, display_name, replicate
+                update_state, trainmode, testmode, setup, apply, replicate
 
 const CRC = ChainRulesCore
 
@@ -75,10 +74,6 @@ include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
 include("helpers/match_eltype.jl")
-
-# AutoDiff
-include("chainrules.jl")
-include("enzymerules.jl")
 
 # ForwardDiff.jl Integration
 include("forwarddiff/jvp.jl")

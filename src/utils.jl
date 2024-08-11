@@ -4,6 +4,7 @@ using ArrayInterface: ArrayInterface
 using ArgCheck: @argcheck
 using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
+using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
 using Functors: fmapstructure
 using MLDataDevices: get_device
@@ -160,10 +161,13 @@ expand(N, i::Integer) = ntuple(Returns(i), N)
 stack1(xs) = mapfoldl(expanddims1, vcat, xs)
 expanddims1(x) = reshape(x, 1, size(x)...)
 
+set_refval!(x, y) = (x[] = y)
+
+@non_differentiable set_refval!(::Any...)
+EnzymeRules.inactive(::typeof(set_refval!), ::Any...) = nothing
+
 end
 
 function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
-
-__set_refval!(x, y) = (x[] = y)

@@ -246,7 +246,7 @@ end
 function WrappedFunction(f::F) where {F}
     # Not a depwarn but helpful to call this
     Base.depwarn("The current default of `:direct_call` will be replaced with \
-                  `:runtime_check` from v0.6). Please make sure that the assumptions of \
+                  `:runtime_check` from v1). Please make sure that the assumptions of \
                   this function are correct or specify `WrappedFunction{:direct_call}(f)`",
         :WrappedFunction)
     return WrappedFunction{:direct_call}(f)
@@ -339,7 +339,7 @@ end
 function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias}
     if use_bias
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
-            bias=d.init_bias(rng, d.out_dims, 1)) #TODO: In v0.6 make it a vector
+            bias=d.init_bias(rng, d.out_dims, 1)) #TODO: In v1 make it a vector
     else
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
     end

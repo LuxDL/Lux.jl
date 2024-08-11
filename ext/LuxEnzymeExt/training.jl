@@ -2,7 +2,7 @@ function Lux.Training.compute_gradients(
         ::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
     dps = Lux.recursive_make_zero(ts.parameters)
 
-    obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.__wrap_objective_function(
+    obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.wrap_objective_function(
         obj_fn, ts.model, ts.parameters, ts.states, data, Val(true))
 
     _, loss = Enzyme.autodiff(
