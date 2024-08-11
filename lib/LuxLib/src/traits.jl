@@ -82,6 +82,14 @@ catch
     false
 end
 
+const AMD_RYZEN_HARDWARE = try
+    occursin("ryzen", lowercase(string(CpuId.cpubrand())))
+catch
+    @warn "Could not detect cpu brand via CpuId.jl, assuming not Ryzen. Open an issue in \
+           `LuxLib.jl` if this is unexpected."
+    false
+end
+
 function explicit_blas_loaded()
     return Utils.is_extension_loaded(Val(:MKL)) |
            Utils.is_extension_loaded(Val(:AppleAccelerate)) |
@@ -91,7 +99,7 @@ end
 CRC.@non_differentiable explicit_blas_loaded()
 
 function use_octavian()
-    @static if Sys.ARCH == :x86_64 && !INTEL_HARDWARE
+    @static if Sys.ARCH == :x86_64 && (!INTEL_HARDWARE || AMD_RYZEN_HARDWARE)
         return !explicit_blas_loaded()
     else
         return False()
