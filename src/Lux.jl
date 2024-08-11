@@ -4,9 +4,9 @@ using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff, Aut
                AutoZygote
 using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
-using ArrayInterface: ArrayInterface, fast_scalar_indexing
-using ChainRulesCore: ChainRulesCore, AbstractZero, HasReverseMode, NoTangent, ProjectTo,
-                      RuleConfig, ZeroTangent, @thunk
+using ArrayInterface: ArrayInterface
+using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig, ZeroTangent,
+                      @thunk
 using Compat: @compat
 using ConcreteStructs: @concrete
 using ConstructionBase: ConstructionBase
@@ -67,6 +67,7 @@ include("layers/extension.jl")
 include("layers/display.jl")
 
 # Helpful Functionalities
+include("helpers/eltype_conversion.jl")
 include("helpers/stateful.jl")
 include("helpers/compact.jl")
 include("helpers/autodiff.jl")

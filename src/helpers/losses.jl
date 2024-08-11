@@ -12,7 +12,7 @@ using LossFunctions: LossFunctions
 using Statistics: mean
 using UnrolledUtilities: unrolled_all
 
-using ..LuxOps: xlogx, xlogy
+using ..LuxOps: xlogy
 
 const CRC = ChainRulesCore
 
