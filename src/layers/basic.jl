@@ -265,8 +265,8 @@ function (wf::WrappedFunction{:runtime_check})(x, ps, st::NamedTuple)
         static(!hasmethod(wf.func, (typeof(x), typeof(ps), typeof(st)))))
 end
 
-wrapped_function_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
-wrapped_function_call(f, x, ps, st, ::Val{true}) = f(x), st
+wrapped_function_call(f, x, ps, st, ::False) = f(x, ps, st)
+wrapped_function_call(f, x, ps, st, ::True) = f(x), st
 
 function Base.show(io::IO, w::WrappedFunction{T}) where {T}
     print(io, "WrappedFunction{$(Meta.quot(T))}(")

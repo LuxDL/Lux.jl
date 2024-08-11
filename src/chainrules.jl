@@ -1,6 +1,5 @@
 # Non Differentiable Functions
 CRC.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
-CRC.@non_differentiable istraining(::Any)
 CRC.@non_differentiable _get_norm_except_dims(::Any, ::Any)
 CRC.@non_differentiable _affine(::Any)
 CRC.@non_differentiable _track_stats(::Any)
