@@ -94,7 +94,7 @@ function initialparameters(::AbstractRNG, layer::DynamicExpressionsLayer)
     return (; params)
 end
 
-function __update_expression_constants!(expression, ps)
+function update_de_expression_constants!(expression, ps)
     # Don't use `set_constant_refs!` here, since it requires the types to match. In our
     # case we just warn the user
     params = filter(node -> node.degree == 0 && node.constant, expression)
@@ -107,8 +107,8 @@ function __update_expression_constants!(expression, ps)
 end
 
 @inline function (de::DynamicExpressionsLayer)(x::AbstractVector, ps, st)
-    y, st_ = de(reshape(x, :, 1), ps, st)
-    return vec(y), st_
+    y, stₙ = de(reshape(x, :, 1), ps, st)
+    return vec(y), stₙ
 end
 
 # NOTE: Unfortunately we can't use `get_device_type` since it causes problems with
@@ -116,34 +116,34 @@ end
 @inline function (de::DynamicExpressionsLayer)(x::AbstractMatrix, ps, st)
     y = match_eltype(de, ps, st, x)
     return (
-        __apply_dynamic_expression(
+        apply_dynamic_expression(
             de, de.expression, de.operator_enum, y, ps.params, get_device(x)),
         st)
 end
 
-function __apply_dynamic_expression_internal end
+function apply_dynamic_expression_internal end
 
-function __apply_dynamic_expression(
+function apply_dynamic_expression(
         de::DynamicExpressionsLayer, expr, operator_enum, x, ps, ::LuxCPUDevice)
-    if !_is_extension_loaded(Val(:DynamicExpressions))
+    if !is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                `DynamicExpressionsLayer`.")
     end
-    return __apply_dynamic_expression_internal(de, expr, operator_enum, x, ps)
+    return apply_dynamic_expression_internal(de, expr, operator_enum, x, ps)
 end
 
-function __apply_dynamic_expression_rrule end
+function ∇apply_dynamic_expression end
 
-function CRC.rrule(::typeof(__apply_dynamic_expression), de::DynamicExpressionsLayer,
+function CRC.rrule(::typeof(apply_dynamic_expression), de::DynamicExpressionsLayer,
         expr, operator_enum, x, ps, ::LuxCPUDevice)
-    if !_is_extension_loaded(Val(:DynamicExpressions))
+    if !is_extension_loaded(Val(:DynamicExpressions))
         error("`DynamicExpressions.jl` is not loaded. Please load it before using \
                `DynamicExpressionsLayer`.")
     end
-    return __apply_dynamic_expression_rrule(de, expr, operator_enum, x, ps)
+    return ∇apply_dynamic_expression(de, expr, operator_enum, x, ps)
 end
 
-function __apply_dynamic_expression(de, expr, operator_enum, x, ps, dev)
+function apply_dynamic_expression(de, expr, operator_enum, x, ps, dev)
     throw(ArgumentError("`DynamicExpressions.jl` only supports CPU operations. Current \
                          device detected as $(dev). CUDA.jl will be supported after \
                          https://github.com/SymbolicML/DynamicExpressions.jl/pull/65 is \
@@ -160,7 +160,7 @@ API internally.
 !!! warning
 
     Lux was written to overcome the limitations of `destructure` + `Flux`. It is
-    recommended to rewrite your l in Lux instead of using this layer.
+    recommended to rewrite your layer in Lux instead of using this layer.
 
 !!! warning
 
@@ -243,23 +243,23 @@ end
 
 @inline function (sc::SimpleChainsLayer{false})(x, ps, st)
     y = match_eltype(sc, ps, st, x)
-    return __apply_simple_chain(sc.layer, y, ps.params, get_device(x)), st
+    return apply_simple_chain(sc.layer, y, ps.params, get_device(x)), st
 end
 
 @inline function (sc::SimpleChainsLayer{true})(x, ps, st)
     y = match_eltype(sc, ps, st, x)
-    return convert(Array, __apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
+    return convert(Array, apply_simple_chain(sc.layer, y, ps.params, get_device(x))), st
 end
 
-@inline __apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
+@inline apply_simple_chain(layer, x, ps, ::LuxCPUDevice) = layer(x, ps)
 
-function __apply_simple_chain(layer, x, ps, dev)
+function apply_simple_chain(layer, x, ps, dev)
     throw(ArgumentError("`SimpleChains.jl` only supports CPU operations. Current device \
                          detected as $(dev)."))
 end
 
 # Workaround for SimpleChains not being able to handle some input types
-function CRC.rrule(::typeof(__apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
+function CRC.rrule(::typeof(apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
     # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     __∇apply_simple_chain = @closure Δ -> begin
