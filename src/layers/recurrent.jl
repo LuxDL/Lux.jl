@@ -471,7 +471,7 @@ function (lstm::LSTMCell{true})(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_state_, memory_ = match_eltype(lstm, ps, st, x, hidden_state, memory)
     g = ps.weight_i * y .+ ps.weight_h * hidden_state_ .+ ps.bias
-    input, forget, cell, output = multigate(g, Val(4))
+    input, forget, cell, output = LuxOps.multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory_ + sigmoid_fast(input) * tanh_fast(cell)
     hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
     return (hidden_state_new, (hidden_state_new, memory_new)), st
@@ -481,7 +481,7 @@ function (lstm::LSTMCell{false})(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_state_, memory_ = match_eltype(lstm, ps, st, x, hidden_state, memory)
     g = ps.weight_i * y .+ ps.weight_h * hidden_state_
-    input, forget, cell, output = multigate(g, Val(4))
+    input, forget, cell, output = LuxOps.multigate(g, Val(4))
     memory_new = @. sigmoid_fast(forget) * memory_ + sigmoid_fast(input) * tanh_fast(cell)
     hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
     return (hidden_state_new, (hidden_state_new, memory_new)), st
@@ -617,8 +617,8 @@ const _GRUCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
 function (gru::GRUCell{true})((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
     y, hidden_state_ = match_eltype(gru, ps, st, x, hidden_state)
-    gxs = multigate(ps.weight_i * y, Val(3))
-    ghbs = multigate(ps.weight_h * hidden_state_ .+ ps.bias_h, Val(3))
+    gxs = LuxOps.multigate(ps.weight_i * y, Val(3))
+    ghbs = LuxOps.multigate(ps.weight_h * hidden_state_ .+ ps.bias_h, Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghbs[1])
     z = @. sigmoid_fast(gxs[2] + ghbs[2])
@@ -630,8 +630,8 @@ end
 
 function (gru::GRUCell{false})((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
     y, hidden_state_ = match_eltype(gru, ps, st, x, hidden_state)
-    gxs = multigate(ps.weight_i * y, Val(3))
-    ghs = multigate(ps.weight_h * hidden_state_, Val(3))
+    gxs = LuxOps.multigate(ps.weight_i * y, Val(3))
+    ghs = LuxOps.multigate(ps.weight_h * hidden_state_, Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghs[1])
     z = @. sigmoid_fast(gxs[2] + ghs[2])

@@ -80,6 +80,11 @@ gate(h::Int, n::Int) = (1:h) .+ h * (n - 1)
 gate(x::AbstractVector, h::Int, n::Int) = view(x, gate(h, n))
 gate(x::AbstractMatrix, h::Int, n::Int) = view(x, gate(h, n), :)
 
+reverse(x::AbstractArray; dims=:) = Base.reverse(x; dims)
+
+vec(x::AbstractArray) = Base.vec(x)
+vec(::Nothing) = nothing
+
 end
 
 # Training Check
@@ -230,9 +235,6 @@ end
 
 @inline __expanddims1(x) = reshape(x, 1, size(x)...)
 
-@inline _vec(x::AbstractArray) = vec(x)
-@inline _vec(::Nothing) = nothing
-
 @inline function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
@@ -259,5 +261,3 @@ end
 @inline __eltype(x) = eltype(x)
 @inline __eltype(::ForwardDiff.Dual{T, V}) where {T, V} = V
 @inline __eltype(::AbstractArray{<:ForwardDiff.Dual{T, V}}) where {T, V} = V
-
-@inline __reverse(x; dims=:) = reverse(x; dims)

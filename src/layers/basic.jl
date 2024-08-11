@@ -38,7 +38,7 @@ end
 
 outputsize(r::ReshapeLayer) = r.dims
 
-@inline function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
+function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(x, r.dims..., size(x, ndims(x))), st
 end
 
@@ -54,7 +54,8 @@ Reverse the specified dimension `dims` of the passed array
 ## Arguments
 
   - `dim`: Dimension that need to be reversed. If `nothing`, for AbstractVector{T}
-    it reverses itself (dimension 1), for other arrays, reverse the dimension `ndims(x) - 1`.
+    it reverses itself (dimension 1), for other arrays, reverse the dimension
+    `ndims(x) - 1`.
 
 ## Inputs
 
@@ -84,24 +85,22 @@ julia> y, st_new = model(x, ps, st)
     dim::D = nothing
 end
 
-@inline function (r::ReverseSequence{Nothing})(
-        x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    return __reverse(x), st
+function (r::ReverseSequence{Nothing})(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
+    return Utils.reverse(x), st
 end
 
-@inline function (r::ReverseSequence{Nothing})(
+function (r::ReverseSequence{Nothing})(
         x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return __reverse(x; dims=ndims(x) - 1), st
+    return Utils.reverse(x; dims=ndims(x) - 1), st
 end
 
-@inline function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    r.dim == 1 && return __reverse(x), st
+function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
+    r.dim == 1 && return Utils.reverse(x), st
     throw(ArgumentError("Cannot specify a dimension other than 1 for AbstractVector{T}"))
 end
 
-@inline function (r::ReverseSequence)(
-        x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return __reverse(x; dims=r.dim), st
+function (r::ReverseSequence)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+    return Utils.reverse(x; dims=r.dim), st
 end
 
 """
@@ -145,12 +144,11 @@ end
 
 FlattenLayer(; N=nothing) = FlattenLayer(N)
 
-@inline function (::FlattenLayer{Nothing})(
-        x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+function (::FlattenLayer{Nothing})(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     return reshape(x, :, size(x, N)), st
 end
 
-@inline function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
     @argcheck f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end
@@ -179,7 +177,7 @@ struct SelectDim{dim, index} <: AbstractExplicitLayer end
 
 SelectDim(dim, index) = SelectDim{dim, index}()
 
-@inline function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
+function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
     return selectdim(x, dim, index), st
 end
 
@@ -211,7 +209,7 @@ julia> y, st_new = model(x, ps, st)
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
-@inline (noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
+(noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
 
 """
     WrappedFunction{DC}(f)
@@ -253,20 +251,20 @@ function WrappedFunction(f::F) where {F}
 end
 
 function (wf::WrappedFunction{:direct_call})(x, ps, st::NamedTuple)
-    return __maybe_direct_call(wf.func, x, ps, st, Val(true))
+    return wrapped_function_call(wf.func, x, ps, st, True())
 end
 
 function (wf::WrappedFunction)(x, ps, st::NamedTuple)
-    return __maybe_direct_call(wf.func, x, ps, st, Val(false))
+    return wrapped_function_call(wf.func, x, ps, st, False())
 end
 
 function (wf::WrappedFunction{:runtime_check})(x, ps, st::NamedTuple)
-    return __maybe_direct_call(
-        wf.func, x, ps, st, Val(!hasmethod(wf.func, (typeof(x), typeof(ps), typeof(st)))))
+    return wrapped_function_call(wf.func, x, ps, st,
+        static(!hasmethod(wf.func, (typeof(x), typeof(ps), typeof(st)))))
 end
 
-@inline __maybe_direct_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
-@inline __maybe_direct_call(f, x, ps, st, ::Val{true}) = f(x), st
+wrapped_function_call(f, x, ps, st, ::Val{false}) = f(x, ps, st)
+wrapped_function_call(f, x, ps, st, ::Val{true}) = f(x), st
 
 function Base.show(io::IO, w::WrappedFunction{T}) where {T}
     print(io, "WrappedFunction{$(Meta.quot(T))}(")
@@ -352,19 +350,19 @@ statelength(d::Dense) = 0
 
 outputsize(d::Dense) = (d.out_dims,)
 
-@inline function (d::Dense)(x::AbstractVector, ps, st::NamedTuple)
+function (d::Dense)(x::AbstractVector, ps, st::NamedTuple)
     return vec(first(d(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
+function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(first(d(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
 end
 
-@inline function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
+function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     return (
         fused_dense_bias_activation(
-            d.activation, ps.weight, y, _vec(LuxOps.getproperty(ps, Val(:bias)))),
+            d.activation, ps.weight, y, Utils.vec(LuxOps.getproperty(ps, Val(:bias)))),
         st)
 end
 
@@ -549,30 +547,30 @@ statelength(b::Bilinear) = 0
 
 outputsize(b::Bilinear) = (b.out_dims,)
 
-function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat},
-        ps, st::NamedTuple) where {use_bias}
-    d_z, d_x, d_y = size(ps.weight)
-    @argcheck d_x == size(x, 1) && d_y == size(y, 1)
+function (b::Bilinear)(
+        (x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat}, ps, st::NamedTuple)
+    s₁, s₂, s₃ = size(ps.weight)
+    @argcheck s₂ == size(x, 1) && s₃ == size(y, 1)
     @argcheck size(x, 2) == size(y, 2)
 
-    Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))
-    Wyx = reshape(batched_matmul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
+    Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
+    Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
 
-    return bias_activation!!(b.activation, Wyx, _vec(LuxOps.getproperty(ps, Val(:bias)))),
-    st
+    return (
+        bias_activation!!(b.activation, Wyx, Utils.vec(LuxOps.getproperty(ps, Val(:bias)))),
+        st)
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)
     @argcheck size(x)[2:end] == size(y)[2:end]
 
-    d_z, d_x, d_y = size(ps.weight)
+    s₁, s₂, s₃ = size(ps.weight)
+    x′ = reshape(x, s₂, :)
+    y′ = reshape(y, s₃, :)
 
-    x_reshaped = reshape(x, d_x, :)
-    y_reshaped = reshape(y, d_y, :)
+    z, stₙ = b((x′, y′), ps, st)
 
-    z, st = b((x_reshaped, y_reshaped), ps, st)
-
-    return reshape(z, d_z, size(x)[2:end]...), st
+    return reshape(z, s₁, size(x)[2:end]...), stₙ
 end
 
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
@@ -585,10 +583,6 @@ A lookup table that stores embeddings of dimension `out_dims` for a vocabulary o
 of Cartesian indices.
 
 This layer is often used to store word embeddings and retrieve them using indices.
-
-!!! warning
-
-    Unlike `Flux.Embedding`, this layer does not support using `OneHotArray` as an input.
 
 ## Arguments
 
@@ -636,22 +630,22 @@ function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)
     return NNlib.gather(ps.weight, x), st
 end
 function (e::Embedding)(x::AbstractArray{<:Integer}, ps, st::NamedTuple)
-    return reshape(e(vec(x), ps, st)[1], :, size(x)...), st
+    y, stₙ = e(vec(x), ps, st)
+    return reshape(y, :, size(x)...), stₙ
 end
 function (e::Embedding)(x::NTuple{<:Any, <:Integer}, ps, st::NamedTuple)
-    view(ps.weight, :, x...), st
+    return view(ps.weight, :, x...), st
 end
 function (e::Embedding)(x::NTuple{<:Any, <:AbstractVector{<:Integer}}, ps, st::NamedTuple)
-    sizes = size.(x)
-    @argcheck allequal(sizes) DimensionMismatch("Input vectors must have the same shape")
+    @argcheck allequal(size, x) DimensionMismatch("Input vectors must have the same shape")
     return NNlib.gather(ps.weight, x...), st
 end
 function (e::Embedding)(x::NTuple{<:Any, <:AbstractArray{<:Integer}}, ps, st::NamedTuple)
-    sizes = size.(x)
-    @argcheck allequal(sizes) DimensionMismatch("Input arrays must have the same shape")
-    return reshape(e(vec.(x), ps, st)[1], :, first(sizes)...), st
+    @argcheck allequal(size, x) DimensionMismatch("Input arrays must have the same shape")
+    y, stₙ = e(vec.(x), ps, st)
+    return reshape(y, :, size(first(x))...), stₙ
 end
-function (e::Embedding)(x::Tuple{}, ps, st::NamedTuple)
+function (e::Embedding)(::Tuple{}, _, ::NamedTuple)
     throw(ArgumentError("Input tuple must contain at least one element"))
 end
 
@@ -714,18 +708,18 @@ end
 
 initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k=2 ./ p.periods,)
 
-@inline function (p::PeriodicEmbedding)(x::AbstractVector, ps, st::NamedTuple)
+function (p::PeriodicEmbedding)(x::AbstractVector, ps, st::NamedTuple)
     return vec(first(p(reshape(x, :, 1), ps, st))), st
 end
 
-@inline function (p::PeriodicEmbedding)(x::AbstractMatrix, ps, st::NamedTuple)
+function (p::PeriodicEmbedding)(x::AbstractMatrix, ps, st::NamedTuple)
     other_idxs = CRC.@ignore_derivatives setdiff(axes(x, 1), p.idxs)
     return (
         vcat(x[other_idxs, :], sinpi.(st.k .* x[p.idxs, :]), cospi.(st.k .* x[p.idxs, :])),
         st)
 end
 
-@inline function (p::PeriodicEmbedding)(x::AbstractArray, ps, st::NamedTuple)
+function (p::PeriodicEmbedding)(x::AbstractArray, ps, st::NamedTuple)
     return reshape(first(p(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
 end
 
