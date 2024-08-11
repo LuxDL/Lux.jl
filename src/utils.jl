@@ -93,6 +93,10 @@ function sample_replicate(rng::AbstractRNG)
     return LuxCore.replicate(rng)
 end
 
+function index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
+    return NamedTuple{fields[idxs]}(values(nt)[idxs])
+end
+
 end
 
 # Convolution
@@ -133,11 +137,6 @@ end
 @inline function _init_trainable_hidden_state(
         hidden_state::AbstractVector, x::AbstractMatrix)
     return repeat(hidden_state, 1, size(x, 2))
-end
-
-# Indexing into NamedTuple
-function _index_namedtuple(nt::NamedTuple{fields}, idxs::AbstractArray) where {fields}
-    return NamedTuple{fields[idxs]}(values(nt)[idxs])
 end
 
 # Backend Integration

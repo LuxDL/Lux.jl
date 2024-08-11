@@ -38,4 +38,6 @@ else
 end
 
 dsum = sum(Base.Fix1(MLUtils.getobs, dcontainer), 1:MLUtils.numobs(dcontainer))
-@test DistributedUtils.allreduce!(backend, [dsum], +)[1] ≈ sum(data)
+dsum_arr = [dsum]
+DistributedUtils.allreduce!(backend, dsum_arr, +)
+@test dsum_arr[1] ≈ sum(data)
