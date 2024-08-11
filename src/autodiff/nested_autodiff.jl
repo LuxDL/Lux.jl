@@ -1,16 +1,3 @@
-#! format: off
-const AD_CONVERTIBLE_FUNCTIONS = [
-    # Input Gradient/Jacobian
-    ComposedFunction{<:Any, <:StatefulLuxLayer},
-    ComposedFunction{<:StatefulLuxLayer, <:Any},
-    StatefulLuxLayer,
-    # Parameter Gradient/Jacobian
-    ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any},
-    Base.Fix1{<:StatefulLuxLayer}
-]
-#! format: on
-
 ## Written like this to avoid dynamic dispatch from Zygote
 # Input Gradient / Jacobian
 function rewrite_autodiff_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F}

@@ -1,3 +1,9 @@
+# VJP Implementation
+function vector_jacobian_product(f::F, backend::AbstractADType, x, u) where {F}
+    return vector_jacobian_product_impl(f, backend, x, u)
+end
+
+# JVP Implementation
 function jacobian_vector_product(f::F, backend::AbstractADType, x, u) where {F}
     return jacobian_vector_product_impl(f, backend, x, u)
 end

@@ -23,9 +23,22 @@ function jacobian_vector_product_impl end
 function batched_jacobian end
 function batched_jacobian_impl end
 
+#! format: off
+const AD_CONVERTIBLE_FUNCTIONS = [
+    # Input Gradient/Jacobian
+    ComposedFunction{<:Any, <:StatefulLuxLayer},
+    ComposedFunction{<:StatefulLuxLayer, <:Any},
+    StatefulLuxLayer,
+    # Parameter Gradient/Jacobian
+    ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}},
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any},
+    Base.Fix1{<:StatefulLuxLayer}
+]
+#! format: on
+
 include("utils.jl")
 
-include("jacvec_product.jl")
+include("jac_products.jl")
 include("batched_autodiff.jl")
 include("nested_autodiff.jl")
 
