@@ -46,31 +46,31 @@ end
     rng = StableRNG(12345)
 
     function bcast_multigate(x)
-        x1, x2, x3 = Lux.multigate(x, Val(3))
+        x1, x2, x3 = LuxOps.multigate(x, Val(3))
         return sum(x1) + sum(x3 .+ x2 .^ 2)
     end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = randn(rng, 10, 1) |> aType
-        x1, x2 = Lux.multigate(x, Val(2))
+        x1, x2 = LuxOps.multigate(x, Val(2))
 
         @test x1 == x[1:5, :]
         @test x2 == x[6:10, :]
 
-        @jet Lux.multigate(x, Val(2))
+        @jet LuxOps.multigate(x, Val(2))
 
         x = randn(rng, 10) |> aType
-        x1, x2 = Lux.multigate(x, Val(2))
+        x1, x2 = LuxOps.multigate(x, Val(2))
 
         @test x1 == x[1:5]
         @test x2 == x[6:10]
 
-        @jet Lux.multigate(x, Val(2))
+        @jet LuxOps.multigate(x, Val(2))
 
         x = rand(6, 5) |> aType
         res, (dx,) = Zygote.withgradient(bcast_multigate, x)
 
-        @jet Lux.multigate(x, Val(3))
+        @jet LuxOps.multigate(x, Val(3))
 
         @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
         @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])

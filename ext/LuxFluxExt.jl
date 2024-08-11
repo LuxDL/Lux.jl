@@ -2,7 +2,7 @@ module LuxFluxExt
 
 using ArgCheck: @argcheck
 using Flux: Flux
-using Lux: Lux, FluxModelConversionException
+using Lux: Lux, FluxModelConversionException, LuxOps
 
 function Lux.__from_flux_adaptor(l::T; preserve_ps_st::Bool=false, kwargs...) where {T}
     @warn "Transformation for type $T not implemented. Using `FluxLayer` as a fallback." maxlog=1
@@ -206,7 +206,7 @@ function Lux.__from_flux_adaptor(
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux \
                and hence not supported. Ignoring these parameters." maxlog=1
-        bs = Lux.multigate(l.b, Val(4))
+        bs = LuxOps.multigate(l.b, Val(4))
         _s, _m = copy.(l.state0)
         return Lux.LSTMCell(in_dims => out_dims; init_bias=Returns.(bs),
             init_state=Returns(_s), init_memory=Returns(_m))
@@ -225,7 +225,7 @@ function Lux.__from_flux_adaptor(
         end
         @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux \
                and hence not supported. Ignoring these parameters." maxlog=1
-        bs = Lux.multigate(l.b, Val(3))
+        bs = LuxOps.multigate(l.b, Val(3))
         return Lux.GRUCell(
             in_dims => out_dims; init_bias=Returns.(bs), init_state=Returns(copy(l.state0)))
     else
