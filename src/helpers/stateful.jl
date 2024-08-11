@@ -54,7 +54,7 @@ function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer{ST}) where {ST}
-    _print_wrapper_model(io, "StatefulLuxLayer{$ST}", s.model)
+    PrettyPrinting.print_wrapper_model(io, "StatefulLuxLayer{$ST}", s.model)
 end
 
 function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}

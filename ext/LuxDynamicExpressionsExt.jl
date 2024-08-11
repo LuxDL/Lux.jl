@@ -24,7 +24,7 @@ function Lux.DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::N
         name::NAME_TYPE=nothing, eval_options::EvalOptionsTypes=missing,
         turbo::Union{Bool, Val, Missing}=missing,
         bumper::Union{Bool, Val, Missing}=missing)
-    eval_options = constuct_eval_options(eval_options, constuct_eval_options(turbo, bumper))
+    eval_options = construct_eval_options(eval_options, construct_eval_options(turbo, bumper))
 
     length(expressions) == 1 && return Lux.DynamicExpressionsLayer(
         operator_enum, first(expressions), name, eval_options)
@@ -44,22 +44,22 @@ function Lux.DynamicExpressionsLayer(
     return Lux.DynamicExpressionsLayer(operator_enum, expressions...; kwargs...)
 end
 
-constuct_eval_options(::Missing, ::Missing) = (; turbo=Val(false), bumper=Val(false))
-function constuct_eval_options(turbo::Union{Bool, Val}, ::Missing)
-    return constuct_eval_options(turbo, Val(false))
+construct_eval_options(::Missing, ::Missing) = (; turbo=Val(false), bumper=Val(false))
+function construct_eval_options(turbo::Union{Bool, Val}, ::Missing)
+    return construct_eval_options(turbo, Val(false))
 end
-function constuct_eval_options(::Missing, bumper::Union{Bool, Val})
-    return constuct_eval_options(Val(false), bumper)
+function construct_eval_options(::Missing, bumper::Union{Bool, Val})
+    return construct_eval_options(Val(false), bumper)
 end
-function constuct_eval_options(turbo::Union{Bool, Val}, bumper::Union{Bool, Val})
+function construct_eval_options(turbo::Union{Bool, Val}, bumper::Union{Bool, Val})
     Base.depwarn("`bumper` and `turbo` are deprecated. Use `eval_options` instead.",
         :DynamicExpressionsLayer)
     return (; turbo, bumper)
 end
 
-constuct_eval_options(::Missing, eval_options::EvalOptionsTypes) = eval_options
-constuct_eval_options(eval_options::EvalOptionsTypes, ::Missing) = eval_options
-function constuct_eval_options(::EvalOptionsTypes, ::EvalOptionsTypes)
+construct_eval_options(::Missing, eval_options::EvalOptionsTypes) = eval_options
+construct_eval_options(eval_options::EvalOptionsTypes, ::Missing) = eval_options
+function construct_eval_options(::EvalOptionsTypes, ::EvalOptionsTypes)
     throw(ArgumentError("`eval_options`, `turbo` and `bumper` are mutually exclusive. \
                          Don't specify `eval_options` if you are using `turbo` or \
                          `bumper`."))

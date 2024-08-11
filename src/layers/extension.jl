@@ -236,7 +236,7 @@ end
 
 function Base.show(
         io::IO, ::MIME"text/plain", s::SimpleChainsLayer{ToArray}) where {ToArray}
-    _print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
+    PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
 end
 
 @inline initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)

@@ -646,6 +646,13 @@ Bidirectional RNN wrapper.
     model <: Parallel
 end
 
+function PrettyPrinting.printable_children(l::BidirectionalRNN)
+    merge_mode = l.model.connection isa Broadcast.BroadcastFunction ? l.model.connection.f :
+                 nothing
+    return (; merge_mode, forward_cell=l.model.layers.forward_rnn.cell,
+        backward_cell=l.model.layers.backward_rnn.rnn.cell)
+end
+
 (rnn::BidirectionalRNN)(x, ps, st::NamedTuple) = rnn.model(x, ps, st)
 
 function BidirectionalRNN(cell::AbstractRecurrentCell,
