@@ -161,7 +161,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     y = first(last(hobbits))
     ax = axes(x)
     project = CRC.ProjectTo.(x)
-    ∇foldl_init = @closure Δ -> begin
+    ∇foldl_init = Δ -> begin
         trio = accumulate(accum_func_inner, reverse(hobbits); init=(0, Δ, 0))
         ∂op = sum(first, trio)
         ∂x = reshape(map(last, reverse(trio)), ax)

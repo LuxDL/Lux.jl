@@ -548,6 +548,7 @@ function initialparameters(
     ps = (; weight_i, weight_h)
     if use_bias
         bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
+        # TODO: in v1 we make this a flat vector
         bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)
         ps = merge(ps, (bias_i=bias_i, bias_h=bias_h))
     end
@@ -577,8 +578,8 @@ function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTu
     y, hidden_stateₙ = match_eltype(gru, ps, st, x, hidden_state)
     gxs = LuxOps.multigate(ps.weight_i * y, Val(3))
     ghbs = LuxOps.multigate(
-        fused_dense_bias_activation(
-            identity, ps.weight_h, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias))),
+        fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ,
+            Utils.vec(LuxOps.getproperty(ps, Val(:bias_h)))),
         Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghbs[1])
