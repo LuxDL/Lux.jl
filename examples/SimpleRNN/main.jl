@@ -78,7 +78,7 @@ function (s::SpiralClassifier)(
     ## See that the parameters and states are automatically populated into a field called
     ## `lstm_cell` We use `eachslice` to get the elements in the sequence without copying,
     ## and `Iterators.peel` to split out the first element for LSTM initialization.
-    x_init, x_rest = Iterators.peel(Lux._eachslice(x, Val(2)))
+    x_init, x_rest = Iterators.peel(LuxOps.eachslice(x, Val(2)))
     (y, carry), st_lstm = s.lstm_cell(x_init, ps.lstm_cell, st.lstm_cell)
     ## Now that we have the hidden state and memory in `carry` we will pass the input and
     ## `carry` jointly
@@ -102,7 +102,7 @@ function SpiralClassifierCompact(in_dims, hidden_dims, out_dims)
     lstm_cell = LSTMCell(in_dims => hidden_dims)
     classifier = Dense(hidden_dims => out_dims, sigmoid)
     return @compact(; lstm_cell, classifier) do x::AbstractArray{T, 3} where {T}
-        x_init, x_rest = Iterators.peel(Lux._eachslice(x, Val(2)))
+        x_init, x_rest = Iterators.peel(LuxOps.eachslice(x, Val(2)))
         y, carry = lstm_cell(x_init)
         for x in x_rest
             y, carry = lstm_cell((x, carry))

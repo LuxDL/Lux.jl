@@ -42,6 +42,7 @@ const Optional{T} = Union{T, Nothing}
 include("preferences.jl")
 
 # Utilities
+include("piracies.jl")
 include("custom_errors.jl")
 include("utils.jl")
 include("extended_ops.jl")
@@ -138,8 +139,5 @@ export LuxOps
 @compat public Experimental
 @compat public xlogx, xlogy # TODO: deprecated in v1.0
 @compat public set_dispatch_doctor_preferences!
-@compat(public,
-    (recursive_add!!, recursive_copyto!, recursive_eltype,
-        recursive_make_zero, recursive_map, recursive_make_zero!!))
 
 end

@@ -2,8 +2,8 @@
 @inline Lux._norm(x::TrackedArray; dims=Colon()) = sqrt.(sum(abs2.(x); dims))
 
 # multigate chain rules
-@inline Lux._gate(x::Tracker.TrackedVector, h::Int, n::Int) = x[Lux._gate(h, n)]
-@inline Lux._gate(x::Tracker.TrackedMatrix, h::Int, n::Int) = x[Lux._gate(h, n), :]
+@inline Utils.gate(x::Tracker.TrackedVector, h::Int, n::Int) = x[Utils.gate(h, n)]
+@inline Utils.gate(x::Tracker.TrackedMatrix, h::Int, n::Int) = x[Utils.gate(h, n), :]
 
 function __construct_tracked_params(ps, dps)
     map_fn = (p, dp) -> Tracker.TrackedArray(Tracker.Call(), p, dp)

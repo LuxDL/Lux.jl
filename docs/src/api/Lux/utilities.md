@@ -65,9 +65,7 @@ SquaredHingeLoss
 ## Miscellaneous Utilities
 
 ```@docs
-Lux.foldl_init
 Lux.istraining
-Lux.multigate
 ```
 
 ## LuxOps Module
@@ -77,6 +75,9 @@ LuxOps
 ```
 
 ```@docs
+LuxOps.eachslice
+LuxOps.foldl_init
+LuxOps.getproperty
 LuxOps.xlogx
 LuxOps.xlogy
 ```
