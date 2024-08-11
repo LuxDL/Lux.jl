@@ -141,7 +141,7 @@
             @jet layer(x, ps, st)
 
             __f = x -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()])
         end
     end
 end

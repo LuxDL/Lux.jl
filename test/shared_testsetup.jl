@@ -7,15 +7,15 @@ import Reexport: @reexport
 using Lux, Functors
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
-using MLDataDevices: default_device_rng
+using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
 using LuxTestUtils: check_approx
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 
 # Some Helper Functions
 function get_default_rng(mode::String)
-    dev = mode == "cpu" ? LuxCPUDevice() :
-          mode == "cuda" ? LuxCUDADevice() : mode == "amdgpu" ? LuxAMDGPUDevice() : nothing
+    dev = mode == "cpu" ? CPUDevice() :
+          mode == "cuda" ? CUDADevice() : mode == "amdgpu" ? AMDGPUDevice() : nothing
     rng = default_device_rng(dev)
     return rng isa TaskLocalRNG ? copy(rng) : deepcopy(rng)
 end

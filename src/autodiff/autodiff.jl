@@ -35,14 +35,6 @@ const AD_CONVERTIBLE_FUNCTIONS = [
     ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any},
     Base.Fix1{<:StatefulLuxLayer},
 ]
-
-# Conversions that lead to error
-const AD_CONVERTIBLE_FUNCTIONS_FALLBACK = [
-    ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
-    ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}
-]
 #! format: on
 
 include("utils.jl")

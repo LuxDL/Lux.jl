@@ -179,10 +179,8 @@ end
 function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    return (
-        fused_conv_bias_activation(c.activation, ps.weight, y,
-            Utils.vec(LuxOps.getproperty(ps, Val(:bias))), cdims),
-        st)
+    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
 function Base.show(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
@@ -674,27 +672,20 @@ function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
-    return (
-        fused_conv_bias_activation(c.activation, ps.weight, y,
-            Utils.vec(LuxOps.getproperty(ps, Val(:bias))), cdims),
-        st)
+    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
-function Base.show(io::IO, l::CrossCor)
+function Base.show(io::IO, l::CrossCor{N, use_bias}) where {N, use_bias}
     print(io, "CrossCor(", l.kernel_size)
     print(io, ", ", l.in_chs, " => ", l.out_chs)
-    _print_crosscor_opt(io, l)
-    return print(io, ")")
-end
-
-function _print_crosscor_opt(io::IO, l::CrossCor{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
     all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
     all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
     all(==(1), l.dilation) ||
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (use_bias == false) && print(io, ", use_bias=false")
-    return nothing
+    return print(io, ")")
 end
 
 @doc doc"""
@@ -803,10 +794,8 @@ end
 function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
     y = match_eltype(c, ps, st, x)
     cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    return (
-        bias_activation!!(c.activation, conv_transpose(y, ps.weight, cdims),
-            Utils.vec(LuxOps.getproperty(ps, Val(:bias)))),
-        st)
+    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    return bias_activation!!(c.activation, conv_transpose(y, ps.weight, cdims), bias), st
 end
 
 function Base.show(io::IO, l::ConvTranspose)

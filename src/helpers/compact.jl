@@ -390,7 +390,7 @@ function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, na
     pre, post = ("(", ")")
     println(io, " "^indent, isnothing(name) ? "" : "$name = ", layer, pre)
     for (k, v) in pairs(setup_strings)
-        val = LuxOps.getproperty(obj.layers, Val(k))
+        val = get_ops(:getproperty)(obj.layers, Val(k))
         if val === nothing
             println(io, " "^(indent + 4), "$k = $v,")
         else
@@ -510,13 +510,13 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     calls = []
     for var in vars
         push!(calls,
-            :($var = $(maybe_make_stateful)($(LuxOps.getproperty)($self, $(Val(var))),
-                $(LuxOps.getproperty)($ps, $(Val(var))),
-                $(LuxOps.getproperty)($st, $(Val(var))))))
+            :($var = $(maybe_make_stateful)($(get_ops(:getproperty))($self, $(Val(var))),
+                $(get_ops(:getproperty))($ps, $(Val(var))),
+                $(get_ops(:getproperty))($st, $(Val(var))))))
     end
     for var in splatted_kwargs
         push!(calls,
-            :($var = $(LuxOps.getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
+            :($var = $(get_ops(:getproperty))(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
     end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
 

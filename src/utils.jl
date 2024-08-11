@@ -2,15 +2,17 @@ module Utils
 
 using ArrayInterface: ArrayInterface
 using ArgCheck: @argcheck
-using ChainRulesCore: @non_differentiable
+using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
 using Functors: fmapstructure
-using MLDataDevices: get_device
 using Random: AbstractRNG
 
 using LuxCore: LuxCore, AbstractExplicitLayer
+using MLDataDevices: get_device
+
+const CRC = ChainRulesCore
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)
@@ -91,6 +93,10 @@ reverse(x::AbstractArray; dims=:) = Base.reverse(x; dims)
 
 vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
+
+function CRC.rrule(::typeof(vec), x::AbstractArray)
+    return Base.vec(x), Δ -> (NoTangent(), reshape(CRC.unthunk(Δ), size(x)))
+end
 
 function sample_replicate(rng::AbstractRNG)
     rand(rng)
@@ -173,3 +179,13 @@ function named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
 end
 
 end
+
+# Strange Zygote type stability issues
+module_getproperty(mod::Module, x::Symbol) = getproperty(mod, x)
+CRC.@non_differentiable module_getproperty(::Module, ::Symbol)
+
+get_utils(x::Symbol) = module_getproperty(Utils, x)
+CRC.@non_differentiable get_utils(::Symbol)
+
+get_ops(x::Symbol) = module_getproperty(LuxOps, x)
+CRC.@non_differentiable get_ops(::Symbol)

@@ -1,7 +1,7 @@
 function Lux.Training.compute_gradients(::AutoTracker, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{:Tracker, FT}}) where {F, FT}
     dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
-    ps_tracked = __construct_tracked_params(ts.parameters, dparams)
+    ps_tracked = construct_tracked_params(ts.parameters, dparams)
 
     loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     Tracker.back!(loss)
