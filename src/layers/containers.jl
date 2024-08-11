@@ -49,6 +49,8 @@ See [`Parallel`](@ref) for a more general implementation.
     name
 end
 
+PrettyPrinting.printable_children(l::SkipConnection) = (; l.connection, l.layers)
+
 function SkipConnection(layers, connection; name::NAME_TYPE=nothing)
     return SkipConnection(; layers, connection, name)
 end
@@ -149,6 +151,12 @@ julia> size.(first(model((x1, x2), ps, st)))
     connection
     layers <: NamedTuple
     name
+end
+
+function PrettyPrinting.printable_children(l::Parallel)
+    children = PrettyPrinting.printable_children(l.layers)
+    l.connection === nothing && return children.layers
+    return merge((; l.connection), children.layers)
 end
 
 function Parallel(connection, layers...; name::NAME_TYPE=nothing)
@@ -342,6 +350,12 @@ end
     connection
     layers <: NamedTuple
     name
+end
+
+function PrettyPrinting.printable_children(l::PairwiseFusion)
+    children = PrettyPrinting.printable_children(l.layers)
+    l.connection === nothing && return children.layers
+    return merge((; l.connection), children.layers)
 end
 
 function PairwiseFusion(connection, layers...; name::NAME_TYPE=nothing)

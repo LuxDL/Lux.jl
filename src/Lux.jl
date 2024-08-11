@@ -54,6 +54,9 @@ include("helpers/training.jl")
 # Experimental
 include("contrib/contrib.jl")
 
+# Pretty Printing
+include("layers/display.jl")
+
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
@@ -62,9 +65,6 @@ include("layers/conv.jl")
 include("layers/dropout.jl")
 include("layers/recurrent.jl")
 include("layers/extension.jl")
-
-# Pretty Printing
-include("layers/display.jl")
 
 # Helpful Functionalities
 include("helpers/eltype_conversion.jl")

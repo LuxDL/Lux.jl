@@ -605,14 +605,14 @@ function (m::CompactLuxLayer)(x, ps, st::NamedTuple{()})
 end
 
 # Pretty printing the layer code
-function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
+function PrettyPrinting.big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
     setup_strings = obj.setup_strings
     local_name = obj.name
     if local_name !== nothing && local_name != ""
         _str = name === nothing ? "" : "$name = "
         str = _str * local_name
         print(io, " "^indent, str, indent == 0 ? "" : ",")
-        _show_parameters_count(io, obj, indent, str)
+        PrettyPrinting.show_parameters_count(io, obj, indent, str)
         indent == 0 || println(io)
         return
     end
@@ -624,7 +624,7 @@ function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
         if val === nothing
             println(io, " "^(indent + 4), "$k = $v,")
         else
-            _big_show(io, val, indent + 4, k)
+            PrettyPrinting.big_show(io, val, indent + 4, k)
         end
     end
     if indent == 0  # i.e. this is the outermost container
@@ -640,7 +640,7 @@ function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
         print(io, " ", block_to_print)
     end
     if indent == 0
-        _big_finale(io, obj, 7)
+        PrettyPrinting.big_finale(io, obj, 7)
     else
         println(io, ",")
     end
