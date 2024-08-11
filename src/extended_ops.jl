@@ -9,7 +9,7 @@ module LuxOps
 
 using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk, @non_differentiable
 using Compat: @compat
-using EnzymeCore: EnzymeCore, EnzymeRules
+using EnzymeCore: EnzymeCore
 using FastClosures: @closure
 using MLDataDevices: get_device_type, AbstractGPUDevice, AbstractDevice
 using Static: StaticBool, known
