@@ -99,7 +99,7 @@ GPUArray.
 Additional dispatches for RNN helpers are also provided for `TimeLastIndex` and
 `BatchLastIndex`.
 """
-function eachslice(x::AbstractArray, ::Val{dims}) where {dims}
+function eachslice(x::AbstractArray, dims::Val)
     return eachslice(get_device_type(x), x, dims)
 end
 function eachslice(::Type{<:AbstractGPUDevice}, x::AbstractArray, ::Val{dims}) where {dims}

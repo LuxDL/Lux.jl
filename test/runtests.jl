@@ -48,7 +48,7 @@ using Lux
         @test_throws ErrorException vector_jacobian_product(
             x -> x, AutoZygote(), rand(2), rand(2))
 
-        @test_throws AssertionError batched_jacobian(x -> x, AutoEnzyme(), rand(2, 2))
+        @test_throws ArgumentError batched_jacobian(x -> x, AutoEnzyme(), rand(2, 2))
         @test_throws ErrorException batched_jacobian(x -> x, AutoZygote(), rand(2, 2))
     end
 

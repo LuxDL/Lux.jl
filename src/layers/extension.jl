@@ -262,9 +262,9 @@ end
 function CRC.rrule(::typeof(apply_simple_chain), layer, x, ps, ::LuxCPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
     # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
-    __∇apply_simple_chain = @closure Δ -> begin
+    ∇apply_simple_chain = @closure Δ -> begin
         ∂layer, ∂x, ∂ps = pb(convert(Array, Δ))
         return NoTangent(), ∂layer, ∂x, ∂ps, NoTangent()
     end
-    return res, __∇apply_simple_chain
+    return res, ∇apply_simple_chain
 end

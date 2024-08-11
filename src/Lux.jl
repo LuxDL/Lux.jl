@@ -5,8 +5,7 @@ using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff, Aut
 using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
-using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig, ZeroTangent,
-                      @thunk
+using ChainRulesCore: ChainRulesCore, NoTangent, @thunk
 using Compat: @compat
 using ConcreteStructs: @concrete
 using ConstructionBase: ConstructionBase

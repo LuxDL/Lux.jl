@@ -18,7 +18,7 @@
 
             @testset "$(backend)" for backend in (AutoZygote(), AutoForwardDiff())
                 J2 = batched_jacobian(smodel, backend, X)
-                J2_mat = mapreduce(Base.Fix1(Lux.__maybe_batched_row, J2),
+                J2_mat = mapreduce(Base.Fix1(Lux.AutoDiffInternalImpl.batched_row, J2),
                     hcat, 1:(size(J2, 1) * size(J2, 3)))'
 
                 @test J1≈J2_mat atol=1.0e-3 rtol=1.0e-3
