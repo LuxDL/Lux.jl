@@ -1,16 +1,22 @@
-# Macro to deprecate a preference
+module LuxPreferences
+
+using ArgCheck: @argcheck
+using Preferences: load_preference, has_preference, set_preferences!
+
+using ..Lux: Lux
+
 macro deprecate_preference(old_pref, new_pref, default)
     msg1 = "Preference `$(old_pref)` is deprecated and will be removed in a future \
             release. Use `$(new_pref)` instead."
     msg2 = "Both `$(old_pref)` and `$(new_pref)` preferences are set. Please remove \
             `$(old_pref)`."
     return esc(quote
-        if has_preference($(__module__), $(old_pref))
-            Base.depwarn($msg1, $(Meta.quot(Symbol(__module__))))
-            has_preference($(__module__), $(new_pref)) && error($msg2)
-            load_preference($(__module__), $(old_pref), $(default))
+        if has_preference($(Lux), $(old_pref))
+            Base.depwarn($msg1, $(Meta.quot(Symbol(Lux))))
+            has_preference($(Lux), $(new_pref)) && error($msg2)
+            load_preference($(Lux), $(old_pref), $(default))
         else
-            load_preference($(__module__), $(new_pref), $(default))
+            load_preference($(Lux), $(new_pref), $(default))
         end
     end)
 end
@@ -19,7 +25,7 @@ macro load_preference_with_choices(pref, default, choices)
     msg1 = "Invalid value for `$(pref)` preference: "
     msg2 = ". Valid choices are: $(choices)"
     return esc(quote
-        val = load_preference($(__module__), $(pref), $(default))
+        val = load_preference($(Lux), $(pref), $(default))
         val ∉ $(choices) && error($(msg1) * string(val) * $(msg2))
         val
     end)
@@ -40,6 +46,24 @@ const ELTYPE_MISMATCH_HANDLING = @load_preference_with_choices("eltype_mismatch_
     "none", ("none", "warn", "convert", "error"))
 
 # Dispatch Doctor
+function set_dispatch_doctor_preferences!(package, mode::String)
+    @argcheck mode in ("disable", "warn", "error")
+    if has_preference(package, "dispatch_doctor")
+        orig_pref = load_preference(package, "dispatch_doctor")
+        if orig_pref == mode
+            @info "Dispatch Doctor preference for $(package) is already set to $mode."
+            return
+        end
+    end
+    set_preferences!(package, "instability_check" => mode; force=true)
+    @info "Dispatch Doctor preference for $(package) set to $mode. Please restart Julia \
+           for this change to take effect."
+    return
+end
+
+end
+
+# Dispatch Doctor
 """
     set_dispatch_doctor_preferences!(mode::String)
     set_dispatch_doctor_preferences!(; luxcore::String="disable", luxlib::String="disable")
@@ -58,22 +82,7 @@ end
 
 function set_dispatch_doctor_preferences!(;
         luxcore::String="disable", luxlib::String="disable")
-    _set_dispatch_doctor_preferences!(LuxCore, luxcore)
-    _set_dispatch_doctor_preferences!(LuxLib, luxlib)
-    return
-end
-
-function _set_dispatch_doctor_preferences!(package, mode::String)
-    @argcheck mode in ("disable", "warn", "error")
-    if has_preference(package, "dispatch_doctor")
-        orig_pref = load_preference(package, "dispatch_doctor")
-        if orig_pref == mode
-            @info "Dispatch Doctor preference for $(package) is already set to $mode."
-            return
-        end
-    end
-    set_preferences!(package, "instability_check" => mode; force=true)
-    @info "Dispatch Doctor preference for $(package) set to $mode. Please restart Julia \
-           for this change to take effect."
+    LuxPreferences.set_dispatch_doctor_preferences!(LuxCore, luxcore)
+    LuxPreferences.set_dispatch_doctor_preferences!(LuxLib, luxlib)
     return
 end

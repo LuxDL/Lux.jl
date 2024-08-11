@@ -3,7 +3,7 @@
 # process.
 using Lux, ForwardDiff, ReverseDiff, Tracker, Zygote, StableRNGs, Test
 
-@info "Running eltype matching tests: \"$(Lux.ELTYPE_MISMATCH_HANDLING)\"..."
+@info "Running eltype matching tests: \"$(Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING)\"..."
 
 include("setup_modes.jl")
 
@@ -22,7 +22,8 @@ include("setup_modes.jl")
     end
 
     # We only log once so can't really check the warning
-    if Lux.ELTYPE_MISMATCH_HANDLING == "none" || Lux.ELTYPE_MISMATCH_HANDLING == "warn"
+    if Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none" ||
+       Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "warn"
         y, st_ = model(x, ps, st)
         @test eltype(y) == Float64  # We don't change the eltype
 
@@ -35,7 +36,7 @@ include("setup_modes.jl")
         @test Lux.recursive_eltype(dps, Val(true)) == Float32
     end
 
-    if Lux.ELTYPE_MISMATCH_HANDLING == "error"
+    if Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "error"
         @test_throws Lux.EltypeMismatchException model(x, ps, st)
 
         @testset "Operator Overloading AD: $(typeof(x_arr))" for x_arr in x_ad_arrs
@@ -43,7 +44,7 @@ include("setup_modes.jl")
         end
     end
 
-    if Lux.ELTYPE_MISMATCH_HANDLING == "convert"
+    if Lux.LuxPreferences.ELTYPE_MISMATCH_HANDLING == "convert"
         y, st_ = model(x, ps, st)
         @test eltype(y) == Float32
 

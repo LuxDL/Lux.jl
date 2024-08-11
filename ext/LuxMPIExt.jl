@@ -1,8 +1,9 @@
 module LuxMPIExt
 
-using Lux: MPIBackend, NCCLBackend, DistributedUtils, MPI_CUDA_AWARE, MPI_ROCM_AWARE, Utils
+using Lux: Lux, MPIBackend, NCCLBackend, DistributedUtils, Utils
 using LuxDeviceUtils: AbstractLuxDevice, LuxCUDADevice, LuxAMDGPUDevice, cpu_device,
                       set_device!, functional
+using Lux.LuxPreferences: MPI_CUDA_AWARE, MPI_ROCM_AWARE
 using MPI: MPI
 
 function DistributedUtils.force_initialize(
