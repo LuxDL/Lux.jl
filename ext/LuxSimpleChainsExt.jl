@@ -4,54 +4,54 @@ using ArgCheck: @argcheck
 using LuxCore: LuxCore
 using SimpleChains: SimpleChains
 using Lux: Lux, SimpleChainsModelConversionException, SimpleChainsLayer,
-           __to_simplechains_adaptor, __fix_input_dims_simplechain, Chain, Conv, Dense,
+           make_simplechain_network, fix_simplechain_input_dims, Chain, Conv, Dense,
            Dropout, FlattenLayer, MaxPool, SamePad
-using LuxLib: NNlib
+using NNlib: NNlib
 using Random: AbstractRNG
 
-function Lux.__fix_input_dims_simplechain(layers::Vector, input_dims)
+function Lux.fix_simplechain_input_dims(layers::Vector, input_dims)
     L = Tuple(layers)
     return SimpleChains.SimpleChain{typeof(input_dims), typeof(L)}(input_dims, L)
 end
 
-function Lux.__fix_input_dims_simplechain(layers, input_dims)
+function Lux.fix_simplechain_input_dims(layers, input_dims)
     @warn "The model provided is not a `Chain`. Trying to wrap it into a `Chain` but this \
            might fail. Please consider using `Chain` directly (potentially with \
            `disable_optimizations = true`)."
-    return __fix_input_dims_simplechain([layers], input_dims)
+    return fix_simplechain_input_dims([layers], input_dims)
 end
 
-__equivalent_simplechains_fn(::typeof(NNlib.relu)) = SimpleChains.relu
-__equivalent_simplechains_fn(f::F) where {F} = f
+equivalent_simplechains_fn(::typeof(NNlib.relu)) = SimpleChains.relu
+equivalent_simplechains_fn(f::F) where {F} = f
 
-function Lux.__to_simplechains_adaptor(layer::Dense{use_bias}) where {use_bias}
+function Lux.make_simplechain_network(layer::Dense{use_bias}) where {use_bias}
     return SimpleChains.TurboDense{use_bias}(
-        __equivalent_simplechains_fn(layer.activation), layer.out_dims)
+        equivalent_simplechains_fn(layer.activation), layer.out_dims)
 end
 
-function Lux.__to_simplechains_adaptor(layer::Chain)
-    return reduce(vcat, map(__to_simplechains_adaptor, layer.layers))
+function Lux.make_simplechain_network(layer::Chain)
+    return reduce(vcat, map(make_simplechain_network, layer.layers))
 end
 
-function Lux.__to_simplechains_adaptor(layer::Conv)
+function Lux.make_simplechain_network(layer::Conv)
     if all(==(1), layer.stride) &&
        layer.groups == 1 &&
        all(==(1), layer.dilation) &&
        (!(layer.pad isa SamePad) && all(==(0), layer.pad))
-        return SimpleChains.Conv(__equivalent_simplechains_fn(layer.activation),
-            layer.kernel_size, layer.out_chs)
+        return SimpleChains.Conv(
+            equivalent_simplechains_fn(layer.activation), layer.kernel_size, layer.out_chs)
     end
     throw(SimpleChainsModelConversionException("Conv with non-standard parameters not \
                                                 supported."))
 end
 
-function Lux.__to_simplechains_adaptor(layer::Dropout)
+function Lux.make_simplechain_network(layer::Dropout)
     layer.dims isa Colon && return SimpleChains.Dropout(layer.p)
     throw(SimpleChainsModelConversionException("Dropout with non-standard parameters not \
                                                 supported."))
 end
 
-function Lux.__to_simplechains_adaptor(layer::FlattenLayer)
+function Lux.make_simplechain_network(layer::FlattenLayer)
     if layer.N === nothing
         throw(SimpleChainsModelConversionException("`FlattenLayer(nothing)` not supported. \
                                                     For `SimpleChains.Flatten` you must \
@@ -60,7 +60,7 @@ function Lux.__to_simplechains_adaptor(layer::FlattenLayer)
     return SimpleChains.Flatten(layer.N)
 end
 
-function Lux.__to_simplechains_adaptor(layer::MaxPool)
+function Lux.make_simplechain_network(layer::MaxPool)
     if layer.stride == layer.k && (!(layer.pad isa SamePad) && all(==(0), layer.pad))
         return SimpleChains.MaxPool(layer.k)
     end
@@ -68,7 +68,7 @@ function Lux.__to_simplechains_adaptor(layer::MaxPool)
                                                 supported."))
 end
 
-Lux.__to_simplechains_adaptor(layer) = throw(SimpleChainsModelConversionException(layer))
+Lux.make_simplechain_network(layer) = throw(SimpleChainsModelConversionException(layer))
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
     return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
