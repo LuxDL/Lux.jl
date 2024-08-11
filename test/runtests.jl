@@ -53,13 +53,13 @@ using Lux
     end
 
     @testset "Ext Loading Check" begin
-        @test !Lux._is_extension_loaded(Val(:Zygote))
+        @test !Lux.is_extension_loaded(Val(:Zygote))
         using Zygote
-        @test Lux._is_extension_loaded(Val(:Zygote))
+        @test Lux.is_extension_loaded(Val(:Zygote))
 
-        @test !Lux._is_extension_loaded(Val(:DynamicExpressions))
+        @test !Lux.is_extension_loaded(Val(:DynamicExpressions))
         using DynamicExpressions
-        @test Lux._is_extension_loaded(Val(:DynamicExpressions))
+        @test Lux.is_extension_loaded(Val(:DynamicExpressions))
     end
 
     # These need to be run before MPI or NCCL is ever loaded

@@ -391,6 +391,7 @@ function initialparameters(rng::AbstractRNG,
                      for init_weight in lstm.init_weight]...)
     ps = (; weight_i, weight_h)
     if use_bias
+        # TODO: in v1 we make this a flat vector
         bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
         ps = merge(ps, (bias=bias,))
     end
@@ -439,7 +440,7 @@ function (lstm::LSTMCell)(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
     z = fused_dense_bias_activation(
-        identity, ps.weight_h, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias)))
+        identity, ps.weight_h, hidden_stateₙ, Utils.vec(LuxOps.getproperty(ps, Val(:bias))))
     g = LuxLib.Impl.matmul(ps.weight_i, y) .+ z
 
     input, forget, cell, output = LuxOps.multigate(g, Val(4))
