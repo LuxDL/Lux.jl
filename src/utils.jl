@@ -4,6 +4,9 @@ using ArgCheck: @argcheck
 using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
 using Functors: fmapstructure
+using Random: AbstractRNG
+
+using LuxCore: LuxCore
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)
@@ -84,6 +87,11 @@ reverse(x::AbstractArray; dims=:) = Base.reverse(x; dims)
 
 vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
+
+function sample_replicate(rng::AbstractRNG)
+    rand(rng)
+    return LuxCore.replicate(rng)
+end
 
 end
 

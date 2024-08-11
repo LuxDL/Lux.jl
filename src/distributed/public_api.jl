@@ -210,7 +210,11 @@ function synchronize!!(
 end
 
 function synchronize!!(backend::AbstractLuxDistributedBackend, ps::T; root::Int=0) where {T}
-    isbitstype(T) && return bcast!(backend, [ps]; root)[]
+    if isbitstype(T) || T <: Number
+        psₙ = [ps]
+        bcast!(backend, psₙ; root)
+        return psₙ[]
+    end
     return ps # If we don't know how to synchronize, just return the value. For ex, Symbol, String, etc.
 end
 

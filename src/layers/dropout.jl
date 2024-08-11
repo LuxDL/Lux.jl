@@ -36,8 +36,7 @@ struct AlphaDropout{T <: Real} <: AbstractExplicitLayer
 end
 
 function initialstates(rng::AbstractRNG, ::AlphaDropout)
-    randn(rng)
-    return (rng=replicate(rng), training=Val(true))
+    return (rng=Utils.sample_replicate(rng), training=Val(true))
 end
 
 function AlphaDropout(p::T) where {T <: Real}
@@ -45,14 +44,13 @@ function AlphaDropout(p::T) where {T <: Real}
     iszero(p) && return NoOpLayer()
     isone(p) && return WrappedFunction(Base.Fix1(broadcast, zero))
 
-    alpha = T(-1.7580993408473766)
-    scale = T(inv(sqrt((1 - p) * (1 + p * alpha^2))))
-    bias = T(-scale * alpha * p)
-
-    return AlphaDropout(p, alpha, scale, bias)
+    α = T(-1.7580993408473766)
+    γ = T(inv(sqrt((1 - p) * (1 + p * α^2))))
+    β = T(-γ * α * p)
+    return AlphaDropout(p, α, γ, β)
 end
 
-function (d::AlphaDropout)(x, ps, st::NamedTuple)
+function (d::AlphaDropout)(x, _, st::NamedTuple)
     y, rng = alpha_dropout(st.rng, x, d.p, st.training, d.alpha, d.scale, d.bias)
     return y, (; rng, st.training)
 end
@@ -99,8 +97,7 @@ See also [`AlphaDropout`](@ref), [`VariationalHiddenDropout`](@ref)
 end
 
 function initialstates(rng::AbstractRNG, ::Dropout)
-    randn(rng)
-    return (rng=replicate(rng), training=Val(true))
+    return (rng=Utils.sample_replicate(rng), training=Val(true))
 end
 
 function Dropout(p; dims=:)
@@ -109,9 +106,9 @@ function Dropout(p; dims=:)
     return Dropout(p, 1 / (1 - p), dims)
 end
 
-function (d::Dropout)(x, ps, st::NamedTuple)
+function (d::Dropout)(x, _, st::NamedTuple)
     y, _, rng = dropout(st.rng, x, d.p, st.training, d.q, d.dims)
-    return y, merge(st, (; rng))
+    return y, (; rng, st.training)
 end
 
 function Base.show(io::IO, d::Dropout)
@@ -164,8 +161,8 @@ See also [`AlphaDropout`](@ref), [`Dropout`](@ref)
 end
 
 function initialstates(rng::AbstractRNG, ::VariationalHiddenDropout)
-    randn(rng)
-    return (rng=replicate(rng), training=Val(true), update_mask=Val(true), mask=nothing)
+    return (rng=Utils.sample_replicate(rng), training=Val(true),
+        update_mask=Val(true), mask=nothing)
 end
 
 function VariationalHiddenDropout(p; dims=:)
@@ -174,9 +171,9 @@ function VariationalHiddenDropout(p; dims=:)
     return VariationalHiddenDropout(p, 1 / (1 - p), dims)
 end
 
-function (d::VariationalHiddenDropout)(x, ps, st::NamedTuple)
-    _mask = st.mask === nothing ? x : st.mask
-    y, mask, rng = dropout(st.rng, x, _mask, d.p, st.training, st.update_mask, d.q, d.dims)
+function (d::VariationalHiddenDropout)(x, _, st::NamedTuple)
+    maskₒ = st.mask === nothing ? x : st.mask
+    y, mask, rng = dropout(st.rng, x, maskₒ, d.p, st.training, st.update_mask, d.q, d.dims)
     return y, merge(st, (; mask, rng, update_mask=Val(false)))
 end
 
