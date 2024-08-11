@@ -266,8 +266,8 @@ averages the gradients across the processes using Allreduce.
 end
 
 function Optimisers.apply!(opt::DistributedOptimizer, state, x, y)
-    y_avg = allreduce!(opt.backend, y, avg)
-    return Optimisers.apply!(opt.opt, state, x, y_avg)
+    allreduce!(opt.backend, y, avg)
+    return Optimisers.apply!(opt.opt, state, x, y)
 end
 
 Optimisers.init(opt::DistributedOptimizer, x::AbstractArray) = Optimisers.init(opt.opt, x)
