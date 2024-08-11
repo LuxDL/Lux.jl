@@ -364,7 +364,7 @@ end
     y = match_eltype(d, ps, st, x)
     return (
         fused_dense_bias_activation(
-            d.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias)))),
+            d.activation, ps.weight, y, _vec(LuxOps.getproperty(ps, Val(:bias)))),
         st)
 end
 
@@ -558,7 +558,8 @@ function (b::Bilinear{use_bias})((x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVec
     Wy = reshape(reshape(ps.weight, (:, d_y)) * y, (d_z, d_x, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (d_x, 1, :))), (d_z, :))
 
-    return bias_activation!!(b.activation, Wyx, _vec(_getproperty(ps, Val(:bias)))), st
+    return bias_activation!!(b.activation, Wyx, _vec(LuxOps.getproperty(ps, Val(:bias)))),
+    st
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)

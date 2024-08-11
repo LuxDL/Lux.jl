@@ -114,3 +114,7 @@ end
     return NamedTuple{fields}(unrolled_map(map_fn, values(x), values.(args)...))
 end
 @inline recursive_map(f::F, x, args...) where {F} = fmap(f, x, args...)
+
+@compat(public,
+    (recursive_add!!, recursive_copyto!, recursive_eltype,
+        recursive_make_zero, recursive_map, recursive_make_zero!!))

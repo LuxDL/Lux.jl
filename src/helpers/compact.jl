@@ -303,12 +303,13 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     calls = []
     for var in vars
         push!(calls,
-            :($var = $(__maybe_make_stateful)($(_getproperty)($self, $(Val(var))),
-                $(_getproperty)($ps, $(Val(var))), $(_getproperty)($st, $(Val(var))))))
+            :($var = $(__maybe_make_stateful)($(LuxOps.getproperty)($self, $(Val(var))),
+                $(LuxOps.getproperty)($ps, $(Val(var))),
+                $(LuxOps.getproperty)($st, $(Val(var))))))
     end
     for var in splatted_kwargs
-        push!(
-            calls, :($var = $(_getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
+        push!(calls,
+            :($var = $(LuxOps.getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
     end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
 
@@ -619,7 +620,7 @@ function _big_show(io::IO, obj::CompactLuxLayer, indent::Int=0, name=nothing)
     pre, post = ("(", ")")
     println(io, " "^indent, isnothing(name) ? "" : "$name = ", layer, pre)
     for (k, v) in pairs(setup_strings)
-        val = _getproperty(obj.layers, Val(k))
+        val = LuxOps.getproperty(obj.layers, Val(k))
         if val === nothing
             println(io, " "^(indent + 4), "$k = $v,")
         else

@@ -135,8 +135,10 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     end
 
     x′ = match_eltype(BN, ps, st, x)
-    y, stats = batchnorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        _getproperty(st, Val(:running_mean)), _getproperty(st, Val(:running_var)),
+    y, stats = batchnorm(
+        x′, LuxOps.getproperty(ps, Val(:scale)), LuxOps.getproperty(ps, Val(:bias)),
+        LuxOps.getproperty(st, Val(:running_mean)),
+        LuxOps.getproperty(st, Val(:running_var)),
         st.training, BN.activation, BN.momentum, BN.epsilon)
     return y, __update_bn_state(BN, st, stats)
 end
@@ -250,8 +252,8 @@ parameterlength(l::GroupNorm) = _affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
-    y = groupnorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        GN.groups, GN.activation, GN.epsilon)
+    y = groupnorm(x′, LuxOps.getproperty(ps, Val(:scale)),
+        LuxOps.getproperty(ps, Val(:bias)), GN.groups, GN.activation, GN.epsilon)
     return y, st
 end
 
@@ -364,8 +366,8 @@ parameterlength(l::InstanceNorm) = ifelse(_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
-    y, stats = instancenorm(x′, _getproperty(ps, Val(:scale)), _getproperty(ps, Val(:bias)),
-        st.training, IN.activation, IN.epsilon)
+    y, stats = instancenorm(x′, LuxOps.getproperty(ps, Val(:scale)),
+        LuxOps.getproperty(ps, Val(:bias)), st.training, IN.activation, IN.epsilon)
     return y, st
 end
 
@@ -590,8 +592,8 @@ end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(l, ps, st, x)
-    y = layernorm(x′, _getproperty(ps, Val(:scale)),
-        _getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
+    y = layernorm(x′, LuxOps.getproperty(ps, Val(:scale)),
+        LuxOps.getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
     return y, st
 end
 

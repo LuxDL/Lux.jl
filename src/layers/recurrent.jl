@@ -26,6 +26,12 @@ abstract type AbstractTimeSeriesDataBatchOrdering end
 struct TimeLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 struct BatchLastIndex <: AbstractTimeSeriesDataBatchOrdering end
 
+LuxOps.eachslice(x::AbstractArray, ::TimeLastIndex) = LuxOps.eachslice(x, Val(ndims(x)))
+function LuxOps.eachslice(x::AbstractArray, ::BatchLastIndex)
+    return LuxOps.eachslice(x, Val(ndims(x) - 1))
+end
+LuxOps.eachslice(x::AbstractMatrix, ::BatchLastIndex) = LuxOps.eachslice(x, Val(ndims(x)))
+
 """
     Recurrence(cell;
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
@@ -102,12 +108,8 @@ function Recurrence(cell; ordering::AbstractTimeSeriesDataBatchOrdering=BatchLas
     return Recurrence{return_sequence}(cell, ordering)
 end
 
-_eachslice(x::AbstractArray, ::TimeLastIndex) = _eachslice(x, Val(ndims(x)))
-_eachslice(x::AbstractArray, ::BatchLastIndex) = _eachslice(x, Val(ndims(x) - 1))
-_eachslice(x::AbstractMatrix, ::BatchLastIndex) = _eachslice(x, Val(ndims(x)))
-
 @inline function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
-    return apply(r, _eachslice(x, r.ordering), ps, st)
+    return apply(r, LuxOps.eachslice(x, r.ordering), ps, st)
 end
 
 function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
@@ -127,7 +129,7 @@ end
         (out, carry), state = apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
     end
-    results = foldl_init(__recurrence_op, x)
+    results = LuxOps.foldl_init(__recurrence_op, x)
     return first(results), last(results)
 end
 

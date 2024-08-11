@@ -118,7 +118,7 @@ end
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias))), cdims),
+            c.activation, ps.weight, y, _vec(LuxOps.getproperty(ps, Val(:bias))), cdims),
         st)
 end
 
@@ -609,7 +609,7 @@ end
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
     return (
         fused_conv_bias_activation(
-            c.activation, ps.weight, y, _vec(_getproperty(ps, Val(:bias))), cdims),
+            c.activation, ps.weight, y, _vec(LuxOps.getproperty(ps, Val(:bias))), cdims),
         st)
 end
 
@@ -736,7 +736,7 @@ end
         y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
         bias_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims),
-            _vec(_getproperty(ps, Val(:bias)))),
+            _vec(LuxOps.getproperty(ps, Val(:bias)))),
         st)
 end
 
