@@ -197,7 +197,7 @@ end
 
 function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
     ∇multigate_internal = @closure Δ -> (
-        NoTangent(), @thunk(∇multigate(Δ, x, c)), NoTangent())
+        NoTangent(), @thunk(∇multigate(CRC.unthunk(Δ), x, c)), NoTangent())
     return multigate(x, c), ∇multigate_internal
 end
 

@@ -107,6 +107,8 @@ function __set_state!(::StatefulLuxLayer{true, M, psType, stType},
 end
 @inline __set_state!(s::StatefulLuxLayer{false}, st) = (s.st_any = st)
 
+CRC.@non_differentiable __set_state!(::Any...)
+
 function (s::StatefulLuxLayer)(x, p=s.ps)
     y, st = apply(s.model, x, p, __get_state(s))
     __set_state!(s, st)

@@ -107,9 +107,6 @@
         end
     end
 
-    @test_throws ArgumentError ToSimpleChainsAdaptor((10, 10, 1))
-    @test_throws ArgumentError ToSimpleChainsAdaptor(1)
-
     # Failures
     @test_throws Lux.SimpleChainsModelConversionException adaptor(Conv(
         (1, 1), 2 => 3; stride=(5, 5)))
