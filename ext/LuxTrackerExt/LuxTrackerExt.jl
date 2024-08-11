@@ -10,7 +10,6 @@ using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
 
 const CRC = ChainRulesCore
 
-include("apply.jl")
 include("utils.jl")
 include("rules.jl")
 include("training.jl")

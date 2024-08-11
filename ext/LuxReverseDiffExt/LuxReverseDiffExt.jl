@@ -9,7 +9,6 @@ using LuxCore: LuxCore, AbstractExplicitLayer
 using ReverseDiff: ReverseDiff, ForwardExecutor, ReverseExecutor, TrackedArray, TrackedReal,
                    @grad_from_chainrules
 
-include("apply.jl")
 include("utils.jl")
 include("rules.jl")
 include("training.jl")
