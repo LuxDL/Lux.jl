@@ -1,4 +1,4 @@
-using Lux, LuxDeviceUtils
+using Lux, MLDataDevices
 
 if !@isdefined(BACKEND_GROUP)
     const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
@@ -15,11 +15,11 @@ end
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           LuxDeviceUtils.functional(LuxCUDADevice)
+           MLDataDevices.functional(CUDADevice)
 end
 function amdgpu_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-           LuxDeviceUtils.functional(LuxAMDGPUDevice)
+           MLDataDevices.functional(AMDGPUDevice)
 end
 
 const MODES = begin

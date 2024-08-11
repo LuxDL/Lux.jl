@@ -10,21 +10,22 @@ using Compat: @compat
 using ConcreteStructs: @concrete
 using ConstructionBase: ConstructionBase
 using FastClosures: @closure
-using ForwardDiff: ForwardDiff
 using Functors: Functors, fmap
-using GPUArraysCore: GPUArraysCore, @allowscalar
+using GPUArraysCore: @allowscalar
 using LossFunctions: LossFunctions
 using Markdown: @doc_str
-using NNlib: NNlib
 using Optimisers: Optimisers
-using Preferences: load_preference, has_preference, set_preferences!
 using Random: Random, AbstractRNG
 using Static: StaticBool, True, False, static
 using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
+# TODO: In v1 we remove the LuxDeviceUtils dependency and replace it with MLDataDevices
 @reexport using LuxCore, LuxLib, LuxDeviceUtils, WeightInitializers
+using MLDataDevices: MLDataDevices, AMDGPUDevice, CPUDevice
+using NNlib: NNlib
+
 import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
                 initialstates, parameterlength, statelength, inputsize, outputsize,
                 update_state, trainmode, testmode, setup, apply, replicate

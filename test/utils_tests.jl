@@ -128,13 +128,13 @@ end
     @test length(Zygote.gradient(l2reg, ps)) == 1
 end
 
-@testitem "_init_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+@testitem "Utils.init_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
         x = randn(rng, Float32, 3, 2, 2)
-        @test Lux._init_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
+        @test Lux.Utils.init_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
               aType(zeros(Float32, 5, 2))
     end
 end

@@ -5,8 +5,9 @@ using DynamicExpressions: DynamicExpressions, Node, OperatorEnum, eval_grad_tree
                           eval_tree_array
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
+
 using Lux: Lux, NAME_TYPE, Chain, Parallel, WrappedFunction, DynamicExpressionsLayer
-using LuxDeviceUtils: LuxCPUDevice
+using MLDataDevices: CPUDevice
 
 @static if pkgversion(DynamicExpressions) ≥ v"0.19"
     using DynamicExpressions: EvalOptions
@@ -96,7 +97,7 @@ end
 # Forward Diff rules
 function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum,
         x::AbstractMatrix{<:ForwardDiff.Dual{Tag, T, N}},
-        ps, ::LuxCPUDevice) where {T, N, Tag}
+        ps, ::CPUDevice) where {T, N, Tag}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -112,8 +113,7 @@ function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operato
 end
 
 function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum, x,
-        ps::AbstractVector{<:ForwardDiff.Dual{Tag, T, N}},
-        ::LuxCPUDevice) where {T, N, Tag}
+        ps::AbstractVector{<:ForwardDiff.Dual{Tag, T, N}}, ::CPUDevice) where {T, N, Tag}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -131,7 +131,7 @@ end
 function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operator_enum,
         x::AbstractMatrix{<:ForwardDiff.Dual{Tag, T1, N}},
         ps::AbstractVector{<:ForwardDiff.Dual{Tag, T2, N}},
-        ::LuxCPUDevice) where {T1, T2, N, Tag}
+        ::CPUDevice) where {T1, T2, N, Tag}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
