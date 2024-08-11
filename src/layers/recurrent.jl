@@ -583,11 +583,14 @@ function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTu
 
     r = @. sigmoid_fast(gxs[1] + ghbs[1])
     z = @. sigmoid_fast(gxs[2] + ghbs[2])
-    n = @. tanh_fast(gxs[3] + ps.bias_i + r * ghbs[3])
+    n = gru_cell_compute(gxs[3], r, ghbs[3], LuxOps.getproperty(ps, Val(:bias_i)))
     hidden_state₂ = @. (1 - z) * n + z * hidden_stateₙ
 
     return (hidden_state₂, (hidden_state₂,)), st
 end
+
+gru_cell_compute(x, r, y, ::Nothing) = @. tanh_fast(x + r * y)
+gru_cell_compute(x, r, y, bias) = @. tanh_fast(x + r * y + bias)
 
 function Base.show(io::IO, g::GRUCell{use_bias, TS}) where {use_bias, TS}
     print(io, "GRUCell($(g.in_dims) => $(g.out_dims)")
@@ -619,6 +622,8 @@ Bidirectional RNN wrapper.
     default value is `vcat`. If `nothing`, the outputs will not be combined.
   - `ordering`: The ordering of the batch and time dimensions in the input. Defaults to
     `BatchLastIndex()`. Alternatively can be set to `TimeLastIndex()`.
+
+# Extended Help
 
 ## Inputs
 

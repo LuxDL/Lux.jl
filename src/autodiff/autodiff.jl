@@ -1,12 +1,12 @@
 module AutoDiffInternalImpl
 
+using ArrayInterface: ArrayInterface
 using ArgCheck: @argcheck
 using ADTypes: AbstractADType, AutoForwardDiff
-using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig
+using ChainRulesCore: ChainRulesCore, HasReverseMode, NoTangent, RuleConfig, ZeroTangent
 using FastClosures: @closure
 using ForwardDiff: ForwardDiff
 using Functors: fmap
-using LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer
 using MLDataDevices: get_device, get_device_type, CPUDevice
 
 using ..Lux: Lux, StatefulLuxLayer
@@ -32,7 +32,15 @@ const AD_CONVERTIBLE_FUNCTIONS = [
     # Parameter Gradient/Jacobian
     ComposedFunction{<:Any, <:Base.Fix1{<:StatefulLuxLayer}},
     ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Any},
-    Base.Fix1{<:StatefulLuxLayer}
+    Base.Fix1{<:StatefulLuxLayer},
+]
+
+# Conversions that lead to error
+const AD_CONVERTIBLE_FUNCTIONS_FALLBACK = [
+    ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
+    ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}
 ]
 #! format: on
 

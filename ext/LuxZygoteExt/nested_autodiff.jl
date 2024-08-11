@@ -5,7 +5,7 @@ function Lux.AutoDiffInternalImpl.vector_jacobian_product_impl(
 end
 
 # Nested AD Handling
-for fType in Lux.AD_CONVERTIBLE_FUNCTIONS
+for fType in Lux.AutoDiffInternalImpl.AD_CONVERTIBLE_FUNCTIONS
     @eval begin
         function Zygote.gradient(f::$fType, x)
             f̂, y = Lux.AutoDiffInternalImpl.rewrite_autodiff_call(f)
@@ -29,7 +29,7 @@ end
 # Handle Weird Zygote shit
 # Forward to a function that doesn't have this _pullback defined so that it triggers the
 # rrule
-for fType in Lux.AD_CONVERTIBLE_FUNCTIONS,
+for fType in Lux.AutoDiffInternalImpl.AD_CONVERTIBLE_FUNCTIONS,
     (fdiff_func, cfg_func) in ((:jacobian, :JacobianConfig), (:gradient, :GradientConfig))
 
     @eval function Zygote._pullback(cx::Zygote.AContext, ::typeof(ForwardDiff.$fdiff_func),

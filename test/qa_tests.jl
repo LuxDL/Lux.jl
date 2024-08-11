@@ -4,7 +4,8 @@
     Aqua.test_all(Lux; piracies=false, ambiguities=false)
     Aqua.test_ambiguities(Lux;
         exclude=[ForwardDiff.jacobian, ForwardDiff.gradient,
-            Lux.__batched_jacobian, Lux.__jacobian_vector_product_impl])
+            Lux.AutoDiffInternalImpl.batched_jacobian,
+            Lux.AutoDiffInternalImpl.jacobian_vector_product_impl])
     Aqua.test_piracies(
         Lux; treat_as_own=[ChainRulesCore.frule, ChainRulesCore.rrule, Core.kwcall])
 end

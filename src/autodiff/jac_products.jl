@@ -15,6 +15,12 @@ for fType in AD_CONVERTIBLE_FUNCTIONS
     end
 end
 
+for fType in AD_CONVERTIBLE_FUNCTIONS_FALLBACK
+    @eval function jacobian_vector_product(f::$(fType), backend::AbstractADType, x, u, y)
+        return jacobian_vector_product_impl(Base.Fix2(f, y), backend, x, u)
+    end
+end
+
 function jacobian_vector_product(f::F, backend::AbstractADType, x, u, y) where {F}
     return jacobian_vector_product_impl(Base.Fix2(f, y), backend, x, u)
 end

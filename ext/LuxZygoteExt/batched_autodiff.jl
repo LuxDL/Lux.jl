@@ -1,7 +1,3 @@
-function Lux.__batched_jacobian(f::F, backend::AutoZygote, x) where {F}
-    return Lux.__batched_jacobian_impl(f, backend, x)
-end
-
 function Lux.AutoDiffInternalImpl.batched_jacobian_impl(f::F, ::AutoZygote, x) where {F}
     # It's not safe to run `pb_f` multiple times. We run the first time to be able to
     # construct the Jacobian
