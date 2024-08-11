@@ -257,30 +257,24 @@ initialstates(rng::AbstractRNG, ::RNNCell) = (rng=Utils.sample_replicate(rng),)
 function (rnn::RNNCell{use_bias, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    hidden_state = _init_hidden_state(rng, rnn, x)
+    hidden_state = Utils.init_hidden_state(rng, rnn, x)
     return rnn((x, (hidden_state,)), ps, merge(st, (; rng)))
 end
 
 function (rnn::RNNCell{use_bias, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
-    hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
+    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
     return rnn((x, (hidden_state,)), ps, st)
 end
 
-const _RNNCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
-
-function (rnn::RNNCell{true})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
-    y, hidden_state_ = match_eltype(rnn, ps, st, x, hidden_state)
-    h_new = ps.weight_ih * y .+ ps.weight_hh * hidden_state_ .+ ps.bias
-    h_new = fastₙactivation!!(rnn.activation, h_new)
-    return (h_new, (h_new,)), st
-end
-
-function (rnn::RNNCell{false})((x, (hidden_state,))::_RNNCellInputType, ps, st::NamedTuple)
-    y, hidden_state_ = match_eltype(rnn, ps, st, x, hidden_state)
-    h_new = ps.weight_ih * y .+ ps.weight_hh * hidden_state_
-    h_new = fastₙactivation!!(rnn.activation, h_new)
-    return (h_new, (h_new,)), st
+function (rnn::RNNCell)(
+        (x, (hidden_state,))::Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}},
+        ps, st::NamedTuple)
+    y, hidden_stateₙ = match_eltype(rnn, ps, st, x, hidden_state)
+    z = fused_dense_bias_activation(
+        identity, ps.weight_hh, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias)))
+    hₙ = fast_activation!!(rnn.activation, LuxLib.Impl.matmul(ps.weight_ih, y) .+ z)
+    return (hₙ, (hₙ,)), st
 end
 
 function Base.show(io::IO, r::RNNCell{use_bias, TS}) where {use_bias, TS}
@@ -395,7 +389,7 @@ function initialparameters(rng::AbstractRNG,
                      for init_weight in lstm.init_weight]...)
     weight_h = vcat([init_weight(rng, lstm.out_dims, lstm.out_dims)
                      for init_weight in lstm.init_weight]...)
-    ps = (weight_i=weight_i, weight_h=weight_h)
+    ps = (; weight_i, weight_h)
     if use_bias
         bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
         ps = merge(ps, (bias=bias,))
@@ -405,67 +399,53 @@ function initialparameters(rng::AbstractRNG,
     return ps
 end
 
-function initialstates(rng::AbstractRNG, ::LSTMCell)
-    # FIXME(@avik-pal): Take PRNGs seriously
-    randn(rng, 1)
-    return (rng=replicate(rng),)
-end
+initialstates(rng::AbstractRNG, ::LSTMCell) = (rng=Utils.sample_replicate(rng),)
 
 function (lstm::LSTMCell{use_bias, false, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    st = merge(st, (; rng))
-    hidden_state = _init_hidden_state(rng, lstm, x)
-    memory = _init_hidden_state(rng, lstm, x)
-    return lstm((x, (hidden_state, memory)), ps, st)
+    hidden_state = Utils.init_hidden_state(rng, lstm, x)
+    memory = Utils.init_hidden_state(rng, lstm, x)
+    return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
 function (lstm::LSTMCell{use_bias, true, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    st = merge(st, (; rng))
-    hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
-    memory = _init_hidden_state(rng, lstm, x)
-    return lstm((x, (hidden_state, memory)), ps, st)
+    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
+    memory = Utils.init_hidden_state(rng, lstm, x)
+    return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
 function (lstm::LSTMCell{use_bias, false, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
-    st = merge(st, (; rng))
-    hidden_state = _init_hidden_state(rng, lstm, x)
-    memory = _init_trainable_hidden_state(ps.memory, x)
-    return lstm((x, (hidden_state, memory)), ps, st)
+    hidden_state = Utils.init_hidden_state(rng, lstm, x)
+    memory = Utils.init_trainable_hidden_state(ps.memory, x)
+    return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
 function (lstm::LSTMCell{use_bias, true, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
-    hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
-    memory = _init_trainable_hidden_state(ps.memory, x)
+    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
+    memory = Utils.init_trainable_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, st)
 end
 
 const _LSTMCellInputType = Tuple{
     <:AbstractMatrix, Tuple{<:AbstractMatrix, <:AbstractMatrix}}
 
-function (lstm::LSTMCell{true})(
+function (lstm::LSTMCell)(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
-    y, hidden_state_, memory_ = match_eltype(lstm, ps, st, x, hidden_state, memory)
-    g = ps.weight_i * y .+ ps.weight_h * hidden_state_ .+ ps.bias
-    input, forget, cell, output = LuxOps.multigate(g, Val(4))
-    memory_new = @. sigmoid_fast(forget) * memory_ + sigmoid_fast(input) * tanh_fast(cell)
-    hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
-    return (hidden_state_new, (hidden_state_new, memory_new)), st
-end
+    y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
+    z = fused_dense_bias_activation(
+        identity, ps.weight_hh, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias)))
+    g = LuxLib.Impl.matmul(ps.weight_i, y) .+ z
 
-function (lstm::LSTMCell{false})(
-        (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
-    y, hidden_state_, memory_ = match_eltype(lstm, ps, st, x, hidden_state, memory)
-    g = ps.weight_i * y .+ ps.weight_h * hidden_state_
     input, forget, cell, output = LuxOps.multigate(g, Val(4))
-    memory_new = @. sigmoid_fast(forget) * memory_ + sigmoid_fast(input) * tanh_fast(cell)
-    hidden_state_new = @. sigmoid_fast(output) * tanh_fast(memory_new)
-    return (hidden_state_new, (hidden_state_new, memory_new)), st
+    memory₂ = @. sigmoid_fast(forget) * memoryₙ + sigmoid_fast(input) * tanh_fast(cell)
+    hidden_state₂ = @. sigmoid_fast(output) * tanh_fast(memory₂)
+    return (hidden_state₂, (hidden_state₂, memory₂)), st
 end
 
 function Base.show(io::IO,
@@ -574,15 +554,11 @@ function initialparameters(
     return ps
 end
 
-function initialstates(rng::AbstractRNG, ::GRUCell)
-    # FIXME(@avik-pal): Take PRNGs seriously
-    randn(rng, 1)
-    return (rng=replicate(rng),)
-end
+initialstates(rng::AbstractRNG, ::GRUCell) = (rng=Utils.sample_replicate(rng),)
 
 function (gru::GRUCell{use_bias, true})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
-    hidden_state = _init_trainable_hidden_state(ps.hidden_state, x)
+    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
     return gru((x, (hidden_state,)), ps, st)
 end
 
@@ -590,36 +566,26 @@ function (gru::GRUCell{use_bias, false})(
         x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
     rng = replicate(st.rng)
     st = merge(st, (; rng))
-    hidden_state = _init_hidden_state(rng, gru, x)
+    hidden_state = Utils.init_hidden_state(rng, gru, x)
     return gru((x, (hidden_state,)), ps, st)
 end
 
 const _GRUCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
-function (gru::GRUCell{true})((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
-    y, hidden_state_ = match_eltype(gru, ps, st, x, hidden_state)
+function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
+    y, hidden_stateₙ = match_eltype(gru, ps, st, x, hidden_state)
     gxs = LuxOps.multigate(ps.weight_i * y, Val(3))
-    ghbs = LuxOps.multigate(ps.weight_h * hidden_state_ .+ ps.bias_h, Val(3))
+    ghbs = LuxOps.multigate(
+        fused_dense_bias_activation(
+            identity, ps.weight_h, hidden_stateₙ, LuxOps.getproperty(ps, Val(:bias))),
+        Val(3))
 
     r = @. sigmoid_fast(gxs[1] + ghbs[1])
     z = @. sigmoid_fast(gxs[2] + ghbs[2])
     n = @. tanh_fast(gxs[3] + ps.bias_i + r * ghbs[3])
-    hidden_state_new = @. (1 - z) * n + z * hidden_state_
+    hidden_state₂ = @. (1 - z) * n + z * hidden_stateₙ
 
-    return (hidden_state_new, (hidden_state_new,)), st
-end
-
-function (gru::GRUCell{false})((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
-    y, hidden_state_ = match_eltype(gru, ps, st, x, hidden_state)
-    gxs = LuxOps.multigate(ps.weight_i * y, Val(3))
-    ghs = LuxOps.multigate(ps.weight_h * hidden_state_, Val(3))
-
-    r = @. sigmoid_fast(gxs[1] + ghs[1])
-    z = @. sigmoid_fast(gxs[2] + ghs[2])
-    n = @. tanh_fast(gxs[3] + r * ghs[3])
-    hidden_state_new = @. (1 - z) * n + z * hidden_state_
-
-    return (hidden_state_new, (hidden_state_new,)), st
+    return (hidden_state₂, (hidden_state₂,)), st
 end
 
 function Base.show(io::IO, g::GRUCell{use_bias, TS}) where {use_bias, TS}
