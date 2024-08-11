@@ -425,7 +425,8 @@ using MacroTools: MacroTools, @capture, combinedef, splitdef
 using Random: AbstractRNG
 
 using LuxCore: LuxCore, AbstractExplicitLayer
-using ..Lux: Lux, LuxOps, CompactLuxLayer, LuxCompactModelParsingException, StatefulLuxLayer
+using ..Lux: Lux, get_ops, CompactLuxLayer, LuxCompactModelParsingException,
+             StatefulLuxLayer
 
 function compact_macro_impl(_exs...)
     # check inputs, extracting function expression fex and unprocessed keyword arguments _kwexs

@@ -11,11 +11,11 @@ end
 for fType in AD_CONVERTIBLE_FUNCTIONS
     @eval function jacobian_vector_product(f::$(fType), backend::AbstractADType, x, u)
         f̂, y = rewrite_autodiff_call(f)
-        return jacobian_vector_product(f̂, backend, x, u, y)
+        return jacobian_vector_product_impl(f̂, backend, x, u, y)
     end
 end
 
-function jacobian_vector_product(f::F, backend::AbstractADType, x, u, y) where {F}
+function jacobian_vector_product_impl(f::F, backend::AbstractADType, x, u, y) where {F}
     return jacobian_vector_product_impl(Base.Fix2(f, y), backend, x, u)
 end
 
@@ -39,7 +39,7 @@ function CRC.rrule(
             _, ∇autodiff_pullback = CRC.rrule_via_ad(
                 cfg, autodiff_pullback, pullback_fn, f, x, y, Δ)
             _, _, _, ∂x, ∂y, _ = ∇autodiff_pullback(u)
-            return NoTangent(), NoTangent(), ∂x, NoTangent(), ∂y
+            return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent(), ∂y
         end
     end
 
