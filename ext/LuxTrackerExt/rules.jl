@@ -16,14 +16,14 @@ Tracker.@grad function Lux.apply_simple_chain(layer, x, ps, ::LuxCPUDevice)
            As such please test your model with `FiniteDiff.jl` or `Zygote.jl` before using \
            `Tracker.jl` for your model." maxlog=1
     y, pb_f = CRC.rrule(layer, Tracker.data(x), Tracker.data(ps))
-    __∇apply_simple_chain = let pb_f = pb_f
+    ∇apply_simple_chain = let pb_f = pb_f
         Δ -> begin
             _, ∂x, ∂ps = pb_f(convert(Array, Tracker.data(Δ)))
             return Tracker.nobacksies(:apply_simple_chain, (nothing, ∂x, ∂ps, nothing))
         end
     end
     # Tracker is not great at handling arbitrary types, so we convert to Array
-    return Array(y), __∇apply_simple_chain
+    return Array(y), ∇apply_simple_chain
 end
 
 # DynamicExpressions.jl

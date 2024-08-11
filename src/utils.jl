@@ -152,79 +152,15 @@ get_norm_except_dims(N, dims::Tuple) = filter(i -> i ∉ dims, 1:N)
 
 @non_differentiable get_norm_except_dims(::Any...)
 
+expand(_, i::Tuple) = i
+expand(N, i::Integer) = ntuple(Returns(i), N)
+
+@non_differentiable expand(::Any...)
+
+stack1(xs) = mapfoldl(expanddims1, vcat, xs)
+expanddims1(x) = reshape(x, 1, size(x)...)
+
 end
-
-# Convolution
-function _convfilter(rng::AbstractRNG, filter::NTuple{N, Integer},
-        ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
-    cin, cout = ch
-    @argcheck cin % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
-    @argcheck cout % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
-    return init(rng, filter..., cin ÷ groups, cout)
-end
-
-_expand(N, i::Tuple) = i
-_expand(N, i::Integer) = ntuple(_ -> i, N)
-
-__tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
-
-# Padding
-struct SamePad end
-
-function _calc_padding(pad, ::NTuple{N}, dilation, stride) where {N}
-    return _expand(Val(2 * N), pad)
-end
-
-function _calc_padding(::SamePad, k::NTuple, dilation, stride)
-    # Ref: "A guide to convolution arithmetic for deep learning"
-    # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
-    k_eff = @. k + (k - 1) * (dilation - 1)
-    # How much total padding needs to be applied?
-    pad_amt = @. k_eff - 1
-    # In case amount of padding is odd we need to apply different amounts to each side.
-    return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
-end
-
-# Backend Integration
-## Convolution
-_conv_transpose(x, weight, cdims) = LuxLib.__∇conv_data(x, weight, cdims)
-
-function _conv_transpose_dims(
-        x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
-    # Calculate size of "input", from ∇conv_data()'s perspective...
-    function calc_dim(xsz, wsz, stride, dilation, pad)
-        return (xsz - 1) * stride + 1 + (wsz - 1) * dilation - pad
-    end
-    combined_pad = ntuple(i -> padding[2i - 1] + padding[2i], length(padding) ÷ 2)
-    I = map(calc_dim, size(x)[1:(end - 2)], size(weight)[1:(end - 2)],
-        stride, dilation, combined_pad)
-    C_in = size(weight)[end - 1] * groups
-    C_out = size(weight)[end]
-    batch_size = size(x)[end]
-    w_size = size(weight)
-
-    size(x)[end - 1] != C_out &&
-        throw(DimensionMismatch(lazy"Expected $(C_out) input channels but got $(size(x)[end - 1]) channels."))
-
-    # Create DenseConvDims() that looks like the corresponding conv()
-    return DenseConvDims(
-        (I..., C_in, batch_size), w_size; stride, padding, dilation, groups)
-end
-
-## Adaptive Pooling
-function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
-    insize = size(x)[1:(end - 2)]
-    stride = insize .÷ outsize
-    k = insize .- (outsize .- 1) .* stride
-    pad = 0
-    return PoolDims(x, k; padding=pad, stride=stride)
-end
-
-# Stack using vcat and mapreduce
-# FIXME: Just use `stack` once the rrule is fixed upstream
-__stack1(xs) = mapfoldl(__expanddims1, vcat, xs)
-
-__expanddims1(x) = reshape(x, 1, size(x)...)
 
 function __named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)

@@ -460,7 +460,7 @@ function initialparameters(
                                      `init_$(k)` keyword argument."))
             end
             dim = wn.dims === nothing ? ndims(v) : wn.dims[i]
-            push!(ps_normalized, Symbol(string(k) * "_g") => _norm_except(v; dims=dim))
+            push!(ps_normalized, Symbol(string(k) * "_g") => Utils.norm_except(v; dims=dim))
             push!(ps_normalized, Symbol(string(k) * "_v") => v)
             i += 1
         else

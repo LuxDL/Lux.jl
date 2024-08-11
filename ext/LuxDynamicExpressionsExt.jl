@@ -24,7 +24,8 @@ function Lux.DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::N
         name::NAME_TYPE=nothing, eval_options::EvalOptionsTypes=missing,
         turbo::Union{Bool, Val, Missing}=missing,
         bumper::Union{Bool, Val, Missing}=missing)
-    eval_options = construct_eval_options(eval_options, construct_eval_options(turbo, bumper))
+    eval_options = construct_eval_options(
+        eval_options, construct_eval_options(turbo, bumper))
 
     length(expressions) == 1 && return Lux.DynamicExpressionsLayer(
         operator_enum, first(expressions), name, eval_options)
@@ -34,7 +35,7 @@ function Lux.DynamicExpressionsLayer(operator_enum::OperatorEnum, expressions::N
         Parallel(nothing,
             ntuple(i -> DynamicExpressionsLayer(operator_enum, expressions[i],
                 name_fn(i), eval_options), length(expressions))...),
-        WrappedFunction{:direct_call}(Lux.__stack1);
+        WrappedFunction{:direct_call}(Lux.Utils.stack1);
         name="DynamicExpressionsLayer")
     #! format: on
 end
@@ -67,7 +68,7 @@ end
 
 function Lux.apply_dynamic_expression_internal(
         de::Lux.DynamicExpressionsLayer, expr, operator_enum, x, ps)
-    Lux.update_de_expression_constants!!(expr, ps)
+    Lux.update_de_expression_constants!(expr, ps)
     @static if pkgversion(DynamicExpressions) ≥ v"0.19"
         eval_options = EvalOptions(; de.eval_options.turbo, de.eval_options.bumper)
         return first(eval_tree_array(expr, x, operator_enum; eval_options))
@@ -79,7 +80,7 @@ end
 
 function Lux.∇apply_dynamic_expression(
         de::Lux.DynamicExpressionsLayer, expr, operator_enum, x, ps)
-    Lux.update_de_expression_constants!!(expr, ps)
+    Lux.update_de_expression_constants!(expr, ps)
     _, Jₓ, _ = eval_grad_tree_array(
         expr, x, operator_enum; variable=Val(true), de.eval_options.turbo)
     y, Jₚ, _ = eval_grad_tree_array(
@@ -99,7 +100,7 @@ function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operato
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
-    Lux.update_de_expression_constants!!(expr, ps)
+    Lux.update_de_expression_constants!(expr, ps)
     y, Jₓ, _ = eval_grad_tree_array(
         expr, value_fn.(x), operator_enum; variable=Val(true), de.eval_options.turbo)
     partials = ntuple(
@@ -116,7 +117,7 @@ function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operato
     value_fn(x) = ForwardDiff.value(Tag, x)
     partials_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
-    Lux.update_de_expression_constants!!(expr, value_fn.(ps))
+    Lux.update_de_expression_constants!(expr, value_fn.(ps))
     y, Jₚ, _ = eval_grad_tree_array(
         expr, x, operator_enum; variable=Val(false), de.eval_options.turbo)
     partials = ntuple(
@@ -137,7 +138,7 @@ function Lux.apply_dynamic_expression(de::DynamicExpressionsLayer, expr, operato
     ps_value = value_fn.(ps)
     x_value = value_fn.(x)
 
-    Lux.update_de_expression_constants!!(expr, ps_value)
+    Lux.update_de_expression_constants!(expr, ps_value)
     _, Jₓ, _ = eval_grad_tree_array(
         expr, x_value, operator_enum; variable=Val(true), de.eval_options.turbo)
     y, Jₚ, _ = eval_grad_tree_array(

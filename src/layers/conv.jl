@@ -1,3 +1,64 @@
+struct SamePad end
+
+function calc_padding(pad, ::NTuple{N}, dilation, stride) where {N}
+    return Utils.expand(Val(2 * N), pad)
+end
+
+function calc_padding(::SamePad, k::NTuple, dilation, stride)
+    # Ref: "A guide to convolution arithmetic for deep learning"
+    # https://arxiv.org/abs/1603.07285 Effective kernel size, including dilation
+    k_eff = @. k + (k - 1) * (dilation - 1)
+    # How much total padding needs to be applied?
+    pad_amt = @. k_eff - 1
+    # In case amount of padding is odd we need to apply different amounts to each side.
+    return Tuple(mapfoldl(i -> [cld(i, 2), fld(i, 2)], vcat, pad_amt))
+end
+
+CRC.@non_differentiable calc_padding(::Any...)
+
+function conv_transpose_dims(
+        x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
+    # Calculate size of "input", from ∇conv_data()'s perspective...
+    function calc_dim(xsz, wsz, stride, dilation, pad)
+        return (xsz - 1) * stride + 1 + (wsz - 1) * dilation - pad
+    end
+    combined_pad = ntuple(i -> padding[2i - 1] + padding[2i], length(padding) ÷ 2)
+    I = map(calc_dim, size(x)[1:(end - 2)], size(weight)[1:(end - 2)],
+        stride, dilation, combined_pad)
+    C_in = size(weight)[end - 1] * groups
+    C_out = size(weight)[end]
+    batch_size = size(x)[end]
+    w_size = size(weight)
+
+    size(x)[end - 1] != C_out &&
+        throw(DimensionMismatch(lazy"Expected $(C_out) input channels but got $(size(x)[end - 1]) channels."))
+
+    # Create DenseConvDims() that looks like the corresponding conv()
+    return DenseConvDims(
+        (I..., C_in, batch_size), w_size; stride, padding, dilation, groups)
+end
+
+CRC.@non_differentiable conv_transpose_dims(::Any...)
+
+conv_transpose(x, weight, cdims) = LuxLib.Impl.∇conv_data(x, weight, cdims)
+
+function compute_adaptive_pooling_dims(x::AbstractArray, outsize)
+    insize = size(x)[1:(end - 2)]
+    stride = insize .÷ outsize
+    k = insize .- (outsize .- 1) .* stride
+    return PoolDims(x, k; padding=0, stride=stride)
+end
+
+CRC.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
+
+function init_conv_filter(rng::AbstractRNG, filter::NTuple{N, Integer},
+        ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
+    cin, cout = ch
+    @argcheck cin % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
+    @argcheck cout % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
+    return init(rng, filter..., cin ÷ groups, cout)
+end
+
 @doc doc"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
          activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
@@ -27,6 +88,8 @@ Standard convolutional layer.
   - `in_chs`: Number of input channels
   - `out_chs`: Number of input and output channels
   - `activation`: Activation Function
+
+# Extended Help
 
 ## Keyword Arguments
 
@@ -92,9 +155,9 @@ end
 function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
         init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
         groups=1, use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
-    stride = _expand(Val(N), stride)
-    dilation = _expand(Val(N), dilation)
-    pad = _calc_padding(pad, k, dilation, stride)
+    stride = Utils.expand(Val(N), stride)
+    dilation = Utils.expand(Val(N), dilation)
+    pad = calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     return Conv{N, use_bias, length(pad)}(activation, first(ch), last(ch), k, stride,
@@ -102,7 +165,7 @@ function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=
 end
 
 function initialparameters(rng::AbstractRNG, c::Conv{N, use_bias}) where {N, use_bias}
-    weight = _convfilter(
+    weight = init_conv_filter(
         rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
     !use_bias && return (; weight)
     return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
@@ -122,21 +185,17 @@ end
         st)
 end
 
-function Base.show(io::IO, l::Conv)
+function Base.show(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
     print(io, "Conv(", l.kernel_size)
     print(io, ", ", l.in_chs, " => ", l.out_chs)
-    _print_conv_opt(io, l)
-    return print(io, ")")
-end
-
-function _print_conv_opt(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
-    all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
+    all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
+    all(==(1), l.dilation) ||
+        print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
     (use_bias == false) && print(io, ", use_bias=false")
-    return nothing
+    return print(io, ")")
 end
 
 @doc doc"""
@@ -165,6 +224,8 @@ value.
         `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
         dimension.
 
+# Extended Help
+
 ## Inputs
 
   - `x`: Data satisfying `ndims(x) == N + 2`, i.e. `size(x) = (I_N, ..., I_1, C, N)`
@@ -189,8 +250,8 @@ struct MaxPool{N, M} <: AbstractExplicitLayer
 end
 
 function MaxPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
-    stride = _expand(Val(N), stride)
-    pad = _calc_padding(pad, k, 1, stride)
+    stride = Utils.expand(Val(N), stride)
+    pad = calc_padding(pad, k, 1, stride)
     return MaxPool{N, length(pad)}(k, pad, stride)
 end
 
@@ -200,8 +261,8 @@ end
 
 function Base.show(io::IO, m::MaxPool)
     print(io, "MaxPool(", m.k)
-    all(==(0), m.pad) || print(io, ", pad=", __tuple_string(m.pad))
-    m.stride == m.k || print(io, ", stride=", __tuple_string(m.stride))
+    all(==(0), m.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(m.pad))
+    m.stride == m.k || print(io, ", stride=", PrettyPrinting.tuple_string(m.stride))
     return print(io, ")")
 end
 
@@ -231,6 +292,8 @@ value.
         `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
         dimension.
 
+# Extended Help
+
 ## Inputs
 
   - `x`: Data satisfying `ndims(x) == N + 2`, i.e. `size(x) = (I_N, ..., I_1, C, N)`
@@ -255,8 +318,8 @@ struct MeanPool{N, M} <: AbstractExplicitLayer
 end
 
 function MeanPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
-    stride = _expand(Val(N), stride)
-    pad = _calc_padding(pad, k, 1, stride)
+    stride = Utils.expand(Val(N), stride)
+    pad = calc_padding(pad, k, 1, stride)
     return MeanPool{N, length(pad)}(k, pad, stride)
 end
 
@@ -266,8 +329,8 @@ end
 
 function Base.show(io::IO, m::MeanPool)
     print(io, "MeanPool(", m.k)
-    all(==(0), m.pad) || print(io, ", pad=", __tuple_string(m.pad))
-    m.stride == m.k || print(io, ", stride=", __tuple_string(m.stride))
+    all(==(0), m.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(m.pad))
+    m.stride == m.k || print(io, ", stride=", PrettyPrinting.tuple_string(m.stride))
     return print(io, ")")
 end
 
@@ -301,6 +364,8 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
   - `:nearest` -> `NNlib.upsample_nearest`
   - `:bilinear` -> `NNlib.upsample_bilinear`
   - `:trilinear` -> `NNlib.upsample_trilinear`
+
+# Extended Help
 
 ## Inputs
 
@@ -548,6 +613,8 @@ number of observations in a batch.
     a faster version. The new activation function will be given by
     `NNlib.fast_act(activation)`
 
+# Extended Help
+
 ## Inputs
 
   - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e.
@@ -584,9 +651,9 @@ function CrossCor(
         k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
         init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
         use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
-    stride = _expand(Val(N), stride)
-    dilation = _expand(Val(N), dilation)
-    pad = _calc_padding(pad, k, dilation, stride)
+    stride = Utils.expand(Val(N), stride)
+    dilation = Utils.expand(Val(N), dilation)
+    pad = calc_padding(pad, k, dilation, stride)
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
     return CrossCor{N, use_bias, length(pad)}(
@@ -594,7 +661,7 @@ function CrossCor(
 end
 
 function initialparameters(rng::AbstractRNG, c::CrossCor{N, use_bias}) where {N, use_bias}
-    weight = _convfilter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight)
+    weight = init_conv_filter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight)
     !use_bias && return (; weight)
     return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
 end
@@ -622,9 +689,10 @@ end
 
 function _print_crosscor_opt(io::IO, l::CrossCor{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
-    all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
+    all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
+    all(==(1), l.dilation) ||
+        print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (use_bias == false) && print(io, ", use_bias=false")
     return nothing
 end
@@ -671,6 +739,8 @@ Standard convolutional transpose layer.
     a faster version. The new activation function will be given by
     `NNlib.fast_act(activation)`
 
+# Extended Help
+
 ## Inputs
 
   - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e.
@@ -703,12 +773,12 @@ function ConvTranspose(
         k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
         init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
         use_bias::Bool=true, groups=1, allow_fast_activation::Bool=true) where {N}
-    stride = _expand(Val(N), stride)
-    dilation = _expand(Val(N), dilation)
+    stride = Utils.expand(Val(N), stride)
+    dilation = Utils.expand(Val(N), dilation)
     pad = if pad isa SamePad
-        _calc_padding(pad, k .- stride .+ 1, dilation, stride)
+        calc_padding(pad, k .- stride .+ 1, dilation, stride)
     else
-        _calc_padding(pad, k, dilation, stride)
+        calc_padding(pad, k, dilation, stride)
     end
     activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
 
@@ -719,7 +789,7 @@ end
 
 function initialparameters(
         rng::AbstractRNG, c::ConvTranspose{N, use_bias}) where {N, use_bias}
-    weight = _convfilter(
+    weight = init_conv_filter(
         rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
     !use_bias && return (; weight)
     return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
@@ -732,10 +802,9 @@ end
 
 @inline function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
     y = match_eltype(c, ps, st, x)
-    cdims = _conv_transpose_dims(
-        y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     return (
-        bias_activation!!(c.activation, _conv_transpose(y, ps.weight, cdims),
+        bias_activation!!(c.activation, conv_transpose(y, ps.weight, cdims),
             Utils.vec(LuxOps.getproperty(ps, Val(:bias)))),
         st)
 end
@@ -749,9 +818,10 @@ end
 
 function _print_convtranspose_opt(io::IO, l::ConvTranspose{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", __tuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", __tuple_string(l.stride))
-    all(==(1), l.dilation) || print(io, ", dilation=", __tuple_string(l.dilation))
+    all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
+    all(==(1), l.dilation) ||
+        print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
     (use_bias == false) && print(io, ", use_bias=false")
     return nothing
