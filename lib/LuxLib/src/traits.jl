@@ -64,12 +64,23 @@ end
 module System
 
 using ChainRulesCore: ChainRulesCore
+using CpuId: CpuId
 using Hwloc: Hwloc
 using Static: False
 
 using ..Utils
 
 const CRC = ChainRulesCore
+
+# Technically Octavian works fine on non-server AMD CPUs, but for safety we disable it
+# on non Intel CPUs.
+const INTEL_HARDWARE = try
+    lowercase(string(CpuId.cpuvendor())) == "intel"
+catch
+    @warn "Could not detect cpu vendor via CpuId.jl, assuming not Intel. Open an issue in \
+           `LuxLib.jl` if this is unexpected."
+    false
+end
 
 function explicit_blas_loaded()
     return Utils.is_extension_loaded(Val(:MKL)) |
@@ -80,7 +91,7 @@ end
 CRC.@non_differentiable explicit_blas_loaded()
 
 function use_octavian()
-    @static if Sys.ARCH == :x86_64  # Mostly from benchmarking we reach this point
+    @static if Sys.ARCH == :x86_64 && !INTEL_HARDWARE
         return !explicit_blas_loaded()
     else
         return False()
