@@ -7,7 +7,7 @@ common cases.
 
 Any leaves of `x` that are arrays and allow in-place addition will be modified in place.
 """
-recursive_add!!(x, y) = recursive_map(__add!!, x, y)
+recursive_add!!(x, y) = recursive_map(Utils.add!!, x, y)
 
 """
     recursive_eltype(x, unwrap_ad_types = Val(false))
@@ -49,7 +49,7 @@ Recursively create a zero value for a nested structure `x`. This is equivalent t
 
 See also [`Lux.recursive_make_zero!!`](@ref).
 """
-recursive_make_zero(x) = recursive_map(__zero, x)
+recursive_make_zero(x) = recursive_map(Utils.zero, x)
 
 """
     recursive_make_zero!!(x)
@@ -59,7 +59,7 @@ in-place zeroing will be modified in place.
 
 See also [`Lux.recursive_make_zero`](@ref) for fully out-of-place version.
 """
-recursive_make_zero!!(x) = recursive_map(__zero!!, x)
+recursive_make_zero!!(x) = recursive_map(Utils.zero!!, x)
 
 """
     recursive_copyto!(x, y)
