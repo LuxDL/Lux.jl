@@ -111,7 +111,8 @@ Flattens the passed array into a matrix.
 ## Arguments
 
   - `N`: Flatten the first `N` dimensions of the input array. If `nothing`, then all
-    dimensions (except) are flattened. Note that the batch dimension is never flattened.
+    dimensions (except the last) are flattened. Note that the batch dimension is never
+    flattened.
 
 ## Inputs
 
@@ -119,7 +120,8 @@ Flattens the passed array into a matrix.
 
 ## Returns
 
-  - AbstractMatrix of size `(:, size(x, ndims(x)))`
+  - AbstractMatrix of size `(:, size(x, ndims(x)))` if `N` is `nothing` else the first
+    `N` dimensions of the input array are flattened.
   - Empty `NamedTuple()`
 
 ## Example
