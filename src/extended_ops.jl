@@ -99,19 +99,17 @@ GPUArray.
 Additional dispatches for RNN helpers are also provided for `TimeLastIndex` and
 `BatchLastIndex`.
 """
-function eachslice(x::AbstractArray, ::Val{dims}) where {dims <: Integer}
+function eachslice(x::AbstractArray, ::Val{dims}) where {dims}
     return eachslice(get_device_type(x), x, dims)
 end
-function eachslice(
-        ::Type{<:AbstractGPUDevice}, x::AbstractArray, ::Val{dims}) where {dims <: Integer}
+function eachslice(::Type{<:AbstractGPUDevice}, x::AbstractArray, ::Val{dims}) where {dims}
     return [Utils.contiguous(selectdim(x, dims, i)) for i in axes(x, dims)]
 end
-function eachslice(
-        ::Type{<:AbstractDevice}, x::AbstractArray, ::Val{dims}) where {dims <: Integer}
+function eachslice(::Type{<:AbstractDevice}, x::AbstractArray, ::Val{dims}) where {dims}
     return [selectdim(x, dims, i) for i in axes(x, dims)]
 end
 
-function ∇eachslice(Δ′, x::AbstractArray, ::Val{dims}) where {dims <: Integer}
+function ∇eachslice(Δ′, x::AbstractArray, ::Val{dims}) where {dims}
     Δs = CRC.unthunk(Δ′)
     idx = findfirst(Base.Fix2(isa, AbstractArray), Δs)
     idx === nothing && return zero.(x)
@@ -123,8 +121,7 @@ function ∇eachslice(Δ′, x::AbstractArray, ::Val{dims}) where {dims <: Integ
     return CRC.ProjectTo(x)(Δ)
 end
 
-function CRC.rrule(
-        ::typeof(eachslice), x::AbstractArray, d::Val{dims}) where {dims <: Integer}
+function CRC.rrule(::typeof(eachslice), x::AbstractArray, d::Val{dims}) where {dims}
     ∇eachslice_internal = @closure Δ -> (NoTangent(), ∇eachslice(Δ, x, d), NoTangent())
     return eachslice(x, d), ∇eachslice_internal
 end

@@ -68,16 +68,13 @@ include("layers/extension.jl")
 include("helpers/eltype_conversion.jl")
 include("helpers/stateful.jl")
 include("helpers/compact.jl")
-include("helpers/autodiff.jl")
-include("helpers/nested_ad.jl")
 include("helpers/losses.jl")
 include("helpers/recursive_ops.jl")
 include("helpers/match_eltype.jl")
 
-# ForwardDiff.jl Integration
-include("forwarddiff/jvp.jl")
-include("forwarddiff/nested_ad.jl")
-include("forwarddiff/batched_ad.jl")
+# AutoDiff
+include("autodiff/api.jl")
+include("autodiff/autodiff.jl")
 
 # Transform to and from other frameworks
 include("transform/types.jl")
