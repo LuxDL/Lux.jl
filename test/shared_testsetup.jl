@@ -7,6 +7,7 @@ import Reexport: @reexport
 using Lux, Functors
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
+using MLDataDevices: default_device_rng
 using LuxTestUtils: check_approx
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
