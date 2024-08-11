@@ -18,9 +18,7 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
       + A 2-argument function that takes `layer(input)` and the input OR
       + An AbstractExplicitLayer that takes `(layer(input), input)` as input
 
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
+# Extended Help
 
 ## Inputs
 
@@ -102,9 +100,7 @@ with `connection`.
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
+# Extended Help
 
 ## Inputs
 
@@ -206,9 +202,7 @@ outputs.
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
+# Extended Help
 
 ## Inputs
 
@@ -304,9 +298,7 @@ x1 → layer1 → y1 ↘
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
-## Keyword Arguments
-
-  - `name`: Name of the layer (optional)
+# Extended Help
 
 ## Inputs
 
@@ -405,6 +397,8 @@ Collects multiple layers / functions to be called in sequence on a given input.
   - `disable_optimizations`: Prevents any structural optimization
   - `name`: Name of the layer (optional)
 
+# Extended Help
+
 ## Inputs
 
 Input `x` is passed sequentially to each layer, and must conform to the input requirements
@@ -462,7 +456,7 @@ Chain(
 end
 
 function Chain(xs...; name::NAME_TYPE=nothing, disable_optimizations::Bool=false)
-    xs = disable_optimizations ? xs : _flatten_model(xs)
+    xs = disable_optimizations ? xs : flatten_lux_chain(xs)
     length(xs) == 0 && return NoOpLayer()
     length(xs) == 1 && return first(xs)
     return Chain(__named_tuple_layers(xs...), name)
@@ -481,10 +475,10 @@ function Chain(; disable_optimizations::Bool=true, name::NAME_TYPE=nothing, kwar
     return Chain((; kwargs...); disable_optimizations, name)
 end
 
-function _flatten_model(layers::Union{AbstractVector, Tuple})
+function flatten_lux_chain(layers::Union{AbstractVector, Tuple})
     new_layers = []
     for l in layers
-        f = _flatten_model(l)
+        f = flatten_lux_chain(l)
         if f isa Tuple || f isa AbstractVector
             append!(new_layers, f)
         elseif f isa Function
@@ -505,7 +499,7 @@ function _flatten_model(layers::Union{AbstractVector, Tuple})
     return layers isa AbstractVector ? new_layers : Tuple(new_layers)
 end
 
-_flatten_model(x) = x
+flatten_lux_chain(x) = x
 
 (c::Chain)(x, ps, st::NamedTuple) = applychain(c.layers, x, ps, st)
 
@@ -525,7 +519,7 @@ end
 Base.keys(c::Chain) = Base.keys(getfield(c, :layers))
 
 Base.getindex(c::Chain, i::Int) = c.layers[i]
-Base.getindex(c::Chain, i::AbstractArray) = Chain(_index_namedtuple(c.layers, i))
+Base.getindex(c::Chain, i::AbstractArray) = Chain(Utils.index_namedtuple(c.layers, i))
 
 function Base.getproperty(c::Chain, name::Symbol)
     hasfield(typeof(c), name) && return getfield(c, name)
@@ -560,6 +554,8 @@ See also [`Parallel`](@ref) to reduce with other operators.
       + Specified as `N` keyword arguments.
       + A no argument function `f` and an integer `n_alts` which specifies the number of
         layers.
+
+# Extended Help
 
 ## Inputs
 
@@ -649,6 +645,8 @@ times for gradients might be unreasonably high.
   - `repeats`: Number of times to apply the model
   - `input_injection`: If `true`, then the input is passed to the model along with the
     output
+
+# Extended Help
 
 ## Inputs
 
