@@ -1,0 +1,63 @@
+name: Benchmarks
+permissions:
+  contents: write # contents permission to update benchmark contents in gh-pages branch
+  statuses: read
+  deployments: write # deployments permission to deploy GitHub pages website
+  pull-requests: write
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/**/*"
+      - "ext/**/*"
+      - "benchmarks/**/*"
+      - ".buildkite/**/*"
+      - "Project.toml"
+      - ".github/workflows/Benchmark.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**/*"
+      - "ext/**/*"
+      - "benchmarks/**/*"
+      - ".buildkite/**/*"
+      - "Project.toml"
+      - ".github/workflows/Benchmark.yml"
+
+jobs:
+  benchmark:
+    if: ${{ !contains(github.event.head_commit.message, '[skip benchmarks]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Buildkite Artifacts
+        id: download
+        uses: EnricoMi/download-buildkite-artifact-action@v1
+        with:
+          buildkite_token: ${{ secrets.BUILDKITE_TOKEN }}
+          ignore_build_states: blocked,canceled,skipped,not_run,failed
+          ignore_job_states: timed_out,failed
+          output_path: artifacts
+
+      - name: Locate Benchmarks Artifact
+        id: locate
+        if: ${{ steps.download.outputs.download-state == 'success' }}
+        run: echo "path=$(find artifacts -type f -name combinedbenchmarks.json 2>/dev/null)" >> $GITHUB_OUTPUT
+
+      - name: Upload Benchmark Results
+        if: ${{ steps.locate.outputs.path != '' }}
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: LuxLib Benchmarks
+          tool: "julia"
+          output-file-path: ${{ steps.locate.outputs.path }}
+          benchmark-data-dir-path: "benchmarks"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          comment-always: true
+          summary-always: true
+          alert-threshold: "150%"
+          fail-on-alert: false
+          auto-push: ${{ github.event_name != 'pull_request' }}

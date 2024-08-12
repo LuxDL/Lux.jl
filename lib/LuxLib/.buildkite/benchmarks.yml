@@ -1,0 +1,149 @@
+steps:
+  - group: ":racehorse: Benchmarks"
+    steps:
+      - label: "CPU: Run Benchmarks with {{matrix.threads}} thread(s)"
+        matrix:
+          setup:
+            threads:
+              - "1"
+              - "2"
+              - "4"
+              - "8"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          arch: "aarch64"  # these ones tend to be more free
+          queue: "juliaecosystem"
+        env:
+          BENCHMARK_GROUP: CPU
+          JULIA_NUM_THREADS: "{{matrix.threads}}"
+        timeout_in_minutes: 120
+
+      - label: "AMDGPU: Run Benchmarks"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Add AMDGPU to benchmarks environment")
+              using Pkg
+              Pkg.add("AMDGPU")'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "juliagpu"
+          rocm: "*"
+        env:
+          BENCHMARK_GROUP: AMDGPU
+        timeout_in_minutes: 120
+
+      - label: "CUDA: Run Benchmarks"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Add CUDA to benchmarks environment")
+              using Pkg
+              Pkg.add("LuxCUDA")'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "benchmark"
+          gpu: "rtx2070"
+          cuda: "*"
+        env:
+          BENCHMARK_GROUP: CUDA
+        timeout_in_minutes: 120
+
+      - label: "Metal: Run Benchmarks"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Add Metal to benchmarks environment")
+              using Pkg
+              Pkg.add("Metal")'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "juliaecosystem"
+          os: "macos"
+          arch: "aarch64"
+        env:
+          BENCHMARK_GROUP: Metal
+        timeout_in_minutes: 120
+
+      - label: "oneAPI: Run Benchmarks"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.develop([PackageSpec(path=pwd())])'
+
+          julia --project=benchmarks -e 'println("--- :julia: Add oneAPI to benchmarks environment")
+              using Pkg
+              Pkg.add("oneAPI")'
+
+          julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
+              include("benchmarks/runbenchmarks.jl")'
+        artifact_paths:
+          - "benchmarks/results/*"
+        agents:
+          queue: "juliagpu"
+          intel: "*"
+        env:
+          BENCHMARK_GROUP: oneAPI
+        timeout_in_minutes: 120
+
+      - wait: ~
+
+      - label: "Combine benchmarks"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+        command: |
+          buildkite-agent artifact download "benchmarks/results/*" .
+
+          julia -e 'println("--- :julia: Instantiating project")
+              using Pkg
+              Pkg.add("BenchmarkTools")
+
+              println("--- :julia: Combining Benchmarks")
+              include("benchmarks/aggregate.jl")'
+        artifact_paths:
+          - "benchmarks/results/combinedbenchmarks.json"
+        agents:
+          queue: "juliagpu"
+        timeout_in_minutes: 10
