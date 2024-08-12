@@ -59,6 +59,13 @@ function activation_has_rrule(::F, ::Type{T}) where {F, T}
         Utils.only_derivative, Tuple{T, F, T})))
 end
 
+# Which activations can be fused into a single kernel
+for act in (
+    :identity, :(NNlib.relu), :tanh, :(NNlib.sigmoid), :abs, :abs2, :(NNlib.tanh_fast))
+    @eval fuse_cpu_activation(::typeof($act)) = True()
+end
+fuse_cpu_activation(::F) where {F} = False()
+
 end
 
 module System

@@ -159,7 +159,7 @@ using EnzymeCore: EnzymeCore, EnzymeRules
 using NNlib: NNlib
 using SLEEFPirates: SLEEFPirates
 
-using ....LuxLib: Numeric
+using ....LuxLib: Numeric, Traits
 
 const CRC = ChainRulesCore
 
@@ -252,5 +252,9 @@ end
 fast_act(f::F) where {F} = f
 
 CRC.@non_differentiable fast_act(::Any...)
+
+for act in (:sigmoid_fast, :swish, :lisht, :tanh_fast, :tanh)
+    @eval Traits.fuse_cpu_activation(::typeof($act)) = True()
+end
 
 end
