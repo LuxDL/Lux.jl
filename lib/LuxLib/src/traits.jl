@@ -64,7 +64,6 @@ end
 module System
 
 using ChainRulesCore: ChainRulesCore
-using CpuId: CpuId
 using Hwloc: Hwloc
 using Static: False
 
@@ -74,19 +73,29 @@ const CRC = ChainRulesCore
 
 # Technically Octavian works fine on non-server AMD CPUs, but for safety we disable it
 # on non Intel CPUs.
-const INTEL_HARDWARE = try
-    lowercase(string(CpuId.cpuvendor())) == "intel"
-catch
-    @warn "Could not detect cpu vendor via CpuId.jl, assuming not Intel. Open an issue in \
-           `LuxLib.jl` if this is unexpected."
+const INTEL_HARDWARE = @static if Sys.ARCH === :x86_64 || Sys.ARCH === :i686
+    try
+        using CpuId: CpuId
+        lowercase(string(CpuId.cpuvendor())) == "intel"
+    catch
+        @warn "Could not detect cpu vendor via CpuId.jl, assuming not Intel. Open an \
+               issue in `LuxLib.jl` if this is unexpected."
+        false
+    end
+else
     false
 end
 
-const AMD_RYZEN_HARDWARE = try
-    occursin("ryzen", lowercase(string(CpuId.cpubrand())))
-catch
-    @warn "Could not detect cpu brand via CpuId.jl, assuming not Ryzen. Open an issue in \
-           `LuxLib.jl` if this is unexpected."
+const AMD_RYZEN_HARDWARE = @static if Sys.ARCH === :x86_64 || Sys.ARCH === :i686
+    try
+        using CpuId: CpuId
+        occursin("ryzen", lowercase(string(CpuId.cpubrand())))
+    catch
+        @warn "Could not detect cpu brand via CpuId.jl, assuming not Ryzen. Open an issue \
+               in `LuxLib.jl` if this is unexpected."
+        false
+    end
+else
     false
 end
 
