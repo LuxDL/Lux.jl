@@ -17,9 +17,18 @@ function bias_activation(
 end
 
 ## General Implementation
+function bias_activation(::GenericBroadcastOp, ::typeof(identity),
+        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+    return x .+ reshape_bias(x, bias)
+end
+function bias_activation(::GenericBroadcastOp, σ::F, x::AbstractArray{<:Number, N},
+        bias::AbstractVector{<:Number}) where {F, N}
+    return σ.(x .+ reshape_bias(x, bias))
+end
+
 function bias_activation(::AbstractInternalArrayOpMode, ::typeof(identity),
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
-    return broadcast(+, x, reshape_bias(x, bias))
+    return x .+ reshape_bias(x, bias)
 end
 function bias_activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}

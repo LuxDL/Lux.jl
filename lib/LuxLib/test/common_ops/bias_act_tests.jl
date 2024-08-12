@@ -68,3 +68,23 @@
         end
     end
 end
+
+@testitem "Bias Activation (ReverseDiff)" tags=[:other_ops] setup=[SharedTestSetup] begin
+    using ReverseDiff, Tracker
+
+    x = rand(Float32, 3, 4)
+    b = rand(Float32, 3)
+    act = tanh
+
+    z = bias_activation(act, ReverseDiff.track(x), b)
+    @test z isa ReverseDiff.TrackedArray  # If this fails then we fail to compile the tape
+
+    z = bias_activation(identity, ReverseDiff.track(x), b)
+    @test z isa ReverseDiff.TrackedArray
+
+    z = bias_activation(act, Tracker.param(x), b)
+    @test z isa Tracker.TrackedArray
+
+    z = bias_activation(identity, Tracker.param(x), b)
+    @test z isa Tracker.TrackedArray
+end
