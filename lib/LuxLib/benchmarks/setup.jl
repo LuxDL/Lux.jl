@@ -32,15 +32,15 @@ function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threa
 
     setup_dense_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
-    setup_bias_activation_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+    # setup_bias_activation_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
-    setup_batchnorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+    # setup_batchnorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
-    setup_layernorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+    # setup_layernorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
-    setup_groupnorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+    # setup_groupnorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
-    setup_batched_matmul_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+    # setup_batched_matmul_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 end
 
 # Dense
