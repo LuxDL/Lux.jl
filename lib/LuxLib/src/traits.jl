@@ -65,7 +65,7 @@ module System
 
 using ChainRulesCore: ChainRulesCore
 using Hwloc: Hwloc
-using Static: False
+using Static: static, False, True
 
 using ..Utils
 
@@ -76,28 +76,38 @@ const CRC = ChainRulesCore
 const INTEL_HARDWARE = @static if Sys.ARCH === :x86_64 || Sys.ARCH === :i686
     try
         using CpuId: CpuId
-        lowercase(string(CpuId.cpuvendor())) == "intel"
+        static(lowercase(string(CpuId.cpuvendor())) == "intel")
     catch
         @warn "Could not detect cpu vendor via CpuId.jl, assuming not Intel. Open an \
                issue in `LuxLib.jl` if this is unexpected."
-        false
+        False()
     end
 else
-    false
+    False()
 end
 
 const AMD_RYZEN_HARDWARE = @static if Sys.ARCH === :x86_64 || Sys.ARCH === :i686
     try
         using CpuId: CpuId
-        occursin("ryzen", lowercase(string(CpuId.cpubrand())))
+        static(occursin("ryzen", lowercase(string(CpuId.cpubrand()))))
     catch
         @warn "Could not detect cpu brand via CpuId.jl, assuming not Ryzen. Open an issue \
                in `LuxLib.jl` if this is unexpected."
-        false
+        False()
     end
 else
-    false
+    False()
 end
+
+function is_x86_64()
+    @static if Sys.ARCH === :x86_64
+        return True()
+    else
+        return False()
+    end
+end
+
+CRC.@non_differentiable is_x86_64()
 
 function explicit_blas_loaded()
     return Utils.is_extension_loaded(Val(:MKL)) |
@@ -107,19 +117,13 @@ end
 
 CRC.@non_differentiable explicit_blas_loaded()
 
-function use_octavian()
-    @static if Sys.ARCH == :x86_64 && (!INTEL_HARDWARE || AMD_RYZEN_HARDWARE)
-        return !explicit_blas_loaded()
-    else
-        return False()
-    end
-end
+use_octavian() = is_x86_64() & (INTEL_HARDWARE | AMD_RYZEN_HARDWARE)
 
 CRC.@non_differentiable use_octavian()
 
-const L1CacheSize::Int = minimum(Hwloc.l1cache_sizes(); init=0)
-const L2CacheSize::Int = minimum(Hwloc.l2cache_sizes(); init=0)
-const L3CacheSize::Int = minimum(Hwloc.l3cache_sizes(); init=0)
+const L1CacheSize::Int = Utils.safe_minimum(Hwloc.l1cache_sizes(), 0)
+const L2CacheSize::Int = Utils.safe_minimum(Hwloc.l2cache_sizes(), 0)
+const L3CacheSize::Int = Utils.safe_minimum(Hwloc.l3cache_sizes(), 0)
 
 # NOTE: some systems might not have L3 cache, so we check whether it fits in L(N - 1) cache
 fits_in_l1cache(xs::AbstractArray...) = sum(sizeof, xs) ≤ L1CacheSize

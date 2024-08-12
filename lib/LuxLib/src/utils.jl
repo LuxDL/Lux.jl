@@ -188,6 +188,13 @@ end
 
 CRC.@non_differentiable safe_warning(::Any...)
 
+function safe_minimum(x::AbstractArray, default)
+    length(x) == 0 && return default
+    return minimum(x)
+end
+
+CRC.@non_differentiable safe_minimum(::Any...)
+
 # Switches function `foo` with function `bar`. To be used when Enzyme cannot differentiate
 # through `foo` but supports `bar`. Use with caution, avoid multiple dispatch on `foo`.
 # Also the function should always return `nothing`
