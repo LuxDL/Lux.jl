@@ -1,4 +1,5 @@
 using MLDataDevices, StableRNGs, Random
+using Zygote
 
 synchronize(::CPUDevice) = nothing
 synchronize(::AMDGPUDevice) = AMDGPU.synchronize()
@@ -14,6 +15,9 @@ function benchmark_group_to_backend(benchmark_group::String)
     benchmark_group == "oneAPI" && return oneAPIDevice()
     error("Unknown backend: $(benchmark_group)")
 end
+
+sumabs2(f::F, args...) where {F} = sum(abs2, f(args...))
+sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
 
 function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threads::Int64)
     dev = benchmark_group_to_backend(backend)
@@ -52,6 +56,14 @@ function setup_dense_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         end setup=begin
             x, w, b = dense_setup($N, $bias, $dev)
         end
+
+        suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
+            Zygote.gradient(sumabs2, fused_dense_bias_activation, $activation, w, x, b)
+            synchronize($dev)
+        end setup=begin
+            x, w, b = dense_setup($N, $bias, $dev)
+            Zygote.gradient(sumabs2, fused_dense_bias_activation, $activation, w, x, b)
+        end
     end
 end
 
@@ -73,17 +85,25 @@ function setup_bias_activation_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::St
         end setup=begin
             x, b = bias_activation_setup($N, $dev)
         end
+
+        suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
+            Zygote.gradient(sumabs2, bias_activation, $activation, x, b)
+            synchronize($dev)
+        end setup=begin
+            x, b = bias_activation_setup($N, $dev)
+            Zygote.gradient(sumabs2, bias_activation, $activation, x, b)
+        end
     end
 end
 
 # BatchNorm
-function batchnorm_setup(ndims::Int, affine::Bool, dev::MLDataDevices.AbstractDevice)
+function batchnorm_setup(shape::Dims, affine::Bool, dev::MLDataDevices.AbstractDevice)
     rng = StableRNG(123)
-    x = randn(rng, Float32, ndims - 2, 4, 32) |> dev
-    scale = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
-    bias = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
-    running_mean = rand(rng, Float32, ndims - 2, 1) |> dev
-    running_var = rand(rng, Float32, ndims - 2, 1) |> dev
+    x = randn(rng, Float32, shape...) |> dev
+    scale = (affine ? randn(rng, Float32, shape[end - 1]) : nothing) |> dev
+    bias = (affine ? randn(rng, Float32, shape[end - 1]) : nothing) |> dev
+    running_mean = rand(rng, Float32, shape[end - 1]) |> dev
+    running_var = rand(rng, Float32, shape[end - 1]) |> dev
     return x, scale, bias, running_mean, running_var
 end
 
@@ -102,18 +122,29 @@ function setup_batchnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 synchronize($dev)
             end setup=begin
                 x, scale, bias, running_mean, running_var = batchnorm_setup(
-                    $ndims, $affine, $dev)
+                    $shape, $affine, $dev)
+            end
+
+            suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
+                Zygote.gradient(sumabs2first, batchnorm, x, scale, bias,
+                    running_mean, running_var, Val(true), $activation)
+                synchronize($dev)
+            end setup=begin
+                x, scale, bias, running_mean, running_var = batchnorm_setup(
+                    $shape, $affine, $dev)
+                Zygote.gradient(sumabs2first, batchnorm, x, scale, bias,
+                    running_mean, running_var, Val(true), $activation)
             end
         end
     end
 end
 
 # LayerNorm
-function layernorm_setup(ndims::Int, affine::Bool, dev::MLDataDevices.AbstractDevice)
+function layernorm_setup(shape::Dims, affine::Bool, dev::MLDataDevices.AbstractDevice)
     rng = StableRNG(123)
-    x = randn(rng, Float32, ndims - 2, 4, 32) |> dev
-    scale = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
-    bias = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    x = randn(rng, Float32, shape...) |> dev
+    scale = (affine ? randn(rng, Float32, shape[1:(end - 1)]..., 1) : nothing) |> dev
+    bias = (affine ? randn(rng, Float32, shape[1:(end - 1)]..., 1) : nothing) |> dev
     return x, scale, bias
 end
 
@@ -130,18 +161,28 @@ function setup_layernorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 layernorm(x, scale, bias, $activation, 1:($ndims - 1))
                 synchronize($dev)
             end setup=begin
-                x, scale, bias = layernorm_setup($ndims, $affine, $dev)
+                x, scale, bias = layernorm_setup($shape, $affine, $dev)
+            end
+
+            suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
+                Zygote.gradient(
+                    sumabs2, layernorm, x, scale, bias, $activation, 1:($ndims - 1))
+                synchronize($dev)
+            end setup=begin
+                x, scale, bias = layernorm_setup($shape, $affine, $dev)
+                Zygote.gradient(
+                    sumabs2, layernorm, x, scale, bias, $activation, 1:($ndims - 1))
             end
         end
     end
 end
 
 # GroupNorm
-function groupnorm_setup(ndims::Int, affine::Bool, dev::MLDataDevices.AbstractDevice)
+function groupnorm_setup(shape::Dims, affine::Bool, dev::MLDataDevices.AbstractDevice)
     rng = StableRNG(123)
-    x = randn(rng, Float32, ndims - 2, 4, 32) |> dev
-    scale = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
-    bias = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    x = randn(rng, Float32, shape...) |> dev
+    scale = (affine ? randn(rng, Float32, shape[end - 1]) : nothing) |> dev
+    bias = (affine ? randn(rng, Float32, shape[end - 1]) : nothing) |> dev
     return x, scale, bias
 end
 
@@ -158,7 +199,15 @@ function setup_groupnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 groupnorm(x, scale, bias, 4, $activation)
                 synchronize($dev)
             end setup=begin
-                x, scale, bias = groupnorm_setup($ndims, $affine, $dev)
+                x, scale, bias = groupnorm_setup($shape, $affine, $dev)
+            end
+
+            suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
+                Zygote.gradient(sumabs2, groupnorm, x, scale, bias, 4, $activation)
+                synchronize($dev)
+            end setup=begin
+                x, scale, bias = groupnorm_setup($shape, $affine, $dev)
+                Zygote.gradient(sumabs2, groupnorm, x, scale, bias, 4, $activation)
             end
         end
     end
@@ -186,6 +235,14 @@ function setup_batched_matmul_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::Str
             synchronize($dev)
         end setup=begin
             x = batchedmm_setup($N, $Bsize, $dev)
+        end
+
+        suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
+            Zygote.gradient(sumabs2, batched_matmul, x, x)
+            synchronize($dev)
+        end setup=begin
+            x = batchedmm_setup($N, $Bsize, $dev)
+            Zygote.gradient(sumabs2, batched_matmul, x, x)
         end
     end
 end
