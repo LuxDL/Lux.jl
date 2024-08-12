@@ -7,6 +7,12 @@ synchronize(::CUDADevice) = CUDA.synchronize()
 synchronize(::MetalDevice) = Metal.synchronize()
 synchronize(::oneAPIDevice) = oneAPI.synchronize()
 
+reclaim(::CPUDevice) = GC.gc()
+reclaim(::AMDGPUDevice) = AMDGPU.HIP.reclaim()
+reclaim(::CUDADevice) = CUDA.reclaim()
+reclaim(::MetalDevice) = nothing  # Metal.reclaim()
+reclaim(::oneAPIDevice) = nothing # oneAPI.reclaim()
+
 function benchmark_group_to_backend(benchmark_group::String)
     benchmark_group == "CPU" && return CPUDevice()
     benchmark_group == "AMDGPU" && return AMDGPUDevice()
@@ -83,6 +89,7 @@ function setup_bias_activation_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::St
             bias_activation($activation, x, b)
             synchronize($dev)
         end setup=begin
+            reclaim($dev)
             x, b = bias_activation_setup($N, $dev)
         end
 
@@ -90,6 +97,7 @@ function setup_bias_activation_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::St
             Zygote.gradient(sumabs2, bias_activation, $activation, x, b)
             synchronize($dev)
         end setup=begin
+            reclaim($dev)
             x, b = bias_activation_setup($N, $dev)
             Zygote.gradient(sumabs2, bias_activation, $activation, x, b)
         end
@@ -130,6 +138,7 @@ function setup_batchnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                     running_mean, running_var, Val(true), $activation)
                 synchronize($dev)
             end setup=begin
+                reclaim($dev)
                 x, scale, bias, running_mean, running_var = batchnorm_setup(
                     $shape, $affine, $dev)
                 Zygote.gradient(sumabs2first, batchnorm, x, scale, bias,
@@ -161,6 +170,7 @@ function setup_layernorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 layernorm(x, scale, bias, $activation, 1:($ndims - 1))
                 synchronize($dev)
             end setup=begin
+                reclaim($dev)
                 x, scale, bias = layernorm_setup($shape, $affine, $dev)
             end
 
@@ -169,6 +179,7 @@ function setup_layernorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                     sumabs2, layernorm, x, scale, bias, $activation, 1:($ndims - 1))
                 synchronize($dev)
             end setup=begin
+                reclaim($dev)
                 x, scale, bias = layernorm_setup($shape, $affine, $dev)
                 Zygote.gradient(
                     sumabs2, layernorm, x, scale, bias, $activation, 1:($ndims - 1))
@@ -199,6 +210,7 @@ function setup_groupnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 groupnorm(x, scale, bias, 4, $activation)
                 synchronize($dev)
             end setup=begin
+                reclaim($dev)
                 x, scale, bias = groupnorm_setup($shape, $affine, $dev)
             end
 
@@ -206,6 +218,7 @@ function setup_groupnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 Zygote.gradient(sumabs2, groupnorm, x, scale, bias, 4, $activation)
                 synchronize($dev)
             end setup=begin
+                reclaim($dev)
                 x, scale, bias = groupnorm_setup($shape, $affine, $dev)
                 Zygote.gradient(sumabs2, groupnorm, x, scale, bias, 4, $activation)
             end
@@ -234,6 +247,7 @@ function setup_batched_matmul_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::Str
             batched_matmul(x, x)
             synchronize($dev)
         end setup=begin
+            reclaim($dev)
             x = batchedmm_setup($N, $Bsize, $dev)
         end
 
@@ -241,6 +255,7 @@ function setup_batched_matmul_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::Str
             Zygote.gradient(sumabs2, batched_matmul, x, x)
             synchronize($dev)
         end setup=begin
+            reclaim($dev)
             x = batchedmm_setup($N, $Bsize, $dev)
             Zygote.gradient(sumabs2, batched_matmul, x, x)
         end
