@@ -34,6 +34,14 @@ function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threa
 end
 
 # Dense
+function dense_setup(N::Int, bias::Bool, dev::MLDataDevices.AbstractDevice)
+    rng = StableRNG(123)
+    x = randn(rng, Float32, N, 128) |> dev
+    w = randn(rng, Float32, N, N) |> dev
+    b = (bias ? randn(rng, Float32, N) : nothing) |> dev
+    return x, w, b
+end
+
 function setup_dense_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
     for bias in [true, false], activation in [identity, relu, gelu], N in [2, 32, 512]
@@ -42,15 +50,19 @@ function setup_dense_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
             fused_dense_bias_activation($activation, w, x, b)
             synchronize($dev)
         end setup=begin
-            rng = StableRNG(123)
-            x = randn(rng, Float32, $N, 128) |> $(dev)
-            w = randn(rng, Float32, $N, $N) |> $(dev)
-            b = ($bias ? randn(rng, Float32, $N) : nothing) |> $(dev)
+            x, w, b = dense_setup($N, $bias, $dev)
         end
     end
 end
 
 # Bias Activation
+function bias_activation_setup(N::Int, dev::MLDataDevices.AbstractDevice)
+    rng = StableRNG(123)
+    x = randn(rng, Float32, N, 128) |> dev
+    b = randn(rng, Float32, N) |> dev
+    return x, b
+end
+
 function setup_bias_activation_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
     for activation in [tanh, relu, gelu], N in [2, 32, 512]
@@ -59,14 +71,22 @@ function setup_bias_activation_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::St
             bias_activation($activation, x, b)
             synchronize($dev)
         end setup=begin
-            rng = StableRNG(123)
-            x = randn(rng, Float32, $N, 128) |> $(dev)
-            b = randn(rng, Float32, $N) |> $(dev)
+            x, b = bias_activation_setup($N, $dev)
         end
     end
 end
 
 # BatchNorm
+function batchnorm_setup(ndims::Int, affine::Bool, dev::MLDataDevices.AbstractDevice)
+    rng = StableRNG(123)
+    x = randn(rng, Float32, ndims - 2, 4, 32) |> dev
+    scale = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    bias = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    running_mean = rand(rng, Float32, ndims - 2, 1) |> dev
+    running_var = rand(rng, Float32, ndims - 2, 1) |> dev
+    return x, scale, bias, running_mean, running_var
+end
+
 function setup_batchnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
     for activation in [identity, relu, gelu], ndims in (2, 4)
@@ -81,18 +101,22 @@ function setup_batchnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                     x, scale, bias, running_mean, running_var, Val(false), $activation)
                 synchronize($dev)
             end setup=begin
-                rng = StableRNG(123)
-                x = randn(rng, Float32, $(shape...)) |> $(dev)
-                scale = $affine ? randn(rng, Float32, $(shape[end - 1])) |> $(dev) : nothing
-                bias = $affine ? randn(rng, Float32, $(shape[end - 1])) |> $(dev) : nothing
-                running_mean = rand(rng, Float32, $(shape[end - 1])) |> $(dev)
-                running_var = rand(rng, Float32, $(shape[end - 1])) |> $(dev)
+                x, scale, bias, running_mean, running_var = batchnorm_setup(
+                    $ndims, $affine, $dev)
             end
         end
     end
 end
 
 # LayerNorm
+function layernorm_setup(ndims::Int, affine::Bool, dev::MLDataDevices.AbstractDevice)
+    rng = StableRNG(123)
+    x = randn(rng, Float32, ndims - 2, 4, 32) |> dev
+    scale = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    bias = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    return x, scale, bias
+end
+
 function setup_layernorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
     for activation in [identity, relu, gelu], ndims in (2, 4)
@@ -106,18 +130,21 @@ function setup_layernorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 layernorm(x, scale, bias, $activation, 1:($ndims - 1))
                 synchronize($dev)
             end setup=begin
-                rng = StableRNG(123)
-                x = randn(rng, Float32, $(shape...)) |> $(dev)
-                scale = $affine ?
-                        randn(rng, Float32, $(shape[1:(end - 1)]..., 1)) |> $(dev) : nothing
-                bias = $affine ?
-                       randn(rng, Float32, $(shape[1:(end - 1)]..., 1)) |> $(dev) : nothing
+                x, scale, bias = layernorm_setup($ndims, $affine, $dev)
             end
         end
     end
 end
 
 # GroupNorm
+function groupnorm_setup(ndims::Int, affine::Bool, dev::MLDataDevices.AbstractDevice)
+    rng = StableRNG(123)
+    x = randn(rng, Float32, ndims - 2, 4, 32) |> dev
+    scale = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    bias = (affine ? randn(rng, Float32, ndims - 2, 1) : nothing) |> dev
+    return x, scale, bias
+end
+
 function setup_groupnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
     for activation in [identity, relu, gelu], ndims in (2, 4)
@@ -131,16 +158,19 @@ function setup_groupnorm_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
                 groupnorm(x, scale, bias, 4, $activation)
                 synchronize($dev)
             end setup=begin
-                rng = StableRNG(123)
-                x = randn(rng, Float32, $(shape...)) |> $(dev)
-                scale = $affine ? randn(rng, Float32, $(shape[end - 1])) |> $(dev) : nothing
-                bias = $affine ? randn(rng, Float32, $(shape[end - 1])) |> $(dev) : nothing
+                x, scale, bias = groupnorm_setup($ndims, $affine, $dev)
             end
         end
     end
 end
 
 # Batched Matrix Multiplication
+function batchedmm_setup(N::Int, Bsize::Int, dev::MLDataDevices.AbstractDevice)
+    rng = StableRNG(123)
+    x = randn(rng, Float32, N, N, Bsize) |> dev
+    return x
+end
+
 function setup_batched_matmul_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
     if dev isa MetalDevice || dev isa oneAPIDevice
@@ -155,8 +185,7 @@ function setup_batched_matmul_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::Str
             batched_matmul(x, x)
             synchronize($dev)
         end setup=begin
-            rng = StableRNG(123)
-            x = randn(rng, Float32, $N, $N, $Bsize) |> $(dev)
+            x = batchedmm_setup($N, $Bsize, $dev)
         end
     end
 end
