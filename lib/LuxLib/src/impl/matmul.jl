@@ -64,21 +64,23 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    matmuladd_cpu!(C, System.use_octavian(), A, B, bias)
+    matmuladd_cpu!(C, System.use_octavian(), System.explicit_blas_loaded(), A, B, bias)
     return
 end
 
-function matmuladd_cpu!(C::AbstractMatrix, ::False, A::AbstractMatrix,
-        B::AbstractMatrix, bias::AbstractVector)
-    if LV.check_args(C, A, B) && System.fits_in_l2cache(C, A, B)
-        matmuladd_loopvec!(C, A, B, bias)
+for (oct, spl_blas) in ((True, True), (False, True), (False, False))
+    @eval function matmuladd_cpu!(C::AbstractMatrix, ::$(oct), ::$(spl_blas),
+            A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+        if LV.check_args(C, A, B) && System.fits_in_l2cache(C, A, B)
+            matmuladd_loopvec!(C, A, B, bias)
+            return
+        end
+        matmuladd_generic!(C, A, B, bias)
         return
     end
-    matmuladd_generic!(C, A, B, bias)
-    return
 end
 
-function matmuladd_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix,
+function matmuladd_cpu!(C::AbstractMatrix, ::True, ::False, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
     if LV.check_args(C, A, B)
         if System.fits_in_l2cache(C, A, B)
@@ -89,7 +91,7 @@ function matmuladd_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix,
             return
         end
     end
-    matmuladd!(C, GenericBroadcastOp(), A, B, bias)
+    matmuladd_generic!(C, A, B, bias)
     return
 end
 
@@ -105,31 +107,42 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
-    return matmul_cpu!(C, System.use_octavian(), A, B)
+    return matmul_cpu!(C, System.use_octavian(), System.explicit_blas_loaded(), A, B)
 end
 
-function matmul_cpu!(C::AbstractMatrix, ::True, A::AbstractMatrix, B::AbstractMatrix)
-    dims = (size(C, 1), size(A, 2), size(B, 2))
-    if LV.check_args(C, A, B)
-        if System.fits_in_l1cache(C, A, B)
-            matmul_loopvec!(C, A, B, true, false)
+for spl_blas in (True, False)
+    @eval begin
+        function matmul_cpu!( # Octavian can be used
+                C::AbstractMatrix, ::True, ::$(spl_blas),
+                A::AbstractMatrix, B::AbstractMatrix)
+            if LV.check_args(C, A, B)
+                if System.fits_in_l1cache(C, A, B)
+                    matmul_loopvec!(C, A, B, true, false)
+                    return
+                elseif $(Utils.known(spl_blas()) ? System.fits_in_l2cache :
+                         System.fits_in_l3cache)(C, A, B)
+                    matmul_octavian!(C, A, B, true, false)
+                    return
+                end
+            end
+            matmul_generic!(C, A, B, true, false)
             return
-        elseif System.fits_in_l3cache(C, A, B)
-            matmul_octavian!(C, A, B, true, false)
+        end
+
+        function matmul_cpu!( # Octavian cannot be used
+                C::AbstractMatrix, ::False, ::$(spl_blas),
+                A::AbstractMatrix, B::AbstractMatrix)
+            if LV.check_args(C, A, B)
+                if $(Utils.known(spl_blas()) ? System.fits_in_l1cache :
+                     System.fits_in_l2cache)(C, A, B)
+                    matmul_loopvec!(C, A, B, true, false)
+                    return
+                end
+            end
+            matmul_generic!(C, A, B, true, false)
             return
         end
     end
-    matmul_generic!(C, A, B, true, false)
-    return
-end
-
-function matmul_cpu!(C::AbstractMatrix, ::False, A::AbstractMatrix, B::AbstractMatrix)
-    if LV.check_args(C, A, B) && System.fits_in_l2cache(C, A, B)
-        matmul_loopvec!(C, A, B, true, false)
-        return
-    end
-    matmul_generic!(C, A, B, true, false)
-    return
 end
 
 # Low-Level Matmul implementations -- Either call libraries or implement our own
