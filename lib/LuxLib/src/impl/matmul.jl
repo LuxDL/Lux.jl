@@ -64,32 +64,9 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    matmuladd_cpu!(C, System.use_octavian(), System.explicit_blas_loaded(), A, B, bias)
-    return
-end
-
-for (oct, spl_blas) in ((True, True), (False, True), (False, False))
-    @eval function matmuladd_cpu!(C::AbstractMatrix, ::$(oct), ::$(spl_blas),
-            A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-        if LV.check_args(C, A, B) && System.fits_in_l2cache(C, A, B)
-            matmuladd_loopvec!(C, A, B, bias)
-            return
-        end
-        matmuladd_generic!(C, A, B, bias)
+    if LV.check_args(C, A, B, bias) && System.fits_in_l2cache(C, A, B, bias)
+        matmuladd_loopvec!(C, A, B, bias)
         return
-    end
-end
-
-function matmuladd_cpu!(C::AbstractMatrix, ::True, ::False, A::AbstractMatrix,
-        B::AbstractMatrix, bias::AbstractVector)
-    if LV.check_args(C, A, B)
-        if System.fits_in_l2cache(C, A, B)
-            matmuladd_loopvec!(C, A, B, bias)
-            return
-        elseif System.fits_in_l3cache(C, A, B)
-            matmuladd_octavian!(C, A, B, bias)
-            return
-        end
     end
     matmuladd_generic!(C, A, B, bias)
     return
@@ -146,13 +123,14 @@ for spl_blas in (True, False)
 end
 
 # Low-Level Matmul implementations -- Either call libraries or implement our own
-function matmul_octavian!(
+# We force inlining here to avoid allocations in the inner loops
+@inline function matmul_octavian!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
     Octavian.matmul!(C, A, B, α, β)
     return
 end
 
-function matmul_generic!(
+@inline function matmul_generic!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
     mul!(C, A, B, α, β)
     return
@@ -160,7 +138,7 @@ end
 
 for serial in (true, false)
     opname = serial ? :serial_matmul_loopvec! : :matmul_loopvec!
-    @eval function $opname(
+    @eval @inline function $opname(
             C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
         if !iszero(β) # Secial case this because Base.FastMath.mul_fast(NaN, false) = NaN
             @turbo thread=$(!serial) for K in indices((C, B), 2), J in indices((C, A), 1)
@@ -182,7 +160,7 @@ for serial in (true, false)
     end
 end
 
-function matmuladd_loopvec!(
+@inline function matmuladd_loopvec!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     @tturbo for K in indices((C, B), 2), J in indices((C, A), 1)
         Cⱼₖ = zero(eltype(C))
@@ -194,17 +172,10 @@ function matmuladd_loopvec!(
     return
 end
 
-function matmuladd_generic!(
+@inline function matmuladd_generic!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     C .= bias
     matmul_generic!(C, A, B, true, true)
-    return
-end
-
-function matmuladd_octavian!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    matmul_octavian!(C, A, B, true, false)
-    bias_add!(C, internal_operation_mode((C, bias)), C, bias)
     return
 end
 
@@ -238,5 +209,4 @@ Utils.@enzyme_reverse_alternative matmul_octavian! matmul_generic!
 Utils.@enzyme_reverse_alternative serial_matmul_loopvec! matmul_generic!
 Utils.@enzyme_reverse_alternative matmul_loopvec! matmul_generic!
 
-Utils.@enzyme_reverse_alternative matmuladd_octavian! matmuladd_generic!
 Utils.@enzyme_reverse_alternative matmuladd_loopvec! matmuladd_generic!
