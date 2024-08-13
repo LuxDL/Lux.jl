@@ -83,85 +83,123 @@ function batchnorm_affine_normalize_internal!(
          γ′
     β′ = similar(x, promote_type(Utils.eltype(β), Utils.eltype(σ²), Utils.eltype(ϵ)), N)
 
-    compute_batchnorm_scale_bias_loopvec!(γ′, β′, γ, β, μ, σ², ϵ)
-    apply_batchnorm_scale_bias!(y, γ′, β′, x)
-    activation!(y, opmode, act, y)
+    compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
+
+    fuse_act = Traits.fuse_cpu_activation(act)
+
+    if Utils.known(fuse_act)
+        apply_batchnorm_scale_bias_act!(y, γ′, β′, x, act)
+    else
+        apply_batchnorm_scale_bias!(y, γ′, β′, x)
+        activation!(y, opmode, act, y)
+    end
+
     return
 end
 
-function compute_batchnorm_scale_bias_loopvec!(γ′, β′, ::Nothing, ::Nothing, μ, σ², ϵ)
-    if LV.check_args(γ′, β′, μ, σ²)
-        @tturbo for J in indices((γ′, β′, μ, σ²))
-            γ′[J] = inv(sqrt(σ²[J] + ϵ))
-            β′[J] = -μ[J] * γ′[J]
+function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
+    if γ === nothing && β === nothing
+        @simd ivdep for J in indices((γ′, β′, μ, σ²))
+            @fastmath @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
+            @fastmath @inbounds β′[J] = -μ[J] * γ′[J]
         end
     else
-        @batch for J in indices((γ′, β′, μ, σ²))
-            @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
-            @inbounds β′[J] = -μ[J] * γ′[J]
+        @simd ivdep for J in indices((γ′, β′, γ, β, μ, σ²))
+            @fastmath @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
+            @fastmath @inbounds β′[J] = β[J] - μ[J] * γ′[J]
         end
     end
 end
 
-function compute_batchnorm_scale_bias_loopvec!(γ′, β′, γ, β, μ, σ², ϵ)
-    if LV.check_args(γ′, β′, γ, β, μ, σ²)
-        @tturbo for J in indices((γ′, β′, γ, β, μ, σ²))
-            γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
-            β′[J] = β[J] - μ[J] * γ′[J]
-        end
+function apply_batchnorm_scale_bias_act!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
+    if size(y, 1) == 1
+        apply_batchnorm_scale_bias_act_2d_serial!(y, γ′, β′, x, σ)
     else
-        @batch for J in indices((γ′, β′, γ, β, μ, σ²))
-            @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
-            @inbounds β′[J] = β[J] - μ[J] * γ′[J]
+        apply_batchnorm_scale_bias_act_3d_threaded!(y, γ′, β′, x, σ)
+    end
+end
+
+@inline function apply_batchnorm_scale_bias_act_2d_serial!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
+    for K in indices((x, y), 3)
+        @simd ivdep for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+            @fastmath @inbounds y[1, J, K] = σ(x[1, J, K] * γ′[J] + β′[J])
         end
     end
 end
 
-function compute_batchnorm_scale_bias_simd_loop!(γ′, β′, ::Nothing, ::Nothing, μ, σ², ϵ)
-    @simd ivdep for J in indices((γ′, β′, μ, σ²))
-        @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
-        @inbounds β′[J] = -μ[J] * γ′[J]
-    end
-end
-
-function compute_batchnorm_scale_bias_simd_loop!(γ′, β′, γ, β, μ, σ², ϵ)
-    @simd ivdep for J in indices((γ′, β′, γ, β, μ, σ²))
-        @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
-        @inbounds β′[J] = β[J] - μ[J] * γ′[J]
-    end
-end
-
-Utils.@enzyme_reverse_alternative compute_batchnorm_scale_bias_loopvec! compute_batchnorm_scale_bias_simd_loop!
-
-function apply_batchnorm_scale_bias!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
-        β′::AbstractVector, x::AbstractArray{<:Number, 3})
-    if LV.check_args(y, γ′, β′, x)
-        @tturbo for K in indices((x, y), 3),
-            J in indices((x, y, γ′, β′), (2, 2, 1, 1)),
-            I in indices((x, y), 1)
-
-            y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
-        end
-    else
-        @batch for K in indices((x, y), 3), J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+@inline function apply_batchnorm_scale_bias_act_3d_threaded!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
+    @batch for K in indices((x, y), 3)
+        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
             @simd ivdep for I in indices((x, y), 1)
-                @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
+                @fastmath @inbounds y[I, J, K] = σ(x[I, J, K] * γ′[J] + β′[J])
             end
         end
     end
 end
 
-function apply_batchnorm_scale_bias_simd_loop!(
+@inline function apply_batchnorm_scale_bias_act_3d_serial!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
-        β′::AbstractVector, x::AbstractArray{<:Number, 3})
-    for K in indices((x, y), 3), J in indices((x, y, γ′, β′), (2, 2, 1, 1))
-        @simd ivdep for I in indices((x, y), 1)
-            @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
+        β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
+    for K in indices((x, y), 3)
+        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+            @simd ivdep for I in indices((x, y), 1)
+                @fastmath @inbounds y[I, J, K] = σ(x[I, J, K] * γ′[J] + β′[J])
+            end
         end
     end
 end
 
-Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias! apply_batchnorm_scale_bias_simd_loop!
+Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias_act_3d_threaded! apply_batchnorm_scale_bias_act_3d_serial!
+
+function apply_batchnorm_scale_bias!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3})
+    if size(y, 1) == 1
+        apply_batchnorm_scale_bias_2d_serial!(y, γ′, β′, x)
+    else
+        apply_batchnorm_scale_bias_3d_threaded!(y, γ′, β′, x)
+    end
+end
+
+@inline function apply_batchnorm_scale_bias_2d_serial!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3})
+    for K in indices((x, y), 3)
+        @simd ivdep for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+            @fastmath @inbounds y[1, J, K] = x[1, J, K] * γ′[J] + β′[J]
+        end
+    end
+end
+
+@inline function apply_batchnorm_scale_bias_3d_threaded!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3})
+    @batch for K in indices((x, y), 3)
+        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+            @simd ivdep for I in indices((x, y), 1)
+                @fastmath @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
+            end
+        end
+    end
+end
+
+@inline function apply_batchnorm_scale_bias_3d_serial!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{<:Number, 3})
+    for K in indices((x, y), 3)
+        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+            @simd ivdep for I in indices((x, y), 1)
+                @fastmath @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
+            end
+        end
+    end
+end
+
+Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias_3d_threaded! apply_batchnorm_scale_bias_3d_serial!
 
 function batchnorm_affine_normalize_internal!(
         y::AbstractArray{<:Number, 3}, ::GPUBroadcastOp, act::F,
@@ -235,6 +273,107 @@ function CRC.rrule(
     return z, ∇batchnorm_affine_normalize_internal
 end
 
+function ∇batchnorm_affine_normalize(opmode::LoopedArrayOp, ∂y::AbstractArray{<:Number, 3},
+        x::AbstractArray{<:Number, 3}, μ::AbstractVector,
+        σ²::AbstractVector, γ::Optional{<:AbstractVector},
+        β::Optional{<:AbstractVector}, ϵ::Real, γ′::AbstractVector)
+    ∂x, ∂μ, ∂σ² = similar(x), similar(μ), similar(σ²)
+    ∂γ = γ === nothing ? nothing : similar(γ)
+    ∂β = β === nothing ? nothing : similar(β)
+
+    ∇batchnorm_affine_normalize_cpu!(∂x, ∂μ, ∂σ², ∂γ, ∂β, opmode, ∂y, x, μ, σ², γ, ϵ, γ′)
+
+    ∂γ = γ === nothing ? ∂∅ : ∂γ
+    ∂β = β === nothing ? ∂∅ : ∂β
+
+    return ∂x, ∂μ, ∂σ², ∂γ, ∂β
+end
+
+function ∇batchnorm_affine_normalize_cpu!(
+        ∂x::AbstractArray{<:Number, 3}, ∂μ::AbstractVector{<:Number},
+        ∂σ²::AbstractVector{<:Number}, ::Nothing, ::Nothing, ::LoopedArrayOp,
+        ∂y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
+        μ::AbstractVector, σ²::AbstractVector, ::Nothing, ϵ::Real, γ′::AbstractVector)
+    half = eltype(∂σ²)(0.5)
+
+    fill!(∂μ, 0)
+    fill!(∂σ², 0)
+
+    if size(∂y, 1) == 1
+        @fastmath @inbounds for K in indices(∂y, 3)
+            @simd for J in indices(∂y, 2)
+                idenom = γ′[J]
+                idenom² = idenom^2
+
+                xμ = x[1, J, K] - μ[J]
+
+                ∂x[1, J, K] = ∂y[1, J, K] * idenom
+                ∂μ[J] -= ∂x[1, J, K]
+                ∂σ²[J] -= ∂x[1, J, K] * xμ * half * idenom²
+            end
+        end
+    else
+        @fastmath @inbounds for K in indices(∂y, 3), J in indices(∂y, 2)
+            idenom = γ′[J]
+            idenom² = idenom^2
+
+            @simd for I in indices(∂y, 1)
+                xμ = x[I, J, K] - μ[J]
+
+                ∂x[I, J, K] = ∂y[I, J, K] * idenom
+                ∂μ[J] -= ∂x[I, J, K]
+                ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
+            end
+        end
+    end
+end
+
+function ∇batchnorm_affine_normalize_cpu!(
+        ∂x::AbstractArray{<:Number, 3}, ∂μ::AbstractVector{<:Number},
+        ∂σ²::AbstractVector{<:Number}, ∂γ::AbstractVector{<:Number},
+        ∂β::AbstractVector{<:Number}, ::LoopedArrayOp, ∂y::AbstractArray{<:Number, 3},
+        x::AbstractArray{<:Number, 3}, μ::AbstractVector,
+        σ²::AbstractVector, γ::AbstractVector, ϵ::Real, γ′::AbstractVector)
+    half = eltype(∂σ²)(0.5)
+
+    fill!(∂μ, 0)
+    fill!(∂σ², 0)
+    fill!(∂γ, 0)
+    fill!(∂β, 0)
+
+    if size(∂y, 1) == 1
+        @fastmath @inbounds for K in indices(∂y, 3)
+            @simd for J in indices(∂y, 2)
+                idenom = inv(sqrt(σ²[J] + ϵ))
+                idenom² = idenom^2
+
+                xμ = x[1, J, K] - μ[J]
+
+                ∂x[1, J, K] = ∂y[1, J, K] * γ′[J]
+                ∂μ[J] -= ∂x[1, J, K]
+                ∂σ²[J] -= ∂x[1, J, K] * xμ * half * idenom²
+                ∂γ[J] += ∂y[1, J, K] * xμ * idenom
+                ∂β[J] += ∂y[1, J, K]
+            end
+        end
+    else
+        @fastmath @inbounds for K in indices(∂y, 3), J in indices(∂y, 2)
+            idenom = inv(sqrt(σ²[J] + ϵ))
+            idenom² = idenom^2
+
+            @simd for I in indices(∂y, 1)
+                xμ = x[I, J, K] - μ[J]
+
+                ∂x[I, J, K] = ∂y[I, J, K] * γ′[J]
+                ∂μ[J] -= ∂x[I, J, K]
+                ∂σ²[J] -= ∂x[I, J, K] * xμ * half * idenom²
+                ∂γ[J] += ∂y[I, J, K] * xμ * idenom
+                ∂β[J] += ∂y[I, J, K]
+            end
+        end
+    end
+end
+
 function ∇batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, ∂y::AbstractArray{<:Number, 3},
         x::AbstractArray{<:Number, 3}, μ::AbstractVector,
@@ -251,75 +390,6 @@ function ∇batchnorm_affine_normalize(
     ∂β = β === nothing ? ∂∅ : dropdims(sum(∂y; dims=(1, 3)); dims=(1, 3))
 
     return ∂x, ∂μ, ∂σ², ∂γ, ∂β
-end
-
-function ∇batchnorm_affine_normalize!(
-        ∂x::AbstractArray{<:Number, 3}, ∂σ²::AbstractArray{<:Number, 3}, ::Nothing,
-        ::LoopedArrayOp, ∂y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
-        μ::AbstractVector, σ²::AbstractVector, ::Nothing, ϵ::Real, γ′::AbstractVector)
-    half = eltype(∂σ²)(0.5)
-
-    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ²)
-        @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = γ′[J]
-            idenom² = idenom^2
-
-            for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
-
-                ∂x[I, J, K] = ∂y[I, J, K] * idenom
-                ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
-            end
-        end
-    else
-        @inbounds @batch for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = γ′[J]
-            idenom² = idenom^2
-
-            @simd for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
-
-                ∂x[I, J, K] = ∂y[I, J, K] * idenom
-                ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
-            end
-        end
-    end
-end
-
-function ∇batchnorm_affine_normalize!(
-        ∂x::AbstractArray{<:Number, 3}, ∂σ²::AbstractArray{<:Number, 3},
-        ∂γ::AbstractArray{<:Number, 3}, ::LoopedArrayOp, ∂y::AbstractArray{<:Number, 3},
-        x::AbstractArray{<:Number, 3}, μ::AbstractVector,
-        σ²::AbstractVector, γ::AbstractVector, ϵ::Real, γ′::AbstractVector)
-    half = eltype(∂σ²)(0.5)
-
-    if LV.check_args(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ)
-        @tturbo for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = inv(sqrt(σ²[J] + ϵ))
-            idenom² = idenom^2
-
-            for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
-
-                ∂x[I, J, K] = ∂y[I, J, K] * γ′[J]
-                ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
-                ∂γ[I, J, K] = ∂y[I, J, K] * xμ * idenom
-            end
-        end
-    else
-        @inbounds @batch for K in indices(∂y, 3), J in indices(∂y, 2)
-            idenom = inv(sqrt(σ²[J] + ϵ))
-            idenom² = idenom^2
-
-            @simd for I in indices(∂y, 1)
-                xμ = x[I, J, K] - μ[J]
-
-                ∂x[I, J, K] = ∂y[I, J, K] * γ′[J]
-                ∂σ²[I, J, K] = -∂x[I, J, K] * xμ * half * idenom²
-                ∂γ[I, J, K] = ∂y[I, J, K] * xμ * idenom
-            end
-        end
-    end
 end
 
 function ∇batchnorm_affine_normalize!(
