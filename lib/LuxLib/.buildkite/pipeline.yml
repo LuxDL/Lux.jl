@@ -12,7 +12,6 @@ steps:
                 - "benchmarks/"
                 - "src/"
                 - "ext/"
-                - "test/"
                 - "Project.toml"
                 - ".buildkite/"
                 - ".github/workflows/Benchmark.yml"

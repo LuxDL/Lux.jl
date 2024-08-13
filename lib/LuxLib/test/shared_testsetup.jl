@@ -57,6 +57,6 @@ function generate_fixed_array(::Type{T}, sz) where {T}
 end
 generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
 
-export MODES, StableRNG, generate_fixed_array
+export MODES, StableRNG, generate_fixed_array, BACKEND_GROUP
 
 end

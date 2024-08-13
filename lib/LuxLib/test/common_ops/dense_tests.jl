@@ -122,24 +122,26 @@ end
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
-@testitem "`LuxLib.Impl.matmul(add)` allocations" tags=[:dense] begin
+@testitem "`LuxLib.Impl.matmul(add)` allocations" tags=[:dense] setup=[SharedTestSetup] begin
     using BenchmarkTools, Statistics
 
-    @testset "size $N" for N in (1, 4, 32, 256, 1024)
-        x = rand(Float32, N, N)
+    if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
+        @testset "size $N" for N in (1, 4, 32, 256, 1024)
+            x = rand(Float32, N, N)
 
-        trial_opt = median(@benchmark(LuxLib.Impl.matmul($x, $x)))
-        trial_baseline = median(@benchmark($x*$x))
+            trial_opt = median(@benchmark(LuxLib.Impl.matmul($x, $x)))
+            trial_baseline = median(@benchmark($x*$x))
 
-        @test trial_opt.allocs ≤ trial_baseline.allocs
-        @test trial_opt.memory ≤ trial_baseline.memory
+            @test trial_opt.allocs ≤ trial_baseline.allocs
+            @test trial_opt.memory ≤ trial_baseline.memory
 
-        bias = rand(Float32, N)
+            bias = rand(Float32, N)
 
-        trial_opt = median(@benchmark(LuxLib.Impl.matmuladd($x, $x, $bias)))
-        trial_baseline = median(@benchmark(muladd($x, $x, $bias)))
+            trial_opt = median(@benchmark(LuxLib.Impl.matmuladd($x, $x, $bias)))
+            trial_baseline = median(@benchmark(muladd($x, $x, $bias)))
 
-        @test trial_opt.allocs ≤ trial_baseline.allocs
-        @test trial_opt.memory ≤ trial_baseline.memory
+            @test trial_opt.allocs ≤ trial_baseline.allocs
+            @test trial_opt.memory ≤ trial_baseline.memory
+        end
     end
 end
