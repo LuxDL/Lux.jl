@@ -200,29 +200,20 @@ end
 
 function bias_add_loop!(y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
         bias::AbstractVector{<:Number})
-    if LV.check_args(y, x, bias)
-        @tturbo for K in indices(x, 3), J in indices((x, bias), (2, 1)), I in indices(y, 1)
-            y[I, J, K] = x[I, J, K] + bias[J]
+    if size(y, 1) == 1
+        for K in indices(x, 3)
+            @simd ivdep for J in indices((x, bias), (2, 1))
+                @inbounds y[1, J, K] = x[1, J, K] + bias[J]
+            end
         end
     else
-        @inbounds @batch for K in indices(x, 3), J in indices((x, bias), (2, 1))
+        for K in indices(x, 3), J in indices((x, bias), (2, 1))
             @simd ivdep for I in indices(y, 1)
-                y[I, J, K] = x[I, J, K] + bias[J]
+                @inbounds y[I, J, K] = x[I, J, K] + bias[J]
             end
         end
     end
 end
-
-function bias_add_simd_loop!(y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
-        bias::AbstractVector{<:Number})
-    @inbounds for K in indices(x, 3), J in indices((x, bias), (2, 1))
-        @simd ivdep for I in indices(y, 1)
-            y[I, J, K] = x[I, J, K] + bias[J]
-        end
-    end
-end
-
-Utils.@enzyme_reverse_alternative bias_add_loop! bias_add_simd_loop!
 
 # Some helper functions for the rrule
 function bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},
@@ -248,22 +239,9 @@ function bias_activation_cached!!(
 end
 
 function bias_activation_cached!!(
-        opmode::LoopedArrayOp, ::False, σ::F, x::AbstractArray{<:Number, N},
+        ::LoopedArrayOp, ::True, σ::F, x::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
-    x_ = reshape(x, :, size(x, N - 1), size(x, N))
-    if LV.check_args(x_, bias)
-        @tturbo for K in indices(x_, 3),
-            J in indices((x_, bias), (2, 1)),
-            I in indices(x_, 1)
-
-            x_[I, J, K] = x_[I, J, K] + bias[J]
-        end
-    else
-        @batch for K in indices(x_, 3), J in indices((x_, bias), (2, 1))
-            @simd ivdep for I in indices(x_, 1)
-                x_[I, J, K] = x_[I, J, K] + bias[J]
-            end
-        end
-    end
-    return activation(σ, x), x
+    x′ = reshape(x, :, size(x, N - 1), size(x, N))
+    bias_add_loop!(x′, x′, bias)
+    return activation(σ, x′), x′
 end

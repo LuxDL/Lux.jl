@@ -96,15 +96,15 @@ function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray)
 end
 
 function activation_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    if LV.check_args(y, x)
+    # We use fuse activation as a proxy check for "simple functions"
+    if LV.check_args(y, x) && Utils.known(!Traits.fuse_cpu_activation(σ))
         @tturbo for I in indices((y, x))
             y[I] = σ(x[I])
         end
-    else
-        @inbounds @batch for I in indices((y, x))
-            y[I] = σ(x[I])
-        end
+        return
     end
+    activation_simd_loop!(y, σ, x)
+    return
 end
 
 function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
@@ -126,12 +126,12 @@ end
 @inbounds function ∇activation(::LoopedArrayOp, Δ, out, act::F, x) where {F}
     y = similar(out)
     if x isa Utils.NotaNumber
-        @batch for i in indices((Δ, out))
-            y[i] = Utils.only_derivative(out[i], act, x) * Δ[i]
+        @simd ivdep for i in indices((Δ, out))
+            @inbounds y[i] = Utils.only_derivative(out[i], act, x) * Δ[i]
         end
     else
-        @batch for i in indices((Δ, out, x))
-            y[i] = Utils.only_derivative(out[i], act, x[i]) * Δ[i]
+        @simd ivdep for i in indices((Δ, out, x))
+            @inbounds y[i] = Utils.only_derivative(out[i], act, x[i]) * Δ[i]
         end
     end
     return y
