@@ -19,13 +19,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "src/**/*"
-      - "ext/**/*"
-      - "benchmarks/**/*"
-      - ".buildkite/**/*"
-      - "Project.toml"
-      - ".github/workflows/Benchmark.yml"
 
 jobs:
   benchmark:
