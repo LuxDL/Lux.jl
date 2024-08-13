@@ -2,6 +2,7 @@ using LuxLib
 using Pkg
 using BenchmarkTools
 using InteractiveUtils
+using LinearAlgebra
 
 const SUITE = BenchmarkGroup()
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 5
@@ -17,6 +18,8 @@ if BENCHMARK_CPU_THREADS > Threads.nthreads()
             JULIA_NUM_THREADS environment variable or pass \
             --threads=$(BENCHMARK_CPU_THREADS) as a julia argument"
 end
+
+LinearAlgebra.BLAS.set_num_threads(BENCHMARK_CPU_THREADS)
 
 if BENCHMARK_GROUP == "AMDGPU"
     using AMDGPU # ] add AMDGPU to benchmarks/Project.toml

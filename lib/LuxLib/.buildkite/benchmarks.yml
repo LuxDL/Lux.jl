@@ -24,12 +24,14 @@ steps:
         agents:
           arch: "aarch64"  # these ones tend to be more free
           queue: "juliaecosystem"
+          num_cpus: "4"
         env:
           BENCHMARK_GROUP: CPU
           JULIA_NUM_THREADS: "{{matrix.threads}}"
         timeout_in_minutes: 120
 
       - label: "AMDGPU: Run Benchmarks"
+        soft_fail: true
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -79,6 +81,7 @@ steps:
         timeout_in_minutes: 120
 
       - label: "Metal: Run Benchmarks"
+        soft_fail: true
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -104,6 +107,7 @@ steps:
         timeout_in_minutes: 120
 
       - label: "oneAPI: Run Benchmarks"
+        soft_fail: true
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -128,6 +132,7 @@ steps:
         timeout_in_minutes: 120
 
       - wait: ~
+        continue_on_failure: true
 
       - label: "Combine benchmarks"
         plugins:
