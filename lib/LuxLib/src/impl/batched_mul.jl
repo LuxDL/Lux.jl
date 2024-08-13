@@ -13,8 +13,8 @@ function batched_matmul(::GPUBroadcastOp{<:AbstractGPUDevice},
     return NNlib.batched_mul(x, y)  # GPU versions are well optimized
 end
 
-function batched_matmul(::GPUBroadcastOp{AMDGPUDevice},
-        x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul(::GPUBroadcastOp{AMDGPUDevice}, x::AbstractArray{<:Complex, 3},
+        y::AbstractArray{<:Complex, 3})
     if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
        (size(x, 2) != size(y, 1))
         throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
