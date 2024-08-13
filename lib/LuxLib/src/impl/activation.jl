@@ -158,6 +158,7 @@ using ChainRulesCore: ChainRulesCore
 using EnzymeCore: EnzymeCore, EnzymeRules
 using NNlib: NNlib
 using SLEEFPirates: SLEEFPirates
+using Static: True
 
 using ....LuxLib: Numeric, Traits
 

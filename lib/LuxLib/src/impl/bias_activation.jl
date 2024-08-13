@@ -178,12 +178,64 @@ function bias_activation!(
     return
 end
 
-function bias_activation!(y::AbstractArray{<:Number, N}, opmode::LoopedArrayOp, σ::F,
+function bias_activation!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp, σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
-    bias_add!(y, opmode, x, bias)
-    activation!(y, opmode, σ, y)
+    bias_activation_cpu!(
+        reshape(y, :, size(y, N - 1), size(y, N)), Traits.fuse_cpu_activation(σ),
+        σ, reshape(x, :, size(x, N - 1), size(x, N)), bias)
     return
 end
+
+function bias_activation_cpu!(y::AbstractArray{<:Number, 3}, ::True, σ::F,
+        x::AbstractArray{<:Number, 3}, bias::AbstractVector{<:Number}) where {F}
+    bias_activation_simd_loop!(y, σ, x, bias)
+    return
+end
+
+function bias_activation_cpu!(y::AbstractArray{<:Number, 3}, ::False, σ::F,
+        x::AbstractArray{<:Number, 3}, bias::AbstractVector{<:Number}) where {F}
+    if !LV.check_args(y, x, bias)
+        bias_activation_simd_loop!(y, σ, x, bias)
+        return
+    end
+    bias_activation_loop!(y, σ, x, bias)
+    return
+end
+
+function bias_activation_loop!(
+        y::AbstractArray{<:Number, 3}, σ::F, x::AbstractArray{<:Number, 3},
+        bias::AbstractVector{<:Number}) where {F}
+    if size(y, 1) == 1
+        @tturbo for K in indices(x, 3), J in indices((x, bias), (2, 1))
+            y[1, J, K] = σ(x[1, J, K] + bias[J])
+        end
+    else
+        @tturbo for K in indices(x, 3), J in indices((x, bias), (2, 1)), I in indices(y, 1)
+            y[I, J, K] = σ(x[I, J, K] + bias[J])
+        end
+    end
+end
+
+function bias_activation_simd_loop!(
+        y::AbstractArray{<:Number, 3}, σ::F, x::AbstractArray{<:Number, 3},
+        bias::AbstractVector{<:Number}) where {F}
+    if size(y, 1) == 1
+        for K in indices(x, 3)
+            @simd ivdep for J in indices((x, bias), (2, 1))
+                @inbounds y[1, J, K] = σ(x[1, J, K] + bias[J])
+            end
+        end
+    else
+        for K in indices(x, 3), J in indices((x, bias), (2, 1))
+            @simd ivdep for I in indices(y, 1)
+                @inbounds y[I, J, K] = σ(x[I, J, K] + bias[J])
+            end
+        end
+    end
+    return
+end
+
+Utils.@enzyme_reverse_alternative bias_activation_loop! bias_activation_simd_loop!
 
 function bias_add!(y::AbstractArray{<:Number, N}, ::AbstractInternalArrayOpMode,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
@@ -243,5 +295,6 @@ function bias_activation_cached!!(
         bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
     x′ = reshape(x, :, size(x, N - 1), size(x, N))
     bias_add_loop!(x′, x′, bias)
-    return activation(σ, x′), x′
+    x′′ = reshape(x′, size(x))
+    return activation(σ, x′′), x′′
 end
