@@ -52,7 +52,8 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
         A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    matmuladd_generic!(C, A, B, bias)
+    C .= bias
+    mul!(C, A, B, true, true)
     return
 end
 
@@ -68,7 +69,7 @@ function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         matmuladd_loopvec!(C, A, B, bias)
         return
     end
-    matmuladd_generic!(C, A, B, bias)
+    matmuladd_cpu_fallback!(C, A, B, bias)
     return
 end
 
@@ -79,7 +80,7 @@ end
 
 function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
         A::AbstractMatrix, B::AbstractMatrix)
-    matmul_generic!(C, A, B, true, false)
+    mul!(C, A, B)
     return
 end
 
@@ -102,7 +103,7 @@ for spl_blas in (True, False)
                     return
                 end
             end
-            matmul_generic!(C, A, B, true, false)
+            matmul_cpu_fallback!(C, A, B, true, false)
             return
         end
 
@@ -116,7 +117,7 @@ for spl_blas in (True, False)
                     return
                 end
             end
-            matmul_generic!(C, A, B, true, false)
+            matmul_cpu_fallback!(C, A, B, true, false)
             return
         end
     end
@@ -130,7 +131,36 @@ end
     return
 end
 
-@inline function matmul_generic!(
+# Best case fallback, we are likely going to hit BLAS
+@inline function matmul_cpu_fallback!(C::AbstractMatrix{T}, A::AbstractMatrix{T},
+        B::AbstractMatrix{T}, α::Number, β::Number) where {T}
+    matmul_linalg_default!(C, A, B, α, β)
+    return
+end
+
+@inline function matmul_cpu_fallback!(C::AbstractMatrix{T}, A::AbstractMatrix{AT},
+        B::AbstractMatrix{BT}, α::Number, β::Number) where {T, AT, BT}
+    if LV.check_args(C, A, B)  # Use Octavian if possible. Don't check via `use_octavian()`
+        matmul_octavian!(C, A, B, α, β)
+        return
+    end
+    # Generic fallback is actually quite good starting julia 1.11
+    @static if VERSION ≥ v"1.11-"
+        @warn "Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be \
+               used on this system. Falling back to generic implementation. This may be \
+               slow." maxlog=1
+        A′, B′ = A, B
+    else
+        @warn "Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be \
+               used on this system. Converting to common type to to attempt to use BLAS. \
+               This may be slow." maxlog=1
+        A′, B′ = Utils.ofeltype_array(T, A), Utils.ofeltype_array(T, B)
+    end
+    matmul_linalg_default!(C, A′, B′, α, β)
+    return
+end
+
+@inline function matmul_linalg_default!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
     mul!(C, A, B, α, β)
     return
@@ -172,10 +202,10 @@ end
     return
 end
 
-@inline function matmuladd_generic!(
+@inline function matmuladd_cpu_fallback!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     C .= bias
-    matmul_generic!(C, A, B, true, true)
+    matmul_cpu_fallback!(C, A, B, true, true)
     return
 end
 
@@ -205,8 +235,8 @@ function CRC.rrule(
 end
 
 # EnzymeRules
-Utils.@enzyme_reverse_alternative matmul_octavian! matmul_generic!
-Utils.@enzyme_reverse_alternative serial_matmul_loopvec! matmul_generic!
-Utils.@enzyme_reverse_alternative matmul_loopvec! matmul_generic!
+Utils.@enzyme_reverse_alternative matmul_octavian! matmul_linalg_default!
+Utils.@enzyme_reverse_alternative serial_matmul_loopvec! matmul_linalg_default!
+Utils.@enzyme_reverse_alternative matmul_loopvec! matmul_linalg_default!
 
-Utils.@enzyme_reverse_alternative matmuladd_loopvec! matmuladd_generic!
+Utils.@enzyme_reverse_alternative matmuladd_loopvec! matmuladd_cpu_fallback!
