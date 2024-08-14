@@ -88,9 +88,9 @@ function batchnorm_affine_normalize_internal!(
     fuse_act = Traits.fuse_cpu_activation(act)
 
     if Utils.known(fuse_act)
-        apply_batchnorm_scale_bias_act!(y, γ′, β′, x, act)
+        apply_batchnorm_scale_bias_act_cpu!(y, γ′, β′, x, act)
     else
-        apply_batchnorm_scale_bias!(y, γ′, β′, x)
+        apply_batchnorm_scale_bias_cpu!(y, γ′, β′, x)
         activation!(y, opmode, act, y)
     end
 
@@ -111,16 +111,17 @@ function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
     end
 end
 
-function apply_batchnorm_scale_bias_act!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+function apply_batchnorm_scale_bias_act_cpu!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
     if size(y, 1) == 1
-        apply_batchnorm_scale_bias_act_2d_serial!(y, γ′, β′, x, σ)
+        apply_batchnorm_scale_bias_act_2d_serial_cpu!(y, γ′, β′, x, σ)
     else
-        apply_batchnorm_scale_bias_act_3d_threaded!(y, γ′, β′, x, σ)
+        apply_batchnorm_scale_bias_act_3d_threaded_cpu!(y, γ′, β′, x, σ)
     end
 end
 
-@inline function apply_batchnorm_scale_bias_act_2d_serial!(
+@inline function apply_batchnorm_scale_bias_act_2d_serial_cpu!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
     for K in indices((x, y), 3)
@@ -130,7 +131,7 @@ end
     end
 end
 
-@inline function apply_batchnorm_scale_bias_act_3d_threaded!(
+@inline function apply_batchnorm_scale_bias_act_3d_threaded_cpu!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
     @batch for K in indices((x, y), 3)
@@ -142,7 +143,7 @@ end
     end
 end
 
-@inline function apply_batchnorm_scale_bias_act_3d_serial!(
+@inline function apply_batchnorm_scale_bias_act_3d_serial_cpu!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3}, σ::F) where {F}
     for K in indices((x, y), 3)
@@ -154,18 +155,18 @@ end
     end
 end
 
-Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias_act_3d_threaded! apply_batchnorm_scale_bias_act_3d_serial!
+Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias_act_3d_threaded_cpu! apply_batchnorm_scale_bias_act_3d_serial_cpu!
 
-function apply_batchnorm_scale_bias!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
+function apply_batchnorm_scale_bias_cpu!(y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3})
     if size(y, 1) == 1
-        apply_batchnorm_scale_bias_2d_serial!(y, γ′, β′, x)
+        apply_batchnorm_scale_bias_2d_serial_cpu!(y, γ′, β′, x)
     else
-        apply_batchnorm_scale_bias_3d_threaded!(y, γ′, β′, x)
+        apply_batchnorm_scale_bias_3d_threaded_cpu!(y, γ′, β′, x)
     end
 end
 
-@inline function apply_batchnorm_scale_bias_2d_serial!(
+@inline function apply_batchnorm_scale_bias_2d_serial_cpu!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3})
     for K in indices((x, y), 3)
@@ -175,7 +176,7 @@ end
     end
 end
 
-@inline function apply_batchnorm_scale_bias_3d_threaded!(
+@inline function apply_batchnorm_scale_bias_3d_threaded_cpu!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3})
     @batch for K in indices((x, y), 3)
@@ -187,7 +188,7 @@ end
     end
 end
 
-@inline function apply_batchnorm_scale_bias_3d_serial!(
+@inline function apply_batchnorm_scale_bias_3d_serial_cpu!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{<:Number, 3})
     for K in indices((x, y), 3)
@@ -199,7 +200,7 @@ end
     end
 end
 
-Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias_3d_threaded! apply_batchnorm_scale_bias_3d_serial!
+Utils.@enzyme_reverse_alternative apply_batchnorm_scale_bias_3d_threaded_cpu! apply_batchnorm_scale_bias_3d_serial_cpu!
 
 function batchnorm_affine_normalize_internal!(
         y::AbstractArray{<:Number, 3}, ::GPUBroadcastOp, act::F,
