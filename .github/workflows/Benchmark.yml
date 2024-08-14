@@ -72,6 +72,7 @@ jobs:
 
   airspeed-velocity:
     runs-on: ubuntu-latest
+    if: ${{ github.base_ref == github.event.repository.default_branch }}
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
