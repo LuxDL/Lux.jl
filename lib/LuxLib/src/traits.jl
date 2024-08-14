@@ -60,7 +60,7 @@ function activation_has_rrule(::F, ::Type{T}) where {F, T}
 end
 
 # Which activations can be fused into a single kernel
-for act in (:identity, :(NNlib.relu), :abs, :abs2, :(NNlib.tanh_fast))
+for act in (:identity, :(NNlib.relu), :abs, :abs2)
     @eval fuse_cpu_activation(::typeof($act)) = True()
 end
 fuse_cpu_activation(::F) where {F} = False()
