@@ -98,9 +98,7 @@ end
 function activation_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
     # We use fuse activation as a proxy check for "simple functions"
     if LV.check_args(y, x) && Utils.known(!Traits.fuse_cpu_activation(σ))
-        @tturbo for I in indices((y, x))
-            y[I] = σ(x[I])
-        end
+        LV.vmap!(σ, y, x)
         return
     end
     activation_simd_loop!(y, σ, x)
