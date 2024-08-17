@@ -12,3 +12,7 @@
 @grad_from_chainrules Lux.apply_dynamic_expression(
     de::Lux.DynamicExpressionsLayer, expr, operator_enum,
     x::TrackedArray, ps::TrackedArray, ::CPUDevice)
+
+# Nested AD
+@grad_from_chainrules Lux.AutoDiffInternalImpl.batched_jacobian(
+    f, backend::AbstractADType, x::TrackedArray)

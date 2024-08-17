@@ -79,6 +79,7 @@ end
     using ComponentArrays, ForwardDiff, Zygote
 
     rng = StableRNG(12345)
+    cdev = cpu_device()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
@@ -113,7 +114,10 @@ end
                 loss_function_simple, model, X, ps, st)
 
             @test ∂x_batched≈∂x_simple atol=1.0e-3 rtol=1.0e-3
-            @test check_approx(∂ps_batched, ∂ps_simple; atol=1.0e-3, rtol=1.0e-3)
+
+            ∂ps_batched = ComponentArray(∂ps_batched |> cdev)
+            ∂ps_simple = ComponentArray(∂ps_simple |> cdev)
+            @test ∂ps_batched≈∂ps_simple atol=1.0e-3 rtol=1.0e-3
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
@@ -121,13 +125,15 @@ end
                 loss_function_batched, model, X, ps, st)
 
             @test ∂x_batched2≈∂x_batched atol=1.0e-3 rtol=1.0e-3
-            @test check_approx(∂ps_batched2, ∂ps_batched; atol=1.0e-3, rtol=1.0e-3)
+
+            ∂ps_batched2 = ComponentArray(∂ps_batched2 |> cdev)
+            @test ∂ps_batched2≈∂ps_batched atol=1.0e-3 rtol=1.0e-3
         end
     end
 end
 
 @testitem "Nested AD: Batched Jacobian Single Input" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ForwardDiff, Zygote, Tracker
+    using ForwardDiff, Zygote, Tracker, ReverseDiff
 
     rng = StableRNG(12345)
     sq_fn(x) = x .^ 2
@@ -150,5 +156,13 @@ end
         @test ∂x1_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
         @test ∂x2_zyg≈∂x_gt atol=1.0e-3 rtol=1.0e-3
         @test ∂x2_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+
+        ongpu && continue
+
+        ∂x1_rdiff = ReverseDiff.gradient(sumabs2_zyg, x)
+        ∂x2_rdiff = ReverseDiff.gradient(sumabs2_fd, x)
+
+        @test ∂x1_rdiff≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x2_rdiff≈∂x_gt atol=1.0e-3 rtol=1.0e-3
     end
 end
