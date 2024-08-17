@@ -13,6 +13,24 @@ function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray, y) wh
     return batched_jacobian_impl(Base.Fix2(f, y), backend, x)
 end
 
+# For simplicity we will reuse the same rrule as below
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian),
+        f::F, backend::AbstractADType, x::AbstractArray) where {F}
+    f̂ = let f = f
+        (x, _) -> f(x)
+    end
+
+    res, ∇batched_jacobian_full = CRC.rrule_via_ad(
+        cfg, batched_jacobian, f̂, backend, x, nothing)
+    ∇batched_jacobian = let ∇batched_jacobian_full = ∇batched_jacobian_full
+        Δ -> begin
+            _, _, _, ∂x, _ = ∇batched_jacobian_full(CRC.unthunk(Δ))
+            return NoTangent(), NoTangent(), NoTangent(), ∂x
+        end
+    end
+    return res, ∇batched_jacobian
+end
+
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian),
         f::F, backend::AbstractADType, x::AbstractArray, y) where {F}
     grad_fn = let cfg = cfg
@@ -29,11 +47,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian)
     res, ∇autodiff_jacobian = CRC.rrule_via_ad(
         cfg, autodiff_jacobian, jac_fn, grad_fn, f, x, y)
     ∇batched_jacobian = let ∇autodiff_jacobian = ∇autodiff_jacobian
-        Δ̂ -> begin
-            Δ = CRC.unthunk(Δ̂)
-            ∂s = ∇autodiff_jacobian(tuple(Δ))
-            ∂x = ∂s[lastindex(∂s) - 1]
-            ∂y = ∂s[lastindex(∂s)]
+        Δ -> begin
+            _, _, _, _, ∂x, ∂y = ∇autodiff_jacobian(tuple(CRC.unthunk(Δ)))
             return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
         end
     end
