@@ -67,6 +67,10 @@ using Lux
         @test_throws ErrorException MPIBackend()
         @test_throws ErrorException NCCLBackend()
     end
+
+    @testset "rule_config" begin
+        @test_throws ErrorException Lux.AutoDiffInternalImpl.rule_config(Val(:Zygote2))
+    end
 end
 
 const RETESTITEMS_NWORKERS = parse(

@@ -13,6 +13,17 @@ function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray, y) wh
     return batched_jacobian_impl(Base.Fix2(f, y), backend, x)
 end
 
+# These are useful to extend Nested AD for non-chain rules backends
+function CRC.rrule(::typeof(batched_jacobian), f::F,
+        backend::AbstractADType, x::AbstractArray) where {F}
+    return CRC.rrule_via_ad(rule_config(Val(:Zygote)), batched_jacobian, f, backend, x)
+end
+
+function CRC.rrule(::typeof(batched_jacobian), f::F,
+        backend::AbstractADType, x::AbstractArray, y) where {F}
+    return CRC.rrule_via_ad(rule_config(Val(:Zygote)), batched_jacobian, f, backend, x, y)
+end
+
 # For simplicity we will reuse the same rrule as below
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian),
         f::F, backend::AbstractADType, x::AbstractArray) where {F}

@@ -127,7 +127,7 @@ end
 end
 
 @testitem "Nested AD: Batched Jacobian Single Input" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ForwardDiff, Zygote
+    using ForwardDiff, Zygote, Tracker
 
     rng = StableRNG(12345)
     sq_fn(x) = x .^ 2
@@ -140,11 +140,15 @@ end
 
         @test sumabs2_fd(x) ≈ sumabs2_zyg(x)
 
-        ∂x1 = Zygote.gradient(sumabs2_zyg, x)[1]
-        ∂x2 = Zygote.gradient(sumabs2_fd, x)[1]
+        ∂x1_zyg = only(Zygote.gradient(sumabs2_zyg, x))
+        ∂x1_tr = only(Tracker.gradient(sumabs2_zyg, x))
+        ∂x2_zyg = only(Zygote.gradient(sumabs2_fd, x))
+        ∂x2_tr = only(Tracker.gradient(sumabs2_fd, x))
         ∂x_gt = ForwardDiff.gradient(sumabs2_fd, x)
 
-        @test ∂x1≈∂x_gt atol=1.0e-3 rtol=1.0e-3
-        @test ∂x2≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x1_zyg≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x1_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x2_zyg≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x2_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
     end
 end

@@ -14,6 +14,8 @@ const CRC = ChainRulesCore
 
 Lux.is_extension_loaded(::Val{:Zygote}) = true
 
+Lux.AutoDiffInternalImpl.rule_config(::Val{:Zygote}) = Zygote.ZygoteRuleConfig()
+
 include("training.jl")
 
 include("batched_autodiff.jl")

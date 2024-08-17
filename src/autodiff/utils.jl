@@ -55,3 +55,8 @@ function compactify_if_structured_matrix(
     end
     return reshape(Δ, size(J))
 end
+
+function rule_config(::Val{P}) where {P}
+    error("`Lux.AutoDiffInternalImpl.rule_config` for `$(P).jl` is not implemented. This \
+           could be because `$(P).jl` hasn't been loaded yet. Try `using $(P)` first.")
+end

@@ -1,6 +1,6 @@
 module LuxTrackerExt
 
-using ADTypes: AutoTracker
+using ADTypes: AbstractADType, AutoTracker
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore
 using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
