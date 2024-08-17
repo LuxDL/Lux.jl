@@ -70,97 +70,146 @@ function groupnorm_affine_normalize_internal!(
         x::AbstractArray{<:Number, 4}, μ::AbstractArray{<:Number, 4},
         σ²::AbstractArray{<:Number, 4}, γ::Optional{<:AbstractArray{<:Number, 4}},
         β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
-    affine_normalize_loopvec!(y, x, μ, σ², γ, β, ϵ)
-    activation!(y, opmode, act, y)
+    if Utils.known(Traits.fuse_cpu_activation(act))
+        groupnorm_affine_normalize_act_cpu!(y, x, μ, σ², γ, β, ϵ, act)
+    else
+        groupnorm_affine_normalize_cpu!(y, x, μ, σ², γ, β, ϵ)
+        activation!(y, opmode, act, y)
+    end
     return
 end
 
-function affine_normalize_loopvec!(
+function groupnorm_affine_normalize_act_cpu!(
         y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
-        μ::AbstractArray{<:Number, 4},
-        σ²::AbstractArray{<:Number, 4}, ::Nothing, ::Nothing, ϵ::Real)
-    if LV.check_args(y, x, μ, σ²)
-        @tturbo for L in indices(y, 4), K in indices(y, 3)
+        μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
+        γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real, act::F) where {F}
+    if size(y, 1) == 1
+        groupnorm_affine_normalize_act_3d_serial_cpu!(y, x, μ, σ², γ, β, ϵ, act)
+    else
+        groupnorm_affine_normalize_act_4d_serial_cpu!(y, x, μ, σ², γ, β, ϵ, act)
+    end
+end
+
+function groupnorm_affine_normalize_act_3d_serial_cpu!(
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+        μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
+        γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real, σ::F) where {F}
+    if γ === nothing && β === nothing
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
-            for J in indices(y, 2), I in indices(y, 1)
-                y[I, J, K, L] = muladd(x[I, J, K, L], γ′, β′)
+            @simd ivdep for J in indices(y, 2)
+                y[1, J, K, L] = σ(x[1, J, K, L] * γ′ + β′)
             end
         end
     else
-        @inbounds @batch for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            @simd for J in indices(y, 2)
+                γ′ = γ[1, J, K, 1] * idenom
+                β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
+                y[1, J, K, L] = σ(x[1, J, K, L] * γ′ + β′)
+            end
+        end
+    end
+end
+
+function groupnorm_affine_normalize_act_4d_serial_cpu!(
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+        μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
+        γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real, σ::F) where {F}
+    if γ === nothing && β === nothing
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
             for J in indices(y, 2)
                 @simd ivdep for I in indices(y, 1)
-                    y[I, J, K, L] = muladd(x[I, J, K, L], γ′, β′)
-                end
-            end
-        end
-    end
-end
-
-function affine_normalize_loopvec!(
-        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
-        μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
-        γ::AbstractArray{<:Number, 4}, β::AbstractArray{<:Number, 4}, ϵ::Real)
-    if LV.check_args(y, x, μ, σ², γ, β)
-        @tturbo for L in indices(y, 4), K in indices(y, 3)
-            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            for J in indices(y, 2)
-                γ′ = γ[1, J, K, 1] * idenom
-                β′ = muladd(-μ[1, 1, K, L], γ′, β[1, J, K, 1])
-                for I in indices(y, 1)
-                    y[I, J, K, L] = muladd(x[I, J, K, L], γ′, β′)
+                    y[I, J, K, L] = σ(x[I, J, K, L] * γ′ + β′)
                 end
             end
         end
     else
-        @inbounds @batch for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             for J in indices(y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
-                β′ = muladd(-μ[1, 1, K, L], γ′, β[1, J, K, 1])
+                β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
                 @simd ivdep for I in indices(y, 1)
-                    y[I, J, K, L] = muladd(x[I, J, K, L], γ′, β′)
+                    y[I, J, K, L] = σ(x[I, J, K, L] * γ′ + β′)
                 end
             end
         end
     end
 end
 
-function affine_normalize_simd_loop!(
-        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
-        μ::AbstractArray{<:Number, 4},
-        σ²::AbstractArray{<:Number, 4}, ::Nothing, ::Nothing, ϵ::Real)
-    @inbounds for L in indices(y, 4), K in indices(y, 3)
-        γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-        β′ = -μ[1, 1, K, L] * γ′
-        for J in indices(y, 2)
-            @simd ivdep for I in indices(y, 1)
-                y[I, J, K, L] = muladd(x[I, J, K, L], γ′, β′)
-            end
-        end
-    end
-end
-
-function affine_normalize_simd_loop!(
+function groupnorm_affine_normalize_cpu!(
         y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
         μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
-        γ::AbstractArray{<:Number, 4}, β::AbstractArray{<:Number, 4}, ϵ::Real)
-    @inbounds for L in indices(y, 4), K in indices(y, 3)
-        idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-        for J in indices(y, 2)
-            γ′ = γ[1, J, K, 1] * idenom
-            β′ = muladd(-μ[1, 1, K, L], γ′, β[1, J, K, 1])
-            @simd ivdep for I in indices(y, 1)
-                y[I, J, K, L] = muladd(x[I, J, K, L], γ′, β′)
+        γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
+    if size(y, 1) == 1
+        groupnorm_affine_normalize_3d_serial_cpu!(y, x, μ, σ², γ, β, ϵ)
+    else
+        groupnorm_affine_normalize_4d_serial_cpu!(y, x, μ, σ², γ, β, ϵ)
+    end
+end
+
+@inline function groupnorm_affine_normalize_3d_serial_cpu!(
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+        μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
+        γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
+    if γ === nothing && β === nothing
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+            γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            β′ = -μ[1, 1, K, L] * γ′
+            @simd ivdep for J in indices(y, 2)
+                y[1, J, K, L] = x[1, J, K, L] * γ′ + β′
+            end
+        end
+    else
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            @simd for J in indices(y, 2)
+                γ′ = γ[1, J, K, 1] * idenom
+                β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
+                y[1, J, K, L] = x[1, J, K, L] * γ′ + β′
             end
         end
     end
 end
 
-Utils.@enzyme_reverse_alternative affine_normalize_loopvec! affine_normalize_simd_loop!
+@inline function groupnorm_affine_normalize_4d_serial_cpu!(
+        y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+        μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
+        γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
+    if γ === nothing && β === nothing
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+            γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            β′ = -μ[1, 1, K, L] * γ′
+            for J in indices(y, 2)
+                @simd ivdep for I in indices(y, 1)
+                    y[I, J, K, L] = x[I, J, K, L] * γ′ + β′
+                end
+            end
+        end
+    else
+        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+            idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
+            for J in indices(y, 2)
+                γ′ = γ[1, J, K, 1] * idenom
+                β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
+                @simd ivdep for I in indices(y, 1)
+                    y[I, J, K, L] = x[I, J, K, L] * γ′ + β′
+                end
+            end
+        end
+    end
+end
 
 function groupnorm_affine_normalize_internal!(
         y::AbstractArray{<:Number, 4}, ::GPUBroadcastOp, act::F,
@@ -231,26 +280,47 @@ function ∇groupnorm_affine_normalize(
     return ∂x, ∂μ, ∂σ², ∂γ, ∂β
 end
 
-function ∇groupnorm_affine_normalize!(
-        ∂x::AbstractArray{<:Number, 4}, ∂σ²::AbstractArray{<:Number, 4}, ::Nothing,
-        ::LoopedArrayOp, ∂y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
+function ∇groupnorm_affine_normalize(opmode::LoopedArrayOp, ∂y::AbstractArray{<:Number, 4},
+        x::AbstractArray{<:Number, 4}, μ::AbstractArray{<:Number, 4},
+        σ²::AbstractArray{<:Number, 4}, γ::Optional{<:AbstractArray{<:Number, 4}},
+        β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
+    ∂x, ∂μ, ∂σ² = similar(x), similar(μ), similar(σ²)
+    ∂γ = γ === nothing ? nothing : similar(γ)
+    ∂β = β === nothing ? nothing : similar(β)
+
+    ∇groupnorm_affine_normalize_cpu!(∂x, ∂μ, ∂σ², ∂γ, ∂β, ∂y, x, μ, σ², γ, ϵ)
+
+    ∂γ = γ === nothing ? ∂∅ : ∂γ
+    ∂β = β === nothing ? ∂∅ : ∂β
+
+    return ∂x, ∂μ, ∂σ², ∂γ, ∂β
+end
+
+function ∇groupnorm_affine_normalize_cpu!(
+        ∂x::AbstractArray{<:Number, 4}, ∂μ::AbstractArray{<:Number, 4},
+        ∂σ²::AbstractArray{<:Number, 4}, ::Nothing, ::Nothing,
+        ∂y::AbstractArray{<:Number, 4}, x::AbstractArray{<:Number, 4},
         μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4}, ::Nothing, ϵ::Real)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂σ², ∂y, x, μ, σ²)
-        @tturbo for L in indices(∂y, 4), K in indices(∂y, 3)
+    fill!(∂μ, 0)
+    fill!(∂σ², 0)
+
+    if size(∂y, 1) == 1
+        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
-            for J in indices(∂y, 2), I in indices(∂y, 1)
-                xμ = x[I, J, K, L] - μ[1, 1, K, L]
+            @simd for J in indices(∂y, 2)
+                xμ = x[1, J, K, L] - μ[1, 1, K, L]
 
-                ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
-                ∂σ²[I, J, K, L] = -∂x[I, J, K, L] * xμ * half * idenom²
+                ∂x[1, J, K, L] = ∂y[1, J, K, L] * idenom
+                ∂μ[1, 1, K, L] -= ∂x[1, J, K, L]
+                ∂σ²[1, 1, K, L] -= ∂x[1, J, K, L] * xμ * half * idenom²
             end
         end
     else
-        @inbounds @batch for L in indices(∂y, 4), K in indices(∂y, 3)
+        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
@@ -259,38 +329,46 @@ function ∇groupnorm_affine_normalize!(
                     xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
                     ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
-                    ∂σ²[I, J, K, L] = -∂x[I, J, K, L] * xμ * half * idenom²
+                    ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+                    ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
                 end
             end
         end
     end
 end
 
-function ∇groupnorm_affine_normalize!(
-        ∂x::AbstractArray{<:Number, 4}, ∂σ²::AbstractArray{<:Number, 4},
-        ∂γ::AbstractArray{<:Number, 4}, ::LoopedArrayOp, ∂y::AbstractArray{<:Number, 4},
+function ∇groupnorm_affine_normalize_cpu!(
+        ∂x::AbstractArray{<:Number, 4}, ∂μ::AbstractArray{<:Number, 4},
+        ∂σ²::AbstractArray{<:Number, 4}, ∂γ::AbstractArray{<:Number, 4},
+        ∂β::AbstractArray{<:Number, 4}, ∂y::AbstractArray{<:Number, 4},
         x::AbstractArray{<:Number, 4}, μ::AbstractArray{<:Number, 4},
         σ²::AbstractArray{<:Number, 4}, γ::AbstractArray{<:Number, 4}, ϵ::Real)
     half = eltype(∂σ²)(0.5)
 
-    if LV.check_args(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ)
-        @tturbo for L in indices(∂y, 4), K in indices(∂y, 3)
+    fill!(∂μ, 0)
+    fill!(∂σ², 0)
+    fill!(∂γ, 0)
+    fill!(∂β, 0)
+
+    if size(∂y, 1) == 1
+        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
-            for J in indices(∂y, 2)
+            @simd for J in indices(∂y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
-                for I in indices(∂y, 1)
-                    xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
-                    ∂x[I, J, K, L] = ∂y[I, J, K, L] * γ′
-                    ∂σ²[I, J, K, L] = -∂x[I, J, K, L] * xμ * half * idenom²
-                    ∂γ[I, J, K, L] = ∂y[I, J, K, L] * xμ * idenom
-                end
+                xμ = x[1, J, K, L] - μ[1, 1, K, L]
+
+                ∂x[1, J, K, L] = ∂y[1, J, K, L] * γ′
+                ∂μ[1, 1, K, L] -= ∂x[1, J, K, L]
+                ∂σ²[1, 1, K, L] -= ∂x[1, J, K, L] * xμ * half * idenom²
+                ∂γ[1, J, K, 1] += ∂y[1, J, K, L] * xμ * idenom
+                ∂β[1, J, K, 1] += ∂y[1, J, K, L]
             end
         end
     else
-        @inbounds @batch for L in indices(∂y, 4), K in indices(∂y, 3)
+        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
@@ -300,8 +378,10 @@ function ∇groupnorm_affine_normalize!(
                     xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
                     ∂x[I, J, K, L] = ∂y[I, J, K, L] * γ′
-                    ∂σ²[I, J, K, L] = -∂x[I, J, K, L] * xμ * half * idenom²
-                    ∂γ[I, J, K, L] = ∂y[I, J, K, L] * xμ * idenom
+                    ∂μ[1, 1, K, L] -= ∂x[I, J, K, L]
+                    ∂σ²[1, 1, K, L] -= ∂x[I, J, K, L] * xμ * half * idenom²
+                    ∂γ[1, J, K, 1] += ∂y[I, J, K, L] * xμ * idenom
+                    ∂β[1, J, K, 1] += ∂y[I, J, K, L]
                 end
             end
         end

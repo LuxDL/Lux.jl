@@ -85,9 +85,7 @@ function batchnorm_affine_normalize_internal!(
 
     compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
 
-    fuse_act = Traits.fuse_cpu_activation(act)
-
-    if Utils.known(fuse_act)
+    if Utils.known(Traits.fuse_cpu_activation(act))
         apply_batchnorm_scale_bias_act_cpu!(y, γ′, β′, x, act)
     else
         apply_batchnorm_scale_bias_cpu!(y, γ′, β′, x)
@@ -282,7 +280,7 @@ function ∇batchnorm_affine_normalize(opmode::LoopedArrayOp, ∂y::AbstractArra
     ∂γ = γ === nothing ? nothing : similar(γ)
     ∂β = β === nothing ? nothing : similar(β)
 
-    ∇batchnorm_affine_normalize_cpu!(∂x, ∂μ, ∂σ², ∂γ, ∂β, opmode, ∂y, x, μ, σ², γ, ϵ, γ′)
+    ∇batchnorm_affine_normalize_cpu!(∂x, ∂μ, ∂σ², ∂γ, ∂β, ∂y, x, μ, σ², γ, ϵ, γ′)
 
     ∂γ = γ === nothing ? ∂∅ : ∂γ
     ∂β = β === nothing ? ∂∅ : ∂β
@@ -292,7 +290,7 @@ end
 
 function ∇batchnorm_affine_normalize_cpu!(
         ∂x::AbstractArray{<:Number, 3}, ∂μ::AbstractVector{<:Number},
-        ∂σ²::AbstractVector{<:Number}, ::Nothing, ::Nothing, ::LoopedArrayOp,
+        ∂σ²::AbstractVector{<:Number}, ::Nothing, ::Nothing,
         ∂y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
         μ::AbstractVector, σ²::AbstractVector, ::Nothing, ϵ::Real, γ′::AbstractVector)
     half = eltype(∂σ²)(0.5)
@@ -332,7 +330,7 @@ end
 function ∇batchnorm_affine_normalize_cpu!(
         ∂x::AbstractArray{<:Number, 3}, ∂μ::AbstractVector{<:Number},
         ∂σ²::AbstractVector{<:Number}, ∂γ::AbstractVector{<:Number},
-        ∂β::AbstractVector{<:Number}, ::LoopedArrayOp, ∂y::AbstractArray{<:Number, 3},
+        ∂β::AbstractVector{<:Number}, ∂y::AbstractArray{<:Number, 3},
         x::AbstractArray{<:Number, 3}, μ::AbstractVector,
         σ²::AbstractVector, γ::AbstractVector, ϵ::Real, γ′::AbstractVector)
     half = eltype(∂σ²)(0.5)
