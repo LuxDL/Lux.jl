@@ -1,48 +1,27 @@
 function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray) where {F}
-    return batched_jacobian_impl(f, backend, x)
+    return batched_jacobian_internal(f, backend, x)
 end
 
 for fType in AD_CONVERTIBLE_FUNCTIONS
     @eval function batched_jacobian(f::$(fType), backend::AbstractADType, x::AbstractArray)
         f̂, y = rewrite_autodiff_call(f)
-        return batched_jacobian(f̂, backend, x, y)
+        return batched_jacobian_internal(f̂, backend, x, y)
     end
 end
 
-function batched_jacobian(f::F, backend::AbstractADType, x::AbstractArray, y) where {F}
-    return batched_jacobian_impl(Base.Fix2(f, y), backend, x)
+function batched_jacobian_internal(
+        f::F, backend::AbstractADType, x::AbstractArray, y) where {F}
+    return batched_jacobian_internal(Base.Fix2(f, y), backend, x)
 end
 
 # These are useful to extend Nested AD for non-chain rules backends
-function CRC.rrule(::typeof(batched_jacobian), f::F,
-        backend::AbstractADType, x::AbstractArray) where {F}
-    return CRC.rrule_via_ad(rule_config(Val(:Zygote)), batched_jacobian, f, backend, x)
-end
-
-function CRC.rrule(::typeof(batched_jacobian), f::F,
+function CRC.rrule(::typeof(batched_jacobian_internal), f::F,
         backend::AbstractADType, x::AbstractArray, y) where {F}
-    return CRC.rrule_via_ad(rule_config(Val(:Zygote)), batched_jacobian, f, backend, x, y)
+    return CRC.rrule_via_ad(
+        rule_config(Val(:Zygote)), batched_jacobian_internal, f, backend, x, y)
 end
 
-# For simplicity we will reuse the same rrule as below
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian),
-        f::F, backend::AbstractADType, x::AbstractArray) where {F}
-    f̂ = let f = f
-        (x, _) -> f(x)
-    end
-
-    res, ∇batched_jacobian_full = CRC.rrule_via_ad(
-        cfg, batched_jacobian, f̂, backend, x, nothing)
-    ∇batched_jacobian = let ∇batched_jacobian_full = ∇batched_jacobian_full
-        Δ -> begin
-            _, _, _, ∂x, _ = ∇batched_jacobian_full(CRC.unthunk(Δ))
-            return NoTangent(), NoTangent(), NoTangent(), ∂x
-        end
-    end
-    return res, ∇batched_jacobian
-end
-
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian),
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian_internal),
         f::F, backend::AbstractADType, x::AbstractArray, y) where {F}
     grad_fn = let cfg = cfg
         (f̂, x, args...) -> begin
@@ -52,7 +31,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian)
     end
 
     jac_fn = let backend = backend
-        (f̂, x̃) -> batched_jacobian_impl(f̂, backend, x̃)
+        (f̂, x̃) -> batched_jacobian_internal(f̂, backend, x̃)
     end
 
     res, ∇autodiff_jacobian = CRC.rrule_via_ad(
@@ -64,6 +43,35 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian)
         end
     end
     return res, ∇batched_jacobian
+end
+
+function CRC.rrule(::typeof(batched_jacobian_internal), f::F,
+        backend::AbstractADType, x::AbstractArray) where {F}
+    return CRC.rrule_via_ad(
+        rule_config(Val(:Zygote)), batched_jacobian_internal, f, backend, x)
+end
+
+function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian_internal),
+        f::F, backend::AbstractADType, x::AbstractArray) where {F}
+    f̂ = let f = f
+        (x, _) -> f(x)
+    end
+
+    res, ∇batched_jacobian_full = CRC.rrule_via_ad(
+        cfg, batched_jacobian_internal, f̂, backend, x, nothing)
+    ∇batched_jacobian = let ∇batched_jacobian_full = ∇batched_jacobian_full
+        Δ -> begin
+            _, _, _, ∂x, _ = ∇batched_jacobian_full(CRC.unthunk(Δ))
+            return NoTangent(), NoTangent(), NoTangent(), ∂x
+        end
+    end
+    return res, ∇batched_jacobian
+end
+
+# We need this intermediate call to ensure that there aren't any ambiguities
+function batched_jacobian_internal(
+        f::F, backend::AbstractADType, x::AbstractArray) where {F}
+    return batched_jacobian_impl(f, backend, x)
 end
 
 # ForwardDiff.jl Implementation

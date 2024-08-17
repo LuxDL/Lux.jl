@@ -21,7 +21,13 @@ function vector_jacobian_product_impl end
 function jacobian_vector_product end
 function jacobian_vector_product_impl end
 
+## Call Structure for `batched_jacobian`
+## Users call `batched_jacobian(f, ad, x)`
+## This calls either `batched_jacobian_internal(f, ad, x)` or
+## `batched_jacobian_internal(f, ad, x, y)` (if `f` is a `ComposedFunction` of correct form)
+## We define rrule on `batched_jacobian_internal`.
 function batched_jacobian end
+function batched_jacobian_internal end
 function batched_jacobian_impl end
 
 #! format: off

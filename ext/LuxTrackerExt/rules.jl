@@ -36,5 +36,5 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
 end
 
 # Nested AD
-@grad_from_chainrules Lux.AutoDiffInternalImpl.batched_jacobian(
+@grad_from_chainrules Lux.AutoDiffInternalImpl.batched_jacobian_internal(
     f, backend::AbstractADType, x::TrackedArray)
