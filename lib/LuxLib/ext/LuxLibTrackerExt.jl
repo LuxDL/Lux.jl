@@ -6,14 +6,52 @@ using NNlib: NNlib
 using Static: True, StaticBool
 using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector
 
-# NNlib: batched_mul
+tracker_data(x) = Tracker.data(x)
+tracker_data(x::NNlib.BatchedAdjoint) = NNlib.batched_adjoint(tracker_data(parent(x)))
+tracker_data(x::NNlib.BatchedTranspose) = NNlib.batched_transpose(tracker_data(parent(x)))
+
+# batched matrix multiplication
+import LuxLib.Impl: batched_matmul
+import NNlib: batched_mul
+
+## Without the rules on BatchedAdjoint and BatchedTranspose, we end up constructing
+## AbstractMatrix{<:TrackedReal} which is not efficient
 for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
     Utils.is_tracked(T1, T2) || continue
 
-    @eval Tracker.@grad_from_chainrules NNlib.batched_mul(
-        x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
-    @eval Tracker.@grad_from_chainrules LuxLib.Impl.batched_matmul(
-        x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
+    for op in (:batched_mul, :batched_matmul)
+        @eval begin
+            function $(op)(x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
+                return Tracker.track($(op), x, y)
+            end
+            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, $T1{<:Number, 3}},
+                    y::$T2{<:Number, 3})
+                return Tracker.track($(op), x, y)
+            end
+            function $(op)(x::$T1{<:Number, 3},
+                    y::NNlib.BatchedAdjOrTrans{<:Number, $T2{<:Number, 3}})
+                return Tracker.track($(op), x, y)
+            end
+            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, $T1{<:Number, 3}},
+                    y::NNlib.BatchedAdjOrTrans{<:Number, $T2{<:Number, 3}})
+                return Tracker.track($(op), x, y)
+            end
+        end
+    end
+end
+
+for op in (:batched_mul, :batched_matmul)
+    @eval Tracker.@grad function $(op)(x, y)
+        z = $(op)(tracker_data(x), tracker_data(y))
+        ∇batched_matmul = @closure Δ -> begin
+            ∂x = $(op)(tracker_data(Δ), NNlib.batched_adjoint(tracker_data(y)))
+            size(x, 3) == 1 && (∂x = sum(∂x; dims=3))
+            ∂y = $(op)(NNlib.batched_adjoint(tracker_data(x)), tracker_data(Δ))
+            size(y, 3) == 1 && (∂y = sum(∂y; dims=3))
+            return Tracker.nobacksies(:batched_matmul, (∂x, ∂y))
+        end
+        return z, ∇batched_matmul
+    end
 end
 
 # NNlib: gather
@@ -27,10 +65,10 @@ Tracker.@grad_from_chainrules Base.repeat(x::TrackedArray, counts...)
 Base.selectdim(x::TrackedArray, d::Integer, i) = Tracker.track(selectdim, x, d, i)
 
 Tracker.@grad function Base.selectdim(x::AbstractArray, d::Integer, i)
-    x_ = Tracker.data(x)
-    y = selectdim(x_, d, i)
+    x′ = Tracker.data(x)
+    y = selectdim(x′, d, i)
     ∇selectdim = @closure Δ -> begin
-        ∂x = zero(x_)
+        ∂x = zero(x′)
         selectdim(∂x, d, i) .= Tracker.data(Δ)
         return ∂x, nothing, nothing
     end
