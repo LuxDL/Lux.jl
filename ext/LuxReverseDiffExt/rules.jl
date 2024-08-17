@@ -14,5 +14,5 @@
     x::TrackedArray, ps::TrackedArray, ::CPUDevice)
 
 # Nested AD
-@grad_from_chainrules Lux.AutoDiffInternalImpl.batched_jacobian(
+@grad_from_chainrules Lux.AutoDiffInternalImpl.batched_jacobian_internal(
     f, backend::AbstractADType, x::TrackedArray)

@@ -79,7 +79,6 @@ end
     using ComponentArrays, ForwardDiff, Zygote
 
     rng = StableRNG(12345)
-    cdev = cpu_device()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
@@ -114,10 +113,7 @@ end
                 loss_function_simple, model, X, ps, st)
 
             @test ∂x_batched≈∂x_simple atol=1.0e-3 rtol=1.0e-3
-
-            ∂ps_batched = ComponentArray(∂ps_batched |> cdev)
-            ∂ps_simple = ComponentArray(∂ps_simple |> cdev)
-            @test ∂ps_batched≈∂ps_simple atol=1.0e-3 rtol=1.0e-3
+            @test check_approx(∂ps_batched, ∂ps_simple; atol=1.0e-3, rtol=1.0e-3)
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
@@ -125,21 +121,21 @@ end
                 loss_function_batched, model, X, ps, st)
 
             @test ∂x_batched2≈∂x_batched atol=1.0e-3 rtol=1.0e-3
-
-            ∂ps_batched2 = ComponentArray(∂ps_batched2 |> cdev)
-            @test ∂ps_batched2≈∂ps_batched atol=1.0e-3 rtol=1.0e-3
+            @test check_approx(∂ps_batched2, ∂ps_batched; atol=1.0e-3, rtol=1.0e-3)
         end
     end
 end
 
 @testitem "Nested AD: Batched Jacobian Single Input" setup=[SharedTestSetup] tags=[:autodiff] begin
-    using ForwardDiff, Zygote, Tracker, ReverseDiff
+    using Zygote, Tracker, ReverseDiff
 
     rng = StableRNG(12345)
     sq_fn(x) = x .^ 2
 
     sumabs2_fd(x) = sum(abs2, batched_jacobian(sq_fn, AutoForwardDiff(), x))
     sumabs2_zyg(x) = sum(abs2, batched_jacobian(sq_fn, AutoZygote(), x))
+
+    true_gradient(x) = 8 .* x
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(rng, Float32, 4, 2) |> aType
@@ -150,7 +146,8 @@ end
         ∂x1_tr = only(Tracker.gradient(sumabs2_zyg, x))
         ∂x2_zyg = only(Zygote.gradient(sumabs2_fd, x))
         ∂x2_tr = only(Tracker.gradient(sumabs2_fd, x))
-        ∂x_gt = ForwardDiff.gradient(sumabs2_fd, x)
+
+        ∂x_gt = true_gradient(x)
 
         @test ∂x1_zyg≈∂x_gt atol=1.0e-3 rtol=1.0e-3
         @test ∂x1_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
