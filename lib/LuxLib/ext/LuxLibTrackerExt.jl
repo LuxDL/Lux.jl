@@ -24,16 +24,16 @@ for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
             function $(op)(x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
                 return Tracker.track($(op), x, y)
             end
-            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, $T1{<:Number, 3}},
+            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, <:$T1{<:Number, 3}},
                     y::$T2{<:Number, 3})
                 return Tracker.track($(op), x, y)
             end
             function $(op)(x::$T1{<:Number, 3},
-                    y::NNlib.BatchedAdjOrTrans{<:Number, $T2{<:Number, 3}})
+                    y::NNlib.BatchedAdjOrTrans{<:Number, <:$T2{<:Number, 3}})
                 return Tracker.track($(op), x, y)
             end
-            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, $T1{<:Number, 3}},
-                    y::NNlib.BatchedAdjOrTrans{<:Number, $T2{<:Number, 3}})
+            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, <:$T1{<:Number, 3}},
+                    y::NNlib.BatchedAdjOrTrans{<:Number, <:$T2{<:Number, 3}})
                 return Tracker.track($(op), x, y)
             end
         end
