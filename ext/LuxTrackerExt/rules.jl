@@ -34,3 +34,7 @@ for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
         de::Lux.DynamicExpressionsLayer, expr,
         operator_enum, x::$(T1), ps::$(T2), dev::CPUDevice)
 end
+
+# Nested AD
+@grad_from_chainrules Lux.AutoDiffInternalImpl.batched_jacobian(
+    f, backend::AbstractADType, x::TrackedArray)
