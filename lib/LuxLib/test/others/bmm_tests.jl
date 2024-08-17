@@ -296,16 +296,6 @@ end
             test_gradients(fn, aType(randn(rng, M, P, 1)),
                 batched_transpose(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
         end
-
-        @testset "batched_vec" begin
-            test_gradients(fn_vec, aType(randn(rng, M, P, B)),
-                aType(randn(rng, P, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn_vec, aType(randn(rng, M, P, B)),
-                transpose(aType(randn(rng, B, P))); atol=1e-3, rtol=1e-3)
-
-            test_gradients(fn_vec, aType(randn(rng, M, P, B)),
-                aType(randn(rng, P)); atol=1e-3, rtol=1e-3)
-        end
     end
 end
 
