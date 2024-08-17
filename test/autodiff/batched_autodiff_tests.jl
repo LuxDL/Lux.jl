@@ -125,3 +125,26 @@ end
         end
     end
 end
+
+@testitem "Nested AD: Batched Jacobian Single Input" setup=[SharedTestSetup] tags=[:autodiff] begin
+    using ForwardDiff, Zygote
+
+    rng = StableRNG(12345)
+    sq_fn(x) = x .^ 2
+
+    sumabs2_fd(x) = sum(abs2, batched_jacobian(sq_fn, AutoForwardDiff(), x))
+    sumabs2_zyg(x) = sum(abs2, batched_jacobian(sq_fn, AutoZygote(), x))
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        x = rand(rng, Float32, 4, 2) |> aType
+
+        @test sumabs2_fd(x) ≈ sumabs2_zyg(x)
+
+        ∂x1 = Zygote.gradient(sumabs2_zyg, x)[1]
+        ∂x2 = Zygote.gradient(sumabs2_fd, x)[1]
+        ∂x_gt = ForwardDiff.gradient(sumabs2_fd, x)
+
+        @test ∂x1≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x2≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+    end
+end
