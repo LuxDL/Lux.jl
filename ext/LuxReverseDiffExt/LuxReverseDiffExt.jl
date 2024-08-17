@@ -1,6 +1,6 @@
 module LuxReverseDiffExt
 
-using ADTypes: ADTypes, AutoReverseDiff
+using ADTypes: ADTypes, AbstractADType, AutoReverseDiff
 using ArrayInterface: ArrayInterface
 using FunctionWrappers: FunctionWrapper
 using ReverseDiff: ReverseDiff, ForwardExecutor, ReverseExecutor, TrackedArray, TrackedReal,
