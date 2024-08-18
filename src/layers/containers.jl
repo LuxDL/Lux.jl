@@ -399,11 +399,6 @@ Collects multiple layers / functions to be called in sequence on a given input.
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
 
-## Keyword Arguments
-
-  - `disable_optimizations`: Prevents any structural optimization
-  - `name`: Name of the layer (optional)
-
 # Extended Help
 
 ## Inputs
