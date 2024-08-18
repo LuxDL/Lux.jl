@@ -39,7 +39,7 @@ true
 ```
 """
 macro layer_map(f, l, ps, st)
-    quote
+    return quote
         layer_map($(esc(f)), $(esc(l)), $(esc(ps)), $(esc(st)), $(Meta.quot(l)))
     end
 end

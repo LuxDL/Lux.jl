@@ -1,12 +1,3 @@
-# SimpleChains.jl: DON'T REPLACE THESE WITH @grad_from_chainrules
-for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
-    T1 === :AbstractArray && T2 === :AbstractArray && continue
-
-    @eval function Lux.apply_simple_chain(layer, x::$(T1), ps::$(T2), dev::CPUDevice)
-        return Tracker.track(Lux.apply_simple_chain, layer, x, ps, dev)
-    end
-end
-
 # DynamicExpressions.jl
 for T1 in (:TrackedArray, :AbstractArray), T2 in (:TrackedArray, :AbstractArray)
     T1 === :AbstractArray && T2 === :AbstractArray && continue

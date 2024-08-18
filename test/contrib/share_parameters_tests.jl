@@ -16,10 +16,8 @@
         @test ps_1.d3.weight == ps_1.d2.l1.weight
         @test ps_1.d3.bias == ps_1.d2.l1.bias
 
-        ps_new_1 = (; weight=randn(rng, Float32, 4, 2), bias=randn(rng, Float32, 4)) |>
-                   device
-        ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2)) |>
-                   device
+        ps_new_1 = (; weight=randn(rng, Float32, 4, 2), bias=randn(rng, Float32, 4)) |> dev
+        ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2)) |> dev
 
         ps_2 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_1, ps_new_2))
 
@@ -29,7 +27,7 @@
         @test ps_2.d3.bias == ps_new_2.bias == ps_2.d2.l1.bias
 
         # Mix in ComponentArray
-        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> device
+        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> dev
 
         ps_3 = Lux.Experimental.share_parameters(ps, sharing, (ps_new_ca_1, ps_new_2))
 
@@ -46,15 +44,13 @@
             ps, sharing, (ps_new_1,))
 
         # Parameter Structure Mismatch
-        ps_new_1 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 4)) |>
-                   device
-        ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2)) |>
-                   device
+        ps_new_1 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 4)) |> dev
+        ps_new_2 = (; weight=randn(rng, Float32, 2, 4), bias=randn(rng, Float32, 2)) |> dev
 
         @test_throws ArgumentError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_1, ps_new_2))
 
-        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> device
+        ps_new_ca_1 = ComponentArray(ps_new_1 |> CPUDevice()) |> dev
 
         @test_throws ArgumentError Lux.Experimental.share_parameters(
             ps, sharing, (ps_new_ca_1, ps_new_2))
