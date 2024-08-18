@@ -3,11 +3,11 @@ module LuxCoreFunctorsExt
 using LuxCore: LuxCore
 using Functors: Functors
 
-LuxCore._is_extension_loaded(::Val{:Functors}) = true
+LuxCore.Internal.is_extension_loaded(::Val{:Functors}) = true
 
-LuxCore.__isleaf(x) = Functors.isleaf(x)
-LuxCore.__fmap(args...; kwargs...) = Functors.fmap(args...; kwargs...)
-LuxCore.__fleaves(args...; kwargs...) = Functors.fleaves(args...; kwargs...)
+LuxCore.Internal.isleaf(x) = Functors.isleaf(x)
+LuxCore.Internal.fmap(args...; kwargs...) = Functors.fmap(args...; kwargs...)
+LuxCore.Internal.fleaves(args...; kwargs...) = Functors.fleaves(args...; kwargs...)
 
 function Functors.functor(::Type{<:LuxCore.AbstractLuxContainerLayer{layers}},
         x) where {layers}

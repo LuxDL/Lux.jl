@@ -4,30 +4,6 @@ using Compat: @compat
 using DispatchDoctor: @stable
 using Random: Random, AbstractRNG, Xoshiro
 
-_is_extension_loaded(::Val) = false
-
-function __fmap end  # Defined in FunctorsExt
-function __fleaves end  # Defined in FunctorsExt
-function __isleaf end  # Defined in FunctorsExt
-
-for op in (:_fmap, :_fleaves, :_isleaf)
-    main_op = Symbol(:_, op)
-    err_msg = "`$op` requires `Functors.jl` to be loaded."
-    @eval begin
-        function $(op)(args...; kwargs...)
-            _is_extension_loaded(Val(:Functors)) || throw(ArgumentError($err_msg))
-            return $main_op(args...; kwargs...)
-        end
-    end
-end
-
-function __setfield end  # Defined in SetfieldExt
-
-function _setfield(args...; kwargs...)
-    _is_extension_loaded(Val(:Setfield)) && return __setfield(args...; kwargs...)
-    throw(ArgumentError("`_setfield` requires `Setfield.jl` to be loaded."))
-end
-
 # PRNG Handling
 """
     replicate(rng::AbstractRNG)
@@ -42,8 +18,6 @@ function replicate(rng::Random.TaskLocalRNG)
     @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`." maxlog=1
     return rng
 end
-
-_default_rng() = Xoshiro(1234)
 
 """
     abstract type AbstractLuxLayer
@@ -90,15 +64,10 @@ for op in (:initialparameters, :initialstates)
         $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
             contains_lux_layer(l) || throw(MethodError($op, (rng, l)))
-            return _fmap(Base.Fix1($op, rng), l; exclude=_isleaf)
+            return Internal.fmap(Base.Fix1($op, rng), l; exclude=Internal.isleaf)
         end
     end
 end
-
-_isleaf(::AbstractLuxLayer) = true
-
-_getemptystate(::AbstractLuxLayer) = NamedTuple()
-_getemptystate(l::NamedTuple) = map(_getemptystate, l)
 
 """
     parameterlength(layer)
@@ -106,7 +75,7 @@ _getemptystate(l::NamedTuple) = map(_getemptystate, l)
 Return the total number of parameters of the layer `l`.
 """
 function parameterlength(l::AbstractLuxLayer)
-    return parameterlength(initialparameters(_default_rng(), l))
+    return parameterlength(initialparameters(Internal.default_rng(), l))
 end
 function parameterlength(nt::Union{NamedTuple, Tuple})
     return length(nt) == 0 ? 0 : sum(parameterlength, nt)
@@ -118,7 +87,7 @@ parameterlength(a::AbstractArray) = length(a)
 
 Return the total number of states of the layer `l`.
 """
-statelength(l::AbstractLuxLayer) = statelength(initialstates(_default_rng(), l))
+statelength(l::AbstractLuxLayer) = statelength(initialstates(Internal.default_rng(), l))
 statelength(nt::Union{NamedTuple, Tuple}) = length(nt) == 0 ? 0 : sum(statelength, nt)
 statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
@@ -129,10 +98,6 @@ statelength(::Any) = 1
 Return the input size of the layer.
 """
 function inputsize end
-
-_size(x::AbstractVector) = size(x)
-_size(x::AbstractArray) = size(x)[1:(ndims(x) - 1)]
-__size(x) = __fmap(_size, x)
 
 """
     outputsize(layer, x, rng)
@@ -153,7 +118,7 @@ if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 function outputsize(layer, x, rng)
     ps, st = setup(rng, layer)
     y = first(apply(layer, x, ps, st))
-    return __size(y)
+    return Internal.size(y)
 end
 
 """
@@ -204,7 +169,7 @@ an empty state of `NamedTuple()`. Behavior of other kinds of models are undefine
 the responsibility of the user to ensure that the model has an empty state.
 """
 function stateless_apply(model::AbstractLuxLayer, x, ps)
-    return first(apply(model, x, ps, _getemptystate(model)))
+    return first(apply(model, x, ps, Internal.get_empty_state(model)))
 end
 
 """
@@ -270,10 +235,6 @@ function statelength(l::AbstractLuxContainerLayer{layers}) where {layers}
     return sum(statelength, getfield.((l,), layers))
 end
 
-function _getemptystate(l::AbstractLuxContainerLayer{layers}) where {layers}
-    return NamedTuple{layers}(_getemptystate.(getfield.((l,), layers)))
-end
-
 """
     abstract type AbstractLuxWrapperLayer{layer} <: AbstractLuxLayer
 
@@ -302,10 +263,6 @@ end
 
 function statelength(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return statelength(getfield(l, layer))
-end
-
-function _getemptystate(l::AbstractLuxWrapperLayer{layer}) where {layer}
-    return _getemptystate(getfield(l, layer))
 end
 
 # Test Mode
@@ -365,11 +322,58 @@ end
 
 A Boolean Value
 """
-check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, _fleaves(x))
+check_fmap_condition(cond::C, ::Nothing, x) where {C} = any(cond, Internal.fleaves(x))
 check_fmap_condition(cond::C, ::Nothing, ::NamedTuple{()}) where {C} = any(cond, ())
 function check_fmap_condition(cond::C, ::Type{T}, x) where {C, T}
     x isa T && return true
     return check_fmap_condition(cond, nothing, x)
+end
+
+module Internal
+
+using ..LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
+
+is_extension_loaded(::Val) = false
+
+function fmap_impl end     # Defined in FunctorsExt
+function fleaves_impl end  # Defined in FunctorsExt
+function isleaf_impl end   # Defined in FunctorsExt
+
+for op in (:fmap, :fleaves, :isleaf)
+    main_op = Symbol(op, :_impl)
+    err_msg = "`$op` requires `Functors.jl` to be loaded."
+    @eval begin
+        function $(op)(args...; kwargs...)
+            is_extension_loaded(Val(:Functors)) || throw(ArgumentError($err_msg))
+            return $main_op(args...; kwargs...)
+        end
+    end
+end
+
+isleaf(::AbstractLuxLayer) = true
+
+function setfield_impl end  # Defined in SetfieldExt
+
+function setfield(args...; kwargs...)
+    is_extension_loaded(Val(:Setfield)) && return setfield_impl(args...; kwargs...)
+    throw(ArgumentError("`setfield` requires `Setfield.jl` to be loaded."))
+end
+
+size_array(x::AbstractArray) = Base.size(x)[1:(ndims(x) - 1)]
+size_array(x::AbstractVector) = Base.size(x)
+size(x) = fmap(size_array, x)
+
+default_rng() = Xoshiro(1234)
+
+get_empty_state(::AbstractLuxLayer) = NamedTuple()
+get_empty_state(l::NamedTuple) = map(get_empty_state, l)
+function get_empty_state(l::AbstractLuxContainerLayer{layers}) where {layers}
+    return NamedTuple{layers}(get_empty_state.(getfield.((l,), layers)))
+end
+function get_empty_state(l::AbstractLuxWrapperLayer{layer}) where {layer}
+    return get_empty_state(getfield(l, layer))
+end
+
 end
 
 @compat(public,
