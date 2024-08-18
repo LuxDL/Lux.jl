@@ -4,21 +4,64 @@
 module NilSizePropagation
 
 using ArrayInterface: ArrayInterface
+using ForwardDiff: ForwardDiff
+using Random: Random
+using Static: Static, StaticBool
+
+# We need these to avoid ambiguities
+using SIMDTypes: SIMDTypes
+using StaticArraysCore: StaticArraysCore
+using VectorizationBase: VectorizationBase
+
+const VecT = Union{Bool, Float16, Float32, Float64, Int16, Int32, Int64,
+    Int8, UInt16, UInt32, UInt64, UInt8, SIMDTypes.Bit}
+
 using ..Lux: recursive_map
 using LuxLib: LuxLib
 using NNlib: NNlib
-using Random: Random
-using Static: StaticBool
 
 struct Nil <: Real end
 
 const nil = Nil()
 
-Nil(::T) where {T <: Number} = nil
-(::Type{T})(::Nil) where {T <: Number} = nil
-Base.convert(::Type{Nil}, ::Number) = nil
-Base.convert(::Type{T}, ::Nil) where {T <: Number} = zero(T)
+Nil(::T) where {T <: Real} = nil
+Nil(::Nil) = nil
+(::Type{T})(::Nil) where {T <: Real} = nil
+Base.convert(::Type{Nil}, ::Real) = nil
+Base.convert(::Type{T}, ::Nil) where {T <: Real} = zero(T)
 Base.convert(::Type{Nil}, ::Nil) = nil
+
+Base.Bool(::Nil) = throw(ArgumentError("`Bool` is not defined for `Nil`."))
+
+const NIL_DUAL_ERROR_MSG = "`Nil` is incompatible with `Dual` numbers."
+
+ForwardDiff.Dual(::Nil) = throw(ArgumentError(NIL_DUAL_ERROR_MSG))
+ForwardDiff.Dual{T}(::Nil) where {T} = throw(ArgumentError(NIL_DUAL_ERROR_MSG))
+ForwardDiff.Dual{T, V}(::Nil) where {T, V} = throw(ArgumentError(NIL_DUAL_ERROR_MSG))
+function ForwardDiff.Dual{T, V, Tag}(::Nil) where {T, V, Tag}
+    throw(ArgumentError(NIL_DUAL_ERROR_MSG))
+end
+function Base.convert(::Type{ForwardDiff.Dual{T, V, Tag}}, ::Nil) where {T, V, Tag}
+    throw(ArgumentError(NIL_DUAL_ERROR_MSG))
+end
+
+const NIL_VEC_ERROR_MSG = "`Nil` is incompatible with `VectorizationBase` numbers."
+
+VectorizationBase.Vec{W, T}(::Nil) where {T, W} = throw(ArgumentError(NIL_VEC_ERROR_MSG))
+function VectorizationBase.VecUnroll{
+        N, W, T, V}(::Nil) where {T, W, V <: VectorizationBase.AbstractSIMDVector{W, T}, N}
+    throw(ArgumentError(NIL_VEC_ERROR_MSG))
+end
+function VectorizationBase.VecUnroll{N, 1, T, T}(::Nil) where {T <: VecT, N}
+    throw(ArgumentError(NIL_VEC_ERROR_MSG))
+end
+
+const NIL_STATIC_ERROR_MSG = "`Nil` is incompatible with `Static` numbers."
+
+function Base.convert(::Type{Nil},
+        ::Union{StaticBool{N}, Static.StaticFloat64{N}, Static.StaticInt{N}}) where {N}
+    throw(ArgumentError(NIL_STATIC_ERROR_MSG))
+end
 
 Base.float(::Type{Nil}) = Nil
 
@@ -39,9 +82,13 @@ Base.isfinite(::Nil) = true
 Base.typemin(::Type{Nil}) = nil
 Base.typemax(::Type{Nil}) = nil
 
-Base.promote_rule(::Type{Nil}, ::Type{<:Number}) = Nil
+Base.promote_rule(::Type{Nil}, ::Type{<:Real}) = Nil
+function Base.promote_rule(
+        ::Type{Nil}, ::Type{ForwardDiff.Dual{T, V, Tag}}) where {T, V, Tag}
+    throw(ArgumentError(NIL_DUAL_ERROR_MSG))
+end
 
-Random.rand(::Random.AbstractRNG, ::Random.SamplerType{Nil}) = nil
+Base.rand(::Random.AbstractRNG, ::Random.SamplerType{Nil}) = nil
 
 struct NilArray{N} <: AbstractArray{Nil, N}
     size::NTuple{N, Int}
@@ -81,15 +128,26 @@ function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NilArray}},
 end
 
 Base.copyto!(dest::NilArray, ::Broadcast.Broadcasted) = dest
+function Base.copyto!(
+        dest::NilArray, ::Broadcast.Broadcasted{<:StaticArraysCore.StaticArrayStyle})
+    return dest
+end
+Base.copyto!(dest::NilArray, ::Broadcast.Broadcasted{Nothing}) = dest
+function Base.copyto!(
+        dest::NilArray, ::Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}})
+    return dest
+end
+function Base.copyto!(
+        dest::NilArray, ::Broadcast.Broadcasted{<:StaticArraysCore.StaticArrayStyle{0}})
+    return dest
+end
 
 Base.fill!(dest::NilArray, _) = dest
-
-Base.mapreducedim!(_, __, R::AnyNilArray, ::Base.AbstractArrayOrBroadcasted) = R
 
 recursively_nillify_internal(x) = x
 recursively_nillify_internal(x::AbstractArray) = NilArray(x)
 
-recursively_nillify(x::AbstractArray{<:Number}) = recursively_nillify_internal(x)
+recursively_nillify(x::AbstractArray{<:Real}) = recursively_nillify_internal(x)
 recursively_nillify(x) = recursive_map(recursively_nillify_internal, x)
 
 const Optional{T} = Union{Nothing, T}
