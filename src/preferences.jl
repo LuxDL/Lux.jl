@@ -1,7 +1,7 @@
 module LuxPreferences
 
 using ArgCheck: @argcheck
-using Preferences: load_preference, has_preference, set_preferences!
+using Preferences: load_preference, has_preference, set_preferences!, @load_preference
 
 using ..Lux: Lux
 

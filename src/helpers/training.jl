@@ -4,16 +4,11 @@ using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZyg
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
-using Optimisers: Optimisers, AbstractRule
-using Random: AbstractRNG
+using Optimisers: Optimisers
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractExplicitLayer
-<<<<<<< HEAD
-using MLDataDevices: MLDataDevices
-=======
 using Optimisers: Optimisers
->>>>>>> 30f27fd4 (fix: don't reexport NNlib.dropout)
 
 """
     TrainState

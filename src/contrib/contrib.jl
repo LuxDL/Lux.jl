@@ -1,6 +1,6 @@
 module Experimental
 
-using ..Lux: Lux, Training, Optional
+using ..Lux: Lux, Optional
 using ..Utils: Utils, BoolType, SymbolType
 using LuxCore: LuxCore, AbstractExplicitLayer, AbstractExplicitContainerLayer, apply
 
