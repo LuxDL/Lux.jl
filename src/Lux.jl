@@ -13,6 +13,7 @@ using Functors: Functors, fmap
 using GPUArraysCore: @allowscalar
 using LossFunctions: LossFunctions
 using Markdown: @doc_str
+using NNlib: NNlib
 using Optimisers: Optimisers
 using Random: Random, AbstractRNG
 using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
