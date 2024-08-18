@@ -19,7 +19,7 @@ end
         Lux; skip=(Base, Core, LuxCore, MLDataDevices, LuxLib, WeightInitializers)) ===
           nothing
     @test check_no_stale_explicit_imports(
-        Lux; ignore=(:inputsize, :setup, :testmode, :trainmode, :update_state)) === nothing
+        Lux; ignore=(:setup, :testmode, :trainmode, :update_state)) === nothing
     @test check_no_self_qualified_accesses(Lux) === nothing
     @test check_all_explicit_imports_via_owners(Lux) === nothing
     @test check_all_qualified_accesses_via_owners(
