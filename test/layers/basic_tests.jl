@@ -102,7 +102,7 @@
             @jet layer(x, ps, st)
 
             __f = x -> sum(first(layer(x, ps, st)))
-            @eval @test_gradients $__f $x gpu_testing=$ongpu atol=1.0f-3 rtol=1.0f-3
+            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "PeriodicEmbedding" begin

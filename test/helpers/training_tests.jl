@@ -146,9 +146,9 @@ end
         x = randn(rng, Float32, 4, 32)
         opt = Adam(0.001f0)
 
-        tstate = Lux.Experimental.TrainState(model, ps, st, opt)
+        tstate = Training.TrainState(model, ps, st, opt)
 
-        _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
+        _, _, _, tstate_new = @inferred Training.compute_gradients(
             AutoEnzyme(), mse, (x, x), tstate)
 
         @test tstate_new.states !== tstate.states
@@ -156,15 +156,15 @@ end
         model = Chain(Dense(4 => 3), Dense(3 => 4))
         ps, st = Lux.setup(rng, model)
 
-        tstate = Lux.Experimental.TrainState(model, ps, st, opt)
+        tstate = Training.TrainState(model, ps, st, opt)
 
-        _, _, _, tstate_new = @inferred Lux.Experimental.compute_gradients(
+        _, _, _, tstate_new = @inferred Training.compute_gradients(
             AutoEnzyme(), mse, (x, x), tstate)
 
-        @test @inferred(Lux.Experimental.compute_gradients(
+        @test @inferred(Training.compute_gradients(
             AutoEnzyme(), mse, (x, x), tstate_new)) isa Any
 
-        _, _, _, tstate_new2 = @inferred Lux.Experimental.compute_gradients(
+        _, _, _, tstate_new2 = @inferred Training.compute_gradients(
             AutoEnzyme(), mse2, (x, x), tstate_new)
         @test hasfield(typeof(tstate_new2.cache.extras), :forward)
         @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
