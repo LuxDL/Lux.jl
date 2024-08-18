@@ -1,7 +1,6 @@
 module LuxLib
 
 using Compat: @compat
-using Random: AbstractRNG
 using Reexport: @reexport
 using Static: Static, known
 using UnrolledUtilities: unrolled_filter
@@ -10,7 +9,7 @@ using ChainRulesCore: ChainRulesCore, NoTangent
 
 using LuxCore: LuxCore
 using MLDataDevices: get_device_type, AbstractGPUDevice
-using NNlib: NNlib, ConvDims, σ
+using NNlib: NNlib
 
 const Optional{T} = Union{Nothing, T}
 const Numeric = Union{AbstractArray{<:T}, T} where {T <: Number}
