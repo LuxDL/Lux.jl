@@ -26,7 +26,8 @@ import LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperL
                 outputsize, update_state, trainmode, testmode, setup, apply, replicate
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
-@eval Expr(:export, filter(x -> x !== :dropout, Reexport.exported_names(NNlib))...)
+using NNlib: NNlib, DenseConvDims, PoolDims, logsigmoid, logsoftmax, maxpool, meanpool,
+             pixel_shuffle, sigmoid_fast, tanh_fast
 
 const CRC = ChainRulesCore
 
