@@ -36,7 +36,7 @@ struct ReshapeLayer{N} <: AbstractLuxLayer
     dims::NTuple{N, Int}
 end
 
-outputsize(r::ReshapeLayer) = r.dims
+outputsize(r::ReshapeLayer, _, __) = r.dims
 
 function (r::ReshapeLayer)(x::AbstractArray, _, st::NamedTuple)
     return reshape(x, r.dims..., size(x, ndims(x))), st
@@ -322,7 +322,7 @@ end
 parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
 statelength(d::Dense) = 0
 
-outputsize(d::Dense) = (d.out_dims,)
+outputsize(d::Dense, _, __) = (d.out_dims,)
 
 function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
@@ -409,7 +409,7 @@ end
 parameterlength(d::Scale) = (1 + has_bias(d)) * prod(d.dims)
 statelength(d::Scale) = 0
 
-outputsize(d::Scale) = d.dims
+outputsize(d::Scale, _, __) = d.dims
 
 function (d::Scale{False})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
@@ -516,7 +516,7 @@ function parameterlength(b::Bilinear)
 end
 statelength(b::Bilinear) = 0
 
-outputsize(b::Bilinear) = (b.out_dims,)
+outputsize(b::Bilinear, _, __) = (b.out_dims,)
 
 function (b::Bilinear)(
         (x, y)::Tuple{<:AbstractVecOrMat, <:AbstractVecOrMat}, ps, st::NamedTuple)
@@ -596,7 +596,7 @@ function Base.show(io::IO, e::Embedding)
     return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
 end
 
-outputsize(e::Embedding) = (e.out_dims,)
+outputsize(e::Embedding, _, __) = (e.out_dims,)
 
 (e::Embedding)(x::Integer, ps, st::NamedTuple) = view(ps.weight, :, x), st
 function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)

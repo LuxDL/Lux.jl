@@ -1,6 +1,4 @@
 # Initial design is based off of https://github.com/FluxML/Flux.jl/blob/942c6e5051b7a8cb064432d1f0604319497d5f09/src/outputsize.jl
-# Currently this is not being used anywhere. However, with 1.0 release we will define
-# outputsize for all layers using this.
 module NilSizePropagation
 
 using ArrayInterface: ArrayInterface
@@ -199,25 +197,8 @@ end
 
 end
 
-# TODO: In v1 we change to this `outputsize` function, till then this is private API
-function compute_output_size(layer::AbstractExplicitLayer,
-        input_size::NTuple{N, <:Integer}, rng::AbstractRNG) where {N}
-    x = NilSizePropagation.NilArray{N}(input_size)
-    return compute_output_size(layer, x, rng)
-end
-
-function compute_output_size(
-        layer::AbstractExplicitLayer, input_size::NTuple{N, <:Integer}, ps, st) where {N}
-    x = NilSizePropagation.NilArray{N}(input_size)
-    return compute_output_size(layer, x, ps, st)
-end
-
-function compute_output_size(layer::AbstractExplicitLayer, x, rng::AbstractRNG)
+function LuxCore.outputsize(layer::AbstractLuxLayer, x, rng::AbstractRNG)
     ps, st = setup(rng, layer)
-    return compute_output_size(layer, x, ps, st)
-end
-
-function compute_output_size(layer::AbstractExplicitLayer, x, ps, st)
     x_nil = NilSizePropagation.recursively_nillify(x)
     ps_nil = NilSizePropagation.recursively_nillify(ps)
     st_nil = NilSizePropagation.recursively_nillify(st)
