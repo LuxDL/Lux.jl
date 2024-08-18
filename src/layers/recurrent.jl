@@ -379,8 +379,7 @@ function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
                      for init_weight in lstm.init_weight]...)
     ps = (; weight_i, weight_h)
     if has_bias(lstm)
-        # TODO: in v1 we make this a flat vector
-        bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
+        bias = vcat([init_bias(rng, lstm.out_dims) for init_bias in lstm.init_bias]...)
         ps = merge(ps, (bias=bias,))
     end
     has_train_state(lstm) &&
@@ -425,7 +424,7 @@ const _LSTMCellInputType = Tuple{
 function (lstm::LSTMCell)(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
-    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
+    bias = safe_getproperty(ps, Val(:bias))
     z = fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ, bias)
     g = LuxLib.Impl.matmul(ps.weight_i, y) .+ z
 
@@ -533,8 +532,7 @@ function initialparameters(rng::AbstractRNG, gru::GRUCell)
     ps = (; weight_i, weight_h)
     if has_bias(gru)
         bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
-        # TODO: in v1 we make this a flat vector
-        bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)
+        bias_h = vcat([init_bias(rng, gru.out_dims) for init_bias in gru.init_bias]...)
         ps = merge(ps, (bias_i=bias_i, bias_h=bias_h))
     end
     has_train_state(gru) &&
@@ -561,7 +559,7 @@ const _GRUCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ = match_eltype(gru, ps, st, x, hidden_state)
     gxs = multigate(ps.weight_i * y, Val(3))
-    bias_h = safe_vec(safe_getproperty(ps, Val(:bias_h)))
+    bias_h = safe_getproperty(ps, Val(:bias_h))
     ghbs = multigate(
         fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ, bias_h), Val(3))
 

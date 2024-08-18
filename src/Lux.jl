@@ -121,7 +121,6 @@ export LuxOps
 
 # Unexported functions that are part of the public API
 @compat public Experimental
-@compat public xlogx, xlogy # TODO: deprecated in v1.0
 @compat public set_dispatch_doctor_preferences!
 
 end
