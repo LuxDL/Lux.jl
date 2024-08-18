@@ -6,7 +6,7 @@ import { transformerMetaWordHighlight } from '@shikijs/transformers';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-    base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
+    base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     title: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
     description: 'Documentation for LuxDL Repositories',
     cleanUrls: true,
