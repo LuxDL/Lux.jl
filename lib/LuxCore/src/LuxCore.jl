@@ -15,7 +15,8 @@ Creates a copy of the `rng` state depending on its type.
     return :(deepcopy(rng))
 end
 function replicate(rng::Random.TaskLocalRNG)
-    @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same `TaskLocalRNG`." maxlog=1
+    @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same \
+           `TaskLocalRNG`." maxlog=1
     return rng
 end
 
@@ -109,17 +110,17 @@ if any of the outputs are Arrays, with `ndims(A) > 1`, it will return
 `size(A)[1:(end - 1)]`. If this behavior is undesirable, provide a custom
 `outputsize(layer, x, rng)` implementation).
 
+!!! warning "Fallback Implementation"
+
+    The fallback implementation of this function is defined once `Lux.jl` is loaded.
+
 !!! warning "Changes from Pre-1.0 Behavior"
 
     Previously it was possible to override this function by defining `outputsize(layer)`.
     However, this can potentially introduce a bug that is hard to bypass. See
     [this PR](https://github.com/LuxDL/LuxCore.jl/pull/43) for more information.
 """
-function outputsize(layer, x, rng)
-    ps, st = setup(rng, layer)
-    y = first(apply(layer, x, ps, st))
-    return Internal.size(y)
-end
+function outputsize end
 
 """
     setup(rng::AbstractRNG, layer)
@@ -358,10 +359,6 @@ function setfield(args...; kwargs...)
     is_extension_loaded(Val(:Setfield)) && return setfield_impl(args...; kwargs...)
     throw(ArgumentError("`setfield` requires `Setfield.jl` to be loaded."))
 end
-
-size_array(x::AbstractArray) = Base.size(x)[1:(ndims(x) - 1)]
-size_array(x::AbstractVector) = Base.size(x)
-size(x) = fmap(size_array, x)
 
 default_rng() = Xoshiro(1234)
 
