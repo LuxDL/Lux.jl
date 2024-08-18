@@ -94,7 +94,7 @@ jobs:
 
   downstream:
     name: Downstream ${{ matrix.package.repo }}/${{ matrix.package.group }}
-    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:

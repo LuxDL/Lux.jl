@@ -39,7 +39,7 @@ steps:
         agents:
           queue: "juliagpu"
           cuda: "*"
-        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.branch != "main"
         timeout_in_minutes: 240
         matrix:
           setup:
@@ -92,7 +92,7 @@ steps:
           rocmgpu: "*"
         env:
           RETESTITEMS_NWORKERS: 2
-        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/
+        if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.branch != "main"
         timeout_in_minutes: 240
         matrix:
           setup:
