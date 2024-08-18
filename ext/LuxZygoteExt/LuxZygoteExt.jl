@@ -4,8 +4,6 @@ using ArgCheck: @argcheck
 using ADTypes: AutoZygote
 using ChainRulesCore: ChainRulesCore
 using ForwardDiff: ForwardDiff
-using Lux: Lux
-using MLDataDevices: get_device_type, CPUDevice
 using Setfield: @set!
 using Zygote: Zygote
 
