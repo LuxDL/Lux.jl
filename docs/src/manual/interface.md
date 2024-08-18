@@ -22,7 +22,7 @@ framework.
 ### Singular Layer
 
 If the layer doesn't contain any other Lux layer, then it is a `Singular Layer`. This means
-it should optionally subtype `Lux.AbstractExplicitLayer` but mandatorily define
+it should optionally subtype `Lux.AbstractLuxLayer` but mandatorily define
 all the necessary functions mentioned in the docstrings. Consider a simplified version of
 [`Dense`](@ref) called `Linear`.
 
@@ -38,7 +38,7 @@ architecture cannot change.
 ```@example layer_interface
 using LuxCore, Random, WeightInitializers # Importing `Lux` also gives you access to `LuxCore`
 
-struct Linear{F1, F2} <: LuxCore.AbstractExplicitLayer
+struct Linear{F1, F2} <: LuxCore.AbstractLuxLayer
     in_dims::Int
     out_dims::Int
     init_weight::F1
@@ -120,13 +120,21 @@ LuxCore.apply(l, x, ps, st) # or `l(x, ps, st)`
 
 If your layer comprises of other Lux layers, then it is a `Container Layer`. Note that you
 could treat it as a [`Singular Layer`](#singular-layer), and it is still fine. FWIW, if you
-cannot subtype your layer with `LuxCore.AbstractExplicitContainerLayer` then you
+cannot subtype your layer with `LuxCore.AbstractLuxContainerLayer` then you
 should go down the [`Singular Layer`](#singular-layer) route. But subtyping allows us to
 bypass some of these common definitions. Let us now define a layer, which is basically a
 composition of two linear layers.
 
+!!! tip "Wrapper Layer"
+
+    If you are defining a layer that is a wrapper around another layer, then you should
+    subtype `LuxCore.AbstractLuxWrapperLayer` instead of
+    `LuxCore.AbstractLuxContainerLayer`. The only difference from a container layer is that
+    it can wrap a single layer and the parameter/state structure is exactly the same as the
+    wrapped layer.
+
 ```@example layer_interface
-struct ComposedLinear{L1, L2} <: LuxCore.AbstractExplicitContainerLayer{(:linear_1, :linear_2)}
+struct ComposedLinear{L1, L2} <: LuxCore.AbstractLuxContainerLayer{(:linear_1, :linear_2)}
     linear_1::L1
     linear_2::L2
 end

@@ -3,7 +3,7 @@
 
     rng = StableRNG(12345)
 
-    struct NotFixedStateModel <: Lux.AbstractExplicitLayer end
+    struct NotFixedStateModel <: Lux.AbstractLuxLayer end
 
     (m::NotFixedStateModel)(x, ps, st) = (x, (; s=1))
 

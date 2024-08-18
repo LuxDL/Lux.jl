@@ -21,9 +21,9 @@ using Reexport: Reexport, @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
-import LuxCore: AbstractExplicitLayer, AbstractExplicitContainerLayer, initialparameters,
-                initialstates, parameterlength, statelength, inputsize, outputsize,
-                update_state, trainmode, testmode, setup, apply, replicate
+import LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer,
+                initialparameters, initialstates, parameterlength, statelength, inputsize,
+                outputsize, update_state, trainmode, testmode, setup, apply, replicate
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 @eval Expr(:export, filter(x -> x !== :dropout, Reexport.exported_names(NNlib))...)

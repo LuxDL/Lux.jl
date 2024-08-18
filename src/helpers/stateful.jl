@@ -3,7 +3,7 @@
 
 !!! warning
 
-    This is not a Lux.AbstractExplicitLayer
+    This is not a Lux.AbstractLuxLayer
 
 A convenience wrapper over Lux layers which stores the parameters and states internally.
 This is meant to be used in internal implementation of layers.
@@ -40,7 +40,7 @@ This is meant to be used in internal implementation of layers.
 
   - `y`: The output of the layer
 """
-mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
+mutable struct StatefulLuxLayer{ST, M <: AbstractLuxLayer, psType, stType}
     const model::M
     ps::psType
     st::stType
@@ -58,10 +58,10 @@ function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
     return StatefulLuxLayer(model, ps, st, st_any, static(ST))
 end
 
-function StatefulLuxLayer{true}(model::AbstractExplicitLayer, ps, st::NamedTuple)
+function StatefulLuxLayer{true}(model::AbstractLuxLayer, ps, st::NamedTuple)
     return StatefulLuxLayer{true}(model, ps, st, nothing)
 end
-function StatefulLuxLayer{false}(model::AbstractExplicitLayer, ps, st::NamedTuple)
+function StatefulLuxLayer{false}(model::AbstractLuxLayer, ps, st::NamedTuple)
     return StatefulLuxLayer{false}(model, ps, nothing, st)
 end
 
@@ -121,8 +121,8 @@ function (s::StatefulLuxLayer)(x, p=s.ps)
     return y
 end
 
-function CRC.rrule(::Type{<:StatefulLuxLayer{FT}},
-        model::AbstractExplicitLayer, ps, st, st_any) where {FT}
+function CRC.rrule(
+        ::Type{<:StatefulLuxLayer{FT}}, model::AbstractLuxLayer, ps, st, st_any) where {FT}
     slayer = StatefulLuxLayer{FT}(model, ps, st, st_any)
     ∇StatefulLuxLayer(Δ) = NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent()
     return slayer, ∇StatefulLuxLayer

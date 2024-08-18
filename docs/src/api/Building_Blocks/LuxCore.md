@@ -14,8 +14,9 @@ Pages = ["LuxCore.md"]
 ## Abstract Types
 
 ```@docs
-LuxCore.AbstractExplicitLayer
-LuxCore.AbstractExplicitContainerLayer
+LuxCore.AbstractLuxLayer
+LuxCore.AbstractLuxWrapperLayer
+LuxCore.AbstractLuxContainerLayer
 ```
 
 ## General

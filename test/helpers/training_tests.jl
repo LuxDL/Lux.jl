@@ -236,7 +236,7 @@ end
         @test_throws ArgumentError Training.compute_gradients(
             AutoReverseDiff(; compile=true), mse2, dataset[1], tstate)
 
-        struct StrangeModel <: Lux.AbstractExplicitLayer end
+        struct StrangeModel <: Lux.AbstractLuxLayer end
 
         function (m::StrangeModel)(x, ps, st)
             return x, (; new_state=0.0)

@@ -16,7 +16,7 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
   - `connection`:
 
       + A 2-argument function that takes `layer(input)` and the input OR
-      + An AbstractExplicitLayer that takes `(layer(input), input)` as input
+      + An AbstractLuxLayer that takes `(layer(input), input)` as input
 
 # Extended Help
 
@@ -32,18 +32,18 @@ The simplest "ResNet"-type connection is just `SkipConnection(layer, +)`.
 ## Parameters
 
   - Parameters of `layer` OR
-  - If `connection` is an AbstractExplicitLayer, then NamedTuple with fields `:layers` and
+  - If `connection` is an AbstractLuxLayer, then NamedTuple with fields `:layers` and
     `:connection`
 
 ## States
 
   - States of `layer` OR
-  - If `connection` is an AbstractExplicitLayer, then NamedTuple with fields `:layers` and
+  - If `connection` is an AbstractLuxLayer, then NamedTuple with fields `:layers` and
     `:connection`
 
 See [`Parallel`](@ref) for a more general implementation.
 """
-@concrete struct SkipConnection <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct SkipConnection <: AbstractLuxWrapperLayer{:layers}
     layers
     connection
     name
@@ -60,13 +60,12 @@ function SkipConnection(; layers, connection, name::NAME_TYPE=nothing)
 end
 
 function initialparameters(
-        rng::AbstractRNG, l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+        rng::AbstractRNG, l::SkipConnection{T, <:AbstractLuxLayer}) where {T}
     return (layers=initialparameters(rng, l.layers),
         connection=initialparameters(rng, l.connection))
 end
 
-function initialstates(
-        rng::AbstractRNG, l::SkipConnection{T, <:AbstractExplicitLayer}) where {T}
+function initialstates(rng::AbstractRNG, l::SkipConnection{T, <:AbstractLuxLayer}) where {T}
     return (
         layers=initialstates(rng, l.layers), connection=initialstates(rng, l.connection))
 end
@@ -76,7 +75,7 @@ function (skip::SkipConnection)(x, ps, st::NamedTuple)
     return skip.connection(mx, x), st
 end
 
-function (skip::SkipConnection{<:AbstractExplicitLayer, <:AbstractExplicitLayer})(
+function (skip::SkipConnection{<:AbstractLuxLayer, <:AbstractLuxLayer})(
         x, ps, st::NamedTuple)
     mx, st1 = apply(skip.layers, x, ps.layers, st.layers)
     y, st2 = apply(skip.connection, (mx, x), ps.connection, st.connection)
@@ -147,7 +146,7 @@ julia> size.(first(model((x1, x2), ps, st)))
 ((1,), (1,))
 ```
 """
-@concrete struct Parallel <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct Parallel <: AbstractLuxWrapperLayer{:layers}
     connection
     layers <: NamedTuple
     name
@@ -254,7 +253,7 @@ BranchLayer(
           #        plus 0 states.
 ```
 """
-@concrete struct BranchLayer <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct BranchLayer <: AbstractLuxWrapperLayer{:layers}
     layers <: NamedTuple
     name
 end
@@ -297,7 +296,7 @@ x1 → layer1 → y1 ↘
 
   - `connection`: Takes 2 inputs and combines them
 
-  - `layers`: `AbstractExplicitLayer`s. Layers can be specified in two formats:
+  - `layers`: `AbstractLuxLayer`s. Layers can be specified in two formats:
 
       + A list of `N` Lux layers
       + Specified as `N` keyword arguments.
@@ -342,7 +341,7 @@ end
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
 """
-@concrete struct PairwiseFusion <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct PairwiseFusion <: AbstractLuxWrapperLayer{:layers}
     connection
     layers <: NamedTuple
     name
@@ -452,7 +451,7 @@ MyFancyChain(
           #        plus 7 states.
 ```
 """
-@concrete struct Chain <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct Chain <: AbstractLuxWrapperLayer{:layers}
     layers <: NamedTuple
     name
 end
@@ -472,10 +471,10 @@ function wrap_functions_in_chain_call(layers::Union{AbstractVector, Tuple})
             append!(new_layers, f)
         elseif f isa Function
             push!(new_layers, WrappedFunction(f))
-        elseif f isa AbstractExplicitLayer
+        elseif f isa AbstractLuxLayer
             push!(new_layers, f)
         else
-            throw("Encountered a non-AbstractExplicitLayer in Chain.")
+            throw("Encountered a non-AbstractLuxLayer in Chain.")
         end
     end
     return layers isa AbstractVector ? new_layers : Tuple(new_layers)
@@ -561,7 +560,7 @@ See also [`Parallel`](@ref) to reduce with other operators.
 [1] Goodfellow, Warde-Farley, Mirza, Courville & Bengio "Maxout Networks"
 [https://arxiv.org/abs/1302.4389](https://arxiv.org/abs/1302.4389)
 """
-@concrete struct Maxout <: AbstractExplicitContainerLayer{(:layers,)}
+@concrete struct Maxout <: AbstractLuxWrapperLayer{:layers}
     layers <: NamedTuple
 end
 
@@ -616,7 +615,7 @@ times for gradients might be unreasonably high.
 
 ## Arguments
 
-  - `model` must be an `AbstractExplicitLayer`
+  - `model` must be an `AbstractLuxLayer`
 
 ## Keyword Arguments
 
@@ -643,10 +642,10 @@ times for gradients might be unreasonably high.
 
   - State of `model`
 """
-@concrete struct RepeatedLayer <: AbstractExplicitContainerLayer{(:model,)}
+@concrete struct RepeatedLayer <: AbstractLuxWrapperLayer{:model}
     nrepeats <: StaticInt
     input_injection <: StaticBool
-    model <: AbstractExplicitLayer
+    model <: AbstractLuxLayer
 end
 
 function LuxCore.display_name(r::RepeatedLayer)
@@ -655,7 +654,7 @@ function LuxCore.display_name(r::RepeatedLayer)
 end
 
 function RepeatedLayer(
-        model::AbstractExplicitLayer; repeats::Union{StaticInt, Integer, Val}=Val(10),
+        model::AbstractLuxLayer; repeats::Union{StaticInt, Integer, Val}=Val(10),
         input_injection::Union{StaticBool, Bool, Val{true}, Val{false}}=Val(false))
     return RepeatedLayer(static(repeats), static(input_injection), model)
 end

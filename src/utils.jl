@@ -10,7 +10,7 @@ using Functors: fmapstructure
 using Random: AbstractRNG
 using Static: Static, StaticBool, StaticInteger, StaticSymbol
 
-using LuxCore: LuxCore, AbstractExplicitLayer
+using LuxCore: LuxCore, AbstractLuxLayer
 using MLDataDevices: get_device
 
 const CRC = ChainRulesCore
@@ -189,7 +189,7 @@ set_refval!(x, y) = (x[] = y)
 @non_differentiable set_refval!(::Any...)
 EnzymeRules.inactive(::typeof(set_refval!), ::Any...) = nothing
 
-function named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
+function named_tuple_layers(layers::Vararg{AbstractLuxLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
 

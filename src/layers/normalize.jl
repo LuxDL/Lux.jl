@@ -86,7 +86,7 @@ Chain(
 See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
 """
-@concrete struct BatchNorm{N} <: AbstractExplicitLayer
+@concrete struct BatchNorm{N} <: AbstractLuxLayer
     activation
     epsilon::N
     momentum::N
@@ -222,7 +222,7 @@ Chain(
 See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
 """
-@concrete struct GroupNorm <: AbstractExplicitLayer
+@concrete struct GroupNorm <: AbstractLuxLayer
     activation
     epsilon
     chs <: IntegerType
@@ -336,7 +336,7 @@ Chain(
 
 See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`WeightNorm`](@ref)
 """
-@concrete struct InstanceNorm <: AbstractExplicitLayer
+@concrete struct InstanceNorm <: AbstractLuxLayer
     activation
     epsilon
     chs <: IntegerType
@@ -376,7 +376,7 @@ function Base.show(io::IO, l::InstanceNorm)
 end
 
 @doc doc"""
-    WeightNorm(layer::AbstractExplicitLayer, which_params::NTuple{N, Symbol},
+    WeightNorm(layer::AbstractLuxLayer, which_params::NTuple{N, Symbol},
                dims::Union{Tuple, Nothing}=nothing)
 
 Applies [weight normalization](https://arxiv.org/abs/1602.07868) to a parameter in the given
@@ -416,13 +416,13 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
 
   - Same as that of `layer`
 """
-@concrete struct WeightNorm <: AbstractExplicitLayer
-    layer <: AbstractExplicitLayer
+@concrete struct WeightNorm <: AbstractLuxLayer
+    layer <: AbstractLuxLayer
     which_params
     dims
 
     function WeightNorm(
-            layer::AbstractExplicitLayer, which_params, dims::Union{Tuple, Nothing}=nothing)
+            layer::AbstractLuxLayer, which_params, dims::Union{Tuple, Nothing}=nothing)
         which_params = static(which_params)
         dims = static(dims)
         return new{typeof(layer), typeof(which_params), typeof(dims)}(
@@ -557,7 +557,7 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
       + `bias`: Bias of shape `(shape..., 1)`
       + `scale`: Scale of shape `(shape..., 1)`
 """
-@concrete struct LayerNorm <: AbstractExplicitLayer
+@concrete struct LayerNorm <: AbstractLuxLayer
     shape
     activation
     epsilon

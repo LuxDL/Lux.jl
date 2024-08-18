@@ -131,7 +131,7 @@ end
                 x::X
             end
 
-            struct L1 <: Lux.AbstractExplicitLayer end
+            struct L1 <: Lux.AbstractLuxLayer end
             (::L1)(x, ps, st) = (ps.x * x, st)
             Lux.initialparameters(rng::AbstractRNG, ::L1) = (x=randn(rng, Float32, 3, 3),)
             Base.:*(a::AbstractArray, b::Input) = a * b.x

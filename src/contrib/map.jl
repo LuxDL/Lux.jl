@@ -45,7 +45,7 @@ macro layer_map(f, l, ps, st)
 end
 
 @doc doc"""
-    layer_map(f::Function, l::AbstractExplicitLayer, ps, st::NamedTuple,
+    layer_map(f::Function, l::AbstractLuxLayer, ps, st::NamedTuple,
               name::Symbol=:model)
 
 Map the function `f` over the model `l`, with the parameters `ps` and states `st`. This is
@@ -54,9 +54,9 @@ the function on all of them together.
 
 ## Call Signature for `f`
 
-  - Must take 4 inputs -- `AbstractExplicitLayer`, Corresponding Parameters, Corresponding
+  - Must take 4 inputs -- `AbstractLuxLayer`, Corresponding Parameters, Corresponding
     States, and the `Functors.KeyPath` to the layer.
-  - Must return a tuple of 3 elements -- `AbstractExplicitLayer`, new parameters and the new
+  - Must return a tuple of 3 elements -- `AbstractLuxLayer`, new parameters and the new
     states.
 
 !!! tip "Use `Lux.Experimental.@layer_map` instead"

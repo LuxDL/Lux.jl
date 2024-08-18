@@ -1,10 +1,10 @@
 module PrettyPrinting
 
 using Functors: Functors
-using LuxCore: LuxCore, AbstractExplicitContainerLayer, AbstractExplicitLayer, display_name
+using LuxCore: LuxCore, AbstractLuxContainerLayer, AbstractLuxLayer, display_name
 
 printable_children(x) = Functors.children(x)
-function printable_children(m::AbstractExplicitContainerLayer{layers}) where {layers}
+function printable_children(m::AbstractLuxContainerLayer{layers}) where {layers}
     children = Functors.children(m)
     length(layers) ≥ 2 && return children
     field = first(layers)
@@ -15,7 +15,7 @@ function printable_children(m::AbstractExplicitContainerLayer{layers}) where {la
 end
 
 show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
-show_leaflike(x::AbstractExplicitLayer) = false
+show_leaflike(x::AbstractLuxLayer) = false
 
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
@@ -75,7 +75,7 @@ function show_parameters_count(io::IO, layer, indent, str::String)
     return
 end
 
-function print_wrapper_model(io::IO, desc::String, model::AbstractExplicitLayer)
+function print_wrapper_model(io::IO, desc::String, model::AbstractLuxLayer)
     if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
         print(io, desc, "(\n")
         big_show(io, model, 4)
@@ -96,7 +96,8 @@ tuple_string(pad::Tuple) = all(==(pad[1]), pad) ? string(pad[1]) : string(pad)
 
 end
 
-function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitContainerLayer)
+function Base.show(io::IO, ::MIME"text/plain",
+        x::Union{AbstractLuxContainerLayer, AbstractLuxWrapperLayer})
     if get(io, :typeinfo, nothing) === nothing  # e.g. top level in REPL
         PrettyPrinting.big_show(io, x)
     elseif !get(io, :compact, false)  # e.g. printed inside a Vector, but not a Matrix
@@ -106,7 +107,7 @@ function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitContainerLayer
     end
 end
 
-function Base.show(io::IO, ::MIME"text/plain", x::AbstractExplicitLayer)
+function Base.show(io::IO, ::MIME"text/plain", x::AbstractLuxLayer)
     !get(io, :compact, false) && return PrettyPrinting.layer_show(io, x)
     show(io, x)
 end
