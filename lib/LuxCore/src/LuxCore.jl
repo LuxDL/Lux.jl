@@ -2,7 +2,7 @@ module LuxCore
 
 using Compat: @compat
 using DispatchDoctor: @stable
-using Random: Random, AbstractRNG, Xoshiro
+using Random: Random, AbstractRNG
 
 # PRNG Handling
 """
@@ -332,6 +332,7 @@ end
 
 module Internal
 
+using Random: Xoshiro
 using ..LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
 
 is_extension_loaded(::Val) = false
@@ -369,6 +370,12 @@ function get_empty_state(l::AbstractLuxContainerLayer{layers}) where {layers}
 end
 function get_empty_state(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return get_empty_state(getfield(l, layer))
+end
+
+function default_layer_check(key)
+    return let key = key
+        x -> hasmethod(keys, (typeof(x),)) ? (key ∈ keys(x)) : false
+    end
 end
 
 end
