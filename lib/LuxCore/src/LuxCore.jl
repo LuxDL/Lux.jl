@@ -94,13 +94,6 @@ statelength(a::AbstractArray) = length(a)
 statelength(::Any) = 1
 
 """
-    inputsize(layer)
-
-Return the input size of the layer.
-"""
-function inputsize end
-
-"""
     outputsize(layer, x, rng)
 
 Return the output size of the layer.
@@ -383,7 +376,7 @@ end
 @compat(public,
     (replicate, trainmode, testmode, update_state, contains_lux_layer,
         check_fmap_condition, initialparameters, initialstates, parameterlength,
-        statelength, inputsize, outputsize, setup, apply, stateless_apply, display_name))
+        statelength, outputsize, setup, apply, stateless_apply, display_name))
 
 export AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
 
