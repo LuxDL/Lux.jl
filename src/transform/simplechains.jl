@@ -2,7 +2,7 @@
     ToSimpleChainsAdaptor(input_dims, convert_to_array::Bool=false)
 
 Adaptor for converting a Lux Model to SimpleChains. The returned model is still a Lux model,
-and satisfies the `AbstractExplicitLayer` interfacem but all internal calculations are
+and satisfies the `AbstractLuxLayer` interfacem but all internal calculations are
 performed using SimpleChains.
 
 !!! warning
@@ -59,12 +59,12 @@ struct ToSimpleChainsAdaptor{ID, AT} <: AbstractFromLuxAdaptor
 end
 
 """
-    Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
+    Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractLuxLayer)
 
 Adapt a Simple Chains model to Lux model. See [`ToSimpleChainsAdaptor`](@ref) for more
 details.
 """
-function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
+function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractLuxLayer)
     if Base.get_extension(@__MODULE__, :LuxSimpleChainsExt) === nothing
         error("`ToSimpleChainsAdaptor` requires `SimpleChains.jl` to be loaded.")
     end

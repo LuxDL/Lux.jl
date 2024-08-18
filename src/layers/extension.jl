@@ -144,7 +144,7 @@ API internally.
 
   - `p`: Flattened parameters of the `layer`
 """
-@concrete struct FluxLayer <: AbstractExplicitLayer
+@concrete struct FluxLayer <: AbstractLuxLayer
     layer
     re <: Optimisers.Restructure
     init_parameters
@@ -171,7 +171,7 @@ Base.show(io::IO, ::MIME"text/plain", l::FluxLayer) = print(io, "FluxLayer($(l.l
     SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
 
 Wraps a `SimpleChains` layer into a `Lux` layer. All operations are performed using
-`SimpleChains` but the layer satisfies the `AbstractExplicitLayer` interface.
+`SimpleChains` but the layer satisfies the `AbstractLuxLayer` interface.
 
 `ToArray` is a boolean flag that determines whether the output should be converted to a
 regular `Array` or not. Default is `false`.
@@ -181,8 +181,8 @@ regular `Array` or not. Default is `false`.
   - `layer`: SimpleChains layer
   - `lux_layer`: Potentially equivalent Lux layer that is used for printing
 """
-struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer}} <:
-       AbstractExplicitLayer
+struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractLuxLayer}} <:
+       AbstractLuxLayer
     to_array::ToArray
     layer::SL
     lux_layer::LL

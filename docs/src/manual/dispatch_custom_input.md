@@ -5,10 +5,10 @@
 * Defining a dispatch on `(::Layer)(x::MyInputType, ps, st::NamedTuple)` is inconvenient,
   since it requires the user to define a new method for every layer type.
 
-* `(::AbstractExplicitLayer)(x::MyInputType, ps, st::NamedTuple)` doesn't work.
+* `(::AbstractLuxLayer)(x::MyInputType, ps, st::NamedTuple)` doesn't work.
 
 * Instead, we need to define the dispatch on
-  `Lux.apply(::AbstractExplicitLayer, x::MyInputType, ps, st::NamedTuple)`.
+  `Lux.apply(::AbstractLuxLayer, x::MyInputType, ps, st::NamedTuple)`.
 
 ## Concrete Example
 
@@ -22,7 +22,7 @@ define a time dependent version of [`Chain`](@ref).
 ```@example dispatch
 using Lux, Random
 
-struct TDChain{L <: NamedTuple} <: Lux.AbstractExplicitContainerLayer{(:layers,)}
+struct TDChain{L <: NamedTuple} <: Lux.AbstractLuxWrapperLayer{:layers}
     layers::L
 end
 
@@ -66,10 +66,10 @@ struct ArrayAndTime{A <: AbstractArray, T <: Real}
 end
 ```
 
-* Define the dispatch on `Lux.apply(::AbstractExplicitLayer, x::ArrayAndTime, ps, st::NamedTuple)`.
+* Define the dispatch on `Lux.apply(::AbstractLuxLayer, x::ArrayAndTime, ps, st::NamedTuple)`.
 
 ```@example dispatch
-function Lux.apply(layer::Lux.AbstractExplicitLayer, x::ArrayAndTime, ps, st::NamedTuple)
+function Lux.apply(layer::Lux.AbstractLuxLayer, x::ArrayAndTime, ps, st::NamedTuple)
     y, st = layer(x.array, ps, st)
     return ArrayAndTime(y, x.time), st
 end

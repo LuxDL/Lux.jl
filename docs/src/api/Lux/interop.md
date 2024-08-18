@@ -37,7 +37,7 @@ preserving the [layer interface](@ref lux-interface).
     `using SimpleChains` must be present somewhere in the code for these to be used.
 
 ```@docs
-Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractExplicitLayer)
+Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractLuxLayer)
 ToSimpleChainsAdaptor
 SimpleChainsLayer
 ```

@@ -62,7 +62,7 @@ trainable.
 ```julia [Lux]
 using Lux, Random, NNlib, Zygote
 
-struct LuxLinear <: Lux.AbstractExplicitLayer
+struct LuxLinear <: Lux.AbstractLuxLayer
     init_A
     init_B
 end

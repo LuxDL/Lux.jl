@@ -293,7 +293,7 @@ macro non_trainable(x)
 end
 
 struct CompactLuxLayer{dispatch, F, N, L, V, SK} <:
-       AbstractExplicitContainerLayer{(:layers, :value_storage)}
+       AbstractLuxContainerLayer{(:layers, :value_storage)}
     d::StaticSymbol{dispatch}
     f::F
     name::N
@@ -323,15 +323,14 @@ function CompactLuxLayer(dispatch::StaticSymbol, f::F, name::NAME_TYPE,
     setup_strings = NamedTuple()
     for (name, val) in pairs(kws)
         is_lux_layer = false
-        if val isa AbstractExplicitLayer
+        if val isa AbstractLuxLayer
             is_lux_layer = true
             push!(layers, name => val)
         elseif LuxCore.contains_lux_layer(val)
             # FIXME: This might lead to incorrect constructions? If the function is a
             #        closure over the provided keyword arguments?
             val = CompactMacroImpl.try_make_lux_layer(val)
-            if LuxCore.check_fmap_condition(
-                !Base.Fix2(isa, AbstractExplicitLayer), nothing, val)
+            if LuxCore.check_fmap_condition(!Base.Fix2(isa, AbstractLuxLayer), nothing, val)
                 throw(LuxCompactModelParsingException("A container `$(name) = $(val)` is \
                                                        found which combines Lux layers \
                                                        with non-Lux layers. This is not \
@@ -422,7 +421,7 @@ using MacroTools: MacroTools, @capture, combinedef, splitdef
 using Random: AbstractRNG
 using Static: static
 
-using LuxCore: LuxCore, AbstractExplicitLayer
+using LuxCore: LuxCore, AbstractLuxLayer
 using ..Lux: Lux, CompactLuxLayer, LuxCompactModelParsingException, StatefulLuxLayer,
              safe_getproperty
 
@@ -585,7 +584,7 @@ end
 
 (f::InitFn)(args...) = f.f(args...)
 
-@concrete struct ValueStorage <: AbstractExplicitLayer
+@concrete struct ValueStorage <: AbstractLuxLayer
     ps_init_fns
     st_init_fns
 end
@@ -657,7 +656,7 @@ function try_make_lux_layer(x::Union{AbstractVector, Tuple})
 end
 try_make_lux_layer(x) = x
 
-function maybe_make_stateful(layer::AbstractExplicitLayer, ps, st)
+function maybe_make_stateful(layer::AbstractLuxLayer, ps, st)
     return StatefulLuxLayer{true}(layer, ps, st)
 end
 maybe_make_stateful(::Nothing, ::Nothing, st) = st

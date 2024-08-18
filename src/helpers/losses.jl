@@ -120,7 +120,7 @@ end
 
 abstract type AbstractLossFunction <: Function end
 
-function (loss::AbstractLossFunction)(model::AbstractExplicitLayer, ps, st, (x, y))
+function (loss::AbstractLossFunction)(model::AbstractLuxLayer, ps, st, (x, y))
     ŷ, stₙ = model(x, ps, st)
     return loss(ŷ, y), stₙ, (;)
 end

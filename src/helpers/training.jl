@@ -7,7 +7,7 @@ using FastClosures: @closure
 using Optimisers: Optimisers
 
 using ..Lux: Lux
-using LuxCore: LuxCore, AbstractExplicitLayer
+using LuxCore: LuxCore, AbstractLuxLayer
 using Optimisers: Optimisers
 
 """
@@ -44,7 +44,7 @@ Internal fields:
 end
 
 """
-    TrainState(model::Lux.AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
+    TrainState(model::Lux.AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
 
 Constructor for [`TrainState`](@ref).
 
@@ -62,8 +62,7 @@ Constructor for [`TrainState`](@ref).
 
 [`TrainState`](@ref) object.
 """
-function TrainState(
-        model::AbstractExplicitLayer, ps, st, optimizer::Optimisers.AbstractRule)
+function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
     st_opt = Optimisers.setup(optimizer, ps)
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end

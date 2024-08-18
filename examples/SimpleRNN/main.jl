@@ -42,7 +42,7 @@ end
 
 # ## Creating a Classifier
 
-# We will be extending the `Lux.AbstractExplicitContainerLayer` type for our custom model
+# We will be extending the `Lux.AbstractLuxContainerLayer` type for our custom model
 # since it will contain a lstm block and a classifier head.
 
 # We pass the fieldnames `lstm_cell` and `classifier` to the type to ensure that the
@@ -52,8 +52,7 @@ end
 # To understand more about container layers, please look at
 # [Container Layer](@ref Container-Layer).
 
-struct SpiralClassifier{L, C} <:
-       Lux.AbstractExplicitContainerLayer{(:lstm_cell, :classifier)}
+struct SpiralClassifier{L, C} <: Lux.AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
     lstm_cell::L
     classifier::C
 end

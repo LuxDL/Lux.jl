@@ -39,7 +39,7 @@ end
 # First we will use the [`@compact`](@ref) macro to define the Neural ODE Layer.
 
 function NeuralODECompact(
-        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+        model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
     return @compact(; model, solver, tspan, kwargs...) do x, p
         dudt(u, p, t) = vec(model(reshape(u, size(x)), p))
         ## Note the `p.model` here
@@ -54,8 +54,7 @@ end
 
 # The NeuralODE is a ContainerLayer, which stores a `model`. The parameters and states of
 # the NeuralODE are same as those of the underlying model.
-struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
-       Lux.AbstractExplicitContainerLayer{(:model,)}
+struct NeuralODE{M <: Lux.AbstractLuxLayer, So, T, K} <: Lux.AbstractLuxWrapperLayer{:model}
     model::M
     solver::So
     tspan::T
@@ -63,7 +62,7 @@ struct NeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
 end
 
 function NeuralODE(
-        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+        model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
     return NeuralODE(model, solver, tspan, kwargs)
 end
 
@@ -177,8 +176,8 @@ train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true)
 # Starting `v0.5.5`, Lux provides a [`StatefulLuxLayer`](@ref) which can be used
 # to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276). Using
 # the `@compact` API avoids this problem entirely.
-struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
-       Lux.AbstractExplicitContainerLayer{(:model,)}
+struct StatefulNeuralODE{M <: Lux.AbstractLuxLayer, So, T, K} <:
+       Lux.AbstractLuxWrapperLayer{:model}
     model::M
     solver::So
     tspan::T
@@ -186,7 +185,7 @@ struct StatefulNeuralODE{M <: Lux.AbstractExplicitLayer, So, T, K} <:
 end
 
 function StatefulNeuralODE(
-        model::Lux.AbstractExplicitLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+        model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
     return StatefulNeuralODE(model, solver, tspan, kwargs)
 end
 

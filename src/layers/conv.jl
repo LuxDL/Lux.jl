@@ -139,7 +139,7 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-@concrete struct Conv <: AbstractExplicitLayer
+@concrete struct Conv <: AbstractLuxLayer
     activation
     in_chs <: IntegerType
     out_chs <: IntegerType
@@ -243,7 +243,7 @@ value.
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref),
 [`AdaptiveMaxPool`](@ref)
 """
-@concrete struct MaxPool <: AbstractExplicitLayer
+@concrete struct MaxPool <: AbstractLuxLayer
     k <: Tuple{Vararg{IntegerType}}
     pad <: Tuple{Vararg{IntegerType}}
     stride <: Tuple{Vararg{IntegerType}}
@@ -313,7 +313,7 @@ value.
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref),
 [`AdaptiveMeanPool`](@ref)
 """
-@concrete struct MeanPool <: AbstractExplicitLayer
+@concrete struct MeanPool <: AbstractLuxLayer
     k <: Tuple{Vararg{IntegerType}}
     pad <: Tuple{Vararg{IntegerType}}
     stride <: Tuple{Vararg{IntegerType}}
@@ -385,7 +385,7 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
   - Upsampled Input of size `size` or of size `(I_1 x scale[1], ..., I_N x scale[N], C, N)`
   - Empty `NamedTuple()`
 """
-@concrete struct Upsample <: AbstractExplicitLayer
+@concrete struct Upsample <: AbstractLuxLayer
     scale
     size
     upsample_mode <: StaticSymbol
@@ -448,7 +448,7 @@ by performing max pooling on the complete (w,h)-shaped feature maps.
 
 See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 """
-struct GlobalMaxPool <: AbstractExplicitLayer end
+struct GlobalMaxPool <: AbstractLuxLayer end
 
 function (g::GlobalMaxPool)(x, _, st::NamedTuple)
     return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
@@ -471,7 +471,7 @@ by performing mean pooling on the complete (w,h)-shaped feature maps.
 
 See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 """
-struct GlobalMeanPool <: AbstractExplicitLayer end
+struct GlobalMeanPool <: AbstractLuxLayer end
 
 function (g::GlobalMeanPool)(x, _, st::NamedTuple)
     return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
@@ -499,7 +499,7 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 
 See also [`MaxPool`](@ref), [`AdaptiveMeanPool`](@ref).
 """
-struct AdaptiveMaxPool{S, O <: Tuple{Vararg{IntegerType}}} <: AbstractExplicitLayer
+struct AdaptiveMaxPool{S, O <: Tuple{Vararg{IntegerType}}} <: AbstractLuxLayer
     out::O
     AdaptiveMaxPool(out) = new{length(out) + 2, typeof(out)}(out)
 end
@@ -532,7 +532,7 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 
 See also [`MeanPool`](@ref), [`AdaptiveMaxPool`](@ref).
 """
-struct AdaptiveMeanPool{S, O <: Tuple{Vararg{IntegerType}}} <: AbstractExplicitLayer
+struct AdaptiveMeanPool{S, O <: Tuple{Vararg{IntegerType}}} <: AbstractLuxLayer
     out::O
     AdaptiveMeanPool(out) = new{length(out) + 2, typeof(out)}(out)
 end
@@ -643,7 +643,7 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-@concrete struct CrossCor <: AbstractExplicitLayer
+@concrete struct CrossCor <: AbstractLuxLayer
     activation
     in_chs <: IntegerType
     out_chs <: IntegerType
@@ -762,7 +762,7 @@ Standard convolutional transpose layer.
   - `weight`: Convolution Transpose kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-@concrete struct ConvTranspose <: AbstractExplicitLayer
+@concrete struct ConvTranspose <: AbstractLuxLayer
     activation
     in_chs <: IntegerType
     out_chs <: IntegerType

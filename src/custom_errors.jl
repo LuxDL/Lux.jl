@@ -16,7 +16,7 @@ struct SimpleChainsModelConversionException <: AbstractLuxException
     msg::String
 end
 
-function SimpleChainsModelConversionException(layer::AbstractExplicitLayer)
+function SimpleChainsModelConversionException(layer::AbstractLuxLayer)
     return SimpleChainsModelConversionException("Conversion to SimpleChains not supported \
                                                  for $(typeof(layer))")
 end

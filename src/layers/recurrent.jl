@@ -1,4 +1,4 @@
-abstract type AbstractRecurrentCell <: AbstractExplicitLayer end
+abstract type AbstractRecurrentCell <: AbstractLuxLayer end
 
 const AbstractDebugRecurrentCell = Experimental.DebugLayer{
     <:Any, <:Any, <:AbstractRecurrentCell}
@@ -85,7 +85,7 @@ automatically operate over a sequence of inputs.
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
-@concrete struct Recurrence{R <: StaticBool} <: AbstractExplicitContainerLayer{(:cell,)}
+@concrete struct Recurrence{R <: StaticBool} <: AbstractLuxWrapperLayer{:cell}
     cell <: Union{<:AbstractRecurrentCell, <:AbstractDebugRecurrentCell}
     ordering <: AbstractTimeSeriesDataBatchOrdering
     return_sequence::R
@@ -151,7 +151,7 @@ update the state with `Lux.update_state(st, :carry, nothing)`.
       + `cell`: Same as `cell`.
       + `carry`: The carry state of the `cell`.
 """
-@concrete struct StatefulRecurrentCell <: AbstractExplicitContainerLayer{(:cell,)}
+@concrete struct StatefulRecurrentCell <: AbstractLuxWrapperLayer{:cell}
     cell <: Union{<:AbstractRecurrentCell, <:AbstractDebugRecurrentCell}
 end
 
@@ -629,7 +629,7 @@ Bidirectional RNN wrapper.
 
   - Same as `cell` and `backward_cell`.
 """
-@concrete struct BidirectionalRNN <: AbstractExplicitContainerLayer{(:model,)}
+@concrete struct BidirectionalRNN <: AbstractLuxWrapperLayer{:model}
     model <: Parallel
 end
 

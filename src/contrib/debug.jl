@@ -2,7 +2,7 @@
     DebugLayer(layer::AbstractExplicitLayer;
         nan_check::Union{Symbol, StaticSymbol, Val}=static(:both),
         error_check::Union{StaticBool, Bool, Val{true}, Val{false}}=True(),
-        location::Union{KeyPath, String}=KeyPath())
+        location::KeyPath=KeyPath())
 
 A wrapper over Lux layers that adds checks for NaNs and errors. This is useful for
 debugging.
@@ -43,14 +43,14 @@ track where the error originates.
 
 See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 """
-@concrete struct DebugLayer <: AbstractExplicitContainerLayer{(:layer,)}
+@concrete struct DebugLayer <: AbstractLuxWrapperLayer{:layer}
     nan_check <: StaticSymbol
     error_check <: StaticBool
-    layer <: AbstractExplicitLayer
+    layer <: AbstractLuxLayer
     location::KeyPath
 end
 
-function DebugLayer(layer::AbstractExplicitLayer; nan_check::SymbolType=static(:both),
+function DebugLayer(layer::AbstractLuxLayer; nan_check::SymbolType=static(:both),
         error_check::BoolType=True(), location::KeyPath=KeyPath())
     @argcheck dynamic(nan_check) in (:both, :forward, :backward, :none)
     return DebugLayer(static(nan_check), static(error_check), layer, location)

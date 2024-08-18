@@ -1,5 +1,5 @@
 """
-    FrozenLayer(l::AbstractExplicitLayer, which_params::Optional{Tuple})
+    FrozenLayer(l::AbstractLuxLayer, which_params::Optional{Tuple})
 
 Freeze the parameters with name `which_params` of the layer `l`.
 
@@ -16,7 +16,7 @@ Freeze the parameters with name `which_params` of the layer `l`.
 
 ## Arguments
 
-  - `l`: Lux AbstractExplicitLayer.
+  - `l`: Lux AbstractLuxLayer.
   - `which_params`: Parameter Names to be Frozen. Can be set to `nothing`, in which case all
     parameters are frozen.
 
@@ -46,10 +46,10 @@ FrozenLayer(Dense(2 => 2), (:weight,))  # 2 parameters, plus 4 non-trainable
 
 See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).
 """
-struct FrozenLayer{which_params, L <: AbstractExplicitLayer} <: AbstractExplicitLayer
+struct FrozenLayer{which_params, L <: AbstractLuxLayer} <: AbstractLuxLayer
     layer::L
 
-    function FrozenLayer(l::AbstractExplicitLayer, which_params::Optional{Tuple}=nothing)
+    function FrozenLayer(l::AbstractLuxLayer, which_params::Optional{Tuple}=nothing)
         if which_params !== nothing && length(which_params) == 0
             @warn "Layer `FrozenLayer($l, (,))` is same as `l`, returning `l`."
             return l
@@ -92,24 +92,24 @@ function Base.show(io::IO, f::FrozenLayer{which_params}) where {which_params}
 end
 
 """
-    freeze(l::AbstractExplicitLayer, which_params::Optional{Tuple} = nothing)
+    freeze(l::AbstractLuxLayer, which_params::Optional{Tuple} = nothing)
 
 Constructs a version of `l` with `which_params` frozen. If `which_params` is nothing,
 then all parameters are frozen.
 """
-function freeze(l::AbstractExplicitLayer, which_params::Optional{Tuple}=nothing)
+function freeze(l::AbstractLuxLayer, which_params::Optional{Tuple}=nothing)
     return FrozenLayer(l, which_params)
 end
 
 """
-    freeze(l::AbstractExplicitLayer, ps, st::NamedTuple,
+    freeze(l::AbstractLuxLayer, ps, st::NamedTuple,
         which_params::Optional{Tuple} = nothing)
 
 Construct a [`Lux.Experimental.FrozenLayer`](@ref) for `l` with the current parameters and
 states. If `which_params` is nothing, then all parameters are frozen.
 """
 function freeze(
-        l::AbstractExplicitLayer, ps, st::NamedTuple, which_params::Optional{Tuple}=nothing)
+        l::AbstractLuxLayer, ps, st::NamedTuple, which_params::Optional{Tuple}=nothing)
     fl = freeze(l, which_params)
     ps_frozen = []
     ps_trainable = []
@@ -137,6 +137,6 @@ unfreeze(l::FrozenLayer) = l.layer
 
 Unwraps a [`Lux.Experimental.FrozenLayer`](@ref) `l` with the current parameters and states.
 """
-function unfreeze(fl::AbstractExplicitLayer, ps, st::NamedTuple)
+function unfreeze(fl::AbstractLuxLayer, ps, st::NamedTuple)
     return unfreeze(fl), merge(ps, st.frozen_params), st.states
 end

@@ -57,7 +57,7 @@
         @test all(iszero, ps_.dense_3.bias)
 
         # Custom Layers -- See https://github.com/LuxDL/Lux.jl/issues/187
-        struct SimpleCustom{L1, L2} <: Lux.AbstractExplicitContainerLayer{(:dense, :conv)}
+        struct SimpleCustom{L1, L2} <: Lux.AbstractLuxContainerLayer{(:dense, :conv)}
             dense::L1
             conv::L2
         end

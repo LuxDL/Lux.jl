@@ -24,8 +24,8 @@ function load_datasets(n_train=1024, n_eval=32, batchsize=256)
 end
 
 # ## Implement a HyperNet Layer
-function HyperNet(weight_generator::Lux.AbstractExplicitLayer,
-        core_network::Lux.AbstractExplicitLayer)
+function HyperNet(
+        weight_generator::Lux.AbstractLuxLayer, core_network::Lux.AbstractLuxLayer)
     ca_axes = Lux.initialparameters(Random.default_rng(), core_network) |>
               ComponentArray |>
               getaxes

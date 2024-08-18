@@ -2,7 +2,8 @@ module Experimental
 
 using ..Lux: Lux, Optional
 using ..Utils: Utils, BoolType, SymbolType
-using LuxCore: LuxCore, AbstractExplicitLayer, AbstractExplicitContainerLayer, apply
+using LuxCore: LuxCore, AbstractLuxLayer, AbstractLuxContainerLayer,
+               AbstractLuxWrapperLayer, apply
 
 using ADTypes: ADTypes
 using ArgCheck: @argcheck

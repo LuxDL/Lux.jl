@@ -32,7 +32,7 @@ julia> y, st_new = model(x, ps, st);
 (2, 2, 3)
 ```
 """
-struct ReshapeLayer{N} <: AbstractExplicitLayer
+struct ReshapeLayer{N} <: AbstractLuxLayer
     dims::NTuple{N, Int}
 end
 
@@ -81,7 +81,7 @@ julia> y, st_new = model(x, ps, st)
 ([3.0, 2.0, 1.0], NamedTuple())
 ```
 """
-@concrete struct ReverseSequence <: AbstractExplicitLayer
+@concrete struct ReverseSequence <: AbstractLuxLayer
     dim <: Union{Nothing, StaticInt}
 end
 
@@ -141,7 +141,7 @@ julia> y, st_new = model(x, ps, st);
 (8, 2)
 ```
 """
-@concrete struct FlattenLayer <: AbstractExplicitLayer
+@concrete struct FlattenLayer <: AbstractLuxLayer
     N <: Union{Nothing, StaticInt}
 end
 
@@ -177,7 +177,7 @@ Return a view of all the data of the input `x` where the index for dimension `di
   - `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
   - Empty `NamedTuple()`
 """
-@concrete struct SelectDim <: AbstractExplicitLayer
+@concrete struct SelectDim <: AbstractLuxLayer
     dim <: StaticInt
     index <: StaticInt
 end
@@ -212,7 +212,7 @@ julia> y, st_new = model(x, ps, st)
 (1, NamedTuple())
 ```
 """
-struct NoOpLayer <: AbstractExplicitLayer end
+struct NoOpLayer <: AbstractLuxLayer end
 
 (noop::NoOpLayer)(x, _, st::NamedTuple) = x, st
 
@@ -238,7 +238,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-@concrete struct WrappedFunction <: AbstractExplicitLayer
+@concrete struct WrappedFunction <: AbstractLuxLayer
     func <: Function
 end
 
@@ -283,7 +283,7 @@ Create a traditional fully connected layer, whose forward pass is given by:
   - `weight`: Weight Matrix of size `(out_dims, in_dims)`
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
-@concrete struct Dense <: AbstractExplicitLayer
+@concrete struct Dense <: AbstractLuxLayer
     activation
     in_dims <: IntegerType
     out_dims <: IntegerType
@@ -370,7 +370,7 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `weight`: Weight Array of size `(dims...)`
   - `bias`: Bias of size `(dims...)`
 """
-@concrete struct Scale{UB <: StaticBool} <: AbstractExplicitLayer
+@concrete struct Scale{UB <: StaticBool} <: AbstractLuxLayer
     activation
     dims <: Tuple{Vararg{IntegerType}}
     init_weight
@@ -472,7 +472,7 @@ with `B` the Bilinear layer.
   - `weight`: Weight Matrix of size `(out_dims, in1_dims, in2_dims)`
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
-@concrete struct Bilinear <: AbstractExplicitLayer
+@concrete struct Bilinear <: AbstractLuxLayer
     activation
     in1_dims <: IntegerType
     in2_dims <: IntegerType
@@ -578,7 +578,7 @@ This layer is often used to store word embeddings and retrieve them using indice
     input, an N + 1 dimensional output is returned.
   - Empty `NamedTuple()`
 """
-@concrete struct Embedding <: AbstractExplicitLayer
+@concrete struct Embedding <: AbstractLuxLayer
     in_dims <: Union{IntegerType, Tuple{Vararg{IntegerType}}}
     out_dims <: IntegerType
     init_weight
