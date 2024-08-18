@@ -22,6 +22,16 @@ size(x::T) where {T} = hasmethod(Base.size, Tuple{T}) ? Base.size(x) : nothing
 
 structure(x) = fmapstructure(size, x)
 
+size_unbatched(x::AbstractVector) = Base.size(x)
+size_unbatched(x::AbstractArray) = Base.size(x)[1:(end - 1)]
+function size_unbatched(x::T) where {T}
+    return hasmethod(Base.size, Tuple{T}) ? Base.size(x)[1:(end - 1)] : nothing
+end
+
+@non_differentiable size_unbatched(::Any)
+
+unbatched_structure(x) = fmapstructure(size_unbatched, x)
+
 # Can we convert this to a NamedTuple?
 can_named_tuple(::NamedTuple) = true
 can_named_tuple(::T) where {T} = can_named_tuple(T)
