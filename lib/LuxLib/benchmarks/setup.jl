@@ -1,4 +1,5 @@
 using MLDataDevices, StableRNGs, Random
+using NNlib
 using Zygote
 
 synchronize(::CPUDevice) = nothing
