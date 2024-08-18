@@ -8,7 +8,6 @@ using Optimisers: Optimisers
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
-using Optimisers: Optimisers
 
 """
     TrainState

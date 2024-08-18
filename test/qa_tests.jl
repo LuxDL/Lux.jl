@@ -35,7 +35,7 @@ end
     doctestexpr = quote
         using SimpleChains: static
         using DynamicExpressions
-        using Adapt, Lux, Random, Optimisers, Zygote
+        using Adapt, Lux, Random, Optimisers, Zygote, NNlib
     end
 
     DocMeta.setdocmeta!(Lux, :DocTestSetup, doctestexpr; recursive=true)

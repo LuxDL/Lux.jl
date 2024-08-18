@@ -1,6 +1,7 @@
 module PrettyPrinting
 
 using Functors: Functors
+
 using LuxCore: LuxCore, AbstractLuxContainerLayer, AbstractLuxLayer, display_name
 
 printable_children(x) = Functors.children(x)

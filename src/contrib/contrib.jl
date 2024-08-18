@@ -1,10 +1,5 @@
 module Experimental
 
-using ..Lux: Lux, Optional
-using ..Utils: Utils, BoolType, SymbolType
-using LuxCore: LuxCore, AbstractLuxLayer, AbstractLuxContainerLayer,
-               AbstractLuxWrapperLayer, apply
-
 using ADTypes: ADTypes
 using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
@@ -17,6 +12,10 @@ using Optimisers: Optimisers
 using Random: AbstractRNG, Random
 using Setfield: Setfield
 using Static: StaticSymbol, StaticBool, True, known, static, dynamic
+
+using ..Lux: Lux, Optional
+using ..Utils: Utils, BoolType, SymbolType
+using LuxCore: LuxCore, AbstractLuxLayer, AbstractLuxWrapperLayer, apply
 
 const CRC = ChainRulesCore
 

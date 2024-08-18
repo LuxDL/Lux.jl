@@ -11,8 +11,9 @@ using ChainRulesCore: ChainRulesCore, NoTangent, ZeroTangent, @thunk, @non_diffe
 using Compat: @compat
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure
-using MLDataDevices: get_device_type, AbstractGPUDevice, AbstractDevice
 using Static: StaticBool, StaticSymbol, known
+
+using MLDataDevices: get_device_type, AbstractGPUDevice, AbstractDevice
 
 using ..Utils: Utils
 
