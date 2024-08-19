@@ -1,7 +1,7 @@
 using ADTypes: ADTypes, AutoEnzyme, AutoZygote
 using Adapt: adapt
 using Lux: Lux, BatchNorm, Chain, Conv, CrossCor, Dense, Dropout, FlattenLayer, MaxPool
-using LuxDeviceUtils: LuxCPUDevice, LuxCUDADevice, LuxAMDGPUDevice
+using MLDataDevices: AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice
 using NNlib: relu, gelu
 using Random: Random
 
@@ -10,18 +10,22 @@ using Enzyme: Enzyme
 using Zygote: Zygote
 
 # Helper Functions
-@inline synchronize(::LuxCUDADevice) = CUDA.synchronize()
-@inline synchronize(::LuxAMDGPUDevice) = AMDGPU.synchronize()
-@inline synchronize(::LuxCPUDevice) = nothing
+@inline synchronize(::CPUDevice) = nothing
+@inline synchronize(::AMDGPUDevice) = AMDGPU.synchronize()
+@inline synchronize(::CUDADevice) = CUDA.synchronize()
+
+@inline reclaim(::CPUDevice) = GC.gc()
+@inline reclaim(::AMDGPUDevice) = AMDGPU.HIP.reclaim()
+@inline reclaim(::CUDADevice) = CUDA.reclaim()
 
 @inline sumabs2(model, x, p, st) = sum(abs2, first(Lux.apply(model, x, p, st)))
 @inline sumabs2(model, x) = sum(abs2, model(x))
 
-function group_to_backend(group::String)
-    group == "AMDGPU" && return LuxAMDGPUDevice()
-    group == "CUDA" && return LuxCUDADevice()
-    group == "CPU" && return LuxCPUDevice()
-    error("Unknown backend: $group")
+function benchmark_group_to_backend(benchmark_group::String)
+    benchmark_group == "CPU" && return CPUDevice()
+    benchmark_group == "AMDGPU" && return AMDGPUDevice()
+    benchmark_group == "CUDA" && return CUDADevice()
+    error("Unknown backend: $(benchmark_group)")
 end
 
 function general_setup(model, x_dims)
@@ -32,84 +36,72 @@ function general_setup(model, x_dims)
     return x, ps, st
 end
 
-function benchmark_forward_pass!(suite::BenchmarkGroup, group::String, tag, model,
-        x_dims)
-    dev = group_to_backend(group)
+# Main benchmark files
+include("setups/layers.jl")
+include("setups/models.jl")
 
-    suite[tag]["Forward"]["Lux"] = @benchmarkable begin
+function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threads::Int64)
+    dev = benchmark_group_to_backend(backend)
+    cpu_or_gpu = backend == "CPU" ? "CPU" : "GPU"
+    final_backend = backend == "CPU" ? string(num_cpu_threads, " ", "thread(s)") : backend
+
+    setup_dense_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_conv_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_vgg16_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_mlp_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_lenet_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+end
+
+function setup_forward_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+        cpu_or_gpu::String, backend::String, model, x_dims, dev::AbstractDevice)
+    suite[benchmark_name]["forward"][cpu_or_gpu][backend] = @benchmarkable begin
         Lux.apply($model, x, ps, st_test)
         synchronize($dev)
     end setup=begin
-        (x, ps, st) = general_setup($model, $x_dims) |> $dev
+        reclaim($dev)
+        x, ps, st = general_setup($model, $x_dims) |> $dev
         st_test = Lux.testmode(st)
-        Lux.apply($model, x, ps, st_test) # Warm up
     end
 end
 
-function benchmark_reverse_pass!(suite::BenchmarkGroup, group::String, backends, tag,
-        model, x_dims)
-    for backend in backends
-        benchmark_reverse_pass!(suite, group, backend, tag, model, x_dims)
+function setup_reverse_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+        cpu_or_gpu::String, backend::String, ad_backends, model, x_dims, dev::AbstractDevice)
+    for ad_backend in ad_backends
+        setup_reverse_pass_benchmark!(
+            suite, benchmark_name, cpu_or_gpu, backend, ad_backend, model, x_dims, dev)
     end
 end
 
-function benchmark_reverse_pass!(
-        suite::BenchmarkGroup, group::String, ::AutoZygote, tag::String, model, x_dims)
-    dev = group_to_backend(group)
-
-    suite[tag]["Reverse"]["Zygote"] = @benchmarkable begin
+function setup_reverse_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+        cpu_or_gpu::String, backend::String, ::AutoZygote, model, x_dims, dev::AbstractDevice)
+    suite[benchmark_name]["zygote"][cpu_or_gpu][backend] = @benchmarkable begin
         Zygote.gradient(sumabs2, $model, x, ps, st)
         synchronize($dev)
     end setup=begin
-        (x, ps, st) = general_setup($model, $x_dims) |> $dev
+        reclaim($dev)
+        x, ps, st = general_setup($model, $x_dims) |> $dev
         Zygote.gradient(sumabs2, $model, x, ps, st) # Warm up
     end
 end
 
-function benchmark_reverse_pass!(
-        suite::BenchmarkGroup, group::String, ::AutoEnzyme, tag::String, model, x_dims)
-    if group != "CPU"
-        @error "Enzyme.jl currently only supports CPU"
-        return
-    end
+function setup_reverse_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,
+        cpu_or_gpu::String, backend::String, ::AutoEnzyme, model, x_dims, dev::AbstractDevice)
+    cpu_or_gpu != "CPU" && return  # TODO: Remove once Enzyme.jl supports GPUs
 
-    dev = group_to_backend(group)
-
-    suite[tag]["Reverse"]["Enzyme"] = @benchmarkable begin
+    suite[benchmark_name]["enzyme"][cpu_or_gpu][backend] = @benchmarkable begin
         Enzyme.autodiff(Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
             Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps), Enzyme.Const(st))
         synchronize($dev)
     end setup=begin
-        (x, ps, st) = general_setup($model, $x_dims) |> $dev
+        reclaim($dev)
+        x, ps, st = general_setup($model, $x_dims) |> $dev
         dps = Enzyme.make_zero(ps)
         dx = Enzyme.make_zero(x)
         Enzyme.autodiff(Enzyme.Reverse, sumabs2, Enzyme.Active, Enzyme.Const($model),
             Enzyme.Duplicated(x, dx), Enzyme.Duplicated(ps, dps), Enzyme.Const(st)) # Warm up
     end
-end
-
-# loadparams custom
-loadparams!(args...) = BenchmarkTools.loadparams!(args...), true
-
-function loadparams!(group::BenchmarkGroup, paramsgroup::BenchmarkGroup, fields...)
-    has_all_groups = true
-    for (k, v) in group
-        if haskey(paramsgroup, k)
-            _, _has_all_groups = loadparams!(v, paramsgroup[k], fields...)
-            !_has_all_groups && (has_all_groups = false)
-        else
-            has_all_groups = false
-        end
-    end
-    return group, has_all_groups
-end
-
-# Final Setup. Main entry point for benchmarks
-function setup_benchmarks(suite::BenchmarkGroup, backend::String, num_cpu_threads::Int64)
-    # Common Layers
-    add_dense_benchmarks!(suite, backend)
-    add_conv_benchmarks!(suite, backend)
-
-    # Full Models
-    add_vgg16_benchmarks!(suite, backend)
 end
