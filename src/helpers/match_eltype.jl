@@ -41,7 +41,7 @@ For `"convert"` only the following conversions are done:
 """
 function match_eltype end
 
-@static if ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
+@static if LuxPreferences.ELTYPE_MISMATCH_HANDLING == "none" # Just return the input
     @inline match_eltype(layer, ps, st, x) = x
     @inline match_eltype(layer, ps, st, x, args...) = (x, args...)
 else
