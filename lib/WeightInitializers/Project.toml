@@ -29,36 +29,16 @@ WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]
 
 [compat]
 AMDGPU = "0.9.6, 1"
-Aqua = "0.8.7"
 ArgCheck = "2.3.0"
 CUDA = "5.3.2"
 ChainRulesCore = "1.23"
 ConcreteStructs = "0.2.3"
-Documenter = "1.5.0"
-ExplicitImports = "1.9.0"
-GPUArrays = "10.2"
 GPUArraysCore = "0.1.6"
+GPUArrays = "10.2"
 LinearAlgebra = "1.10"
 Metal = "1.1.0"
-Pkg = "1.10"
 Random = "1.10"
-ReTestItems = "1.24.0"
 SpecialFunctions = "2.4"
-StableRNGs = "1"
 Statistics = "1.10"
-Test = "1.10"
 julia = "1.10"
 oneAPI = "1.5.0"
-
-[extras]
-Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
-GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
-Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
-StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Aqua", "Documenter", "ExplicitImports", "GPUArrays", "Pkg", "ReTestItems", "StableRNGs", "Test"]

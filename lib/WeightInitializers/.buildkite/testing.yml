@@ -39,8 +39,6 @@ steps:
         agents:
           queue: "juliagpu"
           cuda: "*"
-        env:
-          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
         matrix:
@@ -98,7 +96,6 @@ steps:
           JULIA_AMDGPU_CORE_MUST_LOAD: "1"
           JULIA_AMDGPU_HIP_MUST_LOAD: "1"
           JULIA_AMDGPU_DISABLE_ARTIFACTS: "1"
-          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
         timeout_in_minutes: 60
         matrix:
@@ -159,9 +156,4 @@ steps:
               - "1"
 
 env:
-  RETESTITEMS_NWORKERS: 8
-  RETESTITEMS_NWORKER_THREADS: 2
-  RETESTITEMS_TESTITEM_TIMEOUT: 3600
-  JULIA_PKG_SERVER: ""
-  JULIA_NUM_THREADS: 4
   SECRET_CODECOV_TOKEN: "DpNKbuKYRX40vpyJCfTvQmxwls1hlCUWiZX4pnsukt9E8u4pf0WUcIroRv2UDDbGYjuk5izmZ9yAhZZhiGMhjFF/TIji3JiYe1sXWdfSrNk0N2+CNoXo+CIi3JvS7mB+YAIUTEi2Xph+L7R0d+It079PEispqVv4bdRuqgSbY7Rn3NSsoV1cB8uUaVFBJH4EewC6Hceg80QW7q+CBru+QECudKbAWnRVLoizRsgzIld+gTUqsI1PhR+vSpD+AfZzhVxmff55ttVcMUFGnL3w4L74qoLVPET52/GPLCOi3RLGSzBJjebSBqqKOwesT9xJ4yaZ21AEzyeOm86YRc2WYg==;U2FsdGVkX1/eBwyJ7Of++vKyAWDSBvSdJeiKmVmlaVKFU5CHejM+sDlSZWH/WmoBatLcqH+eUVEGXC+oWl5riw=="

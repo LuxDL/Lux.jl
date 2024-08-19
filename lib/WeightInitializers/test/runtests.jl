@@ -1,4 +1,7 @@
-using Pkg, ReTestItems
+using Pkg, ReTestItems, WeightInitializers
+using InteractiveUtils, Hwloc
+
+@info sprint(versioninfo)
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "All"))
 
@@ -17,6 +20,11 @@ if !isempty(EXTRA_PKGS)
     Pkg.instantiate()
 end
 
-using WeightInitializers
+const RETESTITEMS_NWORKERS = parse(
+    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
+const RETESTITEMS_NWORKER_THREADS = parse(Int,
+    get(ENV, "RETESTITEMS_NWORKER_THREADS",
+        string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))))
 
-ReTestItems.runtests(WeightInitializers)
+ReTestItems.runtests(WeightInitializers; nworkers=RETESTITEMS_NWORKERS,
+    nworker_threads=RETESTITEMS_NWORKER_THREADS)
