@@ -217,23 +217,32 @@ function groupnorm_affine_normalize_internal!(
         σ²::AbstractArray{<:Number, 4}, γ::Optional{<:AbstractArray{<:Number, 4}},
         β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
     backend = KA.get_backend(y)
-    kernel! = groupnorm_affine_normalize_kernel!(backend)
-    kernel!(y, act, x, μ, σ², γ, β, ϵ; ndrange=size(y))
+    if γ === nothing && β === nothing
+        kernel! = groupnorm_affine_normalize_kernel_no_affine!(backend)
+        kernel!(y, act, x, μ, σ², ϵ; ndrange=size(y))
+    else
+        kernel! = groupnorm_affine_normalize_kernel_affine!(backend)
+        kernel!(y, act, x, μ, σ², γ, β, ϵ; ndrange=size(y))
+    end
     KA.synchronize(backend)
 end
 
-@kernel function groupnorm_affine_normalize_kernel!(
+@kernel inbounds=true function groupnorm_affine_normalize_kernel_no_affine!(
+        y::AbstractArray{<:Number, 4}, @Const(f),
+        @Const(x), @Const(μ), @Const(σ²), @Const(ϵ))
+    i, j, k, l = @index(Global, NTuple)
+    γ′ = inv(sqrt(σ²[1, 1, k, l] + ϵ))
+    β′ = -μ[1, 1, k, l] * γ′
+    y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
+end
+
+@kernel inbounds=true function groupnorm_affine_normalize_kernel_affine!(
         y::AbstractArray{<:Number, 4}, @Const(f), @Const(x),
         @Const(μ), @Const(σ²), @Const(γ), @Const(β), @Const(ϵ))
-    (i, j, k, l) = @index(Global, NTuple)
-    if γ !== nothing
-        @inbounds γ′ = γ[1, j, k, 1] / sqrt(σ²[1, 1, k, l] + ϵ)
-        @inbounds β′ = muladd(-μ[1, 1, k, l], γ′, β[1, j, k, 1])
-    else
-        @inbounds γ′ = inv(sqrt(σ²[1, 1, k, l] + ϵ))
-        @inbounds β′ = -μ[1, 1, k, l] * γ′
-    end
-    @inbounds y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
+    i, j, k, l = @index(Global, NTuple)
+    γ′ = γ[1, j, k, 1] / sqrt(σ²[1, 1, k, l] + ϵ)
+    β′ = muladd(-μ[1, 1, k, l], γ′, β[1, j, k, 1])
+    y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
 end
 
 function CRC.rrule(
@@ -395,28 +404,34 @@ function ∇groupnorm_affine_normalize!(
         μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
         γ::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
     backend = KA.get_backend(∂x)
-    kernel! = ∇groupnorm_affine_normalize_kernel!(backend)
-    kernel!(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², γ, ϵ; ndrange=size(∂x))
+    if γ === nothing
+        kernel! = ∇groupnorm_affine_normalize_kernel_no_affine!(backend)
+        kernel!(∂x, ∂σ², ∂y, x, μ, σ², ϵ; ndrange=size(∂x))
+    else
+        kernel! = ∇groupnorm_affine_normalize_kernel_affine!(backend)
+        kernel!(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ; ndrange=size(∂x))
+    end
     KA.synchronize(backend)
 end
 
-@kernel function ∇groupnorm_affine_normalize_kernel!(
-        ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(γ), @Const(ϵ))
-    (i, j, k, l) = @index(Global, NTuple)
-    @inbounds idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
+@kernel inbounds=true function ∇groupnorm_affine_normalize_kernel_no_affine!(
+        ∂x, ∂σ², @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ))
+    i, j, k, l = @index(Global, NTuple)
+    idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
 
-    if γ !== nothing
-        @inbounds γ′ = γ[1, j, k, 1] * idenom
-    else
-        @inbounds γ′ = idenom
-    end
+    ∂x[i, j, k, l] = ∂y[i, j, k, l] * idenom
+    ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * (x[i, j, k, l] - μ[1, 1, k, l]) * idenom^2 / 2
+end
 
-    @inbounds xμ_d = (x[i, j, k, l] - μ[1, 1, k, l]) * idenom
+@kernel inbounds=true function ∇groupnorm_affine_normalize_kernel_affine!(
+        ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ))
+    i, j, k, l = @index(Global, NTuple)
+    idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
+    γ′ = γ[1, j, k, 1] * idenom
 
-    @inbounds ∂x[i, j, k, l] = ∂y[i, j, k, l] * γ′
-    @inbounds ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * xμ_d * idenom / 2
+    xμ_d = (x[i, j, k, l] - μ[1, 1, k, l]) * idenom
 
-    if γ !== nothing
-        @inbounds ∂γ[i, j, k, l] = ∂y[i, j, k, l] * xμ_d
-    end
+    ∂x[i, j, k, l] = ∂y[i, j, k, l] * γ′
+    ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * xμ_d * idenom / 2
+    ∂γ[i, j, k, l] = ∂y[i, j, k, l] * xμ_d
 end

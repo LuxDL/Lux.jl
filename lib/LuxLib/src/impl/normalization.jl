@@ -57,12 +57,12 @@ function update_running_statistics!(rμₙ, rσ²ₙ, ::GPUBroadcastOp, rμ, rσ
     return
 end
 
-@kernel function update_running_statistics_kernel!(
+@kernel inbounds=true function update_running_statistics_kernel!(
         rμₙ, rσ²ₙ, @Const(rμ), @Const(rσ²), @Const(μ),
         @Const(σ²), @Const(m₁), @Const(m₂), @Const(m₃))
     I = @index(Global)
-    @inbounds rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
-    @inbounds rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
+    rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
+    rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
 end
 
 function update_normalization_statistics(
