@@ -121,7 +121,8 @@ for op in (:get_device, :get_device_type)
 
     @eval begin
         function $(op)(x::AbstractArray{T}) where {T}
-            recursive_array_eltype(T) && return mapreduce($(op), combine_devices, x)
+            recursive_array_eltype(T) &&
+                return mapreduce(MLDataDevices.$(op), combine_devices, x)
             if hasmethod(parent, Tuple{typeof(x)})
                 parent_x = parent(x)
                 parent_x === x && return $(cpu_ret_val)
@@ -132,7 +133,7 @@ for op in (:get_device, :get_device_type)
 
         function $(op)(x::Union{Tuple, NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
-            return unrolled_mapreduce($(op), combine_devices, values(x))
+            return unrolled_mapreduce(MLDataDevices.$(op), combine_devices, values(x))
         end
     end
 
