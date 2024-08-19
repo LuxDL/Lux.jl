@@ -3,23 +3,23 @@ module WeightInitializersoneAPIExt
 using oneAPI: oneAPI, oneArray
 using GPUArrays: RNG
 using Random: Random
-using WeightInitializers: WeightInitializers
+using WeightInitializers: DeviceAgnostic
 
-function WeightInitializers.__zeros(
+function DeviceAgnostic.zeros(
         ::RNG, ::oneArray, ::Type{T}, dims::Integer...) where {T <: Number}
     return oneAPI.zeros(T, dims...)
 end
-function WeightInitializers.__ones(
+function DeviceAgnostic.ones(
         ::RNG, ::oneArray, ::Type{T}, dims::Integer...) where {T <: Number}
     return oneAPI.ones(T, dims...)
 end
-function WeightInitializers.__rand(
+function DeviceAgnostic.rand(
         rng::RNG, ::oneArray, ::Type{T}, dims::Integer...) where {T <: Number}
     y = oneArray{T}(undef, dims...)
     Random.rand!(rng, y)
     return y
 end
-function WeightInitializers.__randn(
+function DeviceAgnostic.randn(
         rng::RNG, ::oneArray, ::Type{T}, dims::Integer...) where {T <: Number}
     y = oneArray{T}(undef, dims...)
     Random.randn!(rng, y)

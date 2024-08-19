@@ -2,11 +2,10 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand
     name = Symbol(fname, T)
     docstring = Utils.generic_docstring(string(name))
     TP = Utils.NUM_TO_FPOINT[Symbol(T)]
-    __fname = Symbol("__", fname)
 
     @eval begin
         @doc $docstring function $(name)(rng::AbstractRNG, dims::Integer...; kwargs...)
-            return $__fname(rng, $TP, dims...; kwargs...)
+            return DeviceAgnostic.$(fname)(rng, $TP, dims...; kwargs...)
         end
     end
 end
@@ -29,7 +28,7 @@ artificial intelligence and statistics_. 2010.
 function glorot_uniform(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     scale = T(gain) * sqrt(T(24) / sum(Utils.nfan(dims...)))
-    x = __rand(rng, T, dims...)
+    x = DeviceAgnostic.rand(rng, T, dims...)
     half = T(0.5)
     @. x = (x - half) * scale
     return x
@@ -52,7 +51,7 @@ artificial intelligence and statistics_. 2010.
 function glorot_normal(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
     std = T(gain) * sqrt(T(2) / sum(Utils.nfan(dims...)))
-    x = __randn(rng, T, dims...)
+    x = DeviceAgnostic.randn(rng, T, dims...)
     x .*= std
     return x
 end
@@ -73,7 +72,7 @@ vision_. 2015.
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
     bound = √T(3) * T(gain) / sqrt(T(first(Utils.nfan(dims...))))
-    x = __rand(rng, T, dims...)
+    x = DeviceAgnostic.rand(rng, T, dims...)
     half = T(0.5)
     @. x = (x - half) * 2 * bound
     return x
@@ -95,7 +94,7 @@ vision_. 2015.
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
     std = T(gain) / sqrt(T(first(Utils.nfan(dims...))))
-    x = __randn(rng, T, dims...)
+    x = DeviceAgnostic.randn(rng, T, dims...)
     x .*= std
     return x
 end
@@ -116,7 +115,7 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
     end
     l = Utils.norm_cdf((T(lo) - T(mean)) / T(std))
     u = Utils.norm_cdf((T(hi) - T(mean)) / T(std))
-    xs = __rand(rng, T, dims...)
+    xs = DeviceAgnostic.rand(rng, T, dims...)
     broadcast!(xs, xs) do x
         x = x * 2(u - l) + (2l - one(T))
         x = erfinv(x)
@@ -158,7 +157,7 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     rows, cols = length(dims) == 2 ? dims : (prod(dims[1:(end - 1)]), dims[end])
     rows < cols && return permutedims(orthogonal(rng, T, cols, rows; gain=T(gain)))
 
-    mat = __randn(rng, T, rows, cols)
+    mat = DeviceAgnostic.randn(rng, T, rows, cols)
     Q, R = qr(mat)
     mat .= Q * sign.(Diagonal(R)) .* T(gain)
 
@@ -218,11 +217,11 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
                              initialization."))
     end
 
-    rows, cols = dims
+    rows, _ = dims
     prop_zero = min(1.0, sparsity)
     num_zeros = ceil(Integer, prop_zero * rows)
 
-    sparse_array = __randn(rng, T, dims...)
+    sparse_array = DeviceAgnostic.randn(rng, T, dims...)
     sparse_array .*= T(std)
     fill!(view(sparse_array, 1:num_zeros, :), zero(T))
 
@@ -293,11 +292,11 @@ julia> identity_init(Xoshiro(123), Float32, 3, 3, 1, 1; gain=1.5)
 """
 function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=1, shift::Integer=0) where {T <: Number}
-    length(dims) == 1 && return __zeros(rng, T, dims...)  # Bias initialization
+    length(dims) == 1 && return DeviceAgnostic.zeros(rng, T, dims...)  # Bias initialization
 
     if length(dims) == 2
         rows, cols = dims
-        mat = __zeros(rng, T, rows, cols)
+        mat = DeviceAgnostic.zeros(rng, T, rows, cols)
         diag_indices = 1:min(rows, cols)
         fill!(view(mat, diag_indices, diag_indices), T(gain))
         return circshift(mat, shift)
@@ -306,7 +305,7 @@ function identity_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     # Convolution or more dimensions
     nin, nout = dims[end - 1], dims[end]
     centers = map(d -> cld(d, 2), dims[1:(end - 2)])
-    weights = __zeros(rng, T, dims...)
+    weights = DeviceAgnostic.zeros(rng, T, dims...)
     @allowscalar for i in 1:min(nin, nout)
         index = (centers..., i, i)
         weights[index...] = T(gain)

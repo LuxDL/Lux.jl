@@ -50,27 +50,34 @@ end
 
 end
 
+module DeviceAgnostic
+
+using ChainRulesCore: @non_differentiable
+using Random: AbstractRNG
+
 # Helpers for device agnostic initializers
-function __zeros(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number}
-    return zeros(T, dims...)
+function zeros(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number}
+    return Base.zeros(T, dims...)
 end
-function __ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number}
-    return ones(T, dims...)
+ones(::AbstractRNG, ::Type{T}, dims::Integer...) where {T <: Number} = Base.ones(T, dims...)
+function rand(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T <: Number}
+    return Base.rand(rng, T, args...)
 end
-function __rand(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T <: Number}
-    return rand(rng, T, args...)
-end
-function __randn(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T <: Number}
-    return randn(rng, T, args...)
+function randn(rng::AbstractRNG, ::Type{T}, args::Integer...) where {T <: Number}
+    return Base.randn(rng, T, args...)
 end
 
 ## Certain backends don't support sampling Complex numbers, so we avoid hitting those
 ## dispatches
-for f in (:__rand, :__randn)
+for f in (:rand, :randn)
     @eval function $(f)(
             rng::AbstractRNG, ::Type{<:Complex{T}}, args::Integer...) where {T <: Number}
-        real_part = $(f)(rng, T, args...)
-        imag_part = $(f)(rng, T, args...)
-        return Complex{T}.(real_part, imag_part)
+        return Complex{T}.($(f)(rng, T, args...), $(f)(rng, T, args...))
     end
+end
+
+for f in (:zeros, :ones, :rand, :randn)
+    @eval @non_differentiable $f(::Any...)
+end
+
 end
