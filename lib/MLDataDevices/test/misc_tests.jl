@@ -127,7 +127,7 @@ end
     for backend in (:CUDA, :AMDGPU, :oneAPI, :Metal, AMDGPUDevice(),
         CUDADevice(), MetalDevice(), oneAPIDevice())
         backend_name = backend isa Symbol ? string(backend) :
-                       MLDataDevices._get_device_name(backend)
+                       MLDataDevices.Internal.get_device_name(backend)
         @test_logs (:info,
             "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.") gpu_backend!(backend)
     end

@@ -2,7 +2,7 @@ module MLDataDevicesoneAPIExt
 
 using Adapt: Adapt
 using GPUArrays: GPUArrays
-using MLDataDevices: MLDataDevices, oneAPIDevice, reset_gpu_device!
+using MLDataDevices: MLDataDevices, Internal, oneAPIDevice, reset_gpu_device!
 using oneAPI: oneAPI, oneArray, oneL0
 
 const SUPPORTS_FP64 = Dict{oneL0.ZeDevice, Bool}()
@@ -25,9 +25,9 @@ end
 MLDataDevices.default_device_rng(::oneAPIDevice) = GPUArrays.default_rng(oneArray)
 
 # Query Device from Array
-MLDataDevices._get_device(::oneArray) = oneAPIDevice()
+Internal.get_device(::oneArray) = oneAPIDevice()
 
-MLDataDevices._get_device_type(::oneArray) = oneAPIDevice
+Internal.get_device_type(::oneArray) = oneAPIDevice
 
 # Device Transfer
 ## To GPU

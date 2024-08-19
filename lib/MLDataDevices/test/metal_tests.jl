@@ -5,7 +5,8 @@ using ArrayInterface: parameterless_type
     @test !MLDataDevices.functional(MetalDevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws MLDataDevices.DeviceSelectionException gpu_device(; force_gpu_usage=true)
+    @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(;
+        force_gpu_usage=true)
     @test_throws Exception default_device_rng(MetalDevice())
 end
 
@@ -21,7 +22,7 @@ using Metal
     else
         @info "Metal is NOT functional"
         @test gpu_device() isa MetalDevice
-        @test_throws MLDataDevices.DeviceSelectionException gpu_device(;
+        @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(;
             force_gpu_usage=true)
     end
     @test MLDataDevices.GPU_DEVICE[] !== nothing

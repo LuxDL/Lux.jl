@@ -1,16 +1,12 @@
 module MLDataDevicesReverseDiffExt
 
-using MLDataDevices: MLDataDevices
+using MLDataDevices: Internal
 using ReverseDiff: ReverseDiff
 
-for op in (:_get_device, :_get_device_type)
+for op in (:get_device, :get_device_type)
     @eval begin
-        function MLDataDevices.$op(x::ReverseDiff.TrackedArray)
-            return MLDataDevices.$op(ReverseDiff.value(x))
-        end
-        function MLDataDevices.$op(x::AbstractArray{<:ReverseDiff.TrackedReal})
-            return MLDataDevices.$op(ReverseDiff.value.(x))
-        end
+        Internal.$(op)(x::ReverseDiff.TrackedArray) = Internal.$(op)(ReverseDiff.value(x))
+        Internal.$(op)(x::AbstractArray{<:ReverseDiff.TrackedReal}) = Internal.$(op)(ReverseDiff.value.(x))
     end
 end
 

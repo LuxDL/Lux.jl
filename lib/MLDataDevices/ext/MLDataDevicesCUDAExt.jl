@@ -2,11 +2,12 @@ module MLDataDevicesCUDAExt
 
 using Adapt: Adapt
 using CUDA: CUDA
-using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector
-using MLDataDevices: MLDataDevices, CUDADevice, CPUDevice
+using CUDA.CUSPARSE: AbstractCuSparseMatrix, AbstractCuSparseVector, AbstractCuSparseArray
+using MLDataDevices: MLDataDevices, Internal, CUDADevice, CPUDevice
 using Random: Random
 
-function MLDataDevices._with_device(::Type{CUDADevice}, id::Integer)
+Internal.with_device(::Type{CUDADevice}, ::Nothing) = CUDADevice(nothing)
+function Internal.with_device(::Type{CUDADevice}, id::Integer)
     id > length(CUDA.devices()) &&
         throw(ArgumentError("id = $id > length(CUDA.devices()) = $(length(CUDA.devices()))"))
     old_dev = CUDA.device()
@@ -16,34 +17,23 @@ function MLDataDevices._with_device(::Type{CUDADevice}, id::Integer)
     return device
 end
 
-function MLDataDevices._with_device(::Type{CUDADevice}, ::Nothing)
-    return CUDADevice(nothing)
-end
-
-MLDataDevices._get_device_id(dev::CUDADevice) = CUDA.deviceid(dev.device) + 1
+Internal.get_device_id(dev::CUDADevice) = CUDA.deviceid(dev.device) + 1
 
 # Default RNG
 MLDataDevices.default_device_rng(::CUDADevice) = CUDA.default_rng()
 
 # Query Device from Array
-function MLDataDevices._get_device(x::CUDA.AnyCuArray)
+function Internal.get_device(x::CUDA.AnyCuArray)
     parent_x = parent(x)
     parent_x === x && return CUDADevice(CUDA.device(x))
     return MLDataDevices.get_device(parent_x)
 end
-function MLDataDevices._get_device(x::CUDA.CUSPARSE.AbstractCuSparseArray)
-    return CUDADevice(CUDA.device(x.nzVal))
-end
+Internal.get_device(x::AbstractCuSparseArray) = CUDADevice(CUDA.device(x.nzVal))
 
-function MLDataDevices._get_device_type(::Union{
-        <:CUDA.AnyCuArray, <:CUDA.CUSPARSE.AbstractCuSparseArray})
-    return CUDADevice
-end
+Internal.get_device_type(::Union{<:CUDA.AnyCuArray, <:AbstractCuSparseArray}) = CUDADevice
 
 # Set Device
-function MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice)
-    return CUDA.device!(dev)
-end
+MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice) = CUDA.device!(dev)
 function MLDataDevices.set_device!(::Type{CUDADevice}, id::Integer)
     return MLDataDevices.set_device!(CUDADevice, collect(CUDA.devices())[id])
 end

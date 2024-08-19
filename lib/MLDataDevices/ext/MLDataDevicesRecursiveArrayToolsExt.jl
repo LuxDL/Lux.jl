@@ -1,7 +1,7 @@
 module MLDataDevicesRecursiveArrayToolsExt
 
 using Adapt: Adapt, adapt
-using MLDataDevices: MLDataDevices, AbstractDevice
+using MLDataDevices: MLDataDevices, Internal, AbstractDevice
 using RecursiveArrayTools: VectorOfArray, DiffEqArray
 
 # We want to preserve the structure
@@ -14,10 +14,10 @@ function Adapt.adapt_structure(to::AbstractDevice, x::DiffEqArray)
     return DiffEqArray(map(Base.Fix1(adapt, to), x.u), x.t)
 end
 
-for op in (:_get_device, :_get_device_type)
-    @eval function MLDataDevices.$op(x::Union{VectorOfArray, DiffEqArray})
-        length(x.u) == 0 && return $(op == :_get_device ? nothing : Nothing)
-        return mapreduce(MLDataDevices.$op, MLDataDevices.__combine_devices, x.u)
+for op in (:get_device, :get_device_type)
+    @eval function Internal.$(op)(x::Union{VectorOfArray, DiffEqArray})
+        length(x.u) == 0 && return $(op == :get_device ? nothing : Nothing)
+        return mapreduce(Internal.$(op), Internal.combine_devices, x.u)
     end
 end
 
