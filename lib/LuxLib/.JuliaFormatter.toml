@@ -5,4 +5,4 @@ indent = 4
 format_docstrings = true
 separate_kwargs_with_semicolon = true
 always_for_in = true
-join_lines_based_on_source = false
+join_lines_based_on_source = true

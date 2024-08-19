@@ -51,9 +51,9 @@ end
 
 function update_running_statistics!(rμₙ, rσ²ₙ, ::GPUBroadcastOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
     backend = KA.get_backend(rμₙ)
-    kernel! = Utils.static_ndrange_kernel(
-        update_running_statistics_kernel!, backend, size(rμₙ))
-    kernel!(rμₙ, rσ²ₙ, rμ, rσ², μ, σ², m₁, m₂, m₃)
+    Utils.run_ka_kernel(
+        update_running_statistics_kernel!, backend, nothing, size(rμₙ),
+        rμₙ, rσ²ₙ, rμ, rσ², μ, σ², m₁, m₂, m₃)
     KA.synchronize(backend)
     return
 end

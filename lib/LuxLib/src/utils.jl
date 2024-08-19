@@ -220,8 +220,15 @@ macro enzyme_reverse_alternative(f₁, f₂)
     end)
 end
 
-function static_ndrange_kernel(f::F, backend, range) where {F}
-    return f(backend, KA.DynamicSize(), KA.StaticSize(range))
+@inline function run_ka_kernel(f::F, backend, workgroupsize, ndrange, args...) where {F}
+    if workgroupsize === nothing
+        kernel = f(backend)
+        kernel(args...; ndrange)
+        return
+    end
+    kernel = f(backend, KA.StaticSize(workgroupsize), KA.StaticSize(ndrange))
+    kernel(args...)
+    return
 end
 
 end
