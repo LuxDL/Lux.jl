@@ -31,7 +31,8 @@ function bias_activation(::AbstractInternalArrayOpMode, ::typeof(identity),
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
     return x .+ reshape_bias(x, bias)
 end
-function bias_activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{<:Number, N},
+function bias_activation(
+        ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{<:Number, N},
         bias::AbstractVector{<:Number}) where {F, N}
     return broadcast(σ ∘ +, x, reshape_bias(x, bias))
 end

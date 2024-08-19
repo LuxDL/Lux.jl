@@ -58,7 +58,7 @@ function update_running_statistics!(rμₙ, rσ²ₙ, ::GPUBroadcastOp, rμ, rσ
     return
 end
 
-@kernel inbounds=true function update_running_statistics_kernel!(
+@kernel cpu=false inbounds=true function update_running_statistics_kernel!(
         rμₙ, rσ²ₙ, @Const(rμ), @Const(rσ²), @Const(μ),
         @Const(σ²), @Const(m₁), @Const(m₂), @Const(m₃))
     I = @index(Global)
@@ -134,7 +134,8 @@ CRC.@non_differentiable get_norm_reshape_dims(::Any...)
 
 # Entry Points
 ## LayerNorm
-function layernorm(x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractArray{<:Number, N}},
+function layernorm(
+        x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractArray{<:Number, N}},
         β::Optional{<:AbstractArray{<:Number, N}},
         act::F, dims, epsilon::Real) where {N, F}
     μ, σ² = mean_var(x; dims, corrected=false)

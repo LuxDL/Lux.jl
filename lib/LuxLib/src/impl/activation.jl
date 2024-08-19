@@ -219,7 +219,8 @@ function EnzymeRules.augmented_primal(
     return EnzymeRules.AugmentedReturn(primal, nothing, nothing)
 end
 
-function EnzymeRules.reverse(::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu)},
+function EnzymeRules.reverse(
+        ::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu)},
         dret::EnzymeCore.Active, ::Nothing, x::EnzymeCore.Active{<:Number})
     return (dret.val * ∇gelu(x.val),)
 end
