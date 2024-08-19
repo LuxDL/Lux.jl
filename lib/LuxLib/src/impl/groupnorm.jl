@@ -217,28 +217,22 @@ function groupnorm_affine_normalize_internal!(
         σ²::AbstractArray{<:Number, 4}, γ::Optional{<:AbstractArray{<:Number, 4}},
         β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
     backend = KA.get_backend(y)
-    if γ === nothing && β === nothing
-        Utils.run_ka_kernel(
-            groupnorm_affine_normalize_kernel_no_affine!, backend, nothing, size(y),
-            y, act, x, μ, σ², ϵ)
-    else
-        Utils.run_ka_kernel(
-            groupnorm_affine_normalize_kernel_affine!, backend, nothing, size(y),
-            y, act, x, μ, σ², γ, β, ϵ)
-    end
+    Utils.run_ka_kernel(
+        groupnorm_affine_normalize_kernel!, backend, nothing, size(y),
+        y, act, x, μ, σ², γ, β, ϵ)
     KA.synchronize(backend)
 end
 
-@kernel inbounds=true function groupnorm_affine_normalize_kernel_no_affine!(
+@kernel inbounds=true function groupnorm_affine_normalize_kernel!(
         y::AbstractArray{<:Number, 4}, @Const(f),
-        @Const(x), @Const(μ), @Const(σ²), @Const(ϵ))
+        @Const(x), @Const(μ), @Const(σ²), @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ))
     i, j, k, l = @index(Global, NTuple)
     γ′ = inv(sqrt(σ²[1, 1, k, l] + ϵ))
     β′ = -μ[1, 1, k, l] * γ′
     y[i, j, k, l] = f(muladd(x[i, j, k, l], γ′, β′))
 end
 
-@kernel inbounds=true function groupnorm_affine_normalize_kernel_affine!(
+@kernel inbounds=true function groupnorm_affine_normalize_kernel!(
         y::AbstractArray{<:Number, 4}, @Const(f), @Const(x),
         @Const(μ), @Const(σ²), @Const(γ), @Const(β), @Const(ϵ))
     i, j, k, l = @index(Global, NTuple)
@@ -406,20 +400,15 @@ function ∇groupnorm_affine_normalize!(
         μ::AbstractArray{<:Number, 4}, σ²::AbstractArray{<:Number, 4},
         γ::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
     backend = KA.get_backend(∂x)
-    if γ === nothing
-        Utils.run_ka_kernel(
-            ∇groupnorm_affine_normalize_kernel_no_affine!, backend, nothing, size(∂x),
-            ∂x, ∂σ², ∂y, x, μ, σ², ϵ, γ)
-    else
-        Utils.run_ka_kernel(
-            ∇groupnorm_affine_normalize_kernel_affine!, backend, nothing, size(∂x),
-            ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ)
-    end
+    Utils.run_ka_kernel(
+        ∇groupnorm_affine_normalize_kernel!, backend, nothing, size(∂x),
+        ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ)
     KA.synchronize(backend)
 end
 
-@kernel inbounds=true function ∇groupnorm_affine_normalize_kernel_no_affine!(
-        ∂x, ∂σ², @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ))
+@kernel inbounds=true function ∇groupnorm_affine_normalize_kernel!(
+        ∂x, ∂σ², @Const(∂γ::Nothing), @Const(∂y), @Const(x),
+        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ::Nothing))
     i, j, k, l = @index(Global, NTuple)
     idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
 
@@ -427,8 +416,9 @@ end
     ∂σ²[i, j, k, l] = -∂x[i, j, k, l] * (x[i, j, k, l] - μ[1, 1, k, l]) * idenom^2 / 2
 end
 
-@kernel inbounds=true function ∇groupnorm_affine_normalize_kernel_affine!(
-        ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ))
+@kernel inbounds=true function ∇groupnorm_affine_normalize_kernel!(
+        ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x),
+        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ))
     i, j, k, l = @index(Global, NTuple)
     idenom = inv(sqrt(σ²[1, 1, k, l] + ϵ))
     γ′ = γ[1, j, k, 1] * idenom

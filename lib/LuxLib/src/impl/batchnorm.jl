@@ -206,60 +206,46 @@ function batchnorm_affine_normalize_internal!(
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector},
         ϵ::Real, γ′::Optional{<:AbstractVector}=nothing) where {F}
     backend = KA.get_backend(y)
-    if γ′ === nothing
-        if γ === nothing && β === nothing
-            Utils.run_ka_kernel(
-                batchnorm_affine_normalize_internal_kernel_no_affine!, backend, nothing, size(y),
-                y, act, x, μ, σ², ϵ)
-        else
-            Utils.run_ka_kernel(
-                batchnorm_affine_normalize_internal_kernel_affine!, backend, nothing, size(y),
-                y, act, x, μ, σ², γ, β, ϵ)
-        end
-    else
-        if γ === nothing && β === nothing
-            Utils.run_ka_kernel(
-                batchnorm_affine_normalize_internal_kernel_no_affine_cached!, nothing, backend,
-                size(y), y, γ′, act, x, μ, σ², ϵ)
-        else
-            Utils.run_ka_kernel(
-                batchnorm_affine_normalize_internal_kernel_affine_cached!, nothing, backend,
-                size(y), y, γ′, act, x, μ, σ², γ, β, ϵ)
-        end
-    end
+    Utils.run_ka_kernel(
+        batchnorm_affine_normalize_internal_kernel!, backend, nothing, size(y),
+        y, γ′, act, x, μ, σ², γ, β, ϵ)
     KA.synchronize(backend)
 end
 
-@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel_no_affine!(
-        y::AbstractArray{<:Number, 3}, @Const(f),
-        @Const(x), @Const(μ), @Const(σ²), @Const(ϵ))
+@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+        y::AbstractArray{<:Number, 3}, @Const(γ′::Nothing),
+        @Const(f), @Const(x), @Const(μ), @Const(σ²),
+        @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ))
     i, j, k = @index(Global, NTuple)
     γ′ = inv(sqrt(σ²[j] + ϵ))
     β′ = -μ[j] * γ′
     y[i, j, k] = f(muladd(x[i, j, k], γ′, β′))
 end
 
-@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel_no_affine_cached!(
+@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector{<:Number},
-        @Const(f), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ))
+        @Const(f), @Const(x), @Const(μ), @Const(σ²),
+        @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ))
     i, j, k = @index(Global, NTuple)
     γ′[j] = inv(sqrt(σ²[j] + ϵ))
     β′ = -μ[j] * γ′[j]
     y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
 end
 
-@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel_affine!(
-        y::AbstractArray{<:Number, 3}, @Const(f), @Const(x),
-        @Const(μ), @Const(σ²), @Const(γ), @Const(β), @Const(ϵ))
+@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+        y::AbstractArray{<:Number, 3}, @Const(γ′::Nothing),
+        @Const(f), @Const(x), @Const(μ), @Const(σ²),
+        @Const(γ), @Const(β), @Const(ϵ))
     i, j, k = @index(Global, NTuple)
     γ′ = γ[j] / sqrt(σ²[j] + ϵ)
     β′ = muladd(-μ[j], γ′, β[j])
     y[i, j, k] = f(muladd(x[i, j, k], γ′, β′))
 end
 
-@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel_affine_cached!(
-        y::AbstractArray{<:Number, 3}, γ′::AbstractVector{<:Number}, @Const(f),
-        @Const(x), @Const(μ), @Const(σ²), @Const(γ), @Const(β), @Const(ϵ))
+@kernel inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+        y::AbstractArray{<:Number, 3}, γ′::AbstractVector{<:Number},
+        @Const(f), @Const(x), @Const(μ), @Const(σ²),
+        @Const(γ), @Const(β), @Const(ϵ))
     i, j, k = @index(Global, NTuple)
     γ′[j] = γ[j] / sqrt(σ²[j] + ϵ)
     β′ = muladd(-μ[j], γ′[j], β[j])
@@ -419,21 +405,15 @@ function ∇batchnorm_affine_normalize!(
         ∂y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3}, μ::AbstractVector,
         σ²::AbstractVector, γ::Optional{<:AbstractVector}, ϵ::Real, γ′::AbstractVector)
     backend = KA.get_backend(∂x)
-    kernel! = ∇batchnorm_affine_normalize_kernel!(backend)
-    if γ === nothing && β === nothing
-        Utils.run_ka_kernel(
-            ∇batchnorm_affine_normalize_kernel_no_affine!, backend, nothing, size(∂x),
-            ∂x, ∂σ², ∂y, x, μ, σ², ϵ, γ′)
-    else
-        Utils.run_ka_kernel(
-            ∇batchnorm_affine_normalize_kernel_affine!, backend, nothing, size(∂x),
-            ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′)
-    end
+    Utils.run_ka_kernel(
+        ∇batchnorm_affine_normalize_kernel!, backend, nothing, size(∂x),
+        ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′)
     KA.synchronize(backend)
 end
 
-@kernel inbounds=true function ∇batchnorm_affine_normalize_kernel_no_affine!(
-        ∂x, ∂σ², @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′))
+@kernel inbounds=true function ∇batchnorm_affine_normalize_kernel!(
+        ∂x, ∂σ², @Const(∂γ::Nothing), @Const(∂y), @Const(x),
+        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′))
     i, j, k = @index(Global, NTuple)
     idenom = γ′[j]
     idenom² = idenom^2
@@ -444,8 +424,9 @@ end
     ∂σ²[i, j, k] = -∂x[i, j, k] * xμ * idenom² / 2
 end
 
-@kernel inbounds=true function ∇batchnorm_affine_normalize_kernel_affine!(
-        ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x), @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′))
+@kernel inbounds=true function ∇batchnorm_affine_normalize_kernel!(
+        ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x),
+        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′))
     i, j, k = @index(Global, NTuple)
     idenom = inv(sqrt(σ²[j] + ϵ))
     idenom² = idenom^2
