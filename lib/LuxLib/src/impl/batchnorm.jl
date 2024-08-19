@@ -208,19 +208,24 @@ function batchnorm_affine_normalize_internal!(
     backend = KA.get_backend(y)
     if γ′ === nothing
         if γ === nothing && β === nothing
-            kernel! = batchnorm_affine_normalize_internal_kernel_no_affine!(backend)
-            kernel!(y, act, x, μ, σ², ϵ; ndrange=size(y))
+            kernel! = Utils.static_ndrange_kernel(
+                batchnorm_affine_normalize_internal_kernel_no_affine!, backend, size(y))
+            kernel!(y, act, x, μ, σ², ϵ)
         else
-            kernel! = batchnorm_affine_normalize_internal_kernel_affine!(backend)
-            kernel!(y, act, x, μ, σ², γ, β, ϵ; ndrange=size(y))
+            kernel! = Utils.static_ndrange_kernel(
+                batchnorm_affine_normalize_internal_kernel_affine!, backend, size(y))
+            kernel!(y, act, x, μ, σ², γ, β, ϵ)
         end
     else
         if γ === nothing && β === nothing
-            kernel! = batchnorm_affine_normalize_internal_kernel_no_affine_cached!(backend)
-            kernel!(y, γ′, act, x, μ, σ², ϵ; ndrange=size(y))
+            kernel! = Utils.static_ndrange_kernel(
+                batchnorm_affine_normalize_internal_kernel_no_affine_cached!,
+                backend, size(y))
+            kernel!(y, γ′, act, x, μ, σ², ϵ)
         else
-            kernel! = batchnorm_affine_normalize_internal_kernel_affine_cached!(backend)
-            kernel!(y, γ′, act, x, μ, σ², γ, β, ϵ; ndrange=size(y))
+            kernel! = Utils.static_ndrange_kernel(
+                batchnorm_affine_normalize_internal_kernel_affine_cached!, backend, size(y))
+            kernel!(y, γ′, act, x, μ, σ², γ, β, ϵ)
         end
     end
     KA.synchronize(backend)
@@ -417,11 +422,13 @@ function ∇batchnorm_affine_normalize!(
     backend = KA.get_backend(∂x)
     kernel! = ∇batchnorm_affine_normalize_kernel!(backend)
     if γ === nothing && β === nothing
-        kernel! = ∇batchnorm_affine_normalize_kernel_no_affine!(backend)
-        kernel!(∂x, ∂σ², ∂y, x, μ, σ², ϵ, γ′; ndrange=size(∂x))
+        kernel! = Utils.static_ndrange_kernel(
+            ∇batchnorm_affine_normalize_kernel_no_affine!, backend, size(∂x))
+        kernel!(∂x, ∂σ², ∂y, x, μ, σ², ϵ, γ′)
     else
-        kernel! = ∇batchnorm_affine_normalize_kernel_affine!(backend)
-        kernel!(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′; ndrange=size(∂x))
+        kernel! = Utils.static_ndrange_kernel(
+            ∇batchnorm_affine_normalize_kernel_affine!, backend, size(∂x))
+        kernel!(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′)
     end
     KA.synchronize(backend)
 end

@@ -218,11 +218,13 @@ function groupnorm_affine_normalize_internal!(
         β::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real) where {F}
     backend = KA.get_backend(y)
     if γ === nothing && β === nothing
-        kernel! = groupnorm_affine_normalize_kernel_no_affine!(backend)
-        kernel!(y, act, x, μ, σ², ϵ; ndrange=size(y))
+        kernel! = Utils.static_ndrange_kernel(
+            groupnorm_affine_normalize_kernel_no_affine!, backend, size(y))
+        kernel!(y, act, x, μ, σ², ϵ)
     else
-        kernel! = groupnorm_affine_normalize_kernel_affine!(backend)
-        kernel!(y, act, x, μ, σ², γ, β, ϵ; ndrange=size(y))
+        kernel! = Utils.static_ndrange_kernel(
+            groupnorm_affine_normalize_kernel_affine!, backend, size(y))
+        kernel!(y, act, x, μ, σ², γ, β, ϵ)
     end
     KA.synchronize(backend)
 end
@@ -405,11 +407,13 @@ function ∇groupnorm_affine_normalize!(
         γ::Optional{<:AbstractArray{<:Number, 4}}, ϵ::Real)
     backend = KA.get_backend(∂x)
     if γ === nothing
-        kernel! = ∇groupnorm_affine_normalize_kernel_no_affine!(backend)
-        kernel!(∂x, ∂σ², ∂y, x, μ, σ², ϵ; ndrange=size(∂x))
+        kernel! = Utils.static_ndrange_kernel(
+            ∇groupnorm_affine_normalize_kernel_no_affine!, backend, size(∂x))
+        kernel!(∂x, ∂σ², ∂y, x, μ, σ², ϵ, γ)
     else
-        kernel! = ∇groupnorm_affine_normalize_kernel_affine!(backend)
-        kernel!(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ; ndrange=size(∂x))
+        kernel! = Utils.static_ndrange_kernel(
+            ∇groupnorm_affine_normalize_kernel_affine!, backend, size(∂x))
+        kernel!(∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ)
     end
     KA.synchronize(backend)
 end

@@ -220,6 +220,10 @@ macro enzyme_reverse_alternative(f₁, f₂)
     end)
 end
 
+function static_ndrange_kernel(f::F, backend, range) where {F}
+    return f(backend, KA.DynamicSize(), KA.StaticSize(range))
+end
+
 end
 
 # Accessing properties of modules leads to type instability in Zygote reverse pass
