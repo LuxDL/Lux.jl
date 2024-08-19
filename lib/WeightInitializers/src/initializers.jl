@@ -1,7 +1,7 @@
 for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand, :randn)
     name = Symbol(fname, T)
-    docstring = __generic_docstring(string(name))
-    TP = NUM_TO_FPOINT[Symbol(T)]
+    docstring = Utils.generic_docstring(string(name))
+    TP = Utils.NUM_TO_FPOINT[Symbol(T)]
     __fname = Symbol("__", fname)
 
     @eval begin
@@ -12,7 +12,7 @@ for T in ("16", "32", "64", "C16", "C32", "C64"), fname in (:ones, :zeros, :rand
 end
 
 """
-    glorot_uniform([::AbstractRNG=_default_rng()], [T=Float32], size...;
+    glorot_uniform([::AbstractRNG=Utils.default_rng()], [T=Float32], size...;
         gain = 1) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` containing random numbers drawn from a
@@ -28,7 +28,7 @@ artificial intelligence and statistics_. 2010.
 """
 function glorot_uniform(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
-    scale = T(gain) * sqrt(T(24) / sum(_nfan(dims...)))
+    scale = T(gain) * sqrt(T(24) / sum(Utils.nfan(dims...)))
     x = __rand(rng, T, dims...)
     half = T(0.5)
     @. x = (x - half) * scale
@@ -36,7 +36,7 @@ function glorot_uniform(
 end
 
 """
-    glorot_normal([::AbstractRNG=_default_rng()], [T=Float32], size...;
+    glorot_normal([::AbstractRNG=Utils.default_rng()], [T=Float32], size...;
         gain = 1) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` containing random numbers drawn from a
@@ -51,14 +51,14 @@ artificial intelligence and statistics_. 2010.
 """
 function glorot_normal(
         rng::AbstractRNG, ::Type{T}, dims::Integer...; gain::Number=1) where {T <: Number}
-    std = T(gain) * sqrt(T(2) / sum(_nfan(dims...)))
+    std = T(gain) * sqrt(T(2) / sum(Utils.nfan(dims...)))
     x = __randn(rng, T, dims...)
     x .*= std
     return x
 end
 
 """
-    kaiming_uniform([::AbstractRNG=_default_rng()], [T=Float32], size...;
+    kaiming_uniform([::AbstractRNG=Utils.default_rng()], [T=Float32], size...;
         gain = √T(2)) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` containing random numbers drawn from a
@@ -72,7 +72,7 @@ vision_. 2015.
 """
 function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
-    bound = √T(3) * T(gain) / sqrt(T(first(_nfan(dims...))))
+    bound = √T(3) * T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = __rand(rng, T, dims...)
     half = T(0.5)
     @. x = (x - half) * 2 * bound
@@ -80,7 +80,7 @@ function kaiming_uniform(rng::AbstractRNG, ::Type{T}, dims::Integer...;
 end
 
 """
-    kaiming_normal([::AbstractRNG=_default_rng()], [T=Float32], size...;
+    kaiming_normal([::AbstractRNG=Utils.default_rng()], [T=Float32], size...;
         gain = √T(2)) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` containing random numbers taken from a
@@ -94,14 +94,14 @@ vision_. 2015.
 """
 function kaiming_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
         gain::Number=√T(2)) where {T <: Number}
-    std = T(gain) / sqrt(T(first(_nfan(dims...))))
+    std = T(gain) / sqrt(T(first(Utils.nfan(dims...))))
     x = __randn(rng, T, dims...)
     x .*= std
     return x
 end
 
 """
-    truncated_normal([::AbstractRNG=_default_rng()], [T=Float32], size...; mean = 0,
+    truncated_normal([::AbstractRNG=Utils.default_rng()], [T=Float32], size...; mean = 0,
         std = 1, lo = -2, hi = 2) -> AbstractArray{T, length(size)}
 
 Return an `AbstractArray{T}` of the given `size` where each element is drawn from a
@@ -114,8 +114,8 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
         @warn "Mean is more than 2 std outside the limits in truncated_normal, so the \
                distribution of values may be inaccurate."
     end
-    l = _norm_cdf((T(lo) - T(mean)) / T(std))
-    u = _norm_cdf((T(hi) - T(mean)) / T(std))
+    l = Utils.norm_cdf((T(lo) - T(mean)) / T(std))
+    u = Utils.norm_cdf((T(hi) - T(mean)) / T(std))
     xs = __rand(rng, T, dims...)
     broadcast!(xs, xs) do x
         x = x * 2(u - l) + (2l - one(T))
@@ -126,7 +126,7 @@ function truncated_normal(rng::AbstractRNG, ::Type{T}, dims::Integer...; mean=T(
 end
 
 """
-    orthogonal([::AbstractRNG=_default_rng()], [T=Float32], dims::Integer...;
+    orthogonal([::AbstractRNG=Utils.default_rng()], [T=Float32], dims::Integer...;
         gain = 1)  -> AbstractArray{T, length(dims)}
 
 Return an `AbstractArray{T}` of the given dimensions (`dims`) which is a
@@ -166,7 +166,7 @@ function orthogonal(rng::AbstractRNG, ::Type{T}, dims::Integer...;
 end
 
 """
-    sparse_init([::AbstractRNG=_default_rng()], [T=Float32], dims::Integer...;
+    sparse_init([::AbstractRNG=Utils.default_rng()], [T=Float32], dims::Integer...;
         sparsity::Number, std::Number=0.01) -> AbstractArray{T}
 
 Creates a sparsely initialized weight matrix with a specified proportion of zeroed elements,
@@ -230,7 +230,7 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
 end
 
 """
-    identity_init([::AbstractRNG=_default_rng()], [T=Float32], size...; gain::Number=1,
+    identity_init([::AbstractRNG=Utils.default_rng()], [T=Float32], size...; gain::Number=1,
         shift::Union{Integer, Tuple{Integer, Integer}}=0) -> AbstractArray{T}
 
 Constructs an array that aims to provide an identity mapping when used as parameters in
@@ -320,13 +320,13 @@ for initializer in (:glorot_uniform, :glorot_normal, :kaiming_uniform, :kaiming_
     NType = ifelse(initializer === :truncated_normal, Real, Number)
     @eval begin
         function ($initializer)(dims::Integer...; kwargs...)
-            return $initializer(_default_rng(), Float32, dims...; kwargs...)
+            return $initializer(Utils.default_rng(), Float32, dims...; kwargs...)
         end
         function ($initializer)(rng::AbstractRNG, dims::Integer...; kwargs...)
             return $initializer(rng, Float32, dims...; kwargs...)
         end
         function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T <: $NType}
-            return $initializer(_default_rng(), T, dims...; kwargs...)
+            return $initializer(Utils.default_rng(), T, dims...; kwargs...)
         end
 
         # Partial application
@@ -349,7 +349,7 @@ for tp in ("16", "32", "64", "C16", "C32", "C64"), func in (:zeros, :ones, :rand
     initializer = Symbol(func, tp)
     @eval begin
         function ($initializer)(dims::Integer...; kwargs...)
-            return $initializer(_default_rng(), dims...; kwargs...)
+            return $initializer(Utils.default_rng(), dims...; kwargs...)
         end
         function ($initializer)(::Type{T}, dims::Integer...; kwargs...) where {T}
             throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))

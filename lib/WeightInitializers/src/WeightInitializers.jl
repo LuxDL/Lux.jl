@@ -4,8 +4,8 @@ using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
 using GPUArraysCore: @allowscalar
 using LinearAlgebra: LinearAlgebra, Diagonal, qr
-using Random: Random, AbstractRNG, Xoshiro, shuffle
-using SpecialFunctions: SpecialFunctions, erf, erfinv  # Move to Ext in v2.0
+using Random: Random, AbstractRNG, shuffle
+using SpecialFunctions: SpecialFunctions, erfinv  # Move to Ext in v2.0
 using Statistics: Statistics, std
 
 const CRC = ChainRulesCore

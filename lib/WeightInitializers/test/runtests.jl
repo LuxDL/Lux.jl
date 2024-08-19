@@ -17,4 +17,6 @@ if !isempty(EXTRA_PKGS)
     Pkg.instantiate()
 end
 
-ReTestItems.runtests(@__DIR__)
+using WeightInitializers
+
+ReTestItems.runtests(WeightInitializers)

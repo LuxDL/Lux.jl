@@ -326,7 +326,7 @@ end
             # variance ≈ 2/(fan_in + fan_out)
             for dims in [(1000,), (100, 100), (100, 400), (2, 3, 32, 64), (2, 3, 4, 32, 64)]
                 v = init(dims...)
-                fan_in, fan_out = WeightInitializers._nfan(dims...)
+                fan_in, fan_out = WeightInitializers.Utils.nfan(dims...)
                 σ2 = 2 / (fan_in + fan_out)
                 @test 0.9σ2 < var(v) < 1.1σ2
             end
