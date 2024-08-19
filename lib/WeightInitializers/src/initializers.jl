@@ -331,17 +331,16 @@ for initializer in (:glorot_uniform, :glorot_normal, :kaiming_uniform, :kaiming_
 
         # Partial application
         function ($initializer)(rng::AbstractRNG; kwargs...)
-            return PartialWeightInitializationFunction{Nothing}($initializer, rng, kwargs)
+            return PartialFunction.Partial{Nothing}($initializer, rng, kwargs)
         end
         function ($initializer)(::Type{T}; kwargs...) where {T <: $NType}
-            return PartialWeightInitializationFunction{T}($initializer, nothing, kwargs)
+            return PartialFunction.Partial{T}($initializer, nothing, kwargs)
         end
         function ($initializer)(rng::AbstractRNG, ::Type{T}; kwargs...) where {T <: $NType}
-            return PartialWeightInitializationFunction{T}($initializer, rng, kwargs)
+            return PartialFunction.Partial{T}($initializer, rng, kwargs)
         end
         function ($initializer)(; kwargs...)
-            return PartialWeightInitializationFunction{Nothing}(
-                $initializer, nothing, kwargs)
+            return PartialFunction.Partial{Nothing}($initializer, nothing, kwargs)
         end
     end
 end
@@ -362,14 +361,13 @@ for tp in ("16", "32", "64", "C16", "C32", "C64"), func in (:zeros, :ones, :rand
 
         # Partial application
         function ($initializer)(rng::AbstractRNG; kwargs...)
-            return PartialWeightInitializationFunction{Missing}($initializer, rng, kwargs)
+            return PartialFunction.Partial{Missing}($initializer, rng, kwargs)
         end
         function ($initializer)(rng::AbstractRNG, ::Type{T}; kwargs...) where {T}
             throw(ArgumentError(string($initializer) * " doesn't accept a type argument."))
         end
         function ($initializer)(; kwargs...)
-            return PartialWeightInitializationFunction{Missing}(
-                $initializer, nothing, kwargs)
+            return PartialFunction.Partial{Missing}($initializer, nothing, kwargs)
         end
     end
 end

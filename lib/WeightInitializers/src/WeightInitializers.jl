@@ -2,11 +2,10 @@ module WeightInitializers
 
 using ArgCheck: @argcheck
 using ChainRulesCore: ChainRulesCore
-using ConcreteStructs: @concrete
 using GPUArraysCore: @allowscalar
 using LinearAlgebra: LinearAlgebra, Diagonal, qr
 using Random: Random, AbstractRNG, Xoshiro, shuffle
-using SpecialFunctions: SpecialFunctions, erf, erfinv
+using SpecialFunctions: SpecialFunctions, erf, erfinv  # Move to Ext in v2.0
 using Statistics: Statistics, std
 
 const CRC = ChainRulesCore
