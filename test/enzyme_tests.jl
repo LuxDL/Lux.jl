@@ -2,7 +2,7 @@
 # able to remove this, but this file is still helpful to catch errors in a localized way.
 @testsetup module EnzymeTestSetup
 using LuxTestUtils, Enzyme, Zygote, Test
-using Lux
+using Lux, NNlib
 using LuxTestUtils: check_approx
 
 generic_loss_function(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))

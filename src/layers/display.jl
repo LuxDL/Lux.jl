@@ -2,13 +2,11 @@ module PrettyPrinting
 
 using Functors: Functors
 
-using LuxCore: LuxCore, AbstractLuxContainerLayer, AbstractLuxLayer, display_name
+using LuxCore: LuxCore, AbstractLuxWrapperLayer, AbstractLuxLayer, display_name
 
 printable_children(x) = Functors.children(x)
-function printable_children(m::AbstractLuxContainerLayer{layers}) where {layers}
+function printable_children(m::AbstractLuxWrapperLayer{field}) where {field}
     children = Functors.children(m)
-    length(layers) ≥ 2 && return children
-    field = first(layers)
     hasfield(typeof(children), field) || return children
     nt = getfield(children, field)
     nt isa NamedTuple || (nt = NamedTuple{(field,)}((nt,)))
