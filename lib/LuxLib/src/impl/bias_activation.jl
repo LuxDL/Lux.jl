@@ -1,61 +1,60 @@
 # Entry Points
-bias_activation(::typeof(identity), x::AbstractVector{<:Number}, ::Nothing) = x
-for bType in (Nothing, AbstractVector{<:Number})
-    @eval function bias_activation(
-            σ::F, x::AbstractVector{<:Number}, bias::$(bType)) where {F}
+bias_activation(::typeof(identity), x::AbstractVector, ::Nothing) = x
+for bType in (Nothing, AbstractVector)
+    @eval function bias_activation(σ::F, x::AbstractVector, bias::$(bType)) where {F}
         return vec(bias_activation(σ, reshape(x, :, 1), bias))
     end
 end
 
-bias_activation(::typeof(identity), x::AbstractArray{<:Number}, ::Nothing) = x
-function bias_activation(σ::F, x::AbstractArray{<:Number, N}, ::Nothing) where {F, N}
+bias_activation(::typeof(identity), x::AbstractArray, ::Nothing) = x
+function bias_activation(σ::F, x::AbstractArray{xT, N}, ::Nothing) where {F, N, xT}
     return activation(σ, x)
 end
 function bias_activation(
-        σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+        σ::F, x::AbstractArray{xT, N}, bias::AbstractVector{bT}) where {F, N, xT, bT}
     return bias_activation(internal_operation_mode((x, bias)), σ, x, bias)
 end
 
 ## General Implementation
 function bias_activation(
-        ::GenericBroadcastOp, ::typeof(identity), x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {N}
+        ::GenericBroadcastOp, ::typeof(identity), x::AbstractArray{T1, N},
+        bias::AbstractVector{T2}) where {N, T1, T2}
     return x .+ reshape_bias(x, bias)
 end
-function bias_activation(::GenericBroadcastOp, σ::F, x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {F, N}
+function bias_activation(::GenericBroadcastOp, σ::F, x::AbstractArray{T1, N},
+        bias::AbstractVector) where {F, N, T1}
     return σ.(x .+ reshape_bias(x, bias))
 end
 
 function bias_activation(::AbstractInternalArrayOpMode, ::typeof(identity),
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT}
     return x .+ reshape_bias(x, bias)
 end
 function bias_activation(
-        ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {F, N}
+        ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{xT, N},
+        bias::AbstractVector) where {F, N, xT}
     return broadcast(σ ∘ +, x, reshape_bias(x, bias))
 end
 
 # Prevent ambiguity
 @stable default_mode="disable" function bias_activation(
         opmode::LoopedArrayOp, ::typeof(identity),
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT}
     y = similar(x, Utils.concrete_bias_act_output_eltype(identity, x, bias))
     bias_activation!(y, opmode, identity, x, bias)
     return y
 end
 @stable default_mode="disable" function bias_activation(
-        opmode::LoopedArrayOp, σ::F, x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {F, N}
+        opmode::LoopedArrayOp, σ::F, x::AbstractArray{xT, N},
+        bias::AbstractVector) where {F, N, xT}
     y = similar(x, Utils.concrete_bias_act_output_eltype(σ, x, bias))
     bias_activation!(y, opmode, σ, x, bias)
     return y
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
-        opmode::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {F, N}
+        opmode::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{xT, N},
+        bias::AbstractVector) where {F, N, xT}
     T = Utils.concrete_bias_act_output_eltype(σ, x, bias)
     𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
@@ -89,45 +88,44 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
     return y, ∇bias_activation_rrule
 end
 
-bias_activation!!(::typeof(identity), x::AbstractVector{<:Number}, ::Nothing) = x
-for bType in (Nothing, AbstractVector{<:Number})
-    @eval function bias_activation!!(
-            σ::F, x::AbstractVector{<:Number}, bias::$(bType)) where {F}
+bias_activation!!(::typeof(identity), x::AbstractVector, ::Nothing) = x
+for bType in (Nothing, AbstractVector)
+    @eval function bias_activation!!(σ::F, x::AbstractVector, bias::$(bType)) where {F}
         return vec(bias_activation!!(σ, reshape(x, :, 1), bias))
     end
 end
 
-bias_activation!!(::typeof(identity), x::AbstractArray{<:Number}, ::Nothing) = x
-function bias_activation!!(σ::F, x::AbstractArray{<:Number, N}, ::Nothing) where {F, N}
+bias_activation!!(::typeof(identity), x::AbstractArray, ::Nothing) = x
+function bias_activation!!(σ::F, x::AbstractArray{xT, N}, ::Nothing) where {F, N, xT}
     return activation!!(σ, x)
 end
 function bias_activation!!(
-        σ::F, x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+        σ::F, x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
     return bias_activation!!(
         internal_operation_mode((x, bias)), Traits.is_mutable_array(x), σ, x, bias)
 end
 
 function bias_activation!!(opmode::AbstractInternalArrayOpMode, ::False, σ::F,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
     return bias_activation(opmode, σ, x, bias)
 end
 
 function bias_activation!!(
-        opmode::GenericBroadcastOp, ::True, σ::F, x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {F, N}
+        opmode::GenericBroadcastOp, ::True, σ::F, x::AbstractArray{xT, N},
+        bias::AbstractVector) where {F, N, xT}
     return bias_activation(opmode, σ, x, bias)
 end
 
 @stable default_mode="disable" function bias_activation!!(
         opmode::AbstractInternalArrayOpMode, ::True, σ::F,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
     bias_activation!(x, opmode, σ, x, bias)
     return x
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!),
         opmode::AbstractInternalArrayOpMode, ::True, σ::F,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
     T = Utils.concrete_bias_act_output_eltype(σ, x, bias)
     𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
@@ -162,15 +160,15 @@ end
 
 # Core Implementation
 function bias_activation!(
-        y::AbstractArray{<:Number, N}, opmode::AbstractInternalArrayOpMode,
-        σ::F, x::AbstractArray{<:Number, N}, ::Nothing) where {F, N}
+        y::AbstractArray{yT, N}, opmode::AbstractInternalArrayOpMode,
+        σ::F, x::AbstractArray{xT, N}, ::Nothing) where {F, N, xT, yT}
     activation!(y, opmode, σ, x)
     return
 end
 
 function bias_activation!(
-        y::AbstractArray{<:Number, N}, opmode::AbstractInternalArrayOpMode, σ::F,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+        y::AbstractArray{yT, N}, opmode::AbstractInternalArrayOpMode, σ::F,
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT, yT}
     if σ === identity
         bias_add!(y, opmode, x, bias)
     else
@@ -179,8 +177,8 @@ function bias_activation!(
     return
 end
 
-function bias_activation!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp, σ::F,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
+function bias_activation!(y::AbstractArray{yT, N}, ::LoopedArrayOp, σ::F,
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT, yT}
     bias_activation_cpu!(
         reshape(y, flattened_bias_dims(y), size(y, N - 1), size(y, N)),
         Traits.fuse_cpu_activation(σ),
@@ -188,14 +186,14 @@ function bias_activation!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp, σ::F,
     return
 end
 
-function bias_activation_cpu!(y::AbstractArray{<:Number, 3}, ::True, σ::F,
-        x::AbstractArray{<:Number, 3}, bias::AbstractVector{<:Number}) where {F}
+function bias_activation_cpu!(y::AbstractArray{yT, 3}, ::True, σ::F,
+        x::AbstractArray{xT, 3}, bias::AbstractVector) where {F, xT, yT}
     bias_activation_simd_loop!(y, σ, x, bias)
     return
 end
 
-function bias_activation_cpu!(y::AbstractArray{<:Number, 3}, ::False, σ::F,
-        x::AbstractArray{<:Number, 3}, bias::AbstractVector{<:Number}) where {F}
+function bias_activation_cpu!(y::AbstractArray{yT, 3}, ::False, σ::F,
+        x::AbstractArray{xT, 3}, bias::AbstractVector) where {F, xT, yT}
     if !LV.check_args(y, x, bias)
         bias_activation_simd_loop!(y, σ, x, bias)
         return
@@ -204,9 +202,8 @@ function bias_activation_cpu!(y::AbstractArray{<:Number, 3}, ::False, σ::F,
     return
 end
 
-function bias_activation_loop!(
-        y::AbstractArray{<:Number, 3}, σ::F, x::AbstractArray{<:Number, 3},
-        bias::AbstractVector{<:Number}) where {F}
+function bias_activation_loop!(y::AbstractArray{yT, 3}, σ::F, x::AbstractArray{xT, 3},
+        bias::AbstractVector) where {F, xT, yT}
     if size(y, 1) == 1
         @tturbo for K in indices(x, 3), J in indices((x, bias), (2, 1))
             y[1, J, K] = σ(x[1, J, K] + bias[J])
@@ -218,9 +215,8 @@ function bias_activation_loop!(
     end
 end
 
-function bias_activation_simd_loop!(
-        y::AbstractArray{<:Number, 3}, σ::F, x::AbstractArray{<:Number, 3},
-        bias::AbstractVector{<:Number}) where {F}
+function bias_activation_simd_loop!(y::AbstractArray{yT, 3}, σ::F, x::AbstractArray{xT, 3},
+        bias::AbstractVector) where {F, xT, yT}
     if size(y, 1) == 1
         for K in indices(x, 3)
             @simd ivdep for J in indices((x, bias), (2, 1))
@@ -239,21 +235,21 @@ end
 
 Utils.@enzyme_reverse_alternative bias_activation_loop! bias_activation_simd_loop!
 
-function bias_add!(y::AbstractArray{<:Number, N}, ::AbstractInternalArrayOpMode,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+function bias_add!(y::AbstractArray{yT, N}, ::AbstractInternalArrayOpMode,
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT, yT}
     broadcast!(+, y, x, reshape_bias(x, bias))
     return
 end
 
-function bias_add!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp,
-        x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
+function bias_add!(y::AbstractArray{yT, N}, ::LoopedArrayOp,
+        x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT, yT}
     bias_add_loop!(reshape(y, flattened_bias_dims(y), size(y, N - 1), size(y, N)),
         reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N)), bias)
     return
 end
 
-function bias_add_loop!(y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
-        bias::AbstractVector{<:Number})
+function bias_add_loop!(y::AbstractArray{yT, 3}, x::AbstractArray{xT, 3},
+        bias::AbstractVector) where {xT, yT}
     if size(y, 1) == 1
         for K in indices(x, 3)
             @simd ivdep for J in indices((x, bias), (2, 1))
@@ -270,8 +266,8 @@ function bias_add_loop!(y::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number
 end
 
 # Some helper functions for the rrule
-function bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
+function bias_activation_cached!!(σ::F, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}) where {F, N, xT}
     @assert σ !== identity
     bias === nothing && return activation(σ, x), x
     return bias_activation_cached!!(
@@ -279,22 +275,22 @@ function bias_activation_cached!!(σ::F, x::AbstractArray{<:Number, N},
 end
 
 function bias_activation_cached!!(
-        ::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
+        ::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}) where {F, N, xT}
     y = broadcast(+, x, reshape_bias(x, bias))
     return activation(σ, y), y
 end
 
 function bias_activation_cached!!(
-        ::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
+        ::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}) where {F, N, xT}
     broadcast!(+, x, x, reshape_bias(x, bias))
     return activation(σ, x), x
 end
 
 function bias_activation_cached!!(
-        ::LoopedArrayOp, ::True, σ::F, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
+        ::LoopedArrayOp, ::True, σ::F, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}) where {F, N, xT}
     x′ = reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N))
     bias_add_loop!(x′, x′, bias)
     x′′ = reshape(x′, size(x))

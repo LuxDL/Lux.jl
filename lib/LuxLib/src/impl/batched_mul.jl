@@ -3,8 +3,8 @@ function batched_matmul(x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number
     return batched_matmul(internal_operation_mode((x, y)), x, y)
 end
 
-function batched_matmul(
-        ::GenericBroadcastOp, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul(::GenericBroadcastOp, x::AbstractArray{T1, 3},
+        y::AbstractArray{T2, 3}) where {T1, T2}
     return NNlib.batched_mul(x, y)
 end
 
