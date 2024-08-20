@@ -29,15 +29,15 @@ get_conv_input_weight(::Type{<:AbstractDevice}, ::StaticBool, x, weight) = x, we
 function conv!(y, x, weight, cdims::ConvDims)
     return conv!(y, get_device_type((y, x, weight)), x, weight, cdims)
 end
-function conv!(y::AbstractArray{<:Number, N}, ::Type{<:AbstractDevice},
-        x::AbstractArray{<:Number, N},
-        weight::AbstractArray{<:Number, N}, cdims::ConvDims) where {N}
+function conv!(y::AbstractArray{yT, N}, ::Type{<:AbstractDevice},
+        x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
+        cdims::ConvDims) where {yT, xT, wT, N}
     NNlib.conv!(y, x, weight, cdims)
     return
 end
 function conv!(y::AbstractArray{yT, N}, ::Type{<:AbstractGPUDevice},
         x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
-        cdims::ConvDims) where {yT <: Number, xT <: Number, wT <: Number, N}
+        cdims::ConvDims) where {yT, xT, wT, N}
     if xT !== wT !== yT
         get_utils(:safe_warning)(
             "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
@@ -91,30 +91,30 @@ end
 
 # Entry Points
 function fused_conv(
-        act::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+        act::F, weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, wT, xT, N}
     old_threads = get_utils(:maybe_reduce_BLAS_threads)(weight)
     y = fused_conv(internal_operation_mode((weight, x, bias)), act, weight, x, bias, cdims)
     get_utils(:reset_BLAS_threads)(old_threads)
     return y
 end
 
-function fused_conv(::GenericBroadcastOp, act::F, weight::AbstractArray{<:Number, N},
-        x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+function fused_conv(::GenericBroadcastOp, act::F, weight::AbstractArray{wT, N},
+        x::AbstractArray{xT, N}, bias::Optional{<:AbstractVector},
+        cdims::ConvDims) where {F, wT, xT, N}
     return bias_activation(act, conv(x, weight, cdims), bias)
 end
 
 @stable default_mode="disable" function fused_conv(::AbstractInternalArrayOpMode, act::F,
-        weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+        weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, wT, xT, N}
     return conv_bias_act(x, weight, cdims, bias, act)
 end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
         opmode::AbstractInternalArrayOpMode, act::F,
-        weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, N}
+        weight::AbstractArray{wT, N}, x::AbstractArray{xT, N},
+        bias::Optional{<:AbstractVector}, cdims::ConvDims) where {F, wT, xT, N}
     T = Utils.concrete_bias_act_output_eltype(act, weight, x, bias)
     𝒫w, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
@@ -154,8 +154,8 @@ end
 
 CRC.@opt_out rrule(
     ::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv), ::GenericBroadcastOp,
-    ::F, ::AbstractArray{<:Number, N}, ::AbstractArray{<:Number, N},
-    ::Optional{<:AbstractVector}, ::ConvDims) where {F, N}
+    ::F, ::AbstractArray{wT, N}, ::AbstractArray{xT, N},
+    ::Optional{<:AbstractVector}, ::ConvDims) where {F, wT, xT, N}
 
 function ∇fused_conv(Δ′, weight, x, bias, cdims::ConvDims, z, tmp, 𝒫w, 𝒫x, 𝒫b, act)
     old_threads = get_utils(:maybe_reduce_BLAS_threads)(weight)

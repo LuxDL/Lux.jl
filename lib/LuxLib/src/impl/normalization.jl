@@ -67,9 +67,9 @@ end
 end
 
 function update_normalization_statistics(
-        x::AbstractArray{T, N}, rμ::AbstractArray{<:Number, N},
-        rσ²::AbstractArray{<:Number, N}, μ::AbstractArray{<:Number, N},
-        σ²::AbstractArray{<:Number, N}, momentum::Real, reduce_dims) where {T, N}
+        x::AbstractArray{T, N}, rμ::AbstractArray{rμT, N}, rσ²::AbstractArray{rσ²T, N},
+        μ::AbstractArray{μT, N}, σ²::AbstractArray{σ²T, N},
+        momentum::Real, reduce_dims) where {T, N, rμT, rσ²T, μT, σ²T}
     if last(reduce_dims) != N
         μ = mean(μ; dims=N)
         σ² = mean(σ²; dims=N)
@@ -134,19 +134,18 @@ CRC.@non_differentiable get_norm_reshape_dims(::Any...)
 
 # Entry Points
 ## LayerNorm
-function layernorm(
-        x::AbstractArray{<:Number, N}, γ::Optional{<:AbstractArray{<:Number, N}},
-        β::Optional{<:AbstractArray{<:Number, N}},
-        act::F, dims, epsilon::Real) where {N, F}
+function layernorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractArray{γT, N}},
+        β::Optional{<:AbstractArray{βT, N}}, act::F,
+        dims, epsilon::Real) where {N, F, xT, γT, βT}
     μ, σ² = mean_var(x; dims, corrected=false)
     return affine_normalize(act, x, μ, σ², γ, β, epsilon)
 end
 
 ## InstanceNorm
-function instancenorm(x::AbstractArray{<:Number, N}, rμ::Optional{<:AbstractVector},
+function instancenorm(x::AbstractArray{xT, N}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, training::StaticBool,
-        momentum, epsilon, act::F) where {N, F}
+        momentum, epsilon, act::F) where {xT, N, F}
     y, rμₙ, rσ²ₙ = normalization(
         x, rμ, rσ², γ, β, instancenorm_reduce_dims(x), training, momentum, epsilon, act)
     return y, get_utils(:vec)(rμₙ), get_utils(:vec)(rσ²ₙ)

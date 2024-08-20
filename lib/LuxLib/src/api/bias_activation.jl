@@ -36,7 +36,7 @@ function bias_activation!!(
 end
 
 bias_act_check(_, __) = nothing
-function bias_act_check(x::AbstractArray{<:Number, N}, bias::AbstractVector) where {N}
+function bias_act_check(x::AbstractArray{xT, N}, bias::AbstractVector) where {xT, N}
     if N == 1
         @assert length(bias) == length(x)
     else

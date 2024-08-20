@@ -12,18 +12,18 @@ function reshape_bias(x::AbstractArray{<:Any, N}, bias::StaticVector) where {N}
 end
 
 ## Needed for type stability
-function CRC.rrule(::typeof(reshape_bias), x::AbstractArray{<:Number, N},
-        bias::AbstractVector{<:Number}) where {N}
+function CRC.rrule(::typeof(reshape_bias), x::AbstractArray{xT, N},
+        bias::AbstractVector{bT}) where {xT, bT, N}
     bias_r = reshape_bias(x, bias)
     𝒫bias = CRC.ProjectTo(bias)
     return bias_r, Δ -> (∂∅, ∂∅, 𝒫bias(vec(Δ)))
 end
 
 ∇bias_add(::Nothing, Δ::AbstractArray) = ∂∅
-function ∇bias_add(b::AbstractArray{<:Number, N}, Δ::AbstractArray{<:Number, N}) where {N}
+function ∇bias_add(b::AbstractArray{xT, N}, Δ::AbstractArray{yT, N}) where {xT, yT, N}
     return reduce_sum(b, Δ)
 end
-function ∇bias_add(b::AbstractVector{<:Number}, Δ::AbstractArray{<:Number})
+function ∇bias_add(b::AbstractVector{xT}, Δ::AbstractArray{yT}) where {xT, yT}
     return vec(reduce_sum(reshape_bias(Δ, b), Δ))
 end
 
