@@ -146,14 +146,10 @@ end
     end
     # Generic fallback is actually quite good starting julia 1.11
     @static if VERSION ≥ v"1.11-"
-        @warn "Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be \
-               used on this system. Falling back to generic implementation. This may be \
-               slow." maxlog=1
+        @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Falling back to generic implementation. This may be slow." maxlog=1
         A′, B′ = A, B
     else
-        @warn "Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be \
-               used on this system. Converting to common type to to attempt to use BLAS. \
-               This may be slow." maxlog=1
+        @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Converting to common type to to attempt to use BLAS. This may be slow." maxlog=1
         A′, B′ = Utils.ofeltype_array(T, A), Utils.ofeltype_array(T, B)
     end
     matmul_linalg_default!(C, A′, B′, α, β)
