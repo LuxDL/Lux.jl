@@ -35,12 +35,12 @@ import .API: batchnorm, groupnorm, instancenorm, layernorm, dropout,
 
 ## conv
 @deprecate fused_conv_bias_activation(
-    σ::F, weight::AbstractArray{<:Number, N}, x::AbstractArray{<:Number, N},
-    b::AbstractArray{<:Number, N}, cdims::ConvDims) where {F, N} fused_conv_bias_activation(
-    σ, weight, x, _vec(b), cdims)
+    σ::F, weight::AbstractArray{<:Any, N}, x::AbstractArray{<:Any, N},
+    b::AbstractArray{<:Any, N}, cdims::ConvDims) where {F, N} fused_conv_bias_activation(
+    σ, weight, x, Utils.vec(b), cdims)
 
 ## Private API that was at a point being illegally used in Lux
 @deprecate __∇conv_data(args...; kwargs...) Impl.∇conv_data(args...; kwargs...)
 
 @deprecate __apply_bias_activation(σ::F, x, bias::AbstractArray) where {F} bias_activation(
-    σ, x, _vec(bias))
+    σ, x, Utils.vec(bias))

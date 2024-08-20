@@ -402,10 +402,10 @@ end
 
 function ∇batchnorm_affine_normalize!(
         ∂x::AbstractArray{∂xT, 3}, ∂σ²::AbstractArray{∂σ²T, 3},
-        ∂γ::Optional{<:AbstractArray{∂γT, 3}}, ::GPUBroadcastOp,
+        ∂γ::Optional{<:AbstractArray{<:Any, 3}}, ::GPUBroadcastOp,
         ∂y::AbstractArray{∂yT, 3}, x::AbstractArray{xT, 3}, μ::AbstractVector,
         σ²::AbstractVector, γ::Optional{<:AbstractVector}, ϵ::Real,
-        γ′::AbstractVector) where {∂xT, ∂σ²T, ∂γT, ∂yT, xT}
+        γ′::AbstractVector) where {∂xT, ∂σ²T, ∂yT, xT}
     backend = KA.get_backend(∂x)
     Utils.run_ka_kernel(
         ∇batchnorm_affine_normalize_kernel!, backend, nothing, size(∂x),

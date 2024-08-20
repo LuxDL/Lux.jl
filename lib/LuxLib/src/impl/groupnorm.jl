@@ -389,10 +389,10 @@ end
 
 function ∇groupnorm_affine_normalize!(
         ∂x::AbstractArray{∂xT, 4}, ∂σ²::AbstractArray{∂σ²T, 4},
-        ∂γ::Optional{<:AbstractArray{∂γT, 4}}, ::GPUBroadcastOp,
+        ∂γ::Optional{<:AbstractArray{<:Any, 4}}, ::GPUBroadcastOp,
         ∂y::AbstractArray{∂yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
-        σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{γT, 4}},
-        ϵ::Real) where {∂xT, ∂σ²T, ∂γT, ∂yT, xT, μT, σ²T, γT}
+        σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
+        ϵ::Real) where {∂xT, ∂σ²T, ∂yT, xT, μT, σ²T}
     backend = KA.get_backend(∂x)
     Utils.run_ka_kernel(
         ∇groupnorm_affine_normalize_kernel!, backend, nothing, size(∂x),
