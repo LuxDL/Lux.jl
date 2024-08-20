@@ -182,8 +182,9 @@ end
 function bias_activation!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp, σ::F,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {F, N}
     bias_activation_cpu!(
-        reshape(y, :, size(y, N - 1), size(y, N)), Traits.fuse_cpu_activation(σ),
-        σ, reshape(x, :, size(x, N - 1), size(x, N)), bias)
+        reshape(y, flattened_bias_dims(y), size(y, N - 1), size(y, N)),
+        Traits.fuse_cpu_activation(σ),
+        σ, reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N)), bias)
     return
 end
 
@@ -246,8 +247,8 @@ end
 
 function bias_add!(y::AbstractArray{<:Number, N}, ::LoopedArrayOp,
         x::AbstractArray{<:Number, N}, bias::AbstractVector{<:Number}) where {N}
-    bias_add_loop!(reshape(y, :, size(y, N - 1), size(y, N)),
-        reshape(x, :, size(x, N - 1), size(x, N)), bias)
+    bias_add_loop!(reshape(y, flattened_bias_dims(y), size(y, N - 1), size(y, N)),
+        reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N)), bias)
     return
 end
 
@@ -294,8 +295,12 @@ end
 function bias_activation_cached!!(
         ::LoopedArrayOp, ::True, σ::F, x::AbstractArray{<:Number, N},
         bias::Optional{<:AbstractVector{<:Number}}) where {F, N}
-    x′ = reshape(x, :, size(x, N - 1), size(x, N))
+    x′ = reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N))
     bias_add_loop!(x′, x′, bias)
     x′′ = reshape(x′, size(x))
     return activation(σ, x′′), x′′
 end
+
+flattened_bias_dims(x::AbstractArray{T, N}) where {T, N} = prod(size(x)[1:(N - 2)]; init=1)
+
+CRC.@non_differentiable flattened_bias_dims(::Any...)

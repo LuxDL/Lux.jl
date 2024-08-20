@@ -88,3 +88,17 @@ end
     z = bias_activation(identity, Tracker.param(x), b)
     @test z isa Tracker.TrackedArray
 end
+
+@testitem "Bias Activation: Zero-sized Arrays" tags=[:other_ops] setup=[SharedTestSetup] begin
+    @testset "$mode" for (mode, aType, ongpu) in MODES
+        x = rand(Float32, 4, 3, 2, 0) |> aType
+        b = rand(Float32, 2) |> aType
+        @test size(bias_activation(identity, x, b)) == (4, 3, 2, 0)
+        @test size(bias_activation!!(identity, x, b)) == (4, 3, 2, 0)
+
+        x = rand(Float32, 2, 0) |> aType
+        b = rand(Float32, 2) |> aType
+        @test size(bias_activation(relu, x, b)) == (2, 0)
+        @test size(bias_activation!!(relu, x, b)) == (2, 0)
+    end
+end
