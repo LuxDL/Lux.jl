@@ -26,13 +26,13 @@ for op in (:has_dual, :has_float16, :is_tracked)
     @eval $op(x::Numeric) = $op(eltype(x))
 end
 
-has_dual(::Type{<:Number}) = False()
+has_dual(_) = False()
 has_dual(::Type{<:ForwardDiff.Dual}) = True()
 
-has_float16(::Type{<:Number}) = False()
+has_float16(_) = False()
 has_float16(::Type{<:Float16}) = True()
 
-is_tracked(::Type{<:Number}) = False()
+is_tracked(_) = False()
 
 has_autodiff_value(x) = is_tracked(x) | has_dual(x)
 

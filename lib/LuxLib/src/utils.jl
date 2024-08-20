@@ -36,16 +36,16 @@ contiguous(x::SubArray) = copy(x)
 reshape(x::AbstractArray, dims...) = Base.reshape(x, dims...)
 reshape(::Nothing, dims...) = nothing
 
-remove_tracking(x::Number) = x
+remove_tracking(x) = x
 remove_tracking(x::AbstractArray) = x
-remove_tracking(::Type{T}) where {T <: Number} = T
+remove_tracking(::Type{T}) where {T} = T
 remove_tracking(x::ForwardDiff.Dual) = ForwardDiff.value(x)
 remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 remove_tracking(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = remove_tracking(T)
 remove_tracking(::Nothing) = nothing
 
 # Need rrule for type stability
-vec(x::Number) = x
+vec(x) = x
 vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
 
@@ -110,7 +110,7 @@ depwarn(msg::String, f::Symbol) = Base.depwarn(msg, f)
 CRC.@non_differentiable depwarn(::Any...)
 
 eltype(::AbstractArray{T}) where {T} = T
-eltype(::T) where {T <: Number} = T
+eltype(::T) where {T} = T
 eltype(::Nothing) = Bool
 
 CRC.@non_differentiable eltype(::Any)

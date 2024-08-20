@@ -21,19 +21,17 @@ for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
 
     for op in (:batched_mul, :batched_matmul)
         @eval begin
-            function $(op)(x::$T1{<:Number, 3}, y::$T2{<:Number, 3})
+            $(op)(x::$T1{<:Any, 3}, y::$T2{<:Any, 3}) = Tracker.track($(op), x, y)
+            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Any, <:$T1{<:Any, 3}},
+                    y::$T2{<:Any, 3})
                 return Tracker.track($(op), x, y)
             end
-            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, <:$T1{<:Number, 3}},
-                    y::$T2{<:Number, 3})
+            function $(op)(
+                    x::$T1{<:Any, 3}, y::NNlib.BatchedAdjOrTrans{<:Any, <:$T2{<:Any, 3}})
                 return Tracker.track($(op), x, y)
             end
-            function $(op)(x::$T1{<:Number, 3},
-                    y::NNlib.BatchedAdjOrTrans{<:Number, <:$T2{<:Number, 3}})
-                return Tracker.track($(op), x, y)
-            end
-            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Number, <:$T1{<:Number, 3}},
-                    y::NNlib.BatchedAdjOrTrans{<:Number, <:$T2{<:Number, 3}})
+            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Any, <:$T1{<:Any, 3}},
+                    y::NNlib.BatchedAdjOrTrans{<:Any, <:$T2{<:Any, 3}})
                 return Tracker.track($(op), x, y)
             end
         end

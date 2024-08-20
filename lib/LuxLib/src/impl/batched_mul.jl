@@ -1,15 +1,15 @@
 # Entry Point
-function batched_matmul(x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul(x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
     return batched_matmul(internal_operation_mode((x, y)), x, y)
 end
 
-function batched_matmul(::GenericBroadcastOp, x::AbstractArray{T1, 3},
-        y::AbstractArray{T2, 3}) where {T1, T2}
+function batched_matmul(::GenericBroadcastOp, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {xT, yT}
     return NNlib.batched_mul(x, y)
 end
 
 function batched_matmul(::GPUBroadcastOp{<:AbstractGPUDevice},
-        x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+        x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
     return NNlib.batched_mul(x, y)  # GPU versions are well optimized
 end
 
@@ -26,8 +26,8 @@ function batched_matmul(::GPUBroadcastOp{AMDGPUDevice}, x::AbstractArray{<:Compl
     return stack(Base.Fix2(*, Utils.batchview(y, 1)), Utils.batchview(x))
 end
 
-function batched_matmul(
-        opmode::LoopedArrayOp, x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul(opmode::LoopedArrayOp, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {xT, yT}
     if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
        (size(x, 2) != size(y, 1))
         throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
@@ -38,14 +38,14 @@ function batched_matmul(
     return z
 end
 
-function batched_matmul!(z::AbstractArray{<:Number, 3}, ::AbstractInternalArrayOpMode,
-        x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul!(z::AbstractArray{zT, 3}, ::AbstractInternalArrayOpMode,
+        x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {zT, xT, yT}
     batched_mul!(z, x, y)
     return
 end
 
-function batched_matmul!(z::AbstractArray{<:Number, 3}, ::LoopedArrayOp,
-        x::AbstractArray{<:Number, 3}, y::AbstractArray{<:Number, 3})
+function batched_matmul!(z::AbstractArray{zT, 3}, ::LoopedArrayOp,
+        x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {zT, xT, yT}
     if !LV.check_args(
         Utils.batchview(z, 1), Utils.batchview(x, 1), Utils.batchview(y, 1)) ||
        Utils.known(System.explicit_blas_loaded())
@@ -57,8 +57,8 @@ function batched_matmul!(z::AbstractArray{<:Number, 3}, ::LoopedArrayOp,
 end
 
 function batched_matmul_loopvec_impl!(
-        z::AbstractArray{<:Number, 3}, x::AbstractArray{<:Number, 3},
-        y::AbstractArray{<:Number, 3}, α::Number=true, β::Number=false)
+        z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}, α::Number=true, β::Number=false) where {zT, xT, yT}
     if size(x, 3) == size(y, 3)
         @batch for L in indices((z, x, y), 3)
             serial_matmul_loopvec!(
@@ -77,8 +77,8 @@ function batched_matmul_loopvec_impl!(
     end
 end
 
-function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{<:Number, 3},
-        y::AbstractArray{<:Number, 3})
+function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {xT, yT}
     ∇batched_matmul = @closure Δ_ -> begin
         Δ = CRC.unthunk(Δ_)
         ∂x = CRC.@thunk begin
