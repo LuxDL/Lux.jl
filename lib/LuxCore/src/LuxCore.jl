@@ -275,20 +275,23 @@ Make all occurrences of `training` in state `st` -- `Val(true)`.
 trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
 """
-    update_state(st::NamedTuple, key::Symbol, value; layer_check=Functors.isleaf)
+    update_state(st::NamedTuple, key::Symbol, value; exclude=Internal.isleaf)
 
 Recursively update all occurrences of the `key` in the state `st` with the `value`.
-`layer_check` is a function that is passed to `Functors.fmap_with_path`'s `exclude` keyword.
+`exclude` is a function that is passed to `Functors.fmap_with_path`'s `exclude` keyword.
+
+!!! warning "Needs Functors.jl"
+
+    This function requires `Functors.jl` to be loaded.
 """
-function update_state(
-        st::NamedTuple, key::Symbol, value; layer_check::LC=Functors.isleaf) where {LC}
+function update_state(st::NamedTuple, key::Symbol, value; exclude=Internal.isleaf)
     fmap_fn = let key = key, value = value
         (kp, val) -> begin
             last(kp) == key && return value
             return val
         end
     end
-    return fmap_with_path(fmap_fn, st; exclude=layer_check)
+    return Internal.fmap_with_path(fmap_fn, st; exclude)
 end
 
 """
@@ -330,11 +333,12 @@ using ..LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapper
 
 is_extension_loaded(::Val) = false
 
-function fmap_impl end     # Defined in FunctorsExt
-function fleaves_impl end  # Defined in FunctorsExt
-function isleaf_impl end   # Defined in FunctorsExt
+function fmap_impl end            # Defined in FunctorsExt
+function fmap_with_path_impl end  # Defined in FunctorsExt
+function fleaves_impl end         # Defined in FunctorsExt
+function isleaf_impl end          # Defined in FunctorsExt
 
-for op in (:fmap, :fleaves, :isleaf)
+for op in (:fmap, :fleaves, :isleaf, :fmap_with_path)
     main_op = Symbol(op, :_impl)
     err_msg = "`$op` requires `Functors.jl` to be loaded."
     @eval begin
@@ -363,12 +367,6 @@ function get_empty_state(l::AbstractLuxContainerLayer{layers}) where {layers}
 end
 function get_empty_state(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return get_empty_state(getfield(l, layer))
-end
-
-function default_layer_check(key)
-    return let key = key
-        x -> hasmethod(keys, (typeof(x),)) ? (key ∈ keys(x)) : false
-    end
 end
 
 end

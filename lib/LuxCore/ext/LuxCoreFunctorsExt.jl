@@ -5,8 +5,11 @@ using Functors: Functors
 
 LuxCore.Internal.is_extension_loaded(::Val{:Functors}) = true
 
-LuxCore.Internal.isleaf_impl(x) = Functors.isleaf(x)
+LuxCore.Internal.isleaf_impl(args...; kwargs...) = Functors.isleaf(args...; kwargs...)
 LuxCore.Internal.fmap_impl(args...; kwargs...) = Functors.fmap(args...; kwargs...)
+function LuxCore.Internal.fmap_with_path_impl(args...; kwargs...)
+    return Functors.fmap_with_path(args...; kwargs...)
+end
 LuxCore.Internal.fleaves_impl(args...; kwargs...) = Functors.fleaves(args...; kwargs...)
 
 function Functors.functor(::Type{<:LuxCore.AbstractLuxContainerLayer{layers}},
