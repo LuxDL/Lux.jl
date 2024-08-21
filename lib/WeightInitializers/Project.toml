@@ -1,11 +1,10 @@
 name = "WeightInitializers"
 uuid = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.0.2"
+version = "1.0.3"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
-ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -16,6 +15,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 [weakdeps]
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 Metal = "dde4c033-4e86-420c-a63e-0dd931031962"
 oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
@@ -23,6 +23,7 @@ oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 [extensions]
 WeightInitializersAMDGPUExt = ["AMDGPU", "GPUArrays"]
 WeightInitializersCUDAExt = ["CUDA", "GPUArrays"]
+WeightInitializersChainRulesCoreExt = "ChainRulesCore"
 WeightInitializersGPUArraysExt = "GPUArrays"
 WeightInitializersMetalExt = ["Metal", "GPUArrays"]
 WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]

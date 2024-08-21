@@ -52,7 +52,6 @@ end
 
 module DeviceAgnostic
 
-using ChainRulesCore: @non_differentiable
 using Random: AbstractRNG
 
 # Helpers for device agnostic initializers
@@ -74,10 +73,6 @@ for f in (:rand, :randn)
             rng::AbstractRNG, ::Type{<:Complex{T}}, args::Integer...) where {T <: Number}
         return Complex{T}.($(f)(rng, T, args...), $(f)(rng, T, args...))
     end
-end
-
-for f in (:zeros, :ones, :rand, :randn)
-    @eval @non_differentiable $f(::Any...)
 end
 
 end
