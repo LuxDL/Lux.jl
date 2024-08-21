@@ -118,11 +118,18 @@ end
 
 for op in (:get_device, :get_device_type)
     cpu_ret_val = op == :get_device ? CPUDevice() : CPUDevice
+    not_assigned_msg = "AbstractArray has some undefined references. Giving up, returning \
+                        $(cpu_ret_val)..."
 
     @eval begin
         function $(op)(x::AbstractArray{T}) where {T}
-            recursive_array_eltype(T) &&
+            if recursive_array_eltype(T)
+                if any(!isassigned(x, i) for i in eachindex(x))
+                    @warn $(not_assigned_msg)
+                    return $(cpu_ret_val)
+                end
                 return mapreduce(MLDataDevices.$(op), combine_devices, x)
+            end
             if hasmethod(parent, Tuple{typeof(x)})
                 parent_x = parent(x)
                 parent_x === x && return $(cpu_ret_val)

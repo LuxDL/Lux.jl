@@ -148,3 +148,10 @@ end
     return_val2(x) = Val(get_device(x))
     @test @inferred(return_val2(ps)) isa Val{cpu_device()}
 end
+
+@testset "undefined references array" begin
+    x = Matrix{Any}(undef, 10, 10)
+
+    @test get_device(x) isa CPUDevice
+    @test get_device_type(x) <: CPUDevice
+end
