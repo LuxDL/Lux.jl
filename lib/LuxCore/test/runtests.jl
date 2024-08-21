@@ -301,4 +301,30 @@ end
                     transfers. Apply this function on the parameters and states generated \
                     using `LuxCore.setup`.") dev(my_layer)
     end
+
+    @testset "nested `training` key: Issue Lux.jl#849" begin
+        st = (encoder=(layer_1=NamedTuple(), layer_2=(; training = Val{true}())),
+            μ=NamedTuple(),
+            logσ=NamedTuple(),
+            decoder=(layer_1=NamedTuple(), layer_2=NamedTuple(), layer_3=NamedTuple(),
+                layer_4=(running_mean=Float32[0.0, 0.0], training=Val{true}())),
+            rng=Xoshiro(),
+            training=Val{true}())
+
+        @test st.encoder.layer_2.training isa Val{true}
+        @test st.decoder.layer_4.training isa Val{true}
+        @test st.training isa Val{true}
+
+        st_test = LuxCore.testmode(st)
+
+        @test st_test.encoder.layer_2.training isa Val{false}
+        @test st_test.decoder.layer_4.training isa Val{false}
+        @test st_test.training isa Val{false}
+
+        st_train = LuxCore.trainmode(st_test)
+
+        @test st_train.encoder.layer_2.training isa Val{true}
+        @test st_train.decoder.layer_4.training isa Val{true}
+        @test st_train.training isa Val{true}
+    end
 end

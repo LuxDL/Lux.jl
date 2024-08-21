@@ -2,7 +2,7 @@ module LuxCore
 
 using Compat: @compat
 using DispatchDoctor: @stable
-using Functors: Functors, fmap, fleaves
+using Functors: Functors, fmap, fmap_with_path, fleaves
 using Random: Random, AbstractRNG, Xoshiro
 using Setfield: Setfield
 
@@ -267,23 +267,20 @@ Make all occurrences of `training` in state `st` -- `Val(true)`.
 trainmode(st::NamedTuple) = update_state(st, :training, Val(true))
 
 """
-    update_state(st::NamedTuple, key::Symbol, value;
-        layer_check=_default_layer_check(key))
+    update_state(st::NamedTuple, key::Symbol, value; layer_check=Functors.isleaf)
 
 Recursively update all occurrences of the `key` in the state `st` with the `value`.
+`layer_check` is a function that is passed to `Functors.fmap_with_path`'s `exclude` keyword.
 """
-function update_state(st::NamedTuple, key::Symbol, value;
-        layer_check::LC=_default_layer_check(key)) where {LC}
+function update_state(
+        st::NamedTuple, key::Symbol, value; layer_check::LC=Functors.isleaf) where {LC}
     fmap_fn = let key = key, value = value
-        _st -> Setfield.set(_st, Setfield.PropertyLens{key}(), value)
+        (kp, val) -> begin
+            last(kp) == key && return value
+            return val
+        end
     end
-    return fmap(fmap_fn, st; exclude=layer_check)
-end
-
-function _default_layer_check(key)
-    return let key = key
-        x -> hasmethod(keys, (typeof(x),)) ? (key ∈ keys(x)) : false
-    end
+    return fmap_with_path(fmap_fn, st; exclude=layer_check)
 end
 
 """
