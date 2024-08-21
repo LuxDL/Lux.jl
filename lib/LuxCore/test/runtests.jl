@@ -303,7 +303,7 @@ end
     end
 
     @testset "nested `training` key: Issue Lux.jl#849" begin
-        st = (encoder=(layer_1=NamedTuple(), layer_2=(; training = Val{true}())),
+        st = (encoder=(layer_1=NamedTuple(), layer_2=(; training=Val{true}())),
             μ=NamedTuple(),
             logσ=NamedTuple(),
             decoder=(layer_1=NamedTuple(), layer_2=NamedTuple(), layer_3=NamedTuple(),
