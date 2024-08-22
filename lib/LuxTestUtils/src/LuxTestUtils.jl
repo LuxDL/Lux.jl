@@ -35,11 +35,14 @@ try
     using Enzyme: Enzyme
     __ftest(x) = x
     Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
-    global ENZYME_TESTING_ENABLED = true
+    global ENZYME_TESTING_ENABLED = length(VERSION.prerelease) == 0
 catch err
-    @error "`Enzyme.jl` is currently not functional on $(VERSION). Enzyme tests will be \
-            skipped." maxlog=1 err=err
     global ENZYME_TESTING_ENABLED = false
+end
+
+if !ENZYME_TESTING_ENABLED
+    @warn "`Enzyme.jl` is currently not functional on $(VERSION) either because it errored \
+           of the current version is a prerelease. Enzyme tests will be skipped..."
 end
 
 include("test_softfail.jl")
