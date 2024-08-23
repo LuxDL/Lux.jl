@@ -6,6 +6,7 @@ using ForwardDiff: ForwardDiff
 using NNlib: NNlib
 using Static: True, False, static
 using StaticArraysCore: StaticArray
+using UnrolledUtilities: unrolled_map
 
 using ..LuxLib: Numeric
 using ..Utils
@@ -26,6 +27,12 @@ for op in (:has_dual, :has_float16, :is_tracked)
     @eval $op(x::Numeric) = $op(eltype(x))
 end
 
+unwrap_array(x) = x
+function unwrap_array(x::AbstractArray)
+    parent(x) === x && return x
+    return unwrap_array(parent(x))
+end
+
 has_dual(_) = False()
 has_dual(::Type{<:ForwardDiff.Dual}) = True()
 
@@ -42,9 +49,10 @@ static_isa(x, ::Type{T}) where {T} = static(isa(x, T))
 function use_generic_broadcasting(xs::Tuple)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.
-    return Utils.unrolled_any(has_autodiff_value, xs) |
-           Utils.unrolled_any(has_float16, xs) |
-           Utils.unrolled_any(static_isa(StaticArray), xs)
+    xs_unwrapped = unrolled_map(unwrap_array, xs)
+    return Utils.unrolled_any(has_autodiff_value, xs_unwrapped) |
+           Utils.unrolled_any(has_float16, xs_unwrapped) |
+           Utils.unrolled_any(static_isa(StaticArray), xs_unwrapped)
 end
 
 activation_intermediate_not_needed(::typeof(identity), ::Type) = True()
