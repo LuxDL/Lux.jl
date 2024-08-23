@@ -218,6 +218,12 @@ macro enzyme_alternative(f₁, f₂)
                 ::Type{RT}, (tape, rev), args...) where {RT}
             return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
         end
+
+        function EnzymeRules.forward(
+                ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...) where {RT}
+            EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)
+            return
+        end
     end)
 end
 
