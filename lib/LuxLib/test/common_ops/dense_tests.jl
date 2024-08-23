@@ -145,3 +145,16 @@ end
         end
     end
 end
+
+@testitem "Enzyme.Forward patch: dense" tags=[:dense] setup=[SharedTestSetup] begin
+    using LuxLib, Random, LuxTestUtils, Enzyme
+
+    if LuxTestUtils.ENZYME_TESTING_ENABLED
+        x = rand(Float32, 2, 2)
+
+        f(x) = sum(abs2, LuxLib.Impl.matmul(x, x))
+
+        # Just test that we don't crash
+        @test length(Enzyme.gradient(Forward, f, x)) == 4
+    end
+end
