@@ -1,7 +1,7 @@
 # Wrappers over Base & LinearAlgebra implementations to use poly algs if needed
 matmuladd(A, B, ::Nothing) = matmul(A, B)
 function matmuladd(A::AbstractMatrix, B::AbstractVector, bias::AbstractVector)
-    return matmuladd(A, reshape(B, :, 1), bias)
+    return matmuladd(A, get_utils(:insert_batch_dim)(B), bias)
 end
 function matmuladd(A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     return matmuladd(internal_operation_mode((A, B, bias)), A, B, bias)
@@ -24,7 +24,9 @@ function matmuladd(opmode::AbstractInternalArrayOpMode, A::AbstractMatrix,
     return C
 end
 
-matmul(A::AbstractMatrix, B::AbstractVector) = vec(matmul(A, reshape(B, :, 1)))
+function matmul(A::AbstractMatrix, B::AbstractVector)
+    return vec(matmul(A, get_utils(:insert_batch_dim)(B)))
+end
 function matmul(A::AbstractMatrix, B::AbstractMatrix)
     if size(A, 2) != size(B, 1)
         throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))

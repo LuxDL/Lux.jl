@@ -9,6 +9,7 @@ using LinearAlgebra: LinearAlgebra, BLAS
 using MLDataDevices: get_device_type, CPUDevice
 using NNlib: NNlib
 using Static: Static, False, True
+using StaticArraysCore: SVector, SMatrix
 
 using ..LuxLib: Optional, ∂∅
 
@@ -230,6 +231,9 @@ end
     kernel(args...)
     return
 end
+
+insert_batch_dim(x::AbstractVector) = reshape(x, :, 1)
+insert_batch_dim(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
 
 end
 

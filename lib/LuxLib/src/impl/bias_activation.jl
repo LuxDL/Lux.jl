@@ -2,7 +2,7 @@
 bias_activation(::typeof(identity), x::AbstractVector, ::Nothing) = x
 for bType in (Nothing, AbstractVector)
     @eval function bias_activation(σ::F, x::AbstractVector, bias::$(bType)) where {F}
-        return vec(bias_activation(σ, reshape(x, :, 1), bias))
+        return vec(bias_activation(σ, get_utils(:insert_batch_dim)(x), bias))
     end
 end
 
@@ -91,7 +91,7 @@ end
 bias_activation!!(::typeof(identity), x::AbstractVector, ::Nothing) = x
 for bType in (Nothing, AbstractVector)
     @eval function bias_activation!!(σ::F, x::AbstractVector, bias::$(bType)) where {F}
-        return vec(bias_activation!!(σ, reshape(x, :, 1), bias))
+        return vec(bias_activation!!(σ, get_utils(:insert_batch_dim)(x), bias))
     end
 end
 
