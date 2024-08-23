@@ -233,8 +233,17 @@ function CRC.rrule(
 end
 
 # EnzymeRules
-Utils.@enzyme_reverse_alternative matmul_octavian! matmul_linalg_default!
-Utils.@enzyme_reverse_alternative serial_matmul_loopvec! matmul_linalg_default!
-Utils.@enzyme_reverse_alternative matmul_loopvec! matmul_linalg_default!
+## ReverseMode
+Utils.@enzyme_alternative matmul_octavian! matmul_linalg_default!
+Utils.@enzyme_alternative serial_matmul_loopvec! matmul_linalg_default!
+Utils.@enzyme_alternative matmul_loopvec! matmul_linalg_default!
 
-Utils.@enzyme_reverse_alternative matmuladd_loopvec! matmuladd_cpu_fallback!
+Utils.@enzyme_alternative matmuladd_loopvec! matmuladd_cpu_fallback!
+
+## ForwardMode
+# NOTE: forward mode works fine with LoopVectorization but not with Octavian
+function EnzymeRules.forward(
+        ::EnzymeCore.Const{typeof(matmul_octavian!)}, ::Type{RT}, args...) where {RT}
+    return EnzymeCore.autodiff(
+        EnzymeCore.Forward, EnzymeCore.Const(matmul_linalg_default!), RT, args...)
+end

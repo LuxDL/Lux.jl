@@ -149,7 +149,7 @@ function alpha_dropout_simd_loop!(
     end
 end
 
-Utils.@enzyme_reverse_alternative alpha_dropout! alpha_dropout_simd_loop!
+Utils.@enzyme_alternative alpha_dropout! alpha_dropout_simd_loop!
 
 dropout_fptype(x) = float(real(Utils.remove_tracking(eltype(x))))
 
@@ -198,7 +198,7 @@ function generate_dropout_mask_simd_loop!(y::AbstractArray{T}, p, invp) where {T
     end
 end
 
-Utils.@enzyme_reverse_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
+Utils.@enzyme_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
 
 function generate_dropout_mask!(y::AbstractArray, ::AbstractInternalArrayOpMode, p, invp)
     @. y = (y > p) * invp

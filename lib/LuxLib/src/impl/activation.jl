@@ -111,7 +111,7 @@ function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where 
     end
 end
 
-Utils.@enzyme_reverse_alternative activation_loop! activation_simd_loop!
+Utils.@enzyme_alternative activation_loop! activation_simd_loop!
 
 # Gradient for activations
 ∇activation(Δ, _, ::typeof(identity), x) = Δ

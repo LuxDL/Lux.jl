@@ -233,7 +233,7 @@ function bias_activation_simd_loop!(y::AbstractArray{yT, 3}, σ::F, x::AbstractA
     return
 end
 
-Utils.@enzyme_reverse_alternative bias_activation_loop! bias_activation_simd_loop!
+Utils.@enzyme_alternative bias_activation_loop! bias_activation_simd_loop!
 
 function bias_add!(y::AbstractArray{yT, N}, ::AbstractInternalArrayOpMode,
         x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT, yT}
