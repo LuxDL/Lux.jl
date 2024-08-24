@@ -1,5 +1,5 @@
 using Documenter, DocumenterVitepress, Pkg
-using Lux, LuxCore, LuxLib, WeightInitializers, Boltz
+using Lux, LuxCore, LuxLib, WeightInitializers
 using LuxTestUtils, LuxDeviceUtils
 using MLDataDevices
 using LuxCUDA
@@ -63,12 +63,6 @@ pages = [
             "api/Building_Blocks/LuxLib.md",
             "api/Building_Blocks/WeightInitializers.md"
         ],
-        "Domain Specific Modeling" => [
-            "api/Domain_Specific_Modeling/Boltz.md",
-            "api/Domain_Specific_Modeling/Boltz_Layers.md",
-            "api/Domain_Specific_Modeling/Boltz_Vision.md",
-            "api/Domain_Specific_Modeling/Boltz_Private.md"
-        ],
         "Testing Functionality" => [
             "api/Testing_Functionality/LuxTestUtils.md"
         ]
@@ -85,7 +79,7 @@ makedocs(; sitename="Lux.jl Docs",
     authors="Avik Pal et al.",
     clean=true,
     doctest=false,  # We test it in the CI, no need to run it here
-    modules=[Lux, LuxCore, LuxLib, WeightInitializers, Boltz,
+    modules=[Lux, LuxCore, LuxLib, WeightInitializers,
         LuxTestUtils, LuxDeviceUtils, MLDataDevices],
     linkcheck=true,
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
