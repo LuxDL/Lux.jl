@@ -93,11 +93,6 @@ export default defineConfig({
                         ]
                     },
                     {
-                        text: 'Domain Specific Modeling', items: [
-                            { text: 'Boltz', link: '/api/Domain_Specific_Modeling/Boltz' }
-                        ]
-                    },
-                    {
                         text: 'Testing Functionality', items: [
                             { text: 'LuxTestUtils', link: '/api/Testing_Functionality/LuxTestUtils' }
                         ]
@@ -231,12 +226,6 @@ export default defineConfig({
                             { text: 'WeightInitializers', link: '/api/Building_Blocks/WeightInitializers' },
                             { text: 'NNlib', link: 'https://fluxml.ai/NNlib.jl/dev/' },
                             { text: 'Activation Functions', link: 'https://fluxml.ai/NNlib.jl/dev/reference/#Activation-Functions' }]
-                    },
-                    {
-                        text: 'Domain Specific Modeling', collapsed: false, items: [
-                            { text: 'Boltz', link: '/api/Domain_Specific_Modeling/Boltz' },
-                            { text: 'Computer Vision', link: '/api/Domain_Specific_Modeling/Boltz_Vision' },
-                            { text: 'Boltz Layers', link: '/api/Domain_Specific_Modeling/Boltz_Layers' }]
                     },
                     {
                         text: 'Testing Functionality', collapsed: false, items: [

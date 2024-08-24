@@ -1,7 +1,6 @@
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-Boltz = "4544d5e4-abc5-4dea-817f-29e4c205d9c8"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
@@ -30,7 +29,6 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 ADTypes = "1.3"
 Adapt = "4"
-Boltz = "0.3.8"
 ChainRulesCore = "1.24"
 ComponentArrays = "0.15"
 Documenter = "1.4"
