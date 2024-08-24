@@ -31,6 +31,11 @@ For details about these expressions, refer to the
 These options are simply forwarded to `DynamicExpressions.jl`'s `eval_tree_array`
 and `eval_grad_tree_array` function.
 
+!!! danger "Deprecation Notice"
+
+    These options are deprecated and will be removed in v1. Please use the version in
+    [`Boltz.jl`](https://github.com/LuxDL/Boltz.jl) instead.
+
 # Extended Help
 
 ## Example
@@ -76,11 +81,20 @@ julia> ∂ps.layer_1.layer_2.params ≈ Float32[-31.0, 90.0]
 true
 ```
 """
-@kwdef @concrete struct DynamicExpressionsLayer <: AbstractExplicitLayer
-    operator_enum
-    expression
-    name = nothing
-    eval_options
+struct DynamicExpressionsLayer{OE, E, N, EO} <: AbstractExplicitLayer
+    operator_enum::OE
+    expression::E
+    name::N
+    eval_options::EO
+
+    function DynamicExpressionsLayer(operator_enum::OE, expression::E, name::N,
+            eval_options::EO) where {OE, E, N, EO}
+        Base.depwarn(
+            "`DynamicExpressionsLayer` is deprecated and will be removed in v1. Please \
+             use the corresponding version in `Boltz.jl` instead.",
+            :DynamicExpressionsLayer)
+        return new{OE, E, N, EO}(operator_enum, expression, name, eval_options)
+    end
 end
 
 function Base.show(io::IO, l::DynamicExpressionsLayer)

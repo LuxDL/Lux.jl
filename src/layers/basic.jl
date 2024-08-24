@@ -672,6 +672,13 @@ case, `layer([a, b, c, d], st) == ([a, d, sinpi(2 / 3.0 * b), sinpi(2 / 1.0 * c)
   - `idxs`: Indices of the periodic inputs
   - `periods`: Periods of the periodic inputs, in the same order as in `idxs`
 
+!!! danger "Deprecation Notice"
+
+    This layer is deprecated and will be removed in v1. Please use the version in
+    [`Boltz.jl`](https://github.com/LuxDL/Boltz.jl) instead.
+
+# Extended Help
+
 ## Inputs
 
   - `x` must be an `AbstractArray` with `issubset(idxs, axes(x, 1))`
@@ -700,9 +707,16 @@ julia> all(layer([1.1, 2.2, 3.3], ps, st)[1] .==
 true
 ```
 """
-@concrete struct PeriodicEmbedding <: AbstractExplicitLayer
-    idxs
-    periods
+struct PeriodicEmbedding{I, P} <: AbstractExplicitLayer
+    idxs::I
+    periods::P
+
+    function PeriodicEmbedding(idxs::I, periods::P) where {I, P}
+        Base.depwarn("`PeriodicEmbedding` is deprecated and will be removed in v1. Please \
+                      use the corresponding version in `Boltz.jl` instead.",
+            :PeriodicEmbedding)
+        return new{I, P}(idxs, periods)
+    end
 end
 
 initialstates(::AbstractRNG, p::PeriodicEmbedding) = (k=2 ./ p.periods,)
