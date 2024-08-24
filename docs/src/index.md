@@ -46,3 +46,51 @@ features:
     link: /api/Testing_Functionality/LuxTestUtils
 ---
 ```
+
+## How to Install Lux.jl?
+
+Its easy to install Lux.jl. Since Lux.jl is registered in the Julia General registry,
+you can simply run the following command in the Julia REPL:
+
+```julia
+julia> using Pkg
+julia> Pkg.add("Lux")
+```
+
+If you want to use the latest unreleased version of Lux.jl, you can run the following
+command: (in most cases the released version will be same as the version on github)
+
+```julia
+julia> using Pkg
+julia> Pkg.add(url="https://github.com/LuxDL/Lux.jl")
+```
+
+## Want GPU Support?
+
+Install the following package(s):
+
+:::code-group
+
+```julia [NVIDIA GPUs]
+using Pkg
+Pkg.add("LuxCUDA")
+# or
+Pkg.add(["CUDA", "cuDNN"])
+```
+
+```julia [AMD ROCm GPUs]
+using Pkg
+Pkg.add("AMDGPU")
+```
+
+```julia [Metal M-Series GPUs]
+using Pkg
+Pkg.add("Metal")
+```
+
+```julia [Intel GPUs]
+using Pkg
+Pkg.add("oneAPI")
+```
+
+:::
