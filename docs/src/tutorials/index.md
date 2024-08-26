@@ -26,6 +26,12 @@ const beginner = [
     src: "../blas_optimizations.jpg",
     caption: "Use SimpleChains.jl as a Backend",
     desc: "Learn how to train small neural networks really fast on CPU."
+  }.
+  {
+    href: "https://luxdl.github.io/Boltz.jl/stable/tutorials/1_GettingStarted",
+    src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
+    caption: "Pre-Built Deep Learning Models",
+    desc: "Learn how to use Boltz.jl to load pre-built deep learning (including pretrained weights) and scientific machine learning models."
   }
 ];
 
@@ -58,7 +64,7 @@ const advanced = [
     desc: "Training a Neural ODE to fit simulated data of gravitational waveforms."
   },
   {
-    href: "advanced/2_SymbolicOptimalControl",
+    href: "https://luxdl.github.io/Boltz.jl/stable/tutorials/2_SymbolicOptimalControl",
     src: "../symbolic_optimal_control.png",
     caption: "Optimal Control with Symbolic UDE",
     desc: "Train a UDE and replace a part of it with Symbolic Regression."

@@ -31,7 +31,8 @@ pages = [
             "tutorials/intermediate/3_HyperNet.md"
         ],
         "Advanced" => [
-            "tutorials/advanced/1_GravitationalWaveForm.md"
+            "tutorials/advanced/1_GravitationalWaveForm.md",
+            "tutorials/advanced/2_SymbolicOptimalControl.md"
         ]
     ],
     "Manual" => [
