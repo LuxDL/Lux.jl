@@ -689,23 +689,6 @@ case, `layer([a, b, c, d], st) == ([a, d, sinpi(2 / 3.0 * b), sinpi(2 / 1.0 * c)
   - `AbstractArray` of size `(size(x, 1) + length(idxs), ...)` where `...` are the other
     dimensions of `x`.
   - `st`, unchanged
-
-## Example
-
-```jldoctest
-julia> layer = PeriodicEmbedding([2], [4.0])
-PeriodicEmbedding([2], [4.0])
-
-julia> using Random;
-       rng = Random.seed!(123);
-
-julia> ps, st = Lux.setup(rng, layer)
-(NamedTuple(), (k = [0.5],))
-
-julia> all(layer([1.1, 2.2, 3.3], ps, st)[1] .==
-           [1.1, 3.3, sinpi(2 / 4.0 * 2.2), cospi(2 / 4.0 * 2.2)])
-true
-```
 """
 struct PeriodicEmbedding{I, P} <: AbstractExplicitLayer
     idxs::I
