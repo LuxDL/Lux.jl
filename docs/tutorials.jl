@@ -45,7 +45,7 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
     @info "Running Tutorial $(i): $(p) on task $(current_task())"
     path = joinpath(@__DIR__, "..", "examples", p)
     name = "$(i)_$(first(rsplit(p, "/")))"
-    output_directory = joinpath(joinpath(@__DIR__, "src", "tutorials"), d)
+    output_directory = joinpath(@__DIR__, "src", "tutorials", d)
     tutorial_proj = dirname(path)
     file = joinpath(dirname(@__FILE__), "run_single_tutorial.jl")
 

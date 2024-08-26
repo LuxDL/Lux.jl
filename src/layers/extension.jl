@@ -35,51 +35,6 @@ and `eval_grad_tree_array` function.
 
     These options are deprecated and will be removed in v1. Please use the version in
     [`Boltz.jl`](https://github.com/LuxDL/Boltz.jl) instead.
-
-# Extended Help
-
-## Example
-
-```jldoctest
-julia> using Lux, Random, DynamicExpressions, Zygote
-
-julia> operators = OperatorEnum(; binary_operators=[+, -, *], unary_operators=[cos]);
-
-julia> x1 = Node(; feature=1);
-
-julia> x2 = Node(; feature=2);
-
-julia> expr_1 = x1 * cos(x2 - 3.2)
-x1 * cos(x2 - 3.2)
-
-julia> expr_2 = x2 - x1 * x2 + 2.5 - 1.0 * x1
-((x2 - (x1 * x2)) + 2.5) - (1.0 * x1)
-
-julia> layer = DynamicExpressionsLayer(operators, expr_1, expr_2);
-
-julia> ps, st = Lux.setup(Random.default_rng(), layer)
-((layer_1 = (layer_1 = (params = Float32[3.2],), layer_2 = (params = Float32[2.5, 1.0],)), layer_2 = NamedTuple()), (layer_1 = (layer_1 = NamedTuple(), layer_2 = NamedTuple()), layer_2 = NamedTuple()))
-
-julia> x = [1.0f0 2.0f0 3.0f0
-            4.0f0 5.0f0 6.0f0]
-2×3 Matrix{Float32}:
- 1.0  2.0  3.0
- 4.0  5.0  6.0
-
-julia> layer(x, ps, st)[1] ≈ Float32[0.6967068 -0.4544041 -2.8266668; 1.5 -4.5 -12.5]
-true
-
-julia> ∂x, ∂ps, _ = Zygote.gradient(Base.Fix1(sum, abs2) ∘ first ∘ layer, x, ps, st);
-
-julia> ∂x ≈ Float32[-14.0292 54.206482 180.32669; -0.9995737 10.7700815 55.6814]
-true
-
-julia> ∂ps.layer_1.layer_1.params ≈ Float32[-6.451908]
-true
-
-julia> ∂ps.layer_1.layer_2.params ≈ Float32[-31.0, 90.0]
-true
-```
 """
 struct DynamicExpressionsLayer{OE, E, N, EO} <: AbstractExplicitLayer
     operator_enum::OE
