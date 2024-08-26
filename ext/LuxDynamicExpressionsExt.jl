@@ -1,6 +1,6 @@
 module LuxDynamicExpressionsExt
 
-using ChainRulesCore: ChainRulesCore, NoTangent
+using ChainRulesCore: NoTangent
 using DynamicExpressions: DynamicExpressions, Node, OperatorEnum, eval_grad_tree_array,
                           eval_tree_array
 using FastClosures: @closure
@@ -16,8 +16,6 @@ using MLDataDevices: CPUDevice
 else
     const EvalOptionsTypes = Union{Missing, NamedTuple}
 end
-
-const CRC = ChainRulesCore
 
 Lux.is_extension_loaded(::Val{:DynamicExpressions}) = true
 
