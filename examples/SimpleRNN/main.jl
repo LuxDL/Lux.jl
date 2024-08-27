@@ -181,7 +181,7 @@ nothing #hide
 # Note that we transfer the model to CPU before saving. Additionally, we recommend that
 # you don't save the model
 
-@save "trained_model.jld2" {compress = true} ps_trained st_trained
+@save "trained_model.jld2" ps_trained st_trained
 
 # Let's try loading the model
 

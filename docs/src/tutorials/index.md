@@ -26,7 +26,7 @@ const beginner = [
     src: "../blas_optimizations.jpg",
     caption: "Use SimpleChains.jl as a Backend",
     desc: "Learn how to train small neural networks really fast on CPU."
-  }.
+  },
   {
     href: "https://luxdl.github.io/Boltz.jl/stable/tutorials/1_GettingStarted",
     src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
