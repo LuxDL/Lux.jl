@@ -5,9 +5,8 @@ using MLDataDevices: MLDataDevices, AbstractDevice, AbstractDeviceIterator, CPUD
                      Internal
 using MLUtils: MLUtils, DataLoader
 
-for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    ldev = Symbol(dev, :Device)
-    @eval function (D::$(ldev))(dataloader::DataLoader)
+for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
+    @eval function (D::$(dev))(dataloader::DataLoader)
         if dataloader.parallel
             if dataloader.buffer
                 @warn "Using `buffer=true` for parallel DataLoader with automatic device \

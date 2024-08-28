@@ -28,7 +28,7 @@ end
         Test.@test true
     end
 
+    @safetestset "Iterator Tests" include("iterator_tests.jl")
     @safetestset "Misc Tests" include("misc_tests.jl")
-
     @safetestset "QA Tests" include("qa_tests.jl")
 end
