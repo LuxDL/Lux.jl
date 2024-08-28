@@ -1,18 +1,5 @@
-abstract type AbstractDeviceIterator{D <: AbstractDevice, I} end
-
-function Base.IteratorSize(::Type{AbstractDeviceIterator{D, I}}) where {D, I}
-    return Base.IteratorSize(I)
-end
-Base.length(c::AbstractDeviceIterator) = length(c.iterator)
-Base.axes(c::AbstractDeviceIterator) = axes(c.iterator)
-
-function Base.IteratorEltype(::Type{AbstractDeviceIterator{D, I}}) where {D, I}
-    return Base.IteratorEltype(I)
-end
-Base.eltype(c::AbstractDeviceIterator) = eltype(c.iterator)
-
 # This is based on CuIterator but generalized to work with any device
-struct DeviceIterator{D, I} <: AbstractDeviceIterator{D, I}
+struct DeviceIterator{D <: AbstractDevice, I}
     dev::D
     iterator::I
 end
@@ -33,3 +20,9 @@ function Base.iterate(c::DeviceIterator, (state, prev_batch))
     dev_batch = c.dev(batch)
     return dev_batch, (next_state, dev_batch)
 end
+
+Base.IteratorSize(::Type{DeviceIterator{D, I}}) where {D, I} = Base.IteratorSize(I)
+Base.length(c::DeviceIterator) = length(c.iterator)
+Base.axes(c::DeviceIterator) = axes(c.iterator)
+
+Base.IteratorEltype(::Type{DeviceIterator{D, I}}) where {D, I} = Base.EltypeUnknown()

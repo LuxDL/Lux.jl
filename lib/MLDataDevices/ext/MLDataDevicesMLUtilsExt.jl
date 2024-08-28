@@ -1,8 +1,7 @@
 module MLDataDevicesMLUtilsExt
 
-using MLDataDevices: MLDataDevices, AbstractDevice, AbstractDeviceIterator, CPUDevice,
-                     CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, DeviceIterator,
-                     Internal
+using MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice,
+                     MetalDevice, oneAPIDevice, DeviceIterator
 using MLUtils: MLUtils, DataLoader
 
 for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
@@ -12,44 +11,21 @@ for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
                 @warn "Using `buffer=true` for parallel DataLoader with automatic device \
                        transfer is currently not implemented. Ignoring `buffer=true`."
             end
-            return ParallelDeviceDataLoader(D, dataloader)
+
+            # Mostly from https://github.com/JuliaML/MLUtils.jl/blob/main/src/eachobs.jl
+            data = MLUtils.ObsView(dataloader.data)
+            data = dataloader.shuffle ? MLUtils.shuffleobs(data) : data
+            data = if dataloader.batchsize > 0
+                MLUtils.BatchView(
+                    data; dataloader.batchsize, dataloader.partial, dataloader.collate)
+            else
+                data
+            end
+
+            return DeviceIterator(D, eachobsparallel(D, data))
         end
         return DeviceIterator(D, dataloader)
     end
-end
-
-# Parallel DataLoader that does the device transfer in the same task
-struct ParallelDeviceDataLoader{D <: AbstractDevice, DL <: DataLoader} <:
-       AbstractDeviceIterator{D, DL}
-    dev::D
-    iterator::DL
-end
-
-# Mostly from https://github.com/JuliaML/MLUtils.jl/blob/main/src/eachobs.jl
-function Base.iterate(c::ParallelDeviceDataLoader)
-    data = MLUtils.ObsView(c.iterator.data)
-
-    data = c.iterator.shuffle ? MLUtils.shuffleobs(c.iterator.rng, data) : data
-    data = if c.iterator.batchsize > 0
-        MLUtils.BatchView(
-            data; c.iterator.batchsize, c.iterator.partial, c.iterator.collate)
-    else
-        data
-    end
-
-    iter = eachobsparallel(c.dev, data)
-    item = iterate(iter)
-    item === nothing && return nothing
-    dev_batch, next_state = item
-    return dev_batch, ((iter, next_state), dev_batch)
-end
-
-function Base.iterate(::ParallelDeviceDataLoader, ((iter, state), prev_batch))
-    item = iterate(iter, state)
-    item === nothing && return nothing
-    dev_batch, next_state = item
-    Internal.unsafe_free!(prev_batch)  # free the previous batch
-    return dev_batch, ((iter, next_state), dev_batch)
 end
 
 function eachobsparallel(dev::AbstractDevice, data)
