@@ -42,6 +42,12 @@ function MLDataDevices.set_device!(::Type{CUDADevice}, ::Nothing, rank::Integer)
     return MLDataDevices.set_device!(CUDADevice, id)
 end
 
+# unsafe_free!
+function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
+    CUDA.unsafe_free!(x)
+    return
+end
+
 # Device Transfer
 Adapt.adapt_storage(::CUDADevice{Nothing}, x::AbstractArray) = CUDA.cu(x)
 function Adapt.adapt_storage(to::CUDADevice, x::AbstractArray)

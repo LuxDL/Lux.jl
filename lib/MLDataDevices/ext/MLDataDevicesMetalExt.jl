@@ -18,6 +18,12 @@ Internal.get_device(::MtlArray) = MetalDevice()
 
 Internal.get_device_type(::MtlArray) = MetalDevice
 
+# unsafe_free!
+function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
+    Metal.unsafe_free!(x)
+    return
+end
+
 # Device Transfer
 ## To GPU
 Adapt.adapt_storage(::MetalDevice, x::AbstractArray) = Metal.mtl(x)

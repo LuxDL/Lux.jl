@@ -64,6 +64,12 @@ function MLDataDevices.set_device!(::Type{AMDGPUDevice}, ::Nothing, rank::Intege
     return MLDataDevices.set_device!(AMDGPUDevice, id)
 end
 
+# unsafe_free!
+function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
+    AMDGPU.unsafe_free!(x)
+    return
+end
+
 # Device Transfer
 ## To GPU
 Adapt.adapt_storage(::AMDGPUDevice{Nothing}, x::AbstractArray) = AMDGPU.roc(x)

@@ -1,5 +1,6 @@
 module Internal
 
+using Functors: fmap
 using Preferences: load_preference
 using Random: AbstractRNG
 using UnrolledUtilities: unrolled_mapreduce
@@ -147,6 +148,18 @@ for op in (:get_device, :get_device_type)
     for T in (Number, AbstractRNG, Val, Symbol, String, Nothing)
         @eval $(op)(::$(T)) = $(op == :get_device ? nothing : Nothing)
     end
+end
+
+function unsafe_free_internal!(x::AbstractArray)
+    unsafe_free_internal!(MLDataDevices.get_device_type(x), x)
+    return
+end
+unsafe_free_internal!(::Type, x::AbstractArray) = nothing
+unsafe_free_internal!(_) = nothing
+
+function unsafe_free!(x)
+    fmap(unsafe_free_internal!, x)
+    return
 end
 
 end

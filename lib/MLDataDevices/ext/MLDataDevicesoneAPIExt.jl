@@ -29,6 +29,12 @@ Internal.get_device(::oneArray) = oneAPIDevice()
 
 Internal.get_device_type(::oneArray) = oneAPIDevice
 
+# unsafe_free!
+function Internal.unsafe_free_internal!(::Type{oneAPIDevice}, x::AbstractArray)
+    oneAPI.unsafe_free!(x)
+    return
+end
+
 # Device Transfer
 ## To GPU
 for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
