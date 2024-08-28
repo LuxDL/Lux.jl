@@ -293,7 +293,7 @@ end
 # For all other types we rely on fmap which means we lose type stability.
 # For Lux, typically models only has these 3 datastructures so we should be mostly fine.
 for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    ldev = Symbol("$(dev)Device")
+    ldev = Symbol(dev, :Device)
     @eval begin
         function (D::$(ldev))(x::AbstractArray{T}) where {T}
             return (isbitstype(T) || Internal.special_aos(x)) ? Adapt.adapt(D, x) :

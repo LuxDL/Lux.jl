@@ -25,7 +25,6 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-## To GPU
 Adapt.adapt_storage(::MetalDevice, x::AbstractArray) = Metal.mtl(x)
 
 end

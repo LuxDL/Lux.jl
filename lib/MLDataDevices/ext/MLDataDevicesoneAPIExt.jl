@@ -36,7 +36,6 @@ function Internal.unsafe_free_internal!(::Type{oneAPIDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-## To GPU
 for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     @eval function Adapt.adapt_storage(::oneAPIDevice, x::AbstractArray{$(T1)})
         if !SUPPORTS_FP64[oneAPI.device()]
