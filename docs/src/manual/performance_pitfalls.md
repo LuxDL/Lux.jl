@@ -68,3 +68,53 @@ GPUArraysCore.allowscalar(false)
 enable it by setting the `instability_check` preference. This will help you catch type
 instabilities in your code. For more information on how to set preferences, check out
 [`Lux.set_dispatch_doctor_preferences!`](@ref).
+
+## Faster Primitives
+
+Prefer to use deep learning primitives and their fused variants from `LuxLib.jl` instead of
+`NNlib.jl`. Some of the alternatives are:
+
+1. Replace `NNlib.batched_mul` with [`LuxLib.batched_matmul`](@ref).
+2. Replace `NNlib.conv` with bias and activation with
+   [`LuxLib.fused_conv_bias_activation`](@ref).
+3. Replace `σ.(w * x .+ b)` with [`LuxLib.fused_dense_bias_activation`](@ref).
+4. Replace uses of `σ.(x)` with [`LuxLib.fast_activation`](@ref) or
+   [`LuxLib.fast_activation!!`](@ref) (the latter one is often faster).
+5. Replace uses of `σ.(x .+ b)` with [`LuxLib.bias_activation`](@ref) or
+   [`LuxLib.bias_activation!!`](@ref) (the latter one is often faster).
+
+## Data Loading and Device Transfer
+
+A common pattern for loading data and transferring data to GPUs looks like this:
+
+```julia
+dataloader = DataLoader(dataset; parallel=true, batchsize=12)  # from MLUtils.jl
+gdev = gpu_device()
+
+for (X, y) in dataloader
+    X = X |> gdev
+    y = y |> gdev
+    # ...
+    # do some computation
+    # ...
+end
+```
+
+This is typically fast enough, but the data transfer to the device is happening in main
+process, not exploiting the parallelism in the dataloader. Instead, we can do this:
+
+```julia
+dataloader = DataLoader(dataset; parallel=true, batchsize=12)  # from MLUtils.jl
+gdev = gpu_device()
+
+for (X, y) in gdev(dataloader)
+    # ...
+    # do some computation
+    # ...
+end
+```
+
+Here, `X` and `y` are on the gpu device `gdev` and the data transfer happens in the
+worker processes. Additionally, it behaves similar to `CuIterator` from CUDA.jl and eagerly
+frees the data after every iteration (this is device agnostic and works on all supported GPU
+backends).

@@ -46,3 +46,9 @@ MLDataDevices.functional
 ```@docs
 MLDataDevices.set_device!
 ```
+
+## Iteration
+
+```@docs
+MLDataDevices.DeviceIterator
+```
