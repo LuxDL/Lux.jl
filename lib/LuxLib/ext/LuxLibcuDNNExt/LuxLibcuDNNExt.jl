@@ -29,9 +29,6 @@ end
 
 function CRC.rrule(
         ::typeof(Impl.batchnorm_cudnn), γ, β, x, rμ, rσ², m, ϵ, training::StaticBool)
-    # TODO: Transition this to an error in the future
-    unsafe_known(training) ||
-        @warn "`training=Val(false)` but gradient was called." maxlog=1
     y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, rμ, rσ², m, ϵ, training)
     𝒫x, 𝒫γ, 𝒫β = CRC.ProjectTo(x), CRC.ProjectTo(γ), CRC.ProjectTo(β)
     ∇batchnorm_cudnn = @closure Δ -> begin

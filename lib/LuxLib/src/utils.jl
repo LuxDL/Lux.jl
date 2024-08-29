@@ -8,7 +8,7 @@ using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
 using MLDataDevices: get_device_type, CPUDevice
 using NNlib: NNlib
-using Static: Static, False, True
+using Static: Static, StaticBool, False, True, static
 using StaticArraysCore: SVector, SMatrix
 
 using ..LuxLib: Optional, ∂∅
@@ -230,5 +230,55 @@ end
     kernel(args...)
     return
 end
+
+within_gradient_vararg(args...) = unrolled_any(within_gradient, args)
+
+within_gradient(_) = False()
+within_gradient(::ForwardDiff.Dual) = True()
+within_gradient(::AbstractArray{<:ForwardDiff.Dual}) = True()
+
+CRC.rrule(::typeof(within_gradient), x) = True(), _ -> (∂∅, ∂∅)
+
+static_training_mode(::Nothing, args...) = within_gradient_vararg(args...)
+
+function static_training_mode(
+        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...)
+    return static_training_mode_check(
+        training, static(training), within_gradient_vararg(args...))
+end
+
+function CRC.rrule(::typeof(static_training_mode), ::Nothing, args...)
+    return True(), _ -> ntuple(Returns(∂∅), length(args) + 2)
+end
+
+function CRC.rrule(::typeof(static_training_mode),
+        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...)
+    res = static_training_mode_check(training, static(training), True())
+    return res, _ -> ntuple(Returns(∂∅), length(args) + 2)
+end
+
+static_training_mode_check(_, ::True, ::True) = True()
+static_training_mode_check(_, ::False, ::False) = False()
+
+function static_training_mode_check(training, ::True, ::False)
+    @warn "`training` is set to `$(training)` but is not being used within an autodiff \
+           call (gradient, jacobian, etc...). This will be slow. If you are using a \
+           `Lux.jl` model, set it to inference (test) mode using `LuxCore.testmode`. \
+           Reliance on this behavior is discouraged, and is not guaranteed by Semantic \
+           Versioning, and might be removed without a deprecation cycle. It is recommended \
+           to fix this issue in your code. \n\n\
+           If you are using Enzyme.jl, then you can ignore this warning." maxlog=1
+    return True()
+end
+
+function static_training_mode_check(training, ::False, ::True)
+    @warn "`training` is set to `$(training)` but is being used within an autodiff call \
+           (gradient, jacobian, etc...). This might lead to incorrect results. If you are \
+           using a `Lux.jl` model, set it to training mode using \
+           `LuxCore.trainmode`." maxlog=1
+    return False()
+end
+
+CRC.@non_differentiable static_training_mode_check(::Any...)
 
 end

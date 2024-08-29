@@ -1,5 +1,5 @@
 @doc doc"""
-    instancenorm(x, scale, bias, training::Union{Val, StaticBool}, σ = identity,
+    instancenorm(x, scale, bias, training, σ = identity,
         epsilon = eps(eltype(x)) ^ (5 // 7))
 
 Instance Normalization. For details see [1].
@@ -16,7 +16,9 @@ accordingly.
   - `σ`: Activation function (default: `identity`)
   - `epsilon`: Value added to the denominator for numerical stability
     (default: `eps(eltype(x)) ^ (5 / 7)`)
-  - `training`: Set to `Val(true)` if running in training mode
+  - `training`: Set to `Val(true)` or `True()` if running in training mode. Can be set to
+    `nothing` to automatically determine if the function is being called within an autodiff
+     context
 
 ## Returns
 
@@ -29,13 +31,13 @@ mean and variance.
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
 function instancenorm(x::AbstractArray, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, training::Union{Val, StaticBool}=Val(false),
+        bias::Optional{<:AbstractVector}, training::TrainingType,
         σ::F=identity, epsilon::Real=default_epsilon(x)) where {F}
     assert_valid_instancenorm_arguments(x)
 
-    σ′ = select_fastest_activation(σ, x, scale, bias)
-    y, xμ, xσ² = instancenorm_impl(
-        x, nothing, nothing, scale, bias, static(training), nothing, epsilon, σ′)
+    y, xμ, xσ² = instancenorm_impl(x, nothing, nothing, scale, bias,
+        static_training_mode(training, x, scale, bias), nothing, epsilon,
+        select_fastest_activation(σ, x, scale, bias))
 
     return y, (; running_mean=xμ, running_var=xσ²)
 end
