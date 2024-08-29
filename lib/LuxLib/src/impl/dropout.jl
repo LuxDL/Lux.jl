@@ -15,7 +15,7 @@ end
 function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
         p::T, ::True, ::False, invp::T, dims) where {T}
     if dropout_shape(x, dims) != size(mask)
-        Utils.depwarn(
+        depwarn(
             "`update_mask` is `Val(false)` but `mask` is not of the same size \
              as `LuxLib.dropout_shape(x, dims)`. This has been deprecated and \
              will be removed in the next release. Set `update_mask` to \
@@ -48,9 +48,7 @@ function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, ::True, α, A, 
     return alpha_dropout(noise, p, x, α, A, B), rngₙ
 end
 
-function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, ::False, α, A, B) where {T}
-    return (x, rng)
-end
+alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, ::False, α, A, B) where {T} = x, rng
 
 # Core Implementation
 dropout_shape(s, ::Colon) = size(s)
@@ -149,9 +147,9 @@ function alpha_dropout_simd_loop!(
     end
 end
 
-Utils.@enzyme_alternative alpha_dropout! alpha_dropout_simd_loop!
+@enzyme_alternative alpha_dropout! alpha_dropout_simd_loop!
 
-dropout_fptype(x) = float(real(Utils.remove_tracking(eltype(x))))
+dropout_fptype(x) = float(real(remove_tracking(eltype(x))))
 
 CRC.@non_differentiable dropout_fptype(::Any...)
 
@@ -167,7 +165,7 @@ CRC.@non_differentiable generate_alpha_dropout_noise(::Any...)
 @stable default_mode="disable" function generate_dropout_mask(
         rng::AbstractRNG, x, p, invp, dims)
     rng = LuxCore.replicate(rng)
-    y = similar(Utils.remove_tracking(x), dropout_fptype(x), dropout_shape(x, dims))
+    y = similar(remove_tracking(x), dropout_fptype(x), dropout_shape(x, dims))
     rand!(rng, y)
     generate_dropout_mask!(y, internal_operation_mode(y), p, invp)
     return y, rng
@@ -198,7 +196,7 @@ function generate_dropout_mask_simd_loop!(y::AbstractArray{T}, p, invp) where {T
     end
 end
 
-Utils.@enzyme_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
+@enzyme_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
 
 function generate_dropout_mask!(y::AbstractArray, ::AbstractInternalArrayOpMode, p, invp)
     @. y = (y > p) * invp

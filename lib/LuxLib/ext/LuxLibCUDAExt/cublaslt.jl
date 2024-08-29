@@ -25,9 +25,8 @@ function cublaslt_matmul_fused!(transy::Bool, @nospecialize(y::StridedCuMatrix{y
     wxT = promote_type(wT, xT, bT, auxT)
     @warn "Mixed Precision Inputs received for `weight`: $(typeof(w)) and `x`: \
            $(typeof(x)). Promoting to $(wxT)." maxlog=1
-    return cublaslt_matmul_fused!(transy, y, σ, transw, Utils.ofeltype_array(wxT, w),
-        transx, Utils.ofeltype_array(wxT, x),
-        Utils.ofeltype_array(wxT, b), Utils.ofeltype_array(wxT, aux))
+    return cublaslt_matmul_fused!(transy, y, σ, transw, ofeltype_array(wxT, w),
+        transx, ofeltype_array(wxT, x), ofeltype_array(wxT, b), ofeltype_array(wxT, aux))
 end
 
 # TODO: use https://docs.nvidia.com/cuda/cublas/#cublasltmatmul for a more robust

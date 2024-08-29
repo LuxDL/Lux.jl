@@ -2,7 +2,7 @@
 bias_activation(::typeof(identity), x::AbstractVector, ::Nothing) = x
 for bType in (Nothing, AbstractVector)
     @eval function bias_activation(σ::F, x::AbstractVector, bias::$(bType)) where {F}
-        return vec(bias_activation(σ, get_utils(:insert_batch_dim)(x), bias))
+        return vec(bias_activation(σ, expand_batchdim(x), bias))
     end
 end
 
@@ -40,14 +40,14 @@ end
 @stable default_mode="disable" function bias_activation(
         opmode::LoopedArrayOp, ::typeof(identity),
         x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT}
-    y = similar(x, Utils.concrete_bias_act_output_eltype(identity, x, bias))
+    y = similar(x, concrete_bias_act_output_eltype(identity, x, bias))
     bias_activation!(y, opmode, identity, x, bias)
     return y
 end
 @stable default_mode="disable" function bias_activation(
         opmode::LoopedArrayOp, σ::F, x::AbstractArray{xT, N},
         bias::AbstractVector) where {F, N, xT}
-    y = similar(x, Utils.concrete_bias_act_output_eltype(σ, x, bias))
+    y = similar(x, concrete_bias_act_output_eltype(σ, x, bias))
     bias_activation!(y, opmode, σ, x, bias)
     return y
 end
@@ -55,20 +55,20 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
         opmode::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{xT, N},
         bias::AbstractVector) where {F, N, xT}
-    T = Utils.concrete_bias_act_output_eltype(σ, x, bias)
+    T = concrete_bias_act_output_eltype(σ, x, bias)
     𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
-    if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
+    if unsafe_known(activation_intermediate_not_needed(σ, T))
         y = bias_activation(opmode, σ, x, bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, Utils.NotaNumber())
+            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, NotaNumber())
             ∂b = ∇bias_add(bias, ∂x)
             return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
         end
         return y, ∇bias_activation_no_intermediate
     end
 
-    if Utils.known(Traits.activation_has_rrule(σ, T))
+    if unsafe_known(activation_has_rrule(σ, T))
         tmp = similar(x, T)
         bias_add!(tmp, opmode, x, bias)
         y = activation(opmode, σ, tmp)
@@ -91,7 +91,7 @@ end
 bias_activation!!(::typeof(identity), x::AbstractVector, ::Nothing) = x
 for bType in (Nothing, AbstractVector)
     @eval function bias_activation!!(σ::F, x::AbstractVector, bias::$(bType)) where {F}
-        return vec(bias_activation!!(σ, get_utils(:insert_batch_dim)(x), bias))
+        return vec(bias_activation!!(σ, expand_batchdim(x), bias))
     end
 end
 
@@ -102,7 +102,7 @@ end
 function bias_activation!!(
         σ::F, x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
     return bias_activation!!(
-        internal_operation_mode((x, bias)), Traits.is_mutable_array(x), σ, x, bias)
+        internal_operation_mode((x, bias)), is_mutable_array(x), σ, x, bias)
 end
 
 function bias_activation!!(opmode::AbstractInternalArrayOpMode, ::False, σ::F,
@@ -126,20 +126,20 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!),
         opmode::AbstractInternalArrayOpMode, ::True, σ::F,
         x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
-    T = Utils.concrete_bias_act_output_eltype(σ, x, bias)
+    T = concrete_bias_act_output_eltype(σ, x, bias)
     𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
-    if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
+    if unsafe_known(activation_intermediate_not_needed(σ, T))
         bias_activation!(x, opmode, σ, x, bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), x, σ, Utils.NotaNumber())
+            ∂x = ∇activation(CRC.unthunk(Δ), x, σ, NotaNumber())
             ∂b = ∇bias_add(bias, ∂x)
             return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
         end
         return x, ∇bias_activation_no_intermediate
     end
 
-    if Utils.known(Traits.activation_has_rrule(σ, T))
+    if unsafe_known(activation_has_rrule(σ, T))
         y, tmp = bias_activation_cached!!(σ, x, bias)
         ∇bias_activation_rrule = @closure Δ -> begin
             ∂x = ∇activation(CRC.unthunk(Δ), y, σ, tmp)
@@ -181,7 +181,7 @@ function bias_activation!(y::AbstractArray{yT, N}, ::LoopedArrayOp, σ::F,
         x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT, yT}
     bias_activation_cpu!(
         reshape(y, flattened_bias_dims(y), size(y, N - 1), size(y, N)),
-        Traits.fuse_cpu_activation(σ),
+        fuse_cpu_activation(σ),
         σ, reshape(x, flattened_bias_dims(x), size(x, N - 1), size(x, N)), bias)
     return
 end
@@ -233,7 +233,7 @@ function bias_activation_simd_loop!(y::AbstractArray{yT, 3}, σ::F, x::AbstractA
     return
 end
 
-Utils.@enzyme_alternative bias_activation_loop! bias_activation_simd_loop!
+@enzyme_alternative bias_activation_loop! bias_activation_simd_loop!
 
 function bias_add!(y::AbstractArray{yT, N}, ::AbstractInternalArrayOpMode,
         x::AbstractArray{xT, N}, bias::AbstractVector) where {N, xT, yT}
@@ -271,7 +271,7 @@ function bias_activation_cached!!(σ::F, x::AbstractArray{xT, N},
     @assert σ !== identity
     bias === nothing && return activation(σ, x), x
     return bias_activation_cached!!(
-        internal_operation_mode((x, bias)), Traits.is_mutable_array(x), σ, x, bias)
+        internal_operation_mode((x, bias)), is_mutable_array(x), σ, x, bias)
 end
 
 function bias_activation_cached!!(

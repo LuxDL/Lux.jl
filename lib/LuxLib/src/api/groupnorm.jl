@@ -30,10 +30,10 @@ The normalized array is returned.
 """
 function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, groups::Int, σ::F=identity,
-        epsilon::Real=get_utils(:default_epsilon)(x)) where {F, N}
+        epsilon::Real=default_epsilon(x)) where {F, N}
     assert_valid_groupnorm_arguments(x, scale, bias, groups)
-    σ′ = get_impl(:select_fastest_activation)(σ, x, scale, bias)
-    return get_impl(:groupnorm)(x, scale, bias, groups, σ′, epsilon)
+    return groupnorm_impl(
+        x, scale, bias, groups, select_fastest_activation(σ, x, scale, bias), epsilon)
 end
 
 function assert_valid_groupnorm_arguments(

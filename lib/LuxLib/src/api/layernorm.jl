@@ -33,7 +33,7 @@ Normalized Array of same size as `x`.
 """
 function layernorm(x::AbstractArray{xT}, scale::Optional{<:AbstractArray},
         bias::Optional{<:AbstractArray}, σ::F=identity, dims=Colon(),
-        epsilon::Real=get_utils(:default_epsilon)(x)) where {F, xT}
-    σ′ = get_impl(:select_fastest_activation)(σ, x, scale, bias)
-    return get_impl(:layernorm)(x, scale, bias, σ′, dims, epsilon)
+        epsilon::Real=default_epsilon(x)) where {F, xT}
+    return layernorm_impl(
+        x, scale, bias, select_fastest_activation(σ, x, scale, bias), dims, epsilon)
 end

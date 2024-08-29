@@ -9,12 +9,12 @@ CRC.@non_differentiable batchnorm_reduce_dims(::Any...)
 
 function get_batchnorm_statistics(::AbstractArray, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, ::True)
-    return Utils.copy_drop_gradients(rμ), Utils.copy_drop_gradients(rσ²)
+    return copy_drop_gradients(rμ), copy_drop_gradients(rσ²)
 end
 
 function get_batchnorm_statistics(x::AbstractArray, ::Nothing, ::Nothing, ::False)
-    μ, σ² = mean_var(x; dims=Utils.known(batchnorm_reduce_dims(x)), corrected=false)
-    return Utils.vec(μ), Utils.vec(σ²)
+    μ, σ² = mean_var(x; dims=unsafe_known(batchnorm_reduce_dims(x)), corrected=false)
+    return safe_vec(μ), safe_vec(σ²)
 end
 
 function get_batchnorm_statistics(
@@ -31,8 +31,7 @@ function batchnorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractVector},
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
         batchnorm_reduce_dims(x), training, momentum)
-    return (batchnorm_affine_normalize(act, x, μ, σ², γ, β, ϵ),
-        get_utils(:vec)(rμ), get_utils(:vec)(rσ²))
+    return batchnorm_affine_normalize(act, x, μ, σ², γ, β, ϵ), safe_vec(rμ), safe_vec(rσ²)
 end
 
 function batchnorm_affine_normalize(
@@ -67,8 +66,8 @@ end
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, ϵ::Real) where {F, xT}
     y = similar(x,
-        promote_type(Utils.eltype(x), Utils.eltype(μ), Utils.eltype(σ²),
-            Utils.eltype(γ), Utils.eltype(β)))
+        promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
+            safe_eltype(γ), safe_eltype(β)))
     batchnorm_affine_normalize_internal!(y, opmode, act, x, μ, σ², γ, β, ϵ)
     return y
 end
@@ -80,13 +79,13 @@ function batchnorm_affine_normalize_internal!(
         γ′::Optional{<:AbstractVector}=nothing) where {F, xT, yT}
     N = size(y, 2)
     γ′ = γ′ === nothing ?
-         similar(x, promote_type(Utils.eltype(γ), Utils.eltype(σ²), Utils.eltype(ϵ)), N) :
+         similar(x, promote_type(safe_eltype(γ), safe_eltype(σ²), safe_eltype(ϵ)), N) :
          γ′
-    β′ = similar(x, promote_type(Utils.eltype(β), Utils.eltype(σ²), Utils.eltype(ϵ)), N)
+    β′ = similar(x, promote_type(safe_eltype(β), safe_eltype(σ²), safe_eltype(ϵ)), N)
 
     compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
 
-    if Utils.known(Traits.fuse_cpu_activation(act))
+    if unsafe_known(fuse_cpu_activation(act))
         apply_batchnorm_scale_bias_act_cpu!(y, γ′, β′, x, act)
     else
         apply_batchnorm_scale_bias_cpu!(y, γ′, β′, x)
@@ -154,7 +153,7 @@ end
     end
 end
 
-Utils.@enzyme_alternative apply_batchnorm_scale_bias_act_3d_threaded_cpu! apply_batchnorm_scale_bias_act_3d_serial_cpu!
+@enzyme_alternative apply_batchnorm_scale_bias_act_3d_threaded_cpu! apply_batchnorm_scale_bias_act_3d_serial_cpu!
 
 function apply_batchnorm_scale_bias_cpu!(y::AbstractArray{yT, 3}, γ′::AbstractVector,
         β′::AbstractVector, x::AbstractArray{xT, 3}) where {xT, yT}
@@ -199,7 +198,7 @@ end
     end
 end
 
-Utils.@enzyme_alternative apply_batchnorm_scale_bias_3d_threaded_cpu! apply_batchnorm_scale_bias_3d_serial_cpu!
+@enzyme_alternative apply_batchnorm_scale_bias_3d_threaded_cpu! apply_batchnorm_scale_bias_3d_serial_cpu!
 
 function batchnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 3}, ::GPUBroadcastOp, act::F, x::AbstractArray{xT, 3},
@@ -207,7 +206,7 @@ function batchnorm_affine_normalize_internal!(
         β::Optional{<:AbstractVector}, ϵ::Real,
         γ′::Optional{<:AbstractVector}=nothing) where {F, xT, yT}
     backend = KA.get_backend(y)
-    Utils.run_ka_kernel(
+    run_ka_kernel(
         batchnorm_affine_normalize_internal_kernel!, backend, nothing, size(y),
         y, γ′, act, x, μ, σ², γ, β, ϵ)
     KA.synchronize(backend)
@@ -259,14 +258,14 @@ function CRC.rrule(
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, ϵ::Real) where {F, T, N}
     y = similar(x,
-        promote_type(Utils.eltype(x), Utils.eltype(μ), Utils.eltype(σ²),
-            Utils.eltype(γ), Utils.eltype(β)))
+        promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
+            safe_eltype(γ), safe_eltype(β)))
     γ′ = similar(
-        x, promote_type(Utils.eltype(γ), Utils.eltype(σ²), Utils.eltype(ϵ)), size(x, N - 1))
+        x, promote_type(safe_eltype(γ), safe_eltype(σ²), safe_eltype(ϵ)), size(x, N - 1))
 
     batchnorm_affine_normalize_internal!(y, opmode, identity, x, μ, σ², γ, β, ϵ, γ′)
     z, ∇activation = CRC.rrule_via_ad(
-        cfg, activation!!, opmode, Traits.is_mutable_array(y), act, y)
+        cfg, activation!!, opmode, is_mutable_array(y), act, y)
 
     𝒫x, 𝒫μ, 𝒫σ² = CRC.ProjectTo(x), CRC.ProjectTo(μ), CRC.ProjectTo(σ²)
     𝒫γ = γ === nothing ? identity : CRC.ProjectTo(γ)
@@ -407,7 +406,7 @@ function ∇batchnorm_affine_normalize!(
         σ²::AbstractVector, γ::Optional{<:AbstractVector}, ϵ::Real,
         γ′::AbstractVector) where {∂xT, ∂σ²T, ∂yT, xT}
     backend = KA.get_backend(∂x)
-    Utils.run_ka_kernel(
+    run_ka_kernel(
         ∇batchnorm_affine_normalize_kernel!, backend, nothing, size(∂x),
         ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′)
     KA.synchronize(backend)

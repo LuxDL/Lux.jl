@@ -6,9 +6,19 @@ using NNlib: NNlib, ConvDims
 using Random: Random, AbstractRNG
 using Static: Static, StaticBool, static
 
-using ..LuxLib: Optional, get_impl, get_utils
+using ..LuxLib: Optional
+using ..Impl: Impl, select_fastest_activation
+using ..Utils: default_epsilon, expand_batchdim, remove_tracking
 
 const CRC = ChainRulesCore
+
+# The names are aliased so we define constants for them
+for op in (:batched_matmul, :batchnorm, :bias_activation, :bias_activation!!,
+    :dropout, :alpha_dropout, :groupnorm, :instancenorm, :layernorm,
+    :activation, :activation!!, :fused_conv, :fused_dense)
+    impl_op = Symbol(op, :_impl)
+    @eval const $impl_op = Impl.$op
+end
 
 include("activation.jl")
 include("batched_mul.jl")

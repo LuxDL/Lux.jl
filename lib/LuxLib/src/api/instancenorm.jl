@@ -30,11 +30,11 @@ mean and variance.
 """
 function instancenorm(x::AbstractArray, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, training::Union{Val, StaticBool}=Val(false),
-        σ::F=identity, epsilon::Real=get_utils(:default_epsilon)(x)) where {F}
+        σ::F=identity, epsilon::Real=default_epsilon(x)) where {F}
     assert_valid_instancenorm_arguments(x)
 
-    σ′ = get_impl(:select_fastest_activation)(σ, x, scale, bias)
-    y, xμ, xσ² = get_impl(:instancenorm)(
+    σ′ = select_fastest_activation(σ, x, scale, bias)
+    y, xμ, xσ² = instancenorm_impl(
         x, nothing, nothing, scale, bias, static(training), nothing, epsilon, σ′)
 
     return y, (; running_mean=xμ, running_var=xσ²)

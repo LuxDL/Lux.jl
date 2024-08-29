@@ -51,7 +51,7 @@ end
 
 function update_running_statistics!(rμₙ, rσ²ₙ, ::GPUBroadcastOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
     backend = KA.get_backend(rμₙ)
-    Utils.run_ka_kernel(
+    run_ka_kernel(
         update_running_statistics_kernel!, backend, nothing, size(rμₙ),
         rμₙ, rσ²ₙ, rμ, rσ², μ, σ², m₁, m₂, m₃)
     KA.synchronize(backend)
@@ -74,30 +74,28 @@ function update_normalization_statistics(
         μ = mean(μ; dims=N)
         σ² = mean(σ²; dims=N)
     end
-    m = Utils.remove_tracking(T(accum_size(x, reduce_dims)))
+    m = remove_tracking(T(accum_size(x, reduce_dims)))
     return update_running_statistics(rμ, rσ², μ, σ², momentum, momentum * m / (m - one(m)))
 end
 
-accum_size(x, reduce_dims) = prod(Base.Fix1(size, x), Utils.known(reduce_dims))
+accum_size(x, reduce_dims) = prod(Base.Fix1(size, x), unsafe_known(reduce_dims))
 
 CRC.@non_differentiable update_normalization_statistics(::Any...)
 
 function compute_batch_statistics(
         x::AbstractArray, ::Nothing, ::Nothing, reduce_dims, ::StaticBool, momentum)
-    μ, σ² = mean_var(x; dims=Utils.known(reduce_dims), corrected=false)
+    μ, σ² = mean_var(x; dims=unsafe_known(reduce_dims), corrected=false)
     return (aos_to_soa(μ), aos_to_soa(σ²)), (nothing, nothing)
 end
 
 function compute_batch_statistics(
         ::AbstractArray, rμ::AbstractArray, rσ²::AbstractArray, _, ::False, momentum)
-    remove_tracking = get_utils(:remove_tracking)
     return (remove_tracking(rμ), remove_tracking(rσ²)), (rμ, rσ²)
 end
 
 function compute_batch_statistics(x::AbstractArray, rμ::AbstractArray,
         rσ²::AbstractArray, reduce_dims, ::True, momentum)
-    μ, σ² = mean_var(x; dims=Utils.known(reduce_dims), corrected=false)
-    remove_tracking = get_utils(:remove_tracking)
+    μ, σ² = mean_var(x; dims=unsafe_known(reduce_dims), corrected=false)
     rμ, rσ² = update_normalization_statistics(
         remove_tracking(x), remove_tracking(rμ), remove_tracking(rσ²),
         remove_tracking(μ), remove_tracking(σ²), momentum, reduce_dims)
@@ -148,7 +146,7 @@ function instancenorm(x::AbstractArray{xT, N}, rμ::Optional{<:AbstractVector},
         momentum, epsilon, act::F) where {xT, N, F}
     y, rμₙ, rσ²ₙ = normalization(
         x, rμ, rσ², γ, β, instancenorm_reduce_dims(x), training, momentum, epsilon, act)
-    return y, get_utils(:vec)(rμₙ), get_utils(:vec)(rσ²ₙ)
+    return y, safe_vec(rμₙ), safe_vec(rσ²ₙ)
 end
 
 instancenorm_reduce_dims(::AbstractArray{T, N}) where {T, N} = ntuple(static, N - 2)

@@ -21,9 +21,9 @@ function batched_matmul(::GPUBroadcastOp{AMDGPUDevice}, x::AbstractArray{<:Compl
     end
     @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
            AMDGPUDevice" maxlog=1
-    size(x, 3) == size(y, 3) && return stack(*, Utils.batchview(x), Utils.batchview(y))
-    size(x, 3) == 1 && return stack(Base.Fix1(*, Utils.batchview(x, 1)), Utils.batchview(y))
-    return stack(Base.Fix2(*, Utils.batchview(y, 1)), Utils.batchview(x))
+    size(x, 3) == size(y, 3) && return stack(*, batchview(x), batchview(y))
+    size(x, 3) == 1 && return stack(Base.Fix1(*, batchview(x, 1)), batchview(y))
+    return stack(Base.Fix2(*, batchview(y, 1)), batchview(x))
 end
 
 function batched_matmul(opmode::LoopedArrayOp, x::AbstractArray{xT, 3},
@@ -46,9 +46,8 @@ end
 
 function batched_matmul!(z::AbstractArray{zT, 3}, ::LoopedArrayOp,
         x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {zT, xT, yT}
-    if !LV.check_args(
-        Utils.batchview(z, 1), Utils.batchview(x, 1), Utils.batchview(y, 1)) ||
-       Utils.known(System.explicit_blas_loaded())
+    if !LV.check_args(batchview(z, 1), batchview(x, 1), batchview(y, 1)) ||
+       unsafe_known(explicit_blas_loaded())
         NNlib.batched_mul!(z, x, y)
         return
     end
@@ -61,18 +60,15 @@ function batched_matmul_loopvec_impl!(
         y::AbstractArray{yT, 3}, α::Number=true, β::Number=false) where {zT, xT, yT}
     if size(x, 3) == size(y, 3)
         @batch for L in indices((z, x, y), 3)
-            serial_matmul_loopvec!(
-                Utils.batchview(z, L), Utils.batchview(x, L), Utils.batchview(y, L), α, β)
+            serial_matmul_loopvec!(batchview(z, L), batchview(x, L), batchview(y, L), α, β)
         end
     elseif size(x, 3) == 1
         @batch for L in indices((z, y), 3)
-            serial_matmul_loopvec!(
-                Utils.batchview(z, L), Utils.batchview(x, 1), Utils.batchview(y, L), α, β)
+            serial_matmul_loopvec!(batchview(z, L), batchview(x, 1), batchview(y, L), α, β)
         end
     else # has to be size(y, 3) == 1
         @batch for L in indices((z, x), 3)
-            serial_matmul_loopvec!(
-                Utils.batchview(z, L), Utils.batchview(x, L), Utils.batchview(y, 1), α, β)
+            serial_matmul_loopvec!(batchview(z, L), batchview(x, L), batchview(y, 1), α, β)
         end
     end
 end
@@ -158,10 +154,10 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                     if !(typeof(A) <: EnzymeCore.Const) && dA !== A.val
                         if size(dA, 3) == 1 && size(B.val, 3) != 1
                             B′ = NNlib.batched_adjoint(B.val)
-                            dA′ = Utils.batchview(dA, 1)
+                            dA′ = batchview(dA, 1)
                             for L in indices(B′, 3)
-                                mul!(dA′, Utils.batchview(dC, L),
-                                    Utils.batchview(B′, L), true, true)
+                                mul!(dA′, batchview(dC, L),
+                                    batchview(B′, L), true, true)
                             end
                         else
                             $(func)(dA, dC, NNlib.batched_adjoint(B.val), true, true)
@@ -171,10 +167,10 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                     if !(typeof(B) <: EnzymeCore.Const) && dB !== B.val
                         if size(dB, 3) == 1 && size(A.val, 3) != 1
                             A′ = NNlib.batched_adjoint(A.val)
-                            dB′ = Utils.batchview(dB, 1)
+                            dB′ = batchview(dB, 1)
                             for L in indices(A′, 3)
-                                mul!(dB′, Utils.batchview(A′, L),
-                                    Utils.batchview(dC, L), true, true)
+                                mul!(dB′, batchview(A′, L),
+                                    batchview(dC, L), true, true)
                             end
                         else
                             $(func)(dB, NNlib.batched_adjoint(A.val), dC, true, true)

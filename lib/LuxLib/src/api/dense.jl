@@ -27,6 +27,5 @@ multiple operations.
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}
-    σ′ = get_impl(:select_fastest_activation)(σ, weight, x, b)
-    return get_impl(:fused_dense)(σ′, weight, x, b)
+    return fused_dense_impl(select_fastest_activation(σ, weight, x, b), weight, x, b)
 end

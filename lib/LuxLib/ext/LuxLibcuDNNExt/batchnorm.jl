@@ -43,8 +43,8 @@ function batchnorm_cudnn!(
 
     γ = reshape(γ′, dims)
     β = reshape(β′, dims)
-    rμ = Utils.reshape(rμ′, dims...)
-    rσ² = Utils.reshape(rσ²′, dims...)
+    rμ = safe_reshape(rμ′, dims...)
+    rσ² = safe_reshape(rσ²′, dims...)
 
     if rμ === nothing || rσ² === nothing
         rμ !== rσ² && throw(ArgumentError("both or neither of rμ and rσ² must be nothing"))
@@ -57,7 +57,7 @@ function batchnorm_cudnn!(
     γβd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
         cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
 
-    if Utils.known(training)
+    if unsafe_known(training)
         μ = CUDA.zeros(T, dims)
         σ⁻² = CUDA.ones(T, dims)
 
@@ -120,8 +120,8 @@ function ∇batchnorm_cudnn!(
     ∂γ = reshape(∂γ′, dims)
     γ = reshape(γ′, dims)
     ∂β = reshape(∂β′, dims)
-    rμ = Utils.reshape(rμ′, dims...)
-    rσ² = Utils.reshape(rσ²′, dims...)
+    rμ = safe_reshape(rμ′, dims...)
+    rσ² = safe_reshape(rσ²′, dims...)
 
     if rμ === nothing && rσ² === nothing
         rμ = CU_NULL

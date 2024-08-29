@@ -59,8 +59,8 @@ end
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
         ϵ::Real) where {F, xT, μT, σ²T}
     y = similar(x,
-        promote_type(Utils.eltype(x), Utils.eltype(μ), Utils.eltype(σ²),
-            Utils.eltype(γ), Utils.eltype(β)))
+        promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
+            safe_eltype(γ), safe_eltype(β)))
     groupnorm_affine_normalize_internal!(y, opmode, act, x, μ, σ², γ, β, ϵ)
     return y
 end
@@ -70,7 +70,7 @@ function groupnorm_affine_normalize_internal!(
         μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
         ϵ::Real) where {F, xT, yT, μT, σ²T}
-    if Utils.known(Traits.fuse_cpu_activation(act))
+    if unsafe_known(fuse_cpu_activation(act))
         groupnorm_affine_normalize_act_cpu!(y, x, μ, σ², γ, β, ϵ, act)
     else
         groupnorm_affine_normalize_cpu!(y, x, μ, σ², γ, β, ϵ)
@@ -211,7 +211,7 @@ function groupnorm_affine_normalize_internal!(
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
         ϵ::Real) where {F, xT, yT, μT, σ²T}
     backend = KA.get_backend(y)
-    Utils.run_ka_kernel(
+    run_ka_kernel(
         groupnorm_affine_normalize_kernel!, backend, nothing, size(y),
         y, act, x, μ, σ², γ, β, ϵ)
     KA.synchronize(backend)
@@ -242,11 +242,10 @@ function CRC.rrule(
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
         ϵ::Real) where {F, T, μT, σ²T}
     y = similar(x,
-        promote_type(Utils.eltype(x), Utils.eltype(μ), Utils.eltype(σ²),
-            Utils.eltype(γ), Utils.eltype(β)))
+        promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
+            safe_eltype(γ), safe_eltype(β)))
     groupnorm_affine_normalize_internal!(y, opmode, identity, x, μ, σ², γ, β, ϵ)
-    z, ∇activation = CRC.rrule_via_ad(
-        cfg, activation!!, opmode, Traits.is_mutable_array(y), f, y)
+    z, ∇activation = CRC.rrule_via_ad(cfg, activation!!, opmode, is_mutable_array(y), f, y)
 
     𝒫x, 𝒫μ, 𝒫σ² = CRC.ProjectTo(x), CRC.ProjectTo(μ), CRC.ProjectTo(σ²)
     𝒫γ = γ === nothing ? identity : CRC.ProjectTo(γ)
@@ -394,7 +393,7 @@ function ∇groupnorm_affine_normalize!(
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
         ϵ::Real) where {∂xT, ∂σ²T, ∂yT, xT, μT, σ²T}
     backend = KA.get_backend(∂x)
-    Utils.run_ka_kernel(
+    run_ka_kernel(
         ∇groupnorm_affine_normalize_kernel!, backend, nothing, size(∂x),
         ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ)
     KA.synchronize(backend)

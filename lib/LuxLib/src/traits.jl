@@ -9,7 +9,7 @@ using StaticArraysCore: StaticArray
 using UnrolledUtilities: unrolled_map
 
 using ..LuxLib: Numeric
-using ..Utils
+using ..Utils: NotaNumber, only_derivative, unrolled_any
 
 function fast_scalar_indexing(::T) where {T <: AbstractArray}
     return static(ArrayInterface.fast_scalar_indexing(T))
@@ -50,21 +50,21 @@ function use_generic_broadcasting(xs::Tuple)
     # Float16 is a bit iffy and reordering operations are not optimal for numerical
     # stability so we use the generic implementation for now.
     xs_unwrapped = unrolled_map(unwrap_array, xs)
-    return Utils.unrolled_any(has_autodiff_value, xs_unwrapped) |
-           Utils.unrolled_any(has_float16, xs_unwrapped) |
-           Utils.unrolled_any(static_isa(StaticArray), xs_unwrapped)
+    return unrolled_any(has_autodiff_value, xs_unwrapped) |
+           unrolled_any(has_float16, xs_unwrapped) |
+           unrolled_any(static_isa(StaticArray), xs_unwrapped)
 end
 
 activation_intermediate_not_needed(::typeof(identity), ::Type) = True()
 
 function activation_intermediate_not_needed(::F, ::Type{T}) where {F, T}
     return static(isconcretetype(Core.Compiler._return_type(
-        Utils.only_derivative, Tuple{T, F, Utils.NotaNumber})))
+        only_derivative, Tuple{T, F, NotaNumber})))
 end
 
 function activation_has_rrule(::F, ::Type{T}) where {F, T}
     return static(isconcretetype(Core.Compiler._return_type(
-        Utils.only_derivative, Tuple{T, F, T})))
+        only_derivative, Tuple{T, F, T})))
 end
 
 # Which activations can be fused into a single kernel
@@ -81,7 +81,7 @@ using ChainRulesCore: ChainRulesCore
 using Hwloc: Hwloc
 using Static: static, False, True
 
-using ..Utils
+using ..Utils: is_extension_loaded, safe_minimum
 
 const CRC = ChainRulesCore
 
@@ -124,9 +124,9 @@ end
 CRC.@non_differentiable is_x86_64()
 
 function explicit_blas_loaded()
-    return Utils.is_extension_loaded(Val(:MKL)) |
-           Utils.is_extension_loaded(Val(:AppleAccelerate)) |
-           Utils.is_extension_loaded(Val(:BLISBLAS))
+    return is_extension_loaded(Val(:MKL)) |
+           is_extension_loaded(Val(:AppleAccelerate)) |
+           is_extension_loaded(Val(:BLISBLAS))
 end
 
 CRC.@non_differentiable explicit_blas_loaded()
@@ -135,9 +135,9 @@ use_octavian() = is_x86_64() & (INTEL_HARDWARE | AMD_RYZEN_HARDWARE)
 
 CRC.@non_differentiable use_octavian()
 
-const L1CacheSize::Int = Utils.safe_minimum(Hwloc.l1cache_sizes(), 0)
-const L2CacheSize::Int = Utils.safe_minimum(Hwloc.l2cache_sizes(), 0)
-const L3CacheSize::Int = Utils.safe_minimum(Hwloc.l3cache_sizes(), 0)
+const L1CacheSize::Int = safe_minimum(Hwloc.l1cache_sizes(), 0)
+const L2CacheSize::Int = safe_minimum(Hwloc.l2cache_sizes(), 0)
+const L3CacheSize::Int = safe_minimum(Hwloc.l3cache_sizes(), 0)
 
 # NOTE: some systems might not have L3 cache, so we check whether it fits in L(N - 1) cache
 fits_in_l1cache(xs::AbstractArray...) = sum(sizeof, xs) ≤ L1CacheSize

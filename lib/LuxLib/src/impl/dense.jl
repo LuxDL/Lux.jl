@@ -19,7 +19,7 @@ end
 @stable default_mode="disable" function fused_dense(
         opmode::AbstractInternalArrayOpMode, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
-    y = similar(weight, Utils.concrete_bias_act_output_eltype(act, weight, x, b),
+    y = similar(weight, concrete_bias_act_output_eltype(act, weight, x, b),
         size(weight, 1), size(x, 2))
     fused_dense!(y, opmode, act, weight, x, b)
     return y
@@ -42,20 +42,20 @@ end
 function CRC.rrule(cfg::CRC.RuleConfig{>:HasReverseMode}, ::typeof(fused_dense),
         opmode::AbstractInternalArrayOpMode, act::F, weight::AbstractMatrix,
         x::AbstractMatrix, b::Optional{<:AbstractVector}) where {F}
-    T = Utils.concrete_bias_act_output_eltype(act, weight, x, b)
+    T = concrete_bias_act_output_eltype(act, weight, x, b)
     𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
-    if Utils.known(Traits.activation_intermediate_not_needed(act, T))
+    if unsafe_known(activation_intermediate_not_needed(act, T))
         y = fused_dense(opmode, act, weight, x, b)
         ∇fused_dense_no_intermediate = @closure Δ -> begin
-            ∂y = ∇activation(CRC.unthunk(Δ), y, act, Utils.NotaNumber())
+            ∂y = ∇activation(CRC.unthunk(Δ), y, act, NotaNumber())
             ∂w, ∂x, ∂b = ∇matmul_bias(∂y, weight, x, b)
             return ∂∅, ∂∅, ∂∅, 𝒫weight(∂w), 𝒫x(∂x), 𝒫b(∂b)
         end
         return y, ∇fused_dense_no_intermediate
     end
 
-    if Utils.known(Traits.activation_has_rrule(act, T))
+    if unsafe_known(activation_has_rrule(act, T))
         y = matmuladd(weight, x, b)
         z = activation(opmode, act, y)
         ∇fused_dense_cached = @closure Δ -> begin

@@ -55,7 +55,7 @@ function CRC.rrule(::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool
     return (μ, σ²), ∇mean_var
 end
 
-add!!(x, y) = add!!(Traits.is_mutable_array(x), x, y)
+add!!(x, y) = add!!(is_mutable_array(x), x, y)
 add!!(::True, x, y) = x .+= y
 add!!(::False, x, y) = x .+ y
 

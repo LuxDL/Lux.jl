@@ -1,6 +1,6 @@
 # Entry Points
 function activation!!(σ::F, x::AbstractArray) where {F}
-    return activation!!(internal_operation_mode(x), Traits.is_mutable_array(x), σ, x)
+    return activation!!(internal_operation_mode(x), is_mutable_array(x), σ, x)
 end
 
 activation!(::typeof(identity), ::AbstractArray) = nothing
@@ -26,17 +26,17 @@ end
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
         opmode::AbstractInternalArrayOpMode, ::True,
         σ::F, x::AbstractArray{T}) where {F, T}
-    if Utils.known(Traits.activation_intermediate_not_needed(σ, T))
+    if unsafe_known(activation_intermediate_not_needed(σ, T))
         activation!(x, opmode, σ, x)
         𝒫x_no_intermediate = CRC.ProjectTo(x)
         ∇activation_no_intermediate_rrule = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), x, σ, Utils.NotaNumber())
+            ∂x = ∇activation(CRC.unthunk(Δ), x, σ, NotaNumber())
             return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x_no_intermediate(∂x)
         end
         return x, ∇activation_no_intermediate_rrule
     end
 
-    if Utils.known(Traits.activation_has_rrule(σ, T))
+    if unsafe_known(activation_has_rrule(σ, T))
         y = activation(opmode, σ, x)
         𝓟x_cached = CRC.ProjectTo(x)
         ∇activation_rrule = @closure Δ -> begin
@@ -67,7 +67,7 @@ end
 
 function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
         opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}) where {F, T}
-    if Utils.known(Traits.activation_has_rrule(σ, T))
+    if unsafe_known(activation_has_rrule(σ, T))
         y = activation(opmode, σ, x)
         𝓟x = CRC.ProjectTo(x)
         ∇activation_rrule = @closure Δ -> begin
@@ -97,7 +97,7 @@ end
 
 function activation_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
     # We use fuse activation as a proxy check for "simple functions"
-    if LV.check_args(y, x) && Utils.known(!Traits.fuse_cpu_activation(σ))
+    if LV.check_args(y, x) && unsafe_known(!fuse_cpu_activation(σ))
         LV.vmap!(σ, y, x)
         return
     end
@@ -111,7 +111,7 @@ function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where 
     end
 end
 
-Utils.@enzyme_alternative activation_loop! activation_simd_loop!
+@enzyme_alternative activation_loop! activation_simd_loop!
 
 # Gradient for activations
 ∇activation(Δ, _, ::typeof(identity), x) = Δ
@@ -119,17 +119,17 @@ function ∇activation(Δ, out, act::F, x) where {F}
     return ∇activation(internal_operation_mode((Δ, out)), Δ, out, act, x)
 end
 function ∇activation(::AbstractInternalArrayOpMode, Δ, out, act::F, x) where {F}
-    return @. Δ * Utils.only_derivative(out, act, x)
+    return @. Δ * only_derivative(out, act, x)
 end
 @inbounds function ∇activation(::LoopedArrayOp, Δ, out, act::F, x) where {F}
     y = similar(out)
-    if x isa Utils.NotaNumber
+    if x isa NotaNumber
         @simd ivdep for i in indices((Δ, out))
-            @inbounds y[i] = Utils.only_derivative(out[i], act, x) * Δ[i]
+            @inbounds y[i] = only_derivative(out[i], act, x) * Δ[i]
         end
     else
         @simd ivdep for i in indices((Δ, out, x))
-            @inbounds y[i] = Utils.only_derivative(out[i], act, x[i]) * Δ[i]
+            @inbounds y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
         end
     end
     return y
@@ -138,7 +138,7 @@ end
 # Switch some of the activations to use SLEEFPirates.jl if needed
 function select_fastest_activation(f::F, xs...) where {F}
     return select_fastest_activation(
-        f, internal_operation_mode(xs), unrolled_mapreduce(Utils.eltype, promote_type, xs))
+        f, internal_operation_mode(xs), unrolled_mapreduce(safe_eltype, promote_type, xs))
 end
 
 select_fastest_activation(f::F, ::AbstractInternalArrayOpMode, ::Type{T}) where {F, T} = f

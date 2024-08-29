@@ -34,8 +34,8 @@ ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
 contiguous(x::AbstractArray) = x
 contiguous(x::SubArray) = copy(x)
 
-reshape(x::AbstractArray, dims...) = Base.reshape(x, dims...)
-reshape(::Nothing, dims...) = nothing
+safe_reshape(x::AbstractArray, dims...) = reshape(x, dims...)
+safe_reshape(::Nothing, dims...) = nothing
 
 remove_tracking(x) = x
 remove_tracking(x::AbstractArray) = x
@@ -45,18 +45,9 @@ remove_tracking(x::AbstractArray{<:ForwardDiff.Dual}) = ForwardDiff.value.(x)
 remove_tracking(::Type{<:ForwardDiff.Dual{Tag, T}}) where {Tag, T} = remove_tracking(T)
 remove_tracking(::Nothing) = nothing
 
-# Need rrule for type stability
-vec(x) = x
-vec(x::AbstractArray) = Base.vec(x)
-vec(::Nothing) = nothing
-
-function CRC.rrule(::typeof(vec), x::AbstractArray)
-    res = vec(x)
-    ∇vec = @closure Δ -> begin
-        return ∂∅, CRC.ProjectTo(x)(Δ)
-    end
-    return res, ∇vec
-end
+safe_vec(x) = x
+safe_vec(x::AbstractArray) = vec(x)
+safe_vec(::Nothing) = nothing
 
 ## This part is taken from NNlib.jl
 # This has no methods, used for testing whether `derivatives_given_output(Ω, f, x)`
@@ -101,20 +92,20 @@ unsafe_free!(x::AbstractArray) = KA.unsafe_free!(x)
 
 CRC.@non_differentiable unsafe_free!(::Any)
 
-known(x) = Static.known(x)  # will drop gradients. needed for type stability in Zygote
+unsafe_known(x) = Static.known(x)  # will drop gradients. needed for type stability in Zygote
 
-CRC.@non_differentiable known(::Any)
+CRC.@non_differentiable unsafe_known(::Any)
 
 ## depwarn but marked non-differentiable to prevent type instability
 depwarn(msg::String, f::Symbol) = Base.depwarn(msg, f)
 
 CRC.@non_differentiable depwarn(::Any...)
 
-eltype(::AbstractArray{T}) where {T} = T
-eltype(::T) where {T} = T
-eltype(::Nothing) = Bool
+safe_eltype(::AbstractArray{T}) where {T} = T
+safe_eltype(::T) where {T} = T
+safe_eltype(::Nothing) = Bool
 
-CRC.@non_differentiable eltype(::Any)
+CRC.@non_differentiable safe_eltype(::Any)
 
 default_epsilon(::Type{T}) where {T} = T(eps(T)^(5 / 7))
 default_epsilon(::AbstractArray{T}) where {T} = default_epsilon(T)
@@ -123,7 +114,7 @@ CRC.@non_differentiable default_epsilon(::Any...)
 
 function concrete_bias_act_output_eltype(act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
         b::Optional{<:AbstractVector}) where {F, Tw, Tx}
-    Ty = promote_type(Tw, Tx, eltype(b))
+    Ty = promote_type(Tw, Tx, safe_eltype(b))
     Tact = Core.Compiler._return_type(act, Tuple{Ty})
     return ifelse(isconcretetype(Tact), Tact, Ty)
 end
@@ -170,6 +161,8 @@ end
 function expand_batchdim(x::LinearAlgebra.Transpose)
     return NNlib.BatchedTranspose(reshape(parent(x), size(parent(x))..., 1))
 end
+expand_batchdim(x::AbstractVector) = reshape(x, :, 1)
+expand_batchdim(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
 
 function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
     proj_x = CRC.ProjectTo(x)
@@ -238,20 +231,4 @@ end
     return
 end
 
-insert_batch_dim(x::AbstractVector) = reshape(x, :, 1)
-insert_batch_dim(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
-
 end
-
-# Accessing properties of modules leads to type instability in Zygote reverse pass
-module_getproperty(m::Module, s::Symbol) = getproperty(m, s)
-
-CRC.@non_differentiable module_getproperty(::Module, ::Symbol)
-
-get_impl(s::Symbol) = module_getproperty(Impl, s)
-
-CRC.@non_differentiable get_impl(::Symbol)
-
-get_utils(s::Symbol) = module_getproperty(Utils, s)
-
-CRC.@non_differentiable get_utils(::Symbol)

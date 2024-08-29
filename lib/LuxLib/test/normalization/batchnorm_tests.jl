@@ -26,8 +26,8 @@ function batchnorm_fallback(
         LuxLib.Utils.remove_tracking(running_var), scale, bias,
         LuxLib.Impl.batchnorm_reduce_dims(x), static(training), momentum, epsilon, σ)
     return (y,
-        (; running_mean=LuxLib.Utils.remove_tracking(LuxLib.Utils.vec(xm)),
-            running_var=LuxLib.Utils.remove_tracking(LuxLib.Utils.vec(xv))))
+        (; running_mean=LuxLib.Utils.remove_tracking(LuxLib.Utils.safe_vec(xm)),
+            running_var=LuxLib.Utils.remove_tracking(LuxLib.Utils.safe_vec(xv))))
 end
 
 anonact = x -> x^3

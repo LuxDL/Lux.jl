@@ -1,6 +1,7 @@
 module LuxLibcuDNNExt
 
-using LuxLib: LuxLib, Optional, ∂∅, Impl, Utils
+using LuxLib: LuxLib, Optional, ∂∅, Impl
+using LuxLib.Utils: safe_reshape, safe_vec, unsafe_known
 using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray, DenseCuVector
 using ChainRulesCore: ChainRulesCore
 using cuDNN: cuDNN, cudnnBatchNormalizationBackward,
@@ -23,13 +24,14 @@ function Impl.batchnorm(x::Union{<:CuArray{T, 2}, <:CuArray{T, 4}, <:CuArray{T, 
         training::StaticBool, σ::F, m::Real, ϵ::Real) where {T <: cuDNNFloat, F}
     rμₙ, rσ²ₙ = Impl.get_batchnorm_statistics(x, rμ, rσ², training)
     y = Impl.batchnorm_cudnn(γ, β, x, rμₙ, rσ²ₙ, m, ϵ, training)[1]
-    return Impl.activation!!(σ, y), Utils.vec(rμₙ), Utils.vec(rσ²ₙ)
+    return Impl.activation!!(σ, y), safe_vec(rμₙ), safe_vec(rσ²ₙ)
 end
 
 function CRC.rrule(
         ::typeof(Impl.batchnorm_cudnn), γ, β, x, rμ, rσ², m, ϵ, training::StaticBool)
     # TODO: Transition this to an error in the future
-    Utils.known(training) || @warn "`training=Val(false)` but gradient was called." maxlog=1
+    unsafe_known(training) ||
+        @warn "`training=Val(false)` but gradient was called." maxlog=1
     y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, rμ, rσ², m, ϵ, training)
     𝒫x, 𝒫γ, 𝒫β = CRC.ProjectTo(x), CRC.ProjectTo(γ), CRC.ProjectTo(β)
     ∇batchnorm_cudnn = @closure Δ -> begin

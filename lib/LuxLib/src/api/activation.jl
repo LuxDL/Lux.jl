@@ -27,7 +27,7 @@ generic implementation.
   - Output Array with the same size as `x`
 """
 function fast_activation!!(σ::F, x::AbstractArray) where {F}
-    return get_impl(:activation!!)(get_impl(:select_fastest_activation)(σ, x), x)
+    return activation!!_impl(select_fastest_activation(σ, x), x)
 end
 
 """
@@ -52,5 +52,5 @@ broadcasting.
   - Output Array with the same size as `x`
 """
 function fast_activation(σ::F, x::AbstractArray) where {F}
-    return get_impl(:activation)(get_impl(:select_fastest_activation)(σ, x), x)
+    return activation_impl(select_fastest_activation(σ, x), x)
 end

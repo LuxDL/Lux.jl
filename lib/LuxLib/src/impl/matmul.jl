@@ -1,7 +1,7 @@
 # Wrappers over Base & LinearAlgebra implementations to use poly algs if needed
 matmuladd(A, B, ::Nothing) = matmul(A, B)
 function matmuladd(A::AbstractMatrix, B::AbstractVector, bias::AbstractVector)
-    return matmuladd(A, get_utils(:insert_batch_dim)(B), bias)
+    return matmuladd(A, expand_batchdim(B), bias)
 end
 function matmuladd(A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     return matmuladd(internal_operation_mode((A, B, bias)), A, B, bias)
@@ -25,7 +25,7 @@ function matmuladd(opmode::AbstractInternalArrayOpMode, A::AbstractMatrix,
 end
 
 function matmul(A::AbstractMatrix, B::AbstractVector)
-    return vec(matmul(A, get_utils(:insert_batch_dim)(B)))
+    return vec(matmul(A, expand_batchdim(B)))
 end
 function matmul(A::AbstractMatrix, B::AbstractMatrix)
     if size(A, 2) != size(B, 1)
@@ -67,7 +67,7 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    if LV.check_args(C, A, B, bias) && System.fits_in_l2cache(C, A, B, bias)
+    if LV.check_args(C, A, B, bias) && fits_in_l2cache(C, A, B, bias)
         matmuladd_loopvec!(C, A, B, bias)
         return
     end
@@ -87,7 +87,7 @@ function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
 end
 
 function matmul!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix, B::AbstractMatrix)
-    return matmul_cpu!(C, System.use_octavian(), System.explicit_blas_loaded(), A, B)
+    return matmul_cpu!(C, use_octavian(), explicit_blas_loaded(), A, B)
 end
 
 for spl_blas in (True, False)
@@ -96,11 +96,11 @@ for spl_blas in (True, False)
                 C::AbstractMatrix, ::True, ::$(spl_blas),
                 A::AbstractMatrix, B::AbstractMatrix)
             if LV.check_args(C, A, B)
-                if System.fits_in_l1cache(C, A, B)
+                if fits_in_l1cache(C, A, B)
                     matmul_loopvec!(C, A, B, true, false)
                     return
-                elseif $(Utils.known(spl_blas()) ? System.fits_in_l2cache :
-                         System.fits_in_l3cache)(C, A, B)
+                elseif $(unsafe_known(spl_blas()) ? fits_in_l2cache :
+                         fits_in_l3cache)(C, A, B)
                     matmul_octavian!(C, A, B, true, false)
                     return
                 end
@@ -113,8 +113,7 @@ for spl_blas in (True, False)
                 C::AbstractMatrix, ::False, ::$(spl_blas),
                 A::AbstractMatrix, B::AbstractMatrix)
             if LV.check_args(C, A, B)
-                if $(Utils.known(spl_blas()) ? System.fits_in_l1cache :
-                     System.fits_in_l2cache)(C, A, B)
+                if $(unsafe_known(spl_blas()) ? fits_in_l1cache : fits_in_l2cache)(C, A, B)
                     matmul_loopvec!(C, A, B, true, false)
                     return
                 end
@@ -152,7 +151,7 @@ end
         A′, B′ = A, B
     else
         @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Converting to common type to to attempt to use BLAS. This may be slow." maxlog=1
-        A′, B′ = Utils.ofeltype_array(T, A), Utils.ofeltype_array(T, B)
+        A′, B′ = ofeltype_array(T, A), ofeltype_array(T, B)
     end
     matmul_linalg_default!(C, A′, B′, α, β)
     return
@@ -233,8 +232,8 @@ function CRC.rrule(
 end
 
 # EnzymeRules
-Utils.@enzyme_alternative matmul_octavian! matmul_linalg_default!
-Utils.@enzyme_alternative serial_matmul_loopvec! matmul_linalg_default!
-Utils.@enzyme_alternative matmul_loopvec! matmul_linalg_default!
+@enzyme_alternative matmul_octavian! matmul_linalg_default!
+@enzyme_alternative serial_matmul_loopvec! matmul_linalg_default!
+@enzyme_alternative matmul_loopvec! matmul_linalg_default!
 
-Utils.@enzyme_alternative matmuladd_loopvec! matmuladd_cpu_fallback!
+@enzyme_alternative matmuladd_loopvec! matmuladd_cpu_fallback!

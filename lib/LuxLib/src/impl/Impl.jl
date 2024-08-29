@@ -27,8 +27,16 @@ using MLDataDevices: get_device_type, AMDGPUDevice, CUDADevice, AbstractGPUDevic
 using NNlib: NNlib, ConvDims
 
 using ..LuxLib: Optional, Numeric, ∂∅, internal_operation_mode, AbstractInternalArrayOpMode,
-                GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp, Utils, Traits, System,
-                get_utils
+                GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
+using ..Utils: Utils, NotaNumber, batchview, concrete_bias_act_output_eltype, contiguous,
+               copy_drop_gradients, depwarn, eltype_mismatch, expand_batchdim,
+               maybe_reduce_BLAS_threads, ofeltype_array, only_derivative, remove_tracking,
+               reset_BLAS_threads, run_ka_kernel, safe_eltype, safe_vec, safe_warning,
+               unsafe_known, @enzyme_alternative
+using ..Traits: activation_intermediate_not_needed, activation_has_rrule, is_mutable_array,
+                fuse_cpu_activation
+using ..System: explicit_blas_loaded, use_octavian, fits_in_l1cache, fits_in_l2cache,
+                fits_in_l3cache
 
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
