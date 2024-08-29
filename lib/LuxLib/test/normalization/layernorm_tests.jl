@@ -2,11 +2,16 @@
 using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics
 using LuxTestUtils: check_approx
 
-function setup_layernorm(gen_f, aType, T, x_size, affine_shape)
+function setup_layernorm(gen_f, aType, T, x_size, affine_shape, expand_dims::Bool=true)
     x = gen_f(T, x_size) |> aType
     if affine_shape !== nothing
-        scale = gen_f(T, (affine_shape..., 1)) |> aType
-        bias = gen_f(T, (affine_shape..., 1)) |> aType
+        if expand_dims
+            scale = gen_f(T, (affine_shape..., 1)) |> aType
+            bias = gen_f(T, (affine_shape..., 1)) |> aType
+        else
+            scale = gen_f(T, affine_shape) |> aType
+            bias = gen_f(T, affine_shape) |> aType
+        end
         return x, scale, bias
     else
         return x, nothing, nothing
@@ -14,11 +19,24 @@ function setup_layernorm(gen_f, aType, T, x_size, affine_shape)
 end
 
 function run_layernorm_testing(gen_f, aType, T, x_size, affine_shape, act, ongpu, mode)
-    dims = Colon()
+    @testset for dims in (Colon(), nothing)
+        if dims === nothing
+            affine_shape === nothing && continue
+            length(x_size) ≤ length(affine_shape) && continue
+            x, scale, bias = setup_layernorm(gen_f, aType, T, x_size, affine_shape, false)
+        else
+            x, scale, bias = setup_layernorm(gen_f, aType, T, x_size, affine_shape)
+        end
+
+        run_layernorm_testing_core(
+            aType, T, x_size, affine_shape, act, dims, x, scale, bias)
+    end
+end
+
+function run_layernorm_testing_core(
+        aType, T, x_size, affine_shape, act, dims, x, scale, bias)
     epsilon = LuxLib.Utils.default_epsilon(T)
     _f = (args...) -> layernorm(args..., act, dims, epsilon)
-
-    x, scale, bias = setup_layernorm(gen_f, aType, T, x_size, affine_shape)
 
     @test @inferred(layernorm(x, scale, bias, act, dims, epsilon)) isa Any
     @jet layernorm(x, scale, bias, act, dims, epsilon)
@@ -113,5 +131,18 @@ end
             run_layernorm_testing(
                 generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
         end
+    end
+end
+
+@testitem "Layer Norm: Error Checks" tags=[:layer_norm] setup=[SharedTestSetup] begin
+    @testset "$mode" for (mode, aType, ongpu) in MODES
+        x = rand(2, 3) |> aType
+
+        @test_throws ArgumentError layernorm(x, nothing, nothing, identity, nothing, 1e-5)
+
+        sc = rand(2, 1) |> aType
+        b = rand(2, 1) |> aType
+
+        @test_throws AssertionError layernorm(x, sc, b, identity, nothing, 1e-5)
     end
 end
