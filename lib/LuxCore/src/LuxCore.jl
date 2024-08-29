@@ -239,6 +239,9 @@ layer to be wrapped in a container.
 Additionally, on calling [`initialparameters`](@ref) and [`initialstates`](@ref), the
 parameters and states are **not** wrapped in a `NamedTuple` with the same name as the
 field.
+
+As a convenience, we define the fallback call `(::AbstractLuxWrapperLayer)(x, ps, st)`,
+which calls `getfield(x, layer)(x, ps, st)`.
 """
 abstract type AbstractLuxWrapperLayer{layer} <: AbstractLuxLayer end
 
@@ -257,6 +260,10 @@ end
 
 function statelength(l::AbstractLuxWrapperLayer{layer}) where {layer}
     return statelength(getfield(l, layer))
+end
+
+function (l::AbstractLuxWrapperLayer{layer})(x, ps, st) where {layer}
+    return apply(getfield(l, layer), x, ps, st)
 end
 
 # Test Mode

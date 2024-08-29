@@ -31,6 +31,17 @@ end
 
 (::Dense)(x, ps, st) = x, st  # Dummy Forward Pass
 
+struct DenseWrapper{L} <: AbstractLuxWrapperLayer{:layer}
+    layer::L
+end
+
+# For checking ambiguities in the dispatch
+struct DenseWrapper2{L} <: AbstractLuxWrapperLayer{:layer}
+    layer::L
+end
+
+(d::DenseWrapper2)(x::AbstractArray, ps, st) = d.layer(x, ps, st)
+
 struct Chain{L} <: AbstractLuxContainerLayer{(:layers,)}
     layers::L
 end
@@ -78,6 +89,18 @@ end
                   first(LuxCore.apply(model, x, ps, NamedTuple()))
 
             @test_nowarn println(model)
+
+            @testset for wrapper in (DenseWrapper, DenseWrapper2)
+                model2 = DenseWrapper(model)
+                ps, st = LuxCore.setup(rng, model2)
+
+                @test LuxCore.parameterlength(ps) == LuxCore.parameterlength(model2)
+                @test LuxCore.statelength(st) == LuxCore.statelength(model2)
+
+                @test model2(x, ps, st)[1] == model(x, ps, st)[1]
+
+                @test_nowarn println(model2)
+            end
         end
 
         @testset "Default Fallbacks" begin
