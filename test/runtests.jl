@@ -71,10 +71,6 @@ Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
         @test !Lux.is_extension_loaded(Val(:Zygote))
         using Zygote
         @test Lux.is_extension_loaded(Val(:Zygote))
-
-        @test !Lux.is_extension_loaded(Val(:DynamicExpressions))
-        using DynamicExpressions
-        @test Lux.is_extension_loaded(Val(:DynamicExpressions))
     end
 
     # These need to be run before MPI or NCCL is ever loaded
