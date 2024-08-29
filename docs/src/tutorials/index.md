@@ -31,7 +31,7 @@ const beginner = [
     href: "https://luxdl.github.io/Boltz.jl/stable/tutorials/1_GettingStarted",
     src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
     caption: "Pre-Built Deep Learning Models",
-    desc: "Learn how to use Boltz.jl to load pre-built deep learning (including pretrained weights) and scientific machine learning models."
+    desc: "Use Boltz.jl to load pre-built deep learning and scientific machine learning models."
   }
 ];
 
