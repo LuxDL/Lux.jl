@@ -178,7 +178,6 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)]
                     bias::AbstractVector{$(bT)}, cdims::ConvDims) where {F, N}
                 @warn "MIOpen doesn't support Float64 convolutions, type-casting \
                        everything to Float32 to avoid runtime errors" maxlog=1
-                ofeltype_array = ofeltype_array
                 return ofeltype_array(Float64,
                     fused_conv(opmode, act, ofeltype_array(Float32, weight),
                         ofeltype_array(Float32, x), ofeltype_array(Float32, bias), cdims))
@@ -195,7 +194,6 @@ for (wT, xT) in [(Float64, Float64), (Float64, Float32), (Float32, Float64)]
         function fused_conv(opmode::GPUBroadcastOp{AMDGPUDevice}, act::F,
                 weight::AbstractArray{$(wT), N}, x::AbstractArray{$(xT), N},
                 ::Nothing, cdims::ConvDims) where {F, N}
-            ofeltype_array = ofeltype_array
             return ofeltype_array(Float64,
                 fused_conv(opmode, act, ofeltype_array(Float32, weight),
                     ofeltype_array(Float32, x), nothing, cdims))
