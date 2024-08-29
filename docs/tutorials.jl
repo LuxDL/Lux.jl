@@ -12,7 +12,6 @@ const INTERMEDIATE_TUTORIALS = [
 ]
 const ADVANCED_TUTORIALS = [
     "GravitationalWaveForm/main.jl",
-    "SymbolicOptimalControl/main.jl"
 ]
 
 const TUTORIALS = [

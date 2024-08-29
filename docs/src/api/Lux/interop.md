@@ -41,16 +41,3 @@ Adapt.adapt(from::ToSimpleChainsAdaptor, L::AbstractLuxLayer)
 ToSimpleChainsAdaptor
 SimpleChainsLayer
 ```
-
-## Symbolic Expressions
-
-### Embedding DynamicExpressions.jl Node in Lux Layers
-
-!!! tip
-
-    Accessing these functions require manually loading `DynamicExpressions`, i.e.,
-    `using DynamicExpressions` must be present somewhere in the code for these to be used.
-
-```@docs
-DynamicExpressionsLayer
-```
