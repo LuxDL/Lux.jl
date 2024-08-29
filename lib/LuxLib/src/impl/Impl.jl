@@ -52,6 +52,7 @@ include("dense.jl")
 include("dropout.jl")
 include("forward_diff.jl")
 include("groupnorm.jl")
+include("layernorm.jl")
 include("matmul.jl")
 include("normalization.jl")
 

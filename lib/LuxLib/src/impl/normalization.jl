@@ -131,14 +131,6 @@ end
 CRC.@non_differentiable get_norm_reshape_dims(::Any...)
 
 # Entry Points
-## LayerNorm
-function layernorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractArray{<:Any, N}},
-        β::Optional{<:AbstractArray{<:Any, N}}, act::F,
-        dims, epsilon::Real) where {N, F, xT}
-    μ, σ² = mean_var(x; dims, corrected=false)
-    return affine_normalize(act, x, μ, σ², γ, β, epsilon)
-end
-
 ## InstanceNorm
 function instancenorm(x::AbstractArray{xT, N}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, γ::Optional{<:AbstractVector},
