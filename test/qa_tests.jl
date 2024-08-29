@@ -34,7 +34,6 @@ end
 
     doctestexpr = quote
         using SimpleChains: static
-        using DynamicExpressions
         using Adapt, Lux, Random, Optimisers, Zygote, NNlib
     end
 
