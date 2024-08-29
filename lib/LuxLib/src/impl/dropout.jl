@@ -13,16 +13,8 @@ function dropout(rng::AbstractRNG, x::AbstractArray, ::AbstractArray, p::T,
 end
 
 function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        p::T, ::True, ::False, invp::T, dims) where {T}
-    if dropout_shape(x, dims) != size(mask)
-        depwarn(
-            "`update_mask` is `Val(false)` but `mask` is not of the same size \
-             as `LuxLib.dropout_shape(x, dims)`. This has been deprecated and \
-             will be removed in the next release. Set `update_mask` to \
-             `Val(true)` to avoid this.", :dropout)
-        mask, rngₙ = generate_dropout_mask(rng, x, p, invp, dims)
-        return dropout_dot_mul(x, mask), mask, rngₙ
-    end
+        ::T, ::True, ::False, invp::T, dims) where {T}
+    check_dropout_mask_shape_mismatch(x, mask, dims)
     return dropout_dot_mul(x, mask), mask, rng
 end
 
@@ -30,6 +22,13 @@ function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
         ::T, ::False, ::False, invp::T, dims) where {T}
     return (x, mask, rng)
 end
+
+function check_dropout_mask_shape_mismatch(x::AbstractArray, mask::AbstractArray, dims)
+    @assert dropout_shape(x, dims)==size(mask) "`mask` is not of the same size as `LuxLib.dropout_shape(x, dims)`."
+    return nothing
+end
+
+CRC.@non_differentiable check_dropout_mask_shape_mismatch(::Any...)
 
 ## alpha_dropout
 function alpha_dropout(rng::AbstractRNG, x::AbstractArray{T}, p, ::True) where {T}
