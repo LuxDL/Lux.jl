@@ -115,7 +115,6 @@ export match_eltype
 
 export FromFluxAdaptor, FluxLayer
 export ToSimpleChainsAdaptor, SimpleChainsLayer
-export DynamicExpressionsLayer
 
 export MPIBackend, NCCLBackend, DistributedUtils
 
