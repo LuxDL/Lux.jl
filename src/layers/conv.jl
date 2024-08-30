@@ -179,7 +179,7 @@ end
 function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
     return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
@@ -672,7 +672,7 @@ function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
-    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
     return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
@@ -794,7 +794,7 @@ end
 function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
     y = match_eltype(c, ps, st, x)
     cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    bias = get_utils(:vec)(get_ops(:getproperty)(ps, Val(:bias)))
+    bias = safe_vec(safe_getproperty(ps, Val(:bias)))
     return bias_activation!!(c.activation, conv_transpose(y, ps.weight, cdims), bias), st
 end
 

@@ -206,8 +206,8 @@ end
 
 for logits in (true, false)
     return_expr = logits ? :(return loss.agg((1 .- ỹ) .* ŷ .- logsigmoid.(ŷ))) :
-                  :(return loss.agg(-LossFunctionImpl.xlogy.(ỹ, ŷ .+ ϵ) .-
-                                    LossFunctionImpl.xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ)))
+                  :(return loss.agg(-private_xlogy.(ỹ, ŷ .+ ϵ) .-
+                                    private_xlogy.(1 .- ỹ, 1 .- ŷ .+ ϵ)))
 
     @eval function unsafe_apply_loss(loss::BinaryCrossEntropyLoss{$(logits)}, ŷ, y)
         T = promote_type(eltype(ŷ), eltype(y))
@@ -330,7 +330,7 @@ for logits in (true, false)
                   :(return LossFunctionImpl.fused_agg(
         loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims))) :
                   :(return LossFunctionImpl.fused_agg(
-        loss.agg, -, sum(LossFunctionImpl.xlogy.(ỹ, ŷ .+ ϵ); loss.dims)))
+        loss.agg, -, sum(private_xlogy.(ỹ, ŷ .+ ϵ); loss.dims)))
 
     @eval function unsafe_apply_loss(loss::CrossEntropyLoss{$(logits)}, ŷ, y)
         T = promote_type(eltype(ŷ), eltype(y))
@@ -545,7 +545,7 @@ end
 function unsafe_apply_loss(loss::KLDivergenceLoss, ŷ, y)
     cross_entropy = unsafe_apply_loss(loss.celoss, ŷ, y)
     # Intentional broadcasting for Zygote type stability
-    entropy = loss.agg(sum(get_ops(:xlogx).(y); loss.dims))
+    entropy = loss.agg(sum(private_xlogx.(y); loss.dims))
     return entropy + cross_entropy
 end
 

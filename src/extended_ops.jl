@@ -218,3 +218,13 @@ CRC.@non_differentiable istraining(::Any)
 @compat(public, (xlogx, xlogy, getproperty, eachslice, foldl_init, multigate, istraining))
 
 end
+
+using .LuxOps: LuxOps, multigate
+
+const safe_getproperty = LuxOps.getproperty
+const safe_eachslice = LuxOps.eachslice
+
+# TODO: directly import them from LuxOps from 1.0
+const private_xlogx = LuxOps.xlogx
+const private_xlogy = LuxOps.xlogy
+const private_foldl_init = LuxOps.foldl_init
