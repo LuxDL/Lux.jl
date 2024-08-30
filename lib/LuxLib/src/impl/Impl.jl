@@ -29,7 +29,7 @@ using NNlib: NNlib, ConvDims
 using ..LuxLib: Optional, Numeric, ∂∅, internal_operation_mode, AbstractInternalArrayOpMode,
                 GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp
 using ..Utils: Utils, NotaNumber, batchview, concrete_bias_act_output_eltype, contiguous,
-               copy_drop_gradients, depwarn, eltype_mismatch, expand_batchdim,
+               copy_drop_gradients, eltype_mismatch, expand_batchdim,
                maybe_reduce_BLAS_threads, ofeltype_array, only_derivative, remove_tracking,
                reset_BLAS_threads, run_ka_kernel, safe_eltype, safe_vec, safe_warning,
                unsafe_known, @enzyme_alternative
