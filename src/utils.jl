@@ -190,12 +190,7 @@ end
 
 end
 
-# Strange Zygote type stability issues
-module_getproperty(mod::Module, x::Symbol) = getproperty(mod, x)
-CRC.@non_differentiable module_getproperty(::Module, ::Symbol)
+using .Utils: Utils
 
-get_utils(x::Symbol) = module_getproperty(Utils, x)
-CRC.@non_differentiable get_utils(::Symbol)
-
-get_ops(x::Symbol) = module_getproperty(LuxOps, x)
-CRC.@non_differentiable get_ops(::Symbol)
+const safe_reverse = Utils.reverse
+const safe_vec = Utils.vec

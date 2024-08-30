@@ -139,12 +139,11 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         end
     end
 
-    getp = get_ops(:getproperty)
-
     x′ = match_eltype(BN, ps, st, x)
     y, stats = batchnorm(
-        x′, getp(ps, Val(:scale)), getp(ps, Val(:bias)), getp(st, Val(:running_mean)),
-        getp(st, Val(:running_var)), st.training, BN.activation, BN.momentum, BN.epsilon)
+        x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
+        st.training, BN.activation, BN.momentum, BN.epsilon)
     return y, update_batchnorm_state(BN, st, stats)
 end
 
@@ -260,8 +259,8 @@ parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
-    y = groupnorm(x′, get_ops(:getproperty)(ps, Val(:scale)),
-        get_ops(:getproperty)(ps, Val(:bias)), GN.groups, GN.activation, GN.epsilon)
+    y = groupnorm(x′, safe_getproperty(ps, Val(:scale)),
+        safe_getproperty(ps, Val(:bias)), GN.groups, GN.activation, GN.epsilon)
     return y, st
 end
 
@@ -374,8 +373,9 @@ parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
-    y, _ = instancenorm(x′, get_ops(:getproperty)(ps, Val(:scale)),
-        get_ops(:getproperty)(ps, Val(:bias)), st.training, IN.activation, IN.epsilon)
+    y, _ = instancenorm(
+        x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        st.training, IN.activation, IN.epsilon)
     return y, st
 end
 
@@ -598,8 +598,8 @@ end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(l, ps, st, x)
-    y = layernorm(x′, get_ops(:getproperty)(ps, Val(:scale)),
-        get_ops(:getproperty)(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
+    y = layernorm(x′, safe_getproperty(ps, Val(:scale)),
+        safe_getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
     return y, st
 end
 
