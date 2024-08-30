@@ -22,8 +22,8 @@ using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
 import LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer,
-                initialparameters, initialstates, parameterlength, statelength,
-                outputsize, update_state, trainmode, testmode, setup, apply, replicate
+                initialparameters, initialstates, parameterlength, statelength, outputsize,
+                update_state, trainmode, testmode, setup, apply, replicate
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 using NNlib: NNlib, DenseConvDims, PoolDims, logsigmoid, logsoftmax, maxpool, meanpool,
