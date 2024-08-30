@@ -64,6 +64,9 @@ end
 end
 
 @testitem "VariationalHiddenDropout" setup=[SharedTestSetup] tags=[:normalize_layers] begin
+    using Enzyme
+    Enzyme.API.runtimeActivity!(true)
+
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
