@@ -47,4 +47,33 @@
         myloss(m) = m.st.x
         @test only(Zygote.gradient(myloss, smodel)) === nothing
     end
+
+    @testset "Updating State" begin
+        model = BatchNorm(3, relu)
+        ps, st = Lux.setup(rng, model)
+
+        smodel = StatefulLuxLayer{true}(model, ps, st)
+        @test smodel.st.training isa Val{true}
+
+        smodel = LuxCore.testmode(smodel)
+        @test smodel.st.training isa Val{false}
+
+        smodel = LuxCore.trainmode(smodel)
+        @test smodel.st.training isa Val{true}
+
+        smodel = LuxCore.update_state(smodel, :training, 2)
+        @test smodel.st.training == 2
+
+        smodel = StatefulLuxLayer{false}(model, ps, st)
+        @test smodel.st_any.training isa Val{true}
+
+        smodel = LuxCore.testmode(smodel)
+        @test smodel.st_any.training isa Val{false}
+
+        smodel = LuxCore.trainmode(smodel)
+        @test smodel.st_any.training isa Val{true}
+
+        smodel = LuxCore.update_state(smodel, :training, 2)
+        @test smodel.st_any.training == 2
+    end
 end

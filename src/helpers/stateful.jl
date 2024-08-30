@@ -53,6 +53,18 @@ function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
         model, ps, st, st_any)
 end
 
+for op in (:trainmode, :testmode)
+    @eval function LuxCore.$(op)(s::StatefulLuxLayer{ST}) where {ST}
+        return StatefulLuxLayer{ST}(s.model, s.ps, LuxCore.$(op)(get_state(s)))
+    end
+end
+
+function LuxCore.update_state(
+        s::StatefulLuxLayer{ST}, key::Symbol, value; kwargs...) where {ST}
+    st = LuxCore.update_state(get_state(s), key, value; kwargs...)
+    return StatefulLuxLayer{ST}(s.model, s.ps, st)
+end
+
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer{ST}) where {ST}
     PrettyPrinting.print_wrapper_model(io, "StatefulLuxLayer{$ST}", s.model)
 end
