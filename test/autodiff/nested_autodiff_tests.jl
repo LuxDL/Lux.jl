@@ -114,75 +114,120 @@ end
     end
 end
 
-@testitem "Nested AD: Parameter Gradient/Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
-    rng = StableRNG(1234)
+@testsetup module NestedADParameterTestSetup
 
-    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)),
-            aType(randn(rng, Float32, 2, 4)), aType(randn(rng, Float32, 3, 3, 2, 4)))
-        models = (
-            Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
-                Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
-                BatchNorm(2), FlattenLayer(), Dense(18 => 2)),
-            Chain(Dense(2, 4, gelu), Dense(4, 2)),
-            Chain(Dense(2, 4, gelu), BatchNorm(4, sigmoid), Dense(4, 2)),
-            Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
-                Conv((3, 3), 4 => 2, tanh; pad=SamePad()),
-                BatchNorm(2), FlattenLayer(), Dense(18 => 1)))
+using StableRNGs, Lux, ForwardDiff, Zygote, ComponentArrays
+using LuxTestUtils, Test
 
-        for (X, model) in zip(Xs, models)
+rng = StableRNG(1234)
+
+function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
+    loss_fn === loss_function3 && ongpu && return
+
+    ps, st = Lux.setup(rng, model)
+    ps = ps |> ComponentArray |> dev
+    st = st |> dev
+    X = aType(X)
+
+    l = loss_fn(model, X, ps, st)
+    @test l isa Number
+    @test isfinite(l) && !isnan(l)
+
+    _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
+
+    @test ∂x !== nothing && !iszero(∂x) && all(x -> x === nothing || isfinite(x), ∂x)
+    @test ∂ps !== nothing &&
+          !iszero(ComponentArray(∂ps |> cpu_device())) &&
+          all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
+
+    test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
+        atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
+        skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+end
+
+const Xs = (randn(rng, Float32, 3, 3, 2, 4), randn(rng, Float32, 2, 4),
+    randn(rng, Float32, 2, 4), randn(rng, Float32, 3, 3, 2, 4))
+
+const models = (
+    Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
+        Conv((3, 3), 4 => 2, gelu; pad=SamePad()),
+        BatchNorm(2), FlattenLayer(), Dense(18 => 2)),
+    Chain(Dense(2, 4, gelu), Dense(4, 2)),
+    Chain(Dense(2, 4, gelu), BatchNorm(4, sigmoid), Dense(4, 2)),
+    Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
+        Conv((3, 3), 4 => 2, tanh; pad=SamePad()),
+        BatchNorm(2), FlattenLayer(), Dense(18 => 1)))
+
+# smodel | ForwardDiff.jacobian
+function loss_function1(model, x, ps, st)
+    smodel = StatefulLuxLayer{true}(model, ps, st)
+    return sum(abs2, ForwardDiff.jacobian(Base.Fix1(smodel, x), ps))
+end
+
+# smodel | Zygote.jacobian
+function loss_function2(model, x, ps, st)
+    smodel = StatefulLuxLayer{true}(model, ps, st)
+    return sum(abs2, only(Zygote.jacobian(Base.Fix1(smodel, x), ps)))
+end
+
+# sum(abs2) ∘ smodel | ForwardDiff.gradient
+function loss_function3(model, x, ps, st)
+    smodel = StatefulLuxLayer{true}(model, ps, st)
+    return sum(abs2, ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps))
+end
+
+# sum(abs2) ∘ smodel | Zygote.gradient
+function loss_function4(model, x, ps, st)
+    smodel = StatefulLuxLayer{true}(model, ps, st)
+    return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)))
+end
+
+const ALL_TEST_CONFIGS = Iterators.product(
+    zip(Xs, models), (loss_function1, loss_function2, loss_function3, loss_function4))
+
+const TEST_BLOCKS = collect(Iterators.partition(
+    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 4)))
+
+export test_nested_ad_parameter_gradient_jacobian, TEST_BLOCKS
+
+end
+
+@testitem "Nested AD: Parameter Gradient/Jacobian Group 1" setup=[
+    SharedTestSetup, NestedADParameterTestSetup] tags=[:autodiff] begin
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[1]
             model = maybe_rewrite_to_crosscor(mode, model)
-            ps, st = Lux.setup(rng, model)
-            ps = ps |> ComponentArray |> dev
-            st = st |> dev
+            test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
+        end
+    end
+end
 
-            # smodel | ForwardDiff.jacobian
-            loss_function1 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer{true}(model, ps, st)
-                return sum(abs2, ForwardDiff.jacobian(Base.Fix1(smodel, x), ps))
-            end
+@testitem "Nested AD: Parameter Gradient/Jacobian Group 2" setup=[
+    SharedTestSetup, NestedADParameterTestSetup] tags=[:autodiff] begin
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[2]
+            model = maybe_rewrite_to_crosscor(mode, model)
+            test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
+        end
+    end
+end
 
-            # smodel | Zygote.jacobian
-            loss_function2 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer{true}(model, ps, st)
-                return sum(abs2, only(Zygote.jacobian(Base.Fix1(smodel, x), ps)))
-            end
+@testitem "Nested AD: Parameter Gradient/Jacobian Group 3" setup=[
+    SharedTestSetup, NestedADParameterTestSetup] tags=[:autodiff] begin
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[3]
+            model = maybe_rewrite_to_crosscor(mode, model)
+            test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
+        end
+    end
+end
 
-            # sum(abs2) ∘ smodel | ForwardDiff.gradient
-            loss_function3 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer{true}(model, ps, st)
-                return sum(abs2,
-                    ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps))
-            end
-
-            # sum(abs2) ∘ smodel | Zygote.gradient
-            loss_function4 = (model, x, ps, st) -> begin
-                smodel = StatefulLuxLayer{true}(model, ps, st)
-                return sum(abs2,
-                    only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)))
-            end
-
-            loss_fns = ongpu ? (loss_function1, loss_function2, loss_function4) :
-                       (loss_function1, loss_function2, loss_function3, loss_function4)
-
-            for loss_fn in loss_fns
-                l = loss_fn(model, X, ps, st)
-                @test l isa Number
-                @test isfinite(l) && !isnan(l)
-
-                _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
-
-                @test ∂x !== nothing &&
-                      !iszero(∂x) &&
-                      all(x -> x === nothing || isfinite(x), ∂x)
-                @test ∂ps !== nothing &&
-                      !iszero(∂ps |> cpu_device()) &&
-                      all(x -> x === nothing || isfinite(x), ∂ps |> cpu_device())
-
-                test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
-                    atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
-                    skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
-            end
+@testitem "Nested AD: Parameter Gradient/Jacobian Group 4" setup=[
+    SharedTestSetup, NestedADParameterTestSetup] tags=[:autodiff] begin
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        @testset "$(summary(X)) $(loss_fn)" for ((X, model), loss_fn) in TEST_BLOCKS[4]
+            model = maybe_rewrite_to_crosscor(mode, model)
+            test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, X, model)
         end
     end
 end
