@@ -124,4 +124,44 @@ export LuxOps
 @compat public Experimental
 @compat public set_dispatch_doctor_preferences!
 
+# NNlib.jl reexports
+## Functional API for common layers. Recommended to use the LuxLib versions
+using NNlib: ConvDims, DenseConvDims, PoolDims, batched_adjoint, batched_mul, batched_mul!,
+             batched_transpose, batched_vec, bias_act!, conv, conv!, conv_bias_act,
+             conv_bias_act!, dot_product_attention, dot_product_attention_scores,
+             make_causal_mask, lpnormpool, lpnormpool!, maxpool, maxpool!, meanpool,
+             meanpool!, pixel_shuffle, imrotate, ∇conv_data, ∇conv_data!, ∇conv_filter,
+             ∇conv_filter!, ∇lpnormpool, ∇lpnormpool!, ∇maxpool, ∇maxpool!, ∇meanpool,
+             ∇meanpool!, ∇imrotate
+export ConvDims, DenseConvDims, PoolDims, batched_adjoint, batched_mul, batched_mul!,
+       batched_transpose, batched_vec, bias_act!, conv, conv!, conv_bias_act,
+       conv_bias_act!, dot_product_attention, dot_product_attention_scores,
+       make_causal_mask, lpnormpool, lpnormpool!, maxpool, maxpool!, meanpool, meanpool!,
+       pixel_shuffle, imrotate, ∇conv_data, ∇conv_data!, ∇conv_filter, ∇conv_filter!,
+       ∇lpnormpool, ∇lpnormpool!, ∇maxpool, ∇maxpool!, ∇meanpool, ∇meanpool!, ∇imrotate
+
+## Padding
+using NNlib: pad_circular, pad_constant, pad_reflect, pad_repeat, pad_symmetric, pad_zeros
+export pad_circular, pad_constant, pad_reflect, pad_repeat, pad_symmetric, pad_zeros
+
+## Upsample
+using NNlib: upsample_linear, upsample_bilinear, upsample_trilinear, upsample_nearest,
+             ∇upsample_linear, ∇upsample_bilinear, ∇upsample_trilinear, ∇upsample_nearest
+export upsample_linear, upsample_bilinear, upsample_trilinear, upsample_nearest,
+       ∇upsample_linear, ∇upsample_bilinear, ∇upsample_trilinear, ∇upsample_nearest
+
+## Activation Functions
+using NNlib: σ, celu, elu, gelu, glu, hardsigmoid, hardswish, hardtanh, hardσ, leakyrelu,
+             lisht, logcosh, logsigmoid, logσ, mish, relu, relu6, rrelu, selu, sigmoid,
+             sigmoid_fast, softplus, softshrink, softsign, swish, tanhshrink, tanh_fast,
+             thresholdrelu, trelu
+export σ, celu, elu, gelu, glu, hardsigmoid, hardswish, hardtanh, hardσ, leakyrelu, lisht,
+       logcosh, logsigmoid, logσ, mish, relu, relu6, rrelu, selu, sigmoid, sigmoid_fast,
+       softplus, softshrink, softsign, swish, tanhshrink, tanh_fast, thresholdrelu, trelu
+
+using NNlib: softmax, softmax!, logsoftmax, logsoftmax!, logsumexp, ∇logsoftmax,
+             ∇logsoftmax!, ∇softmax, ∇softmax!
+export softmax, softmax!, logsoftmax, logsoftmax!, logsumexp, ∇logsoftmax, ∇logsoftmax!,
+       ∇softmax, ∇softmax!
+
 end
