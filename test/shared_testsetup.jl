@@ -7,7 +7,7 @@ import Reexport: @reexport
 using Lux, Functors
 using DispatchDoctor: allow_unstable
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
-                Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff, NNlib
+                Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
 using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
 using LuxTestUtils: check_approx
 
