@@ -7,7 +7,7 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, LineSearches, AMDGPU, LuxCUDA, OrdinaryDiffEq, Optimization,
+using Lux, ComponentArrays, LineSearches, LuxCUDA, OrdinaryDiffEq, Optimization,
       OptimizationOptimJL, Printf, Random, SciMLSensitivity
 using CairoMakie
 

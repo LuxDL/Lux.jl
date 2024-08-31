@@ -5,7 +5,7 @@ using Augmentor, Configurations, Dates, FileIO, Functors, Images, MLUtils, OneHo
 import FLoops: ThreadedEx
 import Metalhead
 import MPI, NCCL
-using AMDGPU, LuxCUDA
+using LuxCUDA
 using Format
 
 # Distributed Training: NCCL for NVIDIA GPUs and MPI for anything else
