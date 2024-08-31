@@ -7,7 +7,6 @@ using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
 
 using Lux: Lux, Utils
 using Lux.Training: TrainingBackendCache, TrainState
-using MLDataDevices: CPUDevice
 
 const CRC = ChainRulesCore
 

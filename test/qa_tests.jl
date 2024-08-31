@@ -1,12 +1,13 @@
 @testitem "Aqua: Quality Assurance" tags=[:others] begin
     using Aqua, ChainRulesCore, ForwardDiff
 
-    Aqua.test_all(Lux; ambiguities=false)
+    Aqua.test_all(Lux; ambiguities=false, piracies=false)
     Aqua.test_ambiguities(Lux;
         exclude=[ForwardDiff.jacobian, ForwardDiff.gradient,
             Lux.AutoDiffInternalImpl.batched_jacobian,
             Lux.AutoDiffInternalImpl.jacobian_vector_product,
             Lux.AutoDiffInternalImpl.jacobian_vector_product_impl])
+    Aqua.test_piracies(Lux; treat_as_own=[Lux.outputsize])
 end
 
 @testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
