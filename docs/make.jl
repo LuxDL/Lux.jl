@@ -14,6 +14,7 @@ pages = [
         "Introduction" => "introduction/index.md",
         "Overview" => "introduction/overview.md",
         "Resources" => "introduction/resources.md",
+        "Updating to v1" => "introduction/updating_to_v1.md",
         "Citation" => "introduction/citation.md"
     ],
     "Tutorials" => [
