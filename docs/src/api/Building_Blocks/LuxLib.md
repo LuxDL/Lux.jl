@@ -1,4 +1,4 @@
-# LuxLib
+# [LuxLib](@id LuxLib-API)
 
 Backend for Lux.jl
 

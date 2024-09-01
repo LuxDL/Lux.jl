@@ -11,6 +11,11 @@ import Pkg
 Pkg.add("Lux")
 ```
 
+!!! tip "Update to v1"
+
+    If you are using a pre-v1 version of Lux.jl, please see the
+    [Updating to v1 section](@ref updating-to-v1) for instructions on how to update.
+
 ## Quickstart
 
 !!! tip "Pre-Requisites"

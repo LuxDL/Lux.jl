@@ -111,6 +111,7 @@ export default defineConfig({
                     { text: 'Introduction', link: '/introduction' },
                     { text: 'Overview', link: '/introduction/overview' },
                     { text: 'Resources', link: '/introduction/resources' },
+                    { text: 'Updating to v1', link: '/introduction/updating_to_v1' },
                     { text: 'Citation', link: '/introduction/citation' }]
             },
             "/tutorials/": {
