@@ -234,7 +234,7 @@ ps, st = Lux.setup(Xoshiro(), nn)
 
 const params = ComponentArray{Float64}(ps)
 
-const nn_model = StatefulLuxLayer(nn, st)
+const nn_model = StatefulLuxLayer{true}(nn, st)
 
 # Now we define a system of odes which describes motion of point like particle with
 # Newtonian physics, uses
