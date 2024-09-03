@@ -172,14 +172,16 @@ end
 
     rng = StableRNG(1234)
 
+    ALL_ACTS = [identity, tanh, tanh_fast, sigmoid, sigmoid_fast,
+        relu, gelu, x -> x^3, x -> gelu(x)]
+
     @testset "$mode" for (mode, aType, ongpu) in MODES
         mode ∈ ("cpu", "cuda") || continue
 
         y = zeros(Float32, 2, 2) |> aType
         weight = randn(rng, Float32, 2, 2) |> aType
         x = randn(rng, Float32, 2, 2) |> aType
-        @testset for (act, hasbias) in Iterators.product(
-            [relu, gelu, x -> x^3], (true, false))
+        @testset for (act, hasbias) in Iterators.product(ALL_ACTS, (true, false))
             b = hasbias ? aType(randn(rng, Float32, 2)) : nothing
 
             dy = randn(rng, Float32, 2, 2) |> aType
