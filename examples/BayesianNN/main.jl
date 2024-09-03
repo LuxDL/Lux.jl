@@ -110,7 +110,7 @@ end
 
 # To interface with external libraries it is often desirable to use the
 # [`StatefulLuxLayer`](@ref) to automatically handle the neural network states.
-const model = StatefulLuxLayer{true}(nn, st)
+const model = StatefulLuxLayer{true}(nn, nothing, st)
 
 ## Specify the probabilistic model.
 @model function bayes_nn(xs, ts)
