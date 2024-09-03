@@ -84,7 +84,7 @@ const RETESTITEMS_NWORKERS = parse(
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
 
         ReTestItems.runtests(Lux; tags=(tag == "all" ? nothing : [Symbol(tag)]),
-            nworkers=RETESTITEMS_NWORKERS, testitem_timeout=3600)
+            nworkers=RETESTITEMS_NWORKERS, testitem_timeout=1800, retries=2)
     end
 end
 

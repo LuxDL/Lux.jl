@@ -11,6 +11,7 @@ using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
 using LuxTestUtils: check_approx
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
+LinearAlgebra.BLAS.set_num_threads(Threads.nthreads())
 
 # Some Helper Functions
 function get_default_rng(mode::String)
