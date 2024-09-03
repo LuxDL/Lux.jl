@@ -169,3 +169,17 @@ if ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP)
         end
     end
 end
+
+# Type Stability tests fail if run with DispatchDoctor enabled
+Lux.set_dispatch_doctor_preferences!(; luxcore="disable", luxlib="disable")
+
+if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
+    try
+        # Run in a separate process to load the updated preferences
+        run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+            --startup-file=no --code-coverage=user $(@__DIR__)/zygote_type_stability.jl`)
+        @test true
+    catch
+        @test false
+    end
+end
