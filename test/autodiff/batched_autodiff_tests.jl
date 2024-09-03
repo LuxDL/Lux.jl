@@ -14,10 +14,14 @@
             ps, st = Lux.setup(rng, model) |> dev
             smodel = StatefulLuxLayer{true}(model, ps, st)
 
-            J1 = ForwardDiff.jacobian(smodel, X)
+            J1 = allow_unstable() do
+                ForwardDiff.jacobian(smodel, X)
+            end
 
             @testset "$(backend)" for backend in (AutoZygote(), AutoForwardDiff())
-                J2 = batched_jacobian(smodel, backend, X)
+                J2 = allow_unstable() do
+                    batched_jacobian(smodel, backend, X)
+                end
                 J2_mat = mapreduce(Base.Fix1(Lux.AutoDiffInternalImpl.batched_row, J2),
                     hcat, 1:(size(J2, 1) * size(J2, 3)))'
 
@@ -27,7 +31,9 @@
 
                 smodel = StatefulLuxLayer{true}(model, ps, st)
 
-                J3 = batched_jacobian(smodel, backend, X)
+                J3 = allow_unstable() do
+                    batched_jacobian(smodel, backend, X)
+                end
 
                 @test J2≈J3 atol=1.0e-3 rtol=1.0e-3
             end
@@ -36,7 +42,9 @@
         @testset "Issue #636 Chunksize Specialization" begin
             for N in (2, 4, 8, 11, 12, 50, 51), backend in (AutoZygote(), AutoForwardDiff())
                 model = @compact(; potential=Dense(N => N, gelu), backend=backend) do x
-                    @return batched_jacobian(potential, backend, x)
+                    @return allow_unstable() do
+                        batched_jacobian(potential, backend, x)
+                    end
                 end
 
                 ps, st = Lux.setup(Random.default_rng(), model) |> dev
@@ -60,10 +68,14 @@
             Jx_true[2, 2, 3] = 12
             Jx_true = Jx_true |> dev
 
-            Jx_fdiff = batched_jacobian(ftest, AutoForwardDiff(), x)
+            Jx_fdiff = allow_unstable() do
+                batched_jacobian(ftest, AutoForwardDiff(), x)
+            end
             @test Jx_fdiff ≈ Jx_true
 
-            Jx_zygote = batched_jacobian(ftest, AutoZygote(), x)
+            Jx_zygote = allow_unstable() do
+                batched_jacobian(ftest, AutoZygote(), x)
+            end
             @test Jx_zygote ≈ Jx_true
 
             fincorrect(x) = x[:, 1]
@@ -93,13 +105,17 @@ end
 
             function loss_function_batched(model, x, ps, st)
                 smodel = StatefulLuxLayer{true}(model, ps, st)
-                J = batched_jacobian(smodel, backend, x)
+                J = allow_unstable() do
+                    batched_jacobian(smodel, backend, x)
+                end
                 return sum(abs2, J)
             end
 
             function loss_function_simple(model, x, ps, st)
                 smodel = StatefulLuxLayer{true}(model, ps, st)
-                J = ForwardDiff.jacobian(smodel, x)
+                J = allow_unstable() do
+                    ForwardDiff.jacobian(smodel, x)
+                end
                 return sum(abs2, J)
             end
 
@@ -107,18 +123,21 @@ end
             @test loss_function_batched(model, X, ps, st) ≈
                   loss_function_simple(model, X, ps, st)
 
-            _, ∂x_batched, ∂ps_batched, _ = Zygote.gradient(
-                loss_function_batched, model, X, ps, st)
-            _, ∂x_simple, ∂ps_simple, _ = Zygote.gradient(
-                loss_function_simple, model, X, ps, st)
+            _, ∂x_batched, ∂ps_batched, _ =  allow_unstable() do
+                Zygote.gradient(loss_function_batched, model, X, ps, st)
+            end
+            _, ∂x_simple, ∂ps_simple, _ =  allow_unstable() do
+                Zygote.gradient(loss_function_simple, model, X, ps, st)
+            end
 
             @test ∂x_batched≈∂x_simple atol=1.0e-3 rtol=1.0e-3
             @test check_approx(∂ps_batched, ∂ps_simple; atol=1.0e-3, rtol=1.0e-3)
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
-            _, ∂x_batched2, ∂ps_batched2, _ = Zygote.gradient(
-                loss_function_batched, model, X, ps, st)
+            _, ∂x_batched2, ∂ps_batched2, _ =  allow_unstable() do
+                Zygote.gradient(loss_function_batched, model, X, ps, st)
+            end
 
             @test ∂x_batched2≈∂x_batched atol=1.0e-3 rtol=1.0e-3
             @test check_approx(∂ps_batched2, ∂ps_batched; atol=1.0e-3, rtol=1.0e-3)
@@ -142,10 +161,18 @@ end
 
         @test sumabs2_fd(x) ≈ sumabs2_zyg(x)
 
-        ∂x1_zyg = only(Zygote.gradient(sumabs2_zyg, x))
-        ∂x1_tr = only(Tracker.gradient(sumabs2_zyg, x))
-        ∂x2_zyg = only(Zygote.gradient(sumabs2_fd, x))
-        ∂x2_tr = only(Tracker.gradient(sumabs2_fd, x))
+        ∂x1_zyg =  allow_unstable() do
+            only(Zygote.gradient(sumabs2_zyg, x))
+        end
+        ∂x1_tr =  allow_unstable() do
+            only(Tracker.gradient(sumabs2_zyg, x))
+        end
+        ∂x2_zyg =  allow_unstable() do
+            only(Zygote.gradient(sumabs2_fd, x))
+        end
+        ∂x2_tr =  allow_unstable() do
+            only(Tracker.gradient(sumabs2_fd, x))
+        end
 
         ∂x_gt = true_gradient(x)
 
@@ -156,8 +183,12 @@ end
 
         ongpu && continue
 
-        ∂x1_rdiff = ReverseDiff.gradient(sumabs2_zyg, x)
-        ∂x2_rdiff = ReverseDiff.gradient(sumabs2_fd, x)
+        ∂x1_rdiff =  allow_unstable() do
+            ReverseDiff.gradient(sumabs2_zyg, x)
+        end
+        ∂x2_rdiff =  allow_unstable() do
+            ReverseDiff.gradient(sumabs2_fd, x)
+        end
 
         @test ∂x1_rdiff≈∂x_gt atol=1.0e-3 rtol=1.0e-3
         @test ∂x2_rdiff≈∂x_gt atol=1.0e-3 rtol=1.0e-3

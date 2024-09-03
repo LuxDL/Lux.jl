@@ -2,6 +2,7 @@
 
 using StableRNGs, Lux, ForwardDiff, Zygote, ComponentArrays
 using LuxTestUtils, Test
+using DispatchDoctor: allow_unstable
 
 rng = StableRNG(1234)
 
@@ -15,7 +16,9 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
     @test l isa Number
     @test isfinite(l) && !isnan(l)
 
-    _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
+    _, ∂x, ∂ps, _ = allow_unstable() do
+        Zygote.gradient(loss_fn, model, X, ps, st)
+    end
 
     @test ∂x !== nothing && !iszero(∂x) && all(x -> x === nothing || isfinite(x), ∂x)
     @test ∂ps !== nothing &&
@@ -118,6 +121,7 @@ end
 
 using StableRNGs, Lux, ForwardDiff, Zygote, ComponentArrays
 using LuxTestUtils, Test
+using DispatchDoctor: allow_unstable
 
 rng = StableRNG(1234)
 
@@ -133,7 +137,9 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
     @test l isa Number
     @test isfinite(l) && !isnan(l)
 
-    _, ∂x, ∂ps, _ = Zygote.gradient(loss_fn, model, X, ps, st)
+    _, ∂x, ∂ps, _ = allow_unstable() do
+        Zygote.gradient(loss_fn, model, X, ps, st)
+    end
 
     @test ∂x !== nothing && !iszero(∂x) && all(x -> x === nothing || isfinite(x), ∂x)
     @test ∂ps !== nothing &&
@@ -299,9 +305,12 @@ end
             @test loss_function_vjp(model, X, ps, st, vjp_input) ≈
                   loss_function_vjp_jacobian(model, X, ps, st, vjp_input)
 
-            _, ∂x, ∂ps, _ = Zygote.gradient(loss_function_vjp, model, X, ps, st, vjp_input)
-            _, ∂x_vjp, ∂ps_vjp, _, _ = Zygote.gradient(
-                loss_function_vjp_jacobian, model, X, ps, st, vjp_input)
+            _, ∂x, ∂ps, _ = allow_unstable() do
+                Zygote.gradient(loss_function_vjp, model, X, ps, st, vjp_input)
+            end
+            _, ∂x_vjp, ∂ps_vjp, _, _ = allow_unstable() do
+                Zygote.gradient(loss_function_vjp_jacobian, model, X, ps, st, vjp_input)
+            end
 
             @test ∂x≈∂x_vjp rtol=1e-3 atol=1e-3
             @test check_approx(∂ps, ∂ps_vjp; rtol=1e-3, atol=1e-3)
@@ -310,9 +319,12 @@ end
             @test loss_function_jvp(model, X, ps, st, jvp_input) ≈
                   loss_function_jvp_jacobian(model, X, ps, st, jvp_input)
 
-            _, ∂x, ∂ps, _ = Zygote.gradient(loss_function_jvp, model, X, ps, st, jvp_input)
-            _, ∂x_jvp, ∂ps_jvp, _, _ = Zygote.gradient(
-                loss_function_jvp_jacobian, model, X, ps, st, jvp_input)
+            _, ∂x, ∂ps, _ = allow_unstable() do
+                Zygote.gradient(loss_function_jvp, model, X, ps, st, jvp_input)
+            end
+            _, ∂x_jvp, ∂ps_jvp, _, _ = allow_unstable() do
+                Zygote.gradient(loss_function_jvp_jacobian, model, X, ps, st, jvp_input)
+            end
 
             @test ∂x≈∂x_jvp rtol=1e-3 atol=1e-3
             @test check_approx(∂ps, ∂ps_jvp; rtol=1e-3, atol=1e-3)
@@ -335,10 +347,14 @@ end
         Jv = J * v
         vJ = vec(v' * J)
 
-        Jv_fdiff = vec(jacobian_vector_product(ftest, AutoForwardDiff(), x, v))
+        Jv_fdiff = vec(allow_unstable() do
+            jacobian_vector_product(ftest, AutoForwardDiff(), x, v)
+        end)
         @test Jv≈Jv_fdiff rtol=1e-3 atol=1e-3
 
-        vJ_zyg = vec(vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x))))
+        vJ_zyg = vec(allow_unstable() do
+            vector_jacobian_product(ftest, AutoZygote(), x, reshape(v, size(x)))
+        end)
         @test vJ≈vJ_zyg rtol=1e-3 atol=1e-3
     end
 

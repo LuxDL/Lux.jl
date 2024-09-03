@@ -77,10 +77,15 @@
             @test @inferred(model(x, ps, st)) isa Any
             @test @inferred(loss_function(model, x, ps, st)) isa Any
             if mode == "amdgpu" && (model isa Conv || model isa CrossCor)
-                @test_broken @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
-                             Any
+                allow_unstable() do
+                    @test_broken @inferred(Zygote.gradient(
+                        loss_function, model, x, ps, st)) isa Any
+                end
             else
-                @test @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa Any
+                allow_unstable() do
+                    @test @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
+                          Any
+                end
             end
         end
     end

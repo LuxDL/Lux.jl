@@ -141,16 +141,16 @@ julia> y, st_new = model(x, ps, st);
 ```
 """
 struct FlattenLayer{NT <: Union{Nothing, Int}} <: AbstractExplicitLayer
-    N::NT
+    N::NT  # FIXME: In v1 promote this to type parameter to allow type-stable forward pass
 end
 
 FlattenLayer(; N=nothing) = FlattenLayer(N)
 
-function (::FlattenLayer{Nothing})(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+function (::FlattenLayer{Nothing})(x::AbstractArray{T, N}, _, st::NamedTuple) where {T, N}
     return reshape(x, :, size(x, N)), st
 end
 
-function (f::FlattenLayer)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
+function (f::FlattenLayer)(x::AbstractArray{T, N}, _, st::NamedTuple) where {T, N}
     @argcheck f.N < N
     return reshape(x, :, size(x)[(f.N + 1):end]...), st
 end

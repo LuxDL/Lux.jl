@@ -5,6 +5,7 @@ include("setup_modes.jl")
 import Reexport: @reexport
 
 using Lux, Functors
+using DispatchDoctor: allow_unstable
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
 using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
@@ -34,6 +35,6 @@ function maybe_rewrite_to_crosscor(mode, model)
 end
 
 export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
-       StableRNG, maybe_rewrite_to_crosscor, check_approx
+       StableRNG, maybe_rewrite_to_crosscor, check_approx, allow_unstable
 
 end

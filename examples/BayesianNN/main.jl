@@ -84,7 +84,7 @@ nn = Chain(Dense(2 => 3, tanh), Dense(3 => 2, tanh), Dense(2 => 1, sigmoid))
 ## Initialize the model weights and state
 ps, st = Lux.setup(rng, nn)
 
-Lux.parameterlength(nn) # number of paraemters in NN
+Lux.parameterlength(nn) # number of parameters in NN
 
 # The probabilistic model specification below creates a parameters variable, which has IID
 # normal variables. The parameters represents all parameters of our neural net (weights and
