@@ -128,7 +128,11 @@ function EnzymeRules.augmented_primal(cfg, ::EnzymeCore.Const{typeof(fused_dense
     else
         # TODO: Here for performance we might want to fuse the bias and activation together.
         #       We skip this optimization for now
-        matmuladd!(y.val, opmode.val, weight.val, x.val, b.val)
+        if b.val !== nothing
+            matmuladd!(y.val, opmode.val, weight.val, x.val, b.val)
+        else
+            matmul!(y.val, opmode.val, weight.val, x.val)
+        end
         tmp = zero.(y.val)
         EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const(activation!),
             EnzymeCore.Duplicated(y.val, tmp), opmode, act,
@@ -165,9 +169,9 @@ function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
     end
 
     ∂ys = y.dval
-    ∂xs = x isa EnzymeCore.Const ? dys : x.dval
-    ∂ws = weight isa EnzymeCore.Const ? dys : weight.dval
-    ∂bs = b isa EnzymeCore.Const ? dys : b.dval
+    ∂xs = x isa EnzymeCore.Const ? ∂ys : x.dval
+    ∂ws = weight isa EnzymeCore.Const ? ∂ys : weight.dval
+    ∂bs = b isa EnzymeCore.Const ? ∂ys : b.dval
 
     if EnzymeRules.width(cfg) == 1
         ∂ys = (∂ys,)

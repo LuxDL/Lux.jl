@@ -175,7 +175,7 @@ end
     @testset "$mode" for (mode, aType, ongpu) in MODES
         mode ∈ ("cpu", "cuda") || continue
 
-        y = zeros(rng, Float32, 2, 2) |> aType
+        y = zeros(Float32, 2, 2) |> aType
         weight = randn(rng, Float32, 2, 2) |> aType
         x = randn(rng, Float32, 2, 2) |> aType
         @testset for (act, hasbias) in Iterators.product(
