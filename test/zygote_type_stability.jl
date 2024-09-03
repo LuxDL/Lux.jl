@@ -1,6 +1,8 @@
-@testitem "Type Stability" setup=[SharedTestSetup] tags=[:core_layers] begin
-    using Zygote
+using Lux, Random, Zygote, StableRNGs
 
+include("setup_modes.jl")
+
+@testset "Type Stability" begin
     rng = StableRNG(12345)
 
     #! format: off
@@ -77,15 +79,10 @@
             @test @inferred(model(x, ps, st)) isa Any
             @test @inferred(loss_function(model, x, ps, st)) isa Any
             if mode == "amdgpu" && (model isa Conv || model isa CrossCor)
-                allow_unstable() do
-                    @test_broken @inferred(Zygote.gradient(
-                        loss_function, model, x, ps, st)) isa Any
-                end
+                @test_broken @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
+                             Any
             else
-                allow_unstable() do
-                    @test @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
-                          Any
-                end
+                @test @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa Any
             end
         end
     end

@@ -105,23 +105,24 @@ end
 
             function loss_function_batched(model, x, ps, st)
                 smodel = StatefulLuxLayer{true}(model, ps, st)
-                J = allow_unstable() do
-                    batched_jacobian(smodel, backend, x)
-                end
+                J = batched_jacobian(smodel, backend, x)
                 return sum(abs2, J)
             end
 
             function loss_function_simple(model, x, ps, st)
                 smodel = StatefulLuxLayer{true}(model, ps, st)
-                J = allow_unstable() do
-                    ForwardDiff.jacobian(smodel, x)
-                end
+                J = ForwardDiff.jacobian(smodel, x)
                 return sum(abs2, J)
             end
 
-            @test loss_function_batched(model, X, ps, st) isa Number
-            @test loss_function_batched(model, X, ps, st) ≈
-                  loss_function_simple(model, X, ps, st)
+            @test allow_unstable() do
+                loss_function_batched(model, X, ps, st)
+            end isa Number
+            @test allow_unstable() do
+                loss_function_batched(model, X, ps, st)
+            end ≈ allow_unstable() do
+                loss_function_simple(model, X, ps, st)
+            end
 
             _, ∂x_batched, ∂ps_batched, _ = allow_unstable() do
                 Zygote.gradient(loss_function_batched, model, X, ps, st)
