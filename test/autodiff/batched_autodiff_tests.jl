@@ -123,10 +123,10 @@ end
             @test loss_function_batched(model, X, ps, st) ≈
                   loss_function_simple(model, X, ps, st)
 
-            _, ∂x_batched, ∂ps_batched, _ =  allow_unstable() do
+            _, ∂x_batched, ∂ps_batched, _ = allow_unstable() do
                 Zygote.gradient(loss_function_batched, model, X, ps, st)
             end
-            _, ∂x_simple, ∂ps_simple, _ =  allow_unstable() do
+            _, ∂x_simple, ∂ps_simple, _ = allow_unstable() do
                 Zygote.gradient(loss_function_simple, model, X, ps, st)
             end
 
@@ -135,7 +135,7 @@ end
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
-            _, ∂x_batched2, ∂ps_batched2, _ =  allow_unstable() do
+            _, ∂x_batched2, ∂ps_batched2, _ = allow_unstable() do
                 Zygote.gradient(loss_function_batched, model, X, ps, st)
             end
 
@@ -161,16 +161,16 @@ end
 
         @test sumabs2_fd(x) ≈ sumabs2_zyg(x)
 
-        ∂x1_zyg =  allow_unstable() do
+        ∂x1_zyg = allow_unstable() do
             only(Zygote.gradient(sumabs2_zyg, x))
         end
-        ∂x1_tr =  allow_unstable() do
+        ∂x1_tr = allow_unstable() do
             only(Tracker.gradient(sumabs2_zyg, x))
         end
-        ∂x2_zyg =  allow_unstable() do
+        ∂x2_zyg = allow_unstable() do
             only(Zygote.gradient(sumabs2_fd, x))
         end
-        ∂x2_tr =  allow_unstable() do
+        ∂x2_tr = allow_unstable() do
             only(Tracker.gradient(sumabs2_fd, x))
         end
 
@@ -183,10 +183,10 @@ end
 
         ongpu && continue
 
-        ∂x1_rdiff =  allow_unstable() do
+        ∂x1_rdiff = allow_unstable() do
             ReverseDiff.gradient(sumabs2_zyg, x)
         end
-        ∂x2_rdiff =  allow_unstable() do
+        ∂x2_rdiff = allow_unstable() do
             ReverseDiff.gradient(sumabs2_fd, x)
         end
 
