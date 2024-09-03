@@ -87,9 +87,8 @@ end
             initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
 
             for epoch in 1:100, (x, y) in dataset_
-                allow_unstable() do
-                    grads, loss, _, tstate = Lux.Experimental.compute_gradients(
-                        ad, mse, (x, y), tstate)
+                grads, loss, _, tstate = allow_unstable() do
+                    Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
                 end
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
             end
@@ -104,8 +103,9 @@ end
             @test_deprecated Lux.Experimental.apply_gradients(tstate, grads)
 
             for epoch in 1:100, (x, y) in dataset_
-                grads, loss, _, tstate = Lux.Experimental.single_train_step!(
-                    ad, mse, (x, y), tstate)
+                grads, loss, _, tstate = allow_unstable() do
+                    Lux.Experimental.single_train_step!(ad, mse, (x, y), tstate)
+                end
             end
 
             for epoch in 1:100, (x, y) in dataset_
