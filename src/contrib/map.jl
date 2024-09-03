@@ -48,7 +48,7 @@ julia> # Makes parameters of Dense Layers inside Chain zero
 julia> _, ps_new, _ = Lux.Experimental.layer_map(zero_dense_params, c, ps, st);
 zeroing params of KeyPath(:chain, :dense_1)
 zeroing params of KeyPath(:chain, :dense_2)
-zeroing params of KeyPath(:dense_3)
+zeroing params of KeyPath(:dense_3,)
 
 julia> all(iszero, (ps_new.chain.dense_1.weight, ps_new.chain.dense_1.bias,
                     ps_new.chain.dense_2.weight, ps_new.chain.dense_2.bias,
