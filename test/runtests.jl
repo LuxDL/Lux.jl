@@ -37,6 +37,8 @@ end
 
 using Lux
 
+Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
+
 @testset "Load Tests" begin
     @testset "Load Packages Tests" begin
         @test_throws ErrorException FromFluxAdaptor()(1)

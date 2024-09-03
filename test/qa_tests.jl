@@ -31,7 +31,7 @@ end
 end
 
 # Some of the tests are flaky on prereleases
-@testitem "doctests: Quality Assurance" tags=[:others] skip=:(length(VERSIONS.prerelease) >
+@testitem "doctests: Quality Assurance" tags=[:others] skip=:(length(VERSION.prerelease) >
                                                               0) begin
     using Documenter
 
