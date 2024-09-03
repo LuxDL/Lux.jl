@@ -9,7 +9,7 @@ In this manual entry, we will go over how to freeze certain parameters in a mode
 ## Freezing Layers of a Particular Kind
 
 To freeze a particular kind of layer, let's say [`Dense`](@ref) in the following example.
-We can use [`Lux.Experimental.@layer_map`](@ref) and freeze layers if they are of type
+We can use [`Lux.Experimental.layer_map`](@ref) and freeze layers if they are of type
 `Dense`.
 
 ```@example freezing_model_parameters
@@ -30,7 +30,7 @@ function freeze_dense(d::Lux.Dense, ps, st, path)
 end
 freeze_dense(l, ps, st, path) = (l, ps, st)
 
-model_frozen, ps_frozen, st_frozen = Lux.Experimental.@layer_map freeze_dense model ps st
+model_frozen, ps_frozen, st_frozen = Lux.Experimental.layer_map(freeze_dense, model, ps, st)
 
 model_frozen(x, ps_frozen, st_frozen)
 ```

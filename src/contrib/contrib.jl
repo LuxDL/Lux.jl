@@ -24,7 +24,7 @@ include("freeze.jl")
 include("share_parameters.jl")
 include("debug.jl")
 
-@compat public layer_map, @layer_map
+@compat public layer_map
 @compat public FrozenLayer, freeze, unfreeze
 @compat public share_parameters
 @compat public DebugLayer, @debug_mode

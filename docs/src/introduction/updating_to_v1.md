@@ -92,6 +92,9 @@ abstraction.
 - Certain Experimental features were present outside the `Lux.Experimental` module. These
   have been removed, use them via `Lux.Experimental` instead. Run Julia with with `depwarn`
   as `error` and Lux `v0.5` to see the deprecations.
+- `Lux.Experimental.@layer_map` is not longer needed and has been removed. The name of the
+  variable prevents writing generic functions and is no longer pre-pended to the `KeyPath`.
+  See the docstring of [`Lux.Experimental.layer_map`](@ref) for more details.
 
 ### Breaking Changes (Moved Functionality)
 
@@ -103,7 +106,7 @@ abstraction.
 - `Experimental.StatefulLuxLayer` has been moved to [`Lux.StatefulLuxLayer`](@ref).
 - `st_fixed_path` kwarg has been removed from [`Lux.StatefulLuxLayer`](@ref), instead use it
   as `StatefulLuxLayer{st_fixed_path}(...)`.
-- Strings as inputs to [`Experimental.@layer_map`](@ref) and
+- Strings as inputs to [`Experimental.layer_map`](@ref) and
   [`Experimental.@debug_mode`](@ref) are removed, use `Functors.KeyPath` instead.
 
 ### Breaking Changes (Changes in Defaults)
