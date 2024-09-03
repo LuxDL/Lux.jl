@@ -3,7 +3,7 @@
 
     @testset "Simple Chain (LeNet)" begin
         lenet = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
-            Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
+            Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(),
             Dense(256 => 120, relu), Dense(120 => 84, relu), Dense(84 => 10))
         ps, st = Lux.setup(rng, lenet)
 
@@ -14,7 +14,7 @@
     @testset "Chain with BatchNorm" begin
         lenet = Chain(Conv((5, 5), 1 => 6, relu), BatchNorm(6, relu), MaxPool((2, 2)),
             Conv((5, 5), 6 => 16, relu), BatchNorm(16, relu),
-            MaxPool((2, 2)), FlattenLayer(3), Dense(256 => 120, relu),
+            MaxPool((2, 2)), FlattenLayer(), Dense(256 => 120, relu),
             BatchNorm(120, relu), Dense(120 => 84, relu), Dropout(0.5f0),
             BatchNorm(84, relu), Dense(84 => 10), BatchNorm(10, relu))
         ps, st = Lux.setup(rng, lenet)

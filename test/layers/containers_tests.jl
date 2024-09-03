@@ -130,8 +130,8 @@ end
 
         # Ref https://github.com/FluxML/Flux.jl/issues/1673
         @testset "Input domain" begin
-            struct Input
-                x
+            struct Input{X}
+                x::X
             end
 
             struct L1 <: Lux.AbstractExplicitLayer end
@@ -151,10 +151,14 @@ end
             @test check_approx(par((ip, ip2), ps, st)[1],
                 par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
                 par.layers[2](ip2.x, ps.layer_2, st.layer_2)[1])
-            gs = Zygote.gradient((p, x...) -> sum(par(x, p, st)[1]), ps, ip, ip2)
-            gs_reg = Zygote.gradient(ps, ip, ip2) do p, x, y
-                return sum(par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
-                           par.layers[2](y.x, p.layer_2, st.layer_2)[1])
+            gs = allow_unstable() do
+                Zygote.gradient((p, x...) -> sum(par(x, p, st)[1]), ps, ip, ip2)
+            end
+            gs_reg = allow_unstable() do
+                Zygote.gradient(ps, ip, ip2) do p, x, y
+                    return sum(par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
+                               par.layers[2](y.x, p.layer_2, st.layer_2)[1])
+                end
             end
 
             @test check_approx(gs[1], gs_reg[1])

@@ -87,15 +87,20 @@ end
             initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
 
             for epoch in 1:100, (x, y) in dataset_
-                grads, loss, _, tstate = Lux.Experimental.compute_gradients(
-                    ad, mse, (x, y), tstate)
+                allow_unstable() do
+                    grads, loss, _, tstate = Lux.Experimental.compute_gradients(
+                        ad, mse, (x, y), tstate)
+                end
                 tstate = Lux.Experimental.apply_gradients!(tstate, grads)
             end
 
             (x, y) = first(dataset_)
-            @test_deprecated Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
-            grads, loss, _, tstate = Lux.Experimental.compute_gradients(
-                ad, mse, (x, y), tstate)
+            allow_unstable() do
+                @test_deprecated Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
+            end
+            grads, loss, _, tstate = allow_unstable() do
+                Lux.Experimental.compute_gradients(ad, mse, (x, y), tstate)
+            end
             @test_deprecated Lux.Experimental.apply_gradients(tstate, grads)
 
             for epoch in 1:100, (x, y) in dataset_
@@ -240,8 +245,10 @@ end
     loss_initial = first(mse1(model, ps, st, dataset[1]))
     for i in 1:100
         for (x, y) in dataset
-            _, _, _, tstate = Lux.Experimental.single_train_step!(
-                AutoReverseDiff(; compile=true), mse1, (x, y), tstate)
+            _, _, _, tstate = allow_unstable() do
+                Lux.Experimental.single_train_step!(
+                    AutoReverseDiff(; compile=true), mse1, (x, y), tstate)
+            end
         end
     end
     loss_final = first(mse1(model, tstate.parameters, tstate.states, dataset[1]))

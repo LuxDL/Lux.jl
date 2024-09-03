@@ -118,10 +118,14 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
             @testset "Backend: $(backend_type)" begin
                 @testset "$(basename(file))" for file in distributedtestfiles
                     @info "Running $file with $backend_type backend on $mode device"
-                    run(`$(MPI.mpiexec()) -n $(np) $(Base.julia_cmd()) --color=yes \
-                        --code-coverage=user --project=$(cur_proj) --startup-file=no $(file) \
-                        $(mode) $(backend_type)`)
-                    Test.@test true
+                    try
+                        run(`$(MPI.mpiexec()) -n $(np) $(Base.julia_cmd()) --color=yes \
+                            --code-coverage=user --project=$(cur_proj) --startup-file=no \
+                            $(file) $(mode) $(backend_type)`)
+                        @test true
+                    catch
+                        @test false
+                    end
                 end
             end
         end
@@ -133,9 +137,13 @@ if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
     @testset "eltype_mismath_handling: $option" for option in (
         "none", "warn", "convert", "error")
         set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
-        run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-            --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
-        Test.@test true
+        try
+            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
+            @test true
+        catch
+            @test false
+        end
     end
 end
 

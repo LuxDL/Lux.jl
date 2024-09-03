@@ -46,14 +46,16 @@ function match_eltype end
     @inline match_eltype(layer, ps, st, x, args...) = (x, args...)
 else
     function match_eltype(layer, ps, st, x)
-        fn = let elType = recursive_eltype((ps, st), Val(true)), layer = layer
-            arr -> match_eltype(layer, elType, Utils.eltype(arr), arr)
+        fn = let layer = layer
+            arr -> match_eltype(
+                layer, recursive_eltype((ps, st), Val(true)), Utils.eltype(arr), arr)
         end
         return recursive_map(fn, x)
     end
     function match_eltype(layer, ps, st, x, args...)
-        fn = let elType = recursive_eltype((ps, st), Val(true)), layer = layer
-            arr -> match_eltype(layer, elType, Utils.eltype(arr), arr)
+        fn = let layer = layer
+            arr -> match_eltype(
+                layer, recursive_eltype((ps, st), Val(true)), Utils.eltype(arr), arr)
         end
         return (recursive_map(fn, x), recursive_map(fn, args)...)
     end
