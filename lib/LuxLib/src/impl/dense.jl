@@ -85,12 +85,127 @@ function CRC.rrule(
     𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
     ∇fused_dense = @closure Δ -> begin
-        ∂y = ∇activation(CRC.unthunk(Δ), z, gelu, y)
+        ∂y = ∇activation(CRC.unthunk(Δ), z, NNlib.gelu, y)
         ∂w, ∂x, ∂b = ∇matmul_bias(∂y, weight, x, b)
         return ∂∅, ∂∅, ∂∅, 𝒫weight(∂w), 𝒫x(∂x), 𝒫b(∂b)
     end
 
     return z, ∇fused_dense
+end
+
+# TODO: We can optimize these a bit further by checking for cases where the forward pass
+#       is not needed. We skip such optimizations for now
+function EnzymeRules.augmented_primal(cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
+        ::Type{EnzymeCore.Const{Nothing}}, y::EnzymeCore.Annotation{<:AbstractMatrix},
+        opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode}, act::EnzymeCore.Const,
+        weight::EnzymeCore.Annotation{<:AbstractMatrix},
+        x::EnzymeCore.Annotation{<:AbstractMatrix},
+        b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}})
+
+    # NOTE: Here we are using the ChainRulesCore rrules if they are defined for simplicity
+    all_const = weight isa EnzymeCore.Const && b isa EnzymeCore.Const &&
+                x isa EnzymeCore.Const
+    intermediate_not_needed = unsafe_known(activation_intermediate_not_needed(
+        act.val, eltype(y.val))) || all_const
+
+    weight_cache = EnzymeRules.overwritten(cfg)[5] && !(x isa EnzymeCore.Const) &&
+                   !(y isa EnzymeCore.Const) ? copy(weight.val) : nothing
+    x_cache = EnzymeRules.overwritten(cfg)[6] && !(weight isa EnzymeCore.Const) &&
+              !(y isa EnzymeCore.Const) ? copy(x.val) : nothing
+
+    case_specific_cache = if act.val === NNlib.gelu &&
+                             opmode.val isa GPUBroadcastOp{CUDADevice}
+        tmp = similar(y.val)
+        cublasLt_fused_dense!(y.val, act.val, weight.val, x.val, b.val, tmp)
+        (1, tmp)
+    elseif intermediate_not_needed
+        fused_dense!(y.val, opmode.val, act.val, weight.val, x.val, b.val)
+        (1, NotaNumber())
+    elseif unsafe_known(activation_has_rrule(act.val, eltype(y.val)))
+        tmp = matmuladd(weight.val, x.val, b.val)
+        activation!(y.val, opmode.val, act.val, tmp)
+        (1, tmp)
+    else
+        # TODO: Here for performance we might want to fuse the bias and activation together.
+        #       We skip this optimization for now
+        matmuladd!(y.val, opmode.val, weight.val, x.val, b.val)
+        tmp = zero.(y.val)
+        EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const(activation!),
+            EnzymeCore.Duplicated(y.val, tmp), opmode, act,
+            EnzymeCore.Duplicated(y.val, one.(y.val)))
+        (2, tmp)
+    end
+
+    cache = (case_specific_cache, weight_cache, x_cache)
+
+    return EnzymeRules.AugmentedReturn(nothing, nothing, cache)
+end
+
+function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
+        ::Type{EnzymeCore.Const{Nothing}}, cache, y::EnzymeCore.Annotation{<:AbstractMatrix},
+        opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode}, act::EnzymeCore.Const,
+        weight::EnzymeCore.Annotation{<:AbstractMatrix},
+        x::EnzymeCore.Annotation{<:AbstractMatrix},
+        b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}})
+    # TODO: For the other cases
+    case_specific_cache, weight_cache, x_cache = cache
+
+    (case, tmp) = case_specific_cache
+
+    if !(x isa EnzymeCore.Const) && !(y isa EnzymeCore.Const)
+        if !EnzymeRules.overwritten(cfg)[5]
+            weight_cache = weight.val
+        end
+    end
+
+    if !(weight isa EnzymeCore.Const) && !(y isa EnzymeCore.Const)
+        if !EnzymeRules.overwritten(cfg)[6]
+            x_cache = x.val
+        end
+    end
+
+    ∂ys = y.dval
+    ∂xs = x isa EnzymeCore.Const ? dys : x.dval
+    ∂ws = weight isa EnzymeCore.Const ? dys : weight.dval
+    ∂bs = b isa EnzymeCore.Const ? dys : b.dval
+
+    if EnzymeRules.width(cfg) == 1
+        ∂ys = (∂ys,)
+        ∂xs = (∂xs,)
+        ∂ws = (∂ws,)
+        ∂bs = (∂bs,)
+    end
+
+    for (∂y, ∂w, ∂x, ∂b) in zip(∂ys, ∂ws, ∂xs, ∂bs)
+        if !(y isa EnzymeCore.Const) && ∂y !== y.val
+            # Compute preactivation gradients
+            ∂pre_act = if case == 1
+                ∇activation(∂y, y.val, act.val, tmp)
+            elseif case == 2
+                ∂y .* tmp
+            else
+                error("Unknown case: $case. This should not happen, open an issue.")
+            end
+
+            if !(b isa EnzymeCore.Const) && ∂b !== b.val
+                sum!(∂b, ∂pre_act)
+            end
+
+            if !(weight isa EnzymeCore.Const) && ∂w !== weight.val
+                # TODO: we don't use our faster matmul here since we lack the 5 arg version
+                mul!(∂w, ∂pre_act, x_cache', true, true)
+            end
+
+            if !(x isa EnzymeCore.Const) && ∂x !== x.val
+                # TODO: we don't use our faster matmul here since we lack the 5 arg version
+                mul!(∂x, weight_cache', ∂pre_act, true, true)
+            end
+
+            ∂y .= 0
+        end
+    end
+
+    return ntuple(Returns(nothing), 6)
 end
 
 ∇matmul_bias(∂y, weight, x, bias) = ∇matmul_bias(∂y, ∇bias_add(bias, ∂y), weight, x, bias)
