@@ -33,6 +33,7 @@ if !isempty(EXTRA_PKGS)
     Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()
+    Pkg.precompile()
 end
 
 using Lux

@@ -1,4 +1,4 @@
-using Lux, Random, Zygote, StableRNGs
+using Lux, Random, Zygote, StableRNGs, Test
 
 include("setup_modes.jl")
 
