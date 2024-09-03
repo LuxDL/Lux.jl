@@ -27,7 +27,6 @@ For detailed usage example look at the [manual page](@ref freezing-model-paramet
 ## Map over Layer
 
 ```@docs
-Lux.Experimental.@layer_map
 Lux.Experimental.layer_map
 ```
 
