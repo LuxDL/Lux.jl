@@ -126,51 +126,48 @@ end
     end
 end
 
-@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:helpers] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using ADTypes, Optimisers
     using Enzyme
 
-    if LuxTestUtils.ENZYME_TESTING_ENABLED
-        Enzyme.API.runtimeActivity!(true)
+    Enzyme.API.runtimeActivity!(true)
 
-        mse = MSELoss()
-        function mse2(model, ps, st, (x, y))
-            z, st = model(x, ps, st)
-            return sum(abs2, z .- y), st, ()
-        end
+    mse = MSELoss()
 
-        rng = StableRNG(12345)
-
-        model = Chain(Dense(4 => 3), VariationalHiddenDropout(0.5f0), Dense(3 => 4))
-        ps, st = Lux.setup(rng, model)
-        x = randn(rng, Float32, 4, 32)
-        opt = Adam(0.001f0)
-
-        tstate = Training.TrainState(model, ps, st, opt)
-
-        _, _, _, tstate_new = @inferred Training.compute_gradients(
-            AutoEnzyme(), mse, (x, x), tstate)
-
-        @test tstate_new.states !== tstate.states
-
-        model = Chain(Dense(4 => 3), Dense(3 => 4))
-        ps, st = Lux.setup(rng, model)
-
-        tstate = Training.TrainState(model, ps, st, opt)
-
-        _, _, _, tstate_new = @inferred Training.compute_gradients(
-            AutoEnzyme(), mse, (x, x), tstate)
-
-        @test @inferred(Training.compute_gradients(
-            AutoEnzyme(), mse, (x, x), tstate_new)) isa Any
-
-        _, _, _, tstate_new2 = @inferred Training.compute_gradients(
-            AutoEnzyme(), mse2, (x, x), tstate_new)
-        @test hasfield(typeof(tstate_new2.cache.extras), :forward)
-        @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
-    else
-        @test_broken false
+    function mse2(model, ps, st, (x, y))
+        z, st = model(x, ps, st)
+        return sum(abs2, z .- y), st, ()
     end
+
+    rng = StableRNG(12345)
+
+    model = Chain(Dense(4 => 3), VariationalHiddenDropout(0.5f0), Dense(3 => 4))
+    ps, st = Lux.setup(rng, model)
+    x = randn(rng, Float32, 4, 32)
+    opt = Adam(0.001f0)
+
+    tstate = Training.TrainState(model, ps, st, opt)
+
+    _, _, _, tstate_new = @inferred Training.compute_gradients(
+        AutoEnzyme(), mse, (x, x), tstate)
+
+    @test tstate_new.states !== tstate.states
+
+    model = Chain(Dense(4 => 3), Dense(3 => 4))
+    ps, st = Lux.setup(rng, model)
+
+    tstate = Training.TrainState(model, ps, st, opt)
+
+    _, _, _, tstate_new = @inferred Training.compute_gradients(
+        AutoEnzyme(), mse, (x, x), tstate)
+
+    @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
+          Any
+
+    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+        AutoEnzyme(), mse2, (x, x), tstate_new)
+    @test hasfield(typeof(tstate_new2.cache.extras), :forward)
+    @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
 
     rng = StableRNG(12345)
 
