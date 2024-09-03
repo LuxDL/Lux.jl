@@ -30,7 +30,9 @@ end
     @test_broken check_all_qualified_accesses_are_public(Lux) === nothing  # mostly upstream problems
 end
 
-@testitem "doctests: Quality Assurance" tags=[:others] begin
+# Some of the tests are flaky on prereleases
+@testitem "doctests: Quality Assurance" tags=[:others] skip=:(length(VERSIONS.prerelease) >
+                                                              0) begin
     using Documenter
 
     doctestexpr = quote
