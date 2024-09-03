@@ -146,7 +146,7 @@ end
     end
 end
 
-@testitem "Enzyme.Forward patch: dense" tags=[:dense] setup=[SharedTestSetup] begin
+@testitem "Enzyme.Forward patch: dense" tags=[:dense] setup=[SharedTestSetup] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, Random, LuxTestUtils, Enzyme
 
     if LuxTestUtils.ENZYME_TESTING_ENABLED
@@ -156,5 +156,51 @@ end
 
         # Just test that we don't crash
         @test length(Enzyme.gradient(Forward, f, x)) == 4
+    end
+end
+
+@testitem "Enzyme rules for fused dense" tags=[:dense] setup=[SharedTestSetup] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+    using LuxLib, NNlib, Zygote, Enzyme
+
+    # These are mostly for testing the CUDA rules since we don't enable the CUDA tests
+    # in LuxTestUtils currently
+    function fused_dense!(y, act, weight, x, b)
+        op = LuxLib.internal_operation_mode((y, weight, x, b))
+        LuxLib.Impl.fused_dense!(y, op, act, weight, x, b)
+        return
+    end
+
+    rng = StableRNG(1234)
+
+    @testset "$mode" for (mode, aType, ongpu) in MODES
+        mode ∈ ("cpu", "cuda") || continue
+
+        y = zeros(rng, Float32, 2, 2) |> aType
+        weight = randn(rng, Float32, 2, 2) |> aType
+        x = randn(rng, Float32, 2, 2) |> aType
+        @testset for (act, hasbias) in Iterators.product(
+            [relu, gelu, x -> x^3], (true, false))
+            b = hasbias ? aType(randn(rng, Float32, 2)) : nothing
+
+            dy = randn(rng, Float32, 2, 2) |> aType
+
+            dweight = zeros(Float32, 2, 2) |> aType
+            dx = zeros(Float32, 2, 2) |> aType
+            db = hasbias ? aType(zeros(Float32, 2)) : nothing
+
+            b_enz = hasbias ? Duplicated(b, db) : Const(b)
+
+            Enzyme.autodiff(Reverse, fused_dense!, Duplicated(y, copy(dy)), Const(act),
+                Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
+
+            _, pb_f = Zygote.pullback(fused_dense_bias_activation, act, weight, x, b)
+            _, dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
+
+            @test dweight≈dweight_zyg atol=1e-3 rtol=1e-3
+            @test dx≈dx_zyg atol=1e-3 rtol=1e-3
+            if hasbias
+                @test db≈db_zyg atol=1e-3 rtol=1e-3
+            end
+        end
     end
 end
