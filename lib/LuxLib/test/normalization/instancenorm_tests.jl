@@ -17,24 +17,13 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
 
     epsilon = LuxLib.Utils.default_epsilon(T)
     x, scale, bias = setup_instancenorm(gen_f, aType, T, sz)
-    y, nt = instancenorm(x, scale, bias, training, act, epsilon)
 
-    y_simple, nt_simple = instancenorm(x, scale, bias, training, act, epsilon)
+    # First test without running stats
+    y, nt = instancenorm(x, scale, bias, training, act, epsilon)
 
     fp16 = T == Float16
     atol = fp16 ? 1.0f-2 : 1.0f-3
     rtol = fp16 ? 1.0f-2 : 1.0f-3
-
-    @test y≈y_simple atol=atol rtol=rtol
-
-    # Check the rrules
-    if !fp16
-        ∂x, ∂scale, ∂bias = Zygote.gradient(sum ∘ _f, x, scale, bias)
-        ∂x_simple, ∂scale_simple, ∂bias_simple = Zygote.gradient(sum ∘ _f, x, scale, bias)
-        @test ∂x≈∂x_simple atol=atol rtol=rtol
-        @test ∂scale≈∂scale_simple atol=atol rtol=rtol
-        @test ∂bias≈∂bias_simple atol=atol rtol=rtol
-    end
 
     @test @inferred(instancenorm(x, scale, bias, training, act, epsilon)) isa Any
     @jet instancenorm(x, scale, bias, training, act, epsilon)
@@ -49,6 +38,32 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
 
     if is_training(training)
         __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
+        soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
+        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+    end
+
+    # Now test with running stats
+    rm = rand(T, sz[end - 1]) |> aType
+    rv = abs2.(gen_f(T, sz[end - 1])) |> aType
+
+    y, nt = instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
+
+    @test @inferred(instancenorm(
+        x, scale, bias, rm, rv, training, act, T(0.1), epsilon)) isa Any
+    @jet instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
+
+    if anonact !== act && is_training(training)
+        lfn = (x, sc, b, rm, rv, act, ϵ) -> sum(first(instancenorm(
+            x, sc, b, rm, rv, Val(true), act, T(0.1), ϵ)))
+        @test @inferred(Zygote.gradient(lfn, x, scale, bias, rm, rv, act, epsilon)) isa Any
+    end
+
+    @test y isa aType{T, length(sz)}
+    @test size(y) == sz
+
+    if is_training(training)
+        __f = (args...) -> sum(first(instancenorm(
+            args..., rm, rv, training, act, T(0.1), epsilon)))
         soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
         test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
     end

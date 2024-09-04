@@ -1,5 +1,6 @@
 @doc doc"""
-    instancenorm(x, scale, bias, training, σ = identity,
+    instancenorm(x, scale, bias, training, act, epsilon = eps(eltype(x)) ^ (5 // 7))
+    instancenorm(x, scale, bias, running_mean, running_var, training, act, momentum,
         epsilon = eps(eltype(x)) ^ (5 // 7))
 
 Instance Normalization. For details see [1].
@@ -13,12 +14,15 @@ accordingly.
   - `x`: Input to be Normalized (must be atleast 3D)
   - `scale`: Scale factor (``\gamma``) (can be `nothing`)
   - `bias`: Bias factor (``\beta``) (can be `nothing`)
-  - `σ`: Activation function (default: `identity`)
-  - `epsilon`: Value added to the denominator for numerical stability
-    (default: `eps(eltype(x)) ^ (5 / 7)`)
+  - `running_mean`: Running mean (can be `nothing`)
+  - `running_var`: Running variance (can be `nothing`)
   - `training`: Set to `Val(true)` or `True()` if running in training mode. Can be set to
     `nothing` to automatically determine if the function is being called within an autodiff
      context
+  - `σ`: Activation function (default: `identity`)
+  - `epsilon`: Value added to the denominator for numerical stability
+    (default: `eps(eltype(x)) ^ (5 / 7)`)
+  - `momentum`: Momentum for updating running mean and variance (default: `0.1f0`)
 
 ## Returns
 
@@ -30,16 +34,24 @@ mean and variance.
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
-function instancenorm(x::AbstractArray, scale::Optional{<:AbstractVector},
-        bias::Optional{<:AbstractVector}, training::TrainingType,
+function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
+        β::Optional{<:AbstractVector}, training::TrainingType,
         σ::F=identity, epsilon::Real=default_epsilon(x)) where {F}
+    # This API is kept for legacy purposes when we didn't support passing running stats
+    return instancenorm(x, γ, β, nothing, nothing, training, σ, nothing, epsilon)
+end
+
+function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
+        β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
+        rσ²::Optional{<:AbstractVector}, training::TrainingType,
+        σ::F=identity, momentum::Real=0.1f0, epsilon::Real=default_epsilon(x)) where {F}
     assert_valid_instancenorm_arguments(x)
 
-    y, xμ, xσ² = instancenorm_impl(x, nothing, nothing, scale, bias,
-        static_training_mode(training, x, scale, bias), nothing, epsilon,
-        select_fastest_activation(σ, x, scale, bias))
+    y, rμₙ, rσ²ₙ = instancenorm_impl(
+        x, γ, β, rμ, rσ², static_training_mode(training, x, γ, β, rμ, rσ²),
+        select_fastest_activation(σ, x, γ, β), momentum, epsilon)
 
-    return y, (; running_mean=xμ, running_var=xσ²)
+    return y, (; running_mean=remove_tracking(rμₙ), running_var=remove_tracking(rσ²ₙ))
 end
 
 function assert_valid_instancenorm_arguments(::AbstractArray{T, N}) where {T, N}
