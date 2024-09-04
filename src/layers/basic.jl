@@ -248,7 +248,7 @@ Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform,
-          init_bias=zeros32, use_bias=True(), allow_fast_activation=True())
+          init_bias=zeros32, use_bias=True())
 
 Create a traditional fully connected layer, whose forward pass is given by:
 `y = activation.(weight * x .+ bias)`
@@ -265,9 +265,6 @@ Create a traditional fully connected layer, whose forward pass is given by:
     (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 ## Input
 
@@ -304,9 +301,7 @@ function Dense(mapping::Pair{<:IntegerType, <:IntegerType}, activation=identity;
 end
 
 function Dense(in_dims::IntegerType, out_dims::IntegerType, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32,
-        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+        init_weight=glorot_uniform, init_bias=zeros32, use_bias::BoolType=True())
     return Dense(activation, in_dims, out_dims, init_weight, init_bias, static(use_bias))
 end
 
@@ -327,15 +322,14 @@ outputsize(d::Dense, _, ::AbstractRNG) = (d.out_dims,)
 function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     bias = safe_getproperty(ps, Val(:bias))
+    σ = NNlib.fast_act(d.activation, x)
     z = matrix_to_array(
-        fused_dense_bias_activation(d.activation, ps.weight, make_abstract_matrix(y), bias),
-        y)
+        fused_dense_bias_activation(σ, ps.weight, make_abstract_matrix(y), bias), y)
     return z, st
 end
 
 """
-    Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, use_bias=True(),
-          allow_fast_activation=True())
+    Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, use_bias=True())
 
 Create a Sparsely Connected Layer with a very specific structure (only Diagonal
 Elements are non-zero). The forward pass is given by: `y = activation.(weight .* x .+ bias)`
@@ -351,9 +345,6 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
     (`weight = init_weight(rng, out_dims, in_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 ## Input
 
@@ -386,9 +377,7 @@ function Base.show(io::IO, d::Scale)
 end
 
 function Scale(dims::Tuple{Vararg{IntegerType}}, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32,
-        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+        init_weight=glorot_uniform, init_bias=zeros32, use_bias::BoolType=True())
     return Scale(activation, dims, init_weight, init_bias, static(use_bias))
 end
 
@@ -413,18 +402,20 @@ outputsize(d::Scale, _, ::AbstractRNG) = d.dims
 
 function (d::Scale{False})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
-    return @.(d.activation(y .* ps.weight)), st
+    σ = NNlib.fast_act(d.activation, y)
+    return @.(σ(y .* ps.weight)), st
 end
 function (d::Scale{True})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
-    return @.(d.activation(y * ps.weight + ps.bias)), st
+    σ = NNlib.fast_act(d.activation, y)
+    return @.(σ(y * ps.weight + ps.bias)), st
 end
 
 """
     Bilinear((in1_dims, in2_dims) => out, activation=identity; init_weight=glorot_uniform,
-             init_bias=zeros32, use_bias=True(), allow_fast_activation=True())
+             init_bias=zeros32, use_bias=True())
     Bilinear(in12_dims => out, activation=identity; init_weight=glorot_uniform,
-             init_bias=zeros32, use_bias=True(), allow_fast_activation=True())
+             init_bias=zeros32, use_bias=True())
 
 Create a fully connected layer between two inputs and an output, and otherwise similar to
 [`Dense`](@ref). Its output, given vectors `x` & `y`, is another vector `z` with, for all
@@ -449,9 +440,6 @@ with `B` the Bilinear layer.
     (`weight = init_weight(rng, out_dims, in1_dims, in2_dims)`)
   - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 ## Input
 
@@ -494,10 +482,9 @@ function Bilinear((in12_dims, out)::Pair{<:IntegerType, <:IntegerType},
     return Bilinear((in12_dims, in12_dims) => out, activation; kwargs...)
 end
 
-function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+function Bilinear(
+        ((in1_dims, in2_dims), out)::Pair{<:Tuple, <:IntegerType}, activation=identity;
+        init_weight=glorot_uniform, init_bias=zeros32, use_bias::BoolType=True())
     return Bilinear(
         activation, in1_dims, in2_dims, out, init_weight, init_bias, static(use_bias))
 end
@@ -527,7 +514,8 @@ function (b::Bilinear)(
     Wy = reshape(reshape(ps.weight, (:, s₃)) * y, (s₁, s₂, :))
     Wyx = reshape(batched_matmul(Wy, reshape(x, (s₂, 1, :))), (s₁, :))
 
-    return bias_activation!!(b.activation, Wyx, safe_getproperty(ps, Val(:bias))), st
+    σ = NNlib.fast_act(b.activation, Wyx)
+    return bias_activation!!(σ, Wyx, safe_getproperty(ps, Val(:bias))), st
 end
 
 function (b::Bilinear)((x, y)::Tuple{<:AbstractArray, <:AbstractArray}, ps, st::NamedTuple)

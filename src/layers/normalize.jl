@@ -1,7 +1,6 @@
 @doc doc"""
     BatchNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-              affine=True(), track_stats=True(), epsilon=1f-5, momentum=0.1f0,
-              allow_fast_activation::Bool=true)
+              affine=True(), track_stats=True(), epsilon=1f-5, momentum=0.1f0)
 
 [Batch Normalization](https://arxiv.org/abs/1502.03167) layer.
 
@@ -22,9 +21,6 @@ slice and normalises the input accordingly.
 
   - `epsilon`: a value added to the denominator for numerical stability
   - `momentum`:  the value used for the `running_mean` and `running_var` computation
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
   - If `affine=true`, it also applies a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
 
@@ -98,9 +94,8 @@ See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 end
 
 function BatchNorm(chs::IntegerType, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine::BoolType=True(), track_stats::BoolType=True(),
-        epsilon=1.0f-5, momentum=0.1f0, allow_fast_activation::BoolType=True())
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+        init_scale=ones32, affine::BoolType=True(),
+        track_stats::BoolType=True(), epsilon=1.0f-5, momentum=0.1f0)
     return BatchNorm(activation, epsilon, momentum, chs, init_bias,
         init_scale, static(affine), static(track_stats))
 end
@@ -129,10 +124,11 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     end
 
     x′ = match_eltype(BN, ps, st, x)
+    σ = NNlib.fast_act(BN.activation, x′)
     y, stats = batchnorm(
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
-        st.training, BN.activation, BN.momentum, BN.epsilon)
+        safe_getproperty(st, Val(:running_mean)),
+        safe_getproperty(st, Val(:running_var)), st.training, σ, BN.momentum, BN.epsilon)
     return y, update_batchnorm_state(BN, st, stats)
 end
 
@@ -153,8 +149,7 @@ end
 
 """
     GroupNorm(chs::Integer, groups::Integer, activation=identity; init_bias=zeros32,
-              init_scale=ones32, affine=true, epsilon=1f-5,
-              allow_fast_activation::Bool=true)
+              init_scale=ones32, affine=true, epsilon=1f-5)
 
 [Group Normalization](https://arxiv.org/abs/1803.08494) layer.
 
@@ -171,9 +166,6 @@ end
 
   - `epsilon`: a value added to the denominator for numerical stability
 
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
 
@@ -232,11 +224,10 @@ See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
     affine <: StaticBool
 end
 
-function GroupNorm(chs::IntegerType, groups::IntegerType, activation=identity;
-        init_bias=zeros32, init_scale=ones32, affine::BoolType=True(),
-        epsilon=1.0f-5, allow_fast_activation::BoolType=True())
+function GroupNorm(
+        chs::IntegerType, groups::IntegerType, activation=identity; init_bias=zeros32,
+        init_scale=ones32, affine::BoolType=True(), epsilon=1.0f-5)
     @argcheck chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
     return GroupNorm(
         activation, epsilon, chs, init_bias, init_scale, groups, static(affine))
 end
@@ -250,8 +241,9 @@ parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
+    σ = NNlib.fast_act(GN.activation, x′)
     y = groupnorm(x′, safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)), GN.groups, GN.activation, GN.epsilon)
+        safe_getproperty(ps, Val(:bias)), GN.groups, σ, GN.epsilon)
     return y, st
 end
 
@@ -264,7 +256,7 @@ end
 
 @doc doc"""
     InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-                 affine=true, epsilon=1f-5, allow_fast_activation::Bool=true)
+                 affine=True(), epsilon=1f-5)
 
 Instance Normalization. For details see [1].
 
@@ -282,9 +274,6 @@ accordingly.
 ## Keyword Arguments
 
   - `epsilon`: a value added to the denominator for numerical stability
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
 
@@ -345,10 +334,8 @@ See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`Weight
     affine <: StaticBool
 end
 
-function InstanceNorm(
-        chs::IntegerType, activation=identity; init_bias=zeros32, init_scale=ones32,
-        affine::BoolType=True(), epsilon=1.0f-5, allow_fast_activation::BoolType=True())
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+function InstanceNorm(chs::IntegerType, activation=identity; init_bias=zeros32,
+        init_scale=ones32, affine::BoolType=True(), epsilon=1.0f-5)
     return InstanceNorm(activation, epsilon, chs, init_bias, init_scale, static(affine))
 end
 
@@ -362,9 +349,9 @@ parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
-    y, _ = instancenorm(
-        x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        st.training, IN.activation, IN.epsilon)
+    σ = NNlib.fast_act(IN.activation, x′)
+    y, _ = instancenorm(x′, safe_getproperty(ps, Val(:scale)),
+        safe_getproperty(ps, Val(:bias)), st.training, σ, IN.epsilon)
     return y, st
 end
 
@@ -527,9 +514,6 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
 
 ## Keyword Arguments
 
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
   - `epsilon`: a value added to the denominator for numerical stability.
   - `dims`: Dimensions to normalize the array over.
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
@@ -567,10 +551,8 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
     affine <: StaticBool
 end
 
-function LayerNorm(
-        shape, activation=identity; epsilon=1.0f-5, dims=Colon(), affine::BoolType=True(),
-        init_bias=zeros32, init_scale=ones32, allow_fast_activation::BoolType=True())
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+function LayerNorm(shape, activation=identity; epsilon=1.0f-5, dims=Colon(),
+        affine::BoolType=True(), init_bias=zeros32, init_scale=ones32)
     return LayerNorm(
         shape, activation, epsilon, init_bias, init_scale, dims, static(affine))
 end
@@ -585,8 +567,9 @@ end
 
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(l, ps, st, x)
+    σ = NNlib.fast_act(l.activation, x′)
     y = layernorm(x′, safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)), l.activation, l.dims, l.epsilon)
+        safe_getproperty(ps, Val(:bias)), σ, l.dims, l.epsilon)
     return y, st
 end
 

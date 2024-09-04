@@ -301,13 +301,6 @@ end
 
             @jet layer(x, ps, st)
         end
-
-        @testset "allow fast activation" begin
-            layer = Conv((3, 3), 1 => 1, tanh)
-            @test layer.activation == tanh_fast
-            layer = Conv((3, 3), 1 => 1, tanh; allow_fast_activation=false)
-            @test layer.activation == tanh
-        end
     end
 end
 
@@ -475,13 +468,6 @@ end
                 __f = (x, ps) -> sum(first(layer(x, ps, st)))
                 test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
             end
-        end
-
-        @testset "allow fast activation" begin
-            layer = CrossCor((3, 3), 1 => 1, tanh)
-            @test layer.activation == tanh_fast
-            layer = CrossCor((3, 3), 1 => 1, tanh; allow_fast_activation=false)
-            @test layer.activation == tanh
         end
     end
 end
