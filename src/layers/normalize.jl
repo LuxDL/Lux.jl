@@ -82,10 +82,10 @@ Chain(
 See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
 """
-@concrete struct BatchNorm{N} <: AbstractLuxLayer
+@concrete struct BatchNorm <: AbstractLuxLayer
     activation
-    epsilon::N
-    momentum::N
+    epsilon <: Real
+    momentum <: Real
     chs <: IntegerType
     init_bias
     init_scale
@@ -127,8 +127,9 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     σ = NNlib.fast_act(BN.activation, x′)
     y, stats = batchnorm(
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        safe_getproperty(st, Val(:running_mean)),
-        safe_getproperty(st, Val(:running_var)), st.training, σ, BN.momentum, BN.epsilon)
+        safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
+        st.training, σ, convert(unwrapped_eltype(x′), BN.momentum),
+        convert(unwrapped_eltype(x′), BN.epsilon))
     return y, update_batchnorm_state(BN, st, stats)
 end
 
@@ -242,8 +243,8 @@ parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
     σ = NNlib.fast_act(GN.activation, x′)
-    y = groupnorm(x′, safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)), GN.groups, σ, GN.epsilon)
+    y = groupnorm(x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        GN.groups, σ, convert(unwrapped_eltype(x′), GN.epsilon))
     return y, st
 end
 
@@ -350,8 +351,9 @@ parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
     σ = NNlib.fast_act(IN.activation, x′)
-    y, _ = instancenorm(x′, safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)), st.training, σ, IN.epsilon)
+    y, _ = instancenorm(
+        x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        st.training, σ, convert(unwrapped_eltype(x′), IN.epsilon))
     return y, st
 end
 
@@ -568,8 +570,8 @@ end
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(l, ps, st, x)
     σ = NNlib.fast_act(l.activation, x′)
-    y = layernorm(x′, safe_getproperty(ps, Val(:scale)),
-        safe_getproperty(ps, Val(:bias)), σ, l.dims, l.epsilon)
+    y = layernorm(x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        σ, l.dims, convert(unwrapped_eltype(x′), l.epsilon))
     return y, st
 end
 
