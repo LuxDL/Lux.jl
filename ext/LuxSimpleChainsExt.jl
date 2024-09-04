@@ -25,8 +25,8 @@ end
 equivalent_simplechains_fn(::typeof(NNlib.relu)) = SimpleChains.relu
 equivalent_simplechains_fn(f::F) where {F} = f
 
-function Lux.make_simplechain_network(layer::Dense{use_bias}) where {use_bias}
-    return SimpleChains.TurboDense{use_bias}(
+function Lux.make_simplechain_network(layer::Dense)
+    return SimpleChains.TurboDense{Lux.has_bias(layer)}(
         equivalent_simplechains_fn(layer.activation), layer.out_dims)
 end
 

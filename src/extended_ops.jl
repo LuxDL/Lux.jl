@@ -12,11 +12,13 @@ using Compat: @compat
 using EnzymeCore: EnzymeCore
 using FastClosures: @closure
 using MLDataDevices: get_device_type, AbstractGPUDevice, AbstractDevice
-using Static: StaticBool, known
+using Static: StaticBool, StaticSymbol, known
 
 using ..Utils: Utils
 
 const CRC = ChainRulesCore
+
+const KnownSymbolType{v} = Union{Val{v}, StaticSymbol{v}}
 
 # `xlogx` and `xlogy`
 ## We don't use `LogExpFunctions` since they don't support GPU broadcasting. See
@@ -79,14 +81,15 @@ end
 
 """
     getproperty(x, ::Val{v})
+    getproperty(x, ::StaticSymbol{v})
 
-Similar to `Base.getproperty` but requires a `Val`. Additionally if `v` is not present in
-`x`, then `nothing` is returned.
+Similar to `Base.getproperty` but requires a `Val` (or `Static.StaticSymbol`). Additionally,
+if `v` is not present in `x`, then `nothing` is returned.
 """
-function getproperty(x, ::Val{v}) where {v}
+function getproperty(x, ::KnownSymbolType{v}) where {v}
     return v ∈ Base.propertynames(x) ? Base.getproperty(x, v) : nothing
 end
-@generated function getproperty(x::NamedTuple{names}, ::Val{v}) where {names, v}
+@generated function getproperty(x::NamedTuple{names}, ::KnownSymbolType{v}) where {names, v}
     return v ∈ names ? :(x.$v) : :(nothing)
 end
 
@@ -228,3 +231,12 @@ const safe_eachslice = LuxOps.eachslice
 const private_xlogx = LuxOps.xlogx
 const private_xlogy = LuxOps.xlogy
 const private_foldl_init = LuxOps.foldl_init
+
+# These are defined here to avoid a circular dependency among modules
+for (op, field) in (:bias => :use_bias, :affine => :affine,
+    :track_stats => :track_stats, :train_state => :train_state)
+    @eval function $(Symbol(:has_, op))(l::AbstractExplicitLayer)
+        res = known(safe_getproperty(l, Val($(Meta.quot(field)))))
+        return ifelse(res === nothing, false, res)
+    end
+end

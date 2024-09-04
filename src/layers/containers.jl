@@ -256,8 +256,8 @@ BranchLayer(
           #        plus 0 states.
 ```
 """
-struct BranchLayer{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
+@concrete struct BranchLayer <: AbstractExplicitContainerLayer{(:layers,)}
+    layers <: NamedTuple
     name
 end
 
@@ -595,8 +595,8 @@ See also [`Parallel`](@ref) to reduce with other operators.
 [1] Goodfellow, Warde-Farley, Mirza, Courville & Bengio "Maxout Networks"
 [https://arxiv.org/abs/1302.4389](https://arxiv.org/abs/1302.4389)
 """
-struct Maxout{T <: NamedTuple} <: AbstractExplicitContainerLayer{(:layers,)}
-    layers::T
+@concrete struct Maxout <: AbstractExplicitContainerLayer{(:layers,)}
+    layers <: NamedTuple
 end
 
 Maxout(layers...) = Maxout(Utils.named_tuple_layers(layers...))
@@ -679,32 +679,35 @@ times for gradients might be unreasonably high.
 
   - State of `model`
 """
-struct RepeatedLayer{N, IJ, M <: AbstractExplicitLayer} <:
-       AbstractExplicitContainerLayer{(:model,)}
-    model::M
+@concrete struct RepeatedLayer <: AbstractExplicitContainerLayer{(:model,)}
+    nrepeats <: StaticInt
+    input_injection <: StaticBool
+    model <: AbstractExplicitLayer
 end
 
-LuxCore.display_name(::RepeatedLayer{N, IJ}) where {N, IJ} = "RepeatedLayer{$N, $IJ}"
+function LuxCore.display_name(r::RepeatedLayer)
+    return "RepeatedLayer{nrepeats = $(known(r.nrepeats)), \
+                          input_injection = $(known(r.input_injection))}"
+end
 
-RepeatedLayer{N, IJ}(model) where {N, IJ} = RepeatedLayer{N, IJ, typeof(model)}(model)
-RepeatedLayer{N, IJ}(; model) where {N, IJ} = RepeatedLayer{N, IJ, typeof(model)}(model)
-
-function RepeatedLayer(model::AbstractExplicitLayer; repeats::Val{N}=Val(10),
-        input_injection::Val{IJ}=Val(false)) where {N, IJ}
-    return RepeatedLayer{N, IJ}(model)
+function RepeatedLayer(
+        model::AbstractExplicitLayer; repeats::Union{StaticInt, Integer, Val}=Val(10),
+        input_injection::Union{StaticBool, Bool, Val{true}, Val{false}}=Val(false))
+    return RepeatedLayer(static(repeats), static(input_injection), model)
 end
 
 (m::RepeatedLayer)(x, ps, st) = repeatedlayer(m, m.model, x, ps, st)
 
 @generated function repeatedlayer(::RepeatedLayer{N, IJ}, model, x, ps, st) where {N, IJ}
-    sts = ntuple(_ -> gensym("st"), N)
-    xs = ntuple(_ -> gensym("x"), N + IJ)
+    sts = ntuple(_ -> gensym("st"), known(N))
+    xs = ntuple(_ -> gensym("x"), known(N) + known(IJ))
     calls = []
-    IJ && push!(calls, :($(xs[1]) = x))
-    for i in 1:N
+    known(IJ) && push!(calls, :($(xs[1]) = x))
+    for i in 1:known(N)
         push!(calls,
-            :(($(xs[i + IJ]), $(sts[i])) = apply(
-                model, $(IJ ? :(($(xs[i]), x)) : :x), ps, $(i == 1 ? :st : sts[i - 1]))))
+            :(($(xs[i + known(IJ)]), $(sts[i])) = apply(
+                model, $(known(IJ) ? :(($(xs[i]), x)) : :x),
+                ps, $(i == 1 ? :st : sts[i - 1]))))
     end
     return quote
         $(calls...)

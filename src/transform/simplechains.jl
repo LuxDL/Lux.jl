@@ -34,40 +34,27 @@ julia> lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
            Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
            Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)));
 
-julia> adaptor = ToSimpleChainsAdaptor((28, 28, 1))
-ToSimpleChainsAdaptor{Tuple{Static.StaticInt{28}, Static.StaticInt{28}, Static.StaticInt{1}}}((static(28), static(28), static(1)), false)
+julia> adaptor = ToSimpleChainsAdaptor((28, 28, 1));
 
-julia> simple_chains_model = adapt(adaptor, lux_model) # or adaptor(lux_model)
-SimpleChainsLayer{false}(
-    Chain(
-        layer_1 = Conv((5, 5), 1 => 6, relu),  # 156 parameters
-        layer_2 = MaxPool((2, 2)),
-        layer_3 = Conv((5, 5), 6 => 16, relu),  # 2_416 parameters
-        layer_4 = MaxPool((2, 2)),
-        layer_5 = FlattenLayer{Int64}(3),
-        layer_6 = Dense(256 => 128, relu),  # 32_896 parameters
-        layer_7 = Dense(128 => 84, relu),  # 10_836 parameters
-        layer_8 = Dense(84 => 10),      # 850 parameters
-    ),
-)         # Total: 47_154 parameters,
-          #        plus 0 states.
+julia> simple_chains_model = adapt(adaptor, lux_model); # or adaptor(lux_model)
 
 julia> ps, st = Lux.setup(Random.default_rng(), simple_chains_model);
 
 julia> x = randn(Float32, 28, 28, 1, 1);
 
-julia> size(first(simple_chains_model(x, ps, st))) == (10, 1)
-true
+julia> size(first(simple_chains_model(x, ps, st)))
+(10, 1)
 ```
 """
-struct ToSimpleChainsAdaptor{ID} <: AbstractFromLuxAdaptor
+struct ToSimpleChainsAdaptor{ID, AT} <: AbstractFromLuxAdaptor
     input_dims::ID
-    convert_to_array::Bool
+    convert_to_array::AT
 
-    function ToSimpleChainsAdaptor(input_dims, convert_to_array::Bool=false)
+    function ToSimpleChainsAdaptor(input_dims, convert_to_array::BoolType=False())
         input_dims isa Number && (input_dims = (input_dims,))
         input_dims isa Tuple{Vararg{Integer}} && (input_dims = static(input_dims))
-        return new{typeof(input_dims)}(input_dims, convert_to_array)
+        return new{typeof(input_dims), typeof(convert_to_array)}(
+            input_dims, convert_to_array)
     end
 end
 

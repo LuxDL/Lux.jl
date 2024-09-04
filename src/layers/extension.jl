@@ -192,23 +192,26 @@ regular `Array` or not. Default is `false`.
 """
 struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractExplicitLayer}} <:
        AbstractExplicitLayer
+    to_array::ToArray
     layer::SL
     lux_layer::LL
 
     function SimpleChainsLayer{ToArray}(layer, lux_layer=nothing) where {ToArray}
-        return new{ToArray, typeof(layer), typeof(lux_layer)}(layer, lux_layer)
+        to_array = static(ToArray)
+        return new{typeof(to_array), typeof(layer), typeof(lux_layer)}(
+            to_array, layer, lux_layer)
     end
-    function SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
-        return new{Utils.unwrap_val(ToArray), typeof(layer), Nothing}(layer, nothing)
+    function SimpleChainsLayer(layer, ToArray::BoolType=False())
+        to_array = static(ToArray)
+        return new{typeof(to_array), typeof(layer), Nothing}(to_array, layer, nothing)
     end
 end
 
 function Base.show(
         io::IO, ::MIME"text/plain", s::SimpleChainsLayer{ToArray}) where {ToArray}
-    PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer{$ToArray}", s.lux_layer)
+    PrettyPrinting.print_wrapper_model(
+        io, "SimpleChainsLayer{to_array=$ToArray}", s.lux_layer)
 end
-
-initialstates(::AbstractRNG, ::SimpleChainsLayer) = (;)
 
 function (sc::SimpleChainsLayer)(x, ps, st)
     y = match_eltype(sc, ps, st, x)
@@ -218,8 +221,8 @@ function (sc::SimpleChainsLayer)(x, ps, st)
         st)
 end
 
-simple_chain_output(::SimpleChainsLayer{false}, y) = y
-simple_chain_output(::SimpleChainsLayer{true}, y) = convert(Array, y)
+simple_chain_output(::SimpleChainsLayer{False}, y) = y
+simple_chain_output(::SimpleChainsLayer{True}, y) = convert(Array, y)
 
 apply_simple_chain(layer, x, ps, ::CPUDevice) = layer(x, ps)
 

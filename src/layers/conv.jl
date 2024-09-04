@@ -62,7 +62,7 @@ end
 @doc doc"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
          activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-         pad=0, dilation=1, groups=1, use_bias=true, allow_fast_activation=true)
+         pad=0, dilation=1, groups=1, use_bias=True(), allow_fast_activation=True())
 
 Standard convolutional layer.
 
@@ -139,41 +139,44 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-@concrete struct Conv{N, use_bias, M} <: AbstractExplicitLayer
+@concrete struct Conv <: AbstractExplicitLayer
     activation
-    in_chs::Int
-    out_chs::Int
-    kernel_size::NTuple{N, Int}
-    stride::NTuple{N, Int}
-    pad::NTuple{M, Int}
-    dilation::NTuple{N, Int}
-    groups::Int
+    in_chs <: IntegerType
+    out_chs <: IntegerType
+    kernel_size <: Tuple{Vararg{IntegerType}}
+    stride <: Tuple{Vararg{IntegerType}}
+    pad <: Tuple{Vararg{IntegerType}}
+    dilation <: Tuple{Vararg{IntegerType}}
+    groups <: IntegerType
     init_weight
     init_bias
+    use_bias <: StaticBool
 end
 
-function Conv(k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
-        groups=1, use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
-    stride = Utils.expand(Val(N), stride)
-    dilation = Utils.expand(Val(N), dilation)
+function Conv(k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
+        activation=identity; init_weight=glorot_uniform,
+        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
+        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+    stride = Utils.expand(Val(length(k)), stride)
+    dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
+    @argcheck allequal(length, (stride, dilation, k))
 
-    return Conv{N, use_bias, length(pad)}(activation, first(ch), last(ch), k, stride,
-        pad, dilation, groups, init_weight, init_bias)
+    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+    return Conv(activation, first(ch), last(ch), k, stride, pad, dilation,
+        groups, init_weight, init_bias, static(use_bias))
 end
 
-function initialparameters(rng::AbstractRNG, c::Conv{N, use_bias}) where {N, use_bias}
+function initialparameters(rng::AbstractRNG, c::Conv)
     weight = init_conv_filter(
-        rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, groups=c.groups)
-    !use_bias && return (; weight)
-    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
+        rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, c.groups)
+    has_bias(c) || return (; weight)
+    return (; weight,
+        bias=c.init_bias(rng, ntuple(_ -> 1, length(c.kernel_size))..., c.out_chs, 1)) # TODO: flatten in v1
 end
 
-function parameterlength(c::Conv{N, use_bias}) where {N, use_bias}
-    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups +
-           (use_bias ? c.out_chs : 0)
+function parameterlength(c::Conv)
+    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
 function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
@@ -183,7 +186,7 @@ function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
-function Base.show(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
+function Base.show(io::IO, l::Conv)
     print(io, "Conv(", l.kernel_size)
     print(io, ", ", l.in_chs, " => ", l.out_chs)
     l.activation == identity || print(io, ", ", l.activation)
@@ -192,8 +195,8 @@ function Base.show(io::IO, l::Conv{N, use_bias}) where {N, use_bias}
     all(==(1), l.dilation) ||
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
-    (use_bias == false) && print(io, ", use_bias=false")
-    return print(io, ")")
+    has_bias(l) || print(io, ", use_bias=false")
+    print(io, ")")
 end
 
 @doc doc"""
@@ -241,19 +244,21 @@ value.
 See also [`Conv`](@ref), [`MeanPool`](@ref), [`GlobalMaxPool`](@ref),
 [`AdaptiveMaxPool`](@ref)
 """
-struct MaxPool{N, M} <: AbstractExplicitLayer
-    k::NTuple{N, Int}
-    pad::NTuple{M, Int}
-    stride::NTuple{N, Int}
+@concrete struct MaxPool <: AbstractExplicitLayer
+    k <: Tuple{Vararg{IntegerType}}
+    pad <: Tuple{Vararg{IntegerType}}
+    stride <: Tuple{Vararg{IntegerType}}
 end
 
-function MaxPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
-    stride = Utils.expand(Val(N), stride)
+function MaxPool(k::Tuple{Vararg{IntegerType}}; pad=0, stride=k)
+    stride = Utils.expand(Val(length(k)), stride)
     pad = calc_padding(pad, k, 1, stride)
-    return MaxPool{N, length(pad)}(k, pad, stride)
+    @argcheck allequal(length, (stride, k))
+
+    return MaxPool(k, pad, stride)
 end
 
-function (m::MaxPool{N, M})(x, ps, st::NamedTuple) where {N, M}
+function (m::MaxPool)(x, _, st::NamedTuple)
     return maxpool(x, PoolDims(x, m.k; padding=m.pad, m.stride)), st
 end
 
@@ -309,19 +314,21 @@ value.
 See also [`Conv`](@ref), [`MaxPool`](@ref), [`GlobalMeanPool`](@ref),
 [`AdaptiveMeanPool`](@ref)
 """
-struct MeanPool{N, M} <: AbstractExplicitLayer
-    k::NTuple{N, Int}
-    pad::NTuple{M, Int}
-    stride::NTuple{N, Int}
+@concrete struct MeanPool <: AbstractExplicitLayer
+    k <: Tuple{Vararg{IntegerType}}
+    pad <: Tuple{Vararg{IntegerType}}
+    stride <: Tuple{Vararg{IntegerType}}
 end
 
-function MeanPool(k::NTuple{N, Integer}; pad=0, stride=k) where {N}
-    stride = Utils.expand(Val(N), stride)
+function MeanPool(k::Tuple{Vararg{IntegerType}}; pad=0, stride=k)
+    stride = Utils.expand(Val(length(k)), stride)
     pad = calc_padding(pad, k, 1, stride)
-    return MeanPool{N, length(pad)}(k, pad, stride)
+    @argcheck allequal(length, (stride, k))
+
+    return MeanPool(k, pad, stride)
 end
 
-function (m::MeanPool{N, M})(x, ps, st::NamedTuple) where {N, M}
+function (m::MeanPool)(x, _, st::NamedTuple)
     return meanpool(x, PoolDims(x, m.k; padding=m.pad, m.stride)), st
 end
 
@@ -379,45 +386,50 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
   - Upsampled Input of size `size` or of size `(I_1 x scale[1], ..., I_N x scale[N], C, N)`
   - Empty `NamedTuple()`
 """
-@concrete struct Upsample{mode} <: AbstractExplicitLayer
+@concrete struct Upsample <: AbstractExplicitLayer
     scale
     size
+    upsample_mode <: StaticSymbol
 end
 
-function Upsample(mode::Symbol=:nearest; scale=nothing, size=nothing)
-    mode in [:nearest, :bilinear, :trilinear] ||
-        throw(ArgumentError("mode=:$mode is not supported."))
+function Upsample(mode::SymbolType=static(:nearest); scale=nothing, size=nothing)
+    @argcheck dynamic(mode) in (:nearest, :bilinear, :trilinear)
     if !xor(isnothing(scale), isnothing(size))
         throw(ArgumentError("Either scale or size should be specified (but not both)."))
     end
-    return Upsample{mode}(scale, size)
+    return Upsample(scale, size, static(mode))
 end
 
-Upsample(scale, mode::Symbol=:nearest) = Upsample(mode; scale)
+Upsample(scale, mode::SymbolType=static(:nearest)) = Upsample(mode; scale)
+
+function (m::Upsample)(x::AbstractArray, _, st::NamedTuple)
+    return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale), st
+end
+function (m::Upsample{Nothing})(x::AbstractArray, _, st::NamedTuple)
+    return lux_upsample_size_dispatch(m.upsample_mode, x, m.size), st
+end
 
 for interp in (:nearest, :bilinear, :trilinear)
-    interp_func = Symbol(:upsample_, interp)
+    nnlib_interp_func = Symbol(:upsample_, interp)
     @eval begin
-        function (m::Upsample{$(Meta.quot(interp))})(x::AbstractArray, ps, st::NamedTuple)
-            return NNlib.$(interp_func)(x, m.scale), st
+        function lux_upsample_scale_dispatch(::StaticSymbol{$(Meta.quot(interp))}, x, scale)
+            return $(nnlib_interp_func)(x, scale)
         end
-        function (m::Upsample{$(Meta.quot(interp)), Nothing})(
-                x::AbstractArray, ps, st::NamedTuple)
-            return NNlib.$(interp_func)(x; m.size), st
+        function lux_upsample_size_dispatch(::StaticSymbol{$(Meta.quot(interp))}, x, size)
+            return $(nnlib_interp_func)(x; size)
         end
     end
 end
 
-function (m::Upsample{:nearest, Int})(x::AbstractArray, ps, st::NamedTuple)
-    return NNlib.upsample_nearest(x, ntuple(i -> m.scale, ndims(x) - 2)), st
+function lux_upsample_scale_dispatch(::StaticSymbol{:nearest}, x, scale::Integer)
+    return NNlib.upsample_nearest(x, ntuple(i -> scale, ndims(x) - 2))
 end
 
-function Base.show(io::IO, u::Upsample{mode}) where {mode}
-    print(io, "Upsample(")
-    print(io, ":", mode)
+function Base.show(io::IO, u::Upsample)
+    print(io, "Upsample(", u.upsample_mode)
     u.scale !== nothing && print(io, ", scale = $(u.scale)")
     u.size !== nothing && print(io, ", size = $(u.size)")
-    return print(io, ")")
+    print(io, ")")
 end
 
 """
@@ -439,7 +451,7 @@ See also [`MaxPool`](@ref), [`AdaptiveMaxPool`](@ref), [`GlobalMeanPool`](@ref)
 """
 struct GlobalMaxPool <: AbstractExplicitLayer end
 
-function (g::GlobalMaxPool)(x, ps, st::NamedTuple)
+function (g::GlobalMaxPool)(x, _, st::NamedTuple)
     return maxpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
@@ -462,7 +474,7 @@ See also [`MeanPool`](@ref), [`AdaptiveMeanPool`](@ref), [`GlobalMaxPool`](@ref)
 """
 struct GlobalMeanPool <: AbstractExplicitLayer end
 
-function (g::GlobalMeanPool)(x, ps, st::NamedTuple)
+function (g::GlobalMeanPool)(x, _, st::NamedTuple)
     return meanpool(x, PoolDims(x, size(x)[1:(end - 2)])), st
 end
 
@@ -488,18 +500,16 @@ Adaptive Max Pooling layer. Calculates the necessary window size such that its o
 
 See also [`MaxPool`](@ref), [`AdaptiveMeanPool`](@ref).
 """
-struct AdaptiveMaxPool{S, O} <: AbstractExplicitLayer
-    out::NTuple{O, Int}
-    AdaptiveMaxPool(out::NTuple{O, Int}) where {O} = new{O + 2, O}(out)
+struct AdaptiveMaxPool{S, O <: Tuple{Vararg{IntegerType}}} <: AbstractExplicitLayer
+    out::O
+    AdaptiveMaxPool(out) = new{length(out) + 2, typeof(out)}(out)
 end
 
-function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
+function (a::AdaptiveMaxPool{S})(x::AbstractArray{T, S}, _, st::NamedTuple) where {S, T}
     return maxpool(x, compute_adaptive_pooling_dims(x, a.out)), st
 end
 
-function Base.show(io::IO, a::AdaptiveMaxPool)
-    return print(io, "AdaptiveMaxPool(", a.out, ")")
-end
+Base.show(io::IO, a::AdaptiveMaxPool) = print(io, "AdaptiveMaxPool(", a.out, ")")
 
 """
     AdaptiveMeanPool(out::NTuple)
@@ -523,18 +533,16 @@ Adaptive Mean Pooling layer. Calculates the necessary window size such that its 
 
 See also [`MeanPool`](@ref), [`AdaptiveMaxPool`](@ref).
 """
-struct AdaptiveMeanPool{S, O} <: AbstractExplicitLayer
-    out::NTuple{O, Int}
-    AdaptiveMeanPool(out::NTuple{O, Int}) where {O} = new{O + 2, O}(out)
+struct AdaptiveMeanPool{S, O <: Tuple{Vararg{IntegerType}}} <: AbstractExplicitLayer
+    out::O
+    AdaptiveMeanPool(out) = new{length(out) + 2, typeof(out)}(out)
 end
 
-function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, ps, st::NamedTuple) where {S, T}
+function (a::AdaptiveMeanPool{S})(x::AbstractArray{T, S}, _, st::NamedTuple) where {S, T}
     return meanpool(x, compute_adaptive_pooling_dims(x, a.out)), st
 end
 
-function Base.show(io::IO, a::AdaptiveMeanPool)
-    return print(io, "AdaptiveMeanPool(", a.out, ")")
-end
+Base.show(io::IO, a::AdaptiveMeanPool) = print(io, "AdaptiveMeanPool(", a.out, ")")
 
 """
     PixelShuffle(r::Int)
@@ -563,12 +571,12 @@ function set to `Base.Fix2(pixel_shuffle, r)`
   - Output of size `(r x W, r x H, C, N)` for 4D-arrays, and `(r x W, r x H, ..., C, N)`
     for D-dimensional data, where `D = ndims(x) - 2`
 """
-PixelShuffle(r::Int) = WrappedFunction{:direct_call}(Base.Fix2(pixel_shuffle, r))
+PixelShuffle(r::IntegerType) = WrappedFunction{:direct_call}(Base.Fix2(pixel_shuffle, r))
 
 @doc doc"""
     CrossCor(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
              activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-             pad=0, dilation=1, use_bias=true, allow_fast_activation=true)
+             pad=0, dilation=1, groups=1, use_bias=True(), allow_fast_activation=True())
 
 Cross Correlation layer.
 
@@ -595,6 +603,9 @@ number of observations in a batch.
 
   - `stride`: Should each be either single integer, or a tuple with `N` integers
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
+  - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a
+              convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
+              and `out_chs` must be divisible by `groups`.
   - `pad`: Specifies the number of elements added to the borders of the data array. It can
            be
 
@@ -633,50 +644,55 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
   - `weight`: Convolution kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-@concrete struct CrossCor{N, use_bias, M} <: AbstractExplicitLayer
+@concrete struct CrossCor <: AbstractExplicitLayer
     activation
-    in_chs::Int
-    out_chs::Int
-    kernel_size::NTuple{N, Int}
-    stride::NTuple{N, Int}
-    pad::NTuple{M, Int}
-    dilation::NTuple{N, Int}
+    in_chs <: IntegerType
+    out_chs <: IntegerType
+    kernel_size <: Tuple{Vararg{IntegerType}}
+    stride <: Tuple{Vararg{IntegerType}}
+    pad <: Tuple{Vararg{IntegerType}}
+    dilation <: Tuple{Vararg{IntegerType}}
+    groups <: IntegerType
     init_weight
     init_bias
+    use_bias <: StaticBool
 end
 
-function CrossCor(
-        k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
-        use_bias::Bool=true, allow_fast_activation::Bool=true) where {N}
-    stride = Utils.expand(Val(N), stride)
-    dilation = Utils.expand(Val(N), dilation)
+function CrossCor(k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
+        activation=identity; init_weight=glorot_uniform,
+        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
+        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+    stride = Utils.expand(Val(length(k)), stride)
+    dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
+    @argcheck allequal(length, (stride, dilation, k))
 
-    return CrossCor{N, use_bias, length(pad)}(
-        activation, first(ch), last(ch), k, stride, pad, dilation, init_weight, init_bias)
+    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+    return CrossCor(activation, first(ch), last(ch), k, stride, pad, dilation,
+        groups, init_weight, init_bias, static(use_bias))
 end
 
-function initialparameters(rng::AbstractRNG, c::CrossCor{N, use_bias}) where {N, use_bias}
-    weight = init_conv_filter(rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight)
-    !use_bias && return (; weight)
-    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
+function initialparameters(rng::AbstractRNG, c::CrossCor)
+    weight = init_conv_filter(
+        rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, c.groups)
+    has_bias(c) || return (; weight)
+    return (; weight,
+        bias=c.init_bias(rng, ntuple(_ -> 1, length(c.kernel_size))..., c.out_chs, 1)) # TODO: flatten in v1
 end
 
-function parameterlength(c::CrossCor{N, use_bias}) where {N, use_bias}
-    return prod(c.kernel_size) * c.in_chs * c.out_chs + (use_bias ? c.out_chs : 0)
+function parameterlength(c::CrossCor)
+    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
 function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(
-        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation); F=true)
+        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups); F=true)
     bias = safe_vec(safe_getproperty(ps, Val(:bias)))
     return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
 end
 
-function Base.show(io::IO, l::CrossCor{N, use_bias}) where {N, use_bias}
+function Base.show(io::IO, l::CrossCor)
     print(io, "CrossCor(", l.kernel_size)
     print(io, ", ", l.in_chs, " => ", l.out_chs)
     l.activation == identity || print(io, ", ", l.activation)
@@ -684,15 +700,16 @@ function Base.show(io::IO, l::CrossCor{N, use_bias}) where {N, use_bias}
     all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
     all(==(1), l.dilation) ||
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
-    (use_bias == false) && print(io, ", use_bias=false")
+    (l.groups == 1) || print(io, ", groups=", l.groups)
+    has_bias(l) || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
 @doc doc"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=true,
-                  allow_fast_activation=true)
+                  stride=1, pad=0, dilation=1, groups=1, use_bias=True(),
+                  allow_fast_activation=True())
 
 Standard convolutional transpose layer.
 
@@ -747,51 +764,52 @@ Standard convolutional transpose layer.
   - `weight`: Convolution Transpose kernel
   - `bias`: Bias (present if `use_bias=true`)
 """
-@concrete struct ConvTranspose{N, use_bias, M} <: AbstractExplicitLayer
+@concrete struct ConvTranspose <: AbstractExplicitLayer
     activation
-    in_chs::Int
-    out_chs::Int
-    kernel_size::NTuple{N, Int}
-    stride::NTuple{N, Int}
-    pad::NTuple{M, Int}
-    dilation::NTuple{N, Int}
-    groups::Int
+    in_chs <: IntegerType
+    out_chs <: IntegerType
+    kernel_size <: Tuple{Vararg{IntegerType}}
+    stride <: Tuple{Vararg{IntegerType}}
+    pad <: Tuple{Vararg{IntegerType}}
+    dilation <: Tuple{Vararg{IntegerType}}
+    groups <: IntegerType
     init_weight
     init_bias
+    use_bias <: StaticBool
 end
 
 function ConvTranspose(
-        k::NTuple{N, Integer}, ch::Pair{<:Integer, <:Integer}, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32, stride=1, pad=0, dilation=1,
-        use_bias::Bool=true, groups=1, allow_fast_activation::Bool=true) where {N}
-    stride = Utils.expand(Val(N), stride)
-    dilation = Utils.expand(Val(N), dilation)
+        k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
+        activation=identity; init_weight=glorot_uniform,
+        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
+        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+    stride = Utils.expand(Val(length(k)), stride)
+    dilation = Utils.expand(Val(length(k)), dilation)
     pad = if pad isa SamePad
         calc_padding(pad, k .- stride .+ 1, dilation, stride)
     else
         calc_padding(pad, k, dilation, stride)
     end
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
+    @argcheck allequal(length, (stride, dilation, k))
 
-    return ConvTranspose{N, use_bias, length(pad)}(
-        activation, first(ch), last(ch), k, stride,
-        pad, dilation, groups, init_weight, init_bias)
+    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+    return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation,
+        groups, init_weight, init_bias, static(use_bias))
 end
 
-function initialparameters(
-        rng::AbstractRNG, c::ConvTranspose{N, use_bias}) where {N, use_bias}
+function initialparameters(rng::AbstractRNG, c::ConvTranspose)
     weight = init_conv_filter(
         rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
-    !use_bias && return (; weight)
-    return (; weight, bias=c.init_bias(rng, ntuple(_ -> 1, N)..., c.out_chs, 1)) # TODO: flatten in v1
+    has_bias(c) || return (; weight)
+    return (; weight,
+        bias=c.init_bias(rng, ntuple(_ -> 1, length(c.kernel_size))..., c.out_chs, 1)) # TODO: flatten in v1
 end
 
-function parameterlength(c::ConvTranspose{N, use_bias}) where {N, use_bias}
-    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups +
-           (use_bias ? c.out_chs : 0)
+function parameterlength(c::ConvTranspose)
+    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
 end
 
-function (c::ConvTranspose{N})(x::AbstractArray, ps, st::NamedTuple) where {N}
+function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     bias = safe_vec(safe_getproperty(ps, Val(:bias)))
@@ -801,17 +819,12 @@ end
 function Base.show(io::IO, l::ConvTranspose)
     print(io, "ConvTranspose(", l.kernel_size)
     print(io, ", ", l.in_chs, " => ", l.out_chs)
-    _print_convtranspose_opt(io, l)
-    return print(io, ")")
-end
-
-function _print_convtranspose_opt(io::IO, l::ConvTranspose{N, use_bias}) where {N, use_bias}
     l.activation == identity || print(io, ", ", l.activation)
     all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
     all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
     all(==(1), l.dilation) ||
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
-    (use_bias == false) && print(io, ", use_bias=false")
-    return nothing
+    has_bias(l) || print(io, ", use_bias=false")
+    return print(io, ")")
 end
