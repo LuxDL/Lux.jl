@@ -95,6 +95,8 @@ abstraction.
 - `Lux.Experimental.@layer_map` is not longer needed and has been removed. The name of the
   variable prevents writing generic functions and is no longer pre-pended to the `KeyPath`.
   See the docstring of [`Lux.Experimental.layer_map`](@ref) for more details.
+- `allow_fast_activation` kwarg has been removed completely. Pass an annonymous function
+  as the activation to prevent internal modivations to the activation function.
 
 ### Breaking Changes (Moved Functionality)
 

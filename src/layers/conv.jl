@@ -62,7 +62,7 @@ end
 @doc doc"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
          activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-         pad=0, dilation=1, groups=1, use_bias=True(), allow_fast_activation=True())
+         pad=0, dilation=1, groups=1, use_bias=True())
 
 Standard convolutional layer.
 
@@ -115,9 +115,6 @@ Standard convolutional layer.
               convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
               and `out_chs` must be divisible by `groups`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 ## Inputs
 
@@ -154,15 +151,13 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
 end
 
 function Conv(k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform,
-        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
-        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
     @argcheck allequal(length, (stride, dilation, k))
 
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
     return Conv(activation, first(ch), last(ch), k, stride, pad, dilation,
         groups, init_weight, init_bias, static(use_bias))
 end
@@ -182,7 +177,8 @@ function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     bias = safe_getproperty(ps, Val(:bias))
-    return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
+    σ = NNlib.fast_act(c.activation, y)
+    return fused_conv_bias_activation(σ, ps.weight, y, bias, cdims), st
 end
 
 function Base.show(io::IO, l::Conv)
@@ -575,7 +571,7 @@ PixelShuffle(r::IntegerType) = WrappedFunction(Base.Fix2(pixel_shuffle, r))
 @doc doc"""
     CrossCor(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
              activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-             pad=0, dilation=1, groups=1, use_bias=True(), allow_fast_activation=True())
+             pad=0, dilation=1, groups=1, use_bias=True())
 
 Cross Correlation layer.
 
@@ -617,9 +613,6 @@ number of observations in a batch.
         dimension.
 
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 # Extended Help
 
@@ -658,15 +651,13 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
 end
 
 function CrossCor(k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform,
-        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
-        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
     @argcheck allequal(length, (stride, dilation, k))
 
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
     return CrossCor(activation, first(ch), last(ch), k, stride, pad, dilation,
         groups, init_weight, init_bias, static(use_bias))
 end
@@ -687,7 +678,8 @@ function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
     cdims = DenseConvDims(
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups); F=true)
     bias = safe_getproperty(ps, Val(:bias))
-    return fused_conv_bias_activation(c.activation, ps.weight, y, bias, cdims), st
+    σ = NNlib.fast_act(c.activation, y)
+    return fused_conv_bias_activation(σ, ps.weight, y, bias, cdims), st
 end
 
 function Base.show(io::IO, l::CrossCor)
@@ -706,8 +698,7 @@ end
 @doc doc"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=True(),
-                  allow_fast_activation=True())
+                  stride=1, pad=0, dilation=1, groups=1, use_bias=True())
 
 Standard convolutional transpose layer.
 
@@ -741,9 +732,6 @@ Standard convolutional transpose layer.
               convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
               and `out_chs` must be divisible by `groups`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
-  - `allow_fast_activation`: If `true`, then certain activations can be approximated with
-    a faster version. The new activation function will be given by
-    `NNlib.fast_act(activation)`
 
 # Extended Help
 
@@ -778,9 +766,8 @@ end
 
 function ConvTranspose(
         k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform,
-        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
-        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = if pad isa SamePad
@@ -790,7 +777,6 @@ function ConvTranspose(
     end
     @argcheck allequal(length, (stride, dilation, k))
 
-    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
     return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation,
         groups, init_weight, init_bias, static(use_bias))
 end
@@ -810,7 +796,8 @@ function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
     bias = safe_getproperty(ps, Val(:bias))
-    return bias_activation!!(c.activation, conv_transpose(y, ps.weight, cdims), bias), st
+    σ = NNlib.fast_act(c.activation, y)
+    return bias_activation!!(σ, conv_transpose(y, ps.weight, cdims), bias), st
 end
 
 function Base.show(io::IO, l::ConvTranspose)
