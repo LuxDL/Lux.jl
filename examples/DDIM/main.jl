@@ -359,7 +359,7 @@ end
 
     @info "Preparing dataset"
     ds = FlowersDataset(x -> preprocess_image(x, image_size), true)
-    data_loader = DataLoader(ds; batchsize, collate=true, parallel=true)
+    data_loader = DataLoader(ds; batchsize, collate=true, parallel=true) |> gdev
 
     scheduler = CosAnneal(learning_rate_start, learning_rate_end, epochs)
 
@@ -376,7 +376,6 @@ end
 
         for (i, data) in enumerate(data_loader)
             step += 1
-            data = data |> gdev
             (_, _, stats, tstate) = Training.single_train_step!(
                 AutoZygote(), loss_function, data, tstate)
             image_losses[i] = stats.image_loss

@@ -128,10 +128,10 @@ accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
 # ## Training the Model
 
 function main(model_type)
-    ## Get the dataloaders
-    (train_loader, val_loader) = get_dataloaders()
-
     dev = gpu_device()
+
+    ## Get the dataloaders
+    train_loader, val_loader = get_dataloaders() .|> dev
 
     ## Create the model
     model = model_type(2, 8, 1)
@@ -143,9 +143,6 @@ function main(model_type)
     for epoch in 1:25
         ## Train the model
         for (x, y) in train_loader
-            x = x |> dev
-            y = y |> dev
-
             (_, loss, _, train_state) = Training.single_train_step!(
                 AutoZygote(), lossfn, (x, y), train_state)
 
@@ -155,8 +152,6 @@ function main(model_type)
         ## Validate the model
         st_ = Lux.testmode(train_state.states)
         for (x, y) in val_loader
-            x = x |> dev
-            y = y |> dev
             ŷ, st_ = model(x, train_state.parameters, st_)
             loss = lossfn(ŷ, y)
             acc = accuracy(ŷ, y)

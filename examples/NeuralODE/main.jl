@@ -9,8 +9,8 @@
 
 using Lux, ComponentArrays, SciMLSensitivity, LuxCUDA, Optimisers, OrdinaryDiffEq, Random,
       Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
-import MLDatasets: MNIST
-import MLUtils: DataLoader, splitobs
+using MLDatasets: MNIST
+using MLUtils: DataLoader, splitobs
 
 CUDA.allowscalar(false)
 
@@ -106,13 +106,13 @@ end
 # ## Define Utility Functions
 const logitcrossentropy = CrossEntropyLoss(; logits=Val(true))
 
-function accuracy(model, ps, st, dataloader; dev=gpu_device())
+function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
     cpu_dev = cpu_device()
     for (x, y) in dataloader
-        target_class = onecold(y)
-        predicted_class = onecold(cpu_dev(first(model(dev(x), ps, st))))
+        target_class = onecold(cpu_dev(y))
+        predicted_class = onecold(cpu_dev(first(model(x, ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -125,7 +125,7 @@ function train(model_function; cpu::Bool=false, kwargs...)
     model, ps, st = create_model(model_function; dev, kwargs...)
 
     ## Training
-    train_dataloader, test_dataloader = loadmnist(128, 0.9)
+    train_dataloader, test_dataloader = loadmnist(128, 0.9) |> dev
 
     tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
 
@@ -134,15 +134,13 @@ function train(model_function; cpu::Bool=false, kwargs...)
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
-            x = dev(x)
-            y = dev(y)
             _, _, _, tstate = Training.single_train_step!(
                 AutoZygote(), logitcrossentropy, (x, y), tstate)
         end
         ttime = time() - stime
 
-        tr_acc = accuracy(model, tstate.parameters, tstate.states, train_dataloader; dev)
-        te_acc = accuracy(model, tstate.parameters, tstate.states, test_dataloader; dev)
+        tr_acc = accuracy(model, tstate.parameters, tstate.states, train_dataloader)
+        te_acc = accuracy(model, tstate.parameters, tstate.states, test_dataloader)
         @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test \
                  Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
     end
