@@ -46,46 +46,17 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractExplicitLayer, psType, stType}
     ps::psType
     st::stType
     st_any::Any
-end
+    fixed_state_type::ST
 
-function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
-    return StatefulLuxLayer{ST, typeof(model), typeof(ps), typeof(st)}(
-        model, ps, st, st_any)
-end
-
-for op in (:trainmode, :testmode)
-    @eval function LuxCore.$(op)(s::StatefulLuxLayer{ST}) where {ST}
-        return StatefulLuxLayer{ST}(s.model, s.ps, LuxCore.$(op)(get_state(s)))
+    function StatefulLuxLayer(
+            model::AbstractExplicitLayer, ps, st, st_any, fixed_state_type::StaticBool)
+        return new{typeof(fixed_state_type), typeof(model), typeof(ps), typeof(st)}(
+            model, ps, st, st_any, fixed_state_type)
     end
 end
 
-function LuxCore.update_state(
-        s::StatefulLuxLayer{ST}, key::Symbol, value; kwargs...) where {ST}
-    st = LuxCore.update_state(get_state(s), key, value; kwargs...)
-    return StatefulLuxLayer{ST}(s.model, s.ps, st)
-end
-
-function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer{ST}) where {ST}
-    PrettyPrinting.print_wrapper_model(io, "StatefulLuxLayer{$ST}", s.model)
-end
-
-function Functors.functor(::Type{<:StatefulLuxLayer{FT}}, x) where {FT}
-    return ((; x.model, x.ps, x.st, x.st_any),
-        nt -> StatefulLuxLayer{FT}(nt.model, nt.ps, nt.st, nt.st_any))
-end
-
-function LuxCore.parameterlength(m::StatefulLuxLayer)
-    m.ps === nothing && return LuxCore.parameterlength(m.model)
-    return LuxCore.parameterlength(m.ps)
-end
-function LuxCore.statelength(m::StatefulLuxLayer{FT}) where {FT}
-    FT && return LuxCore.statelength(m.st)
-    return LuxCore.statelength(m.st_any)
-end
-LuxCore.apply(m::StatefulLuxLayer, x, p) = m(x, p)
-
-function ConstructionBase.constructorof(::Type{<:StatefulLuxLayer{FT}}) where {FT}
-    return StatefulLuxLayer{FT}
+function StatefulLuxLayer{ST}(model, ps, st, st_any) where {ST}
+    return StatefulLuxLayer(model, ps, st, st_any, static(ST))
 end
 
 function StatefulLuxLayer(model::AbstractExplicitLayer, st::NamedTuple; kwargs...)
@@ -104,22 +75,53 @@ function StatefulLuxLayer{false}(model::AbstractExplicitLayer, ps, st::NamedTupl
     return StatefulLuxLayer{false}(model, ps, nothing, st)
 end
 
-get_state(s::StatefulLuxLayer{true}) = s.st
-get_state(s::StatefulLuxLayer{false}) = s.st_any
+for op in (:trainmode, :testmode)
+    @eval function LuxCore.$(op)(s::StatefulLuxLayer)
+        return StatefulLuxLayer{dynamic(s.fixed_state_type)}(
+            s.model, s.ps, LuxCore.$(op)(get_state(s)))
+    end
+end
 
-CRC.@non_differentiable get_state(::Any)
+function LuxCore.update_state(s::StatefulLuxLayer, key::Symbol, value; kwargs...)
+    st = LuxCore.update_state(get_state(s), key, value; kwargs...)
+    return StatefulLuxLayer{dynamic(s.fixed_state_type)}(s.model, s.ps, st)
+end
+
+function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer)
+    PrettyPrinting.print_wrapper_model(
+        io, "StatefulLuxLayer{$(dynamic(s.fixed_state_type))}", s.model)
+end
+
+function Functors.functor(::Type{<:StatefulLuxLayer}, x)
+    recon = let ft = x.fixed_state_type
+        nt -> StatefulLuxLayer(nt.model, nt.ps, nt.st, nt.st_any, ft)
+    end
+    return (; x.model, x.ps, x.st, x.st_any), recon
+end
+
+function parameterlength(m::StatefulLuxLayer)
+    m.ps === nothing && return parameterlength(m.model)
+    return parameterlength(m.ps)
+end
+statelength(m::StatefulLuxLayer) = statelength(get_state(m))
+apply(m::StatefulLuxLayer, x, p) = m(x, p)
+
+get_state(s::StatefulLuxLayer{True}) = s.st
+get_state(s::StatefulLuxLayer{False}) = s.st_any
+
+CRC.@non_differentiable get_state(::StatefulLuxLayer)
 
 function set_state!(
-        s::StatefulLuxLayer{true, M, psType, stType}, st::stType) where {M, psType, stType}
+        s::StatefulLuxLayer{True, <:Any, <:Any, stType}, st::stType) where {stType}
     s.st = st
 end
-function set_state!(::StatefulLuxLayer{true, M, psType, stType},
-        ::stType2) where {M, psType, stType, stType2}
+function set_state!(
+        ::StatefulLuxLayer{True, <:Any, <:Any, stType}, ::stType2) where {stType, stType2}
     throw(ArgumentError("Output state from the model has type `$(stType2)`, but expected \
                          `$(stType)`. Construct the Stateful layer as \
                          `StatefulLuxLayer{false}` instead of `StatefulLuxLayer{true}`."))
 end
-set_state!(s::StatefulLuxLayer{false}, st) = (s.st_any = st)
+set_state!(s::StatefulLuxLayer{False}, st) = (s.st_any = st)
 
 CRC.@non_differentiable set_state!(::Any...)
 

@@ -14,6 +14,7 @@ using Markdown: @doc_str
 using Optimisers: Optimisers
 using Random: AbstractRNG, Random
 using Setfield: Setfield
+using Static: StaticSymbol, StaticBool, True, known, static, dynamic
 
 const CRC = ChainRulesCore
 

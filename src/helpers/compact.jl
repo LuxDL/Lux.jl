@@ -292,19 +292,16 @@ macro non_trainable(x)
     return esc(:($(CompactMacroImpl.NonTrainable)($(x))))
 end
 
-@concrete struct CompactLuxLayer{dispatch} <:
-                 AbstractExplicitContainerLayer{(:layers, :value_storage)}
-    f
-    name
+struct CompactLuxLayer{dispatch, F, N, L, V, SK} <:
+       AbstractExplicitContainerLayer{(:layers, :value_storage)}
+    d::StaticSymbol{dispatch}
+    f::F
+    name::N
     strings::NTuple{3, String}
-    setup_strings
-    layers
-    value_storage
-    stored_kwargs
-end
-
-function ConstructionBase.constructorof(::Type{<:CompactLuxLayer{dispatch}}) where {dispatch}
-    return CompactLuxLayer{dispatch}
+    setup_strings::Any
+    layers::L
+    value_storage::V
+    stored_kwargs::SK
 end
 
 function initialparameters(rng::AbstractRNG, m::CompactLuxLayer)
@@ -320,8 +317,8 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
         base_states, (; ₋₋₋kwargs₋₋₋=NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])))
 end
 
-function CompactLuxLayer{dispatch}(
-        f::F, name::NAME_TYPE, str::Tuple, splatted_kwargs; kws...) where {F, dispatch}
+function CompactLuxLayer(dispatch::StaticSymbol, f::F, name::NAME_TYPE,
+        str::Tuple, splatted_kwargs; kws...) where {F}
     layers, others = [], []
     setup_strings = NamedTuple()
     for (name, val) in pairs(kws)
@@ -353,7 +350,7 @@ function CompactLuxLayer{dispatch}(
                 NamedTuple((name => CompactMacroImpl.kwarg_descriptor(val),)))
         end
     end
-    return CompactLuxLayer{dispatch}(f, name, str, setup_strings, NamedTuple((; layers...)),
+    return CompactLuxLayer(dispatch, f, name, str, setup_strings, NamedTuple((; layers...)),
         CompactMacroImpl.ValueStorage(; others...), splatted_kwargs)
 end
 
@@ -423,6 +420,7 @@ using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
 using MacroTools: MacroTools, @capture, combinedef, splitdef
 using Random: AbstractRNG
+using Static: static
 
 using LuxCore: LuxCore, AbstractExplicitLayer
 using ..Lux: Lux, CompactLuxLayer, LuxCompactModelParsingException, StatefulLuxLayer,
@@ -467,6 +465,7 @@ function compact_macro_impl(_exs...)
 
     # check if user has provided a custom dispatch
     dispatch, kwexs = extract_reserved_kwarg(kwexs, :dispatch)
+    dispatch === nothing && (dispatch = QuoteNode(:₋₋₋no_special_dispatch₋₋₋))
 
     # Extract splatted kwargs
     splat_idxs = findall(ex -> ex.head == :..., kwexs)
@@ -495,7 +494,8 @@ function compact_macro_impl(_exs...)
     fex = supportself(fex, vars, splatted_kwargs)
 
     # assemble
-    return esc(:($CompactLuxLayer{$dispatch}($fex, $name, ($layer, $input, $block),
+    return esc(:($CompactLuxLayer(
+        $(static)($(dispatch)), $fex, $name, ($layer, $input, $block),
         (($(Meta.quot.(splatted_kwargs)...),), ($(splatted_kwargs...),)); $(kwexs...))))
 end
 

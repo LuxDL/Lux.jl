@@ -1,12 +1,7 @@
-abstract type AbstractRecurrentCell{use_bias, train_state} <: AbstractExplicitLayer end
+abstract type AbstractRecurrentCell <: AbstractExplicitLayer end
 
 const AbstractDebugRecurrentCell = Experimental.DebugLayer{
     <:Any, <:Any, <:AbstractRecurrentCell}
-
-function ConstructionBase.constructorof(::Type{<:AbstractRecurrentCell{
-        use_bias, train_state}}) where {use_bias, train_state}
-    return AbstractRecurrentCell{use_bias, train_state}
-end
 
 # Fallback for vector inputs
 function (rnn::AbstractRecurrentCell)(x::AbstractVector, ps, st::NamedTuple)
@@ -90,23 +85,22 @@ automatically operate over a sequence of inputs.
 
     For some discussion on this topic, see https://github.com/LuxDL/Lux.jl/issues/472.
 """
-@concrete struct Recurrence{R} <: AbstractExplicitContainerLayer{(:cell,)}
+@concrete struct Recurrence{R <: StaticBool} <: AbstractExplicitContainerLayer{(:cell,)}
     cell <: Union{<:AbstractRecurrentCell, <:AbstractDebugRecurrentCell}
     ordering <: AbstractTimeSeriesDataBatchOrdering
+    return_sequence::R
 end
-
-ConstructionBase.constructorof(::Type{<:Recurrence{R}}) where {R} = Recurrence{R}
 
 function Recurrence(cell; ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
         return_sequence::Bool=false)
-    return Recurrence{return_sequence}(cell, ordering)
+    return Recurrence(cell, ordering, static(return_sequence))
 end
 
 function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
     return apply(r, safe_eachslice(x, r.ordering), ps, st)
 end
 
-function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+function (r::Recurrence{False})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
     (out, carry), st = apply(r.cell, first(x), ps, st)
     for xᵢ in x[(begin + 1):end]
         (out, carry), st = apply(r.cell, (xᵢ, carry), ps, st)
@@ -114,7 +108,7 @@ function (r::Recurrence{false})(x::Union{AbstractVector, NTuple}, ps, st::NamedT
     return out, st
 end
 
-function (r::Recurrence{true})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
+function (r::Recurrence{True})(x::Union{AbstractVector, NTuple}, ps, st::NamedTuple)
     function recur_op(::Nothing, input)
         (out, carry), state = apply(r.cell, input, ps, st)
         return [out], carry, state
@@ -173,13 +167,10 @@ end
 function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, carry)
     return apply(l, (x, carry), ps, st)
 end
-
-function applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing)
-    return apply(l, x, ps, st)
-end
+applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x, ps, st)
 
 @doc doc"""
-    RNNCell(in_dims => out_dims, activation=tanh; bias::Bool=true, train_state::Bool=false,
+    RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
         init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
@@ -191,7 +182,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
   - `in_dims`: Input Dimension
   - `out_dims`: Output (Hidden State) Dimension
   - `activation`: Activation function
-  - `bias`: Set to false to deactivate bias
+  - `use_bias`: Set to false to deactivate bias
   - `train_state`: Trainable initial hidden state can be activated by setting this to `true`
   - `init_bias`: Initializer for bias
   - `init_weight`: Initializer for weight
@@ -226,43 +217,42 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-@concrete struct RNNCell{use_bias, train_state} <:
-                 AbstractRecurrentCell{use_bias, train_state}
+@concrete struct RNNCell <: AbstractRecurrentCell
+    train_state <: StaticBool
     activation
-    in_dims::Int
-    out_dims::Int
+    in_dims <: IntegerType
+    out_dims <: IntegerType
     init_bias
     init_weight
     init_state
+    use_bias <: StaticBool
 end
 
-function RNNCell((in_dims, out_dims)::Pair{<:Int, <:Int}, activation=tanh;
-        use_bias::Bool=true, train_state::Bool=false, init_bias=zeros32,
-        init_weight=glorot_uniform, init_state=ones32)
-    return RNNCell{use_bias, train_state}(
-        activation, in_dims, out_dims, init_bias, init_weight, init_state)
+function RNNCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}, activation=tanh;
+        use_bias::BoolType=True(), train_state::BoolType=False(),
+        init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
+    return RNNCell(static(train_state), activation, in_dims, out_dims,
+        init_bias, init_weight, init_state, static(use_bias))
 end
 
-function initialparameters(
-        rng::AbstractRNG, rnn::RNNCell{use_bias, TS}) where {use_bias, TS}
+function initialparameters(rng::AbstractRNG, rnn::RNNCell)
     ps = (weight_ih=rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
         weight_hh=rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
-    use_bias && (ps = merge(ps, (bias=rnn.init_bias(rng, rnn.out_dims),)))
-    TS && (ps = merge(ps, (hidden_state=rnn.init_state(rng, rnn.out_dims),)))
+    has_bias(rnn) && (ps = merge(ps, (bias=rnn.init_bias(rng, rnn.out_dims),)))
+    has_train_state(rnn) &&
+        (ps = merge(ps, (hidden_state=rnn.init_state(rng, rnn.out_dims),)))
     return ps
 end
 
 initialstates(rng::AbstractRNG, ::RNNCell) = (rng=Utils.sample_replicate(rng),)
 
-function (rnn::RNNCell{use_bias, false})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (rnn::RNNCell{False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     hidden_state = Utils.init_hidden_state(rng, rnn, x)
     return rnn((x, (hidden_state,)), ps, merge(st, (; rng)))
 end
 
-function (rnn::RNNCell{use_bias, true})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (rnn::RNNCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
     hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
     return rnn((x, (hidden_state,)), ps, st)
 end
@@ -277,12 +267,12 @@ function (rnn::RNNCell)(
     return (hₙ, (hₙ,)), st
 end
 
-function Base.show(io::IO, r::RNNCell{use_bias, TS}) where {use_bias, TS}
+function Base.show(io::IO, r::RNNCell)
     print(io, "RNNCell($(r.in_dims) => $(r.out_dims)")
     (r.activation == identity) || print(io, ", $(r.activation)")
-    use_bias || print(io, ", use_bias=false")
-    TS && print(io, ", train_state=true")
-    return print(io, ")")
+    has_bias(r) || print(io, ", use_bias=false")
+    has_train_state(r) && print(io, ", train_state=true")
+    print(io, ")")
 end
 
 @doc doc"""
@@ -360,74 +350,70 @@ Long Short-Term (LSTM) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-@concrete struct LSTMCell{use_bias, train_state, train_memory} <:
-                 AbstractRecurrentCell{use_bias, train_state}
-    in_dims::Int
-    out_dims::Int
+@concrete struct LSTMCell <: AbstractRecurrentCell
+    train_state <: StaticBool
+    train_memory <: StaticBool
+    in_dims <: IntegerType
+    out_dims <: IntegerType
     init_bias
     init_weight
     init_state
     init_memory
+    use_bias <: StaticBool
 end
 
-function LSTMCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-        use_bias::Bool=true,
-        train_state::Bool=false,
-        train_memory::Bool=false,
-        init_weight::NTuple{4, Function}=(
-            glorot_uniform, glorot_uniform, glorot_uniform, glorot_uniform),
-        init_bias::NTuple{4, Function}=(zeros32, zeros32, ones32, zeros32),
-        init_state::Function=zeros32,
-        init_memory::Function=zeros32)
-    return LSTMCell{use_bias, train_state, train_memory}(
-        in_dims, out_dims, init_bias, init_weight, init_state, init_memory)
+function LSTMCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
+        use_bias::BoolType=True(), train_state::BoolType=False(),
+        train_memory::BoolType=False(), init_weight=glorot_uniform,
+        init_bias=zeros32, init_state=zeros32, init_memory=zeros32)
+    init_weight isa NTuple{4} || (init_weight = ntuple(Returns(init_weight), 4))
+    init_bias isa NTuple{4} || (init_bias = ntuple(Returns(init_bias), 4))
+    return LSTMCell(static(train_state), static(train_memory), in_dims, out_dims,
+        init_bias, init_weight, init_state, init_memory, static(use_bias))
 end
 
-function initialparameters(rng::AbstractRNG,
-        lstm::LSTMCell{use_bias, TS, train_memory}) where {use_bias, TS, train_memory}
+function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
     weight_i = vcat([init_weight(rng, lstm.out_dims, lstm.in_dims)
                      for init_weight in lstm.init_weight]...)
     weight_h = vcat([init_weight(rng, lstm.out_dims, lstm.out_dims)
                      for init_weight in lstm.init_weight]...)
     ps = (; weight_i, weight_h)
-    if use_bias
+    if has_bias(lstm)
         # TODO: in v1 we make this a flat vector
         bias = vcat([init_bias(rng, lstm.out_dims, 1) for init_bias in lstm.init_bias]...)
         ps = merge(ps, (bias=bias,))
     end
-    TS && (ps = merge(ps, (hidden_state=lstm.init_state(rng, lstm.out_dims),)))
-    train_memory && (ps = merge(ps, (memory=lstm.init_memory(rng, lstm.out_dims),)))
+    has_train_state(lstm) &&
+        (ps = merge(ps, (hidden_state=lstm.init_state(rng, lstm.out_dims),)))
+    known(lstm.train_memory) &&
+        (ps = merge(ps, (memory=lstm.init_memory(rng, lstm.out_dims),)))
     return ps
 end
 
 initialstates(rng::AbstractRNG, ::LSTMCell) = (rng=Utils.sample_replicate(rng),)
 
-function (lstm::LSTMCell{use_bias, false, false})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (lstm::LSTMCell{False, False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     hidden_state = Utils.init_hidden_state(rng, lstm, x)
     memory = Utils.init_hidden_state(rng, lstm, x)
     return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
-function (lstm::LSTMCell{use_bias, true, false})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (lstm::LSTMCell{True, False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
     memory = Utils.init_hidden_state(rng, lstm, x)
     return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
-function (lstm::LSTMCell{use_bias, false, true})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (lstm::LSTMCell{False, True})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     hidden_state = Utils.init_hidden_state(rng, lstm, x)
     memory = Utils.init_trainable_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
-function (lstm::LSTMCell{use_bias, true, true})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (lstm::LSTMCell{True, True})(x::AbstractMatrix, ps, st::NamedTuple)
     hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
     memory = Utils.init_trainable_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, st)
@@ -449,13 +435,12 @@ function (lstm::LSTMCell)(
     return (hidden_state₂, (hidden_state₂, memory₂)), st
 end
 
-function Base.show(io::IO,
-        lstm::LSTMCell{use_bias, TS, train_memory}) where {use_bias, TS, train_memory}
+function Base.show(io::IO, lstm::LSTMCell)
     print(io, "LSTMCell($(lstm.in_dims) => $(lstm.out_dims)")
-    use_bias || print(io, ", use_bias=false")
-    TS && print(io, ", train_state=true")
-    train_memory && print(io, ", train_memory=true")
-    return print(io, ")")
+    has_bias(lstm) || print(io, ", use_bias=false")
+    has_train_state(lstm) && print(io, ", train_state=true")
+    known(lstm.train_memory) && print(io, ", train_memory=true")
+    print(io, ")")
 end
 
 @doc doc"""
@@ -521,51 +506,50 @@ Gated Recurrent Unit (GRU) Cell
 
   - `rng`: Controls the randomness (if any) in the initial state generation
 """
-@concrete struct GRUCell{use_bias, train_state} <:
-                 AbstractRecurrentCell{use_bias, train_state}
-    in_dims::Int
-    out_dims::Int
+@concrete struct GRUCell <: AbstractRecurrentCell
+    train_state <: StaticBool
+    in_dims <: IntegerType
+    out_dims <: IntegerType
     init_bias
     init_weight
     init_state
+    use_bias <: StaticBool
 end
 
-function GRUCell((in_dims, out_dims)::Pair{<:Int, <:Int};
-        use_bias::Bool=true, train_state::Bool=false,
-        init_weight::NTuple{3, Function}=(glorot_uniform, glorot_uniform, glorot_uniform),
-        init_bias::NTuple{3, Function}=(zeros32, zeros32, zeros32),
-        init_state::Function=zeros32)
-    return GRUCell{use_bias, train_state}(
-        in_dims, out_dims, init_bias, init_weight, init_state)
+function GRUCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
+        use_bias::BoolType=True(), train_state::BoolType=False(),
+        init_weight=glorot_uniform, init_bias=zeros32, init_state=zeros32)
+    init_weight isa NTuple{3} || (init_weight = ntuple(Returns(init_weight), 3))
+    init_bias isa NTuple{3} || (init_bias = ntuple(Returns(init_bias), 3))
+    return GRUCell(static(train_state), in_dims, out_dims, init_bias,
+        init_weight, init_state, static(use_bias))
 end
 
-function initialparameters(
-        rng::AbstractRNG, gru::GRUCell{use_bias, TS}) where {use_bias, TS}
+function initialparameters(rng::AbstractRNG, gru::GRUCell)
     weight_i = vcat([init_weight(rng, gru.out_dims, gru.in_dims)
                      for init_weight in gru.init_weight]...)
     weight_h = vcat([init_weight(rng, gru.out_dims, gru.out_dims)
                      for init_weight in gru.init_weight]...)
     ps = (; weight_i, weight_h)
-    if use_bias
+    if has_bias(gru)
         bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
         # TODO: in v1 we make this a flat vector
         bias_h = vcat([init_bias(rng, gru.out_dims, 1) for init_bias in gru.init_bias]...)
         ps = merge(ps, (bias_i=bias_i, bias_h=bias_h))
     end
-    TS && (ps = merge(ps, (hidden_state=gru.init_state(rng, gru.out_dims),)))
+    has_train_state(gru) &&
+        (ps = merge(ps, (hidden_state=gru.init_state(rng, gru.out_dims),)))
     return ps
 end
 
 initialstates(rng::AbstractRNG, ::GRUCell) = (rng=Utils.sample_replicate(rng),)
 
-function (gru::GRUCell{use_bias, true})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (gru::GRUCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
     hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
     return gru((x, (hidden_state,)), ps, st)
 end
 
-function (gru::GRUCell{use_bias, false})(
-        x::AbstractMatrix, ps, st::NamedTuple) where {use_bias}
+function (gru::GRUCell{False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     st = merge(st, (; rng))
     hidden_state = Utils.init_hidden_state(rng, gru, x)
@@ -592,11 +576,11 @@ end
 gru_cell_compute(x, r, y, ::Nothing) = @. tanh_fast(x + r * y)
 gru_cell_compute(x, r, y, bias) = @. tanh_fast(x + r * y + bias)
 
-function Base.show(io::IO, g::GRUCell{use_bias, TS}) where {use_bias, TS}
+function Base.show(io::IO, g::GRUCell)
     print(io, "GRUCell($(g.in_dims) => $(g.out_dims)")
-    use_bias || print(io, ", use_bias=false")
-    TS && print(io, ", train_state=true")
-    return print(io, ")")
+    has_bias(g) || print(io, ", use_bias=false")
+    has_train_state(g) && print(io, ", train_state=true")
+    print(io, ")")
 end
 
 """

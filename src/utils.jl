@@ -8,11 +8,16 @@ using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
 using Functors: fmapstructure
 using Random: AbstractRNG
+using Static: Static, StaticBool, StaticInteger, StaticSymbol
 
 using LuxCore: LuxCore, AbstractExplicitLayer
 using MLDataDevices: get_device
 
 const CRC = ChainRulesCore
+
+const BoolType = Union{StaticBool, Bool, Val{true}, Val{false}}
+const IntegerType = Union{Integer, StaticInteger}
+const SymbolType = Union{Symbol, StaticSymbol}
 
 # Aliased `size` from Base
 size(x::AbstractArray) = Base.size(x)
@@ -188,9 +193,18 @@ function named_tuple_layers(layers::Vararg{AbstractExplicitLayer, N}) where {N}
     return NamedTuple{ntuple(i -> Symbol(:layer_, i), N)}(layers)
 end
 
+make_abstract_matrix(x::AbstractVector) = reshape(x, :, 1)
+make_abstract_matrix(x::AbstractMatrix) = x
+make_abstract_matrix(x::AbstractArray{T, N}) where {T, N} = reshape(x, Base.size(x, 1), :)
+
+matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
+matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
+matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
+
 end
 
-using .Utils: Utils
+using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
+              matrix_to_array
 
 const safe_reverse = Utils.reverse
 const safe_vec = Utils.vec

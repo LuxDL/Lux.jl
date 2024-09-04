@@ -1,6 +1,8 @@
 """
-    DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
-        error_check::Bool=true, location::KeyPath=KeyPath())
+    DebugLayer(layer::AbstractExplicitLayer;
+        nan_check::Union{Symbol, StaticSymbol, Val}=static(:both),
+        error_check::Union{StaticBool, Bool, Val{true}, Val{false}}=True(),
+        location::Union{KeyPath, String}=KeyPath())
 
 A wrapper over Lux layers that adds checks for NaNs and errors. This is useful for
 debugging.
@@ -41,15 +43,18 @@ track where the error originates.
 
 See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
 """
-@concrete struct DebugLayer{NaNCheck, ErrorCheck} <:
-                 AbstractExplicitContainerLayer{(:layer,)}
+@concrete struct DebugLayer <: AbstractExplicitContainerLayer{(:layer,)}
+    nan_check <: StaticSymbol
+    error_check <: StaticBool
     layer <: AbstractExplicitLayer
     location::KeyPath
 end
 
-function DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
-        error_check::Bool=true, location::Union{KeyPath, String}=KeyPath())
-    @argcheck nan_check in (:both, :forward, :backward, :none)
+function DebugLayer(layer::AbstractExplicitLayer;
+        nan_check::Union{Symbol, StaticSymbol, Val}=static(:both),
+        error_check::Union{StaticBool, Bool, Val{true}, Val{false}}=True(),
+        location::Union{KeyPath, String}=KeyPath())
+    @argcheck dynamic(nan_check) in (:both, :forward, :backward, :none)
 
     if location isa String
         Base.depwarn(
@@ -58,23 +63,23 @@ function DebugLayer(layer::AbstractExplicitLayer; nan_check::Symbol=:both,
         location = KeyPath(Symbol.(split(location, "."))...)
     end
 
-    return DebugLayer{nan_check, error_check}(layer, location)
+    return DebugLayer(static(nan_check), static(error_check), layer, location)
 end
 
-function (d::DebugLayer{NaNCheck, ErrorCheck})(x, ps, st) where {NaNCheck, ErrorCheck}
+function (d::DebugLayer)(x, ps, st)
     CRC.ignore_derivatives() do
         @info lazy"Input Type: $(typeof(x)) | Input Structure: $(Utils.structure(x))."
         @info lazy"Running Layer: $(d.layer) at location $(d.location)!"
-        if NaNCheck ∈ (:both, :forward)
+        if known(d.nan_check) ∈ (:both, :forward)
             check_nan_and_throw(x, "input", d.layer, d.location)
             check_nan_and_throw(ps, "parameters", d.layer, d.location)
             check_nan_and_throw(st, "states", d.layer, d.location)
         end
     end
-    y, stₙ = debug_layer_impl(
-        d.layer, x, ps, st, d.location, ErrorCheck, NaNCheck ∈ (:both, :backward))
+    y, stₙ = debug_layer_impl(d.layer, x, ps, st, d.location, known(d.error_check),
+        known(d.nan_check) ∈ (:both, :backward))
     CRC.ignore_derivatives() do
-        if NaNCheck ∈ (:both, :forward)
+        if known(d.nan_check) ∈ (:both, :forward)
             check_nan_and_throw(y, "output", d.layer, d.location)
             check_nan_and_throw(stₙ, "states", d.layer, d.location)
         end
@@ -99,34 +104,34 @@ function check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
     return fmap_with_path(nan_check, x)
 end
 
-function debug_layer_impl(layer, x, ps, st, location, EC, NC)
+function debug_layer_impl(layer, x, ps, st, location, error_check, _)
     y, stₙ = try
         apply(layer, x, ps, st)
     catch
-        EC &&
+        error_check &&
             @error "Layer $(layer) failed!! This layer is present at location $(location)."
         rethrow()
     end
     return y, stₙ
 end
 
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
-        ::typeof(debug_layer_impl), layer, x, ps, st, location, EC, NC)
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(debug_layer_impl),
+        layer, x, ps, st, location, error_check, nan_check_backward)
     result, ∇debug_layer_internal = CRC.rrule_via_ad(cfg, apply, layer, x, ps, st)
     syms = ("LuxCore.apply", "layer", "x", "ps", "st")
     function ∇debug_layer_internal_with_checks(Δ)
-        NC && check_nan_and_throw(Δ, "pullback input", layer, location)
+        nan_check_backward && check_nan_and_throw(Δ, "pullback input", layer, location)
 
         gs = try
             ∇debug_layer_internal(Δ)
         catch
-            EC &&
+            error_check &&
                 @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)."
             rethrow()
         end
 
-        if NC
-            for (i, g) in enumerate(gs)
+        if nan_check_backward
+            foreach(enumerate(gs)) do (i, g)
                 check_nan_and_throw(g, "pullback output ($(syms[i]))", layer, location)
             end
         end

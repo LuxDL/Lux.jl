@@ -38,7 +38,7 @@ end
 
 outputsize(r::ReshapeLayer) = r.dims
 
-function (r::ReshapeLayer)(x::AbstractArray, ps, st::NamedTuple)
+function (r::ReshapeLayer)(x::AbstractArray, _, st::NamedTuple)
     return reshape(x, r.dims..., size(x, ndims(x))), st
 end
 
@@ -81,34 +81,35 @@ julia> y, st_new = model(x, ps, st)
 ([3.0, 2.0, 1.0], NamedTuple())
 ```
 """
-@kwdef struct ReverseSequence{D <: Union{Int, Nothing}} <: AbstractExplicitLayer
-    dim::D = nothing
+@concrete struct ReverseSequence <: AbstractExplicitLayer
+    dim <: Union{Nothing, StaticInt}
 end
 
-function (r::ReverseSequence{Nothing})(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
+ReverseSequence(dim) = ReverseSequence(static(dim))
+ReverseSequence(; dim=nothing) = ReverseSequence(static(dim))
+
+function (r::ReverseSequence{Nothing})(x::AbstractArray, _, st::NamedTuple)
+    return safe_reverse(x; dims=max(ndims(x) - 1, 1)), st
+end
+
+function (r::ReverseSequence{StaticInt{1}})(x::AbstractVector, _, st::NamedTuple)
     return safe_reverse(x), st
 end
 
-function (r::ReverseSequence{Nothing})(
-        x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return safe_reverse(x; dims=ndims(x) - 1), st
+function (r::ReverseSequence{StaticInt{N}})(::AbstractVector, _, st::NamedTuple) where {N}
+    throw(ArgumentError("Cannot specify a dimension ($(N) != 1) for AbstractVector"))
 end
 
-function (r::ReverseSequence)(x::AbstractVector{T}, ps, st::NamedTuple) where {T}
-    r.dim == 1 && return safe_reverse(x), st
-    throw(ArgumentError("Cannot specify a dimension other than 1 for AbstractVector{T}"))
-end
-
-function (r::ReverseSequence)(x::AbstractArray{T, N}, ps, st::NamedTuple) where {T, N}
-    return safe_reverse(x; dims=r.dim), st
+function (r::ReverseSequence{StaticInt{N}})(x::AbstractArray, _, st::NamedTuple) where {N}
+    return safe_reverse(x; dims=N), st
 end
 
 """
-    FlattenLayer(N = nothing)
+    FlattenLayer(; N = nothing)
 
 Flattens the passed array into a matrix.
 
-## Arguments
+## Keyword Arguments
 
   - `N`: Flatten the first `N` dimensions of the input array. If `nothing`, then all
     dimensions (except the last) are flattened. Note that the batch dimension is never
@@ -140,11 +141,12 @@ julia> y, st_new = model(x, ps, st);
 (8, 2)
 ```
 """
-struct FlattenLayer{NT <: Union{Nothing, Int}} <: AbstractExplicitLayer
-    N::NT  # FIXME: In v1 promote this to type parameter to allow type-stable forward pass
+@concrete struct FlattenLayer <: AbstractExplicitLayer
+    N <: Union{Nothing, StaticInt}
 end
 
-FlattenLayer(; N=nothing) = FlattenLayer(N)
+FlattenLayer(N) = FlattenLayer(static(N))
+FlattenLayer(; N=nothing) = FlattenLayer(static(N))
 
 function (::FlattenLayer{Nothing})(x::AbstractArray{T, N}, _, st::NamedTuple) where {T, N}
     return reshape(x, :, size(x, N)), st
@@ -175,16 +177,17 @@ Return a view of all the data of the input `x` where the index for dimension `di
   - `view(x,:,:,...,i,:,:,...)` where `i` is in position `d`
   - Empty `NamedTuple()`
 """
-struct SelectDim{dim, index} <: AbstractExplicitLayer end
-
-SelectDim(dim, index) = SelectDim{dim, index}()
-
-function (s::SelectDim{dim, index})(x, ps, st::NamedTuple) where {dim, index}
-    return selectdim(x, dim, index), st
+@concrete struct SelectDim <: AbstractExplicitLayer
+    dim <: StaticInt
+    index <: StaticInt
 end
 
-function Base.show(io::IO, ::SelectDim{dim, index}) where {dim, index}
-    return print(io, "SelectDim(", dim, ", ", index, ")")
+SelectDim(dim, index) = SelectDim(static(dim), static(index))
+
+(s::SelectDim)(x, _, st::NamedTuple) = selectdim(x, known(s.dim), known(s.index)), st
+
+function Base.show(io::IO, s::SelectDim)
+    return print(io, "SelectDim(dim = ", s.dim, ", index = ", s.index, ")")
 end
 
 """
@@ -211,7 +214,7 @@ julia> y, st_new = model(x, ps, st)
 """
 struct NoOpLayer <: AbstractExplicitLayer end
 
-(noop::NoOpLayer)(x, ps, st::NamedTuple) = x, st
+(noop::NoOpLayer)(x, _, st::NamedTuple) = x, st
 
 """
     WrappedFunction{DC}(f)
@@ -232,15 +235,21 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 
 ## Inputs
 
-  - `x`: s.t `hasmethod(f, (typeof(x),))` is `true`
+  - `x`: s.t `hasmethod(f, (typeof(x),))` is `true` if :direct_call else
+    `hasmethod(f, (typeof(x), NamedTuple, NamedTuple))` is `true`
 
 ## Returns
 
   - Output of `f(x)`
   - Empty `NamedTuple()`
 """
-@concrete struct WrappedFunction{DC} <: AbstractExplicitLayer
-    func
+struct WrappedFunction{DC, F} <: AbstractExplicitLayer
+    call_mode::StaticSymbol{DC}
+    func::F
+end
+
+function WrappedFunction{call_mode}(f::F) where {call_mode, F}
+    return WrappedFunction(static(call_mode), f)
 end
 
 function WrappedFunction(f::F) where {F}
@@ -266,17 +275,17 @@ function (wf::WrappedFunction{:runtime_check})(x, ps, st::NamedTuple)
 end
 
 wrapped_function_call(f, x, ps, st, ::False) = f(x, ps, st)
-wrapped_function_call(f, x, ps, st, ::True) = f(x), st
+wrapped_function_call(f, x, _, st, ::True) = f(x), st
 
 function Base.show(io::IO, w::WrappedFunction{T}) where {T}
-    print(io, "WrappedFunction{$(Meta.quot(T))}(")
+    print(io, "WrappedFunction(", static(w.call_mode), ", ")
     show(io, w.func)
     print(io, ")")
 end
 
 """
     Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform,
-          init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
+          init_bias=zeros32, use_bias=True(), allow_fast_activation=True())
 
 Create a traditional fully connected layer, whose forward pass is given by:
 `y = activation.(weight * x .+ bias)`
@@ -311,33 +320,35 @@ Create a traditional fully connected layer, whose forward pass is given by:
   - `weight`: Weight Matrix of size `(out_dims, in_dims)`
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
-@concrete struct Dense{use_bias} <: AbstractExplicitLayer
+@concrete struct Dense <: AbstractExplicitLayer
     activation
-    in_dims::Int
-    out_dims::Int
+    in_dims <: IntegerType
+    out_dims <: IntegerType
     init_weight
     init_bias
+    use_bias <: StaticBool
 end
 
-function Base.show(io::IO, d::Dense{use_bias}) where {use_bias}
+function Base.show(io::IO, d::Dense)
     print(io, "Dense($(d.in_dims) => $(d.out_dims)")
     (d.activation == identity) || print(io, ", $(d.activation)")
-    use_bias || print(io, ", use_bias=false")
+    has_bias(d) || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
-function Dense(mapping::Pair{<:Int, <:Int}, activation=identity; kwargs...)
+function Dense(mapping::Pair{<:IntegerType, <:IntegerType}, activation=identity; kwargs...)
     return Dense(first(mapping), last(mapping), activation; kwargs...)
 end
 
-function Dense(in_dims::Int, out_dims::Int, activation=identity; init_weight=glorot_uniform,
-        init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return Dense{use_bias}(activation, in_dims, out_dims, init_weight, init_bias)
+function Dense(in_dims::IntegerType, out_dims::IntegerType, activation=identity;
+        init_weight=glorot_uniform, init_bias=zeros32,
+        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+    return Dense(activation, in_dims, out_dims, init_weight, init_bias, static(use_bias))
 end
 
-function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias}
-    if use_bias
+function initialparameters(rng::AbstractRNG, d::Dense)
+    if has_bias(d)
         return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
             bias=d.init_bias(rng, d.out_dims, 1)) #TODO: In v1 make it a vector
     else
@@ -345,29 +356,23 @@ function initialparameters(rng::AbstractRNG, d::Dense{use_bias}) where {use_bias
     end
 end
 
-function parameterlength(d::Dense{use_bias}) where {use_bias}
-    return use_bias ? d.out_dims * (d.in_dims + 1) : d.out_dims * d.in_dims
-end
+parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
 statelength(d::Dense) = 0
 
 outputsize(d::Dense) = (d.out_dims,)
 
-function (d::Dense)(x::AbstractVector, ps, st::NamedTuple)
-    return vec(first(d(reshape(x, :, 1), ps, st))), st
-end
-
 function (d::Dense)(x::AbstractArray, ps, st::NamedTuple)
-    return reshape(first(d(reshape(x, size(x, 1), :), ps, st)), :, size(x)[2:end]...), st
-end
-
-function (d::Dense)(x::AbstractMatrix, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     bias = safe_vec(safe_getproperty(ps, Val(:bias)))
-    return fused_dense_bias_activation(d.activation, ps.weight, y, bias), st
+    z = matrix_to_array(
+        fused_dense_bias_activation(d.activation, ps.weight, make_abstract_matrix(y), bias),
+        y)
+    return z, st
 end
 
 """
-    Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, bias::Bool=true)
+    Scale(dims, activation=identity; init_weight=ones32, init_bias=zeros32, use_bias=True(),
+          allow_fast_activation=True())
 
 Create a Sparsely Connected Layer with a very specific structure (only Diagonal
 Elements are non-zero). The forward pass is given by: `y = activation.(weight .* x .+ bias)`
@@ -402,61 +407,61 @@ Elements are non-zero). The forward pass is given by: `y = activation.(weight .*
   - `weight`: Weight Array of size `(dims...)`
   - `bias`: Bias of size `(dims...)`
 """
-@concrete struct Scale{use_bias} <: AbstractExplicitLayer
+@concrete struct Scale{UB <: StaticBool} <: AbstractExplicitLayer
     activation
-    dims
+    dims <: Tuple{Vararg{IntegerType}}
     init_weight
     init_bias
+    use_bias::UB
 end
 
-function Base.show(io::IO, d::Scale{use_bias}) where {use_bias}
+function Base.show(io::IO, d::Scale)
     print(io, "Scale($(d.dims)")
     (d.activation == identity) || print(io, ", $(d.activation)")
-    use_bias || print(io, ", use_bias=false")
+    has_bias(d) || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
-function Scale(
-        dims::Tuple{Vararg{Integer}}, activation=identity; init_weight=glorot_uniform,
-        init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return Scale{use_bias}(activation, dims, init_weight, init_bias)
+function Scale(dims::Tuple{Vararg{IntegerType}}, activation=identity;
+        init_weight=glorot_uniform, init_bias=zeros32,
+        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+    return Scale(activation, dims, init_weight, init_bias, static(use_bias))
 end
 
-function Scale(s1::Integer, s23::Integer...; _act=identity, kwargs...)
+function Scale(s1::IntegerType, s23::IntegerType...; _act=identity, kwargs...)
     return Scale(tuple(s1, s23...), _act; kwargs...)
 end
 function Scale(size_act...; kwargs...)
     return Scale(size_act[1:(end - 1)]...; _act=size_act[end], kwargs...)
 end
 
-function initialparameters(rng::AbstractRNG, d::Scale{use_bias}) where {use_bias}
-    if use_bias
-        return (weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
-    else
-        return (weight=d.init_weight(rng, d.dims...),)
+function initialparameters(rng::AbstractRNG, d::Scale)
+    if has_bias(d)
+        return (; weight=d.init_weight(rng, d.dims...), bias=d.init_bias(rng, d.dims...))
     end
+    return (; weight=d.init_weight(rng, d.dims...),)
 end
 
-parameterlength(d::Scale{use_bias}) where {use_bias} = (1 + use_bias) * prod(d.dims)
+parameterlength(d::Scale) = (1 + has_bias(d)) * prod(d.dims)
 statelength(d::Scale) = 0
 
 outputsize(d::Scale) = d.dims
 
-function (d::Scale{false})(x::AbstractArray, ps, st::NamedTuple)
+function (d::Scale{False})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     return @.(d.activation(y .* ps.weight)), st
 end
-function (d::Scale{true})(x::AbstractArray, ps, st::NamedTuple)
+function (d::Scale{True})(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(d, ps, st, x)
     return @.(d.activation(y * ps.weight + ps.bias)), st
 end
 
 """
     Bilinear((in1_dims, in2_dims) => out, activation=identity; init_weight=glorot_uniform,
-             init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
+             init_bias=zeros32, use_bias=True(), allow_fast_activation=True())
     Bilinear(in12_dims => out, activation=identity; init_weight=glorot_uniform,
-             init_bias=zeros32, use_bias::Bool=true, allow_fast_activation::Bool=true)
+             init_bias=zeros32, use_bias=True(), allow_fast_activation=True())
 
 Create a fully connected layer between two inputs and an output, and otherwise similar to
 [`Dense`](@ref). Its output, given vectors `x` & `y`, is another vector `z` with, for all
@@ -504,35 +509,38 @@ with `B` the Bilinear layer.
   - `weight`: Weight Matrix of size `(out_dims, in1_dims, in2_dims)`
   - `bias`: Bias of size `(out_dims, 1)` (present if `use_bias=true`)
 """
-@concrete struct Bilinear{use_bias} <: AbstractExplicitLayer
+@concrete struct Bilinear <: AbstractExplicitLayer
     activation
-    in1_dims::Int
-    in2_dims::Int
-    out_dims::Int
+    in1_dims <: IntegerType
+    in2_dims <: IntegerType
+    out_dims <: IntegerType
     init_weight
     init_bias
+    use_bias <: StaticBool
 end
 
-function Base.show(io::IO, b::Bilinear{use_bias}) where {use_bias}
+function Base.show(io::IO, b::Bilinear)
     print(io, "Bilinear(($(b.in1_dims), $(b.in2_dims)) => $(b.out_dims)")
     (b.activation == identity) || print(io, ", $(b.activation)")
-    use_bias || print(io, ", use_bias=false")
+    has_bias(b) || print(io, ", use_bias=false")
     return print(io, ")")
 end
 
-function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:Integer},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-        use_bias::Bool=true, allow_fast_activation::Bool=true)
-    activation = allow_fast_activation ? NNlib.fast_act(activation) : activation
-    return Bilinear{use_bias}(activation, in1_dims, in2_dims, out, init_weight, init_bias)
-end
-function Bilinear(
-        (in12_dims, out)::Pair{<:Integer, <:Integer}, activation=identity; kwargs...)
+function Bilinear((in12_dims, out)::Pair{<:IntegerType, <:IntegerType},
+        activation=identity; kwargs...)
     return Bilinear((in12_dims, in12_dims) => out, activation; kwargs...)
 end
 
-function initialparameters(rng::AbstractRNG, b::Bilinear{use_bias}) where {use_bias}
-    if use_bias
+function Bilinear(((in1_dims, in2_dims), out)::Pair{<:Tuple, <:IntegerType},
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+        use_bias::BoolType=True(), allow_fast_activation::BoolType=True())
+    activation = dynamic(allow_fast_activation) ? NNlib.fast_act(activation) : activation
+    return Bilinear(
+        activation, in1_dims, in2_dims, out, init_weight, init_bias, static(use_bias))
+end
+
+function initialparameters(rng::AbstractRNG, b::Bilinear)
+    if has_bias(b)
         return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),
             bias=b.init_bias(rng, b.out_dims, 1)) # TODO: In v1.0 make it a vector
     else
@@ -540,8 +548,8 @@ function initialparameters(rng::AbstractRNG, b::Bilinear{use_bias}) where {use_b
     end
 end
 
-function parameterlength(b::Bilinear{use_bias}) where {use_bias}
-    return b.out_dims * b.in1_dims * b.in2_dims + use_bias * b.out_dims
+function parameterlength(b::Bilinear)
+    return b.out_dims * b.in1_dims * b.in2_dims + has_bias(b) * b.out_dims
 end
 statelength(b::Bilinear) = 0
 
@@ -609,20 +617,24 @@ This layer is often used to store word embeddings and retrieve them using indice
   - Empty `NamedTuple()`
 """
 @concrete struct Embedding <: AbstractExplicitLayer
-    in_dims
-    out_dims::Int
+    in_dims <: Union{IntegerType, Tuple{Vararg{IntegerType}}}
+    out_dims <: IntegerType
     init_weight
 end
 
-function Embedding(
-        (in_dims, out_dims)::Pair{<:Union{Integer, NTuple{<:Any, <:Integer}}, <:Integer};
-        init_weight=randn32)
+function Embedding((in_dims, out_dims)::Pair; init_weight=randn32)
     return Embedding(in_dims, out_dims, init_weight)
 end
 
 function initialparameters(rng::AbstractRNG, e::Embedding)
     return (weight=e.init_weight(rng, e.out_dims, e.in_dims...),)
 end
+
+function Base.show(io::IO, e::Embedding)
+    return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
+end
+
+outputsize(e::Embedding) = (e.out_dims,)
 
 (e::Embedding)(x::Integer, ps, st::NamedTuple) = view(ps.weight, :, x), st
 function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)
@@ -647,12 +659,6 @@ end
 function (e::Embedding)(::Tuple{}, _, ::NamedTuple)
     throw(ArgumentError("Input tuple must contain at least one element"))
 end
-
-function Base.show(io::IO, e::Embedding)
-    return print(io, "Embedding(", e.in_dims, " => ", e.out_dims, ")")
-end
-
-outputsize(e::Embedding) = (e.out_dims,)
 
 """
     PeriodicEmbedding(idxs, periods)

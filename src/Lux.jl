@@ -8,7 +8,6 @@ using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore, NoTangent, @thunk
 using Compat: @compat
 using ConcreteStructs: @concrete
-using ConstructionBase: ConstructionBase
 using FastClosures: @closure
 using Functors: Functors, fmap
 using GPUArraysCore: @allowscalar
@@ -16,7 +15,7 @@ using LossFunctions: LossFunctions
 using Markdown: @doc_str
 using Optimisers: Optimisers
 using Random: Random, AbstractRNG
-using Static: StaticBool, True, False, static
+using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
 using Reexport: @reexport
 using Statistics: mean
 using UnrolledUtilities: unrolled_map, unrolled_mapreduce
