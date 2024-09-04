@@ -39,14 +39,14 @@ model_frozen(x, ps_frozen, st_frozen)
 
 When the function in `layer_map` is called, the 4th argument is the name of the layer.
 For example, if you want to freeze the 1st layer inside the inner Chain. The name for this
-would be `<model>.layer_2.layer_1`.
+would be `layer_2.layer_1`.
 
 :::code-group
 
 ```julia [Freezing by Layer Name]
 
 function freeze_by_name(d, ps, st, name::KeyPath)
-    name == KeyPath(:model, :layer_2, :layer_1) &&
+    name == KeyPath(:layer_2, :layer_1) &&
         return Lux.Experimental.freeze(d, ps, st, (:weight, :bias))
     return d, ps, st
 end
@@ -74,7 +74,7 @@ the `weight` parameter while training the `bias` parameter.
 ```julia [Freezing Some Parameters of a Layer]
 
 function freeze_by_name(d, ps, st, name::KeyPath)
-    name == KeyPath(:model, :layer_2, :layer_1) &&
+    name == KeyPath(:layer_2, :layer_1) &&
         return Lux.Experimental.freeze(d, ps, st, (:weight,))
     return d, ps, st
 end
@@ -84,7 +84,7 @@ end
 ```julia [Freezing All Parameters of a Layer]
 
 function freeze_by_name(d, ps, st, name::KeyPath)
-    name == KeyPath(:model, :layer_2, :layer_1) &&
+    name == KeyPath(:layer_2, :layer_1) &&
         return Lux.Experimental.freeze(d, ps, st, (:weight, :bias))
     return d, ps, st
 end
