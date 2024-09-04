@@ -126,6 +126,8 @@ eltype(x) = eltype(Base.eltype(x))
 eltype(::Type{T}) where {T} = T
 eltype(::Type{<:Dual{T, V}}) where {T, V} = V
 
+@non_differentiable eltype(::Any)
+
 ofeltype_array(::Type{T}, x::AbstractArray) where {T} = broadcast(T, x)
 function ofeltype_array(::Type{T}, x::AbstractArray{<:Dual{Tag, V, N}}) where {Tag, T, V, N}
     return Dual{Tag, T, N}.(x)
