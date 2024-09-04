@@ -72,7 +72,6 @@ include("setup_modes.jl")
             model in model_list,
             input in inputs
 
-            model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev
 
