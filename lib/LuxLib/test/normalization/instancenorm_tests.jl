@@ -53,9 +53,10 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
     @jet instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
 
     if anonact !== act && is_training(training)
-        lfn = (x, sc, b, rm, rv, act, ϵ) -> sum(first(instancenorm(
-            x, sc, b, rm, rv, Val(true), act, T(0.1), ϵ)))
-        @test @inferred(Zygote.gradient(lfn, x, scale, bias, rm, rv, act, epsilon)) isa Any
+        lfn = (x, sc, b, rm, rv, act, m, ϵ) -> sum(first(instancenorm(
+            x, sc, b, rm, rv, Val(true), act, m, ϵ)))
+        @test @inferred(Zygote.gradient(
+            lfn, x, scale, bias, rm, rv, act, T(0.1), epsilon)) isa Any
     end
 
     @test y isa aType{T, length(sz)}

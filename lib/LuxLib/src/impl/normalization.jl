@@ -132,10 +132,10 @@ CRC.@non_differentiable get_norm_reshape_dims(::Any...)
 
 # Entry Points
 ## InstanceNorm
-function instancenorm(x::AbstractArray{xT, N}, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, training::StaticBool,
-        momentum, epsilon, act::F) where {xT, N, F}
+function instancenorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractVector},
+        β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
+        rσ²::Optional{<:AbstractVector}, training::StaticBool,
+        act::F, momentum, epsilon) where {xT, N, F}
     y, rμₙ, rσ²ₙ = normalization(
         x, rμ, rσ², γ, β, instancenorm_reduce_dims(x), training, momentum, epsilon, act)
     return y, safe_vec(rμₙ), safe_vec(rσ²ₙ)

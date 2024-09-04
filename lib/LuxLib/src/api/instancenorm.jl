@@ -43,8 +43,8 @@ end
 
 function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, training::TrainingType,
-        σ::F=identity, momentum::Real=0.1f0, epsilon::Real=default_epsilon(x)) where {F}
+        rσ²::Optional{<:AbstractVector}, training::TrainingType, σ::F=identity,
+        momentum::Optional{<:Real}=0.1f0, epsilon::Real=default_epsilon(x)) where {F}
     assert_valid_instancenorm_arguments(x)
 
     y, rμₙ, rσ²ₙ = instancenorm_impl(
