@@ -55,13 +55,13 @@ function ConvMixer(; dim, depth, kernel_size=5, patch_size=2)
     #! format: on
 end
 
-function accuracy(model, ps, st, dataloader; dev=gpu_device())
+function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
     cpu_dev = cpu_device()
     for (x, y) in dataloader
-        target_class = onecold(y)
-        predicted_class = onecold(cpu_dev(first(model(dev(x), ps, st))))
+        target_class = onecold(cpu_dev(y))
+        predicted_class = onecold(cpu_dev(first(model(x, ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -74,7 +74,7 @@ end
     rng = StableRNG(seed)
 
     gdev = gpu_device()
-    trainloader, testloader = get_dataloaders(batchsize)
+    trainloader, testloader = get_dataloaders(batchsize) .|> gdev
 
     model = ConvMixer(; dim=hidden_dim, depth, kernel_size, patch_size)
     ps, st = Lux.setup(rng, model) |> gdev
@@ -96,8 +96,6 @@ end
         for (i, (x, y)) in enumerate(trainloader)
             lr = lr_schedule((epoch - 1) + (i + 1) / length(trainloader))
             train_state = Optimisers.adjust!(train_state, lr)
-            x = x |> gdev
-            y = y |> gdev
             (_, _, _, train_state) = Training.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
         end

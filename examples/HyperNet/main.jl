@@ -59,13 +59,11 @@ end
 # ## Define Utility Functions
 const loss = CrossEntropyLoss(; logits=Val(true))
 
-function accuracy(model, ps, st, dataloader, data_idx, gdev=gpu_device())
+function accuracy(model, ps, st, dataloader, data_idx)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
     cpu_dev = cpu_device()
     for (x, y) in dataloader
-        x = x |> gdev
-        y = y |> gdev
         target_class = onecold(cpu_dev(y))
         predicted_class = onecold(cpu_dev(model((data_idx, x), ps, st)[1]))
         total_correct += sum(target_class .== predicted_class)
@@ -86,26 +84,24 @@ function train()
     train_state = Training.TrainState(model, ps, st, Adam(3.0f-4))
 
     ### Lets train the model
-    nepochs = 10
+    nepochs = 25
     for epoch in 1:nepochs, data_idx in 1:2
-        train_dataloader, test_dataloader = dataloaders[data_idx]
+        train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
 
         stime = time()
         for (x, y) in train_dataloader
-            x = x |> dev
-            y = y |> dev
             (_, _, _, train_state) = Training.single_train_step!(
                 AutoZygote(), loss, ((data_idx, x), y), train_state)
         end
         ttime = time() - stime
 
         train_acc = round(
-            accuracy(model, train_state.parameters, train_state.states,
-                train_dataloader, data_idx, dev) * 100;
+            accuracy(model, train_state.parameters,
+                train_state.states, train_dataloader, data_idx) * 100;
             digits=2)
         test_acc = round(
-            accuracy(model, train_state.parameters, train_state.states,
-                test_dataloader, data_idx, dev) * 100;
+            accuracy(model, train_state.parameters,
+                train_state.states, test_dataloader, data_idx) * 100;
             digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
@@ -116,22 +112,27 @@ function train()
 
     println()
 
+    test_acc_list = [0.0, 0.0]
     for data_idx in 1:2
-        train_dataloader, test_dataloader = dataloaders[data_idx]
+        train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
         train_acc = round(
-            accuracy(model, train_state.parameters, train_state.states,
-                train_dataloader, data_idx, dev) * 100;
+            accuracy(model, train_state.parameters,
+                train_state.states, train_dataloader, data_idx) * 100;
             digits=2)
         test_acc = round(
-            accuracy(model, train_state.parameters, train_state.states,
-                test_dataloader, data_idx, dev) * 100;
+            accuracy(model, train_state.parameters,
+                train_state.states, test_dataloader, data_idx) * 100;
             digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
         @printf "[FINAL] \t %12s \t Training Accuracy: %.2f%% \t Test Accuracy: \
                  %.2f%%\n" data_name train_acc test_acc
+        test_acc_list[data_idx] = test_acc
     end
+    return test_acc_list
 end
 
-train()
+test_acc_list = train()
+@assert test_acc_list[1] > 0.90 && test_acc_list[2] > 0.70 #hide
+nothing #hide
