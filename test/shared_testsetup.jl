@@ -23,10 +23,10 @@ function get_default_rng(mode::String)
 end
 
 maybe_rewrite_to_crosscor(layer) = layer
-function maybe_rewrite_to_crosscor(layer::Conv{N, use_bias, M}) where {N, use_bias, M}
-    return CrossCor{N, use_bias, M}(
-        layer.activation, layer.in_chs, layer.out_chs, layer.kernel_size,
-        layer.stride, layer.pad, layer.dilation, layer.init_weight, layer.init_bias)
+function maybe_rewrite_to_crosscor(layer::Conv)
+    return CrossCor(layer.activation, layer.in_chs, layer.out_chs, layer.kernel_size,
+        layer.stride, layer.pad, layer.dilation, layer.groups, layer.init_weight,
+        layer.init_bias, layer.use_bias)
 end
 
 function maybe_rewrite_to_crosscor(mode, model)
