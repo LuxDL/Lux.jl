@@ -208,3 +208,4 @@ using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
 
 const safe_reverse = Utils.reverse
 const safe_vec = Utils.vec
+const unwrapped_eltype = Utils.eltype
