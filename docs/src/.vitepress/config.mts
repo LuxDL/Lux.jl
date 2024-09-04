@@ -132,8 +132,7 @@ export default defineConfig({
                     },
                     {
                         text: 'Advanced', collapsed: false, items: [
-                            { text: 'Training a Neural ODE to Model Gravitational Waveforms', link: '/tutorials/advanced/1_GravitationalWaveForm' },
-                            { text: 'Solving Optimal Control Problems with Symbolic UDEs', link: '/tutorials/advanced/2_SymbolicOptimalControl' },]
+                            { text: 'Training a Neural ODE to Model Gravitational Waveforms', link: '/tutorials/advanced/1_GravitationalWaveForm' },]
                     },
                     {
                         text: 'Large Models', collapsed: true, items: [
