@@ -1,5 +1,5 @@
 """
-    DebugLayer(layer::AbstractExplicitLayer;
+    DebugLayer(layer::AbstractLuxLayer;
         nan_check::Union{Symbol, StaticSymbol, Val}=static(:both),
         error_check::Union{StaticBool, Bool, Val{true}, Val{false}}=True(),
         location::KeyPath=KeyPath())

@@ -48,7 +48,7 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractLuxLayer, psType, stType}
     fixed_state_type::ST
 
     function StatefulLuxLayer(
-            model::AbstractExplicitLayer, ps, st, st_any, fixed_state_type::StaticBool)
+            model::AbstractLuxLayer, ps, st, st_any, fixed_state_type::StaticBool)
         return new{typeof(fixed_state_type), typeof(model), typeof(ps), typeof(st)}(
             model, ps, st, st_any, fixed_state_type)
     end
