@@ -129,6 +129,7 @@ abstraction.
 - [`Dense`](@ref) and [`Bilinear`](@ref) have updated default initializations to align with
   the defaults from Pytorch. See the documentation for more details.
 - [`InstanceNorm`](@ref) now defaults to `affine=false` instead of `affine=true`.
+- [`Embedding`](@ref) now defaults to `init_weight=rand32` instead of `init_weight=randn32`.
 
 ### New Features
 
