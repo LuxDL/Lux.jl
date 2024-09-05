@@ -77,7 +77,7 @@ Chain(
 
 !!! warning
 
-    Passing a batch size of 1, during training will result in NaNs.
+    Passing a batch size of 1, during training will result in an error.
 
 See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 [`WeightNorm`](@ref)
@@ -257,7 +257,7 @@ end
 
 @doc doc"""
     InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-                 affine=True(), track_stats=False(), epsilon=1f-5, momentum=0.1f0)
+                 affine=False(), track_stats=False(), epsilon=1f-5, momentum=0.1f0)
 
 Instance Normalization. For details see [1].
 
@@ -353,7 +353,7 @@ See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`Weight
 end
 
 function InstanceNorm(chs::IntegerType, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine::BoolType=True(),
+        init_scale=ones32, affine::BoolType=False(),
         track_stats::BoolType=False(), epsilon=1.0f-5, momentum=0.1f0)
     return InstanceNorm(activation, epsilon, momentum, chs, init_bias,
         init_scale, static(affine), static(track_stats))
@@ -391,6 +391,101 @@ function Base.show(io::IO, l::InstanceNorm)
     (l.activation == identity) || print(io, ", $(l.activation)")
     print(io, ", affine=$(has_affine(l))")
     print(io, ", track_stats=$(has_track_stats(l))")
+    return print(io, ")")
+end
+
+@doc doc"""
+    LayerNorm(shape::NTuple{N, Int}, activation=identity; epsilon=1f-5, dims=Colon(),
+              affine=true, init_bias=zeros32, init_scale=ones32)
+
+Computes mean and standard deviation over the whole input array, and uses these to
+normalize the whole array. Optionally applies an elementwise affine transformation
+afterwards.
+
+Given an input array ``x``, this layer computes
+
+```math
+y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
+```
+
+where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
+
+!!! warning "Inconsistent Defaults till v0.5.0"
+
+    As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
+    `affine::Bool=true` as the default. Now the doc reflects the code, so please check
+    whether your assumptions about the default (if made) were invalid.
+
+## Arguments
+
+  - `shape`: Broadcastable shape of input array excluding the batch dimension.
+  - `activation`: After normalization, elementwise activation `activation` is applied.
+
+## Keyword Arguments
+
+  - `epsilon`: a value added to the denominator for numerical stability.
+  - `dims`: Dimensions to normalize the array over.
+  - If `affine=true`, it also applies  a shift and a rescale to the input through to
+    learnable per-element bias and scale parameters.
+
+      + `init_bias`: Controls how the `bias` is initialized
+      + `init_scale`: Controls how the `scale` is initialized
+
+# Extended Help
+
+## Inputs
+
+  - `x`: AbstractArray
+
+## Returns
+
+  - `y`: Normalized Array
+  - Empty NamedTuple()
+
+## Parameters
+
+  - `affine=false`: Empty `NamedTuple()`
+  - `affine=true`
+
+      + `bias`: Bias of shape `(shape..., 1)`
+      + `scale`: Scale of shape `(shape..., 1)`
+"""
+@concrete struct LayerNorm <: AbstractLuxLayer
+    shape
+    activation
+    epsilon
+    init_bias
+    init_scale
+    dims
+    affine <: StaticBool
+end
+
+function LayerNorm(shape, activation=identity; epsilon=1.0f-5, dims=Colon(),
+        affine::BoolType=True(), init_bias=zeros32, init_scale=ones32)
+    return LayerNorm(
+        shape, activation, epsilon, init_bias, init_scale, dims, static(affine))
+end
+
+function initialparameters(rng::AbstractRNG, ln::LayerNorm)
+    if has_affine(ln)
+        dims = (ln.shape..., 1)
+        return (; bias=ln.init_bias(rng, dims...), scale=ln.init_scale(rng, dims...))
+    end
+    return (;)
+end
+
+function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
+    x′ = match_eltype(l, ps, st, x)
+    σ = NNlib.fast_act(l.activation, x′)
+    y = layernorm(x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        σ, l.dims, convert(unwrapped_eltype(x′), l.epsilon))
+    return y, st
+end
+
+function Base.show(io::IO, l::LayerNorm)
+    print(io, "LayerNorm($(l.shape)")
+    (l.activation == identity) || print(io, ", $(l.activation)")
+    print(io, ", affine=$(has_affine(l)), dims=$(l.dims)")
     return print(io, ")")
 end
 
@@ -515,99 +610,4 @@ end
 function Base.show(io::IO, ::MIME"text/plain", w::WeightNorm)
     return print(io, "WeightNorm(", w.layer, ", dims = ", known(w.dims),
         ", normalized_parameters = ", known(w.which_params), ")")
-end
-
-@doc doc"""
-    LayerNorm(shape::NTuple{N, Int}, activation=identity; epsilon=1f-5, dims=Colon(),
-              affine=true, init_bias=zeros32, init_scale=ones32)
-
-Computes mean and standard deviation over the whole input array, and uses these to
-normalize the whole array. Optionally applies an elementwise affine transformation
-afterwards.
-
-Given an input array ``x``, this layer computes
-
-```math
-y = \frac{x - \mathbb{E}[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
-```
-
-where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
-
-!!! warning "Inconsistent Defaults till v0.5.0"
-
-    As of v0.5.0, the doc used to say `affine::Bool=false`, but the code actually had
-    `affine::Bool=true` as the default. Now the doc reflects the code, so please check
-    whether your assumptions about the default (if made) were invalid.
-
-## Arguments
-
-  - `shape`: Broadcastable shape of input array excluding the batch dimension.
-  - `activation`: After normalization, elementwise activation `activation` is applied.
-
-## Keyword Arguments
-
-  - `epsilon`: a value added to the denominator for numerical stability.
-  - `dims`: Dimensions to normalize the array over.
-  - If `affine=true`, it also applies  a shift and a rescale to the input through to
-    learnable per-element bias and scale parameters.
-
-      + `init_bias`: Controls how the `bias` is initialized
-      + `init_scale`: Controls how the `scale` is initialized
-
-# Extended Help
-
-## Inputs
-
-  - `x`: AbstractArray
-
-## Returns
-
-  - `y`: Normalized Array
-  - Empty NamedTuple()
-
-## Parameters
-
-  - `affine=false`: Empty `NamedTuple()`
-  - `affine=true`
-
-      + `bias`: Bias of shape `(shape..., 1)`
-      + `scale`: Scale of shape `(shape..., 1)`
-"""
-@concrete struct LayerNorm <: AbstractLuxLayer
-    shape
-    activation
-    epsilon
-    init_bias
-    init_scale
-    dims
-    affine <: StaticBool
-end
-
-function LayerNorm(shape, activation=identity; epsilon=1.0f-5, dims=Colon(),
-        affine::BoolType=True(), init_bias=zeros32, init_scale=ones32)
-    return LayerNorm(
-        shape, activation, epsilon, init_bias, init_scale, dims, static(affine))
-end
-
-function initialparameters(rng::AbstractRNG, ln::LayerNorm)
-    if has_affine(ln)
-        dims = (ln.shape..., 1)
-        return (; bias=ln.init_bias(rng, dims...), scale=ln.init_scale(rng, dims...))
-    end
-    return (;)
-end
-
-function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
-    x′ = match_eltype(l, ps, st, x)
-    σ = NNlib.fast_act(l.activation, x′)
-    y = layernorm(x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        σ, l.dims, convert(unwrapped_eltype(x′), l.epsilon))
-    return y, st
-end
-
-function Base.show(io::IO, l::LayerNorm)
-    print(io, "LayerNorm($(l.shape)")
-    (l.activation == identity) || print(io, ", $(l.activation)")
-    print(io, ", affine=$(has_affine(l)), dims=$(l.dims)")
-    return print(io, ")")
 end

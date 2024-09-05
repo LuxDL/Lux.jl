@@ -126,6 +126,9 @@ abstraction.
   to the layer.
 - [`Upsample`](@ref) now has an `align_corners` keyword argument, which defaults to `false`.
   Previously this was always `true`.
+- [`Dense`](@ref) and [`Bilinear`](@ref) have updated default initializations to align with
+  the defaults from Pytorch. See the documentation for more details.
+- [`InstanceNorm`](@ref) now defaults to `affine=false` instead of `affine=true`.
 
 ### New Features
 
