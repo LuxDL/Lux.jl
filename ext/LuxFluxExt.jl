@@ -173,7 +173,7 @@ Lux.convert_flux_model(::typeof(Flux.flatten); kwargs...) = Lux.FlattenLayer()
 Lux.convert_flux_model(l::Flux.PixelShuffle; kwargs...) = Lux.PixelShuffle(l.r)
 
 function Lux.convert_flux_model(l::Flux.Upsample{mode}; kwargs...) where {mode}
-    return Lux.Upsample(mode; l.scale, l.size)
+    return Lux.Upsample(mode; l.scale, l.size, align_corners=false)
 end
 
 function Lux.convert_flux_model(
