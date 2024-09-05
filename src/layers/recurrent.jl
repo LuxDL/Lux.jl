@@ -422,7 +422,7 @@ function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
                         for init_bias in lstm.init_bias]...)
         bias_hh = vcat([init_rnn_bias(rng, init_bias, lstm.out_dims, lstm.out_dims)
                         for init_bias in lstm.init_bias]...)
-        ps = merge(ps, (bias_ih, bias_hh))
+        ps = merge(ps, (; bias_ih, bias_hh))
     end
     has_train_state(lstm) &&
         (ps = merge(ps, (hidden_state=lstm.init_state(rng, lstm.out_dims),)))
