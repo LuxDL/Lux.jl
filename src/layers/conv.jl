@@ -494,7 +494,7 @@ function Base.show(io::IO, m::MeanPool)
 end
 
 """
-    Upsample(mode = :nearest; [scale, size])
+    Upsample(mode = :nearest; [scale, size, align_corners=false])
     Upsample(scale, mode = :nearest)
 
 Upsampling Layer.
@@ -526,6 +526,12 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
 
 # Extended Help
 
+## Other Keyword Arguments
+
+  - `align_corners`: If `true`, the corner pixels of the input and output tensors are
+    aligned, and thus preserving the values at those pixels. This only has effect when mode
+    is one of `:bilinear` or `:trilinear`.
+
 ## Inputs
 
   - `x`: For the input dimensions look into the documentation for the corresponding `NNlib`
@@ -544,38 +550,49 @@ Currently supported upsampling `mode`s and corresponding NNlib's methods are:
     scale
     size
     upsample_mode <: StaticSymbol
+    align_corners <: Bool
 end
 
-function Upsample(mode::SymbolType=static(:nearest); scale=nothing, size=nothing)
+function Upsample(mode::SymbolType=static(:nearest); scale=nothing,
+        size=nothing, align_corners::Bool=false)
     @argcheck dynamic(mode) in (:nearest, :bilinear, :trilinear)
+
     if !xor(isnothing(scale), isnothing(size))
         throw(ArgumentError("Either scale or size should be specified (but not both)."))
     end
-    return Upsample(scale, size, static(mode))
+    return Upsample(scale, size, static(mode), align_corners)
 end
 
 Upsample(scale, mode::SymbolType=static(:nearest)) = Upsample(mode; scale)
 
 function (m::Upsample)(x::AbstractArray, _, st::NamedTuple)
-    return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale), st
+    return lux_upsample_scale_dispatch(m.upsample_mode, x, m.scale, m.align_corners), st
 end
 function (m::Upsample{Nothing})(x::AbstractArray, _, st::NamedTuple)
-    return lux_upsample_size_dispatch(m.upsample_mode, x, m.size), st
+    return lux_upsample_size_dispatch(m.upsample_mode, x, m.size, m.align_corners), st
 end
 
-for interp in (:nearest, :bilinear, :trilinear)
+for interp in (:bilinear, :trilinear)
     nnlib_interp_func = Symbol(:upsample_, interp)
     @eval begin
-        function lux_upsample_scale_dispatch(::StaticSymbol{$(Meta.quot(interp))}, x, scale)
+        function lux_upsample_scale_dispatch(
+                ::StaticSymbol{$(Meta.quot(interp))}, x, scale, align_corners)
             return $(nnlib_interp_func)(x, scale)
         end
-        function lux_upsample_size_dispatch(::StaticSymbol{$(Meta.quot(interp))}, x, size)
+        function lux_upsample_size_dispatch(
+                ::StaticSymbol{$(Meta.quot(interp))}, x, size, align_corners)
             return $(nnlib_interp_func)(x; size)
         end
     end
 end
 
-function lux_upsample_scale_dispatch(::StaticSymbol{:nearest}, x, scale::Integer)
+function lux_upsample_size_dispatch(::StaticSymbol{:nearest}, x, size, _)
+    return NNlib.upsample_nearest(x; size)
+end
+function lux_upsample_scale_dispatch(::StaticSymbol{:nearest}, x, scale, _)
+    return NNlib.upsample_nearest(x, scale)
+end
+function lux_upsample_scale_dispatch(::StaticSymbol{:nearest}, x, scale::Integer, _)
     return NNlib.upsample_nearest(x, ntuple(i -> scale, ndims(x) - 2))
 end
 
@@ -583,6 +600,7 @@ function Base.show(io::IO, u::Upsample)
     print(io, "Upsample(", u.upsample_mode)
     u.scale !== nothing && print(io, ", scale = $(u.scale)")
     u.size !== nothing && print(io, ", size = $(u.size)")
+    u.align_corners && print(io, ", align_corners = $(u.align_corners)")
     print(io, ")")
 end
 

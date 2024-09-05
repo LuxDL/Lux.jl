@@ -124,6 +124,8 @@ abstraction.
   function, taken from Pytorch. Pytorch assumes the activation function is `leakyrelu` to
   compute the gain, however, we compute the gain based on the activation function passed in
   to the layer.
+- [`Upsample`](@ref) now has an `align_corners` keyword argument, which defaults to `false`.
+  Previously this was always `true`.
 
 ### New Features
 
