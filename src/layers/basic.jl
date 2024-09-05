@@ -1,3 +1,14 @@
+function init_linear_bias(rng::AbstractRNG, init_bias::F, fan_in::IntegerType,
+        bias_len::IntegerType) where {F}
+    if init_bias === nothing # Default from PyTorch
+        bound = inv(sqrt(fan_in))
+        y = rand32(rng, bias_len)
+        @. y = (y - 0.5f0) * 2 * bound
+        return y
+    end
+    return init_bias(rng, bias_len)
+end
+
 """
     ReshapeLayer(dims)
 
@@ -247,8 +258,8 @@ end
 Base.show(io::IO, w::WrappedFunction) = print(io, "WrappedFunction(", w.func, ")")
 
 """
-    Dense(in_dims => out_dims, activation=identity; init_weight=glorot_uniform,
-          init_bias=zeros32, use_bias=True())
+    Dense(in_dims => out_dims, activation=identity; init_weight=nothing,
+          init_bias=nothing, use_bias=True())
 
 Create a traditional fully connected layer, whose forward pass is given by:
 `y = activation.(weight * x .+ bias)`
@@ -262,8 +273,13 @@ Create a traditional fully connected layer, whose forward pass is given by:
 ## Keyword Arguments
 
   - `init_weight`: initializer for the weight matrix
-    (`weight = init_weight(rng, out_dims, in_dims)`)
-  - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
+    (`weight = init_weight(rng, out_dims, in_dims)`). If `nothing`, then we use
+    [`kaiming_uniform`](@ref) with gain computed on the basis of the activation
+    function (taken from Pytorch
+    [`nn.init.calculate_gain`](https://pytorch.org/docs/stable/nn.init.html#torch.nn.init.calculate_gain)).
+  - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`). If
+    `nothing`, then we use uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(in_dims))`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
 
 ## Input
@@ -306,12 +322,14 @@ function Dense(in_dims::IntegerType, out_dims::IntegerType, activation=identity;
 end
 
 function initialparameters(rng::AbstractRNG, d::Dense)
-    if has_bias(d)
-        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),
-            bias=d.init_bias(rng, d.out_dims))
+    weight = if d.init_weight === nothing
+        kaiming_uniform(rng, Float32, d.out_dims, d.in_dims; gain=Utils.calculate_gain(
+            d.activation, √5.0f0))
     else
-        return (weight=d.init_weight(rng, d.out_dims, d.in_dims),)
+        d.init_weight(rng, d.out_dims, d.in_dims)
     end
+    has_bias(d) || return (; weight)
+    return (; weight, bias=init_linear_bias(rng, d.init_bias, d.in_dims, d.out_dims))
 end
 
 parameterlength(d::Dense) = d.out_dims * d.in_dims + has_bias(d) * d.out_dims
@@ -412,10 +430,10 @@ function (d::Scale{True})(x::AbstractArray, ps, st::NamedTuple)
 end
 
 """
-    Bilinear((in1_dims, in2_dims) => out, activation=identity; init_weight=glorot_uniform,
-             init_bias=zeros32, use_bias=True())
-    Bilinear(in12_dims => out, activation=identity; init_weight=glorot_uniform,
-             init_bias=zeros32, use_bias=True())
+    Bilinear((in1_dims, in2_dims) => out, activation=identity; init_weight=nothing,
+             init_bias=nothing, use_bias=True())
+    Bilinear(in12_dims => out, activation=identity; init_weight=nothing,
+             init_bias=nothing, use_bias=True())
 
 Create a fully connected layer between two inputs and an output, and otherwise similar to
 [`Dense`](@ref). Its output, given vectors `x` & `y`, is another vector `z` with, for all
@@ -437,8 +455,12 @@ with `B` the Bilinear layer.
 ## Keyword Arguments
 
   - `init_weight`: initializer for the weight matrix
-    (`weight = init_weight(rng, out_dims, in1_dims, in2_dims)`)
-  - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`)
+    (`weight = init_weight(rng, out_dims, in1_dims, in2_dims)`). If `nothing`, then we
+    use uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(in1_dims))`.
+  - `init_bias`: initializer for the bias vector (ignored if `use_bias=false`). If
+    `nothing`, then we use uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(in1_dims))`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`
 
 ## Input
@@ -490,12 +512,16 @@ function Bilinear(
 end
 
 function initialparameters(rng::AbstractRNG, b::Bilinear)
-    if has_bias(b)
-        return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),
-            bias=b.init_bias(rng, b.out_dims))
+    weight = if b.init_weight === nothing
+        bound = inv(sqrt(b.in1_dims))
+        y = randn32(rng, b.out_dims, b.in1_dims, b.in2_dims)
+        @. y = (y - 0.5f0) * 2 * bound
+        y
     else
-        return (weight=b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims),)
+        b.init_weight(rng, b.out_dims, b.in1_dims, b.in2_dims)
     end
+    has_bias(b) || return (; weight)
+    return (; weight, bias=init_linear_bias(rng, b.init_bias, b.in1_dims, b.out_dims))
 end
 
 function parameterlength(b::Bilinear)

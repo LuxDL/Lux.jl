@@ -55,8 +55,8 @@ function init_conv_weight(
         rng::AbstractRNG, init_weight::F, filter::NTuple{N, <:IntegerType},
         in_chs::IntegerType, out_chs::IntegerType, groups, σ::A) where {F, N, A}
     if init_weight === nothing # Default from PyTorch
-        gain = Utils.calculate_gain(σ, √5.0f0)
-        return kaiming_uniform(rng, Float32, filter..., in_chs ÷ groups, out_chs; gain)
+        return kaiming_uniform(rng, Float32, filter..., in_chs ÷ groups,
+            out_chs; gain=Utils.calculate_gain(σ, √5.0f0))
     end
     return init_weight(rng, filter..., in_chs ÷ groups, out_chs)
 end
@@ -67,7 +67,7 @@ function init_conv_bias(rng::AbstractRNG, init_bias::F, filter::NTuple{N, <:Inte
         fan_in = prod(filter) * (in_chs ÷ groups)
         bound = inv(sqrt(fan_in))
         y = rand32(rng, out_chs)
-        @. y = y * 2bound - bound
+        @. y = (y - 0.5f0) * 2 * bound
         return y
     end
     return init_bias(rng, out_chs)
