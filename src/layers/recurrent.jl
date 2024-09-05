@@ -308,10 +308,8 @@ end
 
 @doc doc"""
     LSTMCell(in_dims => out_dims; use_bias::Bool=true, train_state::Bool=false,
-             train_memory::Bool=false,
-             init_weight=(glorot_uniform, glorot_uniform, glorot_uniform, glorot_uniform),
-             init_bias=(zeros32, zeros32, ones32, zeros32), init_state=zeros32,
-             init_memory=zeros32)
+             train_memory::Bool=false, init_weight=nothing, init_bias=nothing,
+             init_state=zeros32, init_memory=zeros32)
 
 Long Short-Term (LSTM) Cell
 
@@ -333,8 +331,14 @@ Long Short-Term (LSTM) Cell
   - `use_bias`: Set to false to deactivate bias
   - `train_state`: Trainable initial hidden state can be activated by setting this to `true`
   - `train_memory`: Trainable initial memory can be activated by setting this to `true`
-  - `init_bias`: Initializer for bias. Must be a tuple containing 4 functions
-  - `init_weight`: Initializer for weight. Must be a tuple containing 4 functions
+  - `init_bias`: Initializer for bias. Must be a tuple containing 4 functions. If a single
+    value is passed, it is copied into a 4 element tuple. If `nothing`, then we use
+    uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(out_dims))`.
+  - `init_weight`: Initializer for weight. Must be a tuple containing 4 functions. If a
+    single value is passed, it is copied into a 4 element tuple. If `nothing`, then we use
+    uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(out_dims))`.
   - `init_state`: Initializer for hidden state
   - `init_memory`: Initializer for memory
 
@@ -369,11 +373,13 @@ Long Short-Term (LSTM) Cell
 
 ## Parameters
 
-  - `weight_i`: Concatenated Weights to map from input space
-                ``\{ W_{ii}, W_{if}, W_{ig}, W_{io} \}``.
-  - `weight_h`: Concatenated Weights to map from hidden space
-                ``\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \}``
-  - `bias`: Bias vector (not present if `use_bias=false`)
+  - `weight_ih`: Concatenated Weights to map from input space
+                 ``\{ W_{ii}, W_{if}, W_{ig}, W_{io} \}``.
+  - `weight_hh`: Concatenated Weights to map from hidden space
+                 ``\{ W_{hi}, W_{hf}, W_{hg}, W_{ho} \}``
+  - `bias_ih`: Bias vector for the input-hidden connection (not present if `use_bias=false`)
+  - `bias_hh`: Concatenated Bias vector for the hidden-hidden connection (not present if
+    `use_bias=false`)
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
   - `memory`: Initial memory vector (not present if `train_memory=false`)
 
@@ -393,10 +399,10 @@ Long Short-Term (LSTM) Cell
     use_bias <: StaticBool
 end
 
-function LSTMCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
-        use_bias::BoolType=True(), train_state::BoolType=False(),
-        train_memory::BoolType=False(), init_weight=glorot_uniform,
-        init_bias=zeros32, init_state=zeros32, init_memory=zeros32)
+function LSTMCell(
+        (in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}; use_bias::BoolType=True(),
+        train_state::BoolType=False(), train_memory::BoolType=False(),
+        init_weight=nothing, init_bias=nothing, init_state=zeros32, init_memory=zeros32)
     init_weight isa NTuple{4} || (init_weight = ntuple(Returns(init_weight), 4))
     init_bias isa NTuple{4} || (init_bias = ntuple(Returns(init_bias), 4))
     return LSTMCell(static(train_state), static(train_memory), in_dims, out_dims,
@@ -404,14 +410,17 @@ function LSTMCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
 end
 
 function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
-    weight_i = vcat([init_weight(rng, lstm.out_dims, lstm.in_dims)
-                     for init_weight in lstm.init_weight]...)
-    weight_h = vcat([init_weight(rng, lstm.out_dims, lstm.out_dims)
-                     for init_weight in lstm.init_weight]...)
-    ps = (; weight_i, weight_h)
+    weight_ih = vcat([init_rnn_weight(
+                          rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.in_dins))
+                      for init_weight in lstm.init_weight]...)
+    weight_hh = vcat([init_rnn_weight(
+                          rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.out_dims))
+                      for init_weight in lstm.init_weight]...)
+    ps = (; weight_ih, weight_hh)
     if has_bias(lstm)
-        bias = vcat([init_bias(rng, lstm.out_dims) for init_bias in lstm.init_bias]...)
-        ps = merge(ps, (bias=bias,))
+        bias_ih = vcat([init_bias(rng, lstm.out_dims) for init_bias in lstm.init_bias]...)
+        bias_hh = vcat([init_bias(rng, lstm.out_dims) for init_bias in lstm.init_bias]...)
+        ps = merge(ps, (bias_ih, bias_hh))
     end
     has_train_state(lstm) &&
         (ps = merge(ps, (hidden_state=lstm.init_state(rng, lstm.out_dims),)))
@@ -455,10 +464,11 @@ const _LSTMCellInputType = Tuple{
 function (lstm::LSTMCell)(
         (x, (hidden_state, memory))::_LSTMCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ, memoryₙ = match_eltype(lstm, ps, st, x, hidden_state, memory)
-    bias = safe_getproperty(ps, Val(:bias))
-    z = fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ, bias)
-    g = LuxLib.Impl.matmul(ps.weight_i, y) .+ z
-
+    bias_hh = safe_getproperty(ps, Val(:bias_hh))
+    z₁ = fused_dense_bias_activation(identity, ps.weight_hh, hidden_stateₙ, bias_hh)
+    bias_ih = safe_getproperty(ps, Val(:bias_ih))
+    z₂ = fused_dense_bias_activation(identity, ps.weight_ih, y, bias_ih)
+    g = z₁ .+ z₂
     input, forget, cell, output = multigate(g, Val(4))
     memory₂ = @. sigmoid_fast(forget) * memoryₙ + sigmoid_fast(input) * tanh_fast(cell)
     hidden_state₂ = @. sigmoid_fast(output) * tanh_fast(memory₂)
