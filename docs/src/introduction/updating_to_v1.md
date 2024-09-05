@@ -130,7 +130,11 @@ abstraction.
   the defaults from Pytorch. See the documentation for more details.
 - [`InstanceNorm`](@ref) now defaults to `affine=false` instead of `affine=true`.
 - [`Embedding`](@ref) now defaults to `init_weight=rand32` instead of `init_weight=randn32`.
+- Recurrent Cells - [`RNNCell`](@ref), [`LSTMCell`](@ref), and [`GRUCell`](@ref) now have
+  different default initializations. See the documentation for more details.
 
 ### New Features
 
 - [`InstanceNorm`](@ref) now supports tracking statistics.
+- [`RNNCell`](@ref) add `bias_ih` and `bias_hh` to the parameters to align with Pytorch.
+  Both are controlled using `init_bias` and `use_bias`.

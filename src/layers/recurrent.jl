@@ -27,6 +27,20 @@ function LuxOps.eachslice(x::AbstractArray, ::BatchLastIndex)
 end
 LuxOps.eachslice(x::AbstractMatrix, ::BatchLastIndex) = LuxOps.eachslice(x, Val(ndims(x)))
 
+function init_rnn_weight(rng::AbstractRNG, init_weight, hidden_dims, dims)
+    if init_weight === nothing
+        bound = inv(sqrt(hidden_dims))
+        y = randn32(rng, Float32, dims...)
+        @. y = (y - 0.5f0) * 2 * bound
+        return y
+    end
+    return init_weight(rng, dims...)
+end
+
+function init_rnn_bias(rng::AbstractRNG, init_bias, hidden_dims, bias_len)
+    return init_rnn_weight(rng, init_bias, hidden_dims, (bias_len,))
+end
+
 """
     Recurrence(cell;
         ordering::AbstractTimeSeriesDataBatchOrdering=BatchLastIndex(),
@@ -171,11 +185,11 @@ applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x,
 
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
-        init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
+        init_bias=nothing, init_weight=nothing, init_state=zeros32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
-``h_{new} = activation(weight_{ih} \times x + weight_{hh} \times h_{prev} + bias)``
+``h_{new} = activation(weight_{ih} \times x + bias_{ih} + weight_{hh} \times h_{prev} + bias_{hh})``
 
 ## Arguments
 
@@ -184,8 +198,10 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
   - `activation`: Activation function
   - `use_bias`: Set to false to deactivate bias
   - `train_state`: Trainable initial hidden state can be activated by setting this to `true`
-  - `init_bias`: Initializer for bias
-  - `init_weight`: Initializer for weight
+  - `init_bias`: Initializer for bias. If `nothing`, then we use uniform distribution with
+    bounds `-bound` and `bound` where `bound = inv(sqrt(out_dims))`.
+  - `init_weight`: Initializer for weight. If `nothing`, then we use uniform distribution
+    with bounds `-bound` and `bound` where `bound = inv(sqrt(out_dims))`.
   - `init_state`: Initializer for hidden state
 
 ## Inputs
@@ -199,6 +215,7 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
             updated hidden state is returned.
 
 ## Returns
+
   - Tuple containing
 
       + Output ``h_{new}`` of shape `(out_dims, batch_size)`
@@ -210,7 +227,8 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
   - `weight_ih`: Maps the input to the hidden state.
   - `weight_hh`: Maps the hidden state to the hidden state.
-  - `bias`: Bias vector (not present if `use_bias=false`)
+  - `bias_ih`: Bias vector for the input-hidden connection (not present if `use_bias=false`)
+  - `bias_hh`: Bias vector for the hidden-hidden connection (not present if `use_bias=false`)
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
 
 ## States
@@ -230,15 +248,22 @@ end
 
 function RNNCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}, activation=tanh;
         use_bias::BoolType=True(), train_state::BoolType=False(),
-        init_bias=zeros32, init_weight=glorot_uniform, init_state=ones32)
+        init_bias=nothing, init_weight=nothing, init_state=zeros32)
     return RNNCell(static(train_state), activation, in_dims, out_dims,
         init_bias, init_weight, init_state, static(use_bias))
 end
 
 function initialparameters(rng::AbstractRNG, rnn::RNNCell)
-    ps = (weight_ih=rnn.init_weight(rng, rnn.out_dims, rnn.in_dims),
-        weight_hh=rnn.init_weight(rng, rnn.out_dims, rnn.out_dims))
-    has_bias(rnn) && (ps = merge(ps, (bias=rnn.init_bias(rng, rnn.out_dims),)))
+    weight_ih = init_rnn_weight(
+        rng, rnn.init_weight, rnn.out_dims, (rnn.out_dims, rnn.in_dims))
+    weight_hh = init_rnn_weight(
+        rng, rnn.init_weight, rnn.out_dims, (rnn.out_dims, rnn.out_dims))
+    ps = (; weight_ih, weight_hh)
+    if has_bias(rnn)
+        bias_ih = init_rnn_bias(rng, rnn.init_bias, rnn.out_dims, rnn.out_dims)
+        bias_hh = init_rnn_bias(rng, rnn.init_bias, rnn.out_dims, rnn.out_dims)
+        ps = merge(ps, (; bias_ih, bias_hh))
+    end
     has_train_state(rnn) &&
         (ps = merge(ps, (hidden_state=rnn.init_state(rng, rnn.out_dims),)))
     return ps
@@ -248,12 +273,12 @@ initialstates(rng::AbstractRNG, ::RNNCell) = (rng=Utils.sample_replicate(rng),)
 
 function (rnn::RNNCell{False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
-    hidden_state = Utils.init_hidden_state(rng, rnn, x)
+    hidden_state = init_rnn_hidden_state(rng, rnn, x)
     return rnn((x, (hidden_state,)), ps, merge(st, (; rng)))
 end
 
 function (rnn::RNNCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
-    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
+    hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
     return rnn((x, (hidden_state,)), ps, st)
 end
 
@@ -261,9 +286,15 @@ function (rnn::RNNCell)(
         (x, (hidden_state,))::Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}},
         ps, st::NamedTuple)
     y, hidden_stateₙ = match_eltype(rnn, ps, st, x, hidden_state)
-    bias = safe_getproperty(ps, Val(:bias))
-    z = fused_dense_bias_activation(identity, ps.weight_hh, hidden_stateₙ, bias)
-    hₙ = fast_activation!!(rnn.activation, LuxLib.Impl.matmul(ps.weight_ih, y) .+ z)
+
+    bias_hh = safe_getproperty(ps, Val(:bias_hh))
+    z₁ = fused_dense_bias_activation(identity, ps.weight_hh, hidden_stateₙ, bias_hh)
+
+    bias_ih = safe_getproperty(ps, Val(:bias_ih))
+    z₂ = fused_dense_bias_activation(identity, ps.weight_ih, y, bias_ih)
+
+    # TODO: This operation can be fused instead of doing add then activation
+    hₙ = fast_activation!!(rnn.activation, z₁ .+ z₂)
     return (hₙ, (hₙ,)), st
 end
 
@@ -393,28 +424,28 @@ initialstates(rng::AbstractRNG, ::LSTMCell) = (rng=Utils.sample_replicate(rng),)
 
 function (lstm::LSTMCell{False, False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
-    hidden_state = Utils.init_hidden_state(rng, lstm, x)
-    memory = Utils.init_hidden_state(rng, lstm, x)
+    hidden_state = init_rnn_hidden_state(rng, lstm, x)
+    memory = init_rnn_hidden_state(rng, lstm, x)
     return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
 function (lstm::LSTMCell{True, False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
-    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
-    memory = Utils.init_hidden_state(rng, lstm, x)
+    hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
+    memory = init_rnn_hidden_state(rng, lstm, x)
     return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
 function (lstm::LSTMCell{False, True})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
-    hidden_state = Utils.init_hidden_state(rng, lstm, x)
-    memory = Utils.init_trainable_hidden_state(ps.memory, x)
+    hidden_state = init_rnn_hidden_state(rng, lstm, x)
+    memory = init_trainable_rnn_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, merge(st, (; rng)))
 end
 
 function (lstm::LSTMCell{True, True})(x::AbstractMatrix, ps, st::NamedTuple)
-    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
-    memory = Utils.init_trainable_hidden_state(ps.memory, x)
+    hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
+    memory = init_trainable_rnn_hidden_state(ps.memory, x)
     return lstm((x, (hidden_state, memory)), ps, st)
 end
 
@@ -543,14 +574,14 @@ end
 initialstates(rng::AbstractRNG, ::GRUCell) = (rng=Utils.sample_replicate(rng),)
 
 function (gru::GRUCell{True})(x::AbstractMatrix, ps, st::NamedTuple)
-    hidden_state = Utils.init_trainable_hidden_state(ps.hidden_state, x)
+    hidden_state = init_trainable_rnn_hidden_state(ps.hidden_state, x)
     return gru((x, (hidden_state,)), ps, st)
 end
 
 function (gru::GRUCell{False})(x::AbstractMatrix, ps, st::NamedTuple)
     rng = replicate(st.rng)
     st = merge(st, (; rng))
-    hidden_state = Utils.init_hidden_state(rng, gru, x)
+    hidden_state = init_rnn_hidden_state(rng, gru, x)
     return gru((x, (hidden_state,)), ps, st)
 end
 
