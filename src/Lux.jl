@@ -87,7 +87,7 @@ include("distributed/public_api.jl")
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale
-export Conv, ConvTranspose, CrossCor, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
+export Conv, ConvTranspose, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
        AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm

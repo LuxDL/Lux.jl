@@ -12,6 +12,11 @@ list out some new exciting features that were added as part of this release.
   API](@ref LuxLib-API) for more details.
 - Default for [`layernorm`](@ref) dims has been changed to exclude the batch dimension.
 
+### New Major Features
+
+- Dense layers now support CUDA backend for Enzyme (starting `v1.1`). Wider support for
+  other operations with Enzyme + CUDA is being actively worked on.
+
 ## `LuxCore.jl`
 
 ### Breaking Changes
@@ -110,5 +115,16 @@ abstraction.
   as `StatefulLuxLayer{st_fixed_path}(...)`.
 - Strings as inputs to [`Lux.Experimental.layer_map`](@ref) and
   [`Lux.Experimental.@debug_mode`](@ref) are removed, use `Functors.KeyPath` instead.
+- `CrossCor` has been removed. Use `Conv(args...; kwargs..., cross_correlation=true)`
+  instead.
 
 ### Breaking Changes (Changes in Defaults)
+
+- [`Conv`](@ref) and [`ConvTranspose`](@ref) use an initialization based on the activation
+  function, taken from Pytorch. Pytorch assumes the activation function is `leakyrelu` to
+  compute the gain, however, we compute the gain based on the activation function passed in
+  to the layer.
+
+### New Features
+
+- [`InstanceNorm`](@ref) now supports tracking statistics.

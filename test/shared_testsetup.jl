@@ -5,11 +5,13 @@ include("setup_modes.jl")
 import Reexport: @reexport
 
 using Lux, Functors
+using Setfield: @set
 using DispatchDoctor: allow_unstable
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
                 Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
 using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
 using LuxTestUtils: check_approx
+using Static: True
 
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 LinearAlgebra.BLAS.set_num_threads(Threads.nthreads())
@@ -24,9 +26,8 @@ end
 
 maybe_rewrite_to_crosscor(layer) = layer
 function maybe_rewrite_to_crosscor(layer::Conv)
-    return CrossCor(layer.activation, layer.in_chs, layer.out_chs, layer.kernel_size,
-        layer.stride, layer.pad, layer.dilation, layer.groups,
-        layer.init_weight, layer.init_bias, layer.use_bias)
+    @set layer.cross_correlation = True()
+    return layer
 end
 
 function maybe_rewrite_to_crosscor(mode, model)

@@ -22,7 +22,6 @@ RepeatedLayer
 ```@docs
 Conv
 ConvTranspose
-CrossCor
 ```
 
 ## Dropout Layers

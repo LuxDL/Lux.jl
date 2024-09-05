@@ -77,7 +77,7 @@ include("setup_modes.jl")
 
             @test @inferred(model(x, ps, st)) isa Any
             @test @inferred(loss_function(model, x, ps, st)) isa Any
-            if mode == "amdgpu" && (model isa Conv || model isa CrossCor)
+            if mode == "amdgpu" && model isa Conv
                 @test_broken @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
                              Any
             else

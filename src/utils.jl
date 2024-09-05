@@ -12,6 +12,7 @@ using Static: Static, StaticBool, StaticInteger, StaticSymbol
 
 using LuxCore: LuxCore, AbstractLuxLayer
 using MLDataDevices: get_device
+using NNlib: NNlib
 
 const CRC = ChainRulesCore
 
@@ -202,6 +203,20 @@ make_abstract_matrix(x::AbstractArray{T, N}) where {T, N} = reshape(x, Base.size
 matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
 matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
 matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
+
+# This should probably be in WeightInitializers.jl
+calculate_gain(_, __) = 1.0f0
+calculate_gain(::typeof(identity), _) = 1.0f0
+calculate_gain(::typeof(NNlib.sigmoid), _) = 1.0f0
+calculate_gain(::typeof(NNlib.sigmoid_fast), _) = 1.0f0
+calculate_gain(::typeof(NNlib.relu), _) = 2.0f0
+calculate_gain(::typeof(tanh), _) = 5.0f0 / 3.0f0
+calculate_gain(::typeof(NNlib.tanh_fast), _) = 5.0f0 / 3.0f0
+function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)
+    return calculate_gain(NNlib.leakyrelu, 0.1f0)
+end
+calculate_gain(::typeof(NNlib.leakyrelu), x::Real) = typeof(x)(√(2 / (1 + x^2)))
+calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
 end
 
