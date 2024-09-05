@@ -411,15 +411,17 @@ end
 
 function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
     weight_ih = vcat([init_rnn_weight(
-                          rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.in_dins))
+                          rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.in_dims))
                       for init_weight in lstm.init_weight]...)
     weight_hh = vcat([init_rnn_weight(
                           rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.out_dims))
                       for init_weight in lstm.init_weight]...)
     ps = (; weight_ih, weight_hh)
     if has_bias(lstm)
-        bias_ih = vcat([init_bias(rng, lstm.out_dims) for init_bias in lstm.init_bias]...)
-        bias_hh = vcat([init_bias(rng, lstm.out_dims) for init_bias in lstm.init_bias]...)
+        bias_ih = vcat([init_rnn_bias(rng, init_bias, lstm.out_dims, lstm.out_dims)
+                        for init_bias in lstm.init_bias]...)
+        bias_hh = vcat([init_rnn_bias(rng, init_bias, lstm.out_dims, lstm.out_dims)
+                        for init_bias in lstm.init_bias]...)
         ps = merge(ps, (bias_ih, bias_hh))
     end
     has_train_state(lstm) &&
@@ -485,17 +487,14 @@ end
 
 @doc doc"""
     GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; use_bias=true, train_state::Bool=false,
-            init_weight::Tuple{Function,Function,Function}=(glorot_uniform, glorot_uniform,
-                                                            glorot_uniform),
-            init_bias::Tuple{Function,Function,Function}=(zeros32, zeros32, zeros32),
-            init_state::Function=zeros32)
+            init_weight=nothing, init_bias=nothing, init_state=zeros32)
 
 Gated Recurrent Unit (GRU) Cell
 
 ```math
 \begin{align}
-  r &= \sigma(W_{ir} \times x + W_{hr} \times h_{prev} + b_{hr})\\
-  z &= \sigma(W_{iz} \times x + W_{hz} \times h_{prev} + b_{hz})\\
+  r &= \sigma(W_{ir} \times x + b_{ir} + W_{hr} \times h_{prev} + b_{hr})\\
+  z &= \sigma(W_{iz} \times x + b_{iz} + W_{hz} \times h_{prev} + b_{hz})\\
   n &= \tanh(W_{in} \times x + b_{in} + r \cdot (W_{hn} \times h_{prev} + b_{hn}))\\
   h_{new} &= (1 - z) \cdot n + z \cdot h_{prev}
 \end{align}
@@ -507,8 +506,14 @@ Gated Recurrent Unit (GRU) Cell
   - `out_dims`: Output (Hidden State) Dimension
   - `use_bias`: Set to false to deactivate bias
   - `train_state`: Trainable initial hidden state can be activated by setting this to `true`
-  - `init_bias`: Initializer for bias. Must be a tuple containing 3 functions
-  - `init_weight`: Initializer for weight. Must be a tuple containing 3 functions
+  - `init_bias`: Initializer for bias. Must be a tuple containing 3 functions. If a single
+    value is passed, it is copied into a 3 element tuple. If `nothing`, then we use
+    uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(out_dims))`.
+  - `init_weight`: Initializer for weight. Must be a tuple containing 3 functions. If a
+    single value is passed, it is copied into a 3 element tuple. If `nothing`, then we use
+    uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(out_dims))`.
   - `init_state`: Initializer for hidden state
 
 ## Inputs
@@ -532,13 +537,14 @@ Gated Recurrent Unit (GRU) Cell
 
 ## Parameters
 
-  - `weight_i`: Concatenated Weights to map from input space
-                ``\{ W_{ir}, W_{iz}, W_{in} \}``.
-  - `weight_h`: Concatenated Weights to map from hidden space
-                ``\{ W_{hr}, W_{hz}, W_{hn} \}``.
-  - `bias_i`: Bias vector (``b_{in}``; not present if `use_bias=false`).
-  - `bias_h`: Concatenated Bias vector for the hidden space
-              ``\{ b_{hr}, b_{hz}, b_{hn} \}`` (not present if `use_bias=false`).
+  - `weight_ih`: Concatenated Weights to map from input space
+                 ``\{ W_{ir}, W_{iz}, W_{in} \}``.
+  - `weight_hh`: Concatenated Weights to map from hidden space
+                 ``\{ W_{hr}, W_{hz}, W_{hn} \}``.
+  - `bias_ih`: Concatenated Bias vector for the input space
+               ``\{ b_{ir}, b_{iz}, b_{in} \}`` (not present if `use_bias=false`).
+  - `bias_hh`: Concatenated Bias vector for the hidden space
+               ``\{ b_{hr}, b_{hz}, b_{hn} \}`` (not present if `use_bias=false`).
   - `hidden_state`: Initial hidden state vector (not present if `train_state=false`)
               ``\{ b_{hr}, b_{hz}, b_{hn} \}``.
 
@@ -566,15 +572,19 @@ function GRUCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
 end
 
 function initialparameters(rng::AbstractRNG, gru::GRUCell)
-    weight_i = vcat([init_weight(rng, gru.out_dims, gru.in_dims)
-                     for init_weight in gru.init_weight]...)
-    weight_h = vcat([init_weight(rng, gru.out_dims, gru.out_dims)
-                     for init_weight in gru.init_weight]...)
-    ps = (; weight_i, weight_h)
+    weight_ih = vcat([init_rnn_weight(
+                          rng, init_weight, gru.out_dims, (gru.out_dims, gru.in_dims))
+                      for init_weight in gru.init_weight]...)
+    weight_hh = vcat([init_rnn_weight(
+                          rng, init_weight, gru.out_dims, (gru.out_dims, gru.out_dims))
+                      for init_weight in gru.init_weight]...)
+    ps = (; weight_ih, weight_hh)
     if has_bias(gru)
-        bias_i = gru.init_bias[1](rng, gru.out_dims, 1)
-        bias_h = vcat([init_bias(rng, gru.out_dims) for init_bias in gru.init_bias]...)
-        ps = merge(ps, (bias_i=bias_i, bias_h=bias_h))
+        bias_ih = vcat([init_rnn_bias(rng, init_bias, gru.out_dims, gru.out_dims)
+                        for init_bias in gru.init_bias]...)
+        bias_hh = vcat([init_rnn_bias(rng, init_bias, gru.out_dims, gru.out_dims)
+                        for init_bias in gru.init_bias]...)
+        ps = merge(ps, (; bias_ih, bias_hh))
     end
     has_train_state(gru) &&
         (ps = merge(ps, (hidden_state=gru.init_state(rng, gru.out_dims),)))
@@ -599,21 +609,22 @@ const _GRUCellInputType = Tuple{<:AbstractMatrix, Tuple{<:AbstractMatrix}}
 
 function (gru::GRUCell)((x, (hidden_state,))::_GRUCellInputType, ps, st::NamedTuple)
     y, hidden_stateₙ = match_eltype(gru, ps, st, x, hidden_state)
-    gxs = multigate(ps.weight_i * y, Val(3))
-    bias_h = safe_getproperty(ps, Val(:bias_h))
-    ghbs = multigate(
-        fused_dense_bias_activation(identity, ps.weight_h, hidden_stateₙ, bias_h), Val(3))
 
-    r = @. sigmoid_fast(gxs[1] + ghbs[1])
-    z = @. sigmoid_fast(gxs[2] + ghbs[2])
-    n = gru_cell_compute(gxs[3], r, ghbs[3], safe_getproperty(ps, Val(:bias_i)))
-    hidden_state₂ = @. (1 - z) * n + z * hidden_stateₙ
+    z₁ = fused_dense_bias_activation(
+        identity, ps.weight_ih, y, safe_getproperty(ps, Val(:bias_ih)))
+    z₂ = fused_dense_bias_activation(
+        identity, ps.weight_hh, hidden_stateₙ, safe_getproperty(ps, Val(:bias_hh)))
 
-    return (hidden_state₂, (hidden_state₂,)), st
+    gxs₁, gxs₂, gxs₃ = multigate(z₁, Val(3))
+    ghbs₁, ghbs₂, ghbs₃ = multigate(z₂, Val(3))
+
+    r = @. sigmoid_fast(gxs₁ + ghbs₁)
+    z = @. sigmoid_fast(gxs₂ + ghbs₂)
+    n = @. tanh_fast(gxs₃ + r * ghbs₃)
+    h′ = @. (1 - z) * n + z * hidden_stateₙ
+
+    return (h′, (h′,)), st
 end
-
-gru_cell_compute(x, r, y, ::Nothing) = @. tanh_fast(x + r * y)
-gru_cell_compute(x, r, y, bias) = @. tanh_fast(x + r * y + bias)
 
 function Base.show(io::IO, g::GRUCell)
     print(io, "GRUCell($(g.in_dims) => $(g.out_dims)")
