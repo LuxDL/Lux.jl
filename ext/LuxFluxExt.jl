@@ -131,12 +131,12 @@ function Lux.convert_flux_model(l::Flux.CrossCor; preserve_ps_st::Bool=false, kw
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
-        return Lux.Conv(k, in_chs => out_chs, l.σ; l.stride, pad,
-            l.dilation, init_weight=Returns(copy(l.weight)),
-            init_bias=Returns(_bias), use_bias=!(l.bias isa Bool), cross_correlation=true)
+        return Lux.Conv(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
+            init_weight=Returns(copy(l.weight)), init_bias=Returns(_bias),
+            use_bias=!(l.bias isa Bool), cross_correlation=true)
     else
-        return Lux.Conv(k, in_chs => out_chs, l.σ; l.stride, pad,
-            l.dilation, use_bias=!(l.bias isa Bool), cross_correlation=true)
+        return Lux.Conv(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
+            use_bias=!(l.bias isa Bool), cross_correlation=true)
     end
 end
 
