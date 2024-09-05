@@ -160,11 +160,13 @@ end
 add!!(x::Number, y::Number) = x + y
 add!!(::Nothing, ::Nothing) = nothing
 
-function init_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+function init_rnn_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
+    # TODO: Once we support moving `rng` to the device, we can directly initialize on the
+    #       device
     return rnn.init_state(rng, rnn.out_dims, Base.size(x, 2)) |> get_device(x)
 end
 
-function init_trainable_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
+function init_trainable_rnn_hidden_state(hidden_state::AbstractVector, x::AbstractMatrix)
     return repeat(hidden_state, 1, Base.size(x, 2))
 end
 
@@ -221,7 +223,7 @@ calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 end
 
 using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
-              matrix_to_array
+              matrix_to_array, init_trainable_rnn_hidden_state, init_rnn_hidden_state
 
 const safe_reverse = Utils.reverse
 const safe_vec = Utils.vec
