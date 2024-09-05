@@ -446,8 +446,7 @@ end
             @test ps.bias isa aType{Float16, 1}
         end
 
-        @testset "SamePad kernelsize $k" for k in (
-            (1,), (2,), (3,), (2, 3), (1, 2, 3))
+        @testset "SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3), (1, 2, 3))
             x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
 
             @testset "Kwargs: $kwarg" for kwarg in (
