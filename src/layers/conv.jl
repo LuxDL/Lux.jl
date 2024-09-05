@@ -232,7 +232,8 @@ end
 @doc doc"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=True())
+                  stride=1, pad=0, dilation=1, groups=1, use_bias=True(),
+                  cross_correlation=False())
 
 Standard convolutional transpose layer.
 
@@ -271,6 +272,8 @@ Standard convolutional transpose layer.
               convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
               and `out_chs` must be divisible by `groups`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
+  - `cross_correlation`: If `true`, perform transposed cross-correlation instead of
+    transposed convolution.
 
 # Extended Help
 
@@ -301,12 +304,14 @@ Standard convolutional transpose layer.
     init_weight
     init_bias
     use_bias <: StaticBool
+    cross_correlation <: StaticBool
 end
 
 function ConvTranspose(
         k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
+        activation=identity; init_weight=glorot_uniform,
+        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
+        use_bias::BoolType=True(), cross_correlation::BoolType=False())
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = if pad isa SamePad
@@ -319,8 +324,8 @@ function ConvTranspose(
     @argcheck ch[1] % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
     @argcheck allequal(length, (stride, dilation, k))
 
-    return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation,
-        groups, init_weight, init_bias, static(use_bias))
+    return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation, groups,
+        init_weight, init_bias, static(use_bias), static(cross_correlation))
 end
 
 function initialparameters(rng::AbstractRNG, c::ConvTranspose)
@@ -340,7 +345,8 @@ end
 
 function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
-    cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    cdims = construct_crosscor_convdims(c.cross_correlation,
+        conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups))
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(c.activation, y)
     return bias_activation!!(σ, conv_transpose(y, ps.weight, cdims), bias), st
@@ -356,7 +362,7 @@ function Base.show(io::IO, l::ConvTranspose)
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
     has_bias(l) || print(io, ", use_bias=false")
-    return print(io, ")")
+    print(io, ")")
 end
 
 @doc doc"""
