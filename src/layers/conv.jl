@@ -432,7 +432,7 @@ function Base.show(io::IO, m::MaxPool)
     print(io, "MaxPool(", m.k)
     all(==(0), m.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(m.pad))
     m.stride == m.k || print(io, ", stride=", PrettyPrinting.tuple_string(m.stride))
-    return print(io, ")")
+    print(io, ")")
 end
 
 @doc doc"""
@@ -502,7 +502,7 @@ function Base.show(io::IO, m::MeanPool)
     print(io, "MeanPool(", m.k)
     all(==(0), m.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(m.pad))
     m.stride == m.k || print(io, ", stride=", PrettyPrinting.tuple_string(m.stride))
-    return print(io, ")")
+    print(io, ")")
 end
 
 """
