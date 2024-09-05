@@ -208,8 +208,10 @@ function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = construct_crosscor_convdims(c.cross_correlation,
         DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups))
+    @show cdims
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(c.activation, y)
+    @show σ
     return fused_conv_bias_activation(σ, ps.weight, y, bias, cdims), st
 end
 
