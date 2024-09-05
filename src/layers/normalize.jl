@@ -31,7 +31,7 @@ slice and normalises the input accordingly.
 
 ## Inputs
 
-  - `x`: Array where `size(x, N - 1) = chs` and `ndims(x) > 2`
+  - `x`: Array where `size(x, N - 1) = chs`
 
 ## Returns
 
@@ -257,7 +257,7 @@ end
 
 @doc doc"""
     InstanceNorm(chs::Integer, activation=identity; init_bias=zeros32, init_scale=ones32,
-                 affine=True(), epsilon=1f-5)
+                 affine=True(), track_stats=False(), epsilon=1f-5, momentum=0.1f0)
 
 Instance Normalization. For details see [1].
 
@@ -274,12 +274,18 @@ accordingly.
 
 ## Keyword Arguments
 
+  - If `track_stats=true`, accumulates mean and variance statistics in training phase that
+    will be used to renormalize the input in test phase.
+
   - `epsilon`: a value added to the denominator for numerical stability
+  - `momentum`:  the value used for the `running_mean` and `running_var` computation
   - If `affine=true`, it also applies  a shift and a rescale to the input through to
     learnable per-channel bias and scale parameters.
 
       + `init_bias`: Controls how the `bias` is initialized
       + `init_scale`: Controls how the `scale` is initialized
+
+# Extended Help
 
 ## Inputs
 
@@ -301,6 +307,15 @@ accordingly.
 
 ## States
 
+  - Statistics if `track_stats=true`
+
+      + `running_mean`: Running mean of shape `(chs,)`
+      + `running_var`: Running variance of shape `(chs,)`
+
+  - Statistics if `track_stats=false`
+
+      + `running_mean`: nothing
+      + `running_var`: nothing
   - `training`: Used to check if training/inference mode
 
 Use `Lux.testmode` during inference.
@@ -328,16 +343,20 @@ See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`Weight
 """
 @concrete struct InstanceNorm <: AbstractLuxLayer
     activation
-    epsilon
+    epsilon <: Real
+    momentum <: Real
     chs <: IntegerType
     init_bias
     init_scale
     affine <: StaticBool
+    track_stats <: StaticBool
 end
 
 function InstanceNorm(chs::IntegerType, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine::BoolType=True(), epsilon=1.0f-5)
-    return InstanceNorm(activation, epsilon, chs, init_bias, init_scale, static(affine))
+        init_scale=ones32, affine::BoolType=True(),
+        track_stats::BoolType=False(), epsilon=1.0f-5, momentum=0.1f0)
+    return InstanceNorm(activation, epsilon, momentum, chs, init_bias,
+        init_scale, static(affine), static(track_stats))
 end
 
 function initialparameters(rng::AbstractRNG, l::InstanceNorm)
@@ -345,15 +364,25 @@ function initialparameters(rng::AbstractRNG, l::InstanceNorm)
     return (;)
 end
 
-initialstates(::AbstractRNG, ::InstanceNorm) = (; training=Val(true))
+function initialstates(rng::AbstractRNG, l::InstanceNorm)
+    if has_track_stats(l)
+        return (running_mean=zeros32(rng, l.chs),
+            running_var=ones32(rng, l.chs), training=Val(true))
+    end
+    return (; training=Val(true))
+end
+
 parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
+statelength(l::InstanceNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
     σ = NNlib.fast_act(IN.activation, x′)
     y, _ = instancenorm(
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        st.training, σ, convert(unwrapped_eltype(x′), IN.epsilon))
+        safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
+        st.training, σ, convert(unwrapped_eltype(x′), IN.momentum),
+        convert(unwrapped_eltype(x′), IN.epsilon))
     return y, st
 end
 
@@ -361,6 +390,7 @@ function Base.show(io::IO, l::InstanceNorm)
     print(io, "InstanceNorm($(l.chs)")
     (l.activation == identity) || print(io, ", $(l.activation)")
     print(io, ", affine=$(has_affine(l))")
+    print(io, ", track_stats=$(has_track_stats(l))")
     return print(io, ")")
 end
 
