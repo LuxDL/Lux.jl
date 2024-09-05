@@ -108,7 +108,7 @@ abstraction.
 - `Experimental.StatefulLuxLayer` has been moved to [`Lux.StatefulLuxLayer`](@ref).
 - `st_fixed_path` kwarg has been removed from [`Lux.StatefulLuxLayer`](@ref), instead use it
   as `StatefulLuxLayer{st_fixed_path}(...)`.
-- Strings as inputs to [`Experimental.layer_map`](@ref) and
-  [`Experimental.@debug_mode`](@ref) are removed, use `Functors.KeyPath` instead.
+- Strings as inputs to [`Lux.Experimental.layer_map`](@ref) and
+  [`Lux.Experimental.@debug_mode`](@ref) are removed, use `Functors.KeyPath` instead.
 
 ### Breaking Changes (Changes in Defaults)

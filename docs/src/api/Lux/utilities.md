@@ -119,3 +119,9 @@ StatefulLuxLayer
 @init_fn
 @non_trainable
 ```
+
+## Miscellaneous
+
+```@docs
+Lux.set_dispatch_doctor_preferences!
+```
