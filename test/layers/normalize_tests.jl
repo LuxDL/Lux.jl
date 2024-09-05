@@ -288,7 +288,7 @@ end
 
         # See https://github.com/LuxDL/Lux.jl/issues/95
         @testset "Normalizing Zero Parameters" begin
-            c = Conv((3, 3), 3 => 3)
+            c = Conv((3, 3), 3 => 3; init_bias=zeros32)
 
             wn = WeightNorm(c, (:weight, :bias))
             @test_throws ArgumentError Lux.setup(rng, wn)
