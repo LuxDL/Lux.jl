@@ -151,7 +151,6 @@ function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
         weight::EnzymeCore.Annotation{<:AbstractMatrix},
         x::EnzymeCore.Annotation{<:AbstractMatrix},
         b::EnzymeCore.Annotation{<:Optional{<:AbstractVector}})
-    # TODO: For the other cases
     case_specific_cache, weight_cache, x_cache = cache
 
     (case, tmp) = case_specific_cache

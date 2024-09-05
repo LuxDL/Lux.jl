@@ -20,7 +20,7 @@ end
 
 function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
         ::T, ::False, ::False, invp::T, dims) where {T}
-    return (x, mask, rng)
+    return x, mask, rng
 end
 
 function check_dropout_mask_shape_mismatch(x::AbstractArray, mask::AbstractArray, dims)
@@ -205,11 +205,8 @@ end
 dropout_dot_mul(x::AbstractArray, mask::AbstractArray) = x .* mask
 
 function CRC.rrule(::typeof(dropout_dot_mul), x::AbstractArray, mask::AbstractArray)
-    res = dropout_dot_mul(x, mask)  # size(res) == size(x)
-    𝒫x = CRC.ProjectTo(x)
     ∇dropout_dot_mul = @closure Δ -> begin
-        ∂x = 𝒫x(dropout_dot_mul(Δ, mask))
-        return ∂∅, ∂x, ∂∅
+        return ∂∅, (CRC.ProjectTo(x))(dropout_dot_mul(Δ, mask)), ∂∅
     end
-    return res, ∇dropout_dot_mul
+    return dropout_dot_mul(x, mask), ∇dropout_dot_mul
 end
