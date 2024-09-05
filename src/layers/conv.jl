@@ -51,18 +51,35 @@ end
 
 CRC.@non_differentiable compute_adaptive_pooling_dims(::Any, ::Any)
 
-function init_conv_filter(rng::AbstractRNG, filter::NTuple{N, Integer},
-        ch::Pair{<:Integer, <:Integer}; init=glorot_uniform, groups=1) where {N}
-    cin, cout = ch
-    @argcheck cin % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
-    @argcheck cout % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
-    return init(rng, filter..., cin ÷ groups, cout)
+function init_conv_weight(
+        rng::AbstractRNG, init_weight::F, filter::NTuple{N, <:IntegerType},
+        in_chs::IntegerType, out_chs::IntegerType, groups, σ::A) where {F, N, A}
+    if init_weight === nothing # Default from PyTorch
+        gain = Utils.calculate_gain(σ, √5.0f0)
+        return kaiming_uniform(rng, Float32, filter..., in_chs ÷ groups, out_chs; gain)
+    end
+    return init_weight(rng, filter..., in_chs ÷ groups, out_chs)
 end
+
+function init_conv_bias(rng::AbstractRNG, init_bias::F, filter::NTuple{N, <:IntegerType},
+        in_chs::IntegerType, out_chs::IntegerType, groups) where {F, N}
+    if init_bias === nothing # Default from PyTorch
+        fan_in = prod(filter) * (in_chs ÷ groups)
+        bound = inv(sqrt(fan_in))
+        y = rand32(rng, out_chs)
+        @. y = y * 2bound - bound
+        return y
+    end
+    return init_bias(rng, out_chs)
+end
+
+construct_crosscor_convdims(::False, cdims::DenseConvDims) = cdims
+construct_crosscor_convdims(::True, cdims::DenseConvDims) = DenseConvDims(cdims; F=true)
 
 @doc doc"""
     Conv(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
-         activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-         pad=0, dilation=1, groups=1, use_bias=True())
+         activation=identity; init_weight=nothing, init_bias=nothing, stride=1,
+         pad=0, dilation=1, groups=1, use_bias=True(), cross_correlation=False())
 
 Standard convolutional layer.
 
@@ -79,7 +96,8 @@ Standard convolutional layer.
 !!! warning
 
     Frameworks like [`Pytorch`](https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d)
-    perform cross-correlation in their convolution layers
+    perform cross-correlation in their convolution layers. Pass `cross_correlation=true` to
+    use cross-correlation instead.
 
 ## Arguments
 
@@ -93,8 +111,13 @@ Standard convolutional layer.
 
 ## Keyword Arguments
 
-  - `init_weight`: Controls the initialization of the weight parameter
-  - `init_bias`: Controls the initialization of the bias parameter
+  - `init_weight`: Controls the initialization of the weight parameter. If `nothing`, then
+    we use [`kaiming_uniform`](@ref) with gain computed on the basis of the activation
+    function (taken from Pytorch
+    [`nn.init.calculate_gain`](https://pytorch.org/docs/stable/nn.init.html#torch.nn.init.calculate_gain)).
+  - `init_bias`: Controls the initialization of the bias parameter. If `nothing`, then we
+    use uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(fan_in))`.
 
   - `stride`: Should each be either single integer, or a tuple with `N` integers
   - `dilation`: Should each be either single integer, or a tuple with `N` integers
@@ -115,6 +138,9 @@ Standard convolutional layer.
               convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
               and `out_chs` must be divisible by `groups`.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
+  - `cross_correlation`: If `true`, perform cross-correlation instead of convolution. Prior
+    to `v1`, Lux used to have a `CrossCor` layer which performed cross-correlation. This
+    was removed in `v1` in favor of `Conv` with `cross_correlation=true`.
 
 ## Inputs
 
@@ -148,25 +174,30 @@ O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s
     init_weight
     init_bias
     use_bias <: StaticBool
+    cross_correlation <: StaticBool
 end
 
 function Conv(k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
+        activation=identity; init_weight=nothing,
+        init_bias=nothing, stride=1, pad=0, dilation=1, groups=1,
+        use_bias::BoolType=True(), cross_correlation::BoolType=False())
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
     pad = calc_padding(pad, k, dilation, stride)
+
+    @argcheck ch[1] % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
+    @argcheck ch[2] % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
     @argcheck allequal(length, (stride, dilation, k))
 
-    return Conv(activation, first(ch), last(ch), k, stride, pad, dilation,
-        groups, init_weight, init_bias, static(use_bias))
+    return Conv(activation, first(ch), last(ch), k, stride, pad, dilation, groups,
+        init_weight, init_bias, static(use_bias), static(cross_correlation))
 end
 
 function initialparameters(rng::AbstractRNG, c::Conv)
-    weight = init_conv_filter(
-        rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, c.groups)
+    args = (c.kernel_size, c.in_chs, c.out_chs, c.groups)
+    weight = init_conv_weight(rng, c.init_weight, args..., c.activation)
     has_bias(c) || return (; weight)
-    return (; weight, bias=c.init_bias(rng, c.out_chs))
+    return (; weight, bias=init_conv_bias(rng, c.init_bias, args...))
 end
 
 function parameterlength(c::Conv)
@@ -175,7 +206,8 @@ end
 
 function (c::Conv)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
-    cdims = DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    cdims = construct_crosscor_convdims(c.cross_correlation,
+        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups))
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(c.activation, y)
     return fused_conv_bias_activation(σ, ps.weight, y, bias, cdims), st
@@ -191,7 +223,134 @@ function Base.show(io::IO, l::Conv)
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
     has_bias(l) || print(io, ", use_bias=false")
+    known(l.cross_correlation) && print(io, ", cross_correlation=true")
     print(io, ")")
+end
+
+@doc doc"""
+    ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
+                  activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+                  stride=1, pad=0, dilation=1, groups=1, use_bias=True())
+
+Standard convolutional transpose layer.
+
+## Arguments
+
+  - `k`: Tuple of integers specifying the size of the convolutional kernel. Eg, for 2D
+         convolutions `length(k) == 2`
+  - `in_chs`: Number of input channels
+  - `out_chs`: Number of input and output channels
+  - `activation`: Activation Function
+
+## Keyword Arguments
+
+  - `init_weight`: Controls the initialization of the weight parameter. If `nothing`, then
+    we use [`kaiming_uniform`](@ref) with gain computed on the basis of the activation
+    function (taken from Pytorch
+    [`nn.init.calculate_gain`](https://pytorch.org/docs/stable/nn.init.html#torch.nn.init.calculate_gain)).
+  - `init_bias`: Controls the initialization of the bias parameter. If `nothing`, then we
+    use uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(fan_in))`.
+
+  - `stride`: Should each be either single integer, or a tuple with `N` integers
+  - `dilation`: Should each be either single integer, or a tuple with `N` integers
+  - `pad`: Specifies the number of elements added to the borders of the data array. It can
+           be
+
+      + a single integer for equal padding all around,
+      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
+        dimension,
+      + a tuple of `2*N` integers, for asymmetric padding, or
+      + the singleton `SamePad()`, to calculate padding such that
+        `size(output,d) == size(x,d) * stride` (possibly rounded) for each spatial
+        dimension.
+
+  - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a
+              convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
+              and `out_chs` must be divisible by `groups`.
+  - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
+
+# Extended Help
+
+## Inputs
+
+  - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e.
+         `size(x) = (I_N, ..., I_1, C_in, N)`
+
+## Returns
+
+  - Output of the convolution transpose `y` of size `(O_N, ..., O_1, C_out, N)` where
+  - Empty `NamedTuple()`
+
+## Parameters
+
+  - `weight`: Convolution Transpose kernel
+  - `bias`: Bias (present if `use_bias=true`)
+"""
+@concrete struct ConvTranspose <: AbstractLuxLayer
+    activation
+    in_chs <: IntegerType
+    out_chs <: IntegerType
+    kernel_size <: Tuple{Vararg{IntegerType}}
+    stride <: Tuple{Vararg{IntegerType}}
+    pad <: Tuple{Vararg{IntegerType}}
+    dilation <: Tuple{Vararg{IntegerType}}
+    groups <: IntegerType
+    init_weight
+    init_bias
+    use_bias <: StaticBool
+end
+
+function ConvTranspose(
+        k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
+        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
+        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
+    stride = Utils.expand(Val(length(k)), stride)
+    dilation = Utils.expand(Val(length(k)), dilation)
+    pad = if pad isa SamePad
+        calc_padding(pad, k .- stride .+ 1, dilation, stride)
+    else
+        calc_padding(pad, k, dilation, stride)
+    end
+
+    @argcheck ch[2] % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
+    @argcheck ch[1] % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
+    @argcheck allequal(length, (stride, dilation, k))
+
+    return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation,
+        groups, init_weight, init_bias, static(use_bias))
+end
+
+function initialparameters(rng::AbstractRNG, c::ConvTranspose)
+    args = (c.kernel_size, c.out_chs, c.in_chs, c.groups)
+    weight = init_conv_weight(rng, c.init_weight, args..., c.activation)
+    has_bias(c) || return (; weight)
+    return (; weight, bias=init_conv_bias(rng, c.init_bias, args...))
+end
+
+function parameterlength(c::ConvTranspose)
+    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
+end
+
+function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
+    y = match_eltype(c, ps, st, x)
+    cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
+    bias = safe_getproperty(ps, Val(:bias))
+    σ = NNlib.fast_act(c.activation, y)
+    return bias_activation!!(σ, conv_transpose(y, ps.weight, cdims), bias), st
+end
+
+function Base.show(io::IO, l::ConvTranspose)
+    print(io, "ConvTranspose(", l.kernel_size)
+    print(io, ", ", l.in_chs, " => ", l.out_chs)
+    l.activation == identity || print(io, ", ", l.activation)
+    all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
+    all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
+    all(==(1), l.dilation) ||
+        print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
+    (l.groups == 1) || print(io, ", groups=", l.groups)
+    has_bias(l) || print(io, ", use_bias=false")
+    return print(io, ")")
 end
 
 @doc doc"""
@@ -566,249 +725,10 @@ function set to `Base.Fix2(pixel_shuffle, r)`
   - Output of size `(r x W, r x H, C, N)` for 4D-arrays, and `(r x W, r x H, ..., C, N)`
     for D-dimensional data, where `D = ndims(x) - 2`
 """
-PixelShuffle(r::IntegerType) = WrappedFunction(Base.Fix2(pixel_shuffle, r))
-
-@doc doc"""
-    CrossCor(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
-             activation=identity; init_weight=glorot_uniform, init_bias=zeros32, stride=1,
-             pad=0, dilation=1, groups=1, use_bias=True())
-
-Cross Correlation layer.
-
-Image data should be stored in WHCN order (width, height, channels, batch). In other words,
-a `100 x 100` RGB image would be a `100 x 100 x 3 x 1` array, and a batch of 50 would be a
-`100 x 100 x 3 x 50` array. This has `N = 2` spatial dimensions, and needs a kernel size
-like `(5, 5)`, a 2-tuple of integers. To take convolutions along `N` feature dimensions,
-this layer expects as input an array with `ndims(x) == N + 2`, where
-`size(x, N + 1) == in_chs` is the number of input channels, and `size(x, ndims(x))` is the
-number of observations in a batch.
-
-## Arguments
-
-  - `k`: Tuple of integers specifying the size of the convolutional kernel. Eg, for 2D
-         convolutions `length(k) == 2`
-  - `in_chs`: Number of input channels
-  - `out_chs`: Number of input and output channels
-  - `activation`: Activation Function
-
-## Keyword Arguments
-
-  - `init_weight`: Controls the initialization of the weight parameter
-  - `init_bias`: Controls the initialization of the bias parameter
-
-  - `stride`: Should each be either single integer, or a tuple with `N` integers
-  - `dilation`: Should each be either single integer, or a tuple with `N` integers
-  - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a
-              convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
-              and `out_chs` must be divisible by `groups`.
-  - `pad`: Specifies the number of elements added to the borders of the data array. It can
-           be
-
-      + a single integer for equal padding all around,
-      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
-        dimension,
-      + a tuple of `2*N` integers, for asymmetric padding, or
-      + the singleton `SamePad()`, to calculate padding such that
-        `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
-        dimension.
-
-  - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
-
-# Extended Help
-
-## Inputs
-
-  - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e.
-         `size(x) = (I_N, ..., I_1, C_in, N)`
-
-## Returns
-
-  - Output of the convolution `y` of size `(O_N, ..., O_1, C_out, N)` where
-
-```math
-O_i = \left\lfloor\frac{I_i + p_i + p_{(i + N) \% |p|} - d_i \times (k_i - 1)}{s_i} + 1\right\rfloor
-```
-
-  - Empty `NamedTuple()`
-
-## Parameters
-
-  - `weight`: Convolution kernel
-  - `bias`: Bias (present if `use_bias=true`)
-"""
-@concrete struct CrossCor <: AbstractLuxLayer
-    activation
-    in_chs <: IntegerType
-    out_chs <: IntegerType
-    kernel_size <: Tuple{Vararg{IntegerType}}
-    stride <: Tuple{Vararg{IntegerType}}
-    pad <: Tuple{Vararg{IntegerType}}
-    dilation <: Tuple{Vararg{IntegerType}}
-    groups <: IntegerType
-    init_weight
-    init_bias
-    use_bias <: StaticBool
+@concrete struct PixelShuffle <: AbstractLuxWrapperLayer{:layer}
+    layer <: AbstractLuxLayer
 end
 
-function CrossCor(k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
-    stride = Utils.expand(Val(length(k)), stride)
-    dilation = Utils.expand(Val(length(k)), dilation)
-    pad = calc_padding(pad, k, dilation, stride)
-    @argcheck allequal(length, (stride, dilation, k))
-
-    return CrossCor(activation, first(ch), last(ch), k, stride, pad, dilation,
-        groups, init_weight, init_bias, static(use_bias))
-end
-
-function initialparameters(rng::AbstractRNG, c::CrossCor)
-    weight = init_conv_filter(
-        rng, c.kernel_size, c.in_chs => c.out_chs; init=c.init_weight, c.groups)
-    has_bias(c) || return (; weight)
-    return (; weight, bias=c.init_bias(rng, c.out_chs))
-end
-
-function parameterlength(c::CrossCor)
-    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
-end
-
-function (c::CrossCor)(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(c, ps, st, x)
-    cdims = DenseConvDims(
-        DenseConvDims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups); F=true)
-    bias = safe_getproperty(ps, Val(:bias))
-    σ = NNlib.fast_act(c.activation, y)
-    return fused_conv_bias_activation(σ, ps.weight, y, bias, cdims), st
-end
-
-function Base.show(io::IO, l::CrossCor)
-    print(io, "CrossCor(", l.kernel_size)
-    print(io, ", ", l.in_chs, " => ", l.out_chs)
-    l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
-    all(==(1), l.dilation) ||
-        print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
-    (l.groups == 1) || print(io, ", groups=", l.groups)
-    has_bias(l) || print(io, ", use_bias=false")
-    return print(io, ")")
-end
-
-@doc doc"""
-    ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
-                  activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=True())
-
-Standard convolutional transpose layer.
-
-## Arguments
-
-  - `k`: Tuple of integers specifying the size of the convolutional kernel. Eg, for 2D
-         convolutions `length(k) == 2`
-  - `in_chs`: Number of input channels
-  - `out_chs`: Number of input and output channels
-  - `activation`: Activation Function
-
-## Keyword Arguments
-
-  - `init_weight`: Controls the initialization of the weight parameter
-  - `init_bias`: Controls the initialization of the bias parameter
-
-  - `stride`: Should each be either single integer, or a tuple with `N` integers
-  - `dilation`: Should each be either single integer, or a tuple with `N` integers
-  - `pad`: Specifies the number of elements added to the borders of the data array. It can
-           be
-
-      + a single integer for equal padding all around,
-      + a tuple of `N` integers, to apply the same padding at begin/end of each spatial
-        dimension,
-      + a tuple of `2*N` integers, for asymmetric padding, or
-      + the singleton `SamePad()`, to calculate padding such that
-        `size(output,d) == size(x,d) * stride` (possibly rounded) for each spatial
-        dimension.
-
-  - `groups`: Expected to be an `Int`. It specifies the number of groups to divide a
-              convolution into (set `groups = in_chs` for Depthwise Convolutions). `in_chs`
-              and `out_chs` must be divisible by `groups`.
-  - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
-
-# Extended Help
-
-## Inputs
-
-  - `x`: Data satisfying `ndims(x) == N + 2 && size(x, N - 1) == in_chs`, i.e.
-         `size(x) = (I_N, ..., I_1, C_in, N)`
-
-## Returns
-
-  - Output of the convolution transpose `y` of size `(O_N, ..., O_1, C_out, N)` where
-  - Empty `NamedTuple()`
-
-## Parameters
-
-  - `weight`: Convolution Transpose kernel
-  - `bias`: Bias (present if `use_bias=true`)
-"""
-@concrete struct ConvTranspose <: AbstractLuxLayer
-    activation
-    in_chs <: IntegerType
-    out_chs <: IntegerType
-    kernel_size <: Tuple{Vararg{IntegerType}}
-    stride <: Tuple{Vararg{IntegerType}}
-    pad <: Tuple{Vararg{IntegerType}}
-    dilation <: Tuple{Vararg{IntegerType}}
-    groups <: IntegerType
-    init_weight
-    init_bias
-    use_bias <: StaticBool
-end
-
-function ConvTranspose(
-        k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
-        activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-        stride=1, pad=0, dilation=1, groups=1, use_bias::BoolType=True())
-    stride = Utils.expand(Val(length(k)), stride)
-    dilation = Utils.expand(Val(length(k)), dilation)
-    pad = if pad isa SamePad
-        calc_padding(pad, k .- stride .+ 1, dilation, stride)
-    else
-        calc_padding(pad, k, dilation, stride)
-    end
-    @argcheck allequal(length, (stride, dilation, k))
-
-    return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation,
-        groups, init_weight, init_bias, static(use_bias))
-end
-
-function initialparameters(rng::AbstractRNG, c::ConvTranspose)
-    weight = init_conv_filter(
-        rng, c.kernel_size, c.out_chs => c.in_chs; init=c.init_weight, c.groups)
-    has_bias(c) || return (; weight)
-    return (; weight, bias=c.init_bias(rng, c.out_chs))
-end
-
-function parameterlength(c::ConvTranspose)
-    return prod(c.kernel_size) * c.in_chs * c.out_chs ÷ c.groups + has_bias(c) * c.out_chs
-end
-
-function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
-    y = match_eltype(c, ps, st, x)
-    cdims = conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups)
-    bias = safe_getproperty(ps, Val(:bias))
-    σ = NNlib.fast_act(c.activation, y)
-    return bias_activation!!(σ, conv_transpose(y, ps.weight, cdims), bias), st
-end
-
-function Base.show(io::IO, l::ConvTranspose)
-    print(io, "ConvTranspose(", l.kernel_size)
-    print(io, ", ", l.in_chs, " => ", l.out_chs)
-    l.activation == identity || print(io, ", ", l.activation)
-    all(==(0), l.pad) || print(io, ", pad=", PrettyPrinting.tuple_string(l.pad))
-    all(==(1), l.stride) || print(io, ", stride=", PrettyPrinting.tuple_string(l.stride))
-    all(==(1), l.dilation) ||
-        print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
-    (l.groups == 1) || print(io, ", groups=", l.groups)
-    has_bias(l) || print(io, ", use_bias=false")
-    return print(io, ")")
+function PixelShuffle(r::IntegerType)
+    return PixelShuffle(WrappedFunction(Base.Fix2(pixel_shuffle, r)))
 end

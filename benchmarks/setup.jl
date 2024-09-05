@@ -1,6 +1,6 @@
 using ADTypes: ADTypes, AutoEnzyme, AutoZygote
 using Adapt: adapt
-using Lux: Lux, BatchNorm, Chain, Conv, CrossCor, Dense, Dropout, FlattenLayer, MaxPool
+using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
 using MLDataDevices: AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice
 using NNlib: relu, gelu
 using Random: Random
