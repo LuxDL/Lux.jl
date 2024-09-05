@@ -138,3 +138,5 @@ abstraction.
 - [`InstanceNorm`](@ref) now supports tracking statistics.
 - [`RNNCell`](@ref) and [`LSTMCell`](@ref) add `bias_ih` and `bias_hh` to the parameters to
   align with Pytorch. Both are controlled using `init_bias` and `use_bias`.
+- [`ConvTranspose`](@ref) allows `flipkernel=true` via `cross_correlation=true`. This makes
+  it efficient for MIOpen.
