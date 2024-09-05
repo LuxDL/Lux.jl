@@ -136,5 +136,5 @@ abstraction.
 ### New Features
 
 - [`InstanceNorm`](@ref) now supports tracking statistics.
-- [`RNNCell`](@ref) add `bias_ih` and `bias_hh` to the parameters to align with Pytorch.
-  Both are controlled using `init_bias` and `use_bias`.
+- [`RNNCell`](@ref) and [`LSTMCell`](@ref) add `bias_ih` and `bias_hh` to the parameters to
+  align with Pytorch. Both are controlled using `init_bias` and `use_bias`.
