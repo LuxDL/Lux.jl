@@ -327,9 +327,9 @@ julia> Chain(Dense(784 => 64), InstanceNorm(64, relu), Dense(64 => 10),
            InstanceNorm(10, relu))
 Chain(
     layer_1 = Dense(784 => 64),         # 50_240 parameters
-    layer_2 = InstanceNorm(64, relu, affine=true),  # 128 parameters, plus 1
+    layer_2 = InstanceNorm(64, relu, affine=true, track_stats=false),  # 128 parameters, plus 1
     layer_3 = Dense(64 => 10),          # 650 parameters
-    layer_4 = InstanceNorm(10, relu, affine=true),  # 20 parameters, plus 1
+    layer_4 = InstanceNorm(10, relu, affine=true, track_stats=false),  # 20 parameters, plus 1
 )         # Total: 51_038 parameters,
           #        plus 2 states.
 ```
