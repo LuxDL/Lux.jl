@@ -322,10 +322,14 @@ function ConvTranspose(
 end
 
 function initialparameters(rng::AbstractRNG, c::ConvTranspose)
-    args = (c.kernel_size, c.out_chs, c.in_chs, c.groups)
-    weight = init_conv_weight(rng, c.init_weight, args..., c.activation)
+    weight = init_conv_weight(
+        rng, c.init_weight, c.kernel_size, c.out_chs, c.in_chs, c.groups, c.activation)
     has_bias(c) || return (; weight)
-    return (; weight, bias=init_conv_bias(rng, c.init_bias, args...))
+    # NOTE: The c.out_chs, c.out_chs is intentional, since it only affects the size of the
+    #       bias vector
+    return (; weight,
+        bias=init_conv_bias(
+            rng, c.init_bias, c.kernel_size, c.out_chs, c.out_chs, c.groups))
 end
 
 function parameterlength(c::ConvTranspose)

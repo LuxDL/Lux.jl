@@ -54,7 +54,7 @@
         @test all(iszero, ps_.dense.weight)
         @test all(iszero, ps_.dense.bias)
         @test !all(iszero, ps_.conv.weight)
-        @test all(iszero, ps_.conv.bias)
+        @test !all(iszero, ps_.conv.bias)
 
         # Custom Wrapper
         struct SimpleWrapper{L} <: Lux.AbstractLuxWrapperLayer{:model}
@@ -70,6 +70,6 @@
         @test all(iszero, ps_.dense.weight)
         @test all(iszero, ps_.dense.bias)
         @test !all(iszero, ps_.conv.weight)
-        @test all(iszero, ps_.conv.bias)
+        @test !all(iszero, ps_.conv.bias)
     end
 end
