@@ -35,10 +35,13 @@ VariationalHiddenDropout
 ## Pooling Layers
 
 ```@docs
+AdaptiveLPPool
 AdaptiveMaxPool
 AdaptiveMeanPool
+GlobalLPPool
 GlobalMaxPool
 GlobalMeanPool
+LPPool
 MaxPool
 MeanPool
 ```

@@ -58,6 +58,7 @@ include("layers/basic.jl")
 include("layers/containers.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
+include("layers/pooling.jl")
 include("layers/dropout.jl")
 include("layers/recurrent.jl")
 include("layers/extension.jl")
@@ -87,8 +88,9 @@ include("distributed/public_api.jl")
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale
-export Conv, ConvTranspose, MaxPool, MeanPool, GlobalMaxPool, GlobalMeanPool,
-       AdaptiveMaxPool, AdaptiveMeanPool, Upsample, PixelShuffle
+export Conv, ConvTranspose, Upsample, PixelShuffle
+export MaxPool, MeanPool, LPPool, GlobalMaxPool, GlobalMeanPool, GlobalLPPool,
+       AdaptiveMaxPool, AdaptiveMeanPool, AdaptiveLPPool
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
