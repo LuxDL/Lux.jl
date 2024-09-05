@@ -141,12 +141,8 @@ end
             test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             # Test that we cannot ask for non-integer multiplication factors
-            layer = Conv((2, 2), 3 => 10; groups=2)
-            display(layer)
-            @test_throws DimensionMismatch Lux.setup(rng, layer)
-            layer = Conv((2, 2), 2 => 9; groups=2)
-            display(layer)
-            @test_throws DimensionMismatch Lux.setup(rng, layer)
+            @test_throws DimensionMismatch Conv((2, 2), 3 => 10; groups=2)
+            @test_throws DimensionMismatch Conv((2, 2), 2 => 9; groups=2)
 
             @testset "Segfault Test LuxDL/Lux.jl#386" begin
                 layer = Conv((5,), 32 => 32, tanh; groups=32)
@@ -228,9 +224,7 @@ end
             test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             # Test that we cannot ask for non-integer multiplication factors
-            layer = Conv((2, 2), 3 => 10; groups=3)
-            display(layer)
-            @test_throws DimensionMismatch Lux.setup(rng, layer)
+            @test_throws DimensionMismatch Conv((2, 2), 3 => 10; groups=3)
         end
 
         @testset "Conv SamePad kernelsize $k" for k in ((1,), (2,), (3,), (2, 3), (1, 2, 3))
@@ -261,7 +255,7 @@ end
             x[4, 4, 1, 1] = 1
             x = x |> aType
 
-            layer = Conv((3, 3), 1 => 1)
+            layer = Conv((3, 3), 1 => 1; use_bias=false)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
@@ -271,7 +265,7 @@ end
 
             @jet layer(x, ps, st)
 
-            layer = Conv((3, 1), 1 => 1)
+            layer = Conv((3, 1), 1 => 1; use_bias=false)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
@@ -281,7 +275,7 @@ end
 
             @jet layer(x, ps, st)
 
-            layer = Conv((1, 3), 1 => 1)
+            layer = Conv((1, 3), 1 => 1; use_bias=false)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
@@ -291,7 +285,7 @@ end
 
             @jet layer(x, ps, st)
 
-            layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal)
+            layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal, use_bias=false)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
