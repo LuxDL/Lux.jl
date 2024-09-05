@@ -323,8 +323,8 @@ Use `Lux.testmode` during inference.
 ## Example
 
 ```jldoctest
-julia> Chain(Dense(784 => 64), InstanceNorm(64, relu), Dense(64 => 10),
-           InstanceNorm(10, relu))
+julia> Chain(Dense(784 => 64), InstanceNorm(64, relu; affine=true), Dense(64 => 10),
+           InstanceNorm(10, relu; affine=true))
 Chain(
     layer_1 = Dense(784 => 64),         # 50_240 parameters
     layer_2 = InstanceNorm(64, relu, affine=true, track_stats=false),  # 128 parameters, plus 1

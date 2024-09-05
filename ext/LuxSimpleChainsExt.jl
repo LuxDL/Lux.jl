@@ -61,8 +61,9 @@ function Lux.make_simplechain_network(layer::FlattenLayer)
 end
 
 function Lux.make_simplechain_network(layer::MaxPool)
-    if layer.stride == layer.k && (!(layer.pad isa SamePad) && all(==(0), layer.pad))
-        return SimpleChains.MaxPool(layer.k)
+    if layer.layer.mode.stride == layer.layer.mode.kernel_size &&
+       all(==(0), layer.layer.mode.pad)
+        return SimpleChains.MaxPool(layer.layer.mode.kernel_size)
     end
     throw(SimpleChainsModelConversionException("MaxPool with non-standard parameters not \
                                                 supported."))
