@@ -22,7 +22,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 Comonicon = "1.0.8"
 ConcreteStructs = "0.2.3"
-DataAugmentation = "0.2.12"
+DataAugmentation = "0.2.12, 0.3"
 ImageCore = "0.10.2"
 ImageShow = "0.3.8"
 Interpolations = "0.15.1"
