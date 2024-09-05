@@ -323,8 +323,8 @@ end
 
 function initialparameters(rng::AbstractRNG, d::Dense)
     weight = if d.init_weight === nothing
-        kaiming_uniform(rng, Float32, d.out_dims, d.in_dims; gain=Utils.calculate_gain(
-            d.activation, √5.0f0))
+        kaiming_uniform(rng, Float32, d.out_dims, d.in_dims;
+            gain=Utils.calculate_gain(d.activation, √5.0f0))
     else
         d.init_weight(rng, d.out_dims, d.in_dims)
     end
@@ -559,7 +559,7 @@ end
 (b::Bilinear)(x::AbstractArray, ps, st::NamedTuple) = b((x, x), ps, st)
 
 """
-    Embedding(in_dims => out_dims; init_weight=randn32)
+    Embedding(in_dims => out_dims; init_weight=rand32)
 
 A lookup table that stores embeddings of dimension `out_dims` for a vocabulary of size
 `in_dims`. When the vocabulary is multi-dimensional, the input is expected to be a tuple
@@ -598,7 +598,7 @@ This layer is often used to store word embeddings and retrieve them using indice
     init_weight
 end
 
-function Embedding((in_dims, out_dims)::Pair; init_weight=randn32)
+function Embedding((in_dims, out_dims)::Pair; init_weight=rand32)
     return Embedding(in_dims, out_dims, init_weight)
 end
 
