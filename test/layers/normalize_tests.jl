@@ -367,10 +367,10 @@ end
         for x in (randn(rng, Float32, 3, 3, 3, 2), randn(rng, Float32, 3, 3, 2),
             randn(rng, Float32, 3, 3, 3, 3, 2))
             x = x |> aType
-            for affine in (true, false)
-                layer = InstanceNorm(3; affine)
+            for affine in (true, false), track_stats in (true, false)
+                layer = InstanceNorm(3; affine, track_stats)
                 display(layer)
-                ps, st = Lux.setup(rng, layer) .|> device
+                ps, st = Lux.setup(rng, layer) |> device
 
                 y, st_ = layer(x, ps, st)
 
@@ -387,9 +387,9 @@ end
                 end
 
                 for act in (sigmoid, tanh)
-                    layer = InstanceNorm(3, act; affine)
+                    layer = InstanceNorm(3, act; affine, track_stats)
                     display(layer)
-                    ps, st = Lux.setup(rng, layer) .|> device
+                    ps, st = Lux.setup(rng, layer) |> device
 
                     y, st_ = layer(x, ps, st)
 
