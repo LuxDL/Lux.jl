@@ -109,7 +109,8 @@ end
                 l, back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
-                @test_throws ErrorException gs.bias
+                @test_throws ErrorException gs.bias_ih
+                @test_throws ErrorException gs.bias_hh
                 @test_throws ErrorException gs.hidden_state
                 @test_throws ErrorException gs.memory
 
@@ -122,7 +123,8 @@ end
                 l, back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
-                @test_throws ErrorException gs.bias
+                @test_throws ErrorException gs.bias_ih
+                @test_throws ErrorException gs.bias_hh
                 @test !isnothing(gs.hidden_state)
                 @test_throws ErrorException gs.memory
 
@@ -135,7 +137,8 @@ end
                 l, back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
-                @test_throws ErrorException gs.bias
+                @test_throws ErrorException gs.bias_ih
+                @test_throws ErrorException gs.bias_hh
                 @test_throws ErrorException gs.hidden_state
                 @test !isnothing(gs.memory)
 
@@ -147,19 +150,20 @@ end
                 l, back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
-                @test_throws ErrorException gs.bias
+                @test_throws ErrorException gs.bias_ih
+                @test_throws ErrorException gs.bias_hh
                 @test !isnothing(gs.hidden_state)
                 @test !isnothing(gs.memory)
 
                 lstm = LSTMCell(3 => 5; use_bias=true, train_state=true, train_memory=true)
                 ps, st = Lux.setup(rng, lstm) .|> dev
-                ps = merge(
-                    _ps, (bias=ps.bias, hidden_state=ps.hidden_state, memory=ps.memory))
+                ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state, ps.memory))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 l, back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
-                @test !isnothing(gs.bias)
+                @test !isnothing(gs.bias_ih)
+                @test !isnothing(gs.bias_hh)
                 @test !isnothing(gs.hidden_state)
                 @test !isnothing(gs.memory)
             end
@@ -213,7 +217,8 @@ end
                 @test carry == _carry
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
-                @test_throws ErrorException gs.bias
+                @test_throws ErrorException gs.bias_ih
+                @test_throws ErrorException gs.bias_hh
                 @test_throws ErrorException gs.hidden_state
 
                 gru = GRUCell(3 => 5; use_bias=false, train_state=true)
@@ -227,8 +232,7 @@ end
 
                 gru = GRUCell(3 => 5; use_bias=true, train_state=true)
                 ps, st = Lux.setup(rng, gru) .|> dev
-                ps = merge(
-                    _ps, (bias_h=ps.bias_h, bias_i=ps.bias_i, hidden_state=ps.hidden_state))
+                ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state))
                 (y, carry), _ = Lux.apply(gru, x, ps, st)
                 @test carry == _carry
                 l, back = Zygote.pullback(p -> sum(abs2, 0 .- sum(gru(x, p, st)[1][1])), ps)
