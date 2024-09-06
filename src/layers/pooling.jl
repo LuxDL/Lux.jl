@@ -83,6 +83,13 @@ end
 for layer_op in (:Max, :Mean, :LP)
     op = Symbol(lowercase(string(layer_op)))
 
+    no_gpu_danger = layer_op == :LP ? """
+
+    !!! danger "GPU Support"
+
+        This layer is currently only supported on CPU.
+    """ : ""
+
     layer_name = Symbol(layer_op, :Pool)
     extra_kwargs = layer_op == :LP ? ", p=2" : ""
     layer_docstring = """
@@ -112,6 +119,8 @@ for layer_op in (:Max, :Mean, :LP)
             `size(output,d) == size(x,d) / stride` (possibly rounded) for each spatial
             dimension.
 
+    $(no_gpu_danger)
+
     # Extended Help
 
     ## Inputs
@@ -138,6 +147,8 @@ for layer_op in (:Max, :Mean, :LP)
     `(1, 1, c, b)`-shaped output, by performing mean pooling on the complete `(w, h)`-shaped
     feature maps.
 
+    $(no_gpu_danger)
+
     ## Inputs
 
       - `x`: Data satisfying `ndims(x) > 2`, i.e. `size(x) = (I_N, ..., I_1, C, N)`
@@ -158,6 +169,8 @@ for layer_op in (:Max, :Mean, :LP)
     ## Arguments
 
       - `output_size`: Size of the first `N` dimensions for the output
+
+    $(no_gpu_danger)
 
     ## Inputs
 
@@ -195,7 +208,7 @@ for layer_op in (:Max, :Mean, :LP)
             all(==(1), dilation) ||
                 print(io, ", dilation=", PrettyPrinting.tuple_string(dilation))
             if $(Meta.quot(op)) == :lp
-                a.layer.op.p == 2 || print(io, ", p=", a.layer.op.p)
+                m.layer.op.p == 2 || print(io, ", p=", m.layer.op.p)
             end
             print(io, ")")
         end
@@ -213,7 +226,7 @@ for layer_op in (:Max, :Mean, :LP)
         function Base.show(io::IO, ::MIME"text/plain", g::$(global_layer_name))
             print(io, string($(Meta.quot(global_layer_name))), "(")
             if $(Meta.quot(op)) == :lp
-                a.layer.op.p == 2 || print(io, ", p=", a.layer.op.p)
+                g.layer.op.p == 2 || print(io, ", p=", g.layer.op.p)
             end
             print(io, ")")
         end
