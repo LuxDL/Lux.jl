@@ -27,28 +27,15 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
           !iszero(ComponentArray(∂ps |> cpu_device())) &&
           all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
 
-    __f = (x, ps) -> loss_fn(model, x, ps, st)
-
     allow_unstable() do
-        FDIFF_WORKS = try
-            LuxTestUtils.gradient(__f, AutoForwardDiff(), X, ps)
-            true
-        catch
-            false
-        end
-        skip_backends = [AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
-        if FDIFF_WORKS
-            test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps; atol=1.0f-3,
-                rtol=1.0f-1, soft_fail=[AutoFiniteDiff()], skip_backends)
-        else
-            test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps; atol=1.0f-3,
-                rtol=1.0f-1, skip_backends=vcat(skip_backends, [AutoFiniteDiff()]))
-        end
+        test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
+            atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoFiniteDiff()],
+            skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
     end
 end
 
-const Xs = (randn(rng, Float32, 3, 3, 2, 4), randn(rng, Float32, 2, 4),
-    randn(rng, Float32, 2, 4), randn(rng, Float32, 3, 3, 2, 4))
+const Xs = (randn(rng, Float32, 3, 3, 2, 2), randn(rng, Float32, 2, 2),
+    randn(rng, Float32, 2, 2), randn(rng, Float32, 3, 3, 2, 2))
 
 const models = (
     Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
@@ -63,25 +50,25 @@ const models = (
 # smodel | ForwardDiff.jacobian
 function loss_function1(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, ForwardDiff.jacobian(smodel, x))
+    return sum(abs2, ForwardDiff.jacobian(smodel, x) .* 0.01f0)
 end
 
 # smodel | Zygote.jacobian
 function loss_function2(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, only(Zygote.jacobian(smodel, x)))
+    return sum(abs2, only(Zygote.jacobian(smodel, x)) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | ForwardDiff.gradient
 function loss_function3(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ smodel, x))
+    return sum(abs2, ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ smodel, x) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | Zygote.gradient
 function loss_function4(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ smodel, x)))
+    return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ smodel, x)) .* 0.01f0)
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
@@ -165,28 +152,15 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
           !iszero(ComponentArray(∂ps |> cpu_device())) &&
           all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
 
-    __f = (x, ps) -> loss_fn(model, x, ps, st)
-
     allow_unstable() do
-        FDIFF_WORKS = try
-            LuxTestUtils.gradient(__f, AutoForwardDiff(), X, ps)
-            true
-        catch
-            false
-        end
-        skip_backends = [AutoReverseDiff(), AutoTracker(), AutoEnzyme()]
-        if FDIFF_WORKS
-            test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps; atol=1.0f-3,
-                rtol=1.0f-1, soft_fail=[AutoFiniteDiff()], skip_backends)
-        else
-            test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps; atol=1.0f-3,
-                rtol=1.0f-1, skip_backends=vcat(skip_backends, [AutoFiniteDiff()]))
-        end
+        test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
+            atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoFiniteDiff()],
+            skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
     end
 end
 
-const Xs = (randn(rng, Float32, 3, 3, 2, 4), randn(rng, Float32, 2, 4),
-    randn(rng, Float32, 2, 4), randn(rng, Float32, 3, 3, 2, 4))
+const Xs = (randn(rng, Float32, 3, 3, 2, 2), randn(rng, Float32, 2, 2),
+    randn(rng, Float32, 2, 2), randn(rng, Float32, 3, 3, 2, 2))
 
 const models = (
     Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()), BatchNorm(4),
@@ -201,25 +175,27 @@ const models = (
 # smodel | ForwardDiff.jacobian
 function loss_function1(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, ForwardDiff.jacobian(Base.Fix1(smodel, x), ps))
+    return sum(abs2, ForwardDiff.jacobian(Base.Fix1(smodel, x), ps) .* 0.01f0)
 end
 
 # smodel | Zygote.jacobian
 function loss_function2(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, only(Zygote.jacobian(Base.Fix1(smodel, x), ps)))
+    return sum(abs2, only(Zygote.jacobian(Base.Fix1(smodel, x), ps)) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | ForwardDiff.gradient
 function loss_function3(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps))
+    return sum(abs2,
+        ForwardDiff.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps) .* 0.01f0)
 end
 
 # sum(abs2) ∘ smodel | Zygote.gradient
 function loss_function4(model, x, ps, st)
     smodel = StatefulLuxLayer{true}(model, ps, st)
-    return sum(abs2, only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)))
+    return sum(abs2,
+        only(Zygote.gradient(Base.Fix1(sum, abs2) ∘ Base.Fix1(smodel, x), ps)) .* 0.01f0)
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(

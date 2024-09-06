@@ -22,7 +22,7 @@ Let's explore this using some questions that were posted on the
 [Julia Discourse forum](https://discourse.julialang.org/).
 
 ```@example nested_ad
-using ADTypes, Lux, LinearAlgebra, Zygote, ForwardDiff, Random
+using ADTypes, Lux, LinearAlgebra, Zygote, ForwardDiff, Random, StableRNGs
 using ComponentArrays, FiniteDiff
 ```
 
@@ -70,15 +70,15 @@ function loss_function1(model, x, ps, st, y)
     loss_emp = sum(abs2, ŷ .- y)
     # You can use `Zygote.jacobian` as well but ForwardDiff tends to be more efficient here
     J = ForwardDiff.jacobian(smodel, x)
-    loss_reg = abs2(norm(J))
+    loss_reg = abs2(norm(J .* 0.01f0))
     return loss_emp + loss_reg
 end
 
 # Using Batchnorm to show that it is possible
 model = Chain(Dense(2 => 4, tanh), BatchNorm(4), Dense(4 => 2))
-ps, st = Lux.setup(Xoshiro(0), model)
-x = rand(Xoshiro(0), Float32, 2, 10)
-y = rand(Xoshiro(11), Float32, 2, 10)
+ps, st = Lux.setup(StableRNG(0), model)
+x = randn(StableRNG(0), Float32, 2, 10)
+y = randn(StableRNG(11), Float32, 2, 10)
 
 loss_function1(model, x, ps, st, y)
 ```
@@ -97,9 +97,9 @@ Now let's verify the gradients using finite differences:
     ComponentArray(ps))
 
 println("∞-norm(∂x - ∂x_fd): ", norm(∂x .- ∂x_fd, Inf))
-@assert norm(∂x .- ∂x_fd, Inf) < 1e-1 # hide
+@assert norm(∂x .- ∂x_fd, Inf) < 1e-2 # hide
 println("∞-norm(∂ps - ∂ps_fd): ", norm(ComponentArray(∂ps) .- ∂ps_fd, Inf))
-@assert norm(ComponentArray(∂ps) .- ∂ps_fd, Inf) < 1e-1 # hide
+@assert norm(ComponentArray(∂ps) .- ∂ps_fd, Inf) < 1e-2 # hide
 nothing; # hide
 ```
 
@@ -123,8 +123,8 @@ end
 
 model = Chain(Dense(1 => 12,tanh), Dense(12 => 12,tanh), Dense(12 => 12,tanh),
     Dense(12 => 1))
-ps, st = Lux.setup(Xoshiro(0), model)
-t = rand(Xoshiro(0), Float32, 1, 16)
+ps, st = Lux.setup(StableRNG(0), model)
+t = rand(StableRNG(0), Float32, 1, 16)
 ```
 
 Now the moment of truth:
@@ -164,9 +164,9 @@ end
 
 model = Chain(Dense(1 => 12,tanh), Dense(12 => 12,tanh), Dense(12 => 12,tanh),
     Dense(12 => 1))
-ps, st = Lux.setup(Xoshiro(0), model)
+ps, st = Lux.setup(StableRNG(0), model)
 ps = ComponentArray(ps)  # needs to be an AbstractArray for most jacobian functions
-x = rand(Xoshiro(0), Float32, 1, 16)
+x = rand(StableRNG(0), Float32, 1, 16)
 ```
 
 We can as usual compute the gradient/jacobian of the loss function:
@@ -260,9 +260,9 @@ Now let's compute the trace and compare the results:
 ```@example nested_ad
 model = Chain(Dense(4 => 12,tanh), Dense(12 => 12,tanh), Dense(12 => 12,tanh),
     Dense(12 => 4))
-ps, st = Lux.setup(Xoshiro(0), model)
-x = rand(Xoshiro(0), Float32, 4, 12)
-v = (rand(Xoshiro(12), Float32, 4, 12) .> 0.5f0) * 2.0f0 .- 1.0f0  # rademacher sample
+ps, st = Lux.setup(StableRNG(0), model)
+x = rand(StableRNG(0), Float32, 4, 12)
+v = (rand(StableRNG(12), Float32, 4, 12) .> 0.5f0) * 2.0f0 .- 1.0f0  # rademacher sample
 nothing; # hide
 ```
 
