@@ -1,8 +1,6 @@
 [deps]
-AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
-ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
 ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DataAugmentation = "88a5189c-e7ff-4f85-ac6b-e6158070f02e"
@@ -25,10 +23,8 @@ TensorBoardLogger = "899adc3e-224a-11e9-021f-63837185c80f"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-AMDGPU = "0.9.6, 1"
 ArgCheck = "2.3.0"
 CairoMakie = "0.12"
-ChainRulesCore = "1.23"
 Comonicon = "1"
 ConcreteStructs = "0.2.3"
 DataAugmentation = "0.3"
