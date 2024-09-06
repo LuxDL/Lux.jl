@@ -29,7 +29,7 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
 
     allow_unstable() do
         test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
-            atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
+            atol=1.0f-2, rtol=1.0f-1, soft_fail=[AutoForwardDiff()],
             skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
     end
 end

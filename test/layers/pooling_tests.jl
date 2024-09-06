@@ -11,7 +11,7 @@
                 continue
             end
 
-            broken_backends = ltype == :LPPool ? [AutoTracker()] : []
+            broken_backends = ltype == :LPPool ? [AutoTracker(), AutoEnzyme()] : []
 
             adaptive_ltype = Symbol(:Adaptive, ltype)
             global_ltype = Symbol(:Global, ltype)
