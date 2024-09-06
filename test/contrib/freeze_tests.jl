@@ -1,5 +1,4 @@
 @testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
-    Enzyme.API.runtimeActivity!(true)
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -66,7 +65,6 @@ end
 @testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     using Lux.Experimental: FrozenLayer
 
-    Enzyme.API.runtimeActivity!(true)
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES

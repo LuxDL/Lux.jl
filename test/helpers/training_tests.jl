@@ -20,7 +20,7 @@
 end
 
 @testitem "AbstractADTypes" setup=[SharedTestSetup] tags=[:helpers] begin
-    using ADTypes, Optimisers, Enzyme
+    using ADTypes, Optimisers
 
     function _loss_function(model, ps, st, data)
         y, st = model(data, ps, st)
@@ -52,7 +52,6 @@ end
 
 @testitem "Training API" setup=[SharedTestSetup] tags=[:helpers] begin
     using ADTypes, Optimisers
-    import Enzyme, Tracker, ReverseDiff, Zygote
 
     mse = MSELoss()
 
@@ -128,9 +127,6 @@ end
 
 @testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:helpers] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using ADTypes, Optimisers
-    using Enzyme
-
-    Enzyme.API.runtimeActivity!(true)
 
     mse = MSELoss()
 
