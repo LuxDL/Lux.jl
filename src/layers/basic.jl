@@ -317,7 +317,7 @@ function Dense(mapping::Pair{<:IntegerType, <:IntegerType}, activation=identity;
 end
 
 function Dense(in_dims::IntegerType, out_dims::IntegerType, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32, use_bias::BoolType=True())
+        init_weight=nothing, init_bias=nothing, use_bias::BoolType=True())
     return Dense(activation, in_dims, out_dims, init_weight, init_bias, static(use_bias))
 end
 
@@ -506,7 +506,7 @@ end
 
 function Bilinear(
         ((in1_dims, in2_dims), out)::Pair{<:Tuple, <:IntegerType}, activation=identity;
-        init_weight=glorot_uniform, init_bias=zeros32, use_bias::BoolType=True())
+        init_weight=nothing, init_bias=nothing, use_bias::BoolType=True())
     return Bilinear(
         activation, in1_dims, in2_dims, out, init_weight, init_bias, static(use_bias))
 end
