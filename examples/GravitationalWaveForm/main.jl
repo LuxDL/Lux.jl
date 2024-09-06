@@ -7,11 +7,9 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, LineSearches, LuxCUDA, OrdinaryDiffEq, Optimization,
-      OptimizationOptimJL, Printf, Random, SciMLSensitivity
+using Lux, ComponentArrays, LineSearches, OrdinaryDiffEq, Optimization, OptimizationOptimJL,
+      Printf, Random, SciMLSensitivity
 using CairoMakie
-
-CUDA.allowscalar(false)
 
 # ## Define some Utility Functions
 

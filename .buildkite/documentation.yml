@@ -2,9 +2,9 @@ steps:
   - group: ":open_book: Build & Deploy Documentation"
     if: build.message !~ /\[skip docs\]/ && !build.pull_request.draft
     steps:
-      - label: "Tutorial Build [%N/%t]"
-        key: "tutorial-build"
-        parallelism: 6
+      - label: "Tutorial Build [%N/%t] CUDA Runners"
+        key: "tutorial-build-cuda"
+        parallelism: 4
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
@@ -14,6 +14,8 @@ steps:
                 - src
                 - ext
         command: julia --code-coverage=user --color=yes --project=docs docs/tutorials.jl
+        env:
+          TUTORIAL_BACKEND_GROUP: "CUDA"
         agents:
           queue: "juliagpu"
           cuda: "*"
@@ -22,10 +24,40 @@ steps:
           - "docs/src/tutorials/intermediate/**/*"
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
+          - "**/*.cov"
+        timeout_in_minutes: 60
+
+      - label: "Tutorial Build [%N/%t] CPU Runners"
+        if: build.message !~ /\[skip docs\]/ && !build.pull_request.draft
+        key: "tutorial-build-cpu"
+        parallelism: 4
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "1"
+          # - JuliaCI/julia-coverage#v1:
+          #     codecov: true
+          #     dirs:
+          #       - src
+          #       - ext
+        command: julia --code-coverage=user --color=yes --project=docs docs/tutorials.jl
+        env:
+          TUTORIAL_BACKEND_GROUP: "CPU"
+        agents:
+          queue: "juliaecosystem"
+          os: "macos"
+          arch: "aarch64"
+        artifact_paths:
+          - "docs/src/tutorials/beginner/**/*"
+          - "docs/src/tutorials/intermediate/**/*"
+          - "docs/src/tutorials/advanced/**/*"
+          - "tutorial_deps/*"
+          - "**/*.cov"
         timeout_in_minutes: 60
 
       - label: "Final Documentation Build"
-        depends_on: [tutorial-build]
+        depends_on:
+          - "tutorial-build-cuda"
+          - "tutorial-build-cpu"
         plugins:
           - JuliaCI/julia#v1:
               version: "1"

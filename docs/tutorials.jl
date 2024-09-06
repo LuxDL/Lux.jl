@@ -1,36 +1,49 @@
 #! format: off
 const BEGINNER_TUTORIALS = [
-    "Basics/main.jl",
-    "PolynomialFitting/main.jl",
-    "SimpleRNN/main.jl",
-    "SimpleChains/main.jl"
+    "Basics/main.jl" => "CUDA",
+    "PolynomialFitting/main.jl" => "CUDA",
+    "SimpleRNN/main.jl" => "CUDA",
+    "SimpleChains/main.jl" => "CPU"
 ]
 const INTERMEDIATE_TUTORIALS = [
-    "NeuralODE/main.jl",
-    "BayesianNN/main.jl",
-    "HyperNet/main.jl"
+    "NeuralODE/main.jl" => "CUDA",
+    "BayesianNN/main.jl" => "CPU",
+    "HyperNet/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [
-    "GravitationalWaveForm/main.jl",
+    "GravitationalWaveForm/main.jl" => "CPU",
 ]
 
 const TUTORIALS = [
-    collect(enumerate(Iterators.product(["beginner"], BEGINNER_TUTORIALS)))...,
-    collect(enumerate(Iterators.product(["intermediate"], INTERMEDIATE_TUTORIALS)))...,
-    collect(enumerate(Iterators.product(["advanced"], ADVANCED_TUTORIALS)))...
+    collect(enumerate(Iterators.product(["beginner"], first.(BEGINNER_TUTORIALS))))...,
+    collect(enumerate(Iterators.product(["intermediate"], first.(INTERMEDIATE_TUTORIALS))))...,
+    collect(enumerate(Iterators.product(["advanced"], first.(ADVANCED_TUTORIALS))))...
 ]
+const BACKEND_LIST = lowercase.([
+    last.(BEGINNER_TUTORIALS)...,
+    last.(INTERMEDIATE_TUTORIALS)...,
+    last.(ADVANCED_TUTORIALS)...
+])
 #! format: on
+
+const BACKEND_GROUP = lowercase(get(ENV, "TUTORIAL_BACKEND_GROUP", "all"))
 
 const BUILDKITE_PARALLEL_JOB_COUNT = parse(
     Int, get(ENV, "BUILDKITE_PARALLEL_JOB_COUNT", "-1"))
 
+const TUTORIALS_WITH_BACKEND = if BACKEND_GROUP == "all"
+    TUTORIALS
+else
+    TUTORIALS[BACKEND_LIST .== BACKEND_GROUP]
+end
+
 const TUTORIALS_BUILDING = if BUILDKITE_PARALLEL_JOB_COUNT > 0
     id = parse(Int, ENV["BUILDKITE_PARALLEL_JOB"]) + 1 # Index starts from 0
-    splits = collect(Iterators.partition(
-        TUTORIALS, cld(length(TUTORIALS), BUILDKITE_PARALLEL_JOB_COUNT)))
+    splits = collect(Iterators.partition(TUTORIALS_WITH_BACKEND,
+        cld(length(TUTORIALS_WITH_BACKEND), BUILDKITE_PARALLEL_JOB_COUNT)))
     id > length(splits) ? [] : splits[id]
 else
-    TUTORIALS
+    TUTORIALS_WITH_BACKEND
 end
 
 const NTASKS = min(
