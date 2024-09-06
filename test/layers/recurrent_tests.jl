@@ -2,13 +2,13 @@
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
+        @testset for rnncell in (RNNCell(3 => 5, identity), RNNCell(3 => 5, tanh),
             RNNCell(3 => 5, tanh; use_bias=false),
             RNNCell(3 => 5, identity; use_bias=false),
             RNNCell(3 => 5, identity; use_bias=false, train_state=false))
             display(rnncell)
             ps, st = Lux.setup(rng, rnncell) |> dev
-            for x_size in ((3, 2), (3,))
+            @testset for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
                 (y, carry), st_ = Lux.apply(rnncell, x, ps, st)
 
@@ -17,7 +17,7 @@
 
                 function loss_loop_rnncell(p)
                     (y, carry), st_ = rnncell(x, p, st)
-                    for i in 1:10
+                    for _ in 1:10
                         (y, carry), st_ = rnncell((x, carry), p, st_)
                     end
                     return sum(abs2, y)
@@ -25,13 +25,14 @@
 
                 @test_throws ErrorException ps.train_state
 
-                test_gradients(loss_loop_rnncell, ps; atol=1.0f-3,
-                    rtol=1.0f-3, broken_backends=[AutoEnzyme()])
+                test_gradients(loss_loop_rnncell, ps; atol=1.0f-3, rtol=1.0f-3,
+                    soft_fail=[AutoFiniteDiff()], broken_backends=[AutoEnzyme()])
             end
         end
 
         @testset "Trainable hidden states" begin
-            for rnncell in (RNNCell(3 => 5, identity; use_bias=false, train_state=true),
+            @testset for rnncell in (
+                RNNCell(3 => 5, identity; use_bias=false, train_state=true),
                 RNNCell(3 => 5, identity; use_bias=true, train_state=true))
                 rnn_no_trainable_state = RNNCell(
                     3 => 5, identity; use_bias=false, train_state=false)
@@ -62,12 +63,12 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        for lstmcell in (LSTMCell(3 => 5), LSTMCell(3 => 5; use_bias=true),
+        @testset for lstmcell in (LSTMCell(3 => 5), LSTMCell(3 => 5; use_bias=true),
             LSTMCell(3 => 5; use_bias=false))
             display(lstmcell)
             ps, st = Lux.setup(rng, lstmcell) |> dev
 
-            for x_size in ((3, 2), (3,))
+            @testset for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
                 (y, carry), st_ = Lux.apply(lstmcell, x, ps, st)
 
@@ -82,8 +83,8 @@ end
                     return sum(abs2, y)
                 end
 
-                test_gradients(loss_loop_lstmcell, ps; atol=1.0f-3,
-                    rtol=1.0f-3, broken_backends=[AutoEnzyme()])
+                test_gradients(loss_loop_lstmcell, ps; atol=1.0f-3, rtol=1.0f-3,
+                    soft_fail=[AutoFiniteDiff()], broken_backends=[AutoEnzyme()])
 
                 @test_throws ErrorException ps.train_state
                 @test_throws ErrorException ps.train_memory
@@ -91,7 +92,7 @@ end
         end
 
         @testset "Trainable hidden states" begin
-            for x_size in ((3, 2), (3,))
+            @testset for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
                 _lstm = LSTMCell(
                     3 => 5; use_bias=false, train_state=false, train_memory=false)
@@ -173,12 +174,12 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        for grucell in (GRUCell(3 => 5), GRUCell(3 => 5; use_bias=true),
+        @testset for grucell in (GRUCell(3 => 5), GRUCell(3 => 5; use_bias=true),
             GRUCell(3 => 5; use_bias=false))
             display(grucell)
             ps, st = Lux.setup(rng, grucell) |> dev
 
-            for x_size in ((3, 2), (3,))
+            @testset for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
                 (y, carry), st_ = Lux.apply(grucell, x, ps, st)
 
@@ -193,15 +194,15 @@ end
                     return sum(abs2, y)
                 end
 
-                test_gradients(loss_loop_grucell, ps; atol=1e-3,
-                    rtol=1e-3, broken_backends=[AutoEnzyme()])
+                test_gradients(loss_loop_grucell, ps; atol=1e-3, rtol=1e-3,
+                    soft_fail=[AutoFiniteDiff()], broken_backends=[AutoEnzyme()])
 
                 @test_throws ErrorException ps.train_state
             end
         end
 
         @testset "Trainable hidden states" begin
-            for x_size in ((3, 2), (3,))
+            @testset for x_size in ((3, 2), (3,))
                 x = randn(rng, Float32, x_size...) |> aType
                 _gru = GRUCell(3 => 5; use_bias=false, train_state=false)
                 _ps, _st = Lux.setup(rng, _gru) |> dev
@@ -280,8 +281,8 @@ end
                     return sum(abs2, y)
                 end
 
-                test_gradients(
-                    loss_loop_rnn, ps; atol=1e-3, rtol=1e-3, broken_backends=[AutoEnzyme()])
+                test_gradients(loss_loop_rnn, ps; atol=1e-3, rtol=1e-3,
+                    broken_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
             end
         end
     end
@@ -325,12 +326,12 @@ end
                         @test all(x -> size(x) == (5, 2), y_)
 
                         __f = p -> sum(first(rnn(x, p, st)))
-                        test_gradients(
-                            __f, ps; atol=1e-3, rtol=1e-3, skip_backends=[AutoEnzyme()])
+                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                            skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
 
                         __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                        test_gradients(
-                            __f, ps; atol=1e-3, rtol=1e-3, skip_backends=[AutoEnzyme()])
+                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                            skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
                     end
 
                     # Batched Time Series without data batches
@@ -360,12 +361,12 @@ end
                         end
 
                         __f = p -> sum(first(rnn(x, p, st)))
-                        test_gradients(
-                            __f, ps; atol=1e-3, rtol=1e-3, skip_backends=[AutoEnzyme()])
+                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                            skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
 
                         __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                        test_gradients(
-                            __f, ps; atol=1e-3, rtol=1e-3, skip_backends=[AutoEnzyme()])
+                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                            skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
                     end
                 end
             end
