@@ -138,37 +138,31 @@ end
 
         @testset "zeros" begin
             @test begin
-                layer = Dense(10, 1, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Dense(10, 1, identity; init_weight=ones32, init_bias=zeros32)
                 first(Lux.apply(
                     layer, ones(10, 1) |> aType, dev.(Lux.setup(rng, layer))...))
             end == 10 * aType(ones(1, 1))
 
             @test begin
-                layer = Dense(10, 1, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Dense(10, 1, identity; init_weight=ones32, init_bias=zeros32)
                 first(Lux.apply(
                     layer, ones(10, 2) |> aType, dev.(Lux.setup(rng, layer))...))
             end == 10 * aType(ones(1, 2))
 
             @test begin
-                layer = Dense(10, 2, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Dense(10, 2, identity; init_weight=ones32, init_bias=zeros32)
                 first(Lux.apply(
                     layer, ones(10, 1) |> aType, dev.(Lux.setup(rng, layer))...))
             end == 10 * aType(ones(2, 1))
 
             @test begin
-                layer = Dense(10, 2, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Dense(10, 2, identity; init_weight=ones32, init_bias=zeros32)
                 first(Lux.apply(layer, aType([ones(10, 1) 2 * ones(10, 1)]),
                     dev.(Lux.setup(rng, layer))...))
             end == aType([10 20; 10 20])
 
             @test begin
-                layer = Dense(10, 2, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
-                    use_bias=false)
+                layer = Dense(10, 2, identity; init_weight=ones32, use_bias=false)
                 first(Lux.apply(layer, aType([ones(10, 1) 2 * ones(10, 1)]),
                     dev.(Lux.setup(rng, layer))...))
             end == aType([10 20; 10 20])
@@ -214,23 +208,19 @@ end
 
         @testset "zeros" begin
             @test begin
-                layer = Scale(10, 1, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Scale(10, 1, identity; init_weight=ones32)
                 first(Lux.apply(
                     layer, ones(10, 1) |> aType, dev.(Lux.setup(rng, layer))...))
             end == aType(ones(10, 1))
 
             @test begin
-                layer = Scale(10, 1, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Scale(10, 1, identity; init_weight=ones32)
                 first(Lux.apply(
                     layer, ones(10, 2) |> aType, dev.(Lux.setup(rng, layer))...))
             end == aType(ones(10, 2))
 
             @test begin
-                layer = Scale(2, identity;
-                    init_weight=(rng, args...; kwargs...) -> ones(args...; kwargs...),
-                    init_bias=(rng, args...; kwargs...) -> ones(args...; kwargs...))
+                layer = Scale(2, identity; init_weight=ones32, init_bias=ones32)
                 first(Lux.apply(
                     layer, [1 2; 3 4] |> aType, dev.(Lux.setup(rng, layer))...))
             end == aType([2.0 3.0; 4.0 5.0])
