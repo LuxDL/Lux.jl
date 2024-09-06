@@ -222,8 +222,8 @@ for cell in (:RNNCell, :LSTMCell, :GRUCell)
            mostly in-terms of how the bias term is dealt with. Lux aligns with the Pytorch \
            definition of these models and hence converting `Flux.$(cell)` to `Lux.$(cell) \
            is not possible. Rewrite the model manually."
-    @eval function Lux.convert_flux_model(::Flux.$(cell); preserve_ps_st::Bool=false,
-            force_preserve::Bool=false)
+    @eval function Lux.convert_flux_model(
+            ::Flux.$(cell); preserve_ps_st::Bool=false, force_preserve::Bool=false)
         throw(FluxModelConversionException($msg))
     end
 end
