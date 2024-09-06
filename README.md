@@ -77,7 +77,43 @@ st_opt, ps = Optimisers.update(st_opt, ps, gs)
 
 Look in the [examples](/examples/) directory for self-contained usage examples. The [documentation](https://lux.csail.mit.edu) has examples sorted into proper categories.
 
-## 🧪 Testing
+## 🆘 Getting Help
+
+For usage related questions, please use [Github Discussions](https://github.com/orgs/LuxDL/discussions) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a [pull request](https://github.com/LuxDL/Lux.jl/pulls).
+
+## 🧑‍🔬 Citation
+
+If you found this library to be useful in academic work, then please cite:
+
+```bibtex
+@software{pal2023lux,
+  author    = {Pal, Avik},
+  title     = {{Lux: Explicit Parameterization of Deep Neural Networks in Julia}},
+  month     = apr,
+  year      = 2023,
+  note      = {If you use this software, please cite it as below.},
+  publisher = {Zenodo},
+  version   = {v0.5.0},
+  doi       = {10.5281/zenodo.7808904},
+  url       = {https://doi.org/10.5281/zenodo.7808904}
+}
+
+@thesis{pal2023efficient,
+  title     = {{On Efficient Training \& Inference of Neural Differential Equations}},
+  author    = {Pal, Avik},
+  year      = {2023},
+  school    = {Massachusetts Institute of Technology}
+}
+```
+
+Also consider starring [our github repo](https://github.com/LuxDL/Lux.jl/).
+
+## 🧑‍💻 Contributing
+
+This section is somewhat incomplete. You can contribute by contributing to finishing this
+section 😜.
+
+### 🧪 Testing
 
 The full test of `Lux.jl` takes a long time, here's how to test a portion of the code.
 
@@ -125,36 +161,5 @@ ReTestItems.runtests("tests/"; name = "NAME OF THE TEST")
 For the `SkipConnection` tests that would be:
 
 ```julia
-ReTestItems.runtests("tests/"; name = SkipConnection)
+ReTestItems.runtests("tests/"; name = "SkipConnection")
 ```
-
-## 🆘 Getting Help
-
-For usage related questions, please use [Github Discussions](https://github.com/orgs/LuxDL/discussions) which allows questions and answers to be indexed. To report bugs use [github issues](https://github.com/LuxDL/Lux.jl/issues) or even better send in a [pull request](https://github.com/LuxDL/Lux.jl/pulls).
-
-## 🧑‍🔬 Citation
-
-If you found this library to be useful in academic work, then please cite:
-
-```bibtex
-@software{pal2023lux,
-  author    = {Pal, Avik},
-  title     = {{Lux: Explicit Parameterization of Deep Neural Networks in Julia}},
-  month     = apr,
-  year      = 2023,
-  note      = {If you use this software, please cite it as below.},
-  publisher = {Zenodo},
-  version   = {v0.5.0},
-  doi       = {10.5281/zenodo.7808904},
-  url       = {https://doi.org/10.5281/zenodo.7808904}
-}
-
-@thesis{pal2023efficient,
-  title     = {{On Efficient Training \& Inference of Neural Differential Equations}},
-  author    = {Pal, Avik},
-  year      = {2023},
-  school    = {Massachusetts Institute of Technology}
-}
-```
-
-Also consider starring [our github repo](https://github.com/LuxDL/Lux.jl/).
