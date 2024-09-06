@@ -109,10 +109,9 @@ const logitcrossentropy = CrossEntropyLoss(; logits=Val(true))
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
-    cpu_dev = cpu_device()
     for (x, y) in dataloader
-        target_class = onecold(cpu_dev(y))
-        predicted_class = onecold(cpu_dev(first(model(x, ps, st))))
+        target_class = onecold(y)
+        predicted_class = onecold(first(model(x, ps, st)))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
