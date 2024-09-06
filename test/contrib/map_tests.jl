@@ -8,16 +8,16 @@
 
     function zero_dense_params_1(l, ps, st, name)
         if l isa Dense && occurs_in(KeyPath(:chain), name)
-            @set! ps.weight = zero.(ps.weight)
-            @set! ps.bias = zero.(ps.bias)
+            @set! ps.weight = zero(ps.weight)
+            @set! ps.bias = zero(ps.bias)
         end
         return l, ps, st
     end
 
     function zero_dense_params_2(l, ps, st, name)
         if l isa Dense
-            @set! ps.weight = zero.(ps.weight)
-            @set! ps.bias = zero.(ps.bias)
+            @set! ps.weight = zero(ps.weight)
+            @set! ps.bias = zero(ps.bias)
         end
         return l, ps, st
     end
@@ -37,7 +37,7 @@
         @test all(iszero, ps_.chain.dense_2.weight)
         @test all(iszero, ps_.chain.dense_2.bias)
         @test !all(iszero, ps_.dense_3.weight)
-        @test all(iszero, ps_.dense_3.bias)
+        @test !all(iszero, ps_.dense_3.bias)
 
         # Custom Layers -- See https://github.com/LuxDL/Lux.jl/issues/187
         struct SimpleCustom{L1, L2} <: Lux.AbstractLuxContainerLayer{(:dense, :conv)}
