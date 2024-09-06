@@ -359,6 +359,7 @@ function Base.show(io::IO, l::ConvTranspose)
     (l.groups == 1) || print(io, ", groups=", l.groups)
     all(==(0), l.outpad) || print(io, ", outpad=", PrettyPrinting.tuple_string(l.outpad))
     has_bias(l) || print(io, ", use_bias=false")
+    known(l.cross_correlation) && print(io, ", cross_correlation=true")
     print(io, ")")
 end
 

@@ -470,174 +470,191 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        x = randn(Float32, 5, 5, 1, 1) |> aType
-        layer = Conv((3, 3), 1 => 1)
-        ps, st = Lux.setup(rng, layer) |> dev
-        y = layer(x, ps, st)[1]
+        @testset for cross_correlation in (true, false)
+            x = randn(Float32, 5, 5, 1, 1) |> aType
+            layer = Conv((3, 3), 1 => 1)
+            ps, st = Lux.setup(rng, layer) |> dev
+            y = layer(x, ps, st)[1]
 
-        layer = ConvTranspose((3, 3), 1 => 1)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(y, ps, st)
-
-        x_hat1 = layer(y, ps, st)[1]
-
-        layer = ConvTranspose((3, 3), 1 => 1; use_bias=false)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(y, ps, st)
-
-        x_hat2 = layer(y, ps, st)[1]
-
-        @test size(x_hat1) == size(x_hat2) == size(x)
-
-        layer = ConvTranspose((3, 3), 1 => 1)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-        x = rand(Float32, 5, 5, 1, 1) |> aType
-
-        @jet layer(x, ps, st)
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
-
-        x = rand(Float32, 5, 5, 2, 4) |> aType
-        layer = ConvTranspose((3, 3), 2 => 3)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(x, ps, st)
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
-
-        # test ConvTranspose supports groups argument
-        x = randn(Float32, 10, 10, 2, 3) |> aType
-        layer1 = ConvTranspose((3, 3), 2 => 4; pad=SamePad())
-        display(layer1)
-        ps1, st1 = Lux.setup(rng, layer1) |> dev
-        @test size(ps1.weight) == (3, 3, 4, 2)
-        @test size(layer1(x, ps1, st1)[1]) == (10, 10, 4, 3)
-
-        layer2 = ConvTranspose((3, 3), 2 => 4; groups=2, pad=SamePad())
-        display(layer2)
-        ps2, st2 = Lux.setup(rng, layer2) |> dev
-        @test size(ps2.weight) == (3, 3, 2, 2)
-        @test size(layer1(x, ps1, st1)[1]) == size(layer2(x, ps2, st2)[1])
-
-        __f = (x, ps) -> sum(first(layer1(x, ps, st1)))
-        test_gradients(__f, x, ps1; atol=1.0f-3, rtol=1.0f-3)
-
-        __f = (x, ps) -> sum(first(layer2(x, ps, st2)))
-        test_gradients(__f, x, ps2; atol=1.0f-3, rtol=1.0f-3)
-
-        x = randn(Float32, 10, 2, 1) |> aType
-        layer = ConvTranspose((3,), 2 => 4; pad=SamePad(), groups=2)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(x, ps, st)
-
-        @test size(layer(x, ps, st)[1]) == (10, 4, 1)
-        @test length(ps.weight) == 3 * (2 * 4) / 2
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
-
-        x = randn(Float32, 10, 11, 4, 2) |> aType
-        layer = ConvTranspose((3, 5), 4 => 4; pad=SamePad(), groups=4)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(x, ps, st)
-
-        @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
-        @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
-
-        x = randn(Float32, 10, 11, 4, 2) |> aType
-        layer = ConvTranspose((3, 5), 4 => 4, tanh; pad=SamePad(), groups=4)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(x, ps, st)
-        @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
-        @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
-
-        x = randn(Float32, 10, 11, 12, 3, 2) |> aType
-        layer = ConvTranspose((3, 5, 3), 3 => 6; pad=SamePad(), groups=3)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(x, ps, st)
-        @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
-        @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
-
-        x = randn(Float32, 10, 11, 12, 3, 2) |> aType
-        layer = ConvTranspose((3, 5, 3), 3 => 6, tanh; pad=SamePad(), groups=3)
-        display(layer)
-        ps, st = Lux.setup(rng, layer) |> dev
-
-        @jet layer(x, ps, st)
-        @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
-        @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
-
-        @test occursin("groups=2", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))
-        @test occursin("2 => 4", sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2)))
-
-        @testset "SamePad size mismatch LuxDL/Lux.jl#534" begin
-            layer = ConvTranspose((3,), 2 => 1; pad=SamePad(), stride=2)
+            layer = ConvTranspose((3, 3), 1 => 1; cross_correlation)
             display(layer)
-            x = ones(Float32, 2, 2, 1) |> aType
             ps, st = Lux.setup(rng, layer) |> dev
 
-            y = first(layer(x, ps, st))
-            @test size(y) == (4, 1, 1)
+            @jet layer(y, ps, st)
+
+            x_hat1 = layer(y, ps, st)[1]
+
+            layer = ConvTranspose((3, 3), 1 => 1; use_bias=false, cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
+
+            @jet layer(y, ps, st)
+
+            x_hat2 = layer(y, ps, st)[1]
+
+            @test size(x_hat1) == size(x_hat2) == size(x)
+
+            layer = ConvTranspose((3, 3), 1 => 1; cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
+            x = rand(Float32, 5, 5, 1, 1) |> aType
+
             @jet layer(x, ps, st)
-        end
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
-        @testset "Catch Channel Mismatch Early: LuxDL/Lux.jl#455" begin
-            layer = ConvTranspose((4, 4), 42 => 16; stride=2, pad=1)
-
-            x = randn(Float32, 28, 28, 42, 3) |> aType
+            x = rand(Float32, 5, 5, 2, 4) |> aType
+            layer = ConvTranspose((3, 3), 2 => 3; cross_correlation)
+            display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            @test layer(x, ps, st) isa Any
+            @jet layer(x, ps, st)
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
-            x = randn(Float32, 28, 28, 46, 3) |> aType
+            # test ConvTranspose supports groups argument
+            x = randn(Float32, 10, 10, 2, 3) |> aType
+            layer1 = ConvTranspose((3, 3), 2 => 4; pad=SamePad(), cross_correlation)
+            display(layer1)
+            ps1, st1 = Lux.setup(rng, layer1) |> dev
+            @test size(ps1.weight) == (3, 3, 4, 2)
+            @test size(layer1(x, ps1, st1)[1]) == (10, 10, 4, 3)
 
-            @test_throws DimensionMismatch layer(x, ps, st)
+            layer2 = ConvTranspose(
+                (3, 3), 2 => 4; groups=2, pad=SamePad(), cross_correlation)
+            display(layer2)
+            ps2, st2 = Lux.setup(rng, layer2) |> dev
+            @test size(ps2.weight) == (3, 3, 2, 2)
+            @test size(layer1(x, ps1, st1)[1]) == size(layer2(x, ps2, st2)[1])
 
-            x = randn(Float32, 28, 28, 23, 3) |> aType
+            __f = (x, ps) -> sum(first(layer1(x, ps, st1)))
+            test_gradients(__f, x, ps1; atol=1.0f-3, rtol=1.0f-3)
 
-            @test_throws DimensionMismatch layer(x, ps, st)
-        end
+            __f = (x, ps) -> sum(first(layer2(x, ps, st2)))
+            test_gradients(__f, x, ps2; atol=1.0f-3, rtol=1.0f-3)
 
-        @testest "with Output Padding" begin
-            m1 = ConvTranspose((3, 5), 3 => 6; stride=3)
-            m2 = ConvTranspose((3, 5), 3 => 6; stride=3, outpad=(1, 0))
+            x = randn(Float32, 10, 2, 1) |> aType
+            layer = ConvTranspose((3,), 2 => 4; pad=SamePad(), groups=2, cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
 
-            ps1, st1 = Lux.setup(rng, m1) |> dev
-            ps2, st2 = Lux.setup(rng, m2) |> dev
+            @jet layer(x, ps, st)
 
-            x = randn(Float32, 10, 11, 3, 2) |> aType
-            @test size(m1(x, ps1, st1)[1])[1:2] .+ (1, 0) == size(m2(x, ps2, st2)[1])[1:2]
+            @test size(layer(x, ps, st)[1]) == (10, 4, 1)
+            @test length(ps.weight) == 3 * (2 * 4) / 2
 
-            m1 = ConvTranspose((3, 5, 3), 3 => 6; stride=3)
-            m2 = ConvTranspose((3, 5, 3), 3 => 6; stride=3, outpad=(1, 0, 1))
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
-            ps1, st1 = Lux.setup(rng, m1) |> dev
-            ps2, st2 = Lux.setup(rng, m2) |> dev
+            x = randn(Float32, 10, 11, 4, 2) |> aType
+            layer = ConvTranspose(
+                (3, 5), 4 => 4; pad=SamePad(), groups=4, cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
+
+            @jet layer(x, ps, st)
+
+            @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
+            @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
+
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+
+            x = randn(Float32, 10, 11, 4, 2) |> aType
+            layer = ConvTranspose(
+                (3, 5), 4 => 4, tanh; pad=SamePad(), groups=4, cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
+
+            @jet layer(x, ps, st)
+            @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
+            @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
+
+            __f = (x, ps) -> sum(first(layer(x, ps, st)))
+            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 12, 3, 2) |> aType
+            layer = ConvTranspose(
+                (3, 5, 3), 3 => 6; pad=SamePad(), groups=3, cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
 
-            @test size(m1(x, ps1, st1)[1])[1:3] .+ (1, 0, 1) ==
-                  size(m2(x, ps2, st2)[1])[1:3]
+            @jet layer(x, ps, st)
+            @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
+            @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
+
+            x = randn(Float32, 10, 11, 12, 3, 2) |> aType
+            layer = ConvTranspose(
+                (3, 5, 3), 3 => 6, tanh; pad=SamePad(), groups=3, cross_correlation)
+            display(layer)
+            ps, st = Lux.setup(rng, layer) |> dev
+
+            @jet layer(x, ps, st)
+            @test size(layer(x, ps, st)[1]) == (10, 11, 12, 6, 2)
+            @test length(ps.weight) == (3 * 5 * 3) * (3 * 6) / 3
+
+            @test occursin("groups=2",
+                sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2, cross_correlation)))
+            @test occursin("2 => 4",
+                sprint(show, ConvTranspose((3, 3), 2 => 4; groups=2, cross_correlation)))
+
+            @testset "SamePad size mismatch LuxDL/Lux.jl#534" begin
+                layer = ConvTranspose(
+                    (3,), 2 => 1; pad=SamePad(), stride=2, cross_correlation)
+                display(layer)
+                x = ones(Float32, 2, 2, 1) |> aType
+                ps, st = Lux.setup(rng, layer) |> dev
+
+                y = first(layer(x, ps, st))
+                @test size(y) == (4, 1, 1)
+                @jet layer(x, ps, st)
+            end
+
+            @testset "Catch Channel Mismatch Early: LuxDL/Lux.jl#455" begin
+                layer = ConvTranspose((4, 4), 42 => 16; stride=2, pad=1, cross_correlation)
+
+                x = randn(Float32, 28, 28, 42, 3) |> aType
+                ps, st = Lux.setup(rng, layer) |> dev
+
+                @test layer(x, ps, st) isa Any
+
+                x = randn(Float32, 28, 28, 46, 3) |> aType
+
+                @test_throws DimensionMismatch layer(x, ps, st)
+
+                x = randn(Float32, 28, 28, 23, 3) |> aType
+
+                @test_throws DimensionMismatch layer(x, ps, st)
+            end
+
+            @testset "with Output Padding" begin
+                m1 = ConvTranspose((3, 5), 3 => 6; stride=3, cross_correlation)
+                display(m1)
+                m2 = ConvTranspose(
+                    (3, 5), 3 => 6; stride=3, outpad=(1, 0), cross_correlation)
+                display(m2)
+
+                ps1, st1 = Lux.setup(rng, m1) |> dev
+                ps2, st2 = Lux.setup(rng, m2) |> dev
+
+                x = randn(Float32, 10, 11, 3, 2) |> aType
+                @test size(m1(x, ps1, st1)[1])[1:2] .+ (1, 0) ==
+                      size(m2(x, ps2, st2)[1])[1:2]
+
+                m1 = ConvTranspose((3, 5, 3), 3 => 6; stride=3, cross_correlation)
+                display(m1)
+                m2 = ConvTranspose(
+                    (3, 5, 3), 3 => 6; stride=3, outpad=(1, 0, 1), cross_correlation)
+                display(m2)
+
+                ps1, st1 = Lux.setup(rng, m1) |> dev
+                ps2, st2 = Lux.setup(rng, m2) |> dev
+
+                x = randn(Float32, 10, 11, 12, 3, 2) |> aType
+
+                @test size(m1(x, ps1, st1)[1])[1:3] .+ (1, 0, 1) ==
+                      size(m2(x, ps2, st2)[1])[1:3]
+            end
         end
     end
 end
