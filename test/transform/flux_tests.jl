@@ -327,53 +327,20 @@
         @testset "Recurrent" begin
             @testset "RNNCell" begin
                 model = Flux.RNNCell(2 => 3) |> fdev(dev)
-                x = rand(Float32, 2, 4) |> aType
-
-                model_lux = tolux(model)
-                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
-
-                @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
-
+                @test_throws Lux.FluxModelConversionException tolux(model)
                 @test_throws Lux.FluxModelConversionException toluxforce(model)
-
-                model_lux = toluxpsst(model)
-                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
-
-                @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
             end
 
             @testset "LSTMCell" begin
                 model = Flux.LSTMCell(2 => 3) |> fdev(dev)
-                x = rand(Float32, 2, 4) |> aType
-
-                model_lux = tolux(model)
-                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
-
-                @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
-
+                @test_throws Lux.FluxModelConversionException tolux(model)
                 @test_throws Lux.FluxModelConversionException toluxforce(model)
-
-                model_lux = toluxpsst(model)
-                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
-
-                @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
             end
 
             @testset "GRUCell" begin
                 model = Flux.GRUCell(2 => 3) |> fdev(dev)
-                x = rand(Float32, 2, 4) |> aType
-
-                model_lux = tolux(model)
-                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
-
-                @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
-
+                @test_throws Lux.FluxModelConversionException tolux(model)
                 @test_throws Lux.FluxModelConversionException toluxforce(model)
-
-                model_lux = toluxpsst(model)
-                ps, st = Lux.setup(StableRNG(12345), model_lux) .|> dev
-
-                @test size(model_lux(x, ps, st)[1][1]) == (3, 4)
             end
         end
 

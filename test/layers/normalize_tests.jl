@@ -128,7 +128,7 @@ end
         __f = let m = m, x = x, st = st
             ps -> sum(first(m(x, ps, st)))
         end
-        test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoEnzyme()])
+        test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
 
         @testset "affine: $affine" for affine in (true, false)
             m = GroupNorm(2, 2; affine)

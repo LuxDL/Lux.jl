@@ -617,5 +617,27 @@ end
 
             @test_throws DimensionMismatch layer(x, ps, st)
         end
+
+        @testest "with Output Padding" begin
+            m1 = ConvTranspose((3, 5), 3 => 6; stride=3)
+            m2 = ConvTranspose((3, 5), 3 => 6; stride=3, outpad=(1, 0))
+
+            ps1, st1 = Lux.setup(rng, m1) |> dev
+            ps2, st2 = Lux.setup(rng, m2) |> dev
+
+            x = randn(Float32, 10, 11, 3, 2) |> aType
+            @test size(m1(x, ps1, st1)[1])[1:2] .+ (1, 0) == size(m2(x, ps2, st2)[1])[1:2]
+
+            m1 = ConvTranspose((3, 5, 3), 3 => 6; stride=3)
+            m2 = ConvTranspose((3, 5, 3), 3 => 6; stride=3, outpad=(1, 0, 1))
+
+            ps1, st1 = Lux.setup(rng, m1) |> dev
+            ps2, st2 = Lux.setup(rng, m2) |> dev
+
+            x = randn(Float32, 10, 11, 12, 3, 2) |> aType
+
+            @test size(m1(x, ps1, st1)[1])[1:3] .+ (1, 0, 1) ==
+                  size(m2(x, ps2, st2)[1])[1:3]
+        end
     end
 end

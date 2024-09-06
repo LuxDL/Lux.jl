@@ -17,14 +17,14 @@ end
 CRC.@non_differentiable calc_padding(::Any...)
 
 function conv_transpose_dims(
-        x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups)
+        x::AbstractArray, weight::AbstractArray; padding, stride, dilation, groups, outpad)
     # Calculate size of "input", from ∇conv_data()'s perspective...
-    function calc_dim(xsz, wsz, stride, dilation, pad)
-        return (xsz - 1) * stride + 1 + (wsz - 1) * dilation - pad
+    function calc_dim(xsz, wsz, stride, dilation, pad, outpad)
+        return (xsz - 1) * stride + 1 + (wsz - 1) * dilation - pad + outpad
     end
     combined_pad = ntuple(i -> padding[2i - 1] + padding[2i], length(padding) ÷ 2)
     I = map(calc_dim, size(x)[1:(end - 2)], size(weight)[1:(end - 2)],
-        stride, dilation, combined_pad)
+        stride, dilation, combined_pad, outpad)
     C_in = size(weight)[end - 1] * groups
     C_out = size(weight)[end]
     batch_size = size(x)[end]
@@ -221,7 +221,7 @@ end
 @doc doc"""
     ConvTranspose(k::NTuple{N,Integer}, (in_chs => out_chs)::Pair{<:Integer,<:Integer},
                   activation=identity; init_weight=glorot_uniform, init_bias=zeros32,
-                  stride=1, pad=0, dilation=1, groups=1, use_bias=True(),
+                  stride=1, pad=0, outpad=0, dilation=1, groups=1, use_bias=True(),
                   cross_correlation=False())
 
 Standard convolutional transpose layer.
@@ -263,6 +263,9 @@ Standard convolutional transpose layer.
   - `use_bias`: Trainable bias can be disabled entirely by setting this to `false`.
   - `cross_correlation`: If `true`, perform transposed cross-correlation instead of
     transposed convolution.
+ - `outpad`: To converse [`Conv`](@ref) inversability when `stride > 1`, `outpad` can be
+    used to increase the size of the output in the desired dimensions. Whereas `pad` is used
+    to zero-pad the input, `outpad` only affects the output shape.
 
 # Extended Help
 
@@ -288,6 +291,7 @@ Standard convolutional transpose layer.
     kernel_size <: Tuple{Vararg{IntegerType}}
     stride <: Tuple{Vararg{IntegerType}}
     pad <: Tuple{Vararg{IntegerType}}
+    outpad <: Tuple{Vararg{IntegerType}}
     dilation <: Tuple{Vararg{IntegerType}}
     groups <: IntegerType
     init_weight
@@ -299,7 +303,7 @@ end
 function ConvTranspose(
         k::Tuple{Vararg{IntegerType}}, ch::Pair{<:IntegerType, <:IntegerType},
         activation=identity; init_weight=glorot_uniform,
-        init_bias=zeros32, stride=1, pad=0, dilation=1, groups=1,
+        init_bias=zeros32, stride=1, pad=0, outpad=0, dilation=1, groups=1,
         use_bias::BoolType=True(), cross_correlation::BoolType=False())
     stride = Utils.expand(Val(length(k)), stride)
     dilation = Utils.expand(Val(length(k)), dilation)
@@ -308,12 +312,14 @@ function ConvTranspose(
     else
         calc_padding(pad, k, dilation, stride)
     end
+    outpad = Utils.expand(Val(length(k)), outpad)
 
     @argcheck ch[2] % groups==0 DimensionMismatch("Input channel dimension must be divisible by groups.")
     @argcheck ch[1] % groups==0 DimensionMismatch("Output channel dimension must be divisible by groups.")
     @argcheck allequal(length, (stride, dilation, k))
 
-    return ConvTranspose(activation, first(ch), last(ch), k, stride, pad, dilation, groups,
+    return ConvTranspose(
+        activation, first(ch), last(ch), k, stride, pad, outpad, dilation, groups,
         init_weight, init_bias, static(use_bias), static(cross_correlation))
 end
 
@@ -335,7 +341,8 @@ end
 function (c::ConvTranspose)(x::AbstractArray, ps, st::NamedTuple)
     y = match_eltype(c, ps, st, x)
     cdims = construct_crosscor_convdims(c.cross_correlation,
-        conv_transpose_dims(y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups))
+        conv_transpose_dims(
+            y, ps.weight; c.stride, padding=c.pad, c.dilation, c.groups, c.outpad))
     bias = safe_getproperty(ps, Val(:bias))
     σ = NNlib.fast_act(c.activation, y)
     return bias_activation!!(σ, conv_transpose(y, ps.weight, cdims), bias), st
@@ -350,6 +357,7 @@ function Base.show(io::IO, l::ConvTranspose)
     all(==(1), l.dilation) ||
         print(io, ", dilation=", PrettyPrinting.tuple_string(l.dilation))
     (l.groups == 1) || print(io, ", groups=", l.groups)
+    all(==(0), l.outpad) || print(io, ", outpad=", PrettyPrinting.tuple_string(l.outpad))
     has_bias(l) || print(io, ", use_bias=false")
     print(io, ")")
 end
