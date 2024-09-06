@@ -113,15 +113,16 @@ function Lux.convert_flux_model(
     out_chs, in_chs = size(l.weight)[(end - 1):end]
     groups = l.groups
     pad = l.pad isa Flux.SamePad ? SamePad() : l.pad
+    outpad = hasfield(typeof(l), :outpad) ? l.outpad : 0
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
-        return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride,
-            pad, l.dilation, groups, use_bias=!(l.bias isa Bool),
+        return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
+            outpad, l.dilation, groups, use_bias=!(l.bias isa Bool),
             init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
             init_bias=Returns(_bias))
     else
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
-            l.dilation, groups, use_bias=!(l.bias isa Bool))
+            outpad, l.dilation, groups, use_bias=!(l.bias isa Bool))
     end
 end
 
@@ -177,58 +178,6 @@ function Lux.convert_flux_model(l::Flux.Upsample{mode}; kwargs...) where {mode}
 end
 
 function Lux.convert_flux_model(
-        l::Flux.RNNCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
-    out_dims, in_dims = size(l.Wi)
-    if preserve_ps_st
-        if force_preserve
-            throw(FluxModelConversionException("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `RNNCell`."))
-        end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.RNNCell` is ambiguous in Lux and hence not supported. Ignoring these parameters." maxlog=1
-        return Lux.RNNCell(in_dims => out_dims, l.σ; init_bias=Returns(copy(l.b)),
-            init_state=Returns(copy(l.state0)))
-    else
-        return Lux.RNNCell(in_dims => out_dims, l.σ)
-    end
-end
-
-function Lux.convert_flux_model(
-        l::Flux.LSTMCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
-    _out_dims, in_dims = size(l.Wi)
-    out_dims = _out_dims ÷ 4
-    if preserve_ps_st
-        if force_preserve
-            throw(FluxModelConversionException("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `LSTMCell`."))
-        end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.LSTMCell` is ambiguous in Lux \
-               and hence not supported. Ignoring these parameters." maxlog=1
-        bs = LuxOps.multigate(l.b, Val(4))
-        _s, _m = copy.(l.state0)
-        return Lux.LSTMCell(in_dims => out_dims; init_bias=Returns.(bs),
-            init_state=Returns(_s), init_memory=Returns(_m))
-    else
-        return Lux.LSTMCell(in_dims => out_dims)
-    end
-end
-
-function Lux.convert_flux_model(
-        l::Flux.GRUCell; preserve_ps_st::Bool=false, force_preserve::Bool=false)
-    _out_dims, in_dims = size(l.Wi)
-    out_dims = _out_dims ÷ 3
-    if preserve_ps_st
-        if force_preserve
-            throw(FluxModelConversionException("Recurrent Cell: $(typeof(l)) for Flux uses a `reset!` mechanism which hasn't been extensively tested with `FluxLayer`. Rewrite the model manually to use `GRUCell`."))
-        end
-        @warn "Preserving Parameters: `Wh` & `Wi` for `Flux.GRUCell` is ambiguous in Lux \
-               and hence not supported. Ignoring these parameters." maxlog=1
-        bs = LuxOps.multigate(l.b, Val(3))
-        return Lux.GRUCell(
-            in_dims => out_dims; init_bias=Returns.(bs), init_state=Returns(copy(l.state0)))
-    else
-        return Lux.GRUCell(in_dims => out_dims)
-    end
-end
-
-function Lux.convert_flux_model(
         l::Flux.BatchNorm; preserve_ps_st::Bool=false, force_preserve::Bool=false)
     if preserve_ps_st
         if l.track_stats
@@ -266,6 +215,17 @@ const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
 
 function Lux.convert_flux_model(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
     throw(FluxModelConversionException("Transformation of type $(T) is not supported."))
+end
+
+for cell in (:RNNCell, :LSTMCell, :GRUCell)
+    msg = "Recurrent Cell: $(cell) for Flux has semantical difference with Lux, \
+           mostly in-terms of how the bias term is dealt with. Lux aligns with the Pytorch \
+           definition of these models and hence converting `Flux.$(cell)` to `Lux.$(cell) \
+           is not possible. Rewrite the model manually."
+    @eval function Lux.convert_flux_model(::Flux.$(cell); preserve_ps_st::Bool=false,
+            force_preserve::Bool=false)
+        throw(FluxModelConversionException($msg))
+    end
 end
 
 end

@@ -140,5 +140,7 @@ abstraction.
   align with Pytorch. Both are controlled using `init_bias` and `use_bias`.
 - [`ConvTranspose`](@ref) allows `flipkernel=true` via `cross_correlation=true`. This makes
   it efficient for MIOpen.
+- [`ConvTranspose`](@ref) now has an `outpad` keyword argument, which is used to increase
+  the size of the output in the desired dimensions.
 - Pooling Layers based on lpnorm have been added -- [`LPPool`](@ref),
   [`GlobalLPPool`](@ref), and [`AdaptiveLPPool`](@ref).
