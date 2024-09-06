@@ -302,7 +302,7 @@ end
         @testset "Two-streams zero sum" begin
             x = zeros(Float32, 2, 1) |> aType
             y = zeros(Float32, 1, 1) |> aType
-            layer = Bilinear((2, 1) => 3)
+            layer = Bilinear((2, 1) => 3; init_bias=zeros32)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
