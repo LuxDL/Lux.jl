@@ -48,8 +48,8 @@ Base.show(io::IO, ::MIME"text/plain", l::FluxLayer) = print(io, "FluxLayer($(l.l
 ## SimpleChains.jl
 
 """
-    SimpleChainsLayer{ToArray}(layer, lux_layer=nothing)
-    SimpleChainsLayer(layer, ToArray::Union{Bool, Val}=Val(false))
+    SimpleChainsLayer(layer, to_array::Union{Bool, Val}=Val(false))
+    SimpleChainsLayer(layer, lux_layer, to_array)
 
 Wraps a `SimpleChains` layer into a `Lux` layer. All operations are performed using
 `SimpleChains` but the layer satisfies the `AbstractLuxLayer` interface.
@@ -62,39 +62,30 @@ regular `Array` or not. Default is `false`.
   - `layer`: SimpleChains layer
   - `lux_layer`: Potentially equivalent Lux layer that is used for printing
 """
-struct SimpleChainsLayer{ToArray, SL, LL <: Union{Nothing, AbstractLuxLayer}} <:
-       AbstractLuxLayer
-    to_array::ToArray
-    layer::SL
-    lux_layer::LL
-
-    function SimpleChainsLayer{ToArray}(layer, lux_layer=nothing) where {ToArray}
-        to_array = static(ToArray)
-        return new{typeof(to_array), typeof(layer), typeof(lux_layer)}(
-            to_array, layer, lux_layer)
-    end
-    function SimpleChainsLayer(layer, ToArray::BoolType=False())
-        to_array = static(ToArray)
-        return new{typeof(to_array), typeof(layer), Nothing}(to_array, layer, nothing)
-    end
+@concrete struct SimpleChainsLayer <: AbstractLuxLayer
+    layer
+    lux_layer <: Union{Nothing, AbstractLuxLayer}
+    to_array <: StaticBool
 end
 
-function Base.show(
-        io::IO, ::MIME"text/plain", s::SimpleChainsLayer{ToArray}) where {ToArray}
-    PrettyPrinting.print_wrapper_model(
-        io, "SimpleChainsLayer{to_array=$ToArray}", s.lux_layer)
+function SimpleChainsLayer(layer, to_array::BoolType=False())
+    return SimpleChainsLayer(layer, nothing, static(to_array))
+end
+
+function Base.show(io::IO, ::MIME"text/plain", s::SimpleChainsLayer)
+    PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer", s.lux_layer)
 end
 
 function (sc::SimpleChainsLayer)(x, ps, st)
     y = match_eltype(sc, ps, st, x)
     return (
-        simple_chain_output(
-            sc, apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x))),
+        to_array(sc.to_array,
+            apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x))),
         st)
 end
 
-simple_chain_output(::SimpleChainsLayer{False}, y) = y
-simple_chain_output(::SimpleChainsLayer{True}, y) = convert(Array, y)
+to_array(::False, y) = y
+to_array(::True, y) = convert(Array, y)
 
 apply_simple_chain(layer, x, ps, ::CPUDevice) = layer(x, ps)
 
