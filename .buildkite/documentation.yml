@@ -13,7 +13,7 @@ steps:
               dirs:
                 - src
                 - ext
-        command: julia --code-coverage=user --color=yes --project=docs docs/tutorials.jl
+        command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CUDA"
         agents:
@@ -39,13 +39,13 @@ steps:
           #     dirs:
           #       - src
           #       - ext
-        command: julia --code-coverage=user --color=yes --project=docs docs/tutorials.jl
+        command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CPU"
         agents:
           queue: "juliaecosystem"
-          os: "macos"
-          arch: "aarch64"
+          os: "linux"
+          arch: "x86_64"
         artifact_paths:
           - "docs/src/tutorials/beginner/**/*"
           - "docs/src/tutorials/intermediate/**/*"
