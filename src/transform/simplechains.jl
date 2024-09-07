@@ -69,7 +69,7 @@ function Adapt.adapt(to::ToSimpleChainsAdaptor, L::AbstractLuxLayer)
         error("`ToSimpleChainsAdaptor` requires `SimpleChains.jl` to be loaded.")
     end
     sc_layer = fix_simplechain_input_dims(make_simplechain_network(L), to.input_dims)
-    return SimpleChainsLayer{to.convert_to_array}(sc_layer, L)
+    return SimpleChainsLayer(sc_layer, L, static(to.convert_to_array))
 end
 
 function make_simplechain_network end
