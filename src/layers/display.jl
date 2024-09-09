@@ -16,6 +16,8 @@ end
 show_leaflike(x) = Functors.isleaf(x)  # mostly follow Functors, except for:
 show_leaflike(x::AbstractLuxLayer) = false
 
+isa_printable_leaf(x) = false
+
 function underscorise(n::Integer)
     return join(reverse(join.(reverse.(Iterators.partition(digits(n), 3)))), '_')
 end
@@ -27,7 +29,7 @@ function big_show(io::IO, obj, indent::Int=0, name=nothing)
         return
     end
     children = printable_children(obj)
-    if all(show_leaflike, values(children))
+    if all(show_leaflike, values(children)) || isa_printable_leaf(obj)
         layer_show(io, obj, indent, name)
     else
         println(io, " "^indent, isnothing(name) ? "" : "$name = ", display_name(obj), "(")

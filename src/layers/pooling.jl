@@ -196,7 +196,7 @@ for layer_op in (:Max, :Mean, :LP)
                 window; stride, pad, dilation, p))
         end
 
-        function Base.show(io::IO, ::MIME"text/plain", m::$(layer_name))
+        function Base.show(io::IO, m::$(layer_name))
             kernel_size = m.layer.mode.kernel_size
             print(io, string($(Meta.quot(layer_name))), "($(kernel_size)")
             pad = m.layer.mode.pad
@@ -213,6 +213,8 @@ for layer_op in (:Max, :Mean, :LP)
             print(io, ")")
         end
 
+        PrettyPrinting.isa_printable_leaf(::$(layer_name)) = true
+
         # Global Pooling Layer
         @doc $(global_pooling_docstring) @concrete struct $(global_layer_name) <:
                                                           AbstractLuxWrapperLayer{:layer}
@@ -223,13 +225,15 @@ for layer_op in (:Max, :Mean, :LP)
             return $(global_layer_name)(PoolingLayer(static(:global), $(Meta.quot(op)); p))
         end
 
-        function Base.show(io::IO, ::MIME"text/plain", g::$(global_layer_name))
+        function Base.show(io::IO, g::$(global_layer_name))
             print(io, string($(Meta.quot(global_layer_name))), "(")
             if $(Meta.quot(op)) == :lp
                 g.layer.op.p == 2 || print(io, ", p=", g.layer.op.p)
             end
             print(io, ")")
         end
+
+        PrettyPrinting.isa_printable_leaf(::$(global_layer_name)) = true
 
         # Adaptive Pooling Layer
         @doc $(adaptive_pooling_docstring) @concrete struct $(adaptive_layer_name) <:
@@ -242,12 +246,14 @@ for layer_op in (:Max, :Mean, :LP)
                 static(:adaptive), $(Meta.quot(op)), out_size; p))
         end
 
-        function Base.show(io::IO, ::MIME"text/plain", a::$(adaptive_layer_name))
+        function Base.show(io::IO, a::$(adaptive_layer_name))
             print(io, string($(Meta.quot(adaptive_layer_name))), "(", a.layer.mode.out_size)
             if $(Meta.quot(op)) == :lp
                 a.layer.op.p == 2 || print(io, ", p=", a.layer.op.p)
             end
             print(io, ")")
         end
+
+        PrettyPrinting.isa_printable_leaf(::$(adaptive_layer_name)) = true
     end
 end
