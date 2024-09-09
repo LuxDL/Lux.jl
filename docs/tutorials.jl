@@ -3,7 +3,7 @@ const BEGINNER_TUTORIALS = [
     "Basics/main.jl" => "CUDA",
     "PolynomialFitting/main.jl" => "CUDA",
     "SimpleRNN/main.jl" => "CUDA",
-    "SimpleChains/main.jl" => "CPU"
+    "SimpleChains/main.jl" => "CUDA"
 ]
 const INTERMEDIATE_TUTORIALS = [
     "NeuralODE/main.jl" => "CUDA",
