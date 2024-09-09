@@ -38,7 +38,7 @@ Pkg.add("Lux")
 ```
 
 > [!TIP]
-> If you are using a pre-v1 version of Lux.jl, please see the [Updating to v1 section](https://lux.csail.mit.edu/dev/introduction/updating_to_v1/) for instructions on how to update.
+> If you are using a pre-v1 version of Lux.jl, please see the [Updating to v1 section](https://lux.csail.mit.edu/dev/introduction/updating_to_v1) for instructions on how to update.
 
 ## 🤸 Quickstart
 
