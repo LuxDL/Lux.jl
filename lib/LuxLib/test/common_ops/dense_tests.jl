@@ -3,6 +3,9 @@ using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs
 
 anonact = x -> x^3
 
+dense_simple(act, w, x, ::Nothing) = act.(w * x)
+dense_simple(act, w, x, b) = act.(w * x .+ b)
+
 function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
     rng = StableRNG(1234)
 
@@ -44,6 +47,20 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
         (w, x, b) -> __f(activation, w, x, b)
     end
     test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
+
+    y_simple = dense_simple(activation, w, x, bias)
+    y_zyg = fused_dense_bias_activation(activation, w, x, bias)
+    @test y_simple≈y_zyg atol=atol rtol=rtol
+
+    _, ∂w_true, ∂x_true, ∂b_true = Zygote.gradient(
+        sum ∘ dense_simple, activation, w, x, bias)
+    _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(
+        sum ∘ fused_dense_bias_activation, activation, w, x, bias)
+    @test ∂w_true≈∂w_zyg atol=atol rtol=rtol
+    @test ∂x_true≈∂x_zyg atol=atol rtol=rtol
+    if bias !== nothing
+        @test ∂b_true≈∂b_zyg atol=atol rtol=rtol
+    end
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
@@ -149,14 +166,12 @@ end
 @testitem "Enzyme.Forward patch: dense" tags=[:dense] setup=[SharedTestSetup] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, Random, LuxTestUtils, Enzyme
 
-    if LuxTestUtils.ENZYME_TESTING_ENABLED
-        x = rand(Float32, 2, 2)
+    x = rand(Float32, 2, 2)
 
-        f(x) = sum(abs2, LuxLib.Impl.matmul(x, x))
+    f(x) = sum(abs2, LuxLib.Impl.matmul(x, x))
 
-        # Just test that we don't crash
-        @test length(Enzyme.gradient(Forward, f, x)) == 4
-    end
+    # Just test that we don't crash
+    @test length(Enzyme.gradient(Forward, f, x)) == 4
 end
 
 @testitem "Enzyme rules for fused dense" tags=[:dense] setup=[SharedTestSetup] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
