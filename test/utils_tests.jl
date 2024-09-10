@@ -220,7 +220,8 @@ end
             x = randn(3, 2)
             @test Lux.recursive_eltype(x, Val(true)) == Float64
 
-            x_wrapped = (ForwardDiff.Dual.(x), ForwardDiff.Dual(2.0), ReverseDiff.track.(x),
+            x_wrapped = (
+                ForwardDiff.Dual.(x), ForwardDiff.Dual(2.0), ReverseDiff.track.(x),
                 ReverseDiff.track(2.0), ReverseDiff.track(x),
                 Tracker.param.(x), Tracker.param(x), Tracker.param(2.0))
 

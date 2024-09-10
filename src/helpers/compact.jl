@@ -349,7 +349,8 @@ function CompactLuxLayer(dispatch::StaticSymbol, f::F, name::NAME_TYPE,
                 NamedTuple((name => CompactMacroImpl.kwarg_descriptor(val),)))
         end
     end
-    return CompactLuxLayer(dispatch, f, name, str, setup_strings, NamedTuple((; layers...)),
+    return CompactLuxLayer(
+        dispatch, f, name, str, setup_strings, NamedTuple((; layers...)),
         CompactMacroImpl.ValueStorage(; others...), splatted_kwargs)
 end
 
