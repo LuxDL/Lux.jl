@@ -15,7 +15,8 @@ function load_dataset(::Type{dset}, n_train::Int, n_eval::Int, batchsize::Int) w
     imgs, labels = dset(:test)[1:n_eval]
     x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
 
-    return (DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
+    return (
+        DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
         DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false))
 end
 

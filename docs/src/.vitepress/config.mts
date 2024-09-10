@@ -130,7 +130,8 @@ export default defineConfig({
                         text: 'Intermediate', collapsed: false, items: [
                             { text: 'MNIST Classification using Neural ODEs', link: '/tutorials/intermediate/1_NeuralODE' },
                             { text: 'Bayesian Neural Network', link: '/tutorials/intermediate/2_BayesianNN' },
-                            { text: 'Training a HyperNetwork on MNIST and FashionMNIST', link: '/tutorials/intermediate/3_HyperNet' }]
+                            { text: 'Training a HyperNetwork on MNIST and FashionMNIST', link: '/tutorials/intermediate/3_HyperNet' },
+                            { text: 'Training a PINN on 2D PDE', link: '/tutorials/intermediate/4_PINN2DPDE' }]
                     },
                     {
                         text: 'Advanced', collapsed: false, items: [

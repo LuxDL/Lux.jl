@@ -58,7 +58,13 @@ const intermediate = [
     href: "intermediate/3_HyperNet",
     src: "../hypernet.jpg",
     caption: "Training a HyperNetwork",
-    desc: "Train a hypernetwork to work on multiple datasets by predicting neural network parameters."
+    desc: "Train a hypernetwork to work on multiple datasets by predicting NN parameters."
+  },
+  {
+    href: "intermediate/4_PINN2DPDE",
+    src: "../pinn_nested_ad.gif",
+    caption: "Training a PINN",
+    desc: "Train a PINN to solve 2D PDEs (using Nested AD)."
   }
 ];
 
