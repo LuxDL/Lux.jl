@@ -1,11 +1,10 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.1.0"
+version = "1.1.1"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
-ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -14,6 +13,7 @@ UnrolledUtilities = "0fe1646c-419e-43be-ac14-22321958931b"
 [weakdeps]
 AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 GPUArrays = "0c68f7d7-f131-5f86-a1c3-88cf8149b2d7"
 MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
@@ -29,6 +29,7 @@ oneAPI = "8f75cd03-7ff8-4ecb-9b8f-daf728133b1b"
 [extensions]
 MLDataDevicesAMDGPUExt = "AMDGPU"
 MLDataDevicesCUDAExt = "CUDA"
+MLDataDevicesChainRulesCoreExt = "ChainRulesCore"
 MLDataDevicesFillArraysExt = "FillArrays"
 MLDataDevicesGPUArraysExt = "GPUArrays"
 MLDataDevicesMLUtilsExt = "MLUtils"

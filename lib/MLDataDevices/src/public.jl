@@ -308,13 +308,9 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
 end
 
 for op in (:get_device, :get_device_type)
-    @eval begin
-        function $(op)(x)
-            hasmethod(Internal.$(op), Tuple{typeof(x)}) && return Internal.$(op)(x)
-            return mapreduce(Internal.$(op), Internal.combine_devices, fleaves(x))
-        end
-
-        CRC.@non_differentiable $op(::Any)
+    @eval function $(op)(x)
+        hasmethod(Internal.$(op), Tuple{typeof(x)}) && return Internal.$(op)(x)
+        return mapreduce(Internal.$(op), Internal.combine_devices, fleaves(x))
     end
 end
 
@@ -336,12 +332,4 @@ Adapt.adapt_storage(::CPUDevice, x::AbstractRange) = x
 for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
     CUDADevice{Nothing}, MetalDevice, oneAPIDevice)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
-end
-
-# Chain Rules Core
-function CRC.rrule(::typeof(Adapt.adapt_storage), to::AbstractDevice, x::AbstractArray)
-    ∇adapt_storage = let x = x
-        Δ -> (NoTangent(), NoTangent(), (get_device(x))(Δ))
-    end
-    return Adapt.adapt_storage(to, x), ∇adapt_storage
 end

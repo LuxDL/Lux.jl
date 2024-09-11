@@ -1,12 +1,9 @@
 module MLDataDevices
 
 using Adapt: Adapt
-using ChainRulesCore: ChainRulesCore, NoTangent
 using Functors: Functors, fleaves
 using Preferences: @delete_preferences!, @load_preference, @set_preferences!
 using Random: AbstractRNG, Random
-
-const CRC = ChainRulesCore
 
 abstract type AbstractDevice <: Function end
 abstract type AbstractGPUDevice <: AbstractDevice end
