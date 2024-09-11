@@ -3,7 +3,6 @@ module LuxLib
 using Compat: @compat
 using Reexport: @reexport
 using Static: Static, known
-using UnrolledUtilities: unrolled_filter
 
 using ChainRulesCore: ChainRulesCore, NoTangent
 

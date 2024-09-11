@@ -137,14 +137,52 @@ EnzymeRules.inactive_noinl(::typeof(copy_drop_gradients), ::Any...) = nothing
 is_tracked(x) = x == :TrackedArray || x == :TrackedVector
 is_tracked(args...) = unrolled_any(is_tracked, args)
 
-# UnrolledUtilities.jl has these functions. But we need to support Static so we make some
-# specialized versions
 inferred_length(::Type{<:NTuple{N, Any}}) where {N} = N
+@generated static_length(itr) = return :($(Val(inferred_length(itr))))
 
 @generated function unrolled_any(f::F, xs) where {F}
     L = inferred_length(xs)
     L == 1 && return :(f(xs[1]))
     return Expr(:call, :|, (:(f(xs[$i])) for i in 1:L)...)
+end
+
+@generated function unrolled_map(f::F, xs) where {F}
+    L = inferred_length(xs)
+    return quote
+        $(Expr(:meta, :inline))
+        $(Expr(:inbounds, true))
+        res = $(Expr(:tuple, (:(f(xs[$i])) for i in 1:L)...))
+        $(Expr(:inbounds, :pop))
+        return res
+    end
+end
+
+function unrolled_mapreduce(f::F, op::O, itr) where {F, O}
+    return unrolled_mapreduce(f, op, itr, static_length(itr))
+end
+
+function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F, O}
+    error("Cannot unroll over an empty iterator.")
+end
+
+unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F, O} = f(only(itr))
+
+@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F, O, N}
+    syms = [gensym("f_itr_$(i)") for i in 1:N]
+    op_syms = [gensym("op_$(i)") for i in 1:(N - 1)]
+    f_applied = [:($(syms[i]) = f(itr[$i])) for i in 1:N]
+    combine_expr = [:($(op_syms[1]) = op($(syms[1]), $(syms[2])))]
+    for i in 2:(N - 1)
+        push!(combine_expr, :($(op_syms[i]) = op($(op_syms[i - 1]), $(syms[i + 1]))))
+    end
+    return quote
+        $(Expr(:meta, :inline))
+        $(Expr(:inbounds, true))
+        $(Expr(:block, f_applied...))
+        $(Expr(:inbounds, :pop))
+        $(Expr(:block, combine_expr...))
+        return $(op_syms[end])
+    end
 end
 
 # Working with batches

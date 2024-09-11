@@ -6,10 +6,9 @@ using ForwardDiff: ForwardDiff
 using NNlib: NNlib
 using Static: True, False, static
 using StaticArraysCore: StaticArray
-using UnrolledUtilities: unrolled_map
 
 using ..LuxLib: Numeric
-using ..Utils: NotaNumber, only_derivative, unrolled_any
+using ..Utils: NotaNumber, only_derivative, unrolled_any, unrolled_map
 
 function fast_scalar_indexing(::T) where {T <: AbstractArray}
     return static(ArrayInterface.fast_scalar_indexing(T))
@@ -197,7 +196,7 @@ Currently supported modes are:
     `LoopVectorization.jl` or `Polyester.jl`.
 """
 function internal_operation_mode(xs::Tuple)
-    xs = unrolled_filter(!isnothing, xs)
+    xs = filter(!isnothing, xs)
     known(Traits.use_generic_broadcasting(xs)) && return GenericBroadcastOp()
 
     dev = get_device_type(xs)
