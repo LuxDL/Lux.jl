@@ -50,6 +50,22 @@ if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
     end
 end
 
+# Eltype Matching Tests
+if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
+    @testset "eltype_mismath_handling: $option" for option in (
+        "none", "warn", "convert", "error")
+        set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
+        try
+            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
+            @test true
+        catch
+            @test false
+        end
+    end
+    set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
+end
+
 Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
 
 @testset "Load Tests" begin
@@ -137,21 +153,6 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
                     end
                 end
             end
-        end
-    end
-end
-
-# Eltype Matching Tests
-if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
-    @testset "eltype_mismath_handling: $option" for option in (
-        "none", "warn", "convert", "error")
-        set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
-        try
-            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
-            @test true
-        catch
-            @test false
         end
     end
 end
