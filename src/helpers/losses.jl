@@ -10,7 +10,6 @@ using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
 using LossFunctions: LossFunctions
 using Statistics: mean
-using UnrolledUtilities: unrolled_all
 
 using ..LuxOps: xlogy
 
@@ -40,7 +39,7 @@ fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
 
 fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x::Number, y::Number) = lfn(x, y)
 function fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
-    unrolled_all(fast_scalar_indexing, (x, y)) && return sum(lfn, x, y)
+    fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
     # mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y) leads to slowdowns, better to
     # allocate a new array
     return sum(lfn.(x, y))

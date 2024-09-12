@@ -19,7 +19,6 @@ using Random: Random, AbstractRNG
 using Static: StaticBool, StaticInt, StaticSymbol, True, False, static, known, dynamic
 using Reexport: Reexport, @reexport
 using Statistics: mean
-using UnrolledUtilities: unrolled_map, unrolled_mapreduce
 
 import LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer,
                 initialparameters, initialstates, parameterlength, statelength, outputsize,
