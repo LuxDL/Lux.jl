@@ -33,7 +33,7 @@ recursive_eltype(::Union{Nothing, Missing, Val}, ::StaticBool) = Bool
 function recursive_eltype(x::Union{Tuple, NamedTuple}, val::StaticBool)
     leaves = x isa Tuple ? x : values(x)
     length(leaves) == 0 && return Bool
-    return unrolled_mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves)
+    return mapreduce(Base.Fix2(recursive_eltype, val), promote_type, leaves)
 end
 function recursive_eltype(x, val::StaticBool)
     leaves = x isa Tuple ? x : (x isa NamedTuple ? values(x) : Functors.fleaves(x))
@@ -112,7 +112,7 @@ function recursive_map(f::F, x::NamedTuple{fields}, args...) where {F, fields}
     map_fn = let f = f
         (args_...) -> recursive_map(f, args_...)
     end
-    return NamedTuple{fields}(unrolled_map(map_fn, values(x), values.(args)...))
+    return NamedTuple{fields}(map(map_fn, values(x), values.(args)...))
 end
 recursive_map(f::F, x, args...) where {F} = fmap(f, x, args...)
 
