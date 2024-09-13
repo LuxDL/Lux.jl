@@ -23,7 +23,8 @@ pages = [
             "tutorials/beginner/1_Basics.md",
             "tutorials/beginner/2_PolynomialFitting.md",
             "tutorials/beginner/3_SimpleRNN.md",
-            "tutorials/beginner/4_SimpleChains.md"
+            "tutorials/beginner/4_SimpleChains.md",
+            "tutorials/beginner/5_OptimizationIntegration.md"
         ],
         "Intermediate" => [
             "tutorials/intermediate/1_NeuralODE.md",

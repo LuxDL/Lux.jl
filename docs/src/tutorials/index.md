@@ -28,10 +28,16 @@ const beginner = [
     desc: "Learn how to train small neural networks really fast on CPU."
   },
   {
+    href: "beginner/5_OptimizationIntegration",
+    src: "../optimization_integration.png",
+    caption: "Fitting with Optimization.jl",
+    desc: "Learn how to use Optimization.jl with Lux (on GPUs)."
+  },
+  {
     href: "https://luxdl.github.io/Boltz.jl/stable/tutorials/1_GettingStarted",
     src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
     caption: "Pre-Built Deep Learning Models",
-    desc: "Use Boltz.jl to load pre-built deep learning and scientific machine learning models."
+    desc: "Use Boltz.jl to load pre-built DL and SciML models."
   }
 ];
 
