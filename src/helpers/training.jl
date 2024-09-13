@@ -6,6 +6,7 @@ using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Optimisers: Optimisers
 using Setfield: @set!
+using Static: StaticBool, Static, False, True
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -50,13 +51,10 @@ Constructor for [`TrainState`](@ref).
 
 ## Arguments
 
-  - `rng`: Random Number Generator.
   - `ps`: Parameters of the model.
   - `st`: States of the model.
   - `model`: `Lux` model.
   - `optimizer`: Optimizer from `Optimisers.jl`.
-  - `transform_variables`: Function to transform the variables of the model. Typically used
-    to transfer variables to GPU / CPU.
 
 ## Returns
 
@@ -67,12 +65,18 @@ function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.Abstr
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
 
-@concrete struct TrainingBackendCache{backend, first_try}
+@concrete struct TrainingBackendCache
+    backend
+    first_try <: StaticBool
     dparameters
     extras
 end
 
-training_backend(::TrainingBackendCache{backend}) where {backend} = backend
+dparameters(cache::TrainingBackendCache) = dparameters(cache, cache.first_try)
+function dparameters(cache::TrainingBackendCache, ::False)
+    return Lux.recursive_make_zero!!(cache.dparameters)
+end
+dparameters(cache::TrainingBackendCache, ::True) = cache.dparameters
 
 function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     println(io, "TrainState")
@@ -83,8 +87,7 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     print(io, "    step: ", ts.step)
     if ts.cache !== nothing
         if ts.cache isa TrainingBackendCache
-            print(io,
-                "\n    cache: $(nameof(typeof(ts.cache))){$(training_backend(ts.cache))}")
+            print(io, "\n    cache: $(nameof(typeof(ts.cache)))($(ts.cache.backend))")
         else
             print(io, "\n    cache: $(nameof(typeof(ts.cache)))")
         end
@@ -198,7 +201,7 @@ for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
     end
 end
 
-function generate_wrappers(::F, m, ps, st, data, ::Val{false}) where {F}
+function generate_wrappers(::F, m, ps, st, data, ::False) where {F}
     @warn "Detected function wrapper generation with function being updated between calls. \
            This will generate type-unstable code. A possible reason for this is \
            `TrainState` was compiled (first call to `compute_gradients`) with function \
@@ -208,13 +211,13 @@ function generate_wrappers(::F, m, ps, st, data, ::Val{false}) where {F}
 end
 
 # Run the code when trying to compile the function for the first time.
-function generate_wrappers(objective_function::F, m, ps, st, data, ::Val{true}) where {F}
+function generate_wrappers(objective_function::F, m, ps, st, data, ::True) where {F}
     _, stₙ, statsₙ = objective_function(m, ps, st, data)
     return Ref{typeof(stₙ)}(stₙ), Ref{typeof(statsₙ)}(statsₙ)
 end
 
 function wrap_objective_function(
-        objective_function::F, m, ps, st, data, first_try::Val) where {F}
+        objective_function::F, m, ps, st, data, first_try::StaticBool) where {F}
     st_updated, stats = generate_wrappers(objective_function, m, ps, st, data, first_try)
 
     wrapped_objective_function = @closure (model, ps, st, data) -> begin

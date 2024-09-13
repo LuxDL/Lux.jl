@@ -5,9 +5,11 @@ using ArrayInterface: ArrayInterface
 using FunctionWrappers: FunctionWrapper
 using ReverseDiff: ReverseDiff, ForwardExecutor, ReverseExecutor, TrackedArray, TrackedReal,
                    @grad_from_chainrules
+using Setfield: @set!
+using Static: False, True
 
 using Lux: Lux, Utils
-using Lux.Training: TrainingBackendCache, TrainState
+using Lux.Training: Training, TrainingBackendCache, TrainState
 using LuxCore: LuxCore
 using MLDataDevices: CPUDevice
 

@@ -1,16 +1,15 @@
 # Uncompiled ReverseDiff
 function Lux.Training.compute_gradients(
         ad::AutoReverseDiff{false}, obj_fn::F, data, ts::TrainState) where {F}
-    grads = Lux.recursive_make_zero(ts.parameters)
-    ts_new = TrainState(
-        TrainingBackendCache{:ReverseDiff, true}(grads, nothing), obj_fn, ts.model,
-        ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
-    return Lux.Training.compute_gradients(ad, obj_fn, data, ts_new)
+    @set! ts.cache = TrainingBackendCache(
+        ad, True(), Lux.recursive_make_zero(ts.parameters), nothing)
+    @set! ts.objective_function = obj_fn
+    return Lux.Training.compute_gradients(ad, obj_fn, data, ts)
 end
 
 function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, data,
-        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
-    dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
+        ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{false}}}) where {F}
+    dparams = Training.dparameters(ts.cache)
     tape = ReverseDiff.InstructionTape()
     ps_tracked = Lux.recursive_map(Utils.Fix3(TrackedArray, tape), ts.parameters, dparams)
 
@@ -18,36 +17,34 @@ function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, dat
     loss.deriv = true
     ReverseDiff.reverse_pass!(tape)
 
-    ts_new = TrainState(
-        TrainingBackendCache{:ReverseDiff, false}(ts.cache.dparameters, nothing),
-        obj_fn, ts.model, ts.parameters, st, ts.optimizer, ts.optimizer_state, ts.step)
-
-    return ts.cache.dparameters, ReverseDiff.value(loss), stats, ts_new
+    @set! ts.cache.first_try = False()
+    @set! ts.objective_function = obj_fn
+    @set! ts.states = st
+    return dparams, ReverseDiff.value(loss), stats, ts
 end
 
 # Compiled ReverseDiff
 function Lux.Training.compute_gradients(
         ad::AutoReverseDiff{true}, obj_fn::F, data, ts::TrainState) where {F}
-    grads = Lux.recursive_make_zero(ts.parameters)
-    data_cache = deepcopy(data)
-    ps_cache = deepcopy(ts.parameters)
-    extras = (; data_cache, ps_cache)
+    @set! ts.cache = TrainingBackendCache(
+        ad, True(), Lux.recursive_make_zero(ts.parameters),
+        (; data_cache=deepcopy(data), ps_cache=deepcopy(ts.parameters)))
+    @set! ts.objective_function = nothing
 
-    ts_new = TrainState(
-        TrainingBackendCache{:ReverseDiff, true}(grads, extras), nothing, ts.model,
-        ts.parameters, ts.states, ts.optimizer, ts.optimizer_state, ts.step)
-    return Lux.Training.compute_gradients(ad, obj_fn, data, ts_new)
+    return Lux.Training.compute_gradients(ad, obj_fn, data, ts)
 end
 
 ## Tape hasn't been compiled yet / Function mismatch so recompile
-function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
-        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, FT}}) where {F, FT}
+function Lux.Training.compute_gradients(ad::AutoReverseDiff{true}, obj_fn::F, data,
+        ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{true}}}) where {F}
     if LuxCore.statelength(ts.states) != 0
         throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for Lux \
                              models with non-empty state `st`."))
     end
 
-    if FT # do a dry run
+    first_try = ts.cache.first_try isa True
+
+    if first_try # do a dry run
         _, st_, stats = obj_fn(ts.model, ts.parameters, ts.states, data)
         if stats != NamedTuple()
             throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for \
@@ -59,20 +56,18 @@ function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data
         end
     end
 
-    dparams = FT ? ts.cache.dparameters : Lux.recursive_make_zero!!(ts.cache.dparameters)
+    dparams = Training.dparameters(ts.cache)
 
     (; ps_cache, data_cache) = ts.cache.extras
-    if !FT
+    if !first_try
         Lux.recursive_copyto!(ps_cache, ts.parameters)
         Lux.recursive_copyto!(data_cache, data)
     end
 
-    obj_fn_wrap = first ∘ obj_fn
-
     tape = ReverseDiff.InstructionTape()
     ps_tracked = Lux.recursive_map(Utils.Fix3(TrackedArray, tape), ps_cache, dparams)
 
-    loss = obj_fn_wrap(ts.model, ps_tracked, ts.states, data_cache)
+    loss = first(obj_fn(ts.model, ps_tracked, ts.states, data_cache))
     loss.deriv = true
     ReverseDiff.reverse_pass!(tape)
 
@@ -81,18 +76,14 @@ function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data
     reverse_executor = [FunctionWrapper{Nothing, Tuple{}}(ReverseExecutor(tape[i]))
                         for i in length(tape):-1:1]
 
-    compiled_extras = (;
-        ps_cache, data_cache, forward_executor, reverse_executor, output=loss)
-    ts_new = TrainState(
-        TrainingBackendCache{:ReverseDiff, false}(ts.cache.dparameters, compiled_extras),
-        obj_fn, ts.model, ts.parameters, ts.states,
-        ts.optimizer, ts.optimizer_state, ts.step)
-
-    return dparams, ReverseDiff.value(loss), NamedTuple(), ts_new
+    @set! ts.cache = TrainingBackendCache(ad, False(), dparams,
+        (; ps_cache, data_cache, forward_executor, reverse_executor, output=loss))
+    @set! ts.objective_function = obj_fn
+    return dparams, ReverseDiff.value(loss), NamedTuple(), ts
 end
 
 function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
-        ts::TrainState{<:TrainingBackendCache{:ReverseDiff, false}, F}) where {F}
+        ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{true}}, F}) where {F}
     (; ps_cache, data_cache, output) = ts.cache.extras
 
     dparams = Lux.recursive_make_zero!!(ts.cache.dparameters)
@@ -107,7 +98,7 @@ function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data
         wrapper()
     end
 
-    ts_new = TrainState(ts.cache, obj_fn, ts.model, ts.parameters, ts.states,
-        ts.optimizer, ts.optimizer_state, ts.step)
-    return dparams, ReverseDiff.value(output), NamedTuple(), ts_new
+    @set! ts.cache.first_try = False()
+    @set! ts.objective_function = obj_fn
+    return dparams, ReverseDiff.value(output), NamedTuple(), ts
 end
