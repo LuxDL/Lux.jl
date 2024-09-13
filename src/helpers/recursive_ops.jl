@@ -102,17 +102,11 @@ function recursive_map(f::F, x::AbstractArray{T}, args...) where {F, T}
     (T <: Number || isbitstype(T)) && return f(x, args...) # Not all Number types (BigFloat) are bitstype
     return f.(x, args...)
 end
-function recursive_map(f::F, x::Tuple, args...) where {F}
+function recursive_map(f::F, x::Union{NamedTuple, Tuple}, args...) where {F}
     map_fn = let f = f
         (args_...) -> recursive_map(f, args_...)
     end
     return map(map_fn, x, args...)
-end
-function recursive_map(f::F, x::NamedTuple{fields}, args...) where {F, fields}
-    map_fn = let f = f
-        (args_...) -> recursive_map(f, args_...)
-    end
-    return NamedTuple{fields}(map(map_fn, values(x), values.(args)...))
 end
 recursive_map(f::F, x, args...) where {F} = fmap(f, x, args...)
 

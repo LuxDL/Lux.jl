@@ -3,10 +3,12 @@ module LuxTrackerExt
 using ADTypes: AbstractADType, AutoTracker
 using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore
+using Setfield: @set!
+using Static: False, True
 using Tracker: Tracker, TrackedArray, TrackedReal, @grad_from_chainrules
 
 using Lux: Lux, Utils
-using Lux.Training: TrainingBackendCache, TrainState
+using Lux.Training: Training, TrainingBackendCache, TrainState
 
 const CRC = ChainRulesCore
 
