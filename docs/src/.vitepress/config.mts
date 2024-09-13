@@ -122,7 +122,9 @@ export default defineConfig({
                             { text: 'Julia & Lux for the Uninitiated', link: '/tutorials/beginner/1_Basics' },
                             { text: 'Fitting a Polynomial using MLP', link: '/tutorials/beginner/2_PolynomialFitting' },
                             { text: 'Training a Simple LSTM', link: '/tutorials/beginner/3_SimpleRNN' },
-                            { text: 'MNIST Classification with SimpleChains', link: '/tutorials/beginner/4_SimpleChains' }]
+                            { text: 'MNIST Classification with SimpleChains', link: '/tutorials/beginner/4_SimpleChains' },
+                            { text: 'Fitting with Optimization.jl', link: '/tutorials/beginner/5_OptimizationIntegration' },
+                        ]
                     },
                     {
                         text: 'Intermediate', collapsed: false, items: [
