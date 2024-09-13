@@ -5,6 +5,7 @@ using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Optimisers: Optimisers
+using Setfield: @set!
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -112,8 +113,10 @@ $(APPLY_GRAD_DOCSTRING)
 """
 function apply_gradients(ts::TrainState, grads)
     optimizer_state, ps = Optimisers.update(ts.optimizer_state, ts.parameters, grads)
-    return TrainState(ts.cache, ts.objective_function, ts.model, ps,
-        ts.states, ts.optimizer, optimizer_state, ts.step + 1)
+    @set! ts.parameters = ps
+    @set! ts.optimizer_state = optimizer_state
+    @set! ts.step = ts.step + 1
+    return ts
 end
 
 """
@@ -126,8 +129,8 @@ $(APPLY_GRAD_DOCSTRING)
 """
 function apply_gradients!(ts::TrainState, grads)
     Optimisers.update!(ts.optimizer_state, ts.parameters, grads)
-    return TrainState(ts.cache, ts.objective_function, ts.model, ts.parameters,
-        ts.states, ts.optimizer, ts.optimizer_state, ts.step + 1)
+    @set! ts.step = ts.step + 1
+    return ts
 end
 
 """
@@ -266,33 +269,27 @@ end
 
 # Simple extension to the `adjust!` API
 function Optimisers.adjust!(ts::TrainState, eta::Real)
-    st_opt = ts.optimizer_state
-    Optimisers.adjust!(st_opt, eta)
-    optimizer = Optimisers.adjust(ts.optimizer, eta)
-    return TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+    Optimisers.adjust!(ts.optimizer_state, eta)
+    @set! ts.optimizer = Optimisers.adjust(ts.optimizer, eta)
+    return ts
 end
 
 function Optimisers.adjust!(ts::TrainState; kwargs...)
-    st_opt = ts.optimizer_state
-    Optimisers.adjust!(st_opt; kwargs...)
-    optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
-    return TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+    Optimisers.adjust!(ts.optimizer_state; kwargs...)
+    @set! ts.optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
+    return ts
 end
 
 function Optimisers.adjust(ts::TrainState, eta::Real)
-    st_opt = Optimisers.adjust(ts.optimizer_state, eta)
-    optimizer = Optimisers.adjust(ts.optimizer, eta)
-    return TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+    @set! ts.optimizer_state = Optimisers.adjust(ts.optimizer_state, eta)
+    @set! ts.optimizer = Optimisers.adjust(ts.optimizer, eta)
+    return ts
 end
 
 function Optimisers.adjust(ts::TrainState; kwargs...)
-    st_opt = Optimisers.adjust(ts.optimizer_state; kwargs...)
-    optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
-    return TrainState(ts.cache, ts.objective_function, ts.model,
-        ts.parameters, ts.states, optimizer, st_opt, ts.step)
+    @set! ts.optimizer_state = Optimisers.adjust(ts.optimizer_state; kwargs...)
+    @set! ts.optimizer = Optimisers.adjust(ts.optimizer; kwargs...)
+    return ts
 end
 
 @compat(public,
