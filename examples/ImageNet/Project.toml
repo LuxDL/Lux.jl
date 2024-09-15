@@ -29,7 +29,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [compat]
 AMDGPU = "1"
 Augmentor = "0.6"
-Boltz = "0.1, 0.2, 0.3"
+Boltz = "0.1, 0.2, 0.3, 1"
 Configurations = "0.17"
 FLoops = "0.2"
 FileIO = "1.16"
