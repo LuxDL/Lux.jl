@@ -185,6 +185,12 @@ end
         return
     end
 
+    function matmuladd!(C, A, B, bias)
+        op = LuxLib.internal_operation_mode((C, A, B, bias))
+        LuxLib.Impl.matmuladd!(C, op, A, B, bias)
+        return
+    end
+
     rng = StableRNG(1234)
 
     ALL_ACTS = [identity, tanh, tanh_fast, sigmoid, sigmoid_fast,
@@ -218,6 +224,18 @@ end
             if hasbias
                 @test db≈db_zyg atol=1e-3 rtol=1e-3
             end
+
+            act === identity || !hasbias || continue
+
+            Enzyme.autodiff(Reverse, matmuladd!, Duplicated(y, copy(dy)),
+                Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
+
+            _, pb_f = Zygote.pullback(matmuladd, weight, x, b)
+            dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
+
+            @test dweight≈dweight_zyg atol=1e-3 rtol=1e-3
+            @test dx≈dx_zyg atol=1e-3 rtol=1e-3
+            @test db≈db_zyg atol=1e-3 rtol=1e-3
         end
     end
 end

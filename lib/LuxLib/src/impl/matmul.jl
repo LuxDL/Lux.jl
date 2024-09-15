@@ -232,6 +232,78 @@ function CRC.rrule(
 end
 
 # EnzymeRules
+function EnzymeRules.augmented_primal(cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
+        ::Type{EnzymeCore.Const{Nothing}}, C::EnzymeCore.Annotation{<:AbstractMatrix},
+        opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode},
+        A::EnzymeCore.Annotation{<:AbstractMatrix},
+        B::EnzymeCore.Annotation{<:AbstractMatrix},
+        bias::EnzymeCore.Annotation{<:AbstractVector})
+    A_cache = EnzymeRules.overwritten(cfg)[4] && !(B isa EnzymeCore.Const) &&
+              !(C isa EnzymeCore.Const) ? copy(A.val) : nothing
+    B_cache = EnzymeRules.overwritten(cfg)[5] && !(A isa EnzymeCore.Const) &&
+              !(C isa EnzymeCore.Const) ? copy(B.val) : nothing
+
+    if !(C isa EnzymeCore.DuplicatedNoNeed || C isa EnzymeCore.BatchDuplicatedNoNeed)
+        matmuladd!(C.val, A.val, B.val, bias.val)
+    end
+
+    return EnzymeRules.AugmentedReturn(nothing, nothing, (A_cache, B_cache))
+end
+
+function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
+        ::Type{EnzymeCore.Const{Nothing}}, (A_cache, B_cache),
+        C::EnzymeCore.Annotation{<:AbstractMatrix},
+        opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode},
+        A::EnzymeCore.Annotation{<:AbstractMatrix},
+        B::EnzymeCore.Annotation{<:AbstractMatrix},
+        bias::EnzymeCore.Annotation{<:AbstractVector})
+    if !(C isa EnzymeCore.Const) && !(B isa EnzymeCore.Const)
+        if !EnzymeRules.overwritten(cfg)[4]
+            A_cache = A.val
+        end
+    end
+
+    if !(C isa EnzymeCore.Const) && !(A isa EnzymeCore.Const)
+        if !EnzymeRules.overwritten(cfg)[5]
+            B_cache = B.val
+        end
+    end
+
+    ∂Cs = C.dval
+    ∂As = (typeof(A) <: EnzymeCore.Const) ? ∂Cs : A.dval
+    ∂Bs = (typeof(B) <: EnzymeCore.Const) ? ∂Cs : B.dval
+    ∂bs = bias.dval
+
+    if EnzymeRules.width(cfg) == 1
+        ∂Cs = (∂Cs,)
+        ∂As = (∂As,)
+        ∂Bs = (∂Bs,)
+        ∂bs = (∂bs,)
+    end
+
+    for (∂C, ∂A, ∂B, ∂b) in zip(∂Cs, ∂As, ∂Bs, ∂bs)
+        if !(C isa EnzymeCore.Const) && ∂C !== C.val
+            if !(bias isa EnzymeCore.Const) && ∂b !== bias.val
+                sum!(∂b, ∂C)
+            end
+
+            if !(A isa EnzymeCore.Const) && ∂A !== A.val
+                # TODO: we don't use our faster matmul here since we lack the 5 arg version
+                mul!(∂A, ∂C, B_cache', true, true)
+            end
+
+            if !(B isa EnzymeCore.Const) && ∂B !== B.val
+                # TODO: we don't use our faster matmul here since we lack the 5 arg version
+                mul!(∂B, A_cache', ∂C, true, true)
+            end
+
+            ∂C .= 0
+        end
+    end
+
+    return ntuple(Returns(nothing), 5)
+end
+
 @enzyme_alternative matmul_octavian! matmul_linalg_default!
 @enzyme_alternative serial_matmul_loopvec! matmul_linalg_default!
 @enzyme_alternative matmul_loopvec! matmul_linalg_default!
