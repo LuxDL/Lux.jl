@@ -227,6 +227,9 @@ end
 
             (act === identity && hasbias) || continue
 
+            dweight .= 0
+            dx .= 0
+            db .= 0
             Enzyme.autodiff(Reverse, matmuladd!, Duplicated(y, copy(dy)),
                 Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
 

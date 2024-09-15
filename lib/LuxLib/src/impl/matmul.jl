@@ -244,7 +244,7 @@ function EnzymeRules.augmented_primal(cfg, ::EnzymeCore.Const{typeof(matmuladd!)
               !(C isa EnzymeCore.Const) ? copy(B.val) : nothing
 
     if !(C isa EnzymeCore.DuplicatedNoNeed || C isa EnzymeCore.BatchDuplicatedNoNeed)
-        matmuladd!(C.val, A.val, B.val, bias.val)
+        matmuladd!(C.val, opmode.val, A.val, B.val, bias.val)
     end
 
     return EnzymeRules.AugmentedReturn(nothing, nothing, (A_cache, B_cache))
