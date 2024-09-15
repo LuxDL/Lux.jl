@@ -230,7 +230,7 @@ end
             Enzyme.autodiff(Reverse, matmuladd!, Duplicated(y, copy(dy)),
                 Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
 
-            _, pb_f = Zygote.pullback(matmuladd, weight, x, b)
+            _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)
             dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
 
             @test dweight≈dweight_zyg atol=1e-3 rtol=1e-3
