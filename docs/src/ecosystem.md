@@ -163,14 +163,6 @@ const autodiff = [
 
 const dataload = [
   {
-    avatar: 'https://github.com/evizero.png',
-    name: 'Augmentor.jl',
-    desc: 'Data augmentation for machine learning',
-    links: [
-      { icon: 'github', link: 'https://github.com/evizero/Augmentor.jl' }
-    ]
-  },
-  {
     avatar: 'https://github.com/JuliaML.png',
     name: 'MLUtils.jl',
     desc: 'Utilities and abstractions for Machine Learning tasks',
