@@ -1,13 +1,13 @@
 function Lux.Training.single_train_step!(
         backend::ReactantBackend, obj_fn::F, data, ts::TrainState) where {F}
-    data = __make_reactant_array(data)
-    ps = __make_reactant_array(ts.parameters)
-    st = __make_reactant_array(ts.states)
-    st_opt = __make_reactant_array(ts.optimizer_state)
+    data = Reactant.to_rarray(data)
+    ps = Reactant.to_rarray(ts.parameters)
+    st = Reactant.to_rarray(ts.states)
+    st_opt = Reactant.to_rarray(ts.optimizer_state)
 
     compiled_inference = if backend.input_prototype !== nothing
         Reactant.compile(LuxCore.apply,
-            (ts.model, __make_reactant_array(backend.input_prototype),
+            (ts.model, Reactant.to_rarray(backend.input_prototype),
                 ps, LuxCore.testmode(st)))
     else
         nothing
@@ -19,25 +19,30 @@ function Lux.Training.single_train_step!(
     loss, st_updated, stats = compiled_grad_and_step!(
         obj_fn, ts.model, ps, st, st_opt, data, ts.optimizer)
 
-    cache = TrainingBackendCache{:Reactant, false}(
-        nothing, (; compiled_grad_and_step!, compiled_inference))
-    ts_new = Lux.Training.TrainState(
-        cache, obj_fn, ts.model, ps, st_updated, ts.optimizer, st_opt, ts.step + 1)
+    cache = TrainingBackendCache(backend, False(), nothing, (; compiled_grad_and_step!,
+        compiled_inference))
+    @set! ts.cache = cache
+    @set! ts.objective_function = obj_fn
+    @set! ts.parameters = ps
+    @set! ts.states = st_updated
+    @set! ts.optimizer_state = st_opt
+    @set! ts.step = ts.step + 1
 
-    return nothing, loss, stats, ts_new
+    return nothing, loss, stats, ts # TODO: Return the gradients
 end
 
 function Lux.Training.single_train_step!(::ReactantBackend, obj_fn::F, data,
-        ts::TrainState{<:TrainingBackendCache{:Reactant}, F}) where {F}
-    data = __make_reactant_array(data)
+        ts::TrainState{<:TrainingBackendCache{<:ReactantBackend}, F}) where {F}
+    data = Reactant.to_rarray(data)
 
     loss, st_updated, stats = ts.cache.extras.compiled_grad_and_step!(
         obj_fn, ts.model, ts.parameters, ts.states, ts.optimizer_state, data, ts.optimizer)
 
-    ts_new = Lux.Training.TrainState(ts.cache, obj_fn, ts.model, ts.parameters, st_updated,
-        ts.optimizer, ts.optimizer_state, ts.step + 1)
+    @set! ts.objective_function = obj_fn
+    @set! ts.states = st_updated
+    @set! ts.step = ts.step + 1
 
-    return nothing, loss, stats, ts_new
+    return nothing, loss, stats, ts # TODO: Return the gradients
 end
 
 function internal_grad_and_step!(
@@ -53,8 +58,8 @@ function internal_grad_and_step!(
     return loss, st_updated, stats
 end
 
-function (tstate::TrainState{<:TrainingBackendCache{:Reactant}})(data)
-    data_reactant = __make_reactant_array(data)
+function (tstate::TrainState{<:TrainingBackendCache{<:ReactantBackend}})(data)
+    data_reactant = Reactant.to_rarray(data)
     compiled_inference = if tstate.cache.extras.compiled_inference !== nothing
         tstate.cache.extras.compiled_inference
     else
