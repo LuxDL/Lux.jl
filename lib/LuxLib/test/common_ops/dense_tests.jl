@@ -225,7 +225,7 @@ end
                 @test db≈db_zyg atol=1e-3 rtol=1e-3
             end
 
-            act === identity || !hasbias || continue
+            (act === identity && hasbias) || continue
 
             Enzyme.autodiff(Reverse, matmuladd!, Duplicated(y, copy(dy)),
                 Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
