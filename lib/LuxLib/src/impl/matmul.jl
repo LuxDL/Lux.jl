@@ -270,9 +270,9 @@ function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
     end
 
     ∂Cs = C.dval
-    ∂As = (typeof(A) <: EnzymeCore.Const) ? ∂Cs : A.dval
-    ∂Bs = (typeof(B) <: EnzymeCore.Const) ? ∂Cs : B.dval
-    ∂bs = bias.dval
+    ∂As = A isa EnzymeCore.Const ? ∂Cs : A.dval
+    ∂Bs = B isa EnzymeCore.Const ? ∂Cs : B.dval
+    ∂bs = bias isa EnzymeCore.Const ? ∂Cs : bias.dval
 
     if EnzymeRules.width(cfg) == 1
         ∂Cs = (∂Cs,)

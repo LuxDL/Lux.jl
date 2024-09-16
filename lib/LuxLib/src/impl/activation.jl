@@ -196,17 +196,17 @@ for (f, dfdx) in [
     (:tanh_fast, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω)))))
     #! format: on
 ]
-    @eval CRC.@scalar_rule($f(x), $dfdx)
+    @eval CRC.@scalar_rule($f(x), $(dfdx))
 
     ∇f = Symbol(:∇broadcasted_, f)
     @eval function CRC.rrule(::typeof(Broadcast.broadcasted), ::typeof($f),
             x::Union{Numeric, Broadcast.Broadcasted})
-        Ω = $f.(x)
-        function $∇f(dΩ)
-            ∂x = CRC.InplaceableThunk(dx -> @.(dx+=dΩ * $dfdx), CRC.@thunk @.(dΩ*$dfdx))
+        Ω = $(f).(x)
+        function $(∇f)(dΩ)
+            ∂x = CRC.InplaceableThunk(dx -> @.(dx+=dΩ * $(dfdx)), CRC.@thunk @.(dΩ*$(dfdx)))
             return CRC.NoTangent(), CRC.NoTangent(), ∂x
         end
-        return Ω, $∇f
+        return Ω, $(∇f)
     end
 end
 

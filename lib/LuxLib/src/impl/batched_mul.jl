@@ -137,8 +137,8 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
             end
 
             dCs = C.dval
-            dAs = (typeof(A) <: EnzymeCore.Const) ? dCs : A.dval
-            dBs = (typeof(B) <: EnzymeCore.Const) ? dCs : B.dval
+            dAs = A isa EnzymeCore.Const ? dCs : A.dval
+            dBs = B isa EnzymeCore.Const ? dCs : B.dval
 
             if EnzymeRules.width(cfg) == 1
                 dCs = (dCs,)
