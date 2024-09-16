@@ -21,5 +21,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+[compat]
+MLUtils = "0.4"
+
 [extras]
 CUDA_Runtime_jll = "76a88914-d11a-5bdc-97e0-2f5a05c973a2"
