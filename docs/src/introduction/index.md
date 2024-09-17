@@ -25,7 +25,8 @@ Pkg.add("Lux")
 
 ```@example quickstart
 using Lux, Random, Optimisers, Zygote
-# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
+using LuxCUDA # For CUDA support
+# using AMDGPU, Metal, oneAPI # Other pptional packages for GPU support
 ```
 
 We take randomness very seriously
@@ -43,15 +44,16 @@ Build the model
 model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 1, tanh), Dense(1, 10)))
 ```
 
-Models don't hold parameters and states so initialize them. From there on, we just use our
-standard AD and Optimisers API.
+Models don't hold parameters and states so initialize them. From there on, we can just use
+our standard AD and Optimisers API. However, here we will show how to use Lux's Training
+API that provides an uniform API over all supported AD systems.
 
 ```@example quickstart
 # Get the device determined by Lux
 dev = gpu_device()
 
 # Parameter and State Variables
-ps, st = Lux.setup(rng, model) .|> dev
+ps, st = Lux.setup(rng, model) |> dev
 
 # Dummy Input
 x = rand(rng, Float32, 128, 2) |> dev
@@ -60,21 +62,30 @@ x = rand(rng, Float32, 128, 2) |> dev
 y, st = Lux.apply(model, x, ps, st)
 
 # Gradients
-## Pullback API to capture change in state
-(l, st_), pb = pullback(Lux.apply, model, x, ps, st)
-gs = pb((one.(l), nothing))[3]
+## First construct a TrainState
+train_state = Lux.Training.TrainState(model, ps, st, Adam(0.0001f0))
 
-# Optimization
-st_opt = Optimisers.setup(Adam(0.0001f0), ps)
-st_opt, ps = Optimisers.update(st_opt, ps, gs)  # or Optimisers.update!(st_opt, ps, gs)
+## We can compute the gradients using Training.compute_gradients
+gs, loss, stats, train_state = Lux.Training.compute_gradients(AutoZygote(), MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))), train_state)
+
+## Optimization
+train_state = Training.apply_gradients!(train_state, gs) # or Training.apply_gradients (no `!` at the end)
+
+# Both these steps can be combined into a single call
+gs, loss, stats, train_state = Training.single_train_step!(AutoZygote(), MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))), train_state)
 ```
 
 ## Defining Custom Layers
 
 ```@example custom_compact
 using Lux, Random, Optimisers, Zygote
-# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
-using Printf  # For pretty printing
+using LuxCUDA # For CUDA support
+# using AMDGPU, Metal, oneAPI # Other pptional packages for GPU support
+using Printf # For pretty printing
+
+dev = gpu_device()
 ```
 
 We will define a custom MLP using the `@compact` macro. The macro takes in a list of
@@ -86,9 +97,9 @@ n_in = 1
 n_out = 1
 nlayers = 3
 
-model = @compact(w1=Dense(n_in, 128),
-    w2=[Dense(128, 128) for i in 1:nlayers],
-    w3=Dense(128, n_out),
+model = @compact(w1=Dense(n_in => 32),
+    w2=[Dense(32 => 32) for i in 1:nlayers],
+    w3=Dense(32 => n_out),
     act=relu) do x
     embed = act(w1(x))
     for w in w2
@@ -102,25 +113,40 @@ end
 We can initialize the model and train it with the same code as before!
 
 ```@example custom_compact
-ps, st = Lux.setup(Xoshiro(0), model)
+rng = Random.default_rng()
+Random.seed!(rng, 0)
 
-model(randn(n_in, 32), ps, st)  # 1×32 Matrix as output.
+ps, st = Lux.setup(Xoshiro(0), model) |> dev
 
-x_data = collect(-2.0f0:0.1f0:2.0f0)'
+x = rand(rng, Float32, n_in, 32) |> dev
+
+model(x, ps, st)  # 1×32 Matrix and updated state as output.
+
+x_data = reshape(collect(-2.0f0:0.1f0:2.0f0), 1, :) |> dev
 y_data = 2 .* x_data .- x_data .^ 3
-st_opt = Optimisers.setup(Adam(), ps)
 
-for epoch in 1:1000
-    global st  # Put this in a function in real use-cases
-    (loss, st), pb = Zygote.pullback(ps) do p
-        y, st_ = model(x_data, p, st)
-        return sum(abs2, y .- y_data), st_
+function train_model!(model, ps, st, x_data, y_data)
+    train_state = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
+
+    for iter in 1:1000
+        _, loss, _, train_state = Lux.Training.single_train_step!(AutoZygote(), MSELoss(),
+            (x_data, y_data), train_state)
+        if iter % 100 == 1 || iter == 1000
+            @printf "Iteration: %04d \t Loss: %10.9g\n" iter loss
+        end
     end
-    gs = only(pb((one(loss), nothing)))
-    epoch % 100 == 1 && @printf "Epoch: %04d \t Loss: %10.9g\n" epoch loss
-    Optimisers.update!(st_opt, ps, gs)
+
+    return model, ps, st
 end
+
+train_model!(model, ps, st, x_data, y_data)
+nothing #hide
 ```
+
+!!! tip "Training with Optimization.jl"
+
+    If you are coming from the SciML ecosystem and want to use Optimization.jl, please
+    refer to the [Optimization.jl Tutorial](@ref Optimization-Lux-Tutorial).
 
 ## Additional Packages
 
@@ -133,7 +159,7 @@ You can install all those packages via `import Pkg; Pkg.add(<package name>)`.
 
 GPU Support for Lux.jl requires loading additional packages:
 
-* [`LuxCUDA.jl`](https://github.com/LuxDL/LuxCUDA.jl) for CUDA support.
-* [`AMDGPU.jl`](https://github.com/JuliaGPU/AMDGPU.jl) for AMDGPU support.
-* [`Metal.jl`](https://github.com/JuliaGPU/Metal.jl) for Apple Metal support.
-* [`oneAPI.jl`](https://github.com/JuliaGPU/oneAPI.jl) for oneAPI support.
+- [`LuxCUDA.jl`](https://github.com/LuxDL/LuxCUDA.jl) for CUDA support.
+- [`AMDGPU.jl`](https://github.com/JuliaGPU/AMDGPU.jl) for AMDGPU support.
+- [`Metal.jl`](https://github.com/JuliaGPU/Metal.jl) for Apple Metal support.
+- [`oneAPI.jl`](https://github.com/JuliaGPU/oneAPI.jl) for oneAPI support.
