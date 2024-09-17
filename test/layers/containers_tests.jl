@@ -455,3 +455,34 @@ end
         end
     end
 end
+
+@testitem "Coupling Type Instability: #416" setup=[SharedTestSetup] tags=[:core_layers] begin
+    using ComponentArrays, Random
+
+    rng = Random.default_rng()
+
+    froggie = Chain(
+        BranchLayer(NoOpLayer(), NoOpLayer()),
+        Parallel(
+            nothing,
+            Parallel(
+                +,
+                Dense(1 => 1),
+                NoOpLayer()
+            ),
+            WrappedFunction(first)
+        )
+    )
+
+    @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES
+        x = [1.0] |> aType
+        ps, st = Lux.setup(rng, froggie)
+        st = st |> dev
+
+        ps_nt = ps |> dev
+        @test @inferred(froggie(x, ps_nt, st)) isa Any
+
+        ps_ca = ps |> ComponentArray |> dev
+        @test @inferred(froggie(x, ps_ca, st)) isa Any
+    end
+end

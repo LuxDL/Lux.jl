@@ -71,14 +71,14 @@ function initialstates(rng::AbstractRNG, l::SkipConnection{T, <:AbstractLuxLayer
 end
 
 function (skip::SkipConnection)(x, ps, st::NamedTuple)
-    mx, st = apply(skip.layers, x, ps, st)
+    mx, st = @inline apply(skip.layers, x, ps, st)
     return skip.connection(mx, x), st
 end
 
 function (skip::SkipConnection{<:AbstractLuxLayer, <:AbstractLuxLayer})(
         x, ps, st::NamedTuple)
-    mx, st1 = apply(skip.layers, x, ps.layers, st.layers)
-    y, st2 = apply(skip.connection, (mx, x), ps.connection, st.connection)
+    mx, st1 = @inline apply(skip.layers, x, ps.layers, st.layers)
+    y, st2 = @inline apply(skip.connection, (mx, x), ps.connection, st.connection)
     return y, (layers=st1, connection=st2)
 end
 
@@ -180,7 +180,7 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = []
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = LuxCore.apply(
+        [:(($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
              layers.$(names[i]), $(getinput(i)), ps.$(names[i]), st.$(names[i])))
          for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
@@ -273,7 +273,7 @@ BranchLayer(; name::NAME_TYPE=nothing, kwargs...) = BranchLayer((; kwargs...), n
     st_symbols = [gensym() for _ in 1:N]
     calls = []
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = apply(
+        [:(($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
              layers.$(names[i]), x, ps.$(names[i]), st.$(names[i]))) for i in 1:N])
     push!(calls, :(st = NamedTuple{$names}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(return tuple($(Tuple(y_symbols)...)), st))
@@ -377,7 +377,7 @@ end
     getinput(i) = T <: Tuple ? :(x[$i]) : :x
     calls = [:($(y_symbols[N + 1]) = $(getinput(1)))]
     append!(calls,
-        [:(($(y_symbols[i]), $(st_symbols[i])) = apply(
+        [:(($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
              layers.$(names[i]), $(y_symbols[N + 1]), ps.$(names[i]), st.$(names[i]));
          $(y_symbols[N + 1]) = connection($(y_symbols[i]), $(getinput(i + 1))))
          for i in 1:N])
@@ -484,7 +484,7 @@ wrap_functions_in_chain_call(x) = x
     N = length(fields)
     x_symbols = vcat([:x], [gensym() for _ in 1:N])
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = apply(
+    calls = [:(($(x_symbols[i + 1]), $(st_symbols[i])) = @inline apply(
                  layers.$(fields[i]), $(x_symbols[i]), ps.$(fields[i]), st.$(fields[i])))
              for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
@@ -570,7 +570,7 @@ Maxout(f::Function, n_alts::Int) = Maxout(ntuple(Returns(f()), n_alts)...)
     N = length(fields)
     y_symbols = [gensym() for _ in 1:N]
     st_symbols = [gensym() for _ in 1:N]
-    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = apply(
+    calls = [:(($(y_symbols[i]), $(st_symbols[i])) = @inline apply(
                  layers.$(fields[i]), x, ps.$(fields[i]), st.$(fields[i]))) for i in 1:N]
     push!(calls, :(st = NamedTuple{$fields}((($(Tuple(st_symbols)...),)))))
     push!(calls, :(res = max.($(Tuple(y_symbols)...))))
@@ -661,7 +661,7 @@ end
     known(IJ) && push!(calls, :($(xs[1]) = x))
     for i in 1:known(N)
         push!(calls,
-            :(($(xs[i + known(IJ)]), $(sts[i])) = apply(
+            :(($(xs[i + known(IJ)]), $(sts[i])) = @inline apply(
                 model, $(known(IJ) ? :(($(xs[i]), x)) : :x),
                 ps, $(i == 1 ? :st : sts[i - 1]))))
     end
