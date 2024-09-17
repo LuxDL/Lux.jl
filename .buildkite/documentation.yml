@@ -8,11 +8,6 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
-          - JuliaCI/julia-coverage#v1:
-              codecov: true
-              dirs:
-                - src
-                - ext
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CUDA"
@@ -25,7 +20,7 @@ steps:
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
           - "**/*.cov"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
 
       - label: "Tutorial Build [%N/%t] CPU Runners"
         if: build.message !~ /\[skip docs\]/ && !build.pull_request.draft
@@ -34,11 +29,6 @@ steps:
         plugins:
           - JuliaCI/julia#v1:
               version: "1"
-          # - JuliaCI/julia-coverage#v1:
-          #     codecov: true
-          #     dirs:
-          #       - src
-          #       - ext
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CPU"
@@ -52,7 +42,7 @@ steps:
           - "docs/src/tutorials/advanced/**/*"
           - "tutorial_deps/*"
           - "**/*.cov"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
 
       - label: "Final Documentation Build"
         depends_on:
