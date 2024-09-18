@@ -6,10 +6,6 @@ steps:
         key: "tutorial-build-cuda"
         parallelism: 4
         plugins:
-          - JuliaCI/coreupload#v2:
-              core_pattern: "**/*.core"
-              compressor: "zstd"
-              create_bundle: "true"
           - JuliaCI/julia#v1:
               version: "1"
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
@@ -31,10 +27,6 @@ steps:
         key: "tutorial-build-cpu"
         parallelism: 4
         plugins:
-          - JuliaCI/coreupload#v2:
-              core_pattern: "**/*.core"
-              compressor: "zstd"
-              create_bundle: "true"
           - JuliaCI/julia#v1:
               version: "1"
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl

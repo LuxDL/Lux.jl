@@ -26,14 +26,8 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
 end
 ("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
-if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
-    append!(EXTRA_PKGS,
-        [
-            Pkg.PackageSpec(; name="LuxCUDA", version="0.3"),
-            Pkg.PackageSpec("CUDA"),
-            Pkg.PackageSpec("cuDNN")
-        ])
-end
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
 
