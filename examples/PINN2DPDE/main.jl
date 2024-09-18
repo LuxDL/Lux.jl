@@ -25,8 +25,6 @@ const cdev = cpu_device()
 # with first order derivatives, so that we can compute the gradients of the loss using
 # 2nd order AD.
 
-# TODO: Equations for the PDE
-
 # ## Define the Neural Networks
 
 # All the networks take 3 input variables and output a scalar value. Here, we will define a
