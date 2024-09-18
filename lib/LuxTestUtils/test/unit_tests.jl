@@ -27,8 +27,8 @@ end
     @test_throws ArgumentError test_gradients(
         f, 1.0, x, nothing; broken_backends=[AutoTracker()],
         skip_backends=[AutoTracker(), AutoEnzyme()])
-    @test_throws ArgumentError @test_gradients(
-        f, 1.0, x, nothing; broken_backends=[AutoTracker()],
+    @test_throws ArgumentError @test_gradients(f, 1.0, x, nothing;
+        broken_backends=[AutoTracker()],
         skip_backends=[AutoTracker(), AutoEnzyme()])
 
     test_gradients(f, 1.0, x, nothing; soft_fail=[AutoTracker()])
