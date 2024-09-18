@@ -109,3 +109,17 @@ check_approx(x::AbstractArray, y::NamedTuple; kwargs...) = length(x) == 0 && len
 check_approx(x::NamedTuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y) == 0
 check_approx(x::AbstractArray, y::Tuple; kwargs...) = length(x) == 0 && length(y) == 0
 check_approx(x::Tuple, y::AbstractArray; kwargs...) = length(x) == 0 && length(y) == 0
+
+# Taken from discourse. normalizes the order of keyword arguments in a macro
+function reorder_macro_kw_params(exs)
+    exs = Any[exs...]
+    i = findfirst([(ex isa Expr && ex.head == :parameters) for ex in exs])
+    if i !== nothing
+        extra_kw_def = exs[i].args
+        for ex in extra_kw_def
+            push!(exs, ex isa Symbol ? Expr(:kw, ex, ex) : ex)
+        end
+        deleteat!(exs, i)
+    end
+    return Tuple(exs)
+end

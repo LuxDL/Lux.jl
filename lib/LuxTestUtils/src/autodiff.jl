@@ -130,8 +130,8 @@ julia> test_gradients(f, 1.0, x, nothing)
 function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         soft_fail::Union{Bool, Vector}=false,
         # Internal kwargs start
-        source=LineNumberNode(0, nothing),
-        test_expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
+        source::LineNumberNode=LineNumberNode(0, nothing),
+        test_expr::Expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
         # Internal kwargs end
         kwargs...)
     # TODO: We should add a macro version that propagates the line number info and the test_expr
@@ -217,4 +217,25 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
             Test.record(get_testset(), result)
         end
     end
+end
+
+"""
+    @test_gradients(f, args...; kwargs...)
+
+See the documentation of [`test_gradients`](@ref) for more details. This macro provides
+correct line information for the failing tests.
+"""
+macro test_gradients(exprs...)
+    exs = reorder_macro_kw_params(exprs)
+    kwarg_idx = findfirst(ex -> Meta.isexpr(ex, :kw), exs)
+    if kwarg_idx === nothing
+        args = [exs...]
+        kwargs = []
+    else
+        args = [exs[1:(kwarg_idx - 1)]...]
+        kwargs = [exs[kwarg_idx:end]...]
+    end
+    push!(kwargs, Expr(:kw, :source, QuoteNode(__source__)))
+    push!(kwargs, Expr(:kw, :test_expr, QuoteNode(:(test_gradients($(exs...))))))
+    return esc(:($(test_gradients)($(args...); $(kwargs...))))
 end
