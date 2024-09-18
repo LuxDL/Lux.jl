@@ -170,6 +170,27 @@ end
     end
 end
 
+@testitem "Dense StaticArrays" setup=[SharedTestSetup] tags=[:core_layers] begin
+    using StaticArrays, Enzyme, ForwardDiff, ComponentArrays
+
+    if LuxTestUtils.ENZYME_TESTING_ENABLED && pkgversion(Enzyme) ≥ v"0.12.36"
+        N = 8
+        d = Lux.Dense(N => N)
+        ps = (;
+            weight=randn(SMatrix{N, N, Float64}),
+            bias=randn(SVector{N, Float64})
+        )
+        x = randn(SVector{N, Float64})
+
+        fun = let d = d, x = x
+            ps -> sum(d(x, ps, (;))[1])
+        end
+        grad1 = ForwardDiff.gradient(fun, ComponentVector(ps))
+        grad2 = Enzyme.gradient(Enzyme.Reverse, fun, ps)
+        @test maximum(abs, grad1 .- ComponentVector(grad2)) < 1e-6
+    end
+end
+
 @testitem "Scale" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
