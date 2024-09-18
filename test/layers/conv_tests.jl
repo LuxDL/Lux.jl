@@ -14,7 +14,7 @@
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(rng, Float32, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3), 6 => 2; groups=2)
@@ -27,7 +27,7 @@
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(rng, Float32, 4, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3, 3), 6 => 2; groups=2)
@@ -40,7 +40,7 @@
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             # Test that we cannot ask for non-integer multiplication factors
             @test_throws DimensionMismatch Conv((2, 2), 3 => 10; groups=2)
@@ -55,7 +55,7 @@
                 layer(x, ps, st)
                 @jet layer(x, ps, st)
                 __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -102,7 +102,7 @@
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((2, 2), 3 => 9; groups=3)
             display(layer)
@@ -112,7 +112,7 @@
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((2, 2), 3 => 9; groups=3, use_bias=false)
             display(layer)
@@ -123,7 +123,7 @@
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             # Test that we cannot ask for non-integer multiplication factors
             @test_throws DimensionMismatch Conv((2, 2), 3 => 10; groups=3)
@@ -148,7 +148,7 @@
 
                 @jet layer(x, ps, st)
                 __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -289,7 +289,7 @@ end
 
         @jet layer(x, ps, st)
         __f = x -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x; atol=1e-3, rtol=1e-3)
+        @test_gradients(__f, x; atol=1e-3, rtol=1e-3)
 
         layer = PixelShuffle(3)
         display(layer)
@@ -302,7 +302,7 @@ end
 
         @jet layer(x, ps, st)
         __f = x -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x; atol=1e-3, rtol=1e-3)
+        @test_gradients(__f, x; atol=1e-3, rtol=1e-3)
     end
 end
 
@@ -362,7 +362,7 @@ end
 
                 @jet layer(x, ps, st)
                 __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
             end
         end
     end
@@ -403,7 +403,7 @@ end
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(Float32, 5, 5, 2, 4) |> aType
             layer = ConvTranspose((3, 3), 2 => 3; cross_correlation)
@@ -412,7 +412,7 @@ end
 
             @jet layer(x, ps, st)
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             # test ConvTranspose supports groups argument
             x = randn(Float32, 10, 10, 2, 3) |> aType
@@ -430,10 +430,10 @@ end
             @test size(layer1(x, ps1, st1)[1]) == size(layer2(x, ps2, st2)[1])
 
             __f = (x, ps) -> sum(first(layer1(x, ps, st1)))
-            test_gradients(__f, x, ps1; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps1; atol=1.0f-3, rtol=1.0f-3)
 
             __f = (x, ps) -> sum(first(layer2(x, ps, st2)))
-            test_gradients(__f, x, ps2; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps2; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 2, 1) |> aType
             layer = ConvTranspose((3,), 2 => 4; pad=SamePad(), groups=2, cross_correlation)
@@ -446,7 +446,7 @@ end
             @test length(ps.weight) == 3 * (2 * 4) / 2
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 4, 2) |> aType
             layer = ConvTranspose(
@@ -460,7 +460,7 @@ end
             @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 4, 2) |> aType
             layer = ConvTranspose(
@@ -473,7 +473,7 @@ end
             @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 12, 3, 2) |> aType
             layer = ConvTranspose(

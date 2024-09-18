@@ -47,11 +47,11 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogx)
-        test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
+        @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
 
         y = rand(10) |> aType
         __f = sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogy)
-        test_gradients(__f, x, y; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
+        @test_gradients(__f, x, y; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
     end
 end
 
@@ -80,7 +80,7 @@ end
             @jet loss_sum(ŷ, y)
 
             __f = Base.Fix2(loss_mean, y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "MSLE" begin
@@ -98,7 +98,7 @@ end
             end
 
             __f = Base.Fix2(MSLELoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -157,7 +157,7 @@ end
             @test @inferred(Zygote.gradient(celoss, ŷ, y)) isa Any
 
             __f = Base.Fix2(celoss, y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Logit CrossEntropyLoss" begin
@@ -180,7 +180,7 @@ end
             @test @inferred(Zygote.gradient(logitceloss, logŷ, y)) isa Any
 
             __f = Base.Fix2(logitceloss, y)
-            test_gradients(__f, logŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, logŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         logŷ, y = randn(3) |> aType, rand(3) |> aType
@@ -209,7 +209,7 @@ end
 
             __f = Base.Fix2(bceloss, y)
             σlogŷ = σ.(logŷ)
-            test_gradients(__f, σlogŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, σlogŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Logit BinaryCrossEntropyLoss" begin
@@ -230,7 +230,7 @@ end
             @test @inferred(Zygote.gradient(logitbceloss, logŷ, y)) isa Any
 
             __f = Base.Fix2(logitbceloss, y)
-            test_gradients(__f, logŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, logŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "BinaryFocalLoss" begin
@@ -253,7 +253,7 @@ end
             @test @inferred(Zygote.gradient(BinaryFocalLoss(), ŷ, y)) isa Any broken=ongpu
 
             __f = Base.Fix2(BinaryFocalLoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "FocalLoss" begin
@@ -278,8 +278,10 @@ end
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
-            test_gradients(
-                __f, ŷ; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()],
+            @test_gradients(__f, ŷ;
+                atol=1.0f-3,
+                rtol=1.0f-3,
+                skip_backends=[AutoFiniteDiff()],
                 broken_backends=ongpu ? [AutoTracker()] : [])
         end
     end
@@ -302,7 +304,7 @@ end
             @test @inferred(Zygote.gradient(KLDivergenceLoss(), ŷ, y)) isa Any
 
             __f = Base.Fix2(KLDivergenceLoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "HingeLoss" begin
@@ -316,7 +318,7 @@ end
             @test @inferred(Zygote.gradient(Lux.HingeLoss(), ŷ, y)) isa Any
 
             __f = Base.Fix2(Lux.HingeLoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "SquaredHingeLoss" begin
@@ -330,7 +332,7 @@ end
             @inferred Zygote.gradient(SquaredHingeLoss(), ŷ, y)
 
             __f = Base.Fix2(SquaredHingeLoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "PoissonLoss" begin
@@ -344,7 +346,7 @@ end
             @test_broken @inferred Zygote.gradient(Lux.PoissonLoss(), ŷ, y)
 
             __f = Base.Fix2(Lux.PoissonLoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "DiceCoeffLoss" begin
@@ -358,7 +360,7 @@ end
             @test_broken @inferred Zygote.gradient(DiceCoeffLoss(), ŷ, y)
 
             __f = Base.Fix2(DiceCoeffLoss(), y)
-            test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3,
                 broken_backends=ongpu ? [AutoTracker()] : [])
         end
 

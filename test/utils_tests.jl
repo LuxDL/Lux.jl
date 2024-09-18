@@ -64,7 +64,7 @@ end
         @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
         @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])
 
-        test_gradients(bcast_multigate, x; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(bcast_multigate, x; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 

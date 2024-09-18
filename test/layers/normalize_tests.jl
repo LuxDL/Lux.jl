@@ -44,8 +44,8 @@
 
         @jet m(x, ps, st)
         __f = (x, ps) -> sum(first(m(x, ps, st)))
-        test_gradients(
-            __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+            skip_backends=[AutoFiniteDiff()])
 
         for affine in (true, false)
             m = BatchNorm(2; affine, track_stats=false)
@@ -57,12 +57,12 @@
 
             if affine
                 __f = (x, ps) -> sum(first(m(x, ps, st)))
-                test_gradients(
-                    __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             else
                 __f = x -> sum(first(m(x, ps, st)))
-                test_gradients(
-                    __f, x; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             end
 
             # with activation function
@@ -82,13 +82,13 @@
             if affine
                 st_train = Lux.trainmode(st)
                 __f = (x, ps) -> sum(first(m(x, ps, st_train)))
-                test_gradients(
-                    __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             else
                 st_train = Lux.trainmode(st)
                 __f = x -> sum(first(m(x, ps, st_train)))
-                test_gradients(
-                    __f, x; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             end
 
             m = BatchNorm(32; affine)
@@ -128,7 +128,7 @@ end
         __f = let m = m, x = x, st = st
             ps -> sum(first(m(x, ps, st)))
         end
-        test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
 
         @testset "affine: $affine" for affine in (true, false)
             m = GroupNorm(2, 2; affine)
@@ -140,12 +140,12 @@ end
 
             if affine
                 __f = (x, ps) -> sum(first(m(x, ps, st)))
-                test_gradients(
-                    __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             else
                 __f = x -> sum(first(m(x, ps, st)))
-                test_gradients(
-                    __f, x; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             end
 
             # with activation function
@@ -160,12 +160,12 @@ end
 
             if affine
                 __f = (x, ps) -> sum(first(m(x, ps, st)))
-                test_gradients(
-                    __f, x, ps; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             else
                 __f = x -> sum(first(m(x, ps, st)))
-                test_gradients(
-                    __f, x; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                    skip_backends=[AutoFiniteDiff()])
             end
 
             m = GroupNorm(32, 16; affine)
@@ -216,7 +216,7 @@ end
 
             @jet wn(x, ps, st)
             __f = ps -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight,))
             display(wn)
@@ -225,7 +225,7 @@ end
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight, :bias), (2, 2))
             display(wn)
@@ -234,7 +234,7 @@ end
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight,), (2,))
             display(wn)
@@ -243,7 +243,7 @@ end
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Dense" begin
@@ -256,7 +256,7 @@ end
 
             @jet wn(x, ps, st)
             __f = ps -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight,))
             display(wn)
@@ -265,7 +265,7 @@ end
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight, :bias), (2, 2))
             display(wn)
@@ -274,7 +274,7 @@ end
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight,), (2,))
             display(wn)
@@ -283,7 +283,7 @@ end
 
             @jet wn(x, ps, st)
             __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         # See https://github.com/LuxDL/Lux.jl/issues/95
@@ -328,12 +328,12 @@ end
 
                 if affine
                     __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                    test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
                         skip_backends=[AutoFiniteDiff()])
                 else
                     __f = x -> sum(first(ln(x, ps, st)))
-                    test_gradients(
-                        __f, x; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                    @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                        skip_backends=[AutoFiniteDiff()])
                 end
 
                 for act in (sigmoid, tanh)
@@ -347,11 +347,12 @@ end
 
                     if affine
                         __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                        @test_gradients(__f, x, ps; atol=1.0f-3,
+                            rtol=1.0f-3,
                             skip_backends=[AutoFiniteDiff()])
                     else
                         __f = x -> sum(first(ln(x, ps, st)))
-                        test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                        @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
                             skip_backends=[AutoFiniteDiff()])
                     end
                 end
@@ -378,12 +379,12 @@ end
 
                 if affine
                     __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                    test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
                         skip_backends=[AutoFiniteDiff()])
                 else
                     __f = x -> sum(first(layer(x, ps, st)))
-                    test_gradients(
-                        __f, x; atol=1.0f-3, rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
+                    @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                        skip_backends=[AutoFiniteDiff()])
                 end
 
                 for act in (sigmoid, tanh)
@@ -397,11 +398,12 @@ end
 
                     if affine
                         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                        @test_gradients(__f, x, ps; atol=1.0f-3,
+                            rtol=1.0f-3,
                             skip_backends=[AutoFiniteDiff()])
                     else
                         __f = x -> sum(first(layer(x, ps, st)))
-                        test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+                        @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
                             skip_backends=[AutoFiniteDiff()])
                     end
                 end

@@ -14,7 +14,7 @@
             @jet layer(x, ps, st)
 
             __f = x -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "concat size" begin
@@ -29,8 +29,8 @@
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
             # Method ambiguity for concatenation
-            test_gradients(
-                __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoReverseDiff()])
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends=[AutoReverseDiff()])
         end
     end
 end
@@ -51,7 +51,7 @@ end
             @jet layer(x, ps, st)
 
             __f = x -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "concat size" begin
@@ -65,7 +65,7 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Parallel(hcat, Dense(10, 10), NoOpLayer())
             display(layer)
@@ -77,8 +77,8 @@ end
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
             # Method ambiguity for concatenation
-            test_gradients(
-                __f, x, ps; atol=1.0f-3, rtol=1.0f-3, broken_backends=[AutoReverseDiff()])
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends=[AutoReverseDiff()])
         end
 
         @testset "vararg input" begin
@@ -92,7 +92,7 @@ end
             @jet layer(x, ps, st)
 
             __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-            test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "named layers" begin
@@ -106,7 +106,7 @@ end
             @jet layer(x, ps, st)
 
             __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-            test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "connection is called once" begin
@@ -178,7 +178,7 @@ end
 
         @jet layer(x, ps, st)
         __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-        test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = PairwiseFusion(+; d1=Dense(1, 30), d2=Dense(30, 10))
         display(layer)
@@ -188,7 +188,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-        test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
 
         x = rand(1, 10)
         layer = PairwiseFusion(.+, Dense(1, 10), Dense(10, 1))
@@ -200,7 +200,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
             WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
@@ -233,7 +233,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(sum, first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = BranchLayer(; d1=Dense(10, 10), d2=Dense(10, 10))
         display(layer)
@@ -248,7 +248,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(sum, first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
@@ -267,7 +267,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -280,7 +280,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -295,7 +295,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -310,7 +310,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -325,7 +325,7 @@ end
         @jet layer(x, ps, st)
 
         __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
 
         @testset "indexing and field access" begin
             encoder = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh))
@@ -391,7 +391,7 @@ end
                 @jet layer(x, ps, st)
 
                 __f = x -> sum(first(layer(x, ps, st)))
-                test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -409,7 +409,7 @@ end
             @jet layer(x, ps, st)
 
             __f = x -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "params" begin
@@ -425,7 +425,7 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -451,7 +451,7 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
