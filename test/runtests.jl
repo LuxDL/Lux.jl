@@ -8,12 +8,12 @@ const ALL_LUX_TEST_GROUPS = [
     "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
     "others", "autodiff", "recurrent_layers", "fluxcompat"]
 
-__INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
-const LUX_TEST_GROUP = if startswith("!", __INPUT_TEST_GROUP[1])
-    exclude_group = lowercase.(split(__INPUT_TEST_GROUP[2:end], ","))
+INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
+    exclude_group = lowercase.(split(INPUT_TEST_GROUP[2:end], ","))
     filter(x -> x ∉ exclude_group, ALL_LUX_TEST_GROUPS)
 else
-    [__INPUT_TEST_GROUP]
+    [INPUT_TEST_GROUP]
 end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
@@ -30,9 +30,8 @@ if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
     append!(EXTRA_PKGS,
         [
             Pkg.PackageSpec(; name="LuxCUDA", version="0.3"),
-            Pkg.PackageSpec(; name="CUDA", rev="d72cdaa324cfadc1e67a7aa7fb9c4b035d2ec07c"),
-            Pkg.PackageSpec(; name="cuDNN", rev="d72cdaa324cfadc1e67a7aa7fb9c4b035d2ec07c"),
-            Pkg.PackageSpec(; name="CUDA_Driver_jll", version="0.10")
+            Pkg.PackageSpec("CUDA"),
+            Pkg.PackageSpec("cuDNN")
         ])
 end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&

@@ -31,3 +31,9 @@ OrdinaryDiffEqTsit5 = "1.1.0"
 Printf = "1.10"
 Random = "1.10"
 SciMLSensitivity = "7.67.0"
+
+[extras]
+CUDA_Driver_jll = "4ee394cb-3365-5eb0-8335-949819d2adfc"
+
+[preferences.CUDA_Driver_jll]
+compat = false
