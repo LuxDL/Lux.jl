@@ -17,15 +17,26 @@ else
 end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
-const EXTRA_PKGS = String[]
+const EXTRA_PKGS = Pkg.PackageSpec[]
 
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
-    push!(EXTRA_PKGS, "MPI")
-    (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "NCCL")
+    push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
+    (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
+        push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
 end
-("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
+("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
+if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
+    append!(EXTRA_PKGS,
+        [
+            Pkg.PackageSpec(; name="LuxCUDA", version="0.3"),
+            Pkg.PackageSpec(; name="CUDA", rev="d72cdaa324cfadc1e67a7aa7fb9c4b035d2ec07c"),
+            Pkg.PackageSpec(; name="cuDNN", rev="d72cdaa324cfadc1e67a7aa7fb9c4b035d2ec07c"),
+            Pkg.PackageSpec(; name="CUDA_Driver_jll", version="0.10")
+        ])
+end
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
