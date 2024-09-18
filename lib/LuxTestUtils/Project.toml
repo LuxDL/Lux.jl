@@ -1,7 +1,7 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
 authors = ["Avik Pal <avikpal@mit.edu>"]
-version = "1.2.0"
+version = "1.2.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -24,7 +24,7 @@ ADTypes = "1.5.3"
 ChainRulesCore = "1.24.0"
 ComponentArrays = "0.15.14"
 DispatchDoctor = "0.4.12"
-Enzyme = "0.12.22"
+Enzyme = "0.12.22. 0.13"
 FiniteDiff = "2.23.1"
 ForwardDiff = "0.10.36"
 Functors = "0.4.11"
