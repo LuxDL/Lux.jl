@@ -8,24 +8,28 @@ const ALL_LUX_TEST_GROUPS = [
     "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
     "others", "autodiff", "recurrent_layers", "fluxcompat"]
 
-__INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
-const LUX_TEST_GROUP = if startswith("!", __INPUT_TEST_GROUP[1])
-    exclude_group = lowercase.(split(__INPUT_TEST_GROUP[2:end], ","))
+INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
+const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
+    exclude_group = lowercase.(split(INPUT_TEST_GROUP[2:end], ","))
     filter(x -> x ∉ exclude_group, ALL_LUX_TEST_GROUPS)
 else
-    [__INPUT_TEST_GROUP]
+    [INPUT_TEST_GROUP]
 end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
-const EXTRA_PKGS = String[]
+const EXTRA_PKGS = Pkg.PackageSpec[]
 
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
-    push!(EXTRA_PKGS, "MPI")
-    (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "NCCL")
+    push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
+    (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
+        push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
 end
-("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) && push!(EXTRA_PKGS, "Flux")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
+("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS

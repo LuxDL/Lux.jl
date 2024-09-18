@@ -27,3 +27,9 @@ Printf = "1.10"
 Random = "1.10"
 Statistics = "1.10"
 Zygote = "0.6.70"
+
+[extras]
+CUDA_Driver_jll = "4ee394cb-3365-5eb0-8335-949819d2adfc"
+
+[preferences.CUDA_Driver_jll]
+compat = false
