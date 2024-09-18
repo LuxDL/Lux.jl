@@ -470,7 +470,7 @@ end
                 Dense(1 => 1),
                 NoOpLayer()
             ),
-            WrappedFunction(first)
+            Dense(1 => 1)
         )
     )
 
