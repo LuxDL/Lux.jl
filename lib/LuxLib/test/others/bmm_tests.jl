@@ -264,36 +264,36 @@ end
         B = 3
 
         @testset "Two 3-arrays" begin
-            test_gradients(fn, aType(randn(rng, M, P, B)),
+            @test_gradients(fn, aType(randn(rng, M, P, B)),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, batched_adjoint(aType(randn(rng, P, M, B))),
+            @test_gradients(fn, batched_adjoint(aType(randn(rng, P, M, B))),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, aType(randn(rng, M, P, B)),
+            @test_gradients(fn, aType(randn(rng, M, P, B)),
                 batched_transpose(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
         end
 
         @testset "One a matrix..." begin
-            test_gradients(fn, aType(randn(rng, M, P)),
+            @test_gradients(fn, aType(randn(rng, M, P)),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, adjoint(aType(randn(rng, P, M))),
+            @test_gradients(fn, adjoint(aType(randn(rng, P, M))),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, aType(randn(rng, M, P)),
+            @test_gradients(fn, aType(randn(rng, M, P)),
                 batched_adjoint(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
 
-            test_gradients(fn, aType(randn(rng, M, P)),
+            @test_gradients(fn, aType(randn(rng, M, P)),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, adjoint(aType(randn(rng, P, M))),
+            @test_gradients(fn, adjoint(aType(randn(rng, P, M))),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, aType(randn(rng, M, P)),
+            @test_gradients(fn, aType(randn(rng, M, P)),
                 batched_adjoint(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
         end
 
         @testset "... or equivalent to a matrix" begin
-            test_gradients(fn, aType(randn(rng, M, P, 1)),
+            @test_gradients(fn, aType(randn(rng, M, P, 1)),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, batched_transpose(aType(randn(rng, P, M, 1))),
+            @test_gradients(fn, batched_transpose(aType(randn(rng, P, M, 1))),
                 aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            test_gradients(fn, aType(randn(rng, M, P, 1)),
+            @test_gradients(fn, aType(randn(rng, M, P, 1)),
                 batched_transpose(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
         end
     end

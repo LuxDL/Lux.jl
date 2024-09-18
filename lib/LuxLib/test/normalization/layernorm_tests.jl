@@ -58,10 +58,10 @@ function run_layernorm_testing_core(
     soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
     if affine_shape !== nothing
         __f = (args...) -> sum(_f(args...))
-        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
     else
         __f = x -> sum(_f(x, scale, bias))
-        test_gradients(__f, x; atol, rtol, soft_fail)
+        @test_gradients(__f, x; atol, rtol, soft_fail)
     end
 
     if anonact !== act

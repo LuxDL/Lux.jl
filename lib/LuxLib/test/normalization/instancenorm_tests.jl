@@ -39,7 +39,7 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
     if is_training(training)
         __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
         soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
-        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
     end
 
     # Now test with running stats
@@ -67,7 +67,7 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
             args..., rm, rv, training, act, T(0.1), epsilon)))
         soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
         skip_backends = (Sys.iswindows() && fp16) ? [AutoEnzyme()] : []
-        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail, skip_backends)
+        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail, skip_backends)
     end
 end
 

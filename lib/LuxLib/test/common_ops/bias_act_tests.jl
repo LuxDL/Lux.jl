@@ -50,11 +50,11 @@
                 @test_broken @inferred(Zygote.gradient(bias_act_loss3, act, x, b)) isa Any
             end
 
-            test_gradients(__Fix1(bias_act_loss1, act), x, b; atol, rtol,
+            @test_gradients(__Fix1(bias_act_loss1, act), x, b; atol, rtol,
                 soft_fail=fp16 ? [AutoFiniteDiff()] : [])
-            test_gradients(__Fix1(bias_act_loss2, act), x, b; atol, rtol,
+            @test_gradients(__Fix1(bias_act_loss2, act), x, b; atol, rtol,
                 soft_fail=fp16 ? [AutoFiniteDiff()] : [])
-            test_gradients(__Fix1(bias_act_loss3, act), x, b; atol, rtol,
+            @test_gradients(__Fix1(bias_act_loss3, act), x, b; atol, rtol,
                 soft_fail=fp16 ? [AutoFiniteDiff()] : [])
 
             ∂x1, ∂b1 = Zygote.gradient(__Fix1(bias_act_loss1, act), x, b)

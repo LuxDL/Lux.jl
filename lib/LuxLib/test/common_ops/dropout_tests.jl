@@ -27,7 +27,7 @@
             __f = let rng = rng, T = T
                 x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
                 soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
                 broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 
@@ -74,7 +74,8 @@ end
             __f = let rng = rng, mask = mask, p = T(0.5), invp = T(2)
                 x -> sum(first(dropout(rng, x, mask, p, Val(true), Val(true), invp, :)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(__f, x; atol=1.0f-3,
+                rtol=1.0f-3,
                 soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []))
 
             @jet sum(first(dropout(
@@ -105,7 +106,7 @@ end
             soft_fail = T == Float16 ? Any[AutoFiniteDiff()] : []
             skip_backends = length(x_shape) == 5 ? [AutoEnzyme()] : []
 
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail, skip_backends)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail, skip_backends)
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)))
@@ -154,7 +155,7 @@ end
             __f = let rng = rng
                 x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
                 soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
                 broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
 

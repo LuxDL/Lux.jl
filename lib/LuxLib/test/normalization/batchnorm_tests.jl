@@ -98,8 +98,8 @@ function run_batchnorm_testing(
 
         __f = (args...) -> sum(first(batchnorm(
             args..., rm, rv, training, act, T(0.9), epsilon)))
-        test_gradients(
-            __f, x, scale, bias; atol, rtol, skip_backends, soft_fail, broken_backends)
+        @test_gradients(__f, x, scale, bias; atol, rtol, skip_backends, soft_fail,
+            broken_backends)
     end
 
     if anonact !== act
@@ -183,6 +183,6 @@ end
 
         __f = (args...) -> sum(first(batchnorm(
             args..., running_mean, running_var, Val(true), identity, 0.9f0, 1.0f-5)))
-        test_gradients(__f, x, scale, bias; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, scale, bias; atol=1.0f-3, rtol=1.0f-3)
     end
 end

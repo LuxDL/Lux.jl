@@ -74,7 +74,7 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
 
     if affine
         __f = (args...) -> sum(groupnorm(args..., groups, act, epsilon))
-        test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
     end
 end
 

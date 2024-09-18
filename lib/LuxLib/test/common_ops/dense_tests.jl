@@ -46,7 +46,7 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     __f_grad = let activation = activation
         (w, x, b) -> __f(activation, w, x, b)
     end
-    test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
+    @test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
 
     y_simple = dense_simple(activation, w, x, bias)
     y_zyg = fused_dense_bias_activation(activation, w, x, bias)
