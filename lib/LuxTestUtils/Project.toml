@@ -1,7 +1,7 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
 authors = ["Avik Pal <avikpal@mit.edu>"]
-version = "1.1.4"
+version = "1.2.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"

@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
+          - "min"
           - "1"
           - "pre"
         os:
@@ -64,7 +65,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
-      GROUP: ${{ matrix.package.group }}
+      BACKEND_GROUP: ${{ matrix.package.group }}
     strategy:
       fail-fast: false
       matrix:
@@ -126,8 +127,6 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
-        env:
-          LUX_TEST_GROUP: ${{ matrix.test_group }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v4
         with:

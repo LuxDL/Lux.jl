@@ -128,7 +128,13 @@ julia> test_gradients(f, 1.0, x, nothing)
 ```
 """
 function test_gradients(f, args...; skip_backends=[], broken_backends=[],
-        soft_fail::Union{Bool, Vector}=false, kwargs...)
+        soft_fail::Union{Bool, Vector}=false,
+        # Internal kwargs start
+        source=LineNumberNode(0, nothing),
+        test_expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
+        # Internal kwargs end
+        kwargs...)
+    # TODO: We should add a macro version that propagates the line number info and the test_expr
     on_gpu = get_device_type(args) <: AbstractGPUDevice
     total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
 
@@ -157,36 +163,58 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
 
     @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
-            if backend in skip_backends
-                @test_skip begin
-                    ∂args = allow_unstable() do
-                        return gradient(f, backend, args...)
-                    end
-                    check_approx(∂args, ∂args_gt; kwargs...)
-                end
+            local_test_expr = :([$(nameof(typeof(backend)))] - $(test_expr))
+
+            result = if backend in skip_backends
+                Broken(:skipped, local_test_expr)
             elseif (soft_fail isa Bool && soft_fail) ||
                    (soft_fail isa Vector && backend in soft_fail)
-                @test_softfail begin
+                try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
-                    check_approx(∂args, ∂args_gt; kwargs...)
+                    matched = check_approx(∂args, ∂args_gt; kwargs...)
+                    if matched
+                        Pass(:test, local_test_expr, nothing, nothing, source)
+                    else
+                        Broken(:test, local_test_expr)
+                    end
+                catch
+                    Broken(:test, local_test_expr)
                 end
             elseif backend in broken_backends
-                @test_broken begin
+                try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
-                    check_approx(∂args, ∂args_gt; kwargs...)
+                    matched = check_approx(∂args, ∂args_gt; kwargs...)
+                    if matched
+                        Error(:test_unbroken, local_test_expr, matched, nothing, source)
+                    else
+                        Broken(:test, local_test_expr)
+                    end
+                catch
+                    Broken(:test, local_test_expr)
                 end
             else
-                @test begin
+                try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
                     end
-                    check_approx(∂args, ∂args_gt; kwargs...)
+                    matched = check_approx(∂args, ∂args_gt; kwargs...)
+                    if matched
+                        Pass(:test, local_test_expr, nothing, nothing, source)
+                    else
+                        context = "\n   ∂args: $(∂args)\n∂args_gt: $(∂args_gt)"
+                        Fail(
+                            :test, local_test_expr, matched, nothing, context, source, false)
+                    end
+                catch err
+                    err isa InterruptException && rethrow()
+                    Error(:test, local_test_expr, err, Base.current_exceptions(), source)
                 end
             end
+            Test.record(get_testset(), result)
         end
     end
 end
