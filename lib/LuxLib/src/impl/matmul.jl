@@ -284,7 +284,10 @@ function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
     for (∂C, ∂A, ∂B, ∂b) in zip(∂Cs, ∂As, ∂Bs, ∂bs)
         if !(C isa EnzymeCore.Const) && ∂C !== C.val
             if !(bias isa EnzymeCore.Const) && ∂b !== bias.val
-                sum!(∂b, ∂C)
+                # FIXME: Can we do this without allocating?
+                ∂b₁ = similar(∂b)
+                sum!(∂b₁, ∂C)
+                ∂b .+= ∂b₁
             end
 
             if !(A isa EnzymeCore.Const) && ∂A !== A.val

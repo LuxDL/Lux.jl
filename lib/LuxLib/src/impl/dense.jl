@@ -191,7 +191,10 @@ function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(fused_dense!)},
             end
 
             if !(b isa EnzymeCore.Const) && ∂b !== b.val
-                sum!(∂b, ∂pre_act)
+                # FIXME: Can we do this without allocating?
+                ∂b₁ = similar(∂b)
+                sum!(∂b₁, ∂pre_act)
+                ∂b .+= ∂b₁
             end
 
             if !(weight isa EnzymeCore.Const) && ∂w !== weight.val
