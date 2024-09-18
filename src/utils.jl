@@ -9,6 +9,7 @@ using ForwardDiff: Dual
 using Functors: fmapstructure
 using Random: AbstractRNG
 using Static: Static, StaticBool, StaticInteger, StaticSymbol
+using StaticArraysCore: SMatrix, SVector
 
 using LuxCore: LuxCore, AbstractLuxLayer
 using MLDataDevices: get_device
@@ -199,10 +200,12 @@ function named_tuple_layers(layers::Vararg{AbstractLuxLayer, N}) where {N}
 end
 
 make_abstract_matrix(x::AbstractVector) = reshape(x, :, 1)
+make_abstract_matrix(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
 make_abstract_matrix(x::AbstractMatrix) = x
 make_abstract_matrix(x::AbstractArray{T, N}) where {T, N} = reshape(x, Base.size(x, 1), :)
 
 matrix_to_array(x::AbstractMatrix, ::AbstractVector) = vec(x)
+matrix_to_array(x::SMatrix{L, 1, T}, ::AbstractVector) where {L, T} = SVector{L, T}(x)
 matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
 matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
 
