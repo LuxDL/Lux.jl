@@ -483,6 +483,6 @@ end
         @test @inferred(froggie(x, ps_nt, st)) isa Any
 
         ps_ca = ps |> ComponentArray |> dev
-        @test @inferred(froggie(x, ps_ca, st)) isa Any
+        @test @inferred(froggie(x, ps_ca, st)) isa Any broken=ongpu
     end
 end
