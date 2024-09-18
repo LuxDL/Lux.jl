@@ -20,11 +20,11 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ADTypes = "1.5.3"
+ADTypes = "1.8.1"
 ChainRulesCore = "1.24.0"
 ComponentArrays = "0.15.14"
 DispatchDoctor = "0.4.12"
-Enzyme = "0.12.22, 0.13"
+Enzyme = "0.13"
 FiniteDiff = "2.23.1"
 ForwardDiff = "0.10.36"
 Functors = "0.4.11"
