@@ -25,7 +25,7 @@
 
                 @test_throws ErrorException ps.train_state
 
-                test_gradients(loss_loop_rnncell, ps; atol=1.0f-3, rtol=1.0f-3,
+                @test_gradients(loss_loop_rnncell, ps; atol=1.0f-3, rtol=1.0f-3,
                     soft_fail=[AutoFiniteDiff()], broken_backends=[AutoEnzyme()])
             end
         end
@@ -83,7 +83,7 @@ end
                     return sum(abs2, y)
                 end
 
-                test_gradients(loss_loop_lstmcell, ps; atol=1.0f-3, rtol=1.0f-3,
+                @test_gradients(loss_loop_lstmcell, ps; atol=1.0f-3, rtol=1.0f-3,
                     soft_fail=[AutoFiniteDiff()], broken_backends=[AutoEnzyme()])
 
                 @test_throws ErrorException ps.train_state
@@ -194,7 +194,7 @@ end
                     return sum(abs2, y)
                 end
 
-                test_gradients(loss_loop_grucell, ps; atol=1e-3, rtol=1e-3,
+                @test_gradients(loss_loop_grucell, ps; atol=1e-3, rtol=1e-3,
                     soft_fail=[AutoFiniteDiff()], broken_backends=[AutoEnzyme()])
 
                 @test_throws ErrorException ps.train_state
@@ -281,7 +281,7 @@ end
                     return sum(abs2, y)
                 end
 
-                test_gradients(loss_loop_rnn, ps; atol=1e-3, rtol=1e-3,
+                @test_gradients(loss_loop_rnn, ps; atol=1e-3, rtol=1e-3,
                     broken_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
             end
         end
@@ -326,11 +326,11 @@ end
                         @test all(x -> size(x) == (5, 2), y_)
 
                         __f = p -> sum(first(rnn(x, p, st)))
-                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                        @test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
                             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
 
                         __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                        @test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
                             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
                     end
 
@@ -361,11 +361,11 @@ end
                         end
 
                         __f = p -> sum(first(rnn(x, p, st)))
-                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                        @test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
                             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
 
                         __f = p -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, p, st)))
-                        test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                        @test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
                             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
                     end
                 end
@@ -415,14 +415,16 @@ end
             @test all(x -> size(x) == (5, 2), y_[1])
 
             __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
-            test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+            @test_gradients(__f, ps; atol=1e-3,
+                rtol=1e-3,
                 broken_backends=Sys.isapple() ? [AutoEnzyme()] : [])
 
             __f = p -> begin
                 (y1, y2), st_ = bi_rnn_no_merge(x, p, st)
                 return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
             end
-            test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+            @test_gradients(__f, ps; atol=1e-3,
+                rtol=1e-3,
                 broken_backends=Sys.isapple() ? [AutoEnzyme()] : [])
 
             @testset "backward_cell: $_backward_cell" for _backward_cell in (
@@ -451,14 +453,16 @@ end
                 @test all(x -> size(x) == (5, 2), y_[1])
 
                 __f = p -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, p, st)))
-                test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                @test_gradients(__f, ps; atol=1e-3,
+                    rtol=1e-3,
                     broken_backends=Sys.isapple() ? [AutoEnzyme()] : [])
 
                 __f = p -> begin
                     (y1, y2), st_ = bi_rnn_no_merge(x, p, st)
                     return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
                 end
-                test_gradients(__f, ps; atol=1e-3, rtol=1e-3,
+                @test_gradients(__f, ps; atol=1e-3,
+                    rtol=1e-3,
                     broken_backends=Sys.isapple() ? [AutoEnzyme()] : [])
             end
         end

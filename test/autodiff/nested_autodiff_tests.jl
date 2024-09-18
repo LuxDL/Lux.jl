@@ -28,8 +28,9 @@ function test_nested_ad_input_gradient_jacobian(aType, dev, ongpu, loss_fn, X, m
           all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
 
     allow_unstable() do
-        test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
-            atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoFiniteDiff()],
+        @test_gradients((x, ps)->loss_fn(model, x, ps, st), X, ps;
+            atol=1.0f-3, rtol=1.0f-1,
+            soft_fail=[AutoFiniteDiff()],
             skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
     end
 end
@@ -153,8 +154,9 @@ function test_nested_ad_parameter_gradient_jacobian(aType, dev, ongpu, loss_fn, 
           all(x -> x === nothing || isfinite(x), ComponentArray(∂ps |> cpu_device()))
 
     allow_unstable() do
-        test_gradients((x, ps) -> loss_fn(model, x, ps, st), X, ps;
-            atol=1.0f-3, rtol=1.0f-1, soft_fail=[AutoFiniteDiff()],
+        @test_gradients((x, ps)->loss_fn(model, x, ps, st), X, ps;
+            atol=1.0f-3, rtol=1.0f-1,
+            soft_fail=[AutoFiniteDiff()],
             skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
     end
 end
@@ -264,7 +266,10 @@ end
                 (x, ps) -> sum(abs2, first(model(x, ps, st)))
             end
 
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(__f, x,
+                ps;
+                atol=1.0f-3,
+                rtol=1.0f-3,
                 skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
         end
     end
@@ -403,6 +408,7 @@ end
         (x, ps) -> loss_function(model, ps, st, x)
     end
 
-    test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+    @test_gradients(__f, x, ps; atol=1.0f-3,
+        rtol=1.0f-3,
         skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
 end

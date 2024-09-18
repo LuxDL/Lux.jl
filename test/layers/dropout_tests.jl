@@ -21,7 +21,7 @@
             __f = let layer = layer, ps = ps, st = st
                 x -> sum(first(layer(x, ps, st)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
 
             st = Lux.testmode(st)
 
@@ -54,7 +54,7 @@ end
             __f = let layer = layer, ps = ps, st = st
                 x -> sum(first(layer(x, ps, st)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
 
             st = Lux.testmode(st)
 
@@ -87,13 +87,13 @@ end
             __f = let layer = layer, ps = ps, st = st
                 x -> sum(first(layer(x, ps, st)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
 
             @jet layer(x, ps, st_)
             __f = let layer = layer, ps = ps, st_ = st_
                 x -> sum(first(layer(x, ps, st_)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
 
             st__ = Lux.update_state(st_, :update_mask, Val(true))
             x___, st___ = layer(x, ps, st__)
@@ -105,7 +105,7 @@ end
             __f = let layer = layer, ps = ps, st__ = st__
                 x -> sum(first(layer(x, ps, st__)))
             end
-            test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end

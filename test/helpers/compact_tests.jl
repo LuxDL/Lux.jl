@@ -124,7 +124,7 @@
             @jet model(x, ps, st)
 
             __f = (x, ps) -> sum(first(model(x, ps, st)))
-            test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "String Representations" begin
