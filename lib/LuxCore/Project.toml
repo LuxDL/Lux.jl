@@ -1,7 +1,7 @@
 name = "LuxCore"
 uuid = "bb33d45b-7691-41d6-9220-0943567d0623"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -32,7 +32,7 @@ ArrayInterface = "7.9"
 ChainRulesCore = "1.24"
 Compat = "4.15.0"
 DispatchDoctor = "0.4.10"
-EnzymeCore = "0.7.7"
+EnzymeCore = "0.7.7, 0.8"
 Functors = "0.4.12"
 MLDataDevices = "1"
 Random = "1.10"
