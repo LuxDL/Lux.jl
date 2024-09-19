@@ -241,8 +241,7 @@ be `Chain((x, ps, st) -> (relu.(x), st))`. An easier thing to do would be
 
 ## Inputs
 
-  - `x`: s.t `hasmethod(f, (typeof(x),))` is `true` if :direct_call else
-    `hasmethod(f, (typeof(x), NamedTuple, NamedTuple))` is `true`
+  - `x`: will be directly passed to `f`
 
 ## Returns
 
