@@ -273,7 +273,8 @@ end
 within_autodiff_vararg(args...) = unrolled_any(within_autodiff, args)
 
 function within_autodiff(_)
-    is_extension_loaded(Val(:Enzyme)) && return static(EnzymeCore.within_autodiff())
+    unsafe_known(is_extension_loaded(Val(:Enzyme))) &&
+        return static(EnzymeCore.within_autodiff())
     return False()
 end
 within_autodiff(::ForwardDiff.Dual) = True()
