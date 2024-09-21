@@ -1,10 +1,8 @@
-# Utilities
-
-## Index
-
-```@index
-Pages = ["utilities.md"]
+```@meta
+CollapsedDocStrings = true
 ```
+
+# Utilities
 
 ## [Training API](@id Training-API)
 
@@ -54,13 +52,6 @@ PoissonLoss
 SiameseContrastiveLoss
 SquaredHingeLoss
 ```
-
-## Weight Initialization
-
-!!! warning
-
-    For API documentation on Initialization check out the
-    [WeightInitializers.jl](@ref WeightInitializers-API)
 
 ## LuxOps Module
 

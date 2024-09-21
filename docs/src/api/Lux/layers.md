@@ -1,10 +1,8 @@
-# Built-In Layers
-
-## Index
-
-```@index
-Pages = ["layers.md"]
+```@meta
+CollapsedDocStrings = true
 ```
+
+# Built-In Layers
 
 ## Containers
 

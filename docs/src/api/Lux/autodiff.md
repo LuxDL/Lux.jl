@@ -1,10 +1,8 @@
-# [Automatic Differentiation Helpers](@id autodiff-lux-helpers)
-
-## Index
-
-```@index
-Pages = ["autodiff.md"]
+```@meta
+CollapsedDocStrings = true
 ```
+
+# [Automatic Differentiation Helpers](@id autodiff-lux-helpers)
 
 ## JVP & VJP Wrappers
 

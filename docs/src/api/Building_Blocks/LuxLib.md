@@ -1,12 +1,10 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # [LuxLib](@id LuxLib-API)
 
 Backend for Lux.jl
-
-## Index
-
-```@index
-Pages = ["LuxLib.md"]
-```
 
 ## Apply Activation
 

@@ -1,3 +1,7 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # LuxTestUtils
 
 !!! warning
@@ -8,12 +12,6 @@
 
 Implements utilities for testing **gradient correctness** and **dynamic dispatch**
 of Lux.jl models.
-
-## Index
-
-```@index
-Pages = ["LuxTestUtils.md"]
-```
 
 ## Testing using JET.jl
 

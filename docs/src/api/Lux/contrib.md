@@ -1,3 +1,7 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # Experimental Features
 
 All features listed on this page are **experimental** which means:
@@ -7,12 +11,6 @@ All features listed on this page are **experimental** which means:
 2. Expect edge-cases and report them. It will help us move these features out of
    experimental sooner.
 3. None of the features are exported.
-
-## Index
-
-```@index
-Pages = ["contrib.md"]
-```
 
 ## Parameter Freezing
 
