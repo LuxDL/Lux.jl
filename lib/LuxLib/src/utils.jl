@@ -272,7 +272,10 @@ end
 
 within_gradient_vararg(args...) = unrolled_any(within_gradient, args)
 
-within_gradient(_) = False()
+function within_gradient(_)
+    is_extension_loaded(Val(:Enzyme)) && return static(EnzymeCore.within_autodiff())
+    return False()
+end
 within_gradient(::ForwardDiff.Dual) = True()
 within_gradient(::AbstractArray{<:ForwardDiff.Dual}) = True()
 
@@ -305,8 +308,7 @@ function static_training_mode_check(training, ::True, ::False)
            `Lux.jl` model, set it to inference (test) mode using `LuxCore.testmode`. \
            Reliance on this behavior is discouraged, and is not guaranteed by Semantic \
            Versioning, and might be removed without a deprecation cycle. It is recommended \
-           to fix this issue in your code. \n\n\
-           If you are using Enzyme.jl, then you can ignore this warning." maxlog=1
+           to fix this issue in your code." maxlog=1
     return True()
 end
 
