@@ -8,22 +8,26 @@ function batched_matmul(::GenericBroadcastOp, x::AbstractArray{xT, 3},
     return NNlib.batched_mul(x, y)
 end
 
-function batched_matmul(::GPUBroadcastOp{<:AbstractGPUDevice},
-        x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
-    return NNlib.batched_mul(x, y)  # GPU versions are well optimized
+for dev in (AMDGPUDevice, CUDADevice)
+    @eval function batched_matmul(::GPUBroadcastOp{$(dev)},
+            x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
+        return NNlib.batched_mul(x, y)  # GPU versions are well optimized
+    end
 end
 
-function batched_matmul(::GPUBroadcastOp{AMDGPUDevice}, x::AbstractArray{<:Complex, 3},
-        y::AbstractArray{<:Complex, 3})
-    if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
-       (size(x, 2) != size(y, 1))
-        throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
+function batched_matmul(opmode::GPUBroadcastOp{<:AbstractGPUDevice},
+        x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
+    if isconcretetype(Core.Compiler._return_type(
+        NNlib.batched_mul, Tuple{typeof(x), typeof(y)}))
+        return NNlib.batched_mul(x, y)  # GPU versions are well optimized
     end
-    @warn "Using fallback implementation of `batched_matmul` for complex numbers on \
-           AMDGPUDevice" maxlog=1
-    size(x, 3) == size(y, 3) && return stack(*, batchview(x), batchview(y))
-    size(x, 3) == 1 && return stack(Base.Fix1(*, batchview(x, 1)), batchview(y))
-    return stack(Base.Fix2(*, batchview(y, 1)), batchview(x))
+    return fallback_batched_matmul(opmode, x, y)
+end
+
+function batched_matmul(
+        opmode::GPUBroadcastOp{AMDGPUDevice}, x::AbstractArray{<:Complex, 3},
+        y::AbstractArray{<:Complex, 3})
+    return fallback_batched_matmul(opmode, x, y)
 end
 
 function batched_matmul(opmode::LoopedArrayOp, x::AbstractArray{xT, 3},
@@ -71,6 +75,20 @@ function batched_matmul_loopvec_impl!(
             serial_matmul_loopvec!(batchview(z, L), batchview(x, L), batchview(y, 1), α, β)
         end
     end
+end
+
+function fallback_batched_matmul(
+        dev, x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
+    @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
+           $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
+           slow." maxlog=1
+    if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
+       (size(x, 2) != size(y, 1))
+        throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
+    end
+    size(x, 3) == size(y, 3) && return stack(*, batchview(x), batchview(y))
+    size(x, 3) == 1 && return stack(Base.Fix1(*, batchview(x, 1)), batchview(y))
+    return stack(Base.Fix2(*, batchview(y, 1)), batchview(x))
 end
 
 function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{xT, 3},
