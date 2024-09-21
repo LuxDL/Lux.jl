@@ -270,23 +270,23 @@ end
     return
 end
 
-within_gradient_vararg(args...) = unrolled_any(within_gradient, args)
+within_autodiff_vararg(args...) = unrolled_any(within_autodiff, args)
 
-function within_gradient(_)
+function within_autodiff(_)
     is_extension_loaded(Val(:Enzyme)) && return static(EnzymeCore.within_autodiff())
     return False()
 end
-within_gradient(::ForwardDiff.Dual) = True()
-within_gradient(::AbstractArray{<:ForwardDiff.Dual}) = True()
+within_autodiff(::ForwardDiff.Dual) = True()
+within_autodiff(::AbstractArray{<:ForwardDiff.Dual}) = True()
 
-CRC.rrule(::typeof(within_gradient), x) = True(), _ -> (∂∅, ∂∅)
+CRC.rrule(::typeof(within_autodiff), x) = True(), _ -> (∂∅, ∂∅)
 
-static_training_mode(::Nothing, args...) = within_gradient_vararg(args...)
+static_training_mode(::Nothing, args...) = within_autodiff_vararg(args...)
 
 function static_training_mode(
         training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...)
     return static_training_mode_check(
-        training, static(training), within_gradient_vararg(args...))
+        training, static(training), within_autodiff_vararg(args...))
 end
 
 function CRC.rrule(::typeof(static_training_mode), ::Nothing, args...)

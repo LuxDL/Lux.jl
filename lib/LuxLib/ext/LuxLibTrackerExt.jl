@@ -93,9 +93,9 @@ Utils.remove_tracking(x::TrackedArray) = Tracker.data(x)
 Utils.remove_tracking(x::AbstractArray{<:TrackedReal}) = Tracker.data.(x)
 Utils.remove_tracking(::Type{<:TrackedReal{T}}) where {T} = Utils.remove_tracking(T)
 
-Utils.within_gradient(::TrackedReal) = True()
-Utils.within_gradient(::TrackedArray) = True()
-Utils.within_gradient(::AbstractArray{<:TrackedReal}) = True()
+Utils.within_autodiff(::TrackedReal) = True()
+Utils.within_autodiff(::TrackedArray) = True()
+Utils.within_autodiff(::AbstractArray{<:TrackedReal}) = True()
 
 # Traits extensions
 Traits.is_tracked(::Type{<:TrackedReal}) = True()
