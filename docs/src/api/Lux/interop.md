@@ -1,5 +1,6 @@
 ```@meta
 CollapsedDocStrings = true
+CurrentModule = Lux
 ```
 
 # Interoperability between Lux and other packages
