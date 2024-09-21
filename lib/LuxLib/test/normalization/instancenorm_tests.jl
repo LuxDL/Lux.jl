@@ -84,8 +84,9 @@ end
 
 @testitem "Instance Norm: Group 1" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[1]
+            !fp64 && T == Float64 && continue
             run_instancenorm_testing(
                 generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
@@ -94,8 +95,9 @@ end
 
 @testitem "Instance Norm: Group 2" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[2]
+            !fp64 && T == Float64 && continue
             run_instancenorm_testing(
                 generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
@@ -104,8 +106,9 @@ end
 
 @testitem "Instance Norm: Group 3" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[3]
+            !fp64 && T == Float64 && continue
             run_instancenorm_testing(
                 generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
@@ -114,8 +117,9 @@ end
 
 @testitem "Instance Norm: Group 4" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[4]
+            !fp64 && T == Float64 && continue
             run_instancenorm_testing(
                 generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end
@@ -124,8 +128,9 @@ end
 
 @testitem "Instance Norm: Group 5" tags=[:instance_norm] setup=[
     SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[5]
+            !fp64 && T == Float64 && continue
             run_instancenorm_testing(
                 generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
         end

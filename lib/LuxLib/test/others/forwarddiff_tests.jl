@@ -38,7 +38,7 @@
         end
     end
 
-    @testset "$(mode): Jacobian Vector Products" for (mode, aType, ongpu) in MODES
+    @testset "$(mode): Jacobian Vector Products" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(op)(; flipped = $flipped)" for flipped in (true, false),
             op in (depthwiseconv, conv)
 
@@ -98,7 +98,7 @@ end
 
     rng = StableRNG(12345)
 
-    @testset "$mode: dropout" for (mode, aType, ongpu) in MODES
+    @testset "$mode: dropout" for (mode, aType, ongpu, fp64) in MODES
         x = randn(rng, Float32, 10, 2) |> aType
         x_dual = ForwardDiff.Dual.(x)
 

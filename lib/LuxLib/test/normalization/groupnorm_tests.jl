@@ -93,40 +93,45 @@ export setup_groupnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_groupnorm_testing
 end
 
 @testitem "Group Norm: Group 1" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[1]
+            !fp64 && T == Float64 && continue
             run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 2" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[2]
+            !fp64 && T == Float64 && continue
             run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 3" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[3]
+            !fp64 && T == Float64 && continue
             run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 4" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[4]
+            !fp64 && T == Float64 && continue
             run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Group Norm: Group 5" tags=[:group_norm] setup=[SharedTestSetup, GroupNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $groups, $affine, $act" for (T, sz, groups, affine, act) in TEST_BLOCKS[5]
+            !fp64 && T == Float64 && continue
             run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         end
     end

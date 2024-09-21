@@ -79,40 +79,45 @@ export ALL_TEST_CONFIGS, TEST_BLOCKS, run_dense_testing
 end
 
 @testitem "Fused Dense: Group 1" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[1]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Dense: Group 2" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[2]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Dense: Group 3" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[3]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Dense: Group 4" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[4]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end
 end
 
 @testitem "Fused Dense: Group 5" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[5]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
         end
     end

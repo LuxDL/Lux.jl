@@ -92,8 +92,9 @@ export expand, convfilter, calc_padding, anonact, TEST_BLOCKS, run_conv_testing
 end
 
 @testitem "Fused Conv: Group 1" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[1]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_conv_testing(generate_fixed_array, activation, kernel, stride,
                 padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
@@ -101,8 +102,9 @@ end
 end
 
 @testitem "Fused Conv: Group 2" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[2]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_conv_testing(generate_fixed_array, activation, kernel, stride,
                 padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
@@ -110,8 +112,9 @@ end
 end
 
 @testitem "Fused Conv: Group 3" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[3]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_conv_testing(generate_fixed_array, activation, kernel, stride,
                 padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
@@ -119,8 +122,9 @@ end
 end
 
 @testitem "Fused Conv: Group 4" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[4]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_conv_testing(generate_fixed_array, activation, kernel, stride,
                 padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end
@@ -128,8 +132,9 @@ end
 end
 
 @testitem "Fused Conv: Group 5" tags=[:conv] setup=[SharedTestSetup, ConvSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(Tw) x $(Tx) hasbias: $(hasbias) activation: $(activation) kernel: $(kernel) padding: $(padding) stride: $(stride) groups: $(groups)" for ((Tx, Tw), hasbias, activation, (kernel, padding, stride, groups)) in TEST_BLOCKS[5]
+            !fp64 && (Tx == Float64 || Tw == Float64) && continue
             run_conv_testing(generate_fixed_array, activation, kernel, stride,
                 padding, hasbias, groups, Tw, Tx, aType, mode, ongpu)
         end

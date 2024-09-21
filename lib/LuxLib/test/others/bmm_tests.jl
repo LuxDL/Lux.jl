@@ -46,8 +46,10 @@ end
 @testitem "batched_mul" tags=[:batched_ops] setup=[SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "batched_mul: Float64 × $(TB)" for TB in [Float64, Float32]
+            !fp64 && continue
+
             @testset "real" begin
                 A = randn(rng, 7, 5, 3) |> aType
                 B = randn(rng, TB, 5, 7, 3) |> aType
@@ -131,7 +133,9 @@ end
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
+        !fp64 && continue
+
         @testset "Float64 × $(TB)" for TB in [Float64, ComplexF64]
             @testset "trivial dimensions & unit strides" begin
                 @testset "$tA(rand$((sA...,3))) ⊠ $tB(rand$((sB...,3)))" for tA in [
@@ -228,7 +232,9 @@ end
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
+        !fp64 && continue
+
         @testset "Float64 × $(TB)" for TB in [Float64, ComplexF64]
             A = randn(rng, 3, 3, 3) |> aType
             M = aType(rand(rng, TB, 3, 3)) .+ im
@@ -259,42 +265,44 @@ end
     fn(A, B) = sum(batched_matmul(A, B))
     fn_vec(A, B) = sum(batched_vec(A, B))
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         M, P, Q = 13, 7, 11
         B = 3
 
         @testset "Two 3-arrays" begin
-            @test_gradients(fn, aType(randn(rng, M, P, B)),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, batched_adjoint(aType(randn(rng, P, M, B))),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, aType(randn(rng, M, P, B)),
-                batched_transpose(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P, B)),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, batched_adjoint(aType(randn(rng, Float32, P, M, B))),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P, B)),
+                batched_transpose(aType(randn(rng, Float32, Q, P, B))); atol=1e-3,
+                rtol=1e-3)
         end
 
         @testset "One a matrix..." begin
-            @test_gradients(fn, aType(randn(rng, M, P)),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, adjoint(aType(randn(rng, P, M))),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, aType(randn(rng, M, P)),
-                batched_adjoint(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P)),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, adjoint(aType(randn(rng, Float32, P, M))),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P)),
+                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3)
 
-            @test_gradients(fn, aType(randn(rng, M, P)),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, adjoint(aType(randn(rng, P, M))),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, aType(randn(rng, M, P)),
-                batched_adjoint(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P)),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, adjoint(aType(randn(rng, Float32, P, M))),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P)),
+                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3)
         end
 
         @testset "... or equivalent to a matrix" begin
-            @test_gradients(fn, aType(randn(rng, M, P, 1)),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, batched_transpose(aType(randn(rng, P, M, 1))),
-                aType(randn(rng, P, Q, B)); atol=1e-3, rtol=1e-3)
-            @test_gradients(fn, aType(randn(rng, M, P, 1)),
-                batched_transpose(aType(randn(rng, Q, P, B))); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P, 1)),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, batched_transpose(aType(randn(rng, Float32, P, M, 1))),
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+            @test_gradients(fn, aType(randn(rng, Float32, M, P, 1)),
+                batched_transpose(aType(randn(rng, Float32, Q, P, B))); atol=1e-3,
+                rtol=1e-3)
         end
     end
 end

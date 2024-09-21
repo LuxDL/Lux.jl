@@ -5,10 +5,12 @@
     apply_act_fast(f::F, x) where {F} = sum(abs2, fast_activation!!(f, copy(x)))
     apply_act_fast2(f::F, x) where {F} = sum(abs2, fast_activation(f, x))
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$f: $T" for f in [identity, relu, sigmoid, sigmoid_fast, softplus,
                 logsigmoid, gelu, swish, lisht, tanh, tanh_fast],
             T in [Float16, Float32, Float64]
+
+            !fp64 && T == Float64 && continue
 
             x = rand(rng, T, 4, 3) |> aType
 

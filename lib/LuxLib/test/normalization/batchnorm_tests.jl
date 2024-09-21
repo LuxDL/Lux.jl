@@ -123,8 +123,9 @@ export setup_batchnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_batchnorm_testing
 end
 
 @testitem "Batch Norm: Group 1" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[1]
+            !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
                 affine, track_stats, act, aType, mode, ongpu)
         end
@@ -132,8 +133,9 @@ end
 end
 
 @testitem "Batch Norm: Group 2" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[2]
+            !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
                 affine, track_stats, act, aType, mode, ongpu)
         end
@@ -141,8 +143,9 @@ end
 end
 
 @testitem "Batch Norm: Group 3" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[3]
+            !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
                 affine, track_stats, act, aType, mode, ongpu)
         end
@@ -150,8 +153,9 @@ end
 end
 
 @testitem "Batch Norm: Group 4" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[4]
+            !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
                 affine, track_stats, act, aType, mode, ongpu)
         end
@@ -159,8 +163,9 @@ end
 end
 
 @testitem "Batch Norm: Group 5" tags=[:batch_norm] setup=[SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[5]
+            !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
                 affine, track_stats, act, aType, mode, ongpu)
         end
@@ -168,7 +173,9 @@ end
 end
 
 @testitem "Batch Norm: Mixed Precision" tags=[:batch_norm] setup=[SharedTestSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
+        !fp64 && aType == Float64 && continue
+
         x = rand(Float64, 4, 4, 6, 2) |> aType
         scale = rand(Float32, 6) |> aType
         bias = rand(Float32, 6) |> aType

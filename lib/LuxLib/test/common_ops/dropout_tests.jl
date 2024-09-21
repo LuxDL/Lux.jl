@@ -1,10 +1,12 @@
 @testitem "Dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T, $x_shape, $dims" for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1)),
             dims in (:, 1, (1, 2))
+
+            !fp64 && T == Float64 && continue
 
             x = randn(rng, T, x_shape) |> aType
 
@@ -46,9 +48,11 @@ end
 
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+
+            !fp64 && T == Float64 && continue
 
             x = randn(rng, T, x_shape) |> aType
             mask = rand(T, x_shape) |> aType
@@ -133,9 +137,11 @@ end
 
     rng = StableRNG(12345)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+
+            !fp64 && T == Float64 && continue
 
             x = randn(rng, T, x_shape) |> aType
 

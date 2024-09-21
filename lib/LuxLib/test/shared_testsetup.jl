@@ -61,11 +61,11 @@ end
 
 const MODES = begin
     modes = []
-    cpu_testing() && push!(modes, ("cpu", Array, false))
-    cuda_testing() && push!(modes, ("cuda", CuArray, true))
-    amdgpu_testing() && push!(modes, ("amdgpu", ROCArray, true))
-    oneapi_testing() && push!(modes, ("oneapi", oneArray, true))
-    metal_testing() && push!(modes, ("metal", MtlArray, true))
+    cpu_testing() && push!(modes, ("cpu", Array, false, true))
+    cuda_testing() && push!(modes, ("cuda", CuArray, true, true))
+    amdgpu_testing() && push!(modes, ("amdgpu", ROCArray, true, true))
+    oneapi_testing() && push!(modes, ("oneapi", oneArray, true, false))
+    metal_testing() && push!(modes, ("metal", MtlArray, true, false))
     modes
 end
 

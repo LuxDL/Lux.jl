@@ -1,5 +1,5 @@
 @testitem "internal_operation_mode: Wrapped Arrays" tags=[:others] setup=[SharedTestSetup] begin
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         x = rand(Float32, 4, 3) |> aType
         retval = ongpu ? LuxLib.GPUBroadcastOp : LuxLib.LoopedArrayOp
         @test LuxLib.internal_operation_mode(x) isa retval

@@ -64,6 +64,7 @@ function fallback_slow_conv!(y::AbstractArray{yT, N}, dev::Type{<:AbstractDevice
            $(size(x)) eltype = $(xT) and weight: size = $(size(weight)) \
            eltype = $(wT)." maxlog=1
     # TODO: We should be able to reuse `y` for some part here for some efficiency
+    @assert NNlib.groupcount(cdims) == 1 "Only groups=1 is supported for now." # FIXME
     tmp = NNlib.unfold(x, cdims)
     weight_compact = reshape(weight, :, size(weight, N), 1)
     res = batched_matmul(tmp, weight_compact)
@@ -71,9 +72,23 @@ function fallback_slow_conv!(y::AbstractArray{yT, N}, dev::Type{<:AbstractDevice
     return
 end
 
-function conv(x′, weight′, cdims::ConvDims)
+conv(x, weight, cdims::ConvDims) = conv(get_device_type((x, weight)), x, weight, cdims)
+
+function conv(::Type{Union{<:CPUDevice, <:CUDADevice, <:AMDGPUDevice}},
+        x′, weight′, cdims::ConvDims)
     x, weight = get_conv_input_weight(x′, weight′)
     return NNlib.conv(x, weight, cdims)
+end
+function conv(dev::Type{<:AbstractDevice}, x′, weight′, cdims::ConvDims)
+    x, weight = get_conv_input_weight(dev, x′, weight′)
+    return fallback_slow_conv(dev, x, weight, cdims)
+end
+
+function fallback_slow_conv(dev, x, weight, cdims::ConvDims)
+    y = similar(x, promote_type(eltype(x), eltype(weight)), NNlib.output_size(cdims)...,
+        NNlib.channels_out(cdims), size(x, ndims(x)))
+    fallback_slow_conv!(y, dev, x, weight, cdims)
+    return y
 end
 
 function ∇conv_data(x′, weight′, cdims::ConvDims)

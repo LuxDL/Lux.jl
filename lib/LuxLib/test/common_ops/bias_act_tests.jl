@@ -11,12 +11,14 @@
     end
     (f::__Fix1)(x, b) = f.f(f.act, x, b)
 
-    @testset "$mode" for (mode, aType, ongpu) in MODES
+    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$act, $T, $sz" for act in [
                 identity, relu, sigmoid, sigmoid_fast, softplus,
                 logsigmoid, gelu, swish, lisht, tanh, tanh_fast],
             T in [Float16, Float32, Float64],
             sz in [(2, 2, 3, 4), (4, 5)]
+
+            !fp64 && T == Float64 && continue
 
             x = rand(rng, T, sz) |> aType
             b = rand(rng, T, sz[end - 1]) |> aType
