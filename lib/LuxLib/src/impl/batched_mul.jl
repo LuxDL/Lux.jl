@@ -133,7 +133,7 @@ end
 for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
     @eval begin
         function EnzymeRules.augmented_primal(
-                cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(func))},
+                cfg::EnzymeRules.RevConfigWidth, ::EnzymeCore.Const{typeof($(func))},
                 ::Type{RT}, C::EnzymeCore.Annotation{<:AbstractArray{<:Any, 3}},
                 A::EnzymeCore.Annotation{<:AbstractArray{<:Any, 3}},
                 B::EnzymeCore.Annotation{<:AbstractArray{<:Any, 3}}) where {RT}
@@ -155,7 +155,7 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
         end
 
         function EnzymeRules.reverse(
-                cfg::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(func))},
+                cfg::EnzymeRules.RevConfigWidth, ::EnzymeCore.Const{typeof($(func))},
                 ::Type{RT}, cache, C::EnzymeCore.Annotation{<:AbstractArray{<:Any, 3}},
                 A::EnzymeCore.Annotation{<:AbstractArray{<:Any, 3}},
                 B::EnzymeCore.Annotation{<:AbstractArray{<:Any, 3}}) where {RT}

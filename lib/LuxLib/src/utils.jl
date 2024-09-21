@@ -233,7 +233,7 @@ CRC.@non_differentiable safe_minimum(::Any...)
 macro enzyme_alternative(f₁, f₂)
     return esc(quote
         function EnzymeRules.augmented_primal(
-                ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(f₁))},
+                ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
                 ::Type{RT}, args...) where {RT}
             fwd, rev = EnzymeCore.autodiff_thunk(
                 EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof($(f₂))},
@@ -245,11 +245,12 @@ macro enzyme_alternative(f₁, f₂)
         end
 
         function EnzymeRules.reverse(
-                ::EnzymeRules.ConfigWidth, ::EnzymeCore.Const{typeof($(f₁))},
+                ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
                 ::Type{RT}, (tape, rev), args...) where {RT}
             return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
         end
 
+        # FIXME: ForwardRules changed in EnzymeCore 0.8
         function EnzymeRules.forward(
                 ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...) where {RT}
             EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)

@@ -213,18 +213,19 @@ end
 # Enzyme works for all of these except `gelu`.
 # See https://github.com/EnzymeAD/Enzyme.jl/issues/1671
 function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.ConfigWidth{1}, func::EnzymeCore.Const{typeof(gelu)},
+        cfg::EnzymeRules.RevConfigWidth{1}, func::EnzymeCore.Const{typeof(gelu)},
         ::Type{<:EnzymeCore.Active}, x::EnzymeCore.Active{<:Number})
     primal = EnzymeRules.needs_primal(cfg) ? func.val(x.val) : nothing
     return EnzymeRules.AugmentedReturn(primal, nothing, nothing)
 end
 
 function EnzymeRules.reverse(
-        ::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu)},
+        ::EnzymeRules.RevConfigWidth{1}, ::EnzymeCore.Const{typeof(gelu)},
         dret::EnzymeCore.Active, ::Nothing, x::EnzymeCore.Active{<:Number})
     return (dret.val * ∇gelu(x.val),)
 end
 
+# FIXME: ForwardRules changed in EnzymeCore 0.8
 function EnzymeRules.forward(
         ::EnzymeCore.Const{typeof(gelu)}, ::Type{<:EnzymeCore.Duplicated},
         x::EnzymeCore.Duplicated{<:Number})
