@@ -79,6 +79,15 @@ end
 
 function fallback_batched_matmul(
         dev, x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
+    z = similar(x, promote_type(eltype(x), eltype(y)), size(x, 1),
+        size(y, 2), max(size(x, 3), size(y, 3)))
+    fallback_batched_matmul!(z, dev, x, y)
+    return z
+end
+
+function fallback_batched_matmul!(
+        z::AbstractArray{zT, 3}, dev, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {zT, xT, yT}
     @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
            $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
            slow." maxlog=1
@@ -86,9 +95,19 @@ function fallback_batched_matmul(
        (size(x, 2) != size(y, 1))
         throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
     end
-    size(x, 3) == size(y, 3) && return stack(*, batchview(x), batchview(y))
-    size(x, 3) == 1 && return stack(Base.Fix1(*, batchview(x, 1)), batchview(y))
-    return stack(Base.Fix2(*, batchview(y, 1)), batchview(x))
+    if size(x, 3) == size(y, 3)
+        Threads.@threads for L in indices((x, y), 3)
+            mul!(batchview(z, L), batchview(x, L), batchview(y, L))
+        end
+    elseif size(x, 3) == 1
+        Threads.@threads for L in indices((x, y), 3)
+            mul!(batchview(z, L), batchview(x, 1), batchview(y, L))
+        end
+    else # has to be size(y, 3) == 1
+        Threads.@threads for L in indices((x, y), 3)
+            mul!(batchview(z, L), batchview(x, L), batchview(y, 1))
+        end
+    end
 end
 
 function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{xT, 3},
