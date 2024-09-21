@@ -78,9 +78,9 @@ steps:
             julia:
               - "1"
 
-  - group: ":julia: oneAPI (Intel) GPU"
+  - group: ":julia: oneAPI GPU"
     steps:
-      - label: ":julia: Julia {{matrix.julia}} + oneAPI (Intel) GPU"
+      - label: ":julia: Julia {{matrix.julia}} + oneAPI GPU"
         soft_fail: true
         plugins:
           - JuliaCI/julia#v1:
