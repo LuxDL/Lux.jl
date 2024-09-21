@@ -1,6 +1,6 @@
 steps:
   - label: "Triggering Pipelines (Pull Request)"
-    if: "build.pull_request.base_branch == 'main'"
+    if: build.branch != "main" && build.tag == null
     agents:
       queue: "juliagpu"
     plugins:

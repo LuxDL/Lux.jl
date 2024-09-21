@@ -61,3 +61,9 @@ Statistics = "1.10"
 Test = "1.10"
 Tracker = "0.2.34"
 Zygote = "0.6.70"
+
+[extras]
+CUDA_Driver_jll = "4ee394cb-3365-5eb0-8335-949819d2adfc"
+
+[preferences.CUDA_Driver_jll]
+compat = false
