@@ -31,7 +31,7 @@ function conv!(y::AbstractArray{yT, N}, ::Type{<:AbstractDevice},
     NNlib.conv!(y, x, weight, cdims)
     return
 end
-function conv!(y::AbstractArray{yT, N}, ::Type{<:AbstractGPUDevice},
+function conv!(y::AbstractArray{yT, N}, ::Type{<:Union{CUDADevice, AMDGPUDevice}},
         x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
         cdims::ConvDims) where {yT, xT, wT, N}
     if xT !== wT !== yT
@@ -41,6 +41,33 @@ function conv!(y::AbstractArray{yT, N}, ::Type{<:AbstractGPUDevice},
     end
     NNlib.conv!(y, contiguous(ofeltype_array(yT, x)),
         contiguous(ofeltype_array(yT, weight)), cdims)
+    return
+end
+function conv!(y::AbstractArray{yT, N}, dev::Type{<:AbstractGPUDevice},
+        x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
+        cdims::ConvDims) where {yT, xT, wT, N}
+    if xT !== wT !== yT
+        safe_warning(
+            "Mixed Precision Inputs received for GPU convolution [weight: $(wT)] and \
+             [x: $(xT)]. Promoting to $(yT).", 1)
+    end
+    x_cont = contiguous(ofeltype_array(yT, x))
+    weight_cont = contiguous(ofeltype_array(yT, weight))
+    fallback_slow_conv!(y, dev, x_cont, weight_cont, cdims)
+    return
+end
+
+function fallback_slow_conv!(y::AbstractArray{yT, N}, dev::Type{<:AbstractDevice},
+        x::AbstractArray{xT, N}, weight::AbstractArray{wT, N},
+        cdims::ConvDims) where {yT, xT, wT, N}
+    @warn "Falling back to slow convolution routine for $(dev) with x: size = \
+           $(size(x)) eltype = $(xT) and weight: size = $(size(weight)) \
+           eltype = $(wT)." maxlog=1
+    # TODO: We should be able to reuse `y` for some part here for some efficiency
+    tmp = NNlib.unfold(x, cdims)
+    weight_compact = reshape(weight, :, size(weight, N), 1)
+    res = batched_matmul(tmp, weight_compact)
+    copyto!(y, reshape(res, size(y)))
     return
 end
 
