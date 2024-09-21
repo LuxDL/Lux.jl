@@ -33,12 +33,9 @@ steps:
         env:
           TUTORIAL_BACKEND_GROUP: "CPU"
         agents:
-          # FIXME: enable these once the servers are back up
-          # queue: "juliaecosystem"
-          # os: "linux"
-          # arch: "x86_64"
-          queue: "juliagpu"
-          cuda: "*"
+          queue: "juliaecosystem"
+          os: "linux"
+          arch: "x86_64"
         artifact_paths:
           - "docs/src/tutorials/beginner/**/*"
           - "docs/src/tutorials/intermediate/**/*"
