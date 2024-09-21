@@ -1,14 +1,12 @@
+```@meta
+CollapsedDocStrings = true
+```
+
 # Distributed Utils
 
 !!! note
 
     These functionalities are available via the `Lux.DistributedUtils` module.
-
-## Index
-
-```@index
-Pages = ["distributed_utils.md"]
-```
 
 ## [Backends](@id communication-backends)
 

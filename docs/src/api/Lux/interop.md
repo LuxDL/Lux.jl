@@ -1,8 +1,8 @@
-# Interoperability between Lux and other packages
-
 ```@meta
-CurrentModule = Lux
+CollapsedDocStrings = true
 ```
+
+# Interoperability between Lux and other packages
 
 ## Switching from older frameworks
 
