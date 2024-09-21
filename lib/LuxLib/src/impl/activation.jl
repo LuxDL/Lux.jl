@@ -225,10 +225,8 @@ function EnzymeRules.reverse(
     return (dret.val * ∇gelu(x.val),)
 end
 
-# FIXME: ForwardRules changed in EnzymeCore 0.8
-function EnzymeRules.forward(
-        ::EnzymeCore.Const{typeof(gelu)}, ::Type{<:EnzymeCore.Duplicated},
-        x::EnzymeCore.Duplicated{<:Number})
+function EnzymeRules.forward(::EnzymeRules.FwdConfig, ::EnzymeCore.Const{typeof(gelu)},
+        ::Type{<:EnzymeCore.Duplicated}, x::EnzymeCore.Duplicated{<:Number})
     return EnzymeCore.Duplicated(gelu(x.val), x.dval * ∇gelu(x.val))
 end
 

@@ -250,10 +250,10 @@ macro enzyme_alternative(f₁, f₂)
             return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
         end
 
-        # FIXME: ForwardRules changed in EnzymeCore 0.8
-        function EnzymeRules.forward(
+        function EnzymeRules.forward(cfg::EnzymeRules.FwdConfig,
                 ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...) where {RT}
-            EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)
+            EnzymeCore.autodiff(cfg, EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT,
+                args...)
             return
         end
     end)
