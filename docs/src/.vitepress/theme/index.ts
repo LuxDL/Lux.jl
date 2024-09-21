@@ -3,6 +3,7 @@ import { h } from 'vue'
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import AsideTrustees from '../../components/AsideTrustees.vue'
+import VersionPicker from "../../components/VersionPicker.vue";
 
 import { enhanceAppWithTabs } from 'vitepress-plugin-tabs/client'
 import './style.css'
@@ -15,6 +16,7 @@ export default {
     })
   },
   enhanceApp({ app }) {
-    enhanceAppWithTabs(app)
+    enhanceAppWithTabs(app);
+    app.component('VersionPicker', VersionPicker);
   }
 } satisfies Theme
