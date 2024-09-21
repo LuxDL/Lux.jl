@@ -236,11 +236,6 @@ end
 
 function setup_batched_matmul_benchmarks!(suite::BenchmarkGroup, cpu_or_gpu::String,
         backend::String, dev::MLDataDevices.AbstractDevice)
-    if dev isa MetalDevice || dev isa oneAPIDevice
-        @warn "Skipping batched_matmul benchmarks for $(dev)..."
-        return
-    end
-
     for N in [2, 16, 128, 512], Bsize in [4, 32, 128, 512]
         benchmark_name = "batchedmm($N, Bsize=$Bsize)"
 
