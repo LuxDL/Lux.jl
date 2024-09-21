@@ -4,6 +4,17 @@ import mathjax3 from "markdown-it-mathjax3";
 import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from '@shikijs/transformers';
 
+function getBaseRepository(base: string): string {
+    if (!base) return '/';
+    // I guess if deploy_url is available. From where do I check this ?
+    const parts = base.split('/').filter(Boolean);
+    return parts.length > 0 ? `/${parts[0]}/` : '/';
+}
+
+const baseTemp = {
+    base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
+}
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
     base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
@@ -44,6 +55,9 @@ export default defineConfig({
         ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' }],
         ['link', { rel: 'icon', href: '/favicon.ico' }],
         ['link', { rel: 'manifest', href: '/site.webmanifest' }],
+        ['link', { rel: 'icon', href: 'REPLACE_ME_DOCUMENTER_VITEPRESS_FAVICON' }],
+        ['script', {src: `${getBaseRepository(baseTemp.base)}versions.js`}],
+        ['script', {src: `${baseTemp.base}siteinfo.js`}]
     ],
 
     themeConfig: {
@@ -99,10 +113,7 @@ export default defineConfig({
                 ]
             },
             {
-                text: 'Versions', items: [
-                    { text: 'Stable', link: 'https://lux.csail.mit.edu/stable' },
-                    { text: 'Dev', link: 'https://lux.csail.mit.edu/dev' }
-                ]
+                component: 'VersionPicker'
             }
         ],
         sidebar: {
