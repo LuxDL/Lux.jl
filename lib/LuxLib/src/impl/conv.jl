@@ -64,7 +64,7 @@ function fallback_slow_conv!(y::AbstractArray{yT, N}, dev::Type{<:AbstractDevice
            $(size(x)) eltype = $(xT) and weight: size = $(size(weight)) \
            eltype = $(wT)." maxlog=1
     # TODO: We should be able to reuse `y` for some part here for some efficiency
-    @assert NNlib.groupcount(cdims) == 1 "Only groups=1 is supported for now." # FIXME
+    @assert NNlib.groupcount(cdims)==1 "Only groups=1 is supported for now." # FIXME
     tmp = NNlib.unfold(x, cdims)
     weight_compact = reshape(weight, :, size(weight, N), 1)
     res = batched_matmul(tmp, weight_compact)

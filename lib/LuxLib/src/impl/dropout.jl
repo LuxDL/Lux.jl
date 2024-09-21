@@ -190,6 +190,7 @@ function generate_dropout_mask_loop!(y::AbstractArray, p, invp)
 end
 
 function generate_dropout_mask_simd_loop!(y::AbstractArray{T}, p, invp) where {T}
+    p, invp = T(p), T(invp)
     @simd ivdep for I in indices(y)
         y[I] = (y[I] > p) * invp
     end
@@ -197,7 +198,9 @@ end
 
 @enzyme_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
 
-function generate_dropout_mask!(y::AbstractArray, ::AbstractInternalArrayOpMode, p, invp)
+function generate_dropout_mask!(
+        y::AbstractArray{T}, ::AbstractInternalArrayOpMode, p, invp) where {T}
+    p, invp = T(p), T(invp)
     @. y = (y > p) * invp
     return
 end
