@@ -33,6 +33,14 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
     using AMDGPU
 end
 
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi"
+    using oneAPI
+end
+
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "metal"
+    using Metal
+end
+
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
@@ -42,12 +50,22 @@ function amdgpu_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
            MLDataDevices.functional(AMDGPUDevice)
 end
+function oneapi_testing()
+    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
+           MLDataDevices.functional(oneAPIDevice)
+end
+function metal_testing()
+    return (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
+           MLDataDevices.functional(MetalDevice)
+end
 
 const MODES = begin
     modes = []
     cpu_testing() && push!(modes, ("cpu", Array, false))
     cuda_testing() && push!(modes, ("cuda", CuArray, true))
     amdgpu_testing() && push!(modes, ("amdgpu", ROCArray, true))
+    oneapi_testing() && push!(modes, ("oneapi", oneArray, true))
+    metal_testing() && push!(modes, ("metal", MtlArray, true))
     modes
 end
 
