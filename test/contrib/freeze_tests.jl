@@ -35,7 +35,8 @@
             @jet m(x, ps_c, st)
 
             __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @test_gradients(__f, x, ps_c; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps_c; atol=1.0f-3, rtol=1.0f-3,
+                enzyme_set_runtime_activity=true)
         end
 
         @testset "LuxDL/Lux.jl#427" begin
@@ -84,7 +85,8 @@ end
 
         @jet fd(x, ps, st)
         __f = (x, ps) -> sum(first(fd(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+            enzyme_set_runtime_activity=true)
 
         fd = Lux.Experimental.freeze(d, ())
         @test fd === d
