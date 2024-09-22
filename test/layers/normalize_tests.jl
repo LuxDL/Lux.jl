@@ -328,7 +328,8 @@ end
 
                     if affine
                         __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                        @test_gradients(__f, x, ps; atol=1.0f-3,
+                            rtol=1.0f-3,
                             skip_backends=[AutoFiniteDiff()])
                     else
                         __f = x -> sum(first(ln(x, ps, st)))
