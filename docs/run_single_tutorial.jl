@@ -8,6 +8,7 @@ name = ARGS[1]
 pkg_log_path = joinpath(storage_dir, "$(name)_pkg.log")
 output_directory = ARGS[2]
 path = ARGS[3]
+push!(LOAD_PATH, "@literate")  # Should have the Literate and InteractiveUtils packages
 
 io = open(pkg_log_path, "w")
 warn_old_version = try
@@ -16,7 +17,7 @@ warn_old_version = try
 catch err
     err isa Pkg.Resolve.ResolverError || rethrow()
     @warn "Failed to install the latest version of Lux.jl. This is possible when the \
-           downstream packages haven't been updated to support latest releases yet."
+           downstream packages haven't been updated to support latest releases yet." err=err
     true
 end
 Pkg.instantiate(; io)
@@ -26,11 +27,11 @@ using Literate
 
 function preprocess(path, str)
     if warn_old_version
-        st = """
-        !!! danger "Using older version of Lux.jl"
+        str = """
+        # !!! danger "Using older version of Lux.jl"
 
-            This tutorial cannot be run on the latest Lux.jl release due to downstream
-            packages not being updated yet.
+        #     This tutorial cannot be run on the latest Lux.jl release due to downstream
+        #     packages not being updated yet.
 
         \n\n""" * str
     end

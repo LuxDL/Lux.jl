@@ -55,6 +55,8 @@ const NTASKS = min(
 
 @info "Starting Lux Tutorial Build with $(NTASKS) tasks."
 
+run(`$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=@literate -e 'import Pkg; Pkg.add(["Literate", "InteractiveUtils"])'`)
+
 asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
     @info "Running Tutorial $(i): $(p) on task $(current_task())"
     path = joinpath(@__DIR__, "..", "examples", p)
@@ -66,8 +68,7 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
     withenv("JULIA_NUM_THREADS" => "$(Threads.nthreads())",
         "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 ÷ NTASKS)%",
         "JULIA_PKG_PRECOMPILE_AUTO" => "0", "JULIA_DEBUG" => "Literate") do
-        cmd = `$(Base.julia_cmd()) --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)"`
-        run(cmd)
+        run(`$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)"`)
     end
 
     return
