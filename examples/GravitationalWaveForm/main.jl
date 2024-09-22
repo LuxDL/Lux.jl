@@ -7,8 +7,8 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, LineSearches, OrdinaryDiffEq, Optimization, OptimizationOptimJL,
-      Printf, Random, SciMLSensitivity
+using Lux, ComponentArrays, LineSearches, OrdinaryDiffEqLowOrderRK, Optimization,
+      OptimizationOptimJL, Printf, Random, SciMLSensitivity
 using CairoMakie
 
 # ## Define some Utility Functions
@@ -221,16 +221,16 @@ end
 
 # We will deviate from the standard Neural Network initialization and use
 # `WeightInitializers.jl`,
-const nn = Chain(Base.Fix1(broadcast, cos),
-    Dense(1 => 32, cos; init_weight=truncated_normal(; std=1e-4)),
-    Dense(32 => 32, cos; init_weight=truncated_normal(; std=1e-4)),
-    Dense(32 => 2; init_weight=truncated_normal(; std=1e-4)))
-ps, st = Lux.setup(Xoshiro(), nn)
+const nn = Chain(Base.Fix1(fast_activation, cos),
+    Dense(1 => 32, cos; init_weight=truncated_normal(; std=1e-4), init_bias=zeros32),
+    Dense(32 => 32, cos; init_weight=truncated_normal(; std=1e-4), init_bias=zeros32),
+    Dense(32 => 2; init_weight=truncated_normal(; std=1e-4), init_bias=zeros32))
+ps, st = Lux.setup(Random.default_rng(), nn)
 
 # Similar to most DL frameworks, Lux defaults to using `Float32`, however, in this case we
 # need Float64
 
-const params = ComponentArray{Float64}(ps)
+const params = ComponentArray(ps |> f64)
 
 const nn_model = StatefulLuxLayer{true}(nn, nothing, st)
 
@@ -293,7 +293,7 @@ const mseloss = MSELoss()
 function loss(θ)
     pred = Array(solve(prob_nn, RK4(); u0, p=θ, saveat=tsteps, dt, adaptive=false))
     pred_waveform = first(compute_waveform(dt_data, pred, mass_ratio, ode_model_params))
-    return mseloss(waveform, pred_waveform), pred_waveform
+    return mseloss(pred_waveform, waveform), pred_waveform
 end
 
 # Warmup the loss function
