@@ -316,7 +316,7 @@
                 @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
                     y = W * x
                     incr *= 10
-                    return act.(y .+ b) .+ incr
+                    @return act.(y .+ b) .+ incr
                 end
             end
 
@@ -329,12 +329,7 @@
             @test st_new.incr == 10
             _, st_new = model(x, ps, st_new)
             @test st_new.incr == 100
-
-            # By default creates a closure so type cannot be inferred
-            inf_type = Core.Compiler._return_type(
-                model, Tuple{typeof(x), typeof(ps), typeof(st)}).parameters
-            @test inf_type[1] === Any
-            @test inf_type[2] === NamedTuple
+            @test @inferred(model(x, ps, st)) isa Any
 
             function ScaledDense2(; d_in=5, d_out=7, act=relu)
                 @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
