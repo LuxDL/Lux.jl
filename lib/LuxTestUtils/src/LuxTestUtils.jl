@@ -1,5 +1,6 @@
 module LuxTestUtils
 
+using ArrayInterface: ArrayInterface
 using ComponentArrays: ComponentArray, getdata, getaxes
 using DispatchDoctor: allow_unstable
 using Functors: Functors

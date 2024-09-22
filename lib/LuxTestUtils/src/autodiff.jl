@@ -172,10 +172,10 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
             local_test_expr = :([$(nameof(typeof(backend)))] - $(test_expr))
 
-            result = if backend in skip_backends
+            result = if check_ad_backend_in(backend, skip_backends)
                 Broken(:skipped, local_test_expr)
             elseif (soft_fail isa Bool && soft_fail) ||
-                   (soft_fail isa Vector && backend in soft_fail)
+                   (soft_fail isa Vector && check_ad_backend_in(backend, soft_fail))
                 try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
@@ -189,7 +189,7 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
                 catch
                     Broken(:test, local_test_expr)
                 end
-            elseif backend in broken_backends
+            elseif check_ad_backend_in(backend, broken_backends)
                 try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)

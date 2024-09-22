@@ -123,3 +123,9 @@ function reorder_macro_kw_params(exs)
     end
     return Tuple(exs)
 end
+
+function check_ad_backend_in(backend, backends)
+    backends_type = map(ArrayInterface.parameterless_type ∘ typeof, backends)
+    backend_type = ArrayInterface.parameterless_type(typeof(backend))
+    return backend_type in backends_type
+end
