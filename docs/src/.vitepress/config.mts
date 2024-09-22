@@ -4,13 +4,6 @@ import mathjax3 from "markdown-it-mathjax3";
 import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from '@shikijs/transformers';
 
-function getBaseRepository(base: string): string {
-    if (!base) return '/';
-    // I guess if deploy_url is available. From where do I check this ?
-    const parts = base.split('/').filter(Boolean);
-    return parts.length > 0 ? `/${parts[0]}/` : '/';
-}
-
 const baseTemp = {
     base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',// TODO: replace this in makedocs!
 }
@@ -56,7 +49,7 @@ export default defineConfig({
         ['link', { rel: 'icon', href: '/favicon.ico' }],
         ['link', { rel: 'manifest', href: '/site.webmanifest' }],
         ['link', { rel: 'icon', href: 'REPLACE_ME_DOCUMENTER_VITEPRESS_FAVICON' }],
-        ['script', {src: `${getBaseRepository(baseTemp.base)}versions.js`}],
+        ['script', {src: `/versions.js`}],
         ['script', {src: `${baseTemp.base}siteinfo.js`}]
     ],
 
