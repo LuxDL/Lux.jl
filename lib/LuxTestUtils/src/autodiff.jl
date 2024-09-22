@@ -114,6 +114,7 @@ Test the gradients of `f` with respect to `args` using the specified backends.
   - `soft_fail`: If `true`, then the test will be recorded as a `soft_fail` test. This
     overrides any `broken` kwargs. Alternatively, a list of backends can be passed to
     `soft_fail` to allow soft_fail tests for only those backends.
+  - `enzyme_set_runtime_activity`: If `true`, then activate runtime activity for Enzyme.
   - `kwargs`: Additional keyword arguments to pass to `check_approx`.
 
 ## Example
@@ -129,6 +130,7 @@ julia> test_gradients(f, 1.0, x, nothing)
 """
 function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         soft_fail::Union{Bool, Vector}=false,
+        enzyme_set_runtime_activity::Bool=false,
         # Internal kwargs start
         source::LineNumberNode=LineNumberNode(0, nothing),
         test_expr::Expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
@@ -146,7 +148,12 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         total_length ≤ 100 && push!(backends, AutoForwardDiff())
         total_length ≤ 100 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
-        ENZYME_TESTING_ENABLED && push!(backends, AutoEnzyme())
+        if ENZYME_TESTING_ENABLED
+            mode = enzyme_set_runtime_activity ?
+                   Enzyme.set_runtime_activity(Enzyme.Reverse) :
+                   Enzyme.Reverse
+            push!(backends, AutoEnzyme(; mode))
+        end
     end
     push!(backends, AutoTracker())
 

@@ -5,6 +5,13 @@ All notable changes to this project since the release of v1 will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2024-09-22
+
+### Added
+
+  - Adds a kwarg `enzyme_set_runtime_activity` to `test_gradients` to allow users to set
+    the runtime activity of Enzyme tests.
+
 ## [1.2.0] - 2024-09-18
 
 ### Added
