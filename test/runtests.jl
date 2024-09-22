@@ -42,43 +42,15 @@ end
 
 using Lux
 
-# Type Stability tests fail if run with DispatchDoctor enabled
-if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
-    try
-        # Run in a separate process to load the updated preferences
-        run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-            --startup-file=no --code-coverage=user $(@__DIR__)/zygote_type_stability.jl`)
-        @test true
-    catch
-        @test false
-    end
-end
-
-# Eltype Matching Tests
-if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
-    @testset "eltype_mismath_handling: $option" for option in (
-        "none", "warn", "convert", "error")
-        set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
-        try
-            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
-                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
-            @test true
-        catch
-            @test false
-        end
-    end
-    set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
-end
-
-Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
-
 @testset "Load Tests" begin
     @testset "Load Packages Tests" begin
         @test_throws ErrorException FromFluxAdaptor()(1)
         showerror(stdout, Lux.FluxModelConversionException("cannot convert"))
+        println()
 
         @test_throws ErrorException ToSimpleChainsAdaptor(nothing)(Dense(2 => 2))
         showerror(stdout, Lux.SimpleChainsModelConversionException(Dense(2 => 2)))
+        println()
 
         @test_throws ErrorException vector_jacobian_product(
             x -> x, AutoZygote(), rand(2), rand(2))
@@ -103,6 +75,31 @@ Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
         @test_throws ErrorException Lux.AutoDiffInternalImpl.rule_config(Val(:Zygote2))
     end
 end
+
+# Type Stability tests fail if run with DispatchDoctor enabled
+if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
+    @testset "Zygote Type Stability" begin
+        include("zygote_type_stability.jl")
+    end
+end
+
+# Eltype Matching Tests
+if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
+    @testset "eltype_mismath_handling: $option" for option in (
+        "none", "warn", "convert", "error")
+        set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
+        try
+            run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
+                --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
+            @test true
+        catch
+            @test false
+        end
+    end
+    set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
+end
+
+Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
 
 const RETESTITEMS_NWORKERS = parse(
     Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))

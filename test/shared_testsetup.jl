@@ -1,8 +1,5 @@
 @testsetup module SharedTestSetup
 
-using Enzyme
-Enzyme.API.runtimeActivity!(true)
-
 include("setup_modes.jl")
 
 import Reexport: @reexport
