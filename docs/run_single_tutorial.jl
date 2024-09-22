@@ -10,13 +10,30 @@ output_directory = ARGS[2]
 path = ARGS[3]
 
 io = open(pkg_log_path, "w")
-Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
+warn_old_version = try
+    Pkg.develop(; path=joinpath(@__DIR__, ".."), io)
+    false
+catch err
+    err isa Pkg.Resolve.ResolverError || rethrow()
+    @warn "Failed to install the latest version of Lux.jl. This is possible when the \
+           downstream packages haven't been updated to support latest releases yet."
+    true
+end
 Pkg.instantiate(; io)
 close(io)
 
 using Literate
 
 function preprocess(path, str)
+    if warn_old_version
+        st = """
+        !!! danger "Using older version of Lux.jl"
+
+            This tutorial cannot be run on the latest Lux.jl release due to downstream
+            packages not being updated yet.
+
+        \n\n""" * str
+    end
     new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
     appendix_code = """
     # ## Appendix
