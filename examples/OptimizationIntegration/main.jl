@@ -17,7 +17,7 @@
 # ## Imports packages
 
 using Lux, Optimization, OptimizationOptimisers, OptimizationOptimJL, OrdinaryDiffEqTsit5,
-      SciMLSensitivity, Random, MLUtils, IterTools, CairoMakie, ComponentArrays, Printf
+      SciMLSensitivity, Random, MLUtils, CairoMakie, ComponentArrays, Printf
 using LuxCUDA
 
 const gdev = gpu_device()
@@ -98,7 +98,7 @@ function train_model(dataloader)
 
     smodel = StatefulLuxLayer{true}(model, nothing, st)
 
-    function loss_adjoint(θ, u_batch, t_batch)
+    function loss_adjoint(θ, (u_batch, t_batch))
         t_batch = t_batch.t
         u0 = u_batch[:, 1]
         dudt(u, p, t) = smodel(u, p)
@@ -110,26 +110,21 @@ function train_model(dataloader)
     ## Define the Optimization Function that takes in the optimization state (our parameters)
     ## and optimization parameters (nothing in our case) and data from the dataloader and
     ## returns the loss.
-    opt_func = OptimizationFunction(
-        (θ, _, u_batch, t_batch) -> loss_adjoint(θ, u_batch, t_batch),
-        Optimization.AutoZygote())
-    opt_prob = OptimizationProblem(opt_func, ps_ca)
+    opt_func = OptimizationFunction(loss_adjoint, Optimization.AutoZygote())
+    opt_prob = OptimizationProblem(opt_func, ps_ca, dataloader)
 
-    nepcohs = 25
-    res_adam = solve(
-        opt_prob, Optimisers.Adam(0.001), ncycle(dataloader, nepcohs); callback)
+    epochs = 25
+    res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, maxiters=epochs)
 
     ## Let's finetune a bit with L-BFGS
     opt_prob = remake(opt_prob; u0=res_adam.u)
-    res_lbfgs = solve(opt_prob, LBFGS(), ncycle(dataloader, nepcohs); callback)
+    res_lbfgs = solve(opt_prob, LBFGS(); callback, maxiters=epochs)
 
     ## Now that we have a good fit, let's train it on the entire dataset without
     ## Minibatching. We need to do this since ODE solves can lead to accumulated errors if
     ## the model was trained on individual parts (without a data-shooting approach).
-    opt_func = OptimizationFunction(
-        (θ, _) -> loss_adjoint(θ, gdev(ode_data), TimeWrapper(t)),
-        Optimization.AutoZygote())
-    opt_prob = OptimizationProblem(opt_func, res_lbfgs.u)
+    opt_func = OptimizationFunction(loss_adjoint, Optimization.AutoZygote())
+    opt_prob = OptimizationProblem(opt_func, res_lbfgs.u, (gdev(ode_data), TimeWrapper(t)))
 
     res = solve(opt_prob, Optimisers.Adam(0.005); maxiters=500, callback)
 
