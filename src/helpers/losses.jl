@@ -57,7 +57,7 @@ function CRC.rrule(::typeof(fused_agg), ::typeof(sum), lfn::LossFunctions.Traits
 end
 
 function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.ConfigWidth{1}, func::EnzymeCore.Const{typeof(fused_agg)},
+        cfg::EnzymeRules.RevConfigWidth{1}, func::EnzymeCore.Const{typeof(fused_agg)},
         ::Type{<:EnzymeCore.Active}, agg_f::EnzymeCore.Const{typeof(sum)},
         lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
         x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
@@ -71,7 +71,7 @@ function EnzymeRules.augmented_primal(
 end
 
 function EnzymeRules.reverse(
-        cfg::EnzymeRules.ConfigWidth{1}, ::EnzymeCore.Const{typeof(fused_agg)},
+        cfg::EnzymeRules.RevConfigWidth{1}, ::EnzymeCore.Const{typeof(fused_agg)},
         dret::EnzymeCore.Active, (cache_x, cache_y), agg_f::EnzymeCore.Const{typeof(sum)},
         lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
         x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
