@@ -252,8 +252,7 @@ macro enzyme_alternative(f₁, f₂)
 
         function EnzymeRules.forward(cfg::EnzymeRules.FwdConfig,
                 ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...) where {RT}
-            EnzymeCore.autodiff(cfg, EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT,
-                args...)
+            EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)
             return
         end
     end)
