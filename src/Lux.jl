@@ -49,6 +49,7 @@ function __init__()
 end
 
 is_extension_loaded(::Val) = false
+is_extension_loaded(::Val{:ForwardDiff}) = true
 
 # Preferences
 include("preferences.jl")
