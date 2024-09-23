@@ -25,9 +25,10 @@ steps:
             julia:
               - "1"
             group:
-              - "!fluxcompat,distributed"
+              - "!fluxcompat,distributed,recurrent_layers"
               - "fluxcompat"
               - "distributed"
+              - "recurrent_layers"
 
   - group: ":telescope: Downstream CUDA"
     steps:
@@ -81,9 +82,10 @@ steps:
             julia:
               - "1"
             group:
-              - "!fluxcompat,distributed"
+              - "!fluxcompat,distributed,recurrent_layers"
               - "fluxcompat"
               - "distributed"
+              - "recurrent_layers"
 
   - group: ":telescope: Downstream AMD GPU"
     steps:
