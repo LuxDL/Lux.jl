@@ -34,16 +34,16 @@ jobs:
           - macos-latest
           - windows-latest
         test_group:
-          # - "core_layers"
-          # - "contrib"
-          # - "helpers"
-          # - "distributed"
-          # - "normalize_layers"
-          # - "others"
-          # - "autodiff"
+          - "core_layers"
+          - "contrib"
+          - "helpers"
+          - "distributed"
+          - "normalize_layers"
+          - "others"
+          - "autodiff"
           - "recurrent_layers"
-          # - "eltype_match"
-          # - "fluxcompat"
+          - "eltype_match"
+          - "fluxcompat"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -138,16 +138,16 @@ jobs:
       matrix:
         version: ["1"]
         test_group:
-          # - "core_layers"
-          # - "contrib"
-          # - "helpers"
-          # - "distributed"
-          # - "normalize_layers"
-          # - "others"
-          # - "autodiff"
+          - "core_layers"
+          - "contrib"
+          - "helpers"
+          - "distributed"
+          - "normalize_layers"
+          - "others"
+          - "autodiff"
           - "recurrent_layers"
-          # - "eltype_match"
-          # - "fluxcompat"
+          - "eltype_match"
+          - "fluxcompat"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
