@@ -6,16 +6,16 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
 ## Overview
 
-| AD Package                                                         | Mode    | CPU   | GPU   | Nested 2nd Order AD | Support Class |
-| :----------------------------------------------------------------- | :------ | :---- | :---- | :------------------ | :------------ |
-| [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr] | Reverse | ✔️     | ✔️     | ✔️                   | Tier I        |
-| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ❓[^q] | ❓[^q]               | Tier I[^e]    |
-| [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                 | Reverse | ✔️     | ✔️     | ✔️                   | Tier I        |
-| [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | Forward | ✔️     | ✔️     | ✔️                   | Tier I        |
-| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | Reverse | ✔️     | ❌     | ❌                   | Tier II       |
-| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | Reverse | ✔️     | ✔️     | ❌                   | Tier II       |
-| [`Tapir.jl`](https://github.com/compintell/Tapir.jl)               | Reverse | ❓[^q] | ❌     | ❌                   | Tier III      |
-| [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | Forward | ❓[^q] | ❓[^q] | ❓[^q]               | Tier III      |
+| AD Package                                                         | Mode    | CPU    | GPU    | Nested 2nd Order AD | Support Class |
+| :----------------------------------------------------------------- | :------ | :----- | :----- | :------------------ | :------------ |
+| [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr] | Reverse | ✔️     | ✔️     | ✔️                  | Tier I        |
+| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ❓[^q] | ❓[^q]              | Tier I[^e]    |
+| [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                 | Reverse | ✔️     | ✔️     | ✔️                  | Tier I        |
+| [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | Forward | ✔️     | ✔️     | ✔️                  | Tier I        |
+| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | Reverse | ✔️     | ❌     | ❌                  | Tier II       |
+| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | Reverse | ✔️     | ✔️     | ❌                  | Tier II       |
+| [`Mooncake.jl`](https://github.com/compintell/Mooncake.jl)         | Reverse | ❓[^q] | ❌     | ❌                  | Tier III      |
+| [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | Forward | ❓[^q] | ❓[^q] | ❓[^q]              | Tier III      |
 
 [^e]: Currently Enzyme outperforms other AD packages in terms of CPU performance. However,
       there are some edge cases where it might not work with Lux. We are working on
