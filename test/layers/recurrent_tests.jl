@@ -455,14 +455,14 @@ end
 
             __f = (bi_rnn, x, ps, st) -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, ps, st)))
             @test_gradients(__f, bi_rnn, x, ps, st; atol=1e-3, rtol=1e-3,
-                broken_backends=[AutoEnzyme()])
+                skip_backends=[AutoEnzyme()])
 
             __f = (bi_rnn_no_merge, x, ps, st) -> begin
                 (y1, y2), st_ = bi_rnn_no_merge(x, ps, st)
                 return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
             end
             @test_gradients(__f, bi_rnn_no_merge, x, ps, st; atol=1e-3,
-                rtol=1e-3, broken_backends=[AutoEnzyme()])
+                rtol=1e-3, skip_backends=[AutoEnzyme()])
 
             @testset for _backward_cell in (RNNCell, LSTMCell, GRUCell)
                 cell = _cell(3 => 5)
@@ -491,15 +491,14 @@ end
                 __f = (bi_rnn, x, ps, st) -> sum(
                     Base.Fix1(sum, abs2), first(bi_rnn(x, ps, st)))
                 @test_gradients(__f, bi_rnn, x, ps, st; atol=1e-3,
-                    rtol=1e-3,
-                    broken_backends=[AutoEnzyme()])
+                    rtol=1e-3, skip_backends=[AutoEnzyme()])
 
                 __f = (bi_rnn_no_merge, x, ps, st) -> begin
                     (y1, y2), st_ = bi_rnn_no_merge(x, ps, st)
                     return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
                 end
                 @test_gradients(__f, bi_rnn_no_merge, x, ps, st; atol=1e-3,
-                    rtol=1e-3, broken_backends=[AutoEnzyme()])
+                    rtol=1e-3, skip_backends=[AutoEnzyme()])
             end
         end
     end
