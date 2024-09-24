@@ -5,14 +5,7 @@ CollapsedDocStrings = true
 # [MLDataDevices](@id MLDataDevices-API)
 
 `MLDataDevices.jl` is a lightweight package defining rules for transferring data across
-devices. Most users should directly use Lux.jl instead.
-
-!!! note "Transitioning from `LuxDeviceUtils.jl`"
-
-    `LuxDeviceUtils.jl` was renamed to `MLDataDevices.jl` in v1.0 as a part of allowing
-    these packages to have broader adoption outsize the Lux community. However, Lux
-    currently still uses `LuxDeviceUtils.jl` internally. This is supposed to change with
-    the transition of Lux to `v1.0`.
+devices.
 
 ## Preferences
 
