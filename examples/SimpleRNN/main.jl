@@ -173,8 +173,7 @@ nothing #hide
 # ## Saving the Model
 
 # We can save the model using JLD2 (and any other serialization library of your choice)
-# Note that we transfer the model to CPU before saving. Additionally, we recommend that
-# you don't save the model
+# Note that we transfer the model to CPU before saving.
 
 @save "trained_model.jld2" ps_trained st_trained
 
