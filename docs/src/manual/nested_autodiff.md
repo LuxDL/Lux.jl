@@ -106,6 +106,16 @@ nothing; # hide
 That's pretty good, of course you will have some error from the finite differences
 calculation.
 
+!!! tip
+
+    Notice that in this example the Jacobian `J` consists on the full matrix of derivatives of `smodel` with respect
+    the different inputs in `x`. In order to avoid the unnecessary calculation of zero entries of the Jacobian, you can 
+    instead use [`batched_jacobian`](@ref) to parse the calculation of the Jacobian per each single input. 
+    ```@example nested_ad
+    J = batched_jacobian(smodel, AutoForwardDiff(), x)
+    ```
+    Notice that this now returns a 3D array with the Jacobian calculation for each independent input value in `x`. 
+
 ## Loss Function contains Gradient Computation
 
 Ok here I am going to cheat a bit. This comes from a discussion on nested AD for PINNs
