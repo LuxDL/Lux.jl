@@ -125,7 +125,7 @@ function loss_function_batched(model, x, ps, st, y)
     smodel = StatefulLuxLayer{true}(model, ps, st)
     ŷ = smodel(x)
     loss_emp = sum(abs2, ŷ .- y)
-    # You can use `Zygote.jacobian` as well but ForwardDiff tends to be more efficient here
+    # You can use `AutoZygote()` as well but `AutoForwardDiff()` tends to be more efficient here
     J = batched_jacobian(smodel, AutoForwardDiff(), x)
     loss_reg = abs2(norm(J .* 0.01f0))
     return loss_emp + loss_reg
