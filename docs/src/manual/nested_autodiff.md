@@ -110,7 +110,7 @@ calculation.
 
 Notice that in this example the Jacobian `J` consists on the full matrix of derivatives of `smodel` with respect
 the different inputs in `x`. In many cases, we are interested in computing the Jacobian with respect to each 
-input individually, avoiding the unnecessary calculation of zero entries of the Jacobian. This can be achived with 
+input individually, avoiding the unnecessary calculation of zero entries of the Jacobian. This can be achieved with 
 [`batched_jacobian`](@ref) to parse the calculation of the Jacobian per each single input. Using the same example 
 from the previous section:
 
