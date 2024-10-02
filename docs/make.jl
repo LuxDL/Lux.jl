@@ -45,7 +45,8 @@ pages = [
         "manual/migrate_from_flux.md",
         "manual/weight_initializers.md",
         "manual/distributed_utils.md",
-        "manual/nested_autodiff.md"
+        "manual/nested_autodiff.md",
+        "manual/compiling_lux_models.md",
     ],
     "API Reference" => [
         "Lux" => [
