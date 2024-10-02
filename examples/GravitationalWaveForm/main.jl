@@ -293,7 +293,7 @@ const mseloss = MSELoss()
 function loss(θ)
     pred = Array(solve(prob_nn, RK4(); u0, p=θ, saveat=tsteps, dt, adaptive=false))
     pred_waveform = first(compute_waveform(dt_data, pred, mass_ratio, ode_model_params))
-    return mseloss(pred_waveform, waveform), pred_waveform
+    return mseloss(pred_waveform, waveform)
 end
 
 # Warmup the loss function
@@ -302,9 +302,9 @@ loss(params)
 # Now let us define a callback function to store the loss over time
 const losses = Float64[]
 
-function callback(θ, l, pred_waveform)
+function callback(θ, l)
     push!(losses, l)
-    @printf "Training %10s Iteration: %5d %10s Loss: %.10f\n" "" length(losses) "" l
+    @printf "Training \t Iteration: %5d \t Loss: %.10f\n" θ.iter l
     return false
 end
 
