@@ -121,7 +121,7 @@ function gpu_device(device_id::Union{Nothing, <:Integer}=nothing; force::Bool=fa
         if device_id === nothing
             force &&
                 !(dev isa AbstractGPUDevice) &&
-                throw(Internal.DeviceSelectionException())
+                throw(Internal.DeviceSelectionException("GPU"))
             return dev
         else
             selected_device_id = Internal.get_device_id(dev)
