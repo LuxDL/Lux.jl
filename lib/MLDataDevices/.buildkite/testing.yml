@@ -1,7 +1,7 @@
 steps:
   - group: ":julia: CUDA GPU"
     steps:
-      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
+      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU (Backend Group: {{matrix.group}})"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -16,13 +16,16 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         env:
-          BACKEND_GROUP: "CUDA"
+          BACKEND_GROUP: "{{matrix.group}}"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
           setup:
             julia:
               - "1"
+            group:
+              - CUDA
+              - XLA
 
   - group: ":telescope: Downstream CUDA"
     steps:

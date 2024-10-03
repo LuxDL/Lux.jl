@@ -66,7 +66,7 @@ supported_gpu_backends() = map(Internal.get_device_name, GPU_DEVICES)
 
 """
     gpu_device(device_id::Union{Nothing, Integer}=nothing;
-        force_gpu_usage::Bool=false) -> AbstractDevice()
+        force::Bool=false) -> AbstractDevice
 
 Selects GPU device based on the following criteria:
 
@@ -75,7 +75,7 @@ Selects GPU device based on the following criteria:
  2. Otherwise, an automatic selection algorithm is used. We go over possible device
     backends in the order specified by `supported_gpu_backends()` and select the first
     functional backend.
- 3. If no GPU device is functional and  `force_gpu_usage` is `false`, then `cpu_device()` is
+ 3. If no GPU device is functional and  `force` is `false`, then `cpu_device()` is
     invoked.
  4. If nothing works, an error is thrown.
 
@@ -102,17 +102,24 @@ Selects GPU device based on the following criteria:
 
 ## Keyword Arguments
 
-  - `force_gpu_usage::Bool`: If `true`, then an error is thrown if no functional GPU
+  - `force::Bool`: If `true`, then an error is thrown if no functional GPU
     device is found.
 """
-function gpu_device(device_id::Union{Nothing, <:Integer}=nothing;
-        force_gpu_usage::Bool=false)::AbstractDevice
+function gpu_device(device_id::Union{Nothing, <:Integer}=nothing; force::Bool=false,
+        force_gpu_usage::Union{Missing, Bool}=missing)::AbstractDevice
+    if force_gpu_usage !== missing
+        Base.depwarn(
+            "`force_gpu_usage` is deprecated and will be removed in v2. Use \
+             `force` instead.", :gpu_device)
+        force = force_gpu_usage
+    end
+
     device_id == 0 && throw(ArgumentError("`device_id` is 1-indexed."))
 
     if GPU_DEVICE[] !== nothing
         dev = GPU_DEVICE[]
         if device_id === nothing
-            force_gpu_usage &&
+            force &&
                 !(dev isa AbstractGPUDevice) &&
                 throw(Internal.DeviceSelectionException())
             return dev
@@ -122,7 +129,7 @@ function gpu_device(device_id::Union{Nothing, <:Integer}=nothing;
         end
     end
 
-    device_type = Internal.get_gpu_device(; force_gpu_usage)
+    device_type = Internal.get_gpu_device(; force)
     device = Internal.with_device(device_type, device_id)
     GPU_DEVICE[] = device
 
@@ -179,19 +186,25 @@ Return a `CPUDevice` object which can be used to transfer data to CPU.
 cpu_device() = CPUDevice()
 
 """
-    xla_device() -> XLADevice()
+    xla_device(; force::Bool=false) -> Union{XLADevice, CPUDevice}
 
-Return a `XLADevice` object.
+Return a `XLADevice` object if functional. Otherwise, throw an error if `force` is `true`.
+Falls back to `CPUDevice` if `force` is `false`.
 
 !!! danger
 
     This is an experimental feature and might change without deprecations
 """
-function xla_device()
-    @assert loaded(XLADevice)&&functional(XLADevice) "`XLADevice` is not loaded or not \
-                                                      functional. Load `Reactant.jl` \
-                                                      before calling this function."
-    return XLADevice()
+function xla_device(; force::Bool=false)
+    msg = "`XLADevice` is not loaded or not functional. Load `Reactant.jl` before calling \
+           this function. Defaulting to CPU."
+    if loaded(XLADevice)
+        functional(XLADevice) && return XLADevice()
+        msg = "`XLADevice` is loaded but not functional. Defaulting to CPU."
+    end
+    force && throw(Internal.DeviceSelectionException("XLA"))
+    @warn msg maxlog=1
+    return cpu_device()
 end
 
 """

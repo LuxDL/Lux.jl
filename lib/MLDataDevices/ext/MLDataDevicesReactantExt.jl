@@ -2,7 +2,7 @@ module MLDataDevicesReactantExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, Internal, XLADevice, CPUDevice
-using Reactant: Reactant, RArray, ConcreteRArray
+using Reactant: Reactant, RArray
 
 MLDataDevices.loaded(::Union{XLADevice, Type{<:XLADevice}}) = true
 MLDataDevices.functional(::Union{XLADevice, Type{<:XLADevice}}) = true
@@ -21,6 +21,6 @@ Internal.get_device_type(::RArray) = XLADevice
 Internal.unsafe_free_internal!(::Type{XLADevice}, x::AbstractArray) = nothing
 
 # Device Transfer
-Adapt.adapt_storage(::XLADevice, x::AbstractArray) = ConcreteRArray(x)
+Adapt.adapt_storage(::XLADevice, x::AbstractArray) = Reactant.to_rarray(x)
 
 end

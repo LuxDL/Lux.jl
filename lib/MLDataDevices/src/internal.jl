@@ -35,13 +35,15 @@ for T in (CPUDevice, CUDADevice{Nothing}, AMDGPUDevice{Nothing},
     @eval get_device_id(::$(T)) = nothing
 end
 
-struct DeviceSelectionException <: Exception end
-
-function Base.showerror(io::IO, ::DeviceSelectionException)
-    return print(io, "DeviceSelectionException(No functional GPU device found!!)")
+struct DeviceSelectionException <: Exception
+    dev::String
 end
 
-function get_gpu_device(; force_gpu_usage::Bool)
+function Base.showerror(io::IO, d::DeviceSelectionException)
+    return print(io, "DeviceSelectionException: No functional $(d.dev) device found!")
+end
+
+function get_gpu_device(; force::Bool)
     backend = load_preference(MLDataDevices, "gpu_backend", nothing)
 
     # If backend set with preferences, use it
@@ -88,7 +90,7 @@ function get_gpu_device(; force_gpu_usage::Bool)
         end
     end
 
-    force_gpu_usage && throw(DeviceSelectionException())
+    force && throw(DeviceSelectionException("GPU"))
     @warn """No functional GPU backend found! Defaulting to CPU.
 
              1. If no GPU is available, nothing needs to be done.
@@ -147,7 +149,7 @@ for op in (:get_device, :get_device_type)
         end
     end
 
-    for T in (Number, AbstractRNG, Val, Symbol, String, Nothing)
+    for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
         @eval $(op)(::$(T)) = $(op == :get_device ? nothing : Nothing)
     end
 end
