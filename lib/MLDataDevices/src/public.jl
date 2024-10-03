@@ -1,4 +1,5 @@
-struct CPUDevice <: AbstractDevice end
+struct CPUDevice <: AbstractCPUDevice end
+
 @kwdef struct CUDADevice{D} <: AbstractGPUDevice
     device::D = nothing
 end
@@ -7,6 +8,9 @@ end
 end
 struct MetalDevice <: AbstractGPUDevice end
 struct oneAPIDevice <: AbstractGPUDevice end
+
+# TODO: Later we might want to add the client field here?
+struct XLADevice <: AbstractAcceleratorDevice end
 
 """
     functional(x::AbstractDevice) -> Bool
@@ -175,6 +179,22 @@ Return a `CPUDevice` object which can be used to transfer data to CPU.
 cpu_device() = CPUDevice()
 
 """
+    xla_device() -> XLADevice()
+
+Return a `XLADevice` object.
+
+!!! danger
+
+    This is an experimental feature and might change without deprecations
+"""
+function xla_device()
+    @assert loaded(XLADevice) && functional(XLADevice) "`XLADevice` is not loaded or not \
+                                                        functional. Load `Reactant.jl` \
+                                                        before calling this function."
+    return XLADevice()
+end
+
+"""
     default_device_rng(::AbstractDevice)
 
 Returns the default RNG for the device. This can be used to directly generate parameters
@@ -186,7 +206,8 @@ function default_device_rng(D::AbstractDevice)
            either because:
 
            1. The default RNG for this device is not known / officially provided.
-           2. The trigger package for the device ($(Internal.get_device_name(D)).jl) is not loaded.
+           2. The trigger package for the device ($(Internal.get_device_name(D)).jl) is \
+              not loaded.
            """)
 end
 default_device_rng(::CPUDevice) = Random.default_rng()
@@ -268,6 +289,8 @@ function set_device!(::Type{T}, dev_or_id) where {T <: AbstractDevice}
         @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting."
     T === CPUDevice &&
         @warn "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting."
+    T === XLADevice &&
+        @warn "Setting device for `XLADevice` hasn't been implemented yet. Ignoring the device setting."
     return
 end
 
@@ -292,7 +315,7 @@ end
 # Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
 # For all other types we rely on fmap which means we lose type stability.
 # For Lux, typically models only has these 3 datastructures so we should be mostly fine.
-for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
+for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :XLA)
     ldev = Symbol(dev, :Device)
     @eval begin
         function (D::$(ldev))(x::AbstractArray{T}) where {T}
@@ -318,7 +341,7 @@ end
 Adapt.adapt_storage(::CPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
 Adapt.adapt_storage(::CPUDevice, rng::AbstractRNG) = rng
 
-for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice)
+for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, XLADevice)
     @eval begin
         function Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG)
             return default_device_rng(to)
@@ -328,6 +351,7 @@ for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice)
 end
 
 Adapt.adapt_storage(::CPUDevice, x::AbstractRange) = x
+Adapt.adapt_storage(::XLADevice, x::AbstractRange) = x
 # Prevent Ambiguity
 for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
     CUDADevice{Nothing}, MetalDevice, oneAPIDevice)

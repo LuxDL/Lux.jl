@@ -17,10 +17,12 @@ devices. It is used in deep learning frameworks such as [Lux.jl](https://lux.csa
 
 Currently we provide support for the following backends:
 
-1. `CUDA.jl` for NVIDIA GPUs.
-2. `AMDGPU.jl` for AMD ROCM GPUs.
-3. `Metal.jl` for Apple Metal GPUs. **(Experimental)**
-4. `oneAPI.jl` for Intel GPUs. **(Experimental)**
+1. `CPUDevice`: for CPUs -- no additional packages required.
+2. `CUDADevice`: `CUDA.jl` for NVIDIA GPUs.
+3. `AMDGPUDevice`: `AMDGPU.jl` for AMD ROCM GPUs.
+4. `MetalDevice`: `Metal.jl` for Apple Metal GPUs. **(Experimental)**
+5. `oneAPIDevice`: `oneAPI.jl` for Intel GPUs. **(Experimental)**
+6. `XLADevice`: `Reactant.jl` for XLA Support. **(Experimental)**
 
 ## Updating to v1.0
 
