@@ -44,7 +44,7 @@ julia> for (i, x) in enumerate(CUDADevice()(dataloader))
 (i, summary(x)) = (3, "3×7 CuArray{Float32, 2, CUDA.DeviceMemory}")
 ```
 """
-struct DeviceIterator{D <: AbstractDevice, I}
+struct DeviceIterator{D <: Function, I}
     dev::D
     iterator::I
 end

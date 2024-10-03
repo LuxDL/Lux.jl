@@ -60,6 +60,7 @@ end
     end
 
     @testset "DataLoader: parallel=$parallel" for parallel in (true, false)
+        @info "Testing DataLoader with parallel=$parallel"
         X = rand(Float64, 3, 33)
         pre = DataLoader(dev(X); batchsize=13, shuffle=false, parallel)
         post = DataLoader(X; batchsize=13, shuffle=false, parallel) |> dev
