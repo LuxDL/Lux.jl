@@ -188,9 +188,9 @@ Return a `XLADevice` object.
     This is an experimental feature and might change without deprecations
 """
 function xla_device()
-    @assert loaded(XLADevice) && functional(XLADevice) "`XLADevice` is not loaded or not \
-                                                        functional. Load `Reactant.jl` \
-                                                        before calling this function."
+    @assert loaded(XLADevice)&&functional(XLADevice) "`XLADevice` is not loaded or not \
+                                                      functional. Load `Reactant.jl` \
+                                                      before calling this function."
     return XLADevice()
 end
 
