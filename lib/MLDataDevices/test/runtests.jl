@@ -20,8 +20,9 @@ if !isempty(EXTRA_PKGS)
 end
 
 @testset "MLDataDevices Tests" begin
-    file_names = BACKEND_GROUP == "all" ?
-                 ["cuda_tests.jl", "amdgpu_tests.jl", "metal_tests.jl", "oneapi_tests.jl"] :
+    all_files = ["cuda_tests.jl", "amdgpu_tests.jl",
+        "metal_tests.jl", "oneapi_tests.jl", "xla_tests.jl"]
+    file_names = BACKEND_GROUP == "all" ? all_files :
                  (BACKEND_GROUP == "cpu" ? [] : [BACKEND_GROUP * "_tests.jl"])
     @testset "$(file_name)" for file_name in file_names
         run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
