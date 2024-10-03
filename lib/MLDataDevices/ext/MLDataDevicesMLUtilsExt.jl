@@ -4,7 +4,7 @@ using MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGP
                      MetalDevice, oneAPIDevice, XLADevice, DeviceIterator
 using MLUtils: MLUtils, DataLoader
 
-for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
+for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, XLADevice)
     @eval function (D::$(dev))(dataloader::DataLoader)
         if dataloader.parallel
             if dataloader.buffer
@@ -27,9 +27,6 @@ for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice)
         return DeviceIterator(D, dataloader)
     end
 end
-
-# XXX: Doing it in parallel leads to deadlocks
-(D::XLADevice)(dataloader::DataLoader) = DeviceIterator(D, dataloader)
 
 function eachobsparallel(dev::AbstractDevice, data)
     return MLUtils.Loader(1:MLUtils.numobs(data)) do ch, i
