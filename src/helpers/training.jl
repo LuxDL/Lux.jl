@@ -10,6 +10,7 @@ using Static: StaticBool, Static, False, True
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
+using MLDataDevices: XLADevice, get_device_type
 
 """
     TrainState
@@ -95,6 +96,8 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     ts.objective_function !== nothing &&
         print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
+
+struct ReactantBackend end
 
 const APPLY_GRAD_DOCSTRING = """
 ## Arguments
@@ -183,13 +186,30 @@ A 4-Tuple containing:
     returned in step `i + 1` might be aliased by the old gradients. If you want to prevent
     this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
-function compute_gradients(ad::AbstractADType, ::F, _, ::TrainState) where {F}
+function compute_gradients(ad::AbstractADType, obj_fn::F, data, ts::TrainState) where {F}
+    dev_type = get_device_type((data, ts.parameters, ts.states))
+    return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type), obj_fn, data, ts)
+end
+
+maybe_wrap_adtype(backend::ReactantBackend, _) = backend
+maybe_wrap_adtype(ad::AbstractADType, _) = ad
+function maybe_wrap_adtype(ad::AbstractADType, ::Type{XLADevice})
+    ad isa AutoEnzyme && return ReactantBackend()
+    throw(ArgumentError("Computing gradients for models on XLA is supported only with \
+                         Enzyme.jl (`AutoEnzyme`)."))
+end
+
+function compute_gradients_impl(ad, ::F, _, ts::TrainState) where {F}
     return check_if_compute_gradients_implemented(ad)
 end
 
 function check_if_compute_gradients_implemented(::T) where {T <: AbstractADType}
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented \
                          yet!"))
+end
+
+function check_if_compute_gradients_implemented(::ReactantBackend)
+    throw(ArgumentError("Load `Reactant` with `using Reactant` before using this function!"))
 end
 
 for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
