@@ -42,6 +42,7 @@ jobs:
           - "recurrent_layers"
           - "eltype_match"
           - "fluxcompat"
+          - "reactant"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

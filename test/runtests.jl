@@ -6,7 +6,7 @@ using InteractiveUtils, Hwloc
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = [
     "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
-    "others", "autodiff", "recurrent_layers", "fluxcompat"]
+    "others", "autodiff", "recurrent_layers", "fluxcompat", "reactant"]
 
 INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
@@ -30,6 +30,8 @@ end
     push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "reactant") &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS

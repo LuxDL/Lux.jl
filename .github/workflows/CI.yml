@@ -42,6 +42,7 @@ jobs:
           - "recurrent_layers"
           - "eltype_match"
           - "fluxcompat"
+          - "reactant"
         include:
           - version: "1.10"
             os: macos-latest
