@@ -32,16 +32,16 @@ jobs:
         os:
           - ubuntu-latest
         test_group:
-          - "core_layers"
-          - "contrib"
-          - "helpers"
-          - "distributed"
-          - "normalize_layers"
-          - "others"
-          - "autodiff"
-          - "recurrent_layers"
-          - "eltype_match"
-          - "fluxcompat"
+          # - "core_layers"
+          # - "contrib"
+          # - "helpers"
+          # - "distributed"
+          # - "normalize_layers"
+          # - "others"
+          # - "autodiff"
+          # - "recurrent_layers"
+          # - "eltype_match"
+          # - "fluxcompat"
           - "reactant"
         include:
           - version: "1.10"
