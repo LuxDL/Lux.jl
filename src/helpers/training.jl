@@ -186,8 +186,8 @@ A 4-Tuple containing:
     returned in step `i + 1` might be aliased by the old gradients. If you want to prevent
     this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
-function compute_gradients(ad::AbstractADType, obj_fn::F, data, ts::TrainState) where {F}
-    dev_type = get_device_type((data, ts.parameters, ts.states))
+function compute_gradients(ad, obj_fn::F, data, ts::TrainState) where {F}
+    dev_type = get_device_type((ts.parameters, ts.states))
     return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type), obj_fn, data, ts)
 end
 
@@ -264,7 +264,10 @@ only the parameters in `ts` are updated inplace. Users should be using the retur
 object for further training steps, else there is no caching and performance will be
 suboptimal (and absolutely terrible for backends like `AutoReactant`).
 """
-function single_train_step! end
+function single_train_step!(backend, obj_fn::F, data, ts::TrainState) where {F}
+    backend = maybe_wrap_adtype(backend, get_device_type((ts.parameters, ts.states)))
+    return single_train_step_impl!(backend, obj_fn, data, ts)
+end
 
 """
     single_train_step(backend, obj_fn::F, data, ts::TrainState)
@@ -279,10 +282,14 @@ In most cases you should use [`single_train_step!`](@ref) instead of this functi
 
 Returned values are the same as [`compute_gradients`](@ref).
 """
-function single_train_step end
+function single_train_step(backend, obj_fn::F, data, ts::TrainState) where {F}
+    backend = maybe_wrap_adtype(backend, get_device_type((ts.parameters, ts.states)))
+    return single_train_step_impl(backend, obj_fn, data, ts)
+end
 
 for inplace in ("!", "")
-    step, apply_fn = Symbol(:single_train_step, inplace), Symbol(:apply_gradients, inplace)
+    step = Symbol(:single_train_step_impl, inplace)
+    apply_fn = Symbol(:apply_gradients, inplace)
     @eval function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
         grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
         ts = $(apply_fn)(ts, grads)
