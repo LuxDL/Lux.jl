@@ -79,15 +79,21 @@ for inplace in ("!", "")
     end
 end
 
-for inplace in ("!", "")
-    fname = Symbol(:compute_gradients_internal_and_step, inplace)
-    update_fn = Symbol(:update, inplace)
-    @eval function $(fname)(objective_function::F, model, data, ps, dps,
-            st, opt_state) where {F}
-        _, (loss, stₙ, stats) = Enzyme.autodiff(
-            Enzyme.ReverseWithPrimal, Const(objective_function), Active, Const(model),
-            Duplicated(ps, dps), Const(st), Const(data))
-        opt_state, ps = Optimisers.$(update_fn)(opt_state, ps, dps)
-        return dps, ps, loss, stats, stₙ, opt_state
-    end
+function compute_gradients_internal_and_step(objective_function::F, model, data, ps, dps,
+        st, opt_state) where {F}
+    _, (loss, stₙ, stats) = Enzyme.autodiff(
+        Enzyme.ReverseWithPrimal, Const(objective_function), Active, Const(model),
+        Duplicated(ps, dps), Const(st), Const(data))
+    opt_state, ps = Optimisers.update(opt_state, ps, dps)
+    return dps, ps, loss, stats, stₙ, opt_state
+end
+
+function compute_gradients_internal_and_step!(objective_function::F, model, data, ps, dps,
+        st, opt_state) where {F}
+    _, (loss, stₙ, stats) = Enzyme.autodiff(
+        Enzyme.ReverseWithPrimal, Const(objective_function), Active, Const(model),
+        Duplicated(ps, dps), Const(st), Const(data))
+    # XXX: Inplace updates not actually inplace
+    opt_state, ps = Optimisers.update!(opt_state, ps, dps)
+    return dps, ps, loss, stats, stₙ, opt_state
 end
