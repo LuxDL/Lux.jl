@@ -26,12 +26,13 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
 end
 ("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
+("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
+    push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
+
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "reactant") &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
