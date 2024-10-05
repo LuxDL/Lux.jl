@@ -1,5 +1,5 @@
 @testitem "Compiled Loss Functions" tags=[:reactant] setup=[SharedTestSetup] begin
-    using Reactant, Enzyme, Lux, OneHotArrays
+    using Reactant, Lux, OneHotArrays
 
     rng = StableRNG(123)
 

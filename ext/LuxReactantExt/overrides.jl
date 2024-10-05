@@ -1,3 +1,4 @@
+# Loss Functions
 for fnType in (typeof(sum), Any, typeof(mean))
     @eval begin
         function LossFunctionImpl.fused_agg(
