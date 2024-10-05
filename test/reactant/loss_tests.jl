@@ -1,5 +1,5 @@
 @testitem "Compiled Loss Functions" tags=[:reactant] setup=[SharedTestSetup] begin
-    using Reactant, Enzyme, Lux
+    using Reactant, Enzyme, Lux, OneHotArrays
 
     rng = StableRNG(123)
 
@@ -66,7 +66,78 @@
             end
         end
 
-        @testset "Classification Loss" begin end
+        @testset "Classification Loss" begin
+            y = onehotbatch([1, 1, 0, 0], 0:1) |> Array
+            ŷ = [0.1 0.9; 0.9 0.1; 0.9 0.1; 0.1 0.9]' |> Array
+
+            y_ra = Reactant.to_rarray(y)
+            ŷ_ra = Reactant.to_rarray(ŷ)
+
+            @testset "CrossEntropyLoss" begin
+                celoss = CrossEntropyLoss()
+                celoss_compiled = @compile celoss(ŷ_ra, y_ra)
+                @test celoss(ŷ, y) ≈ celoss_compiled(ŷ_ra, y_ra)
+
+                celoss_ls = CrossEntropyLoss(; label_smoothing=0.1)
+                celoss_ls_compiled = @compile celoss_ls(ŷ_ra, y_ra)
+                @test celoss_ls(ŷ, y) ≈ celoss_ls_compiled(ŷ_ra, y_ra)
+
+                celoss_lp = CrossEntropyLoss(; logits=Val(true))
+                celoss_lp_compiled = @compile celoss_lp(log.(ŷ_ra), y_ra)
+                @test celoss_lp(log.(ŷ), y) ≈ celoss_lp_compiled(log.(ŷ_ra), y_ra)
+
+                celoss_lp_ls = CrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
+                celoss_lp_ls_compiled = @compile celoss_lp_ls(log.(ŷ_ra), y_ra)
+                @test celoss_lp_ls(log.(ŷ), y) ≈ celoss_lp_ls_compiled(log.(ŷ_ra), y_ra)
+            end
+
+            @testset "Binary CrossEntropyLoss" begin
+                bceloss = BinaryCrossEntropyLoss()
+                bceloss_compiled = @compile bceloss(ŷ_ra, y_ra)
+                @test bceloss(ŷ, y) ≈ bceloss_compiled(ŷ_ra, y_ra)
+
+                bceloss_ls = BinaryCrossEntropyLoss(; label_smoothing=0.1)
+                bceloss_ls_compiled = @compile bceloss_ls(ŷ_ra, y_ra)
+                @test bceloss_ls(ŷ, y) ≈ bceloss_ls_compiled(ŷ_ra, y_ra)
+
+                bceloss_lp = BinaryCrossEntropyLoss(; logits=Val(true))
+                bceloss_lp_compiled = @compile bceloss_lp(log.(ŷ_ra), y_ra)
+                @test bceloss_lp(log.(ŷ), y) ≈ bceloss_lp_compiled(log.(ŷ_ra), y_ra)
+
+                bceloss_lp_ls = BinaryCrossEntropyLoss(;
+                    logits=Val(true), label_smoothing=0.1)
+                bceloss_lp_ls_compiled = @compile bceloss_lp_ls(log.(ŷ_ra), y_ra)
+                @test bceloss_lp_ls(log.(ŷ), y) ≈ bceloss_lp_ls_compiled(log.(ŷ_ra), y_ra)
+            end
+
+            @testset "BinaryFocalLoss" begin
+                y = [0 1 0
+                     1 0 1]
+                ŷ = [0.268941 0.5 0.268941
+                     0.731059 0.5 0.731059]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                bfl = BinaryFocalLoss()
+                bfl_compiled = @compile bfl(ŷ_ra, y_ra)
+                @test bfl(ŷ, y) ≈ bfl_compiled(ŷ_ra, y_ra)
+            end
+
+            @testset "FocalLoss" begin
+                y = [1 0 0 0 1
+                     0 1 0 1 0
+                     0 0 1 0 0]
+                ŷ = softmax(reshape(-7:7, 3, 5) .* 1.0f0) |> Array
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                fl = FocalLoss()
+                fl_compiled = @compile fl(ŷ_ra, y_ra)
+                @test fl(ŷ, y) ≈ fl_compiled(ŷ_ra, y_ra)
+            end
+        end
 
         @testset "Other Losses" begin end
     end
