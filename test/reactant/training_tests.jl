@@ -1,4 +1,4 @@
-@testitem "Reactant: Training Tests" tags=[:reactant] setup=[SharedTestSetup] begin
+@testitem "Reactant: Training API" tags=[:reactant] setup=[SharedTestSetup] begin
     using Reactant
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
