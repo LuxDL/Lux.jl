@@ -139,6 +139,102 @@
             end
         end
 
-        @testset "Other Losses" begin end
+        @testset "Other Losses" begin
+            @testset "KLDivergenceLoss" begin
+                y = [1.0 2.0 3.0]
+                ŷ = [4.0 5.0 6.0]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                kldl = KLDivergenceLoss()
+                kldl_compiled = @compile kldl(ŷ_ra, y_ra)
+                @test kldl(ŷ, y) ≈ kldl_compiled(ŷ_ra, y_ra)
+            end
+
+            @testset "HingeLoss" begin
+                y = [1.0, 2.0, 3.0, 4.0]
+                ŷ = [5.0, 6.0, 7.0, 8.0]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                hl = HingeLoss()
+                hl_compiled = @compile hl(ŷ_ra, y_ra)
+                @test hl(ŷ, y) ≈ hl_compiled(ŷ_ra, y_ra)
+
+                hl = HingeLoss(; agg=mean)
+                hl_compiled = @compile hl(ŷ_ra, y_ra)
+                @test hl(ŷ, y) ≈ hl_compiled(ŷ_ra, y_ra)
+            end
+
+            @testset "SquaredHingeLoss" begin
+                y = [1.0, 2.0, 3.0, 4.0]
+                ŷ = [5.0, 6.0, 7.0, 8.0]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                hl = SquaredHingeLoss()
+                hl_compiled = @compile hl(ŷ_ra, y_ra)
+                @test hl(ŷ, y) ≈ hl_compiled(ŷ_ra, y_ra)
+
+                hl = SquaredHingeLoss(; agg=mean)
+                hl_compiled = @compile hl(ŷ_ra, y_ra)
+                @test hl(ŷ, y) ≈ hl_compiled(ŷ_ra, y_ra)
+            end
+
+            @testset "PoissonLoss" begin
+                y = [0.1, 0.2, 0.3]
+                ŷ = [0.4, 0.5, 0.6]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                pl = PoissonLoss()
+                pl_compiled = @compile pl(ŷ_ra, y_ra)
+                @test pl(ŷ, y) ≈ pl_compiled(ŷ_ra, y_ra)
+
+                pl = PoissonLoss(; agg=mean)
+                pl_compiled = @compile pl(ŷ_ra, y_ra)
+                @test pl(ŷ, y) ≈ pl_compiled(ŷ_ra, y_ra)
+            end
+
+            @testset "DiceCoeffLoss" begin
+                y = [1.0, 0.5, 0.3, 2.4]
+                ŷ = [0.0, 1.4, 0.5, 1.2]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                dl = DiceCoeffLoss()
+                dl_compiled = @compile dl(ŷ_ra, y_ra)
+                @test dl(ŷ, y) ≈ dl_compiled(ŷ_ra, y_ra)
+
+                dl = DiceCoeffLoss(; agg=mean)
+                dl_compiled = @compile dl(ŷ_ra, y_ra)
+                @test dl(ŷ, y) ≈ dl_compiled(ŷ_ra, y_ra)
+            end
+
+            @testset "Siamese Contrastive Loss" begin
+                y = [1.0 0.0
+                     0.0 0.0
+                     0.0 1.0]
+                ŷ = [0.4 0.2
+                     0.5 0.5
+                     0.1 0.3]
+
+                y_ra = Reactant.to_rarray(y)
+                ŷ_ra = Reactant.to_rarray(ŷ)
+
+                sl = SiameseContrastiveLoss()
+                sl_compiled = @compile sl(ŷ_ra, y_ra)
+                @test sl(ŷ, y) ≈ sl_compiled(ŷ_ra, y_ra)
+
+                sl = SiameseContrastiveLoss(; agg=mean)
+                sl_compiled = @compile sl(ŷ_ra, y_ra)
+                @test sl(ŷ, y) ≈ sl_compiled(ŷ_ra, y_ra)
+            end
+        end
     end
 end

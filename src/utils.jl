@@ -86,7 +86,7 @@ function pairs(x)
     return Base.pairs(x)
 end
 
-@concrete struct Fix3
+@concrete struct Fix3 <: Function
     f
     x
 end

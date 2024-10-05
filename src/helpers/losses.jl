@@ -148,7 +148,7 @@ function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1, T2}
 end
 
 function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
-    return (true - y) * x^2 + y * max(promote_type(T1, T2)(false), margin - x)^2
+    return (true - y) * x^2 + y * max(convert(promote_type(T1, T2), false), margin - x)^2
 end
 
 poisson_loss(x::T1, y::T2, ϵ) where {T1, T2} = x - xlogy(y, x + get_ϵ(T1, ϵ))
