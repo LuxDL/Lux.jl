@@ -1,5 +1,5 @@
 # https://github.com/JuliaML/LossFunctions.jl/blob/d07bacab74f4db420833106ebd0b438d22bd2014/src/losses/distance.jl#L213
-for fnType in (typeof(sum), Any)
+for fnType in (typeof(sum), Any, typeof(mean))
     @eval function LossFunctionImpl.fused_agg(
             fn::$(fnType), lfn::LossFunctions.HuberLoss{T1}, x::TracedRArray{T2, N},
             y::TracedRArray{T3, N}) where {T1, T2, T3, N}

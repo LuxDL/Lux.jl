@@ -6,6 +6,7 @@ using Optimisers: Optimisers
 using Reactant: Reactant, @compile, TracedRArray
 using Setfield: @set!
 using Static: False
+using Statistics: mean
 
 using Lux: Lux, LuxOps, Training, LossFunctionImpl
 using Lux.Training: TrainingBackendCache, ReactantBackend
