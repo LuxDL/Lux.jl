@@ -24,15 +24,11 @@
             fn1(x) = LuxOps.xlogx.(x)
             fn2(x, y) = LuxOps.xlogy.(x, y)
 
-            @test begin
-                fn1_compiled = @compile fn1(x_ra)
-                fn1(x) ≈ fn1_compiled(x_ra)
-            end
+            fn1_compiled = @compile fn1(x_ra)
+            @test fn1(x) ≈ fn1_compiled(x_ra)
 
-            @test begin
-                fn2_compiled = @compile fn2(x_ra, y_ra)
-                fn2(x, y) ≈ fn2_compiled(x_ra, y_ra)
-            end broken=true
+            fn2_compiled = @compile fn2(x_ra, y_ra)
+            @test fn2(x, y) ≈ fn2_compiled(x_ra, y_ra)
         end
 
         @testset "Regression Loss" begin end
