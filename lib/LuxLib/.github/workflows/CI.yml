@@ -24,16 +24,13 @@ jobs:
     name: Julia ${{ matrix.version }} - ${{ matrix.test_group }} - ${{ matrix.os }} - ${{ matrix.blas_backend }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         version:
-          - "1"
+          - "1.10"
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest
         test_group:
           - "conv"
           - "dense"
@@ -46,22 +43,27 @@ jobs:
           - "others"
         blas_backend:
           - "default"
-        exclude:
-          - os: macos-latest
-            test_group: "conv" # Never terminates
         include:
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "blis"
-            version: "1"
+            version: "1.10"
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "mkl"
-            version: "1"
+            version: "1.10"
           - os: macos-latest
             test_group: "dense"
             blas_backend: "appleaccelerate"
-            version: "1"
+            version: "1.10"
+          - os: macos-latest
+            test_group: "all"
+            blas_backend: "default"
+            version: "1.10"
+          - os: windows-latest
+            test_group: "all"
+            blas_backend: "default"
+            version: "1.10"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -95,16 +97,13 @@ jobs:
   downstream:
     name: Downstream ${{ matrix.package.repo }}/${{ matrix.package.group }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
     env:
       GROUP: ${{ matrix.package.group }}
       LUX_TEST_GROUP: ${{ matrix.package.group }}
     strategy:
       fail-fast: false
       matrix:
-        julia-version: ["1"]
-        os: [ubuntu-latest]
         package:
           - { user: LuxDL, repo: Lux.jl, group: "core_layers" }
           - { user: LuxDL, repo: Lux.jl, group: "contrib" }
@@ -116,12 +115,12 @@ jobs:
           - { user: LuxDL, repo: Lux.jl, group: "recurrent_layers" }
           - { user: LuxDL, repo: Lux.jl, group: "eltype_match" }
           - { user: LuxDL, repo: Lux.jl, group: "fluxcompat" }
-          - { user: LuxDL, repo: Boltz.jl, group: All }
+          - { user: LuxDL, repo: Boltz.jl, group: "all" }
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.julia-version }}
+          version: "1.10"
           arch: x64
       - uses: julia-actions/julia-buildpkg@v1
       - name: Clone Downstream
@@ -156,14 +155,11 @@ jobs:
 
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
-    name: Downgrade Julia ${{ matrix.version }} - ${{ matrix.test_group }}
+    name: Downgrade Julia - ${{ matrix.test_group }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - "1"
         test_group:
           - "conv"
           - "dense"
@@ -178,7 +174,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: ${{ matrix.version }}
+          version: "1.10"
       - uses: julia-actions/julia-downgrade-compat@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
