@@ -6,7 +6,9 @@ using InteractiveUtils, Hwloc
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = [
     "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
-    "others", "autodiff", "recurrent_layers", "fluxcompat", "reactant"]
+    "others", "autodiff", "recurrent_layers", "fluxcompat"]
+
+Sys.iswindows() || push!(ALL_LUX_TEST_GROUPS, "reactant")
 
 INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
