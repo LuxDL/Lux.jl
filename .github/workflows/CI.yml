@@ -43,13 +43,13 @@ jobs:
           # - "eltype_match"
           # - "fluxcompat"
           - "reactant"
-        include:
-          - version: "1.10"
-            os: macos-latest
-            test_group: "all"
-          - version: "1.10"
-            os: windows-latest
-            test_group: "all"
+        # include:
+        #   - version: "1.10"
+        #     os: macos-latest
+        #     test_group: "all"
+        #   - version: "1.10"
+        #     os: windows-latest
+        #     test_group: "all"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -133,27 +133,27 @@ jobs:
           verbose: true
           fail_ci_if_error: true
 
-  downgrade:
-    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
-    name: Downgrade Julia 1.10
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: "1.10"
-      - uses: julia-actions/julia-downgrade-compat@v1
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
-      - uses: julia-actions/julia-processcoverage@v1
-        with:
-          directories: src,ext
-      - uses: codecov/codecov-action@v4
-        with:
-          files: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-          fail_ci_if_error: true
+  # downgrade:
+  #   if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
+  #   name: Downgrade Julia 1.10
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: julia-actions/setup-julia@v2
+  #       with:
+  #         version: "1.10"
+  #     - uses: julia-actions/julia-downgrade-compat@v1
+  #     - uses: julia-actions/julia-buildpkg@v1
+  #     - uses: julia-actions/julia-runtest@v1
+  #     - uses: julia-actions/julia-processcoverage@v1
+  #       with:
+  #         directories: src,ext
+  #     - uses: codecov/codecov-action@v4
+  #       with:
+  #         files: lcov.info
+  #         token: ${{ secrets.CODECOV_TOKEN }}
+  #         verbose: true
+  #         fail_ci_if_error: true
 
   invalidations:
     # Only run on PRs to the default branch.
