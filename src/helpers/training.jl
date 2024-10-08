@@ -10,7 +10,7 @@ using Static: StaticBool, Static, False, True
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: XLADevice, get_device_type
+using MLDataDevices: XLADevice, get_device_type, get_device, cpu_device
 
 """
     TrainState
@@ -62,7 +62,13 @@ Constructor for [`TrainState`](@ref).
 [`TrainState`](@ref) object.
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
-    st_opt = Optimisers.setup(optimizer, ps)
+    dev = get_device(ps)
+    st_opt = if dev isa XLADevice
+        ps_cpu = ps |> cpu_device()
+        Optimisers.setup(optimizer, ps_cpu) |> dev
+    else
+        Optimisers.setup(optimizer, ps)
+    end
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
 
