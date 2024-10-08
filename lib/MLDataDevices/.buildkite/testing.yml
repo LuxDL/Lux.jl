@@ -22,6 +22,7 @@ steps:
         matrix:
           setup:
             julia:
+              - "1.10"
               - "1"
             group:
               - CUDA
@@ -78,6 +79,7 @@ steps:
         matrix:
           setup:
             julia:
+              - "1.10"
               - "1"
 
   - group: ":telescope: Downstream AMD GPU"
@@ -134,6 +136,7 @@ steps:
         matrix:
           setup:
             julia:
+              - "1.10"
               - "1"
 
   - group: ":julia: oneAPI GPU"
@@ -159,6 +162,7 @@ steps:
         matrix:
           setup:
             julia:
+              - "1.10"
               - "1"
 
 env:
