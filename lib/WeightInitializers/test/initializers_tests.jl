@@ -154,7 +154,7 @@ end
                  init === randn32) &&
                 continue
 
-            if (backend == "oneapi" || backend == "metal") && init === truncated_normal
+            if backend == "oneapi" && init === truncated_normal
                 @test_broken size(init(rng, 3)) == (3,)  # `erfinv` not implemented
                 continue
             end
@@ -229,9 +229,7 @@ end
 
             init === truncated_normal && !(T <: Real) && continue
 
-            if (backend == "oneapi" || backend == "metal") &&
-               init === truncated_normal &&
-               T == Float32
+            if backend == "oneapi" && init === truncated_normal && T == Float32
                 @test_broken init(rng, T, 3) isa AbstractArray{T, 1}  # `erfinv` not implemented
                 continue
             end
@@ -261,7 +259,7 @@ end
         @testset "Closure: $init" for init in [
             kaiming_uniform, kaiming_normal, glorot_uniform,
             glorot_normal, truncated_normal, identity_init]
-            if (backend == "oneapi" || backend == "metal") && init === truncated_normal
+            if backend == "oneapi" && init === truncated_normal
                 @test_broken size(init(rng, 3)) == (3,)  # `erfinv` not implemented
                 continue
             end

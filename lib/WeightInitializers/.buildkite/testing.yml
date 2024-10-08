@@ -22,6 +22,7 @@ steps:
         matrix:
           setup:
             julia:
+              - "1.10"
               - "1"
 
   - group: ":telescope: Downstream CUDA"
@@ -40,7 +41,7 @@ steps:
           queue: "juliagpu"
           cuda: "*"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.pull_request.labels includes "run downstream test"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
             repo:
@@ -70,10 +71,11 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 240
         matrix:
           setup:
             julia:
+              - "1.10"
               - "1"
 
   - group: ":telescope: Downstream AMD GPU"
