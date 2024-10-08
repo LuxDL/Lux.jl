@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
+          - "min"
           - "1"
         os:
           - ubuntu-latest
@@ -118,7 +119,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["1"]
+        version: ["1.10"]
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
