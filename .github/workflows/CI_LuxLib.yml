@@ -27,7 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.10"
+          - "1"
         os:
           - ubuntu-latest
         test_group:
@@ -48,31 +48,47 @@ jobs:
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "blis"
-            version: "1.10"
+            version: "1"
             loopvec: "true"
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "mkl"
-            version: "1.10"
+            version: "1"
             loopvec: "true"
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "default"
-            version: "1.10"
+            version: "1"
             loopvec: "false"
           - os: ubuntu-latest
             test_group: "batched_ops"
             blas_backend: "default"
-            version: "1.10"
+            version: "1"
             loopvec: "false"
           - os: ubuntu-latest
             test_group: "other_ops"
             blas_backend: "default"
-            version: "1.10"
+            version: "1"
             loopvec: "false"
           - os: macos-latest
             test_group: "dense"
             blas_backend: "appleaccelerate"
+            version: "1"
+            loopvec: "true"
+          - os: macos-latest
+            test_group: "all"
+            blas_backend: "default"
+            version: "1"
+            loopvec: "true"
+          - os: windows-latest
+            test_group: "all"
+            blas_backend: "default"
+            version: "1"
+            loopvec: "true"
+          # 1.10 tests
+          - os: ubuntu-latest
+            test_group: "all"
+            blas_backend: "default"
             version: "1.10"
             loopvec: "true"
           - os: macos-latest

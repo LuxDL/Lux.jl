@@ -32,11 +32,9 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.10"
+          - "1"
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest
         test_group:
           - "core_layers"
           - "contrib"
@@ -49,6 +47,16 @@ jobs:
           - "eltype_match"
           - "fluxcompat"
           - "reactant"
+        include:
+          - version: "1.10"
+            os: "ubuntu-latest"
+            test_group: "all"
+          - version: "1.10"
+            os: "macos-latest"
+            test_group: "all"
+          - version: "1.10"
+            os: "windows-latest"
+            test_group: "all"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
