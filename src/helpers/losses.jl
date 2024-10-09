@@ -10,6 +10,7 @@ using FastClosures: @closure
 using ForwardDiff: ForwardDiff, Dual, Partials
 using Statistics: mean
 
+using ..Utils: Utils
 using ..LuxOps: xlogy
 
 const CRC = ChainRulesCore
@@ -33,13 +34,13 @@ fused_agg(::typeof(mean), op::OP, x) where {OP} = fused_agg(sum, op, x) / length
 fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
 fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
 
-fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
-fused_agg(f::F, op::OP, args...) where {F, OP} = f(op.(args...))
-function fused_agg(::typeof(mean), op::OP, x, y) where {OP}
-    return LossFunctionImpl.fused_agg(sum, op, x, y) / length(x)
+fused_agg(::typeof(mean), op::OP, x::Number, y::Number) where {OP} = op(x, y)
+function fused_agg(::typeof(mean), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
+    return fused_agg(sum, op, x, y) / length(x)
 end
 
-function fused_agg(::typeof(sum), op::OP, x, y) where {OP}
+fused_agg(::typeof(sum), op::OP, x::Number, y::Number) where {OP} = op(x, y)
+function fused_agg(::typeof(sum), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
     if fast_scalar_indexing(x) && fast_scalar_indexing(y)
         res = Core.Compiler._return_type(op, Tuple{eltype(x), eltype(y)})(0)
         @simd ivdep for i in eachindex(x, y)
@@ -47,17 +48,32 @@ function fused_agg(::typeof(sum), op::OP, x, y) where {OP}
         end
         return res
     end
-    return mapreduce(op, +, x, y)
+    return fallback_fused_agg(sum, op, x, y)
 end
+
+fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
+fused_agg(f::F, op::OP, args...) where {F, OP} = fallback_fused_agg(f, op, args...)
+
+@inline fallback_fused_agg(f::F, op::OP, args...) where {F, OP} = f(op.(args...))
 
 function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         ::typeof(fused_agg), ::typeof(sum), op::OP, x, y) where {OP}
+    if has_custom_derivative(op)
+        res = fused_agg(sum, op, x, y)
+        ∇fused_agg_custom_derivative = Δ -> begin
+            ∂x = @thunk derivative.(Ref(op), x, y) .* Δ
+            return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
+        end
+        return res, ∇fused_agg_custom_derivative
+    end
+
+    # Without custom derivatives use ForwardDiff for the looped implementation
     if fast_scalar_indexing(x) && fast_scalar_indexing(y)
         x_dual = Dual{
             Nothing, eltype(x), 1}.(x, (Partials{1, eltype(x)}((one(eltype(x)),)),))
         x_partials = similar(x)
-        res = Core.Compiler._return_type(op, Tuple{eltype(x), eltype(y)})(0)
         T = eltype(x)
+        res = Core.Compiler._return_type(op, Tuple{T, eltype(y)})(0)
         @inbounds @simd for i in eachindex(x_partials, x, y)
             x_dual = Dual{Nothing, T, 1}(x[i], Partials{1, T}((one(T),)))
             tmp = op(x_dual, y[i])
@@ -72,12 +88,8 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
         end
         return res, ∇fused_agg_loop
     end
-    res, ∇mapreduce = CRC.rrule_via_ad(cfg, mapreduce, op, +, x, y)
-    ∇fused_agg_mapreduce = @closure Δ -> begin
-        _, ∂op, _, ∂x, ∂y = ∇mapreduce(Δ)
-        return (NoTangent(), NoTangent(), ∂op, ∂x, ∂y)
-    end
-    return res, ∇fused_agg_mapreduce
+
+    return CRC.rrule_via_ad(cfg, fallback_fused_agg, sum, op, x, y)
 end
 
 get_ϵ(::Type{T}, ϵ::Real) where {T} = T(ϵ)
@@ -86,10 +98,23 @@ get_ϵ(::Type{T}, ::Nothing) where {T} = eps(float(T))
 get_loss_dims(::AbstractVector) = Colon()
 get_loss_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
 
+has_custom_derivative(::F) where {F} = false
+
+has_custom_derivative(f::Utils.Fix3) = has_custom_derivative(f.f)
+derivative(f::Utils.Fix3, x, y) = derivative(f.f, x, y, f.x)
+
 # Functional forms of losses
 l1_distance_loss(x::T1, y::T2) where {T1, T2} = abs(x - y)
+has_custom_derivative(::typeof(l1_distance_loss)) = true
+function derivative(::typeof(l1_distance_loss), x::T1, y::T2) where {T1, T2}
+    return convert(T1, sign(x - y))
+end
 
 l2_distance_loss(x::T1, y::T2) where {T1, T2} = abs2(x - y)
+has_custom_derivative(::typeof(l2_distance_loss)) = true
+function derivative(::typeof(l2_distance_loss), x::T1, y::T2) where {T1, T2}
+    return convert(T1, 2 * (x - y))
+end
 
 function huber_loss(x::T1, y::T2, δ::T3) where {T1, T2, T3}
     T = promote_type(T1, T2, T3)
@@ -97,15 +122,29 @@ function huber_loss(x::T1, y::T2, δ::T3) where {T1, T2, T3}
     abs_diff = abs(diff)
     return ifelse(abs_diff ≤ δ, T(0.5) * abs2(diff), δ * (abs_diff - T(0.5) * δ))
 end
+has_custom_derivative(::typeof(huber_loss)) = true
+function derivative(::typeof(huber_loss), x::T, y::T2, δ::T3) where {T, T2, T3}
+    diff = x - y
+    return ifelse(abs(diff) ≤ δ, T(diff), T(δ) * convert(T, sign(diff)))
+end
 
 function l1_hinge_loss(x::T1, y::T2) where {T1, T2}
     agreement = x * y
     return max(oftype(agreement, false), true - agreement)
 end
+has_custom_derivative(::typeof(l1_hinge_loss)) = true
+function derivative(::typeof(l1_hinge_loss), x::T1, y::T2) where {T1, T2}
+    return T1(ifelse(x * y ≥ 1, false, true))
+end
 
 function l2_hinge_loss(x::T1, y::T2) where {T1, T2}
     agreement = x * y
     return ifelse(agreement ≥ 1, oftype(agreement, false), abs2(true - agreement))
+end
+has_custom_derivative(::typeof(l2_hinge_loss)) = true
+function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1, T2}
+    agreement = x * y
+    return T1(ifelse(agreement ≥ 1, false, 2 * (agreement - true)))
 end
 
 function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}

@@ -11,7 +11,8 @@ using Lux: Lux, LossFunctionImpl
 
 const CRC = ChainRulesCore
 
-function LossFunctionImpl.fused_agg(::typeof(mean), lfn::LossFunctions.Traits.Loss, x, y)
+function LossFunctionImpl.fused_agg(
+        ::typeof(mean), lfn::LossFunctions.Traits.Loss, x::AbstractArray, y::AbstractArray)
     return LossFunctionImpl.fused_agg(sum, lfn, x, y) / length(x)
 end
 
@@ -19,10 +20,9 @@ function LossFunctionImpl.fused_agg(
         ::typeof(sum), lfn::LossFunctions.Traits.Loss, x::Number, y::Number)
     return lfn(x, y)
 end
-function LossFunctionImpl.fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
+function LossFunctionImpl.fused_agg(
+        ::typeof(sum), lfn::LossFunctions.Traits.Loss, x::AbstractArray, y::AbstractArray)
     fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
-    # mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y) leads to slowdowns, better to
-    # allocate a new array
     return sum(lfn.(x, y))
 end
 
