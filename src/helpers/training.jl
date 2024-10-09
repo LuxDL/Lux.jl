@@ -10,6 +10,7 @@ using Static: StaticBool, Static, False, True
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
+using MLDataDevices: XLADevice, get_device_type, get_device, cpu_device
 
 """
     TrainState
@@ -61,7 +62,13 @@ Constructor for [`TrainState`](@ref).
 [`TrainState`](@ref) object.
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
-    st_opt = Optimisers.setup(optimizer, ps)
+    dev = get_device(ps)
+    st_opt = if dev isa XLADevice
+        ps_cpu = ps |> cpu_device()
+        Optimisers.setup(optimizer, ps_cpu) |> dev
+    else
+        Optimisers.setup(optimizer, ps)
+    end
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
 
@@ -95,6 +102,8 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
     ts.objective_function !== nothing &&
         print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
+
+struct ReactantBackend end
 
 const APPLY_GRAD_DOCSTRING = """
 ## Arguments
@@ -183,13 +192,30 @@ A 4-Tuple containing:
     returned in step `i + 1` might be aliased by the old gradients. If you want to prevent
     this, simply use `copy(grads)` or `deepcopy(grads)` to make a copy of the gradients.
 """
-function compute_gradients(ad::AbstractADType, ::F, _, ::TrainState) where {F}
+function compute_gradients(ad, obj_fn::F, data, ts::TrainState) where {F}
+    dev_type = get_device_type((ts.parameters, ts.states))
+    return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type), obj_fn, data, ts)
+end
+
+maybe_wrap_adtype(backend::ReactantBackend, _) = backend
+maybe_wrap_adtype(ad::AbstractADType, _) = ad
+function maybe_wrap_adtype(ad::AbstractADType, ::Type{XLADevice})
+    ad isa AutoEnzyme && return ReactantBackend()
+    throw(ArgumentError("Computing gradients for models on XLA is supported only with \
+                         Enzyme.jl (`AutoEnzyme`)."))
+end
+
+function compute_gradients_impl(ad, ::F, _, ts::TrainState) where {F}
     return check_if_compute_gradients_implemented(ad)
 end
 
 function check_if_compute_gradients_implemented(::T) where {T <: AbstractADType}
     throw(ArgumentError("Support for AD backend $(nameof(T)) has not been implemented \
                          yet!"))
+end
+
+function check_if_compute_gradients_implemented(::ReactantBackend)
+    throw(ArgumentError("Load `Reactant` with `using Reactant` before using this function!"))
 end
 
 for package in (:Zygote, :Tracker, :ReverseDiff, :Enzyme)
@@ -244,7 +270,10 @@ only the parameters in `ts` are updated inplace. Users should be using the retur
 object for further training steps, else there is no caching and performance will be
 suboptimal (and absolutely terrible for backends like `AutoReactant`).
 """
-function single_train_step! end
+function single_train_step!(backend, obj_fn::F, data, ts::TrainState) where {F}
+    backend = maybe_wrap_adtype(backend, get_device_type((ts.parameters, ts.states)))
+    return single_train_step_impl!(backend, obj_fn, data, ts)
+end
 
 """
     single_train_step(backend, obj_fn::F, data, ts::TrainState)
@@ -259,10 +288,14 @@ In most cases you should use [`single_train_step!`](@ref) instead of this functi
 
 Returned values are the same as [`compute_gradients`](@ref).
 """
-function single_train_step end
+function single_train_step(backend, obj_fn::F, data, ts::TrainState) where {F}
+    backend = maybe_wrap_adtype(backend, get_device_type((ts.parameters, ts.states)))
+    return single_train_step_impl(backend, obj_fn, data, ts)
+end
 
 for inplace in ("!", "")
-    step, apply_fn = Symbol(:single_train_step, inplace), Symbol(:apply_gradients, inplace)
+    step = Symbol(:single_train_step_impl, inplace)
+    apply_fn = Symbol(:apply_gradients, inplace)
     @eval function $(step)(backend, obj_fn::F, data, ts::TrainState) where {F}
         grads, loss, stats, ts = compute_gradients(backend, obj_fn, data, ts)
         ts = $(apply_fn)(ts, grads)

@@ -120,7 +120,8 @@ function huber_loss(x::T1, y::T2, δ::T3) where {T1, T2, T3}
     T = promote_type(T1, T2, T3)
     diff = x - y
     abs_diff = abs(diff)
-    return ifelse(abs_diff ≤ δ, T(0.5) * abs2(diff), δ * (abs_diff - T(0.5) * δ))
+    return ifelse(
+        abs_diff ≤ δ, convert(T, 0.5) * abs2(diff), δ * (abs_diff - convert(T, 0.5) * δ))
 end
 has_custom_derivative(::typeof(huber_loss)) = true
 function derivative(::typeof(huber_loss), x::T, y::T2, δ::T3) where {T, T2, T3}
@@ -148,7 +149,7 @@ function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1, T2}
 end
 
 function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
-    return (true - y) * x^2 + y * max(promote_type(T1, T2)(false), margin - x)^2
+    return (true - y) * x^2 + y * max(convert(promote_type(T1, T2), false), margin - x)^2
 end
 
 poisson_loss(x::T1, y::T2, ϵ) where {T1, T2} = x - xlogy(y, x + get_ϵ(T1, ϵ))

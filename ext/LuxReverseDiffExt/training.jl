@@ -1,5 +1,5 @@
 # Uncompiled ReverseDiff
-function Lux.Training.compute_gradients(
+function Lux.Training.compute_gradients_impl(
         ad::AutoReverseDiff{false}, obj_fn::F, data, ts::TrainState) where {F}
     @set! ts.cache = TrainingBackendCache(
         ad, True(), Lux.recursive_make_zero(ts.parameters), nothing)
@@ -7,7 +7,7 @@ function Lux.Training.compute_gradients(
     return Lux.Training.compute_gradients(ad, obj_fn, data, ts)
 end
 
-function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, data,
+function Lux.Training.compute_gradients_impl(::AutoReverseDiff{false}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{false}}}) where {F}
     dparams = Training.dparameters(ts.cache)
     tape = ReverseDiff.InstructionTape()
@@ -24,7 +24,7 @@ function Lux.Training.compute_gradients(::AutoReverseDiff{false}, obj_fn::F, dat
 end
 
 # Compiled ReverseDiff
-function Lux.Training.compute_gradients(
+function Lux.Training.compute_gradients_impl(
         ad::AutoReverseDiff{true}, obj_fn::F, data, ts::TrainState) where {F}
     @set! ts.cache = TrainingBackendCache(
         ad, True(), Lux.recursive_make_zero(ts.parameters),
@@ -35,7 +35,7 @@ function Lux.Training.compute_gradients(
 end
 
 ## Tape hasn't been compiled yet / Function mismatch so recompile
-function Lux.Training.compute_gradients(ad::AutoReverseDiff{true}, obj_fn::F, data,
+function Lux.Training.compute_gradients_impl(ad::AutoReverseDiff{true}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{true}}}) where {F}
     if LuxCore.statelength(ts.states) != 0
         throw(ArgumentError("AutoReverseDiff(; compile=true) is not supported for Lux \
@@ -82,7 +82,7 @@ function Lux.Training.compute_gradients(ad::AutoReverseDiff{true}, obj_fn::F, da
     return dparams, ReverseDiff.value(loss), NamedTuple(), ts
 end
 
-function Lux.Training.compute_gradients(::AutoReverseDiff{true}, obj_fn::F, data,
+function Lux.Training.compute_gradients_impl(::AutoReverseDiff{true}, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{true}}, F}) where {F}
     (; ps_cache, data_cache, output) = ts.cache.extras
 

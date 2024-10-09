@@ -8,6 +8,8 @@ const ALL_LUX_TEST_GROUPS = [
     "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
     "others", "autodiff", "recurrent_layers", "fluxcompat"]
 
+Sys.iswindows() || push!(ALL_LUX_TEST_GROUPS, "reactant")
+
 INPUT_TEST_GROUP = lowercase(get(ENV, "LUX_TEST_GROUP", "all"))
 const LUX_TEST_GROUP = if startswith("!", INPUT_TEST_GROUP[1])
     exclude_group = lowercase.(split(INPUT_TEST_GROUP[2:end], ","))
@@ -26,6 +28,12 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
 end
 ("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
+
+if !Sys.iswindows()
+    ("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
+        push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
+end
+
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&

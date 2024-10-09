@@ -1,4 +1,4 @@
-function Lux.Training.compute_gradients(
+function Lux.Training.compute_gradients_impl(
         ad::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
     dps = Lux.recursive_make_zero(ts.parameters)
 
@@ -20,9 +20,8 @@ end
 const AUTODIFF_CACHE_TYPE = TrainingBackendCache{
     <:AutoEnzyme, False, PS, <:NamedTuple{(:obj_fn, :st_wrap, :stats_wrap)}} where {PS}
 
-function Lux.Training.compute_gradients(
+function Lux.Training.compute_gradients_impl(
         ::AutoEnzyme, obj_fn::F, data, ts::TrainState{<:AUTODIFF_CACHE_TYPE, F}) where {F}
-    # dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
     Enzyme.make_zero!(ts.cache.dparameters)
     dps = ts.cache.dparameters
 
@@ -36,7 +35,7 @@ function Lux.Training.compute_gradients(
     return dps, loss, ts.cache.extras.stats_wrap[], ts
 end
 
-function Lux.Training.compute_gradients(ad::AutoEnzyme, obj_fn::F, data,
+function Lux.Training.compute_gradients_impl(ad::AutoEnzyme, obj_fn::F, data,
         ts::TrainState{<:TrainingBackendCache{<:AutoEnzyme, False}}) where {F}
     @warn "Detected calls to `compute_gradients(::AutoEnzyme, ...)` with objective \
            function that is changing across function calls. This can lead to the \
@@ -56,7 +55,7 @@ end
 const AUTODIFF_THUNK_CACHE_TYPE = TrainingBackendCache{
     <:AutoEnzyme, False, PS, <:NamedTuple{(:forward, :reverse)}} where {PS}
 
-function Lux.Training.compute_gradients(::AutoEnzyme, obj_fn::F, data,
+function Lux.Training.compute_gradients_impl(::AutoEnzyme, obj_fn::F, data,
         ts::TrainState{<:AUTODIFF_THUNK_CACHE_TYPE, F}) where {F}
     dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
     params = Duplicated(ts.parameters, dps)
