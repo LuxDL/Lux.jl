@@ -13,8 +13,6 @@
             Reactant.set_default_backend("cpu")
         end
 
-        # TODO: Test for compute_gradients
-
         xdev = xla_device(; force=true)
 
         @testset "MLP Training: $(version)" for version in (:iip, :oop)
@@ -41,17 +39,13 @@
 
             train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
 
-            # FIXME: Use MSELoss <-- currently fails due to Enzyme
-            function sse(model, ps, st, (x, y))
-                z, stₙ = model(x, ps, st)
-                return sum(abs2, z .- y), stₙ, (;)
-            end
-
             for epoch in 1:100, (xᵢ, yᵢ) in dataloader
                 grads, loss, stats, train_state = if version === :iip
-                    Training.single_train_step!(AutoEnzyme(), sse, (xᵢ, yᵢ), train_state)
+                    Training.single_train_step!(
+                        AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
                 elseif version === :oop
-                    Training.single_train_step(AutoEnzyme(), sse, (xᵢ, yᵢ), train_state)
+                    Training.single_train_step(
+                        AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
                 else
                     error("Invalid version: $(version)")
                 end
@@ -64,7 +58,5 @@
 
             @test total_final_loss < 100 * total_initial_loss
         end
-
-        # TODO: Training a CNN
     end
 end
