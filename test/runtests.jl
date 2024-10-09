@@ -28,8 +28,11 @@ if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
 end
 ("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
-("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
+
+if !Sys.iswindows()
+    ("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
+        push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
+end
 
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
