@@ -6,9 +6,8 @@ module LossFunctionImpl
 
 using ArrayInterface: fast_scalar_indexing
 using ChainRulesCore: ChainRulesCore, NoTangent, @non_differentiable, @thunk
-using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
-using LossFunctions: LossFunctions
+using ForwardDiff: ForwardDiff, Dual, Partials
 using Statistics: mean
 
 using ..LuxOps: xlogy
@@ -30,59 +29,55 @@ check_sizes(_, __) = nothing
 
 # Aggregation. We are able to define custom aggregation fast paths
 fused_agg(::typeof(mean), op::OP, x) where {OP} = fused_agg(sum, op, x) / length(x)
-function fused_agg(::typeof(mean), lfn::LossFunctions.Traits.Loss, x, y)
-    return fused_agg(sum, lfn, x, y) / length(x)
-end
 
 fused_agg(::typeof(sum), op::OP, x::Number) where {OP} = op(x)
 fused_agg(::typeof(sum), op::OP, x) where {OP} = sum(op, x)
 
-fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x::Number, y::Number) = lfn(x, y)
-function fused_agg(::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
-    fast_scalar_indexing(x) && fast_scalar_indexing(y) && return sum(lfn, x, y)
-    # mapreduce(Broadcast.BroadcastFunction(lfn), +, x, y) leads to slowdowns, better to
-    # allocate a new array
-    return sum(lfn.(x, y))
-end
-
 fused_agg(::Nothing, op::OP, args...) where {OP} = op.(args...)
 fused_agg(f::F, op::OP, args...) where {F, OP} = f(op.(args...))
-
-function CRC.rrule(::typeof(fused_agg), ::typeof(sum), lfn::LossFunctions.Traits.Loss, x, y)
-    ∇fused_agg = @closure Δ -> begin
-        ∂x = @thunk LossFunctions.deriv.(Ref(lfn), x, y) .* Δ
-        return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent()
-    end
-    return fused_agg(sum, lfn, x, y), ∇fused_agg
+function fused_agg(::typeof(mean), op::OP, x, y) where {OP}
+    return LossFunctionImpl.fused_agg(sum, op, x, y) / length(x)
 end
 
-function EnzymeRules.augmented_primal(
-        cfg::EnzymeRules.RevConfigWidth{1}, func::EnzymeCore.Const{typeof(fused_agg)},
-        ::Type{<:EnzymeCore.Active}, agg_f::EnzymeCore.Const{typeof(sum)},
-        lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
-        x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
-    primal = EnzymeRules.needs_primal(cfg) ? func.val(agg_f.val, lfn.val, x.val, y.val) :
-             nothing
-
-    cache_x = EnzymeRules.overwritten(cfg)[4] ? copy(x.val) : nothing
-    cache_y = EnzymeRules.overwritten(cfg)[5] ? copy(y.val) : nothing
-
-    return EnzymeRules.AugmentedReturn(primal, nothing, (cache_x, cache_y))
+function fused_agg(::typeof(sum), op::OP, x, y) where {OP}
+    if fast_scalar_indexing(x) && fast_scalar_indexing(y)
+        res = Core.Compiler._return_type(op, Tuple{eltype(x), eltype(y)})(0)
+        @simd ivdep for i in eachindex(x, y)
+            @inbounds res += op(x[i], y[i])
+        end
+        return res
+    end
+    return mapreduce(op, +, x, y)
 end
 
-function EnzymeRules.reverse(
-        cfg::EnzymeRules.RevConfigWidth{1}, ::EnzymeCore.Const{typeof(fused_agg)},
-        dret::EnzymeCore.Active, (cache_x, cache_y), agg_f::EnzymeCore.Const{typeof(sum)},
-        lfn::EnzymeCore.Const{<:LossFunctions.Traits.Loss},
-        x::EnzymeCore.Annotation{<:AbstractArray}, y::EnzymeCore.Const)
-    EnzymeRules.overwritten(cfg)[4] || (cache_x = x.val)
-    EnzymeRules.overwritten(cfg)[5] || (cache_y = y.val)
-
-    if !(typeof(x) <: EnzymeCore.Const)
-        @. x.dval = LossFunctions.deriv(lfn.val, cache_x, cache_y) * dret.val
+function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
+        ::typeof(fused_agg), ::typeof(sum), op::OP, x, y) where {OP}
+    if fast_scalar_indexing(x) && fast_scalar_indexing(y)
+        x_dual = Dual{
+            Nothing, eltype(x), 1}.(x, (Partials{1, eltype(x)}((one(eltype(x)),)),))
+        x_partials = similar(x)
+        res = Core.Compiler._return_type(op, Tuple{eltype(x), eltype(y)})(0)
+        T = eltype(x)
+        @inbounds @simd for i in eachindex(x_partials, x, y)
+            x_dual = Dual{Nothing, T, 1}(x[i], Partials{1, T}((one(T),)))
+            tmp = op(x_dual, y[i])
+            x_partials[i] = ForwardDiff.partials(tmp, 1)
+            res += ForwardDiff.value(tmp)
+        end
+        ∇fused_agg_loop = Δ -> begin
+            @simd ivdep for i in eachindex(x_partials)
+                @inbounds x_partials[i] *= Δ
+            end
+            return NoTangent(), NoTangent(), NoTangent(), x_partials, NoTangent()
+        end
+        return res, ∇fused_agg_loop
     end
-
-    return ntuple(Returns(nothing), 4)
+    res, ∇mapreduce = CRC.rrule_via_ad(cfg, mapreduce, op, +, x, y)
+    ∇fused_agg_mapreduce = @closure Δ -> begin
+        _, ∂op, _, ∂x, ∂y = ∇mapreduce(Δ)
+        return (NoTangent(), NoTangent(), ∂op, ∂x, ∂y)
+    end
+    return res, ∇fused_agg_mapreduce
 end
 
 get_ϵ(::Type{T}, ϵ::Real) where {T} = T(ϵ)
@@ -92,8 +87,29 @@ get_loss_dims(::AbstractVector) = Colon()
 get_loss_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
 
 # Functional forms of losses
+l1_distance_loss(x::T1, y::T2) where {T1, T2} = abs(x - y)
+
+l2_distance_loss(x::T1, y::T2) where {T1, T2} = abs2(x - y)
+
+function huber_loss(x::T1, y::T2, δ::T3) where {T1, T2, T3}
+    T = promote_type(T1, T2, T3)
+    diff = x - y
+    abs_diff = abs(diff)
+    return ifelse(abs_diff ≤ δ, T(0.5) * abs2(diff), δ * (abs_diff - T(0.5) * δ))
+end
+
+function l1_hinge_loss(x::T1, y::T2) where {T1, T2}
+    agreement = x * y
+    return max(oftype(agreement, false), true - agreement)
+end
+
+function l2_hinge_loss(x::T1, y::T2) where {T1, T2}
+    agreement = x * y
+    return ifelse(agreement ≥ 1, oftype(agreement, false), abs2(true - agreement))
+end
+
 function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
-    return (1 - y) * x^2 + y * max(promote_type(T1, T2)(0), margin - x)^2
+    return (true - y) * x^2 + y * max(promote_type(T1, T2)(false), margin - x)^2
 end
 
 poisson_loss(x::T1, y::T2, ϵ) where {T1, T2} = x - xlogy(y, x + get_ϵ(T1, ϵ))
@@ -462,7 +478,7 @@ julia> loss(y_pred, y_true) ≈ 0.55
 true
 ```
 """
-HingeLoss(; agg=mean) = GenericLossFunction(LossFunctions.L1HingeLoss(); agg)
+HingeLoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l1_hinge_loss; agg)
 
 @doc doc"""
     HuberLoss(; delta = 1, agg = mean)
@@ -490,7 +506,8 @@ true
 """
 function HuberLoss(; delta::Union{Nothing, AbstractFloat}=nothing, agg=mean)
     return GenericLossFunction(
-        LossFunctions.HuberLoss(ifelse(delta === nothing, Float16(1), delta)); agg)
+        Utils.Fix3(LossFunctionImpl.huber_loss, ifelse(delta === nothing, true, delta));
+        agg)
 end
 
 @doc doc"""
@@ -566,7 +583,7 @@ julia> loss(y_model, 1:3) ≈ 0.1
 true
 ```
 """
-MAELoss(; agg=mean) = GenericLossFunction(LossFunctions.L1DistLoss(); agg)
+MAELoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l1_distance_loss; agg)
 
 const L1Loss = MAELoss
 
@@ -588,7 +605,7 @@ julia> loss(y_model, 1:3) ≈ 0.01
 true
 ```
 """
-MSELoss(; agg=mean) = GenericLossFunction(LossFunctions.L2DistLoss(); agg)
+MSELoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l2_distance_loss; agg)
 
 const L2Loss = MSELoss
 
@@ -696,7 +713,7 @@ julia> loss(y_pred, y_true) ≈ 0.625
 true
 ```
 """
-SquaredHingeLoss(; agg=mean) = GenericLossFunction(LossFunctions.L2HingeLoss(); agg)
+SquaredHingeLoss(; agg=mean) = GenericLossFunction(LossFunctionImpl.l2_hinge_loss; agg)
 
 @doc doc"""
     GenericLossFunction(loss_fn; agg = mean)

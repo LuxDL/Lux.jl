@@ -11,7 +11,6 @@ using ConcreteStructs: @concrete
 using FastClosures: @closure
 using Functors: Functors, fmap
 using GPUArraysCore: @allowscalar
-using LossFunctions: LossFunctions
 using Markdown: @doc_str
 using NNlib: NNlib
 using Optimisers: Optimisers
