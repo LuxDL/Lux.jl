@@ -1,7 +1,6 @@
 module LuxLibCUDAExt
 
-# This file only wraps functionality part of CUDA like CUBLAS
-using CUDA: CUDA, CUBLAS, StridedCuMatrix, StridedCuVector, CuPtr, AnyCuMatrix, AnyCuVector
+using CUDA: CUDA, CUBLAS, StridedCuMatrix, StridedCuVector, CuPtr
 using LinearAlgebra: LinearAlgebra, Transpose, Adjoint
 using LuxLib: LuxLib, Optional
 using LuxLib.Utils: ofeltype_array
