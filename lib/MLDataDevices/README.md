@@ -13,7 +13,7 @@
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
 `MLDataDevices.jl` is a lightweight package defining rules for transferring data across
-devices. It is used in deep learning frameworks such as [Lux.jl](https://lux.csail.mit.edu/).
+devices. It is used in deep learning frameworks such as [Lux.jl](https://lux.csail.mit.edu/) and [Flux.jl](https://fluxml.ai/).
 
 Currently we provide support for the following backends:
 
