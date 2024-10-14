@@ -33,10 +33,7 @@ function vector_jacobian_product(::F, backend::AbstractADType, _, __) where {F}
 end
 
 function vector_jacobian_product(f::F, backend::AutoZygote, x, u) where {F}
-    if !is_extension_loaded(Val(:Zygote))
-        error("`Zygote.jl` must be loaded for `vector_jacobian_product` \
-               to work with `$(backend)`.")
-    end
+    assert_backend_loaded(:vector_jacobian_product, backend)
     return AutoDiffInternalImpl.vector_jacobian_product(f, backend, x, u)
 end
 
@@ -89,10 +86,11 @@ the following properties for `y = f(x)`:
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed |
-|:------------------ |:--------------- |
-| `AutoForwardDiff`  |                 |
-| `AutoZygote`       | `Zygote.jl`     |
+| Supported Backends | Packages Needed | Note                                           |
+|:------------------ |:--------------- |:---------------------------------------------- |
+| `AutoForwardDiff`  |                 |                                                |
+| `AutoZygote`       | `Zygote.jl`     |                                                |
+| `AutoEnzyme`       | `Enzyme.jl`     | Not compatible with ChainRules based Nested AD |
 
 ## Arguments
 
@@ -118,14 +116,24 @@ function batched_jacobian(::F, backend::AbstractADType, x::AbstractArray) where 
     throw(ArgumentError("`batched_jacobian` is not implemented for `$(backend)`."))
 end
 
-function batched_jacobian(f::F, backend::AutoForwardDiff, x::AbstractArray) where {F}
-    return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
+for implemented_backend in (AutoForwardDiff, AutoZygote, AutoEnzyme)
+    @eval function batched_jacobian(
+            f::F, backend::$(implemented_backend), x::AbstractArray) where {F}
+        assert_backend_loaded(:batched_jacobian, backend)
+        return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
+    end
 end
 
-function batched_jacobian(f::F, backend::AutoZygote, x::AbstractArray) where {F}
-    if !is_extension_loaded(Val(:Zygote))
-        error("`Zygote.jl` must be loaded for `batched_jacobian` to work with \
-               `$(backend)`.")
-    end
-    return AutoDiffInternalImpl.batched_jacobian(f, backend, x)
+function assert_backend_loaded(fname::Symbol, ad::AbstractADType)
+    return assert_backend_loaded(fname, ad, adtype_to_backend(ad))
 end
+function assert_backend_loaded(fname::Symbol, ad::AbstractADType, backend::Val{B}) where {B}
+    if !is_extension_loaded(backend)
+        error("$(fname) with `$(ad)` requires $(B).jl to be loaded.")
+    end
+    return
+end
+
+adtype_to_backend(::AutoEnzyme) = Val(:Enzyme)
+adtype_to_backend(::AutoForwardDiff) = Val(:ForwardDiff)
+adtype_to_backend(::AutoZygote) = Val(:Zygote)
