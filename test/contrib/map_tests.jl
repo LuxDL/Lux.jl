@@ -2,12 +2,12 @@
     using Setfield, Functors
 
     function occurs_in(kp::KeyPath, x::KeyPath)
-        length(kp) ≤ length(x) && return all(==(x[i], kp[i]) for i in 1:length(kp))
+        length(kp)≤length(x)&&return all(==(x[i], kp[i]) for i in 1:length(kp))
         return false
     end
 
     function zero_dense_params_1(l, ps, st, name)
-        if l isa Dense && occurs_in(KeyPath(:chain), name)
+        if l isa Dense&&occurs_in(KeyPath(:chain), name)
             @set! ps.weight = zero(ps.weight)
             @set! ps.bias = zero(ps.bias)
         end

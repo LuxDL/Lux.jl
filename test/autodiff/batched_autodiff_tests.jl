@@ -1,7 +1,7 @@
 @testitem "Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
@@ -23,7 +23,7 @@
                     batched_jacobian(smodel, backend, X)
                 end
                 J2_mat = mapreduce(Base.Fix1(Lux.AutoDiffInternalImpl.batched_row, J2),
-                    hcat, 1:(size(J2, 1) * size(J2, 3)))'
+                    hcat, 1:(size(J2, 1)*size(J2, 3)))'
 
                 @test J1≈J2_mat atol=1.0e-3 rtol=1.0e-3
 
@@ -41,6 +41,7 @@
 
         @testset "Issue #636 Chunksize Specialization" begin
             for N in (2, 4, 8, 11, 12, 50, 51), backend in (AutoZygote(), AutoForwardDiff())
+
                 model = @compact(; potential=Dense(N => N, gelu), backend=backend) do x
                     @return allow_unstable() do
                         batched_jacobian(potential, backend, x)
@@ -90,7 +91,7 @@ end
 @testitem "Nested AD: Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
@@ -100,6 +101,7 @@ end
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs), backend in (AutoZygote(), AutoForwardDiff())
+
             model = maybe_rewrite_to_crosscor(mode, model)
             ps, st = Lux.setup(rng, model) |> dev
 
@@ -124,10 +126,12 @@ end
                 loss_function_simple(model, X, ps, st)
             end
 
-            _, ∂x_batched, ∂ps_batched, _ = allow_unstable() do
+            _, ∂x_batched,
+            ∂ps_batched, _ = allow_unstable() do
                 Zygote.gradient(loss_function_batched, model, X, ps, st)
             end
-            _, ∂x_simple, ∂ps_simple, _ = allow_unstable() do
+            _, ∂x_simple,
+            ∂ps_simple, _ = allow_unstable() do
                 Zygote.gradient(loss_function_simple, model, X, ps, st)
             end
 
@@ -136,7 +140,8 @@ end
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
-            _, ∂x_batched2, ∂ps_batched2, _ = allow_unstable() do
+            _, ∂x_batched2,
+            ∂ps_batched2, _ = allow_unstable() do
                 Zygote.gradient(loss_function_batched, model, X, ps, st)
             end
 
@@ -149,13 +154,13 @@ end
 @testitem "Nested AD: Batched Jacobian Single Input" setup=[SharedTestSetup] tags=[:autodiff] begin
     using Zygote, Tracker, ReverseDiff
 
-    rng = StableRNG(12345)
-    sq_fn(x) = x .^ 2
+    rng=StableRNG(12345)
+    sq_fn(x)=x .^ 2
 
-    sumabs2_fd(x) = sum(abs2, batched_jacobian(sq_fn, AutoForwardDiff(), x))
-    sumabs2_zyg(x) = sum(abs2, batched_jacobian(sq_fn, AutoZygote(), x))
+    sumabs2_fd(x)=sum(abs2, batched_jacobian(sq_fn, AutoForwardDiff(), x))
+    sumabs2_zyg(x)=sum(abs2, batched_jacobian(sq_fn, AutoZygote(), x))
 
-    true_gradient(x) = 8 .* x
+    true_gradient(x)=8 .* x
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(rng, Float32, 4, 2) |> aType

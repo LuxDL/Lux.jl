@@ -169,7 +169,8 @@ julia> optim = Optimisers.setup(Adam(), ps);
 julia> loss_initial = sum(abs2, first(model(x_data, ps, st)) .- y_data);
 
 julia> for epoch in 1:1000
-           loss, gs = Zygote.withgradient(
+           loss,
+           gs = Zygote.withgradient(
                ps -> sum(abs2, first(model(x_data, ps, st)) .- y_data), ps)
            Optimisers.update!(optim, ps, gs[1])
        end;

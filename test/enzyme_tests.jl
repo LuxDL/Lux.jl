@@ -73,14 +73,15 @@ end
 
 @testitem "Enzyme Integration" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
     :autodiff, :enzyme] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # TODO: Currently all the tests are run on CPU. We should eventually add tests for
         #       CUDA and AMDGPU.
         ongpu && continue
 
-        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
+        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in
+                                                       enumerate(MODELS_LIST)
             ps, st = Lux.setup(rng, model) |> dev
             x = x |> aType
 
@@ -97,14 +98,15 @@ end
     :autodiff, :enzyme] begin
     using ComponentArrays
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         # TODO: Currently all the tests are run on CPU. We should eventually add tests for
         #       CUDA and AMDGPU.
         ongpu && continue
 
-        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
+        @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in
+                                                       enumerate(MODELS_LIST)
             ps, st = Lux.setup(rng, model)
             ps = ComponentArray(ps)
             st = st |> dev

@@ -96,7 +96,7 @@ get_ϵ(::Type{T}, ϵ::Real) where {T} = T(ϵ)
 get_ϵ(::Type{T}, ::Nothing) where {T} = eps(float(T))
 
 get_loss_dims(::AbstractVector) = Colon()
-get_loss_dims(::AbstractArray{T, N}) where {T, N} = 1:(N - 1)
+get_loss_dims(::AbstractArray{T, N}) where {T, N} = 1:(N-1)
 
 has_custom_derivative(::F) where {F} = false
 
@@ -148,7 +148,7 @@ function derivative(::typeof(l2_hinge_loss), x::T1, y::T2) where {T1, T2}
     return T1(ifelse(agreement ≥ 1, false, 2 * (agreement - true)))
 end
 
-function siamese_contrastive_loss(x::T1, y::T2, margin=true) where {T1, T2}
+function siamese_contrastive_loss(x::T1, y::T2; margin=true) where {T1, T2}
     return (true - y) * x^2 + y * max(convert(promote_type(T1, T2), false), margin - x)^2
 end
 

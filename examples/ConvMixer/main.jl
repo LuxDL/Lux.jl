@@ -95,7 +95,10 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
         for (i, (x, y)) in enumerate(trainloader)
             lr = lr_schedule((epoch - 1) + (i + 1) / length(trainloader))
             train_state = Optimisers.adjust!(train_state, lr)
-            (_, _, _, train_state) = Training.single_train_step!(
+            (_,
+                _,
+                _,
+                train_state) = Training.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
         end
         ttime = time() - stime

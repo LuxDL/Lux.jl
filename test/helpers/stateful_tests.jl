@@ -1,22 +1,22 @@
 @testitem "Simple Stateful Tests" setup=[SharedTestSetup] tags=[:helpers] begin
     using Setfield, Zygote
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    struct NotFixedStateModel <: Lux.AbstractLuxLayer end
+    struct NotFixedStateModel<:Lux.AbstractLuxLayer end
 
-    (m::NotFixedStateModel)(x, ps, st) = (x, (; s=1))
+    (m::NotFixedStateModel)(x, ps, st)=(x, (; s=1))
 
-    model = NotFixedStateModel()
-    ps, st = Lux.setup(rng, model)
+    model=NotFixedStateModel()
+    ps, st=Lux.setup(rng, model)
 
     @test st isa NamedTuple{()}
 
-    smodel = StatefulLuxLayer{false}(model, ps, st)
+    smodel=StatefulLuxLayer{false}(model, ps, st)
     display(smodel)
     @test smodel(1) isa Any
 
-    smodel = StatefulLuxLayer{true}(model, ps, st)
+    smodel=StatefulLuxLayer{true}(model, ps, st)
     display(smodel)
     @test_throws ArgumentError smodel(1)
 

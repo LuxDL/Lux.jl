@@ -31,18 +31,18 @@ function Lux.convert_flux_model(l::Flux.Dense; preserve_ps_st::Bool=false, kwarg
     if preserve_ps_st
         bias = l.bias isa Bool ? nothing : copy(l.bias)
         return Lux.Dense(in_dims => out_dims, l.σ; init_weight=Returns(copy(l.weight)),
-            init_bias=Returns(bias), use_bias=!(l.bias isa Bool))
+            init_bias=Returns(bias), use_bias=(!(l.bias isa Bool)))
     else
-        return Lux.Dense(in_dims => out_dims, l.σ; use_bias=!(l.bias isa Bool))
+        return Lux.Dense(in_dims => out_dims, l.σ; use_bias=(!(l.bias isa Bool)))
     end
 end
 
 function Lux.convert_flux_model(l::Flux.Scale; preserve_ps_st::Bool=false, kwargs...)
     if preserve_ps_st
         return Lux.Scale(size(l.scale), l.σ; init_weight=Returns(copy(l.scale)),
-            init_bias=Returns(copy(l.bias)), use_bias=!(l.bias isa Bool))
+            init_bias=Returns(copy(l.bias)), use_bias=(!(l.bias isa Bool)))
     else
-        return Lux.Scale(size(l.scale), l.σ; use_bias=!(l.bias isa Bool))
+        return Lux.Scale(size(l.scale), l.σ; use_bias=(!(l.bias isa Bool)))
     end
 end
 
@@ -60,9 +60,9 @@ function Lux.convert_flux_model(l::Flux.Bilinear; preserve_ps_st::Bool=false, kw
     out, in1, in2 = size(l.weight)
     if preserve_ps_st
         return Lux.Bilinear((in1, in2) => out, l.σ; init_weight=Returns(copy(l.weight)),
-            init_bias=Returns(copy(l.bias)), use_bias=!(l.bias isa Bool))
+            init_bias=Returns(copy(l.bias)), use_bias=(!(l.bias isa Bool)))
     else
-        return Lux.Bilinear((in1, in2) => out, l.σ; use_bias=!(l.bias isa Bool))
+        return Lux.Bilinear((in1, in2) => out, l.σ; use_bias=(!(l.bias isa Bool)))
     end
 end
 
@@ -100,10 +100,10 @@ function Lux.convert_flux_model(l::Flux.Conv; preserve_ps_st::Bool=false, kwargs
         _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad, l.dilation,
             groups, init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
-            init_bias=Returns(_bias), use_bias=!(l.bias isa Bool))
+            init_bias=Returns(_bias), use_bias=(!(l.bias isa Bool)))
     else
         return Lux.Conv(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
-            l.dilation, groups, use_bias=!(l.bias isa Bool))
+            l.dilation, groups, use_bias=(!(l.bias isa Bool)))
     end
 end
 
@@ -117,12 +117,12 @@ function Lux.convert_flux_model(
     if preserve_ps_st
         _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
-            outpad, l.dilation, groups, use_bias=!(l.bias isa Bool),
+            outpad, l.dilation, groups, use_bias=(!(l.bias isa Bool)),
             init_weight=Returns(Lux.maybe_flip_conv_weight(l.weight)),
             init_bias=Returns(_bias))
     else
         return Lux.ConvTranspose(k, in_chs * groups => out_chs, l.σ; l.stride, pad,
-            outpad, l.dilation, groups, use_bias=!(l.bias isa Bool))
+            outpad, l.dilation, groups, use_bias=(!(l.bias isa Bool)))
     end
 end
 
@@ -134,10 +134,10 @@ function Lux.convert_flux_model(l::Flux.CrossCor; preserve_ps_st::Bool=false, kw
         _bias = l.bias isa Bool ? nothing : vec(copy(l.bias))
         return Lux.Conv(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
             init_weight=Returns(copy(l.weight)), init_bias=Returns(_bias),
-            use_bias=!(l.bias isa Bool), cross_correlation=true)
+            use_bias=(!(l.bias isa Bool)), cross_correlation=true)
     else
         return Lux.Conv(k, in_chs => out_chs, l.σ; l.stride, pad, l.dilation,
-            use_bias=!(l.bias isa Bool), cross_correlation=true)
+            use_bias=(!(l.bias isa Bool)), cross_correlation=true)
     end
 end
 

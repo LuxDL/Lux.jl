@@ -392,10 +392,12 @@ Comonicon.@main function main(; seed::Int=0, model_name::String,
                  model_kind !== nothing ? (model_kind,) : (depth,)
     model, ps, st = construct_model(; rng, model_name, model_args, pretrained)
 
-    ds_train, ds_val = construct_dataloaders(;
+    ds_train,
+    ds_val = construct_dataloaders(;
         base_path, train_batchsize, val_batchsize, image_size)
 
-    opt, scheduler = construct_optimizer_and_scheduler(;
+    opt,
+    scheduler = construct_optimizer_and_scheduler(;
         kind=optimizer_kind, learning_rate, nesterov, momentum, weight_decay,
         scheduler_kind, cycle_length, damp_factor, lr_step_decay, lr_step)
 
@@ -445,7 +447,9 @@ Comonicon.@main function main(; seed::Int=0, model_name::String,
         bsize = size(img, ndims(img))
 
         t = time()
-        _, loss, stats, train_state = Training.single_train_step!(
+        _, loss,
+        stats,
+        train_state = Training.single_train_step!(
             AutoZygote(), loss_function, (img, y), train_state)
         t_training = time() - t
 

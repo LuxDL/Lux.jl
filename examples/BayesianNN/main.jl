@@ -101,7 +101,7 @@ function vector_to_parameters(ps_new::AbstractVector, ps::NamedTuple)
     @assert length(ps_new) == Lux.parameterlength(ps)
     i = 1
     function get_ps(x)
-        z = reshape(view(ps_new, i:(i + length(x) - 1)), size(x))
+        z = reshape(view(ps_new, i:(i+length(x)-1)), size(x))
         i += length(x)
         return z
     end

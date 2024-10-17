@@ -39,9 +39,9 @@ function batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
     i = mod1(i, M)
     y = similar(x, N * K)
     data = view(x, i, :, k)
-    fill!(view(y, 1:(N * (K - 1))), zero(T))
-    copyto!(view(y, (N * (k - 1) + 1):(N * k)), data)
-    fill!(view(y, (N * k + 1):(N * K)), zero(T))
+    fill!(view(y, 1:(N*(K-1))), zero(T))
+    copyto!(view(y, (N*(k-1)+1):(N*k)), data)
+    fill!(view(y, (N*k+1):(N*K)), zero(T))
     return y
 end
 

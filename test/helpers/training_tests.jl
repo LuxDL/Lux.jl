@@ -1,7 +1,7 @@
 @testitem "TrainState" setup=[SharedTestSetup] tags=[:helpers] begin
     using Optimisers
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
@@ -23,11 +23,11 @@ end
     using ADTypes, Optimisers
 
     function _loss_function(model, ps, st, data)
-        y, st = model(data, ps, st)
+        y, st=model(data, ps, st)
         return sum(y), st, ()
     end
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Dense(3, 2)
@@ -53,14 +53,14 @@ end
 @testitem "Training API" setup=[SharedTestSetup] tags=[:helpers] begin
     using ADTypes, Optimisers
 
-    mse = MSELoss()
+    mse=MSELoss()
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    x_data = randn(rng, Float32, 4, 32)
-    y_data = evalpoly.(x_data, ((1, 2, 3),)) .- evalpoly.(x_data, ((5, 2),))
-    y_data = (y_data .- minimum(y_data)) ./ (maximum(y_data) - minimum(y_data))
-    dataset = [(x_data[:, i], y_data[:, i]) for i in Iterators.partition(1:32, 8)]
+    x_data=randn(rng, Float32, 4, 32)
+    y_data=evalpoly.(x_data, ((1, 2, 3),)) .- evalpoly.(x_data, ((5, 2),))
+    y_data=(y_data .- minimum(y_data)) ./ (maximum(y_data)-minimum(y_data))
+    dataset=[(x_data[:, i], y_data[:, i]) for i in Iterators.partition(1:32, 8)]
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(Dense(4, 32, tanh), BatchNorm(32),
@@ -79,20 +79,26 @@ end
             initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
 
             for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = allow_unstable() do
+
+                grads, loss, _,
+                tstate = allow_unstable() do
                     Training.compute_gradients(ad, mse, (x, y), tstate)
                 end
                 tstate = Training.apply_gradients!(tstate, grads)
             end
 
             for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = allow_unstable() do
+
+                grads, loss, _,
+                tstate = allow_unstable() do
                     Training.single_train_step!(ad, mse, (x, y), tstate)
                 end
             end
 
             for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = allow_unstable() do
+
+                grads, loss, _,
+                tstate = allow_unstable() do
                     Training.single_train_step(ad, mse, (x, y), tstate)
                 end
             end
@@ -125,72 +131,81 @@ end
     end
 end
 
-@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:helpers] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:helpers] skip=:(using LuxTestUtils;
+!LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using ADTypes, Optimisers
 
-    mse = MSELoss()
+    mse=MSELoss()
 
     function mse2(model, ps, st, (x, y))
-        z, st = model(x, ps, st)
+        z, st=model(x, ps, st)
         return sum(abs2, z .- y), st, ()
     end
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    model = Chain(Dense(4 => 3), VariationalHiddenDropout(0.5f0), Dense(3 => 4))
-    ps, st = Lux.setup(rng, model)
-    x = randn(rng, Float32, 4, 32)
-    opt = Adam(0.001f0)
+    model=Chain(Dense(4=>3), VariationalHiddenDropout(0.5f0), Dense(3=>4))
+    ps, st=Lux.setup(rng, model)
+    x=randn(rng, Float32, 4, 32)
+    opt=Adam(0.001f0)
 
-    tstate = Training.TrainState(model, ps, st, opt)
+    tstate=Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _,
+    _, tstate_new=@inferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
 
-    model = Chain(Dense(4 => 3), Dense(3 => 4))
-    ps, st = Lux.setup(rng, model)
+    model=Chain(Dense(4=>3), Dense(3=>4))
+    ps, st=Lux.setup(rng, model)
 
-    tstate = Training.TrainState(model, ps, st, opt)
+    tstate=Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _,
+    _, tstate_new=@inferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
           Any
 
-    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+    _, _,
+    _,
+    tstate_new2=@inferred Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)
     @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    model = Chain(Dense(4 => 3), VariationalHiddenDropout(0.5f0), Dense(3 => 4))
-    ps, st = Lux.setup(rng, model)
-    x = randn(rng, Float32, 4, 32)
-    opt = Adam(0.001f0)
+    model=Chain(Dense(4=>3), VariationalHiddenDropout(0.5f0), Dense(3=>4))
+    ps, st=Lux.setup(rng, model)
+    x=randn(rng, Float32, 4, 32)
+    opt=Adam(0.001f0)
 
-    tstate = Training.TrainState(model, ps, st, opt)
+    tstate=Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _,
+    _, tstate_new=@inferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
 
-    model = Chain(Dense(4 => 3), Dense(3 => 4))
-    ps, st = Lux.setup(rng, model)
+    model=Chain(Dense(4=>3), Dense(3=>4))
+    ps, st=Lux.setup(rng, model)
 
-    tstate = Training.TrainState(model, ps, st, opt)
+    tstate=Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _,
+    _, tstate_new=@inferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
           Any
 
-    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+    _, _,
+    _,
+    tstate_new2=@inferred Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)
     @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
@@ -199,15 +214,15 @@ end
 @testitem "Compiled ReverseDiff" setup=[SharedTestSetup] tags=[:helpers] begin
     using ADTypes, Optimisers, ReverseDiff
 
-    mse1 = MSELoss()
+    mse1=MSELoss()
     function mse2(model, ps, st, data)
-        l, st_, stats = mse1(model, ps, st, data)
+        l, st_, stats=mse1(model, ps, st, data)
         return l, st_, (; data=2.0f0)
     end
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    dataset = [(randn(rng, Float32, 4, 32), randn(rng, Float32, 4, 32)) for _ in 1:100]
+    dataset=[(randn(rng, Float32, 4, 32), randn(rng, Float32, 4, 32)) for _ in 1:100]
 
     @testset "Unhandled Cases" begin
         model = Chain(Dense(4, 32, tanh), BatchNorm(32),
@@ -245,21 +260,23 @@ end
             AutoReverseDiff(; compile=true), mse1, dataset[1], tstate)
     end
 
-    model = Chain(Dense(4, 32, tanh), Dense(32, 32, tanh), Dense(32, 4))
-    ps, st = Lux.setup(rng, model)
+    model=Chain(Dense(4, 32, tanh), Dense(32, 32, tanh), Dense(32, 4))
+    ps, st=Lux.setup(rng, model)
 
-    tstate = Training.TrainState(model, ps, st, Adam(0.001f0))
+    tstate=Training.TrainState(model, ps, st, Adam(0.001f0))
 
-    loss_initial = first(mse1(model, ps, st, dataset[1]))
+    loss_initial=first(mse1(model, ps, st, dataset[1]))
     for i in 1:100
         for (x, y) in dataset
-            _, _, _, tstate = allow_unstable() do
+            _, _,
+            _,
+            tstate=allow_unstable() do
                 Training.single_train_step!(
                     AutoReverseDiff(; compile=true), mse1, (x, y), tstate)
             end
         end
     end
-    loss_final = first(mse1(model, tstate.parameters, tstate.states, dataset[1]))
+    loss_final=first(mse1(model, tstate.parameters, tstate.states, dataset[1]))
 
     @test loss_final * 100 < loss_initial
 end

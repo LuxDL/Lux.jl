@@ -125,7 +125,8 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
 
     x′ = match_eltype(BN, ps, st, x)
     σ = NNlib.fast_act(BN.activation, x′)
-    y, stats = batchnorm(
+    y,
+    stats = batchnorm(
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
         safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
         st.training, σ, convert(unwrapped_eltype(x′), BN.momentum),
@@ -378,7 +379,8 @@ statelength(l::InstanceNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
     σ = NNlib.fast_act(IN.activation, x′)
-    y, _ = instancenorm(
+    y,
+    _ = instancenorm(
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
         safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
         st.training, σ, convert(unwrapped_eltype(x′), IN.momentum),

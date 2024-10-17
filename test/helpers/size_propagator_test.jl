@@ -1,5 +1,5 @@
 @testitem "Size Propagator" setup=[SharedTestSetup] tags=[:helpers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "Simple Chain (LeNet)" begin
         lenet = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
@@ -23,7 +23,7 @@
         end
     end
 
-    norm_layer = [
+    norm_layer=[
         (BatchNorm(3, relu), [randn(rng, Float32, 4, 4, 3, 2), randn(rng, Float32, 3, 3)]),
         (GroupNorm(6, 3, relu),
             [randn(rng, Float32, 4, 4, 6, 2), randn(rng, Float32, 6, 3)]),

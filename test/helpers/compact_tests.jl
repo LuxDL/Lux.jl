@@ -1,18 +1,18 @@
 @testitem "@compact" setup=[SharedTestSetup] tags=[:helpers] begin
     using ComponentArrays, Zygote
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     function similar_strings(s₁::String, s₂::String)
-        if s₁ != s₂
+        if s₁!=s₂
             println(stderr, "s₁: ", s₁)
             println(stderr, "s₂: ", s₂)
         end
-        return s₁ == s₂
+        return s₁==s₂
     end
 
     function get_model_string(model)
-        io = IOBuffer()
+        io=IOBuffer()
         show(io, MIME"text/plain"(), model)
         return String(take!(io))
     end
@@ -153,10 +153,10 @@
         end
 
         @testset "Hierarchical Models" begin
-            model1 = @compact(w1=Dense(32 => 32, relu), w2=Dense(32 => 32, relu)) do x
+            model1 = @compact(w1=Dense(32=>32, relu), w2=Dense(32=>32, relu)) do x
                 @return w2(w1(x))
             end
-            model2 = @compact(w1=model1, w2=Dense(32 => 32, relu)) do x
+            model2 = @compact(w1=model1, w2=Dense(32=>32, relu)) do x
                 @return w2(w1(x))
             end
             expected_string = """@compact(
@@ -175,7 +175,7 @@
         end
 
         @testset "Array Parameters" begin
-            model = @compact(x=randn(32), w=Dense(32 => 32)) do s
+            model = @compact(x=randn(32), w=Dense(32=>32)) do s
                 @return w(x .* s)
             end
             expected_string = """@compact(

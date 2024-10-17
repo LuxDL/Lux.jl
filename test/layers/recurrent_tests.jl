@@ -26,12 +26,11 @@ export loss_loop, loss_loop_no_carry
 end
 
 @testitem "RNNCell" setup=[SharedTestSetup, RecurrentLayersSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for act in (identity, tanh), use_bias in (true, false),
             train_state in (true, false)
-
             rnncell = RNNCell(3 => 5, act; use_bias, train_state)
             display(rnncell)
             ps, st = Lux.setup(rng, rnncell) |> dev
@@ -69,7 +68,8 @@ end
                     (y, carry), _ = Lux.apply(rnncell, x, ps, st)
                     @test carry == _carry
 
-                    l, back = Zygote.pullback(
+                    l,
+                    back = Zygote.pullback(
                         p -> sum(abs2, 0 .- rnncell(x, p, st)[1][1]), ps)
                     gs = back(one(l))[1]
                     @test !isnothing(gs.hidden_state)
@@ -80,7 +80,7 @@ end
 end
 
 @testitem "LSTMCell" setup=[SharedTestSetup, RecurrentLayersSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for use_bias in (true, false)
@@ -116,7 +116,8 @@ end
                 ps = _ps
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
+                l,
+                back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
 
@@ -131,7 +132,8 @@ end
                 ps = merge(_ps, (hidden_state=ps.hidden_state,))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
+                l,
+                back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !hasproperty(gs, :bias_ih)
@@ -145,7 +147,8 @@ end
                 ps = merge(_ps, (memory=ps.memory,))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
+                l,
+                back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !hasproperty(gs, :bias_ih)
@@ -158,7 +161,8 @@ end
                 ps = merge(_ps, (hidden_state=ps.hidden_state, memory=ps.memory))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
                 @test carry == _carry
-                l, back = Zygote.pullback(
+                l,
+                back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !hasproperty(gs, :bias_ih)
@@ -170,7 +174,8 @@ end
                 ps, st = Lux.setup(rng, lstm) |> dev
                 ps = merge(_ps, (; ps.bias_ih, ps.bias_hh, ps.hidden_state, ps.memory))
                 (y, carry), _ = Lux.apply(lstm, x, ps, st)
-                l, back = Zygote.pullback(
+                l,
+                back = Zygote.pullback(
                     p -> sum(abs2, 0 .- sum(lstm(x, p, st)[1][1])), ps)
                 gs = back(one(l))[1]
                 @test !isnothing(gs.bias_ih)
@@ -183,7 +188,7 @@ end
 end
 
 @testitem "GRUCell" setup=[SharedTestSetup, RecurrentLayersSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for use_bias in (true, false)
@@ -246,12 +251,11 @@ end
 end
 
 @testitem "StatefulRecurrentCell" setup=[SharedTestSetup, RecurrentLayersSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for _cell in (RNNCell, LSTMCell, GRUCell), use_bias in (true, false),
             train_state in (true, false)
-
             cell = _cell(3 => 5; use_bias, train_state)
             rnn = StatefulRecurrentCell(cell)
             display(rnn)
@@ -410,7 +414,7 @@ end
 end
 
 @testitem "Recurrence Ordering Check #302" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         encoder = Recurrence(
             RNNCell(1 => 1, identity;
@@ -427,7 +431,7 @@ end
 end
 
 @testitem "Bidirectional" setup=[SharedTestSetup, RecurrentLayersSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "cell: $_cell" for _cell in (RNNCell, LSTMCell, GRUCell)
@@ -457,7 +461,10 @@ end
             @test_gradients(__f, bi_rnn, x, ps, st; atol=1e-3, rtol=1e-3,
                 skip_backends=[AutoEnzyme()])
 
-            __f = (bi_rnn_no_merge, x, ps, st) -> begin
+            __f = (bi_rnn_no_merge,
+                x,
+                ps,
+                st) -> begin
                 (y1, y2), st_ = bi_rnn_no_merge(x, ps, st)
                 return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
             end
@@ -488,12 +495,16 @@ end
                 @test size(y_[1]) == (4,)
                 @test all(x -> size(x) == (5, 2), y_[1])
 
-                __f = (bi_rnn, x, ps, st) -> sum(
+                __f = (bi_rnn, x, ps,
+                    st) -> sum(
                     Base.Fix1(sum, abs2), first(bi_rnn(x, ps, st)))
                 @test_gradients(__f, bi_rnn, x, ps, st; atol=1e-3,
                     rtol=1e-3, skip_backends=[AutoEnzyme()])
 
-                __f = (bi_rnn_no_merge, x, ps, st) -> begin
+                __f = (bi_rnn_no_merge,
+                    x,
+                    ps,
+                    st) -> begin
                     (y1, y2), st_ = bi_rnn_no_merge(x, ps, st)
                     return sum(Base.Fix1(sum, abs2), y1) + sum(Base.Fix1(sum, abs2), y2)
                 end

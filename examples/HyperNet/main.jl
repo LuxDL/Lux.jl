@@ -86,11 +86,15 @@ function train()
     ### Lets train the model
     nepochs = 25
     for epoch in 1:nepochs, data_idx in 1:2
+
         train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
 
         stime = time()
         for (x, y) in train_dataloader
-            (_, _, _, train_state) = Training.single_train_step!(
+            (_,
+                _,
+                _,
+                train_state) = Training.single_train_step!(
                 AutoZygote(), loss, ((data_idx, x), y), train_state)
         end
         ttime = time() - stime

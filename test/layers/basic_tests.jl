@@ -1,5 +1,5 @@
 @testitem "Miscellaneous Layers" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Reshape Layer" begin
@@ -108,7 +108,7 @@
 end
 
 @testitem "Dense" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "constructors" begin
@@ -174,25 +174,25 @@ end
     using StaticArrays, Enzyme, ForwardDiff, ComponentArrays
 
     if LuxTestUtils.ENZYME_TESTING_ENABLED
-        N = 8
-        d = Lux.Dense(N => N)
-        ps = (;
+        N=8
+        d=Lux.Dense(N=>N)
+        ps=(;
             weight=randn(SMatrix{N, N, Float64}),
             bias=randn(SVector{N, Float64})
         )
-        x = randn(SVector{N, Float64})
+        x=randn(SVector{N, Float64})
 
-        fun = let d = d, x = x
-            ps -> sum(d(x, ps, (;))[1])
+        fun=let d=d, x=x
+            ps->sum(d(x, ps, (;))[1])
         end
-        grad1 = ForwardDiff.gradient(fun, ComponentVector(ps))
-        grad2 = Enzyme.gradient(Enzyme.Reverse, fun, ps)[1]
+        grad1=ForwardDiff.gradient(fun, ComponentVector(ps))
+        grad2=Enzyme.gradient(Enzyme.Reverse, fun, ps)[1]
         @test maximum(abs, grad1 .- ComponentVector(grad2)) < 1e-6
     end
 end
 
 @testitem "Scale" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "constructors" begin
@@ -257,7 +257,7 @@ end
 end
 
 @testitem "Bilinear" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "SkipConnection recombinator" begin
@@ -357,7 +357,7 @@ end
 end
 
 @testitem "Embedding" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Linear indices" begin

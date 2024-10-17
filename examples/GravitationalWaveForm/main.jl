@@ -144,7 +144,7 @@ function h_22_strain_two_body(dt::T, orbit1, mass1, orbit2, mass2) where {T}
     return scaling_const * h₊, -scaling_const * hₓ
 end
 
-function compute_waveform(dt::T, soln, mass_ratio, model_params=nothing) where {T}
+function compute_waveform(dt::T, soln, mass_ratio; model_params=nothing) where {T}
     @assert mass_ratio≤1 "mass_ratio must be <= 1"
     @assert mass_ratio≥0 "mass_ratio must be non-negative"
 

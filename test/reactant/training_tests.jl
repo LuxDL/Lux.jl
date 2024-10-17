@@ -40,7 +40,10 @@
             train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
 
             for epoch in 1:100, (xᵢ, yᵢ) in dataloader
-                grads, loss, stats, train_state = if version === :iip
+
+                grads, loss,
+                stats,
+                train_state = if version === :iip
                     Training.single_train_step!(
                         AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
                 elseif version === :oop

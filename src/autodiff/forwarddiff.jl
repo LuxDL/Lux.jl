@@ -6,6 +6,7 @@ for cfg in (:JacobianConfig, :GradientConfig)
 end
 
 for fType in AD_CONVERTIBLE_FUNCTIONS, type in (:Gradient, :Jacobian)
+
     cfgname = Symbol(type, :Config)
     fname = Symbol(lowercase(string(type)))
     internal_fname = Symbol(:forwarddiff_, fname)
@@ -31,7 +32,8 @@ for type in (:Gradient, :Jacobian)
     rrule_call = if type == :Gradient
         :((res, pb_f) = CRC.rrule_via_ad(cfg, autodiff_gradient, grad_fn, f, x, y))
     else
-        :((res, pb_f) = CRC.rrule_via_ad(
+        :((res,
+            pb_f) = CRC.rrule_via_ad(
             cfg, autodiff_jacobian, ForwardDiff.$(fname), grad_fn, f, x, y))
     end
     ret_expr = type == :Gradient ? :(only(res)) : :(res)
