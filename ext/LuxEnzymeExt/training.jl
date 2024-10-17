@@ -2,10 +2,12 @@ function Lux.Training.compute_gradients_impl(
         ad::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
     dps = Lux.recursive_make_zero(ts.parameters)
 
-    obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.wrap_objective_function(
+    obj_fn_wrap, st_wrap,
+    stats_wrap = Lux.Training.wrap_objective_function(
         obj_fn, ts.model, ts.parameters, ts.states, data, True())
 
-    _, loss = Enzyme.autodiff(
+    _,
+    loss = Enzyme.autodiff(
         EnzymeCore.ReverseWithPrimal, Const(obj_fn_wrap), Active, Const(ts.model),
         Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
@@ -25,7 +27,8 @@ function Lux.Training.compute_gradients_impl(
     Enzyme.make_zero!(ts.cache.dparameters)
     dps = ts.cache.dparameters
 
-    _, loss = Enzyme.autodiff(
+    _,
+    loss = Enzyme.autodiff(
         EnzymeCore.ReverseWithPrimal, Const(ts.cache.extras.obj_fn), Active,
         Const(ts.model), Duplicated(ts.parameters, dps), Const(ts.states), Const(data))
 
@@ -41,7 +44,8 @@ function Lux.Training.compute_gradients_impl(ad::AutoEnzyme, obj_fn::F, data,
            function that is changing across function calls. This can lead to the \
            generation of slow code" maxlog=1
 
-    forward, reverse = Enzyme.autodiff_thunk(
+    forward,
+    reverse = Enzyme.autodiff_thunk(
         EnzymeCore.ReverseSplitWithPrimal, Const{typeof(obj_fn)}, Active,
         Const{typeof(ts.model)}, Duplicated{typeof(ts.parameters)},
         Const{typeof(ts.states)}, Const{typeof(data)})
@@ -60,7 +64,8 @@ function Lux.Training.compute_gradients_impl(::AutoEnzyme, obj_fn::F, data,
     dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
     params = Duplicated(ts.parameters, dps)
 
-    tape, (loss, st_, stats), _ = ts.cache.extras.forward(
+    tape, (loss, st_, stats),
+    _ = ts.cache.extras.forward(
         Const(obj_fn), Const(ts.model), params, Const(ts.states), Const(data))
     ts.cache.extras.reverse(
         Const(obj_fn), Const(ts.model), params, Const(ts.states), Const(data),

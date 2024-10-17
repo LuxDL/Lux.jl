@@ -155,7 +155,8 @@ function train_model(xyt, target_data, xyt_bc, target_bc; seed::Int=0,
     train_state = Training.TrainState(pinn, ps, st, Adam(0.05f0))
     lr = i -> i < 5000 ? 0.05f0 : (i < 10000 ? 0.005f0 : 0.0005f0)
 
-    total_loss_tracker, physics_loss_tracker, data_loss_tracker, bc_loss_tracker = ntuple(
+    total_loss_tracker, physics_loss_tracker,
+    data_loss_tracker, bc_loss_tracker = ntuple(
         _ -> Lag(Float32, 32), 4)
 
     iter = 1
@@ -163,7 +164,9 @@ function train_model(xyt, target_data, xyt_bc, target_bc; seed::Int=0,
         Iterators.cycle(pde_dataloader), Iterators.cycle(bc_dataloader))
         Optimisers.adjust!(train_state, lr(iter))
 
-        _, loss, stats, train_state = Training.single_train_step!(
+        _, loss,
+        stats,
+        train_state = Training.single_train_step!(
             AutoZygote(), loss_function, (
                 xyt_batch, target_data_batch, xyt_bc_batch, target_bc_batch),
             train_state)

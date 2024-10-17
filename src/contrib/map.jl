@@ -71,7 +71,8 @@ function (::LayerWalkWithPath)(
     ps_children, ps_re = functor(ps)
     st_children, st_re = functor(st)
 
-    layer_children_new, ps_children_new, st_children_new = perform_layer_map(
+    layer_children_new, ps_children_new,
+    st_children_new = perform_layer_map(
         recurse, kp, ps_children, st_children, layer_children)
 
     inner_layer = layer_re(layer_children_new)
@@ -85,7 +86,8 @@ function (::LayerWalkWithPath)(
     ps_children, ps_re = functor(ps)
     st_children, st_re = functor(st)
 
-    layer_children_new, ps_children_new, st_children_new = perform_layer_map(
+    layer_children_new, ps_children_new,
+    st_children_new = perform_layer_map(
         recurse, kp, ps_children, st_children, layer_children)
 
     return layer_re(layer_children_new), ps_re(ps_children_new), st_re(st_children_new)

@@ -1,8 +1,8 @@
 @testitem "Pooling" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    nnlib_op = Dict(:LPPool => (args...) -> lpnormpool(args...; p=2),
-        :MeanPool => meanpool, :MaxPool => maxpool)
+    nnlib_op=Dict(:LPPool=>(args...)->lpnormpool(args...; p=2),
+        :MeanPool=>meanpool, :MaxPool=>maxpool)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for ltype in (:LPPool, :MeanPool, :MaxPool)

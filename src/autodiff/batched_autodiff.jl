@@ -34,7 +34,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian_
         (f̂, x̃) -> batched_jacobian_internal(f̂, backend, x̃)
     end
 
-    res, ∇autodiff_jacobian = CRC.rrule_via_ad(
+    res,
+    ∇autodiff_jacobian = CRC.rrule_via_ad(
         cfg, autodiff_jacobian, jac_fn, grad_fn, f, x, y)
     ∇batched_jacobian = let ∇autodiff_jacobian = ∇autodiff_jacobian
         Δ -> begin
@@ -57,7 +58,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian_
         (x, _) -> f(x)
     end
 
-    res, ∇batched_jacobian_full = CRC.rrule_via_ad(
+    res,
+    ∇batched_jacobian_full = CRC.rrule_via_ad(
         cfg, batched_jacobian_internal, f̂, backend, x, nothing)
     ∇batched_jacobian = let ∇batched_jacobian_full = ∇batched_jacobian_full
         Δ -> begin
@@ -127,9 +129,9 @@ end
         ::Type{Partials}, idx::Int) where {F, T, Tag, CK, Dual, Partials}
     N, B = size(x)
 
-    idxs = idx:min(idx + CK - 1, N)
-    idxs_prev = 1:(idx - 1)
-    idxs_next = (idx + CK):N
+    idxs = idx:min(idx+CK-1, N)
+    idxs_prev = 1:(idx-1)
+    idxs_next = (idx+CK):N
 
     dev = get_device(x)
 

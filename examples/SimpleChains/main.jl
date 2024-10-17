@@ -76,7 +76,9 @@ function train(model; rng=Xoshiro(0), kwargs...)
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
-            gs, _, _, train_state = Training.single_train_step!(
+            gs, _,
+            _,
+            train_state = Training.single_train_step!(
                 AutoZygote(), loss, (x, y), train_state)
         end
         ttime = time() - stime

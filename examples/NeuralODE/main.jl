@@ -134,7 +134,9 @@ function train(model_function; cpu::Bool=false, kwargs...)
     for epoch in 1:nepochs
         stime = time()
         for (x, y) in train_dataloader
-            _, _, _, tstate = Training.single_train_step!(
+            _, _,
+            _,
+            tstate = Training.single_train_step!(
                 AutoZygote(), logitcrossentropy, (x, y), tstate)
         end
         ttime = time() - stime

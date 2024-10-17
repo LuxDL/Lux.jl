@@ -1,5 +1,5 @@
 @testitem "CNN" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Grouped Conv" begin
@@ -201,7 +201,7 @@
 end
 
 @testitem "Upsample" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Construction" begin
@@ -275,7 +275,7 @@ end
 end
 
 @testitem "PixelShuffle" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         layer = PixelShuffle(2)
@@ -307,7 +307,7 @@ end
 end
 
 @testitem "Conv(cross_correlation=true)" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Asymmetric Padding" begin
@@ -369,7 +369,7 @@ end
 end
 
 @testitem "ConvTranspose" setup=[SharedTestSetup] tags=[:core_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset for cross_correlation in (true, false)

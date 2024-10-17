@@ -66,7 +66,8 @@ function (d::DebugLayer)(x, ps, st)
             check_nan_and_throw(st, "states", d.layer, d.location)
         end
     end
-    y, stₙ = debug_layer_impl(d.layer, x, ps, st, d.location, known(d.error_check),
+    y,
+    stₙ = debug_layer_impl(d.layer, x, ps, st, d.location, known(d.error_check),
         known(d.nan_check) ∈ (:both, :backward))
     CRC.ignore_derivatives() do
         if known(d.nan_check) ∈ (:both, :forward)
@@ -95,7 +96,8 @@ function check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
 end
 
 function debug_layer_impl(layer, x, ps, st, location, error_check, _)
-    y, stₙ = try
+    y,
+    stₙ = try
         apply(layer, x, ps, st)
     catch
         error_check &&

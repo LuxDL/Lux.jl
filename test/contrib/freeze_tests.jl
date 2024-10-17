@@ -1,5 +1,5 @@
 @testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "NamedTuple" begin
@@ -66,7 +66,7 @@ end
 @testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
     using Lux.Experimental: FrozenLayer
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         d = Dense(5 => 5)

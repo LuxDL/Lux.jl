@@ -246,7 +246,8 @@ function wrap_objective_function(
         objective_function::F, m, ps, st, data, first_try::StaticBool) where {F}
     st_updated, stats = generate_wrappers(objective_function, m, ps, st, data, first_try)
 
-    wrapped_objective_function = @closure (model, ps, st, data) -> begin
+    wrapped_objective_function = @closure (model, ps, st,
+        data) -> begin
         loss, st_, stats_ = objective_function(model, ps, st, data)
         Lux.Utils.set_refval!(st_updated, st_)
         Lux.Utils.set_refval!(stats, stats_)
@@ -330,7 +331,7 @@ end
 
 @compat(public,
     (TrainState, apply_gradients, apply_gradients!,
-        compute_gradients, single_train_step, single_train_step!))
+    compute_gradients, single_train_step, single_train_step!))
 
 export AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZygote
 

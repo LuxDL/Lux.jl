@@ -143,7 +143,10 @@ function main(model_type)
     for epoch in 1:25
         ## Train the model
         for (x, y) in train_loader
-            (_, loss, _, train_state) = Training.single_train_step!(
+            (_,
+                loss,
+                _,
+                train_state) = Training.single_train_step!(
                 AutoZygote(), lossfn, (x, y), train_state)
 
             @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss

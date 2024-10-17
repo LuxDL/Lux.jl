@@ -84,7 +84,7 @@ function unet_model(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128],
     channel_input = embedding_dims + channels[1]
     down_blocks = [downsample_block(
                        i == 1 ? channel_input : channels[i - 1], channels[i], block_depth)
-                   for i in 1:(length(channels) - 1)]
+                   for i in 1:(length(channels)-1)]
     residual_blocks = Chain([residual_block(
                                  ifelse(i == 1, channels[end - 1], channels[end]),
                                  channels[end]) for i in 1:block_depth]...)
@@ -133,7 +133,8 @@ function ddim(rng::AbstractRNG, args...; min_signal_rate=0.02f0,
         noises = rand_like(rng, images)
         diffusion_times = rand_like(rng, images, (1, 1, 1, size(images, 4)))
 
-        noise_rates, signal_rates = diffusion_schedules(
+        noise_rates,
+        signal_rates = diffusion_schedules(
             diffusion_times, min_signal_rate, max_signal_rate)
 
         noisy_images = @. signal_rates * images + noise_rates * noises
@@ -184,15 +185,18 @@ function reverse_diffusion(
         # We start t = 1, and gradually decreases to t=0
         diffusion_times = (ones(T, 1, 1, 1, num_images) .- step_size * step) |> dev
 
-        noise_rates, signal_rates = diffusion_schedules(
+        noise_rates,
+        signal_rates = diffusion_schedules(
             diffusion_times, min_signal_rate, max_signal_rate)
 
-        pred_noises, pred_images = denoise(
+        pred_noises,
+        pred_images = denoise(
             StatefulLuxLayer{true}(model.model.layers.unet, model.ps.unet, model.st.unet),
             noisy_images, noise_rates, signal_rates)
 
         next_diffusion_times = diffusion_times .- step_size
-        next_noisy_rates, next_signal_rates = diffusion_schedules(
+        next_noisy_rates,
+        next_signal_rates = diffusion_schedules(
             next_diffusion_times, min_signal_rate, max_signal_rate)
 
         next_noisy_images = next_signal_rates .* pred_images .+
@@ -224,6 +228,7 @@ function generate_and_save_image_grid(output_dir, imgs::Vector{<:AbstractArray{<
     fig = Figure()
     nrows, ncols = 3, 4
     for r in 1:nrows, c in 1:ncols
+
         i = (r - 1) * ncols + c
         i > length(imgs) && break
         ax = Axis(fig[r, c]; aspect=DataAspect())
@@ -376,7 +381,10 @@ Comonicon.@main function main(; epochs::Int=100, image_size::Int=128,
 
         for (i, data) in enumerate(data_loader)
             step += 1
-            (_, _, stats, tstate) = Training.single_train_step!(
+            (_,
+                _,
+                stats,
+                tstate) = Training.single_train_step!(
                 AutoZygote(), loss_function, data, tstate)
             image_losses[i] = stats.image_loss
             noise_losses[i] = stats.noise_loss

@@ -1,5 +1,5 @@
 @testitem "Dropout" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         for p in (0.5f0, 0.5)
@@ -31,7 +31,7 @@
 end
 
 @testitem "AlphaDropout" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         for p in (0.5f0, 0.5)
@@ -64,7 +64,7 @@ end
 end
 
 @testitem "VariationalHiddenDropout" setup=[SharedTestSetup] tags=[:normalize_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         for p in (0.5f0, 0.5)

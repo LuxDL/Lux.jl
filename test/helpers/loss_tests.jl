@@ -5,8 +5,8 @@
     @test isnan(LuxOps.xlogx(NaN))
     @test LuxOps.xlogx(2) ≈ 2.0 * log(2.0)
 
-    ∂x1 = ForwardDiff.derivative(LuxOps.xlogx, 2.0)
-    ∂x2 = Zygote.gradient(LuxOps.xlogx, 2.0)[1]
+    ∂x1=ForwardDiff.derivative(LuxOps.xlogx, 2.0)
+    ∂x2=Zygote.gradient(LuxOps.xlogx, 2.0)[1]
     @test ∂x1 ≈ ∂x2
 
     @test @inferred(LuxOps.xlogx(2)) isa Number
@@ -19,11 +19,12 @@
     @test isnan(LuxOps.xlogy(NaN, NaN))
     @test LuxOps.xlogy(2, 3) ≈ 2.0 * log(3.0)
 
-    ∂x1 = ForwardDiff.derivative(Base.Fix2(LuxOps.xlogy, 3.0), 2.0)
-    ∂y1 = ForwardDiff.derivative(Base.Fix1(LuxOps.xlogy, 2.0), 3.0)
-    ∂x2, ∂y2 = Zygote.gradient(LuxOps.xlogy, 2.0, 3.0)
+    ∂x1=ForwardDiff.derivative(Base.Fix2(LuxOps.xlogy, 3.0), 2.0)
+    ∂y1=ForwardDiff.derivative(Base.Fix1(LuxOps.xlogy, 2.0), 3.0)
+    ∂x2, ∂y2=Zygote.gradient(LuxOps.xlogy, 2.0, 3.0)
     if LuxTestUtils.ENZYME_TESTING_ENABLED
-        ((∂x3, ∂y3),) = Enzyme.autodiff(
+        ((∂x3,
+            ∂y3),)=Enzyme.autodiff(
             Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))
         @test ∂x1 ≈ ∂x2 ≈ ∂x3
         @test ∂y1 ≈ ∂y2 ≈ ∂y3

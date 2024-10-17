@@ -32,11 +32,11 @@ end
 end
 
 @testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     function bcast_multigate(x)
-        x1, x2, x3 = LuxOps.multigate(x, Val(3))
-        return sum(x1) + sum(x3 .+ x2 .^ 2)
+        x1, x2, x3=LuxOps.multigate(x, Val(3))
+        return sum(x1)+sum(x3 .+ x2 .^ 2)
     end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -71,7 +71,7 @@ end
 @testitem "ComponentArrays" setup=[SharedTestSetup] tags=[:others] begin
     using Optimisers, Functors
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
@@ -106,26 +106,26 @@ end
     end
 
     # Ref: https://github.com/LuxDL/Lux.jl/issues/243
-    nn = Chain(Dense(4, 3), Dense(3, 2))
-    ps, st = Lux.setup(rng, nn)
+    nn=Chain(Dense(4, 3), Dense(3, 2))
+    ps, st=Lux.setup(rng, nn)
 
-    l2reg(p) = sum(abs2, ComponentArray(p))
+    l2reg(p)=sum(abs2, ComponentArray(p))
     @test length(Zygote.gradient(l2reg, ps)) == 1
 end
 
 @testitem "Utils.init_rnn_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
         x = randn(rng, Float32, 3, 2, 2)
-        @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
+        @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x),:,1,:)) ==
               aType(zeros(Float32, 5, 2))
     end
 end
 
 @testitem "FP Conversions" setup=[SharedTestSetup] tags=[:others] begin
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(
@@ -149,7 +149,7 @@ end
             @test eltype(st.layer_3.running_var) == ftype
             @test typeof(st.layer_3.training) == Val{true}
 
-            @test_throws ArgumentError (ps.|>f)
+            @test_throws ArgumentError (ps .|> f)
             @test_throws ArgumentError f.(ps)
 
             x = [1.0, 2.0, 3.0] |> aType
@@ -263,15 +263,15 @@ end
 @testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:others] begin
     using Functors
 
-    rng = StableRNG(12345)
+    rng=StableRNG(12345)
 
-    c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
-        dense_3=Dense(5 => 1))
+    c=Parallel(+; chain=Chain(; dense_1=Dense(2=>3), dense_2=Dense(3=>5)),
+        dense_3=Dense(5=>1))
 
     @test fmap(println, c) isa Any
 
-    l = Dense(2 => 2)
-    new_model = fmap(x -> l, c)
+    l=Dense(2=>2)
+    new_model=fmap(x->l, c)
     @test new_model.layers.chain.layers.dense_1 == l
     @test new_model.layers.chain.layers.dense_2 == l
     @test new_model.layers.dense_3 == l
@@ -280,23 +280,23 @@ end
 @testitem "Tracing AD: AoS to SoA" setup=[SharedTestSetup] tags=[:autodiff] begin
     using ReverseDiff, Tracker
 
-    rng = StableRNG(1234)
+    rng=StableRNG(1234)
 
-    x = rand(rng, Float32, 1, 128)
-    nn = Dense(1 => 1)
-    ps, st = Lux.setup(rng, nn)
+    x=rand(rng, Float32, 1, 128)
+    nn=Dense(1=>1)
+    ps, st=Lux.setup(rng, nn)
 
-    x_t = Tracker.TrackedReal.(x)
-    y_t = LuxCore.stateless_apply(nn, x_t, ps)
+    x_t=Tracker.TrackedReal.(x)
+    y_t=LuxCore.stateless_apply(nn, x_t, ps)
     @test y_t isa Tracker.TrackedArray
 
-    y_t = first(nn(x_t, ps, st))
+    y_t=first(nn(x_t, ps, st))
     @test y_t isa AbstractArray{<:Tracker.TrackedReal}
 
-    x_t = ReverseDiff.TrackedReal.(x, zero(x))
-    y_t = LuxCore.stateless_apply(nn, x_t, ps)
+    x_t=ReverseDiff.TrackedReal.(x, zero(x))
+    y_t=LuxCore.stateless_apply(nn, x_t, ps)
     @test y_t isa ReverseDiff.TrackedArray
 
-    y_t = first(nn(x_t, ps, st))
+    y_t=first(nn(x_t, ps, st))
     @test y_t isa AbstractArray{<:ReverseDiff.TrackedReal}
 end

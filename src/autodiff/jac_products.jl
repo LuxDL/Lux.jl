@@ -36,7 +36,8 @@ function CRC.rrule(
 
     ∇jacvec_product = let pullback_fn = pullback_fn, f = f, x = x, y = y, u = u, cfg = cfg
         Δ -> begin
-            _, ∇autodiff_pullback = CRC.rrule_via_ad(
+            _,
+            ∇autodiff_pullback = CRC.rrule_via_ad(
                 cfg, autodiff_pullback, pullback_fn, f, x, y, Δ)
             _, _, _, ∂x, ∂y, _ = ∇autodiff_pullback(u)
             return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent(), ∂y

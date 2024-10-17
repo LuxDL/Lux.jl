@@ -1,30 +1,30 @@
 @testitem "ToSimpleChainsAdaptor" setup=[SharedTestSetup] tags=[:others] begin
     import SimpleChains: static
 
-    lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
-        Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
-        Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)))
+    lux_model=Chain(Conv((5, 5), 1=>6, relu), MaxPool((2, 2)),
+        Conv((5, 5), 6=>16, relu), MaxPool((2, 2)), FlattenLayer(3),
+        Chain(Dense(256=>128, relu), Dense(128=>84, relu), Dense(84=>10)))
 
-    adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
+    adaptor=ToSimpleChainsAdaptor((static(28), static(28), static(1)))
 
-    simple_chains_model = adaptor(lux_model)
+    simple_chains_model=adaptor(lux_model)
 
-    rng = Random.Xoshiro()
-    ps_rng = []
+    rng=Random.Xoshiro()
+    ps_rng=[]
     for i in 1:2
-        ps, st = Lux.setup(Lux.replicate(rng), simple_chains_model)
+        ps, st=Lux.setup(Lux.replicate(rng), simple_chains_model)
         push!(ps_rng, ps)
     end
     @test allequal(ps_rng)
 
-    ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
+    ps, st=Lux.setup(Random.default_rng(), simple_chains_model)
 
-    x = randn(Float32, 28, 28, 1, 1)
+    x=randn(Float32, 28, 28, 1, 1)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 1)
 
-    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+    __f=(x, p)->sum(first(simple_chains_model(x, p, st)))
 
-    gs = Zygote.gradient(__f, x, ps)
+    gs=Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
@@ -32,12 +32,12 @@
     @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
         broken_backends=[AutoEnzyme(), AutoTracker()])
 
-    x = randn(Float32, 28, 28, 1, 15)
+    x=randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
 
-    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+    __f=(x, p)->sum(first(simple_chains_model(x, p, st)))
 
-    gs = Zygote.gradient(__f, x, ps)
+    gs=Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
@@ -56,30 +56,30 @@
         @test first(simple_chains_model(x, ps, st)) isa Array
     end
 
-    lux_model = Chain(
-        FlattenLayer(3), Dense(784 => 20, tanh), Dropout(0.5), Dense(20 => 10))
+    lux_model=Chain(
+        FlattenLayer(3), Dense(784=>20, tanh), Dropout(0.5), Dense(20=>10))
 
-    adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
+    adaptor=ToSimpleChainsAdaptor((static(28), static(28), static(1)))
 
-    simple_chains_model = adaptor(lux_model)
+    simple_chains_model=adaptor(lux_model)
 
-    ps, st = Lux.setup(Random.default_rng(), simple_chains_model)
+    ps, st=Lux.setup(Random.default_rng(), simple_chains_model)
 
-    x = randn(Float32, 28, 28, 1, 1)
+    x=randn(Float32, 28, 28, 1, 1)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 1)
 
-    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+    __f=(x, p)->sum(first(simple_chains_model(x, p, st)))
 
-    gs = Zygote.gradient(__f, x, ps)
+    gs=Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
-    x = randn(Float32, 28, 28, 1, 15)
+    x=randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
 
-    __f = (x, p) -> sum(first(simple_chains_model(x, p, st)))
+    __f=(x, p)->sum(first(simple_chains_model(x, p, st)))
 
-    gs = Zygote.gradient(__f, x, ps)
+    gs=Zygote.gradient(__f, x, ps)
     @test size(gs[1]) == size(x)
     @test length(gs[2].params) == length(ps.params)
 
@@ -133,11 +133,11 @@
         end
     end
 
-    lux_model = Dense(10 => 5)
-    adaptor = ToSimpleChainsAdaptor((static(10),))
-    smodel = adaptor(lux_model)
+    lux_model=Dense(10=>5)
+    adaptor=ToSimpleChainsAdaptor((static(10),))
+    smodel=adaptor(lux_model)
 
-    smodel2 = SimpleChainsLayer(smodel.layer, Val(true))
+    smodel2=SimpleChainsLayer(smodel.layer, Val(true))
     @test smodel2.layer == smodel.layer
     @test smodel2.lux_layer === nothing
 end
