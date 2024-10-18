@@ -92,7 +92,8 @@ For faster performance on CPUs load the following packages:
 
 If these are available, we automatically use optimized versions of the layers. Though there
 are cases where this might be an issue (see
-[#980](https://github.com/LuxDL/Lux.jl/issues/980)).
+[#980](https://github.com/LuxDL/Lux.jl/issues/980) and
+[disabling loop vectorization](@ref disable_loop_vectorization)).
 
 ## Data Loading and Device Transfer
 
