@@ -81,10 +81,10 @@ function train()
     rng = Xoshiro(0)
     ps, st = Lux.setup(rng, model) |> dev
 
-    train_state = Training.TrainState(model, ps, st, Adam(3.0f-4))
+    train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
 
     ### Lets train the model
-    nepochs = 25
+    nepochs = 50
     for epoch in 1:nepochs, data_idx in 1:2
         train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
 
@@ -106,8 +106,8 @@ function train()
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
-        @printf "[%3d/%3d] \t %12s \t Time %.5fs \t Training Accuracy: %.2f%% \t Test \
-                 Accuracy: %.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
+        @printf "[%3d/%3d]\t%12s\tTime %3.5fs\tTraining Accuracy: %3.2f%%\tTest \
+                 Accuracy: %3.2f%%\n" epoch nepochs data_name ttime train_acc test_acc
     end
 
     println()
@@ -126,13 +126,13 @@ function train()
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
-        @printf "[FINAL] \t %12s \t Training Accuracy: %.2f%% \t Test Accuracy: \
-                 %.2f%%\n" data_name train_acc test_acc
+        @printf "[FINAL]\t%12s\tTraining Accuracy: %3.2f%%\tTest Accuracy: \
+                 %3.2f%%\n" data_name train_acc test_acc
         test_acc_list[data_idx] = test_acc
     end
     return test_acc_list
 end
 
 test_acc_list = train()
-@assert test_acc_list[1] > 0.90 && test_acc_list[2] > 0.70 #hide
+@assert test_acc_list[1] > 75 && test_acc_list[2] > 75 #hide
 nothing #hide
