@@ -97,12 +97,12 @@ end
 
 function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
     if γ === nothing && β === nothing
-        @simd ivdep for J in indices((γ′, β′, μ, σ²))
+        @simd ivdep for J in eachindex(γ′, β′, μ, σ²)
             @fastmath @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
             @fastmath @inbounds β′[J] = -μ[J] * γ′[J]
         end
     else
-        @simd ivdep for J in indices((γ′, β′, γ, β, μ, σ²))
+        @simd ivdep for J in eachindex(γ′, β′, γ, β, μ, σ²)
             @fastmath @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
             @fastmath @inbounds β′[J] = β[J] - μ[J] * γ′[J]
         end
@@ -122,8 +122,8 @@ end
 @inline function apply_batchnorm_scale_bias_act_2d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
         x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
-    for K in indices((x, y), 3)
-        @simd ivdep for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+    for K in axes(x, 3)
+        @simd ivdep for J in axes(x, 2)
             @fastmath @inbounds y[1, J, K] = σ(x[1, J, K] * γ′[J] + β′[J])
         end
     end
@@ -132,9 +132,9 @@ end
 @inline function apply_batchnorm_scale_bias_act_3d_threaded_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
         x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
-    @batch for K in indices((x, y), 3)
-        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
-            @simd ivdep for I in indices((x, y), 1)
+    @batch for K in axes(x, 3)
+        for J in axes(x, 2)
+            @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = σ(x[I, J, K] * γ′[J] + β′[J])
             end
         end
@@ -144,9 +144,9 @@ end
 @inline function apply_batchnorm_scale_bias_act_3d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
         x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
-    for K in indices((x, y), 3)
-        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
-            @simd ivdep for I in indices((x, y), 1)
+    for K in axes(x, 3)
+        for J in axes(x, 2)
+            @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = σ(x[I, J, K] * γ′[J] + β′[J])
             end
         end
@@ -167,8 +167,8 @@ end
 @inline function apply_batchnorm_scale_bias_2d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
         x::AbstractArray{xT, 3}) where {xT, yT}
-    for K in indices((x, y), 3)
-        @simd ivdep for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
+    for K in axes(x, 3)
+        @simd ivdep for J in axes(x, 2)
             @fastmath @inbounds y[1, J, K] = x[1, J, K] * γ′[J] + β′[J]
         end
     end
@@ -177,9 +177,9 @@ end
 @inline function apply_batchnorm_scale_bias_3d_threaded_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
         x::AbstractArray{xT, 3}) where {xT, yT}
-    @batch for K in indices((x, y), 3)
-        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
-            @simd ivdep for I in indices((x, y), 1)
+    @batch for K in axes(x, 3)
+        for J in axes(x, 2)
+            @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
             end
         end
@@ -189,9 +189,9 @@ end
 @inline function apply_batchnorm_scale_bias_3d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
         x::AbstractArray{xT, 3}) where {xT, yT}
-    for K in indices((x, y), 3)
-        for J in indices((x, y, γ′, β′), (2, 2, 1, 1))
-            @simd ivdep for I in indices((x, y), 1)
+    for K in axes(x, 3)
+        for J in axes(x, 2)
+            @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
             end
         end
@@ -307,8 +307,8 @@ function ∇batchnorm_affine_normalize_cpu!(
     fill!(∂σ², 0)
 
     if size(∂y, 1) == 1
-        @fastmath @inbounds for K in indices(∂y, 3)
-            @simd for J in indices(∂y, 2)
+        @fastmath @inbounds for K in axes(∂y, 3)
+            @simd for J in axes(∂y, 2)
                 idenom = γ′[J]
                 idenom² = idenom^2
 
@@ -320,11 +320,11 @@ function ∇batchnorm_affine_normalize_cpu!(
             end
         end
     else
-        @fastmath @inbounds for K in indices(∂y, 3), J in indices(∂y, 2)
+        @fastmath @inbounds for K in axes(∂y, 3), J in axes(∂y, 2)
             idenom = γ′[J]
             idenom² = idenom^2
 
-            @simd for I in indices(∂y, 1)
+            @simd for I in axes(∂y, 1)
                 xμ = x[I, J, K] - μ[J]
 
                 ∂x[I, J, K] = ∂y[I, J, K] * idenom
@@ -349,8 +349,8 @@ function ∇batchnorm_affine_normalize_cpu!(
     fill!(∂β, 0)
 
     if size(∂y, 1) == 1
-        @fastmath @inbounds for K in indices(∂y, 3)
-            @simd for J in indices(∂y, 2)
+        @fastmath @inbounds for K in axes(∂y, 3)
+            @simd for J in axes(∂y, 2)
                 idenom = inv(sqrt(σ²[J] + ϵ))
                 idenom² = idenom^2
 
@@ -364,11 +364,11 @@ function ∇batchnorm_affine_normalize_cpu!(
             end
         end
     else
-        @fastmath @inbounds for K in indices(∂y, 3), J in indices(∂y, 2)
+        @fastmath @inbounds for K in axes(∂y, 3), J in axes(∂y, 2)
             idenom = inv(sqrt(σ²[J] + ϵ))
             idenom² = idenom^2
 
-            @simd for I in indices(∂y, 1)
+            @simd for I in axes(∂y, 1)
                 xμ = x[I, J, K] - μ[J]
 
                 ∂x[I, J, K] = ∂y[I, J, K] * γ′[J]

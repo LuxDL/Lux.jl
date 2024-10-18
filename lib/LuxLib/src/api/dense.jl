@@ -24,6 +24,11 @@ multiple operations.
   - For small CPU Arrays, we use LoopVectorization.jl. On `x86_64` we use Octavian for
     medium sized matrices. This is overridden if special BLAS implementations are loaded
     (currently `MKL`, `AppleAccelerate`, and `BLISBLAS`).
+
+!!! tip "Load `Octavian.jl`
+
+    Loading `Octavian.jl` enables a polyalgorithm that uses different backends based on the
+    input sizes.
 """
 function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
         b::Optional{<:AbstractVector}) where {F}

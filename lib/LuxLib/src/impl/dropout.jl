@@ -80,29 +80,16 @@ function CRC.rrule(::typeof(alpha_dropout), ::LoopedArrayOp, noise::AbstractArra
         p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
     cond = similar(noise, Bool)
     y = similar(x, promote_type(typeof(p), typeof(α), typeof(A), typeof(B), eltype(x)))
-    if LV.check_args(noise, x, y, cond)
-        @tturbo for I in indices((noise, x, y, cond))
-            cond[I] = noise[I] > p
-            y[I] = ifelse(cond[I], x[I], α) * A + B
-        end
-    else
-        @batch for I in indices((noise, x, y, cond))
-            cond[I] = noise[I] > p
-            y[I] = ifelse(cond[I], x[I], α) * A + B
-        end
+    @simd ivdep for I in eachindex(noise, x, y, cond)
+        @inbounds cond[I] = noise[I] > p
+        @inbounds y[I] = ifelse(cond[I], x[I], α) * A + B
     end
 
     ∇alpha_dropout = let cond = cond, 𝒫x = CRC.ProjectTo(x), x = x
         Δ -> begin
             ∂x = similar(x)
-            if LV.check_args(∂x, cond, Δ)
-                @tturbo for I in indices((∂x, cond, Δ))
-                    ∂x[I] = cond[I] * Δ[I] * A
-                end
-            else
-                @batch for I in indices((∂x, cond, Δ))
-                    ∂x[I] = cond[I] * Δ[I] * A
-                end
+            @simd ivdep for I in eachindex(cond, Δ, ∂x)
+                @inbounds ∂x[I] = cond[I] * Δ[I] * A
             end
             return (ntuple(Returns(∂∅), 4)..., 𝒫x(∂x), ntuple(Returns(∂∅), 3)...)
         end
@@ -125,28 +112,13 @@ function CRC.rrule(::typeof(alpha_dropout), ::AbstractInternalArrayOpMode,
     return y, ∇alpha_dropout
 end
 
-function alpha_dropout!(res::AbstractArray, ::LoopedArrayOp, noise::AbstractArray,
-        p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
-    if LV.check_args(noise, x, res)
-        @tturbo for I in indices((noise, x, res))
-            res[I] = ifelse(noise[I] > p, x[I], α) * A + B
-        end
-    else
-        @batch for I in indices((noise, x, res))
-            res[I] = ifelse(noise[I] > p, x[I], α) * A + B
-        end
-    end
-end
-
-function alpha_dropout_simd_loop!(
+function alpha_dropout!(
         res::AbstractArray{T}, ::LoopedArrayOp, noise::AbstractArray{T},
         p::Real, x::AbstractArray{T}, α::Real, A::Real, B::Real) where {T}
-    @simd ivdep for I in indices((noise, x, res))
+    @simd ivdep for I in eachindex(noise, x, res)
         res[I] = ifelse(noise[I] > p, x[I], α) * A + B
     end
 end
-
-@enzyme_alternative alpha_dropout! alpha_dropout_simd_loop!
 
 dropout_fptype(x) = float(real(remove_tracking(eltype(x))))
 
@@ -177,26 +149,12 @@ function generate_dropout_mask!(y::AbstractArray, ::LoopedArrayOp, p, invp)
     return
 end
 
-function generate_dropout_mask_loop!(y::AbstractArray, p, invp)
-    if LV.check_args(y)
-        @tturbo for I in indices(y)
-            y[I] = (y[I] > p) * invp
-        end
-    else
-        @batch for I in indices(y)
-            y[I] = (y[I] > p) * invp
-        end
-    end
-end
-
-function generate_dropout_mask_simd_loop!(y::AbstractArray{T}, p, invp) where {T}
+function generate_dropout_mask_loop!(y::AbstractArray{T}, p, invp) where {T}
     p, invp = T(p), T(invp)
-    @simd ivdep for I in indices(y)
+    @simd ivdep for I in eachindex(y)
         y[I] = (y[I] > p) * invp
     end
 end
-
-@enzyme_alternative generate_dropout_mask_loop! generate_dropout_mask_simd_loop!
 
 function generate_dropout_mask!(
         y::AbstractArray{T}, ::AbstractInternalArrayOpMode, p, invp) where {T}

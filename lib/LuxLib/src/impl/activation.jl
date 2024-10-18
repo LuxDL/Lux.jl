@@ -91,16 +91,6 @@ function activation!(
     return
 end
 function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray) where {F}
-    activation_loop!(y, σ, x)
-    return
-end
-
-function activation_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    # We use fuse activation as a proxy check for "simple functions"
-    if LV.check_args(y, x) && unsafe_known(!fuse_cpu_activation(σ))
-        LV.vmap!(σ, y, x)
-        return
-    end
     activation_simd_loop!(y, σ, x)
     return
 end
@@ -110,8 +100,6 @@ function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where 
         @inbounds y[I] = σ(x[I])
     end
 end
-
-@enzyme_alternative activation_loop! activation_simd_loop!
 
 # Gradient for activations
 ∇activation(Δ, _, ::typeof(identity), x) = Δ
@@ -124,11 +112,11 @@ end
 @inbounds function ∇activation(::LoopedArrayOp, Δ, out, act::F, x) where {F}
     y = similar(out)
     if x isa NotaNumber
-        @simd ivdep for i in indices((Δ, out))
+        @simd ivdep for i in eachindex(Δ, out)
             @inbounds y[i] = only_derivative(out[i], act, x) * Δ[i]
         end
     else
-        @simd ivdep for i in indices((Δ, out, x))
+        @simd ivdep for i in eachindex(Δ, out, x)
             @inbounds y[i] = only_derivative(out[i], act, x[i]) * Δ[i]
         end
     end
@@ -144,73 +132,13 @@ end
 select_fastest_activation(f::F, ::AbstractInternalArrayOpMode, ::Type{T}) where {F, T} = f
 
 function select_fastest_activation(f::F, ::LoopedArrayOp, ::Type{T}) where {F, T}
-    return SLEEFActivations.fast_act(f, T)
+    return sleefpirates_fast_act(f, T)
 end
 
 CRC.@non_differentiable select_fastest_activation(::Any...)
 
-# Fast activations via SLEEFPirates.jl
-module SLEEFActivations
+sleefpirates_fast_act(f::F, ::Type{T}) where {F, T} = f
+sleefpirates_fast_act(f::F, ::Type{Float32}) where {F} = sleefpirates_fast_act(f)
+sleefpirates_fast_act(f::F) where {F} = f
 
-using ChainRulesCore: ChainRulesCore
-using NNlib: NNlib
-using SLEEFPirates: SLEEFPirates
-
-using ....LuxLib: Numeric
-
-const CRC = ChainRulesCore
-
-sigmoid_fast(x::Number) = SLEEFPirates.sigmoid_fast(x)
-softplus(x::Number) = SLEEFPirates.softplus(x)
-logsigmoid(x::Number) = -softplus(-x)
-swish(x::Number) = Base.FastMath.mul_fast(x, sigmoid_fast(x))
-lisht(x::Number) = Base.FastMath.mul_fast(x, tanh_fast(x))
-tanh(x::Number) = SLEEFPirates.tanh(x)
-tanh_fast(x::Number) = SLEEFPirates.tanh_fast(x)
-
-for (f, dfdx) in [
-    #! format: off
-    (:sigmoid_fast, :(conj(Base.FastMath.mul_fast(Ω, Base.FastMath.sub_fast(1, Ω))))),
-    (:softplus, :(sigmoid_fast(x))),
-    (:logsigmoid, :(sigmoid_fast(-x))),
-    (:swish, :(Base.FastMath.add_fast(Ω, Base.FastMath.mul_fast(sigmoid_fast(x), Base.FastMath.sub_fast(1, Ω))))),
-    (:lisht, :(Base.FastMath.add_fast(x, Base.FastMath.mul_fast(tanh_fast(x), Base.FastMath.sub_fast(1, Ω))))),
-    (:tanh, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω))))),
-    (:tanh_fast, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω)))))
-    #! format: on
-]
-    @eval CRC.@scalar_rule($f(x), $(dfdx))
-
-    ∇f = Symbol(:∇broadcasted_, f)
-    @eval function CRC.rrule(::typeof(Broadcast.broadcasted), ::typeof($f),
-            x::Union{Numeric, Broadcast.Broadcasted})
-        Ω = $(f).(x)
-        function $(∇f)(dΩ)
-            ∂x = CRC.InplaceableThunk(dx -> @.(dx+=dΩ * $(dfdx)), CRC.@thunk @.(dΩ*$(dfdx)))
-            return CRC.NoTangent(), CRC.NoTangent(), ∂x
-        end
-        return Ω, $(∇f)
-    end
-end
-
-fast_act(f::F, ::Type{T}) where {F, T} = f
-fast_act(f::F, ::Type{Float32}) where {F} = fast_act(f)
-
-for (fbase, ffast) in [
-    #! format: off
-    (NNlib.sigmoid_fast, sigmoid_fast),
-    (NNlib.softplus, softplus),
-    (NNlib.logsigmoid, logsigmoid),
-    (NNlib.swish, swish),
-    (NNlib.lisht, lisht),
-    (Base.tanh, tanh),
-    (NNlib.tanh_fast, tanh_fast)
-    #! format: on
-]
-    @eval fast_act(::typeof($fbase)) = $ffast
-end
-fast_act(f::F) where {F} = f
-
-CRC.@non_differentiable fast_act(::Any...)
-
-end
+CRC.@non_differentiable sleefpirates_fast_act(::Any...)

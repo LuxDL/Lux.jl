@@ -36,7 +36,7 @@
             @jet apply_act_fast2(f, x)
 
             @test @inferred(Zygote.gradient(apply_act, f, x)) isa Any
-            if f !== lisht || (f === lisht && T == Float32 && !ongpu)
+            if f !== lisht
                 @test @inferred(Zygote.gradient(apply_act_fast, f, x)) isa Any
             end
             @test @inferred(Zygote.gradient(apply_act_fast2, f, x)) isa Any

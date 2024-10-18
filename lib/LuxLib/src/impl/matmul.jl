@@ -67,7 +67,7 @@ end
 
 function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
         B::AbstractMatrix, bias::AbstractVector)
-    if LV.check_args(C, A, B, bias) && fits_in_l2cache(C, A, B, bias)
+    if can_loopvec_args(C, A, B, bias) && fits_in_l2cache(C, A, B, bias)
         matmuladd_loopvec!(C, A, B, bias)
         return
     end
@@ -95,7 +95,7 @@ for spl_blas in (True, False)
         function matmul_cpu!( # Octavian can be used
                 C::AbstractMatrix, ::True, ::$(spl_blas),
                 A::AbstractMatrix, B::AbstractMatrix)
-            if LV.check_args(C, A, B)
+            if can_loopvec_args(C, A, B)
                 if fits_in_l1cache(C, A, B)
                     matmul_loopvec!(C, A, B, true, false)
                     return
@@ -112,7 +112,7 @@ for spl_blas in (True, False)
         function matmul_cpu!( # Octavian cannot be used
                 C::AbstractMatrix, ::False, ::$(spl_blas),
                 A::AbstractMatrix, B::AbstractMatrix)
-            if LV.check_args(C, A, B)
+            if can_loopvec_args(C, A, B)
                 if $(unsafe_known(spl_blas()) ? fits_in_l1cache : fits_in_l2cache)(C, A, B)
                     matmul_loopvec!(C, A, B, true, false)
                     return
@@ -126,11 +126,6 @@ end
 
 # Low-Level Matmul implementations -- Either call libraries or implement our own
 # We force inlining here to avoid allocations in the inner loops
-@inline function matmul_octavian!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
-    Octavian.matmul!(C, A, B, α, β)
-    return
-end
 
 # Best case fallback, we are likely going to hit BLAS
 @inline function matmul_cpu_fallback!(C::AbstractMatrix{T}, A::AbstractMatrix{T},
@@ -141,7 +136,7 @@ end
 
 @inline function matmul_cpu_fallback!(C::AbstractMatrix{T}, A::AbstractMatrix{AT},
         B::AbstractMatrix{BT}, α::Number, β::Number) where {T, AT, BT}
-    if LV.check_args(C, A, B)  # Use Octavian if possible. Don't check via `use_octavian()`
+    if can_loopvec_args(C, A, B) && unsafe_known(is_extension_loaded(Val(:Octavian)))
         matmul_octavian!(C, A, B, α, β)
         return
     end
@@ -163,41 +158,11 @@ end
     return
 end
 
-for serial in (true, false)
-    opname = serial ? :serial_matmul_loopvec! : :matmul_loopvec!
-    @eval @inline function $opname(
-            C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
-        if !iszero(β) # Secial case this because Base.FastMath.mul_fast(NaN, false) = NaN
-            @turbo thread=$(!serial) for K in indices((C, B), 2), J in indices((C, A), 1)
-                Cⱼₖ = zero(eltype(C))
-                for I in indices((A, B), (2, 1))
-                    Cⱼₖ += A[J, I] * B[I, K]
-                end
-                C[J, K] = α * Cⱼₖ + β * C[J, K]
-            end
-        else
-            @turbo thread=$(!serial) for K in indices((C, B), 2), J in indices((C, A), 1)
-                Cⱼₖ = zero(eltype(C))
-                for I in indices((A, B), (2, 1))
-                    Cⱼₖ += A[J, I] * B[I, K]
-                end
-                C[J, K] = α * Cⱼₖ
-            end
-        end
-    end
-end
+function serial_matmul_loopvec! end
+function matmul_loopvec! end
+function matmuladd_loopvec! end
 
-@inline function matmuladd_loopvec!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
-    @tturbo for K in indices((C, B), 2), J in indices((C, A), 1)
-        Cⱼₖ = zero(eltype(C))
-        for I in indices((A, B), (2, 1))
-            Cⱼₖ += A[J, I] * B[I, K]
-        end
-        C[J, K] = bias[J] + Cⱼₖ
-    end
-    return
-end
+function matmul_octavian! end
 
 @inline function matmuladd_cpu_fallback!(
         C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)

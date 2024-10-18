@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Julia ${{ matrix.version }} - ${{ matrix.test_group }} - ${{ matrix.os }} - ${{ matrix.blas_backend }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.test_group }} - ${{ matrix.os }} - ${{ matrix.blas_backend }} - ${{ matrix.loopvec }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -43,27 +43,49 @@ jobs:
           - "others"
         blas_backend:
           - "default"
+        loopvec:
+          - "true"
         include:
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "blis"
             version: "1.10"
+            loopvec: "true"
           - os: ubuntu-latest
             test_group: "dense"
             blas_backend: "mkl"
             version: "1.10"
+            loopvec: "true"
+          - os: ubuntu-latest
+            test_group: "dense"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
+          - os: ubuntu-latest
+            test_group: "batched_ops"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
+          - os: ubuntu-latest
+            test_group: "other_ops"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
           - os: macos-latest
             test_group: "dense"
             blas_backend: "appleaccelerate"
             version: "1.10"
+            loopvec: "true"
           - os: macos-latest
             test_group: "all"
             blas_backend: "default"
             version: "1.10"
+            loopvec: "true"
           - os: windows-latest
             test_group: "all"
             blas_backend: "default"
             version: "1.10"
+            loopvec: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -84,6 +106,7 @@ jobs:
         env:
           LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
           LUXLIB_BLAS_BACKEND: ${{ matrix.blas_backend }}
+          LUXLIB_LOAD_LOOPVEC: ${{ matrix.loopvec }}
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext

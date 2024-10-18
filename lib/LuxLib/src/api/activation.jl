@@ -10,7 +10,7 @@ generic implementation.
     This function doesn't replace `σ` with `NNlib.fast_act(σ, ...)`, that needs to be
     done by the user if needed.
 
-!!! tip
+!!! tip "Load `SLEEFPirates.jl` to get faster activations"
 
     Certain activation functions are replaced with specialized implementations from
     [SLEEFPirates.jl](https://github.com/JuliaSIMD/SLEEFPirates.jl) for FP32. This might

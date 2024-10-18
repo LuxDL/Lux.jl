@@ -11,12 +11,15 @@ using NNlib: NNlib
 using Static: Static, StaticBool, False, True, static
 using StaticArraysCore: SVector, SMatrix
 
-using ..LuxLib: Optional, ∂∅
+using ..LuxLib: Optional, ∂∅, DISABLE_LOOP_VECTORIZATION
 
 const CRC = ChainRulesCore
 const KA = KernelAbstractions
 
 is_extension_loaded(::Val) = False()
+
+CRC.@non_differentiable is_extension_loaded(::Any...)
+EnzymeRules.inactive_noinl(::typeof(is_extension_loaded), ::Any...) = nothing
 
 # Simple Operations -- no rrules needed
 ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
@@ -321,5 +324,19 @@ function static_training_mode_check(training, ::False, ::True)
 end
 
 CRC.@non_differentiable static_training_mode_check(::Any...)
+
+@static if DISABLE_LOOP_VECTORIZATION
+    @inline can_loopvec_args(args...) = false
+else
+    @inline function can_loopvec_args(args...)
+        return can_loopvec_args_check(is_extension_loaded(Val(:LoopVectorization)), args...)
+    end
+end
+
+@inline can_loopvec_args_check(::False, args...) = false
+
+CRC.@non_differentiable can_loopvec_args_check(::Any...)
+
+EnzymeRules.inactive_noinl(::typeof(can_loopvec_args_check), ::Any...) = nothing
 
 end

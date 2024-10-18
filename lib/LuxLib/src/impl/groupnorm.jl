@@ -95,17 +95,17 @@ function groupnorm_affine_normalize_act_3d_serial_cpu!(
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
         β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real, σ::F) where {F, xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
-            @simd ivdep for J in indices(y, 2)
+            @simd ivdep for J in axes(y, 2)
                 y[1, J, K, L] = σ(x[1, J, K, L] * γ′ + β′)
             end
         end
     else
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            @simd for J in indices(y, 2)
+            @simd for J in axes(y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
                 β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
                 y[1, J, K, L] = σ(x[1, J, K, L] * γ′ + β′)
@@ -119,22 +119,22 @@ function groupnorm_affine_normalize_act_4d_serial_cpu!(
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
         β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real, σ::F) where {F, xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
-            for J in indices(y, 2)
-                @simd ivdep for I in indices(y, 1)
+            for J in axes(y, 2)
+                @simd ivdep for I in axes(y, 1)
                     y[I, J, K, L] = σ(x[I, J, K, L] * γ′ + β′)
                 end
             end
         end
     else
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            for J in indices(y, 2)
+            for J in axes(y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
                 β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
-                @simd ivdep for I in indices(y, 1)
+                @simd ivdep for I in axes(y, 1)
                     y[I, J, K, L] = σ(x[I, J, K, L] * γ′ + β′)
                 end
             end
@@ -158,17 +158,17 @@ end
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
         β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real) where {xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
-            @simd ivdep for J in indices(y, 2)
+            @simd ivdep for J in axes(y, 2)
                 y[1, J, K, L] = x[1, J, K, L] * γ′ + β′
             end
         end
     else
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            @simd for J in indices(y, 2)
+            @simd for J in axes(y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
                 β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
                 y[1, J, K, L] = x[1, J, K, L] * γ′ + β′
@@ -182,22 +182,22 @@ end
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
         β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real) where {xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             β′ = -μ[1, 1, K, L] * γ′
-            for J in indices(y, 2)
-                @simd ivdep for I in indices(y, 1)
+            for J in axes(y, 2)
+                @simd ivdep for I in axes(y, 1)
                     y[I, J, K, L] = x[I, J, K, L] * γ′ + β′
                 end
             end
         end
     else
-        @fastmath @inbounds for L in indices(y, 4), K in indices(y, 3)
+        @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
-            for J in indices(y, 2)
+            for J in axes(y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
                 β′ = β[1, J, K, 1] - μ[1, 1, K, L] * γ′
-                @simd ivdep for I in indices(y, 1)
+                @simd ivdep for I in axes(y, 1)
                     y[I, J, K, L] = x[I, J, K, L] * γ′ + β′
                 end
             end
@@ -305,11 +305,11 @@ function ∇groupnorm_affine_normalize_cpu!(
     fill!(∂σ², 0)
 
     if size(∂y, 1) == 1
-        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
+        @fastmath @inbounds for L in axes(∂y, 4), K in axes(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
-            @simd for J in indices(∂y, 2)
+            @simd for J in axes(∂y, 2)
                 xμ = x[1, J, K, L] - μ[1, 1, K, L]
 
                 ∂x[1, J, K, L] = ∂y[1, J, K, L] * idenom
@@ -318,12 +318,12 @@ function ∇groupnorm_affine_normalize_cpu!(
             end
         end
     else
-        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
+        @fastmath @inbounds for L in axes(∂y, 4), K in axes(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
-            for J in indices(∂y, 2)
-                @simd for I in indices(∂y, 1)
+            for J in axes(∂y, 2)
+                @simd for I in axes(∂y, 1)
                     xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
                     ∂x[I, J, K, L] = ∂y[I, J, K, L] * idenom
@@ -349,11 +349,11 @@ function ∇groupnorm_affine_normalize_cpu!(
     fill!(∂β, 0)
 
     if size(∂y, 1) == 1
-        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
+        @fastmath @inbounds for L in axes(∂y, 4), K in axes(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
-            @simd for J in indices(∂y, 2)
+            @simd for J in axes(∂y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
 
                 xμ = x[1, J, K, L] - μ[1, 1, K, L]
@@ -366,13 +366,13 @@ function ∇groupnorm_affine_normalize_cpu!(
             end
         end
     else
-        @fastmath @inbounds for L in indices(∂y, 4), K in indices(∂y, 3)
+        @fastmath @inbounds for L in axes(∂y, 4), K in axes(∂y, 3)
             idenom = inv(sqrt(σ²[1, 1, K, L] + ϵ))
             idenom² = idenom^2
 
-            for J in indices(∂y, 2)
+            for J in axes(∂y, 2)
                 γ′ = γ[1, J, K, 1] * idenom
-                @simd for I in indices(∂y, 1)
+                @simd for I in axes(∂y, 1)
                     xμ = x[I, J, K, L] - μ[1, 1, K, L]
 
                     ∂x[I, J, K, L] = ∂y[I, J, K, L] * γ′

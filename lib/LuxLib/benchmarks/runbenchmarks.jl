@@ -3,6 +3,7 @@ using Pkg
 using BenchmarkTools
 using InteractiveUtils
 using LinearAlgebra
+using Octavian, LoopVectorization
 
 const SUITE = BenchmarkGroup()
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 5

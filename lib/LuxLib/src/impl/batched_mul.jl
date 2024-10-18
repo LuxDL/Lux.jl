@@ -50,32 +50,24 @@ end
 
 function batched_matmul!(z::AbstractArray{zT, 3}, ::LoopedArrayOp,
         x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {zT, xT, yT}
-    if !LV.check_args(batchview(z, 1), batchview(x, 1), batchview(y, 1)) ||
-       unsafe_known(explicit_blas_loaded())
-        NNlib.batched_mul!(z, x, y)
-        return
-    end
-    batched_matmul_loopvec_impl!(z, x, y)
+    batched_matmul_cpu!(z, x, y)
     return
 end
 
-function batched_matmul_loopvec_impl!(
-        z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
-        y::AbstractArray{yT, 3}, α::Number=true, β::Number=false) where {zT, xT, yT}
-    if size(x, 3) == size(y, 3)
-        @batch for L in indices((z, x, y), 3)
-            serial_matmul_loopvec!(batchview(z, L), batchview(x, L), batchview(y, L), α, β)
-        end
-    elseif size(x, 3) == 1
-        @batch for L in indices((z, y), 3)
-            serial_matmul_loopvec!(batchview(z, L), batchview(x, 1), batchview(y, L), α, β)
-        end
-    else # has to be size(y, 3) == 1
-        @batch for L in indices((z, x), 3)
-            serial_matmul_loopvec!(batchview(z, L), batchview(x, L), batchview(y, 1), α, β)
-        end
+function batched_matmul_cpu!(z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {zT, xT, yT}
+    if can_loopvec_args(batchview(z, 1), batchview(x, 1), batchview(y, 1)) &&
+       !unsafe_known(explicit_blas_loaded())
+        batched_matmul_loopvec_impl!(z, x, y)
+        return
     end
+    # Avoid an Enzyme segfault https://github.com/EnzymeAD/Enzyme.jl/issues/1983
+    fallback_batched_matmul!(z, LoopedArrayOp(), x, y)
+    # NNlib.batched_mul!(z, x, y) # XXX: restore once the enzyme segfault is fixed
+    return
 end
+
+function batched_matmul_loopvec_impl! end
 
 function fallback_batched_matmul(
         dev, x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
@@ -88,26 +80,35 @@ end
 function fallback_batched_matmul!(
         z::AbstractArray{zT, 3}, dev, x::AbstractArray{xT, 3},
         y::AbstractArray{yT, 3}) where {zT, xT, yT}
-    @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
-           $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
-           slow." maxlog=1
+    # XXX: bring back once the enzyme segfault is fixed
+    # @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
+    #        $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
+    #        slow." maxlog=1
+
     if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
        (size(x, 2) != size(y, 1))
         throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
     end
+
+    old_threads = maybe_reduce_BLAS_threads(z)
+
     if size(x, 3) == size(y, 3)
-        Threads.@threads for L in indices((x, y), 3)
+        Threads.@threads for L in axes(z, 3)
             mul!(batchview(z, L), batchview(x, L), batchview(y, L))
         end
     elseif size(x, 3) == 1
-        Threads.@threads for L in indices((x, y), 3)
+        Threads.@threads for L in axes(z, 3)
             mul!(batchview(z, L), batchview(x, 1), batchview(y, L))
         end
     else # has to be size(y, 3) == 1
-        Threads.@threads for L in indices((x, y), 3)
+        Threads.@threads for L in axes(z, 3)
             mul!(batchview(z, L), batchview(x, L), batchview(y, 1))
         end
     end
+
+    reset_BLAS_threads(old_threads)
+
+    return
 end
 
 function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{xT, 3},
@@ -192,7 +193,7 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                         if size(dA, 3) == 1 && size(B.val, 3) != 1
                             B′ = NNlib.batched_adjoint(B.val)
                             dA′ = batchview(dA, 1)
-                            for L in indices(B′, 3)
+                            for L in axes(B′, 3)
                                 mul!(dA′, batchview(dC, L),
                                     batchview(B′, L), true, true)
                             end
@@ -205,7 +206,7 @@ for func in (NNlib.batched_mul!, batched_matmul_loopvec_impl!)
                         if size(dB, 3) == 1 && size(A.val, 3) != 1
                             A′ = NNlib.batched_adjoint(A.val)
                             dB′ = batchview(dB, 1)
-                            for L in indices(A′, 3)
+                            for L in axes(A′, 3)
                                 mul!(dB′, batchview(A′, L),
                                     batchview(dC, L), true, true)
                             end

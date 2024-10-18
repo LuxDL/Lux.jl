@@ -1,6 +1,7 @@
 module LuxLib
 
 using Compat: @compat
+using Preferences: @load_preference
 using Reexport: @reexport
 using Static: Static, known
 
@@ -14,6 +15,8 @@ const Optional{T} = Union{Nothing, T}
 const Numeric = Union{AbstractArray{<:T}, T} where {T <: Number}
 const ∂∅ = NoTangent()
 const CRC = ChainRulesCore
+
+const DISABLE_LOOP_VECTORIZATION = @load_preference("disable_loop_vectorization", false)
 
 include("utils.jl")
 include("traits.jl")

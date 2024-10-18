@@ -43,7 +43,7 @@ end
 
 function update_running_statistics_simd_loop!(
         rμₙ, rσ²ₙ, ::LoopedArrayOp, rμ, rσ², μ, σ², m₁, m₂, m₃)
-    @simd ivdep for I in indices((rμₙ, rσ²ₙ))
+    @simd ivdep for I in eachindex(rμₙ, rσ²ₙ)
         rμₙ[I] = m₃ * rμ[I] + m₁ * μ[I]
         rσ²ₙ[I] = m₃ * rσ²[I] + m₂ * σ²[I]
     end
