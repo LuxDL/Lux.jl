@@ -20,7 +20,9 @@ Turing.setprogress!(true);
 
 # ## Generating data
 
-# Our goal here is to use a Bayesian neural network to classify points in an artificial dataset. The code below generates data points arranged in a box-like pattern and displays a graph of the dataset we'll be working with.
+# Our goal here is to use a Bayesian neural network to classify points in an artificial
+# dataset. The code below generates data points arranged in a box-like pattern and displays
+# a graph of the dataset we'll be working with.
 
 ## Number of points to generate
 N = 80

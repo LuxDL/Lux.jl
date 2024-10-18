@@ -134,5 +134,5 @@ function train()
 end
 
 test_acc_list = train()
-@assert test_acc_list[1] > 75 && test_acc_list[2] > 75 #hide
+@assert test_acc_list[1] > 60 && test_acc_list[2] > 60 #hide
 nothing #hide

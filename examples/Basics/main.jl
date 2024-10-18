@@ -95,7 +95,8 @@ W = randn(5, 10)
 x = rand(10)
 W * x
 
-# Julia's arrays are very powerful, and you can learn more about what they can do [here](https://docs.julialang.org/en/v1/manual/arrays/).
+# Julia's arrays are very powerful, and you can learn more about what they can do
+# [here](https://docs.julialang.org/en/v1/manual/arrays/).
 
 # ### CUDA Arrays
 
@@ -206,18 +207,20 @@ println("Computed Gradient via Forward Mode AD (ForwardDiff): ", ForwardDiff.gra
 # ### Jacobian-Vector Product
 
 # I will defer the discussion on forward-mode AD to
-# [https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/](https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/). Here let us just look
-# at a mini example on how to use it.
+# [https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/](https://book.sciml.ai/notes/08-Forward-Mode_Automatic_Differentiation_(AD)_via_High_Dimensional_Algebras/).
+# Here let us just look at a mini example on how to use it.
 
 f(x) = x .* x ./ 2
 x = randn(rng, Float32, 5)
 v = ones(Float32, 5)
 
 # Construct the pushforward function. We will write out the function here but in
-# practice we recommend using [SparseDiffTools.auto_jacvec](https://docs.sciml.ai/SparseDiffTools/stable/#Jacobian-Vector-and-Hessian-Vector-Products)!
+# practice we recommend using
+# [SparseDiffTools.auto_jacvec](https://docs.sciml.ai/SparseDiffTools/stable/#Jacobian-Vector-and-Hessian-Vector-Products)!
 
 # First we need to create a Tag for ForwardDiff. It is enough to know that this is something
-# that you must do. For more details, see the [ForwardDiff Documentation](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Custom-tags-and-tag-checking)!
+# that you must do. For more details, see the
+# [ForwardDiff Documentation](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Custom-tags-and-tag-checking)!
 struct TestTag end
 
 # Going in the details of what is function is doing is beyond the scope of this tutorial.
