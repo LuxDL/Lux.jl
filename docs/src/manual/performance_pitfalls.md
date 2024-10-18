@@ -83,6 +83,17 @@ Prefer to use deep learning primitives and their fused variants from `LuxLib.jl`
 5. Replace uses of `σ.(x .+ b)` with [`LuxLib.bias_activation`](@ref) or
    [`LuxLib.bias_activation!!`](@ref) (the latter one is often faster).
 
+## Optional Dependencies for Performance
+
+For faster performance on CPUs load the following packages:
+
+1. `LoopVectorization.jl`
+2. `Octavian.jl`
+
+If these are available, we automatically use optimized versions of the layers. Though there
+are cases where this might be an issue (see
+[#980](https://github.com/LuxDL/Lux.jl/issues/980)).
+
 ## Data Loading and Device Transfer
 
 A common pattern for loading data and transferring data to GPUs looks like this:
