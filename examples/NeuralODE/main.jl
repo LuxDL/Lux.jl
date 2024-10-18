@@ -7,8 +7,8 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, SciMLSensitivity, LuxCUDA, Optimisers, OrdinaryDiffEq, Random,
-      Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
+using Lux, ComponentArrays, SciMLSensitivity, LuxCUDA, Optimisers, OrdinaryDiffEqTsit5,
+      Random, Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
 using MLDatasets: MNIST
 using MLUtils: DataLoader, splitobs
 
@@ -139,9 +139,9 @@ function train(model_function; cpu::Bool=false, kwargs...)
         end
         ttime = time() - stime
 
-        tr_acc = accuracy(model, tstate.parameters, tstate.states, train_dataloader)
-        te_acc = accuracy(model, tstate.parameters, tstate.states, test_dataloader)
-        @printf "[%d/%d] \t Time %.2fs \t Training Accuracy: %.5f%% \t Test \
+        tr_acc = accuracy(model, tstate.parameters, tstate.states, train_dataloader) * 100
+        te_acc = accuracy(model, tstate.parameters, tstate.states, test_dataloader) * 100
+        @printf "[%d/%d]\tTime %.4fs\tTraining Accuracy: %.5f%%\tTest \
                  Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
     end
 end

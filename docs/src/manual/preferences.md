@@ -13,6 +13,8 @@
 
     ```julia
     pkg> preference add Lux <preference-name>=<value>
+    pkg> preference add LuxLib <preference-name>=<value>
+    pkg> preference add LuxCore <preference-name>=<value>
     ```
 
 Lux.jl relies on several preferences to make decision on how to run your code. Here is an
@@ -57,3 +59,12 @@ By default, both of these preferences are set to `false`.
    - Setting the `LuxLib` preference sets the check at the level of functional layer of
      Lux, for example, [`fused_dense_bias_activation`](@ref). These functions are supposed
      to be type stable for common input types and can be used to guarantee type stability.
+
+## [Disabling Loop Vectorization / Octavian](@id disable_loop_vectorization)
+
+`LoopVectorization.jl` and `Octavian.jl` are optional dependencies that are used to
+accelerate certain CPU operations. However, these packages are tightly coupled with julia
+and might not work with all julia versions and systems. If these packages are loaded in any
+form LuxLib will use the optimized versions of the functions. But it might be desirable to
+disable these packages and use the default implementations instead. This can be done by
+setting the `disable_loop_vectorization` preference to `true` for `LuxLib`.

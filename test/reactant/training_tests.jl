@@ -1,4 +1,4 @@
-@testitem "Reactant: Training API" tags=[:reactant] setup=[SharedTestSetup] begin
+@testitem "Reactant: Training API" tags=[:reactant] setup=[SharedTestSetup] skip=:(Sys.iswindows()) begin
     using Reactant, Optimisers
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES

@@ -13,6 +13,8 @@ using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
 using LuxTestUtils: check_approx
 using Static: True
 
+using Octavian, LoopVectorization
+
 LuxTestUtils.jet_target_modules!(["Lux", "LuxCore", "LuxLib"])
 LinearAlgebra.BLAS.set_num_threads(Threads.nthreads())
 

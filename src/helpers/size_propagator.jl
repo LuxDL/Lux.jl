@@ -9,7 +9,6 @@ using Static: Static, StaticBool
 # We need these to avoid ambiguities
 using SIMDTypes: SIMDTypes
 using StaticArraysCore: StaticArraysCore
-using VectorizationBase: VectorizationBase
 
 const VecT = Union{Bool, Float16, Float32, Float64, Int16, Int32, Int64,
     Int8, UInt16, UInt32, UInt64, UInt8, SIMDTypes.Bit}
@@ -41,17 +40,6 @@ function ForwardDiff.Dual{T, V, Tag}(::Nil) where {T, V, Tag}
 end
 function Base.convert(::Type{ForwardDiff.Dual{T, V, Tag}}, ::Nil) where {T, V, Tag}
     throw(ArgumentError(NIL_DUAL_ERROR_MSG))
-end
-
-const NIL_VEC_ERROR_MSG = "`Nil` is incompatible with `VectorizationBase` numbers."
-
-VectorizationBase.Vec{W, T}(::Nil) where {T, W} = throw(ArgumentError(NIL_VEC_ERROR_MSG))
-function VectorizationBase.VecUnroll{
-        N, W, T, V}(::Nil) where {T, W, V <: VectorizationBase.AbstractSIMDVector{W, T}, N}
-    throw(ArgumentError(NIL_VEC_ERROR_MSG))
-end
-function VectorizationBase.VecUnroll{N, 1, T, T}(::Nil) where {T <: VecT, N}
-    throw(ArgumentError(NIL_VEC_ERROR_MSG))
 end
 
 const NIL_STATIC_ERROR_MSG = "`Nil` is incompatible with `Static` numbers."

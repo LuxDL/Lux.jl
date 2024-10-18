@@ -10,7 +10,7 @@
     Aqua.test_piracies(Lux; treat_as_own=[Lux.outputsize])
 end
 
-@testitem "Explicit Imports: Quality Assurance" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Explicit Imports: Quality Assurance" tags=[:others] begin
     # Load all trigger packages
     import Lux, ComponentArrays, ReverseDiff, SimpleChains, Tracker, Zygote, Enzyme
     using ExplicitImports

@@ -1,4 +1,4 @@
-@testitem "Compiled Loss Functions" tags=[:reactant] setup=[SharedTestSetup] begin
+@testitem "Compiled Loss Functions" tags=[:reactant] setup=[SharedTestSetup] skip=:(Sys.iswindows()) begin
     using Reactant, Lux, OneHotArrays
 
     rng = StableRNG(123)
