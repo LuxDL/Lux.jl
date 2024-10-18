@@ -56,7 +56,11 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.e == ps.e
     @test ps_xpu.d == ps.d
     @test ps_xpu.rng_default isa rngType
+    @test get_device(ps_xpu.rng_default) isa CUDADevice
+    @test get_device_type(ps_xpu.rng_default) <: CUDADevice
     @test ps_xpu.rng == ps.rng
+    @test get_device(ps_xpu.rng) === nothing
+    @test get_device_type(ps_xpu.rng) <: Nothing
 
     if MLDataDevices.functional(CUDADevice)
         @test ps_xpu.one_elem isa CuArray
@@ -82,7 +86,11 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.e == ps.e
     @test ps_cpu.d == ps.d
     @test ps_cpu.rng_default isa Random.TaskLocalRNG
+    @test get_device(ps_cpu.rng_default) === nothing
+    @test get_device_type(ps_cpu.rng_default) <: Nothing
     @test ps_cpu.rng == ps.rng
+    @test get_device(ps_cpu.rng) === nothing
+    @test get_device_type(ps_cpu.rng) <: Nothing
 
     if MLDataDevices.functional(CUDADevice)
         @test ps_cpu.one_elem isa Array
@@ -140,6 +148,27 @@ using FillArrays, Zygote  # Extensions
 
         return_val2(x) = Val(get_device(x))
         @test_throws ErrorException @inferred(return_val2(ps))
+    end
+end
+
+@testset "Functions" begin
+    if MLDataDevices.functional(CUDADevice)
+        @test get_device(tanh) isa MLDataDevices.UnknownDevice
+        @test get_device_type(tanh) <: MLDataDevices.UnknownDevice
+
+        f(x, y) = () -> (x, x .^ 2, y)
+
+        ff = f([1, 2, 3], 1)
+        @test get_device(ff) isa CPUDevice
+        @test get_device_type(ff) <: CPUDevice
+
+        ff_xpu = ff |> CUDADevice()
+        @test get_device(ff_xpu) isa CUDADevice
+        @test get_device_type(ff_xpu) <: CUDADevice
+
+        ff_cpu = ff_xpu |> cpu_device()
+        @test get_device(ff_cpu) isa CPUDevice
+        @test get_device_type(ff_cpu) <: CPUDevice
     end
 end
 

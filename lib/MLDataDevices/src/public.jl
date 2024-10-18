@@ -12,6 +12,9 @@ struct oneAPIDevice <: AbstractGPUDevice end
 # TODO: Later we might want to add the client field here?
 struct XLADevice <: AbstractAcceleratorDevice end
 
+# Fallback for when we don't know the device type
+struct UnknownDevice <: AbstractDevice end
+
 """
     functional(x::AbstractDevice) -> Bool
     functional(::Type{<:AbstractDevice}) -> Bool
@@ -229,11 +232,6 @@ const GET_DEVICE_ADMONITIONS = """
 !!! note
 
     Trigger Packages must be loaded for this to return the correct device.
-
-!!! warning
-
-    RNG types currently don't participate in device determination. We will remove this
-    restriction in the future.
 """
 
 # Query Device from Array
@@ -244,6 +242,12 @@ If all arrays (on the leaves of the structure) are on the same device, we return
 device. Otherwise, we throw an error. If the object is device agnostic, we return `nothing`.
 
 $(GET_DEVICE_ADMONITIONS)
+
+## Special Retuened Values
+
+  - `nothing` -- denotes that the object is device agnostic. For example, scalar, abstract
+    range, etc.
+  - `UnknownDevice()` -- denotes that the device type is unknown
 
 See also [`get_device_type`](@ref) for a faster alternative that can be used for dispatch
 based on device type.
@@ -258,6 +262,12 @@ itself. This value is often a compile time constant and is recommended to be use
 of [`get_device`](@ref) where ever defining dispatches based on the device type.
 
 $(GET_DEVICE_ADMONITIONS)
+
+## Special Retuened Values
+
+  - `Nothing` -- denotes that the object is device agnostic. For example, scalar, abstract
+    range, etc.
+  - `UnknownDevice` -- denotes that the device type is unknown
 """
 function get_device_type end
 
@@ -345,7 +355,7 @@ end
 
 for op in (:get_device, :get_device_type)
     @eval function $(op)(x)
-        hasmethod(Internal.$(op), Tuple{typeof(x)}) && return Internal.$(op)(x)
+        Internal.fast_structure(x) && return Internal.$(op)(x)
         return mapreduce(Internal.$(op), Internal.combine_devices, fleaves(x))
     end
 end

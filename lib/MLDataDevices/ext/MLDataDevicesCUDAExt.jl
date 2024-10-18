@@ -29,8 +29,12 @@ function Internal.get_device(x::CUDA.AnyCuArray)
     return MLDataDevices.get_device(parent_x)
 end
 Internal.get_device(x::AbstractCuSparseArray) = CUDADevice(CUDA.device(x.nzVal))
+Internal.get_device(::CUDA.RNG) = CUDADevice(CUDA.device())
+Internal.get_device(::CUDA.CURAND.RNG) = CUDADevice(CUDA.device())
 
 Internal.get_device_type(::Union{<:CUDA.AnyCuArray, <:AbstractCuSparseArray}) = CUDADevice
+Internal.get_device_type(::CUDA.RNG) = CUDADevice
+Internal.get_device_type(::CUDA.CURAND.RNG) = CUDADevice
 
 # Set Device
 MLDataDevices.set_device!(::Type{CUDADevice}, dev::CUDA.CuDevice) = CUDA.device!(dev)

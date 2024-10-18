@@ -154,6 +154,6 @@ end
 @testset "undefined references array" begin
     x = Matrix{Any}(undef, 10, 10)
 
-    @test get_device(x) isa CPUDevice
-    @test get_device_type(x) <: CPUDevice
+    @test get_device(x) isa MLDataDevices.UnknownDevice
+    @test get_device_type(x) <: MLDataDevices.UnknownDevice
 end
