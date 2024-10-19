@@ -347,8 +347,8 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :XLA)
         end
         (D::$(ldev))(x::Union{Tuple, NamedTuple}) = map(D, x)
         function (D::$(ldev))(x)
-            Functors.isleaf(x) && return Adapt.adapt(D, x)
-            return Functors.fmap(D, x)
+            isleaf(x) && return Adapt.adapt(D, x)
+            return Functors.fmap(D, x; exclude=isleaf)
         end
     end
 end
@@ -380,3 +380,20 @@ for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
     CUDADevice{Nothing}, MetalDevice, oneAPIDevice)
     @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
 end
+
+"""
+    isleaf(x) -> Bool
+
+Returns `true` if `x` is a leaf node in the data structure.
+
+Defining `MLDataDevices.isleaf(x::T) = true` for custom types
+can be used to customize the behavior the data movement behavior
+when an object with nested structure containing the type is transferred to a device.
+
+`Adapt.adapt_structure(::AbstractDevice, x::T)` or
+`Adapt.adapt_structure(::AbstractDevice, x::T)` will be called during
+data movement if `isleaf(x::T) == true`.
+
+If `MLDataDevices.isleaf(x::T)` is not defined, then it will fall back to `Functors.isleaf(x)`.
+"""
+isleaf(x) = Functors.isleaf(x)
