@@ -56,10 +56,9 @@ it both compiler and autodiff friendly.
   in our core framework is extensively tested, along with downstream CI to ensure that
   everything works as expected.
 
-## Why not use Lux (and Julia for traditional Deep Learning in general) ?
+!!! tip "Revising Previous Recommendation about Large Models"
 
-* **Lack of Large Models Support** -- Classical deep learning is not Lux's primary focus.
-  For these, python frameworks like PyTorch and Jax are better suited.
-
-* **XLA Support** -- Lux doesn't compile to XLA which means no TPU support unfortunately.
-  We are currently actively working on XLA support via [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl).
+    Previously we recommended not using Lux for very large models. But we have been making
+    a lot of head-way with [Reactant.jl](https://github.com/EnzymeAD/Reactant.jl) and it
+    would be worthwhile to test larger models with Lux. See [compiling Lux
+    models](@ref reactant-compilation) for more information.

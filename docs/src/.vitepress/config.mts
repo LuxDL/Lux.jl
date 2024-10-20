@@ -204,6 +204,7 @@ export default defineConfig({
                             { text: 'Custom Input Types', link: '/manual/dispatch_custom_input' },
                             { text: 'Configuration via Preferences', link: '/manual/preferences' },
                             { text: 'Distributed Training', link: '/manual/distributed_utils' },
+                            { text: 'Compiling Lux Models (Reactant)', link: '/manual/compiling_lux_models' },
                             { text: 'Lux In GPU Kernels', link: '/manual/nn_inside_gpu_kernels' },
                         ]
                     },
