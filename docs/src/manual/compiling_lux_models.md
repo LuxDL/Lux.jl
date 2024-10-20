@@ -10,6 +10,155 @@ Quoting the Reactant.jl Readme:
 > removed. The benefits of this approach is immediately making all such code available for
 > advanced optimization with little developer effort.
 
+!!! danger "Experimental"
+
+    Reactant compilation is a very new feature and is currently experimental. Certain models
+    might not be compilable yet, but we are actively working on it. Open an issue if you
+    encounter any problems.
+
 ```@example compile_lux_model
-using Lux, Reactant, Enzyme, Random
+using Lux, Reactant, Enzyme, Random, Zygote
+using Functors, Optimisers, Printf
+```
+
+!!! tip "Using the `TrainState` API"
+
+    If you are using the [`TrainState`](@ref) API, skip to the
+    [bottom of this page](@ref compile_lux_model_trainstate) to see how to train the model
+    without any of this boilerplate.
+
+We start by defining a simple MLP model:
+
+```@example compile_lux_model
+model = Chain(
+    Dense(2 => 32, gelu),
+    Dense(32 => 32, gelu),
+    Dense(32 => 2)
+)
+ps, st = Lux.setup(Random.default_rng(), model)
+```
+
+We then create a random input and output data:
+
+```@example compile_lux_model
+x = randn(Float32, 2, 32)
+y = x .^ 2
+```
+
+We will use [`xla_device`](@ref) similar to [`gpu_device`](@ref) to move the arrays to
+`Reactant`.
+
+```@example compile_lux_model
+const xdev = xla_device()
+
+x_ra = x |> xdev
+y_ra = y |> xdev
+ps_ra = ps |> xdev
+st_ra = st |> xdev
+nothing
+```
+
+First let's run the model as we would normally:
+
+```@example compile_lux_model
+pred_lux, _ = model(x, ps, Lux.testmode(st))
+```
+
+To run it using `XLA` we need to compile the model. We can do this using the
+`Reactant.@compile` macro. Note that the inputs need to be moved to the device using
+[`xla_device`](@ref) first.
+
+```@example compile_lux_model
+model_compiled = @compile model(x_ra, ps_ra, Lux.testmode(st_ra))
+```
+
+Now we can test the difference between the results:
+
+```@example compile_lux_model
+pred_compiled, _ = model_compiled(x_ra, ps_ra, Lux.testmode(st_ra))
+
+pred_lux .- Array(pred_compiled)
+```
+
+The difference is very small as we would expect. Now, let's try to differentiate the
+output of the model. We need to use `Enzyme.jl` to do this.
+
+```@example compile_lux_model
+function loss_function(model, ps, st, x, y)
+    pred, _ = model(x, ps, st)
+    return MSELoss()(pred, y)
+end
+```
+
+We will use `Zygote.jl` to compute the gradient of the loss function for the vanilla model.
+
+```@example compile_lux_model
+loss_function(model, ps, st, x, y)
+
+∂ps_zyg = only(Zygote.gradient(ps -> loss_function(model, ps, st, x, y), ps))
+```
+
+Now we will compile the gradient function using `Reactant.@compile`.
+
+```@example compile_lux_model
+function enzyme_gradient(model, ps, st, x, y)
+    dps = Enzyme.make_zero(ps)
+    Enzyme.autodiff(Enzyme.Reverse, Const(loss_function), Active, Const(model),
+        Duplicated(ps, dps), Const(st), Const(x), Const(y))
+    return dps
+end
+
+enzyme_gradient_compiled = @compile enzyme_gradient(model, ps_ra, st_ra, x_ra, y_ra)
+
+∂ps_enzyme = enzyme_gradient_compiled(model, ps_ra, st_ra, x_ra, y_ra)
+```
+
+Now we check the difference:
+
+```@example compile_lux_model
+fmap(Broadcast.BroadcastFunction(-), ∂ps_zyg, ∂ps_enzyme)
+```
+
+## [Using the `TrainState` API](@id compile_lux_model_trainstate)
+
+Now that we saw the low-level API let's see how to train the model without any of this
+boilerplate. Simply follow the following steps:
+
+1. Create a device using `xla_device`. Remember to load `Reactant.jl` before doing this.
+2. Similar to other device functions move the model, parameters, states and data to the
+   device. Note that you might want to use [`DeviceIterator`](@ref) to move the data
+   loader to the device with an iterator.
+3. Construct a [`TrainState`](@ref) using [`Training.TrainState`](@ref).
+4. And most importantly use `AutoEnzyme` while calling [`Training.single_train_step!`](@ref)
+   or [`Training.single_train_step`](@ref).
+
+```@example compile_lux_model
+model = Chain(
+    Dense(2 => 4, gelu),
+    Dense(4 => 4, gelu),
+    Dense(4 => 2)
+)
+ps, st = Lux.setup(Random.default_rng(), model)
+
+x_ra = [randn(Float32, 2, 32) for _ in 1:32]
+y_ra = [xᵢ .^ 2 for xᵢ in x_ra]
+ps_ra = ps |> xdev
+st_ra = st |> xdev
+
+dataloader = DeviceIterator(xdev, zip(x_ra, y_ra))
+
+train_state = Training.TrainState(model, ps_ra, st_ra, Adam(0.001f0))
+
+for iteration in 1:1000
+    for (xᵢ, yᵢ) in dataloader
+        grads, loss, stats, train_state = Training.single_train_step!(
+            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+    end
+    if iteration % 100 == 0 || iteration == 1
+        # We need to do this since scalar outputs are currently expressed as a zero-dim
+        # array
+        loss = Array(loss)[]
+        @printf("Iter: [%4d/%4d]\tLoss: %.8f\n", iteration, 1000, loss)
+    end
+end
 ```
