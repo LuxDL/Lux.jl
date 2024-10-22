@@ -23,7 +23,7 @@ using Functors, Optimisers, Printf
 
 !!! tip "Using the `TrainState` API"
 
-    If you are using the [`TrainState`](@ref) API, skip to the
+    If you are using the [`Training.TrainState`](@ref) API, skip to the
     [bottom of this page](@ref compile_lux_model_trainstate) to see how to train the model
     without any of this boilerplate.
 
@@ -128,7 +128,7 @@ boilerplate. Simply follow the following steps:
 2. Similar to other device functions move the model, parameters, states and data to the
    device. Note that you might want to use [`DeviceIterator`](@ref) to move the data
    loader to the device with an iterator.
-3. Construct a [`TrainState`](@ref) using [`Training.TrainState`](@ref).
+3. Construct a `TrainState` using [`Training.TrainState`](@ref).
 4. And most importantly use `AutoEnzyme` while calling [`Training.single_train_step!`](@ref)
    or [`Training.single_train_step`](@ref).
 
@@ -147,18 +147,25 @@ st_ra = st |> xdev
 
 dataloader = DeviceIterator(xdev, zip(x_ra, y_ra))
 
-train_state = Training.TrainState(model, ps_ra, st_ra, Adam(0.001f0))
+function train_model(model, ps, st, dataloader)
+    train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
 
-for iteration in 1:1000
-    for (xᵢ, yᵢ) in dataloader
-        grads, loss, stats, train_state = Training.single_train_step!(
-            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+    for iteration in 1:1000
+        for (xᵢ, yᵢ) in dataloader
+            grads, loss, stats, train_state = Training.single_train_step!(
+                AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+        end
+        if iteration % 100 == 0 || iteration == 1
+            # We need to do this since scalar outputs are currently expressed as a zero-dim
+            # array
+            loss = Array(loss)[]
+            @printf("Iter: [%4d/%4d]\tLoss: %.8f\n", iteration, 1000, loss)
+        end
     end
-    if iteration % 100 == 0 || iteration == 1
-        # We need to do this since scalar outputs are currently expressed as a zero-dim
-        # array
-        loss = Array(loss)[]
-        @printf("Iter: [%4d/%4d]\tLoss: %.8f\n", iteration, 1000, loss)
-    end
+
+    return train_state
 end
+
+train_model(model, ps_ra, st_ra, dataloader)
+nothing # hide
 ```
