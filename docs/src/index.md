@@ -140,6 +140,7 @@ Run the following to access a device:
 
 ```julia [CPU Backend]
 using Reactant, Lux
+Reactant.set_default_backend("cpu") # default
 
 const dev = xla_device()
 ```
@@ -147,6 +148,13 @@ const dev = xla_device()
 ```julia [GPU Backend]
 using Reactant, Lux
 Reactant.set_default_backend("gpu")
+
+const dev = xla_device()
+```
+
+```julia [TPU Backend]
+using Reactant, Lux
+Reactant.set_default_backend("tpu")
 
 const dev = xla_device()
 ```
