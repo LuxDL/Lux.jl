@@ -94,3 +94,61 @@ Pkg.add("oneAPI")
 ```
 
 :::
+
+Run the following to access a device:
+
+:::code-group
+
+```julia [NVIDIA GPUs]
+using Lux, LuxCUDA
+
+const dev = gpu_device()
+```
+
+```julia [AMD ROCm GPUs]
+using Lux, AMDGPU
+
+const dev = gpu_device()
+```
+
+```julia [Metal M-Series GPUs]
+using Lux, Metal
+
+const dev = gpu_device()
+```
+
+```julia [Intel GPUs]
+using Lux, oneAPI
+
+const dev = gpu_device()
+```
+
+:::
+
+## Want XLA Support?
+
+Install the following package:
+
+```julia
+using Pkg;
+Pkg.add("Reactant")
+```
+
+Run the following to access a device:
+
+:::code-group
+
+```julia [CPU Backend]
+using Reactant, Lux
+
+const dev = xla_device()
+```
+
+```julia [GPU Backend]
+using Reactant, Lux
+Reactant.set_default_backend("gpu")
+
+const dev = xla_device()
+```
+
+:::

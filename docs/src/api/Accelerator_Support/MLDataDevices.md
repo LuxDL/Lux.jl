@@ -31,6 +31,7 @@ MLDataDevices.get_device
 MLDataDevices.get_device_type
 MLDataDevices.loaded
 MLDataDevices.functional
+MLDataDevices.isleaf
 ```
 
 ## Multi-GPU Support

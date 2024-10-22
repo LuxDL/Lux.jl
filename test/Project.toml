@@ -44,7 +44,6 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 ADTypes = "1.8.1"
 Adapt = "4"
 Aqua = "0.8.4"
-CUDA_Driver_jll = "0.9, 0.10"
 ChainRulesCore = "1.24"
 ComponentArrays = "0.15.16"
 DispatchDoctor = "0.4.12"
@@ -82,9 +81,3 @@ Statistics = "1.11.1"
 Test = "1.10"
 Tracker = "0.2.34"
 Zygote = "0.6.70"
-
-[extras]
-CUDA_Driver_jll = "4ee394cb-3365-5eb0-8335-949819d2adfc"
-
-[preferences.CUDA_Driver_jll]
-compat = false

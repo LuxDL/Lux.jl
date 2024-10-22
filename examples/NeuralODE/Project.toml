@@ -26,9 +26,3 @@ OrdinaryDiffEqTsit5 = "1"
 SciMLSensitivity = "7.63"
 Statistics = "1"
 Zygote = "0.6"
-
-[extras]
-CUDA_Driver_jll = "4ee394cb-3365-5eb0-8335-949819d2adfc"
-
-[preferences.CUDA_Driver_jll]
-compat = false
