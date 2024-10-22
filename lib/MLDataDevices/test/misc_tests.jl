@@ -160,21 +160,50 @@ end
 end
 
 @testset "isleaf" begin
-    # Functors.isleaf fallback
-    @test MLDataDevices.isleaf(rand(2))
-    @test !MLDataDevices.isleaf((rand(2),))
+    @testset "basics" begin
+        # Functors.isleaf fallback
+        @test MLDataDevices.isleaf(rand(2))
+        @test !MLDataDevices.isleaf((rand(2),))
 
-    struct Tleaf
-        x::Any
+        struct Tleaf
+            x::Any
+        end
+        Functors.@functor Tleaf
+        MLDataDevices.isleaf(::Tleaf) = true
+        Adapt.adapt_structure(dev::CPUDevice, t::Tleaf) = Tleaf(2 .* dev(t.x))
+
+        cpu = cpu_device()
+        t = Tleaf(ones(2))
+        y = cpu(t)
+        @test y.x == 2 .* ones(2)
+        y = cpu([(t,)])
+        @test y[1][1].x == 2 .* ones(2)
     end
-    Functors.@functor Tleaf
-    MLDataDevices.isleaf(::Tleaf) = true
-    Adapt.adapt_structure(dev::CPUDevice, t::Tleaf) = Tleaf(2 .* dev(t.x))
 
-    cpu = cpu_device()
-    t = Tleaf(ones(2))
-    y = cpu(t)
-    @test y.x == 2 .* ones(2)
-    y = cpu([(t,)])
-    @test y[1][1].x == 2 .* ones(2)
+    @testset "shared parameters" begin
+        # from  
+        x = rand(1)
+        m = (; a=x, b=x')
+        count = Ref(0)
+        mcopy = Functors.fmap(m; exclude=MLDataDevices.isleaf) do x
+            count[] += 1
+            return copy(x)
+        end
+        @test count[] == 1
+        @test mcopy.a === mcopy.b'
+    end
+
+    @testset "bitstypes and wrapped types" begin
+        struct BitsType
+            x::Int32
+            y::Float64
+        end
+
+        for x in [1.0, 'a', BitsType(1, 2.0)]
+            @test MLDataDevices.isleaf([x])
+            @test !MLDataDevices.isleaf([x]')
+            @test !MLDataDevices.isleaf(transpose([x]))
+            @test !MLDataDevices.isleaf(PermutedDimsArray([x;;], (1, 2)))
+        end
+    end
 end

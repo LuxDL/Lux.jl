@@ -397,3 +397,6 @@ data movement if `isleaf(x::T) == true`.
 If `MLDataDevices.isleaf(x::T)` is not defined, then it will fall back to `Functors.isleaf(x)`.
 """
 isleaf(x) = Functors.isleaf(x)
+
+isleaf(::AbstractArray{T}) where {T} = isbitstype(T)
+isleaf(::Union{Transpose, Adjoint, PermutedDimsArray}) = false
