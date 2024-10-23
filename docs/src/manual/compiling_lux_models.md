@@ -102,10 +102,8 @@ Now we will compile the gradient function using `Reactant.@compile`.
 
 ```@example compile_lux_model
 function enzyme_gradient(model, ps, st, x, y)
-    dps = Enzyme.make_zero(ps)
-    Enzyme.autodiff(Enzyme.Reverse, Const(loss_function), Active, Const(model),
-        Duplicated(ps, dps), Const(st), Const(x), Const(y))
-    return dps
+    return only(Enzyme.autodiff(Enzyme.Reverse, Const(loss_function), Active, Const(model),
+        ps, Const(st), Const(x), Const(y)))
 end
 
 enzyme_gradient_compiled = @compile enzyme_gradient(model, ps_ra, st_ra, x_ra, y_ra)
