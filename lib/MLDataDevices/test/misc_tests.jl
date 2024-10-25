@@ -50,17 +50,17 @@ end
 
 @testset "CRC Tests" begin
     dev = cpu_device() # Other devices don't work with FiniteDifferences.jl
-    test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred=true)
+    test_rrule(Adapt.adapt, dev, randn(Float64, 10); check_inferred=true)
 
     gdev = gpu_device()
     if !(gdev isa MetalDevice)  # On intel devices causes problems
         x = randn(10)
-        ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt_storage, gdev, x)
+        ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, gdev, x)
         @test ∂dev === nothing
         @test ∂x ≈ ones(10)
 
         x = randn(10) |> gdev
-        ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt_storage, cpu_device(), x)
+        ∂dev, ∂x = Zygote.gradient(sum ∘ Adapt.adapt, cpu_device(), x)
         @test ∂dev === nothing
         @test ∂x ≈ gdev(ones(10))
         @test get_device(∂x) isa parameterless_type(typeof(gdev))
@@ -181,7 +181,6 @@ end
     end
 
     @testset "shared parameters" begin
-        # from  
         x = rand(1)
         m = (; a=x, b=x')
         count = Ref(0)
@@ -199,11 +198,24 @@ end
             y::Float64
         end
 
-        for x in [1.0, 'a', BitsType(1, 2.0)]
+        @testset for x in [1.0, 'a', BitsType(1, 2.0)]
             @test MLDataDevices.isleaf([x])
             @test !MLDataDevices.isleaf([x]')
             @test !MLDataDevices.isleaf(transpose([x]))
             @test !MLDataDevices.isleaf(PermutedDimsArray([x;;], (1, 2)))
         end
     end
+end
+
+@testset "Zygote.gradient(wrapped arrays)" begin
+    using Zygote
+
+    x = rand(4, 4)
+    cdev = cpu_device()
+
+    @test only(Zygote.gradient(x -> sum(abs2, cdev(x)), x')) isa Matrix{Float64}
+
+    gdev = gpu_device()
+
+    @test only(Zygote.gradient(x -> sum(abs2, gdev(x)), x')) isa Matrix{Float64}
 end

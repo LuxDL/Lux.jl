@@ -5,7 +5,6 @@ using Functors: Functors, fleaves
 using Preferences: @delete_preferences!, @load_preference, @set_preferences!
 using Random: AbstractRNG, Random
 using Compat: @compat
-using LinearAlgebra: Transpose, Adjoint
 
 abstract type AbstractDevice <: Function end
 abstract type AbstractCPUDevice <: AbstractDevice end

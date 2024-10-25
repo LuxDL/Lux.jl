@@ -1,13 +1,12 @@
 name = "MLDataDevices"
 uuid = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.4.1"
+version = "1.4.2"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
 Functors = "d9f16b24-f501-4c13-a1f2-28368ffc5196"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
@@ -47,14 +46,13 @@ MLDataDevicesoneAPIExt = ["GPUArrays", "oneAPI"]
 
 [compat]
 AMDGPU = "0.9.6, 1"
-Adapt = "4"
+Adapt = "4.1"
 CUDA = "5.2"
 ChainRulesCore = "1.23"
 Compat = "4.15"
 FillArrays = "1"
 Functors = "0.4.8"
 GPUArrays = "10, 11"
-LinearAlgebra = "1.10"
 MLUtils = "0.4.4"
 Metal = "1"
 Preferences = "1.4"

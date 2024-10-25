@@ -52,7 +52,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_xpu.mixed[1] isa Float32
     @test ps_xpu.mixed[2] isa Float64
     @test ps_xpu.mixed[3] isa aType
-    @test ps_xpu.range isa aType
+    @test ps_xpu.range isa AbstractRange
     @test ps_xpu.e == ps.e
     @test ps_xpu.d == ps.d
     @test ps_xpu.rng_default isa rngType
@@ -82,7 +82,7 @@ using FillArrays, Zygote  # Extensions
     @test ps_cpu.mixed[1] isa Float32
     @test ps_cpu.mixed[2] isa Float64
     @test ps_cpu.mixed[3] isa Array
-    @test ps_cpu.range isa Array
+    @test ps_cpu.range isa AbstractRange
     @test ps_cpu.e == ps.e
     @test ps_cpu.d == ps.d
     @test ps_cpu.rng_default isa Random.TaskLocalRNG

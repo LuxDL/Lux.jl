@@ -342,8 +342,10 @@ for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :XLA)
     ldev = Symbol(dev, :Device)
     @eval begin
         function (D::$(ldev))(x::AbstractArray{T}) where {T}
-            return (isbitstype(T) || Internal.special_aos(x)) ? Adapt.adapt(D, x) :
-                   map(D, x)
+            if isbitstype(T) || Internal.special_aos(x) || x isa Adapt.WrappedArray
+                return Adapt.adapt(D, x)
+            end
+            return map(D, x)
         end
         (D::$(ldev))(x::Union{Tuple, NamedTuple}) = map(D, x)
         function (D::$(ldev))(x)
@@ -373,14 +375,6 @@ for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, XLADevice)
     end
 end
 
-Adapt.adapt_storage(::CPUDevice, x::AbstractRange) = x
-Adapt.adapt_storage(::XLADevice, x::AbstractRange) = x
-# Prevent Ambiguity
-for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
-    CUDADevice{Nothing}, MetalDevice, oneAPIDevice)
-    @eval Adapt.adapt_storage(to::$(T), x::AbstractRange) = Adapt.adapt(to, collect(x))
-end
-
 """
     isleaf(x) -> Bool
 
@@ -399,4 +393,4 @@ If `MLDataDevices.isleaf(x::T)` is not defined, then it will fall back to `Funct
 isleaf(x) = Functors.isleaf(x)
 
 isleaf(::AbstractArray{T}) where {T} = isbitstype(T)
-isleaf(::Union{Transpose, Adjoint, PermutedDimsArray}) = false
+isleaf(::Adapt.WrappedArray) = false
