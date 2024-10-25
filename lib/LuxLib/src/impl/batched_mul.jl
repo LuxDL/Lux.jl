@@ -70,15 +70,15 @@ end
 function batched_matmul_loopvec_impl! end
 
 function fallback_batched_matmul(
-        dev, x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
+        opmode, x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
     z = similar(x, promote_type(eltype(x), eltype(y)), size(x, 1),
         size(y, 2), max(size(x, 3), size(y, 3)))
-    fallback_batched_matmul!(z, dev, x, y)
+    fallback_batched_matmul!(z, opmode, x, y)
     return z
 end
 
 function fallback_batched_matmul!(
-        z::AbstractArray{zT, 3}, dev, x::AbstractArray{xT, 3},
+        z::AbstractArray{zT, 3}, opmode, x::AbstractArray{xT, 3},
         y::AbstractArray{yT, 3}) where {zT, xT, yT}
     # XXX: bring back once the enzyme segfault is fixed
     # @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
@@ -90,6 +90,36 @@ function fallback_batched_matmul!(
         throw(DimensionMismatch(lazy"size(x) = $(size(x)), size(y) = $(size(y)) inconsistent for batched_matmul."))
     end
 
+    if use_threaded_batched_matmul(get_device_type(x))
+        unsafe_fallback_threaded_batched_matmul!(z, x, y)
+    else
+        unsafe_fallback_serial_batched_matmul!(z, x, y)
+    end
+
+    return
+end
+
+function unsafe_fallback_serial_batched_matmul!(
+        z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {zT, xT, yT}
+    if size(x, 3) == size(y, 3)
+        for L in axes(z, 3)
+            mul!(batchview(z, L), batchview(x, L), batchview(y, L))
+        end
+    elseif size(x, 3) == 1
+        for L in axes(z, 3)
+            mul!(batchview(z, L), batchview(x, 1), batchview(y, L))
+        end
+    else # has to be size(y, 3) == 1
+        for L in axes(z, 3)
+            mul!(batchview(z, L), batchview(x, L), batchview(y, 1))
+        end
+    end
+end
+
+function unsafe_fallback_threaded_batched_matmul!(
+        z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
+        y::AbstractArray{yT, 3}) where {zT, xT, yT}
     old_threads = maybe_reduce_BLAS_threads(z)
 
     if size(x, 3) == size(y, 3)
@@ -107,9 +137,12 @@ function fallback_batched_matmul!(
     end
 
     reset_BLAS_threads(old_threads)
-
     return
 end
+
+use_threaded_batched_matmul(::Type) = false
+use_threaded_batched_matmul(::Type{CUDADevice}) = true
+use_threaded_batched_matmul(::Type{CPUDevice}) = true
 
 function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{xT, 3},
         y::AbstractArray{yT, 3}) where {xT, yT}

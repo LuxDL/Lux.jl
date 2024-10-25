@@ -38,7 +38,6 @@ steps:
                 - src
                 - ext
         env:
-          RETESTITEMS_NWORKERS: 2
           BACKEND_GROUP: "AMDGPU"
         agents:
           queue: "juliagpu"
@@ -126,6 +125,7 @@ steps:
             repo:
               - "Boltz"
               - "Lux"
+              - "NeuralOperators"
 
   - group: ":telescope: Downstream AMD GPU"
     steps:
@@ -143,8 +143,6 @@ steps:
           queue: "juliagpu"
           rocm: "*"
           rocmgpu: "*"
-        env:
-          RETESTITEMS_NWORKERS: 2
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip downstream\]/ && build.message !~ /\[skip ci\]/ && build.branch != "main"
         timeout_in_minutes: 240
         matrix:
@@ -152,6 +150,7 @@ steps:
             repo:
               - "Boltz"
               - "Lux"
+              - "NeuralOperators"
 
 env:
   JULIA_PKG_SERVER: ""
