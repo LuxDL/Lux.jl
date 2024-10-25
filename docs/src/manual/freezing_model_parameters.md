@@ -13,7 +13,7 @@ We can use [`Lux.Experimental.layer_map`](@ref) and freeze layers if they are of
 `Dense`.
 
 ```@example freezing_model_parameters
-using Lux, Random
+using Lux, Random, Functors
 
 rng = Xoshiro(0)
 
