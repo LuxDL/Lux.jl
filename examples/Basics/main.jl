@@ -214,50 +214,25 @@ f(x) = x .* x ./ 2
 x = randn(rng, Float32, 5)
 v = ones(Float32, 5)
 
-# Construct the pushforward function. We will write out the function here but in
-# practice we recommend using
-# [SparseDiffTools.auto_jacvec](https://docs.sciml.ai/SparseDiffTools/stable/#Jacobian-Vector-and-Hessian-Vector-Products)!
+# !!! warning "Using DifferentiationInterface"
+#
+#     While DifferentiationInterface provides these functions for a wider range of backends,
+#     we currently don't recommend using them with Lux models, since the functions presented
+#     here come with additional goodies like
+#     [fast second-order derivatives](@ref nested_autodiff).
 
-# First we need to create a Tag for ForwardDiff. It is enough to know that this is something
-# that you must do. For more details, see the
-# [ForwardDiff Documentation](https://juliadiff.org/ForwardDiff.jl/dev/user/advanced/#Custom-tags-and-tag-checking)!
-struct TestTag end
+# Compute the jvp. `AutoForwardDiff` specifies that we want to use `ForwardDiff.jl` for the
+# Jacobian-Vector Product
 
-# Going in the details of what is function is doing is beyond the scope of this tutorial.
-# But in short, it is constructing a new Dual Vector with the partials set to the input
-# to the pushforward function. When this is propagated through the original function
-# we get the value and the jvp
-function pushforward_forwarddiff(f, x)
-    T = eltype(x)
-    function pushforward(v)
-        v_ = reshape(v, axes(x))
-        y = ForwardDiff.Dual{
-            ForwardDiff.Tag{TestTag, T}, T, 1}.(x, ForwardDiff.Partials.(tuple.(v_)))
-        res = vec(f(y))
-        return ForwardDiff.value.(res), vec(ForwardDiff.partials.(res, 1))
-    end
-    return pushforward
-end
-
-pf_f = pushforward_forwarddiff(f, x)
-
-# Compute the jvp.
-
-val, jvp = pf_f(v)
-println("Computed Value: f(", x, ") = ", val)
-println("JVP: ", jvp[1])
+jvp = jacobian_vector_product(f, AutoForwardDiff(), x, v)
+println("JVP: ", jvp)
 
 # ### Vector-Jacobian Product
 
 # Using the same function and inputs, let us compute the VJP.
 
-val, pb_f = Zygote.pullback(f, x)
-
-# Compute the vjp.
-
-vjp = only(pb_f(v))
-println("Computed Value: f(", x, ") = ", val)
-println("VJP: ", vjp[1])
+vjp = vector_jacobian_product(f, AutoZygote(), x, v)
+println("VJP: ", vjp)
 
 # ## Linear Regression
 
