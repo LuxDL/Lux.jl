@@ -4,6 +4,10 @@ using InteractiveUtils: versioninfo
 using LinearAlgebra: BLAS
 using Statistics: median
 
+# Needed for certain fast computations
+using LoopVectorization: LoopVectorization
+using Octavian: Octavian
+
 # To run benchmarks on a specific GPU backend, add AMDGPU / CUDA / Metal / oneAPI
 # to benchmarks/Project.toml and change BENCHMARK_GROUP to the backend name
 const BENCHMARK_GROUP = get(ENV, "BENCHMARK_GROUP", "CPU")
