@@ -1,7 +1,8 @@
 # # MNIST Classification using Neural ODEs
 
 # To understand Neural ODEs, users should look up
-# [these lecture notes](https://book.sciml.ai/notes/11-Differentiable_Programming_and_Neural_Differential_Equations/). We recommend users to directly use
+# [these lecture notes](https://book.sciml.ai/notes/11-Differentiable_Programming_and_Neural_Differential_Equations/).
+# We recommend users to directly use
 # [DiffEqFlux.jl](https://docs.sciml.ai/DiffEqFlux/stable/), instead of implementing
 # Neural ODEs from scratch.
 
@@ -31,7 +32,8 @@ function loadmnist(batchsize, train_split)
         ## Use DataLoader to automatically minibatch and shuffle the data
         DataLoader(collect.((x_train, y_train)); batchsize, shuffle=true),
         ## Don't shuffle the test data
-        DataLoader(collect.((x_test, y_test)); batchsize, shuffle=false))
+        DataLoader(collect.((x_test, y_test)); batchsize, shuffle=false)
+    )
 end
 
 # ## Define the Neural ODE Layer

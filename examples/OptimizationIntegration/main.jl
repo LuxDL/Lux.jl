@@ -114,7 +114,7 @@ function train_model(dataloader)
     opt_prob = OptimizationProblem(opt_func, ps_ca, dataloader)
 
     epochs = 25
-    res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, maxiters=epochs)
+    res_adam = solve(opt_prob, Optimisers.Adam(0.001); callback, epochs)
 
     ## Let's finetune a bit with L-BFGS
     opt_prob = OptimizationProblem(opt_func, res_adam.u, (gdev(ode_data), TimeWrapper(t)))
