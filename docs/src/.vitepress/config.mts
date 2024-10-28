@@ -128,6 +128,7 @@ export default defineConfig({
                             { text: 'Training a Simple LSTM', link: '/tutorials/beginner/3_SimpleRNN' },
                             { text: 'MNIST Classification with SimpleChains', link: '/tutorials/beginner/4_SimpleChains' },
                             { text: 'Fitting with Optimization.jl', link: '/tutorials/beginner/5_OptimizationIntegration' },
+                            { text: 'MLFlow Lux.jl Integration Guide', link: '/tutorials/beginner/6_MLFlow' },
                         ]
                     },
                     {

@@ -38,7 +38,13 @@ const beginner = [
     src: "https://production-media.paperswithcode.com/datasets/ImageNet-0000000008-f2e87edd_Y0fT5zg.jpg",
     caption: "Pre-Built Deep Learning Models",
     desc: "Use Boltz.jl to load pre-built DL and SciML models."
-  }
+  },
+  {
+    href: "beginner/6_MLFlow",
+    src: "https://picsum.photos/350/250?image=444",
+    caption: "MLFlow Lux.jl Integration Guide",
+    desc: "Using MLFlow to log Lux.jl experimental data."
+  },
 ];
 
 const intermediate = [

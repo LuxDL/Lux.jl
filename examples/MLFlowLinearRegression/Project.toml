@@ -1,0 +1,18 @@
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Lux = "b2108857-7c20-44ae-9111-449ecde12c47"
+MLFlowClient = "64a0f543-368b-4a9a-827a-e71edb2a0b83"
+MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+Optimisers = "3bd65402-5787-11e9-1adc-39752487f4e2"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[compat]
+Distributions = "0.25"
+Lux = "1.2"
+MLFlowClient = "0.5"
+MLUtils = "0.4"
+Optimisers = "0.3"
+Zygote = "0.6"
+julia = "1"
