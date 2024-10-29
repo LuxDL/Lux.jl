@@ -26,13 +26,13 @@ Automatic Backend Management is done by two simple functions: `cpu_device` and `
 
 * [`cpu_device`](@ref): This is a simple function and just returns a `CPUDevice` object.
 
-```@example gpu_management
-cdev = cpu_device()
-```
+   ```@example gpu_management
+   cdev = cpu_device()
+   ```
 
-```@example gpu_management
-x_cpu = randn(Float32, 3, 2)
-```
+   ```@example gpu_management
+   x_cpu = randn(Float32, 3, 2)
+   ```
 
 * [`gpu_device`](@ref): This function performs automatic GPU device selection and returns
    an object.
@@ -44,15 +44,15 @@ x_cpu = randn(Float32, 3, 2)
       package is used.
 
 
-```@example gpu_management
-gdev = gpu_device()
+   ```@example gpu_management
+   gdev = gpu_device()
 
-x_gpu = x_cpu |> gdev
-```
+   x_gpu = x_cpu |> gdev
+   ```
 
-```@example gpu_management
-(x_gpu |> cdev) ≈ x_cpu
-```
+   ```@example gpu_management
+   (x_gpu |> cdev) ≈ x_cpu
+   ```
 
 ## Manual Backend Management
 
