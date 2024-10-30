@@ -183,7 +183,7 @@ const dataload = [
     name: 'Images.jl',
     desc: 'An image library for Julia',
     links: [
-      { icon: 'github', link: 'ttps://github.com/JuliaImages/Images.jl' }
+      { icon: 'github', link: 'https://github.com/JuliaImages/Images.jl' }
     ]
   },
   {
