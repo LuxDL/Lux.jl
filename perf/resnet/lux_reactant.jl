@@ -18,6 +18,11 @@ function parse_commandline()
             help = "Model size"
             arg_type = Int
             default = 50
+
+        "--optimize"
+            help = "Optimization Level for Reactant"
+            arg_type = String
+            default = "all"
     end
     #! format: on
 
@@ -43,7 +48,9 @@ function main()
 
         x = rand(Float32, 224, 224, 3, b) |> dev
 
-        model_compiled = Reactant.compile(model, (x, ps_ra, st_ra); sync=true)
+        model_compiled = Reactant.compile(
+            model, (x, ps_ra, st_ra); sync=true, optimize=Symbol(parsed_args["optimize"])
+        )
 
         timings[b] = @belapsed $(model_compiled)($(x), $(ps_ra), $(st_ra))
 
