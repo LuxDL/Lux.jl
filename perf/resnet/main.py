@@ -163,7 +163,9 @@ if __name__ == "__main__":
 
         print(f"Param count: {param_count}")
 
-        apply_fn_compiled = jax.jit(partial(model.apply, train=False))
+        apply_fn_compiled = (
+            jax.jit(partial(model.apply, train=False)).lower(params, x).compile()
+        )
 
         best_timing = np.inf
         for i in range(100):
