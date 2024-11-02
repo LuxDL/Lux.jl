@@ -43,12 +43,9 @@ function main()
 
         x = rand(Float32, 224, 224, 3, b) |> dev
 
-        model_compiled = @compile model(x, ps_ra, st_ra)
+        model_compiled = Reactant.compile(model, (x, ps_ra, st_ra); sync=true)
 
-        timings[b] = @belapsed begin
-            y, _ = $(model_compiled)($(x), $(ps_ra), $(st_ra))
-            Reactant.synchronize(y)
-        end
+        timings[b] = @belapsed $(model_compiled)($(x), $(ps_ra), $(st_ra))
 
         println("Best timing: $(timings[b]) s")
     end
