@@ -86,7 +86,7 @@ automatically operate over a sequence of inputs.
 !!! tip
 
     Frameworks like Tensorflow have special implementation of
-    [`MultiRNNCell`](https://www.tensorflow.org/api_docs/python/tf/compat/v1/nn/rnn_cell/MultiRNNCell)
+    [`StackedRNNCells`](https://www.tensorflow.org/api_docs/python/tf/keras/layers/StackedRNNCells)
     to handle sequentially composed RNN Cells. In Lux, one can simple stack multiple
     `Recurrence` blocks in a `Chain` to achieve the same.
 
