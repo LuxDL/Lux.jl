@@ -1,0 +1,19 @@
+[tool.poetry]
+description = "Benchmarking Lux against Python frameworks"
+authors = ["Avik Pal <avikpal@mit.edu>"]
+readme = "../README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "~3.10"
+jax = {extras = ["cuda12"], version = "^0.4.35"}
+flax = "~0.10.1"
+einops = "^0.8.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.29.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
