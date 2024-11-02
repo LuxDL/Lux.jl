@@ -26,7 +26,7 @@ end
 
 function main()
     parsed_args = parse_commandline()
-    dev = xla_device()
+    dev = xla_device(; force=true)
 
     model = Vision.ResNet(parsed_args["model-size"])
     ps, st = Lux.setup(Random.default_rng(), model)
