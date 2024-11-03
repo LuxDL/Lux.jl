@@ -69,7 +69,11 @@ steps:
           julia --code-coverage=user --color=yes --project=docs -e '
             println("--- :julia: Instantiating project")
             using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
+            dev_pkgs = Pkg.PackageSpec[]
+            for pkg in ("lib/LuxLib", "lib/LuxCore", "lib/MLDataDevices", "lib/LuxTestUtils", "lib/WeightInitializers", ".")
+              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
+            end
+            Pkg.develop(dev_pkgs)
             Pkg.instantiate()
             println("+++ :julia: Building documentation")
             include("docs/make.jl")'
