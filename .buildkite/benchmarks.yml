@@ -15,7 +15,11 @@ steps:
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
               using Pkg
-              Pkg.develop([PackageSpec(path=pwd())])'
+              Pkg.develop([
+                PackageSpec(path=pwd()),
+                PackageSpec(path="lib/LuxLib"),
+                PackageSpec(path="lib/MLDataDevices"),
+              ])'
 
           julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
               include("benchmarks/runbenchmarks.jl")'
@@ -36,8 +40,12 @@ steps:
               version: "1"
         command: |
           julia --project=benchmarks -e 'println("--- :julia: Instantiating project")
-              using Pkg
-              Pkg.develop([PackageSpec(path=pwd())])'
+              using Pkg;
+              Pkg.develop([
+                PackageSpec(path=pwd()),
+                PackageSpec(path="lib/LuxLib"),
+                PackageSpec(path="lib/MLDataDevices"),
+              ])'
 
           julia --project=benchmarks -e 'println("--- :julia: Add CUDA to benchmarks environment")
               using Pkg
