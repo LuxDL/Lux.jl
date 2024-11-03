@@ -14,6 +14,22 @@ struct oneAPIDevice <: AbstractGPUDevice end
     device::D = missing
 end
 
+function Base.:(==)(x::XLADevice, y::XLADevice)
+    if x.client !== missing
+        y.client === missing && return false
+        x.client.client != y.client.client && return false
+    else
+        y.client !== missing && return false
+    end
+    if x.device !== missing
+        y.device === missing && return false
+        x.device.device != y.device.device && return false
+    else
+        y.device !== missing && return false
+    end
+    return true
+end
+
 # Fallback for when we don't know the device type
 struct UnknownDevice <: AbstractDevice end
 
