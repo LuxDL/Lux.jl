@@ -58,7 +58,6 @@ jobs:
 
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
-    name: Downgrade Julia 1.10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

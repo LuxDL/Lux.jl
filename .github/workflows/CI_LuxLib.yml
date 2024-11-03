@@ -104,6 +104,7 @@ jobs:
           for pkg in ("lib/LuxCore", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
+          Pkg.develop(dev_pkgs)
           Pkg.Registry.update()
           Pkg.instantiate()
           Pkg.activate("lib/LuxLib/test")
@@ -115,9 +116,10 @@ jobs:
         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
       - name: "Run Tests"
         run: |
-          import Pkg
-          Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
+          import Pkg, LuxLib
+          dir = dirname(pathof(LuxLib))
+          include(joinpath(dir, "../test/runtests.jl"))
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
         env:
           LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
           LUXLIB_BLAS_BACKEND: ${{ matrix.blas_backend }}
@@ -166,6 +168,7 @@ jobs:
           for pkg in ("lib/LuxCore", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
+          Pkg.develop(dev_pkgs)
           Pkg.Registry.update()
           Pkg.instantiate()
           Pkg.activate("lib/LuxLib/test")
@@ -177,9 +180,10 @@ jobs:
         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
       - name: "Run Tests"
         run: |
-          import Pkg
-          Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
+          import Pkg, LuxLib
+          dir = dirname(pathof(LuxLib))
+          include(joinpath(dir, "../test/runtests.jl"))
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
         env:
           LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
           LUXLIB_BLAS_BACKEND: ${{ matrix.blas_backend }}
