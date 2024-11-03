@@ -69,7 +69,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["1.10"]
+        version: ["lts"]
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

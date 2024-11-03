@@ -64,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: "1.10"
+          version: "lts"
       - uses: julia-actions/julia-downgrade-compat@v1
       - name: "Install Dependencies and Run Tests"
         run: |
