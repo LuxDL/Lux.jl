@@ -8,6 +8,7 @@ steps:
           diff: ".buildkite/scripts/diff.sh $BUILDKITE_COMMIT"
           interpolation: false
           watch:
+            # Core Lux Testing
             - path:
                 - "src/"
                 - "ext/"
@@ -43,6 +44,14 @@ steps:
                 agents:
                   queue: "juliagpu"
 
+            # LuxCUDA Testing
+            - path:
+                - "lib/LuxCUDA/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
+                agents:
+                  queue: "juliagpu"
+
   - label: "Triggering Pipelines (Main Branch / Tag)"
     if: build.branch == "main" || build.tag != null
     agents:
@@ -51,3 +60,6 @@ steps:
       buildkite-agent pipeline upload .buildkite/testing.yml
       buildkite-agent pipeline upload .buildkite/documentation.yml
       buildkite-agent pipeline upload .buildkite/benchmarks.yml
+
+      # Subpackage testing
+      buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml
