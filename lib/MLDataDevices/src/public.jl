@@ -9,8 +9,10 @@ end
 struct MetalDevice <: AbstractGPUDevice end
 struct oneAPIDevice <: AbstractGPUDevice end
 
-# TODO: Later we might want to add the client field here?
-struct XLADevice <: AbstractAcceleratorDevice end
+@kwdef struct XLADevice{C, D} <: AbstractAcceleratorDevice
+    client::C = missing
+    device::D = missing
+end
 
 # Fallback for when we don't know the device type
 struct UnknownDevice <: AbstractDevice end
@@ -189,20 +191,25 @@ Return a `CPUDevice` object which can be used to transfer data to CPU.
 cpu_device() = CPUDevice()
 
 """
-    xla_device(; force::Bool=false) -> Union{XLADevice, CPUDevice}
+    xla_device(;
+        force::Bool=false, client=missing, device=missing
+    ) -> Union{XLADevice, CPUDevice}
 
 Return a `XLADevice` object if functional. Otherwise, throw an error if `force` is `true`.
 Falls back to `CPUDevice` if `force` is `false`.
+
+`client` and `device` are used to specify the client and particular device to use. If not
+specified, then the default client and index are used.
 
 !!! danger
 
     This is an experimental feature and might change without deprecations
 """
-function xla_device(; force::Bool=false)
+function xla_device(; force::Bool=false, client=missing, device=missing)
     msg = "`XLADevice` is not loaded or not functional. Load `Reactant.jl` before calling \
            this function. Defaulting to CPU."
     if loaded(XLADevice)
-        functional(XLADevice) && return XLADevice()
+        functional(XLADevice) && return XLADevice(client, device)
         msg = "`XLADevice` is loaded but not functional. Defaulting to CPU."
     end
     force && throw(Internal.DeviceSelectionException("XLA"))
