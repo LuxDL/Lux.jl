@@ -1,11 +1,11 @@
-name: CI (WeightInitializers)
+name: CI (LuxTestUtils)
 on:
   pull_request:
     branches:
       - main
     paths:
-      - "lib/WeightInitializers/**"
-      - ".github/workflows/CI_WeightInitializers.yml"
+      - "lib/LuxTestUtils/**"
+      - ".github/workflows/CI_LuxTestUtils.yml"
   push:
     branches:
       - main
@@ -51,10 +51,10 @@ jobs:
           Pkg.Registry.update()
           Pkg.instantiate()
           Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxTestUtils {0}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: lib/WeightInitializers/src,lib/WeightInitializers/ext
+          directories: lib/LuxTestUtils/src,lib/LuxTestUtils/ext
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
@@ -81,10 +81,10 @@ jobs:
           Pkg.Registry.update()
           Pkg.instantiate()
           Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxTestUtils {0}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: lib/WeightInitializers/src,lib/WeightInitializers/ext
+          directories: lib/LuxTestUtils/src,lib/LuxTestUtils/ext
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
