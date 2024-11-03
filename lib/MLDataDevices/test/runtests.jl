@@ -4,11 +4,12 @@ using SafeTestsets, Test
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 
 const EXTRA_PKGS = PackageSpec[]
+const EXTRA_DEV_PKGS = PackageSpec[]
 
 if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
     if isdir(joinpath(@__DIR__, "../../LuxCUDA"))
         @info "Using local LuxCUDA"
-        push!(EXTRA_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
+        push!(EXTRA_DEV_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
     else
         push!(EXTRA_PKGS, PackageSpec(; name="LuxCUDA"))
     end
@@ -23,8 +24,9 @@ end
     push!(EXTRA_PKGS, PackageSpec(; name="Reactant"))
 
 if !isempty(EXTRA_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
-    Pkg.develop(EXTRA_PKGS)
+    @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+    isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
+    isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
     Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()

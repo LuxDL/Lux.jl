@@ -7,6 +7,7 @@ Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const EXTRA_PKGS = PackageSpec[]
+const EXTRA_DEV_PKGS = PackageSpec[]
 
 const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default"))
 @assert LUXLIB_BLAS_BACKEND in ("default", "appleaccelerate", "blis", "mkl")
@@ -15,7 +16,7 @@ const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default")
 if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
     if isdir(joinpath(@__DIR__, "../../LuxCUDA"))
         @info "Using local LuxCUDA"
-        push!(EXTRA_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
+        push!(EXTRA_DEV_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
     else
         push!(EXTRA_PKGS, PackageSpec(; name="LuxCUDA"))
     end
@@ -28,8 +29,9 @@ end
     push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
 
 if !isempty(EXTRA_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
-    Pkg.develop(EXTRA_PKGS)
+    @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+    isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
+    isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
     Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()
