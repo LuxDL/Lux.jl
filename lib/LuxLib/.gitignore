@@ -1,0 +1,14 @@
+Manifest.toml
+generated
+build
+.vscode
+wip
+model_weights
+
+docs/docs
+docs/site
+
+scripts
+test_ext
+
+benchmarks/results
