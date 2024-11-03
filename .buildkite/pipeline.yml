@@ -96,6 +96,19 @@ steps:
                 agents:
                   queue: "juliagpu"
 
+            # Downstream
+            - path:
+                - "src/"
+                - "ext/"
+                - "lib/"
+                - "Project.toml"
+                - ".buildkite/"
+              if: build.pull_request.labels includes "run downstream test"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
+                agents:
+                  queue: "juliagpu"
+
   - label: "Triggering Pipelines (Main Branch / Tag)"
     if: build.branch == "main" || build.tag != null
     agents:
