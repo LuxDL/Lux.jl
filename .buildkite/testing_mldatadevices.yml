@@ -1,7 +1,7 @@
 steps:
   - group: ":julia: (MLDataDevices) CUDA GPU"
     steps:
-      - label: ":julia: Julia: {{matrix.julia}} + CUDA GPU"
+      - label: ":julia: Julia: {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
