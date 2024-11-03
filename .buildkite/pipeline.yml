@@ -47,6 +47,27 @@ steps:
                 agents:
                   queue: "juliagpu"
 
+            # LuxLib Testing
+            - path:
+                - "lib/LuxLib/"
+                - ".buildkite/"
+                - "lib/LuxTestUtils/"
+                - "lib/LuxCore/"
+                - "lib/MLDataDevices/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxlib.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # LuxTestUtils Testing
+            - path:
+                - "lib/LuxTestUtils/"
+                - ".buildkite/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
+                agents:
+                  queue: "juliagpu"
+
             # Benchmarks
             - path:
                 - "src/"
@@ -80,10 +101,18 @@ steps:
     agents:
       queue: "juliagpu"
     command: |
+      # Core Lux Testing
       buildkite-agent pipeline upload .buildkite/testing.yml
-      buildkite-agent pipeline upload .buildkite/documentation.yml
-      buildkite-agent pipeline upload .buildkite/benchmarks.yml
 
       # Subpackage testing
       buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml
       buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml
+      buildkite-agent pipeline upload .buildkite/testing_luxlib.yml
+      buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml
+      buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml
+
+      # Documentation
+      buildkite-agent pipeline upload .buildkite/documentation.yml
+
+      # Benchmarks
+      buildkite-agent pipeline upload .buildkite/benchmarks.yml

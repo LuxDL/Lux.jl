@@ -129,7 +129,7 @@ jobs:
           LUXLIB_LOAD_LOOPVEC: ${{ matrix.loopvec }}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: lib/LuxLib/src,lib/LuxLib/ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/LuxTestUtils/src,lib/LuxTestUtils/ext
+          directories: lib/LuxLib/src,lib/LuxLib/ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/LuxTestUtils/src
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
@@ -192,7 +192,7 @@ jobs:
           LUXLIB_LOAD_LOOPVEC: ${{ matrix.loopvec }}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: lib/LuxLib/src,lib/LuxLib/ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/LuxTestUtils/src,lib/LuxTestUtils/ext
+          directories: lib/LuxLib/src,lib/LuxLib/ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/LuxTestUtils/src
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
