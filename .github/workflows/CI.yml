@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "lts"
+          - "1.10"
         os:
           - ubuntu-latest
         test_group:
@@ -44,10 +44,10 @@ jobs:
           - "fluxcompat"
           - "reactant"
         include:
-          - version: "lts"
+          - version: "1.10"
             os: macos-latest
             test_group: "all"
-          - version: "lts"
+          - version: "1.10"
             os: windows-latest
             test_group: "all"
     steps:
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: "lts"
+          version: "1.10"
       - uses: julia-actions/julia-downgrade-compat@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
