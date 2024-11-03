@@ -14,6 +14,7 @@ on:
       - "ext/**/*"
       - "benchmarks/**/*"
       - ".buildkite/**/*"
+      - "lib/**/*"
       - "Project.toml"
       - ".github/workflows/Benchmark.yml"
   push:
