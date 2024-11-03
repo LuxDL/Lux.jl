@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
 jobs:
-  ci:
+  test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.test_group }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
