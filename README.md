@@ -10,7 +10,7 @@
 [![Stable Docs](https://img.shields.io/badge/docs-stable-blue.svg)](http://lux.csail.mit.edu/stable/)
 
 [![CI](https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml)
-[![CI (pre-release)](https://img.shields.io/github/actions/workflow/status/LuxDL/Lux.jl/CIPreRelease.yml?branch=main&label=CI%20(pre-release)&logo=github)](https://github.com/LuxDL/Lux.jl/actions/workflows/CIPreRelease.yml)
+[![CI (pre-release)](<https://img.shields.io/github/actions/workflow/status/LuxDL/Lux.jl/CIPreRelease.yml?branch=main&label=CI%20(pre-release)&logo=github>)](https://github.com/LuxDL/Lux.jl/actions/workflows/CIPreRelease.yml)
 [![Build status](https://img.shields.io/buildkite/ba1f9622add5978c2d7b194563fd9327113c9c21e5734be20e/main.svg?label=gpu&branch=main&logo=buildkite)](https://buildkite.com/julialang/lux-dot-jl)
 [![codecov](https://codecov.io/gh/LuxDL/Lux.jl/branch/main/graph/badge.svg?token=IMqBM1e3hz)](https://codecov.io/gh/LuxDL/Lux.jl)
 [![Benchmarks](https://github.com/LuxDL/Lux.jl/actions/workflows/Benchmark.yml/badge.svg?branch=main)](https://lux.csail.mit.edu/benchmarks/)
@@ -39,6 +39,95 @@ Pkg.add("Lux")
 
 > [!TIP]
 > If you are using a pre-v1 version of Lux.jl, please see the [Updating to v1 section](https://lux.csail.mit.edu/dev/introduction/updating_to_v1) for instructions on how to update.
+
+<div align="center">
+
+| **Packages**                                           | **Stable Version**                                             | **Monthly Downloads**                                                 | **Total Downloads**                                                         | **Build Status**                                                                                                                                |
+| :----------------------------------------------------- | :------------------------------------------------------------- | :-------------------------------------------------------------------- | :-------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📦 [Lux.jl](./src)                                     | [![][lux-version]][lux-juliahub]                               | [![][downloads-lux]][downloads-lux-url]                               | [![][total-downloads-lux]][downloads-lux-url]                               | [![][gh-actions-lux]][gh-actions-lux-url] [![][gh-actions-lux-prerelease]][gh-actions-lux-prerelease-url] [![][buildkite-badge]][buildkite-url] |
+| └ 📦 [LuxLib.jl](./lib/LuxLib)                         | [![][luxlib-version]][luxlib-juliahub]                         | [![][downloads-luxlib]][downloads-luxlib-url]                         | [![][total-downloads-luxlib]][downloads-luxlib-url]                         | [![][gh-actions-luxlib]][gh-actions-luxlib-url]                                                                                                 |
+| └ 📦 [LuxCore.jl](./lib/LuxCore)                       | [![][luxcore-version]][luxcore-juliahub]                       | [![][downloads-luxcore]][downloads-luxcore-url]                       | [![][total-downloads-luxcore]][downloads-luxcore-url]                       | [![][gh-actions-luxcore]][gh-actions-luxcore-url]                                                                                               |
+| └ 📦 [MLDataDevices.jl](./lib/MLDataDevices)           | [![][mldatadevices-version]][mldatadevices-juliahub]           | [![][downloads-mldatadevices]][downloads-mldatadevices-url]           | [![][total-downloads-mldatadevices]][downloads-mldatadevices-url]           | [![][gh-actions-mldatadevices]][gh-actions-mldatadevices-url]                                                                                   |
+| └ 📦 [WeightInitializers.jl](./lib/WeightInitializers) | [![][weightinitializers-version]][weightinitializers-juliahub] | [![][downloads-weightinitializers]][downloads-weightinitializers-url] | [![][total-downloads-weightinitializers]][downloads-weightinitializers-url] | [![][gh-actions-weightinitializers]][gh-actions-weightinitializers-url]                                                                         |
+| └ 📦 [LuxTestUtils.jl](./lib/LuxTestUtils)             | [![][luxtestutils-version]][luxtestutils-juliahub]             | [![][downloads-luxtestutils]][downloads-luxtestutils-url]             | [![][total-downloads-luxtestutils]][downloads-luxtestutils-url]             | [![][gh-actions-luxtestutils]][gh-actions-luxtestutils-url]                                                                                     |
+| └ 📦 [LuxCUDA.jl](./lib/LuxCUDA)                       | [![][luxcuda-version]][luxcuda-juliahub]                       | [![][downloads-luxcuda]][downloads-luxcuda-url]                       | [![][total-downloads-luxcuda]][downloads-luxcuda-url]                       | [![][gh-actions-luxcuda]][gh-actions-luxcuda-url]                                                                                               |
+
+</div>
+
+<!-- VARIABLES -->
+
+<!-- Package -->
+
+[lux-version]: https://juliahub.com/docs/General/Lux/stable/version.svg?color=blue
+[luxlib-version]: https://juliahub.com/docs/General/LuxLib/stable/version.svg?color=blue
+[luxcore-version]: https://juliahub.com/docs/General/LuxCore/stable/version.svg?color=blue
+[mldatadevices-version]: https://juliahub.com/docs/General/MLDataDevices/stable/version.svg?color=blue
+[weightinitializers-version]: https://juliahub.com/docs/General/WeightInitializers/stable/version.svg?color=blue
+[luxtestutils-version]: https://juliahub.com/docs/General/LuxTestUtils/stable/version.svg?color=blue
+[luxcuda-version]: https://juliahub.com/docs/General/LuxCUDA/stable/version.svg?color=blue
+[lux-juliahub]: https://juliahub.com/ui/Packages/General/Lux
+[luxlib-juliahub]: https://juliahub.com/ui/Packages/General/LuxLib
+[luxcore-juliahub]: https://juliahub.com/ui/Packages/General/LuxCore
+[mldatadevices-juliahub]: https://juliahub.com/ui/Packages/General/MLDataDevices
+[weightinitializers-juliahub]: https://juliahub.com/ui/Packages/General/WeightInitializers
+[luxtestutils-juliahub]: https://juliahub.com/ui/Packages/General/LuxTestUtils
+[luxcuda-juliahub]: https://juliahub.com/ui/Packages/General/LuxCUDA
+
+<!-- Documentation -->
+
+[docr-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docd-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docr-url]: https://lux.csail.mit.edu/stable/
+[docd-url]: https://lux.csail.mit.edu/dev/
+
+<!-- Buildkite -->
+
+[buildkite-badge]: https://img.shields.io/buildkite/ba1f9622add5978c2d7b194563fd9327113c9c21e5734be20e/main.svg?label=gpu&branch=main&logo=buildkite]
+
+[buildkite-url]: https://buildkite.com/julialang/lux-dot-jl/builds?branch=main
+
+<!-- CI -->
+
+[gh-actions-lux]: https://github.com/LuxDL/Lux.jl/workflows/CI/badge.svg
+[gh-actions-lux-prerelease]: https://github.com/LuxDL/Lux.jl/workflows/CIPreRelease/badge.svg
+[gh-actions-luxlib]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxLib/badge.svg
+[gh-actions-luxcore]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxCore/badge.svg
+[gh-actions-mldatadevices]: https://github.com/LuxDL/Lux.jl/workflows/CI_MLDataDevices/badge.svg
+[gh-actions-weightinitializers]: https://github.com/LuxDL/Lux.jl/workflows/CI_WeightInitializers/badge.svg
+[gh-actions-luxtestutils]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxTestUtils/badge.svg
+[gh-actions-luxcuda]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxCUDA/badge.svg
+[gh-actions-lux-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml
+[gh-actions-lux-prerelease-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CIPreRelease.yml
+[gh-actions-luxlib-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_LuxLib.yml
+[gh-actions-luxcore-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_LuxCore.yml
+[gh-actions-mldatadevices-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_MLDataDevices.yml
+[gh-actions-weightinitializers-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_WeightInitializers.yml
+[gh-actions-luxtestutils-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_LuxTestUtils.yml
+[gh-actions-luxcuda-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_LuxCUDA.yml
+
+<!-- Downloads -->
+
+[total-downloads-lux]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FLux&query=total_requests&label=Downloads
+[total-downloads-luxlib]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FLuxLib&query=total_requests&label=Downloads
+[total-downloads-luxcore]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FLuxCore&query=total_requests&label=Downloads
+[total-downloads-mldatadevices]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FMLDataDevices&query=total_requests&label=Downloads
+[total-downloads-weightinitializers]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FWeightInitializers&query=total_requests&label=Downloads
+[total-downloads-luxtestutils]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FLuxTestUtils&query=total_requests&label=Downloads
+[total-downloads-luxcuda]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Ftotal_downloads%2FLuxCUDA&query=total_requests&label=Downloads
+[downloads-lux]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FLux&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-luxlib]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FLuxLib&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-luxcore]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FLuxCore&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-mldatadevices]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FMLDataDevices&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-weightinitializers]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FWeightInitializers&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-luxtestutils]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FLuxTestUtils&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-luxcuda]: https://img.shields.io/badge/dynamic/json?url=http%3A%2F%2Fjuliapkgstats.com%2Fapi%2Fv1%2Fmonthly_downloads%2FLuxCUDA&query=total_requests&suffix=%2Fmonth&label=Downloads
+[downloads-lux-url]: http://juliapkgstats.com/pkg/Lux
+[downloads-luxlib-url]: http://juliapkgstats.com/pkg/LuxLib
+[downloads-luxcore-url]: http://juliapkgstats.com/pkg/LuxCore
+[downloads-mldatadevices-url]: http://juliapkgstats.com/pkg/MLDataDevices
+[downloads-weightinitializers-url]: http://juliapkgstats.com/pkg/WeightInitializers
+[downloads-luxtestutils-url]: http://juliapkgstats.com/pkg/LuxTestUtils
+[downloads-luxcuda-url]: http://juliapkgstats.com/pkg/LuxCUDA
 
 ## 🤸 Quickstart
 

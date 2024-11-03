@@ -210,7 +210,7 @@ const nnprimitives = [
     name: 'LuxLib.jl',
     desc: 'Backend for Lux.jl',
     links: [
-      { icon: 'github', link: 'https://github.com/LuxDL/LuxLib.jl' }
+      { icon: 'github', link: 'https://github.com/LuxDL/tree/main/lib/LuxLib.jl' }
     ]
   }
 ];
@@ -310,7 +310,7 @@ const test_utils = [
     name: 'LuxTestUtils.jl',
     desc: 'Collection of Functions useful for testing various packages in the Lux Ecosystem',
     links: [
-      { icon: 'github', link: 'https://github.com/LuxDL/LuxTestUtils.jl' }
+      { icon: 'github', link: 'https://github.com/LuxDL/tree/main/lib/LuxTestUtils' }
     ]
   }
 ];

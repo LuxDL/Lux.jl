@@ -1,3 +1,7 @@
 [default.extend-words]
 numer = "numer"
 Nd = "Nd"
+nd = "nd"
+Ba = "Ba"
+skipt = "skipt"
+nin = "nin"

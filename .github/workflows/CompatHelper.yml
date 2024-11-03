@@ -36,6 +36,7 @@ jobs:
           import CompatHelper
           subdirs = ["", "docs", "test"]
           append!(subdirs, joinpath.(("examples",), filter(p -> isdir(joinpath("examples", p)), readdir("examples"))))
+          append!(subdirs, joinpath.(("lib",), filter(p -> isdir(joinpath("lib", p)), readdir("lib"))))
           CompatHelper.main(; subdirs)
         shell: julia --color=yes {0}
         working-directory: "./"

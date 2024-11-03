@@ -1,4 +1,4 @@
-name: CIPreRelease
+name: CIPreRelease (Lux)
 on:
   pull_request:
     branches:
@@ -9,6 +9,11 @@ on:
       - "test/**"
       - "Project.toml"
       - ".github/workflows/CI.yml"
+      - "lib/LuxTestUtils/**"
+      - "lib/LuxCore/**"
+      - "lib/MLDataDevices/**"
+      - "lib/WeightInitializers/**"
+      - "lib/LuxLib/**"
   push:
     branches:
       - main
@@ -21,7 +26,6 @@ concurrency:
 
 jobs:
   ci:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.test_group }}
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
     runs-on: ${{ matrix.os }}
     strategy:

@@ -8,6 +8,7 @@ steps:
           diff: ".buildkite/scripts/diff.sh $BUILDKITE_COMMIT"
           interpolation: false
           watch:
+            # Core Lux Testing
             - path:
                 - "src/"
                 - "ext/"
@@ -18,18 +19,56 @@ steps:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
                 agents:
                   queue: "juliagpu"
+
+            # LuxCUDA Testing
             - path:
-                - "src/"
-                - "ext/"
-                - "test/"
-                - "Project.toml"
-                - "docs/"
-                - "examples/"
+                - "lib/LuxCUDA/"
                 - ".buildkite/"
               config:
-                command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
                 agents:
                   queue: "juliagpu"
+
+            # WeightInitializers Testing
+            - path:
+                - "lib/WeightInitializers/"
+                - ".buildkite/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # MLDataDevices Testing
+            - path:
+                - "lib/MLDataDevices/"
+                - ".buildkite/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # LuxLib Testing
+            - path:
+                - "lib/LuxLib/"
+                - ".buildkite/"
+                - "lib/LuxTestUtils/"
+                - "lib/LuxCore/"
+                - "lib/MLDataDevices/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxlib.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # LuxTestUtils Testing
+            - path:
+                - "lib/LuxTestUtils/"
+                - ".buildkite/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # Benchmarks
             - path:
                 - "src/"
                 - "ext/"
@@ -43,11 +82,51 @@ steps:
                 agents:
                   queue: "juliagpu"
 
+            # Documentation
+            - path:
+                - "src/"
+                - "ext/"
+                - "test/"
+                - "Project.toml"
+                - "docs/"
+                - "examples/"
+                - ".buildkite/"
+                - "lib"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # Downstream
+            - path:
+                - "src/"
+                - "ext/"
+                - "lib/"
+                - "Project.toml"
+                - ".buildkite/"
+              if: build.pull_request.labels includes "run downstream test"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/downstream.yml"
+                agents:
+                  queue: "juliagpu"
+
   - label: "Triggering Pipelines (Main Branch / Tag)"
     if: build.branch == "main" || build.tag != null
     agents:
       queue: "juliagpu"
     command: |
+      # Core Lux Testing
       buildkite-agent pipeline upload .buildkite/testing.yml
+
+      # Subpackage testing
+      buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml
+      buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml
+      buildkite-agent pipeline upload .buildkite/testing_luxlib.yml
+      buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml
+      buildkite-agent pipeline upload .buildkite/testing_luxtestutils.yml
+
+      # Documentation
       buildkite-agent pipeline upload .buildkite/documentation.yml
+
+      # Benchmarks
       buildkite-agent pipeline upload .buildkite/benchmarks.yml

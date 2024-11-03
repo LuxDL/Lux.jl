@@ -1,0 +1,206 @@
+name: CI (LuxLib)
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "lib/LuxLib/**"
+      - ".github/workflows/CI_LuxLib.yml"
+      - "lib/LuxTestUtils/**"
+      - "lib/LuxCore/**"
+      - "lib/MLDataDevices/**"
+  push:
+    branches:
+      - main
+
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  test:
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - "1.10"
+        os:
+          - ubuntu-latest
+        test_group:
+          - "conv"
+          - "dense"
+          - "batch_norm"
+          - "group_norm"
+          - "instance_norm"
+          - "layer_norm"
+          - "other_ops"
+          - "batched_ops"
+          - "others"
+        blas_backend:
+          - "default"
+        loopvec:
+          - "true"
+        include:
+          - os: ubuntu-latest
+            test_group: "dense"
+            blas_backend: "blis"
+            version: "1.10"
+            loopvec: "true"
+          - os: ubuntu-latest
+            test_group: "dense"
+            blas_backend: "mkl"
+            version: "1.10"
+            loopvec: "true"
+          - os: ubuntu-latest
+            test_group: "dense"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
+          - os: ubuntu-latest
+            test_group: "batched_ops"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
+          - os: ubuntu-latest
+            test_group: "other_ops"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
+          - os: macos-latest
+            test_group: "dense"
+            blas_backend: "appleaccelerate"
+            version: "1.10"
+            loopvec: "true"
+          - os: macos-latest
+            test_group: "all"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "true"
+          - os: windows-latest
+            test_group: "all"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: actions/cache@v4
+        env:
+          cache-name: cache-artifacts
+        with:
+          path: ~/.julia/artifacts
+          key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('**/Project.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-test-${{ env.cache-name }}-
+            ${{ runner.os }}-test-
+            ${{ runner.os }}-
+      - name: "Install Dependencies"
+        run: |
+          import Pkg
+          dev_pkgs = Pkg.PackageSpec[]
+          for pkg in ("lib/LuxCore", "lib/MLDataDevices")
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          Pkg.develop(dev_pkgs)
+          Pkg.Registry.update()
+          Pkg.instantiate()
+          Pkg.activate("lib/LuxLib/test")
+          dev_pkgs = Pkg.PackageSpec[]
+          for pkg in ("lib/LuxTestUtils", "lib/LuxLib")
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          Pkg.develop(dev_pkgs)
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
+      - name: "Run Tests"
+        run: |
+          import Pkg, LuxLib
+          dir = dirname(pathof(LuxLib))
+          include(joinpath(dir, "../test/runtests.jl"))
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
+        env:
+          LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
+          LUXLIB_BLAS_BACKEND: ${{ matrix.blas_backend }}
+          LUXLIB_LOAD_LOOPVEC: ${{ matrix.loopvec }}
+      - uses: julia-actions/julia-processcoverage@v1
+        with:
+          directories: lib/LuxLib/src,lib/LuxLib/ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/LuxTestUtils/src
+      - uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          fail_ci_if_error: true
+
+  downgrade:
+    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_group:
+          - "conv"
+          - "dense"
+          - "batch_norm"
+          - "group_norm"
+          - "instance_norm"
+          - "layer_norm"
+          - "other_ops"
+          - "batched_ops"
+          - "others"
+        blas_backend:
+          - "default"
+        loopvec:
+          - "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.10"
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          skip: "LuxCore,MLDataDevices"
+      - name: "Install Dependencies"
+        run: |
+          import Pkg
+          dev_pkgs = Pkg.PackageSpec[]
+          for pkg in ("lib/LuxCore", "lib/MLDataDevices")
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          Pkg.develop(dev_pkgs)
+          Pkg.Registry.update()
+          Pkg.instantiate()
+          Pkg.activate("lib/LuxLib/test")
+          dev_pkgs = Pkg.PackageSpec[]
+          for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
+            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
+          end
+          Pkg.develop(dev_pkgs)
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
+      - name: "Run Tests"
+        run: |
+          import Pkg, LuxLib
+          dir = dirname(pathof(LuxLib))
+          include(joinpath(dir, "../test/runtests.jl"))
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
+        env:
+          LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
+          LUXLIB_BLAS_BACKEND: ${{ matrix.blas_backend }}
+          LUXLIB_LOAD_LOOPVEC: ${{ matrix.loopvec }}
+      - uses: julia-actions/julia-processcoverage@v1
+        with:
+          directories: lib/LuxLib/src,lib/LuxLib/ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/LuxTestUtils/src
+      - uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          fail_ci_if_error: true
+
+env:
+  BACKEND_GROUP: "CPU"

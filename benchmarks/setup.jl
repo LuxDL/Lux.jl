@@ -1,30 +1,42 @@
-using ADTypes: ADTypes, AutoEnzyme, AutoZygote
+using ADTypes
 using Adapt: adapt
-using Lux: Lux, BatchNorm, Chain, Conv, Dense, Dropout, FlattenLayer, MaxPool
-using MLDataDevices: AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice
-using NNlib: relu, gelu
+using Lux
+using LuxLib
+using MLDataDevices
+using MLDataDevices: AbstractDevice
+using NNlib
 using Random: Random
+using StableRNGs: StableRNG
 
 # AD Backends
 using Enzyme: Enzyme
 using Zygote: Zygote
 
 # Helper Functions
-@inline synchronize(::CPUDevice) = nothing
-@inline synchronize(::AMDGPUDevice) = AMDGPU.synchronize()
-@inline synchronize(::CUDADevice) = CUDA.synchronize()
+synchronize(::CPUDevice) = nothing
+synchronize(::AMDGPUDevice) = AMDGPU.synchronize()
+synchronize(::CUDADevice) = CUDA.synchronize()
+synchronize(::MetalDevice) = Metal.synchronize()
+synchronize(::oneAPIDevice) = oneAPI.synchronize()
 
-@inline reclaim(::CPUDevice) = GC.gc()
-@inline reclaim(::AMDGPUDevice) = AMDGPU.HIP.reclaim()
-@inline reclaim(::CUDADevice) = CUDA.reclaim()
+reclaim(::CPUDevice) = GC.gc()
+reclaim(::AMDGPUDevice) = AMDGPU.HIP.reclaim()
+reclaim(::CUDADevice) = CUDA.reclaim()
+reclaim(::MetalDevice) = nothing  # Metal.reclaim()
+reclaim(::oneAPIDevice) = nothing # oneAPI.reclaim()
 
-@inline sumabs2(model, x, p, st) = sum(abs2, first(Lux.apply(model, x, p, st)))
-@inline sumabs2(model, x) = sum(abs2, model(x))
+function sumabs2(model::Lux.AbstractLuxLayer, x, p, st)
+    return sum(abs2, first(Lux.apply(model, x, p, st)))
+end
+sumabs2(f::F, args...) where {F} = sum(abs2, f(args...))
+sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
 
 function benchmark_group_to_backend(benchmark_group::String)
     benchmark_group == "CPU" && return CPUDevice()
     benchmark_group == "AMDGPU" && return AMDGPUDevice()
     benchmark_group == "CUDA" && return CUDADevice()
+    benchmark_group == "Metal" && return MetalDevice()
+    benchmark_group == "oneAPI" && return oneAPIDevice()
     error("Unknown backend: $(benchmark_group)")
 end
 
@@ -39,12 +51,14 @@ end
 # Main benchmark files
 include("setups/layers.jl")
 include("setups/models.jl")
+include("setups/luxlib.jl")
 
 function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threads::Int64)
     dev = benchmark_group_to_backend(backend)
     cpu_or_gpu = backend == "CPU" ? "CPU" : "GPU"
     final_backend = backend == "CPU" ? string(num_cpu_threads, " ", "thread(s)") : backend
 
+    # Model Benchmarks
     setup_dense_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
     setup_conv_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
@@ -54,6 +68,19 @@ function setup_benchmarks!(suite::BenchmarkGroup, backend::String, num_cpu_threa
     setup_mlp_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 
     setup_lenet_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    # Layer Benchmarks
+    setup_dense_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_bias_activation_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_batchnorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_layernorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_groupnorm_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
+
+    setup_batched_matmul_benchmarks!(suite, cpu_or_gpu, final_backend, dev)
 end
 
 function setup_forward_pass_benchmark!(suite::BenchmarkGroup, benchmark_name::String,

@@ -20,6 +20,7 @@ end
 @info "Running tests for group: $LUX_TEST_GROUP"
 
 const EXTRA_PKGS = Pkg.PackageSpec[]
+const EXTRA_DEV_PKGS = Pkg.PackageSpec[]
 
 if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
@@ -34,14 +35,21 @@ if !Sys.iswindows()
         push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
 end
 
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
+if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
+    if isdir(joinpath(@__DIR__, "../lib/LuxCUDA"))
+        @info "Using local LuxCUDA"
+        push!(EXTRA_DEV_PKGS, Pkg.PackageSpec(; path=joinpath(@__DIR__, "../lib/LuxCUDA")))
+    else
+        push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
+    end
+end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
 
-if !isempty(EXTRA_PKGS)
-    @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
-    Pkg.add(EXTRA_PKGS)
+if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
+    @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
+    isempty(EXTRA_PKGS) || Pkg.add(EXTRA_PKGS)
+    isempty(EXTRA_DEV_PKGS) || Pkg.develop(EXTRA_DEV_PKGS)
     Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()
