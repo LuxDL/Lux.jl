@@ -80,6 +80,7 @@ jobs:
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
+          Pkg.instantiate()
         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=. {0}
       - name: "Run Tests"
         run: |
@@ -91,7 +92,7 @@ jobs:
           LUX_TEST_GROUP: ${{ matrix.test_group }}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,ext
+          directories: src,ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/WeightInitializers/src,lib/WeightInitializers/ext,lib/LuxLib/src,lib/LuxLib/ext,lib/LuxTestUtils/src
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
@@ -126,6 +127,7 @@ jobs:
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
+          Pkg.instantiate()
         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=. {0}
       - name: "Run Tests"
         run: |
@@ -135,7 +137,7 @@ jobs:
         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=test {0}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src,ext
+          directories: src,ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/WeightInitializers/src,lib/WeightInitializers/ext,lib/LuxLib/src,lib/LuxLib/ext,lib/LuxTestUtils/src
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info

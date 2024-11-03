@@ -76,7 +76,6 @@ jobs:
 
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
-    name: Downgrade Julia ${{ matrix.version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
