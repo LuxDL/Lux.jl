@@ -349,7 +349,8 @@ end
     end
 
     @testset "Quality Assurance" begin
-        Aqua.test_all(LuxCore)
+        Aqua.test_all(LuxCore; stale_deps=true)
+        Aqua.test_stale_deps(LuxCore; ignore=[:MLDataDevices])
 
         @test check_no_implicit_imports(LuxCore) === nothing
         @test check_no_stale_explicit_imports(LuxCore) === nothing
