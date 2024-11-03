@@ -1,5 +1,5 @@
 steps:
-  - group: ":julia: CUDA GPU"
+  - group: ":julia: (Lux) CUDA GPU"
     steps:
       - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
         plugins:
@@ -53,7 +53,7 @@ steps:
               - "1.10"
               - "1"
 
-  - group: ":julia: AMD GPU"
+  - group: ":julia: (Lux) AMD GPU"
     steps:
       - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
         plugins:
