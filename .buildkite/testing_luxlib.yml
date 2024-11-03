@@ -27,7 +27,7 @@ steps:
             Pkg.instantiate();
             Pkg.activate("lib/LuxLib/test");
             dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/LuxTestUtils", "lib/LuxLib")
+            for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
               push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
             end;
             Pkg.develop(dev_pkgs)'
@@ -76,7 +76,7 @@ steps:
             Pkg.instantiate();
             Pkg.activate("lib/LuxLib/test");
             dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/LuxTestUtils", "lib/LuxLib")
+            for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
               push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
             end;
             Pkg.develop(dev_pkgs)'
