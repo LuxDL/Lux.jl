@@ -43,7 +43,6 @@ Automatic Backend Management is done by two simple functions: `cpu_device` and `
       LocalPreferences file is present, then the first working GPU with loaded trigger
       package is used.
 
-
    ```@example gpu_management
    gdev = gpu_device()
 
