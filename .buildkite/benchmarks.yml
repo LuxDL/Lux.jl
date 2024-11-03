@@ -41,7 +41,7 @@ steps:
 
           julia --project=benchmarks -e 'println("--- :julia: Add CUDA to benchmarks environment")
               using Pkg
-              Pkg.add("LuxCUDA")'
+              Pkg.develop([PackageSpec(path="lib/LuxCUDA")])'
 
           julia --project=benchmarks -e 'println("--- :julia: Run Benchmarks")
               include("benchmarks/runbenchmarks.jl")'

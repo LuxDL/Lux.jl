@@ -6,16 +6,26 @@ using InteractiveUtils, Hwloc
 Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
-const EXTRA_PKGS = String[]
+const EXTRA_PKGS = PackageSpec[]
 
 const LUXLIB_BLAS_BACKEND = lowercase(get(ENV, "LUXLIB_BLAS_BACKEND", "default"))
 @assert LUXLIB_BLAS_BACKEND in ("default", "appleaccelerate", "blis", "mkl")
 @info "Running tests with BLAS backend: $(LUXLIB_BLAS_BACKEND)"
 
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") && push!(EXTRA_PKGS, "oneAPI")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") && push!(EXTRA_PKGS, "Metal")
+if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
+    if isdir(joinpath(@__DIR__, "../../LuxCUDA"))
+        @info "Using local LuxCUDA"
+        push!(EXTRA_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
+    else
+        push!(EXTRA_PKGS, PackageSpec(; name="LuxCUDA"))
+    end
+end
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS

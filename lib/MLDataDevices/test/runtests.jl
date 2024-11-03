@@ -1,15 +1,26 @@
-import Pkg
+using Pkg: Pkg, PackageSpec
 using SafeTestsets, Test
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 
-const EXTRA_PKGS = String[]
+const EXTRA_PKGS = PackageSpec[]
 
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") && push!(EXTRA_PKGS, "LuxCUDA")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") && push!(EXTRA_PKGS, "AMDGPU")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") && push!(EXTRA_PKGS, "oneAPI")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") && push!(EXTRA_PKGS, "Metal")
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "xla") && push!(EXTRA_PKGS, "Reactant")
+if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
+    if isdir(joinpath(@__DIR__, "../../LuxCUDA"))
+        @info "Using local LuxCUDA"
+        push!(EXTRA_PKGS, PackageSpec(; path=joinpath(@__DIR__, "../../LuxCUDA")))
+    else
+        push!(EXTRA_PKGS, PackageSpec(; name="LuxCUDA"))
+    end
+end
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="Metal"))
+(BACKEND_GROUP == "all" || BACKEND_GROUP == "xla") &&
+    push!(EXTRA_PKGS, PackageSpec(; name="Reactant"))
 
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS

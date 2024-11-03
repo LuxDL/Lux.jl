@@ -34,8 +34,14 @@ if !Sys.iswindows()
         push!(EXTRA_PKGS, Pkg.PackageSpec("Reactant"))
 end
 
-(BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
+if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
+    if isdir(joinpath(@__DIR__, "../lib/LuxCUDA"))
+        @info "Using local LuxCUDA"
+        push!(EXTRA_PKGS, Pkg.PackageSpec(; path=joinpath(@__DIR__, "../lib/LuxCUDA")))
+    else
+        push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
+    end
+end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("AMDGPU"))
 
