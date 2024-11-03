@@ -29,13 +29,13 @@ steps:
               - "1.10"
               - "1"
 
-  - group: ":julia: AMD GPU"
+  - group: ":julia: (WeightInitializers) AMD GPU"
     steps:
       - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
-          -JuliaCI/julia-coverage#v1:
+          - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
                 - lib/WeightInitializers/src

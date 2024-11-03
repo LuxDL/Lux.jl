@@ -19,18 +19,24 @@ steps:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
                 agents:
                   queue: "juliagpu"
+
+            # LuxCUDA Testing
             - path:
-                - "src/"
-                - "ext/"
-                - "test/"
-                - "Project.toml"
-                - "docs/"
-                - "examples/"
-                - ".buildkite/"
+                - "lib/LuxCUDA/"
               config:
-                command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
+                command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
                 agents:
                   queue: "juliagpu"
+
+            # WeightInitializers Testing
+            - path:
+                - "lib/WeightInitializers/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # Benchmarks
             - path:
                 - "src/"
                 - "ext/"
@@ -44,11 +50,17 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # LuxCUDA Testing
+            # Documentation
             - path:
-                - "lib/LuxCUDA/"
+                - "src/"
+                - "ext/"
+                - "test/"
+                - "Project.toml"
+                - "docs/"
+                - "examples/"
+                - ".buildkite/"
               config:
-                command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
+                command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
                 agents:
                   queue: "juliagpu"
 
@@ -63,3 +75,4 @@ steps:
 
       # Subpackage testing
       buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml
+      buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml
