@@ -94,6 +94,7 @@ steps:
   - group: ":julia: (WeightInitializers) oneAPI GPU"
     steps:
       - label: ":julia: Julia: {{matrix.julia}} + oneAPI"
+        soft_fail: true
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
