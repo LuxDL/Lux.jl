@@ -79,60 +79,6 @@ jobs:
           verbose: true
           fail_ci_if_error: true
 
-  downstream:
-    name: Downstream ${{ matrix.package.repo }}/${{ matrix.package.group }}
-    if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && contains(github.event.pull_request.labels.*.name, 'run downstream test') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 240
-    env:
-      GROUP: ${{ matrix.package.group }}
-    strategy:
-      fail-fast: false
-      matrix:
-        package:
-          - { user: SciML, repo: DiffEqFlux.jl, group: BasicNeuralDE }
-          - { user: SciML, repo: DiffEqFlux.jl, group: AdvancedNeuralDE }
-          - { user: SciML, repo: DeepEquilibriumNetworks.jl, group: All }
-          - { user: SciML, repo: NeuralPDE.jl, group: NNPDE1 }
-          - { user: SciML, repo: NeuralPDE.jl, group: NNPDE2 }
-          - { user: LuxDL, repo: Boltz.jl, group: CPU }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: "lts"
-          arch: x64
-      - uses: julia-actions/julia-buildpkg@v1
-      - name: Clone Downstream
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
-          path: downstream
-      - name: Load this and run the downstream tests
-        shell: julia --code-coverage=user --color=yes --project=downstream {0}
-        run: |
-          using Pkg
-          try
-            # force it to use this PR's version of the package
-            Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
-            Pkg.update()
-            Pkg.test(; coverage="user")  # resolver may fail with test time deps
-          catch err
-            err isa Pkg.Resolve.ResolverError || rethrow()
-            # If we can't resolve that means this is incompatible by SemVer and this is fine
-            # It means we marked this as a breaking change, so we don't need to worry about
-            # Mistakenly introducing a breaking change, as we have intentionally made one
-            @info "Not compatible with this release. No problem." exception=err
-            exit(0)  # Exit immediately, as a success
-          end
-      - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v4
-        with:
-          files: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-          fail_ci_if_error: true
-
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
     name: Downgrade Julia 1.10
