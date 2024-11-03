@@ -1,0 +1,128 @@
+steps:
+  - group: ":julia: (MLDataDevices) CUDA GPU"
+    steps:
+      - label: ":julia: Julia: {{matrix.julia}} + CUDA GPU"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - lib/MLDataDevices/src
+                - lib/MLDataDevices/ext
+        command: |
+          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/MLDataDevices -e '
+            import Pkg;
+            Pkg.Registry.update();
+            Pkg.instantiate();
+            Pkg.test(; coverage="user")'
+        env:
+          BACKEND_GROUP: "{{matrix.group}}"
+        agents:
+          queue: "juliagpu"
+          cuda: "*"
+        if: build.message !~ /\[skip tests\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1.10"
+              - "1"
+            group:
+              - "CPU"
+              - "XLA"
+
+  - group: ":julia: (MLDataDevices) AMD GPU"
+    steps:
+      - label: ":julia: Julia: {{matrix.julia}} + AMD GPU"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - lib/MLDataDevices/src
+                - lib/MLDataDevices/ext
+        command: |
+          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/MLDataDevices -e '
+            import Pkg;
+            Pkg.Registry.update();
+            Pkg.instantiate();
+            Pkg.test(; coverage="user")'
+        env:
+          BACKEND_GROUP: "AMDGPU"
+        agents:
+          queue: "juliagpu"
+          rocm: "*"
+          rocmgpu: "*"
+        if: build.message !~ /\[skip tests\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1.10"
+              - "1"
+
+  - group: ":julia: (MLDataDevices) Metal GPU"
+    steps:
+      - label: ":julia: Julia: {{matrix.julia}} + Metal"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - lib/MLDataDevices/src
+                - lib/MLDataDevices/ext
+        command: |
+          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/MLDataDevices -e '
+            import Pkg;
+            Pkg.Registry.update();
+            Pkg.instantiate();
+            Pkg.test(; coverage="user")'
+        env:
+          BACKEND_GROUP: "Metal"
+        agents:
+          queue: "juliaecosystem"
+          os: "macos"
+          arch: "aarch64"
+        if: build.message !~ /\[skip tests\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1.10"
+              - "1"
+
+  - group: ":julia: (MLDataDevices) oneAPI GPU"
+    steps:
+      - label: ":julia: Julia: {{matrix.julia}} + oneAPI"
+        plugins:
+          - JuliaCI/julia#v1:
+              version: "{{matrix.julia}}"
+          - JuliaCI/julia-coverage#v1:
+              codecov: true
+              dirs:
+                - lib/MLDataDevices/src
+                - lib/MLDataDevices/ext
+        command: |
+          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/MLDataDevices -e '
+            import Pkg;
+            Pkg.Registry.update();
+            Pkg.instantiate();
+            Pkg.test(; coverage="user")'
+        env:
+          BACKEND_GROUP: "oneAPI"
+        agents:
+          queue: "juliagpu"
+          intel: "*"
+        if: build.message !~ /\[skip tests\]/
+        timeout_in_minutes: 60
+        matrix:
+          setup:
+            julia:
+              - "1.10"
+              - "1"
+
+env:
+  SECRET_CODECOV_TOKEN: "jQ0BMTQgyZx7QGyU0Q2Ec7qB9mtE2q/tDu0FsfxvEG7/zOAGvXkyXrzIFFOQxvDoFcP+K2+hYZKMxicYdNqzr5wcxu505aNGN2GM3wyegAr+hO6q12bCFYx6qXzU9FLCCdeqINqn9gUSSOlGtWNFrbAlrTyz/D4Yo66TqBDzvaLL63FMnhCLaXW/zJt3hNuEAJaPY2O6Ze1rX2WZ3Y+i+s3uQ8aLImtoCJhPe8CRx+OhuYiTzGhynFfGntZ0738/1RN4gNM0S/hTC4gLE7XMVBanJpGh32rFaiDwW4zAyXKBrDkL3QA3MS1RvLTJxGJ085S16hCk0C4ddAhZCvIM9Q==;U2FsdGVkX1+bXdFeKMs5G79catOCyby2n07A2fg0FjVAvrjQLZ0yfvDS4paJiFikLkodho0khz2YALKb2Y0K6w=="

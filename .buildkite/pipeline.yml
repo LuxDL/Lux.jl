@@ -23,6 +23,7 @@ steps:
             # LuxCUDA Testing
             - path:
                 - "lib/LuxCUDA/"
+                - ".buildkite/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_luxcuda.yml"
                 agents:
@@ -31,8 +32,18 @@ steps:
             # WeightInitializers Testing
             - path:
                 - "lib/WeightInitializers/"
+                - ".buildkite/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing_weightinitializers.yml"
+                agents:
+                  queue: "juliagpu"
+
+            # MLDataDevices Testing
+            - path:
+                - "lib/MLDataDevices/"
+                - ".buildkite/"
+              config:
+                command: "buildkite-agent pipeline upload .buildkite/testing_mldatadevices.yml"
                 agents:
                   queue: "juliagpu"
 
