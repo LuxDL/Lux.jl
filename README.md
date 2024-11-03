@@ -88,14 +88,14 @@ Pkg.add("Lux")
 
 <!-- CI -->
 
-[gh-actions-lux]: https://github.com/LuxDL/Lux.jl/workflows/CI/badge.svg
-[gh-actions-lux-prerelease]: https://github.com/LuxDL/Lux.jl/workflows/CIPreRelease/badge.svg
-[gh-actions-luxlib]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxLib/badge.svg
-[gh-actions-luxcore]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxCore/badge.svg
-[gh-actions-mldatadevices]: https://github.com/LuxDL/Lux.jl/workflows/CI_MLDataDevices/badge.svg
-[gh-actions-weightinitializers]: https://github.com/LuxDL/Lux.jl/workflows/CI_WeightInitializers/badge.svg
-[gh-actions-luxtestutils]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxTestUtils/badge.svg
-[gh-actions-luxcuda]: https://github.com/LuxDL/Lux.jl/workflows/CI_LuxCUDA/badge.svg
+[gh-actions-lux]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(Lux)/badge.svg
+[gh-actions-lux-prerelease]: https://github.com/LuxDL/Lux.jl/workflows/CIPreRelease%20(Lux)/badge.svg
+[gh-actions-luxlib]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(LuxLib)/badge.svg
+[gh-actions-luxcore]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(LuxCore)/badge.svg
+[gh-actions-mldatadevices]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(MLDataDevices)/badge.svg
+[gh-actions-weightinitializers]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(WeightInitializers)/badge.svg
+[gh-actions-luxtestutils]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(LuxTestUtils)/badge.svg
+[gh-actions-luxcuda]: https://github.com/LuxDL/Lux.jl/workflows/CI%20(LuxCUDA)/badge.svg
 [gh-actions-lux-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI.yml
 [gh-actions-lux-prerelease-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CIPreRelease.yml
 [gh-actions-luxlib-url]: https://github.com/LuxDL/Lux.jl/actions/workflows/CI_LuxLib.yml
