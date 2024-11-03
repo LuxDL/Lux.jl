@@ -17,7 +17,8 @@ include("internal.jl")
 
 export gpu_backend!, supported_gpu_backends, reset_gpu_device!
 export default_device_rng
-export gpu_device, cpu_device, xla_device
+export gpu_device, cpu_device
+export xla_device, reactant_device
 
 export CPUDevice
 export CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice

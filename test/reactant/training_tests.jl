@@ -13,7 +13,7 @@
             Reactant.set_default_backend("cpu")
         end
 
-        xdev = xla_device(; force=true)
+        xdev = reactant_device(; force=true)
 
         @testset "MLP Training: $(version)" for version in (:iip, :oop)
             model = Chain(

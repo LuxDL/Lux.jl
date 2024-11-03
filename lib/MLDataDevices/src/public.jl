@@ -9,12 +9,12 @@ end
 struct MetalDevice <: AbstractGPUDevice end
 struct oneAPIDevice <: AbstractGPUDevice end
 
-@kwdef struct XLADevice{C, D} <: AbstractAcceleratorDevice
+@kwdef struct ReactantDevice{C, D} <: AbstractAcceleratorDevice
     client::C = missing
     device::D = missing
 end
 
-function Base.:(==)(x::XLADevice, y::XLADevice)
+function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
     if x.client !== missing
         y.client === missing && return false
         x.client.client != y.client.client && return false
@@ -29,6 +29,9 @@ function Base.:(==)(x::XLADevice, y::XLADevice)
     end
     return true
 end
+
+# XXX: Deprecate in v2
+const XLADevice = ReactantDevice
 
 # Fallback for when we don't know the device type
 struct UnknownDevice <: AbstractDevice end
@@ -207,11 +210,11 @@ Return a `CPUDevice` object which can be used to transfer data to CPU.
 cpu_device() = CPUDevice()
 
 """
-    xla_device(;
+    reactant_device(;
         force::Bool=false, client=missing, device=missing
-    ) -> Union{XLADevice, CPUDevice}
+    ) -> Union{ReactantDevice, CPUDevice}
 
-Return a `XLADevice` object if functional. Otherwise, throw an error if `force` is `true`.
+Return a `ReactantDevice` object if functional. Otherwise, throw an error if `force` is `true`.
 Falls back to `CPUDevice` if `force` is `false`.
 
 `client` and `device` are used to specify the client and particular device to use. If not
@@ -221,17 +224,19 @@ specified, then the default client and index are used.
 
     This is an experimental feature and might change without deprecations
 """
-function xla_device(; force::Bool=false, client=missing, device=missing)
-    msg = "`XLADevice` is not loaded or not functional. Load `Reactant.jl` before calling \
-           this function. Defaulting to CPU."
-    if loaded(XLADevice)
-        functional(XLADevice) && return XLADevice(client, device)
-        msg = "`XLADevice` is loaded but not functional. Defaulting to CPU."
+function reactant_device(; force::Bool=false, client=missing, device=missing)
+    msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
+           calling this function. Defaulting to CPU."
+    if loaded(ReactantDevice)
+        functional(ReactantDevice) && return ReactantDevice(client, device)
+        msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
     force && throw(Internal.DeviceSelectionException("XLA"))
     @warn msg maxlog=1
     return cpu_device()
 end
+
+Base.@deprecate xla_device(; kwargs...) reactant_device(; kwargs...)
 
 """
     default_device_rng(::AbstractDevice)
@@ -335,8 +340,8 @@ function set_device!(::Type{T}, dev_or_id) where {T <: AbstractDevice}
         @warn "Support for Multi Device oneAPI hasn't been implemented yet. Ignoring the device setting."
     T === CPUDevice &&
         @warn "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting."
-    T === XLADevice &&
-        @warn "Setting device for `XLADevice` hasn't been implemented yet. Ignoring the device setting."
+    T === ReactantDevice &&
+        @warn "Setting device for `ReactantDevice` hasn't been implemented yet. Ignoring the device setting."
     return
 end
 
@@ -389,7 +394,7 @@ end
 Adapt.adapt_storage(::CPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
 Adapt.adapt_storage(::CPUDevice, rng::AbstractRNG) = rng
 
-for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, XLADevice)
+for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, ReactantDevice)
     @eval begin
         function Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG)
             return default_device_rng(to)

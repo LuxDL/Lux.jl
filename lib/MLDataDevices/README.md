@@ -10,7 +10,7 @@ Currently we provide support for the following backends:
 3. `AMDGPUDevice`: `AMDGPU.jl` for AMD ROCM GPUs.
 4. `MetalDevice`: `Metal.jl` for Apple Metal GPUs. **(Experimental)**
 5. `oneAPIDevice`: `oneAPI.jl` for Intel GPUs. **(Experimental)**
-6. `XLADevice`: `Reactant.jl` for XLA Support. **(Experimental)**
+6. `ReactantDevice`: `Reactant.jl` for XLA Support. **(Experimental)**
 
 ## Updating to v1.0
 

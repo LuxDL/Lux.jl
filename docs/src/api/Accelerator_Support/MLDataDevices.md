@@ -18,7 +18,7 @@ MLDataDevices.gpu_backend!
 ```@docs
 MLDataDevices.cpu_device
 MLDataDevices.gpu_device
-MLDataDevices.xla_device
+MLDataDevices.reactant_device
 ```
 
 ## Miscellaneous

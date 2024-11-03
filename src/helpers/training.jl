@@ -10,7 +10,7 @@ using Static: StaticBool, Static, False, True
 
 using ..Lux: Lux
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: XLADevice, get_device_type, get_device, cpu_device
+using MLDataDevices: ReactantDevice, get_device_type, get_device, cpu_device
 
 """
     TrainState
@@ -63,7 +63,7 @@ Constructor for [`TrainState`](@ref).
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
     dev = get_device(ps)
-    st_opt = if dev isa XLADevice
+    st_opt = if dev isa ReactantDevice
         ps_cpu = ps |> cpu_device()
         Optimisers.setup(optimizer, ps_cpu) |> dev
     else
@@ -199,7 +199,7 @@ end
 
 maybe_wrap_adtype(backend::ReactantBackend, _) = backend
 maybe_wrap_adtype(ad::AbstractADType, _) = ad
-function maybe_wrap_adtype(ad::AbstractADType, ::Type{XLADevice})
+function maybe_wrap_adtype(ad::AbstractADType, ::Type{ReactantDevice})
     ad isa AutoEnzyme && return ReactantBackend()
     throw(ArgumentError("Computing gradients for models on XLA is supported only with \
                          Enzyme.jl (`AutoEnzyme`)."))

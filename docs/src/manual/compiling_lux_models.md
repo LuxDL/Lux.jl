@@ -45,11 +45,11 @@ x = randn(Float32, 2, 32)
 y = x .^ 2
 ```
 
-We will use [`xla_device`](@ref) similar to [`gpu_device`](@ref) to move the arrays to
+We will use [`reactant_device`](@ref) similar to [`gpu_device`](@ref) to move the arrays to
 `Reactant`.
 
 ```@example compile_lux_model
-const xdev = xla_device()
+const xdev = reactant_device()
 
 x_ra = x |> xdev
 y_ra = y |> xdev
@@ -66,7 +66,7 @@ pred_lux, _ = model(x, ps, Lux.testmode(st))
 
 To run it using `XLA` we need to compile the model. We can do this using the
 `Reactant.@compile` macro. Note that the inputs need to be moved to the device using
-[`xla_device`](@ref) first.
+[`reactant_device`](@ref) first.
 
 ```@example compile_lux_model
 model_compiled = @compile model(x_ra, ps_ra, Lux.testmode(st_ra))
@@ -122,7 +122,7 @@ fmap(Broadcast.BroadcastFunction(-), ∂ps_zyg, ∂ps_enzyme)
 Now that we saw the low-level API let's see how to train the model without any of this
 boilerplate. Simply follow the following steps:
 
-1. Create a device using `xla_device`. Remember to load `Reactant.jl` before doing this.
+1. Create a device using `reactant_device`. Remember to load `Reactant.jl` before doing this.
 2. Similar to other device functions move the model, parameters, states and data to the
    device. Note that you might want to use [`DeviceIterator`](@ref) to move the data
    loader to the device with an iterator.

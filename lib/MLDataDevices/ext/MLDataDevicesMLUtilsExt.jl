@@ -1,10 +1,10 @@
 module MLDataDevicesMLUtilsExt
 
 using MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice,
-                     MetalDevice, oneAPIDevice, XLADevice, DeviceIterator
+                     MetalDevice, oneAPIDevice, ReactantDevice, DeviceIterator
 using MLUtils: MLUtils, DataLoader
 
-for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, XLADevice)
+for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, ReactantDevice)
     @eval function (D::$(dev))(dataloader::DataLoader)
         if dataloader.parallel
             if dataloader.buffer

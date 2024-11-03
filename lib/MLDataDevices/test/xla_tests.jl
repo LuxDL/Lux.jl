@@ -2,11 +2,11 @@ using MLDataDevices, Random, Test
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
-    @test !MLDataDevices.functional(XLADevice)
+    @test !MLDataDevices.functional(ReactantDevice)
     @test cpu_device() isa CPUDevice
-    @test xla_device() isa CPUDevice
-    @test_throws MLDataDevices.Internal.DeviceSelectionException xla_device(; force=true)
-    @test_throws Exception default_device_rng(XLADevice())
+    @test reactant_device() isa CPUDevice
+    @test_throws MLDataDevices.Internal.DeviceSelectionException reactant_device(; force=true)
+    @test_throws Exception default_device_rng(ReactantDevice())
 end
 
 using Reactant
@@ -15,14 +15,14 @@ if "gpu" in keys(Reactant.XLA.backends)
 end
 
 @testset "Loaded Trigger Package" begin
-    if MLDataDevices.functional(XLADevice)
+    if MLDataDevices.functional(ReactantDevice)
         @info "Reactant is functional"
-        @test xla_device() isa XLADevice
-        @test xla_device(; force=true) isa XLADevice
+        @test reactant_device() isa ReactantDevice
+        @test reactant_device(; force=true) isa ReactantDevice
     else
         @info "Reactant is NOT functional"
-        @test xla_device() isa CPUDevice
-        @test_throws MLDataDevices.Internal.DeviceSelectionException xla_device(;
+        @test reactant_device() isa CPUDevice
+        @test_throws MLDataDevices.Internal.DeviceSelectionException reactant_device(;
             force=true)
     end
 end
@@ -36,13 +36,13 @@ using FillArrays, Zygote  # Extensions
         rng_default=Random.default_rng(), rng=MersenneTwister(),
         one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
 
-    device = xla_device()
-    aType = MLDataDevices.functional(XLADevice) ? Reactant.ConcreteRArray : Array
+    device = reactant_device()
+    aType = MLDataDevices.functional(ReactantDevice) ? Reactant.ConcreteRArray : Array
     rngType = Random.AbstractRNG
 
     ps_xpu = ps |> device
-    @test get_device(ps_xpu) isa XLADevice
-    @test get_device_type(ps_xpu) <: XLADevice
+    @test get_device(ps_xpu) isa ReactantDevice
+    @test get_device_type(ps_xpu) <: ReactantDevice
     @test ps_xpu.a.c isa aType
     @test ps_xpu.b isa aType
     @test ps_xpu.a.d == ps.a.d
@@ -60,7 +60,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(ps_xpu.rng) === nothing
     @test get_device_type(ps_xpu.rng) <: Nothing
 
-    if MLDataDevices.functional(XLADevice)
+    if MLDataDevices.functional(ReactantDevice)
         @test ps_xpu.one_elem isa Reactant.RArray
         @test ps_xpu.farray isa Reactant.RArray
     else
@@ -90,7 +90,7 @@ using FillArrays, Zygote  # Extensions
     @test get_device(ps_cpu.rng) === nothing
     @test get_device_type(ps_cpu.rng) <: Nothing
 
-    if MLDataDevices.functional(XLADevice)
+    if MLDataDevices.functional(ReactantDevice)
         @test ps_cpu.one_elem isa Array
         @test ps_cpu.farray isa Array
     else
@@ -110,12 +110,12 @@ using FillArrays, Zygote  # Extensions
         @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
 
         return_val2(x) = Val(get_device(x))
-        @test @inferred(return_val2(ps)) isa Val{get_device(x)}
+        @test_throws TypeError @inferred(return_val2(ps))
     end
 end
 
 @testset "Functions" begin
-    if MLDataDevices.functional(XLADevice)
+    if MLDataDevices.functional(ReactantDevice)
         @test get_device(tanh) isa MLDataDevices.UnknownDevice
         @test get_device_type(tanh) <: MLDataDevices.UnknownDevice
 
@@ -125,9 +125,9 @@ end
         @test get_device(ff) isa CPUDevice
         @test get_device_type(ff) <: CPUDevice
 
-        ff_xpu = ff |> XLADevice()
-        @test get_device(ff_xpu) isa XLADevice
-        @test get_device_type(ff_xpu) <: XLADevice
+        ff_xpu = ff |> ReactantDevice()
+        @test get_device(ff_xpu) isa ReactantDevice
+        @test get_device_type(ff_xpu) <: ReactantDevice
 
         ff_cpu = ff_xpu |> cpu_device()
         @test get_device(ff_cpu) isa CPUDevice
@@ -136,20 +136,20 @@ end
 end
 
 @testset "Wrapped Arrays" begin
-    if MLDataDevices.functional(XLADevice)
-        x = rand(10, 10) |> XLADevice()
-        @test get_device(x) isa XLADevice
-        @test get_device_type(x) <: XLADevice
+    if MLDataDevices.functional(ReactantDevice)
+        x = rand(10, 10) |> ReactantDevice()
+        @test get_device(x) isa ReactantDevice
+        @test get_device_type(x) <: ReactantDevice
         x_view = view(x, 1:5, 1:5)
-        @test get_device(x_view) isa XLADevice
-        @test get_device_type(x_view) <: XLADevice
+        @test get_device(x_view) isa ReactantDevice
+        @test get_device_type(x_view) <: ReactantDevice
     end
 end
 
 @testset "setdevice!" begin
-    if MLDataDevices.functional(XLADevice)
+    if MLDataDevices.functional(ReactantDevice)
         @test_logs (:warn,
-            "Setting device for `XLADevice` hasn't been implemented yet. Ignoring the device setting.") MLDataDevices.set_device!(
-            XLADevice, nothing, 1)
+            "Setting device for `ReactantDevice` hasn't been implemented yet. Ignoring the device setting.") MLDataDevices.set_device!(
+            ReactantDevice, nothing, 1)
     end
 end

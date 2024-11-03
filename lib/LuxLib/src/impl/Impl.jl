@@ -19,7 +19,7 @@ using Random: Random, AbstractRNG, rand!
 using Statistics: Statistics, mean, var
 
 using LuxCore: LuxCore
-using MLDataDevices: get_device_type, CPUDevice, AMDGPUDevice, CUDADevice, XLADevice,
+using MLDataDevices: get_device_type, CPUDevice, AMDGPUDevice, CUDADevice, ReactantDevice,
                      AbstractGPUDevice, AbstractDevice
 using NNlib: NNlib, ConvDims
 
