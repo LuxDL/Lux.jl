@@ -1,0 +1,17 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+Hwloc = "0e44f5e4-bd66-52a0-8798-143a42290a1d"
+InteractiveUtils = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+MetaTesting = "9e32d19f-1e4f-477a-8631-b16c78aa0f56"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+CUDA = "5"
+ComponentArrays = "0.15"
+Hwloc = "3"
+InteractiveUtils = "<0.0.1, 1"
+MetaTesting = "0.1"
+ReTestItems = "1.25"
+Test = "1.10"
