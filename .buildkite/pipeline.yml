@@ -91,6 +91,7 @@ steps:
                 - "docs/"
                 - "examples/"
                 - ".buildkite/"
+                - "lib"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/documentation.yml"
                 agents:

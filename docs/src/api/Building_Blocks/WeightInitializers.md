@@ -18,8 +18,8 @@ learning models.
 | `AMDGPU.rocrand_rng()`            | `ROCArray`              |                                                  |
 | `AMDGPU.gpuarrays_rng()`          | `ROCArray`              |                                                  |
 | `GPUArrays.default_rng(ROCArray)` | `ROCArray`              |                                                  |
-| `Metal.gpuarrays_rng()`           | `MtlArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
-| `GPUArrays.default_rng(MtlArray)` | `MtlArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
+| `Metal.gpuarrays_rng()`           | `MtlArray`              | [`orthogonal`](@ref)                             |
+| `GPUArrays.default_rng(MtlArray)` | `MtlArray`              | [`orthogonal`](@ref)                             |
 | `oneAPI.gpuarrays_rng()`          | `oneArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
 | `GPUArrays.default_rng(oneArray)` | `oneArray`              | [`orthogonal`](@ref), [`truncated_normal`](@ref) |
 
