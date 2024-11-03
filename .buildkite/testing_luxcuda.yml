@@ -1,5 +1,5 @@
 steps:
-  - group: ":julia: CUDA GPU"
+  - group: ":julia: (LuxCUDA) CUDA GPU"
     steps:
       - label: ":julia: Julia: {{matrix.julia}}"
         plugins:

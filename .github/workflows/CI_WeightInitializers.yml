@@ -1,11 +1,11 @@
-name: CI (LuxCore)
+name: CI (WeightInitializers)
 on:
   pull_request:
     branches:
       - main
     paths:
-      - "lib/LuxCore/**"
-      - ".github/workflows/CI_LuxCore.yml"
+      - "lib/WeightInitializers/**"
+      - ".github/workflows/CI_WeightInitializers.yml"
   push:
     branches:
       - main
@@ -25,7 +25,6 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "min"
           - "1"
         os:
           - ubuntu-latest
@@ -50,17 +49,12 @@ jobs:
         run: |
           import Pkg
           Pkg.Registry.update()
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/MLDataDevices",)
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
           Pkg.instantiate()
           Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCore {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers {0}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext
+            directories: lib/WeightInitializers/src,lib/WeightInitializers/ext
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
@@ -86,17 +80,12 @@ jobs:
         run: |
           import Pkg
           Pkg.Registry.update()
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/MLDataDevices",)
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
           Pkg.instantiate()
           Pkg.test(; coverage="user")
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCore {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/WeightInitializers {0}
       - uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext
+          directories: lib/WeightInitializers/src,lib/WeightInitializers/ext
       - uses: codecov/codecov-action@v4
         with:
           files: lcov.info
