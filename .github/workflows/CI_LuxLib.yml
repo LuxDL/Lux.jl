@@ -33,13 +33,8 @@ jobs:
         test_group:
           - "conv"
           - "dense"
-          - "batch_norm"
-          - "group_norm"
-          - "instance_norm"
-          - "layer_norm"
-          - "other_ops"
-          - "batched_ops"
-          - "others"
+          - "normalization"
+          - "misc"
         blas_backend:
           - "default"
         loopvec:
@@ -55,26 +50,21 @@ jobs:
             blas_backend: "mkl"
             version: "1.10"
             loopvec: "true"
-          - os: ubuntu-latest
-            test_group: "dense"
-            blas_backend: "default"
-            version: "1.10"
-            loopvec: "false"
-          - os: ubuntu-latest
-            test_group: "batched_ops"
-            blas_backend: "default"
-            version: "1.10"
-            loopvec: "false"
-          - os: ubuntu-latest
-            test_group: "other_ops"
-            blas_backend: "default"
-            version: "1.10"
-            loopvec: "false"
           - os: macos-latest
             test_group: "dense"
             blas_backend: "appleaccelerate"
             version: "1.10"
             loopvec: "true"
+          - os: ubuntu-latest
+            test_group: "dense"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
+          - os: ubuntu-latest
+            test_group: "misc"
+            blas_backend: "default"
+            version: "1.10"
+            loopvec: "false"
           - os: macos-latest
             test_group: "all"
             blas_backend: "default"
@@ -146,13 +136,8 @@ jobs:
         test_group:
           - "conv"
           - "dense"
-          - "batch_norm"
-          - "group_norm"
-          - "instance_norm"
-          - "layer_norm"
-          - "other_ops"
-          - "batched_ops"
-          - "others"
+          - "normalization"
+          - "misc"
         blas_backend:
           - "default"
         loopvec:

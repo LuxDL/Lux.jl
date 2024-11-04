@@ -1,4 +1,4 @@
-@testitem "Dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "Dropout" tags=[:misc] setup=[SharedTestSetup] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -43,7 +43,7 @@
     end
 end
 
-@testitem "Dropout with Preset Mask" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "Dropout with Preset Mask" tags=[:misc] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)
@@ -132,7 +132,7 @@ end
     end
 end
 
-@testitem "Alpha Dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "Alpha Dropout" tags=[:misc] setup=[SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)

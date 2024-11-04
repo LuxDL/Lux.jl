@@ -1,4 +1,4 @@
-@testitem "Bias Activation" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "Bias Activation" tags=[:misc] setup=[SharedTestSetup] begin
     rng = StableRNG(1234)
 
     bias_act_loss1(act, x, b) = sum(abs2, act.(x .+ LuxLib.Impl.reshape_bias(x, b)))
@@ -68,7 +68,7 @@
     end
 end
 
-@testitem "Bias Activation (ReverseDiff)" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "Bias Activation (ReverseDiff)" tags=[:misc] setup=[SharedTestSetup] begin
     using ReverseDiff, Tracker
 
     x = rand(Float32, 3, 4)
@@ -88,7 +88,7 @@ end
     @test z isa Tracker.TrackedArray
 end
 
-@testitem "Bias Activation: Zero-sized Arrays" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "Bias Activation: Zero-sized Arrays" tags=[:misc] setup=[SharedTestSetup] begin
     @testset "$mode" for (mode, aType, ongpu) in MODES
         x = rand(Float32, 4, 3, 2, 0) |> aType
         b = rand(Float32, 2) |> aType
