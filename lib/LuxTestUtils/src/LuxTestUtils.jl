@@ -24,6 +24,7 @@ const FD = FiniteDiff
 # Check if JET will work
 try
     using JET: JET, JETTestFailure, get_reports, report_call, report_opt
+    # XXX: In 1.11, JET leads to stack overflows
     global JET_TESTING_ENABLED = v"1.10-" ≤ VERSION < v"1.11-"
 catch err
     @error "`JET.jl` did not successfully precompile on $(VERSION). All `@jet` tests will \
