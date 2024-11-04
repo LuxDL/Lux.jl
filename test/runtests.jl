@@ -124,8 +124,6 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
 end
 
-Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
-
 const RETESTITEMS_NWORKERS = parse(
     Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
 

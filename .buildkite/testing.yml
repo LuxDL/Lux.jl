@@ -1,7 +1,7 @@
 steps:
   - group: ":julia: (Lux) CUDA GPU"
     steps:
-      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU + {{matrix.group}}"
+      - label: ":julia: Julia {{matrix.julia}} + CUDA GPU"
         plugins:
           - JuliaCI/julia#v1:
               version: "{{matrix.julia}}"
@@ -45,7 +45,6 @@ steps:
               include(joinpath(dir, "../test/runtests.jl"))'
         env:
           BACKEND_GROUP: "CUDA"
-          LUX_TEST_GROUP: "{{matrix.group}}"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
         timeout_in_minutes: 60
         matrix:
@@ -53,9 +52,6 @@ steps:
             julia:
               - "1.10"
               - "1"
-            group:
-              - "!reactant"
-              - "reactant"
 
   - group: ":julia: (Lux) AMD GPU"
     steps:
