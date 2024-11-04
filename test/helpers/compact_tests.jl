@@ -1,4 +1,4 @@
-@testitem "@compact" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "@compact" setup=[SharedTestSetup] tags=[:misc] begin
     using ComponentArrays, Zygote
 
     rng = StableRNG(12345)
@@ -439,7 +439,7 @@
     end
 end
 
-@testitem "@compact error checks" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "@compact error checks" setup=[SharedTestSetup] tags=[:misc] begin
     showerror(stdout, Lux.LuxCompactModelParsingException(""))
     println()
 

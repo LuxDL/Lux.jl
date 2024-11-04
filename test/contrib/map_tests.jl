@@ -1,4 +1,4 @@
-@testitem "Layer Map" setup=[SharedTestSetup] tags=[:contrib] begin
+@testitem "Layer Map" setup=[SharedTestSetup] tags=[:misc] begin
     using Setfield, Functors
 
     function occurs_in(kp::KeyPath, x::KeyPath)

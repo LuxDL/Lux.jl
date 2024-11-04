@@ -1,4 +1,4 @@
-@testitem "TrainState" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "TrainState" setup=[SharedTestSetup] tags=[:misc] begin
     using Optimisers
 
     rng = StableRNG(12345)
@@ -19,7 +19,7 @@
     end
 end
 
-@testitem "AbstractADTypes" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "AbstractADTypes" setup=[SharedTestSetup] tags=[:misc] begin
     using ADTypes, Optimisers
 
     function _loss_function(model, ps, st, data)
@@ -50,7 +50,7 @@ end
     end
 end
 
-@testitem "Training API" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Training API" setup=[SharedTestSetup] tags=[:misc] begin
     using ADTypes, Optimisers
 
     mse = MSELoss()
@@ -125,7 +125,7 @@ end
     end
 end
 
-@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:helpers] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme: Invalidate Cache on State Update" setup=[SharedTestSetup] tags=[:misc] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using ADTypes, Optimisers
 
     mse = MSELoss()
@@ -196,7 +196,7 @@ end
     @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
 end
 
-@testitem "Compiled ReverseDiff" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Compiled ReverseDiff" setup=[SharedTestSetup] tags=[:misc] begin
     using ADTypes, Optimisers, ReverseDiff
 
     mse1 = MSELoss()

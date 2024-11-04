@@ -1,4 +1,4 @@
-@testitem "Aqua: Quality Assurance" tags=[:others] begin
+@testitem "Aqua: Quality Assurance" tags=[:misc] begin
     using Aqua, ChainRulesCore, ForwardDiff
 
     Aqua.test_all(Lux; ambiguities=false, piracies=false)
@@ -10,7 +10,7 @@
     Aqua.test_piracies(Lux; treat_as_own=[Lux.outputsize])
 end
 
-@testitem "Explicit Imports: Quality Assurance" tags=[:others] begin
+@testitem "Explicit Imports: Quality Assurance" tags=[:misc] begin
     # Load all trigger packages
     import Lux, ComponentArrays, ReverseDiff, SimpleChains, Tracker, Zygote, Enzyme
     using ExplicitImports
@@ -30,7 +30,7 @@ end
 end
 
 # Some of the tests are flaky on prereleases
-@testitem "doctests: Quality Assurance" tags=[:others] begin
+@testitem "doctests: Quality Assurance" tags=[:misc] begin
     using Documenter
 
     doctestexpr = quote

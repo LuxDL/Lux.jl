@@ -1,4 +1,4 @@
-@testitem "Simple Stateful Tests" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Simple Stateful Tests" setup=[SharedTestSetup] tags=[:misc] begin
     using Setfield, Zygote
 
     rng = StableRNG(12345)

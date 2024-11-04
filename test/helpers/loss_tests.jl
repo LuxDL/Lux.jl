@@ -1,4 +1,4 @@
-@testitem "LuxOps.xlogx & LuxOps.xlogy" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "LuxOps.xlogx & LuxOps.xlogy" setup=[SharedTestSetup] tags=[:misc] begin
     using ForwardDiff, Zygote, Enzyme
 
     @test iszero(LuxOps.xlogx(0))
@@ -55,7 +55,7 @@
     end
 end
 
-@testitem "Regression Loss" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Regression Loss" setup=[SharedTestSetup] tags=[:misc] begin
     using Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -99,7 +99,7 @@ end
     end
 end
 
-@testitem "Classification Loss" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Classification Loss" setup=[SharedTestSetup] tags=[:misc] begin
     using OneHotArrays, Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -283,7 +283,7 @@ end
     end
 end
 
-@testitem "Other Losses" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Other Losses" setup=[SharedTestSetup] tags=[:misc] begin
     using Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -404,7 +404,7 @@ end
     end
 end
 
-@testitem "Losses: Error Checks and Misc" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Losses: Error Checks and Misc" setup=[SharedTestSetup] tags=[:misc] begin
     @testset "Size Checks" begin
         @test_throws DimensionMismatch MSELoss()([1, 2], [1, 2, 3])
     end

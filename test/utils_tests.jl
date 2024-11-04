@@ -1,4 +1,4 @@
-@testitem "replicate" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "replicate" setup=[SharedTestSetup] tags=[:misc] begin
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         _rng = get_default_rng(mode)
         @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
@@ -7,7 +7,7 @@
     end
 end
 
-@testitem "istraining" tags=[:others] begin
+@testitem "istraining" tags=[:misc] begin
     using Static
 
     @test LuxOps.istraining(Val(true))
@@ -21,7 +21,7 @@ end
     @test !LuxOps.istraining(static(false))
 end
 
-@testitem "ComponentArrays edge cases" tags=[:others] begin
+@testitem "ComponentArrays edge cases" tags=[:misc] begin
     using ComponentArrays
 
     @test eltype(ComponentArray()) == Float32
@@ -31,7 +31,7 @@ end
     @test eltype(ComponentArray(Any[:a, 1], (FlatAxis(),))) == Any
 end
 
-@testitem "multigate" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "multigate" setup=[SharedTestSetup] tags=[:misc] begin
     rng = StableRNG(12345)
 
     function bcast_multigate(x)
@@ -68,7 +68,7 @@ end
     end
 end
 
-@testitem "ComponentArrays" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "ComponentArrays" setup=[SharedTestSetup] tags=[:misc] begin
     using Optimisers, Functors
 
     rng = StableRNG(12345)
@@ -124,7 +124,7 @@ end
     end
 end
 
-@testitem "FP Conversions" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "FP Conversions" setup=[SharedTestSetup] tags=[:misc] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -160,7 +160,7 @@ end
     end
 end
 
-@testitem "Edge Cases" tags=[:others] begin
+@testitem "Edge Cases" tags=[:misc] begin
     @test Lux.Utils.size(nothing) === nothing
     @test Lux.Utils.size(1) == ()
     @test Lux.Utils.size(1.0) == ()
@@ -187,7 +187,7 @@ end
     @test Lux.Utils.merge(abc, abc) == (a=1, b=2)
 end
 
-@testitem "Recursive Utils" tags=[:others] begin
+@testitem "Recursive Utils" tags=[:misc] begin
     using Functors, Tracker, ReverseDiff, ForwardDiff
 
     struct functorABC{A, B}
@@ -260,7 +260,7 @@ end
     end
 end
 
-@testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:others] begin
+@testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:misc] begin
     using Functors
 
     rng = StableRNG(12345)

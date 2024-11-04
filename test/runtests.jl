@@ -5,8 +5,8 @@ using InteractiveUtils, Hwloc
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = [
-    "core_layers", "contrib", "helpers", "distributed", "normalize_layers",
-    "others", "autodiff", "recurrent_layers", "fluxcompat"]
+    "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc"
+]
 
 Sys.iswindows() || push!(ALL_LUX_TEST_GROUPS, "reactant")
 
@@ -22,13 +22,12 @@ end
 const EXTRA_PKGS = Pkg.PackageSpec[]
 const EXTRA_DEV_PKGS = Pkg.PackageSpec[]
 
-if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
+if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
         push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
-end
-("all" in LUX_TEST_GROUP || "fluxcompat" in LUX_TEST_GROUP) &&
     push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
+end
 
 if !Sys.iswindows()
     ("all" in LUX_TEST_GROUP || "reactant" in LUX_TEST_GROUP) &&
@@ -100,7 +99,7 @@ if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
 end
 
 # Eltype Matching Tests
-if ("all" in LUX_TEST_GROUP || "eltype_match" in LUX_TEST_GROUP)
+if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     @testset "eltype_mismath_handling: $option" for option in (
         "none", "warn", "convert", "error")
         set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
@@ -120,18 +119,23 @@ Lux.set_dispatch_doctor_preferences!(; luxcore="error", luxlib="error")
 const RETESTITEMS_NWORKERS = parse(
     Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
 
+const RETESTITEMS_NWORKER_THREADS = parse(
+    Int, get(ENV, "RETESTITEMS_NWORKER_THREADS",
+        string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))))
+
 @testset "Lux.jl Tests" begin
     for (i, tag) in enumerate(LUX_TEST_GROUP)
-        (tag == "distributed" || tag == "eltype_match") && continue
+        tag == "misc" && continue
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
 
         ReTestItems.runtests(Lux; tags=(tag == "all" ? nothing : [Symbol(tag)]),
-            nworkers=RETESTITEMS_NWORKERS, testitem_timeout=2400)
+            nworkers=RETESTITEMS_NWORKERS, nworker_threads=RETESTITEMS_NWORKER_THREADS,
+            testitem_timeout=2400)
     end
 end
 
 # Distributed Tests
-if ("all" in LUX_TEST_GROUP || "distributed" in LUX_TEST_GROUP)
+if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     using MPI
 
     nprocs_str = get(ENV, "JULIA_MPI_TEST_NPROCS", "")

@@ -1,4 +1,4 @@
-@testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
+@testitem "All Parameter Freezing" setup=[SharedTestSetup] tags=[:misc] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -63,7 +63,7 @@
     end
 end
 
-@testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:contrib] begin
+@testitem "Partial Freezing" setup=[SharedTestSetup] tags=[:misc] begin
     using Lux.Experimental: FrozenLayer
 
     rng = StableRNG(12345)
