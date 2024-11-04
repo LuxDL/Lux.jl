@@ -79,8 +79,12 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
 end
 
 const ALL_TEST_CONFIGS = Iterators.product([Float16, Float32, Float64],
-    ((6, 2), (4, 6, 2), (8, 8, 8, 6, 2), (3, 16, 16, 12, 2),
-        (4, 4, 6, 2), (2, 2, 6, 2), (3, 3, 12, 4)),
+    (
+        (6, 2),
+        (4, 6, 2),
+        (8, 8, 8, 6, 2), (3, 16, 16, 12, 2),
+        (4, 4, 6, 2), (2, 2, 6, 2), (3, 3, 12, 4)
+    ),
     (2, 3),
     (true, false),
     (identity, relu, tanh_fast, sigmoid_fast, anonact))

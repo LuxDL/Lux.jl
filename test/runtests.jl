@@ -55,6 +55,16 @@ if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
     Pkg.precompile()
 end
 
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
+    using LuxCUDA
+    @info sprint(CUDA.versioninfo)
+end
+
+if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
+    using AMDGPU
+    @info sprint(AMDGPU.versioninfo)
+end
+
 using Lux
 
 @testset "Load Tests" begin
@@ -129,8 +139,8 @@ const RETESTITEMS_NWORKER_THREADS = parse(
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
 
         ReTestItems.runtests(Lux; tags=(tag == "all" ? nothing : [Symbol(tag)]),
-            nworkers=RETESTITEMS_NWORKERS, nworker_threads=RETESTITEMS_NWORKER_THREADS,
-            testitem_timeout=2400)
+            nworkers=BACKEND_GROUP == "amdgpu" ? 0 : RETESTITEMS_NWORKERS,
+            nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=2400)
     end
 end
 
