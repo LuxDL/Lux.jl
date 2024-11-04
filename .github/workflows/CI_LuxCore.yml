@@ -51,7 +51,7 @@ jobs:
           Pkg.instantiate()
           Pkg.activate("lib/LuxCore/test")
           dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/LuxCore",)
+          for pkg in ("lib/LuxCore", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
@@ -92,7 +92,7 @@ jobs:
           Pkg.instantiate()
           Pkg.activate("lib/LuxCore/test")
           dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/LuxCore",)
+          for pkg in ("lib/LuxCore", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)

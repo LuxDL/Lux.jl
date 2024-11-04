@@ -40,40 +40,40 @@ jobs:
         loopvec:
           - "true"
         include:
-          - os: ubuntu-latest
+          - version: "1.10"
+            os: ubuntu-latest
             test_group: "dense"
             blas_backend: "blis"
-            version: "1.10"
             loopvec: "true"
-          - os: ubuntu-latest
+          - version: "1.10"
+            os: ubuntu-latest
             test_group: "dense"
             blas_backend: "mkl"
-            version: "1.10"
             loopvec: "true"
-          - os: macos-latest
+          - version: "1.10"
+            os: macos-latest
             test_group: "dense"
             blas_backend: "appleaccelerate"
-            version: "1.10"
             loopvec: "true"
-          - os: ubuntu-latest
+          - version: "1.10"
+            os: ubuntu-latest
             test_group: "dense"
             blas_backend: "default"
-            version: "1.10"
             loopvec: "false"
-          - os: ubuntu-latest
+          - version: "1.10"
+            os: ubuntu-latest
             test_group: "misc"
             blas_backend: "default"
-            version: "1.10"
             loopvec: "false"
-          - os: macos-latest
+          - version: "1.10"
+            os: macos-latest
             test_group: "all"
             blas_backend: "default"
-            version: "1.10"
             loopvec: "true"
-          - os: windows-latest
+          - version: "1.10"
+            os: windows-latest
             test_group: "all"
             blas_backend: "default"
-            version: "1.10"
             loopvec: "true"
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +102,7 @@ jobs:
           Pkg.instantiate()
           Pkg.activate("lib/LuxLib/test")
           dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/LuxTestUtils", "lib/LuxLib")
+          for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)

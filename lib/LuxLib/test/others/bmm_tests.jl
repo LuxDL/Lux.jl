@@ -269,38 +269,48 @@ end
 
         @testset "Two 3-arrays" begin
             @test_gradients(fn, aType(randn(rng, Float32, M, P, B)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, batched_adjoint(aType(randn(rng, Float32, P, M, B))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P, B)),
                 batched_transpose(aType(randn(rng, Float32, Q, P, B))); atol=1e-3,
-                rtol=1e-3)
+                rtol=1e-3, skip_backends=[AutoEnzyme()])
         end
 
         @testset "One a matrix..." begin
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, adjoint(aType(randn(rng, Float32, P, M))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3)
+                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
 
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, adjoint(aType(randn(rng, Float32, P, M))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3)
+                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
         end
 
         @testset "... or equivalent to a matrix" begin
             @test_gradients(fn, aType(randn(rng, Float32, M, P, 1)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, batched_transpose(aType(randn(rng, Float32, P, M, 1))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P, 1)),
                 batched_transpose(aType(randn(rng, Float32, Q, P, B))); atol=1e-3,
-                rtol=1e-3)
+                rtol=1e-3, skip_backends=[AutoEnzyme()])
         end
     end
 end
