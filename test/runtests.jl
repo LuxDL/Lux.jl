@@ -135,12 +135,15 @@ const RETESTITEMS_NWORKER_THREADS = parse(
 
 @testset "Lux.jl Tests" begin
     for (i, tag) in enumerate(LUX_TEST_GROUP)
-        tag == "misc" && continue
         @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
 
-        ReTestItems.runtests(Lux; tags=(tag == "all" ? nothing : [Symbol(tag)]),
-            nworkers=BACKEND_GROUP == "amdgpu" ? 0 : RETESTITEMS_NWORKERS,
-            nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=2400)
+        nworkers = (tag == "reactant") || (BACKEND_GROUP == "amdgpu") ? 0 :
+                   RETESTITEMS_NWORKERS
+
+        ReTestItems.runtests(Lux;
+            tags=(tag == "all" ? nothing : [Symbol(tag)]), testitem_timeout=2400,
+            nworkers, nworker_threads=RETESTITEMS_NWORKER_THREADS
+        )
     end
 end
 
