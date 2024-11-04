@@ -15,6 +15,7 @@ steps:
                 - "test/"
                 - "Project.toml"
                 - ".buildkite/"
+                - "lib/"
               config:
                 command: "buildkite-agent pipeline upload .buildkite/testing.yml"
                 agents:
