@@ -2,7 +2,7 @@ module MLDataDevicesReactantExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, get_device_type
-using Reactant: Reactant, XLA, RArray, ConcreteRArray, ConcreteRNumber, TracedRArray,
+using Reactant: Reactant, XLA, ConcreteRArray, ConcreteRNumber, TracedRArray,
                 TracedRNumber
 
 MLDataDevices.loaded(::Union{ReactantDevice, Type{<:ReactantDevice}}) = true
