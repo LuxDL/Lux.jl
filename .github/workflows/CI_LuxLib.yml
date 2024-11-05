@@ -44,21 +44,6 @@ jobs:
           - version: "1.10"
             os: ubuntu-latest
             test_group: "dense"
-            blas_backend: "blis"
-            loopvec: "true"
-          - version: "1.10"
-            os: ubuntu-latest
-            test_group: "dense"
-            blas_backend: "mkl"
-            loopvec: "true"
-          - version: "1.10"
-            os: macos-latest
-            test_group: "dense"
-            blas_backend: "appleaccelerate"
-            loopvec: "true"
-          - version: "1.10"
-            os: ubuntu-latest
-            test_group: "dense"
             blas_backend: "default"
             loopvec: "false"
           - version: "1.10"

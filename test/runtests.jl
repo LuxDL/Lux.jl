@@ -60,11 +60,6 @@ if BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda"
     @info sprint(CUDA.versioninfo)
 end
 
-if BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu"
-    using AMDGPU
-    @info sprint(AMDGPU.versioninfo)
-end
-
 using Lux
 
 @testset "Load Tests" begin

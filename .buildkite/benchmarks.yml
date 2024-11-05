@@ -1,5 +1,6 @@
 steps:
   - group: ":racehorse: Benchmarks"
+    if: build.message !~ /\[skip benchmarks\]/ && build.message !~ /\[skip ci\]/ && !build.pull_request.draft
     steps:
       - label: "CPU: Run Benchmarks with {{matrix.threads}} thread(s)"
         matrix:

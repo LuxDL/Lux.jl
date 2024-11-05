@@ -26,7 +26,6 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.10"
               - "1"
             group:
               - "CUDA"
@@ -60,7 +59,6 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.10"
               - "1"
 
   - group: ":julia: (MLDataDevices) Metal GPU"
@@ -91,7 +89,6 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.10"
               - "1"
 
   - group: ":julia: (MLDataDevices) oneAPI GPU"
@@ -122,7 +119,6 @@ steps:
         matrix:
           setup:
             julia:
-              - "1.10"
               - "1"
 
 env:

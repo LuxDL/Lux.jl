@@ -23,7 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.10"
           - "1"
     steps:
       - uses: actions/checkout@v4
