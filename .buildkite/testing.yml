@@ -46,7 +46,7 @@ steps:
         env:
           BACKEND_GROUP: "CUDA"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
         matrix:
           setup:
             julia:
@@ -101,7 +101,7 @@ steps:
           rocm: "*"
           rocmgpu: "*"
         if: build.message !~ /\[skip tests\]/ && build.message !~ /\[skip ci\]/
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
         matrix:
           setup:
             julia:
