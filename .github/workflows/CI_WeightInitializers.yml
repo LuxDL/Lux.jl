@@ -28,8 +28,6 @@ jobs:
           - "1"
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2

@@ -201,7 +201,9 @@ end
         relu, gelu, x -> x^3, x -> gelu(x)]
 
     @testset "$mode" for (mode, aType, ongpu) in MODES
-        mode ∈ ("cpu", "cuda") || continue
+        # XXX: Enzyme 0.13 has a regression with cuda support
+        # mode ∈ ("cpu", "cuda") || continue
+        mode ∈ ("cpu",) || continue
 
         y = zeros(Float32, 2, 2) |> aType
         weight = randn(rng, Float32, 2, 2) |> aType

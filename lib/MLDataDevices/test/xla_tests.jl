@@ -5,7 +5,8 @@ using ArrayInterface: parameterless_type
     @test !MLDataDevices.functional(ReactantDevice)
     @test cpu_device() isa CPUDevice
     @test reactant_device() isa CPUDevice
-    @test_throws MLDataDevices.Internal.DeviceSelectionException reactant_device(; force=true)
+    @test_throws MLDataDevices.Internal.DeviceSelectionException reactant_device(;
+        force=true)
     @test_throws Exception default_device_rng(ReactantDevice())
 end
 

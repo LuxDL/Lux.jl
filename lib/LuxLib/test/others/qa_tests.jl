@@ -1,4 +1,4 @@
-@testitem "Aqua: Quality Assurance" tags=[:others] begin
+@testitem "Aqua: Quality Assurance" tags=[:misc] begin
     using Aqua, ChainRulesCore, EnzymeCore, NNlib
     using EnzymeCore: EnzymeRules
 
@@ -11,7 +11,7 @@
             EnzymeRules.augmented_primal, EnzymeRules.reverse])
 end
 
-@testitem "Explicit Imports" tags=[:others] setup=[SharedTestSetup] begin
+@testitem "Explicit Imports" tags=[:misc] setup=[SharedTestSetup] begin
     using ExplicitImports
 
     @test check_no_implicit_imports(LuxLib) === nothing

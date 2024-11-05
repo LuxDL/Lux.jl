@@ -1,4 +1,4 @@
-@testitem "Efficient JVPs" tags=[:others] setup=[SharedTestSetup] begin
+@testitem "Efficient JVPs" tags=[:misc] setup=[SharedTestSetup] begin
     using ForwardDiff, Zygote, ComponentArrays
     using LuxTestUtils: check_approx
 
@@ -92,7 +92,7 @@
     end
 end
 
-@testitem "ForwardDiff dropout" tags=[:other_ops] setup=[SharedTestSetup] begin
+@testitem "ForwardDiff dropout" tags=[:misc] setup=[SharedTestSetup] begin
     using ForwardDiff
     using LuxTestUtils: check_approx
 

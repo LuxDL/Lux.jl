@@ -58,10 +58,11 @@ function run_layernorm_testing_core(
     soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
     if affine_shape !== nothing
         __f = (args...) -> sum(_f(args...))
-        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail,
+            skip_backends=[AutoEnzyme()])
     else
         __f = x -> sum(_f(x, scale, bias))
-        @test_gradients(__f, x; atol, rtol, soft_fail)
+        @test_gradients(__f, x; atol, rtol, soft_fail, skip_backends=[AutoEnzyme()])
     end
 
     if anonact !== act
@@ -89,7 +90,8 @@ export ALL_TEST_CONFIGS, TEST_BLOCKS, run_layernorm_testing
 
 end
 
-@testitem "Layer Norm: Group 1" tags=[:layer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
+@testitem "Layer Norm: Group 1" tags=[:normalization] setup=[
+    SharedTestSetup, LayerNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[1]
             !fp64 && T == Float64 && continue
@@ -99,7 +101,8 @@ end
     end
 end
 
-@testitem "Layer Norm: Group 2" tags=[:layer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
+@testitem "Layer Norm: Group 2" tags=[:normalization] setup=[
+    SharedTestSetup, LayerNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[2]
             !fp64 && T == Float64 && continue
@@ -109,7 +112,8 @@ end
     end
 end
 
-@testitem "Layer Norm: Group 3" tags=[:layer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
+@testitem "Layer Norm: Group 3" tags=[:normalization] setup=[
+    SharedTestSetup, LayerNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[3]
             !fp64 && T == Float64 && continue
@@ -119,7 +123,8 @@ end
     end
 end
 
-@testitem "Layer Norm: Group 4" tags=[:layer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
+@testitem "Layer Norm: Group 4" tags=[:normalization] setup=[
+    SharedTestSetup, LayerNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[4]
             !fp64 && T == Float64 && continue
@@ -129,7 +134,8 @@ end
     end
 end
 
-@testitem "Layer Norm: Group 5" tags=[:layer_norm] setup=[SharedTestSetup, LayerNormSetup] begin
+@testitem "Layer Norm: Group 5" tags=[:normalization] setup=[
+    SharedTestSetup, LayerNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[5]
             !fp64 && T == Float64 && continue
@@ -139,7 +145,7 @@ end
     end
 end
 
-@testitem "Layer Norm: Error Checks" tags=[:layer_norm] setup=[SharedTestSetup] begin
+@testitem "Layer Norm: Error Checks" tags=[:normalization] setup=[SharedTestSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         !fp64 && continue
 

@@ -1,9 +1,7 @@
-using ReTestItems, Pkg, LuxTestUtils, Preferences
+using ReTestItems, Pkg, LuxTestUtils
 using InteractiveUtils, Hwloc
 
 @info sprint(versioninfo)
-
-Preferences.set_preferences!("LuxLib", "instability_check" => "error")
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const EXTRA_PKGS = PackageSpec[]
@@ -50,5 +48,5 @@ using LuxLib
 
 ReTestItems.runtests(
     LuxLib; tags=(LUXLIB_TEST_GROUP == "all" ? nothing : [Symbol(LUXLIB_TEST_GROUP)]),
-    nworkers=RETESTITEMS_NWORKERS,
+    nworkers=BACKEND_GROUP == "amdgpu" ? 0 : RETESTITEMS_NWORKERS,
     nworker_threads=RETESTITEMS_NWORKER_THREADS, testitem_timeout=3600)

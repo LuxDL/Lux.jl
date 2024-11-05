@@ -63,7 +63,7 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
         (w, x, b) -> __f(activation, w, x, b, cdims)
     end
 
-    skip_backends = []
+    skip_backends = Any[AutoEnzyme()]
     mp = Tx != Tw
     mp && push!(skip_backends, AutoReverseDiff())
     ((mp && ongpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))) &&

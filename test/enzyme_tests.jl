@@ -41,7 +41,8 @@ const MODELS_LIST  = [
     (Chain(Conv((4, 4), 2 => 2; pad=SamePad()), MeanPool((5, 5); pad=SamePad())), rand(Float32, 5, 5, 2, 2)),
     (Chain(Conv((3, 3), 2 => 3, relu; pad=SamePad()), MaxPool((2, 2))), rand(Float32, 5, 5, 2, 2)),
     (Maxout(() -> Dense(5 => 4, tanh), 3), randn(Float32, 5, 2)),
-    (Bilinear((2, 2) => 3), randn(Float32, 2, 3)),
+    # XXX: https://github.com/LuxDL/Lux.jl/issues/1024
+    # (Bilinear((2, 2) => 3), randn(Float32, 2, 3)),
     (SkipConnection(Dense(2 => 2), vcat), randn(Float32, 2, 3)),
     (ConvTranspose((3, 3), 3 => 2; stride=2), rand(Float32, 5, 5, 3, 1)),
     (StatefulRecurrentCell(RNNCell(3 => 5)), rand(Float32, 3, 2)),
@@ -61,7 +62,8 @@ const MODELS_LIST  = [
     (Chain(Dense(2, 4), GroupNorm(4, 2)), randn(Float32, 2, 3)),
     (Chain(Conv((3, 3), 2 => 6), GroupNorm(6, 3)), randn(Float32, 6, 6, 2, 2)),
     (Chain(Conv((3, 3), 2 => 6, tanh), GroupNorm(6, 3)), randn(Float32, 6, 6, 2, 2)),
-    (Chain(Conv((3, 3), 2 => 3, gelu), LayerNorm((1, 1, 3))), randn(Float32, 4, 4, 2, 2)),
+    # XXX: Recent Enzyme release breaks this
+    # (Chain(Conv((3, 3), 2 => 3, gelu), LayerNorm((1, 1, 3))), randn(Float32, 4, 4, 2, 2)),
     (Chain(Conv((3, 3), 2 => 6), InstanceNorm(6)), randn(Float32, 6, 6, 2, 2)),
     (Chain(Conv((3, 3), 2 => 6, tanh), InstanceNorm(6)), randn(Float32, 6, 6, 2, 2)),
 ]

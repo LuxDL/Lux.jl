@@ -21,6 +21,11 @@ using Lux, Reactant, Enzyme, Random, Zygote
 using Functors, Optimisers, Printf
 ```
 
+!!! tip "Running on alternate accelerators"
+
+    `Reactant.set_default_backend("gpu")` sets the default backend to CUDA and
+    `Reactant.set_default_backend("tpu")` sets the default backend to TPU.
+
 !!! tip "Using the `TrainState` API"
 
     If you are using the [`Training.TrainState`](@ref) API, skip to the
@@ -149,15 +154,12 @@ function train_model(model, ps, st, dataloader)
     train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
 
     for iteration in 1:1000
-        for (xᵢ, yᵢ) in dataloader
-            grads, loss, stats, train_state = Training.single_train_step!(
+        for (i, (xᵢ, yᵢ)) in enumerate(dataloader)
+            _, loss, _, train_state = Training.single_train_step!(
                 AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
-        end
-        if iteration % 100 == 0 || iteration == 1
-            # We need to do this since scalar outputs are currently expressed as a zero-dim
-            # array
-            loss = Array(loss)[]
-            @printf("Iter: [%4d/%4d]\tLoss: %.8f\n", iteration, 1000, loss)
+            if (iteration % 100 == 0 || iteration == 1) && i == 1
+                @printf("Iter: [%4d/%4d]\tLoss: %.8f\n", iteration, 1000, loss)
+            end
         end
     end
 

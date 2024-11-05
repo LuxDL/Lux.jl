@@ -24,7 +24,8 @@ const FD = FiniteDiff
 # Check if JET will work
 try
     using JET: JET, JETTestFailure, get_reports, report_call, report_opt
-    global JET_TESTING_ENABLED = true
+    # XXX: In 1.11, JET leads to stack overflows
+    global JET_TESTING_ENABLED = v"1.10-" ≤ VERSION < v"1.11-"
 catch err
     @error "`JET.jl` did not successfully precompile on $(VERSION). All `@jet` tests will \
             be skipped." maxlog=1 err=err
@@ -36,14 +37,15 @@ try
     using Enzyme: Enzyme
     __ftest(x) = x
     Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
-    global ENZYME_TESTING_ENABLED = length(VERSION.prerelease) == 0
+    # XXX: Lift this once Enzyme supports 1.11 properly
+    global ENZYME_TESTING_ENABLED = v"1.10-" ≤ VERSION < v"1.11-"
 catch err
     global ENZYME_TESTING_ENABLED = false
 end
 
 if !ENZYME_TESTING_ENABLED
     @warn "`Enzyme.jl` is currently not functional on $(VERSION) either because it errored \
-           of the current version is a prerelease. Enzyme tests will be skipped..."
+           or the current version is a prerelease. Enzyme tests will be skipped..."
 end
 
 include("test_softfail.jl")

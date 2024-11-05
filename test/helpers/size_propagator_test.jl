@@ -1,4 +1,4 @@
-@testitem "Size Propagator" setup=[SharedTestSetup] tags=[:helpers] begin
+@testitem "Size Propagator" setup=[SharedTestSetup] tags=[:misc] begin
     rng = StableRNG(12345)
 
     @testset "Simple Chain (LeNet)" begin

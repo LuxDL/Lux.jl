@@ -11,7 +11,6 @@ function bmm_test(a, b; transA=false, transB=false)
     for i in 1:bs
         push!(c, a[:, :, i] * b[:, :, i])
     end
-
     return cat(c...; dims=3)
 end
 
@@ -23,7 +22,6 @@ function bmm_adjtest(a, b; adjA=false, adjB=false)
         bi = adjB ? adjoint(b[:, :, i]) : b[:, :, i]
         push!(c, ai * bi)
     end
-
     return cat(c...; dims=3)
 end
 
@@ -43,7 +41,7 @@ export bmm_test, bmm_adjtest, half_batched_mul, perm_12, perm_23
 
 end
 
-@testitem "batched_mul" tags=[:batched_ops] setup=[SharedTestSetup, BatchedMMSetup] begin
+@testitem "batched_mul" tags=[:misc] setup=[SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
@@ -129,7 +127,7 @@ end
     end
 end
 
-@testitem "batched_mul: trivial dimensions & unit strides" tags=[:batched_ops] setup=[
+@testitem "batched_mul: trivial dimensions & unit strides" tags=[:misc] setup=[
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
@@ -161,7 +159,7 @@ end
     end
 end
 
-@testitem "BatchedAdjOrTrans interface" tags=[:batched_ops] setup=[
+@testitem "BatchedAdjOrTrans interface" tags=[:misc] setup=[
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
@@ -228,7 +226,7 @@ end
     end
 end
 
-@testitem "batched_matmul(ndims < 3)" tags=[:batched_ops] setup=[
+@testitem "batched_matmul(ndims < 3)" tags=[:misc] setup=[
     SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
@@ -259,7 +257,7 @@ end
     end
 end
 
-@testitem "BMM AutoDiff" tags=[:batched_ops] setup=[SharedTestSetup, BatchedMMSetup] begin
+@testitem "BMM AutoDiff" tags=[:misc] setup=[SharedTestSetup, BatchedMMSetup] begin
     rng = StableRNG(1234)
 
     fn(A, B) = sum(batched_matmul(A, B))
@@ -271,43 +269,53 @@ end
 
         @testset "Two 3-arrays" begin
             @test_gradients(fn, aType(randn(rng, Float32, M, P, B)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, batched_adjoint(aType(randn(rng, Float32, P, M, B))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P, B)),
                 batched_transpose(aType(randn(rng, Float32, Q, P, B))); atol=1e-3,
-                rtol=1e-3)
+                rtol=1e-3, skip_backends=[AutoEnzyme()])
         end
 
         @testset "One a matrix..." begin
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, adjoint(aType(randn(rng, Float32, P, M))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3)
+                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
 
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, adjoint(aType(randn(rng, Float32, P, M))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P)),
-                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3)
+                batched_adjoint(aType(randn(rng, Float32, Q, P, B))); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
         end
 
         @testset "... or equivalent to a matrix" begin
             @test_gradients(fn, aType(randn(rng, Float32, M, P, 1)),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, batched_transpose(aType(randn(rng, Float32, P, M, 1))),
-                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3)
+                aType(randn(rng, Float32, P, Q, B)); atol=1e-3, rtol=1e-3,
+                skip_backends=[AutoEnzyme()])
             @test_gradients(fn, aType(randn(rng, Float32, M, P, 1)),
                 batched_transpose(aType(randn(rng, Float32, Q, P, B))); atol=1e-3,
-                rtol=1e-3)
+                rtol=1e-3, skip_backends=[AutoEnzyme()])
         end
     end
 end
 
-@testitem "BMM Tracker AoS" tags=[:batched_ops] setup=[SharedTestSetup, BatchedMMSetup] begin
+@testitem "BMM Tracker AoS" tags=[:misc] setup=[SharedTestSetup, BatchedMMSetup] begin
     using Tracker, Zygote, NNlib
 
     rng = StableRNG(1234)

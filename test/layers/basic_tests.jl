@@ -275,7 +275,8 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoEnzyme()])
 
             d = Dense(2 => 2)
             display(d)
@@ -291,7 +292,8 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoEnzyme()])
 
             d = Dense(2 => 3)
             display(d)
@@ -307,7 +309,8 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoEnzyme()])
         end
 
         @testset "Two-streams zero sum" begin
@@ -325,7 +328,8 @@ end
             @jet layer((x, y), ps, st)
 
             __f = (x, y, ps) -> sum(first(layer((x, y), ps, st)))
-            @test_gradients(__f, x, y, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, y, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoEnzyme()])
         end
 
         @testset "Inner interactions" begin
@@ -339,7 +343,8 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoEnzyme()])
 
             x = randn(Float32, 2, 1) |> aType
             layer = Bilinear(2 => 3)
@@ -351,7 +356,8 @@ end
             @jet layer(x, ps, st)
 
             __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoEnzyme()])
         end
     end
 end
