@@ -98,7 +98,7 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 | ReverseDiff.jl | `AutoReverseDiff()` | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 100`       |
 | FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 100`       |
-| Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
+| Enzyme.jl      | `AutoEnzyme()`      | ✖   | ✖   | Only Reverse Mode |
 
 ## Arguments
 
@@ -115,6 +115,7 @@ Test the gradients of `f` with respect to `args` using the specified backends.
     overrides any `broken` kwargs. Alternatively, a list of backends can be passed to
     `soft_fail` to allow soft_fail tests for only those backends.
   - `enzyme_set_runtime_activity`: If `true`, then activate runtime activity for Enzyme.
+  - `enable_enzyme_reverse_mode`: If `true`, then enable reverse mode for Enzyme.
   - `kwargs`: Additional keyword arguments to pass to `check_approx`.
 
 ## Example
@@ -131,6 +132,7 @@ julia> test_gradients(f, 1.0, x, nothing)
 function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         soft_fail::Union{Bool, Vector}=false,
         enzyme_set_runtime_activity::Bool=false,
+        enable_enzyme_reverse_mode::Bool=false,
         # Internal kwargs start
         source::LineNumberNode=LineNumberNode(0, nothing),
         test_expr::Expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
@@ -148,7 +150,7 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         total_length ≤ 100 && push!(backends, AutoForwardDiff())
         total_length ≤ 100 && push!(backends, AutoFiniteDiff())
         # TODO: Move Enzyme out of here once it supports GPUs
-        if ENZYME_TESTING_ENABLED
+        if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
             mode = enzyme_set_runtime_activity ?
                    Enzyme.set_runtime_activity(Enzyme.Reverse) :
                    Enzyme.Reverse
