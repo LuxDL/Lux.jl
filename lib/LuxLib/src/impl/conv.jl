@@ -74,7 +74,7 @@ end
 
 conv(x, weight, cdims::ConvDims) = conv(get_device_type((x, weight)), x, weight, cdims)
 
-function conv(::Type{<:Union{CPUDevice, CUDADevice, AMDGPUDevice, XLADevice}},
+function conv(::Type{<:Union{CPUDevice, CUDADevice, AMDGPUDevice, ReactantDevice}},
         x′, weight′, cdims::ConvDims)
     x, weight = get_conv_input_weight(x′, weight′)
     return NNlib.conv(x, weight, cdims)

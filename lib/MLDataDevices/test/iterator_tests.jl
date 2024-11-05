@@ -25,11 +25,11 @@ if BACKEND_GROUP == "xla" || BACKEND_GROUP == "all"
     end
 end
 
-DEVICES = [CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, XLADevice]
+DEVICES = [CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, ReactantDevice]
 
 freed_if_can_be_freed(x) = freed_if_can_be_freed(get_device_type(x), x)
 freed_if_can_be_freed(::Type{CPUDevice}, x) = true
-freed_if_can_be_freed(::Type{XLADevice}, x) = true
+freed_if_can_be_freed(::Type{ReactantDevice}, x) = true
 function freed_if_can_be_freed(::Type, x)
     try
         Array(x)
@@ -63,7 +63,7 @@ end
         @info "Testing DataLoader with parallel=$parallel"
         X = rand(Float64, 3, 33)
         post = DataLoader(X; batchsize=13, shuffle=false, parallel) |> dev
-        if dev_type === XLADevice
+        if dev_type === ReactantDevice
             pre = post # XXX: deadlocks and other shenanigans
         else
             pre = DataLoader(dev(X); batchsize=13, shuffle=false, parallel)
@@ -77,7 +77,7 @@ end
                 # Ordering is not guaranteed in parallel
                 !parallel && @test p ≈ q
 
-                if dev_type === CPUDevice || dev_type === XLADevice
+                if dev_type === CPUDevice || dev_type === ReactantDevice
                     continue
                 end
 
@@ -91,7 +91,7 @@ end
 
         Y = rand(Float64, 1, 33)
         post = DataLoader((; x=X, y=Y); batchsize=13, shuffle=false, parallel) |> dev
-        if dev_type === XLADevice
+        if dev_type === ReactantDevice
             pre = post # XXX: deadlocks and other shenanigans
         else
             pre = DataLoader((; x=dev(X), y=dev(Y)); batchsize=13, shuffle=false, parallel)
@@ -108,7 +108,7 @@ end
                 !parallel && @test p.x ≈ q.x
                 !parallel && @test p.y ≈ q.y
 
-                if dev_type === CPUDevice || dev_type === XLADevice
+                if dev_type === CPUDevice || dev_type === ReactantDevice
                     continue
                 end
 

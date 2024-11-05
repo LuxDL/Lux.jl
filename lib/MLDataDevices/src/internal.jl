@@ -5,7 +5,7 @@ using Preferences: load_preference
 using Random: AbstractRNG
 
 using ..MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice,
-                       MetalDevice, oneAPIDevice, XLADevice, UnknownDevice,
+                       MetalDevice, oneAPIDevice, ReactantDevice, UnknownDevice,
                        supported_gpu_backends, GPU_DEVICES, loaded, functional
 
 for dev in (CPUDevice, MetalDevice, oneAPIDevice)
@@ -27,11 +27,11 @@ for name in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
         get_triggerpkg_name(::Union{$ldev, Type{<:$ldev}}) = $(tpkg)
     end
 end
-get_device_name(::XLADevice) = "XLA"
-get_triggerpkg_name(::XLADevice) = "Reactant"
+get_device_name(::ReactantDevice) = "XLA"
+get_triggerpkg_name(::ReactantDevice) = "Reactant"
 
 for T in (CPUDevice, CUDADevice{Nothing}, AMDGPUDevice{Nothing},
-    MetalDevice, oneAPIDevice, XLADevice)
+    MetalDevice, oneAPIDevice, ReactantDevice)
     @eval get_device_id(::$(T)) = nothing
 end
 
