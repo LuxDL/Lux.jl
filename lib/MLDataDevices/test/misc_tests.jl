@@ -219,3 +219,17 @@ end
 
     @test only(Zygote.gradient(x -> sum(abs2, gdev(x)), x')) isa Matrix{Float64}
 end
+
+@testset "data movement is type stable" begin
+    cpu = cpu_device()
+    gpu = gpu_device()
+
+    r = [1, 2]
+    x = (a = r, b = 3, c =(4, (d=5, e=r)))
+    y = @inferred(gpu(x))
+    x2 = @inferred(cpu(y))
+
+    # identity is preserved
+    @test y.a === y.c[2].e
+    @test x2.a === x2.c[2].e
+end

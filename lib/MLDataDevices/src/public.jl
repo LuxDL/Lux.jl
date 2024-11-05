@@ -362,24 +362,12 @@ function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractDe
     return set_device!(T, rank)
 end
 
-# Dispatches for Different Data Structures
-# Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
-# For all other types we rely on fmap which means we lose type stability.
-# For Lux, typically models only has these 3 datastructures so we should be mostly fine.
-for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :XLA)
+
+for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :Reactant)
     ldev = Symbol(dev, :Device)
-    @eval begin
-        function (D::$(ldev))(x::AbstractArray{T}) where {T}
-            if isbitstype(T) || Internal.special_aos(x) || x isa Adapt.WrappedArray
-                return Adapt.adapt(D, x)
-            end
-            return map(D, x)
-        end
-        (D::$(ldev))(x::Union{Tuple, NamedTuple}) = map(D, x)
-        function (D::$(ldev))(x)
-            isleaf(x) && return Adapt.adapt(D, x)
-            return Functors.fmap(D, x; exclude=isleaf)
-        end
+    @eval function (D::$(ldev))(x)
+        isleaf(x) && return Adapt.adapt(D, x)
+        return Functors.fmap(D, x; exclude=isleaf)
     end
 end
 
