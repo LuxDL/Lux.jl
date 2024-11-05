@@ -100,7 +100,7 @@ end
 ```
 
 Finally, let's run this layer. If you have made this far into the documentation, we don't
-feel you need a refresher on that.
+feel you need a refresher on that. But if you do see the [Quickstart](@ref).
 
 ```@example layer_interface
 rng = Random.default_rng()
