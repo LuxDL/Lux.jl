@@ -274,11 +274,13 @@ end
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
-            @test_gradients(__f, ŷ;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends=[AutoFiniteDiff()],
-                broken_backends=ongpu ? [AutoTracker()] : [])
+            broken_backends = if VERSION ≥ v"1.11-"
+                []
+            else
+                ongpu ? [AutoTracker()] : []
+            end
+            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoFiniteDiff()], broken_backends)
         end
     end
 end
