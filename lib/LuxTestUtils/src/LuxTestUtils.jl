@@ -37,10 +37,7 @@ try
     using Enzyme: Enzyme
     __ftest(x) = x
     Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
-    # XXX: Enzyme has been causing some issues lately. Let's just disable it for now.
-    #      We still have opt-in testing available for Enzyme.
-    # XXX: Lift this once Enzyme supports 1.11 properly
-    global ENZYME_TESTING_ENABLED = false # v"1.10-" ≤ VERSION < v"1.11-"
+    global ENZYME_TESTING_ENABLED = true
 catch err
     global ENZYME_TESTING_ENABLED = false
 end
