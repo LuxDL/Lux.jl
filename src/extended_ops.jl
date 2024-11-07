@@ -118,6 +118,7 @@ function ∇eachslice(Δ′, x::AbstractArray, ::Val{dims}) where {dims}
     idx = findfirst(Base.Fix2(isa, AbstractArray), Δs)
     idx === nothing && return zero.(x)
     Δ = similar(x)
+    fill!(Δ, false)
     for i in axes(x, dims)
         Δᵢ = selectdim(Δ, dims, i)
         copyto!(Δᵢ, Δs[i])
