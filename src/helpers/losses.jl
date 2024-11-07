@@ -317,8 +317,10 @@ function unsafe_apply_loss(loss::BinaryFocalLoss, ŷ, y)
 end
 
 @doc doc"""
-    CrossEntropyLoss(; agg=mean, epsilon=nothing, dims=1,
-        label_smoothing::Union{Nothing, Real}=nothing)
+    CrossEntropyLoss(;
+        agg=mean, epsilon=nothing, dims=1, logits::Union{Bool, Val}=Val(false),
+        label_smoothing::Union{Nothing, Real}=nothing
+    )
 
 Return the cross entropy loss which is used in multi-class classification tasks. The input,
 $\hat{y}$, is expected to be normalized (i.e. `softmax` output) if `logits` is `false` or
