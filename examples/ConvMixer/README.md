@@ -76,11 +76,7 @@ Flags
 
 ## Notes
 
-  1. Weight-Decay with Adam in Optimisers.jl works differently from `torch.optim.AdamW`,
-     so you might need to adjust the value of `--weight-decay` to get the same results.
-     Pytorch multiplies the weight decay with the learning rate, whereas in Optimisers.jl
-     the learning rate is decoupled from the weight decay.
-  2. To match the results from the original repo, we need more augmentation strategies, that
+  1. To match the results from the original repo, we need more augmentation strategies, that
      are currently not implemented in DataAugmentation.jl.
-  3. Don't compare the reported timings in that repo against the numbers here. They time the
+  2. Don't compare the reported timings in that repo against the numbers here. They time the
      entire loop. We only time the training part of the loop.
