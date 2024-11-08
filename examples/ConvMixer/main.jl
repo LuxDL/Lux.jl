@@ -22,17 +22,17 @@ function get_dataloaders(batchsize)
     cifar10_std = (0.2471, 0.2435, 0.2616)
 
     train_transform = RandomResizeCrop((32, 32)) |>
-                      Maybe(FlipX()) |>
+                      Maybe(FlipX{2}()) |>
                       ImageToTensor() |>
                       Normalize(cifar10_mean, cifar10_std)
 
     test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std)
 
     trainset = TensorDataset(CIFAR10(:train), train_transform)
-    trainloader = DataLoader(trainset; batchsize, shuffle=true, buffer=true, parallel=true)
+    trainloader = DataLoader(trainset; batchsize, shuffle=true, parallel=true)
 
     testset = TensorDataset(CIFAR10(:test), test_transform)
-    testloader = DataLoader(testset; batchsize, shuffle=false, buffer=true, parallel=true)
+    testloader = DataLoader(testset; batchsize, shuffle=false, parallel=true)
 
     return trainloader, testloader
 end

@@ -17,7 +17,7 @@ julia --startup-file=no \
     --threads=auto \
     main.jl \
     --lr-max=0.05 \
-    --weight-decay=0.000005
+    --weight-decay=0.0001
 ```
 
 Here's an example of the output of the above command (on a V100 32GB GPU):
