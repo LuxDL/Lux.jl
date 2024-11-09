@@ -11,6 +11,9 @@ for new experiments on small datasets.
 You can get around **90.0%** accuracy in just **25 epochs** by running the script with the
 following arguments, which trains a ConvMixer-256/8 with kernel size 5 and patch size 2.
 
+> [!NOTE]
+> To train the model using Reactant.jl pass in `--backend=reactant` to the script.
+
 ```bash
 julia --startup-file=no \
     --project=. \
