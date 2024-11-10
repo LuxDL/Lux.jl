@@ -5,6 +5,8 @@ using ReverseDiff, Tracker, ForwardDiff
 using SparseArrays, FillArrays, Zygote, RecursiveArrayTools
 using Functors: Functors
 
+const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
+
 @testset "Issues Patches" begin
     @testset "#10 patch" begin
         dev = CPUDevice()
@@ -218,4 +220,24 @@ end
     gdev = gpu_device()
 
     @test only(Zygote.gradient(x -> sum(abs2, gdev(x)), x')) isa Matrix{Float64}
+end
+
+@testset "OneHotArrays" begin
+    using OneHotArrays
+
+    x = onehotbatch("abracadabra", 'a':'e', 'e')
+    @test get_device(x) isa CPUDevice
+
+    gdev = gpu_device()
+    x_g = gdev(x)
+    @test get_device(x_g) isa parameterless_type(typeof(gdev))
+
+    if BACKEND_GROUP == "none" || BACKEND_GROUP == "reactant"
+        using Reactant
+
+        rdev = reactant_device()
+        x_rd = rdev(x)
+        @test get_device(x_rd) isa ReactantDevice
+        @test x_rd isa Reactant.ConcreteRArray{Bool, 2}
+    end
 end
