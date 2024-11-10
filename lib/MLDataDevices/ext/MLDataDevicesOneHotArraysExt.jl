@@ -1,4 +1,4 @@
-module  MLDataDevicesOneHotArraysExt
+module MLDataDevicesOneHotArraysExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice
