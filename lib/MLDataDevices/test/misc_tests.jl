@@ -222,6 +222,21 @@ end
     @test only(Zygote.gradient(x -> sum(abs2, gdev(x)), x')) isa Matrix{Float64}
 end
 
+@testset "Zygote and ChainRules OneElement #1016" begin
+    using Zygote
+
+    cdev = cpu_device()
+    gdev = gpu_device()
+
+    g = only(Zygote.gradient(x -> cdev(2 .* gdev(x))[1], Float32[1, 2, 3]))
+    @test g isa Vector{Float32}
+
+    g = only(Zygote.gradient(
+        x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9]
+    ))
+    @test g isa Matrix{Float32}
+end
+
 @testset "OneHotArrays" begin
     using OneHotArrays
 

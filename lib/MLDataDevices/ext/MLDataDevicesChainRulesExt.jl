@@ -1,9 +1,9 @@
-module MLDataDevicesZygoteExt
+module MLDataDevicesChainRulesExt
 
 using Adapt: Adapt
 using MLDataDevices: CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice,
                      ReactantDevice
-using Zygote: OneElement
+using ChainRules: OneElement
 
 Adapt.adapt_structure(::CPUDevice, x::OneElement) = x
 

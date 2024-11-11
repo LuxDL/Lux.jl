@@ -54,6 +54,7 @@ end
 
 # Device Transfer
 Adapt.adapt_storage(::CUDADevice{Nothing}, x::AbstractArray) = CUDA.cu(x)
+
 function Adapt.adapt_storage(to::CUDADevice, x::AbstractArray)
     old_dev = CUDA.device()  # remember the current device
     dev = MLDataDevices.get_device(x)
