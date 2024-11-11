@@ -69,6 +69,7 @@ Options
   --seed <42::Int>
   --epochs <25::Int>
   --lr-max <0.01::Float64>
+  --backend <reactant::String>
 
 Flags
   --clip-norm

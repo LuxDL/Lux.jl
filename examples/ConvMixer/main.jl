@@ -76,7 +76,7 @@ end
 Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::Int=8,
         patch_size::Int=2, kernel_size::Int=5, weight_decay::Float64=1e-5,
         clip_norm::Bool=false, seed::Int=42, epochs::Int=25, lr_max::Float64=0.01,
-        backend::String="reactant")
+        backend::String="gpu_if_available")
     rng = StableRNG(seed)
 
     if backend == "gpu_if_available"
@@ -111,13 +111,16 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
 
     if backend == "reactant"
         x_ra = rand(rng, Float32, size(first(trainloader)[1])) |> accelerator_device
-        model_compiled = @compile model(x_ra, ps, st)
+        @printf "[Info] Compiling model with Reactant.jl\n"
+        model_compiled = @compile model(x_ra, ps, Lux.testmode(st))
+        @printf "[Info] Model compiled!\n"
     else
         model_compiled = model
     end
 
     loss = CrossEntropyLoss(; logits=Val(true))
 
+    @printf "[Info] Training model\n"
     for epoch in 1:epochs
         stime = time()
         lr = 0
@@ -127,6 +130,7 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
             (_, _, _, train_state) = Training.single_train_step!(
                 adtype, loss, (x, y), train_state
             )
+            @show i, time() - stime
         end
         ttime = time() - stime
 
@@ -137,7 +141,8 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
             model_compiled, train_state.parameters, train_state.states, testloader
         ) * 100
 
-        @printf "Epoch %2d: Learning Rate %.2e, Train Acc: %.2f%%, Test Acc: %.2f%%, \
-                 Time: %.2f\n" epoch lr train_acc test_acc ttime
+        @printf "[Train] Epoch %2d: Learning Rate %.2e, Train Acc: %.2f%%, Test Acc: \
+                 %.2f%%, Time: %.2f\n" epoch lr train_acc test_acc ttime
     end
+    @printf "[Info] Finished training\n"
 end
