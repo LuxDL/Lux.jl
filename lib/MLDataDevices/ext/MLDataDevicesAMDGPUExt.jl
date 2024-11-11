@@ -68,7 +68,7 @@ end
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
-    AMDGPU.unsafe_free!(x)
+    applicable(AMDGPU.unsafe_free!, x) && AMDGPU.unsafe_free!(x)
     return
 end
 

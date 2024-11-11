@@ -17,7 +17,8 @@ function load_dataset(::Type{dset}, n_train::Int, n_eval::Int, batchsize::Int) w
 
     return (
         DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
-        DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false))
+        DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false)
+    )
 end
 
 function load_datasets(n_train=1024, n_eval=32, batchsize=256)
@@ -50,8 +51,11 @@ end
 function create_model()
     ## Doesn't need to be a MLP can have any Lux Layer
     core_network = Chain(FlattenLayer(), Dense(784, 256, relu), Dense(256, 10))
-    weight_generator = Chain(Embedding(2 => 32), Dense(32, 64, relu),
-        Dense(64, Lux.parameterlength(core_network)))
+    weight_generator = Chain(
+        Embedding(2 => 32),
+        Dense(32, 64, relu),
+        Dense(64, Lux.parameterlength(core_network))
+    )
 
     model = HyperNet(weight_generator, core_network)
     return model

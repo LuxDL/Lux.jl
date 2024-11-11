@@ -31,7 +31,7 @@ Internal.get_device_type(::oneArray) = oneAPIDevice
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{oneAPIDevice}, x::AbstractArray)
-    oneAPI.unsafe_free!(x)
+    applicable(oneAPI.unsafe_free!, x) && oneAPI.unsafe_free!(x)
     return
 end
 

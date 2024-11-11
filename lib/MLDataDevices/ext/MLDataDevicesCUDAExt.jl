@@ -48,7 +48,7 @@ end
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
-    CUDA.unsafe_free!(x)
+    applicable(CUDA.unsafe_free!, x) && CUDA.unsafe_free!(x)
     return
 end
 
