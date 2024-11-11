@@ -20,7 +20,11 @@ Internal.get_device_type(::MtlArray) = MetalDevice
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
-    Metal.unsafe_free!(x)
+    if applicable(Metal.unsafe_free!, x)
+        Metal.unsafe_free!(x)
+    else
+        @warn "Metal.unsafe_free! is not defined for $(typeof(x))." maxlog=1
+    end
     return
 end
 

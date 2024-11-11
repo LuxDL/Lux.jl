@@ -48,7 +48,11 @@ end
 
 # unsafe_free!
 function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
-    CUDA.unsafe_free!(x)
+    if applicable(CUDA.unsafe_free!, x)
+        CUDA.unsafe_free!(x)
+    else
+        @warn "CUDA.unsafe_free! is not defined for $(typeof(x))." maxlog=1
+    end
     return
 end
 
