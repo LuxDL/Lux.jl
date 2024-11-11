@@ -222,6 +222,18 @@ end
     @test only(Zygote.gradient(x -> sum(abs2, gdev(x)), x')) isa Matrix{Float64}
 end
 
+@testset "Zygote and ChainRules OneElement #1016" begin
+    using Zygote
+
+    cpu = cpu_device()
+    gpu = gpu_device()
+
+    g = Zygote.gradient(x -> cpu(2 .* gpu(x))[1], Float32[1, 2, 3])[1]
+    @test g isa Vector{Float32}
+    g = Zygote.gradient(x -> cpu(gpu(x) * gpu(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9])[1]
+    @test g isa Matrix{Float32}
+end
+
 @testset "OneHotArrays" begin
     using OneHotArrays
 
@@ -240,16 +252,4 @@ end
         @test get_device(x_rd) isa ReactantDevice
         @test x_rd isa Reactant.ConcreteRArray{Bool, 2}
     end
-end
-
-@testset "Zygote and ChainRules OneElement" begin
-    # Issue #1016
-    using Zygote
-    cpu = cpu_device()
-    gpu = gpu_device()
-
-    g = Zygote.gradient(x -> cpu(2 .* gpu(x))[1], Float32[1,2,3])[1]
-    @test g isa Vector{Float32}
-    g = Zygote.gradient(x -> cpu(gpu(x) * gpu(x))[1,2], Float32[1 2 3; 4 5 6; 7 8 9])[1]
-    @test g isa Matrix{Float32}
 end
