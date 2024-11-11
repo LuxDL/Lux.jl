@@ -225,12 +225,15 @@ end
 @testset "Zygote and ChainRules OneElement #1016" begin
     using Zygote
 
-    cpu = cpu_device()
-    gpu = gpu_device()
+    cdev = cpu_device()
+    gdev = gpu_device()
 
-    g = Zygote.gradient(x -> cpu(2 .* gpu(x))[1], Float32[1, 2, 3])[1]
+    g = only(Zygote.gradient(x -> cdev(2 .* gdev(x))[1], Float32[1, 2, 3]))
     @test g isa Vector{Float32}
-    g = Zygote.gradient(x -> cpu(gpu(x) * gpu(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9])[1]
+
+    g = only(Zygote.gradient(
+        x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9]
+    ))
     @test g isa Matrix{Float32}
 end
 
