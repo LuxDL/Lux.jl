@@ -163,7 +163,7 @@ add!!(::Nothing, ::Nothing) = nothing
 function init_rnn_hidden_state(rng::AbstractRNG, rnn, x::AbstractMatrix)
     y = similar(x, rnn.out_dims, Base.size(x, 2))
     copyto!(y, rnn.init_state(rng, size(y)...))
-    return y
+    return ArrayInterface.aos_to_soa(y)
 end
 
 @non_differentiable init_rnn_hidden_state(::Any...)
