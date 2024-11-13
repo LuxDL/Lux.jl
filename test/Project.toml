@@ -41,7 +41,7 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ADTypes = "1.8.1"
+ADTypes = "1.10"
 Adapt = "4"
 Aqua = "0.8.4"
 ChainRulesCore = "1.24"
