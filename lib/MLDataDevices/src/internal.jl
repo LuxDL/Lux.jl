@@ -130,15 +130,21 @@ end
 for op in (:get_device, :get_device_type)
     cpu_ret_val = op == :get_device ? CPUDevice() : CPUDevice
     unknown_ret_val = op == :get_device ? UnknownDevice() : UnknownDevice
-    not_assigned_msg = "AbstractArray has some undefined references. Giving up, returning \
-                        $(unknown_ret_val)..."
+    all_not_assigned_msg = "AbstractArray has all undefined references. Giving up, \
+                            returning $(unknown_ret_val)..."
+    some_not_assigned_msg = "AbstractArray has some undefined references. Skipping over \
+                             unassigned indices..."
 
     @eval begin
         function $(op)(x::AbstractArray{T}) where {T}
             if recursive_array_eltype(T)
-                if any(!isassigned(x, i) for i in eachindex(x))
-                    @warn $(not_assigned_msg)
+                is_assigned_idxs = findall(Base.Fix1(isassigned, x), eachindex(x))
+                if length(is_assigned_idxs) == 0
+                    @warn $(all_not_assigned_msg)
                     return $(unknown_ret_val)
+                elseif 0 < length(is_assigned_idxs) < length(x)
+                    @warn $(some_not_assigned_msg)
+                    x = x[is_assigned_idxs]
                 end
                 return mapreduce(MLDataDevices.$(op), combine_devices, x)
             end

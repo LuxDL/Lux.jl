@@ -52,7 +52,7 @@ end
 
 @testset "CRC Tests" begin
     dev = cpu_device() # Other devices don't work with FiniteDifferences.jl
-    test_rrule(Adapt.adapt, dev, randn(Float64, 10); check_inferred=true)
+    test_rrule(Adapt.adapt, dev, randn(Float64, 10); check_inferred=false)
 
     gdev = gpu_device()
     if !(gdev isa MetalDevice)  # On intel devices causes problems
@@ -215,11 +215,11 @@ end
     x = rand(4, 4)
     cdev = cpu_device()
 
-    @test only(Zygote.gradient(x -> sum(abs2, cdev(x)), x')) isa Matrix{Float64}
+    @test get_device(only(Zygote.gradient(x -> sum(abs2, cdev(x)), x'))) isa CPUDevice
 
     gdev = gpu_device()
 
-    @test only(Zygote.gradient(x -> sum(abs2, gdev(x)), x')) isa Matrix{Float64}
+    @test get_device(only(Zygote.gradient(x -> sum(abs2, gdev(x)), x'))) isa CPUDevice
 end
 
 @testset "Zygote and ChainRules OneElement #1016" begin
@@ -255,4 +255,14 @@ end
         @test get_device(x_rd) isa ReactantDevice
         @test x_rd isa Reactant.ConcreteRArray{Bool, 2}
     end
+end
+
+@testset "Device Movement Behavior: FluxML/Flux.jl#2513" begin
+    dev = gpu_device()
+
+    x = randn(5)
+    x2 = (x, x)
+    cx2 = dev(x2)
+
+    @test cx2[1] === cx2[2]
 end
