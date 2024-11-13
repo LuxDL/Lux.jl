@@ -9,7 +9,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ComponentArrays = "0.15"
+ComponentArrays = "0.15.18"
 ForwardDiff = "0.10"
 Lux = "1"
 LuxCUDA = "0.3"

@@ -334,8 +334,11 @@ end
     end
 
     @testset "Convenience Checks" begin
-        models1 = [Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
-            Chain2(Dense(5, 10), Dense(10, 5)), [Dense(5, 10), Dense(10, 5)]]
+        models1 = [
+            Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
+            Chain2(Dense(5, 10), Dense(10, 5)),
+            [Dense(5, 10), Dense(10, 5)]
+        ]
 
         @test LuxCore.contains_lux_layer(models1)
 
