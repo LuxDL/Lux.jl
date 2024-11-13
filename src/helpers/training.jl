@@ -4,13 +4,14 @@ using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZyg
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
+using Functors: fmap
 using Optimisers: Optimisers
 using Setfield: @set!
 using Static: StaticBool, Static, False, True
 
-using ..Lux: Lux
+using ..Lux: Lux, Utils
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: ReactantDevice, get_device_type, get_device, cpu_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device_type, get_device, cpu_device
 
 """
     TrainState
@@ -81,7 +82,7 @@ end
 
 dparameters(cache::TrainingBackendCache) = dparameters(cache, cache.first_try)
 function dparameters(cache::TrainingBackendCache, ::False)
-    return Lux.recursive_make_zero!!(cache.dparameters)
+    return fmap(Utils.zero!!, cache.dparameters; exclude=MLDataDevices.isleaf)
 end
 dparameters(cache::TrainingBackendCache, ::True) = cache.dparameters
 

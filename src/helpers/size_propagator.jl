@@ -13,7 +13,6 @@ using StaticArraysCore: StaticArraysCore
 const VecT = Union{Bool, Float16, Float32, Float64, Int16, Int32, Int64,
     Int8, UInt16, UInt32, UInt64, UInt8, SIMDTypes.Bit}
 
-using ..Lux: recursive_map
 using LuxLib: LuxLib
 using NNlib: NNlib
 
@@ -130,12 +129,6 @@ end
 
 Base.fill!(dest::NilArray, _) = dest
 
-recursively_nillify_internal(x) = x
-recursively_nillify_internal(x::AbstractArray) = NilArray(x)
-
-recursively_nillify(x::AbstractArray{<:Real}) = recursively_nillify_internal(x)
-recursively_nillify(x) = recursive_map(recursively_nillify_internal, x)
-
 const Optional{T} = Union{Nothing, T}
 const Numeric = Union{<:Number, <:AbstractArray{<:Number}}
 
@@ -187,9 +180,10 @@ end
 
 function LuxCore.outputsize(layer::AbstractLuxLayer, x, rng::AbstractRNG)
     ps, st = setup(rng, layer)
-    x_nil = NilSizePropagation.recursively_nillify(x)
-    ps_nil = NilSizePropagation.recursively_nillify(ps)
-    st_nil = NilSizePropagation.recursively_nillify(st)
+    fn = xᵢ -> xᵢ isa AbstractArray ? NilSizePropagation.NilArray(xᵢ) : xᵢ
+    x_nil = Functors.fmap(fn, x)
+    ps_nil = Functors.fmap(fn, ps)
+    st_nil = Functors.fmap(fn, st)
     y = first(apply(layer, x_nil, ps_nil, st_nil))
     return Utils.unbatched_structure(y)
 end

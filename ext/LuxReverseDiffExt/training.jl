@@ -2,7 +2,8 @@
 function Lux.Training.compute_gradients_impl(
         ad::AutoReverseDiff{false}, obj_fn::F, data, ts::TrainState) where {F}
     @set! ts.cache = TrainingBackendCache(
-        ad, True(), Lux.recursive_make_zero(ts.parameters), nothing)
+        ad, True(), fmap(Utils.zero, ts.parameters; exclude=isleaf), nothing
+    )
     @set! ts.objective_function = obj_fn
     return Lux.Training.compute_gradients(ad, obj_fn, data, ts)
 end
@@ -11,7 +12,9 @@ function Lux.Training.compute_gradients_impl(::AutoReverseDiff{false}, obj_fn::F
         ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{false}}}) where {F}
     dparams = Training.dparameters(ts.cache)
     tape = ReverseDiff.InstructionTape()
-    ps_tracked = Lux.recursive_map(Utils.Fix3(TrackedArray, tape), ts.parameters, dparams)
+    ps_tracked = fmap(
+        Utils.Fix3(TrackedArray, tape), ts.parameters, dparams; exclude=isleaf
+    )
 
     loss, st, stats = obj_fn(ts.model, ps_tracked, ts.states, data)
     loss.deriv = true
@@ -27,8 +30,9 @@ end
 function Lux.Training.compute_gradients_impl(
         ad::AutoReverseDiff{true}, obj_fn::F, data, ts::TrainState) where {F}
     @set! ts.cache = TrainingBackendCache(
-        ad, True(), Lux.recursive_make_zero(ts.parameters),
-        (; data_cache=deepcopy(data), ps_cache=deepcopy(ts.parameters)))
+        ad, True(), fmap(Utils.zero, ts.parameters; exclude=isleaf),
+        (; data_cache=deepcopy(data), ps_cache=deepcopy(ts.parameters))
+    )
     @set! ts.objective_function = nothing
 
     return Lux.Training.compute_gradients(ad, obj_fn, data, ts)
@@ -60,12 +64,14 @@ function Lux.Training.compute_gradients_impl(ad::AutoReverseDiff{true}, obj_fn::
 
     (; ps_cache, data_cache) = ts.cache.extras
     if !first_try
-        Lux.recursive_copyto!(ps_cache, ts.parameters)
-        Lux.recursive_copyto!(data_cache, data)
+        fmap(copyto!, ps_cache, ts.parameters; exclude=isleaf)
+        fmap(copyto!, data_cache, data; exclude=isleaf)
     end
 
     tape = ReverseDiff.InstructionTape()
-    ps_tracked = Lux.recursive_map(Utils.Fix3(TrackedArray, tape), ps_cache, dparams)
+    ps_tracked = fmap(
+        Utils.Fix3(TrackedArray, tape), ps_cache, dparams; exclude=isleaf
+    )
 
     loss = first(obj_fn(ts.model, ps_tracked, ts.states, data_cache))
     loss.deriv = true
@@ -86,9 +92,9 @@ function Lux.Training.compute_gradients_impl(::AutoReverseDiff{true}, obj_fn::F,
         ts::TrainState{<:TrainingBackendCache{AutoReverseDiff{true}}, F}) where {F}
     (; ps_cache, data_cache, output) = ts.cache.extras
 
-    dparams = Lux.recursive_make_zero!!(ts.cache.dparameters)
-    Lux.recursive_copyto!(ps_cache, ts.parameters)
-    Lux.recursive_copyto!(data_cache, data)
+    dparams = Training.dparameters(ts.cache)
+    fmap(copyto!, ps_cache, ts.parameters; exclude=isleaf)
+    fmap(copyto!, data_cache, data; exclude=isleaf)
 
     for wrapper in ts.cache.extras.forward_executor
         wrapper()
