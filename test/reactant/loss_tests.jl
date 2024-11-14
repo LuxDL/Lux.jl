@@ -72,10 +72,12 @@
                 @test celoss_ls(ŷ, y) ≈ @jit(celoss_ls(ŷ_ra, y_ra))
 
                 celoss_lp = CrossEntropyLoss(; logits=Val(true))
-                @test celoss_lp(log.(ŷ), y) ≈ @jit(celoss_lp(log.(ŷ_ra), y_ra))
+                logit_celoss_lp = (ŷ, y) -> celoss_lp(log.(ŷ), y)
+                @test logit_celoss_lp(ŷ, y) ≈ @jit(logit_celoss_lp(ŷ_ra, y_ra))
 
                 celoss_lp_ls = CrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
-                @test celoss_lp_ls(log.(ŷ), y) ≈ @jit(celoss_lp_ls(log.(ŷ_ra), y_ra))
+                logit_celoss_lp_ls = (ŷ, y) -> celoss_lp_ls(log.(ŷ), y)
+                @test logit_celoss_lp_ls(ŷ, y) ≈ @jit(logit_celoss_lp_ls(ŷ_ra, y_ra))
             end
 
             @testset "Binary CrossEntropyLoss" begin
@@ -86,11 +88,13 @@
                 @test bceloss_ls(ŷ, y) ≈ @jit(bceloss_ls(ŷ_ra, y_ra))
 
                 bceloss_lp = BinaryCrossEntropyLoss(; logits=Val(true))
-                @test bceloss_lp(log.(ŷ), y) ≈ @jit(bceloss_lp(log.(ŷ_ra), y_ra))
+                logit_bceloss_lp = (ŷ, y) -> bceloss_lp(log.(ŷ), y)
+                @test logit_bceloss_lp(ŷ, y) ≈ @jit(logit_bceloss_lp(ŷ_ra, y_ra))
 
                 bceloss_lp_ls = BinaryCrossEntropyLoss(;
                     logits=Val(true), label_smoothing=0.1)
-                @test bceloss_lp_ls(log.(ŷ), y) ≈ @jit(bceloss_lp_ls(log.(ŷ_ra), y_ra))
+                logit_bceloss_lp_ls = (ŷ, y) -> bceloss_lp_ls(log.(ŷ), y)
+                @test logit_bceloss_lp_ls(ŷ, y) ≈ @jit(logit_bceloss_lp_ls(ŷ_ra, y_ra))
             end
 
             @testset "BinaryFocalLoss" begin

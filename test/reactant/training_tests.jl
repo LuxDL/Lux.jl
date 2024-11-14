@@ -24,18 +24,22 @@
             ps, st = Lux.setup(StableRNG(1234), model) |> xdev
 
             x_ra = randn(Float32, 2, 32) |> xdev
+            y_ra = rand(Float32, 2, 32) |> xdev
 
-            inference_fn = @compile model(x_ra, ps, Lux.testmode(st))
+            inference_loss_fn = (xᵢ, yᵢ, mode, ps, st) -> begin
+                ŷᵢ, _ = model(xᵢ, ps, Lux.testmode(st))
+                return MSELoss()(ŷᵢ, yᵢ)
+            end
+            inference_loss_fn_compiled = @compile inference_loss_fn(
+                x_ra, y_ra, model, ps, st
+            )
 
             x = [rand(Float32, 2, 32) for _ in 1:32]
             y = [xᵢ .^ 2 for xᵢ in x]
 
             dataloader = DeviceIterator(xdev, zip(x, y))
 
-            total_initial_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
-                ŷᵢ, _ = inference_fn(xᵢ, ps, Lux.testmode(st))
-                return MSELoss()(ŷᵢ, yᵢ)
-            end
+            total_initial_loss = mapreduce(inference_loss_fn_compiled, +, dataloader)
 
             train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
 
@@ -51,10 +55,7 @@
                 end
             end
 
-            total_final_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
-                ŷᵢ, _ = inference_fn(xᵢ, train_state.parameters, Lux.testmode(st))
-                return MSELoss()(ŷᵢ, yᵢ)
-            end
+            total_final_loss = mapreduce(inference_loss_fn_compiled, +, dataloader)
 
             @test total_final_loss < 100 * total_initial_loss
         end
