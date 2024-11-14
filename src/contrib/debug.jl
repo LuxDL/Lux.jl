@@ -91,7 +91,8 @@ function check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
         return x
     end
 
-    return fmap_with_path(nan_check, x)
+    fmapstructure_with_path(nan_check, x)
+    return
 end
 
 function debug_layer_impl(layer, x, ps, st, location, error_check, _)

@@ -12,8 +12,12 @@ function LuxCore.Internal.fmap_with_path_impl(args...; kwargs...)
 end
 LuxCore.Internal.fleaves_impl(args...; kwargs...) = Functors.fleaves(args...; kwargs...)
 
-function Functors.functor(::Type{<:LuxCore.AbstractLuxContainerLayer{layers}},
-        x) where {layers}
+function Functors.functor(::Type{<:LuxCore.AbstractLuxLayer}, x)
+    return Functors.NoChildren(), Returns(x)
+end
+
+function Functors.functor(
+        ::Type{<:LuxCore.AbstractLuxContainerLayer{layers}}, x) where {layers}
     children = NamedTuple{layers}(getproperty.((x,), layers))
     layer_reconstructor = let x = x, layers = layers
         z -> reduce(LuxCore.Internal.setfield, zip(layers, z); init=x)
@@ -21,8 +25,7 @@ function Functors.functor(::Type{<:LuxCore.AbstractLuxContainerLayer{layers}},
     return children, layer_reconstructor
 end
 
-function Functors.functor(::Type{<:LuxCore.AbstractLuxWrapperLayer{layer}},
-        x) where {layer}
+function Functors.functor(::Type{<:LuxCore.AbstractLuxWrapperLayer{layer}}, x) where {layer}
     children = NamedTuple{(layer,)}((getproperty(x, layer),))
     layer_reconstructor = let x = x, layer = layer
         z -> LuxCore.Internal.setfield(x, layer, getproperty(z, layer))

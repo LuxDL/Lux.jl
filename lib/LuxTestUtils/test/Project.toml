@@ -9,7 +9,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
 CUDA = "5"
-ComponentArrays = "0.15"
+ComponentArrays = "0.15.18"
 Hwloc = "3"
 InteractiveUtils = "<0.0.1, 1"
 MetaTesting = "0.1"

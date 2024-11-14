@@ -4,6 +4,9 @@ using Adapt: Adapt, adapt
 using MLDataDevices: MLDataDevices, Internal, AbstractDevice
 using RecursiveArrayTools: VectorOfArray, DiffEqArray
 
+MLDataDevices.isleaf(::VectorOfArray) = true
+MLDataDevices.isleaf(::DiffEqArray) = true
+
 # We want to preserve the structure
 function Adapt.adapt_structure(to::AbstractDevice, x::VectorOfArray)
     return VectorOfArray(map(Base.Fix1(adapt, to), x.u))

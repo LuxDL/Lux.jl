@@ -6,8 +6,9 @@ Utils.gate(x::Tracker.TrackedVector, h::Int, n::Int) = x[Utils.gate(h, n)]
 Utils.gate(x::Tracker.TrackedMatrix, h::Int, n::Int) = x[Utils.gate(h, n), :]
 
 function construct_tracked_params(ps, dps)
-    map_fn = (p, dp) -> Tracker.TrackedArray(Tracker.Call(), p, dp)
-    return Lux.recursive_map(map_fn, ps, dps)
+    return fmap(ps, dps; exclude=isleaf) do p, dp
+        Tracker.TrackedArray(Tracker.Call(), p, dp)
+    end
 end
 
 Utils.eltype(::Type{<:TrackedReal{T}}) where {T} = T

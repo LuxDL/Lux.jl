@@ -26,7 +26,8 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     push!(EXTRA_PKGS, Pkg.PackageSpec("MPI"))
     (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
         push!(EXTRA_PKGS, Pkg.PackageSpec("NCCL"))
-    push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
+    # XXX: Reactivate once Flux is compatible with Functors 0.5
+    # push!(EXTRA_PKGS, Pkg.PackageSpec("Flux"))
 end
 
 if !Sys.iswindows()

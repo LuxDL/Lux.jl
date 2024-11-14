@@ -275,7 +275,7 @@ $(GET_DEVICE_ADMONITIONS)
 
   - `nothing` -- denotes that the object is device agnostic. For example, scalar, abstract
     range, etc.
-  - `UnknownDevice()` -- denotes that the device type is unknown
+  - `UnknownDevice()` -- denotes that the device type is unknown.
 
 See also [`get_device_type`](@ref) for a faster alternative that can be used for dispatch
 based on device type.
@@ -295,7 +295,7 @@ $(GET_DEVICE_ADMONITIONS)
 
   - `Nothing` -- denotes that the object is device agnostic. For example, scalar, abstract
     range, etc.
-  - `UnknownDevice` -- denotes that the device type is unknown
+  - `UnknownDevice` -- denotes that the device type is unknown.
 """
 function get_device_type end
 
@@ -363,30 +363,16 @@ function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractDe
 end
 
 # Dispatches for Different Data Structures
-# Abstract Array / Tuples / NamedTuples have special fast paths to facilitate type stability
-# For all other types we rely on fmap which means we lose type stability.
-# For Lux, typically models only has these 3 datastructures so we should be mostly fine.
-for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI, :XLA)
-    ldev = Symbol(dev, :Device)
-    @eval begin
-        function (D::$(ldev))(x::AbstractArray{T}) where {T}
-            if isbitstype(T) || Internal.special_aos(x) || x isa Adapt.WrappedArray
-                return Adapt.adapt(D, x)
-            end
-            return map(D, x)
-        end
-        (D::$(ldev))(x::Union{Tuple, NamedTuple}) = map(D, x)
-        function (D::$(ldev))(x)
-            isleaf(x) && return Adapt.adapt(D, x)
-            return Functors.fmap(D, x; exclude=isleaf)
-        end
-    end
+for dev in (CPUDevice, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, ReactantDevice)
+    @eval (D::$(dev))(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude=isleaf)
 end
 
 for op in (:get_device, :get_device_type)
     @eval function $(op)(x)
         Internal.fast_structure(x) && return Internal.$(op)(x)
-        return mapreduce(Internal.$(op), Internal.combine_devices, fleaves(x))
+        return mapreduce(
+            Internal.$(op), Internal.combine_devices, fleaves(x; exclude=isleaf)
+        )
     end
 end
 
@@ -396,9 +382,7 @@ Adapt.adapt_storage(::CPUDevice, rng::AbstractRNG) = rng
 
 for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, ReactantDevice)
     @eval begin
-        function Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG)
-            return default_device_rng(to)
-        end
+        Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG) = default_device_rng(to)
         Adapt.adapt_storage(::$(T), rng::AbstractRNG) = rng
     end
 end
@@ -420,5 +404,5 @@ If `MLDataDevices.isleaf(x::T)` is not defined, then it will fall back to `Funct
 """
 isleaf(x) = Functors.isleaf(x)
 
-isleaf(::AbstractArray{T}) where {T} = isbitstype(T)
+isleaf(::AbstractArray{T}) where {T} = isbitstype(T) || T <: Number # BigFloat and such are not bitstype
 isleaf(::Adapt.WrappedArray) = false

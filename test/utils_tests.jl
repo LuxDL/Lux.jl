@@ -187,7 +187,7 @@ end
     @test Lux.Utils.merge(abc, abc) == (a=1, b=2)
 end
 
-@testitem "Recursive Utils" tags=[:misc] begin
+@testitem "Recursive Utils (Deprecated)" tags=[:misc] begin
     using Functors, Tracker, ReverseDiff, ForwardDiff
 
     struct functorABC{A, B}

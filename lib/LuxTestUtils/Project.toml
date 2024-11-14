@@ -1,7 +1,7 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
 authors = ["Avik Pal <avikpal@mit.edu>"]
-version = "1.5.0"
+version = "1.6.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -21,19 +21,19 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
-ADTypes = "1.8.1"
+ADTypes = "1.10"
 ArrayInterface = "7.9"
 ChainRulesCore = "1.24.0"
-ComponentArrays = "0.15.14"
+ComponentArrays = "0.15.18"
 DispatchDoctor = "0.4.12"
 Enzyme = "0.13.13"
 FiniteDiff = "2.23.1"
 ForwardDiff = "0.10.36"
-Functors = "0.4.11"
+Functors = "0.5"
 JET = "0.9.6"
-MLDataDevices = "1.0.0"
+MLDataDevices = "1.6"
 ReverseDiff = "1.15.3"
 Test = "1.10"
-Tracker = "0.2.34"
+Tracker = "0.2.36"
 Zygote = "0.6.70"
 julia = "1.10"

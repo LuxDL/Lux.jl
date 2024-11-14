@@ -21,7 +21,7 @@ making it compatible with multiple GPU backends.
     input data and let Lux handle the batching internally.
 
 ```@example nn_in_gpu_kernels
-using Lux, LuxCUDA, Random
+using Lux, LuxCUDA, Random, Functors
 using KernelAbstractions, StaticArrays
 ```
 
@@ -45,8 +45,8 @@ nn = Chain(Dense(4, 4, relu), Dense(4, 4))
 ps, st = Lux.setup(Xoshiro(123), nn)
 
 to_sarray(x) = SArray{Tuple{size(x)...}}(x)
-ps_static = Lux.recursive_map(to_sarray, ps)
-st_static = Lux.recursive_map(to_sarray, st)
+ps_static = fmap(to_sarray, ps)
+st_static = fmap(to_sarray, st)
 ```
 
 First we will run it on CPU.

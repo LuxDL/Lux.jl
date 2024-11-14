@@ -1,6 +1,6 @@
 function Lux.Training.compute_gradients_impl(
         ad::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
-    dps = Lux.recursive_make_zero(ts.parameters)
+    dps = Lux.Training.dparameters(ts.cache)
 
     obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.wrap_objective_function(
         obj_fn, ts.model, ts.parameters, ts.states, data, True())
@@ -22,8 +22,7 @@ const AUTODIFF_CACHE_TYPE = TrainingBackendCache{
 
 function Lux.Training.compute_gradients_impl(
         ::AutoEnzyme, obj_fn::F, data, ts::TrainState{<:AUTODIFF_CACHE_TYPE, F}) where {F}
-    Enzyme.make_zero!(ts.cache.dparameters)
-    dps = ts.cache.dparameters
+    dps = Lux.Training.dparameters(ts.cache)
 
     _, loss = Enzyme.autodiff(
         EnzymeCore.ReverseWithPrimal, Const(ts.cache.extras.obj_fn), Active,
@@ -57,14 +56,16 @@ const AUTODIFF_THUNK_CACHE_TYPE = TrainingBackendCache{
 
 function Lux.Training.compute_gradients_impl(::AutoEnzyme, obj_fn::F, data,
         ts::TrainState{<:AUTODIFF_THUNK_CACHE_TYPE, F}) where {F}
-    dps = Lux.recursive_make_zero!!(ts.cache.dparameters)
+    dps = Lux.Training.dparameters(ts.cache)
     params = Duplicated(ts.parameters, dps)
 
     tape, (loss, st_, stats), _ = ts.cache.extras.forward(
         Const(obj_fn), Const(ts.model), params, Const(ts.states), Const(data))
     ts.cache.extras.reverse(
         Const(obj_fn), Const(ts.model), params, Const(ts.states), Const(data),
-        (one(loss), Lux.recursive_make_zero(st_), Lux.recursive_make_zero(stats)), tape)
+        (one(loss), fmap(Utils.zero, st_; exclude=isleaf),
+            fmap(Utils.zero, stats; exclude=isleaf)), tape
+    )
 
     @set! ts.objective_function = obj_fn
     @set! ts.states = st_

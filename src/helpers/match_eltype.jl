@@ -50,14 +50,17 @@ else
             arr -> match_eltype(
                 layer, recursive_eltype((ps, st), Val(true)), Utils.eltype(arr), arr)
         end
-        return recursive_map(fn, x)
+        return fmap(fn, x; exclude=MLDataDevices.isleaf)
     end
     function match_eltype(layer, ps, st, x, args...)
         fn = let layer = layer
             arr -> match_eltype(
                 layer, recursive_eltype((ps, st), Val(true)), Utils.eltype(arr), arr)
         end
-        return (recursive_map(fn, x), recursive_map(fn, args)...)
+        return (
+            fmap(fn, x; exclude=MLDataDevices.isleaf),
+            fmap(fn, args; exclude=MLDataDevices.isleaf)...
+        )
     end
 end
 

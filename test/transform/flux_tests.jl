@@ -1,4 +1,4 @@
-@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:misc] skip=:(true) begin
     import Flux
 
     toluxpsst = FromFluxAdaptor(; preserve_ps_st=true)

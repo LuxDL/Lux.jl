@@ -83,6 +83,9 @@ include("transform/simplechains.jl")
 include("distributed/backend.jl")
 include("distributed/public_api.jl")
 
+# Deprecations for v2
+include("deprecations.jl")
+
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
 export Bilinear, Dense, Embedding, Scale
