@@ -20,11 +20,8 @@ steps:
               push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
             end;
             Pkg.develop(dev_pkgs);
-            Pkg.instantiate()'
-          julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxTestUtils/test -e '
-            import Pkg, LuxTestUtils
-            dir = dirname(pathof(LuxTestUtils))
-            include(joinpath(dir, "../test/runtests.jl"))'
+            Pkg.instantiate();
+            Pkg.test(; coverage="user")'
         agents:
           queue: "juliagpu"
           cuda: "*"
