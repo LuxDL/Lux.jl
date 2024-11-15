@@ -1,5 +1,5 @@
 using Documenter, DocumenterVitepress, Pkg
-using Lux, LuxCore, LuxLib, WeightInitializers
+using Lux, LuxCore, LuxLib, WeightInitializers, NNlib
 using LuxTestUtils, MLDataDevices
 using LuxCUDA
 
@@ -60,9 +60,13 @@ pages = [
         "Accelerator Support" => [
             "api/Accelerator_Support/MLDataDevices.md"
         ],
+        "NN Primitives" => [
+            "api/NN_Primitives/LuxLib.md",
+            "api/NN_Primitives/NNlib.md",
+            "api/NN_Primitives/ActivationFunctions.md"
+        ],
         "Building Blocks" => [
             "api/Building_Blocks/LuxCore.md",
-            "api/Building_Blocks/LuxLib.md",
             "api/Building_Blocks/WeightInitializers.md"
         ],
         "Testing Functionality" => [
@@ -81,8 +85,13 @@ makedocs(; sitename="Lux.jl Docs",
     authors="Avik Pal et al.",
     clean=true,
     doctest=false,  # We test it in the CI, no need to run it here
-    modules=[Lux, LuxCore, LuxLib, WeightInitializers, LuxTestUtils, MLDataDevices],
+    modules=[
+        Lux, LuxCore, LuxLib, WeightInitializers, LuxTestUtils, MLDataDevices, NNlib
+    ],
     linkcheck=true,
+    linkcheck_ignore=[
+        "http://www.iro.umontreal.ca/~lisa/publications2/index.php/attachments/single/205"
+    ],
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     format=DocumenterVitepress.MarkdownVitepress(;
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",

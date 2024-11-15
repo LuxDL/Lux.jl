@@ -1,5 +1,6 @@
 ```@meta
 CollapsedDocStrings = true
+CurrentModule = LuxLib
 ```
 
 # [LuxLib](@id LuxLib-API)
