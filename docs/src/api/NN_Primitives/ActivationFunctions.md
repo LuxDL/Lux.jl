@@ -1,5 +1,6 @@
 ```@meta
 CollapsedDocStrings = true
+CurrentModule = NNlib
 ```
 
 # [Activation Functions](@id NNlib-ActivationFunctions-API)
@@ -13,6 +14,7 @@ celu
 elu
 gelu
 hardsigmoid
+NNlib.hardσ
 sigmoid_fast
 hardtanh
 tanh_fast
@@ -20,12 +22,14 @@ leakyrelu
 lisht
 logcosh
 logsigmoid
+NNlib.logσ
 mish
 relu
 relu6
 rrelu
 selu
 sigmoid
+NNlib.σ
 softplus
 softshrink
 softsign

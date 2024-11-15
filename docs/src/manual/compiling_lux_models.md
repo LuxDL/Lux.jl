@@ -119,7 +119,7 @@ enzyme_gradient_compiled = @compile enzyme_gradient(model, ps_ra, st_ra, x_ra, y
 Now we check the difference:
 
 ```@example compile_lux_model
-fmap(Broadcast.BroadcastFunction(-), ∂ps_zyg, ∂ps_enzyme)
+fmap(Broadcast.BroadcastFunction(-), ∂ps_zyg, ∂ps_enzyme |> cpu_device())
 ```
 
 ## [Using the `TrainState` API](@id compile_lux_model_trainstate)

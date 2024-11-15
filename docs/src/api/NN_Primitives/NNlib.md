@@ -1,5 +1,6 @@
 ```@meta
 CollapsedDocStrings = true
+CurrentModule = NNlib
 ```
 
 # [NNlib](@id NNlib-API)
@@ -9,7 +10,7 @@ Neural Network Primitives with custom bindings for different accelerator backend
 !!! note "Reexport of `NNlib`"
 
     Lux doesn't re-export all of `NNlib` for now. Directly loading `NNlib` is the
-    recommended appraoch for accessing these functions.
+    recommended approach for accessing these functions.
 
 ## Attention 
 
@@ -54,8 +55,8 @@ ConvDims
 depthwiseconv
 DepthwiseConvDims
 DenseConvDims
-Lux.NNlib.unfold
-Lux.NNlib.fold
+NNlib.unfold
+NNlib.fold
 ```
 
 ## Upsampling
@@ -93,10 +94,10 @@ batched_vec
 ## Gather and Scatter
 
 ```@docs
-Lux.NNlib.gather
-Lux.NNlib.gather!
-Lux.NNlib.scatter
-Lux.NNlib.scatter!
+NNlib.gather
+NNlib.gather!
+NNlib.scatter
+NNlib.scatter!
 ```
 
 ## Sampling
@@ -126,14 +127,82 @@ glu
     not part of the public API.
 
 ```@docs
-Lux.NNlib.within_gradient
+NNlib.within_gradient
 ```
 
 !!! tip
 
-    Use [`LuxLib.bias_activation!!`](@ref) or [`LuxLib.bias_activation`](@ref) instead of
+    Use `LuxLib.API.bias_activation!!` or `LuxLib.API.bias_activation` instead of
     `NNlib.bias_act!`.
 
 ```@docs
 bias_act!
+```
+
+## Dropout
+
+!!! tip
+
+    Use `LuxLib.API.dropout` instead of `NNlib.dropout`.
+
+```@docs
+NNlib.dropout
+NNlib.dropout!
+```
+
+## Internal NNlib Functions
+
+These functions are not part of the public API and are subject to change without notice.
+
+```@docs
+NNlib.BatchedAdjoint
+NNlib.∇conv_filter_direct!
+NNlib._check_trivial_rotations!
+NNlib.fast_act
+NNlib.spectrogram
+NNlib.is_strided
+NNlib.conv_direct!
+NNlib.gemm!
+NNlib.calc_padding_regions
+NNlib.∇depthwiseconv_data_im2col!
+NNlib._prepare_imrotate
+NNlib.insert_singleton_spatial_dimension
+NNlib._fast_broadcast!
+NNlib.hann_window
+NNlib._rng_from_array
+NNlib.∇depthwiseconv_filter_im2col!
+NNlib.istft
+NNlib.transpose_swapbatch
+NNlib.transpose_pad
+NNlib.power_to_db
+NNlib.col2im!
+NNlib.depthwiseconv_im2col!
+NNlib.storage_type
+NNlib.im2col_dims
+NNlib.∇depthwiseconv_filter_direct!
+NNlib.reverse_indices
+NNlib.∇conv_filter_im2col!
+NNlib.conv_im2col!
+NNlib.∇conv_data_direct!
+NNlib.scatter_dims
+NNlib.∇conv_data_im2col!
+NNlib.storage_typejoin
+NNlib.add_blanks
+NNlib.∇filter_im2col_dims
+NNlib._bilinear_helper
+NNlib._triangular_filterbanks
+NNlib.∇depthwiseconv_data_direct!
+NNlib.db_to_power
+NNlib.predilated_size
+NNlib.stft
+NNlib.hamming_window
+NNlib.maximum_dims
+NNlib.BatchedTranspose
+NNlib._rotate_coordinates
+NNlib.melscale_filterbanks
+NNlib.logaddexp
+NNlib.depthwiseconv_direct!
+NNlib.im2col!
+NNlib.predilate
+NNlib.safe_div
 ```
