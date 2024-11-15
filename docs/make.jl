@@ -60,9 +60,13 @@ pages = [
         "Accelerator Support" => [
             "api/Accelerator_Support/MLDataDevices.md"
         ],
+        "NN Primitives" => [
+            "api/NN_Primitives/LuxLib.md",
+            "api/NN_Primitives/NNlib.md",
+            "api/NN_Primitives/ActivationFunctions.md"
+        ],
         "Building Blocks" => [
             "api/Building_Blocks/LuxCore.md",
-            "api/Building_Blocks/LuxLib.md",
             "api/Building_Blocks/WeightInitializers.md"
         ],
         "Testing Functionality" => [
