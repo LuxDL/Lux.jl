@@ -39,7 +39,9 @@
 
             dataloader = DeviceIterator(xdev, zip(x, y))
 
-            total_initial_loss = mapreduce(inference_loss_fn_compiled, +, dataloader)
+            total_initial_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
+                inference_loss_fn_compiled(xᵢ, yᵢ, model, ps, st)
+            end
 
             train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
 
@@ -55,7 +57,11 @@
                 end
             end
 
-            total_final_loss = mapreduce(inference_loss_fn_compiled, +, dataloader)
+            total_final_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
+                inference_loss_fn_compiled(
+                    xᵢ, yᵢ, model, train_state.parameters, train_state.states
+                )
+            end
 
             @test total_final_loss < 100 * total_initial_loss
         end

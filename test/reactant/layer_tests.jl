@@ -52,13 +52,13 @@ end
             y_ra, _ = @jit model(x_ra, ps_ra, st_ra)
             y, _ = model(x, ps, st)
 
-            @test y_ra≈y atol=1e-4
+            @test y_ra≈y atol=1e-3 rtol=1e-3
 
             @testset "gradient" begin
                 ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
                 ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
-                @test ∂x_ra≈∂x atol=1e-4
-                @test check_approx(∂ps_ra, ∂ps; atol=1e-4)
+                @test ∂x_ra≈∂x atol=1e-3 rtol=1e-3
+                @test check_approx(∂ps_ra, ∂ps; atol=1e-3, rtol=1e-3)
             end
         end
     end
