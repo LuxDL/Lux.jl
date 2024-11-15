@@ -1,11 +1,14 @@
 module MLDataDevicesMLUtilsExt
 
+using Adapt: Adapt
 using MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice,
                      MetalDevice, oneAPIDevice, ReactantDevice, DeviceIterator
 using MLUtils: MLUtils, DataLoader
 
+MLDataDevices.isleaf(::DataLoader) = true
+
 for dev in (CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, ReactantDevice)
-    @eval function (D::$(dev))(dataloader::DataLoader)
+    @eval function Adapt.adapt_structure(D::$(dev), dataloader::DataLoader)
         if dataloader.parallel
             if dataloader.buffer
                 @warn "Using `buffer=true` for parallel DataLoader with automatic device \
