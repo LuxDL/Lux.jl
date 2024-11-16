@@ -125,7 +125,7 @@ const dev = gpu_device()
 
 :::
 
-## Want XLA Support?
+## Want Reactant (XLA) Support?
 
 Install the following package:
 
@@ -134,13 +134,14 @@ using Pkg;
 Pkg.add("Reactant")
 ```
 
-Run the following to access a device:
+Run the following to access a device (Reactant automatically selects the best backend by
+default):
 
 :::code-group
 
 ```julia [CPU Backend]
 using Reactant, Lux
-Reactant.set_default_backend("cpu") # default
+Reactant.set_default_backend("cpu")
 
 const dev = reactant_device()
 ```
