@@ -41,23 +41,18 @@ Generate an example input.
 x = randn(Random.default_rng(), Float32, 28, 28, 1, 4) |> dev;
 ```
 
-No instead of compiling the model, we will use `Reactant.@code_hlo` to generate the
+Now instead of compiling the model, we will use `Reactant.@code_hlo` to generate the
 StableHLO code.
 
 ```@example exporting_to_stablehlo
 hlo_code = @code_hlo model(x, ps, st)
 ```
 
-Now we just save this into an `mlir` file. Remember that we only need to save the `@main`
-function and not the entire module.
+Now we just save this into an `mlir` file.
 
 ```@example exporting_to_stablehlo
-hlo_string = string(hlo_code)
-hlo_string = hlo_string[findfirst("func.func @main", hlo_string)[1]:end]
-hlo_string = hlo_string[1:findlast("}\n}", hlo_string)[1]]
-
 open("exported_lux_model.mlir", "w") do io
-    write(io, hlo_string)
+    write(io, string(hlo_code))
 end
 ```
 
