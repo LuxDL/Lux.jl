@@ -57,10 +57,13 @@ end
 # the `gdev` device to move the data to the GPU on each iteration.
 
 # By default `gdev` will move all objects to the GPU. But we don't want to move the time
-# vector to the GPU. So we will wrap it in a struct.
+# vector to the GPU. So we will wrap it in a struct and mark it as a leaf using
+# MLDataDevices.isleaf
 struct TimeWrapper{T}
     t::T
 end
+
+MLDataDevices.isleaf(::TimeWrapper) = true
 
 Base.length(t::TimeWrapper) = length(t.t)
 
@@ -103,7 +106,8 @@ function train_model(dataloader)
         u0 = u_batch[:, 1]
         dudt(u, p, t) = smodel(u, p)
         prob = ODEProblem(dudt, u0, (t_batch[1], t_batch[end]), θ)
-        pred = convert(AbstractArray, solve(prob, Tsit5(); saveat=t_batch))
+        sol = solve(prob, Tsit5(); sensealg=InterpolatingAdjoint(), saveat=t_batch)
+        pred = stack(sol.u)
         return MSELoss()(pred, u_batch)
     end
 
