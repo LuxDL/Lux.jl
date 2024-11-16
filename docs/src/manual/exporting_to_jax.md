@@ -103,8 +103,11 @@ def run_lux_model(
     )
 
 
-# Note that all the inputs must be transposed, i.e. if the Lux model has an input of shape
-# (28, 28, 1, 4), then the input to the exported Lux model must be of shape (4, 1, 28, 28)
+# Note that all the inputs must be transposed, i.e. if the julia function has an input of
+# shape (28, 28, 1, 4), then the input to the exported function called from python must be
+# of shape (4, 1, 28, 28). This is because multi-dimensional arrays in Julia are stored in
+# column-major order, while in JAX/Python they are stored in row-major order.
+
 # Input as defined in our exported Lux model
 x = jax.random.normal(jax.random.PRNGKey(0), (4, 1, 28, 28))
 
