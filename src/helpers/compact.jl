@@ -32,7 +32,8 @@ is useful when using it with SciML tools which require passing in the parameters
 
 If you are passing in kwargs by splatting them, they will be passed as is to the function
 body. This means if your splatted kwargs contain a lux layer that won't be registered
-in the CompactLuxLayer.
+in the CompactLuxLayer. Additionally all of the device functions treat these kwargs as
+leaves.
 
 ## Special Syntax
 
@@ -314,7 +315,13 @@ function initialstates(rng::AbstractRNG, m::CompactLuxLayer)
         initialstates(rng, m.layers)..., initialstates(rng, m.value_storage)...)
     length(first(m.stored_kwargs)) == 0 && return base_states
     return merge(
-        base_states, (; ₋₋₋kwargs₋₋₋=NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])))
+        base_states,
+        (;
+            ₋₋₋kwargs₋₋₋=CompactMacroImpl.KwargsStorage(
+                NamedTuple{m.stored_kwargs[1]}(m.stored_kwargs[2])
+            )
+        )
+    )
 end
 
 function CompactLuxLayer(dispatch::StaticSymbol, f::F, name::NAME_TYPE,
@@ -419,6 +426,7 @@ module CompactMacroImpl
 using ChainRulesCore: @non_differentiable
 using ConcreteStructs: @concrete
 using MacroTools: MacroTools, @capture, combinedef, splitdef
+using Functors: Functors
 using Random: AbstractRNG
 using Static: static
 
@@ -517,7 +525,9 @@ function supportself(fex::Expr, vars, splatted_kwargs)
     end
     for var in splatted_kwargs
         push!(calls,
-            :($var = $(safe_getproperty)(getproperty($st, :₋₋₋kwargs₋₋₋), $(Val(var)))))
+            :($var = $(safe_getproperty)(
+                getproperty(getproperty($st, :₋₋₋kwargs₋₋₋), :kws), $(Val(var))
+            )))
     end
     custom_param && push!(calls, :($(sdef[:args][2]) = $ps))
 
@@ -630,6 +640,12 @@ function LuxCore.initialstates(rng::AbstractRNG, v::ValueStorage)
     return NamedTuple([n => (fn isa InitFn ? fn(rng) : fn())
                        for (n, fn) in pairs(v.st_init_fns)])
 end
+
+@concrete struct KwargsStorage
+    kws <: NamedTuple
+end
+
+Functors.@leaf KwargsStorage
 
 function kwarg_descriptor(val)
     val isa NonTrainable && return "@non_trainable($(kwarg_descriptor(val.value)))"
