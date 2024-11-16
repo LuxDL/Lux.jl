@@ -5,16 +5,16 @@ import footnote from "markdown-it-footnote";
 import { transformerMetaWordHighlight } from "@shikijs/transformers";
 
 const baseTemp = {
-  base: "REPLACE_ME_DOCUMENTER_VITEPRESS", // TODO: replace this in makedocs!
+  base: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // TODO: replace this in makedocs!
 };
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base: "REPLACE_ME_DOCUMENTER_VITEPRESS",
-  title: "REPLACE_ME_DOCUMENTER_VITEPRESS",
+  base: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
+  title: 'REPLACE_ME_DOCUMENTER_VITEPRESS',
   description: "Documentation for LuxDL Repositories",
   cleanUrls: true,
-  outDir: "REPLACE_ME_DOCUMENTER_VITEPRESS", // This is required for MarkdownVitepress to work correctly...
+  outDir: 'REPLACE_ME_DOCUMENTER_VITEPRESS', // This is required for MarkdownVitepress to work correctly...
 
   markdown: {
     math: true,
@@ -424,7 +424,7 @@ export default defineConfig({
       text: "Edit this page on GitHub",
     },
     socialLinks: [
-      { icon: "github", link: "REPLACE_ME_DOCUMENTER_VITEPRESS" },
+      { icon: "github", link: 'REPLACE_ME_DOCUMENTER_VITEPRESS' },
       { icon: "twitter", link: "https://twitter.com/avikpal1410" },
       { icon: "slack", link: "https://julialang.org/slack/" },
     ],

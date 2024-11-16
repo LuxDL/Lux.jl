@@ -81,7 +81,8 @@ deploy_config = Documenter.auto_detect_deploy_system()
 deploy_decision = Documenter.deploy_folder(deploy_config; repo="github.com/LuxDL/Lux.jl",
     devbranch="main", devurl="dev", push_preview=true)
 
-makedocs(; sitename="Lux.jl Docs",
+makedocs(;
+    sitename="Lux.jl Docs",
     authors="Avik Pal et al.",
     clean=true,
     doctest=false,  # We test it in the CI, no need to run it here
@@ -97,7 +98,10 @@ makedocs(; sitename="Lux.jl Docs",
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
         deploy_url="https://lux.csail.mit.edu", deploy_decision),
     draft=false,
-    pages)
+    pages
+)
 
-deploydocs(; repo="github.com/LuxDL/Lux.jl.git",
-    push_preview=true, target="build", devbranch="main")
+deploydocs(;
+    repo="github.com/LuxDL/Lux.jl.git",
+    push_preview=true, target="build", devbranch="main"
+)
