@@ -118,8 +118,7 @@ end
 
 # ## (Im)mutability
 
-# Lux as you might have read is
-# [Immutable by convention](https://lux.csail.mit.edu/dev/introduction/overview#design-principles)
+# Lux as you might have read is Immutable by convention
 # which means that the core library is built without any form of mutation and all functions
 # are pure. However, we don't enforce it in any form. We do **strongly recommend** that
 # users extending this framework for their respective applications don't mutate their
