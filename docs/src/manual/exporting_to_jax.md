@@ -1,4 +1,4 @@
-# Exporting Lux Models to Jax (via StableHLO)
+# Exporting Lux Models to Jax (via EnzymeJAX & Reactant)
 
 !!! danger "Experimental"
 
