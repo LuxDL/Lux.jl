@@ -9,7 +9,6 @@ using Optimisers # for some docstrings
 
 pages = [
     "Lux.jl" => "index.md",
-    "Ecosystem" => "ecosystem.md",
     "Getting Started" => [
         "Introduction" => "introduction/index.md",
         "Overview" => "introduction/overview.md",

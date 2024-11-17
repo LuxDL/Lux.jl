@@ -12,9 +12,6 @@ hero:
       text: Tutorials
       link: /tutorials
     - theme: alt
-      text: Ecosystem
-      link: /ecosystem
-    - theme: alt
       text: API Reference 📚
       link: /api/Lux/layers
     - theme: alt
@@ -27,23 +24,23 @@ hero:
 features:
   - icon: 🚀
     title: Fast & Extendible
-    details: Lux.jl is written in Julia itself, making it extremely extendible. CUDA and AMDGPU are supported first-class, with experimental support for Metal Hardware.
+    details: Lux.jl is written in Julia itself, making it extremely extendible. CUDA and AMDGPU are supported first-class, with experimental support for Metal and Intel GPUs.
     link: /introduction
+
+  - icon: 🐎
+    title: Powered by the XLA Compiler
+    details: Lux.jl seamlessly integrates with Reactant.jl, to compiler models to run on CPU, GPU, TPU, and more.
+    link: /manual/compiling_lux_models
 
   - icon: 🧑‍🔬
     title: SciML ❤️ Lux
-    details: Lux is the default choice for many SciML packages, including DiffEqFlux.jl, NeuralPDE.jl, and more.
+    details: Lux is the default choice for all SciML packages, including DiffEqFlux.jl, NeuralPDE.jl, and more.
     link: https://sciml.ai/
 
   - icon: 🧩
     title: Uniquely Composable
     details: Lux.jl natively supports Arbitrary Parameter Types, making it uniquely composable with other Julia packages (and even Non-Julia packages).
     link: /api/Lux/contrib#Training
-
-  - icon: 🧪
-    title: Well Tested
-    details: Lux.jl tests every supported Automatic Differentiation Framework with every supported hardware backend against Finite Differences to prevent sneaky 🐛 in your code.
-    link: /api/Testing_Functionality/LuxTestUtils
 ---
 ```
 
