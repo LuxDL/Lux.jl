@@ -306,6 +306,10 @@ export default defineConfig({
                 text: "Compiling Lux Models",
                 link: "/manual/compiling_lux_models",
               },
+              {
+                text: "Exporting Lux Models to Jax",
+                link: "/manual/exporting_to_jax",
+              },
             ],
           },
           {
