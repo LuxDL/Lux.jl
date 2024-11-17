@@ -7,6 +7,9 @@ using MLDataDevices: AbstractDevice, UnknownDevice, get_device, get_device_type
 
 @non_differentiable get_device(::Any)
 @non_differentiable get_device_type(::Any)
+@non_differentiable gpu_device(::Any)
+@non_differentiable cpu_device()
+
 
 function ChainRulesCore.rrule(::typeof(Adapt.adapt), to::AbstractDevice, x::AbstractArray)
     dev = get_device(x)
