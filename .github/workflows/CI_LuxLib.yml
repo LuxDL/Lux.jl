@@ -27,7 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.10"
           - "1"
         os:
           - ubuntu-latest
@@ -41,22 +40,22 @@ jobs:
         loopvec:
           - "true"
         include:
-          - version: "1.10"
+          - version: "1"
             os: ubuntu-latest
             test_group: "dense"
             blas_backend: "default"
             loopvec: "false"
-          - version: "1.10"
+          - version: "1"
             os: ubuntu-latest
             test_group: "misc"
             blas_backend: "default"
             loopvec: "false"
-          - version: "1.10"
+          - version: "1"
             os: macos-latest
             test_group: "all"
             blas_backend: "default"
             loopvec: "true"
-          - version: "1.10"
+          - version: "1"
             os: windows-latest
             test_group: "all"
             blas_backend: "default"
@@ -76,23 +75,18 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - name: "Install Dependencies"
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: "lib/LuxLib"
+      - name: "Dev Test Dependencies"
         run: |
           import Pkg
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/LuxCore", "lib/MLDataDevices")
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
-          Pkg.Registry.update()
-          Pkg.instantiate()
-          Pkg.activate("lib/LuxLib/test")
           dev_pkgs = Pkg.PackageSpec[]
           for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
       - name: "Run Tests"
         run: |
           import Pkg, LuxLib
@@ -111,7 +105,7 @@ jobs:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
@@ -126,23 +120,18 @@ jobs:
       - uses: julia-actions/julia-downgrade-compat@v1
         with:
           skip: "LuxCore,MLDataDevices"
-      - name: "Install Dependencies"
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: "lib/LuxLib"
+      - name: "Dev Test Dependencies"
         run: |
           import Pkg
-          dev_pkgs = Pkg.PackageSpec[]
-          for pkg in ("lib/LuxCore", "lib/MLDataDevices")
-            push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
-          end
-          Pkg.develop(dev_pkgs)
-          Pkg.Registry.update()
-          Pkg.instantiate()
-          Pkg.activate("lib/LuxLib/test")
           dev_pkgs = Pkg.PackageSpec[]
           for pkg in ("lib/LuxTestUtils", "lib/LuxLib", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
       - name: "Run Tests"
         run: |
           import Pkg, LuxLib
@@ -161,7 +150,7 @@ jobs:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
 env:
   BACKEND_GROUP: "CPU"

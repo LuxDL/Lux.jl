@@ -15,11 +15,6 @@ steps:
           julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxTestUtils -e '
             import Pkg;
             Pkg.Registry.update();
-            dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/MLDataDevices",)
-              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
-            end;
-            Pkg.develop(dev_pkgs);
             Pkg.instantiate();
             Pkg.test(; coverage="user")'
         agents:

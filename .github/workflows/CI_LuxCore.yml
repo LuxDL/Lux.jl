@@ -43,18 +43,18 @@ jobs:
             ${{ runner.os }}-test-${{ env.cache-name }}-
             ${{ runner.os }}-test-
             ${{ runner.os }}-
-      - name: "Install Dependencies"
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: "lib/LuxCore"
+      - name: "Dev Test Dependencies"
         run: |
           import Pkg
-          Pkg.Registry.update()
-          Pkg.instantiate()
-          Pkg.activate("lib/LuxCore/test")
           dev_pkgs = Pkg.PackageSpec[]
           for pkg in ("lib/LuxCore", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCore {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCore/test {0}
       - name: "Run Tests"
         run: |
           import Pkg, LuxCore
@@ -69,7 +69,7 @@ jobs:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   downgrade:
     if: ${{ !contains(github.event.head_commit.message, '[skip tests]') && github.base_ref == github.event.repository.default_branch }}
@@ -84,18 +84,18 @@ jobs:
         with:
           version: ${{ matrix.version }}
       - uses: julia-actions/julia-downgrade-compat@v1
-      - name: "Install Dependencies"
+      - uses: julia-actions/julia-buildpkg@v1
+        with:
+          project: "lib/LuxCore"
+      - name: "Dev Test Dependencies"
         run: |
           import Pkg
-          Pkg.Registry.update()
-          Pkg.instantiate()
-          Pkg.activate("lib/LuxCore/test")
           dev_pkgs = Pkg.PackageSpec[]
           for pkg in ("lib/LuxCore", "lib/MLDataDevices")
             push!(dev_pkgs, Pkg.PackageSpec(path=pkg))
           end
           Pkg.develop(dev_pkgs)
-        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCore {0}
+        shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxCore/test {0}
       - name: "Run Tests"
         run: |
           import Pkg, LuxCore
@@ -110,7 +110,7 @@ jobs:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
 env:
   BACKEND_GROUP: "CPU"

@@ -111,3 +111,9 @@ Tracker = "0.2.36"
 WeightInitializers = "1"
 Zygote = "0.6.70"
 julia = "1.10"
+
+[sources]
+LuxCore = { path = "lib/LuxCore" }
+LuxLib = { path = "lib/LuxLib" }
+MLDataDevices = { path = "lib/MLDataDevices" }
+WeightInitializers = { path = "lib/WeightInitializers" }

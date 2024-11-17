@@ -25,11 +25,6 @@ steps:
         command: |
           julia --color=yes --code-coverage=user --depwarn=yes --project=. -e '
             import Pkg;
-            dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/LuxCore", "lib/MLDataDevices", "lib/WeightInitializers", "lib/LuxLib",)
-              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
-            end
-            Pkg.develop(dev_pkgs);
             Pkg.Registry.update();
             Pkg.instantiate();
             Pkg.activate("test");
@@ -39,10 +34,10 @@ steps:
             end
             Pkg.develop(dev_pkgs);
             Pkg.instantiate();'
-            julia --color=yes --code-coverage=user --depwarn=yes --project=test -e '
-              import Pkg, Lux;
-              dir = dirname(pathof(Lux));
-              include(joinpath(dir, "../test/runtests.jl"))'
+          julia --color=yes --code-coverage=user --depwarn=yes --project=test -e '
+            import Pkg, Lux;
+            dir = dirname(pathof(Lux));
+            include(joinpath(dir, "../test/runtests.jl"))'
         env:
           BACKEND_GROUP: "CUDA"
           LUX_TEST_GROUP: "{{matrix.group}}"
@@ -79,11 +74,6 @@ steps:
         command: |
           julia --color=yes --code-coverage=user --depwarn=yes --project=. -e '
             import Pkg;
-            dev_pkgs = Pkg.PackageSpec[];
-            for pkg in ("lib/LuxCore", "lib/MLDataDevices", "lib/WeightInitializers", "lib/LuxLib",)
-              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
-            end
-            Pkg.develop(dev_pkgs);
             Pkg.Registry.update();
             Pkg.instantiate();
             Pkg.activate("test");
@@ -93,10 +83,10 @@ steps:
             end
             Pkg.develop(dev_pkgs);
             Pkg.instantiate();'
-            julia --color=yes --code-coverage=user --depwarn=yes --project=test -e '
-              import Pkg, Lux;
-              dir = dirname(pathof(Lux));
-              include(joinpath(dir, "../test/runtests.jl"))'
+          julia --color=yes --code-coverage=user --depwarn=yes --project=test -e '
+            import Pkg, Lux;
+            dir = dirname(pathof(Lux));
+            include(joinpath(dir, "../test/runtests.jl"))'
         env:
           BACKEND_GROUP: "AMDGPU"
         agents:
