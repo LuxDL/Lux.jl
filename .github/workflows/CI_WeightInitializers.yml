@@ -53,7 +53,7 @@ jobs:
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: lib/WeightInitializers/src,lib/WeightInitializers/ext
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -84,7 +84,7 @@ jobs:
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: lib/WeightInitializers/src,lib/WeightInitializers/ext
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
