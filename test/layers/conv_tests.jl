@@ -214,9 +214,8 @@ end
             scales = (nothing, 2, (2, 1))
 
             @testset for umode in modes, xsize in sizes, scale in scales
-                if !xor(isnothing(xsize), isnothing(scale))
-                    continue
-                end
+                xor(isnothing(xsize), isnothing(scale)) || continue
+
                 layer = Upsample(umode; size=xsize, scale=scale)
                 display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
@@ -242,9 +241,8 @@ end
             scales = (nothing, 2, (2, 1, 1), (2, 2, 1))
 
             @testset for umode in modes, xsize in sizes, scale in scales
-                if !xor(isnothing(xsize), isnothing(scale))
-                    continue
-                end
+                xor(isnothing(xsize), isnothing(scale)) || continue
+
                 layer = Upsample(umode; size=xsize, scale=scale)
                 display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
@@ -263,7 +261,7 @@ end
 
                 broken_backends = Any[AutoTracker()]
                 umode == :nearest || push!(broken_backends, AutoReverseDiff())
-                if VERSION < v"1.11-"
+                if VERSION < v"1.11-" && umode == :nearest
                     push!(broken_backends, AutoEnzyme())
                 end
                 @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,

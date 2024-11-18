@@ -82,7 +82,7 @@ using Hwloc: Hwloc
 using Static: static, False, True
 
 using ..LuxLib: DISABLE_LOOP_VECTORIZATION
-using ..Utils: is_extension_loaded, safe_minimum, unsafe_known
+using ..Utils: is_extension_loaded, safe_minimum, unsafe_known, within_enzyme_autodiff
 
 const CRC = ChainRulesCore
 
@@ -136,8 +136,7 @@ CRC.@non_differentiable explicit_blas_loaded()
     use_octavian() = False()
 else
     function use_octavian()
-        unsafe_known(is_extension_loaded(Val(:Enzyme))) && EnzymeCore.within_autodiff() &&
-            return False()
+        within_enzyme_autodiff() && return False()
         return is_extension_loaded(Val(:Octavian)) & is_x86_64() &
                (INTEL_HARDWARE | AMD_RYZEN_HARDWARE)
     end

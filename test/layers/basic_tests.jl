@@ -255,8 +255,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             d = Dense(2 => 2)
             display(d)
@@ -269,8 +268,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             d = Dense(2 => 3)
             display(d)
@@ -283,8 +281,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (5, 7, 11)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Two-streams zero sum" begin
@@ -299,8 +296,7 @@ end
 
             @test LuxCore.outputsize(layer, (x, y), rng) == (3,)
             @jet layer((x, y), ps, st)
-            @test_gradients(sumabs2first, layer, (x, y), ps, st; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, (x, y), ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Inner interactions" begin
@@ -311,8 +307,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 2, 1) |> aType
             layer = Bilinear(2 => 3)
@@ -321,8 +316,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end

@@ -284,6 +284,11 @@ within_autodiff(::AbstractArray{<:ForwardDiff.Dual}) = True()
 
 CRC.rrule(::typeof(within_autodiff), x) = True(), _ -> (∂∅, ∂∅)
 
+function within_enzyme_autodiff()
+    unsafe_known(is_extension_loaded(Val(:Enzyme))) && return EnzymeCore.within_autodiff()
+    return false
+end
+
 static_training_mode(::Nothing, args...) = within_autodiff_vararg(args...)
 
 function static_training_mode(
@@ -330,8 +335,7 @@ CRC.@non_differentiable static_training_mode_check(::Any...)
 else
     @inline function can_loopvec_args(args...)
         # Avoid loop vectorization inside Enzyme autodiff calls
-        unsafe_known(is_extension_loaded(Val(:Enzyme))) && EnzymeCore.within_autodiff() &&
-            return false
+        within_enzyme_autodiff() && return false
         return can_loopvec_args_check(is_extension_loaded(Val(:LoopVectorization)), args...)
     end
 end

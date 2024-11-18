@@ -96,15 +96,29 @@ function batchnorm_affine_normalize_internal!(
 end
 
 function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
-    if γ === nothing && β === nothing
-        @simd ivdep for J in eachindex(γ′, β′, μ, σ²)
-            @fastmath @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
-            @fastmath @inbounds β′[J] = -μ[J] * γ′[J]
+    if Utils.within_enzyme_autodiff()
+        if γ === nothing && β === nothing
+            for J in eachindex(γ′, β′, μ, σ²)
+                @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
+                @inbounds β′[J] = -μ[J] * γ′[J]
+            end
+        else
+            for J in eachindex(γ′, β′, γ, β, μ, σ²)
+                @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
+                @inbounds β′[J] = β[J] - μ[J] * γ′[J]
+            end
         end
     else
-        @simd ivdep for J in eachindex(γ′, β′, γ, β, μ, σ²)
-            @fastmath @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
-            @fastmath @inbounds β′[J] = β[J] - μ[J] * γ′[J]
+        if γ === nothing && β === nothing
+            @simd ivdep for J in eachindex(γ′, β′, μ, σ²)
+                @fastmath @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
+                @fastmath @inbounds β′[J] = -μ[J] * γ′[J]
+            end
+        else
+            @simd ivdep for J in eachindex(γ′, β′, γ, β, μ, σ²)
+                @fastmath @inbounds γ′[J] = γ[J] / sqrt(σ²[J] + ϵ)
+                @fastmath @inbounds β′[J] = β[J] - μ[J] * γ′[J]
+            end
         end
     end
 end
@@ -115,7 +129,11 @@ function apply_batchnorm_scale_bias_act_cpu!(
     if size(y, 1) == 1
         apply_batchnorm_scale_bias_act_2d_serial_cpu!(y, γ′, β′, x, σ)
     else
-        apply_batchnorm_scale_bias_act_3d_threaded_cpu!(y, γ′, β′, x, σ)
+        if Utils.within_enzyme_autodiff()
+            apply_batchnorm_scale_bias_act_3d_serial_cpu!(y, γ′, β′, x, σ)
+        else
+            apply_batchnorm_scale_bias_act_3d_threaded_cpu!(y, γ′, β′, x, σ)
+        end
     end
 end
 
@@ -160,7 +178,11 @@ function apply_batchnorm_scale_bias_cpu!(y::AbstractArray{yT, 3}, γ′::Abstrac
     if size(y, 1) == 1
         apply_batchnorm_scale_bias_2d_serial_cpu!(y, γ′, β′, x)
     else
-        apply_batchnorm_scale_bias_3d_threaded_cpu!(y, γ′, β′, x)
+        if Utils.within_enzyme_autodiff()
+            apply_batchnorm_scale_bias_3d_serial_cpu!(y, γ′, β′, x)
+        else
+            apply_batchnorm_scale_bias_3d_threaded_cpu!(y, γ′, β′, x)
+        end
     end
 end
 
