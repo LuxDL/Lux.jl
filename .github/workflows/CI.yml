@@ -88,7 +88,7 @@ jobs:
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/WeightInitializers/src,lib/WeightInitializers/ext,lib/LuxLib/src,lib/LuxLib/ext,lib/LuxTestUtils/src
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -127,7 +127,7 @@ jobs:
       - uses: julia-actions/julia-processcoverage@v1
         with:
           directories: src,ext,lib/LuxCore/src,lib/LuxCore/ext,lib/MLDataDevices/src,lib/MLDataDevices/ext,lib/WeightInitializers/src,lib/WeightInitializers/ext,lib/LuxLib/src,lib/LuxLib/ext,lib/LuxTestUtils/src
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
