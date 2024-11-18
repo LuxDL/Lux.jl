@@ -329,6 +329,9 @@ CRC.@non_differentiable static_training_mode_check(::Any...)
     @inline can_loopvec_args(args...) = false
 else
     @inline function can_loopvec_args(args...)
+        # Avoid loop vectorization inside Enzyme autodiff calls
+        unsafe_known(is_extension_loaded(Val(:Enzyme))) && EnzymeCore.within_autodiff() &&
+            return false
         return can_loopvec_args_check(is_extension_loaded(Val(:LoopVectorization)), args...)
     end
 end

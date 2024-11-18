@@ -65,7 +65,7 @@ function aos_to_soa(x::AbstractArray{<:ReverseDiff.TrackedReal, N}) where {N}
     y = length(x) > 1 ? reduce(vcat, x) : reduce(vcat, [x[1], x[1]])[1:1]
     return reshape(y, size(x))
 end
-aos_to_soa(x::AbstractArray{<:Tracker.TrackedReal,N}) where {N} = Tracker.collect(x)
+aos_to_soa(x::AbstractArray{<:Tracker.TrackedReal, N}) where {N} = Tracker.collect(x)
 
 function needs_gradient(y)
     leaves = Functors.fleaves(y)

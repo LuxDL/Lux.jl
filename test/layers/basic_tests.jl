@@ -299,8 +299,8 @@ end
 
             @test LuxCore.outputsize(layer, (x, y), rng) == (3,)
             @jet layer((x, y), ps, st)
-            @test_gradients(sumabs2first, layer, (x, y), ps, st; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, (x, y), ps, st; atol=1.0f-3,
+                rtol=1.0f-3, skip_backends=[AutoEnzyme()])
         end
 
         @testset "Inner interactions" begin

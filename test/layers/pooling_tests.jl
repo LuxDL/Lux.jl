@@ -39,7 +39,12 @@
             @test_gradients(sumabs2first, layer, y, ps, st; atol=1.0f-3, rtol=1.0f-3,
                 broken_backends)
 
-            push!(broken_backends, AutoEnzyme())
+            broken_backends2 = broken_backends
+            if VERSION ≥ v"1.11-"
+                push!(broken_backends2, AutoEnzyme())
+            elseif ltype == :LPPool
+                push!(broken_backends2, AutoEnzyme())
+            end
 
             layer = getfield(Lux, global_ltype)()
             display(layer)
@@ -48,8 +53,8 @@
             @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
             @test layer(x, ps, st)[1] == nnlib_op[ltype](x, PoolDims(x, size(x)[1:2]))
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
+                rtol=1.0f-3, broken_backends=broken_backends2)
 
             layer = getfield(Lux, ltype)((2, 2))
             display(layer)

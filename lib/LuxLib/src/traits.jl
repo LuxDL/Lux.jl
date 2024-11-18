@@ -77,11 +77,12 @@ end
 module System
 
 using ChainRulesCore: ChainRulesCore
+using EnzymeCore: EnzymeCore
 using Hwloc: Hwloc
 using Static: static, False, True
 
 using ..LuxLib: DISABLE_LOOP_VECTORIZATION
-using ..Utils: is_extension_loaded, safe_minimum
+using ..Utils: is_extension_loaded, safe_minimum, unsafe_known
 
 const CRC = ChainRulesCore
 
@@ -135,6 +136,8 @@ CRC.@non_differentiable explicit_blas_loaded()
     use_octavian() = False()
 else
     function use_octavian()
+        unsafe_known(is_extension_loaded(Val(:Enzyme))) && EnzymeCore.within_autodiff() &&
+            return False()
         return is_extension_loaded(Val(:Octavian)) & is_x86_64() &
                (INTEL_HARDWARE | AMD_RYZEN_HARDWARE)
     end

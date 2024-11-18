@@ -15,11 +15,8 @@
             x = randn(rng, Float32, 5, 1) |> aType
 
             @test d(x, psd, std)[1] == fd(x, ps, st)[1]
-
             @jet fd(x, ps, st)
-
-            __f = x -> sum(first(fd(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, fd, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "ComponentArray" begin
@@ -31,11 +28,8 @@
             x = randn(rng, Float32, 1, 2) |> aType
 
             @test m(x, ps, st)[1] == m(x, ps_c, st)[1]
-
             @jet m(x, ps_c, st)
-
-            __f = (x, ps) -> sum(first(m(x, ps, st)))
-            @test_gradients(__f, x, ps_c; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(sumabs2first, m, x, ps_c, st; atol=1.0f-3, rtol=1.0f-3,
                 enzyme_set_runtime_activity=true)
         end
 
@@ -82,10 +76,8 @@ end
         x = randn(rng, Float32, 5, 1) |> aType
 
         @test d(x, psd, std)[1] == fd(x, ps, st)[1]
-
         @jet fd(x, ps, st)
-        __f = (x, ps) -> sum(first(fd(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+        @test_gradients(sumabs2first, fd, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
             enzyme_set_runtime_activity=true)
 
         fd = Lux.Experimental.freeze(d, ())
