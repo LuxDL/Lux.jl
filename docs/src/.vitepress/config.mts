@@ -428,7 +428,7 @@ export default defineConfig({
       text: "Edit this page on GitHub",
     },
     socialLinks: [
-      { icon: "github", link: 'REPLACE_ME_DOCUMENTER_VITEPRESS' },
+      { icon: "github", link: "https://github.com/LuxDL/Lux.jl" },
       { icon: "twitter", link: "https://twitter.com/avikpal1410" },
       { icon: "slack", link: "https://julialang.org/slack/" },
     ],
