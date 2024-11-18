@@ -143,6 +143,7 @@ end
 zero(x) = Base.zero(x)
 zero(::Nothing) = nothing
 zero(x::Val) = x
+zero(t::Tuple{}) = t
 
 zero!!(x::Number) = Base.zero(x)
 function zero!!(x::AbstractArray{<:Number})
