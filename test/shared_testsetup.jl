@@ -37,7 +37,11 @@ function maybe_rewrite_to_crosscor(mode, model)
     return fmap(maybe_rewrite_to_crosscor, model)
 end
 
+sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
+sumsumfirst(layer, x, ps, st) = sum(sum, first(layer(x, ps, st)))
+
 export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_default_rng,
-       StableRNG, maybe_rewrite_to_crosscor, check_approx, allow_unstable
+       StableRNG, maybe_rewrite_to_crosscor, check_approx, allow_unstable,
+       sumabs2first, sumsumfirst
 
 end

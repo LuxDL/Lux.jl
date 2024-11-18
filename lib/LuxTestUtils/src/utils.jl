@@ -50,18 +50,28 @@ function partial_function(f::F, idx::Int, args...) where {F}
     return partial_f, args[idx]
 end
 
-function flatten_gradient_computable(f, nt::NamedTuple)
+function flatten_gradient_computable(f, nt)
     if needs_gradient(nt)
-        _f = (x) -> f(NamedTuple(x))
-        xxx = nt |> cpu_device() |> ComponentArray |> get_device(nt)
-        eltype(xxx) == Any &&
-            error("eltype of the flattened vector is `Any`. Check your inputs.")
-        return _f, xxx
+        x_flat, re = Optimisers.destructure(nt)
+        _f = x -> f(Functors.fmap(aos_to_soa, re(x)))
+        return _f, x_flat, re
     end
-    return nothing, nothing
+    return nothing, nothing, nothing
 end
 
-needs_gradient(y) = all(Fix{2}(isa, AbstractArray), Functors.fleaves(y))
+# XXX: We can use ArrayInterface after https://github.com/JuliaArrays/ArrayInterface.jl/pull/457
+aos_to_soa(x) = x
+function aos_to_soa(x::AbstractArray{<:ReverseDiff.TrackedReal, N}) where {N}
+    y = length(x) > 1 ? reduce(vcat, x) : reduce(vcat, [x[1], x[1]])[1:1]
+    return reshape(y, size(x))
+end
+aos_to_soa(x::AbstractArray{<:Tracker.TrackedReal,N}) where {N} = Tracker.collect(x)
+
+function needs_gradient(y)
+    leaves = Functors.fleaves(y)
+    isempty(leaves) && return false
+    return all(Fix{2}(isa, AbstractArray{<:AbstractFloat}), leaves)
+end
 
 __length(x) = 0
 __length(x::AbstractArray) = length(x)

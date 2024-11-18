@@ -1,10 +1,5 @@
 @testsetup module RecurrentLayersSetup
 
-using MLDataDevices
-
-MLDataDevices.Internal.get_device_type(::Function) = Nothing  # FIXME: upstream maybe?
-MLDataDevices.Internal.get_device_type(_) = Nothing  # FIXME: upstream maybe?
-
 function loss_loop(cell, x, p, st)
     (y, carry), st_ = cell(x, p, st)
     for _ in 1:3
@@ -287,6 +282,8 @@ end
 
 using LuxTestUtils, StableRNGs, Test, Lux
 
+sumabs2first(layer, x, ps, st) = sum(abs2, first(layer(x, ps, st)))
+
 function test_recurrence_layer(
         mode, aType, dev, ongpu, ordering, _cell, use_bias, train_state)
     rng = StableRNG(12345)
@@ -316,12 +313,10 @@ function test_recurrence_layer(
         @test length(y_) == 4
         @test all(x -> size(x) == (5, 2), y_)
 
-        __f = ps -> sum(abs2, first(rnn(x, ps, st)))
-        @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3,
+        @test_gradients(sumabs2first, rnn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
 
-        __f = ps -> sum(Base.Fix1(sum, abs2), first(rnn_seq(x, ps, st)))
-        @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3,
+        @test_gradients(sumabs2first, rnn_seq, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
     end
 
@@ -346,12 +341,10 @@ function test_recurrence_layer(
             @test all(x -> x[1] == vec(x[2]), zip(y_, y2_))
         end
 
-        __f = ps -> sum(abs2, first(rnn(x, ps, st)))
-        @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3,
+        @test_gradients(sumabs2first, rnn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
 
-        __f = ps -> sum(Base.Fix1(sum, abs2), first(rnn(x, ps, st)))
-        @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3,
+        @test_gradients(sumabs2first, rnn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
             skip_backends=[AutoEnzyme()], soft_fail=[AutoFiniteDiff()])
     end
 end
@@ -453,8 +446,7 @@ end
             @test size(y_[1]) == (4,)
             @test all(x -> size(x) == (5, 2), y_[1])
 
-            __f = (bi_rnn, x, ps, st) -> sum(Base.Fix1(sum, abs2), first(bi_rnn(x, ps, st)))
-            @test_gradients(__f, bi_rnn, x, ps, st; atol=1e-3, rtol=1e-3,
+            @test_gradients(sumabs2first, bi_rnn, x, ps, st; atol=1e-3, rtol=1e-3,
                 skip_backends=[AutoEnzyme()])
 
             __f = (bi_rnn_no_merge, x, ps, st) -> begin
@@ -488,9 +480,7 @@ end
                 @test size(y_[1]) == (4,)
                 @test all(x -> size(x) == (5, 2), y_[1])
 
-                __f = (bi_rnn, x, ps, st) -> sum(
-                    Base.Fix1(sum, abs2), first(bi_rnn(x, ps, st)))
-                @test_gradients(__f, bi_rnn, x, ps, st; atol=1e-3,
+                @test_gradients(sumabs2first, bi_rnn, x, ps, st; atol=1e-3,
                     rtol=1e-3, skip_backends=[AutoEnzyme()])
 
                 __f = (bi_rnn_no_merge, x, ps, st) -> begin

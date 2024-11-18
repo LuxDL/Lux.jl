@@ -1,7 +1,6 @@
 # Zygote.jl
 function gradient(f::F, ::AutoZygote, args...) where {F}
-    return map((xᵢ, dxᵢ) -> dxᵢ === nothing || xᵢ isa Number ? CRC.NoTangent() : dxᵢ,
-        args, Zygote.gradient(f, args...))
+    return gradient(f, only ∘ Zygote.gradient, args...)
 end
 
 # FiniteDiff.jl
@@ -35,22 +34,7 @@ end
 
 # Tracker.jl
 function gradient(f::F, ::AutoTracker, args...) where {F}
-    counter = 0
-    tracked_args = map(args) do x
-        if needs_gradient(x)
-            counter += 1
-            return Functors.fmap(Tracker.param, x; exclude=_tracker_leaf)
-        end
-        return x
-    end
-
-    @assert counter>0 "No tracked arguments found in `gradient(f, AutoTracker, args...)`"
-    Tracker.back!(f(tracked_args...))
-
-    return Tuple(map(tracked_args) do x
-        needs_gradient(x) && return Functors.fmap(__tracker_grad, x; exclude=_tracker_leaf)
-        return CRC.NoTangent()
-    end)
+    return gradient(f, Tracker.data ∘ only ∘ Tracker.gradient, args...)
 end
 
 _tracker_leaf(x) = Functors.isleaf(x)
@@ -73,11 +57,11 @@ function gradient(f::F, grad_fn::GFN, args...) where {F, GFN <: Function}
     gs = Vector{Any}(undef, length(args))
     for i in 1:length(args)
         _f, x = partial_function(f, i, args...)
-        if x isa AbstractArray
+        if x isa AbstractArray{<:AbstractFloat}
             gs[i] = grad_fn(_f, x)
-        elseif x isa NamedTuple
-            __f, x_flat = flatten_gradient_computable(_f, x)
-            gs[i] = x_flat === nothing ? CRC.NoTangent() : NamedTuple(grad_fn(__f, x_flat))
+        elseif x isa NamedTuple || x isa Tuple
+            __f, x_flat, re = flatten_gradient_computable(_f, x)
+            gs[i] = x_flat === nothing ? CRC.NoTangent() : re(grad_fn(__f, x_flat))
         else
             gs[i] = CRC.NoTangent()
         end
