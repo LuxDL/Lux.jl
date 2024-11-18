@@ -8,6 +8,7 @@ using ArrayInterface: ArrayInterface
 using ChainRulesCore: ChainRulesCore, NoTangent, @thunk
 using Compat: @compat
 using ConcreteStructs: @concrete
+using EnzymeCore: EnzymeRules
 using FastClosures: @closure
 using Functors: Functors, fmap
 using GPUArraysCore: @allowscalar

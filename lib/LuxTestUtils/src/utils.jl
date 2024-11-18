@@ -53,19 +53,11 @@ end
 function flatten_gradient_computable(f, nt)
     if needs_gradient(nt)
         x_flat, re = Optimisers.destructure(nt)
-        _f = x -> f(Functors.fmap(aos_to_soa, re(x)))
+        _f = x -> f(Functors.fmap(ArrayInterface.aos_to_soa, re(x)))
         return _f, x_flat, re
     end
     return nothing, nothing, nothing
 end
-
-# XXX: We can use ArrayInterface after https://github.com/JuliaArrays/ArrayInterface.jl/pull/457
-aos_to_soa(x) = x
-function aos_to_soa(x::AbstractArray{<:ReverseDiff.TrackedReal, N}) where {N}
-    y = length(x) > 1 ? reduce(vcat, x) : reduce(vcat, [x[1], x[1]])[1:1]
-    return reshape(y, size(x))
-end
-aos_to_soa(x::AbstractArray{<:Tracker.TrackedReal, N}) where {N} = Tracker.collect(x)
 
 function needs_gradient(y)
     leaves = Functors.fleaves(y)

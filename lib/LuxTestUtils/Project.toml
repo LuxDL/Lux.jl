@@ -26,11 +26,11 @@ MLDataDevices = {path = "../MLDataDevices"}
 
 [compat]
 ADTypes = "1.10"
-ArrayInterface = "7.9"
+ArrayInterface = "7.17.1"
 ChainRulesCore = "1.24.0"
 ComponentArrays = "0.15.18"
 DispatchDoctor = "0.4.12"
-Enzyme = "0.13.14"
+Enzyme = "0.13.15"
 FiniteDiff = "2.23.1"
 ForwardDiff = "0.10.36"
 Functors = "0.5"

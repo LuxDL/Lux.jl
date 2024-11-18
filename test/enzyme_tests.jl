@@ -10,8 +10,11 @@ generic_loss_function(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))
 function compute_enzyme_gradient(model, x, ps, st)
     dx = Enzyme.make_zero(x)
     dps = Enzyme.make_zero(ps)
-    Enzyme.autodiff(Reverse, generic_loss_function, Active, Const(model),
-        Duplicated(x, dx), Duplicated(ps, dps), Const(st))
+    Enzyme.autodiff(
+        Enzyme.set_runtime_activity(Reverse),
+        generic_loss_function, Active, Const(model),
+        Duplicated(x, dx), Duplicated(ps, dps), Const(st)
+    )
     return dx, dps
 end
 
@@ -40,7 +43,8 @@ const MODELS_LIST  = [
     (Chain(Conv((3, 3), 2 => 3, gelu), Conv((3, 3), 3 => 1, gelu)), rand(Float32, 5, 5, 2, 2)),
     (Chain(Conv((4, 4), 2 => 2; pad=SamePad()), MeanPool((5, 5); pad=SamePad())), rand(Float32, 5, 5, 2, 2)),
     (Chain(Conv((3, 3), 2 => 3, relu; pad=SamePad()), MaxPool((2, 2))), rand(Float32, 5, 5, 2, 2)),
-    (Maxout(() -> Dense(5 => 4, tanh), 3), randn(Float32, 5, 2)),
+    # XXX: https://github.com/EnzymeAD/Enzyme.jl/issues/2105
+    # (Maxout(() -> Dense(5 => 4, tanh), 3), randn(Float32, 5, 2)),
     # XXX: https://github.com/LuxDL/Lux.jl/issues/1024
     # (Bilinear((2, 2) => 3), randn(Float32, 2, 3)),
     (SkipConnection(Dense(2 => 2), vcat), randn(Float32, 2, 3)),
@@ -83,6 +87,8 @@ end
         ongpu && continue
 
         @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
+            display(model)
+
             ps, st = Lux.setup(rng, model) |> dev
             x = x |> aType
 
@@ -107,6 +113,8 @@ end
         ongpu && continue
 
         @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
+            display(model)
+
             ps, st = Lux.setup(rng, model)
             ps = ComponentArray(ps)
             st = st |> dev
