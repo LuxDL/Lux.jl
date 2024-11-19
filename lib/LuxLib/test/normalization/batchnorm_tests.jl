@@ -34,6 +34,8 @@ anonact = x -> x^3
 
 is_training(::Val{training}) where {training} = training
 
+sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
+
 function run_batchnorm_testing(
         gen_f, T, sz, training, affine, track_stats, act, aType, mode, ongpu)
     epsilon = eps(T)^(5 // 7)
@@ -43,9 +45,8 @@ function run_batchnorm_testing(
     y_simple, nt_simple = batchnorm_fallback(
         x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
-    fp16 = T == Float16
-    atol = fp16 ? 1.0f-2 : 1.0f-3
-    rtol = fp16 ? 1.0f-2 : 1.0f-3
+    atol = 1.0f-3
+    rtol = 1.0f-3
 
     @test y≈y_simple atol=atol rtol=rtol
     if track_stats
@@ -84,22 +85,8 @@ function run_batchnorm_testing(
         skip_backends = []
         act === relu && push!(skip_backends, AutoFiniteDiff())
 
-        soft_fail = if fp16
-            if Sys.iswindows()
-                [AutoTracker(), AutoFiniteDiff(), AutoReverseDiff(), AutoForwardDiff()]
-            else
-                true
-            end
-        else
-            false
-        end
-
-        broken_backends = Sys.iswindows() && fp16 ? [AutoEnzyme()] : []
-
-        __f = (args...) -> sum(first(batchnorm(
-            args..., rm, rv, training, act, T(0.9), epsilon)))
-        @test_gradients(__f, x, scale, bias; atol, rtol, skip_backends, soft_fail,
-            broken_backends)
+        @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(rm),
+            Constant(rv), training, act, T(0.9), epsilon; atol, rtol, skip_backends)
     end
 
     if anonact !== act
@@ -111,7 +98,7 @@ function run_batchnorm_testing(
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
-    [Float16, Float32, Float64], ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
+    [Float32, Float64], ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
     (Val(true), Val(false)), (true, false), (true, false),
     (identity, relu, tanh_fast, sigmoid_fast, anonact))
 

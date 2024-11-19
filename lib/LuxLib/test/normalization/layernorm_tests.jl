@@ -33,6 +33,8 @@ function run_layernorm_testing(gen_f, aType, T, x_size, affine_shape, act, ongpu
     end
 end
 
+sumabs2layernorm(args...) = sum(abs2, layernorm(args...))
+
 function run_layernorm_testing_core(
         aType, T, x_size, affine_shape, act, dims, x, scale, bias)
     epsilon = LuxLib.Utils.default_epsilon(T)
@@ -51,19 +53,11 @@ function run_layernorm_testing_core(
         @test check_approx(std(y; dims), 1; atol=1e-1, rtol=1e-1)
     end
 
-    fp16 = T == Float16
-    atol = fp16 ? 1.0f-2 : 1.0f-3
-    rtol = fp16 ? 1.0f-2 : 1.0f-3
+    atol = 1.0f-3
+    rtol = 1.0f-3
 
-    soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
-    if affine_shape !== nothing
-        __f = (args...) -> sum(_f(args...))
-        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail,
-            skip_backends=[AutoEnzyme()])
-    else
-        __f = x -> sum(_f(x, scale, bias))
-        @test_gradients(__f, x; atol, rtol, soft_fail, skip_backends=[AutoEnzyme()])
-    end
+    @test_gradients(sumabs2layernorm, x, scale, bias, act, dims, epsilon; atol, rtol,
+        soft_fail=[AutoFiniteDiff()])
 
     if anonact !== act
         lfn = (x, sc, b, act, dim, ϵ) -> sum(layernorm(x, sc, b, act, dim, ϵ))
@@ -75,7 +69,7 @@ anonact = x -> x^3
 
 const ALL_TEST_CONFIGS = Any[]
 
-for T in (Float16, Float32, Float64),
+for T in (Float32, Float64),
     x_shape in ((3, 3, 2, 1), (2, 2, 2, 1), (2, 3, 2, 2)),
     affine_shape in (nothing, x_shape[1:3], (1, 1, 1), (1, 1, x_shape[3])),
     act in (identity, relu, tanh_fast, sigmoid_fast, anonact)

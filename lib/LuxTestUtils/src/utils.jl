@@ -3,6 +3,7 @@ struct Fix{N, F, T} <: Function
     f::F
     x::T
 
+    Fix{N}(f::F, x::Constant) where {N, F} = Fix{N}(f, x.val)
     function Fix{N}(f::F, x) where {N, F}
         if N isa Int && N < 1
             throw(ArgumentError("expected `N` in `Fix{N}` to be integer greater than 0, \
@@ -59,6 +60,7 @@ function flatten_gradient_computable(f, nt)
     return nothing, nothing, nothing
 end
 
+needs_gradient(::Constant) = false
 function needs_gradient(y)
     leaves = Functors.fleaves(y)
     isempty(leaves) && return false

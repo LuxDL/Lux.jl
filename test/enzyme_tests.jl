@@ -67,7 +67,7 @@ const MODELS_LIST  = Any[
 
 if VERSION < v"1.11-"
     # Only fails on CI
-    push!(
+    append!(
         MODELS_LIST, Any[
             (Chain(Dense(2, 4), BatchNorm(4)), randn(Float32, 2, 3)),
             (Chain(Dense(2, 4), BatchNorm(4, gelu)), randn(Float32, 2, 3)),

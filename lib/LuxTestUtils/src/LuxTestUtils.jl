@@ -44,12 +44,14 @@ catch err
 end
 
 include("test_softfail.jl")
-include("utils.jl")
 include("autodiff.jl")
 include("jet.jl")
 
+include("utils.jl")
+
 export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
 export test_gradients, @test_gradients
+export Constant
 export @jet, jet_target_modules!
 export @test_softfail
 

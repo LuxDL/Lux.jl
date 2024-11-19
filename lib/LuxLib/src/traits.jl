@@ -82,7 +82,7 @@ using Hwloc: Hwloc
 using Static: static, False, True
 
 using ..LuxLib: DISABLE_LOOP_VECTORIZATION
-using ..Utils: is_extension_loaded, safe_minimum, unsafe_known, within_enzyme_autodiff
+using ..Utils: is_extension_loaded, safe_minimum, within_enzyme_autodiff
 
 const CRC = ChainRulesCore
 
