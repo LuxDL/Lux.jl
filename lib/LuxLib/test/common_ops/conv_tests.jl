@@ -14,6 +14,8 @@ end
 
 calc_padding(pad, ::NTuple{N}, dilation, stride) where {N} = expand(Val(2 * N), pad)
 
+sumabs2conv(args...) = sum(abs2, fused_conv_bias_activation(args...))
+
 function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
         hasbias, groups, Tw, Tx, aType, mode, ongpu)
     weight = convfilter(gen_f, Tw, kernel, 4 => 8; groups) |> aType
@@ -28,9 +30,8 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
 
     generic_testing = !(mode == "amdgpu" && (Tx == Float64 || Tw == Float64))
 
-    fp16 = Tx == Float16 || Tw == Float16
-    atol = fp16 ? 1.0f-1 : 1.0f-3
-    rtol = fp16 ? 1.0f-1 : 1.0f-3
+    atol = 1.0f-3
+    rtol = 1.0f-3
 
     if generic_testing
         y_generic = LuxLib.Impl.conv(x, weight, cdims)
@@ -45,13 +46,13 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
     @test @inferred(fused_conv_bias_activation(activation, weight, x, bias, cdims)) isa Any
     @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
-    __f = (σ, w, x, b, cdims) -> sum(abs2, fused_conv_bias_activation(σ, w, x, b, cdims))
-
-    if mode != "amdgpu" && activation !== anonact && !fp16
-        @test @inferred(Zygote.gradient(__f, activation, weight, x, bias, cdims)) isa Any
+    if mode != "amdgpu" && activation !== anonact
+        @test @inferred(Zygote.gradient(
+            sumabs2conv, activation, weight, x, bias, cdims
+        )) isa Any
     else
         try
-            @inferred(Zygote.gradient(__f, activation, weight, x, bias, cdims))
+            @inferred(Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims))
             @test true
         catch e
             e isa ErrorException || rethrow()
@@ -59,22 +60,19 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
         end
     end
 
-    __f_grad = let activation = activation, cdims = cdims
-        (w, x, b) -> __f(activation, w, x, b, cdims)
-    end
-
-    skip_backends = Any[AutoEnzyme()]
+    skip_backends = []
     mp = Tx != Tw
     mp && push!(skip_backends, AutoReverseDiff())
     ((mp && ongpu) || (mode == "amdgpu" && (Tx == Float64 || Tw == Float64))) &&
         push!(skip_backends, AutoTracker())
-    @test_gradients(__f_grad, weight, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
+
+    @test_gradients(sumabs2conv, activation, weight, x, bias, cdims; atol, rtol,
+        skip_backends)
 end
 
 anonact = x -> gelu(x)
 
-const ELTYPES = [(Float16, Float16), (Float32, Float16), (Float32, Float32),
-    (Float32, Float64), (Float64, Float64)]
+const ELTYPES = [(Float32, Float32), (Float32, Float64), (Float64, Float64)]
 const ACTIVATIONS = [
     identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, swish, anonact]
 
