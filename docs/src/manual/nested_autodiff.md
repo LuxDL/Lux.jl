@@ -9,7 +9,13 @@ In this manual, we will explore how to use automatic differentiation (AD) inside
 or loss functions and have Lux automatically switch the AD backend with a faster one when
 needed.
 
-!!! tip
+!!! tip "Reactant Support"
+
+    Reactant + Lux natively supports Nested AD (even higher dimensions). If you are using
+    Reactant, please see the [Nested AD with Reactant](@ref nested_autodiff_reactant)
+    manual.
+
+!!! tip "Disabling Nested AD Switching"
 
     Don't wan't Lux to do this switching for you? You can disable it by setting the
     `automatic_nested_ad_switching` Preference to `false`.
