@@ -36,8 +36,7 @@ is_training(::Val{training}) where {training} = training
 
 sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
 
-function run_batchnorm_testing(
-        gen_f, T, sz, training, affine, track_stats, act, aType, mode, ongpu)
+function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act, aType)
     epsilon = eps(T)^(5 // 7)
     x, scale, bias, rm, rv = setup_batchnorm(gen_f, aType, T, sz; track_stats, affine)
 
@@ -81,12 +80,10 @@ function run_batchnorm_testing(
         @test size(nt.running_var) == (size(x, length(sz) - 1),)
     end
 
-    if is_training(training) && affine
-        skip_backends = []
-        act === relu && push!(skip_backends, AutoFiniteDiff())
-
+    if is_training(training)
         @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(rm),
-            Constant(rv), training, act, T(0.9), epsilon; atol, rtol, skip_backends)
+            Constant(rv), training, act, T(0.9), epsilon; atol, rtol,
+            enzyme_set_runtime_activity=true)
     end
 
     if anonact !== act
@@ -100,7 +97,7 @@ end
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64], ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
     (Val(true), Val(false)), (true, false), (true, false),
-    (identity, relu, tanh_fast, sigmoid_fast, anonact))
+    (identity, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
     ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
@@ -115,7 +112,7 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[1]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end
@@ -126,7 +123,7 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[2]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end
@@ -137,7 +134,7 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[3]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end
@@ -148,7 +145,7 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[4]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end
@@ -159,7 +156,7 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[5]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end

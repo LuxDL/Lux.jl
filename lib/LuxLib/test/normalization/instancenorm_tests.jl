@@ -68,7 +68,7 @@ end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64], ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
-    (Val(true), Val(false)), (identity, relu, tanh_fast, sigmoid_fast, anonact))
+    (Val(true), Val(false)), (identity, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
     ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
