@@ -16,7 +16,6 @@ const EXTRA_PKGS = String[]
 if !isempty(EXTRA_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS=EXTRA_PKGS
     Pkg.add(EXTRA_PKGS)
-    Pkg.update()
     Base.retry_load_extensions()
     Pkg.instantiate()
 end
