@@ -15,7 +15,7 @@ if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
     end
 end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU"))
+    push!(EXTRA_PKGS, PackageSpec(; name="AMDGPU", version=v"1.0.4"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
     push!(EXTRA_PKGS, PackageSpec(; name="oneAPI"))
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
