@@ -75,8 +75,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "named layers" begin
@@ -87,8 +86,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "connection is called once" begin
@@ -336,8 +334,7 @@ end
 
             @test layer(x, ps, st)[1] == x
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "simple alternatives" begin
@@ -353,9 +350,7 @@ end
 
                 @test layer(x, ps, st)[1] == 2 .* x
                 @jet layer(x, ps, st)
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
-                    rtol=1.0f-3,
-                    broken_backends=[AutoEnzyme()])
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -383,8 +378,7 @@ end
                   sum(Lux.parameterlength.(values(layer.layers)))
             @test size(layer(x, ps, st)[1]) == (4, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end

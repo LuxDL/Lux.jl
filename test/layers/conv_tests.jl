@@ -284,8 +284,7 @@ end
         @test y isa aType{Float32, 3}
         @test size(y) == (6, 3, 3)
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1e-3, rtol=1e-3,
-            broken_backends=[AutoEnzyme()])
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1e-3, rtol=1e-3)
 
         layer = PixelShuffle(3)
         display(layer)

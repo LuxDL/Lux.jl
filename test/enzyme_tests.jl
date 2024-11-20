@@ -43,8 +43,7 @@ const MODELS_LIST  = Any[
     (Chain(Conv((3, 3), 2 => 3, gelu), Conv((3, 3), 3 => 1, gelu)), rand(Float32, 5, 5, 2, 2)),
     (Chain(Conv((4, 4), 2 => 2; pad=SamePad()), MeanPool((5, 5); pad=SamePad())), rand(Float32, 5, 5, 2, 2)),
     (Chain(Conv((3, 3), 2 => 3, relu; pad=SamePad()), MaxPool((2, 2))), rand(Float32, 5, 5, 2, 2)),
-    # XXX: https://github.com/EnzymeAD/Enzyme.jl/issues/2105
-    # (Maxout(() -> Dense(5 => 4, tanh), 3), randn(Float32, 5, 2)),
+    (Maxout(() -> Dense(5 => 4, tanh), 3), randn(Float32, 5, 2)),
     (Bilinear((2, 2) => 3), randn(Float32, 2, 3)),
     (SkipConnection(Dense(2 => 2), vcat), randn(Float32, 2, 3)),
     (ConvTranspose((3, 3), 3 => 2; stride=2), rand(Float32, 5, 5, 3, 1)),
