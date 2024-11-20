@@ -38,7 +38,7 @@ try
     using Enzyme: Enzyme
     __ftest(x) = x
     Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
-    global ENZYME_TESTING_ENABLED = true
+    global ENZYME_TESTING_ENABLED = Sys.islinux()
 catch err
     global ENZYME_TESTING_ENABLED = false
 end
