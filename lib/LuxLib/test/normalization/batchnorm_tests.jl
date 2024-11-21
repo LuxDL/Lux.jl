@@ -100,7 +100,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
     (identity, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
+    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)))
 
 export setup_batchnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_batchnorm_testing
 
@@ -121,39 +121,6 @@ end
     SharedTestSetup, BatchNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[2]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType)
-        end
-    end
-end
-
-@testitem "Batch Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[3]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType)
-        end
-    end
-end
-
-@testitem "Batch Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[4]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType)
-        end
-    end
-end
-
-@testitem "Batch Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[5]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
                 affine, track_stats, act, aType)

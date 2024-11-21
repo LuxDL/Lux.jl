@@ -78,7 +78,7 @@ for T in (Float32, Float64),
 end
 
 const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
+    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)))
 
 export ALL_TEST_CONFIGS, TEST_BLOCKS, run_layernorm_testing
 
@@ -99,39 +99,6 @@ end
     SharedTestSetup, LayerNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[2]
-            !fp64 && T == Float64 && continue
-            run_layernorm_testing(
-                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
-        end
-    end
-end
-
-@testitem "Layer Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[3]
-            !fp64 && T == Float64 && continue
-            run_layernorm_testing(
-                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
-        end
-    end
-end
-
-@testitem "Layer Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[4]
-            !fp64 && T == Float64 && continue
-            run_layernorm_testing(
-                generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)
-        end
-    end
-end
-
-@testitem "Layer Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, LayerNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $x_shape, $act" for (T, x_shape, affine_shape, act) in TEST_BLOCKS[5]
             !fp64 && T == Float64 && continue
             run_layernorm_testing(
                 generate_fixed_array, aType, T, x_shape, affine_shape, act, ongpu, mode)

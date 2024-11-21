@@ -152,10 +152,9 @@ end
 
             @test @inferred(Zygote.gradient(celoss, ŷ, y)) isa Any
 
-            # Failure only on CI
-            __f = Base.Fix2(celoss, y)
-            @test_gradients(__f, ŷ; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
+            # XXX: Failure only on CI
+            @test_gradients(Base.Fix2(celoss, y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+                # rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
         end
 
         @testset "Logit CrossEntropyLoss" begin
@@ -177,10 +176,9 @@ end
 
             @test @inferred(Zygote.gradient(logitceloss, logŷ, y)) isa Any
 
-            # Failure only on CI
-            __f = Base.Fix2(logitceloss, y)
-            @test_gradients(__f, logŷ; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
+            # XXX: Failure only on CI
+            @test_gradients(Base.Fix2(logitceloss, y), logŷ; atol=1.0f-3, rtol=1.0f-3)
+                # rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
         end
 
         logŷ, y = randn(3) |> aType, rand(3) |> aType
@@ -307,10 +305,9 @@ end
             @jet KLDivergenceLoss()(ŷ, y)
             @test @inferred(Zygote.gradient(KLDivergenceLoss(), ŷ, y)) isa Any
 
-            # Failure only on CI
-            __f = Base.Fix2(KLDivergenceLoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
+            # XXX: Failure only on CI
+            @test_gradients(Base.Fix2(KLDivergenceLoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+                # rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
         end
 
         @testset "HingeLoss" begin

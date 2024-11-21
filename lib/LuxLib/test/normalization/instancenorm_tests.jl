@@ -71,7 +71,7 @@ const ALL_TEST_CONFIGS = Iterators.product(
     (Val(true), Val(false)), (identity, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
+    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)))
 
 export setup_instancenorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_instancenorm_testing
 
@@ -91,36 +91,6 @@ end
     SharedTestSetup, InstanceNormSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[2]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[3]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[4]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[5]
             !fp64 && T == Float64 && continue
             run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
         end
