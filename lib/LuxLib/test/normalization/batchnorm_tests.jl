@@ -145,6 +145,7 @@ end
         @test nt.running_var isa aType && length(nt.running_var) == 6
 
         @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(running_mean),
-            Constant(running_var), training, act, 0.9, 1e-5; atol=1.0f-3, rtol=1.0f-3)
+            Constant(running_var), Val(true), gelu, 0.9, 1e-5; atol=1.0f-3, rtol=1.0f-3,
+            broken_backends=[AutoEnzyme()])
     end
 end

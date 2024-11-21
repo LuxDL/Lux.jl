@@ -61,7 +61,12 @@ function batched_matmul_cpu!(z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
         batched_matmul_loopvec_impl!(z, x, y)
         return
     end
-    NNlib.batched_mul!(z, x, y)
+    if Utils.within_enzyme_autodiff()
+        # XXX: https://github.com/LuxDL/Lux.jl/issues/1024
+        fallback_batched_matmul!(z, LoopedArrayOp(), x, y)
+    else
+        NNlib.batched_mul!(z, x, y)
+    end
     return
 end
 
@@ -78,7 +83,7 @@ end
 function fallback_batched_matmul!(
         z::AbstractArray{zT, 3}, opmode, x::AbstractArray{xT, 3},
         y::AbstractArray{yT, 3}) where {zT, xT, yT}
-    @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
+    @warn "Using fallback Batched Matrix Multiply routine for $(opmode) with A: size = \
            $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
            slow." maxlog=1
 

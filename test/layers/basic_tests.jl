@@ -242,8 +242,7 @@ end
 @testitem "Bilinear" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
-    # XXX: https://github.com/LuxDL/Lux.jl/issues/1024
-    skip_backends = [AutoEnzyme()]
+    skip_backends = VERSION < v"1.11-" ? [AutoEnzyme()] : []
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "SkipConnection recombinator" begin
