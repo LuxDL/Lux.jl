@@ -143,9 +143,7 @@ end
         @test nt.running_mean isa aType && length(nt.running_mean) == 6
         @test nt.running_var isa aType && length(nt.running_var) == 6
 
-        @test_gradients(
-            sumabs2first, batchnorm, x, scale, bias, Constant(running_mean),
-            Constant(running_var), training, act, T(0.9), T(1e-5); atol=1.0f-3, rtol=1.0f-3
-        )
+        @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(running_mean),
+            Constant(running_var), training, act, T(0.9), T(1e-5); atol=1.0f-3, rtol=1.0f-3)
     end
 end
