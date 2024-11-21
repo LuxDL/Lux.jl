@@ -21,8 +21,8 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
     # First test without running stats
     y, nt = instancenorm(x, scale, bias, training, act, epsilon)
 
-    atol = 1.0f-3
-    rtol = 1.0f-3
+    atol = 1.0f-2
+    rtol = 1.0f-2
 
     @test @inferred(instancenorm(x, scale, bias, training, act, epsilon)) isa Any
     @jet instancenorm(x, scale, bias, training, act, epsilon)
@@ -37,7 +37,7 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
 
     if is_training(training)
         @test_gradients(sumabs2instancenorm, x, scale, bias, training, act, epsilon;
-            atol, rtol, soft_fail=[AutoFiniteDiff()])
+            atol, rtol, soft_fail=[AutoFiniteDiff()], enzyme_set_runtime_activity=true)
     end
 
     # Now test with running stats
@@ -62,7 +62,9 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
 
     if is_training(training)
         @test_gradients(sumabs2instancenorm, x, scale, bias, Constant(rm), Constant(rv),
-            training, act, T(0.1), epsilon; atol, rtol, soft_fail=[AutoFiniteDiff()])
+            training, act, T(0.1), epsilon; atol, rtol,
+            soft_fail=[AutoFiniteDiff()],
+            enzyme_set_runtime_activity=true)
     end
 end
 

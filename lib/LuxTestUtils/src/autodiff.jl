@@ -204,7 +204,8 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
                     end
                 catch err
                     err isa InterruptException && rethrow()
-                    Error(:test_error, local_test_expr, err, Base.current_exceptions(), source)
+                    Error(:test_error, local_test_expr, err,
+                        Base.current_exceptions(), source)
                 end
             end
             Test.record(get_testset(), result)
