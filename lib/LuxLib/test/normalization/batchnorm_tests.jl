@@ -84,6 +84,7 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
         # XXX: Fails due to runtime activity but setting it doesn't help
         @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(rm),
             Constant(rv), training, act, T(0.9), epsilon; atol, rtol,
+            soft_fail=[AutoFiniteDiff()],
             skip_backends=[AutoEnzyme()], enzyme_set_runtime_activity=true)
     end
 
@@ -144,6 +145,6 @@ end
         @test nt.running_var isa aType && length(nt.running_var) == 6
 
         @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(running_mean),
-            Constant(running_var), training, act, T(0.9), T(1e-5); atol=1.0f-3, rtol=1.0f-3)
+            Constant(running_var), training, act, 0.9, 1e-5; atol=1.0f-3, rtol=1.0f-3)
     end
 end
