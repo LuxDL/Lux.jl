@@ -42,28 +42,21 @@
         x_ = m(x, ps, st_)[1] |> CPUDevice()
         @test x_[1]≈(1 .- 0.3) / sqrt(1.3) atol=1.0e-5
 
-        @jet m(x, ps, st)
-        __f = (x, ps) -> sum(first(m(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-            skip_backends=[AutoFiniteDiff()])
+        broken_backends = VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
 
-        for affine in (true, false)
+        @jet m(x, ps, st)
+        @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3,
+            rtol=1.0f-3, skip_backends=[AutoFiniteDiff()], broken_backends)
+
+        @testset for affine in (true, false)
             m = BatchNorm(2; affine, track_stats=false)
             x = [1.0f0 3.0f0 5.0f0; 2.0f0 4.0f0 6.0f0] |> aType
             display(m)
             ps, st = Lux.setup(rng, m) |> dev
 
             @jet m(x, ps, Lux.testmode(st))
-
-            if affine
-                __f = (x, ps) -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            else
-                __f = x -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            end
+            @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3,
+                rtol=1.0f-3, skip_backends=[AutoFiniteDiff()], broken_backends)
 
             # with activation function
             m = BatchNorm(2, sigmoid; affine)
@@ -76,16 +69,8 @@
             @test y ≈
                   sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon))
             @jet m(x, ps, Lux.testmode(st))
-
-            if affine
-                __f = (x, ps) -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            else
-                __f = x -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            end
+            @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3,
+                rtol=1.0f-3, skip_backends=[AutoFiniteDiff()], broken_backends)
 
             m = BatchNorm(32; affine)
             x = randn(Float32, 416, 416, 32, 1) |> aType
@@ -116,10 +101,8 @@ end
         @test ps.scale == [1, 1, 1, 1] |> aType # init_scale(32)
 
         @jet m(x, ps, st)
-        __f = let m = m, x = x, st = st
-            ps -> sum(first(m(x, ps, st)))
-        end
-        @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3, enzyme_set_runtime_activity=true)
+        @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+            enzyme_set_runtime_activity=true)
 
         @testset for affine in (true, false)
             m = GroupNorm(2, 2; affine)
@@ -128,16 +111,8 @@ end
             ps, st = Lux.setup(rng, m) |> dev
 
             @jet m(x, ps, Lux.testmode(st))
-
-            if affine
-                __f = (x, ps) -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            else
-                __f = x -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            end
+            @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoFiniteDiff()])
 
             # with activation function
             m = GroupNorm(2, 2, sigmoid; affine)
@@ -146,16 +121,8 @@ end
             ps, st = Lux.setup(rng, m) |> dev
             y, st_ = m(x, ps, Lux.testmode(st))
             @jet m(x, ps, Lux.testmode(st))
-
-            if affine
-                __f = (x, ps) -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            else
-                __f = x -> sum(first(m(x, ps, st)))
-                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                    skip_backends=[AutoFiniteDiff()])
-            end
+            @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends=[AutoFiniteDiff()])
 
             m = GroupNorm(32, 16; affine)
             x = randn(rng, Float32, 416, 416, 32, 1) |> aType
@@ -187,6 +154,8 @@ end
             @jet __f(z)
         end
 
+        broken_backends = VERSION ≥ v"1.11-" ? Any[AutoEnzyme()] : []
+
         @testset "Conv" begin
             c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
@@ -196,8 +165,8 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = ps -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             wn = WeightNorm(c, (:weight,))
             display(wn)
@@ -205,8 +174,8 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             wn = WeightNorm(c, (:weight, :bias), (2, 2))
             display(wn)
@@ -214,8 +183,8 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             wn = WeightNorm(c, (:weight,), (2,))
             display(wn)
@@ -223,8 +192,8 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
         end
 
         @testset "Dense" begin
@@ -236,8 +205,8 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = ps -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             wn = WeightNorm(d, (:weight,))
             display(wn)
@@ -245,8 +214,8 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             wn = WeightNorm(d, (:weight, :bias), (2, 2))
             display(wn)
@@ -254,8 +223,8 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             wn = WeightNorm(d, (:weight,), (2,))
             display(wn)
@@ -263,8 +232,8 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            __f = (x, ps) -> sum(first(wn(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
         end
 
         # See https://github.com/LuxDL/Lux.jl/issues/95
@@ -306,16 +275,8 @@ end
                 @test std(y)≈1 atol=1.0f-2
 
                 @jet ln(x, ps, Lux.testmode(st))
-
-                if affine
-                    __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                        skip_backends=[AutoFiniteDiff()])
-                else
-                    __f = x -> sum(first(ln(x, ps, st)))
-                    @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                        skip_backends=[AutoFiniteDiff()])
-                end
+                @test_gradients(sumabs2first, ln, x, ps, st; atol=1.0f-3,
+                    rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
 
                 @testset for act in (sigmoid, tanh)
                     ln = LayerNorm(bshape, act; affine)
@@ -325,17 +286,8 @@ end
                     y, st_ = ln(x, ps, Lux.testmode(st))
 
                     @jet ln(x, ps, Lux.testmode(st))
-
-                    if affine
-                        __f = (x, ps) -> sum(first(ln(x, ps, st)))
-                        @test_gradients(__f, x, ps; atol=1.0f-3,
-                            rtol=1.0f-3,
-                            skip_backends=[AutoFiniteDiff()])
-                    else
-                        __f = x -> sum(first(ln(x, ps, st)))
-                        @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                            skip_backends=[AutoFiniteDiff()])
-                    end
+                    @test_gradients(sumabs2first, ln, x, ps, st; atol=1.0f-3,
+                        rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
                 end
             end
         end
@@ -357,16 +309,9 @@ end
 
                 y, st_ = layer(x, ps, Lux.testmode(st))
                 @jet layer(x, ps, Lux.testmode(st))
-
-                if affine
-                    __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                        skip_backends=[AutoFiniteDiff()], enzyme_set_runtime_activity=true)
-                else
-                    __f = x -> sum(first(layer(x, ps, st)))
-                    @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                        skip_backends=[AutoFiniteDiff()], enzyme_set_runtime_activity=true)
-                end
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
+                    rtol=1.0f-3, enzyme_set_runtime_activity=true,
+                    skip_backends=[AutoFiniteDiff()])
 
                 @testset for act in (sigmoid, tanh)
                     layer = InstanceNorm(3, act; affine, track_stats)
@@ -375,18 +320,9 @@ end
 
                     y, st_ = layer(x, ps, Lux.testmode(st))
                     @jet layer(x, ps, Lux.testmode(st))
-
-                    if affine
-                        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                        @test_gradients(__f, x, ps; atol=1.0f-3,
-                            rtol=1.0f-3, enzyme_set_runtime_activity=true,
-                            skip_backends=[AutoFiniteDiff()])
-                    else
-                        __f = x -> sum(first(layer(x, ps, st)))
-                        @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                            skip_backends=[AutoFiniteDiff()],
-                            enzyme_set_runtime_activity=true)
-                    end
+                    @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
+                        rtol=1.0f-3, enzyme_set_runtime_activity=true,
+                        skip_backends=[AutoFiniteDiff()])
                 end
             end
         end

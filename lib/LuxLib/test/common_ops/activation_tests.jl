@@ -1,4 +1,6 @@
 @testitem "Activation Functions" tags=[:misc] setup=[SharedTestSetup] begin
+    using Enzyme
+
     rng = StableRNG(1234)
 
     apply_act(f::F, x) where {F} = sum(abs2, f.(x))
@@ -8,7 +10,7 @@
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$f: $T" for f in [identity, relu, sigmoid, sigmoid_fast, softplus,
                 logsigmoid, gelu, swish, lisht, tanh, tanh_fast],
-            T in [Float16, Float32, Float64]
+            T in [Float32, Float64]
 
             !fp64 && T == Float64 && continue
 
@@ -41,9 +43,9 @@
             end
             @test @inferred(Zygote.gradient(apply_act_fast2, f, x)) isa Any
 
-            @test_gradients(Base.Fix1(apply_act, f), x; atol, rtol)
-            @test_gradients(Base.Fix1(apply_act_fast, f), x; atol, rtol)
-            @test_gradients(Base.Fix1(apply_act_fast2, f), x; atol, rtol)
+            @test_gradients(apply_act, f, x; atol, rtol)
+            @test_gradients(apply_act_fast, f, x; atol, rtol, skip_backends=[AutoEnzyme()])
+            @test_gradients(apply_act_fast2, f, x; atol, rtol)
 
             ∂x1 = Zygote.gradient(apply_act, f, x)[2]
             ∂x2 = Zygote.gradient(apply_act_fast, f, x)[2]

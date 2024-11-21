@@ -10,27 +10,21 @@
             x = randn(rng, Float32, 10, 10, 10, 10) |> aType
 
             @test layer(x, ps, st)[1] == x
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "concat size" begin
-            layer = SkipConnection(Dense(10, 10), (a, b) -> hcat(a, b))
+            layer = SkipConnection(Dense(10, 10), hcat)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, Float32, 10, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
             # Method ambiguity for concatenation
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=[AutoReverseDiff()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
+                rtol=1.0f-3, broken_backends=[AutoReverseDiff()])
         end
     end
 end
@@ -47,37 +41,29 @@ end
             x = randn(rng, 10, 10, 10, 10) |> aType
 
             @test layer(x, ps, st)[1] == x
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "concat size" begin
             layer = Parallel((a, b) -> cat(a, b; dims=2), Dense(10, 10), NoOpLayer())
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
-            x = randn(rng, 10, 2) |> aType
+            x = randn(rng, Float32, 10, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Parallel(hcat, Dense(10, 10), NoOpLayer())
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
             # Method ambiguity for concatenation
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
+                rtol=1.0f-3,
                 broken_backends=[AutoReverseDiff()])
         end
 
@@ -88,11 +74,8 @@ end
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1)) .|> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-            @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "named layers" begin
@@ -102,11 +85,8 @@ end
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1)) .|> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-            @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "connection is called once" begin
@@ -174,33 +154,29 @@ end
         display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         y, _ = layer(x, ps, st)
-        @test size(y) == (10, 10)
 
+        @test size(y) == (10, 10)
         @jet layer(x, ps, st)
-        __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-        @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = PairwiseFusion(+; d1=Dense(1, 30), d2=Dense(30, 10))
         display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         y, _ = layer(x, ps, st)
+
         @test size(y) == (10, 10)
         @jet layer(x, ps, st)
-
-        __f = (x1, x2, x3, ps) -> sum(first(layer((x1, x2, x3), ps, st)))
-        @test_gradients(__f, x[1], x[2], x[3], ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         x = rand(1, 10)
         layer = PairwiseFusion(.+, Dense(1, 10), Dense(10, 1))
         display(layer)
         ps, st = Lux.setup(rng, layer)
         y, _ = layer(x, ps, st)
+
         @test size(y) == (1, 10)
-
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
             WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
@@ -231,9 +207,7 @@ end
         @test y2 == layer.layers.layer_2(x, ps.layer_2, st.layer_2)[1]
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(sum, first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumsumfirst, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = BranchLayer(; d1=Dense(10, 10), d2=Dense(10, 10))
         display(layer)
@@ -246,9 +220,7 @@ end
         @test y2 == layer.layers.d2(x, ps.d2, st.d2)[1]
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(sum, first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumsumfirst, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
     end
 end
 
@@ -265,9 +237,7 @@ end
         @test Lux.outputsize(layer, x, rng) == (1,)
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -278,9 +248,7 @@ end
         @test size(y) == (1, 1)
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -293,9 +261,7 @@ end
         @test Lux.outputsize(layer, x, rng) == (2,)
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -308,9 +274,7 @@ end
         @test Lux.outputsize(layer, x, rng) == (2,)
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         layer = Chain(;
             l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
@@ -323,9 +287,7 @@ end
         @test Lux.outputsize(layer, x, rng) == (5,)
 
         @jet layer(x, ps, st)
-
-        __f = (x, ps) -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
         @testset "indexing and field access" begin
             encoder = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh))
@@ -371,8 +333,8 @@ end
             x = rand(rng, Float32, 10, 1) |> aType
 
             @test layer(x, ps, st)[1] == x
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "simple alternatives" begin
@@ -387,11 +349,8 @@ end
                 x = Float32.(collect(1:40)) |> aType
 
                 @test layer(x, ps, st)[1] == 2 .* x
-
                 @jet layer(x, ps, st)
-
-                __f = x -> sum(first(layer(x, ps, st)))
-                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -405,11 +364,8 @@ end
             y = aType([0.5, 0.7]) .* x
 
             @test layer(x, ps, st)[1] == y
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "params" begin
@@ -421,11 +377,8 @@ end
             @test Lux.parameterlength(layer) ==
                   sum(Lux.parameterlength.(values(layer.layers)))
             @test size(layer(x, ps, st)[1]) == (4, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -447,11 +400,8 @@ end
             x = rand(rng, Float32, 2, 12) |> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 12)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end

@@ -1,6 +1,6 @@
 function Lux.Training.compute_gradients_impl(
         ad::AutoEnzyme, obj_fn::F, data, ts::TrainState) where {F}
-    dps = Lux.Training.dparameters(ts.cache)
+    dps = fmap(Utils.zero, ts.parameters; exclude=isleaf)
 
     obj_fn_wrap, st_wrap, stats_wrap = Lux.Training.wrap_objective_function(
         obj_fn, ts.model, ts.parameters, ts.states, data, True())

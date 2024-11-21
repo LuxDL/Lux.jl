@@ -1,6 +1,11 @@
 abstract type AbstractPoolMode end
 
-CRC.@non_differentiable (::AbstractPoolMode)(::Any...)
+(m::AbstractPoolMode)(x) = calculate_pool_dims(m, x)
+
+function calculate_pool_dims end
+
+CRC.@non_differentiable calculate_pool_dims(::Any...)
+EnzymeRules.inactive(::typeof(calculate_pool_dims), ::Any...) = true
 
 @concrete struct GenericPoolMode <: AbstractPoolMode
     kernel_size <: Tuple{Vararg{IntegerType}}
@@ -9,17 +14,19 @@ CRC.@non_differentiable (::AbstractPoolMode)(::Any...)
     dilation <: Tuple{Vararg{IntegerType}}
 end
 
-(m::GenericPoolMode)(x) = PoolDims(x, m.kernel_size; padding=m.pad, m.stride, m.dilation)
+function calculate_pool_dims(m::GenericPoolMode, x)
+    return PoolDims(x, m.kernel_size; padding=m.pad, m.stride, m.dilation)
+end
 
 struct GlobalPoolMode <: AbstractPoolMode end
 
-(::GlobalPoolMode)(x) = PoolDims(x, size(x)[1:(end - 2)])
+calculate_pool_dims(::GlobalPoolMode, x) = PoolDims(x, size(x)[1:(end - 2)])
 
 @concrete struct AdaptivePoolMode <: AbstractPoolMode
     out_size <: Tuple{Vararg{IntegerType}}
 end
 
-function (m::AdaptivePoolMode)(x)
+function calculate_pool_dims(m::AdaptivePoolMode, x)
     in_size = size(x)[1:(end - 2)]
     stride = in_size .÷ m.out_size
     kernel_size = in_size .- (m.out_size .- 1) .* stride

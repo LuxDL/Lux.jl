@@ -5,6 +5,7 @@ using ComponentArrays: ComponentArray, getdata, getaxes
 using DispatchDoctor: allow_unstable
 using Functors: Functors
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
+using Optimisers: Optimisers
 using Test: Test, Error, Broken, Pass, Fail, get_testset, @testset, @test, @test_skip,
             @test_broken, eval_test, Threw, Returned
 
@@ -37,21 +38,20 @@ try
     using Enzyme: Enzyme
     __ftest(x) = x
     Enzyme.autodiff(Enzyme.Reverse, __ftest, Enzyme.Active, Enzyme.Active(2.0))
-    # XXX: Enzyme has been causing some issues lately. Let's just disable it for now.
-    #      We still have opt-in testing available for Enzyme.
-    # XXX: Lift this once Enzyme supports 1.11 properly
-    global ENZYME_TESTING_ENABLED = false # v"1.10-" ≤ VERSION < v"1.11-"
+    global ENZYME_TESTING_ENABLED = Sys.islinux()
 catch err
     global ENZYME_TESTING_ENABLED = false
 end
 
 include("test_softfail.jl")
-include("utils.jl")
 include("autodiff.jl")
 include("jet.jl")
 
+include("utils.jl")
+
 export AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff, AutoZygote
 export test_gradients, @test_gradients
+export Constant
 export @jet, jet_target_modules!
 export @test_softfail
 

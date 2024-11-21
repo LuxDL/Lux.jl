@@ -129,6 +129,7 @@ reshape_norm_dims(y, x) = reshape(x, get_norm_reshape_dims(size(y), length(x)))
 end
 
 CRC.@non_differentiable get_norm_reshape_dims(::Any...)
+EnzymeRules.inactive(::typeof(get_norm_reshape_dims), ::Any...) = true
 
 # Entry Points
 ## InstanceNorm

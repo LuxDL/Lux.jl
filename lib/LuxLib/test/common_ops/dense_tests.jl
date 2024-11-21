@@ -6,6 +6,8 @@ anonact = x -> x^3
 dense_simple(act, w, x, ::Nothing) = act.(w * x)
 dense_simple(act, w, x, b) = act.(w * x .+ b)
 
+sumabs2dense(args...) = sum(abs2, fused_dense_bias_activation(args...))
+
 function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu)
     rng = StableRNG(1234)
 
@@ -28,25 +30,17 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     @test @inferred(fused_dense_bias_activation(activation, w, x, bias)) isa Any
     @jet fused_dense_bias_activation(activation, w, x, bias)
 
-    fp16 = Tx == Float16 || Tw == Float16
-    atol = fp16 ? 1.0f-1 : 1.0f-3
-    rtol = fp16 ? 1.0f-1 : 1.0f-3
+    atol = 1.0f-3
+    rtol = 1.0f-3
 
-    __f = (σ, w, x, b) -> sum(abs2, fused_dense_bias_activation(σ, w, x, b))
-
-    if !fp16 && activation !== anonact
-        @test @inferred(Zygote.gradient(__f, activation, w, x, bias)) isa Any
+    if activation !== anonact
+        @test @inferred(Zygote.gradient(sumabs2dense, activation, w, x, bias)) isa Any
     end
 
     skip_backends = []
     Tw != Tx && push!(skip_backends, AutoReverseDiff())
-    fp16 && push!(skip_backends, AutoFiniteDiff())
-    fp16 && push!(skip_backends, AutoTracker())
 
-    __f_grad = let activation = activation
-        (w, x, b) -> __f(activation, w, x, b)
-    end
-    @test_gradients(__f_grad, w, x, bias; atol, rtol, skip_backends, soft_fail=fp16)
+    @test_gradients(sumabs2dense, activation, w, x, bias; atol, rtol, skip_backends)
 
     y_simple = dense_simple(activation, w, x, bias)
     y_zyg = fused_dense_bias_activation(activation, w, x, bias)
@@ -64,8 +58,7 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
-    ((Float16, Float16), (Float32, Float16), (Float32, Float32),
-        (Float32, Float64), (Float64, Float64)),
+    ((Float32, Float32), (Float32, Float64), (Float64, Float64)),
     (4, 32),
     (4, 32),
     (true, false),

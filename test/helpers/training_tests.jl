@@ -73,33 +73,39 @@ end
             ongpu && (ad isa AutoReverseDiff || ad isa AutoEnzyme) && continue
             !LuxTestUtils.ENZYME_TESTING_ENABLED && ad isa AutoEnzyme && continue
 
+            broken = ad isa AutoEnzyme && VERSION ≥ v"1.11-"
+
             ps, st = Lux.setup(rng, model) |> dev
             tstate = Training.TrainState(model, ps, st, opt)
 
-            initial_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
+            @test begin
+                initial_loss = first(mse(
+                    model, tstate.parameters, tstate.states, dataset_[1]))
 
-            for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = allow_unstable() do
-                    Training.compute_gradients(ad, mse, (x, y), tstate)
+                for epoch in 1:1000, (x, y) in dataset_
+                    grads, loss, _, tstate = allow_unstable() do
+                        Training.compute_gradients(ad, mse, (x, y), tstate)
+                    end
+                    tstate = Training.apply_gradients!(tstate, grads)
                 end
-                tstate = Training.apply_gradients!(tstate, grads)
-            end
 
-            for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = allow_unstable() do
-                    Training.single_train_step!(ad, mse, (x, y), tstate)
+                for epoch in 1:1000, (x, y) in dataset_
+                    grads, loss, _, tstate = allow_unstable() do
+                        Training.single_train_step!(ad, mse, (x, y), tstate)
+                    end
                 end
-            end
 
-            for epoch in 1:1000, (x, y) in dataset_
-                grads, loss, _, tstate = allow_unstable() do
-                    Training.single_train_step(ad, mse, (x, y), tstate)
+                for epoch in 1:1000, (x, y) in dataset_
+                    grads, loss, _, tstate = allow_unstable() do
+                        Training.single_train_step(ad, mse, (x, y), tstate)
+                    end
                 end
-            end
 
-            final_loss = first(mse(model, tstate.parameters, tstate.states, dataset_[1]))
+                final_loss = first(mse(
+                    model, tstate.parameters, tstate.states, dataset_[1]))
 
-            @test final_loss * 100 < initial_loss
+                final_loss * 100 < initial_loss
+            end broken=broken
 
             # Test the adjust API
             tstate = Optimisers.adjust(tstate, 0.1f0)

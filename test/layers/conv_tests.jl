@@ -1,4 +1,4 @@
-@testitem "CNN" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "Conv" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -8,39 +8,30 @@
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            layer(x, ps, st)
             @test size(ps.weight) == (3, 3, 2)
             @test size(layer(x, ps, st)[1]) == (2, 2, 1)
-
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(rng, Float32, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3), 6 => 2; groups=2)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            layer(x, ps, st)
             @test size(ps.weight) == (3, 3, 3, 2)
             @test size(layer(x, ps, st)[1]) == (2, 2, 2, 1)
-
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(rng, Float32, 4, 4, 4, 6, 1) |> aType
             layer = Conv((3, 3, 3), 6 => 2; groups=2)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
-            layer(x, ps, st)
             @test size(ps.weight) == (3, 3, 3, 3, 2)
             @test size(layer(x, ps, st)[1]) == (2, 2, 2, 2, 1)
-
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             # Test that we cannot ask for non-integer multiplication factors
             @test_throws DimensionMismatch Conv((2, 2), 3 => 10; groups=2)
@@ -52,10 +43,8 @@
                 x = rand(rng, Float32, 16, 32, 1) |> aType
                 ps, st = Lux.setup(rng, layer) |> dev
 
-                layer(x, ps, st)
                 @jet layer(x, ps, st)
-                __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -78,6 +67,7 @@
             @test check_approx(y_hat[end, end], 2.0)
 
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
@@ -96,34 +86,28 @@
             layer = Conv((2, 2), 3 => 15; groups=3)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
+
             @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
-
             @test size(layer(x, ps, st)[1], 3) == 15
-
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((2, 2), 3 => 9; groups=3)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1], 3) == 9
-
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((2, 2), 3 => 9; groups=3, use_bias=false)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
+
             @test Lux.parameterlength(layer) == Lux.parameterlength(ps)
-
             @test size(layer(x, ps, st)[1], 3) == 9
-
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             # Test that we cannot ask for non-integer multiplication factors
             @test_throws DimensionMismatch Conv((2, 2), 3 => 10; groups=3)
@@ -147,8 +131,7 @@
                 end
 
                 @jet layer(x, ps, st)
-                __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
         end
 
@@ -163,9 +146,10 @@
 
             y = zeros(eltype(ps.weight), 5, 5, 1, 1) |> aType
             y[2:(end - 1), 2:(end - 1), 1, 1] = ps.weight
-            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((3, 1), 1 => 1; use_bias=false)
             display(layer)
@@ -173,9 +157,10 @@
 
             y = zeros(eltype(ps.weight), 5, 7, 1, 1) |> aType
             y[2:(end - 1), 4, 1, 1] = ps.weight
-            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((1, 3), 1 => 1; use_bias=false)
             display(layer)
@@ -184,8 +169,8 @@
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
             y[4, 2:(end - 1), 1, 1] = ps.weight
             @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             layer = Conv((1, 3), 1 => 1; init_weight=Lux.glorot_normal, use_bias=false)
             display(layer)
@@ -193,9 +178,10 @@
 
             y = zeros(eltype(ps.weight), 7, 5, 1, 1) |> aType
             y[4, 2:(end - 1), 1, 1] = ps.weight
-            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
 
+            @test y≈layer(x, ps, st)[1] rtol=1e-3 atol=1e-3
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -227,14 +213,13 @@ end
             sizes = (nothing, (64, 64), (64, 32))
             scales = (nothing, 2, (2, 1))
 
-            for umode in modes, xsize in sizes, scale in scales
-                if !xor(isnothing(xsize), isnothing(scale))
-                    continue
-                end
+            @testset for umode in modes, xsize in sizes, scale in scales
+                xor(isnothing(xsize), isnothing(scale)) || continue
+
                 layer = Upsample(umode; size=xsize, scale=scale)
                 display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
-                x = zeros((32, 32, 3, 4)) |> aType
+                x = rand(32, 32, 3, 4) |> aType
 
                 @jet layer(x, ps, st)
 
@@ -245,19 +230,23 @@ end
                     @test size(y)[1:2] == size(x)[1:2] .* scale
                 end
                 @test size(y)[3:4] == size(x)[3:4]
+
+                broken_backends = Any[AutoTracker()]
+                umode == :nearest || push!(broken_backends, AutoReverseDiff())
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                    broken_backends)
             end
 
             sizes = (nothing, (64, 64, 64), (64, 32, 128))
             scales = (nothing, 2, (2, 1, 1), (2, 2, 1))
 
-            for umode in modes, xsize in sizes, scale in scales
-                if !xor(isnothing(xsize), isnothing(scale))
-                    continue
-                end
+            @testset for umode in modes, xsize in sizes, scale in scales
+                xor(isnothing(xsize), isnothing(scale)) || continue
+
                 layer = Upsample(umode; size=xsize, scale=scale)
                 display(layer)
                 ps, st = Lux.setup(rng, layer) |> dev
-                x = zeros((32, 32, 32, 3, 4)) |> aType
+                x = rand(32, 32, 32, 3, 4) |> aType
 
                 @jet layer(x, ps, st)
 
@@ -269,6 +258,14 @@ end
                     @test size(y)[1:3] == size(x)[1:3] .* scale
                 end
                 @test size(y)[4:5] == size(x)[4:5]
+
+                broken_backends = Any[AutoTracker()]
+                umode == :nearest || push!(broken_backends, AutoReverseDiff())
+                if VERSION < v"1.11-" && umode == :nearest
+                    push!(broken_backends, AutoEnzyme())
+                end
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                    broken_backends)
             end
         end
     end
@@ -286,10 +283,8 @@ end
         y, st_ = layer(x, ps, st)
         @test y isa aType{Float32, 3}
         @test size(y) == (6, 3, 3)
-
         @jet layer(x, ps, st)
-        __f = x -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x; atol=1e-3, rtol=1e-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1e-3, rtol=1e-3)
 
         layer = PixelShuffle(3)
         display(layer)
@@ -299,10 +294,8 @@ end
         y, st_ = layer(x, ps, st)
         @test y isa aType{Float32, 4}
         @test size(y) == (9, 12, 1, 3)
-
         @jet layer(x, ps, st)
-        __f = x -> sum(first(layer(x, ps, st)))
-        @test_gradients(__f, x; atol=1e-3, rtol=1e-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol=1e-3, rtol=1e-3)
     end
 end
 
@@ -327,8 +320,8 @@ end
             @test check_approx(y_hat[1, end], 3.0)
             @test check_approx(y_hat[1, end - 1], 6.0)
             @test check_approx(y_hat[end, end], 2.0)
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1e-3, rtol=1e-3)
         end
 
         @testset "Variable BitWidth Parameters FluxML/Flux.jl#1421" begin
@@ -361,8 +354,7 @@ end
                 end
 
                 @jet layer(x, ps, st)
-                __f = (x, ps) -> sum(first(layer(x, ps, st)))
-                @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
             end
         end
     end
@@ -402,8 +394,7 @@ end
             x = rand(Float32, 5, 5, 1, 1) |> aType
 
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(Float32, 5, 5, 2, 4) |> aType
             layer = ConvTranspose((3, 3), 2 => 3; cross_correlation)
@@ -411,8 +402,7 @@ end
             ps, st = Lux.setup(rng, layer) |> dev
 
             @jet layer(x, ps, st)
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             # test ConvTranspose supports groups argument
             x = randn(Float32, 10, 10, 2, 3) |> aType
@@ -426,14 +416,11 @@ end
                 (3, 3), 2 => 4; groups=2, pad=SamePad(), cross_correlation)
             display(layer2)
             ps2, st2 = Lux.setup(rng, layer2) |> dev
+
             @test size(ps2.weight) == (3, 3, 2, 2)
             @test size(layer1(x, ps1, st1)[1]) == size(layer2(x, ps2, st2)[1])
-
-            __f = (x, ps) -> sum(first(layer1(x, ps, st1)))
-            @test_gradients(__f, x, ps1; atol=1.0f-3, rtol=1.0f-3)
-
-            __f = (x, ps) -> sum(first(layer2(x, ps, st2)))
-            @test_gradients(__f, x, ps2; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer1, x, ps1, st1; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer2, x, ps2, st2; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 2, 1) |> aType
             layer = ConvTranspose((3,), 2 => 4; pad=SamePad(), groups=2, cross_correlation)
@@ -445,8 +432,7 @@ end
             @test size(layer(x, ps, st)[1]) == (10, 4, 1)
             @test length(ps.weight) == 3 * (2 * 4) / 2
 
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 4, 2) |> aType
             layer = ConvTranspose(
@@ -458,9 +444,7 @@ end
 
             @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
             @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 4, 2) |> aType
             layer = ConvTranspose(
@@ -471,9 +455,7 @@ end
             @jet layer(x, ps, st)
             @test size(layer(x, ps, st)[1]) == (10, 11, 4, 2)
             @test length(ps.weight) == (3 * 5) * (4 * 4) / 4
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = randn(Float32, 10, 11, 12, 3, 2) |> aType
             layer = ConvTranspose(

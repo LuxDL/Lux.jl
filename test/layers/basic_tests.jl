@@ -10,11 +10,8 @@
 
             @test size(layer(x, ps, st)[1]) == (2, 3, 3)
             @test Lux.outputsize(layer, x, rng) == (2, 3)
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Reverse Sequence" begin
@@ -41,11 +38,8 @@
             @test layer2(x2, ps2, st2)[1] == aType(x2rd2)
 
             @test layer(xs, ps, st)[1] == aType(xs)
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Flatten Layer" begin
@@ -55,11 +49,8 @@
             x = randn(rng, 6, 3, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (18, 2)
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "NoOpLayer" begin
@@ -69,12 +60,10 @@
             x = (x=2, b=5) # Something totally arbitrary
 
             @test layer(x, ps, st)[1] == x
-
             @jet layer(x, ps, st)
 
             x = randn(rng, 6, 3) |> aType
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "SelectDim Layer" begin
@@ -84,11 +73,8 @@
             x = randn(rng, 6, 4, 3, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (6, 4, 2)
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "WrappedFunction" begin
@@ -98,11 +84,8 @@
             x = randn(rng, 6, 4, 3, 2) |> aType
 
             @test layer(x, ps, st)[1] == x .* x
-
             @jet layer(x, ps, st)
-
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -259,6 +242,8 @@ end
 @testitem "Bilinear" setup=[SharedTestSetup] tags=[:core_layers] begin
     rng = StableRNG(12345)
 
+    skip_backends = VERSION < v"1.11-" ? [AutoEnzyme()] : []
+
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "SkipConnection recombinator" begin
             d = Dense(2 => 2)
@@ -271,12 +256,9 @@ end
             x = randn(rng, Float32, 2, 1) |> aType
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends)
 
             d = Dense(2 => 2)
             display(d)
@@ -288,12 +270,9 @@ end
             x = randn(rng, Float32, 2, 1) |> aType
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends)
 
             d = Dense(2 => 3)
             display(d)
@@ -305,12 +284,9 @@ end
             x = randn(rng, Float32, 2, 7, 11) |> aType
 
             @test size(layer(x, ps, st)[1]) == (5, 7, 11)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends)
         end
 
         @testset "Two-streams zero sum" begin
@@ -324,12 +300,9 @@ end
             @test sum(abs2, layer((x, y), ps, st)[1]) == 0.0f0
 
             @test LuxCore.outputsize(layer, (x, y), rng) == (3,)
-
             @jet layer((x, y), ps, st)
-
-            __f = (x, y, ps) -> sum(first(layer((x, y), ps, st)))
-            @test_gradients(__f, x, y, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, (x, y), ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends)
         end
 
         @testset "Inner interactions" begin
@@ -339,12 +312,9 @@ end
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends)
 
             x = randn(Float32, 2, 1) |> aType
             layer = Bilinear(2 => 3)
@@ -352,12 +322,9 @@ end
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(layer(x, ps, st)[1]) == (3, 1)
-
             @jet layer(x, ps, st)
-
-            __f = (x, ps) -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                skip_backends=[AutoEnzyme()])
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                skip_backends)
         end
     end
 end
@@ -373,29 +340,28 @@ end
             ps, st = Lux.setup(rng, layer) |> dev
 
             @test size(ps.weight) == (embed_size, vocab_size)
-
             @test LuxCore.outputsize(layer, nothing, rng) == (4,)
 
             x = rand(1:vocab_size, 1)[1]
             y, st_ = layer(x, ps, st)
             @test size(layer(x, ps, st)[1]) == (embed_size,)
             @test y == ps.weight[:, x]
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(1:vocab_size, 3) |> aType
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32}
             @test y == ps.weight[:, x]
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = rand(1:vocab_size, 3, 4) |> aType
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32, 3}
             @test size(y) == (embed_size, 3, 4)
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Cartesian indices" begin
@@ -412,22 +378,24 @@ end
             y, st_ = layer(x, ps, st)
             @test size(layer(x, ps, st)[1]) == (embed_size,)
             @test y == ps.weight[:, x...]
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 3)) .|> aType
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32}
             @test y == ps.weight[:, CartesianIndex.(x...)]
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends=[AutoEnzyme()])
 
             x = (rand(1:vocab_size[1], 3, 4), rand(1:vocab_size[2], 3, 4)) .|> aType
             y, st_ = layer(x, ps, st)
             @test y isa aType{Float32, 3}
             @test size(y) == (embed_size, 3, 4)
-
             @jet layer(x, ps, st)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends=[AutoEnzyme()])
 
             x = (rand(1:vocab_size[1], 3), rand(1:vocab_size[2], 4)) .|> aType
             @test_throws DimensionMismatch layer(x, ps, st)

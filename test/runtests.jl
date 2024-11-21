@@ -120,7 +120,8 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
 end
 
 const RETESTITEMS_NWORKERS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4))))
+    Int, get(ENV, "RETESTITEMS_NWORKERS",
+        string(min(Hwloc.num_physical_cores(), Sys.isapple() ? 2 : 4))))
 
 const RETESTITEMS_NWORKER_THREADS = parse(
     Int, get(ENV, "RETESTITEMS_NWORKER_THREADS",
@@ -135,7 +136,8 @@ const RETESTITEMS_NWORKER_THREADS = parse(
 
         ReTestItems.runtests(Lux;
             tags=(tag == "all" ? nothing : [Symbol(tag)]), testitem_timeout=2400,
-            nworkers, nworker_threads=RETESTITEMS_NWORKER_THREADS
+            nworkers, nworker_threads=RETESTITEMS_NWORKER_THREADS,
+            retries=tag == "reactant" ? 2 : 0
         )
     end
 end

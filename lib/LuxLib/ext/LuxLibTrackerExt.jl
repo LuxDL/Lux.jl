@@ -1,10 +1,10 @@
 module LuxLibTrackerExt
 
 using FastClosures: @closure
-using LuxLib: LuxLib, Utils, Traits
+using LuxLib: LuxLib, Utils, Impl, Traits, GenericBroadcastOp
 using NNlib: NNlib
 using Static: True, StaticBool
-using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector
+using Tracker: Tracker, TrackedArray, TrackedReal, TrackedVector, TrackedMatrix
 
 tracker_data(x) = Tracker.data(x)
 tracker_data(x::NNlib.BatchedAdjoint) = NNlib.batched_adjoint(tracker_data(parent(x)))
@@ -49,6 +49,19 @@ for op in (:batched_mul, :batched_matmul)
             return Tracker.nobacksies(:batched_matmul, (∂x, ∂y))
         end
         return z, ∇batched_matmul
+    end
+end
+
+# Overload muladd for Traced Arrays
+for AType in (:TrackedMatrix, :AbstractMatrix),
+    xType in (:TrackedMatrix, :AbstractMatrix),
+    bType in (:TrackedVector, :AbstractVector)
+
+    Utils.is_tracked(AType, xType, bType) || continue
+
+    @eval function Impl.matmuladd(
+            ::GenericBroadcastOp, A::$(AType), x::$(xType), b::$(bType))
+        return A * x .+ b
     end
 end
 

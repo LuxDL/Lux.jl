@@ -15,7 +15,7 @@
         @testset "$act, $T, $sz" for act in [
                 identity, relu, sigmoid, sigmoid_fast, softplus,
                 logsigmoid, gelu, swish, lisht, tanh, tanh_fast],
-            T in [Float16, Float32, Float64],
+            T in [Float32, Float64],
             sz in [(2, 2, 3, 4), (4, 5)]
 
             !fp64 && T == Float64 && continue

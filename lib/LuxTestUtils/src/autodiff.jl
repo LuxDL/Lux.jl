@@ -1,7 +1,10 @@
+struct Constant{T}
+    val::T
+end
+
 # Zygote.jl
 function gradient(f::F, ::AutoZygote, args...) where {F}
-    return map((xᵢ, dxᵢ) -> dxᵢ === nothing || xᵢ isa Number ? CRC.NoTangent() : dxᵢ,
-        args, Zygote.gradient(f, args...))
+    return gradient(f, only ∘ Zygote.gradient, args...)
 end
 
 # FiniteDiff.jl
@@ -20,6 +23,7 @@ function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
 
     args_activity = map(args) do x
         needs_gradient(x) && return Enzyme.Duplicated(x, Enzyme.make_zero(x))
+        x isa Constant && return Enzyme.Const(x.val)
         return Enzyme.Const(x)
     end
     Enzyme.autodiff(ad.mode, Enzyme.Const(f), Enzyme.Active, args_activity...)
@@ -35,29 +39,8 @@ end
 
 # Tracker.jl
 function gradient(f::F, ::AutoTracker, args...) where {F}
-    counter = 0
-    tracked_args = map(args) do x
-        if needs_gradient(x)
-            counter += 1
-            return Functors.fmap(Tracker.param, x; exclude=_tracker_leaf)
-        end
-        return x
-    end
-
-    @assert counter>0 "No tracked arguments found in `gradient(f, AutoTracker, args...)`"
-    Tracker.back!(f(tracked_args...))
-
-    return Tuple(map(tracked_args) do x
-        needs_gradient(x) && return Functors.fmap(__tracker_grad, x; exclude=_tracker_leaf)
-        return CRC.NoTangent()
-    end)
+    return gradient(f, Tracker.data ∘ only ∘ Tracker.gradient, args...)
 end
-
-_tracker_leaf(x) = Functors.isleaf(x)
-_tracker_leaf(::AbstractArray) = true
-
-__tracker_grad(x) = Tracker.grad(x)
-__tracker_grad(x::ComponentArray) = ComponentArray(__tracker_grad(getdata(x)), getaxes(x))
 
 # ReverseDiff.jl
 function gradient(f::F, ::AutoReverseDiff, args...) where {F}
@@ -73,11 +56,13 @@ function gradient(f::F, grad_fn::GFN, args...) where {F, GFN <: Function}
     gs = Vector{Any}(undef, length(args))
     for i in 1:length(args)
         _f, x = partial_function(f, i, args...)
-        if x isa AbstractArray
+        if x isa AbstractArray{<:AbstractFloat}
             gs[i] = grad_fn(_f, x)
-        elseif x isa NamedTuple
-            __f, x_flat = flatten_gradient_computable(_f, x)
-            gs[i] = x_flat === nothing ? CRC.NoTangent() : NamedTuple(grad_fn(__f, x_flat))
+        elseif x isa Constant
+            gs[i] = CRC.NoTangent()
+        elseif x isa NamedTuple || x isa Tuple
+            __f, x_flat, re = flatten_gradient_computable(_f, x)
+            gs[i] = x_flat === nothing ? CRC.NoTangent() : re(grad_fn(__f, x_flat))
         else
             gs[i] = CRC.NoTangent()
         end
@@ -98,7 +83,7 @@ Test the gradients of `f` with respect to `args` using the specified backends.
 | ReverseDiff.jl | `AutoReverseDiff()` | ✔   | ✖   |                   |
 | ForwardDiff.jl | `AutoForwardDiff()` | ✔   | ✖   | `len ≤ 100`       |
 | FiniteDiff.jl  | `AutoFiniteDiff()`  | ✔   | ✖   | `len ≤ 100`       |
-| Enzyme.jl      | `AutoEnzyme()`      | ✖   | ✖   | Only Reverse Mode |
+| Enzyme.jl      | `AutoEnzyme()`      | ✔   | ✖   | Only Reverse Mode |
 
 ## Arguments
 
@@ -138,7 +123,6 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         test_expr::Expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
         # Internal kwargs end
         kwargs...)
-    # TODO: We should add a macro version that propagates the line number info and the test_expr
     on_gpu = get_device_type(args) <: AbstractGPUDevice
     total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
 
@@ -220,7 +204,8 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
                     end
                 catch err
                     err isa InterruptException && rethrow()
-                    Error(:test, local_test_expr, err, Base.current_exceptions(), source)
+                    Error(:test_error, local_test_expr, err,
+                        Base.current_exceptions(), source)
                 end
             end
             Test.record(get_testset(), result)

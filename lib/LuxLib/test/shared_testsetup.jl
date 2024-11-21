@@ -79,6 +79,8 @@ function generate_fixed_array(::Type{T}, sz) where {T}
 end
 generate_fixed_array(::Type{T}, sz::Int) where {T} = T.(collect(1:sz) ./ sz)
 
-export MODES, StableRNG, generate_fixed_array, BACKEND_GROUP
+sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
+
+export MODES, StableRNG, generate_fixed_array, BACKEND_GROUP, sumabs2first
 
 end

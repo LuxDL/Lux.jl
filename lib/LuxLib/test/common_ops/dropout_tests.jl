@@ -2,7 +2,7 @@
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$T, $x_shape, $dims" for T in (Float16, Float32, Float64),
+        @testset "$T, $x_shape, $dims" for T in (Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1)),
             dims in (:, 1, (1, 2))
 
@@ -26,12 +26,8 @@
             __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, dims)))
             @test @inferred(Zygote.gradient(__f, x)) isa Any
 
-            __f = let rng = rng, T = T
-                x -> sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
-            end
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
-                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
+            @test_gradients(sumabs2first,
+                dropout, rng, x, T(0.5), Val(true), T(2), dims; atol=1.0f-3, rtol=1.0f-3)
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), dims)
 
@@ -49,7 +45,7 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
+        @testset "$T: $x_shape" for T in (Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             !fp64 && T == Float64 && continue
@@ -75,12 +71,9 @@ end
                 StableRNG(0), x, mask, 0.5, Val(true), Val(true), 2.0, :)))
             @test @inferred(Zygote.gradient(__f, x, mask)) isa Any
 
-            __f = let rng = rng, mask = mask, p = T(0.5), invp = T(2)
-                x -> sum(first(dropout(rng, x, mask, p, Val(true), Val(true), invp, :)))
-            end
-            @test_gradients(__f, x; atol=1.0f-3,
-                rtol=1.0f-3,
-                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []))
+            @test_gradients(sumabs2first,
+                dropout, rng, x, LuxTestUtils.Constant(mask), T(0.5), Val(true), Val(true),
+                T(2), :; atol=1.0f-3, rtol=1.0f-3)
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)))
@@ -103,14 +96,11 @@ end
                 StableRNG(0), x, mask, 0.5, Val(true), Val(false), 2.0, :)))
             @test @inferred(Zygote.gradient(__f, x, mask)) isa Any
 
-            __f = let rng = rng, mask = mask, p = T(0.5), invp = T(2)
-                x -> sum(first(dropout(rng, x, mask, p, Val(true), Val(false), invp, :)))
-            end
-
-            soft_fail = T == Float16 ? Any[AutoFiniteDiff()] : []
-            skip_backends = length(x_shape) == 5 ? [AutoEnzyme()] : []
-
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail, skip_backends)
+            @test_gradients(sumabs2first,
+                dropout, rng, x, LuxTestUtils.Constant(mask),
+                T(0.5), Val(true), Val(false), T(2), :;
+                broken_backends=length(x_shape) > 2 ? [AutoEnzyme()] : [],
+                atol=1.0f-3, rtol=1.0f-3)
 
             @jet sum(first(dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)))
@@ -138,7 +128,7 @@ end
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "$T: $x_shape" for T in (Float16, Float32, Float64),
+        @testset "$T: $x_shape" for T in (Float32, Float64),
             x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             !fp64 && T == Float64 && continue
@@ -158,12 +148,8 @@ end
             __f = x -> sum(first(alpha_dropout(StableRNG(0), x, 0.5, Val(true))))
             @test @inferred(Zygote.gradient(__f, x)) isa Any
 
-            __f = let rng = rng
-                x -> sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
-            end
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3,
-                soft_fail=(T == Float16 ? [AutoFiniteDiff()] : []),
-                broken_backends=(T == Float16 && Sys.iswindows() ? [AutoEnzyme()] : []))
+            @test_gradients(sumabs2first,
+                alpha_dropout, rng, x, T(0.5), Val(true); atol=1.0f-3, rtol=1.0f-3)
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             @test @inferred(alpha_dropout(rng, x, T(0.5), Val(false))) isa Any

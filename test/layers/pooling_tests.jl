@@ -11,7 +11,7 @@
                 continue
             end
 
-            broken_backends = ltype == :LPPool ? [AutoTracker(), AutoEnzyme()] : []
+            broken_backends = ltype == :LPPool ? Any[AutoTracker()] : []
 
             adaptive_ltype = Symbol(:Adaptive, ltype)
             global_ltype = Symbol(:Global, ltype)
@@ -26,8 +26,8 @@
             @test size(layer(x, ps, st)[1]) == (5, 5, 3, 2)
             @test layer(x, ps, st)[1] == nnlib_op[ltype](x, PoolDims(x, 2))
             @jet layer(x, ps, st)
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, broken_backends)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             layer = getfield(Lux, adaptive_ltype)((10, 5))
             display(layer)
@@ -36,8 +36,8 @@
             @test size(layer(y, ps, st)[1]) == (10, 5, 3, 2)
             @test layer(y, ps, st)[1] == nnlib_op[ltype](y, PoolDims(y, (2, 4)))
             @jet layer(y, ps, st)
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, broken_backends)
+            @test_gradients(sumabs2first, layer, y, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             layer = getfield(Lux, global_ltype)()
             display(layer)
@@ -46,8 +46,8 @@
             @test size(layer(x, ps, st)[1]) == (1, 1, 3, 2)
             @test layer(x, ps, st)[1] == nnlib_op[ltype](x, PoolDims(x, size(x)[1:2]))
             @jet layer(x, ps, st)
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, broken_backends)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
+                rtol=1.0f-3, broken_backends)
 
             layer = getfield(Lux, ltype)((2, 2))
             display(layer)
@@ -55,8 +55,8 @@
 
             @test layer(x, ps, st)[1] == nnlib_op[ltype](x, PoolDims(x, 2))
             @jet layer(x, ps, st)
-            __f = x -> sum(first(layer(x, ps, st)))
-            @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, broken_backends)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                broken_backends)
 
             @testset "SamePad windowsize $k" for k in ((1,), (2,), (3,), (4, 5), (6, 7, 8))
                 x = ones(Float32, (k .+ 3)..., 1, 1) |> aType
@@ -68,11 +68,10 @@
                 @test size(layer(x, ps, st)[1])[1:(end - 2)] ==
                       cld.(size(x)[1:(end - 2)], k)
                 @jet layer(x, ps, st)
-                __f = x -> sum(first(layer(x, ps, st)))
 
                 soft_fail = ltype == :MaxPool ? [AutoFiniteDiff()] : []
-                @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail,
-                    broken_backends)
+                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
+                    soft_fail, broken_backends)
             end
         end
     end

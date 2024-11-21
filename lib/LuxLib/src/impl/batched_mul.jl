@@ -61,9 +61,12 @@ function batched_matmul_cpu!(z::AbstractArray{zT, 3}, x::AbstractArray{xT, 3},
         batched_matmul_loopvec_impl!(z, x, y)
         return
     end
-    # Avoid an Enzyme segfault https://github.com/EnzymeAD/Enzyme.jl/issues/1983
-    fallback_batched_matmul!(z, LoopedArrayOp(), x, y)
-    # NNlib.batched_mul!(z, x, y) # XXX: restore once the enzyme segfault is fixed
+    if Utils.within_enzyme_autodiff()
+        # XXX: https://github.com/LuxDL/Lux.jl/issues/1024
+        fallback_batched_matmul!(z, LoopedArrayOp(), x, y)
+    else
+        NNlib.batched_mul!(z, x, y)
+    end
     return
 end
 
@@ -80,10 +83,9 @@ end
 function fallback_batched_matmul!(
         z::AbstractArray{zT, 3}, opmode, x::AbstractArray{xT, 3},
         y::AbstractArray{yT, 3}) where {zT, xT, yT}
-    # XXX: bring back once the enzyme segfault is fixed
-    # @warn "Using fallback Batched Matrix Multiply routine for $(dev) with A: size = \
-    #        $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
-    #        slow." maxlog=1
+    @warn "Using fallback Batched Matrix Multiply routine for $(opmode) with A: size = \
+           $(size(x)) eltype = $(xT) and B: size = $(size(y)) eltype = $(yT). This may be \
+           slow." maxlog=1
 
     if (size(x, 3) != size(y, 3) && size(x, 3) != 1 && size(y, 3) != 1) ||
        (size(x, 2) != size(y, 1))

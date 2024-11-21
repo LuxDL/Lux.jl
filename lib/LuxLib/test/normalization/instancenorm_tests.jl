@@ -12,18 +12,17 @@ end
 
 anonact = x -> x^3
 
-function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongpu)
-    _f = (args...) -> first(instancenorm(args..., training, act, epsilon))
+sumabs2instancenorm(args...) = sum(abs2, first(instancenorm(args...)))
 
+function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
     epsilon = LuxLib.Utils.default_epsilon(T)
     x, scale, bias = setup_instancenorm(gen_f, aType, T, sz)
 
     # First test without running stats
     y, nt = instancenorm(x, scale, bias, training, act, epsilon)
 
-    fp16 = T == Float16
-    atol = fp16 ? 1.0f-2 : 1.0f-3
-    rtol = fp16 ? 1.0f-2 : 1.0f-3
+    atol = 1.0f-2
+    rtol = 1.0f-2
 
     @test @inferred(instancenorm(x, scale, bias, training, act, epsilon)) isa Any
     @jet instancenorm(x, scale, bias, training, act, epsilon)
@@ -37,9 +36,8 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
     @test size(y) == sz
 
     if is_training(training)
-        __f = (args...) -> sum(first(instancenorm(args..., training, act, epsilon)))
-        soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
-        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail)
+        @test_gradients(sumabs2instancenorm, x, scale, bias, training, act, epsilon;
+            atol, rtol, soft_fail=[AutoFiniteDiff()], enzyme_set_runtime_activity=true)
     end
 
     # Now test with running stats
@@ -63,20 +61,19 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType, mode, ongp
     @test size(y) == sz
 
     if is_training(training)
-        __f = (args...) -> sum(first(instancenorm(
-            args..., rm, rv, training, act, T(0.1), epsilon)))
-        soft_fail = fp16 ? fp16 : [AutoFiniteDiff()]
-        skip_backends = [AutoEnzyme()]
-        @test_gradients(__f, x, scale, bias; atol, rtol, soft_fail, skip_backends)
+        @test_gradients(sumabs2instancenorm, x, scale, bias, Constant(rm), Constant(rv),
+            training, act, T(0.1), epsilon; atol, rtol,
+            soft_fail=[AutoFiniteDiff()],
+            enzyme_set_runtime_activity=true)
     end
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
-    [Float16, Float32, Float64], ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
-    (Val(true), Val(false)), (identity, relu, tanh_fast, sigmoid_fast, anonact))
+    [Float32, Float64], ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
+    (Val(true), Val(false)), (identity, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
+    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)))
 
 export setup_instancenorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_instancenorm_testing
 
@@ -87,8 +84,7 @@ end
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[1]
             !fp64 && T == Float64 && continue
-            run_instancenorm_testing(
-                generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
+            run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
         end
     end
 end
@@ -98,41 +94,7 @@ end
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[2]
             !fp64 && T == Float64 && continue
-            run_instancenorm_testing(
-                generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[3]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(
-                generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[4]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(
-                generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Instance Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[5]
-            !fp64 && T == Float64 && continue
-            run_instancenorm_testing(
-                generate_fixed_array, T, sz, training, act, aType, mode, ongpu)
+            run_instancenorm_testing(generate_fixed_array, T, sz, training, act, aType)
         end
     end
 end

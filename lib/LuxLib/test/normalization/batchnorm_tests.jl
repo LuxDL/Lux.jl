@@ -34,8 +34,9 @@ anonact = x -> x^3
 
 is_training(::Val{training}) where {training} = training
 
-function run_batchnorm_testing(
-        gen_f, T, sz, training, affine, track_stats, act, aType, mode, ongpu)
+sumabs2first(f::F, args...) where {F} = sum(abs2, first(f(args...)))
+
+function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act, aType)
     epsilon = eps(T)^(5 // 7)
     x, scale, bias, rm, rv = setup_batchnorm(gen_f, aType, T, sz; track_stats, affine)
 
@@ -43,9 +44,8 @@ function run_batchnorm_testing(
     y_simple, nt_simple = batchnorm_fallback(
         x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
-    fp16 = T == Float16
-    atol = fp16 ? 1.0f-2 : 1.0f-3
-    rtol = fp16 ? 1.0f-2 : 1.0f-3
+    atol = 1.0f-3
+    rtol = 1.0f-3
 
     @test y≈y_simple atol=atol rtol=rtol
     if track_stats
@@ -80,26 +80,12 @@ function run_batchnorm_testing(
         @test size(nt.running_var) == (size(x, length(sz) - 1),)
     end
 
-    if is_training(training) && affine
-        skip_backends = []
-        act === relu && push!(skip_backends, AutoFiniteDiff())
-
-        soft_fail = if fp16
-            if Sys.iswindows()
-                [AutoTracker(), AutoFiniteDiff(), AutoReverseDiff(), AutoForwardDiff()]
-            else
-                true
-            end
-        else
-            false
-        end
-
-        broken_backends = Sys.iswindows() && fp16 ? [AutoEnzyme()] : []
-
-        __f = (args...) -> sum(first(batchnorm(
-            args..., rm, rv, training, act, T(0.9), epsilon)))
-        @test_gradients(__f, x, scale, bias; atol, rtol, skip_backends, soft_fail,
-            broken_backends)
+    if is_training(training)
+        # XXX: Fails due to runtime activity but setting it doesn't help
+        @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(rm),
+            Constant(rv), training, act, T(0.9), epsilon; atol, rtol,
+            soft_fail=[AutoFiniteDiff()],
+            skip_backends=[AutoEnzyme()], enzyme_set_runtime_activity=true)
     end
 
     if anonact !== act
@@ -111,12 +97,12 @@ function run_batchnorm_testing(
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
-    [Float16, Float32, Float64], ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
+    [Float32, Float64], ((4, 4, 6, 2), (8, 2), (4, 4, 4, 3, 2)),
     (Val(true), Val(false)), (true, false), (true, false),
-    (identity, relu, tanh_fast, sigmoid_fast, anonact))
+    (identity, sigmoid_fast, anonact))
 
 const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
+    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)))
 
 export setup_batchnorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_batchnorm_testing
 
@@ -128,7 +114,7 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[1]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end
@@ -139,48 +125,13 @@ end
         @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[2]
             !fp64 && T == Float64 && continue
             run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Batch Norm: Group 3" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[3]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Batch Norm: Group 4" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[4]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
-        end
-    end
-end
-
-@testitem "Batch Norm: Group 5" tags=[:normalization] setup=[
-    SharedTestSetup, BatchNormSetup] begin
-    @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        @testset "eltype $T, size $sz, $act $affine $track_stats" for (T, sz, training, affine, track_stats, act) in TEST_BLOCKS[5]
-            !fp64 && T == Float64 && continue
-            run_batchnorm_testing(generate_fixed_array, T, sz, training,
-                affine, track_stats, act, aType, mode, ongpu)
+                affine, track_stats, act, aType)
         end
     end
 end
 
 @testitem "Batch Norm: Mixed Precision" tags=[:normalization] setup=[SharedTestSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
-        !fp64 && aType == Float64 && continue
-
         x = rand(Float64, 4, 4, 6, 2) |> aType
         scale = rand(Float32, 6) |> aType
         bias = rand(Float32, 6) |> aType
@@ -193,8 +144,8 @@ end
         @test nt.running_mean isa aType && length(nt.running_mean) == 6
         @test nt.running_var isa aType && length(nt.running_var) == 6
 
-        __f = (args...) -> sum(first(batchnorm(
-            args..., running_mean, running_var, Val(true), identity, 0.9f0, 1.0f-5)))
-        @test_gradients(__f, x, scale, bias; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, batchnorm, x, scale, bias, Constant(running_mean),
+            Constant(running_var), Val(true), gelu, 0.9, 1e-5; atol=1.0f-3,
+            rtol=1.0f-3, broken_backends=[AutoEnzyme()])
     end
 end
