@@ -1,5 +1,5 @@
 @testsetup module ConvSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, TestExtras
 
 expand(_, i::Tuple) = i
 expand(N, i::Integer) = ntuple(_ -> i, N)
@@ -43,20 +43,19 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
 
     @test eltype(y) == promote_type(Tw, Tx)
 
-    @test @inferred(fused_conv_bias_activation(activation, weight, x, bias, cdims)) isa Any
+    @constinferred fused_conv_bias_activation(activation, weight, x, bias, cdims)
     @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
     if mode != "amdgpu" && activation !== anonact
-        @test @inferred(Zygote.gradient(
-            sumabs2conv, activation, weight, x, bias, cdims
-        )) isa Any
+        @constinferred Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims)
     else
         try
-            @inferred(Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims))
-            @test true
+            @constinferred Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims)
         catch e
             e isa ErrorException || rethrow()
-            @test_broken false
+            @constinferred_broken Zygote.gradient(
+                sumabs2conv, activation, weight, x, bias, cdims
+            )
         end
     end
 

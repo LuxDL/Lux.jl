@@ -2,7 +2,7 @@
 import Reexport: @reexport
 
 using LuxLib, MLDataDevices
-@reexport using LuxTestUtils, StableRNGs, Test, Enzyme, Zygote, NNlib
+@reexport using LuxTestUtils, StableRNGs, Test, Enzyme, Zygote, NNlib, TestExtras
 
 LuxTestUtils.jet_target_modules!(["LuxLib"])
 

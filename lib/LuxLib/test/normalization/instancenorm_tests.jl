@@ -1,5 +1,5 @@
 @testsetup module InstanceNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, TestExtras
 
 is_training(::Val{training}) where {training} = training
 
@@ -24,12 +24,12 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
     atol = 1.0f-2
     rtol = 1.0f-2
 
-    @test @inferred(instancenorm(x, scale, bias, training, act, epsilon)) isa Any
+    @constinferred instancenorm(x, scale, bias, training, act, epsilon)
     @jet instancenorm(x, scale, bias, training, act, epsilon)
 
     if anonact !== act && is_training(training)
         lfn = (x, sc, b, act, ϵ) -> sum(first(instancenorm(x, sc, b, Val(true), act, ϵ)))
-        @test @inferred(Zygote.gradient(lfn, x, scale, bias, act, epsilon)) isa Any
+        @constinferred Zygote.gradient(lfn, x, scale, bias, act, epsilon)
     end
 
     @test y isa aType{T, length(sz)}
@@ -46,15 +46,13 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
 
     y, nt = instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
 
-    @test @inferred(instancenorm(
-        x, scale, bias, rm, rv, training, act, T(0.1), epsilon)) isa Any
+    @constinferred instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
     @jet instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
 
     if anonact !== act && is_training(training)
         lfn = (x, sc, b, rm, rv, act, m, ϵ) -> sum(first(instancenorm(
             x, sc, b, rm, rv, Val(true), act, m, ϵ)))
-        @test @inferred(Zygote.gradient(
-            lfn, x, scale, bias, rm, rv, act, T(0.1), epsilon)) isa Any
+        @constinferred Zygote.gradient(lfn, x, scale, bias, rm, rv, act, T(0.1), epsilon)
     end
 
     @test y isa aType{T, length(sz)}

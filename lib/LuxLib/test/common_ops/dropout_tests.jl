@@ -10,7 +10,7 @@
 
             x = randn(rng, T, x_shape) |> aType
 
-            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
+            @constinferred dropout(rng, x, T(0.5), Val(true), T(2), dims)
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(true), T(2), dims)
 
@@ -21,10 +21,10 @@
             @test rng != rng_
 
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
-            @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
+            @constinferred dropout(rng, x, T(0.5), Val(true), T(2), dims)
 
             __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, dims)))
-            @test @inferred(Zygote.gradient(__f, x)) isa Any
+            @constinferred Zygote.gradient(__f, x)
 
             @test_gradients(sumabs2first,
                 dropout, rng, x, T(0.5), Val(true), T(2), dims; atol=1.0f-3, rtol=1.0f-3)
@@ -54,8 +54,7 @@ end
             mask = rand(T, x_shape) |> aType
 
             # Update mask
-            @test @inferred(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)) isa Any
+            @constinferred dropout(rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)
 
             y, mask_, rng_ = dropout(
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)
@@ -69,7 +68,7 @@ end
 
             __f = (x, mask) -> sum(first(dropout(
                 StableRNG(0), x, mask, 0.5, Val(true), Val(true), 2.0, :)))
-            @test @inferred(Zygote.gradient(__f, x, mask)) isa Any
+            @constinferred Zygote.gradient(__f, x, mask)
 
             @test_gradients(sumabs2first,
                 dropout, rng, x, LuxTestUtils.Constant(mask), T(0.5), Val(true), Val(true),
@@ -79,8 +78,7 @@ end
                 rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)))
 
             # Try using mask if possible (possible!!)
-            @test @inferred(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)) isa Any
+            @constinferred dropout(rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)
 
             y, mask_, rng_ = dropout(
                 rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)
@@ -94,7 +92,7 @@ end
 
             __f = (x, mask) -> sum(first(dropout(
                 StableRNG(0), x, mask, 0.5, Val(true), Val(false), 2.0, :)))
-            @test @inferred(Zygote.gradient(__f, x, mask)) isa Any
+            @constinferred Zygote.gradient(__f, x, mask)
 
             @test_gradients(sumabs2first,
                 dropout, rng, x, LuxTestUtils.Constant(mask),
@@ -107,8 +105,7 @@ end
             mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
 
             # Testing Mode
-            @test @inferred(dropout(
-                rng, x, mask, T(0.5), Val(false), Val(false), T(2), :)) isa Any
+            @constinferred dropout(rng, x, mask, T(0.5), Val(false), Val(false), T(2), :)
 
             y, mask_, rng_ = dropout(
                 rng, x, mask, T(0.5), Val(false), Val(false), T(2), :)
@@ -135,7 +132,7 @@ end
 
             x = randn(rng, T, x_shape) |> aType
 
-            @test @inferred(alpha_dropout(rng, x, T(0.5), Val(true))) isa Any
+            @constinferred alpha_dropout(rng, x, T(0.5), Val(true))
 
             y, rng_ = alpha_dropout(rng, x, T(0.5), Val(true))
 
@@ -146,13 +143,13 @@ end
             @test_broken std(y)≈std(x) atol=1.0f-2 rtol=1.0f-2
 
             __f = x -> sum(first(alpha_dropout(StableRNG(0), x, 0.5, Val(true))))
-            @test @inferred(Zygote.gradient(__f, x)) isa Any
+            @constinferred Zygote.gradient(__f, x)
 
             @test_gradients(sumabs2first,
                 alpha_dropout, rng, x, T(0.5), Val(true); atol=1.0f-3, rtol=1.0f-3)
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
-            @test @inferred(alpha_dropout(rng, x, T(0.5), Val(false))) isa Any
+            @constinferred alpha_dropout(rng, x, T(0.5), Val(false))
 
             y, rng_ = alpha_dropout(rng, x, T(0.5), Val(false))
 

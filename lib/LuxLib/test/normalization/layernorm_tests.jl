@@ -1,5 +1,5 @@
 @testsetup module LayerNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Statistics, TestExtras
 using LuxTestUtils: check_approx
 
 function setup_layernorm(gen_f, aType, T, x_size, affine_shape, expand_dims::Bool=true)
@@ -40,7 +40,7 @@ function run_layernorm_testing_core(
     epsilon = LuxLib.Utils.default_epsilon(T)
     _f = (args...) -> layernorm(args..., act, dims, epsilon)
 
-    @test @inferred(layernorm(x, scale, bias, act, dims, epsilon)) isa Any
+    @constinferred layernorm(x, scale, bias, act, dims, epsilon)
     @jet layernorm(x, scale, bias, act, dims, epsilon)
 
     y = _f(x, scale, bias)
@@ -61,7 +61,7 @@ function run_layernorm_testing_core(
 
     if anonact !== act
         lfn = (x, sc, b, act, dim, ϵ) -> sum(layernorm(x, sc, b, act, dim, ϵ))
-        @test @inferred(Zygote.gradient(lfn, x, scale, bias, act, dims, epsilon)) isa Any
+        @constinferred Zygote.gradient(lfn, x, scale, bias, act, dims, epsilon)
     end
 end
 
