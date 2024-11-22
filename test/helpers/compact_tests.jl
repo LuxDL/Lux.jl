@@ -329,7 +329,7 @@
             @test st_new.incr == 10
             _, st_new = model(x, ps, st_new)
             @test st_new.incr == 100
-            @test @inferred(model(x, ps, st)) isa Any
+            @constinferred model(x, ps, st)
 
             function ScaledDense2(; d_in=5, d_out=7, act=relu)
                 @compact(W=randn(d_out, d_in), b=zeros(d_out), incr=1) do x
@@ -349,10 +349,10 @@
             _, st_new = model(x, ps, st_new)
             @test st_new.incr == 100
 
-            @test @inferred(model(x, ps, st)) isa Any
+            @constinferred model(x, ps, st)
 
             __f = (m, x, ps, st) -> sum(abs2, first(m(x, ps, st)))
-            @test @inferred(Zygote.gradient(__f, model, x, ps, st)) isa Any
+            @constinferred Zygote.gradient(__f, model, x, ps, st)
         end
 
         @testset "Multiple @return" begin

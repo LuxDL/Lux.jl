@@ -430,9 +430,13 @@ end
         st = st |> dev
 
         ps_nt = ps |> dev
-        @test @inferred(froggie(x, ps_nt, st)) isa Any
+        @constinferred froggie(x, ps_nt, st)
 
         ps_ca = ps |> ComponentArray |> dev
-        @test @inferred(froggie(x, ps_ca, st)) isa Any broken=ongpu
+        if ongpu
+            @constinferred_broken froggie(x, ps_ca, st)
+        else
+            @constinferred froggie(x, ps_ca, st)
+        end
     end
 end

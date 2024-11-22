@@ -150,7 +150,7 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _, _, tstate_new = @constinferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
@@ -160,13 +160,12 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _, _, tstate_new = @constinferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
-    @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
-          Any
+    @constinferred Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)
 
-    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+    _, _, _, tstate_new2 = @constinferred Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)
     @test hasfield(typeof(tstate_new2.cache.extras), :reverse)
@@ -180,7 +179,7 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _, _, tstate_new = @constinferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
     @test tstate_new.states !== tstate.states
@@ -190,13 +189,12 @@ end
 
     tstate = Training.TrainState(model, ps, st, opt)
 
-    _, _, _, tstate_new = @inferred Training.compute_gradients(
+    _, _, _, tstate_new = @constinferred Training.compute_gradients(
         AutoEnzyme(), mse, (x, x), tstate)
 
-    @test @inferred(Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)) isa
-          Any
+    @constinferred Training.compute_gradients(AutoEnzyme(), mse, (x, x), tstate_new)
 
-    _, _, _, tstate_new2 = @inferred Training.compute_gradients(
+    _, _, _, tstate_new2 = @constinferred Training.compute_gradients(
         AutoEnzyme(), mse2, (x, x), tstate_new)
     @test hasfield(typeof(tstate_new2.cache.extras), :forward)
     @test hasfield(typeof(tstate_new2.cache.extras), :reverse)

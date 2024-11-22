@@ -75,13 +75,13 @@ include("setup_modes.jl")
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev
 
-            @test @inferred(model(x, ps, Lux.testmode(st))) isa Any
-            @test @inferred(loss_function(model, x, ps, Lux.testmode(st))) isa Number
+            @constinferred model(x, ps, Lux.testmode(st))
+            @constinferred loss_function(model, x, ps, Lux.testmode(st))
+
             if mode == "amdgpu" && model isa Conv
-                @test_broken @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa
-                             Any
+                @constinferred_broken Zygote.gradient(loss_function, model, x, ps, st)
             else
-                @test @inferred(Zygote.gradient(loss_function, model, x, ps, st)) isa Any
+                @constinferred Zygote.gradient(loss_function, model, x, ps, st)
             end
         end
     end
