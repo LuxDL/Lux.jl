@@ -62,3 +62,11 @@ StaticArrays = "1"
 WeightInitializers = "1"
 Zygote = "0.6.70"
 julia = "1.10"
+
+[sources]
+Lux = { path = "../" }
+LuxLib = { path = "../lib/LuxLib" }
+LuxCore = { path = "../lib/LuxCore" }
+MLDataDevices = { path = "../lib/MLDataDevices" }
+LuxTestUtils = { path = "../lib/LuxTestUtils" }
+WeightInitializers = { path = "../lib/WeightInitializers" }

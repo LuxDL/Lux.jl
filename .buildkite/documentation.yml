@@ -7,7 +7,7 @@ steps:
         parallelism: 4
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.10"
+              version: "1"
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CUDA"
@@ -28,7 +28,7 @@ steps:
         parallelism: 4
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.10"
+              version: "1"
         command: julia --code-coverage=user --color=yes --project=docs --threads=auto docs/tutorials.jl
         env:
           TUTORIAL_BACKEND_GROUP: "CPU"
@@ -50,7 +50,7 @@ steps:
           - "tutorial-build-cpu"
         plugins:
           - JuliaCI/julia#v1:
-              version: "1.10"
+              version: "1"
           - JuliaCI/julia-coverage#v1:
               codecov: true
               dirs:
@@ -69,11 +69,6 @@ steps:
           julia --code-coverage=user --color=yes --project=docs -e '
             println("--- :julia: Instantiating project")
             using Pkg
-            dev_pkgs = Pkg.PackageSpec[]
-            for pkg in ("lib/LuxLib", "lib/LuxCore", "lib/MLDataDevices", "lib/LuxTestUtils", "lib/WeightInitializers", ".")
-              push!(dev_pkgs, Pkg.PackageSpec(path=pkg));
-            end
-            Pkg.develop(dev_pkgs)
             Pkg.instantiate()
             println("+++ :julia: Building documentation")
             include("docs/make.jl")'
