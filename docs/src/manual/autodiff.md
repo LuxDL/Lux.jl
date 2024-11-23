@@ -47,7 +47,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
     1. Use `Reactant.jl` + `Enzyme.jl` for the best performance. This is the most reliable and fastest option, but presently
        only supports NVIDIA GPU's.
-    1. Use `Zygote.jl` for the best performance on non-NVIDIA GPUs. This is the most reliable and fastest
+    2. Use `Zygote.jl` for the best performance on non-NVIDIA GPUs. This is the most reliable and fastest
        non-`Reactant.jl` option for GPU for the time-being. We are working on supporting `Enzyme.jl` without
        `Reactant.jl` for GPU as well.
 
