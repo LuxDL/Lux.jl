@@ -37,10 +37,10 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
     1. Use `Reactant.jl` + `Enzyme.jl` for the best performance as well as mutation-support. It does not support AMD GPU presently.
        When available, this is the most reliable and fastest option.
-    1. Use `Zygote.jl` for the best performance without `Reactant.jl`. This is the most reliable and fastest
+    2. Use `Zygote.jl` for the best performance without `Reactant.jl`. This is the most reliable and fastest
        option for CPU for the time-being. (We are working on faster Enzyme support for CPU)
-    2. Use `Enzyme.jl`, if there are mutations in the code and/or `Zygote.jl` fails.
-    3. If `Enzyme.jl` fails for some reason, (open an issue and) try
+    3. Use `Enzyme.jl`, if there are mutations in the code and/or `Zygote.jl` fails.
+    4. If `Enzyme.jl` fails for some reason, (open an issue and) try
        `ReverseDiff.jl` ([possibly with compiled mode](https://juliadiff.org/ReverseDiff.jl/dev/api/#ReverseDiff.compile)).
 
   * For GPU Usacases:
