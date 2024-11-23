@@ -8,7 +8,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
 | AD Package                                                         | Mode    | CPU    | GPU    | TPU    | Nested 2nd Order AD | Support Class |
 | :----------------------------------------------------------------- | :------ | :----- | :----- | :----- | :------------------ | :------------ |
-| [`Reactant.jl`](https://github.com/EnzymeAD/Reactant.jl)[^re] + [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ✔️ | ✔️ |              | Tier I    |
+| [`Reactant.jl`](https://github.com/EnzymeAD/Reactant.jl)[^re] + [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ✔️ | ✔️ | ✔️             | Tier I    |
 | [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr] | Reverse | ✔️     | ✔️     | ❌      | ✔️                  | Tier I        |
 | [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ❓[^q] | ❌      | ❓[^q]              | Tier I[^e]    |
 | [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                 | Reverse | ✔️     | ✔️     | ❌      | ✔️                  | Tier I        |
@@ -35,7 +35,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
   * For CPU Usacases:
 
-    1. Use `Reactant.jl` + `Enzyme.jl` for the best performance as well as mutation-support. It does not support AMD GPU presently.
+    1. Use `Reactant.jl` + `Enzyme.jl` for the best performance as well as mutation-support.
        When available, this is the most reliable and fastest option.
     2. Use `Zygote.jl` for the best performance without `Reactant.jl`. This is the most reliable and fastest
        option for CPU for the time-being. (We are working on faster Enzyme support for CPU)
@@ -46,7 +46,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
   * For GPU Usacases:
 
     1. Use `Reactant.jl` + `Enzyme.jl` for the best performance. This is the most reliable and fastest option, but presently
-       only supports NVIDIA GPU's.
+       only supports NVIDIA GPU's. AMD GPUs are currently not supported.
     2. Use `Zygote.jl` for the best performance on non-NVIDIA GPUs. This is the most reliable and fastest
        non-`Reactant.jl` option for GPU for the time-being. We are working on supporting `Enzyme.jl` without
        `Reactant.jl` for GPU as well.
