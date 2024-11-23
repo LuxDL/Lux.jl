@@ -6,20 +6,21 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
 ## Overview
 
-| AD Package                                                         | Mode    | CPU    | GPU    | Nested 2nd Order AD | Support Class |
-| :----------------------------------------------------------------- | :------ | :----- | :----- | :------------------ | :------------ |
-| [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr] | Reverse | ✔️     | ✔️     | ✔️                  | Tier I        |
-| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ❓[^q] | ❓[^q]              | Tier I[^e]    |
-| [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                 | Reverse | ✔️     | ✔️     | ✔️                  | Tier I        |
-| [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | Forward | ✔️     | ✔️     | ✔️                  | Tier I        |
-| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | Reverse | ✔️     | ❌     | ❌                  | Tier II       |
-| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | Reverse | ✔️     | ✔️     | ❌                  | Tier II       |
-| [`Mooncake.jl`](https://github.com/compintell/Mooncake.jl)         | Reverse | ❓[^q] | ❌     | ❌                  | Tier III      |
-| [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | Forward | ❓[^q] | ❓[^q] | ❓[^q]              | Tier III      |
+| AD Package                                                         | Mode    | CPU    | GPU    | TPU    | Nested 2nd Order AD | Support Class |
+| :----------------------------------------------------------------- | :------ | :----- | :----- | :----- | :------------------ | :------------ |
+| [`Reactant.jl`](https://github.com/EnzymeAD/Reactant.jl)[^re] + [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ✔️ | ✔️ | ✔️             | Tier I    |
+| [`ChainRules.jl`](https://github.com/JuliaDiff/ChainRules.jl)[^cr] | Reverse | ✔️     | ✔️     | ❌      | ✔️                  | Tier I        |
+| [`Enzyme.jl`](https://github.com/EnzymeAD/Enzyme.jl)               | Reverse | ✔️     | ❓[^q] | ❌      | ❓[^q]              | Tier I[^e]    |
+| [`Zygote.jl`](https://github.com/FluxML/Zygote.jl)                 | Reverse | ✔️     | ✔️     | ❌      | ✔️                  | Tier I        |
+| [`ForwardDiff.jl`](https://github.com/JuliaDiff/ForwardDiff.jl)    | Forward | ✔️     | ✔️     | ❌      | ✔️                  | Tier I        |
+| [`ReverseDiff.jl`](https://github.com/JuliaDiff/ReverseDiff.jl)    | Reverse | ✔️     | ❌     | ❌      | ❌                  | Tier II       |
+| [`Tracker.jl`](https://github.com/FluxML/Tracker.jl)               | Reverse | ✔️     | ✔️     | ❌      | ❌                  | Tier II       |
+| [`Mooncake.jl`](https://github.com/compintell/Mooncake.jl)         | Reverse | ❓[^q] | ❌     | ❌      | ❌                  | Tier III      |
+| [`Diffractor.jl`](https://github.com/JuliaDiff/Diffractor.jl)      | Forward | ❓[^q] | ❓[^q] | ❌      | ❓[^q]              | Tier III      |
 
 [^e]: Currently Enzyme outperforms other AD packages in terms of CPU performance. However,
-      there are some edge cases where it might not work with Lux. We are working on
-      improving the compatibility. Please report any issues you encounter.
+      there are some edge cases where it might not work with Lux when not using Reactant. We are working on
+      improving the compatibility. Please report any issues you encounter and try Reactant if something fails.
 
 [^q]: This feature is supported downstream, but we don't extensively test it to ensure
       that it works with Lux.
@@ -27,21 +28,31 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 [^cr]: Note that `ChainRules.jl` is not really an AD package, but we have first-class
        support for packages that use `rrules`.
 
+[^re]: Note that `Reactant.jl` is not really an AD package, but a tool for compiling functions, including the use of EnzymeMLIR for AD via `Enzyme.jl`.
+       We have first-class support for the usage of `Reactant.jl` for inference and training when using `Enzyme.jl` for differentiation.
+
 ## [Recommendations](@id autodiff-recommendations)
 
   * For CPU Usacases:
 
-    1. Use `Zygote.jl` for the best performance. This is the most reliable and fastest
+    1. Use `Reactant.jl` + `Enzyme.jl` for the best performance as well as mutation-support.
+       When available, this is the most reliable and fastest option.
+    2. Use `Zygote.jl` for the best performance without `Reactant.jl`. This is the most reliable and fastest
        option for CPU for the time-being. (We are working on faster Enzyme support for CPU)
-    2. Use `Enzyme.jl`, if there are mutations in the code and/or `Zygote.jl` fails.
-    3. If `Enzyme.jl` fails for some reason, (open an issue and) try
+    3. Use `Enzyme.jl`, if there are mutations in the code and/or `Zygote.jl` fails.
+    4. If `Enzyme.jl` fails for some reason, (open an issue and) try
        `ReverseDiff.jl` ([possibly with compiled mode](https://juliadiff.org/ReverseDiff.jl/dev/api/#ReverseDiff.compile)).
 
   * For GPU Usacases:
 
-    1. Use `Zygote.jl` for the best performance. This is the most reliable and fastest
-       option for GPU for the time-being. We are working on supporting `Enzyme.jl` for
-       GPU as well.
+    1. Use `Reactant.jl` + `Enzyme.jl` for the best performance. This is the most reliable and fastest option, but presently
+       only supports NVIDIA GPU's. AMD GPUs are currently not supported.
+    2. Use `Zygote.jl` for the best performance on non-NVIDIA GPUs. This is the most reliable and fastest
+       non-`Reactant.jl` option for GPU for the time-being. We are working on supporting `Enzyme.jl` without
+       `Reactant.jl` for GPU as well.
+
+  * For TPU Usacases:
+    1. Use `Reactant.jl`. This is the only supported (and fastest) option.
 
 ## Support Class
 
