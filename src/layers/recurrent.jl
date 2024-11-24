@@ -131,7 +131,7 @@ function (r::Recurrence{True})(x::Union{AbstractVector, NTuple}, ps, st::NamedTu
         (out, carry), state = apply(r.cell, (input, carry), ps, state)
         return vcat(outputs, [out]), carry, state
     end
-    results = private_foldl_init(recur_op, x)
+    results = foldl_init(recur_op, x)
     return first(results), last(results)
 end
 

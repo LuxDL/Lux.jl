@@ -224,19 +224,18 @@ CRC.@non_differentiable istraining(::Any)
 
 end
 
-using .LuxOps: LuxOps, multigate
+using .LuxOps: LuxOps, multigate, xlogx, xlogy, foldl_init
 
 const safe_getproperty = LuxOps.getproperty
 const safe_eachslice = LuxOps.eachslice
 
-# TODO: directly import them from LuxOps from 1.0
-const private_xlogx = LuxOps.xlogx
-const private_xlogy = LuxOps.xlogy
-const private_foldl_init = LuxOps.foldl_init
-
 # These are defined here to avoid a circular dependency among modules
-for (op, field) in (:bias => :use_bias, :affine => :affine,
-    :track_stats => :track_stats, :train_state => :train_state)
+for (op, field) in (
+    :bias => :use_bias,
+    :affine => :affine,
+    :track_stats => :track_stats,
+    :train_state => :train_state
+)
     @eval function $(Symbol(:has_, op))(l::AbstractLuxLayer)
         res = known(safe_getproperty(l, Val($(Meta.quot(field)))))
         return ifelse(res === nothing, false, res)
