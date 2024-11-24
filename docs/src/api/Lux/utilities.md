@@ -89,6 +89,7 @@ simply pass the parameters / states / arrays into one of the following functions
 Lux.f16
 Lux.f32
 Lux.f64
+Lux.bf16
 ```
 
 ## Element Type Matching
