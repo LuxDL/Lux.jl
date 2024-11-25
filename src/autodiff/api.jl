@@ -86,7 +86,7 @@ the following properties for `y = f(x)`:
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed | Note                                           |
+| Supported Backends | Packages Needed | Notes                                          |
 |:------------------ |:--------------- |:---------------------------------------------- |
 | `AutoForwardDiff`  |                 |                                                |
 | `AutoZygote`       | `Zygote.jl`     |                                                |
