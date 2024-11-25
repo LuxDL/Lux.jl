@@ -24,6 +24,16 @@ annotate_function(::AutoEnzyme{<:Any, A}, f::F) where {F, A} = A(f)
 
 include("training.jl")
 
+include("autodiff.jl")
 include("batched_autodiff.jl")
+
+@concrete struct OOPFunctionWrapper
+    f
+end
+
+function (f::OOPFunctionWrapper)(y, args...)
+    copyto!(y, f.f(args...))
+    return
+end
 
 end

@@ -85,12 +85,3 @@ function make_zero!(partials, idxs)
     end
     return partials[1:length(idxs)]
 end
-
-@concrete struct OOPFunctionWrapper
-    f
-end
-
-function (f::OOPFunctionWrapper)(y, x)
-    copyto!(y, f.f(x))
-    return
-end

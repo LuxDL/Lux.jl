@@ -7,9 +7,10 @@ products efficiently using mixed-mode AD.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed |
-| :----------------- | :-------------- |
-| `AutoZygote`       | `Zygote.jl`     |
+| Supported Backends | Packages Needed | Notes                                          |
+| :----------------- | :-------------- | :--------------------------------------------- |
+| `AutoZygote`       | `Zygote.jl`     |                                                |
+| `AutoEnzyme`       | `Enzyme.jl`     | Not compatible with ChainRules based Nested AD |
 
 !!! warning
 
@@ -32,9 +33,12 @@ function vector_jacobian_product(::F, backend::AbstractADType, _, __) where {F}
     throw(ArgumentError("`vector_jacobian_product` is not implemented for `$(backend)`."))
 end
 
-function vector_jacobian_product(f::F, backend::AutoZygote, x, u) where {F}
-    assert_backend_loaded(:vector_jacobian_product, backend)
-    return AutoDiffInternalImpl.vector_jacobian_product(f, backend, x, u)
+for implemented_backend in (:AutoZygote, :AutoEnzyme)
+    @eval function vector_jacobian_product(
+            f::F, backend::$implemented_backend, x, u) where {F}
+        assert_backend_loaded(:vector_jacobian_product, backend)
+        return AutoDiffInternalImpl.vector_jacobian_product(f, backend, x, u)
+    end
 end
 
 @doc doc"""
@@ -46,9 +50,10 @@ products efficiently using mixed-mode AD.
 
 ## Backends & AD Packages
 
-| Supported Backends | Packages Needed  |
-| :----------------- | :--------------- |
-| `AutoForwardDiff`  |                  |
+| Supported Backends | Packages Needed | Notes                                          |
+| :----------------- | :-------------- | :--------------------------------------------- |
+| `AutoForwardDiff`  |                 |                                                |
+| `AutoEnzyme`       | `Enzyme.jl`     | Not compatible with ChainRules based Nested AD |
 
 !!! warning
 
@@ -71,8 +76,11 @@ function jacobian_vector_product(::F, backend::AbstractADType, _, __) where {F}
     throw(ArgumentError("`jacobian_vector_product` is not implemented for `$(backend)`."))
 end
 
-function jacobian_vector_product(f::F, backend::AutoForwardDiff, x, u) where {F}
-    return AutoDiffInternalImpl.jacobian_vector_product(f, backend, x, u)
+for implemented_backend in (:AutoEnzyme, :AutoForwardDiff)
+    @eval function jacobian_vector_product(
+            f::F, backend::$(implemented_backend), x, u) where {F}
+        return AutoDiffInternalImpl.jacobian_vector_product(f, backend, x, u)
+    end
 end
 
 """
