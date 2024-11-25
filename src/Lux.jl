@@ -114,7 +114,7 @@ export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss,
        PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss
 export GenericLossFunction
 
-export f16, f32, f64
+export f16, f32, f64, bf16
 export match_eltype
 
 export FromFluxAdaptor, FluxLayer
