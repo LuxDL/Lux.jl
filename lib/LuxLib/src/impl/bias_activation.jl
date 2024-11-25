@@ -80,13 +80,16 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
         return y, ∇bias_activation_rrule
     end
 
-    y, ∇broadcast = CRC.rrule_via_ad(cfg, broadcast, σ ∘ +, x, reshape_bias(x, bias))
+    y, ∇broadcast = CRC.rrule_via_ad(
+        cfg, broadcast_bias_activation_generic, σ, x, reshape_bias(x, bias))
     ∇bias_activation_rrule = @closure Δ -> begin
         _, _, ∂x, ∂bias = ∇broadcast(Δ)
         return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(vec(∂bias))
     end
     return y, ∇bias_activation_rrule
 end
+
+@inline broadcast_bias_activation_generic(σ::F, x, b) where {F} = σ.(x .+ b)
 
 bias_activation!!(::typeof(identity), x::AbstractVector, ::Nothing) = x
 for bType in (Nothing, AbstractVector)

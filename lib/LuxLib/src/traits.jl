@@ -21,7 +21,7 @@ is_mutable_array(::Nothing) = True()
 
 ChainRulesCore.@non_differentiable is_mutable_array(::Any...)
 
-for op in (:has_dual, :has_float16, :is_tracked)
+for op in (:has_dual, :has_float16, :is_tracked, :has_complex)
     @eval $op(::Nothing) = False()
     @eval $op(x::Numeric) = $op(eltype(x))
 end
@@ -38,6 +38,9 @@ has_dual(::Type{<:ForwardDiff.Dual}) = True()
 has_float16(_) = False()
 has_float16(::Type{<:Float16}) = True()
 
+has_complex(_) = False()
+has_complex(::Type{<:Complex}) = True()
+
 is_tracked(_) = False()
 
 has_autodiff_value(x) = is_tracked(x) | has_dual(x)
@@ -51,6 +54,7 @@ function use_generic_broadcasting(xs::Tuple)
     xs_unwrapped = unrolled_map(unwrap_array, xs)
     return unrolled_any(has_autodiff_value, xs_unwrapped) |
            unrolled_any(has_float16, xs_unwrapped) |
+           unrolled_any(has_complex, xs_unwrapped) |
            unrolled_any(static_isa(StaticArray), xs_unwrapped)
 end
 
@@ -198,6 +202,7 @@ Currently supported modes are:
       + ReverseDiff Arrays
       + Tracker Arrays
       + ForwardDiff.Dual Arrays
+      + Complex Arrays
 
   - `GPUBroadcastOp{dev}`: GPU Arrays where `dev` is obtained from `get_device_type(xs)`.
     This option dispatches should preferably use `KernelAbstractions` or specialized vendor
