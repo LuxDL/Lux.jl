@@ -1,10 +1,10 @@
 ## Written like this to avoid dynamic dispatch from Zygote
 # Input Gradient / Jacobian
 function rewrite_autodiff_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F}
-    (f, f.inner.ps)
+    return f, f.inner.ps
 end
 function rewrite_autodiff_call(f::ComposedFunction{<:StatefulLuxLayer, F}) where {F}
-    (@closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps)
+    return @closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps
 end
 rewrite_autodiff_call(f::StatefulLuxLayer) = f, f.ps
 
@@ -22,10 +22,12 @@ function rewrite_autodiff_call(f::Base.Fix1{<:StatefulLuxLayer})
 end
 
 ## Break ambiguity
-for op in [ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
+for op in [
+    ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
     ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
     ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}]
+    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}
+]
     @eval function rewrite_autodiff_call(::$op)
         error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer \
                layers")
