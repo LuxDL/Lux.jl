@@ -77,7 +77,7 @@ steps:
           cuda: "*"
         env:
           JULIA_DEBUG: "Documenter"
-        timeout_in_minutes: 60
+        timeout_in_minutes: 120
 
 env:
   LUX_DOCUMENTATION_NTASKS: 1
