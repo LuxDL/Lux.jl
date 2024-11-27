@@ -40,7 +40,7 @@ function run_layernorm_testing_core(
     epsilon = LuxLib.Utils.default_epsilon(T)
     _f = (args...) -> layernorm(args..., act, dims, epsilon)
 
-    @constinferred layernorm(x, scale, bias, act, dims, epsilon)
+    @test @inferred(layernorm(x, scale, bias, act, dims, epsilon)) isa Any
     @jet layernorm(x, scale, bias, act, dims, epsilon)
 
     y = _f(x, scale, bias)
@@ -60,8 +60,8 @@ function run_layernorm_testing_core(
         soft_fail=[AutoFiniteDiff()])
 
     if anonact !== act
-        lfn = (x, sc, b, act, dim, ϵ) -> sum(layernorm(x, sc, b, act, dim, ϵ))
-        @constinferred Zygote.gradient(lfn, x, scale, bias, act, dims, epsilon)
+        @test @inferred(Zygote.gradient(
+            sumabs2layernorm, x, scale, bias, act, dims, epsilon)) isa Any
     end
 end
 

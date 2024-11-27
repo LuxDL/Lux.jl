@@ -1,5 +1,5 @@
 @testsetup module DenseSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs, TestExtras
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, StableRNGs
 
 anonact = x -> x^3
 
@@ -27,14 +27,14 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     @test y ≈ y_generic
     @test eltype(y) == promote_type(Tw, Tx)
 
-    @constinferred fused_dense_bias_activation(activation, w, x, bias)
+    @test @inferred(fused_dense_bias_activation(activation, w, x, bias)) isa Any
     @jet fused_dense_bias_activation(activation, w, x, bias)
 
     atol = 1.0f-3
     rtol = 1.0f-3
 
     if activation !== anonact
-        @constinferred Zygote.gradient(sumabs2dense, activation, w, x, bias)
+        @test @inferred(Zygote.gradient(sumabs2dense, activation, w, x, bias)) isa Any
     end
 
     skip_backends = []

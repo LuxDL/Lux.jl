@@ -1,5 +1,5 @@
 @testsetup module GroupNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, StableRNGs, TestExtras
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, StableRNGs
 using LuxTestUtils: check_approx
 
 function setup_groupnorm(rng, aType, T, sz, affine)
@@ -58,12 +58,12 @@ function run_groupnorm_testing(T, sz, groups, affine, act, aType, mode, ongpu)
         @test ∂bias≈∂bias_simple atol=atol rtol=rtol
     end
 
-    @constinferred groupnorm(x, scale, bias, groups, act, epsilon)
+    @test @inferred(groupnorm(x, scale, bias, groups, act, epsilon)) isa Any
     @jet groupnorm(x, scale, bias, groups, act, epsilon)
 
     if anonact !== act
-        lfn = (x, sc, b, g, act, ϵ) -> sum(groupnorm(x, sc, b, g, act, ϵ))
-        @constinferred Zygote.gradient(lfn, x, scale, bias, groups, act, epsilon)
+        @test @inferred(Zygote.gradient(
+            sumabs2groupnorm, x, scale, bias, groups, act, epsilon)) isa Any
     end
 
     @test y isa aType{T, length(sz)}

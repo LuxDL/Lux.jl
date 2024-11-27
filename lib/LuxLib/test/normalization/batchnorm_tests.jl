@@ -69,7 +69,8 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
         end
     end
 
-    @constinferred batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
+    @test @inferred(batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)) isa
+          Any
     @jet batchnorm(x, scale, bias, rm, rv, training, act, T(0.9), epsilon)
 
     @test y isa aType{T, length(sz)}
@@ -88,9 +89,8 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
     end
 
     if anonact !== act
-        lfn = (x, sc, b, rm, rv, tr, act, ϵ) -> sum(first(batchnorm(
-            x, sc, b, rm, rv, tr, act, ϵ)))
-        @constinferred Zygote.gradient(lfn, x, scale, bias, rm, rv, training, act, epsilon)
+        @test @inferred(Zygote.gradient(
+            sumabs2first, x, scale, bias, rm, rv, training, act, epsilon)) isa Any
     end
 end
 
