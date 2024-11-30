@@ -196,13 +196,13 @@ Binary Cross Entropy Loss with optional label smoothing and fused logit computat
 
 Returns the binary cross entropy loss computed as:
 
-  - If `logits` is either `false` or `Val(false)`:
+- If `logits` is either `false` or `Val(false)`:
 
-$$\text{agg}\left(-\tilde{y} * \log\left(\hat{y} + \epsilon\right) - (1 - \tilde{y}) * \log\left(1 - \hat{y} + \epsilon\right)\right)$$
+  $$\text{agg}\left(-\tilde{y} * \log\left(\hat{y} + \epsilon\right) - (1 - \tilde{y}) * \log\left(1 - \hat{y} + \epsilon\right)\right)$$
 
-  - If `logits` is `true` or `Val(true)`:
+- If `logits` is `true` or `Val(true)`:
 
-$$\text{agg}\left((1 - \tilde{y}) * \hat{y} - log\sigma(\hat{y})\right)$$
+  $$\text{agg}\left((1 - \tilde{y}) * \hat{y} - log\sigma(\hat{y})\right)$$
 
 The value of $\tilde{y}$ is computed using label smoothing. If `label_smoothing` is
 `nothing`, then no label smoothing is applied. If `label_smoothing` is a real number
