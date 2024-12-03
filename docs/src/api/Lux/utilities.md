@@ -13,6 +13,7 @@ basic building blocks which can be seamlessly composed to create complex trainin
 
 ```@docs
 Training.TrainState
+Training.TrainState(::AbstractLuxLayer, ::Any, ::Any, ::Optimisers.AbstractRule)
 Training.compute_gradients
 Training.apply_gradients
 Training.apply_gradients!
