@@ -57,7 +57,8 @@ true
 ```
 """
 function layer_map(f, l, ps, st)
-    return fmap_with_path(l, ps, st; walk=LayerWalkWithPath()) do kp, layer, ps_, st_
+    return fmap_with_path(
+        l, ps, st; walk=LayerWalkWithPath(), exclude=layer_map_leaf) do kp, layer, ps_, st_
         return f(layer, ps_, st_, kp)
     end
 end
@@ -103,3 +104,8 @@ function perform_layer_map(recurse, kp, ps_children, st_children, layer_children
 
     return layer_children_new, ps_children_new, st_children_new
 end
+
+layer_map_leaf(::KeyPath, ::AbstractLuxLayer) = true
+layer_map_leaf(::KeyPath, ::AbstractLuxWrapperLayer) = false
+layer_map_leaf(::KeyPath, ::AbstractLuxContainerLayer) = false
+layer_map_leaf(::KeyPath, x) = Functors.isleaf(x)

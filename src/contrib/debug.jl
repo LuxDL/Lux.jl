@@ -141,15 +141,10 @@ Recurses into the `layer` and replaces the inner most non Container Layers with 
 See [`Lux.Experimental.DebugLayer`](@ref) for details about the Keyword Arguments.
 """
 macro debug_mode(layer, kwargs...)
-    kws = esc.(kwargs)
     return esc(:(
         $(fmap_with_path)(
-        (kp, l) -> $(DebugLayer)(l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kws...)),
-        $(layer); exclude=$(debug_leaf))
+        (kp, l) -> $(DebugLayer)(
+            l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kwargs...)),
+        $(layer); exclude=$(layer_map_leaf))
     ))
 end
-
-debug_leaf(::KeyPath, ::AbstractLuxLayer) = true
-debug_leaf(::KeyPath, ::AbstractLuxWrapperLayer) = false
-debug_leaf(::KeyPath, ::AbstractLuxContainerLayer) = false
-debug_leaf(::KeyPath, x) = Functors.isleaf(x)
