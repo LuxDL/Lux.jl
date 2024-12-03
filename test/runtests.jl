@@ -44,7 +44,7 @@ if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
     end
 end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec(; name="AMDGPU", version=v"1.0.4"))
+    push!(EXTRA_PKGS, Pkg.PackageSpec(; name="AMDGPU"))
 
 if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
