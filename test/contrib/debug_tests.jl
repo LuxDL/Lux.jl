@@ -151,3 +151,20 @@ end
         @test !any(isnan, gs.layer_3.bias)
     end
 end
+
+@testitem "Debugging Tools: Issue #1068" setup=[SharedTestSetup] tags=[:misc] begin
+    model = Chain(
+        Conv((3, 3), 3 => 16, relu; stride=2),
+        MaxPool((2, 2)),
+        AdaptiveMaxPool((2, 2)),
+        GlobalMaxPool()
+    )
+
+    model_debug = Lux.Experimental.@debug_mode model
+    display(model_debug)
+
+    @test model_debug[1] isa Lux.Experimental.DebugLayer
+    @test model_debug[2] isa Lux.Experimental.DebugLayer
+    @test model_debug[3] isa Lux.Experimental.DebugLayer
+    @test model_debug[4] isa Lux.Experimental.DebugLayer
+end
