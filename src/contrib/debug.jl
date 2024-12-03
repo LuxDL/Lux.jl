@@ -142,7 +142,14 @@ See [`Lux.Experimental.DebugLayer`](@ref) for details about the Keyword Argument
 """
 macro debug_mode(layer, kwargs...)
     kws = esc.(kwargs)
-    return :($(fmap_with_path)(
-        (kp, l) -> DebugLayer(l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kws...)),
-        $(esc(layer))))
+    return esc(:(
+        $(fmap_with_path)(
+        (kp, l) -> $(DebugLayer)(l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kws...)),
+        $(layer); exclude=$(debug_leaf))
+    ))
 end
+
+debug_leaf(::KeyPath, ::AbstractLuxLayer) = true
+debug_leaf(::KeyPath, ::AbstractLuxWrapperLayer) = false
+debug_leaf(::KeyPath, ::AbstractLuxContainerLayer) = false
+debug_leaf(::KeyPath, x) = Functors.isleaf(x)
