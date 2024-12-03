@@ -141,8 +141,10 @@ Recurses into the `layer` and replaces the inner most non Container Layers with 
 See [`Lux.Experimental.DebugLayer`](@ref) for details about the Keyword Arguments.
 """
 macro debug_mode(layer, kwargs...)
-    kws = esc.(kwargs)
-    return :($(fmap_with_path)(
-        (kp, l) -> DebugLayer(l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kws...)),
-        $(esc(layer))))
+    return esc(:(
+        $(fmap_with_path)(
+        (kp, l) -> $(DebugLayer)(
+            l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kwargs...)),
+        $(layer); exclude=$(layer_map_leaf))
+    ))
 end

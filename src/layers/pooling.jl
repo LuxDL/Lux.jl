@@ -197,6 +197,8 @@ for layer_op in (:Max, :Mean, :LP)
             layer <: PoolingLayer
         end
 
+        Experimental.layer_map_leaf(::KeyPath, ::$(layer_name)) = true
+
         function $(layer_name)(
                 window::Tuple{Vararg{IntegerType}}; stride=window, pad=0, dilation=1, p=2)
             return $(layer_name)(PoolingLayer(static(:generic), static($(Meta.quot(op))),
@@ -204,19 +206,15 @@ for layer_op in (:Max, :Mean, :LP)
         end
 
         function Base.show(io::IO, m::$(layer_name))
-            kernel_size = m.layer.mode.kernel_size
+            (; mode, op) = m.layer
+            (; kernel_size, pad, stride, dilation) = mode
             print(io, string($(Meta.quot(layer_name))), "($(kernel_size)")
-            pad = m.layer.mode.pad
             all(==(0), pad) || print(io, ", pad=", PrettyPrinting.tuple_string(pad))
-            stride = m.layer.mode.stride
             stride == kernel_size ||
                 print(io, ", stride=", PrettyPrinting.tuple_string(stride))
-            dilation = m.layer.mode.dilation
             all(==(1), dilation) ||
                 print(io, ", dilation=", PrettyPrinting.tuple_string(dilation))
-            if $(Meta.quot(op)) == :lp
-                m.layer.op.p == 2 || print(io, ", p=", m.layer.op.p)
-            end
+            $(Meta.quot(op)) == :lp && (op.p == 2 || print(io, ", p=", op.p))
             print(io, ")")
         end
 
@@ -228,15 +226,16 @@ for layer_op in (:Max, :Mean, :LP)
             layer <: PoolingLayer
         end
 
+        Experimental.layer_map_leaf(::KeyPath, ::$(global_layer_name)) = true
+
         function $(global_layer_name)(; p=2)
             return $(global_layer_name)(PoolingLayer(static(:global), $(Meta.quot(op)); p))
         end
 
         function Base.show(io::IO, g::$(global_layer_name))
+            (; op) = g.layer
             print(io, string($(Meta.quot(global_layer_name))), "(")
-            if $(Meta.quot(op)) == :lp
-                g.layer.op.p == 2 || print(io, ", p=", g.layer.op.p)
-            end
+            $(Meta.quot(op)) == :lp && (op.p == 2 || print(io, ", p=", op.p))
             print(io, ")")
         end
 
@@ -248,16 +247,17 @@ for layer_op in (:Max, :Mean, :LP)
             layer <: PoolingLayer
         end
 
+        Experimental.layer_map_leaf(::KeyPath, ::$(adaptive_layer_name)) = true
+
         function $(adaptive_layer_name)(out_size::Tuple{Vararg{IntegerType}}; p=2)
             return $(adaptive_layer_name)(PoolingLayer(
                 static(:adaptive), $(Meta.quot(op)), out_size; p))
         end
 
         function Base.show(io::IO, a::$(adaptive_layer_name))
-            print(io, string($(Meta.quot(adaptive_layer_name))), "(", a.layer.mode.out_size)
-            if $(Meta.quot(op)) == :lp
-                a.layer.op.p == 2 || print(io, ", p=", a.layer.op.p)
-            end
+            (; mode, op) = a.layer
+            print(io, string($(Meta.quot(adaptive_layer_name))), "(", mode.out_size)
+            $(Meta.quot(op)) == :lp && (op.p == 2 || print(io, ", p=", op.p))
             print(io, ")")
         end
 
