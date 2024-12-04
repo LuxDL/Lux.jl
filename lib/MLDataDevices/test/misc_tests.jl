@@ -52,7 +52,7 @@ end
 
 @testset "CRC Tests" begin
     dev = cpu_device() # Other devices don't work with FiniteDifferences.jl
-    test_rrule(Adapt.adapt, dev, randn(Float64, 10); check_inferred=false)
+    test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred=false)
 
     gdev = gpu_device()
     if !(gdev isa MetalDevice)  # On intel devices causes problems

@@ -104,8 +104,6 @@ end
 
 special_aos(::AbstractArray) = false
 
-recursive_array_eltype(::Type{T}) where {T} = !isbitstype(T) && !(T <: Number)
-
 combine_devices(::Nothing, ::Nothing) = nothing
 combine_devices(::Nothing, dev::AbstractDevice) = dev
 combine_devices(dev::AbstractDevice, ::Nothing) = dev
@@ -127,6 +125,15 @@ function combine_devices(T1::Type{<:AbstractDevice}, T2::Type{<:AbstractDevice})
     throw(ArgumentError("Objects are on devices with different types: $(T1) and $(T2)."))
 end
 
+function ancestor(x)
+    if applicable(parent, x)
+        px = parent(x)
+        px === x && return x
+        return ancestor(px)
+    end
+    return x
+end
+
 for op in (:get_device, :get_device_type)
     cpu_ret_val = op == :get_device ? CPUDevice() : CPUDevice
     unknown_ret_val = op == :get_device ? UnknownDevice() : UnknownDevice
@@ -137,7 +144,7 @@ for op in (:get_device, :get_device_type)
 
     @eval begin
         function $(op)(x::AbstractArray{T}) where {T}
-            if recursive_array_eltype(T)
+            if !isbitstype(T) && !(T <: Number)
                 is_assigned_idxs = findall(Base.Fix1(isassigned, x), eachindex(x))
                 if length(is_assigned_idxs) == 0
                     @warn $(all_not_assigned_msg)
@@ -148,25 +155,16 @@ for op in (:get_device, :get_device_type)
                 end
                 return mapreduce(MLDataDevices.$(op), combine_devices, x)
             end
-            if hasmethod(parent, Tuple{typeof(x)})
-                parent_x = parent(x)
-                parent_x === x && return $(cpu_ret_val)
-                return $(op)(parent_x)
-            end
-            return $(cpu_ret_val)
+            return $(op)(ancestor(x))
         end
 
         function $(op)(x::Union{Tuple, NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
-            return unrolled_mapreduce(MLDataDevices.$(op), combine_devices, values(x))
+            return mapreduce(MLDataDevices.$(op), combine_devices, values(x))
         end
 
-        function $(op)(f::F) where {F <: Function}
-            Base.issingletontype(F) &&
-                return $(op == :get_device ? UnknownDevice() : UnknownDevice)
-            return unrolled_mapreduce(MLDataDevices.$(op), combine_devices,
-                map(Base.Fix1(getfield, f), fieldnames(F)))
-        end
+        # IMP: Don't mark as fast_structure
+        $(op)(::Function) = $(op == :get_device ? UnknownDevice() : UnknownDevice)
     end
 
     for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
@@ -177,41 +175,15 @@ end
 get_device(_) = UnknownDevice()
 get_device_type(_) = UnknownDevice
 
+get_device(::Array) = CPUDevice()
+get_device_type(::Array) = CPUDevice
+
 fast_structure(::AbstractArray) = true
 fast_structure(::Union{Tuple, NamedTuple}) = true
 for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
     @eval fast_structure(::$(T)) = true
 end
-fast_structure(::Function) = true
 fast_structure(_) = false
-
-function unrolled_mapreduce(f::F, op::O, itr) where {F, O}
-    return unrolled_mapreduce(f, op, itr, static_length(itr))
-end
-
-function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F, O}
-    error("Cannot unroll over an empty iterator.")
-end
-
-unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F, O} = f(only(itr))
-
-@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F, O, N}
-    syms = [gensym("f_itr_$(i)") for i in 1:N]
-    op_syms = [gensym("op_$(i)") for i in 1:(N - 1)]
-    f_applied = [:($(syms[i]) = f(itr[$i])) for i in 1:N]
-    combine_expr = [:($(op_syms[1]) = op($(syms[1]), $(syms[2])))]
-    for i in 2:(N - 1)
-        push!(combine_expr, :($(op_syms[i]) = op($(op_syms[i - 1]), $(syms[i + 1]))))
-    end
-    return quote
-        $(Expr(:meta, :inline))
-        $(Expr(:inbounds, true))
-        $(Expr(:block, f_applied...))
-        $(Expr(:inbounds, :pop))
-        $(Expr(:block, combine_expr...))
-        return $(op_syms[end])
-    end
-end
 
 function unsafe_free_internal!(x::AbstractArray)
     unsafe_free_internal!(MLDataDevices.get_device_type(x), x)
