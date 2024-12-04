@@ -1,7 +1,7 @@
 module MLDataDevicesTrackerExt
 
 using Adapt: Adapt
-using MLDataDevices: Internal, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice
+using MLDataDevices: Internal, AbstractDevice
 using Tracker: Tracker
 
 for op in (:get_device, :get_device_type)
@@ -11,13 +11,10 @@ end
 
 Internal.special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
 
-for T in (AMDGPUDevice, AMDGPUDevice{Nothing}, CUDADevice,
-    CUDADevice{Nothing}, MetalDevice, oneAPIDevice)
-    @eval function Adapt.adapt_storage(to::$(T), x::AbstractArray{<:Tracker.TrackedReal})
-        @warn "AbstractArray{<:Tracker.TrackedReal} is not supported for $(to). Converting \
-               to Tracker.TrackedArray." maxlog=1
-        return to(Tracker.collect(x))
-    end
+function Adapt.adapt_structure(to::AbstractDevice, x::AbstractArray{<:Tracker.TrackedReal})
+    @warn "AbstractArray{<:Tracker.TrackedReal} is not supported for $(to). Converting to \
+           Tracker.TrackedArray." maxlog=1
+    return Adapt.adapt(to, Tracker.collect(x))
 end
 
 end
