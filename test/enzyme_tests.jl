@@ -83,12 +83,10 @@ export generic_loss_function, compute_enzyme_gradient, compute_zygote_gradient,
 end
 
 @testitem "Enzyme Integration" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
-    :autodiff, :enzyme] begin
+    :autodiff, :enzyme] timeout=3600 begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # TODO: Currently all the tests are run on CPU. We should eventually add tests for
-        #       CUDA and AMDGPU.
         ongpu && continue
 
         @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
@@ -106,15 +104,13 @@ end
     end
 end
 
-@testitem "Enzyme Integration ComponentArray" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
+@testitem "Enzyme Integration ComponentArray" setup=[EnzymeTestSetup, SharedTestSetup] timeout=3600 tags=[
     :autodiff, :enzyme] begin
     using ComponentArrays
 
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        # TODO: Currently all the tests are run on CPU. We should eventually add tests for
-        #       CUDA and AMDGPU.
         ongpu && continue
 
         @testset "[$(i)] $(nameof(typeof(model)))" for (i, (model, x)) in enumerate(MODELS_LIST)
