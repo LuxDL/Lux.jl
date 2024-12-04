@@ -125,15 +125,6 @@ function combine_devices(T1::Type{<:AbstractDevice}, T2::Type{<:AbstractDevice})
     throw(ArgumentError("Objects are on devices with different types: $(T1) and $(T2)."))
 end
 
-function ancestor(x)
-    if applicable(parent, x)
-        px = parent(x)
-        px === x && return x
-        return ancestor(px)
-    end
-    return x
-end
-
 for op in (:get_device, :get_device_type)
     cpu_ret_val = op == :get_device ? CPUDevice() : CPUDevice
     unknown_ret_val = op == :get_device ? UnknownDevice() : UnknownDevice
@@ -155,7 +146,12 @@ for op in (:get_device, :get_device_type)
                 end
                 return mapreduce(MLDataDevices.$(op), combine_devices, x)
             end
-            return $(op)(ancestor(x))
+            if hasmethod(parent, Tuple{typeof(x)})
+                parent_x = parent(x)
+                parent_x === x && return $(cpu_ret_val)
+                return $(op)(parent_x)
+            end
+            return $(cpu_ret_val)
         end
 
         function $(op)(x::Union{Tuple, NamedTuple})
@@ -174,9 +170,6 @@ end
 
 get_device(_) = UnknownDevice()
 get_device_type(_) = UnknownDevice
-
-get_device(::Array) = CPUDevice()
-get_device_type(::Array) = CPUDevice
 
 fast_structure(::AbstractArray) = true
 fast_structure(::Union{Tuple, NamedTuple}) = true

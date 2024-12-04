@@ -363,9 +363,7 @@ function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractDe
 end
 
 # Dispatches for Different Data Structures
-for dev in (CPUDevice, AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, ReactantDevice)
-    @eval (D::$(dev))(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude=isleaf)
-end
+(D::AbstractDevice)(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude=isleaf)
 
 for op in (:get_device, :get_device_type)
     @eval function $(op)(x)
@@ -377,15 +375,9 @@ for op in (:get_device, :get_device_type)
 end
 
 # Adapt Interface
-Adapt.adapt_storage(::CPUDevice, x::AbstractArray) = Adapt.adapt(Array, x)
-Adapt.adapt_storage(::CPUDevice, rng::AbstractRNG) = rng
-
-for T in (AMDGPUDevice, CUDADevice, MetalDevice, oneAPIDevice, ReactantDevice)
-    @eval begin
-        Adapt.adapt_storage(to::$(T), ::Random.TaskLocalRNG) = default_device_rng(to)
-        Adapt.adapt_storage(::$(T), rng::AbstractRNG) = rng
-    end
-end
+Adapt.adapt_storage(::CPUDevice, x::AbstractArray) = Array(x)
+Adapt.adapt_storage(to::AbstractDevice, ::Random.TaskLocalRNG) = default_device_rng(to)
+Adapt.adapt_storage(::AbstractDevice, rng::AbstractRNG) = rng
 
 """
     isleaf(x) -> Bool
