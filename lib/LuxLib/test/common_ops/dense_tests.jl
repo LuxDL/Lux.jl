@@ -117,23 +117,23 @@ end
 end
 
 @testitem "Fused Dense: StaticArrays" tags=[:dense] begin
-    using StaticArrays, NNlib
+    using StaticArrays, NNlib, TestExtras
 
     x = @SArray rand(2, 4)
     weight = @SArray rand(3, 2)
     bias = @SArray rand(3)
 
-    @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa SArray
+    @constinferred fused_dense_bias_activation(relu, weight, x, bias)
 end
 
 @testitem "Fused Dense: CPU No Scalar Indexing" tags=[:dense] begin
-    using JLArrays, NNlib
+    using JLArrays, NNlib, TestExtras
 
     x = JLArray(rand(Float32, 2, 4))
     weight = JLArray(rand(Float32, 3, 2))
     bias = JLArray(rand(Float32, 3))
 
-    @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa JLArray
+    @constinferred fused_dense_bias_activation(relu, weight, x, bias)
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 

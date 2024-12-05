@@ -30,18 +30,18 @@
             @test eltype(y2) == T
             @test eltype(y3) == T
 
-            @test @inferred(apply_act(f, x)) isa Any
-            @test @inferred(apply_act_fast(f, x)) isa Any
-            @test @inferred(apply_act_fast2(f, x)) isa Any
+            @constinferred apply_act(f, x)
+            @constinferred apply_act_fast(f, x)
+            @constinferred apply_act_fast2(f, x)
 
             @jet apply_act_fast(f, x)
             @jet apply_act_fast2(f, x)
 
-            @test @inferred(Zygote.gradient(apply_act, f, x)) isa Any
+            @constinferred Zygote.gradient(apply_act, f, x)
             if f !== lisht
-                @test @inferred(Zygote.gradient(apply_act_fast, f, x)) isa Any
+                @constinferred Zygote.gradient(apply_act_fast, f, x)
             end
-            @test @inferred(Zygote.gradient(apply_act_fast2, f, x)) isa Any
+            @constinferred Zygote.gradient(apply_act_fast2, f, x)
 
             @test_gradients(apply_act, f, x; atol, rtol)
             @test_gradients(apply_act_fast, f, x; atol, rtol, skip_backends=[AutoEnzyme()])

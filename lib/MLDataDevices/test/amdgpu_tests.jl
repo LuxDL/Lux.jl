@@ -1,4 +1,4 @@
-using MLDataDevices, Random, Test
+using MLDataDevices, Random, Test, TestExtras
 using ArrayInterface: parameterless_type
 
 @testset "CPU Fallback" begin
@@ -122,7 +122,7 @@ using FillArrays, Zygote  # Extensions
         ps = (; weight=x, bias=x, d=(x, x))
 
         return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
-        @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
+        @constinferred Val{parameterless_type(typeof(device))} return_val(ps)
     end
 end
 

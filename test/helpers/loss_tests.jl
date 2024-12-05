@@ -9,8 +9,8 @@
     ∂x2 = Zygote.gradient(LuxOps.xlogx, 2.0)[1]
     @test ∂x1 ≈ ∂x2
 
-    @test @inferred(LuxOps.xlogx(2)) isa Number
-    @test @inferred(LuxOps.xlogx(0)) isa Number
+    @constinferred LuxOps.xlogx(2)
+    @constinferred LuxOps.xlogx(0)
     @jet LuxOps.xlogx(2)
 
     @test iszero(LuxOps.xlogy(0, 1))
@@ -33,13 +33,13 @@
         @test_broken false
     end
 
-    @test @inferred(LuxOps.xlogy(2, 3)) isa Number
-    @test @inferred(LuxOps.xlogy(0, 1)) isa Number
+    @constinferred LuxOps.xlogy(2, 3)
+    @constinferred LuxOps.xlogy(0, 1)
     @jet LuxOps.xlogy(2, 3)
 
     if LuxTestUtils.ENZYME_TESTING_ENABLED
-        @test @inferred(Enzyme.autodiff(
-            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))) isa Any
+        @constinferred Enzyme.autodiff(
+            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))
     else
         @test_broken false
     end
@@ -74,7 +74,7 @@ end
             @test loss_sum(ŷ, y) ≈ loss_res * 4
             @test loss_sum2(ŷ, y) ≈ loss_res * 4
 
-            @test @inferred(Zygote.gradient(loss_mean, ŷ, y)) isa Any
+            @constinferred Zygote.gradient(loss_mean, ŷ, y)
 
             @jet loss_mean(ŷ, y)
             @jet loss_sum(ŷ, y)
@@ -91,7 +91,11 @@ end
 
             @jet MSLELoss()(ŷ, y)
 
-            @test @inferred(Zygote.gradient(MSLELoss(), ŷ, y)) isa Any broken=ongpu
+            if ongpu
+                @constinferred_broken Zygote.gradient(MSLELoss(), ŷ, y)
+            else
+                @constinferred Zygote.gradient(MSLELoss(), ŷ, y)
+            end
 
             __f = Base.Fix2(MSLELoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -150,7 +154,7 @@ end
             @jet celoss(ŷ, y)
             @jet celoss_smooth(ŷ, y)
 
-            @test @inferred(Zygote.gradient(celoss, ŷ, y)) isa Any
+            @constinferred Zygote.gradient(celoss, ŷ, y)
 
             @test_gradients(Base.Fix2(celoss, y), ŷ; atol=1.0f-3,
                 rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
@@ -173,7 +177,7 @@ end
             @jet logitceloss(logŷ, y)
             @jet logitceloss_smooth(logŷ, y)
 
-            @test @inferred(Zygote.gradient(logitceloss, logŷ, y)) isa Any
+            @constinferred Zygote.gradient(logitceloss, logŷ, y)
 
             @test_gradients(Base.Fix2(logitceloss, y), logŷ; atol=1.0f-3,
                 rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
@@ -201,7 +205,7 @@ end
             @jet bceloss(σ.(logŷ), y)
             @jet bceloss_smooth(σ.(logŷ), y)
 
-            @test @inferred(Zygote.gradient(bceloss, σ.(logŷ), y)) isa Any
+            @constinferred Zygote.gradient(bceloss, σ.(logŷ), y)
 
             __f = Base.Fix2(bceloss, y)
             σlogŷ = σ.(logŷ)
@@ -223,7 +227,7 @@ end
             @jet logitbceloss(logŷ, y)
             @jet logitbceloss_smooth(logŷ, y)
 
-            @test @inferred(Zygote.gradient(logitbceloss, logŷ, y)) isa Any
+            @constinferred Zygote.gradient(logitbceloss, logŷ, y)
 
             __f = Base.Fix2(logitbceloss, y)
             @test_gradients(__f, logŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -246,7 +250,11 @@ end
 
             @jet BinaryFocalLoss()(ŷ, y)
 
-            @test @inferred(Zygote.gradient(BinaryFocalLoss(), ŷ, y)) isa Any broken=ongpu
+            if ongpu
+                @constinferred_broken Zygote.gradient(BinaryFocalLoss(), ŷ, y)
+            else
+                @constinferred Zygote.gradient(BinaryFocalLoss(), ŷ, y)
+            end
 
             __f = Base.Fix2(BinaryFocalLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -270,7 +278,11 @@ end
 
             @jet FocalLoss()(ŷ, y)
 
-            @test @inferred(Zygote.gradient(FocalLoss(), ŷ, y)) isa Any broken=ongpu
+            if ongpu
+                @constinferred_broken Zygote.gradient(FocalLoss(), ŷ, y)
+            else
+                @constinferred Zygote.gradient(FocalLoss(), ŷ, y)
+            end
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
@@ -301,7 +313,7 @@ end
             @test KLDivergenceLoss()(y, y) ≈ 0
 
             @jet KLDivergenceLoss()(ŷ, y)
-            @test @inferred(Zygote.gradient(KLDivergenceLoss(), ŷ, y)) isa Any
+            @constinferred Zygote.gradient(KLDivergenceLoss(), ŷ, y)
 
             @test_gradients(Base.Fix2(KLDivergenceLoss(), y), ŷ; atol=1.0f-3,
                 rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
@@ -315,7 +327,7 @@ end
             @test Lux.HingeLoss()(y, 0.5 .* y) ≈ 0.125
 
             @jet Lux.HingeLoss()(ŷ, y)
-            @test @inferred(Zygote.gradient(Lux.HingeLoss(), ŷ, y)) isa Any
+            @constinferred Zygote.gradient(Lux.HingeLoss(), ŷ, y)
 
             __f = Base.Fix2(Lux.HingeLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -329,7 +341,7 @@ end
             @test SquaredHingeLoss()(y, 0.5 .* y) ≈ 0.0625
 
             @jet SquaredHingeLoss()(ŷ, y)
-            @inferred Zygote.gradient(SquaredHingeLoss(), ŷ, y)
+            @constinferred Zygote.gradient(SquaredHingeLoss(), ŷ, y)
 
             __f = Base.Fix2(SquaredHingeLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -343,7 +355,7 @@ end
             @test Lux.PoissonLoss()(y, y) ≈ 0.5044459776946685
 
             @jet Lux.PoissonLoss()(ŷ, y)
-            @test @inferred Zygote.gradient(Lux.PoissonLoss(), ŷ, y) isa Any
+            @constinferred Zygote.gradient(Lux.PoissonLoss(), ŷ, y)
 
             __f = Base.Fix2(Lux.PoissonLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -357,7 +369,7 @@ end
             @test DiceCoeffLoss()(y, y) ≈ 0.0
 
             @jet DiceCoeffLoss()(ŷ, y)
-            @test @inferred(Zygote.gradient(DiceCoeffLoss(), ŷ, y)) isa Any broken=true
+            @constinferred_broken Zygote.gradient(DiceCoeffLoss(), ŷ, y)
 
             __f = Base.Fix2(DiceCoeffLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3,

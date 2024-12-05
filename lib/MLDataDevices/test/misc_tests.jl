@@ -1,4 +1,4 @@
-using Adapt, MLDataDevices, ComponentArrays, Random
+using Adapt, MLDataDevices, ComponentArrays, Random, TestExtras
 using ArrayInterface: parameterless_type
 using ChainRulesTestUtils: test_rrule
 using ReverseDiff, Tracker, ForwardDiff
@@ -148,10 +148,10 @@ end
     ps = (; weight=x, bias=x, d=(x, x))
 
     return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
-    @test @inferred(return_val(ps)) isa Val{typeof(cpu_device())}
+    @constinferred Val{typeof(cpu_device())} return_val(ps)
 
     return_val2(x) = Val(get_device(x))
-    @test @inferred(return_val2(ps)) isa Val{cpu_device()}
+    @constinferred Val{cpu_device()} return_val2(ps)
 end
 
 @testset "undefined references array" begin

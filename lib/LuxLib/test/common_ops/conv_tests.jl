@@ -47,16 +47,15 @@ function run_conv_testing(gen_f::Function, activation, kernel, stride, padding,
     @jet fused_conv_bias_activation(activation, weight, x, bias, cdims)
 
     if mode != "amdgpu" && activation !== anonact
-        @test @inferred(Zygote.gradient(
-            sumabs2conv, activation, weight, x, bias, cdims
-        )) isa Any
+        @test @inferred(Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims)) isa Any
     else
         try
-            @inferred(Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims))
-            @test true
+            @test @inferred(Zygote.gradient(sumabs2conv, activation, weight, x, bias, cdims)) isa Any
         catch e
             e isa ErrorException || rethrow()
-            @test_broken false
+            @test_broken @inferred(Zygote.gradient(
+                sumabs2conv, activation, weight, x, bias, cdims
+            ))
         end
     end
 

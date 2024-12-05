@@ -8,7 +8,7 @@ using Lux, Functors
 using Setfield: @set
 using DispatchDoctor: allow_unstable
 @reexport using ComponentArrays, LuxCore, LuxLib, LuxTestUtils, Random, StableRNGs, Test,
-                Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff
+                Zygote, Statistics, Enzyme, LinearAlgebra, ForwardDiff, TestExtras
 using MLDataDevices: default_device_rng, CPUDevice, CUDADevice, AMDGPUDevice
 using LuxTestUtils: check_approx
 using Static: True

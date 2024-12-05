@@ -1,5 +1,5 @@
 @testsetup module BatchNormSetup
-using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static
+using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib, Static, TestExtras
 
 function setup_batchnorm(gen_f, aType, T, sz; affine::Bool=true, track_stats::Bool)
     x = gen_f(T, sz) |> aType
@@ -89,10 +89,8 @@ function run_batchnorm_testing(gen_f, T, sz, training, affine, track_stats, act,
     end
 
     if anonact !== act
-        lfn = (x, sc, b, rm, rv, tr, act, ϵ) -> sum(first(batchnorm(
-            x, sc, b, rm, rv, tr, act, ϵ)))
         @test @inferred(Zygote.gradient(
-            lfn, x, scale, bias, rm, rv, training, act, epsilon)) isa Any
+            sumabs2first, x, scale, bias, rm, rv, training, act, epsilon)) isa Any
     end
 end
 
