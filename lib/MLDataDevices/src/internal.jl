@@ -104,8 +104,6 @@ end
 
 special_aos(::AbstractArray) = false
 
-recursive_array_eltype(::Type{T}) where {T} = !isbitstype(T) && !(T <: Number)
-
 combine_devices(::Nothing, ::Nothing) = nothing
 combine_devices(::Nothing, dev::AbstractDevice) = dev
 combine_devices(dev::AbstractDevice, ::Nothing) = dev
@@ -137,7 +135,7 @@ for op in (:get_device, :get_device_type)
 
     @eval begin
         function $(op)(x::AbstractArray{T}) where {T}
-            if recursive_array_eltype(T)
+            if !isbitstype(T) && !(T <: Number)
                 is_assigned_idxs = findall(Base.Fix1(isassigned, x), eachindex(x))
                 if length(is_assigned_idxs) == 0
                     @warn $(all_not_assigned_msg)
@@ -158,15 +156,12 @@ for op in (:get_device, :get_device_type)
 
         function $(op)(x::Union{Tuple, NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
+            # NOTE: We need unrolled_mapreduce for julia 1.10 to ensure type stability
             return unrolled_mapreduce(MLDataDevices.$(op), combine_devices, values(x))
         end
 
-        function $(op)(f::F) where {F <: Function}
-            Base.issingletontype(F) &&
-                return $(op == :get_device ? UnknownDevice() : UnknownDevice)
-            return unrolled_mapreduce(MLDataDevices.$(op), combine_devices,
-                map(Base.Fix1(getfield, f), fieldnames(F)))
-        end
+        # NOTE: Don't mark as fast_structure
+        $(op)(::Function) = $(op == :get_device ? UnknownDevice() : UnknownDevice)
     end
 
     for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
@@ -182,7 +177,6 @@ fast_structure(::Union{Tuple, NamedTuple}) = true
 for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
     @eval fast_structure(::$(T)) = true
 end
-fast_structure(::Function) = true
 fast_structure(_) = false
 
 function unrolled_mapreduce(f::F, op::O, itr) where {F, O}

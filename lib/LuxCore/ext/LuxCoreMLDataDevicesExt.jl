@@ -1,16 +1,16 @@
 module LuxCoreMLDataDevicesExt
 
-using LuxCore: LuxCore
-using MLDataDevices: MLDataDevices
+using Adapt: Adapt
+using LuxCore: LuxCore, AbstractLuxLayer
+using MLDataDevices: MLDataDevices, AbstractDevice
 
-for (dev) in (:CPU, :CUDA, :AMDGPU, :Metal, :oneAPI)
-    ldev = Symbol(dev, :Device)
-    @eval function (::MLDataDevices.$(ldev))(NN::LuxCore.AbstractLuxLayer)
-        @warn "Lux layers are stateless and hence don't participate in device transfers. \
-               Apply this function on the parameters and states generated using \
-               `LuxCore.setup`."
-        return NN
-    end
+MLDataDevices.isleaf(::AbstractLuxLayer) = true
+
+function Adapt.adapt_storage(::AbstractDevice, x::AbstractLuxLayer)
+    @warn "Lux layers are stateless and hence don't participate in device transfers. \
+           Apply this function on the parameters and states generated using \
+           `LuxCore.setup`."
+    return x
 end
 
 end
