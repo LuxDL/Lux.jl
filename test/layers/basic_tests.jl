@@ -165,7 +165,7 @@ end
         )
         x = randn(SVector{N, Float64})
 
-        broken = pkgversion(Enzyme) ≥ v"0.13.18"
+        broken = pkgversion(Enzyme) == v"0.13.18"
 
         @test begin
             grad1 = ForwardDiff.gradient(ComponentArray(ps)) do ps
