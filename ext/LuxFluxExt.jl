@@ -211,12 +211,6 @@ function Lux.convert_flux_model(
     return Lux.GroupNorm(l.chs, l.G, l.λ; l.affine, epsilon=l.ϵ)
 end
 
-const _INVALID_TRANSFORMATION_TYPES = Union{<:Flux.Recur}
-
-function Lux.convert_flux_model(l::T; kwargs...) where {T <: _INVALID_TRANSFORMATION_TYPES}
-    throw(FluxModelConversionException("Transformation of type $(T) is not supported."))
-end
-
 for cell in (:RNNCell, :LSTMCell, :GRUCell)
     msg = "Recurrent Cell: $(cell) for Flux has semantical difference with Lux, \
            mostly in-terms of how the bias term is dealt with. Lux aligns with the Pytorch \
