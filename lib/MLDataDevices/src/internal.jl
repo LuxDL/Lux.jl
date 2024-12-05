@@ -156,10 +156,11 @@ for op in (:get_device, :get_device_type)
 
         function $(op)(x::Union{Tuple, NamedTuple})
             length(x) == 0 && return $(op == :get_device ? nothing : Nothing)
-            return mapreduce(MLDataDevices.$(op), combine_devices, values(x))
+            # NOTE: We need unrolled_mapreduce for julia 1.10 to ensure type stability
+            return unrolled_mapreduce(MLDataDevices.$(op), combine_devices, values(x))
         end
 
-        # IMP: Don't mark as fast_structure
+        # NOTE: Don't mark as fast_structure
         $(op)(::Function) = $(op == :get_device ? UnknownDevice() : UnknownDevice)
     end
 
@@ -177,6 +178,34 @@ for T in (Number, AbstractRNG, Val, Symbol, String, Nothing, AbstractRange)
     @eval fast_structure(::$(T)) = true
 end
 fast_structure(_) = false
+
+function unrolled_mapreduce(f::F, op::O, itr) where {F, O}
+    return unrolled_mapreduce(f, op, itr, static_length(itr))
+end
+
+function unrolled_mapreduce(::F, ::O, _, ::Val{0}) where {F, O}
+    error("Cannot unroll over an empty iterator.")
+end
+
+unrolled_mapreduce(f::F, ::O, itr, ::Val{1}) where {F, O} = f(only(itr))
+
+@generated function unrolled_mapreduce(f::F, op::O, itr, ::Val{N}) where {F, O, N}
+    syms = [gensym("f_itr_$(i)") for i in 1:N]
+    op_syms = [gensym("op_$(i)") for i in 1:(N - 1)]
+    f_applied = [:($(syms[i]) = f(itr[$i])) for i in 1:N]
+    combine_expr = [:($(op_syms[1]) = op($(syms[1]), $(syms[2])))]
+    for i in 2:(N - 1)
+        push!(combine_expr, :($(op_syms[i]) = op($(op_syms[i - 1]), $(syms[i + 1]))))
+    end
+    return quote
+        $(Expr(:meta, :inline))
+        $(Expr(:inbounds, true))
+        $(Expr(:block, f_applied...))
+        $(Expr(:inbounds, :pop))
+        $(Expr(:block, combine_expr...))
+        return $(op_syms[end])
+    end
+end
 
 function unsafe_free_internal!(x::AbstractArray)
     unsafe_free_internal!(MLDataDevices.get_device_type(x), x)
