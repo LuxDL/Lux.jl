@@ -135,8 +135,7 @@ const RETESTITEMS_NWORKER_THREADS = parse(
 
         ReTestItems.runtests(Lux;
             tags=(tag == "all" ? nothing : [Symbol(tag)]), testitem_timeout=2400,
-            nworkers, nworker_threads=RETESTITEMS_NWORKER_THREADS,
-            retries=tag == "reactant" ? 2 : 0
+            nworkers, nworker_threads=RETESTITEMS_NWORKER_THREADS
         )
     end
 end
