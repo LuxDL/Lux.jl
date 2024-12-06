@@ -74,7 +74,8 @@ function compute_gradients_internal_and_step(objective_function::F, model, data,
         st, opt_state) where {F}
     dps = Enzyme.make_zero(ps)
     _, (loss, stₙ, stats) = Enzyme.autodiff(
-        Enzyme.ReverseWithPrimal, Const(objective_function), Active, Const(model),
+        Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
+        Const(objective_function), Active, Const(model),
         Duplicated(ps, dps), Const(st), Const(data))
     opt_state, ps = Optimisers.update(opt_state, ps, dps)
     return dps, ps, loss, stats, stₙ, opt_state
@@ -84,7 +85,8 @@ function compute_gradients_internal_and_step!(objective_function::F, model, data
         st, opt_state) where {F}
     dps = Enzyme.make_zero(ps)
     _, (loss, stₙ, stats) = Enzyme.autodiff(
-        Enzyme.ReverseWithPrimal, Const(objective_function), Active, Const(model),
+        Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
+        Const(objective_function), Active, Const(model),
         Duplicated(ps, dps), Const(st), Const(data))
     # XXX: Inplace updates not actually inplace
     opt_state, ps = Optimisers.update!(opt_state, ps, dps)
