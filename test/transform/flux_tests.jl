@@ -1,4 +1,4 @@
-@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:misc] skip=:(true) begin
+@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:misc] begin
     import Flux
 
     toluxpsst = FromFluxAdaptor(; preserve_ps_st=true)
@@ -8,10 +8,10 @@
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Containers" begin
             @testset "Chain" begin
-                models = [Flux.Chain(Flux.Dense(2 => 5), Flux.Dense(5 => 1)),
-                    Flux.Chain(; l1=Flux.Dense(2 => 5), l2=Flux.Dense(5 => 1))] |> dev
-
-                for model in models
+                for model in [
+                    Flux.Chain(Flux.Dense(2 => 5), Flux.Dense(5 => 1)) |> dev,
+                    Flux.Chain(; l1=Flux.Dense(2 => 5), l2=Flux.Dense(5 => 1)) |> dev
+                ]
                     x = rand(Float32, 2, 1) |> aType
 
                     model_lux = toluxpsst(model)
@@ -57,10 +57,10 @@
             end
 
             @testset "Parallel" begin
-                models = [Flux.Parallel(+, Flux.Dense(2 => 2), Flux.Dense(2 => 2)),
-                    Flux.Parallel(+; l1=Flux.Dense(2 => 2), l2=Flux.Dense(2 => 2))] |> dev
-
-                for model in models
+                for model in [
+                    Flux.Parallel(+, Flux.Dense(2 => 2), Flux.Dense(2 => 2)) |> dev,
+                    Flux.Parallel(+; l1=Flux.Dense(2 => 2), l2=Flux.Dense(2 => 2)) |> dev
+                ]
                     x = rand(Float32, 2, 1) |> aType
 
                     model_lux = toluxpsst(model)
@@ -94,8 +94,10 @@
 
         @testset "Linear" begin
             @testset "Dense" begin
-                for model in [Flux.Dense(2 => 4) |> dev,
-                    Flux.Dense(2 => 4; bias=false) |> dev]
+                for model in [
+                    Flux.Dense(2 => 4) |> dev,
+                    Flux.Dense(2 => 4; bias=false) |> dev
+                ]
                     x = randn(Float32, 2, 4) |> aType
 
                     model_lux = toluxpsst(model)
@@ -112,7 +114,9 @@
 
             @testset "Scale" begin
                 for model in [
-                    Flux.Scale(2) |> dev, Flux.Scale(2; bias=false) |> dev]
+                    Flux.Scale(2) |> dev,
+                    Flux.Scale(2; bias=false) |> dev
+                ]
                     x = randn(Float32, 2, 4) |> aType
 
                     model_lux = toluxpsst(model)
@@ -128,8 +132,10 @@
             end
 
             @testset "Bilinear" begin
-                for model in [Flux.Bilinear((2, 3) => 5) |> dev,
-                    Flux.Bilinear((2, 3) => 5; bias=false) |> dev]
+                for model in [
+                    Flux.Bilinear((2, 3) => 5) |> dev,
+                    Flux.Bilinear((2, 3) => 5; bias=false) |> dev
+                ]
                     x = randn(Float32, 2, 4) |> aType
                     y = randn(Float32, 3, 4) |> aType
 
@@ -447,7 +453,7 @@
                 bias
             end
 
-            Flux.@functor CustomFluxLayer
+            Flux.@layer CustomFluxLayer
 
             (c::CustomFluxLayer)(x) = c.weight .* x .+ c.bias
 
@@ -465,13 +471,6 @@
             @test tolux(Flux.flatten) isa Lux.FlattenLayer
             @test tolux(identity) isa Lux.NoOpLayer
             @test tolux(+) isa Lux.WrappedFunction
-        end
-
-        @testset "Unsupported Layers" begin
-            accum(h, x) = (h + x, x)
-            rnn = Flux.Recur(accum, 0)
-
-            @test_throws Lux.FluxModelConversionException tolux(rnn)
         end
     end
 end
