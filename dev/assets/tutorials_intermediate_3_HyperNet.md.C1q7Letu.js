@@ -1,0 +1,560 @@
+import{_ as a,c as n,a2 as i,o as p}from"./chunks/framework.BS99Di-t.js";const E=JSON.parse('{"title":"Training a HyperNetwork on MNIST and FashionMNIST","description":"","frontmatter":{},"headers":[],"relativePath":"tutorials/intermediate/3_HyperNet.md","filePath":"tutorials/intermediate/3_HyperNet.md","lastUpdated":null}'),l={name:"tutorials/intermediate/3_HyperNet.md"};function e(t,s,h,c,r,k){return p(),n("div",null,s[0]||(s[0]=[i(`<h1 id="Training-a-HyperNetwork-on-MNIST-and-FashionMNIST" tabindex="-1">Training a HyperNetwork on MNIST and FashionMNIST <a class="header-anchor" href="#Training-a-HyperNetwork-on-MNIST-and-FashionMNIST" aria-label="Permalink to &quot;Training a HyperNetwork on MNIST and FashionMNIST {#Training-a-HyperNetwork-on-MNIST-and-FashionMNIST}&quot;">​</a></h1><h2 id="Package-Imports" tabindex="-1">Package Imports <a class="header-anchor" href="#Package-Imports" aria-label="Permalink to &quot;Package Imports {#Package-Imports}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux, ADTypes, ComponentArrays, LuxCUDA, MLDatasets, MLUtils, OneHotArrays, Optimisers,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">      Printf, Random, Setfield, Statistics, Zygote</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">CUDA</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">allowscalar</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">false</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>Precompiling Lux...</span></span>
+<span class="line"><span>    541.8 ms  ✓ Requires</span></span>
+<span class="line"><span>    602.8 ms  ✓ CpuId</span></span>
+<span class="line"><span>    524.8 ms  ✓ Compat</span></span>
+<span class="line"><span>    617.8 ms  ✓ DocStringExtensions</span></span>
+<span class="line"><span>    468.1 ms  ✓ JLLWrappers</span></span>
+<span class="line"><span>    774.7 ms  ✓ Static</span></span>
+<span class="line"><span>   2564.9 ms  ✓ MacroTools</span></span>
+<span class="line"><span>    406.0 ms  ✓ Compat → CompatLinearAlgebraExt</span></span>
+<span class="line"><span>   1065.8 ms  ✓ LazyArtifacts</span></span>
+<span class="line"><span>    599.7 ms  ✓ LogExpFunctions</span></span>
+<span class="line"><span>    593.1 ms  ✓ Hwloc_jll</span></span>
+<span class="line"><span>    633.6 ms  ✓ OpenSpecFun_jll</span></span>
+<span class="line"><span>    414.5 ms  ✓ BitTwiddlingConvenienceFunctions</span></span>
+<span class="line"><span>    665.2 ms  ✓ CommonSubexpressions</span></span>
+<span class="line"><span>   1026.7 ms  ✓ CPUSummary</span></span>
+<span class="line"><span>   1601.4 ms  ✓ DispatchDoctor</span></span>
+<span class="line"><span>   1501.4 ms  ✓ Setfield</span></span>
+<span class="line"><span>    611.0 ms  ✓ Functors</span></span>
+<span class="line"><span>   1301.0 ms  ✓ ChainRulesCore</span></span>
+<span class="line"><span>   1509.1 ms  ✓ StaticArrayInterface</span></span>
+<span class="line"><span>   7762.8 ms  ✓ StaticArrays</span></span>
+<span class="line"><span>   1487.0 ms  ✓ LLVMExtra_jll</span></span>
+<span class="line"><span>    666.3 ms  ✓ PolyesterWeave</span></span>
+<span class="line"><span>    429.9 ms  ✓ DispatchDoctor → DispatchDoctorEnzymeCoreExt</span></span>
+<span class="line"><span>   2226.5 ms  ✓ Hwloc</span></span>
+<span class="line"><span>   2654.6 ms  ✓ SpecialFunctions</span></span>
+<span class="line"><span>   1220.3 ms  ✓ LuxCore</span></span>
+<span class="line"><span>    874.5 ms  ✓ MLDataDevices</span></span>
+<span class="line"><span>    399.3 ms  ✓ ADTypes → ADTypesChainRulesCoreExt</span></span>
+<span class="line"><span>    405.2 ms  ✓ ArrayInterface → ArrayInterfaceChainRulesCoreExt</span></span>
+<span class="line"><span>   1105.4 ms  ✓ Optimisers</span></span>
+<span class="line"><span>    647.6 ms  ✓ DispatchDoctor → DispatchDoctorChainRulesCoreExt</span></span>
+<span class="line"><span>    467.8 ms  ✓ CloseOpenIntervals</span></span>
+<span class="line"><span>   1329.1 ms  ✓ LogExpFunctions → LogExpFunctionsChainRulesCoreExt</span></span>
+<span class="line"><span>    600.3 ms  ✓ LayoutPointers</span></span>
+<span class="line"><span>    637.9 ms  ✓ StaticArrays → StaticArraysChainRulesCoreExt</span></span>
+<span class="line"><span>    593.3 ms  ✓ StaticArrays → StaticArraysStatisticsExt</span></span>
+<span class="line"><span>    628.0 ms  ✓ ConstructionBase → ConstructionBaseStaticArraysExt</span></span>
+<span class="line"><span>    655.5 ms  ✓ Adapt → AdaptStaticArraysExt</span></span>
+<span class="line"><span>    653.2 ms  ✓ StaticArrayInterface → StaticArrayInterfaceStaticArraysExt</span></span>
+<span class="line"><span>   1739.0 ms  ✓ SpecialFunctions → SpecialFunctionsChainRulesCoreExt</span></span>
+<span class="line"><span>   2812.3 ms  ✓ WeightInitializers</span></span>
+<span class="line"><span>    675.2 ms  ✓ LuxCore → LuxCoreChainRulesCoreExt</span></span>
+<span class="line"><span>    460.0 ms  ✓ LuxCore → LuxCoreFunctorsExt</span></span>
+<span class="line"><span>    453.0 ms  ✓ LuxCore → LuxCoreEnzymeCoreExt</span></span>
+<span class="line"><span>    470.4 ms  ✓ LuxCore → LuxCoreSetfieldExt</span></span>
+<span class="line"><span>    626.5 ms  ✓ MLDataDevices → MLDataDevicesChainRulesCoreExt</span></span>
+<span class="line"><span>   3963.7 ms  ✓ ForwardDiff</span></span>
+<span class="line"><span>    481.1 ms  ✓ LuxCore → LuxCoreMLDataDevicesExt</span></span>
+<span class="line"><span>    445.2 ms  ✓ Optimisers → OptimisersEnzymeCoreExt</span></span>
+<span class="line"><span>   7000.3 ms  ✓ LLVM</span></span>
+<span class="line"><span>    955.3 ms  ✓ StrideArraysCore</span></span>
+<span class="line"><span>    936.8 ms  ✓ WeightInitializers → WeightInitializersChainRulesCoreExt</span></span>
+<span class="line"><span>    922.9 ms  ✓ ForwardDiff → ForwardDiffStaticArraysExt</span></span>
+<span class="line"><span>    797.1 ms  ✓ Polyester</span></span>
+<span class="line"><span>   1940.4 ms  ✓ UnsafeAtomicsLLVM</span></span>
+<span class="line"><span>   4560.9 ms  ✓ KernelAbstractions</span></span>
+<span class="line"><span>   1601.9 ms  ✓ KernelAbstractions → LinearAlgebraExt</span></span>
+<span class="line"><span>   1659.2 ms  ✓ KernelAbstractions → EnzymeExt</span></span>
+<span class="line"><span>   6102.0 ms  ✓ NNlib</span></span>
+<span class="line"><span>   1771.0 ms  ✓ NNlib → NNlibEnzymeCoreExt</span></span>
+<span class="line"><span>   1772.8 ms  ✓ NNlib → NNlibForwardDiffExt</span></span>
+<span class="line"><span>   6524.3 ms  ✓ LuxLib</span></span>
+<span class="line"><span>   9995.1 ms  ✓ Lux</span></span>
+<span class="line"><span>  64 dependencies successfully precompiled in 54 seconds. 59 already precompiled.</span></span>
+<span class="line"><span>Precompiling ComponentArrays...</span></span>
+<span class="line"><span>    911.6 ms  ✓ ComponentArrays</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 57 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxComponentArraysExt...</span></span>
+<span class="line"><span>    517.0 ms  ✓ ComponentArrays → ComponentArraysOptimisersExt</span></span>
+<span class="line"><span>   2520.4 ms  ✓ Lux → LuxComponentArraysExt</span></span>
+<span class="line"><span>   2825.8 ms  ✓ ComponentArrays → ComponentArraysKernelAbstractionsExt</span></span>
+<span class="line"><span>  3 dependencies successfully precompiled in 3 seconds. 124 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxCUDA...</span></span>
+<span class="line"><span>    398.0 ms  ✓ Scratch</span></span>
+<span class="line"><span>   1272.5 ms  ✓ SentinelArrays</span></span>
+<span class="line"><span>    907.9 ms  ✓ CUDA_Driver_jll</span></span>
+<span class="line"><span>    547.2 ms  ✓ NVTX_jll</span></span>
+<span class="line"><span>   2785.1 ms  ✓ TimerOutputs</span></span>
+<span class="line"><span>    556.5 ms  ✓ demumble_jll</span></span>
+<span class="line"><span>    556.8 ms  ✓ JuliaNVTXCallbacks_jll</span></span>
+<span class="line"><span>   3816.7 ms  ✓ Test</span></span>
+<span class="line"><span>   1685.4 ms  ✓ DataStructures</span></span>
+<span class="line"><span>   1993.8 ms  ✓ StringManipulation</span></span>
+<span class="line"><span>   2188.3 ms  ✓ GPUArrays</span></span>
+<span class="line"><span>   1864.3 ms  ✓ KernelAbstractions → SparseArraysExt</span></span>
+<span class="line"><span>   2605.9 ms  ✓ CUDA_Runtime_jll</span></span>
+<span class="line"><span>   1343.4 ms  ✓ NVTX</span></span>
+<span class="line"><span>    530.4 ms  ✓ BFloat16s</span></span>
+<span class="line"><span>   1367.1 ms  ✓ AbstractFFTs → AbstractFFTsTestExt</span></span>
+<span class="line"><span>    544.8 ms  ✓ SortingAlgorithms</span></span>
+<span class="line"><span>   2209.5 ms  ✓ CUDNN_jll</span></span>
+<span class="line"><span>   1306.9 ms  ✓ LLVM → BFloat16sExt</span></span>
+<span class="line"><span>  20661.3 ms  ✓ PrettyTables</span></span>
+<span class="line"><span>  27399.3 ms  ✓ GPUCompiler</span></span>
+<span class="line"><span>  47400.7 ms  ✓ DataFrames</span></span>
+<span class="line"><span>  53212.4 ms  ✓ CUDA</span></span>
+<span class="line"><span>   5182.0 ms  ✓ Atomix → AtomixCUDAExt</span></span>
+<span class="line"><span>   8616.7 ms  ✓ cuDNN</span></span>
+<span class="line"><span>   5344.6 ms  ✓ LuxCUDA</span></span>
+<span class="line"><span>  26 dependencies successfully precompiled in 150 seconds. 74 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesGPUArraysExt...</span></span>
+<span class="line"><span>   1335.6 ms  ✓ MLDataDevices → MLDataDevicesGPUArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 42 already precompiled.</span></span>
+<span class="line"><span>Precompiling WeightInitializersGPUArraysExt...</span></span>
+<span class="line"><span>   1396.6 ms  ✓ WeightInitializers → WeightInitializersGPUArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 46 already precompiled.</span></span>
+<span class="line"><span>Precompiling ComponentArraysGPUArraysExt...</span></span>
+<span class="line"><span>   1563.8 ms  ✓ ComponentArrays → ComponentArraysGPUArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 68 already precompiled.</span></span>
+<span class="line"><span>Precompiling ParsersExt...</span></span>
+<span class="line"><span>    486.0 ms  ✓ InlineStrings → ParsersExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 9 already precompiled.</span></span>
+<span class="line"><span>Precompiling ChainRulesCoreSparseArraysExt...</span></span>
+<span class="line"><span>    650.9 ms  ✓ ChainRulesCore → ChainRulesCoreSparseArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 11 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesSparseArraysExt...</span></span>
+<span class="line"><span>    687.0 ms  ✓ MLDataDevices → MLDataDevicesSparseArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 17 already precompiled.</span></span>
+<span class="line"><span>Precompiling AbstractFFTsChainRulesCoreExt...</span></span>
+<span class="line"><span>    428.5 ms  ✓ AbstractFFTs → AbstractFFTsChainRulesCoreExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 0 seconds. 9 already precompiled.</span></span>
+<span class="line"><span>Precompiling ArrayInterfaceCUDAExt...</span></span>
+<span class="line"><span>   5072.2 ms  ✓ ArrayInterface → ArrayInterfaceCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 5 seconds. 101 already precompiled.</span></span>
+<span class="line"><span>Precompiling NNlibCUDAExt...</span></span>
+<span class="line"><span>   5151.7 ms  ✓ CUDA → ChainRulesCoreExt</span></span>
+<span class="line"><span>   5967.3 ms  ✓ NNlib → NNlibCUDAExt</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 6 seconds. 102 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesCUDAExt...</span></span>
+<span class="line"><span>   5356.1 ms  ✓ MLDataDevices → MLDataDevicesCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 104 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibCUDAExt...</span></span>
+<span class="line"><span>   5234.1 ms  ✓ CUDA → EnzymeCoreExt</span></span>
+<span class="line"><span>   5475.7 ms  ✓ CUDA → SpecialFunctionsExt</span></span>
+<span class="line"><span>   5859.9 ms  ✓ LuxLib → LuxLibCUDAExt</span></span>
+<span class="line"><span>  3 dependencies successfully precompiled in 6 seconds. 167 already precompiled.</span></span>
+<span class="line"><span>Precompiling WeightInitializersCUDAExt...</span></span>
+<span class="line"><span>   5081.5 ms  ✓ WeightInitializers → WeightInitializersCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 5 seconds. 109 already precompiled.</span></span>
+<span class="line"><span>Precompiling NNlibCUDACUDNNExt...</span></span>
+<span class="line"><span>   5851.0 ms  ✓ NNlib → NNlibCUDACUDNNExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 106 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicescuDNNExt...</span></span>
+<span class="line"><span>   5075.2 ms  ✓ MLDataDevices → MLDataDevicescuDNNExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 5 seconds. 107 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibcuDNNExt...</span></span>
+<span class="line"><span>   5842.5 ms  ✓ LuxLib → LuxLibcuDNNExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 174 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDatasets...</span></span>
+<span class="line"><span>    361.3 ms  ✓ Glob</span></span>
+<span class="line"><span>    392.6 ms  ✓ WorkerUtilities</span></span>
+<span class="line"><span>    397.5 ms  ✓ TensorCore</span></span>
+<span class="line"><span>    417.7 ms  ✓ BufferedStreams</span></span>
+<span class="line"><span>    419.6 ms  ✓ PaddedViews</span></span>
+<span class="line"><span>    621.0 ms  ✓ URIs</span></span>
+<span class="line"><span>    335.2 ms  ✓ SimpleBufferStream</span></span>
+<span class="line"><span>    415.2 ms  ✓ LazyModules</span></span>
+<span class="line"><span>    332.4 ms  ✓ PackageExtensionCompat</span></span>
+<span class="line"><span>    359.1 ms  ✓ BitFlags</span></span>
+<span class="line"><span>    379.5 ms  ✓ MappedArrays</span></span>
+<span class="line"><span>    402.8 ms  ✓ StackViews</span></span>
+<span class="line"><span>    659.5 ms  ✓ GZip</span></span>
+<span class="line"><span>    716.2 ms  ✓ ConcurrentUtilities</span></span>
+<span class="line"><span>    591.3 ms  ✓ ZipFile</span></span>
+<span class="line"><span>    799.1 ms  ✓ StructTypes</span></span>
+<span class="line"><span>    411.2 ms  ✓ InverseFunctions → InverseFunctionsDatesExt</span></span>
+<span class="line"><span>    497.2 ms  ✓ LoggingExtras</span></span>
+<span class="line"><span>   1023.5 ms  ✓ MbedTLS</span></span>
+<span class="line"><span>   1033.4 ms  ✓ SimpleTraits</span></span>
+<span class="line"><span>    598.9 ms  ✓ MPIPreferences</span></span>
+<span class="line"><span>    394.0 ms  ✓ ContextVariablesX</span></span>
+<span class="line"><span>   2899.9 ms  ✓ Accessors</span></span>
+<span class="line"><span>    338.1 ms  ✓ InternedStrings</span></span>
+<span class="line"><span>   1225.3 ms  ✓ SplittablesBase</span></span>
+<span class="line"><span>    482.8 ms  ✓ ExceptionUnwrapping</span></span>
+<span class="line"><span>    607.8 ms  ✓ InverseFunctions → InverseFunctionsTestExt</span></span>
+<span class="line"><span>    611.1 ms  ✓ OpenSSL_jll</span></span>
+<span class="line"><span>    563.4 ms  ✓ Chemfiles_jll</span></span>
+<span class="line"><span>    458.7 ms  ✓ MicrosoftMPI_jll</span></span>
+<span class="line"><span>    590.6 ms  ✓ libaec_jll</span></span>
+<span class="line"><span>    597.6 ms  ✓ Libiconv_jll</span></span>
+<span class="line"><span>    452.3 ms  ✓ LogExpFunctions → LogExpFunctionsInverseFunctionsExt</span></span>
+<span class="line"><span>   1029.3 ms  ✓ FilePathsBase</span></span>
+<span class="line"><span>    791.6 ms  ✓ WeakRefStrings</span></span>
+<span class="line"><span>   2376.9 ms  ✓ StatsBase</span></span>
+<span class="line"><span>   4709.0 ms  ✓ FileIO</span></span>
+<span class="line"><span>    433.3 ms  ✓ StridedViews</span></span>
+<span class="line"><span>   2382.6 ms  ✓ ColorVectorSpace</span></span>
+<span class="line"><span>    454.4 ms  ✓ MosaicViews</span></span>
+<span class="line"><span>   1457.7 ms  ✓ MPICH_jll</span></span>
+<span class="line"><span>   1185.9 ms  ✓ MPItrampoline_jll</span></span>
+<span class="line"><span>   1105.4 ms  ✓ OpenMPI_jll</span></span>
+<span class="line"><span>    578.5 ms  ✓ FLoopsBase</span></span>
+<span class="line"><span>    607.5 ms  ✓ Accessors → AccessorsTestExt</span></span>
+<span class="line"><span>    882.8 ms  ✓ Accessors → AccessorsDatesExt</span></span>
+<span class="line"><span>    845.2 ms  ✓ BangBang</span></span>
+<span class="line"><span>    731.2 ms  ✓ Accessors → AccessorsStaticArraysExt</span></span>
+<span class="line"><span>   1969.7 ms  ✓ OpenSSL</span></span>
+<span class="line"><span>  21713.8 ms  ✓ Unitful</span></span>
+<span class="line"><span>    512.0 ms  ✓ StringEncodings</span></span>
+<span class="line"><span>    528.1 ms  ✓ FilePathsBase → FilePathsBaseMmapExt</span></span>
+<span class="line"><span>   1180.4 ms  ✓ FilePathsBase → FilePathsBaseTestExt</span></span>
+<span class="line"><span>  11265.1 ms  ✓ JSON3</span></span>
+<span class="line"><span>   1625.2 ms  ✓ NPZ</span></span>
+<span class="line"><span>   3488.7 ms  ✓ ColorSchemes</span></span>
+<span class="line"><span>   1847.7 ms  ✓ HDF5_jll</span></span>
+<span class="line"><span>    719.5 ms  ✓ BangBang → BangBangStaticArraysExt</span></span>
+<span class="line"><span>   1947.9 ms  ✓ BangBang → BangBangDataFramesExt</span></span>
+<span class="line"><span>    525.0 ms  ✓ BangBang → BangBangChainRulesCoreExt</span></span>
+<span class="line"><span>    513.8 ms  ✓ BangBang → BangBangTablesExt</span></span>
+<span class="line"><span>    958.5 ms  ✓ MicroCollections</span></span>
+<span class="line"><span>  19767.2 ms  ✓ ImageCore</span></span>
+<span class="line"><span>    592.1 ms  ✓ Unitful → ConstructionBaseUnitfulExt</span></span>
+<span class="line"><span>    573.5 ms  ✓ Unitful → InverseFunctionsUnitfulExt</span></span>
+<span class="line"><span>   2964.9 ms  ✓ UnitfulAtomic</span></span>
+<span class="line"><span>   2496.5 ms  ✓ PeriodicTable</span></span>
+<span class="line"><span>    740.3 ms  ✓ Accessors → AccessorsUnitfulExt</span></span>
+<span class="line"><span>  20111.6 ms  ✓ HTTP</span></span>
+<span class="line"><span>   2414.7 ms  ✓ Pickle</span></span>
+<span class="line"><span>  35638.3 ms  ✓ JLD2</span></span>
+<span class="line"><span>   7551.7 ms  ✓ HDF5</span></span>
+<span class="line"><span>   2656.0 ms  ✓ Transducers</span></span>
+<span class="line"><span>   2114.2 ms  ✓ ImageBase</span></span>
+<span class="line"><span>   2173.7 ms  ✓ AtomsBase</span></span>
+<span class="line"><span>   1903.8 ms  ✓ FileIO → HTTPExt</span></span>
+<span class="line"><span>   3195.7 ms  ✓ DataDeps</span></span>
+<span class="line"><span>   1466.1 ms  ✓ Transducers → TransducersDataFramesExt</span></span>
+<span class="line"><span>   2467.6 ms  ✓ MAT</span></span>
+<span class="line"><span>    665.5 ms  ✓ Transducers → TransducersAdaptExt</span></span>
+<span class="line"><span>   1958.6 ms  ✓ ImageShow</span></span>
+<span class="line"><span>   2307.1 ms  ✓ Chemfiles</span></span>
+<span class="line"><span>   5448.9 ms  ✓ FLoops</span></span>
+<span class="line"><span>  20280.6 ms  ✓ CSV</span></span>
+<span class="line"><span>   7548.8 ms  ✓ MLUtils</span></span>
+<span class="line"><span>   9767.0 ms  ✓ MLDatasets</span></span>
+<span class="line"><span>  86 dependencies successfully precompiled in 94 seconds. 115 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesMLUtilsExt...</span></span>
+<span class="line"><span>   2778.3 ms  ✓ MLDataDevices → MLDataDevicesMLUtilsExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 3 seconds. 116 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxMLUtilsExt...</span></span>
+<span class="line"><span>   3154.1 ms  ✓ Lux → LuxMLUtilsExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 4 seconds. 178 already precompiled.</span></span>
+<span class="line"><span>Precompiling OneHotArrays...</span></span>
+<span class="line"><span>   1822.1 ms  ✓ OneHotArrays</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 50 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesOneHotArraysExt...</span></span>
+<span class="line"><span>   1720.0 ms  ✓ MLDataDevices → MLDataDevicesOneHotArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 57 already precompiled.</span></span>
+<span class="line"><span>Precompiling Zygote...</span></span>
+<span class="line"><span>    916.4 ms  ✓ ZygoteRules</span></span>
+<span class="line"><span>   1887.4 ms  ✓ IRTools</span></span>
+<span class="line"><span>   5456.2 ms  ✓ ChainRules</span></span>
+<span class="line"><span>  33194.0 ms  ✓ Zygote</span></span>
+<span class="line"><span>  4 dependencies successfully precompiled in 39 seconds. 82 already precompiled.</span></span>
+<span class="line"><span>Precompiling AccessorsStructArraysExt...</span></span>
+<span class="line"><span>    478.7 ms  ✓ Accessors → AccessorsStructArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 16 already precompiled.</span></span>
+<span class="line"><span>Precompiling BangBangStructArraysExt...</span></span>
+<span class="line"><span>    484.4 ms  ✓ BangBang → BangBangStructArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 22 already precompiled.</span></span>
+<span class="line"><span>Precompiling StructArraysStaticArraysExt...</span></span>
+<span class="line"><span>    641.8 ms  ✓ StructArrays → StructArraysStaticArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 18 already precompiled.</span></span>
+<span class="line"><span>Precompiling ArrayInterfaceChainRulesExt...</span></span>
+<span class="line"><span>    773.4 ms  ✓ ArrayInterface → ArrayInterfaceChainRulesExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 39 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesChainRulesExt...</span></span>
+<span class="line"><span>    818.8 ms  ✓ MLDataDevices → MLDataDevicesChainRulesExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 40 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesFillArraysExt...</span></span>
+<span class="line"><span>    440.0 ms  ✓ MLDataDevices → MLDataDevicesFillArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 15 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesZygoteExt...</span></span>
+<span class="line"><span>   1644.6 ms  ✓ MLDataDevices → MLDataDevicesZygoteExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 93 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxZygoteExt...</span></span>
+<span class="line"><span>   3769.5 ms  ✓ Lux → LuxZygoteExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 4 seconds. 162 already precompiled.</span></span>
+<span class="line"><span>Precompiling ComponentArraysZygoteExt...</span></span>
+<span class="line"><span>   1606.6 ms  ✓ ComponentArrays → ComponentArraysZygoteExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 99 already precompiled.</span></span>
+<span class="line"><span>Precompiling ZygoteColorsExt...</span></span>
+<span class="line"><span>   1778.3 ms  ✓ Zygote → ZygoteColorsExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 89 already precompiled.</span></span></code></pre></div><h2 id="Loading-Datasets" tabindex="-1">Loading Datasets <a class="header-anchor" href="#Loading-Datasets" aria-label="Permalink to &quot;Loading Datasets {#Loading-Datasets}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> load_dataset</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Type{dset}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, n_train</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, n_eval</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, batchsize</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Int</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">where</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> {dset}</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    imgs, labels </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> dset</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">:train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">n_train]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    x_train, y_train </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> reshape</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(imgs, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">28</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">28</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, n_train), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">onehotbatch</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(labels, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">9</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    imgs, labels </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> dset</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">:test</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)[</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">n_eval]</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    x_test, y_test </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> reshape</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(imgs, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">28</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">28</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, n_eval), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">onehotbatch</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(labels, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">9</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        DataLoader</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((x_train, y_train); batchsize</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">min</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(batchsize, n_train), shuffle</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">),</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        DataLoader</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((x_test, y_test); batchsize</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">min</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(batchsize, n_eval), shuffle</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">false</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    )</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> load_datasets</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(n_train</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">1024</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, n_eval</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, batchsize</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> load_dataset</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">.((MNIST, FashionMNIST), n_train, n_eval, batchsize)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>load_datasets (generic function with 4 methods)</span></span></code></pre></div><h2 id="Implement-a-HyperNet-Layer" tabindex="-1">Implement a HyperNet Layer <a class="header-anchor" href="#Implement-a-HyperNet-Layer" aria-label="Permalink to &quot;Implement a HyperNet Layer {#Implement-a-HyperNet-Layer}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> HyperNet</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        weight_generator</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Lux.AbstractLuxLayer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, core_network</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Lux.AbstractLuxLayer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ca_axes </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">initialparameters</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(Random</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">default_rng</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), core_network) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              ComponentArray </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">              getaxes</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @compact</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; ca_axes, weight_generator, core_network, dispatch</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">:HyperNet</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">do</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x, y)</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">        # Generate the weights</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ps_new </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ComponentArray</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">vec</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">weight_generator</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(x)), ca_axes)</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        @return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> core_network</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y, ps_new)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>HyperNet (generic function with 1 method)</span></span></code></pre></div><p>Defining functions on the CompactLuxLayer requires some understanding of how the layer is structured, as such we don&#39;t recommend doing it unless you are familiar with the internals. In this case, we simply write it to ignore the initialization of the <code>core_network</code> parameters.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">initialparameters</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(rng</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">AbstractRNG</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, hn</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">CompactLuxLayer{:HyperNet}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (; weight_generator</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">initialparameters</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(rng, hn</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">layers</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">weight_generator),)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><h2 id="Create-and-Initialize-the-HyperNet" tabindex="-1">Create and Initialize the HyperNet <a class="header-anchor" href="#Create-and-Initialize-the-HyperNet" aria-label="Permalink to &quot;Create and Initialize the HyperNet {#Create-and-Initialize-the-HyperNet}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> create_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Doesn&#39;t need to be a MLP can have any Lux Layer</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    core_network </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Chain</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">FlattenLayer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Dense</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">784</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, relu), </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Dense</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">256</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">10</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    weight_generator </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Chain</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        Embedding</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> =&gt;</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">),</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        Dense</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">32</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, relu),</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        Dense</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">64</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">parameterlength</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(core_network))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    )</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    model </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> HyperNet</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(weight_generator, core_network)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> model</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>create_model (generic function with 1 method)</span></span></code></pre></div><h2 id="Define-Utility-Functions" tabindex="-1">Define Utility Functions <a class="header-anchor" href="#Define-Utility-Functions" aria-label="Permalink to &quot;Define Utility Functions {#Define-Utility-Functions}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">const</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> loss </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> CrossEntropyLoss</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; logits</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Val</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, ps, st, dataloader, data_idx)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    total_correct, total </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    st </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">testmode</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(st)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x, y) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dataloader</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        target_class </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> onecold</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(y)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        predicted_class </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> onecold</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">first</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">((data_idx, x), ps, st)))</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        total_correct </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> sum</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(target_class </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.==</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> predicted_class)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        total </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">+=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> length</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(target_class)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> total_correct </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">/</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> total</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>accuracy (generic function with 1 method)</span></span></code></pre></div><h2 id="training" tabindex="-1">Training <a class="header-anchor" href="#training" aria-label="Permalink to &quot;Training&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    model </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> create_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    dataloaders </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> load_datasets</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    dev </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> gpu_device</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    rng </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Xoshiro</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    ps, st </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">setup</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(rng, model) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    train_state </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Training</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">TrainState</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, ps, st, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">Adam</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.001f0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">))</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    ### Lets train the model</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    nepochs </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 50</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> epoch </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">nepochs, data_idx </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        train_dataloader, test_dataloader </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dataloaders[data_idx] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        stime </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> time</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> (x, y) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> train_dataloader</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            (_, _, _, train_state) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> Training</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">single_train_step!</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">                AutoZygote</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), loss, ((data_idx, x), y), train_state)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">        end</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        ttime </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> time</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">() </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">-</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> stime</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        train_acc </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> round</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">parameters,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">states, train_dataloader, data_idx) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            digits</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        test_acc </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> round</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">parameters,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">states, test_dataloader, data_idx) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            digits</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        data_name </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> data_idx </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ?</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;MNIST&quot;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;FashionMNIST&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        @printf</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;[%3d/%3d]</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">%12s</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">Time %3.5fs</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">Training Accuracy: %3.2f%%</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">Test \\</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">                 Accuracy: %3.2f%%</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> epoch nepochs data_name ttime train_acc test_acc</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">    println</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    test_acc_list </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> [</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">0.0</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">]</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    for</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> data_idx </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">in</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        train_dataloader, test_dataloader </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dataloaders[data_idx] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.|&gt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> dev</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        train_acc </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> round</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">parameters,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">states, train_dataloader, data_idx) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            digits</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        test_acc </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> round</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">            accuracy</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(model, train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">parameters,</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">                train_state</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">states, test_dataloader, data_idx) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">*</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 100</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">;</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">            digits</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">2</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        data_name </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> data_idx </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">==</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> ?</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;MNIST&quot;</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> :</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;FashionMNIST&quot;</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        @printf</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;"> &quot;[FINAL]</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">%12s</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">Training Accuracy: %3.2f%%</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\t</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">Test Accuracy: \\</span></span>
+<span class="line"><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">                 %3.2f%%</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">\\n</span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> data_name train_acc test_acc</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        test_acc_list[data_idx] </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> test_acc</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> test_acc_list</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">test_acc_list </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[  1/ 50]	       MNIST	Time 85.00969s	Training Accuracy: 54.10%	Test Accuracy: 53.12%</span></span>
+<span class="line"><span>[  1/ 50]	FashionMNIST	Time 0.02825s	Training Accuracy: 49.02%	Test Accuracy: 46.88%</span></span>
+<span class="line"><span>[  2/ 50]	       MNIST	Time 0.02937s	Training Accuracy: 70.41%	Test Accuracy: 56.25%</span></span>
+<span class="line"><span>[  2/ 50]	FashionMNIST	Time 0.02880s	Training Accuracy: 59.77%	Test Accuracy: 50.00%</span></span>
+<span class="line"><span>[  3/ 50]	       MNIST	Time 0.02639s	Training Accuracy: 77.25%	Test Accuracy: 65.62%</span></span>
+<span class="line"><span>[  3/ 50]	FashionMNIST	Time 0.05015s	Training Accuracy: 65.62%	Test Accuracy: 53.12%</span></span>
+<span class="line"><span>[  4/ 50]	       MNIST	Time 0.02504s	Training Accuracy: 75.88%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[  4/ 50]	FashionMNIST	Time 0.02455s	Training Accuracy: 68.26%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[  5/ 50]	       MNIST	Time 0.02552s	Training Accuracy: 81.45%	Test Accuracy: 62.50%</span></span>
+<span class="line"><span>[  5/ 50]	FashionMNIST	Time 0.02153s	Training Accuracy: 70.31%	Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[  6/ 50]	       MNIST	Time 0.02954s	Training Accuracy: 85.94%	Test Accuracy: 65.62%</span></span>
+<span class="line"><span>[  6/ 50]	FashionMNIST	Time 0.02135s	Training Accuracy: 74.80%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[  7/ 50]	       MNIST	Time 0.02211s	Training Accuracy: 90.23%	Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[  7/ 50]	FashionMNIST	Time 0.02232s	Training Accuracy: 73.05%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[  8/ 50]	       MNIST	Time 0.02892s	Training Accuracy: 89.16%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[  8/ 50]	FashionMNIST	Time 0.02210s	Training Accuracy: 71.58%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[  9/ 50]	       MNIST	Time 0.02233s	Training Accuracy: 92.48%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[  9/ 50]	FashionMNIST	Time 0.02076s	Training Accuracy: 73.24%	Test Accuracy: 65.62%</span></span>
+<span class="line"><span>[ 10/ 50]	       MNIST	Time 0.02081s	Training Accuracy: 94.04%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 10/ 50]	FashionMNIST	Time 0.02085s	Training Accuracy: 77.54%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 11/ 50]	       MNIST	Time 0.02223s	Training Accuracy: 94.34%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 11/ 50]	FashionMNIST	Time 0.02136s	Training Accuracy: 77.93%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 12/ 50]	       MNIST	Time 0.02135s	Training Accuracy: 96.29%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 12/ 50]	FashionMNIST	Time 0.02689s	Training Accuracy: 81.84%	Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[ 13/ 50]	       MNIST	Time 0.02118s	Training Accuracy: 97.46%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 13/ 50]	FashionMNIST	Time 0.02100s	Training Accuracy: 82.42%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[ 14/ 50]	       MNIST	Time 0.02045s	Training Accuracy: 98.34%	Test Accuracy: 84.38%</span></span>
+<span class="line"><span>[ 14/ 50]	FashionMNIST	Time 0.02181s	Training Accuracy: 84.18%	Test Accuracy: 68.75%</span></span>
+<span class="line"><span>[ 15/ 50]	       MNIST	Time 0.02084s	Training Accuracy: 99.02%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 15/ 50]	FashionMNIST	Time 0.02091s	Training Accuracy: 83.69%	Test Accuracy: 71.88%</span></span>
+<span class="line"><span>[ 16/ 50]	       MNIST	Time 0.02183s	Training Accuracy: 99.61%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 16/ 50]	FashionMNIST	Time 0.02445s	Training Accuracy: 85.35%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 17/ 50]	       MNIST	Time 0.02167s	Training Accuracy: 99.80%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 17/ 50]	FashionMNIST	Time 0.02120s	Training Accuracy: 86.04%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 18/ 50]	       MNIST	Time 0.02703s	Training Accuracy: 99.80%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 18/ 50]	FashionMNIST	Time 0.02105s	Training Accuracy: 86.52%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 19/ 50]	       MNIST	Time 0.02225s	Training Accuracy: 99.80%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 19/ 50]	FashionMNIST	Time 0.02204s	Training Accuracy: 87.60%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 20/ 50]	       MNIST	Time 0.02119s	Training Accuracy: 99.80%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 20/ 50]	FashionMNIST	Time 0.02259s	Training Accuracy: 88.48%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 21/ 50]	       MNIST	Time 0.02194s	Training Accuracy: 99.90%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 21/ 50]	FashionMNIST	Time 0.02127s	Training Accuracy: 88.67%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 22/ 50]	       MNIST	Time 0.02243s	Training Accuracy: 99.90%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 22/ 50]	FashionMNIST	Time 0.02295s	Training Accuracy: 88.77%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 23/ 50]	       MNIST	Time 0.02534s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 23/ 50]	FashionMNIST	Time 0.02679s	Training Accuracy: 90.14%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 24/ 50]	       MNIST	Time 0.02071s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 24/ 50]	FashionMNIST	Time 0.02213s	Training Accuracy: 90.33%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 25/ 50]	       MNIST	Time 0.02226s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 25/ 50]	FashionMNIST	Time 0.02176s	Training Accuracy: 90.43%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 26/ 50]	       MNIST	Time 0.02208s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 26/ 50]	FashionMNIST	Time 0.02086s	Training Accuracy: 90.82%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 27/ 50]	       MNIST	Time 0.02331s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 27/ 50]	FashionMNIST	Time 0.02455s	Training Accuracy: 90.92%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 28/ 50]	       MNIST	Time 0.02148s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 28/ 50]	FashionMNIST	Time 0.02156s	Training Accuracy: 91.11%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 29/ 50]	       MNIST	Time 0.02694s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 29/ 50]	FashionMNIST	Time 0.02162s	Training Accuracy: 91.80%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 30/ 50]	       MNIST	Time 0.02074s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 30/ 50]	FashionMNIST	Time 0.02062s	Training Accuracy: 91.02%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 31/ 50]	       MNIST	Time 0.02096s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 31/ 50]	FashionMNIST	Time 0.02485s	Training Accuracy: 92.09%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 32/ 50]	       MNIST	Time 0.02119s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 32/ 50]	FashionMNIST	Time 0.02186s	Training Accuracy: 92.09%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 33/ 50]	       MNIST	Time 0.02236s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 33/ 50]	FashionMNIST	Time 0.02218s	Training Accuracy: 92.87%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 34/ 50]	       MNIST	Time 0.02234s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 34/ 50]	FashionMNIST	Time 0.02941s	Training Accuracy: 92.87%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 35/ 50]	       MNIST	Time 0.02079s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 35/ 50]	FashionMNIST	Time 0.02135s	Training Accuracy: 93.07%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 36/ 50]	       MNIST	Time 0.02050s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 36/ 50]	FashionMNIST	Time 0.02149s	Training Accuracy: 93.07%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 37/ 50]	       MNIST	Time 0.02169s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 37/ 50]	FashionMNIST	Time 0.02060s	Training Accuracy: 93.07%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 38/ 50]	       MNIST	Time 0.02149s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 38/ 50]	FashionMNIST	Time 0.02195s	Training Accuracy: 92.97%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 39/ 50]	       MNIST	Time 0.02158s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 39/ 50]	FashionMNIST	Time 0.02120s	Training Accuracy: 93.65%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 40/ 50]	       MNIST	Time 0.02710s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 40/ 50]	FashionMNIST	Time 0.02082s	Training Accuracy: 93.36%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 41/ 50]	       MNIST	Time 0.02040s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 41/ 50]	FashionMNIST	Time 0.02061s	Training Accuracy: 94.24%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 42/ 50]	       MNIST	Time 0.02158s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 42/ 50]	FashionMNIST	Time 0.02161s	Training Accuracy: 93.95%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 43/ 50]	       MNIST	Time 0.02167s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 43/ 50]	FashionMNIST	Time 0.02158s	Training Accuracy: 94.34%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 44/ 50]	       MNIST	Time 0.02242s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 44/ 50]	FashionMNIST	Time 0.02264s	Training Accuracy: 94.92%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 45/ 50]	       MNIST	Time 0.02080s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 45/ 50]	FashionMNIST	Time 0.02703s	Training Accuracy: 95.21%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 46/ 50]	       MNIST	Time 0.02090s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 46/ 50]	FashionMNIST	Time 0.02076s	Training Accuracy: 95.02%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 47/ 50]	       MNIST	Time 0.02027s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 47/ 50]	FashionMNIST	Time 0.02216s	Training Accuracy: 95.31%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 48/ 50]	       MNIST	Time 0.02081s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 48/ 50]	FashionMNIST	Time 0.02053s	Training Accuracy: 96.00%	Test Accuracy: 75.00%</span></span>
+<span class="line"><span>[ 49/ 50]	       MNIST	Time 0.02165s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 49/ 50]	FashionMNIST	Time 0.02234s	Training Accuracy: 96.09%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span>[ 50/ 50]	       MNIST	Time 0.02080s	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[ 50/ 50]	FashionMNIST	Time 0.02127s	Training Accuracy: 95.90%	Test Accuracy: 78.12%</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>[FINAL]	       MNIST	Training Accuracy: 100.00%	Test Accuracy: 81.25%</span></span>
+<span class="line"><span>[FINAL]	FashionMNIST	Training Accuracy: 95.90%	Test Accuracy: 78.12%</span></span></code></pre></div><h2 id="appendix" tabindex="-1">Appendix <a class="header-anchor" href="#appendix" aria-label="Permalink to &quot;Appendix&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> InteractiveUtils</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">InteractiveUtils</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">versioninfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @isdefined</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(MLDataDevices)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @isdefined</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(CUDA) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MLDataDevices</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">functional</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(CUDADevice)</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        println</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        CUDA</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">versioninfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    if</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> @isdefined</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(AMDGPU) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&amp;&amp;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MLDataDevices</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">functional</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(AMDGPUDevice)</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">        println</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">        AMDGPU</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">versioninfo</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    end</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>Julia Version 1.11.2</span></span>
+<span class="line"><span>Commit 5e9a32e7af2 (2024-12-01 20:02 UTC)</span></span>
+<span class="line"><span>Build Info:</span></span>
+<span class="line"><span>  Official https://julialang.org/ release</span></span>
+<span class="line"><span>Platform Info:</span></span>
+<span class="line"><span>  OS: Linux (x86_64-linux-gnu)</span></span>
+<span class="line"><span>  CPU: 48 × AMD EPYC 7402 24-Core Processor</span></span>
+<span class="line"><span>  WORD_SIZE: 64</span></span>
+<span class="line"><span>  LLVM: libLLVM-16.0.6 (ORCJIT, znver2)</span></span>
+<span class="line"><span>Threads: 48 default, 0 interactive, 24 GC (on 2 virtual cores)</span></span>
+<span class="line"><span>Environment:</span></span>
+<span class="line"><span>  JULIA_CPU_THREADS = 2</span></span>
+<span class="line"><span>  JULIA_DEPOT_PATH = /root/.cache/julia-buildkite-plugin/depots/01872db4-8c79-43af-ab7d-12abac4f24f6</span></span>
+<span class="line"><span>  LD_LIBRARY_PATH = /usr/local/nvidia/lib:/usr/local/nvidia/lib64</span></span>
+<span class="line"><span>  JULIA_PKG_SERVER = </span></span>
+<span class="line"><span>  JULIA_NUM_THREADS = 48</span></span>
+<span class="line"><span>  JULIA_CUDA_HARD_MEMORY_LIMIT = 100%</span></span>
+<span class="line"><span>  JULIA_PKG_PRECOMPILE_AUTO = 0</span></span>
+<span class="line"><span>  JULIA_DEBUG = Literate</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>CUDA runtime 12.6, artifact installation</span></span>
+<span class="line"><span>CUDA driver 12.6</span></span>
+<span class="line"><span>NVIDIA driver 560.35.3</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>CUDA libraries: </span></span>
+<span class="line"><span>- CUBLAS: 12.6.4</span></span>
+<span class="line"><span>- CURAND: 10.3.7</span></span>
+<span class="line"><span>- CUFFT: 11.3.0</span></span>
+<span class="line"><span>- CUSOLVER: 11.7.1</span></span>
+<span class="line"><span>- CUSPARSE: 12.5.4</span></span>
+<span class="line"><span>- CUPTI: 2024.3.2 (API 24.0.0)</span></span>
+<span class="line"><span>- NVML: 12.0.0+560.35.3</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Julia packages: </span></span>
+<span class="line"><span>- CUDA: 5.5.2</span></span>
+<span class="line"><span>- CUDA_Driver_jll: 0.10.4+0</span></span>
+<span class="line"><span>- CUDA_Runtime_jll: 0.15.5+0</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Toolchain:</span></span>
+<span class="line"><span>- Julia: 1.11.2</span></span>
+<span class="line"><span>- LLVM: 16.0.6</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Environment:</span></span>
+<span class="line"><span>- JULIA_CUDA_HARD_MEMORY_LIMIT: 100%</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>1 device:</span></span>
+<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 3.232 GiB / 4.750 GiB available)</span></span></code></pre></div><hr><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl" target="_blank" rel="noreferrer">Literate.jl</a>.</em></p>`,26)]))}const y=a(l,[["render",e]]);export{E as __pageData,y as default};
