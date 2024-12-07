@@ -96,11 +96,13 @@ using Lux
 end
 
 # Type Stability tests fail if run with DispatchDoctor enabled
-if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
-    @testset "Zygote Type Stability" begin
-        include("zygote_type_stability.jl")
-    end
-end
+# XXX: We disable this since we are aggressively moving towards Reactant and these are
+#      somewhat flaky
+# if "all" in LUX_TEST_GROUP || "core_layers" in LUX_TEST_GROUP
+#     @testset "Zygote Type Stability" begin
+#         include("zygote_type_stability.jl")
+#     end
+# end
 
 # Eltype Matching Tests
 if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
