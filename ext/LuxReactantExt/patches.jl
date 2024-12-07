@@ -5,3 +5,6 @@ LuxOps.xlogx(x::TracedRNumber{Bool}) = zero(x)
 function LuxOps.xlogy(x::TracedRNumber, y::TracedRNumber)
     return invoke(LuxOps.xlogy, Tuple{Number, Number}, float(x), float(y))
 end
+
+# XXX: Use PoolDims once EnzymeJAX supports stablehlo.reduce_window adjoint
+Lux.calculate_pool_dims(g::Lux.GlobalPoolMode, ::TracedRArray) = g
