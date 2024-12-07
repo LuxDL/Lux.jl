@@ -73,7 +73,7 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
     rng = StableRNG(seed)
 
     gdev = gpu_device()
-    trainloader, testloader = get_dataloaders(batchsize) .|> gdev
+    trainloader, testloader = get_dataloaders(batchsize) |> gdev
 
     model = ConvMixer(; dim=hidden_dim, depth, kernel_size, patch_size)
     ps, st = Lux.setup(rng, model) |> gdev
@@ -81,8 +81,7 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
     opt = AdamW(; eta=lr_max, lambda=weight_decay)
     clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
-    train_state = Training.TrainState(
-        model, ps, st, AdamW(; eta=lr_max, lambda=weight_decay))
+    train_state = Training.TrainState(model, ps, st, opt)
 
     lr_schedule = linear_interpolation(
         [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0])
