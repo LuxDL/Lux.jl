@@ -34,6 +34,7 @@ const NAME_TYPE = Union{Nothing, String, Symbol}
 const Optional{T} = Union{T, Nothing}
 
 is_extension_loaded(::Val) = false
+is_extension_loaded(::Val{:ForwardDiff}) = true
 
 # Preferences
 include("preferences.jl")
