@@ -8,11 +8,20 @@ using Lux, ADTypes, ComponentArrays, LuxCUDA, MLDatasets, MLUtils, OneHotArrays,
 CUDA.allowscalar(false)
 
 # ## Loading Datasets
-function load_dataset(::Type{dset}, n_train::Int, n_eval::Int, batchsize::Int) where {dset}
-    imgs, labels = dset(:train)[1:n_train]
+function load_dataset(::Type{dset}, n_train::Union{Nothing, Int},
+        n_eval::Union{Nothing, Int}, batchsize::Int) where {dset}
+    if n_train === nothing
+        imgs, labels = dset(:train)
+    else
+        imgs, labels = dset(:train)[1:n_train]
+    end
     x_train, y_train = reshape(imgs, 28, 28, 1, n_train), onehotbatch(labels, 0:9)
 
-    imgs, labels = dset(:test)[1:n_eval]
+    if n_eval === nothing
+        imgs, labels = dset(:test)
+    else
+        imgs, labels = dset(:test)[1:n_eval]
+    end
     x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
 
     return (
@@ -21,7 +30,9 @@ function load_dataset(::Type{dset}, n_train::Int, n_eval::Int, batchsize::Int) w
     )
 end
 
-function load_datasets(n_train=1024, n_eval=32, batchsize=256)
+function load_datasets(batchsize=256)
+    n_train = parse(Bool, get(ENV, "CI", "false")) ? 1024 : nothing
+    n_eval = parse(Bool, get(ENV, "CI", "false")) ? 32 : nothing
     return load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
 end
 
