@@ -14,10 +14,15 @@ using SimpleChains: SimpleChains
 # ## Loading MNIST
 function loadmnist(batchsize, train_split)
     ## Load MNIST
-    N = 2000
+    N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
     dataset = MNIST(; split=:train)
-    imgs = dataset.features[:, :, 1:N]
-    labels_raw = dataset.targets[1:N]
+    if N !== nothing
+        imgs = dataset.features[:, :, 1:N]
+        labels_raw = dataset.targets[1:N]
+    else
+        imgs = dataset.features
+        labels_raw = dataset.targets
+    end
 
     ## Process images into (H, W, C, BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
