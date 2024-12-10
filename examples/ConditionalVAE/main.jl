@@ -4,7 +4,7 @@
 # based on the [CVAE implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/cvae/).
 
 using Lux, Reactant, MLDatasets, Random, Statistics, Enzyme, MLUtils, DataAugmentation,
-      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers
+      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers, Comonicon
 
 const xdev = reactant_device()
 const cdev = cpu_device()
