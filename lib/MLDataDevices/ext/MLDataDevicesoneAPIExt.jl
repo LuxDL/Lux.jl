@@ -42,6 +42,7 @@ end
 # Device Transfer
 for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
     @eval function Adapt.adapt_storage(::oneAPIDevice, x::AbstractArray{$(T1)})
+        MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
         if !SUPPORTS_FP64[oneAPI.device()]
             @warn LazyString(
                 "Double type is not supported on this device. Using `", $(T2), "` instead.")
@@ -50,6 +51,9 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
         return oneArray(x)
     end
 end
-Adapt.adapt_storage(::oneAPIDevice, x::AbstractArray) = oneArray(x)
+function Adapt.adapt_storage(::oneAPIDevice, x::AbstractArray)
+    MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
+    return oneArray(x)
+end
 
 end

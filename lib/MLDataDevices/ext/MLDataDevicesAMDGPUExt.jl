@@ -77,7 +77,11 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-Adapt.adapt_storage(::AMDGPUDevice{Nothing}, x::AbstractArray) = AMDGPU.roc(x)
+function Adapt.adapt_storage(::AMDGPUDevice{Nothing}, x::AbstractArray)
+    MLDataDevices.get_device_type(x) <: AMDGPUDevice && return x
+    return AMDGPU.roc(x)
+end
+
 function Adapt.adapt_storage(to::AMDGPUDevice, x::AbstractArray)
     old_dev = AMDGPU.device()  # remember the current device
     dev = MLDataDevices.get_device(x)

@@ -57,7 +57,10 @@ function Internal.unsafe_free_internal!(::Type{CUDADevice}, x::AbstractArray)
 end
 
 # Device Transfer
-Adapt.adapt_storage(::CUDADevice{Nothing}, x::AbstractArray) = CUDA.cu(x)
+function Adapt.adapt_storage(::CUDADevice{Nothing}, x::AbstractArray)
+    MLDataDevices.get_device_type(x) <: CUDADevice && return x
+    return CUDA.cu(x)
+end
 
 function Adapt.adapt_storage(to::CUDADevice, x::AbstractArray)
     old_dev = CUDA.device()  # remember the current device
