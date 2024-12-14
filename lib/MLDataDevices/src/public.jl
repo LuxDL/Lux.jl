@@ -375,7 +375,10 @@ for op in (:get_device, :get_device_type)
 end
 
 # Adapt Interface
-Adapt.adapt_storage(::CPUDevice, x::AbstractArray) = Array(x)
+function Adapt.adapt_storage(::CPUDevice, x::AbstractArray)
+    get_device_type(x) <: CPUDevice && return x
+    return Array(x)
+end
 Adapt.adapt_storage(to::AbstractDevice, ::Random.TaskLocalRNG) = default_device_rng(to)
 Adapt.adapt_storage(::AbstractDevice, rng::AbstractRNG) = rng
 

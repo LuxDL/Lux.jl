@@ -29,6 +29,9 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
 end
 
 # Device Transfer
-Adapt.adapt_storage(::MetalDevice, x::AbstractArray) = Metal.mtl(x)
+function Adapt.adapt_storage(::MetalDevice, x::AbstractArray)
+    MLDataDevices.get_device_type(x) <: MetalDevice && return x
+    return Metal.mtl(x)
+end
 
 end

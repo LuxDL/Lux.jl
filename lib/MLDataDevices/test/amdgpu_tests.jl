@@ -124,6 +124,12 @@ using FillArrays, Zygote  # Extensions
         return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
         @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
     end
+
+    @testset "Issue #1129: no new object" begin
+        x = rand(Float32, 10, 10) |> device
+        y = x |> device
+        @test x === y
+    end
 end
 
 @testset "Functions" begin

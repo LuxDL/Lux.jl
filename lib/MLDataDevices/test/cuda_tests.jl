@@ -149,6 +149,12 @@ using FillArrays, Zygote  # Extensions
         return_val2(x) = Val(get_device(x))
         @test_throws ErrorException @inferred(return_val2(ps))
     end
+
+    @testset "Issue #1129: no new object" begin
+        x = rand(Float32, 10, 10) |> device
+        y = x |> device
+        @test x === y
+    end
 end
 
 @testset "Functions" begin
