@@ -399,5 +399,7 @@ If `MLDataDevices.isleaf(x::T)` is not defined, then it will fall back to `Funct
 """
 isleaf(x) = Functors.isleaf(x)
 
-isleaf(::AbstractArray{T}) where {T} = isbitstype(T) || T <: Number # BigFloat and such are not bitstype
-isleaf(::Adapt.WrappedArray) = false
+function isleaf(x::AbstractArray{T}) where {T}
+    parent(x) !== x && return Functors.isleaf(x)
+    return isbitstype(T) || T <: Number # BigFloat and such are not bitstype
+end
