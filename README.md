@@ -191,13 +191,9 @@ If you found this library to be useful in academic work, then please cite:
   note      = {If you use this software, please cite it as below.},
   publisher = {Zenodo},
   version   = {v1.4.2},
-  doi       = {10.5281/zenodo.14489365},
-  url       = {https://doi.org/10.5281/zenodo.14489365},
-  swhid     = {swh:1:dir:1a304ec3243961314a1cc7c1481a31c4386c4a34
-                   ;origin=https://doi.org/10.5281/zenodo.7808903;vis
-                   it=swh:1:snp:e2bbe43b14bde47c4ddf7e637eb7fc7bd10db
-                   8c7;anchor=swh:1:rel:2c0c0ff927e7bfe8fc8bc43fd553a
-                   b392a6eb403;path=/}
+  doi       = {10.5281/zenodo.7808903},
+  url       = {https://doi.org/10.5281/zenodo.7808903},
+  swhid     = {swh:1:dir:1a304ec3243961314a1cc7c1481a31c4386c4a34;origin=https://doi.org/10.5281/zenodo.7808903;visit=swh:1:snp:e2bbe43b14bde47c4ddf7e637eb7fc7bd10db8c7;anchor=swh:1:rel:2c0c0ff927e7bfe8fc8bc43fd553ab392a6eb403;path=/}
 }
 
 @thesis{pal2023efficient,
