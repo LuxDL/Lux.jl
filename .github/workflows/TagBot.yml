@@ -1,4 +1,5 @@
 name: TagBot
+
 on:
   issue_comment:
     types:
@@ -7,6 +8,7 @@ on:
     inputs:
       lookback:
         default: "3"
+
 permissions:
   actions: read
   checks: read
@@ -20,8 +22,9 @@ permissions:
   repository-projects: read
   security-events: read
   statuses: read
+
 jobs:
-  TagBot:
+  TagBot-Lux:
     if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
     runs-on: ubuntu-latest
     steps:
@@ -30,39 +33,24 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ssh: ${{ secrets.DOCUMENTER_KEY }}
-      - name: Tag LuxCore
+
+  TagBot-Subpackages:
+    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - LuxCUDA
+          - LuxCore
+          - LuxLib
+          - LuxTestUtils
+          - MLDataDevices
+          - WeightInitializers
+    steps:
+      - name: Tag ${{ matrix.package }}
         uses: JuliaRegistries/TagBot@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ssh: ${{ secrets.DOCUMENTER_KEY }}
-          subdir: "lib/LuxCore"
-      - name: Tag LuxCUDA
-        uses: JuliaRegistries/TagBot@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
-          subdir: "lib/LuxCUDA"
-      - name: Tag LuxLib
-        uses: JuliaRegistries/TagBot@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
-          subdir: "lib/LuxLib"
-      - name: Tag LuxTestUtils
-        uses: JuliaRegistries/TagBot@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
-          subdir: "lib/LuxTestUtils"
-      - name: Tag MLDataDevices
-        uses: JuliaRegistries/TagBot@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
-          subdir: "lib/MLDataDevices"
-      - name: Tag WeightInitializers
-        uses: JuliaRegistries/TagBot@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ssh: ${{ secrets.DOCUMENTER_KEY }}
-          subdir: "lib/WeightInitializers"
+          subdir: "lib/${{ matrix.package }}"
