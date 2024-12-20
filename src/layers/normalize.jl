@@ -134,7 +134,9 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
 end
 
 function update_batchnorm_state(BN::BatchNorm, st::NamedTuple, stats)
-    has_track_stats(BN) && return merge(st, (; stats.running_mean, stats.running_var))
+    has_track_stats(BN) && return merge(st,
+        (; running_mean=Utils.vec(stats.running_mean),
+            running_var=Utils.vec(stats.running_var)))
     return st
 end
 
@@ -378,13 +380,22 @@ statelength(l::InstanceNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(IN, ps, st, x)
     σ = NNlib.fast_act(IN.activation, x′)
-    y, _ = instancenorm(
+    y, stats = instancenorm(
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
         safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
         st.training, σ, convert(unwrapped_eltype(x′), IN.momentum),
         convert(unwrapped_eltype(x′), IN.epsilon))
-    return y, st
+    return y, update_instancenorm_state(IN, st, stats)
 end
+
+function update_instancenorm_state(IN::InstanceNorm, st::NamedTuple, stats)
+    has_track_stats(IN) && return merge(st,
+        (; running_mean=Utils.vec(stats.running_mean),
+            running_var=Utils.vec(stats.running_var)))
+    return st
+end
+
+CRC.@non_differentiable update_instancenorm_state(::Any...)
 
 function Base.show(io::IO, l::InstanceNorm)
     print(io, "InstanceNorm($(l.chs)")
