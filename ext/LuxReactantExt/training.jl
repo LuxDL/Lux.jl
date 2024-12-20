@@ -56,6 +56,8 @@ for inplace in ("!", "")
         return grads, loss, stats, ts
     end
 
+    # XXX: Should we add a check to ensure the inputs to this function is same as the one
+    #      used in the compiled function? We can re-trigger the compilation with a warning
     @eval function Lux.Training.$(fname)(::ReactantBackend, obj_fn::F, data,
             ts::Training.TrainState{<:TrainingBackendCache{ReactantBackend}, F}) where {F}
         grads, ps, loss, stats, st, opt_state = ts.cache.extras.compiled_grad_and_step_function(
