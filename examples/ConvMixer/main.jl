@@ -73,10 +73,10 @@ function accuracy(model, ps, st, dataloader)
     return total_correct / total
 end
 
-Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::Int=8,
+Comonicon.@main function main(; batchsize::Int=64, hidden_dim::Int=256, depth::Int=8,
         patch_size::Int=2, kernel_size::Int=5, weight_decay::Float64=1e-5,
         clip_norm::Bool=false, seed::Int=42, epochs::Int=25, lr_max::Float64=0.01,
-        backend::String="gpu_if_available")
+        backend::String="reactant")
     rng = StableRNG(seed)
 
     if backend == "gpu_if_available"
@@ -130,7 +130,6 @@ Comonicon.@main function main(; batchsize::Int=512, hidden_dim::Int=256, depth::
             (_, _, _, train_state) = Training.single_train_step!(
                 adtype, loss, (x, y), train_state
             )
-            @show i, time() - stime
         end
         ttime = time() - stime
 
