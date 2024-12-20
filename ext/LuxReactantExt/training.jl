@@ -36,19 +36,13 @@ for inplace in ("!", "")
 
     @eval function Lux.Training.$(fname)(backend::ReactantBackend, objective_function::F,
             data, ts::Training.TrainState) where {F}
-        @show 1213
-
         compiled_grad_and_step_function = @compile $(internal_fn)(
             objective_function, ts.model, data, ts.parameters, ts.states,
             ts.optimizer_state)
 
-        @show Lux.Functors.fmap(typeof, ts.states)
-
         grads, ps, loss, stats, st, opt_state = compiled_grad_and_step_function(
             objective_function, ts.model, data, ts.parameters, ts.states,
             ts.optimizer_state)
-
-        @show Lux.Functors.fmap(typeof, st)
 
         cache = TrainingBackendCache(
             backend, False(), nothing, (; compiled_grad_and_step_function))
@@ -59,8 +53,6 @@ for inplace in ("!", "")
         @set! ts.optimizer_state = opt_state
         @set! ts.step = ts.step + 1
 
-        @show Lux.Functors.fmap(typeof, ts.states)
-
         return grads, loss, stats, ts
     end
 
@@ -68,9 +60,6 @@ for inplace in ("!", "")
     #      used in the compiled function? We can re-trigger the compilation with a warning
     @eval function Lux.Training.$(fname)(::ReactantBackend, obj_fn::F, data,
             ts::Training.TrainState{<:TrainingBackendCache{ReactantBackend}, F}) where {F}
-        @show Lux.Functors.fmap(typeof, ts.parameters)
-        @show Lux.Functors.fmap(typeof, ts.states)
-
         grads, ps, loss, stats, st, opt_state = ts.cache.extras.compiled_grad_and_step_function(
             obj_fn, ts.model, data, ts.parameters, ts.states, ts.optimizer_state)
 

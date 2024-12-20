@@ -11,7 +11,6 @@ const INTERMEDIATE_TUTORIALS = [
     "BayesianNN/main.jl" => "CPU",
     "HyperNet/main.jl" => "CUDA",
     "PINN2DPDE/main.jl" => "CUDA",
-    "ConditionalVAE/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [
     "GravitationalWaveForm/main.jl" => "CPU",

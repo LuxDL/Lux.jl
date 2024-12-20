@@ -218,10 +218,6 @@ export default defineConfig({
                 text: "Training a PINN on 2D PDE",
                 link: "/tutorials/intermediate/4_PINN2DPDE",
               },
-              {
-                text: "Conditional VAE for MNIST using Reactant",
-                link: "/tutorials/intermediate/5_ConditionalVAE",
-              }
             ],
           },
           {
