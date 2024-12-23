@@ -9,6 +9,19 @@ using Static: False
 using Lux: Lux, LuxOps, Training, Utils
 using Lux.Training: TrainingBackendCache, ReactantBackend
 
+Lux.is_extension_loaded(::Val{:Reactant}) = true
+
+Utils.to_rarray(x; kwargs...) = Reactant.to_rarray(x; kwargs...)
+
+function Utils.promote_to(::Type{T}, x::Number) where {T <: Number}
+    x isa Reactant.TracedType && return x
+    return Reactant.ConcreteRNumber{T}(x)
+end
+
+function Utils.promote_to_inside_interpreter(::Type{T}, x::Number) where {T <: Number}
+    return Reactant.TracedUtils.promote_to(TracedRNumber{T}, x)
+end
+
 include("patches.jl")
 include("training.jl")
 

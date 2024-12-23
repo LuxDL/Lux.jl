@@ -44,6 +44,7 @@ include("utils.jl")
 include("extended_ops.jl")
 
 # Training Helpers
+include("helpers/optimizers.jl")
 include("helpers/training.jl")
 
 # Experimental

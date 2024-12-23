@@ -211,6 +211,10 @@ matrix_to_array(x::SMatrix{L, 1, T}, ::AbstractVector) where {L, T} = SVector{L,
 matrix_to_array(x::AbstractMatrix, ::AbstractMatrix) = x
 matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:end]...)
 
+function to_rarray end
+function promote_to end
+function promote_to_inside_interpreter end
+
 # This should probably be in WeightInitializers.jl
 calculate_gain(_, __) = 1.0f0
 calculate_gain(::typeof(identity), _) = 1.0f0
