@@ -46,6 +46,8 @@ pages = [
         "manual/distributed_utils.md",
         "manual/nested_autodiff.md",
         "manual/compiling_lux_models.md",
+        "manual/exporting_to_jax.md",
+        "manual/nested_autodiff_reactant.md"
     ],
     "API Reference" => [
         "Lux" => [
