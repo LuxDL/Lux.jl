@@ -213,6 +213,7 @@ matrix_to_array(x::AbstractMatrix, y::AbstractArray) = reshape(x, :, size(y)[2:e
 
 function to_rarray end
 function promote_to end
+function promote_to_inside_interpreter end
 
 # This should probably be in WeightInitializers.jl
 calculate_gain(_, __) = 1.0f0

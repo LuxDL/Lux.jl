@@ -48,7 +48,7 @@ end
 Optimisers.init(::ReactantDescent, ::AbstractArray) = nothing
 
 function Optimisers.apply!(opt::ReactantDescent, state, x::AbstractArray{T}, dx) where {T}
-    η = T(opt.eta)
+    η = Utils.promote_to_inside_interpreter(T, opt.eta)
     return state, @. dx * η
 end
 
@@ -74,7 +74,8 @@ function Optimisers.init(::ReactantMomentum, x::AbstractArray)
 end
 
 function Optimisers.apply!(opt::ReactantMomentum, mvel, ::AbstractArray{T}, dx) where {T}
-    η, ρ = T(opt.eta), T(opt.rho)
+    η = Utils.promote_to_inside_interpreter(T, opt.eta)
+    ρ = Utils.promote_to_inside_interpreter(T, opt.rho)
     @. mvel = ρ * mvel + η * dx
     return mvel, mvel
 end
@@ -109,7 +110,13 @@ function Optimisers.init(opt::ReactantAdam, x::AbstractArray{T}) where {T}
 end
 
 function Optimisers.apply!(o::ReactantAdam, state, ::AbstractArray{T}, dx) where {T}
-    η, β, ϵ = T(o.eta), T.(o.beta), T(o.epsilon) # XXX: See Optimisers._eps
+    η = Utils.promote_to_inside_interpreter(T, o.eta)
+    β = (
+        Utils.promote_to_inside_interpreter(T, o.beta[1]),
+        Utils.promote_to_inside_interpreter(T, o.beta[2])
+    )
+    ϵ = Utils.promote_to_inside_interpreter(T, o.epsilon) # XXX: See Optimisers._eps
+
     mt, vt, βt = state
 
     @. mt = β[1] * mt + (1 - β[1]) * dx
@@ -154,7 +161,14 @@ function Optimisers.init(opt::ReactantAdamW, x::AbstractArray{T}) where {T}
 end
 
 function Optimisers.apply!(o::ReactantAdamW, state, x::AbstractArray{T}, dx) where {T}
-    η, β, ϵ, λ = T(o.eta), T.(o.beta), T(o.epsilon), T(o.lambda) # XXX: See Optimisers._eps
+    η = Utils.promote_to_inside_interpreter(T, o.eta)
+    β = (
+        Utils.promote_to_inside_interpreter(T, o.beta[1]),
+        Utils.promote_to_inside_interpreter(T, o.beta[2])
+    )
+    ϵ = Utils.promote_to_inside_interpreter(T, o.epsilon) # XXX: See Optimisers._eps
+    λ = Utils.promote_to_inside_interpreter(T, o.lambda)
+
     mt, vt, βt = state
 
     # standard Adam update with learning rate eta=1
