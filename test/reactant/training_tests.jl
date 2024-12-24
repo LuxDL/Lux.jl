@@ -18,7 +18,9 @@
         @testset "MLP Training: $(version)" for version in (:iip, :oop)
             model = Chain(
                 Dense(2 => 32, gelu),
+                BatchNorm(32),
                 Dense(32 => 32, gelu),
+                BatchNorm(32),
                 Dense(32 => 2)
             )
             ps, st = Lux.setup(StableRNG(1234), model) |> xdev
@@ -43,27 +45,31 @@
                 inference_loss_fn_compiled(xᵢ, yᵢ, model, ps, st)
             end
 
-            train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
+            @testset for opt in (
+                Descent(0.01f0), Momentum(0.01f0), Adam(0.01f0), AdamW(0.01f0)
+            )
+                train_state = Training.TrainState(model, ps, st, opt)
 
-            for epoch in 1:100, (xᵢ, yᵢ) in dataloader
-                grads, loss, stats, train_state = if version === :iip
-                    Training.single_train_step!(
-                        AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
-                elseif version === :oop
-                    Training.single_train_step(
-                        AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
-                else
-                    error("Invalid version: $(version)")
+                for epoch in 1:100, (xᵢ, yᵢ) in dataloader
+                    grads, loss, stats, train_state = if version === :iip
+                        Training.single_train_step!(
+                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+                    elseif version === :oop
+                        Training.single_train_step(
+                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+                    else
+                        error("Invalid version: $(version)")
+                    end
                 end
-            end
 
-            total_final_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
-                inference_loss_fn_compiled(
-                    xᵢ, yᵢ, model, train_state.parameters, train_state.states
-                )
-            end
+                total_final_loss = mapreduce(+, dataloader) do (xᵢ, yᵢ)
+                    inference_loss_fn_compiled(
+                        xᵢ, yᵢ, model, train_state.parameters, train_state.states
+                    )
+                end
 
-            @test total_final_loss < 100 * total_initial_loss
+                @test total_final_loss < 100 * total_initial_loss
+            end
         end
     end
 end
