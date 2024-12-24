@@ -1,7 +1,7 @@
 name = "LuxLib"
 uuid = "82251201-b29d-42c6-8e01-566dec8acb11"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.3.10"
+version = "1.4.0"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -19,8 +19,8 @@ LuxCore = "bb33d45b-7691-41d6-9220-0943567d0623"
 MLDataDevices = "7e8f7934-dd98-4c1a-8fe8-92b47a384d40"
 Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
-Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Static = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
@@ -32,23 +32,29 @@ AMDGPU = "21141c5a-9bdb-4563-92ae-f87d6854732e"
 AppleAccelerate = "13e28ba4-7ad8-5781-acae-3021b1ed3924"
 BLISBLAS = "6f275bd8-fec0-4d39-945b-7e95a765fa1e"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
-MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
+MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 Octavian = "6fd5a793-0b7e-452c-907f-f8bfe9c57db4"
+Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 SLEEFPirates = "476501e8-09a2-5ece-8869-fb82de89a1fa"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 cuDNN = "02a925ec-e4fe-4b08-9a7e-0d78e3d38ccd"
 
+[sources]
+LuxCore = {path = "../LuxCore"}
+MLDataDevices = {path = "../MLDataDevices"}
+
 [extensions]
 LuxLibAppleAccelerateExt = "AppleAccelerate"
 LuxLibBLISBLASExt = "BLISBLAS"
 LuxLibCUDAExt = "CUDA"
-LuxLibMKLExt = "MKL"
 LuxLibEnzymeExt = "Enzyme"
 LuxLibLoopVectorizationExt = "LoopVectorization"
+LuxLibMKLExt = "MKL"
 LuxLibOctavianExt = ["Octavian", "LoopVectorization"]
+LuxLibReactantExt = "Reactant"
 LuxLibReverseDiffExt = "ReverseDiff"
 LuxLibSLEEFPiratesExt = "SLEEFPirates"
 LuxLibTrackerAMDGPUExt = ["AMDGPU", "Tracker"]
@@ -79,9 +85,10 @@ MLDataDevices = "1.6"
 Markdown = "1.10"
 NNlib = "0.9.24"
 Octavian = "0.3.28"
-Preferences = "1.4.3"
 Polyester = "0.7.15"
+Preferences = "1.4.3"
 Random = "1.10"
+Reactant = "0.2.11"
 Reexport = "1"
 ReverseDiff = "1.15"
 SLEEFPirates = "0.6.43"
@@ -91,7 +98,3 @@ Statistics = "1.10"
 Tracker = "0.2.36"
 cuDNN = "1.3"
 julia = "1.10"
-
-[sources]
-LuxCore = { path = "../LuxCore" }
-MLDataDevices = { path = "../MLDataDevices" }
