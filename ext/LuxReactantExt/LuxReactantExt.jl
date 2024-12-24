@@ -18,10 +18,6 @@ function Utils.promote_to(::Type{T}, x::Number) where {T <: Number}
     return Reactant.ConcreteRNumber{T}(x)
 end
 
-function Utils.promote_to_inside_interpreter(::Type{T}, x::Number) where {T <: Number}
-    return Reactant.TracedUtils.promote_to(TracedRNumber{T}, x)
-end
-
 include("patches.jl")
 include("training.jl")
 
