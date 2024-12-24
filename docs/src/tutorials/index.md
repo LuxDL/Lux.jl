@@ -97,10 +97,10 @@ const large_models = [
     desc: "Train a Diffusion Model to generate images from Gaussian noises."
   },
   {
-    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/ConvMixer",
+    href: "https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10",
     src: "https://datasets.activeloop.ai/wp-content/uploads/2022/09/CIFAR-10-dataset-Activeloop-Platform-visualization-image-1.webp",
-    caption: "ConvMixer on CIFAR-10",
-    desc: "Train ConvMixer on CIFAR-10 to 90% accuracy within 10 minutes."
+    caption: "Vision Models on CIFAR-10",
+    desc: "Train differnt vision models on CIFAR-10 to 90% accuracy within 10 minutes."
   }
 ];
 
