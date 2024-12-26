@@ -54,7 +54,7 @@ safe_vec(::Nothing) = nothing
 
 ## This part is taken from NNlib.jl
 # This has no methods, used for testing whether `derivatives_given_output(Ω, f, x)`
-# is independent of `x`, as `_return_type` says `Union{}` when calling is an error.
+# is independent of `x`, as `return_type` says `Union{}` when calling is an error.
 struct NotaNumber <: Real end
 
 # This just saves typing `only.(only.(` many times:
@@ -118,7 +118,7 @@ CRC.@non_differentiable default_epsilon(::Any...)
 function concrete_bias_act_output_eltype(act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
         b::Optional{<:AbstractVector}) where {F, Tw, Tx}
     Ty = promote_type(Tw, Tx, safe_eltype(b))
-    Tact = Core.Compiler._return_type(act, Tuple{Ty})
+    Tact = Core.Compiler.return_type(act, Tuple{Ty})
     return ifelse(isconcretetype(Tact), Tact, Ty)
 end
 

@@ -17,7 +17,7 @@ end
 
 function batched_matmul(opmode::GPUBroadcastOp{<:AbstractGPUDevice},
         x::AbstractArray{xT, 3}, y::AbstractArray{yT, 3}) where {xT, yT}
-    if isconcretetype(Core.Compiler._return_type(
+    if isconcretetype(Core.Compiler.return_type(
         NNlib.batched_mul, Tuple{typeof(x), typeof(y)}))
         return NNlib.batched_mul(x, y)  # GPU versions are well optimized
     end
