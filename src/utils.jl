@@ -42,7 +42,7 @@ unbatched_structure(x) = fmapstructure(size_unbatched, x)
 can_named_tuple(::NamedTuple) = true
 can_named_tuple(::T) where {T} = can_named_tuple(T)
 function can_named_tuple(::Type{T}) where {T}
-    return Core.Compiler._return_type(named_tuple, Tuple{T}) !== Union{}
+    return Core.Compiler.return_type(named_tuple, Tuple{T}) !== Union{}
 end
 
 @non_differentiable can_named_tuple(::Any)
@@ -50,7 +50,7 @@ end
 # Convert to a NamedTuple
 named_tuple(nt::NamedTuple) = nt
 function named_tuple(x::T) where {T}
-    NT = Core.Compiler._return_type(NamedTuple, Tuple{T})
+    NT = Core.Compiler.return_type(NamedTuple, Tuple{T})
     if NT === Union{} || NT === NamedTuple
         error("`NamedTuple` is not defined for type `$(T)`. Please define \
                `Lux.Utils.named_tuple(::$(T))` method (or preferably \

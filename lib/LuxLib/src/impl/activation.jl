@@ -59,7 +59,7 @@ function activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) wher
 end
 @stable default_mode="disable" function activation(
         opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}) where {F, T}
-    RT = Core.Compiler._return_type(σ, Tuple{T})
+    RT = Core.Compiler.return_type(σ, Tuple{T})
     y = similar(x, ifelse(isconcretetype(RT), RT, T))
     activation!(y, opmode, σ, x)
     return y

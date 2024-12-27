@@ -61,12 +61,12 @@ end
 activation_intermediate_not_needed(::typeof(identity), ::Type) = True()
 
 function activation_intermediate_not_needed(::F, ::Type{T}) where {F, T}
-    return static(isconcretetype(Core.Compiler._return_type(
+    return static(isconcretetype(Core.Compiler.return_type(
         only_derivative, Tuple{T, F, NotaNumber})))
 end
 
 function activation_has_rrule(::F, ::Type{T}) where {F, T}
-    return static(isconcretetype(Core.Compiler._return_type(
+    return static(isconcretetype(Core.Compiler.return_type(
         only_derivative, Tuple{T, F, T})))
 end
 

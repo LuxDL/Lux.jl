@@ -42,7 +42,7 @@ end
 fused_agg(::typeof(sum), op::OP, x::Number, y::Number) where {OP} = op(x, y)
 function fused_agg(::typeof(sum), op::OP, x::AbstractArray, y::AbstractArray) where {OP}
     if fast_scalar_indexing(x) && fast_scalar_indexing(y)
-        res = Core.Compiler._return_type(op, Tuple{eltype(x), eltype(y)})(0)
+        res = Core.Compiler.return_type(op, Tuple{eltype(x), eltype(y)})(0)
         @simd ivdep for i in eachindex(x, y)
             @inbounds res += op(x[i], y[i])
         end
@@ -73,7 +73,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
             Nothing, eltype(x), 1}.(x, (Partials{1, eltype(x)}((one(eltype(x)),)),))
         x_partials = similar(x)
         T = eltype(x)
-        res = Core.Compiler._return_type(op, Tuple{T, eltype(y)})(0)
+        res = Core.Compiler.return_type(op, Tuple{T, eltype(y)})(0)
         @inbounds @simd for i in eachindex(x_partials, x, y)
             x_dual = Dual{Nothing, T, 1}(x[i], Partials{1, T}((one(T),)))
             tmp = op(x_dual, y[i])
