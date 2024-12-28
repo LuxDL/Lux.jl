@@ -62,22 +62,22 @@ function alpha_dropout(noise::AbstractArray, p, x::AbstractArray, α, A, B)
 end
 
 @stable default_mode="disable" function alpha_dropout(
-        ::AbstractInternalArrayOpMode, noise::AbstractArray, p::Real,
-        x::AbstractArray{T}, α::Real, A::Real, B::Real) where {T}
+        ::AbstractInternalArrayOpMode, noise::AbstractArray, p,
+        x::AbstractArray{T}, α, A, B) where {T}
     A′, B′, α = T(A), T(B), T(α)
     return @. muladd(ifelse(noise > p, x, α), A′, B′)
 end
 
 @stable default_mode="disable" function alpha_dropout(
-        opmode::LoopedArrayOp, noise::AbstractArray, p::Real,
-        x::AbstractArray, α::Real, A::Real, B::Real)
+        opmode::LoopedArrayOp, noise::AbstractArray, p,
+        x::AbstractArray, α, A, B)
     res = similar(x, promote_type(typeof(p), typeof(α)))
     alpha_dropout!(res, opmode, noise, p, x, α, A, B)
     return res
 end
 
 function CRC.rrule(::typeof(alpha_dropout), ::LoopedArrayOp, noise::AbstractArray,
-        p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
+        p, x::AbstractArray, α, A, B)
     cond = similar(noise, Bool)
     y = similar(x, promote_type(typeof(p), typeof(α), typeof(A), typeof(B), eltype(x)))
     @simd ivdep for I in eachindex(noise, x, y, cond)
@@ -99,7 +99,7 @@ function CRC.rrule(::typeof(alpha_dropout), ::LoopedArrayOp, noise::AbstractArra
 end
 
 function CRC.rrule(::typeof(alpha_dropout), ::AbstractInternalArrayOpMode,
-        noise::AbstractArray, p::Real, x::AbstractArray, α::Real, A::Real, B::Real)
+        noise::AbstractArray, p, x::AbstractArray, α, A, B)
     cond = noise .> p
     y = @. ifelse(cond, x, α) * A + B
 
@@ -114,7 +114,7 @@ end
 
 function alpha_dropout!(
         res::AbstractArray{T}, ::LoopedArrayOp, noise::AbstractArray{T},
-        p::Real, x::AbstractArray{T}, α::Real, A::Real, B::Real) where {T}
+        p, x::AbstractArray{T}, α, A, B) where {T}
     @simd ivdep for I in eachindex(noise, x, res)
         res[I] = ifelse(noise[I] > p, x[I], α) * A + B
     end

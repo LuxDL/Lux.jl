@@ -225,7 +225,7 @@ calculate_gain(::typeof(NNlib.tanh_fast), _) = 5.0f0 / 3.0f0
 function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)
     return calculate_gain(NNlib.leakyrelu, 0.1f0)
 end
-calculate_gain(::typeof(NNlib.leakyrelu), x::Real) = typeof(x)(√(2 / (1 + x^2)))
+calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
 end

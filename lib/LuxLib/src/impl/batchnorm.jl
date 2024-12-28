@@ -27,7 +27,7 @@ CRC.@non_differentiable get_batchnorm_statistics(::Any...)
 function batchnorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, training::StaticBool, act::F,
-        momentum::Real, ϵ::Real) where {F, xT, N}
+        momentum, ϵ) where {F, xT, N}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
         batchnorm_reduce_dims(x), training, momentum)
@@ -37,7 +37,7 @@ end
 function batchnorm_affine_normalize(
         act::F, x::AbstractArray{xT, N}, μ::AbstractArray{μT, N},
         σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, xT, μT, σ²T, N}
+        β::Optional{<:AbstractVector}, ϵ) where {F, xT, μT, σ²T, N}
     return batchnorm_affine_normalize(
         internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ)
 end
@@ -45,7 +45,7 @@ end
 function batchnorm_affine_normalize(
         ::GenericBroadcastOp, act::F, x::AbstractArray{xT, N}, μ::AbstractArray{μT, N},
         σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, xT, μT, σ²T, N}
+        β::Optional{<:AbstractVector}, ϵ) where {F, xT, μT, σ²T, N}
     return affine_normalize(
         act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ)
 end
@@ -54,7 +54,7 @@ function batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{xT, N},
         μ::AbstractArray{μT, N}, σ²::AbstractArray{σ²T, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector},
-        ϵ::Real) where {F, xT, μT, σ²T, N}
+        ϵ) where {F, xT, μT, σ²T, N}
     x′ = reshape(x, :, size(x, N - 1), size(x, N))
     return reshape(
         batchnorm_affine_normalize_internal(opmode, act, x′, vec(μ), vec(σ²), γ, β, ϵ),
@@ -64,7 +64,7 @@ end
 @stable default_mode="disable" function batchnorm_affine_normalize_internal(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, xT}
+        β::Optional{<:AbstractVector}, ϵ) where {F, xT}
     y = similar(x,
         promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
             safe_eltype(γ), safe_eltype(β)))
@@ -75,7 +75,7 @@ end
 function batchnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 3}, opmode::LoopedArrayOp, act::F, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real,
+        β::Optional{<:AbstractVector}, ϵ,
         γ′::Optional{<:AbstractVector}=nothing) where {F, xT, yT}
     N = size(y, 2)
     γ′ = γ′ === nothing ?
@@ -225,7 +225,7 @@ end
 function batchnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 3}, ::GPUBroadcastOp, act::F, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real,
+        β::Optional{<:AbstractVector}, ϵ,
         γ′::Optional{<:AbstractVector}=nothing) where {F, xT, yT}
     backend = KA.get_backend(y)
     run_ka_kernel(
@@ -278,7 +278,7 @@ function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(batchnorm_affine_normalize_internal),
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{T, N},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, T, N}
+        β::Optional{<:AbstractVector}, ϵ) where {F, T, N}
     y = similar(x,
         promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
             safe_eltype(γ), safe_eltype(β)))
@@ -304,7 +304,7 @@ end
 
 function ∇batchnorm_affine_normalize(opmode::LoopedArrayOp, ∂y::AbstractArray{∂yT, 3},
         x::AbstractArray{xT, 3}, μ::AbstractVector, σ²::AbstractVector,
-        γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real,
+        γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ,
         γ′::AbstractVector) where {∂yT, xT}
     ∂x, ∂μ, ∂σ² = similar(x), similar(μ), similar(σ²)
     ∂γ = γ === nothing ? nothing : similar(γ)
@@ -322,7 +322,7 @@ function ∇batchnorm_affine_normalize_cpu!(
         ∂x::AbstractArray{∂xT, 3}, ∂μ::AbstractVector{∂μT},
         ∂σ²::AbstractVector{∂σ²T}, ::Nothing, ::Nothing, ∂y::AbstractArray{∂yT, 3},
         x::AbstractArray{xT, 3}, μ::AbstractVector, σ²::AbstractVector, ::Nothing,
-        ϵ::Real, γ′::AbstractVector) where {∂xT, ∂μT, ∂σ²T, ∂yT, xT}
+        ϵ, γ′::AbstractVector) where {∂xT, ∂μT, ∂σ²T, ∂yT, xT}
     half = eltype(∂σ²)(0.5)
 
     fill!(∂μ, 0)
@@ -361,7 +361,7 @@ function ∇batchnorm_affine_normalize_cpu!(
         ∂x::AbstractArray{∂xT, 3}, ∂μ::AbstractVector{∂μT},
         ∂σ²::AbstractVector{∂σ²T}, ∂γ::AbstractVector{∂γT},
         ∂β::AbstractVector{∂βT}, ∂y::AbstractArray{∂yT, 3}, x::AbstractArray{xT, 3},
-        μ::AbstractVector, σ²::AbstractVector, γ::AbstractVector, ϵ::Real,
+        μ::AbstractVector, σ²::AbstractVector, γ::AbstractVector, ϵ,
         γ′::AbstractVector) where {∂xT, ∂μT, ∂σ²T, ∂γT, ∂βT, ∂yT, xT}
     half = eltype(∂σ²)(0.5)
 
@@ -406,7 +406,7 @@ end
 function ∇batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, ∂y::AbstractArray{∂yT, 3},
         x::AbstractArray{xT, 3}, μ::AbstractVector, σ²::AbstractVector,
-        γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ::Real,
+        γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ,
         γ′::AbstractVector) where {∂yT, xT}
     ∂x, ∂σ² = similar(x), similar(σ², size(x))
     ∂γ = γ === nothing ? nothing : similar(γ, size(x))
@@ -425,7 +425,7 @@ function ∇batchnorm_affine_normalize!(
         ∂x::AbstractArray{∂xT, 3}, ∂σ²::AbstractArray{∂σ²T, 3},
         ∂γ::Optional{<:AbstractArray{<:Any, 3}}, ::GPUBroadcastOp,
         ∂y::AbstractArray{∂yT, 3}, x::AbstractArray{xT, 3}, μ::AbstractVector,
-        σ²::AbstractVector, γ::Optional{<:AbstractVector}, ϵ::Real,
+        σ²::AbstractVector, γ::Optional{<:AbstractVector}, ϵ,
         γ′::AbstractVector) where {∂xT, ∂σ²T, ∂yT, xT}
     backend = KA.get_backend(∂x)
     run_ka_kernel(

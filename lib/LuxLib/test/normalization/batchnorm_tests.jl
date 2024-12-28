@@ -21,7 +21,7 @@ function batchnorm_fallback(
         bias::LuxLib.Optional{<:AbstractVector},
         running_mean::LuxLib.Optional{<:AbstractVector},
         running_var::LuxLib.Optional{<:AbstractVector}, training::Val,
-        σ::F=identity, momentum::Real=0.1f0, epsilon::Real=1.0f-5) where {F, N}
+        σ::F=identity, momentum=0.1f0, epsilon=1.0f-5) where {F, N}
     y, xm, xv = LuxLib.Impl.normalization(x, LuxLib.Utils.remove_tracking(running_mean),
         LuxLib.Utils.remove_tracking(running_var), scale, bias,
         LuxLib.Impl.batchnorm_reduce_dims(x), static(training), momentum, epsilon, σ)

@@ -97,7 +97,7 @@ for RM in (:TrackedVector, :Nothing, :AbstractVector),
     Utils.is_tracked(RM, RV, S, B, XT) || continue
 
     @eval Tracker.@grad_from_chainrules LuxLib.Impl.batchnorm_cudnn(
-        γ::$S, β::$B, x::$XT, rμ::$RM, rσ²::$RV, m::Real, ϵ::Real, training::StaticBool)
+        γ::$S, β::$B, x::$XT, rμ::$RM, rσ²::$RV, m, ϵ, training::StaticBool)
 end
 
 # Utils extensions
