@@ -110,3 +110,5 @@ For the following types it directly defines recursion rules:
     correctness of this implementation for specific usecases.
 """
 function recursive_map end
+
+@compat(public, (recursive_eltype,))
