@@ -127,9 +127,7 @@ const RETESTITEMS_NWORKER_THREADS = parse(
         string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))))
 
 @testset "Lux.jl Tests" begin
-    for (i, tag) in enumerate(LUX_TEST_GROUP)
-        @info "Running tests for group: [$(i)/$(length(LUX_TEST_GROUP))] $tag"
-
+    @testset "[$(tag)] [$(i)/$(length(LUX_TEST_GROUP))]" for (i, tag) in enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") || (BACKEND_GROUP == "amdgpu") ? 0 :
                    RETESTITEMS_NWORKERS
 
