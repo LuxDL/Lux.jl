@@ -4,14 +4,14 @@ using ADTypes: AbstractADType, AutoEnzyme, AutoReverseDiff, AutoTracker, AutoZyg
 using Compat: @compat
 using ConcreteStructs: @concrete
 using FastClosures: @closure
-using Functors: fmap
+using Functors: Functors, fmap
 using Optimisers: Optimisers
 using Setfield: @set!
 using Static: StaticBool, Static, False, True
 
-using ..Lux: Lux, Utils
+using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: MLDataDevices, ReactantDevice, get_device_type, get_device, cpu_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device_type
 
 """
     TrainState
@@ -63,10 +63,10 @@ Constructor for [`TrainState`](@ref).
 [`TrainState`](@ref) object.
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
-    dev = get_device(ps)
-    st_opt = if dev isa ReactantDevice
-        ps_cpu = ps |> cpu_device()
-        Optimisers.setup(optimizer, ps_cpu) |> dev
+    st_opt = if get_device_type(ps) <: ReactantDevice
+        Optimisers.setup(
+            ReactantCompatibleOptimisers.make_reactant_compatible(optimizer), ps
+        )
     else
         Optimisers.setup(optimizer, ps)
     end

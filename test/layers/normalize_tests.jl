@@ -56,7 +56,7 @@
 
             @jet m(x, ps, Lux.testmode(st))
             @test_gradients(sumabs2first, m, x, ps, st; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=[AutoFiniteDiff()], broken_backends)
+                rtol=1.0f-3, skip_backends=[AutoFiniteDiff()])
 
             # with activation function
             m = BatchNorm(2, sigmoid; affine)

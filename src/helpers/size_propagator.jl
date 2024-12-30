@@ -152,12 +152,12 @@ end
 function LuxLib.Impl.batchnorm(
         x::AnyNilArray{N}, ::Optional{<:AbstractVector}, ::Optional{<:AbstractVector},
         rμ::Optional{<:AbstractVector}, rσ²::Optional{<:AbstractVector},
-        ::StaticBool, act::F, ::Real, ::Real) where {N, F}
+        ::StaticBool, act::F, ::Number, ::Number) where {N, F}
     return x, rμ, rσ²
 end
 
 function LuxLib.Impl.groupnorm(x::AnyNilArray{N}, ::Optional{<:AbstractVector},
-        ::Optional{<:AbstractVector}, ::Int, act::F, ::Real) where {N, F}
+        ::Optional{<:AbstractVector}, ::Int, act::F, ::Number) where {N, F}
     return x
 end
 
@@ -168,11 +168,11 @@ function LuxLib.Impl.normalization(x::AnyNilArray, rμ::Optional{<:AbstractVecto
 end
 
 function LuxLib.Impl.affine_normalize(
-        ::F, x::AnyNilArray, ::Numeric, ::Numeric, ::Nothing, ::Nothing, ::Real) where {F}
+        ::F, x::AnyNilArray, ::Numeric, ::Numeric, ::Nothing, ::Nothing, ::Number) where {F}
     return x
 end
 function LuxLib.Impl.affine_normalize(::F, x::AnyNilArray, ::Numeric, ::Numeric,
-        ::AbstractArray, ::AbstractArray, ::Real) where {F}
+        ::AbstractArray, ::AbstractArray, ::Number) where {F}
     return x
 end
 

@@ -1,7 +1,7 @@
 # TODO: For the `dims === nothing` case, we can optimize using a loop vectorization and
 #       kernel abstractions
 function layernorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractArray},
-        β::Optional{<:AbstractArray}, act::F, dims, epsilon::Real) where {N, F, xT}
+        β::Optional{<:AbstractArray}, act::F, dims, epsilon) where {N, F, xT}
     μ, σ² = mean_var(x; dims=compute_layernorm_dims(x, γ, β, dims), corrected=false)
     γ′, β′ = expand_layernorm_dims(x, γ, β, dims)
     return affine_normalize(act, x, μ, σ², γ′, β′, epsilon)

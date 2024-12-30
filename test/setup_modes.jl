@@ -1,4 +1,4 @@
-using Lux, MLDataDevices
+using Lux, MLDataDevices, Pkg
 
 if !@isdefined(BACKEND_GROUP)
     const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))

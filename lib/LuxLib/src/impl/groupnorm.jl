@@ -3,7 +3,7 @@ groupnorm_reduce_dims(::AbstractArray{T, N}) where {T, N} = ntuple(static, N - 1
 CRC.@non_differentiable groupnorm_reduce_dims(::Any)
 
 function groupnorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, groups::Int, act::F, ϵ::Real) where {F, N, xT}
+        β::Optional{<:AbstractVector}, groups::Int, act::F, ϵ) where {F, N, xT}
     x′ = reshape(x, size(x)[1:(N - 2)]..., size(x, N - 1) ÷ groups, groups, size(x, N))
     (μ, σ²), _ = compute_batch_statistics(
         x′, nothing, nothing, groupnorm_reduce_dims(x), False(), nothing)
@@ -13,7 +13,7 @@ end
 function groupnorm_affine_normalize(
         act::F, x::AbstractArray{xT, N}, μ::AbstractArray{μT, N},
         σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, N, xT, μT, σ²T}
+        β::Optional{<:AbstractVector}, ϵ) where {F, N, xT, μT, σ²T}
     return groupnorm_affine_normalize(
         internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ)
 end
@@ -21,7 +21,7 @@ end
 function groupnorm_affine_normalize(
         ::GenericBroadcastOp, act::F, x::AbstractArray{xT, N}, μ::AbstractArray{μT, N},
         σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, N, xT, μT, σ²T}
+        β::Optional{<:AbstractVector}, ϵ) where {F, N, xT, μT, σ²T}
     return affine_normalize(
         act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ)
 end
@@ -29,7 +29,7 @@ end
 @generated function groupnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{xT, N},
         μ::AbstractArray{μT, N}, σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ::Real) where {F, N, xT, μT, σ²T}
+        β::Optional{<:AbstractVector}, ϵ) where {F, N, xT, μT, σ²T}
     reshape_calls = if γ != Nothing
         quote
             γ′ = reshape(γ, 1, size(x, N - 2), size(x, N - 1), 1)
@@ -57,7 +57,7 @@ end
         opmode::AbstractInternalArrayOpMode, act::F,
         x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {F, xT, μT, σ²T}
+        ϵ) where {F, xT, μT, σ²T}
     y = similar(x,
         promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
             safe_eltype(γ), safe_eltype(β)))
@@ -69,7 +69,7 @@ function groupnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 4}, opmode::LoopedArrayOp, act::F, x::AbstractArray{xT, 4},
         μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {F, xT, yT, μT, σ²T}
+        ϵ) where {F, xT, yT, μT, σ²T}
     if unsafe_known(fuse_cpu_activation(act))
         groupnorm_affine_normalize_act_cpu!(y, x, μ, σ², γ, β, ϵ, act)
     else
@@ -82,7 +82,7 @@ end
 function groupnorm_affine_normalize_act_cpu!(
         y::AbstractArray{yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real, act::F) where {F, xT, yT, μT, σ²T}
+        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ, act::F) where {F, xT, yT, μT, σ²T}
     if size(y, 1) == 1
         groupnorm_affine_normalize_act_3d_serial_cpu!(y, x, μ, σ², γ, β, ϵ, act)
     else
@@ -93,7 +93,7 @@ end
 function groupnorm_affine_normalize_act_3d_serial_cpu!(
         y::AbstractArray{yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real, σ::F) where {F, xT, yT, μT, σ²T}
+        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ, σ::F) where {F, xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
         @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
@@ -117,7 +117,7 @@ end
 function groupnorm_affine_normalize_act_4d_serial_cpu!(
         y::AbstractArray{yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real, σ::F) where {F, xT, yT, μT, σ²T}
+        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ, σ::F) where {F, xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
         @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
@@ -145,7 +145,7 @@ end
 function groupnorm_affine_normalize_cpu!(
         y::AbstractArray{yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real) where {xT, yT, μT, σ²T}
+        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ) where {xT, yT, μT, σ²T}
     if size(y, 1) == 1
         groupnorm_affine_normalize_3d_serial_cpu!(y, x, μ, σ², γ, β, ϵ)
     else
@@ -156,7 +156,7 @@ end
 @inline function groupnorm_affine_normalize_3d_serial_cpu!(
         y::AbstractArray{yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real) where {xT, yT, μT, σ²T}
+        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ) where {xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
         @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
@@ -180,7 +180,7 @@ end
 @inline function groupnorm_affine_normalize_4d_serial_cpu!(
         y::AbstractArray{yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ::Real) where {xT, yT, μT, σ²T}
+        β::Optional{<:AbstractArray{<:Any, 4}}, ϵ) where {xT, yT, μT, σ²T}
     if γ === nothing && β === nothing
         @fastmath @inbounds for L in axes(y, 4), K in axes(y, 3)
             γ′ = inv(sqrt(σ²[1, 1, K, L] + ϵ))
@@ -209,7 +209,7 @@ function groupnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 4}, ::GPUBroadcastOp, act::F, x::AbstractArray{xT, 4},
         μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {F, xT, yT, μT, σ²T}
+        ϵ) where {F, xT, yT, μT, σ²T}
     backend = KA.get_backend(y)
     run_ka_kernel(
         groupnorm_affine_normalize_kernel!, backend, nothing, size(y),
@@ -240,7 +240,7 @@ function CRC.rrule(
         opmode::AbstractInternalArrayOpMode, f::F,
         x::AbstractArray{T, 4}, μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {F, T, μT, σ²T}
+        ϵ) where {F, T, μT, σ²T}
     y = similar(x,
         promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
             safe_eltype(γ), safe_eltype(β)))
@@ -264,7 +264,7 @@ function ∇groupnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, ∂y::AbstractArray{∂yT, 4},
         x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {∂yT, xT, μT, σ²T}
+        ϵ) where {∂yT, xT, μT, σ²T}
     ∂x, ∂σ² = similar(x), similar(σ², size(x))
     ∂γ = γ === nothing ? nothing : similar(γ, size(x))
 
@@ -281,7 +281,7 @@ end
 function ∇groupnorm_affine_normalize(::LoopedArrayOp, ∂y::AbstractArray{∂yT, 4},
         x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::Optional{<:AbstractArray{<:Any, 4}}, β::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {∂yT, xT, μT, σ²T}
+        ϵ) where {∂yT, xT, μT, σ²T}
     ∂x, ∂μ, ∂σ² = similar(x), similar(μ), similar(σ²)
     ∂γ = γ === nothing ? nothing : similar(γ)
     ∂β = β === nothing ? nothing : similar(β)
@@ -298,7 +298,7 @@ function ∇groupnorm_affine_normalize_cpu!(
         ∂x::AbstractArray{∂xT, 4}, ∂μ::AbstractArray{∂μT, 4}, ∂σ²::AbstractArray{∂σ²T, 4},
         ::Nothing, ::Nothing, ∂y::AbstractArray{∂yT, 4}, x::AbstractArray{xT, 4},
         μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4}, ::Nothing,
-        ϵ::Real) where {∂xT, ∂μT, ∂σ²T, ∂yT, xT, μT, σ²T}
+        ϵ) where {∂xT, ∂μT, ∂σ²T, ∂yT, xT, μT, σ²T}
     half = eltype(∂σ²)(0.5)
 
     fill!(∂μ, 0)
@@ -340,7 +340,7 @@ function ∇groupnorm_affine_normalize_cpu!(
         ∂γ::AbstractArray{∂γT, 4}, ∂β::AbstractArray{∂βT, 4}, ∂y::AbstractArray{∂yT, 4},
         x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4}, σ²::AbstractArray{σ²T, 4},
         γ::AbstractArray{γT, 4},
-        ϵ::Real) where {∂xT, ∂μT, ∂σ²T, ∂γT, ∂βT, ∂yT, xT, μT, σ²T, γT}
+        ϵ) where {∂xT, ∂μT, ∂σ²T, ∂γT, ∂βT, ∂yT, xT, μT, σ²T, γT}
     half = eltype(∂σ²)(0.5)
 
     fill!(∂μ, 0)
@@ -391,7 +391,7 @@ function ∇groupnorm_affine_normalize!(
         ∂γ::Optional{<:AbstractArray{<:Any, 4}}, ::GPUBroadcastOp,
         ∂y::AbstractArray{∂yT, 4}, x::AbstractArray{xT, 4}, μ::AbstractArray{μT, 4},
         σ²::AbstractArray{σ²T, 4}, γ::Optional{<:AbstractArray{<:Any, 4}},
-        ϵ::Real) where {∂xT, ∂σ²T, ∂yT, xT, μT, σ²T}
+        ϵ) where {∂xT, ∂σ²T, ∂yT, xT, μT, σ²T}
     backend = KA.get_backend(∂x)
     run_ka_kernel(
         ∇groupnorm_affine_normalize_kernel!, backend, nothing, size(∂x),

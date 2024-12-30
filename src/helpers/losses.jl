@@ -92,7 +92,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode},
     return CRC.rrule_via_ad(cfg, fallback_fused_agg, sum, op, x, y)
 end
 
-get_ϵ(::Type{T}, ϵ::Real) where {T} = T(ϵ)
+get_ϵ(::Type{T}, ϵ) where {T} = T(ϵ)
 get_ϵ(::Type{T}, ::Nothing) where {T} = eps(float(T))
 
 get_loss_dims(::AbstractVector) = Colon()
@@ -160,13 +160,13 @@ function msle_loss(x::T1, y::T2, ϵ) where {T1, T2}
 end
 
 label_smoothing(::Nothing, y, ::Type{T}) where {T} = y
-function label_smoothing(label_smoothing::Real, y, ::Type{T}) where {T}
+function label_smoothing(label_smoothing, y, ::Type{T}) where {T}
     label_smoothing = T(label_smoothing)
     return y .* (1 - label_smoothing) .+ label_smoothing ./ size(y, ndims(y) - 1)
 end
 
 label_smoothing_binary(::Nothing, y, ::Type{T}) where {T} = y
-function label_smoothing_binary(label_smoothing::Real, y, ::Type{T}) where {T}
+function label_smoothing_binary(label_smoothing, y, ::Type{T}) where {T}
     label_smoothing = T(label_smoothing)
     return y .* (1 - label_smoothing) .+ label_smoothing ./ 2
 end
@@ -725,7 +725,7 @@ true
 invariant mapping." 2006 IEEE computer society conference on computer vision and pattern
 recognition (CVPR'06). Vol. 2. IEEE, 2006.
 """
-function SiameseContrastiveLoss(; margin::Real=true, agg=mean)
+function SiameseContrastiveLoss(; margin=true, agg=mean)
     @argcheck margin ≥ 0
     return GenericLossFunction(
         Utils.Fix3(LossFunctionImpl.siamese_contrastive_loss, margin); agg)

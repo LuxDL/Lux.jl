@@ -16,7 +16,7 @@ end
 function groupnorm_fallback(
         x::AbstractArray{<:Real, N}, scale::LuxLib.Optional{<:AbstractVector},
         bias::LuxLib.Optional{<:AbstractVector}, groups::Int,
-        σ::F=identity, epsilon::Real=1.0f-5) where {F, N}
+        σ::F=identity, epsilon=1.0f-5) where {F, N}
     sz = size(x)
     x_reshaped = reshape(x, sz[1:(N - 2)]..., sz[N - 1] ÷ groups, groups, sz[N])
     y, _, _ = LuxLib.Impl.normalization(x_reshaped, nothing, nothing, scale, bias,

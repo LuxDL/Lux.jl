@@ -21,7 +21,7 @@ include("batchnorm.jl")
 function Impl.batchnorm(x::Union{<:CuArray{T, 2}, <:CuArray{T, 4}, <:CuArray{T, 5}},
         γ::Optional{<:CuVector{T}}, β::Optional{<:CuVector{T}},
         rμ::Optional{<:CuVector{T}}, rσ²::Optional{<:CuVector{T}},
-        training::StaticBool, σ::F, m::Real, ϵ::Real) where {T <: cuDNNFloat, F}
+        training::StaticBool, σ::F, m, ϵ) where {T <: cuDNNFloat, F}
     rμₙ, rσ²ₙ = Impl.get_batchnorm_statistics(x, rμ, rσ², training)
     y = Impl.batchnorm_cudnn(γ, β, x, rμₙ, rσ²ₙ, m, ϵ, training)[1]
     return Impl.activation!!(σ, y), safe_vec(rμₙ), safe_vec(rσ²ₙ)

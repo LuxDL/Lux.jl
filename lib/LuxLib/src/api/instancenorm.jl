@@ -36,7 +36,7 @@ mean and variance.
 """
 function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, training::TrainingType,
-        σ::F=identity, epsilon::Real=default_epsilon(x)) where {F}
+        σ::F=identity, epsilon=default_epsilon(x)) where {F}
     # This API is kept for legacy purposes when we didn't support passing running stats
     return instancenorm(x, γ, β, nothing, nothing, training, σ, nothing, epsilon)
 end
@@ -44,7 +44,7 @@ end
 function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, training::TrainingType, σ::F=identity,
-        momentum::Optional{<:Real}=0.1f0, epsilon::Real=default_epsilon(x)) where {F}
+        momentum::Optional{<:Real}=0.1f0, epsilon=default_epsilon(x)) where {F}
     assert_valid_instancenorm_arguments(x)
 
     y, rμₙ, rσ²ₙ = instancenorm_impl(

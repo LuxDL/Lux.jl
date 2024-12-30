@@ -1,14 +1,14 @@
 # In most cases this implementation should not be preferred. But this is nice to have
 # because it works for arbitrary dimensions
 function affine_normalize(act::F, x::AbstractArray, μ::Numeric, σ²::Numeric,
-        ::Nothing, ::Nothing, ϵ::Real) where {F}
+        ::Nothing, ::Nothing, ϵ) where {F}
     γ′ = @. inv(sqrt(σ² + ϵ))
     β′ = @. -μ * γ′
     return @. act(x * γ′ + β′)
 end
 
 function affine_normalize(act::F, x::AbstractArray, μ::Numeric, σ²::Numeric,
-        γ::AbstractArray, β::AbstractArray, ϵ::Real) where {F}
+        γ::AbstractArray, β::AbstractArray, ϵ) where {F}
     γ′ = @. γ / sqrt(σ² + ϵ)
     β′ = @. β - μ * γ′
     return @. act(x * γ′ + β′)
@@ -69,7 +69,7 @@ end
 function update_normalization_statistics(
         x::AbstractArray{T, N}, rμ::AbstractArray{rμT, N}, rσ²::AbstractArray{rσ²T, N},
         μ::AbstractArray{μT, N}, σ²::AbstractArray{σ²T, N},
-        momentum::Real, reduce_dims) where {T, N, rμT, rσ²T, μT, σ²T}
+        momentum, reduce_dims) where {T, N, rμT, rσ²T, μT, σ²T}
     if last(reduce_dims) != N
         μ = mean(μ; dims=N)
         σ² = mean(σ²; dims=N)

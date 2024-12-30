@@ -46,12 +46,12 @@
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
-        __f = sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogx)
-        @test_gradients(__f, x; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
+        @test_gradients(sum∘Broadcast.BroadcastFunction(LuxOps.xlogx),
+            x; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
 
         y = rand(10) |> aType
-        __f = sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogy)
-        @test_gradients(__f, x, y; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
+        @test_gradients(sum∘Broadcast.BroadcastFunction(LuxOps.xlogy),
+            x, y; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
     end
 end
 
@@ -79,8 +79,7 @@ end
             @jet loss_mean(ŷ, y)
             @jet loss_sum(ŷ, y)
 
-            __f = Base.Fix2(loss_mean, y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(loss_mean, y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "MSLE" begin
@@ -93,8 +92,7 @@ end
 
             @test @inferred(Zygote.gradient(MSLELoss(), ŷ, y)) isa Any broken=ongpu
 
-            __f = Base.Fix2(MSLELoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(MSLELoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
     end
 end
@@ -203,9 +201,8 @@ end
 
             @test @inferred(Zygote.gradient(bceloss, σ.(logŷ), y)) isa Any
 
-            __f = Base.Fix2(bceloss, y)
-            σlogŷ = σ.(logŷ)
-            @test_gradients(__f, σlogŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(bceloss, y), σ.(logŷ); atol=1.0f-3, rtol=1.0f-3,
+                enzyme_set_runtime_activity=true)
         end
 
         @testset "Logit BinaryCrossEntropyLoss" begin
@@ -225,8 +222,8 @@ end
 
             @test @inferred(Zygote.gradient(logitbceloss, logŷ, y)) isa Any
 
-            __f = Base.Fix2(logitbceloss, y)
-            @test_gradients(__f, logŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(logitbceloss, y), logŷ; atol=1.0f-3, rtol=1.0f-3,
+                enzyme_set_runtime_activity=true)
         end
 
         @testset "BinaryFocalLoss" begin
@@ -248,8 +245,7 @@ end
 
             @test @inferred(Zygote.gradient(BinaryFocalLoss(), ŷ, y)) isa Any broken=ongpu
 
-            __f = Base.Fix2(BinaryFocalLoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(BinaryFocalLoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "FocalLoss" begin
