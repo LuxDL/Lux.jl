@@ -243,8 +243,8 @@ export default defineConfig({
                 link: "https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM",
               },
               {
-                text: "ConvMixer on CIFAR-10",
-                link: "https://github.com/LuxDL/Lux.jl/tree/main/examples/ConvMixer",
+                text: "Different Vision Models on CIFAR-10",
+                link: "https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10",
               },
             ],
           },

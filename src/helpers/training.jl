@@ -11,7 +11,7 @@ using Static: StaticBool, Static, False, True
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
-using MLDataDevices: MLDataDevices, ReactantDevice, get_device_type, cpu_device
+using MLDataDevices: MLDataDevices, ReactantDevice, get_device_type
 
 """
     TrainState
