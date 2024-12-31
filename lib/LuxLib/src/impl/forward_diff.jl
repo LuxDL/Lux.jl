@@ -1,4 +1,4 @@
-for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
+for op in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter)
     patched_op = op !== :depthwiseconv ? eval(op) : getfield(NNlib, op)
 
     @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
@@ -89,4 +89,89 @@ function logsoftmax_dual(
 
     partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
     return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
+end
+
+for op in (:maxpool, :meanpool, :lpnormpool)
+    @eval function NNlib.$(op)(
+            x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}, pdims::NNlib.PoolDims;
+            kwargs...) where {Tag, T, P}
+        value_fn(x) = ForwardDiff.value(Tag, x)
+        partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+        y = NNlib.$(op)(value_fn.(x), pdims; kwargs...)
+        dysᵢ = ntuple(P) do i
+            return NNlib.$(op)(partial_fn.(x, i), pdims; kwargs...)
+        end
+
+        partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
+        return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
+    end
+end
+
+for op in (:∇maxpool, :∇meanpool, :∇lpnormpool)
+    @eval begin
+        function NNlib.$(op)(
+                dy::AbstractArray{<:Real},
+                y::AbstractArray{<:Real},
+                x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}},
+                pdims::NNlib.PoolDims; kwargs...) where {Tag, T, P}
+            value_fn(x) = ForwardDiff.value(Tag, x)
+            partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+            dy_data, y_data, x_data = value_fn.(dy), value_fn.(y), value_fn.(x)
+
+            dx = NNlib.$(op)(dy_data, y_data, x_data, pdims; kwargs...)
+            dysᵢ = ntuple(P) do i
+                return NNlib.$(op)(dy_data, y_data, partial_fn.(x, i), pdims; kwargs...)
+            end
+
+            partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
+            return ForwardDiff.Dual{Tag, eltype(dx), P}.(dx, partials)
+        end
+
+        function NNlib.$(op)(
+                dy::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}},
+                y::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}},
+                x::AbstractArray{<:Real},
+                pdims::NNlib.PoolDims; kwargs...) where {Tag, T, P}
+            value_fn(x) = ForwardDiff.value(Tag, x)
+            partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+            dy_data, y_data, x_data = value_fn.(dy), value_fn.(y), value_fn.(x)
+
+            dx = NNlib.$(op)(dy_data, y_data, x_data, pdims; kwargs...)
+            dysᵢ = ntuple(P) do i
+                ∇y₁ = NNlib.$(op)(partial_fn.(dy, i), y_data, x_data, pdims; kwargs...)
+                ∇y₂ = NNlib.$(op)(dy_data, partial_fn.(y, i), x_data, pdims; kwargs...)
+                @. ∇y₁ += ∇y₂
+                return ∇y₁
+            end
+
+            partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
+            return ForwardDiff.Dual{Tag, eltype(dx), P}.(dx, partials)
+        end
+
+        function NNlib.$(op)(
+                dy::AbstractArray{<:ForwardDiff.Dual{Tag, T1, P}},
+                y::AbstractArray{<:ForwardDiff.Dual{Tag, T1, P}},
+                x::AbstractArray{<:ForwardDiff.Dual{Tag, T2, P}},
+                pdims::NNlib.PoolDims; kwargs...) where {Tag, T1, T2, P}
+            value_fn(x) = ForwardDiff.value(Tag, x)
+            partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+            dy_data, y_data, x_data = value_fn.(dy), value_fn.(y), value_fn.(x)
+
+            dx = NNlib.$(op)(dy_data, y_data, x_data, pdims; kwargs...)
+            dysᵢ = ntuple(P) do i
+                ∇y₁ = NNlib.$(op)(dy_data, y_data, partial_fn.(x, i), pdims; kwargs...)
+                ∇y₂ = NNlib.$(op)(partial_fn.(dy, i), y_data, x_data, pdims; kwargs...)
+                ∇y₃ = NNlib.$(op)(dy_data, partial_fn.(y, i), x_data, pdims; kwargs...)
+                @. ∇y₁ += ∇y₂ + ∇y₃
+                return ∇y₁
+            end
+
+            partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
+            return ForwardDiff.Dual{Tag, eltype(dx), P}.(dx, partials)
+        end
+    end
 end
