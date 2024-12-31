@@ -116,6 +116,29 @@
                 )
             end
         end
+
+        @testset for op in (meanpool,)
+            @testset for (input_dim, kernel_size, stride, pad) in (
+                ((8, 3, 2), (4,), (2,), (0,)),
+                ((8, 3, 2), (4,), (3,), (0,)),
+                ((8, 3, 2), (4,), (3,), (1,)),
+                ((8, 8, 3, 2), (4, 4), (2, 2), (0, 0)),
+                ((8, 8, 3, 2), (4, 4), (3, 3), (0, 0)),
+                ((8, 8, 3, 2), (4, 4), (3, 3), (1, 1))
+            )
+                x = randn(Float32, input_dim) |> aType
+                u = randn(Float32, input_dim) |> aType
+
+                test_jvp_computation(
+                    x -> op(x, kernel_size; stride, pad), x, u, ongpu)
+
+                test_jvp_computation(
+                    x -> only(Zygote.gradient(
+                        x -> sum(op(x, kernel_size; stride, pad)), x)),
+                    x, u, ongpu, true
+                )
+            end
+        end
     end
 end
 
