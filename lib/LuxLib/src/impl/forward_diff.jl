@@ -67,7 +67,7 @@ function softmax_dual(
     y = NNlib.softmax(x_data; dims)
     dysᵢ = ntuple(P) do i
         v = partial_fn.(x, i)
-        return y .* (v .- LinearAlgebra.dot(y, v))
+        return y .* (v .- sum(y .* v; dims))
     end
 
     partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
@@ -84,7 +84,7 @@ function logsoftmax_dual(
     y = NNlib.softmax(x_data; dims)
     dysᵢ = ntuple(P) do i
         v = partial_fn.(x, i)
-        return v .- LinearAlgebra.dot(y, v)
+        return v .- sum(y .* v; dims)
     end
 
     partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
