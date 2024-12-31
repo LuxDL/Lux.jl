@@ -23,12 +23,12 @@ end
 Comonicon.@main function main(;
         batchsize::Int=512, weight_decay::Float64=0.0001,
         clip_norm::Bool=false, seed::Int=1234, epochs::Int=50, lr::Float64=0.003,
-        backend::String="reactant"
+        backend::String="reactant", bfloat16::Bool=false
 )
     model = SimpleCNN()
 
     opt = AdamW(; eta=lr, lambda=weight_decay)
     clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
-    return train_model(model, opt, nothing; backend, batchsize, seed, epochs)
+    return train_model(model, opt, nothing; backend, batchsize, seed, epochs, bfloat16)
 end

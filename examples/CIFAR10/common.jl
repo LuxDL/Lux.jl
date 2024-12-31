@@ -1,5 +1,5 @@
 using ConcreteStructs, DataAugmentation, ImageShow, Lux, MLDatasets, MLUtils, OneHotArrays,
-      Printf, ProgressTables, Random
+      Printf, ProgressTables, Random, BFloat16s
 using Reactant, LuxCUDA
 
 @concrete struct TensorDataset
@@ -15,21 +15,22 @@ function Base.getindex(ds::TensorDataset, idxs::Union{Vector{<:Integer}, Abstrac
     return stack(parent ∘ itemdata ∘ Base.Fix1(apply, ds.transform), img), y
 end
 
-function get_cifar10_dataloaders(batchsize; kwargs...)
-    cifar10_mean = (0.4914, 0.4822, 0.4465)
-    cifar10_std = (0.2471, 0.2435, 0.2616)
+function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
+    cifar10_mean = (0.4914, 0.4822, 0.4465) .|> T
+    cifar10_std = (0.2471, 0.2435, 0.2616) .|> T
 
     train_transform = RandomResizeCrop((32, 32)) |>
                       Maybe(FlipX{2}()) |>
                       ImageToTensor() |>
-                      Normalize(cifar10_mean, cifar10_std)
+                      Normalize(cifar10_mean, cifar10_std) |>
+                      ToEltype(T)
 
-    test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std)
+    test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std) |> ToEltype(T)
 
-    trainset = TensorDataset(CIFAR10(:train), train_transform)
+    trainset = TensorDataset(CIFAR10(; Tx=T, split=:train), train_transform)
     trainloader = DataLoader(trainset; batchsize, shuffle=true, kwargs...)
 
-    testset = TensorDataset(CIFAR10(:test), test_transform)
+    testset = TensorDataset(CIFAR10(; Tx=T, split=:test), test_transform)
     testloader = DataLoader(testset; batchsize, shuffle=false, kwargs...)
 
     return trainloader, testloader
@@ -64,24 +65,30 @@ end
 
 function train_model(
         model, opt, scheduler=nothing;
-        backend::String, batchsize::Int=512, seed::Int=1234, epochs::Int=25
+        backend::String, batchsize::Int=512, seed::Int=1234, epochs::Int=25,
+        bfloat16::Bool=false
 )
     rng = Random.default_rng()
     Random.seed!(rng, seed)
 
+    prec = bfloat16 ? bf16 : f32
+    prec_jl = bfloat16 ? BFloat16 : Float32
+    prec_str = bfloat16 ? "BFloat16" : "Float32"
+    @printf "[Info] Using %s precision\n" prec_str
+
     accelerator_device = get_accelerator_device(backend)
     kwargs = accelerator_device isa ReactantDevice ? (; partial=false) : ()
-    trainloader, testloader = get_cifar10_dataloaders(batchsize; kwargs...) |>
+    trainloader, testloader = get_cifar10_dataloaders(prec_jl, batchsize; kwargs...) |>
                               accelerator_device
 
-    ps, st = Lux.setup(rng, model) |> accelerator_device
+    ps, st = Lux.setup(rng, model) |> prec |> accelerator_device
 
     train_state = Training.TrainState(model, ps, st, opt)
 
     adtype = backend == "reactant" ? AutoEnzyme() : AutoZygote()
 
     if backend == "reactant"
-        x_ra = rand(rng, Float32, size(first(trainloader)[1])) |> accelerator_device
+        x_ra = rand(rng, prec_jl, size(first(trainloader)[1])) |> accelerator_device
         @printf "[Info] Compiling model with Reactant.jl\n"
         st_test = Lux.testmode(st)
         model_compiled = Reactant.compile(model, (x_ra, ps, st_test))

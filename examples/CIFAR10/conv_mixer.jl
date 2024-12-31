@@ -35,7 +35,7 @@ Comonicon.@main function main(;
         batchsize::Int=512, hidden_dim::Int=256, depth::Int=8,
         patch_size::Int=2, kernel_size::Int=5, weight_decay::Float64=0.0001,
         clip_norm::Bool=false, seed::Int=1234, epochs::Int=25, lr_max::Float64=0.05,
-        backend::String="reactant"
+        backend::String="reactant", bfloat16::Bool=false
 )
     model = ConvMixer(; dim=hidden_dim, depth, kernel_size, patch_size)
 
@@ -46,5 +46,5 @@ Comonicon.@main function main(;
         [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0]
     )
 
-    return train_model(model, opt, lr_schedule; backend, batchsize, seed, epochs)
+    return train_model(model, opt, lr_schedule; backend, batchsize, seed, epochs, bfloat16)
 end
