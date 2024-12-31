@@ -48,3 +48,45 @@ for op in [:conv, :depthwiseconv, :∇conv_data, :∇conv_filter]
         return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
     end
 end
+
+for op in (:logsoftmax, :softmax)
+    dual_op = Symbol(op, :_dual)
+    @eval function NNlib.$(op)(
+            x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+        return Impl.$(dual_op)(x; dims)
+    end
+end
+
+function softmax_dual(
+        x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+    value_fn(x) = ForwardDiff.value(Tag, x)
+    partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+    x_data = value_fn.(x)
+
+    y = NNlib.softmax(x_data; dims)
+    dysᵢ = ntuple(P) do i
+        v = partial_fn.(x, i)
+        return y .* (v .- LinearAlgebra.dot(y, v))
+    end
+
+    partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
+    return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
+end
+
+function logsoftmax_dual(
+        x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+    value_fn(x) = ForwardDiff.value(Tag, x)
+    partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
+
+    x_data = value_fn.(x)
+
+    y = NNlib.softmax(x_data; dims)
+    dysᵢ = ntuple(P) do i
+        v = partial_fn.(x, i)
+        return v .- LinearAlgebra.dot(y, v)
+    end
+
+    partials = ForwardDiff.Partials.(tuple.(dysᵢ...))
+    return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
+end
