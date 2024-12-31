@@ -8,9 +8,9 @@ using Reactant: Reactant, XLA, ConcreteRArray, ConcreteRNumber, TracedRArray,
 MLDataDevices.loaded(::Union{ReactantDevice, Type{<:ReactantDevice}}) = true
 MLDataDevices.functional(::Union{ReactantDevice, Type{<:ReactantDevice}}) = true
 
-# Default RNG: Forward to CPU, we will compile it
+# Default RNG
 function MLDataDevices.default_device_rng(::ReactantDevice)
-    return MLDataDevices.default_device_rng(CPUDevice())
+    return Reactant.TracedRandom.default_rng()
 end
 
 # Query Device from Array
