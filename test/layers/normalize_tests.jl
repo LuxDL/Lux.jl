@@ -154,8 +154,6 @@ end
             @jet __f(z)
         end
 
-        broken_backends = VERSION ≥ v"1.11-" ? Any[AutoEnzyme()] : []
-
         @testset "Conv" begin
             c = Conv((3, 3), 3 => 3; init_bias=Lux.ones32)
 
@@ -165,8 +163,7 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight,))
             display(wn)
@@ -174,8 +171,7 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight, :bias), (2, 2))
             display(wn)
@@ -183,8 +179,7 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(c, (:weight,), (2,))
             display(wn)
@@ -192,8 +187,7 @@ end
             x = randn(rng, Float32, 3, 3, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         @testset "Dense" begin
@@ -205,8 +199,7 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight,))
             display(wn)
@@ -214,8 +207,7 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight, :bias), (2, 2))
             display(wn)
@@ -223,8 +215,7 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
 
             wn = WeightNorm(d, (:weight,), (2,))
             display(wn)
@@ -232,8 +223,7 @@ end
             x = randn(rng, Float32, 3, 1) |> aType
 
             @jet wn(x, ps, st)
-            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends)
+            @test_gradients(sumabs2first, wn, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
         end
 
         # See https://github.com/LuxDL/Lux.jl/issues/95
