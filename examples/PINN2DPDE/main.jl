@@ -180,7 +180,7 @@ function train_model(xyt, target_data, xyt_bc, target_bc; seed::Int=0,
 
         isnan(loss) && throw(ArgumentError("NaN Loss Detected"))
 
-        if iter % 500 == 1 || iter == maxiters
+        if iter % 1000 == 1 || iter == maxiters
             @printf "Iteration: [%5d / %5d] \t Loss: %.9f (%.9f) \t Physics Loss: %.9f \
                      (%.9f) \t Data Loss: %.9f (%.9f) \t BC \
                      Loss: %.9f (%.9f)\n" iter maxiters loss mean_loss stats.physics_loss mean_physics_loss stats.data_loss mean_data_loss stats.bc_loss mean_bc_loss
