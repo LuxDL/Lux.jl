@@ -31,7 +31,15 @@ julia --startup-file=no \
 On a RTX 4050 6GB Laptop GPU the training takes approximately 3 mins and the final training
 and test accuracies are 97% and 65%, respectively.
 
-## MLP-Mixer
+## ResNet 20
+
+```bash
+julia --startup-file=no \
+    --project=. \
+    --threads=auto \
+    resnet20.jl \
+    --backend=reactant
+```
 
 ## ConvMixer
 

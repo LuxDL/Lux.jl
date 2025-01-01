@@ -1,4 +1,4 @@
-using Comonicon, Interpolations, Lux, Optimisers, Printf, Random, Statistics, Zygote, Enzyme
+using Comonicon, Interpolations, Lux, Optimisers, Printf, Random, Statistics, Zygote
 
 include("common.jl")
 
@@ -39,12 +39,14 @@ Comonicon.@main function main(;
 )
     model = ConvMixer(; dim=hidden_dim, depth, kernel_size, patch_size)
 
-    opt = AdamW(; eta=lr_max, lambda=weight_decay)
-    clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
+    opt = Adam(0.001f0)
+    # opt = AdamW(; eta=lr_max, lambda=weight_decay)
+    # clip_norm && (opt = OptimiserChain(ClipNorm(), opt))
 
-    lr_schedule = linear_interpolation(
-        [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0]
-    )
+    # lr_schedule = linear_interpolation(
+    #     [0, epochs * 2 ÷ 5, epochs * 4 ÷ 5, epochs + 1], [0, lr_max, lr_max / 20, 0]
+    # )
+    lr_schedule = nothing
 
     return train_model(model, opt, lr_schedule; backend, batchsize, seed, epochs, bfloat16)
 end
