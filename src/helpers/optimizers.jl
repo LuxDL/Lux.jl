@@ -20,13 +20,17 @@ make_reactant_compatible(opt::ReactantCompatibleOptimisersRule) = opt
 
 function setfield_if_present(opt, field::Symbol, nt::NamedTuple)
     if hasfield(typeof(nt), field)
-        opt = Setfield.set(
+        return Setfield.set(
             opt, Setfield.PropertyLens{field}(),
-            convert(
-                typeof(getproperty(opt, field)),
-                Utils.to_rarray(getproperty(nt, field); track_numbers=true)
-            )
+            convert(typeof(getproperty(opt, field)), getproperty(nt, field))
         )
+    end
+    return opt
+end
+
+function Optimisers._adjust(opt::ReactantCompatibleOptimisersRule, nt::NamedTuple)
+    for field in fieldnames(typeof(opt))
+        opt = setfield_if_present(opt, field, nt)
     end
     return opt
 end
@@ -52,10 +56,6 @@ function Optimisers.apply!(opt::ReactantDescent, state, x::AbstractArray{T}, dx)
     return state, @. dx * η
 end
 
-function Optimisers._adjust(opt::ReactantDescent, nt::NamedTuple)
-    return setfield_if_present(opt, :eta, nt)
-end
-
 # Momentum
 @concrete struct ReactantMomentum <: ReactantCompatibleOptimisersRule
     eta
@@ -77,12 +77,6 @@ function Optimisers.apply!(opt::ReactantMomentum, mvel, ::AbstractArray{T}, dx) 
     η, ρ = T(opt.eta), T(opt.rho)
     @. mvel = ρ * mvel + η * dx
     return mvel, mvel
-end
-
-function Optimisers._adjust(opt::ReactantMomentum, nt::NamedTuple)
-    opt = setfield_if_present(opt, :eta, nt)
-    opt = setfield_if_present(opt, :rho, nt)
-    return opt
 end
 
 # Adam
@@ -117,13 +111,6 @@ function Optimisers.apply!(o::ReactantAdam, state, ::AbstractArray{T}, dx) where
     dx′ = @. mt / (1 - βt[1]) / (sqrt(vt / (1 - βt[2])) + ϵ) * η
 
     return (mt, vt, βt .* β), dx′
-end
-
-function Optimisers._adjust(opt::ReactantAdam, nt::NamedTuple)
-    opt = setfield_if_present(opt, :eta, nt)
-    opt = setfield_if_present(opt, :beta, nt)
-    opt = setfield_if_present(opt, :epsilon, nt)
-    return opt
 end
 
 # AdamW
@@ -170,15 +157,6 @@ function Optimisers.apply!(o::ReactantAdamW, state, x::AbstractArray{T}, dx) whe
     end
 
     return (mt, vt, βt .* β), dx′′
-end
-
-function Optimisers._adjust(opt::ReactantAdamW, nt::NamedTuple)
-    opt = setfield_if_present(opt, :eta, nt)
-    opt = setfield_if_present(opt, :beta, nt)
-    opt = setfield_if_present(opt, :lambda, nt)
-    opt = setfield_if_present(opt, :epsilon, nt)
-    opt = setfield_if_present(opt, :couple, nt)
-    return opt
 end
 
 end

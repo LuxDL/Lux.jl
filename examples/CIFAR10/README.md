@@ -41,6 +41,9 @@ julia --startup-file=no \
     --backend=reactant
 ```
 
+On a RTX 3060 GPU, each epoch takes about 4.5 seconds and the final training and testing
+accuracy are 89% and 75% respectively.
+
 ## ConvMixer
 
 > [!NOTE]
