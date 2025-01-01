@@ -26,15 +26,20 @@
 
     function test_jvp_computation(f::F, x, u, ongpu, nested=false) where {F}
         jvp₁ = jvp_forwarddiff(f, x, u)
+
         if !(x isa ComponentArray && ongpu)
             # ComponentArray + ForwardDiff on GPU don't play nice
-            jvp₂ = jvp_forwarddiff_concrete(f, x, u)
-            @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
+            @testset "JVP ForwardDiff Concrete" begin
+                jvp₂ = jvp_forwarddiff_concrete(f, x, u)
+                @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
+            end
         end
 
         if !nested
-            jvp₃ = jvp_zygote(f, x, u)
-            @test check_approx(jvp₁, jvp₃; atol=1e-5, rtol=1e-5)
+            @testset "JVP Zygote" begin
+                jvp₃ = jvp_zygote(f, x, u)
+                @test check_approx(jvp₁, jvp₃; atol=1e-5, rtol=1e-5)
+            end
         end
     end
 
@@ -87,6 +92,51 @@
                     u,
                     ongpu,
                     true)
+            end
+        end
+
+        @testset for op in (logsoftmax, softmax)
+            @testset for (input_dim, dim) in zip(
+                (
+                    (2, 3), (2, 3), (2, 3, 4, 5),
+                    (2, 3, 4, 5), (2, 3, 4, 5), (2, 3, 4, 5)
+                ),
+                (1, 2, 1, 2, 3, 4)
+            )
+                x = randn(Float32, input_dim) |> aType
+                u = randn(Float32, input_dim) |> aType
+
+                test_jvp_computation(x -> op(x; dims=dim), x, u, ongpu)
+                test_jvp_computation(
+                    x -> op(x; dims=dim), ComponentArray(; x), u, ongpu)
+
+                test_jvp_computation(
+                    x -> only(Zygote.gradient(x -> sum(op(x; dims=dim)), x)),
+                    x, u, ongpu, true
+                )
+            end
+        end
+
+        @testset for op in (meanpool,)
+            @testset for (input_dim, kernel_size, stride, pad) in (
+                ((8, 3, 2), (4,), (2,), (0,)),
+                ((8, 3, 2), (4,), (3,), (0,)),
+                ((8, 3, 2), (4,), (3,), (1,)),
+                ((8, 8, 3, 2), (4, 4), (2, 2), (0, 0)),
+                ((8, 8, 3, 2), (4, 4), (3, 3), (0, 0)),
+                ((8, 8, 3, 2), (4, 4), (3, 3), (1, 1))
+            )
+                x = randn(Float32, input_dim) |> aType
+                u = randn(Float32, input_dim) |> aType
+
+                test_jvp_computation(
+                    x -> op(x, kernel_size; stride, pad), x, u, ongpu)
+
+                test_jvp_computation(
+                    x -> only(Zygote.gradient(
+                        x -> sum(op(x, kernel_size; stride, pad)), x)),
+                    x, u, ongpu, true
+                )
             end
         end
     end
