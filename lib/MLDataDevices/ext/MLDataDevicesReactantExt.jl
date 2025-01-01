@@ -2,6 +2,7 @@ module MLDataDevicesReactantExt
 
 using Adapt: Adapt
 using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, get_device_type
+using Random: Random
 using Reactant: Reactant, XLA, ConcreteRArray, ConcreteRNumber, TracedRArray,
                 TracedRNumber
 
@@ -15,9 +16,7 @@ end
 
 # Query Device from Array
 function Internal.get_device(x::Union{ConcreteRNumber, ConcreteRArray})
-    client = XLA.client(x.data)
-    device = XLA.device(x.data)
-    return ReactantDevice(client, device)
+    return ReactantDevice(XLA.client(x.data), XLA.device(x.data))
 end
 
 function Internal.get_device(::Union{TracedRArray, TracedRNumber})
@@ -53,5 +52,7 @@ function Adapt.adapt_storage(dev::ReactantDevice, x::ConcreteRArray)
            yet. Using slow fallback path." maxlog=1
     return Adapt.adapt(dev, Adapt.adapt(CPUDevice(), x))
 end
+
+Adapt.adapt_storage(::CPUDevice, ::Reactant.ConcreteRNG) = Random.default_rng()
 
 end

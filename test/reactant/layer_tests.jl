@@ -63,3 +63,37 @@ end
         end
     end
 end
+
+@testitem "Dropout Layers" tags=[:reactant] setup=[SharedTestSetup] skip=:(Sys.iswindows()) begin
+    using Reactant, Lux, Random
+
+    @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        dev = reactant_device(; force=true)
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        @testset for layer in (AlphaDropout, Dropout, VariationalHiddenDropout)
+            model = layer(0.5f0)
+            ps, st = Lux.setup(Random.default_rng(), model) |> dev
+            x = randn(Float32, 10, 10) |> dev
+
+            @test st.rng isa Reactant.ConcreteRNG
+
+            hlo = @code_hlo model(x, ps, st)
+            @test contains(repr(hlo), "stablehlo.rng_bit_generator")
+
+            y, st2 = @jit model(x, ps, st)
+            @test st2.rng isa Reactant.ConcreteRNG
+            @test st.rng.seed != st2.rng.seed
+        end
+    end
+end
