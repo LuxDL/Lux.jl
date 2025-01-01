@@ -112,8 +112,8 @@ function Optimisers.apply!(o::ReactantAdam, state, ::AbstractArray{T}, dx) where
     η, β, ϵ = T(o.eta), T.(o.beta), T(o.epsilon) # XXX: See Optimisers._eps
     mt, vt, βt = state
 
-    @. mt = β[1] * mt + (1 - β[1]) * dx
-    @. vt = β[2] * vt + (1 - β[2]) * abs2(dx)
+    mt = @. β[1] * mt + (1 - β[1]) * dx
+    vt = @. β[2] * vt + (1 - β[2]) * abs2(dx)
     dx′ = @. mt / (1 - βt[1]) / (sqrt(vt / (1 - βt[2])) + ϵ) * η
 
     return (mt, vt, βt .* β), dx′
@@ -158,9 +158,9 @@ function Optimisers.apply!(o::ReactantAdamW, state, x::AbstractArray{T}, dx) whe
     mt, vt, βt = state
 
     # standard Adam update with learning rate eta=1
-    @. mt = β[1] * mt + (1 - β[1]) * dx
-    @. vt = β[2] * vt + (1 - β[2]) * abs2(dx)
-    dx′ = @. mt / (1 - βt[1]) / (sqrt(vt / (1 - βt[2])) + ϵ) * η
+    mt = @. β[1] * mt + (1 - β[1]) * dx
+    vt = @. β[2] * vt + (1 - β[2]) * abs2(dx)
+    dx′ = @. mt / (1 - βt[1]) / (sqrt(vt / (1 - βt[2])) + ϵ)
 
     # apply learning rate and weight decay
     if o.couple

@@ -14,6 +14,10 @@ To get the options for each script, run the script with the `--help` flag.
 > To train the model using Reactant.jl pass in `--backend=reactant` to the script. This is
 > the recommended approach to train the models present in this directory.
 
+> [!NOTE]
+> Passing `--bfloat16` will use BFloat16 precision for training. This needs Julia 1.11 or
+> above.
+
 ## Simple CNN
 
 ```bash
