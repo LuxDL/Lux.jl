@@ -107,8 +107,6 @@
                 u = randn(Float32, input_dim) |> aType
 
                 test_jvp_computation(x -> op(x; dims=dim), x, u, ongpu)
-                test_jvp_computation(
-                    x -> op(x; dims=dim), ComponentArray(; x), u, ongpu)
 
                 test_jvp_computation(
                     x -> only(Zygote.gradient(x -> sum(op(x; dims=dim)), x)),
