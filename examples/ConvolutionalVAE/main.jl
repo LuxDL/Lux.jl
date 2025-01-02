@@ -276,6 +276,7 @@ function main(;
     train_dataloader = xdev(loadmnist(batchsize, image_size))
 
     opt = AdamW(; eta=learning_rate, lambda=weight_decay)
+    opt = OptimiserChain(ClipGrad(0.1f0), opt)
 
     train_state = Training.TrainState(cvae, ps, st, opt)
 
