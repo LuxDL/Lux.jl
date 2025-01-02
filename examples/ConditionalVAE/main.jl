@@ -136,16 +136,10 @@ function loadmnist(batchsize, image_size::Dims{2})
     end
 
     train_transform = ScaleKeepAspect(image_size) |> Maybe(FlipX{2}()) |> ImageToTensor()
-    test_transform = ScaleKeepAspect(image_size) |> ImageToTensor()
-
     trainset = TensorDataset(train_dataset, train_transform)
-    trainloader = DataLoader(
-        trainset; batchsize, shuffle=true, parallel=true, partial=false)
+    trainloader = DataLoader(trainset; batchsize, shuffle=true, partial=false)
 
-    testset = TensorDataset(test_dataset, test_transform)
-    testloader = DataLoader(testset; batchsize, shuffle=false, parallel=true, partial=false)
-
-    return trainloader, testloader
+    return trainloader
 end
 
 # ## Helper Functions
@@ -196,33 +190,45 @@ function loss_function(model, ps, st, X)
     return loss, st, (; y, μ, logσ², reconstruction_loss, kldiv_loss)
 end
 
-function generate_images(model, ps, st; num_samples::Int=128, num_latent_dims::Int)
+function generate_images(
+        model, ps, st; num_samples::Int=128, num_latent_dims::Int, decode_compiled=nothing)
     z = randn(Float32, num_latent_dims, num_samples) |> get_device((ps, st))
-    images, _ = decode(model, z, ps, Lux.testmode(st))
+    if decode_compiled === nothing
+        images, _ = decode(model, z, ps, Lux.testmode(st))
+    else
+        images, _ = decode_compiled(model, z, ps, Lux.testmode(st))
+        images = images |> cpu_device()
+    end
     return create_image_grid(images, 8, num_samples ÷ 8)
 end
 
 # ## Training the Model
 
 Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_dims=32,
-        max_num_filters=64, seed=0, epochs=100, weight_decay=1e-3, learning_rate=1e-3)
+        max_num_filters=64, seed=0, epochs=50, weight_decay=1e-5, learning_rate=1e-3,
+        num_samples=128)
     rng = Random.default_rng()
     Random.seed!(rng, seed)
 
     cvae = CVAE(; num_latent_dims, image_shape=(image_size..., 1), max_num_filters)
     ps, st = Lux.setup(rng, cvae) |> xdev
 
-    train_dataloader, test_dataloader = loadmnist(batchsize, image_size) |> xdev
+    z = randn(Float32, num_latent_dims, num_samples) |> xdev
+    decode_compiled = @compile decode(cvae, z, ps, Lux.testmode(st))
+
+    train_dataloader = loadmnist(batchsize, image_size) |> xdev
 
     opt = AdamW(; eta=learning_rate, lambda=weight_decay)
 
     train_state = Training.TrainState(cvae, ps, st, opt)
 
+    @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps) / 1e6)
+
     for epoch in 1:epochs
         loss_total = 0.0f0
         total_samples = 0
+        total_time = 0.0
 
-        stime = time()
         for (i, X) in enumerate(train_dataloader)
             throughput_tic = time()
             (_, loss, _, train_state) = Training.single_train_step!(
@@ -231,61 +237,21 @@ Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_d
 
             loss_total += loss
             total_samples += size(X, ndims(X))
+            total_time += throughput_toc - throughput_tic
 
-            if i % 10 == 0 || i == length(train_dataloader)
-                @printf "Epoch %d, Iter %d, Loss: %.4f, Throughput: %.6f it/s\n" epoch i loss ((throughput_toc -
-                                                                                                throughput_tic)/size(
-                    X, ndims(X)))
+            if i % 100 == 0 || i == length(train_dataloader)
+                throughput = total_samples / total_time
+                @printf "Epoch %d, Iter %d, Loss: %.4f, Throughput: %.6f im/s\n" epoch i loss throughput
             end
         end
-        ttime = time() - stime
 
-        train_loss = loss_total / total_samples
-        @printf "Epoch %d, Train Loss: %.4f, Time: %.4fs\n" epoch train_loss ttime
+        train_loss = loss_total / length(train_dataloader)
+        throughput = total_samples / total_time
+        @printf "Epoch %d, Train Loss: %.4f, Time: %.4fs, Throughput: %.6f im/s\n" epoch train_loss total_time throughput
+
+        # XXX: Generate images conditionally
+        display(generate_images(
+            cvae, train_state.parameters, train_state.states;
+            num_samples, num_latent_dims, decode_compiled))
     end
-end
-
-# XXX: Move into a proper function
-
-rng = Random.default_rng()
-Random.seed!(rng, 0)
-
-cvae = CVAE(; num_latent_dims=32, image_shape=(64, 64, 1), max_num_filters=64)
-ps, st = Lux.setup(rng, cvae) |> xdev;
-
-train_dataloader, test_dataloader = loadmnist(128, (64, 64)) |> xdev
-
-opt = AdamW(; eta=1e-3, lambda=1e-3)
-
-epochs = 100
-
-train_state = Training.TrainState(cvae, ps, st, opt)
-
-for epoch in 1:epochs
-    loss_total = 0.0f0
-    total_samples = 0
-
-    stime = time()
-    for (i, X) in enumerate(train_dataloader)
-        throughput_tic = time()
-        (_, loss, _, train_state) = Training.single_train_step!(
-            AutoEnzyme(), loss_function, X, train_state)
-        throughput_toc = time()
-
-        loss_total += loss
-        total_samples += size(X, ndims(X))
-
-        if i % 10 == 0 || i == length(train_dataloader)
-            @printf "Epoch %d, Iter %d, Loss: %.4f, Throughput: %.6f it/s\n" epoch i loss ((throughput_toc -
-                                                                                            throughput_tic)/size(
-                X, ndims(X)))
-        end
-    end
-    ttime = time() - stime
-
-    train_loss = loss_total / total_samples
-    @printf "Epoch %d, Train Loss: %.4f, Time: %.4fs\n" epoch train_loss ttime
-
-    # XXX: Generate images conditionally
-    display(generate_images(cvae, ps, st; num_samples=128, num_latent_dims=32))
 end
