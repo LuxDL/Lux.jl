@@ -35,21 +35,24 @@ function cvae_encoder(
             ),
             FlattenLayer()
         ),
-        proj_mu=Dense(flattened_dim, num_latent_dims),
-        proj_log_var=Dense(flattened_dim, num_latent_dims),
+        proj_mu=Dense(flattened_dim, num_latent_dims; init_bias=zeros32),
+        proj_log_var=Dense(flattened_dim, num_latent_dims; init_bias=zeros32),
         rng) do x
         y = embed(x)
 
         μ = proj_mu(y)
         logσ² = proj_log_var(y)
-        σ² = exp.(logσ² .* eltype(logσ²)(0.5))
+
+        T = eltype(logσ²)
+        logσ² = clamp.(logσ², -T(20.0f0), T(10.0f0))
+        σ = exp.(logσ² .* T(0.5))
 
         ## Generate a tensor of random values from a normal distribution
         rng = Lux.replicate(rng)
-        ϵ = randn_like(rng, σ²)
+        ϵ = randn_like(rng, σ)
 
         ## Reparametrization trick to brackpropagate through sampling
-        z = ϵ .* σ² .+ μ
+        z = ϵ .* σ .+ μ
 
         @return z, μ, logσ²
     end
@@ -74,7 +77,8 @@ function cvae_decoder(; num_latent_dims::Int, image_shape::Dims{3}, max_num_filt
             ),
             Chain(
                 Upsample(2),
-                Conv((3, 3), max_num_filters ÷ 4 => image_shape[3]; stride=1, pad=1)
+                Conv((3, 3), max_num_filters ÷ 4 => image_shape[3],
+                    sigmoid; stride=1, pad=1)
             )
         ),
         max_num_filters) do x
@@ -185,7 +189,7 @@ end
 function loss_function(model, ps, st, X)
     (y, μ, logσ²), st = model(X, ps, st)
     reconstruction_loss = MSELoss(; agg=sum)(y, X)
-    kldiv_loss = -0.5f0 * sum(1 .+ logσ² .- μ .^ 2 .- exp.(logσ²))
+    kldiv_loss = -sum(1 .+ logσ² .- μ .^ 2 .- exp.(logσ²)) / 2
     loss = reconstruction_loss + kldiv_loss
     return loss, st, (; y, μ, logσ², reconstruction_loss, kldiv_loss)
 end
@@ -204,7 +208,7 @@ end
 
 # ## Training the Model
 
-Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_dims=32,
+Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8,
         max_num_filters=64, seed=0, epochs=50, weight_decay=1e-5, learning_rate=1e-3,
         num_samples=128)
     rng = Random.default_rng()
@@ -219,10 +223,11 @@ Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_d
     train_dataloader = loadmnist(batchsize, image_size) |> xdev
 
     opt = AdamW(; eta=learning_rate, lambda=weight_decay)
+    opt = OptimiserChain(ClipGrad(0.1f0), opt)
 
     train_state = Training.TrainState(cvae, ps, st, opt)
 
-    @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps) / 1e6)
+    @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps)/1e6)
 
     for epoch in 1:epochs
         loss_total = 0.0f0
@@ -239,7 +244,7 @@ Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_d
             total_samples += size(X, ndims(X))
             total_time += throughput_toc - throughput_tic
 
-            if i % 100 == 0 || i == length(train_dataloader)
+            if i % 250 == 0 || i == length(train_dataloader)
                 throughput = total_samples / total_time
                 @printf "Epoch %d, Iter %d, Loss: %.4f, Throughput: %.6f im/s\n" epoch i loss throughput
             end
