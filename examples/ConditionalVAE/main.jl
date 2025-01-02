@@ -228,6 +228,7 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
     train_dataloader = loadmnist(batchsize, image_size) |> xdev
 
     opt = AdamW(; eta=learning_rate, lambda=weight_decay)
+    opt = OptimiserChain(ClipGrad(0.1f0), opt)
 
     train_state = Training.TrainState(cvae, ps, st, opt)
 
