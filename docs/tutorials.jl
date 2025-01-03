@@ -11,6 +11,7 @@ const INTERMEDIATE_TUTORIALS = [
     "BayesianNN/main.jl" => "CPU",
     "HyperNet/main.jl" => "CUDA",
     "PINN2DPDE/main.jl" => "CUDA",
+    "ConditionalVAE/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [
     "GravitationalWaveForm/main.jl" => "CPU",
@@ -41,9 +42,16 @@ end
 
 const TUTORIALS_BUILDING = if BUILDKITE_PARALLEL_JOB_COUNT > 0
     id = parse(Int, ENV["BUILDKITE_PARALLEL_JOB"]) + 1 # Index starts from 0
-    splits = collect(Iterators.partition(TUTORIALS_WITH_BACKEND,
-        cld(length(TUTORIALS_WITH_BACKEND), BUILDKITE_PARALLEL_JOB_COUNT)))
-    id > length(splits) ? [] : splits[id]
+    splits = Vector{Vector{eltype(TUTORIALS_WITH_BACKEND)}}(
+        undef, BUILDKITE_PARALLEL_JOB_COUNT)
+    for i in eachindex(TUTORIALS_WITH_BACKEND)
+        idx = mod1(i, BUILDKITE_PARALLEL_JOB_COUNT)
+        if !isassigned(splits, idx)
+            splits[idx] = Vector{eltype(TUTORIALS_WITH_BACKEND)}()
+        end
+        push!(splits[idx], TUTORIALS_WITH_BACKEND[i])
+    end
+    (id > length(splits) || !isassigned(splits, id)) ? [] : splits[id]
 else
     TUTORIALS_WITH_BACKEND
 end
