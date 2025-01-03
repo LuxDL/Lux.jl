@@ -267,7 +267,8 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
 
         if is_vscode || epoch == epochs
             recon_images = reconstruct_images(
-                cvae_compiled, train_state.parameters, train_state.states, x)
+                cvae_compiled, train_state.parameters, train_state.states,
+                first(train_dataloader))
             gen_images = generate_images(
                 cvae, train_state.parameters, train_state.states;
                 num_samples, num_latent_dims, decode_compiled)
