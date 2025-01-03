@@ -1,12 +1,15 @@
 using Comonicon, BenchmarkTools
-using Lux, LuxCUDA, Random
+using Lux, Enzyme, Reactant, Random
+
+Reactant.set_default_backend("gpu")
 
 include("resnet.jl")
 
 Comonicon.@main function main(;
-        batch_size::Vector{Int}=[1, 4, 32, 128], model_size::Int=50
+        optimize::String="all", batch_size::Vector{Int}=[1, 4, 32, 128],
+        model_size::Int=50
 )
-    dev = gpu_device(; force=true)
+    dev = reactant_device(; force=true)
 
     model = ResNet(model_size)
     ps, st = Lux.setup(Random.default_rng(), model) |> dev
@@ -21,15 +24,14 @@ Comonicon.@main function main(;
 
         x = rand(Float32, 224, 224, 3, b) |> dev
 
-        timings[b] = @belapsed begin
-            y, _ = $(model)($(x), $(ps), $(Lux.testmode(st)))
-            CUDA.synchronize()
-        end
+        model_compiled = Reactant.compile(
+            model, (x, ps, Lux.testmode(st)); sync=true, optimize=Symbol(optimize)
+        )
+
+        timings[b] = @belapsed $(model_compiled)($(x), $(ps), $(Lux.testmode(st)))
 
         println("Best timing: $(timings[b]) s")
     end
 
     println(timings)
 end
-
-main()
