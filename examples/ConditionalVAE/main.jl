@@ -4,9 +4,10 @@
 # based on the [CVAE implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/cvae/).
 
 using Lux, Reactant, MLDatasets, Random, Statistics, Enzyme, MLUtils, DataAugmentation,
-      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers, Comonicon
+      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers, Comonicon,
+      StableRNGs
 
-const xdev = reactant_device()
+const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
 
 # ## Model Definition
@@ -51,7 +52,7 @@ function cvae_encoder(
         rng = Lux.replicate(rng)
         ϵ = randn_like(rng, σ)
 
-        ## Reparametrization trick to brackpropagate through sampling
+        ## Reparameterization trick to brackpropagate through sampling
         z = ϵ .* σ .+ μ
 
         @return z, μ, logσ²
@@ -93,9 +94,10 @@ end
     decoder <: Lux.AbstractLuxLayer
 end
 
-function CVAE(; num_latent_dims::Int, image_shape::Dims{3}, max_num_filters::Int)
+function CVAE(rng=Random.default_rng(); num_latent_dims::Int,
+        image_shape::Dims{3}, max_num_filters::Int)
     decoder = cvae_decoder(; num_latent_dims, image_shape, max_num_filters)
-    encoder = cvae_encoder(; num_latent_dims, image_shape, max_num_filters)
+    encoder = cvae_encoder(rng; num_latent_dims, image_shape, max_num_filters)
     return CVAE(encoder, decoder)
 end
 
@@ -139,7 +141,7 @@ function loadmnist(batchsize, image_size::Dims{2})
         test_dataset = test_dataset[1:N]
     end
 
-    train_transform = ScaleKeepAspect(image_size) |> Maybe(FlipX{2}()) |> ImageToTensor()
+    train_transform = ScaleKeepAspect(image_size) |> ImageToTensor()
     trainset = TensorDataset(train_dataset, train_transform)
     trainloader = DataLoader(trainset; batchsize, shuffle=true, partial=false)
 
@@ -206,28 +208,37 @@ function generate_images(
     return create_image_grid(images, 8, num_samples ÷ 8)
 end
 
+function reconstruct_images(model, ps, st, X)
+    (recon, _, _), _ = model(X, ps, Lux.testmode(st))
+    recon = recon |> cpu_device()
+    return create_image_grid(recon, 8, size(X, ndims(X)) ÷ 8)
+end
+
 # ## Training the Model
 
-Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8,
-        max_num_filters=64, seed=0, epochs=50, weight_decay=1e-5, learning_rate=1e-3,
-        num_samples=128)
-    rng = Random.default_rng()
+function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_filters=64,
+        seed=0, epochs=50, weight_decay=1e-5, learning_rate=1e-3, num_samples=batchsize)
+    rng = Xoshiro()
     Random.seed!(rng, seed)
 
-    cvae = CVAE(; num_latent_dims, image_shape=(image_size..., 1), max_num_filters)
+    cvae = CVAE(rng; num_latent_dims, image_shape=(image_size..., 1), max_num_filters)
     ps, st = Lux.setup(rng, cvae) |> xdev
 
     z = randn(Float32, num_latent_dims, num_samples) |> xdev
     decode_compiled = @compile decode(cvae, z, ps, Lux.testmode(st))
+    x = randn(Float32, image_size..., 1, batchsize) |> xdev
+    cvae_compiled = @compile cvae(x, ps, Lux.testmode(st))
 
     train_dataloader = loadmnist(batchsize, image_size) |> xdev
 
     opt = AdamW(; eta=learning_rate, lambda=weight_decay)
-    opt = OptimiserChain(ClipGrad(0.1f0), opt)
 
     train_state = Training.TrainState(cvae, ps, st, opt)
 
     @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps)/1e6)
+
+    is_vscode = isdefined(Main, :VSCodeServer)
+    empty_row, model_img_full = nothing, nothing
 
     for epoch in 1:epochs
         loss_total = 0.0f0
@@ -236,7 +247,7 @@ Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_d
 
         for (i, X) in enumerate(train_dataloader)
             throughput_tic = time()
-            (_, loss, _, train_state) = Training.single_train_step!(
+            (_, loss, stats, train_state) = Training.single_train_step!(
                 AutoEnzyme(), loss_function, X, train_state)
             throughput_toc = time()
 
@@ -246,17 +257,30 @@ Comonicon.@main function main(; batchsize=128, image_size=(64, 64), num_latent_d
 
             if i % 250 == 0 || i == length(train_dataloader)
                 throughput = total_samples / total_time
-                @printf "Epoch %d, Iter %d, Loss: %.4f, Throughput: %.6f im/s\n" epoch i loss throughput
+                @printf "Epoch %d, Iter %d, Loss: %.7f, Throughput: %.6f im/s\n" epoch i loss throughput
             end
         end
 
         train_loss = loss_total / length(train_dataloader)
         throughput = total_samples / total_time
-        @printf "Epoch %d, Train Loss: %.4f, Time: %.4fs, Throughput: %.6f im/s\n" epoch train_loss total_time throughput
+        @printf "Epoch %d, Train Loss: %.7f, Time: %.4fs, Throughput: %.6f im/s\n" epoch train_loss total_time throughput
 
-        # XXX: Generate images conditionally
-        display(generate_images(
-            cvae, train_state.parameters, train_state.states;
-            num_samples, num_latent_dims, decode_compiled))
+        if is_vscode || epoch == epochs
+            recon_images = reconstruct_images(
+                cvae_compiled, train_state.parameters, train_state.states, x)
+            gen_images = generate_images(
+                cvae, train_state.parameters, train_state.states;
+                num_samples, num_latent_dims, decode_compiled)
+            if empty_row === nothing
+                empty_row = similar(gen_images, image_size[1], size(gen_images, 2))
+                fill!(empty_row, 0)
+            end
+            model_img_full = vcat(recon_images, empty_row, gen_images)
+            is_vscode && display(model_img_full)
+        end
     end
+
+    return model_img_full
 end
+
+main()
