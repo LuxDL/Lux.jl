@@ -51,7 +51,7 @@ const TUTORIALS_BUILDING = if BUILDKITE_PARALLEL_JOB_COUNT > 0
         end
         push!(splits[idx], TUTORIALS_WITH_BACKEND[i])
     end
-    id > length(splits) ? [] : splits[id]
+    (id > length(splits) || !isassigned(splits, id)) ? [] : splits[id]
 else
     TUTORIALS_WITH_BACKEND
 end
