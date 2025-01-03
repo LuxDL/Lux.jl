@@ -6,9 +6,9 @@
 
 # ## Package Imports
 
-using ArgCheck, CairoMakie, ConcreteStructs, Comonicon, DataAugmentation, DataDeps, FileIO,
-      ImageCore, JLD2, Lux, LuxCUDA, MLUtils, Optimisers, ParameterSchedulers, ProgressBars,
-      Random, Setfield, StableRNGs, Statistics, Zygote
+using ArgCheck, ConcreteStructs, Comonicon, DataAugmentation, DataDeps, Enzyme, FileIO,
+      ImageCore, JLD2, Lux, LuxCUDA, MLUtils, Optimisers, ParameterSchedulers,
+      ProgressTables, Random, Reactant, Setfield, StableRNGs, Statistics, Zygote
 using TensorBoardLogger: TBLogger, log_value, log_images
 
 CUDA.allowscalar(false)
@@ -19,16 +19,15 @@ CUDA.allowscalar(false)
 # [the Keras example](https://keras.io/examples/generative/ddim/). Embed noise variances to
 # embedding.
 
-function sinusoidal_embedding(x::AbstractArray{T, 4}, min_freq::T, max_freq::T,
-        embedding_dims::Int) where {T <: AbstractFloat}
-    size(x)[1:3] != (1, 1, 1) &&
+function sinusoidal_embedding(
+        x::AbstractArray{T, 4}, min_freq, max_freq, embedding_dims::Int) where {T}
+    if size(x)[1:3] != (1, 1, 1)
         throw(DimensionMismatch("Input shape must be (1, 1, 1, batch)"))
+    end
 
-    lower, upper = log(min_freq), log(max_freq)
+    lower, upper = T(log(min_freq)), T(log(max_freq))
     n = embedding_dims ÷ 2
-    d = (upper - lower) / (n - 1)
-    freqs = reshape(exp.(lower:d:upper) |> get_device(x), 1, 1, n, 1)
-    x_ = 2 .* x .* freqs
+    x_ = 2 .* x .* exp.(reshape(range(lower, upper; length=n), 1, 1, n, 1))
     return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
@@ -97,7 +96,7 @@ function unet_model(image_size::Tuple{Int, Int}; channels=[32, 64, 96, 128],
     return @compact(;
         upsample, conv_in, conv_out, down_blocks, residual_blocks, up_blocks,
         min_freq, max_freq, embedding_dims,
-        num_blocks=(length(channels) - 1)) do x::Tuple{AbstractArray{<:Real, 4}, AbstractArray{<:Real, 4}}
+        num_blocks=(length(channels) - 1)) do x::Tuple{<:AbstractArray, <:AbstractArray}
     #! format: on
         noisy_images, noise_variances = x
 
@@ -125,8 +124,7 @@ function ddim(rng::AbstractRNG, args...; min_signal_rate=0.02f0,
     unet = unet_model(args...; kwargs...)
     bn = BatchNorm(3; affine=false, track_stats=true)
 
-    return @compact(; unet, bn, rng, min_signal_rate,
-        max_signal_rate, dispatch=:DDIM) do x::AbstractArray{<:Real, 4}
+    return @compact(; unet, bn, rng, min_signal_rate, max_signal_rate, dispatch=:DDIM) do x
         images = bn(x)
         rng = Lux.replicate(rng)
 
@@ -144,10 +142,10 @@ function ddim(rng::AbstractRNG, args...; min_signal_rate=0.02f0,
     end
 end
 
-function diffusion_schedules(diffusion_times::AbstractArray{T, 4}, min_signal_rate::T,
-        max_signal_rate::T) where {T <: Real}
-    start_angle = acos(max_signal_rate)
-    end_angle = acos(min_signal_rate)
+function diffusion_schedules(
+        diffusion_times::AbstractArray{T, 4}, min_signal_rate, max_signal_rate) where {T}
+    start_angle = T(acos(max_signal_rate))
+    end_angle = T(acos(min_signal_rate))
 
     diffusion_angles = @. start_angle + (end_angle - start_angle) * diffusion_times
 
@@ -157,8 +155,14 @@ function diffusion_schedules(diffusion_times::AbstractArray{T, 4}, min_signal_ra
     return noise_rates, signal_rates
 end
 
-function denoise(unet, noisy_images::AbstractArray{T, 4}, noise_rates::AbstractArray{T, 4},
-        signal_rates::AbstractArray{T, 4}) where {T <: Real}
+function denoise(
+        unet, noisy_images::AbstractArray{T1, 4}, noise_rates::AbstractArray{T2, 4},
+        signal_rates::AbstractArray{T3, 4}) where {T1, T2, T3}
+    T = promote_type(T1, T2, T3)
+    noisy_images = T.(noisy_images)
+    noise_rates = T.(noise_rates)
+    signal_rates = T.(signal_rates)
+
     pred_noises = unet((noisy_images, noise_rates .^ 2))
     pred_images = @. (noisy_images - pred_noises * noise_rates) / signal_rates
     return pred_noises, pred_images
