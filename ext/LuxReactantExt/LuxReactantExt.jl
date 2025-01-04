@@ -13,6 +13,8 @@ Lux.is_extension_loaded(::Val{:Reactant}) = true
 
 Utils.to_rarray(x; kwargs...) = Reactant.to_rarray(x; kwargs...)
 
+Utils.eltype(x::Reactant.AnyTracedRArray) = Reactant.unwrapped_eltype(x)
+
 function Utils.promote_to(::Type{T}, x::Number) where {T <: Number}
     x isa Reactant.TracedType && return x
     return Reactant.ConcreteRNumber{T}(x)
