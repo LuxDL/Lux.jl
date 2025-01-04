@@ -16,6 +16,7 @@ Reactant = "3c362404-f566-11ee-1572-e11a4b42c853"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 
 [compat]
+Comonicon = "1"
 ConcreteStructs = "0.2.3"
 DataAugmentation = "0.3.2"
 Enzyme = "0.13.20"
