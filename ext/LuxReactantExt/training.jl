@@ -24,7 +24,7 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
 end
 
 function maybe_dump_to_mlir_file!(f::F, args...) where {F}
-   if Lux.DUMP_REACTANT_HLO_OPT_MODE[] !== nothing
+    if Lux.DUMP_REACTANT_HLO_OPT_MODE[] !== nothing
         hlo = @code_hlo optimize=Lux.DUMP_REACTANT_HLO_OPT_MODE[] f(args...)
         fname = tempname() * ".mlir"
         io = open(fname, "w")

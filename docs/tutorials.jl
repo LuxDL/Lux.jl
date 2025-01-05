@@ -5,7 +5,7 @@ const BEGINNER_TUTORIALS = [
     "SimpleRNN/main.jl" => "CUDA",
     # Technically this is run on CPU but we need a better machine to run it
     "SimpleChains/main.jl" => "CUDA",
-    "OptimizationIntegration/main.jl" => "CUDA", # XXX: Run on CPU
+    "OptimizationIntegration/main.jl" => "CPU",
 ]
 const INTERMEDIATE_TUTORIALS = [
     "NeuralODE/main.jl" => "CUDA", # XXX: Can we remove CUDA here?
