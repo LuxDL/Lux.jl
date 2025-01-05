@@ -60,7 +60,7 @@ Reactant = "0.2.11"
 StableRNGs = "1"
 StaticArrays = "1"
 WeightInitializers = "1"
-Zygote = "0.6.70"
+Zygote = "0.6.70, 0.7"
 julia = "1.10"
 
 [sources]
