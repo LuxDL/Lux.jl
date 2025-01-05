@@ -5,7 +5,7 @@
 
 # ## Package Imports
 
-using Lux, ADTypes, LuxCUDA, Optimisers, Printf, Random, Statistics, Zygote
+using Lux, ADTypes, Optimisers, Printf, Random, Enzyme, Reactant, Statistics
 using CairoMakie
 
 # ## Dataset
@@ -55,10 +55,10 @@ opt = Adam(0.03f0)
 # functions provided by Lux.
 const loss_function = MSELoss()
 
-const dev_cpu = cpu_device()
-const dev_gpu = gpu_device()
+const cdev = cpu_device()
+const xdev = reactant_device()
 
-ps, st = Lux.setup(rng, model) |> dev_gpu
+ps, st = Lux.setup(rng, model) |> xdev
 
 # ## Training
 
@@ -67,14 +67,14 @@ ps, st = Lux.setup(rng, model) |> dev_gpu
 
 tstate = Training.TrainState(model, ps, st, opt)
 
-# Now we will use Zygote for our AD requirements.
+# Now we will use Enzyme (Reactant) for our AD requirements.
 
-vjp_rule = AutoZygote()
+vjp_rule = AutoEnzyme()
 
 # Finally the training loop.
 
 function main(tstate::Training.TrainState, vjp, data, epochs)
-    data = data .|> gpu_device()
+    data = data |> xdev
     for epoch in 1:epochs
         _, loss, _, tstate = Training.single_train_step!(vjp, loss_function, data, tstate)
         if epoch % 50 == 1 || epoch == epochs
@@ -85,7 +85,16 @@ function main(tstate::Training.TrainState, vjp, data, epochs)
 end
 
 tstate = main(tstate, vjp_rule, (x, y), 250)
-y_pred = dev_cpu(Lux.apply(tstate.model, dev_gpu(x), tstate.parameters, tstate.states)[1])
+
+# Since we are using Reactant, we need to compile the model before we can use it.
+
+forward_pass = @compile Lux.apply(
+    tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
+)
+
+y_pred = cdev(first(forward_pass(
+    tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
+)))
 nothing #hide
 
 # Let's plot the results
