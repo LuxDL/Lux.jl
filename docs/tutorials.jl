@@ -1,6 +1,6 @@
 #! format: off
 const BEGINNER_TUTORIALS = [
-    "Basics/main.jl" => "CUDA",
+    "Basics/main.jl" => "CPU",
     "PolynomialFitting/main.jl" => "CUDA",
     "SimpleRNN/main.jl" => "CUDA",
     "SimpleChains/main.jl" => "CUDA",
