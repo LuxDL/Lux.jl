@@ -30,6 +30,24 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 WeightInitializers = "d49dbf32-c5c2-4618-8acc-27bb2598ef2d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
+[sources.Lux]
+path = "../"
+
+[sources.LuxCore]
+path = "../lib/LuxCore"
+
+[sources.LuxLib]
+path = "../lib/LuxLib"
+
+[sources.LuxTestUtils]
+path = "../lib/LuxTestUtils"
+
+[sources.MLDataDevices]
+path = "../lib/MLDataDevices"
+
+[sources.WeightInitializers]
+path = "../lib/WeightInitializers"
+
 [compat]
 ADTypes = "1.10"
 Adapt = "4"
@@ -60,13 +78,5 @@ Reactant = "0.2.11"
 StableRNGs = "1"
 StaticArrays = "1"
 WeightInitializers = "1"
-Zygote = "0.6.70"
+Zygote = "0.6.70, 0.7"
 julia = "1.10"
-
-[sources]
-Lux = { path = "../" }
-LuxLib = { path = "../lib/LuxLib" }
-LuxCore = { path = "../lib/LuxCore" }
-MLDataDevices = { path = "../lib/MLDataDevices" }
-LuxTestUtils = { path = "../lib/LuxTestUtils" }
-WeightInitializers = { path = "../lib/WeightInitializers" }
