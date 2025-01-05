@@ -216,6 +216,7 @@ function internal_operation_mode(xs::Tuple)
 
     dev = get_device_type(xs)
     dev <: AbstractGPUDevice && return GPUBroadcastOp{dev}()
+    dev <: ReactantDevice && return GenericBroadcastOp()
 
     # This check needs to be done after the GPU Check
     known(Utils.unrolled_any(!Traits.fast_scalar_indexing, xs)) &&

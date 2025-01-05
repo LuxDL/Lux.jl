@@ -8,10 +8,10 @@ const BEGINNER_TUTORIALS = [
     "OptimizationIntegration/main.jl" => "CPU",
 ]
 const INTERMEDIATE_TUTORIALS = [
-    "NeuralODE/main.jl" => "CUDA", # XXX: Can we remove CUDA here?
+    "NeuralODE/main.jl" => "CUDA",
     "BayesianNN/main.jl" => "CPU",
-    "HyperNet/main.jl" => "CUDA", # XXX: Make reactant
-    "PINN2DPDE/main.jl" => "CUDA", # XXX: Make reactant
+    "HyperNet/main.jl" => "CUDA",
+    "PINN2DPDE/main.jl" => "CUDA",
     "ConditionalVAE/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [
