@@ -96,7 +96,7 @@ function accuracy(model, ps, st, dataloader, idx)
 end
 
 # ## Training
-function train(; dev = reactant_device())
+function train(; dev=reactant_device())
     model = create_model()
     dataloaders = load_datasets(256) |> dev
 
