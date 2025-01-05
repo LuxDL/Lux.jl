@@ -307,6 +307,10 @@ end
 
 function save_images(output_dir, images::Vector{<:AbstractMatrix{<:RGB}})
     for (i, img) in enumerate(images)
+        if any(isnan, img)
+            @warn "NaN image found in the generated images. Skipping..."
+            continue
+        end
         save(joinpath(output_dir, "img_$(i).png"), img)
     end
 end
