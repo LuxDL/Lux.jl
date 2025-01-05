@@ -124,6 +124,16 @@ fmap(Broadcast.BroadcastFunction(-), ∂ps_zyg, ∂ps_enzyme |> cpu_device())
 
 ## [Using the `TrainState` API](@id compile_lux_model_trainstate)
 
+!!! tip "Debugging TrainState API Failures"
+
+    If the code fails to compile with Reactant, it is useful to dump the HLO. Starting the
+    Julia session with `LUX_DUMP_REACTANT_HLO_OPTIMIZE` environment variable set to
+    `no_enzyme`, `false`, or `true` will dump the HLO to a file (filename will be
+    displayed). This is an useful information to provide when opening an issue.
+
+    Alternatively, you can set theglobal reference `Lux.DUMP_REACTANT_HLO_OPT_MODE` to a
+    symbol corresponding to the `optimize` keyword argument to `@code_hlo`.
+
 Now that we saw the low-level API let's see how to train the model without any of this
 boilerplate. Simply follow the following steps:
 

@@ -5,8 +5,7 @@
 
 # ## Package Imports
 
-using Lux, ADTypes, Optimisers, Printf, Random, Enzyme, Reactant, Statistics
-using CairoMakie
+using Lux, ADTypes, Optimisers, Printf, Random, Reactant, Statistics, CairoMakie
 
 # ## Dataset
 

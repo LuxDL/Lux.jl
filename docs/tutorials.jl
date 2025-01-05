@@ -5,13 +5,13 @@ const BEGINNER_TUTORIALS = [
     "SimpleRNN/main.jl" => "CUDA",
     # Technically this is run on CPU but we need a better machine to run it
     "SimpleChains/main.jl" => "CUDA",
-    "OptimizationIntegration/main.jl" => "CUDA",
+    "OptimizationIntegration/main.jl" => "CUDA", # XXX: Run on CPU
 ]
 const INTERMEDIATE_TUTORIALS = [
-    "NeuralODE/main.jl" => "CUDA",
+    "NeuralODE/main.jl" => "CUDA", # XXX: Can we remove CUDA here?
     "BayesianNN/main.jl" => "CPU",
-    "HyperNet/main.jl" => "CUDA",
-    "PINN2DPDE/main.jl" => "CUDA",
+    "HyperNet/main.jl" => "CUDA", # XXX: Make reactant
+    "PINN2DPDE/main.jl" => "CUDA", # XXX: Make reactant
     "ConditionalVAE/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [

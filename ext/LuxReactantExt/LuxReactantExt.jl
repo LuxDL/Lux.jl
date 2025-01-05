@@ -2,7 +2,7 @@ module LuxReactantExt
 
 using Enzyme: Enzyme, Const, Duplicated, Active
 using Optimisers: Optimisers
-using Reactant: Reactant, @compile, AnyTracedRArray, TracedRArray, TracedRNumber
+using Reactant: Reactant, @compile, @code_hlo, AnyTracedRArray, TracedRArray, TracedRNumber
 using Setfield: @set!
 using Static: False
 
@@ -12,6 +12,8 @@ using Lux.Training: TrainingBackendCache, ReactantBackend
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
 Utils.to_rarray(x; kwargs...) = Reactant.to_rarray(x; kwargs...)
+
+Utils.contiguous(x::AnyTracedRArray) = Reactant.TracedUtils.materialize_traced_array(x)
 
 function Utils.promote_to(::Type{T}, x::Number) where {T <: Number}
     x isa Reactant.TracedType && return x
