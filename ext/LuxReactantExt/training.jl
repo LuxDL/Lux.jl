@@ -135,7 +135,7 @@ for inplace in ("!", "")
             objective_function::F, model, data, ps, st, opt_state) where {F}
         dps, loss, stats, stₙ = compute_gradients_internal(
             objective_function, model, data, ps, st)
-        # opt_state, ps = Optimisers.$(update_fn)(opt_state, ps, dps)
+        opt_state, ps = Optimisers.$(update_fn)(opt_state, ps, dps)
         return dps, ps, loss, stats, stₙ, opt_state
     end
 end
