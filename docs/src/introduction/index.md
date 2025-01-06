@@ -25,8 +25,7 @@ Pkg.add("Lux")
 
 ```@example quickstart
 using Lux, Random, Optimisers, Zygote
-using LuxCUDA # For CUDA support
-# using AMDGPU, Metal, oneAPI # Other pptional packages for GPU support
+# using LuxCUDA, AMDGPU, Metal, oneAPI # Optional packages for GPU support
 ```
 
 We take randomness very seriously
@@ -66,26 +65,33 @@ y, st = Lux.apply(model, x, ps, st)
 train_state = Lux.Training.TrainState(model, ps, st, Adam(0.0001f0))
 
 ## We can compute the gradients using Training.compute_gradients
-gs, loss, stats, train_state = Lux.Training.compute_gradients(AutoZygote(), MSELoss(),
-    (x, dev(rand(rng, Float32, 10, 2))), train_state)
+gs, loss, stats, train_state = Lux.Training.compute_gradients(
+    AutoZygote(), MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))), train_state
+)
 
 ## Optimization
 train_state = Training.apply_gradients!(train_state, gs) # or Training.apply_gradients (no `!` at the end)
 
 # Both these steps can be combined into a single call
-gs, loss, stats, train_state = Training.single_train_step!(AutoZygote(), MSELoss(),
-    (x, dev(rand(rng, Float32, 10, 2))), train_state)
+gs, loss, stats, train_state = Training.single_train_step!(
+    AutoZygote(), MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))), train_state
+)
 ```
 
 ## Defining Custom Layers
 
+We can train our model using the above code, but let's go ahead and see how to use Reactant.
+Reactant is a julia frontend that generates MLIR and then compiles it using XLA (after
+running fancy optimizations). It is the current recommended way to train large models in
+Lux. For more details on using Reactant, see the [manual](@ref reactant-compilation).
+
 ```@example custom_compact
-using Lux, Random, Optimisers, Zygote
-using LuxCUDA # For CUDA support
-# using AMDGPU, Metal, oneAPI # Other pptional packages for GPU support
+using Lux, Random, Optimisers, Reactant, Enzyme
 using Printf # For pretty printing
 
-dev = gpu_device()
+dev = reactant_device()
 ```
 
 We will define a custom MLP using the `@compact` macro. The macro takes in a list of
@@ -97,10 +103,12 @@ n_in = 1
 n_out = 1
 nlayers = 3
 
-model = @compact(w1=Dense(n_in => 32),
+model = @compact(
+    w1=Dense(n_in => 32),
     w2=[Dense(32 => 32) for i in 1:nlayers],
     w3=Dense(32 => n_out),
-    act=relu) do x
+    act=relu
+) do x
     embed = act(w1(x))
     for w in w2
         embed = act(w(embed))
@@ -116,21 +124,24 @@ We can initialize the model and train it with the same code as before!
 rng = Random.default_rng()
 Random.seed!(rng, 0)
 
-ps, st = Lux.setup(Xoshiro(0), model) |> dev
+ps, st = Lux.setup(rng, model) |> dev
 
 x = rand(rng, Float32, n_in, 32) |> dev
 
-model(x, ps, st)  # 1×32 Matrix and updated state as output.
+@jit model(x, ps, st)  # 1×32 Matrix and updated state as output.
 
-x_data = reshape(collect(-2.0f0:0.1f0:2.0f0), 1, :) |> dev
+x_data = reshape(collect(-2.0f0:0.1f0:2.0f0), 1, :)
 y_data = 2 .* x_data .- x_data .^ 3
+x_data, y_data = dev(x_data), dev(y_data)
 
 function train_model!(model, ps, st, x_data, y_data)
     train_state = Lux.Training.TrainState(model, ps, st, Adam(0.001f0))
 
     for iter in 1:1000
-        _, loss, _, train_state = Lux.Training.single_train_step!(AutoZygote(), MSELoss(),
-            (x_data, y_data), train_state)
+        _, loss, _, train_state = Lux.Training.single_train_step!(
+            AutoEnzyme(), MSELoss(),
+            (x_data, y_data), train_state
+        )
         if iter % 100 == 1 || iter == 1000
             @printf "Iteration: %04d \t Loss: %10.9g\n" iter loss
         end
@@ -154,6 +165,11 @@ nothing #hide
 packages mentioned in this documentation are available via the Julia General Registry.
 
 You can install all those packages via `import Pkg; Pkg.add(<package name>)`.
+
+## XLA (CPU/GPU/TPU) Support
+
+Lux.jl supports XLA compilation for CPU, GPU, and TPU using
+[Reactant.jl](https://github.com/EnzymeAD/Reactant.jl).
 
 ## GPU Support
 

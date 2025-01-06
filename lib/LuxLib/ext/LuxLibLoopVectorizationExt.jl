@@ -15,7 +15,7 @@ for serial in (true, false)
     opname = serial ? :serial_matmul_loopvec! : :matmul_loopvec!
     @eval @inline function LuxLib.Impl.$(opname)(
             C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
-        if !iszero(β) # Secial case this because Base.FastMath.mul_fast(NaN, false) = NaN
+        if !iszero(β) # Special case this because Base.FastMath.mul_fast(NaN, false) = NaN
             @turbo thread=$(!serial) for K in indices((C, B), 2), J in indices((C, A), 1)
                 Cⱼₖ = zero(eltype(C))
                 for I in indices((A, B), (2, 1))

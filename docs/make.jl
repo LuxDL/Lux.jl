@@ -1,7 +1,6 @@
 using Documenter, DocumenterVitepress, Pkg
 using Lux, LuxCore, LuxLib, WeightInitializers, NNlib
 using LuxTestUtils, MLDataDevices
-using LuxCUDA
 
 using Optimisers # for some docstrings
 
@@ -78,8 +77,10 @@ pages = [
 #! format: on
 
 deploy_config = Documenter.auto_detect_deploy_system()
-deploy_decision = Documenter.deploy_folder(deploy_config; repo="github.com/LuxDL/Lux.jl",
-    devbranch="main", devurl="dev", push_preview=true)
+deploy_decision = Documenter.deploy_folder(
+    deploy_config; repo="github.com/LuxDL/Lux.jl",
+    devbranch="main", devurl="dev", push_preview=true
+)
 
 makedocs(;
     sitename="Lux.jl Docs",
@@ -96,7 +97,8 @@ makedocs(;
     repo="https://github.com/LuxDL/Lux.jl/blob/{commit}{path}#{line}",
     format=DocumenterVitepress.MarkdownVitepress(;
         repo="github.com/LuxDL/Lux.jl", devbranch="main", devurl="dev",
-        deploy_url="https://lux.csail.mit.edu", deploy_decision),
+        deploy_url="https://lux.csail.mit.edu", deploy_decision
+    ),
     draft=false,
     pages
 )

@@ -66,6 +66,7 @@ julia = "1.10"
 [sources]
 Lux = { path = "../" }
 LuxLib = { path = "../lib/LuxLib" }
+LuxCUDA = { path = "../lib/LuxCUDA" }
 LuxCore = { path = "../lib/LuxCore" }
 MLDataDevices = { path = "../lib/MLDataDevices" }
 LuxTestUtils = { path = "../lib/LuxTestUtils" }
