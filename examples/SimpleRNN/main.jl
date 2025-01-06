@@ -53,7 +53,7 @@ end
 # To understand more about container layers, please look at
 # [Container Layer](@ref Container-Layer).
 
-struct SpiralClassifier{L, C} <: Lux.AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
+struct SpiralClassifier{L, C} <: AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
     lstm_cell::L
     classifier::C
 end
