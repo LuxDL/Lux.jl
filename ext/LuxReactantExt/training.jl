@@ -13,14 +13,22 @@ function wrapped_objective_function(
 end
 
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    stats_wrapper = StatsAndNewStateWrapper(nothing, nothing)
+    # XXX: Hacky workaround for https://github.com/LuxDL/Lux.jl/issues/1186
+    # stats_wrapper = StatsAndNewStateWrapper(nothing, nothing)
+    # res = Enzyme.gradient(
+    #     Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
+    #     Const(wrapped_objective_function), Const(objective_function),
+    #     Const(model), ps, Const(st), Const(data), Const(stats_wrapper)
+    # )
+    # loss, dps = res.val, res.derivs[3]
+    # return dps, loss, stats_wrapper.stats, stats_wrapper.st
     res = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
-        Const(wrapped_objective_function), Const(objective_function),
-        Const(model), ps, Const(st), Const(data), Const(stats_wrapper)
+        Const(objective_function), Const(model), ps, Const(st), Const(data)
     )
-    loss, dps = res.val, res.derivs[3]
-    return dps, loss, stats_wrapper.stats, stats_wrapper.st
+    (loss, new_st, stats) = res.val
+    (_, dps, _, _) = res.derivs
+    return dps, loss, stats, new_st
 end
 
 function maybe_dump_to_mlir_file!(f::F, args...) where {F}
