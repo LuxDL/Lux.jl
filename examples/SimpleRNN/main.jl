@@ -150,22 +150,32 @@ function main(model_type)
 
     for epoch in 1:25
         ## Train the model
+        total_loss = 0.0f0
+        total_samples = 0
         for (x, y) in train_loader
             (_, loss, _, train_state) = Training.single_train_step!(
                 ad, lossfn, (x, y), train_state
             )
-            @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss
+            total_loss += loss * length(y)
+            total_samples += length(y)
         end
+        @printf "Epoch [%3d]: Loss %4.5f\n" epoch (total_loss/total_samples)
 
         ## Validate the model
+        total_acc = 0.0f0
+        total_loss = 0.0f0
+        total_samples = 0
+
         st_ = Lux.testmode(train_state.states)
         for (x, y) in val_loader
             ŷ, st_ = model_compiled(x, train_state.parameters, st_)
             ŷ, y = cdev(ŷ), cdev(y)
-            loss = lossfn(ŷ, y)
-            acc = accuracy(ŷ, y)
-            @printf "Validation: Loss %4.5f Accuracy %4.5f\n" loss acc
+            total_acc += accuracy(ŷ, y) * length(y)
+            total_loss += lossfn(ŷ, y) * length(y)
+            total_samples += length(y)
         end
+
+        @printf "Validation:\tLoss %4.5f\tAccuracy %4.5f\n" (total_loss/total_samples) (total_acc/total_samples)
     end
 
     return (train_state.parameters, train_state.states) |> cpu_device()

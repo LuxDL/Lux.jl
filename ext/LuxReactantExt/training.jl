@@ -13,22 +13,14 @@ function wrapped_objective_function(
 end
 
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    # XXX: Hacky workaround for https://github.com/LuxDL/Lux.jl/issues/1186
-    # stats_wrapper = StatsAndNewStateWrapper(nothing, nothing)
-    # res = Enzyme.gradient(
-    #     Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
-    #     Const(wrapped_objective_function), Const(objective_function),
-    #     Const(model), ps, Const(st), Const(data), Const(stats_wrapper)
-    # )
-    # loss, dps = res.val, res.derivs[3]
-    # return dps, loss, stats_wrapper.stats, stats_wrapper.st
+    stats_wrapper = StatsAndNewStateWrapper(nothing, nothing)
     res = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
-        Const(objective_function), Const(model), ps, Const(st), Const(data)
+        Const(wrapped_objective_function), Const(objective_function),
+        Const(model), ps, Const(st), Const(data), Const(stats_wrapper)
     )
-    (loss, new_st, stats) = res.val
-    (_, dps, _, _) = res.derivs
-    return dps, loss, stats, new_st
+    loss, dps = res.val, res.derivs[3]
+    return dps, loss, stats_wrapper.stats, stats_wrapper.st
 end
 
 function maybe_dump_to_mlir_file!(f::F, args...) where {F}
@@ -98,8 +90,7 @@ for inplace in ("!", "")
         return ts
     end
 
-    # XXX: Should we add a check to ensure the inputs to this function is same as the one
-    #      used in the compiled function? We can re-trigger the compilation with a warning
+    # XXX: recompile with a warning if new input types are used
     @eval function Lux.Training.$(fname)(backend::ReactantBackend, objective_function::F,
             data, ts::Training.TrainState) where {F}
         maybe_dump_to_mlir_file!($(internal_fn), objective_function, ts.model, data,
