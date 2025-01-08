@@ -3,7 +3,7 @@ module WeightInitializers
 using ArgCheck: @argcheck
 using GPUArraysCore: @allowscalar
 using LinearAlgebra: LinearAlgebra, Diagonal, qr
-using Random: Random, AbstractRNG, shuffle
+using Random: Random, AbstractRNG
 using SpecialFunctions: SpecialFunctions, erfinv  # TODO: Move to Ext in v2.0
 using Statistics: Statistics, std
 

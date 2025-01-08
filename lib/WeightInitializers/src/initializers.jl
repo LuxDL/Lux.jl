@@ -225,7 +225,19 @@ function sparse_init(rng::AbstractRNG, ::Type{T}, dims::Integer...;
     sparse_array .*= T(std)
     fill!(view(sparse_array, 1:num_zeros, :), zero(T))
 
-    return @allowscalar mapslices(shuffle, sparse_array; dims=1)
+    if applicable(Random.rng_native_52, rng)
+        @inbounds for i in axes(sparse_array, 2)
+            @allowscalar Random.shuffle!(rng, view(sparse_array, :, i))
+        end
+    else
+        @warn "`rng` is not supported by `Random.shuffle!`. Ignoring the `rng` for \
+               shuffle." maxlog=1
+        @inbounds for i in axes(sparse_array, 2)
+            @allowscalar Random.shuffle!(view(sparse_array, :, i))
+        end
+    end
+
+    return sparse_array
 end
 
 """
