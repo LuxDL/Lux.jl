@@ -111,6 +111,10 @@ function Recurrence(cell; ordering::AbstractTimeSeriesDataBatchOrdering=BatchLas
 end
 
 function (r::Recurrence)(x::AbstractArray, ps, st::NamedTuple)
+    return applyrecurrence(r, get_device_type((x, ps, st)), x, ps, st)
+end
+
+function applyrecurrence(r::Recurrence, ::Any, x::AbstractArray, ps, st::NamedTuple)
     return apply(r, safe_eachslice(x, r.ordering), ps, st)
 end
 
