@@ -244,7 +244,8 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
         start_time = time()
         for (i, X) in enumerate(train_dataloader)
             (_, loss, _, train_state) = Training.single_train_step!(
-                AutoEnzyme(), loss_function, X, train_state)
+                AutoEnzyme(), loss_function, X, train_state; return_gradients=Val(false)
+            )
 
             loss_total += loss
             total_samples += size(X, ndims(X))
