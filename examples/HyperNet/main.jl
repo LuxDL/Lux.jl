@@ -2,43 +2,31 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, MLDatasets, MLUtils, OneHotArrays, Optimisers, Printf, Random,
-      Reactant
+using Lux, ComponentArrays, LuxCUDA, MLDatasets, MLUtils, OneHotArrays, Optimisers,
+      Printf, Random, Zygote
+
+CUDA.allowscalar(false)
 
 # ## Loading Datasets
-function load_dataset(
-        ::Type{dset}, n_train::Union{Nothing, Int},
-        n_eval::Union{Nothing, Int}, batchsize::Int
-) where {dset}
-    data = dset(:train)
-    (imgs, labels) = if n_train === nothing
-        n_train = size(data.features, ndims(data.features))
-        data.features, data.targets
+function load_dataset(::Type{dset}, n_train::Union{Nothing, Int},
+        n_eval::Union{Nothing, Int}, batchsize::Int) where {dset}
+    if n_train === nothing
+        imgs, labels = dset(:train)
     else
-        data = data[1:n_train]
-        data.features, data.targets
+        imgs, labels = dset(:train)[1:n_train]
     end
     x_train, y_train = reshape(imgs, 28, 28, 1, n_train), onehotbatch(labels, 0:9)
 
-    data = dset(:test)
-    (imgs, labels) = if n_eval === nothing
-        n_eval = size(data.features, ndims(data.features))
-        data.features, data.targets
+    if n_eval === nothing
+        imgs, labels = dset(:test)
     else
-        data = data[1:n_eval]
-        data.features, data.targets
+        imgs, labels = dset(:test)[1:n_eval]
     end
     x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
 
     return (
-        DataLoader(
-            (x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true,
-            partial=false
-        ),
-        DataLoader(
-            (x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false,
-            partial=false
-        )
+        DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
+        DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false)
     )
 end
 
@@ -49,19 +37,21 @@ function load_datasets(batchsize=256)
 end
 
 # ## Implement a HyperNet Layer
-function HyperNet(weight_generator::AbstractLuxLayer, core_network::AbstractLuxLayer)
+function HyperNet(
+        weight_generator::Lux.AbstractLuxLayer, core_network::Lux.AbstractLuxLayer)
     ca_axes = Lux.initialparameters(Random.default_rng(), core_network) |>
-              ComponentArray |> getaxes
+              ComponentArray |>
+              getaxes
     return @compact(; ca_axes, weight_generator, core_network, dispatch=:HyperNet) do (x, y)
         ## Generate the weights
-        ps_new = ComponentArray(Lux.Utils.vec(weight_generator(x)), ca_axes)
+        ps_new = ComponentArray(vec(weight_generator(x)), ca_axes)
         @return core_network(y, ps_new)
     end
 end
 
 # Defining functions on the CompactLuxLayer requires some understanding of how the layer
 # is structured, as such we don't recommend doing it unless you are familiar with the
-# internals. In this case, we simply write it to ignore the initialization of the
+# internals. In this case, we simply write it to ignore the initialization of the 
 # `core_network` parameters.
 
 function Lux.initialparameters(rng::AbstractRNG, hn::CompactLuxLayer{:HyperNet})
@@ -73,22 +63,24 @@ function create_model()
     ## Doesn't need to be a MLP can have any Lux Layer
     core_network = Chain(FlattenLayer(), Dense(784, 256, relu), Dense(256, 10))
     weight_generator = Chain(
-        Embedding(1 => 32),
+        Embedding(2 => 32),
         Dense(32, 64, relu),
         Dense(64, Lux.parameterlength(core_network))
     )
-    return HyperNet(weight_generator, core_network)
+
+    model = HyperNet(weight_generator, core_network)
+    return model
 end
 
 # ## Define Utility Functions
 const loss = CrossEntropyLoss(; logits=Val(true))
 
-function accuracy(model, ps, st, dataloader, idx)
+function accuracy(model, ps, st, dataloader, data_idx)
     total_correct, total = 0, 0
     st = Lux.testmode(st)
     for (x, y) in dataloader
         target_class = onecold(y)
-        predicted_class = onecold(Array(first(model((idx, x), ps, st))))
+        predicted_class = onecold(first(model((data_idx, x), ps, st)))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -96,50 +88,36 @@ function accuracy(model, ps, st, dataloader, idx)
 end
 
 # ## Training
-function train(; dev=reactant_device())
+function train()
     model = create_model()
-    dataloaders = load_datasets(256) |> dev
+    dataloaders = load_datasets()
 
-    ps, st = Lux.setup(Random.default_rng(), model) |> dev
-
-    if dev isa ReactantDevice
-        idx = ConcreteRNumber(1)
-        x = dev(rand(Float32, 28, 28, 1, 256))
-        model_compiled = @compile model((idx, x), ps, Lux.testmode(st))
-    else
-        model_compiled = model
-    end
+    dev = gpu_device()
+    rng = Xoshiro(0)
+    ps, st = Lux.setup(rng, model) |> dev
 
     train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
 
     ### Lets train the model
     nepochs = 50
     for epoch in 1:nepochs, data_idx in 1:2
-        train_dataloader, test_dataloader = dataloaders[data_idx]
-        idx = dev isa ReactantDevice ? ConcreteRNumber(data_idx) : data_idx
+        train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
 
         stime = time()
         for (x, y) in train_dataloader
             (_, _, _, train_state) = Training.single_train_step!(
-                AutoEnzyme(), loss, ((idx, x), y), train_state
-            )
+                AutoZygote(), loss, ((data_idx, x), y), train_state)
         end
         ttime = time() - stime
 
         train_acc = round(
-            accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, train_dataloader, idx
-            ) * 100;
-            digits=2
-        )
+            accuracy(model, train_state.parameters,
+                train_state.states, train_dataloader, data_idx) * 100;
+            digits=2)
         test_acc = round(
-            accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, test_dataloader, idx
-            ) * 100;
-            digits=2
-        )
+            accuracy(model, train_state.parameters,
+                train_state.states, test_dataloader, data_idx) * 100;
+            digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
@@ -151,23 +129,15 @@ function train(; dev=reactant_device())
 
     test_acc_list = [0.0, 0.0]
     for data_idx in 1:2
-        train_dataloader, test_dataloader = dataloaders[data_idx]
-        idx = dev isa ReactantDevice ? ConcreteRNumber(data_idx) : data_idx
-
+        train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
         train_acc = round(
-            accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, train_dataloader, idx
-            ) * 100;
-            digits=2
-        )
+            accuracy(model, train_state.parameters,
+                train_state.states, train_dataloader, data_idx) * 100;
+            digits=2)
         test_acc = round(
-            accuracy(
-                model_compiled, train_state.parameters,
-                train_state.states, test_dataloader, idx
-            ) * 100;
-            digits=2
-        )
+            accuracy(model, train_state.parameters,
+                train_state.states, test_dataloader, data_idx) * 100;
+            digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
 
