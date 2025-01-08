@@ -23,9 +23,24 @@ function compute_gradients_internal(objective_function::F, model, data, ps, st) 
     return dps, loss, stats_wrapper.stats, stats_wrapper.st
 end
 
+function maybe_dump_to_mlir_file!(f::F, args...) where {F}
+    if Lux.DUMP_REACTANT_HLO_OPT_MODE[] !== nothing
+        hlo = @code_hlo optimize=Lux.DUMP_REACTANT_HLO_OPT_MODE[] f(args...)
+        fname = tempname() * ".mlir"
+        io = open(fname, "w")
+        write(io, string(hlo))
+        close(io)
+        @info "HLO dumped to $fname"
+    end
+    return
+end
+
 function Lux.Training.compute_gradients_impl(
         backend::ReactantBackend, objective_function::F,
         data, ts::Training.TrainState) where {F}
+    maybe_dump_to_mlir_file!(compute_gradients_internal, objective_function, ts.model,
+        data, ts.parameters, ts.states)
+
     compiled_gradient_function = @compile compute_gradients_internal(
         objective_function, ts.model, data, ts.parameters, ts.states)
 
@@ -60,6 +75,9 @@ for inplace in ("!", "")
         if hasfield(typeof(ts.cache.extras), :update_function)
             update_function = ts.cache.extras.update_function
         else
+            maybe_dump_to_mlir_file!(update_function, ts.optimizer_state, ts.parameters,
+                grads)
+
             update_function = @compile Optimisers.$(update_fn)(
                 ts.optimizer_state, ts.parameters, grads)
             @set! ts.cache.extras = merge(ts.cache.extras, (; update_function))
@@ -72,10 +90,12 @@ for inplace in ("!", "")
         return ts
     end
 
-    # XXX: Should we add a check to ensure the inputs to this function is same as the one
-    #      used in the compiled function? We can re-trigger the compilation with a warning
+    # XXX: recompile with a warning if new input types are used
     @eval function Lux.Training.$(fname)(backend::ReactantBackend, objective_function::F,
             data, ts::Training.TrainState) where {F}
+        maybe_dump_to_mlir_file!($(internal_fn), objective_function, ts.model, data,
+            ts.parameters, ts.states, ts.optimizer_state)
+
         compiled_grad_and_step_function = @compile $(internal_fn)(
             objective_function, ts.model, data, ts.parameters, ts.states,
             ts.optimizer_state)

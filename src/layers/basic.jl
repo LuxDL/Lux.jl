@@ -611,22 +611,30 @@ end
 
 outputsize(e::Embedding, _, ::AbstractRNG) = (e.out_dims,)
 
-(e::Embedding)(x::Integer, ps, st::NamedTuple) = view(ps.weight, :, x), st
-function (e::Embedding)(x::AbstractVector{<:Integer}, ps, st::NamedTuple)
+function (e::Embedding)(x::Number, ps, st::NamedTuple)
+    @assert Utils.eltype(x) <: Integer
+    return view(ps.weight, :, x), st
+end
+function (e::Embedding)(x::AbstractVector, ps, st::NamedTuple)
+    @assert Utils.eltype(x) <: Integer
     return NNlib.gather(ps.weight, x), st
 end
-function (e::Embedding)(x::AbstractArray{<:Integer}, ps, st::NamedTuple)
+function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
+    @assert Utils.eltype(x) <: Integer
     y, stₙ = e(vec(x), ps, st)
     return reshape(y, :, size(x)...), stₙ
 end
-function (e::Embedding)(x::NTuple{<:Any, <:Integer}, ps, st::NamedTuple)
+function (e::Embedding)(x::NTuple{N, T}, ps, st::NamedTuple) where {N, T}
+    @assert Utils.eltype(T) <: Integer
     return view(ps.weight, :, x...), st
 end
-function (e::Embedding)(x::NTuple{<:Any, <:AbstractVector{<:Integer}}, ps, st::NamedTuple)
+function (e::Embedding)(x::NTuple{N, <:AbstractVector{T}}, ps, st::NamedTuple) where {N, T}
+    @assert Utils.eltype(T) <: Integer
     @argcheck allequal(size, x) DimensionMismatch("Input vectors must have the same shape")
     return NNlib.gather(ps.weight, x...), st
 end
-function (e::Embedding)(x::NTuple{<:Any, <:AbstractArray{<:Integer}}, ps, st::NamedTuple)
+function (e::Embedding)(x::NTuple{N, <:AbstractArray{T}}, ps, st::NamedTuple) where {N, T}
+    @assert Utils.eltype(T) <: Integer
     @argcheck allequal(size, x) DimensionMismatch("Input arrays must have the same shape")
     y, stₙ = e(vec.(x), ps, st)
     return reshape(y, :, size(first(x))...), stₙ

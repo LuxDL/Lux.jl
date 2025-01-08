@@ -170,6 +170,38 @@ gs, loss, stats, train_state = Training.single_train_step!(AutoZygote(), MSELoss
     (x, dev(rand(rng, Float32, 10, 2))), train_state)
 ```
 
+## 🤸 Quickstart with Reactant
+
+```julia
+using Lux, Random, Optimisers, Reactant, Enzyme
+
+rng = Random.default_rng()
+Random.seed!(rng, 0)
+
+model = Chain(Dense(128, 256, tanh), Chain(Dense(256, 1, tanh), Dense(1, 10)))
+
+dev = reactant_device()
+
+ps, st = Lux.setup(rng, model) |> dev
+
+x = rand(rng, Float32, 128, 2) |> dev
+
+# We need to compile the model before we can use it.
+model_forward = @compile model(x, ps, Lux.testmode(st))
+model_forward(x, ps, Lux.testmode(st))
+
+# Gradients can be computed using Enzyme
+@jit Enzyme.gradient(Reverse, sum ∘ first ∘ Lux.apply, Const(model), x, ps, Const(st))
+
+# All of this can be automated using the TrainState API
+train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
+
+gs, loss, stats, train_state = Training.single_train_step!(
+    AutoEnzyme(), MSELoss(),
+    (x, dev(rand(rng, Float32, 10, 2))), train_state
+)
+```
+
 ## 📚 Examples
 
 Look in the [examples](/examples/) directory for self-contained usage examples. The [documentation](https://lux.csail.mit.edu) has examples sorted into proper categories.

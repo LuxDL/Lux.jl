@@ -9,7 +9,7 @@
 
 # ## Package Imports
 
-using ADTypes, Lux, LuxCUDA, JLD2, MLUtils, Optimisers, Zygote, Printf, Random, Statistics
+using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
 
 # ## Dataset
 
@@ -34,9 +34,11 @@ function get_dataloaders(; dataset_size=1000, sequence_length=50)
     ## Create DataLoaders
     return (
         ## Use DataLoader to automatically minibatch and shuffle the data
-        DataLoader(collect.((x_train, y_train)); batchsize=128, shuffle=true),
+        DataLoader(
+            collect.((x_train, y_train)); batchsize=128, shuffle=true, partial=false),
         ## Don't shuffle the validation data
-        DataLoader(collect.((x_val, y_val)); batchsize=128, shuffle=false))
+        DataLoader(collect.((x_val, y_val)); batchsize=128, shuffle=false, partial=false)
+    )
 end
 
 # ## Creating a Classifier
@@ -51,7 +53,7 @@ end
 # To understand more about container layers, please look at
 # [Container Layer](@ref Container-Layer).
 
-struct SpiralClassifier{L, C} <: Lux.AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
+struct SpiralClassifier{L, C} <: AbstractLuxContainerLayer{(:lstm_cell, :classifier)}
     lstm_cell::L
     classifier::C
 end
@@ -128,35 +130,52 @@ accuracy(y_pred, y_true) = matches(y_pred, y_true) / length(y_pred)
 # ## Training the Model
 
 function main(model_type)
-    dev = gpu_device()
+    dev = reactant_device()
+    cdev = cpu_device()
 
     ## Get the dataloaders
-    train_loader, val_loader = get_dataloaders() .|> dev
+    train_loader, val_loader = get_dataloaders() |> dev
 
     ## Create the model
     model = model_type(2, 8, 1)
-    rng = Xoshiro(0)
-    ps, st = Lux.setup(rng, model) |> dev
+    ps, st = Lux.setup(Random.default_rng(), model) |> dev
 
     train_state = Training.TrainState(model, ps, st, Adam(0.01f0))
+    model_compiled = if dev isa ReactantDevice
+        @compile model(first(train_loader)[1], ps, Lux.testmode(st))
+    else
+        model
+    end
+    ad = dev isa ReactantDevice ? AutoEnzyme() : AutoZygote()
 
     for epoch in 1:25
         ## Train the model
+        total_loss = 0.0f0
+        total_samples = 0
         for (x, y) in train_loader
             (_, loss, _, train_state) = Training.single_train_step!(
-                AutoZygote(), lossfn, (x, y), train_state)
-
-            @printf "Epoch [%3d]: Loss %4.5f\n" epoch loss
+                ad, lossfn, (x, y), train_state
+            )
+            total_loss += loss * length(y)
+            total_samples += length(y)
         end
+        @printf "Epoch [%3d]: Loss %4.5f\n" epoch (total_loss/total_samples)
 
         ## Validate the model
+        total_acc = 0.0f0
+        total_loss = 0.0f0
+        total_samples = 0
+
         st_ = Lux.testmode(train_state.states)
         for (x, y) in val_loader
-            ŷ, st_ = model(x, train_state.parameters, st_)
-            loss = lossfn(ŷ, y)
-            acc = accuracy(ŷ, y)
-            @printf "Validation: Loss %4.5f Accuracy %4.5f\n" loss acc
+            ŷ, st_ = model_compiled(x, train_state.parameters, st_)
+            ŷ, y = cdev(ŷ), cdev(y)
+            total_acc += accuracy(ŷ, y) * length(y)
+            total_loss += lossfn(ŷ, y) * length(y)
+            total_samples += length(y)
         end
+
+        @printf "Validation:\tLoss %4.5f\tAccuracy %4.5f\n" (total_loss/total_samples) (total_acc/total_samples)
     end
 
     return (train_state.parameters, train_state.states) |> cpu_device()

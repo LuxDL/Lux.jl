@@ -1,7 +1,7 @@
 name = "Lux"
 uuid = "b2108857-7c20-44ae-9111-449ecde12c47"
 authors = ["Avik Pal <avikpal@mit.edu> and contributors"]
-version = "1.4.4"
+version = "1.5.0"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -88,7 +88,7 @@ Compat = "4.16"
 ComponentArrays = "0.15.18"
 ConcreteStructs = "0.2.3"
 DispatchDoctor = "0.4.12"
-Enzyme = "0.13.16"
+Enzyme = "0.13.28"
 EnzymeCore = "0.8.8"
 FastClosures = "0.3.2"
 Flux = "0.15, 0.16"

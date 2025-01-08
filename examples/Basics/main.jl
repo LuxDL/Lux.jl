@@ -109,12 +109,14 @@ W * x
 # the `cu` function (or the `gpu` function exported by `Lux``), and it supports all of the
 # above operations with the same syntax.
 
-using LuxCUDA
-
-if LuxCUDA.functional()
-    x_cu = cu(rand(5, 3))
-    @show x_cu
-end
+# ```julia
+# using LuxCUDA
+#
+# if LuxCUDA.functional()
+#     x_cu = cu(rand(5, 3))
+#     @show x_cu
+# end
+# ```
 
 # ## (Im)mutability
 

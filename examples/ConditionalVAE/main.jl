@@ -151,7 +151,8 @@ end
 function create_image_grid(imgs::AbstractArray, grid_rows::Int, grid_cols::Int)
     total_images = grid_rows * grid_cols
     imgs = map(eachslice(imgs[:, :, :, 1:total_images]; dims=4)) do img
-        cimg = size(img, 3) == 1 ? colorview(Gray, view(img, :, :, 1)) : colorview(RGB, img)
+        cimg = size(img, 3) == 1 ? colorview(Gray, view(img, :, :, 1)) :
+               colorview(RGB, permutedims(img, (3, 1, 2)))
         return cimg'
     end
     return create_image_grid(imgs, grid_rows, grid_cols)
@@ -239,23 +240,21 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
     for epoch in 1:epochs
         loss_total = 0.0f0
         total_samples = 0
-        total_time = 0.0
 
+        start_time = time()
         for (i, X) in enumerate(train_dataloader)
-            throughput_tic = time()
             (_, loss, _, train_state) = Training.single_train_step!(
                 AutoEnzyme(), loss_function, X, train_state)
-            throughput_toc = time()
 
             loss_total += loss
             total_samples += size(X, ndims(X))
-            total_time += throughput_toc - throughput_tic
 
             if i % 250 == 0 || i == length(train_dataloader)
-                throughput = total_samples / total_time
+                throughput = total_samples / (time() - start_time)
                 @printf "Epoch %d, Iter %d, Loss: %.7f, Throughput: %.6f im/s\n" epoch i loss throughput
             end
         end
+        total_time = time() - start_time
 
         train_loss = loss_total / length(train_dataloader)
         throughput = total_samples / total_time

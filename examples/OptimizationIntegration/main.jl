@@ -18,7 +18,6 @@
 
 using Lux, Optimization, OptimizationOptimisers, OptimizationOptimJL, OrdinaryDiffEqTsit5,
       SciMLSensitivity, Random, MLUtils, CairoMakie, ComponentArrays, Printf
-using LuxCUDA
 
 const gdev = gpu_device()
 const cdev = cpu_device()

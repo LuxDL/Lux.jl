@@ -8,7 +8,7 @@ using Static: Static, known
 using ChainRulesCore: ChainRulesCore, NoTangent
 
 using LuxCore: LuxCore
-using MLDataDevices: get_device_type, AbstractGPUDevice
+using MLDataDevices: get_device_type, AbstractGPUDevice, ReactantDevice
 using NNlib: NNlib
 
 const Optional{T} = Union{Nothing, T}

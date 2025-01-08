@@ -1,12 +1,5 @@
 # GPU Management
 
-!!! info
-
-    Starting from `v0.5`, Lux has transitioned to a new GPU management system. The old
-    system using `cpu` and `gpu` functions is still in place but will be removed in `v1`.
-    Using the  old functions might lead to performance regressions if used inside
-    performance critical code.
-
 `Lux.jl` can handle multiple GPU backends. Currently, the following backends are supported:
 
 ```@example gpu_management
@@ -15,6 +8,12 @@ using Lux, LuxCUDA #, AMDGPU, Metal, oneAPI
 
 supported_gpu_backends()
 ```
+
+!!! tip "GPU Support via Reactant"
+
+    If you are using Reactant, you can use the [`reactant_device`](@ref) function to
+    automatically select Reactant backend if available. Additionally to force Reactant to
+    use `gpu`, you can run `Reactant.set_default_backend("gpu")` (this is automatic).
 
 !!! danger "Metal Support"
 

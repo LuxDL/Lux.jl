@@ -1,6 +1,6 @@
 module LuxCoreReactantExt
 
-using LuxCore: AbstractLuxLayer
+using LuxCore: AbstractLuxLayer, LuxCore
 using Reactant: Reactant
 
 # Avoid tracing though models since it won't contain anything useful
@@ -9,5 +9,8 @@ function Reactant.make_tracer(
 )
     return model
 end
+
+LuxCore.replicate(rng::Reactant.TracedRNG) = copy(rng)
+LuxCore.replicate(rng::Reactant.ConcreteRNG) = copy(rng)
 
 end

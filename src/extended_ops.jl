@@ -13,7 +13,7 @@ using EnzymeCore: EnzymeCore
 using FastClosures: @closure
 using Static: StaticBool, StaticSymbol, known
 
-using MLDataDevices: get_device_type, AbstractGPUDevice, AbstractDevice
+using MLDataDevices: get_device_type, AbstractGPUDevice, ReactantDevice, AbstractDevice
 
 using ..Utils: Utils
 
@@ -103,10 +103,12 @@ GPUArray.
 Additional dispatches for RNN helpers are also provided for `TimeLastIndex` and
 `BatchLastIndex`.
 """
-function eachslice(x::AbstractArray, dims::Val)
-    return eachslice(get_device_type(x), x, dims)
-end
-function eachslice(::Type{<:AbstractGPUDevice}, x::AbstractArray, ::Val{dims}) where {dims}
+eachslice(x::AbstractArray, dims::Val) = eachslice(get_device_type(x), x, dims)
+
+function eachslice(
+        ::Type{<:Union{<:ReactantDevice, <:AbstractGPUDevice}},
+        x::AbstractArray, ::Val{dims}
+) where {dims}
     return [Utils.contiguous(selectdim(x, dims, i)) for i in axes(x, dims)]
 end
 function eachslice(::Type{<:AbstractDevice}, x::AbstractArray, ::Val{dims}) where {dims}

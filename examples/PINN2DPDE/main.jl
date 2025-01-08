@@ -10,13 +10,10 @@
 
 # ## Package Imports
 
-using ADTypes, Lux, Optimisers, Zygote, Random, Printf, Statistics, MLUtils, OnlineStats,
-      CairoMakie
-using LuxCUDA
+using Lux, Optimisers, Random, Printf, Statistics, MLUtils, OnlineStats, CairoMakie,
+      Reactant, Enzyme
 
-CUDA.allowscalar(false)
-
-const gdev = gpu_device()
+const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
 
 # ## Problem Definition
@@ -60,12 +57,13 @@ end
 # will use the following loss function
 
 @views function physics_informed_loss_function(
-        u::StatefulLuxLayer, v::StatefulLuxLayer, w::StatefulLuxLayer, xyt::AbstractArray)
-    ∂u_∂xyt = only(Zygote.gradient(sum ∘ u, xyt))
+        u::StatefulLuxLayer, v::StatefulLuxLayer, w::StatefulLuxLayer, xyt::AbstractArray
+)
+    ∂u_∂xyt = Enzyme.gradient(Enzyme.Reverse, sum ∘ u, xyt)[1]
     ∂u_∂x, ∂u_∂y, ∂u_∂t = ∂u_∂xyt[1:1, :], ∂u_∂xyt[2:2, :], ∂u_∂xyt[3:3, :]
-    ∂v_∂x = only(Zygote.gradient(sum ∘ v, xyt))[1:1, :]
+    ∂v_∂x = Enzyme.gradient(Enzyme.Reverse, sum ∘ v, xyt)[1][1:1, :]
     v_xyt = v(xyt)
-    ∂w_∂y = only(Zygote.gradient(sum ∘ w, xyt))[2:2, :]
+    ∂w_∂y = Enzyme.gradient(Enzyme.Reverse, sum ∘ w, xyt)[1][2:2, :]
     w_xyt = w(xyt)
     return (
         mean(abs2, ∂u_∂t .- ∂v_∂x .- ∂w_∂y) +
@@ -141,37 +139,45 @@ nothing #hide
 
 # ## Training
 
-function train_model(xyt, target_data, xyt_bc, target_bc; seed::Int=0,
-        maxiters::Int=50000, hidden_dims::Int=32)
+function train_model(
+        xyt, target_data, xyt_bc, target_bc; seed::Int=0,
+        maxiters::Int=50000, hidden_dims::Int=32
+)
     rng = Random.default_rng()
     Random.seed!(rng, seed)
 
     pinn = PINN(; hidden_dims)
-    ps, st = Lux.setup(rng, pinn) |> gdev
+    ps, st = Lux.setup(rng, pinn) |> xdev
 
-    bc_dataloader = DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true) |> gdev
-    pde_dataloader = DataLoader((xyt, target_data); batchsize=32, shuffle=true) |> gdev
+    bc_dataloader = DataLoader(
+        (xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false
+    ) |> xdev
+    pde_dataloader = DataLoader(
+        (xyt, target_data); batchsize=32, shuffle=true, partial=false
+    ) |> xdev
 
     train_state = Training.TrainState(pinn, ps, st, Adam(0.05f0))
     lr = i -> i < 5000 ? 0.05f0 : (i < 10000 ? 0.005f0 : 0.0005f0)
 
     total_loss_tracker, physics_loss_tracker, data_loss_tracker, bc_loss_tracker = ntuple(
-        _ -> Lag(Float32, 32), 4)
+        _ -> OnlineStats.CircBuff(Float32, 32; rev=true), 4)
 
     iter = 1
     for ((xyt_batch, target_data_batch), (xyt_bc_batch, target_bc_batch)) in zip(
-        Iterators.cycle(pde_dataloader), Iterators.cycle(bc_dataloader))
+        Iterators.cycle(pde_dataloader), Iterators.cycle(bc_dataloader)
+    )
         Optimisers.adjust!(train_state, lr(iter))
 
         _, loss, stats, train_state = Training.single_train_step!(
-            AutoZygote(), loss_function, (
-                xyt_batch, target_data_batch, xyt_bc_batch, target_bc_batch),
-            train_state)
+            AutoEnzyme(), loss_function,
+            (xyt_batch, target_data_batch, xyt_bc_batch, target_bc_batch),
+            train_state
+        )
 
-        fit!(total_loss_tracker, loss)
-        fit!(physics_loss_tracker, stats.physics_loss)
-        fit!(data_loss_tracker, stats.data_loss)
-        fit!(bc_loss_tracker, stats.bc_loss)
+        fit!(total_loss_tracker, Float32(loss))
+        fit!(physics_loss_tracker, Float32(stats.physics_loss))
+        fit!(data_loss_tracker, Float32(stats.data_loss))
+        fit!(bc_loss_tracker, Float32(stats.bc_loss))
 
         mean_loss = mean(OnlineStats.value(total_loss_tracker))
         mean_physics_loss = mean(OnlineStats.value(physics_loss_tracker))
@@ -181,7 +187,7 @@ function train_model(xyt, target_data, xyt_bc, target_bc; seed::Int=0,
         isnan(loss) && throw(ArgumentError("NaN Loss Detected"))
 
         if iter % 1000 == 1 || iter == maxiters
-            @printf "Iteration: [%5d / %5d] \t Loss: %.9f (%.9f) \t Physics Loss: %.9f \
+            @printf "Iteration: [%6d/%6d] \t Loss: %.9f (%.9f) \t Physics Loss: %.9f \
                      (%.9f) \t Data Loss: %.9f (%.9f) \t BC \
                      Loss: %.9f (%.9f)\n" iter maxiters loss mean_loss stats.physics_loss mean_physics_loss stats.data_loss mean_data_loss stats.bc_loss mean_bc_loss
         end
@@ -191,12 +197,14 @@ function train_model(xyt, target_data, xyt_bc, target_bc; seed::Int=0,
     end
 
     return StatefulLuxLayer{true}(
-        pinn, cdev(train_state.parameters), cdev(train_state.states))
+        pinn, cdev(train_state.parameters), cdev(train_state.states)
+    )
 end
 
 trained_model = train_model(xyt, target_data, xyt_bc, target_bc)
-trained_u = Lux.testmode(StatefulLuxLayer{true}(
-    trained_model.model.u, trained_model.ps.u, trained_model.st.u))
+trained_u = Lux.testmode(
+    StatefulLuxLayer{true}(trained_model.model.u, trained_model.ps.u, trained_model.st.u)
+)
 nothing #hide
 
 # ## Visualizing the Results

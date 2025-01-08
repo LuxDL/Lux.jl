@@ -23,8 +23,8 @@ hero:
 
 features:
   - icon: 🚀
-    title: Fast & Extendible
-    details: Lux.jl is written in Julia itself, making it extremely extendible. CUDA and AMDGPU are supported first-class, with experimental support for Metal and Intel GPUs.
+    title: Fast & Extendable
+    details: Lux.jl is written in Julia itself, making it extremely extendable. CUDA and AMDGPU are supported first-class, with experimental support for Metal and Intel GPUs.
     link: /introduction
 
   - icon: 🐎

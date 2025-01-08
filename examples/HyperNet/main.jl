@@ -2,8 +2,8 @@
 
 # ## Package Imports
 
-using Lux, ADTypes, ComponentArrays, LuxCUDA, MLDatasets, MLUtils, OneHotArrays, Optimisers,
-      Printf, Random, Setfield, Statistics, Zygote
+using Lux, ComponentArrays, LuxCUDA, MLDatasets, MLUtils, OneHotArrays, Optimisers,
+      Printf, Random, Zygote
 
 CUDA.allowscalar(false)
 

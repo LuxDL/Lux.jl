@@ -1,10 +1,11 @@
 #! format: off
 const BEGINNER_TUTORIALS = [
-    "Basics/main.jl" => "CUDA",
+    "Basics/main.jl" => "CPU",
     "PolynomialFitting/main.jl" => "CUDA",
     "SimpleRNN/main.jl" => "CUDA",
+    # Technically this is run on CPU but we need a better machine to run it
     "SimpleChains/main.jl" => "CUDA",
-    "OptimizationIntegration/main.jl" => "CUDA",
+    "OptimizationIntegration/main.jl" => "CPU",
 ]
 const INTERMEDIATE_TUTORIALS = [
     "NeuralODE/main.jl" => "CUDA",
