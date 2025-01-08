@@ -7,7 +7,7 @@ using FastClosures: @closure
 using Functors: Functors, fmap
 using Optimisers: Optimisers
 using Setfield: @set!
-using Static: StaticBool, Static, False, True
+using Static: StaticBool, Static, False, True, static
 
 using ..Lux: Lux, Utils, ReactantCompatibleOptimisers
 using LuxCore: LuxCore, AbstractLuxLayer
@@ -104,7 +104,9 @@ function Base.show(io::IO, ::MIME"text/plain", ts::TrainState)
         print(io, "\n    objective_function: ", nameof(typeof(ts.objective_function)))
 end
 
-struct ReactantBackend end
+@concrete struct ReactantBackend
+    return_gradients <: StaticBool
+end
 
 const APPLY_GRAD_DOCSTRING = """
 ## Arguments
@@ -198,10 +200,13 @@ function compute_gradients(ad, obj_fn::F, data, ts::TrainState) where {F}
     return compute_gradients_impl(maybe_wrap_adtype(ad, dev_type), obj_fn, data, ts)
 end
 
-maybe_wrap_adtype(backend::ReactantBackend, _) = backend
-maybe_wrap_adtype(ad::AbstractADType, _) = ad
-function maybe_wrap_adtype(ad::AbstractADType, ::Type{ReactantDevice})
-    ad isa AutoEnzyme && return ReactantBackend()
+maybe_wrap_adtype(backend::ReactantBackend, ::Any; kwargs...) = backend
+maybe_wrap_adtype(ad::AbstractADType, ::Any; kwargs...) = ad
+function maybe_wrap_adtype(
+        ad::AbstractADType, ::Type{ReactantDevice};
+        return_gradients::Utils.BoolType=True()
+)
+    ad isa AutoEnzyme && return ReactantBackend(static(return_gradients))
     throw(ArgumentError("Computing gradients for models on XLA is supported only with \
                          Enzyme.jl (`AutoEnzyme`)."))
 end
@@ -258,11 +263,16 @@ function wrap_objective_function(
 end
 
 """
-    single_train_step!(backend, obj_fn::F, data, ts::TrainState)
+    single_train_step!(backend, obj_fn::F, data, ts::TrainState; return_gradients=True())
 
 Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
 updates the parameters using [`apply_gradients!`](@ref). All backends supported via
 [`compute_gradients`](@ref) are supported here.
+
+## Keyword Arguments
+
+  - `return_gradients`: If `True()`, the gradients are returned. If `False()`, the returned
+    gradients are `nothing`. Defaults to `True()`. This is only used for Reactant Backend.
 
 ## Return
 
@@ -271,13 +281,15 @@ only the parameters in `ts` are updated inplace. Users should be using the retur
 object for further training steps, else there is no caching and performance will be
 suboptimal (and absolutely terrible for backends like `AutoReactant`).
 """
-function single_train_step!(backend, obj_fn::F, data, ts::TrainState) where {F}
-    backend = maybe_wrap_adtype(backend, get_device_type((ts.parameters, ts.states)))
+function single_train_step!(backend, obj_fn::F, data, ts::TrainState;
+        return_gradients::Utils.BoolType=True()) where {F}
+    backend = maybe_wrap_adtype(
+        backend, get_device_type((ts.parameters, ts.states)); return_gradients)
     return single_train_step_impl!(backend, obj_fn, data, ts)
 end
 
 """
-    single_train_step(backend, obj_fn::F, data, ts::TrainState)
+    single_train_step(backend, obj_fn::F, data, ts::TrainState; return_gradients=True())
 
 Perform a single training step. Computes the gradients using [`compute_gradients`](@ref) and
 updates the parameters using [`apply_gradients`](@ref). All backends supported via
@@ -285,12 +297,19 @@ updates the parameters using [`apply_gradients`](@ref). All backends supported v
 
 In most cases you should use [`single_train_step!`](@ref) instead of this function.
 
+## Keyword Arguments
+
+  - `return_gradients`: If `True()`, the gradients are returned. If `False()`, the returned
+    gradients are `nothing`. Defaults to `True()`. This is only used for Reactant Backend.
+
 ## Return
 
-Returned values are the same as [`compute_gradients`](@ref).
+Returned values are the same as [`single_train_step!`](@ref).
 """
-function single_train_step(backend, obj_fn::F, data, ts::TrainState) where {F}
-    backend = maybe_wrap_adtype(backend, get_device_type((ts.parameters, ts.states)))
+function single_train_step(backend, obj_fn::F, data, ts::TrainState;
+        return_gradients::Utils.BoolType=True()) where {F}
+    backend = maybe_wrap_adtype(
+        backend, get_device_type((ts.parameters, ts.states)); return_gradients)
     return single_train_step_impl(backend, obj_fn, data, ts)
 end
 

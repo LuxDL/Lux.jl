@@ -4,7 +4,7 @@ using Enzyme: Enzyme, Const, Duplicated, Active
 using Optimisers: Optimisers
 using Reactant: Reactant, @compile, @code_hlo, AnyTracedRArray, TracedRArray, TracedRNumber
 using Setfield: @set!
-using Static: False
+using Static: True, False
 
 using Lux: Lux, LuxOps, Training, Utils
 using Lux.Training: TrainingBackendCache, ReactantBackend
