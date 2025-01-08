@@ -42,12 +42,14 @@ end
             Reactant.set_default_backend("cpu")
         end
 
+        dev = reactant_device(; force=true)
+
         @testset for cell in (RNNCell, LSTMCell, GRUCell)
             model = Recurrence(cell(4 => 4))
             ps, st = Lux.setup(rng, model)
-            ps_ra, st_ra = (ps, st) |> Reactant.to_rarray
+            ps_ra, st_ra = (ps, st) |> dev
             x = rand(Float32, 4, 16, 12)
-            x_ra = x |> Reactant.to_rarray
+            x_ra = x |> dev
 
             y_ra, _ = @jit model(x_ra, ps_ra, st_ra)
             y, _ = model(x, ps, st)
