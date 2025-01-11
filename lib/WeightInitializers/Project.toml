@@ -27,8 +27,8 @@ WeightInitializersCUDAExt = ["CUDA", "GPUArrays"]
 WeightInitializersChainRulesCoreExt = "ChainRulesCore"
 WeightInitializersGPUArraysExt = "GPUArrays"
 WeightInitializersMetalExt = ["Metal", "GPUArrays"]
-WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]
 WeightInitializersReactantExt = "Reactant"
+WeightInitializersoneAPIExt = ["oneAPI", "GPUArrays"]
 
 [compat]
 AMDGPU = "0.9.6, 1"
@@ -45,4 +45,4 @@ Reactant = "0.2.16"
 SpecialFunctions = "2.4"
 Statistics = "1.10"
 julia = "1.10"
-oneAPI = "1.5.0"
+oneAPI = "1.5.0, 2"
