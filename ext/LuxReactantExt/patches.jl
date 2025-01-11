@@ -1,5 +1,8 @@
 Utils.vec(x::AnyTracedRArray) = Reactant.TracedUtils.materialize_traced_array(vec(x))
 
+# XXX: remove once EnzymeJAX supports batched AD
+Utils.max_enzyme_batched_chunk_size(x::AnyTracedRArray) = 1
+
 # XXX: Use PoolDims once EnzymeJAX supports stablehlo.reduce_window adjoint
 Lux.calculate_pool_dims(g::Lux.GlobalPoolMode, ::TracedRArray) = g
 

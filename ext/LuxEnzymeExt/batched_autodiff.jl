@@ -20,16 +20,17 @@ function batched_enzyme_jacobian_impl(
     J = similar(x, promote_type(eltype(y), eltype(x)), prod(size(y)[1:(end - 1)]),
         prod(size(x)[1:(end - 1)]), B)
 
-    chunk_size = min(8, length(y) ÷ B)
+    chunk_size = Utils.max_enzyme_batched_chunk_size(y)
     partials = ntuple(_ -> zero(x), chunk_size)
 
     for i in 1:chunk_size:(length(x) ÷ B)
         idxs = i:min(i + chunk_size - 1, length(x) ÷ B)
         partials′ = make_onehot!(partials, idxs)
         J_partials = only(Enzyme.autodiff(
-            ad.mode, f, BatchDuplicated(x, partials′), Const.(args)...))
+            ad.mode, f, make_batch_duplicated(x, partials′), Const.(args)...
+        ))
         for (idx, J_partial) in zip(idxs, J_partials)
-            copyto!(view(J, :, idx, :), reshape(J_partial, :, B))
+            J[:, :, idx] .= reshape(J_partial, :, B)
         end
     end
 
@@ -51,7 +52,7 @@ function batched_enzyme_jacobian_impl(
     J = similar(x, promote_type(eltype(y), eltype(x)), prod(size(y)[1:(end - 1)]),
         prod(size(x)[1:(end - 1)]), B)
 
-    chunk_size = min(8, length(x) ÷ B)
+    chunk_size = Utils.max_enzyme_batched_chunk_size(y)
     partials = ntuple(_ -> zero(y), chunk_size)
     J_partials = ntuple(_ -> zero(x), chunk_size)
 
@@ -61,11 +62,11 @@ function batched_enzyme_jacobian_impl(
         partials′ = make_onehot!(partials, idxs)
         J_partials′ = make_zero!(J_partials, idxs)
         Enzyme.autodiff(
-            ad.mode, fn, BatchDuplicated(y, partials′),
-            BatchDuplicated(x, J_partials′), Const.(args)...
+            ad.mode, fn, make_batch_duplicated(y, partials′),
+            make_batch_duplicated(x, J_partials′), Const.(args)...
         )
         for (idx, J_partial) in zip(idxs, J_partials)
-            copyto!(view(J, idx, :, :), reshape(J_partial, :, B))
+            J[idx, :, :] .= reshape(J_partial, :, B)
         end
     end
 
@@ -74,16 +75,19 @@ end
 
 function make_onehot!(partials, idxs)
     for (idx, partial) in zip(idxs, partials)
+        partial .= false
         partial′ = reshape(partial, :, size(partial, ndims(partial)))
-        fill!(partial′, false)
-        fill!(view(partial′, idx, :), true)
+        partial′[idx, :] .= true
     end
     return partials[1:length(idxs)]
 end
 
 function make_zero!(partials, idxs)
     for partial in partials
-        fill!(partial, false)
+        partial .= false
     end
     return partials[1:length(idxs)]
 end
+
+make_batch_duplicated(x, dxs) = BatchDuplicated(x, dxs)
+make_batch_duplicated(x, dx::Tuple{X}) where {X} = Duplicated(x, only(dx))
