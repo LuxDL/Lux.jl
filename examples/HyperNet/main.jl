@@ -10,23 +10,27 @@ CUDA.allowscalar(false)
 # ## Loading Datasets
 function load_dataset(::Type{dset}, n_train::Union{Nothing, Int},
         n_eval::Union{Nothing, Int}, batchsize::Int) where {dset}
-    if n_train === nothing
-        imgs, labels = dset(:train)
+    (; features, targets) = if n_train === nothing
+        tmp = dset(:train)
+        tmp[1:length(tmp)]
     else
-        imgs, labels = dset(:train)[1:n_train]
+        dset(:train)[1:n_train]
     end
-    x_train, y_train = reshape(imgs, 28, 28, 1, n_train), onehotbatch(labels, 0:9)
+    x_train, y_train = reshape(features, 28, 28, 1, :), onehotbatch(targets, 0:9)
 
-    if n_eval === nothing
-        imgs, labels = dset(:test)
+    (; features, targets) = if n_eval === nothing
+        tmp = dset(:test)
+        tmp[1:length(tmp)]
     else
-        imgs, labels = dset(:test)[1:n_eval]
+        dset(:test)[1:n_eval]
     end
-    x_test, y_test = reshape(imgs, 28, 28, 1, n_eval), onehotbatch(labels, 0:9)
+    x_test, y_test = reshape(features, 28, 28, 1, :), onehotbatch(targets, 0:9)
 
     return (
-        DataLoader((x_train, y_train); batchsize=min(batchsize, n_train), shuffle=true),
-        DataLoader((x_test, y_test); batchsize=min(batchsize, n_eval), shuffle=false)
+        DataLoader(
+            (x_train, y_train); batchsize=min(batchsize, size(x_train, 4)), shuffle=true),
+        DataLoader(
+            (x_test, y_test); batchsize=min(batchsize, size(x_test, 4)), shuffle=false)
     )
 end
 
