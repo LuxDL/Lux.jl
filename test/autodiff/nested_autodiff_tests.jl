@@ -267,10 +267,8 @@ end
             end
 
             @test_gradients(__f, x,
-                ps;
-                atol=1.0f-3,
-                rtol=1.0f-3,
-                skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+                ps; atol=1.0f-3,
+                rtol=1.0f-3, skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
         end
     end
 end
@@ -409,6 +407,5 @@ end
     end
 
     @test_gradients(__f, x, ps; atol=1.0f-3,
-        rtol=1.0f-3,
-        skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
+        rtol=1.0f-3, skip_backends=[AutoReverseDiff(), AutoTracker(), AutoEnzyme()])
 end

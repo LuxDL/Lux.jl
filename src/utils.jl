@@ -228,6 +228,8 @@ end
 calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
+max_enzyme_batched_chunk_size(x::AbstractArray) = min(8, length(x) ÷ Base.size(x, ndims(x)))
+
 end
 
 using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
