@@ -17,6 +17,7 @@ Utils.contiguous(x::AnyTracedRArray) = Reactant.TracedUtils.materialize_traced_a
 
 Utils.eltype(::Type{<:TracedRArray{T, N}}) where {T, N} = T
 Utils.eltype(::Type{<:TracedRNumber{T}}) where {T} = T
+Utils.eltype(x::Reactant.AnyTracedRArray) = Reactant.unwrapped_eltype(x)
 
 function Utils.promote_to(::Type{T}, x::Number) where {T <: Number}
     x isa Reactant.TracedType && return x
