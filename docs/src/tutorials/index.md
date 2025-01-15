@@ -67,10 +67,10 @@ const intermediate = [
     desc: "Train a PINN to solve 2D PDEs (using Nested AD)."
   },
   {
-    href: "intermediate/5_ConditionalVAE",
+    href: "intermediate/5_ConvolutionalVAE",
     src: "../conditional_vae.png",
-    caption: "Conditional VAE for MNIST using Reactant",
-    desc: "Train a Conditional VAE to generate images from a latent space."
+    caption: "Convolutional VAE for MNIST using Reactant",
+    desc: "Train a Convolutional VAE to generate images from a latent space."
   }
 ];
 

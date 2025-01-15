@@ -1,4 +1,4 @@
-# # [Conditional VAE for MNIST using Reactant](@id Conditional-VAE-Tutorial)
+# # [Convolutional VAE for MNIST using Reactant](@id Convolutional-VAE-Tutorial)
 
 # Convolutional variational autoencoder (CVAE) implementation in MLX using MNIST. This is
 # based on the [CVAE implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/cvae/).
