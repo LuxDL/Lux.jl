@@ -99,3 +99,8 @@ end
         end
     end
 end
+
+@testitem "BatchNorm Layer" tags=[:reactant] setup=[SharedTestSetup] skip=:(Sys.iswindows()) begin
+    using Reactant, Lux, Random
+
+end
