@@ -2,12 +2,14 @@ module LuxReactantExt
 
 using Enzyme: Enzyme, Const, Duplicated, Active
 using Optimisers: Optimisers
-using Reactant: Reactant, @compile, @code_hlo, AnyTracedRArray, TracedRArray, TracedRNumber
+using Reactant: Reactant, @compile, @code_hlo, @trace, AnyTracedRArray, TracedRArray,
+                TracedRNumber
 using Setfield: @set!
 using Static: True, False
 
 using Lux: Lux, LuxOps, Training, Utils
 using Lux.Training: TrainingBackendCache, ReactantBackend
+using LuxCore: LuxCore
 
 Lux.is_extension_loaded(::Val{:Reactant}) = true
 
@@ -26,5 +28,6 @@ end
 
 include("patches.jl")
 include("training.jl")
+include("layers.jl")
 
 end
