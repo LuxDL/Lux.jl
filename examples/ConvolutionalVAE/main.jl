@@ -4,8 +4,7 @@
 # based on the [CVAE implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/cvae/).
 
 using Lux, Reactant, MLDatasets, Random, Statistics, Enzyme, MLUtils, DataAugmentation,
-      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers, Comonicon,
-      StableRNGs
+      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()
@@ -280,4 +279,9 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
     return model_img_full
 end
 
-main()
+img = main()
+nothing #hide
+
+# ---
+
+img #hide

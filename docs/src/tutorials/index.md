@@ -71,6 +71,12 @@ const intermediate = [
     src: "../conditional_vae.png",
     caption: "Convolutional VAE for MNIST using Reactant",
     desc: "Train a Convolutional VAE to generate images from a latent space."
+  },
+  {
+    href: "intermediate/6_GCN_Cora",
+    src: "../gcn_cora.jpg",
+    caption: "Graph Convolutional Network on Cora",
+    desc: "Train a Graph Convolutional Network on Cora dataset."
   }
 ];
 

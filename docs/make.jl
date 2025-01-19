@@ -30,6 +30,7 @@ pages = [
             "tutorials/intermediate/3_HyperNet.md",
             "tutorials/intermediate/4_PINN2DPDE.md",
             "tutorials/intermediate/5_ConvolutionalVAE.md",
+            "tutorials/intermediate/6_GCN_Cora.md",
         ],
         "Advanced" => [
             "tutorials/advanced/1_GravitationalWaveForm.md"
