@@ -13,6 +13,7 @@ const INTERMEDIATE_TUTORIALS = [
     "HyperNet/main.jl" => "CUDA",
     "PINN2DPDE/main.jl" => "CUDA",
     "ConvolutionalVAE/main.jl" => "CUDA",
+    "GCN_Cora/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [
     "GravitationalWaveForm/main.jl" => "CPU",

@@ -221,7 +221,11 @@ export default defineConfig({
               {
                 text: "Convolutional VAE for MNIST using Reactant",
                 link: "/tutorials/intermediate/5_ConvolutionalVAE",
-              }
+              },
+              {
+                text: "Graph Convolutional Network on Cora",
+                link: "/tutorials/intermediate/6_GCN_Cora",
+              },
             ],
           },
           {
