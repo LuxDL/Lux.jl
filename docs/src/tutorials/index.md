@@ -77,6 +77,12 @@ const intermediate = [
     src: "../gcn_cora.jpg",
     caption: "Graph Convolutional Network on Cora",
     desc: "Train a Graph Convolutional Network on Cora dataset."
+  },
+  {
+    href: "intermediate/7_RealNVP",
+    src: "../realnvp.png",
+    caption: "Normalizing Flows for Density Estimation",
+    desc: "Train a normalizing flow for density estimation on the Moons dataset.",
   }
 ];
 
