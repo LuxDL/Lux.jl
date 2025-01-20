@@ -46,6 +46,8 @@ begin
     fig
 end
 
+# ---
+
 function load_moons_dataloader(
         args...; batchsize::Int, noise::Union{Nothing, AbstractFloat}=nothing, kwargs...
 )
@@ -191,8 +193,8 @@ end
 # ## Training the Model
 
 function main(;
-        maxiters::Int=10_000, n_train_samples::Int=100_000, batchsize::Int=1024,
-        n_transforms::Int=6, hidden_dims::Int=128, n_layers::Int=4,
+        maxiters::Int=10_000, n_train_samples::Int=100_000, batchsize::Int=128,
+        n_transforms::Int=6, hidden_dims::Int=16, n_layers::Int=4,
         lr::Float64=0.0004, noise::Float64=0.06
 )
     rng = Random.default_rng()
