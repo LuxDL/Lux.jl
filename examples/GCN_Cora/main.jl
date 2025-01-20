@@ -3,8 +3,8 @@
 # This example is based on [GCN MLX tutorial](https://github.com/ml-explore/mlx-examples/blob/main/gcn/). While we are doing this manually, we recommend directly using
 # [GNNLux.jl](https://juliagraphs.org/GraphNeuralNetworks.jl/docs/GNNLux.jl/stable/).
 
-using Lux, Reactant, MLDatasets, Random, Statistics, Enzyme, GNNGraphs, MLUtils,
-      ConcreteStructs, Printf, OneHotArrays, Optimisers
+using Lux, Reactant, MLDatasets, Random, Statistics, Enzyme, GNNGraphs, ConcreteStructs,
+      Printf, OneHotArrays, Optimisers
 
 const xdev = reactant_device(; force=true)
 const cdev = cpu_device()

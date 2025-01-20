@@ -14,6 +14,7 @@ const INTERMEDIATE_TUTORIALS = [
     "PINN2DPDE/main.jl" => "CUDA",
     "ConvolutionalVAE/main.jl" => "CUDA",
     "GCN_Cora/main.jl" => "CUDA",
+    "RealNVP/main.jl" => "CUDA",
 ]
 const ADVANCED_TUTORIALS = [
     "GravitationalWaveForm/main.jl" => "CPU",

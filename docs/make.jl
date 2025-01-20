@@ -31,6 +31,7 @@ pages = [
             "tutorials/intermediate/4_PINN2DPDE.md",
             "tutorials/intermediate/5_ConvolutionalVAE.md",
             "tutorials/intermediate/6_GCN_Cora.md",
+            "tutorials/intermediate/7_RealNVP.md",
         ],
         "Advanced" => [
             "tutorials/advanced/1_GravitationalWaveForm.md"

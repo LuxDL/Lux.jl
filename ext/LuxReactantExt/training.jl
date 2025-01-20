@@ -4,23 +4,23 @@ mutable struct StatsAndNewStateWrapper
 end
 
 function wrapped_objective_function(
-        fn::F, model, ps, st, data, cache::StatsAndNewStateWrapper
+        fn::F, model, ps, data, cache::StatsAndNewStateWrapper
 ) where {F}
-    loss, stₙ, stats = fn(model, ps, st, data)
+    loss, stₙ, stats = fn(model, ps, cache.st, data)
     cache.stats = stats
     cache.st = stₙ
     return loss
 end
 
 function compute_gradients_internal(objective_function::F, model, data, ps, st) where {F}
-    stats_wrapper = StatsAndNewStateWrapper(nothing, nothing)
+    st_stats_wrapper = StatsAndNewStateWrapper(nothing, st)
     res = Enzyme.gradient(
         Enzyme.set_abi(Enzyme.ReverseWithPrimal, Reactant.ReactantABI),
         Const(wrapped_objective_function), Const(objective_function),
-        Const(model), ps, Const(st), Const(data), Const(stats_wrapper)
+        Const(model), ps, Const(data), Const(st_stats_wrapper)
     )
     loss, dps = res.val, res.derivs[3]
-    return dps, loss, stats_wrapper.stats, stats_wrapper.st
+    return dps, loss, st_stats_wrapper.stats, st_stats_wrapper.st
 end
 
 function maybe_dump_to_mlir_file!(f::F, args...) where {F}

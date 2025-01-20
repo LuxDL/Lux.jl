@@ -226,6 +226,10 @@ export default defineConfig({
                 text: "Graph Convolutional Network on Cora",
                 link: "/tutorials/intermediate/6_GCN_Cora",
               },
+              {
+                text: "Normalizing Flows for Density Estimation",
+                link: "/tutorials/intermediate/7_RealNVP",
+              }
             ],
           },
           {
