@@ -115,16 +115,17 @@ function eachslice(::Type{<:AbstractDevice}, x::AbstractArray, ::Val{dims}) wher
     return [selectdim(x, dims, i) for i in axes(x, dims)]
 end
 
-function ∇eachslice(Δ, x::AbstractArray, ::Val{dims}) where {dims}
-    idx = findfirst(Base.Fix2(isa, AbstractArray), Δ)
-    idx === nothing && return zero.(x)
-    Δ = similar(x)
-    fill!(Δ, false)
-    for i in axes(x, dims)
-        Δᵢ = selectdim(Δ, dims, i)
-        copyto!(Δᵢ, Δ[i])
+function ∇eachslice(Δs, x::AbstractArray, ::Val{dims}) where {dims}
+    idx = findfirst(Base.Fix2(isa, AbstractArray), Δs)
+    idx === nothing && return CRC.ZeroTangent()
+    return CRC.@thunk begin
+        Δ = similar(x)
+        fill!(Δ, false)
+        for i in axes(x, dims)
+            copyto!(selectdim(Δ, dims, i), Δs[i])
+        end
+        return CRC.ProjectTo(x)(Δ)
     end
-    return CRC.ProjectTo(x)(Δ)
 end
 
 function CRC.rrule(::typeof(eachslice), x::AbstractArray, d::Val{dims}) where {dims}

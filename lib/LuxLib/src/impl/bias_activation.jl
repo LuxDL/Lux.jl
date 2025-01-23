@@ -135,7 +135,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         ∇bias_activation_no_intermediate = @closure Δ -> begin
             ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), x, σ, NotaNumber()))
             ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
-            return ∂∅, ∂∅, ∂∅, ∂x, ∂b
+            return ∂∅, ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
         return x, ∇bias_activation_no_intermediate
     end
@@ -145,7 +145,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         ∇bias_activation_rrule = @closure Δ -> begin
             ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
             ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
-            return ∂∅, ∂∅, ∂∅, ∂x, ∂b
+            return ∂∅, ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
         return y, ∇bias_activation_rrule
     end
@@ -154,7 +154,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         cfg, bias_activation, opmode, σ, x, bias)
     ∇bias_activation_fallback = @closure Δ -> begin
         _, _, _, ∂x, ∂b = ∇bias_activation_from_ad(Δ)
-        return ∂∅, ∂∅, ∂∅, CRC.ProjectTo(x)(∂x), CRC.ProjectTo(bias)(∂b)
+        return ∂∅, ∂∅, ∂∅, ∂∅, CRC.ProjectTo(x)(∂x), CRC.ProjectTo(bias)(∂b)
     end
     return res, ∇bias_activation_fallback
 end
