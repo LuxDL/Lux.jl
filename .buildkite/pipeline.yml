@@ -69,19 +69,19 @@ steps:
                 agents:
                   queue: "juliagpu"
 
-            # Benchmarks
-            - path:
-                - "src/"
-                - "ext/"
-                - "test/"
-                - "Project.toml"
-                - ".buildkite/"
-                - "benchmarks/"
-              if: build.pull_request.labels includes "run benchmarks"
-              config:
-                command: "buildkite-agent pipeline upload .buildkite/benchmarks.yml"
-                agents:
-                  queue: "juliagpu"
+            # # Benchmarks
+            # - path:
+            #     - "src/"
+            #     - "ext/"
+            #     - "test/"
+            #     - "Project.toml"
+            #     - ".buildkite/"
+            #     - "benchmarks/"
+            #   if: build.pull_request.labels includes "run benchmarks"
+            #   config:
+            #     command: "buildkite-agent pipeline upload .buildkite/benchmarks.yml"
+            #     agents:
+            #       queue: "juliagpu"
 
             # Documentation
             - path:
