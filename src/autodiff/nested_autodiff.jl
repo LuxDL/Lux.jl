@@ -44,12 +44,12 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient
     end
 
     res = autodiff_gradient(grad_fn, f, x, y)
-    ∇autodiff_gradient = @closure Δ′ -> begin
-        (Δ′ isa NoTangent || Δ′ isa ZeroTangent) && return ntuple(Returns(NoTangent()), 5)
+    ∇autodiff_gradient = @closure Δ -> begin
+        (Δ isa NoTangent || Δ isa ZeroTangent) && return ntuple(Returns(NoTangent()), 5)
 
-        Δ = Utils.recursive_unthunk(Δ′)
         # For Zygote and such which return a tuple
         (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
+        Δ = Utils.recursive_unthunk(Δ)
         ∂x, ∂y = forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
         return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
     end

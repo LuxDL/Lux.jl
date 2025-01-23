@@ -240,8 +240,7 @@ recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=unthunk_leaf)
 end
 
 using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
-              matrix_to_array, init_trainable_rnn_hidden_state, init_rnn_hidden_state,
-              recursive_unthunk
+              matrix_to_array, init_trainable_rnn_hidden_state, init_rnn_hidden_state
 
 const safe_reverse = Utils.reverse
 const safe_vec = Utils.vec
