@@ -60,8 +60,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
     if unsafe_known(activation_intermediate_not_needed(σ, T))
         y = bias_activation(opmode, σ, x, bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
-            ∂x = CRC.@thunk CRC.ProjectTo(x)(∇activation(
-                recursive_unthunk(Δ), y, σ, NotaNumber()))
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, NotaNumber()))
             ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
             return ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
@@ -73,7 +72,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
         bias_add!(tmp, opmode, x, bias)
         y = activation(opmode, σ, tmp)
         ∇bias_activation_rrule = @closure Δ -> begin
-            ∂x = CRC.@thunk CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
             ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
             return ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
@@ -134,8 +133,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
     if unsafe_known(activation_intermediate_not_needed(σ, T))
         bias_activation!(x, opmode, σ, x, bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
-            ∂x = CRC.@thunk CRC.ProjectTo(x)(∇activation(
-                recursive_unthunk(Δ), x, σ, NotaNumber()))
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), x, σ, NotaNumber()))
             ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
             return ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
@@ -145,7 +143,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
     if unsafe_known(activation_has_rrule(σ, T))
         y, tmp = bias_activation_cached!!(σ, x, bias)
         ∇bias_activation_rrule = @closure Δ -> begin
-            ∂x = CRC.@thunk CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
             ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
             return ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
