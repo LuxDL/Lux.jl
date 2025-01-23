@@ -49,7 +49,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient
 
         Δ = CRC.unthunk(Δ′)
         # For Zygote and such which return a tuple
-        (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
+        (res isa Tuple || Δ isa Tuple) && (Δ = CRC.unthunk(only(Δ)))
         ∂x, ∂y = forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
         𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
         return NoTangent(), NoTangent(), NoTangent(), 𝒫x(∂x), 𝒫y(∂y)
@@ -79,7 +79,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_pullback
 
             Δ = CRC.unthunk(Δ′)
             # For Zygote and such which return a tuple
-            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
+            (res isa Tuple || Δ isa Tuple) && (Δ = CRC.unthunk(only(Δ)))
             ∂x, ∂y = forwarddiff_jvp(x, Δ, y) do x_dual, y_
                 return last(pb_f(f, x_dual, y_))(u)
             end
@@ -113,7 +113,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian
 
             Δ = CRC.unthunk(Δ′)
             # For Zygote and such which return a tuple
-            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
+            (res isa Tuple || Δ isa Tuple) && (Δ = CRC.unthunk(only(Δ)))
             Δ = compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
             inner_grad_fn = @closure(i->sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)

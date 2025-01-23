@@ -49,7 +49,7 @@ for type in (:Gradient, :Jacobian)
             $(rrule_call)
             ∇forwarddiff_ad = let pb_f = pb_f
                 Δ -> begin
-                    ∂x, ∂y = pb_f(tuple(Δ))[(end - 1):end]
+                    ∂x, ∂y = pb_f(tuple(CRC.unthunk(Δ)))[(end - 1):end]
                     𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
                     return (ntuple(Returns(NoTangent()), 4)..., 𝒫x(∂x), 𝒫y(∂y))
                 end
