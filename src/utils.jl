@@ -6,7 +6,7 @@ using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
-using Functors: fmapstructure
+using Functors: Functors, fmapstructure
 using Random: AbstractRNG
 using Static: Static, StaticBool, StaticInteger, StaticSymbol
 using StaticArraysCore: SMatrix, SVector
@@ -111,7 +111,10 @@ vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
 
 function CRC.rrule(::typeof(vec), x::AbstractArray)
-    return Base.vec(x), Δ -> (NoTangent(), reshape(CRC.unthunk(Δ), size(x)))
+    return (
+        Base.vec(x),
+        Δ -> (NoTangent(), CRC.@thunk(reshape(recursive_unthunk(Δ), size(x))))
+    )
 end
 
 function sample_replicate(rng::AbstractRNG)
@@ -228,10 +231,17 @@ end
 calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
+unthunk_leaf(x) = Functors.isleaf(x)
+unthunk_leaf(x::CRC.AbstractThunk) = true
+unthunk_leaf(::CRC.AbstractTangent) = true
+
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=unthunk_leaf)
+
 end
 
 using .Utils: Utils, BoolType, IntegerType, SymbolType, make_abstract_matrix,
-              matrix_to_array, init_trainable_rnn_hidden_state, init_rnn_hidden_state
+              matrix_to_array, init_trainable_rnn_hidden_state, init_rnn_hidden_state,
+              recursive_unthunk
 
 const safe_reverse = Utils.reverse
 const safe_vec = Utils.vec

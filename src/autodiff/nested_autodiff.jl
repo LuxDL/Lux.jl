@@ -47,12 +47,11 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient
     ∇autodiff_gradient = @closure Δ′ -> begin
         (Δ′ isa NoTangent || Δ′ isa ZeroTangent) && return ntuple(Returns(NoTangent()), 5)
 
-        Δ = CRC.unthunk(Δ′)
+        Δ = Utils.recursive_unthunk(Δ′)
         # For Zygote and such which return a tuple
-        (res isa Tuple || Δ isa Tuple) && (Δ = CRC.unthunk(only(Δ)))
+        (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
         ∂x, ∂y = forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
-        𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
-        return NoTangent(), NoTangent(), NoTangent(), 𝒫x(∂x), 𝒫y(∂y)
+        return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
     end
 
     return res, ∇autodiff_gradient
@@ -73,18 +72,16 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_pullback
 
     res = autodiff_pullback(pb_f, f, x, y, u)
     ∇autodiff_pullback = let pb_f = pb_f, f = f, x = x, y = y, u = u, res = res
-        Δ′ -> begin
-            (Δ′ isa NoTangent || Δ′ isa ZeroTangent) &&
-                return ntuple(Returns(NoTangent()), 6)
+        Δ -> begin
+            (Δ isa NoTangent || Δ isa ZeroTangent) && return ntuple(Returns(NoTangent()), 6)
 
-            Δ = CRC.unthunk(Δ′)
             # For Zygote and such which return a tuple
-            (res isa Tuple || Δ isa Tuple) && (Δ = CRC.unthunk(only(Δ)))
+            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
+            Δ = Utils.recursive_unthunk(Δ)
             ∂x, ∂y = forwarddiff_jvp(x, Δ, y) do x_dual, y_
                 return last(pb_f(f, x_dual, y_))(u)
             end
-            𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
-            return (NoTangent(), NoTangent(), NoTangent(), 𝒫x(∂x), 𝒫y(∂y), NoTangent())
+            return (NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y, NoTangent())
         end
     end
 
@@ -107,13 +104,12 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian
 
     res = autodiff_jacobian(jac_fn, grad_fn, f, x, y)
     ∇autodiff_jacobian = let res = res, grad_fn = grad_fn, f = f, x = x, y = y
-        Δ′ -> begin
-            (Δ′ isa NoTangent || Δ′ isa ZeroTangent) &&
-                return ntuple(Returns(NoTangent()), 6)
+        Δ -> begin
+            (Δ isa NoTangent || Δ isa ZeroTangent) && return ntuple(Returns(NoTangent()), 6)
 
-            Δ = CRC.unthunk(Δ′)
             # For Zygote and such which return a tuple
-            (res isa Tuple || Δ isa Tuple) && (Δ = CRC.unthunk(only(Δ)))
+            (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
+            Δ = Utils.recursive_unthunk(Δ)
             Δ = compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
             inner_grad_fn = @closure(i->sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)
@@ -134,8 +130,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian
                 mapreduce(map_fn, Lux.recursive_add!!, 1:numrows(Δ))
             end
 
-            𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
-            return (NoTangent(), NoTangent(), NoTangent(), NoTangent(), 𝒫x(∂x), 𝒫y(∂y))
+            return NoTangent(), NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
         end
     end
 

@@ -196,7 +196,7 @@ CRC.@opt_out rrule(
 
 function ∇fused_conv(Δ′, weight, x, bias, cdims::ConvDims, z, tmp, 𝒫w, 𝒫x, 𝒫b, act)
     old_threads = maybe_reduce_BLAS_threads(weight)
-    Δ = NNlib.colmajor(CRC.unthunk(Δ′))
+    Δ = NNlib.colmajor(recursive_unthunk(Δ′))
     ∂y = ∇activation(Δ, z, act, tmp)
     ∂w, ∂x, ∂b = ∇conv_bias(∂y, weight, x, bias, cdims)
     reset_BLAS_threads(old_threads)

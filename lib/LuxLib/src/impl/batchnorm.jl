@@ -294,7 +294,7 @@ function CRC.rrule(
     𝒫β = β === nothing ? identity : CRC.ProjectTo(β)
 
     ∇batchnorm_affine_normalize_internal = @closure Δ -> begin
-        ∂y = last(∇activation(Δ))
+        ∂y = recursive_unthunk(last(∇activation(Δ)))
         ∂x, ∂μ, ∂σ², ∂γ, ∂β = ∇batchnorm_affine_normalize(opmode, ∂y, x, μ, σ², γ, β, ϵ, γ′)
         return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫μ(∂μ), 𝒫σ²(∂σ²), 𝒫γ(∂γ), 𝒫β(∂β), ∂∅
     end

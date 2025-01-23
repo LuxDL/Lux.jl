@@ -3,6 +3,7 @@ module Utils
 using ChainRulesCore: ChainRulesCore
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
+using Functors: Functors
 using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
@@ -345,5 +346,11 @@ end
 CRC.@non_differentiable can_loopvec_args_check(::Any...)
 
 EnzymeRules.inactive_noinl(::typeof(can_loopvec_args_check), ::Any...) = nothing
+
+unthunk_leaf(x) = Functors.isleaf(x)
+unthunk_leaf(x::CRC.AbstractThunk) = true
+unthunk_leaf(::CRC.AbstractTangent) = true
+
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=unthunk_leaf)
 
 end

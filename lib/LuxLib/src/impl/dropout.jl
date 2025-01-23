@@ -89,7 +89,7 @@ function CRC.rrule(::typeof(alpha_dropout), ::LoopedArrayOp, noise::AbstractArra
         Δ -> begin
             ∂x = CRC.@thunk begin
                 ∂x_tmp = similar(x)
-                Δ_ = CRC.unthunk(Δ)
+                Δ_ = recursive_unthunk(Δ)
                 @simd ivdep for I in eachindex(cond, Δ_, ∂x_tmp)
                     @inbounds ∂x_tmp[I] = cond[I] * Δ_[I] * A
                 end
@@ -109,7 +109,7 @@ function CRC.rrule(::typeof(alpha_dropout), ::AbstractInternalArrayOpMode,
 
     𝒫x = CRC.ProjectTo(x)
     ∇alpha_dropout = @closure Δ -> begin
-        ∂x = CRC.@thunk 𝒫x(CRC.unthunk(Δ) .* cond .* A)
+        ∂x = CRC.@thunk 𝒫x(recursive_unthunk(Δ) .* cond .* A)
         return (ntuple(Returns(∂∅), 4)..., ∂x, ntuple(Returns(∂∅), 3)...)
     end
 
@@ -171,7 +171,7 @@ dropout_dot_mul(x::AbstractArray, mask::AbstractArray) = x .* mask
 
 function CRC.rrule(::typeof(dropout_dot_mul), x::AbstractArray, mask::AbstractArray)
     ∇dropout_dot_mul = @closure Δ -> begin
-        ∂x = CRC.@thunk CRC.ProjectTo(x)(dropout_dot_mul(CRC.unthunk(Δ), mask))
+        ∂x = CRC.@thunk CRC.ProjectTo(x)(dropout_dot_mul(recursive_unthunk(Δ), mask))
         return ∂∅, ∂x, ∂∅
     end
     return dropout_dot_mul(x, mask), ∇dropout_dot_mul

@@ -1,7 +1,7 @@
 module LuxLibcuDNNExt
 
 using LuxLib: LuxLib, Optional, ∂∅, Impl
-using LuxLib.Utils: safe_reshape, safe_vec, unsafe_known
+using LuxLib.Utils: safe_reshape, safe_vec, unsafe_known, recursive_unthunk
 using CUDA: CUDA, CuArray, CuVector, CU_NULL, DenseCuArray, DenseCuVector
 using ChainRulesCore: ChainRulesCore
 using cuDNN: cuDNN, cudnnBatchNormalizationBackward,
@@ -33,7 +33,8 @@ function CRC.rrule(
     𝒫x, 𝒫γ, 𝒫β = CRC.ProjectTo(x), CRC.ProjectTo(γ), CRC.ProjectTo(β)
     ∇batchnorm_cudnn = @closure Δ -> begin
         ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(
-            γ, β, x, CRC.unthunk(first(Δ)), rμ, rσ², xμ, xσ⁻², ϵ)
+            γ, β, x, recursive_unthunk(first(Δ)), rμ, rσ², xμ, xσ⁻², ϵ
+        )
         return ∂∅, 𝒫γ(∂γ), 𝒫β(∂β), 𝒫x(∂x), ∂∅, ∂∅, ∂∅, ∂∅, ∂∅
     end
     return (y, xμ, xσ⁻²), ∇batchnorm_cudnn

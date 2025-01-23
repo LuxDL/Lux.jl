@@ -174,10 +174,9 @@ end
 # ChainRules
 function CRC.rrule(::typeof(matmul), A::AbstractMatrix, B::AbstractMatrix)
     𝒫A, 𝒫B = CRC.ProjectTo(A), CRC.ProjectTo(B)
-    ∇matmul = @closure Δ′ -> begin
-        Δ = CRC.unthunk(Δ′)
-        ∂A = CRC.@thunk(𝒫A(matmul(Δ, B')))
-        ∂B = CRC.@thunk(𝒫B(matmul(A', Δ)))
+    ∇matmul = @closure Δ -> begin
+        ∂A = CRC.@thunk 𝒫A(matmul(recursive_unthunk(Δ), B'))
+        ∂B = CRC.@thunk 𝒫B(matmul(A', recursive_unthunk(Δ)))
         return ∂∅, ∂A, ∂B
     end
     return matmul(A, B), ∇matmul
@@ -186,11 +185,10 @@ end
 function CRC.rrule(
         ::typeof(matmuladd), A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
     𝒫A, 𝒫B, 𝒫bias = CRC.ProjectTo(A), CRC.ProjectTo(B), CRC.ProjectTo(bias)
-    ∇matmuladd = @closure Δ′ -> begin
-        Δ = CRC.unthunk(Δ′)
-        ∂A = CRC.@thunk(𝒫A(matmul(Δ, B')))
-        ∂B = CRC.@thunk(𝒫B(matmul(A', Δ)))
-        ∂bias = CRC.@thunk(𝒫bias(∇bias_add(bias, Δ)))
+    ∇matmuladd = @closure Δ -> begin
+        ∂A = CRC.@thunk 𝒫A(matmul(recursive_unthunk(Δ), B'))
+        ∂B = CRC.@thunk 𝒫B(matmul(A', recursive_unthunk(Δ)))
+        ∂bias = CRC.@thunk 𝒫bias(∇bias_add(bias, recursive_unthunk(Δ)))
         return ∂∅, ∂A, ∂B, ∂bias
     end
     return matmuladd(A, B, bias), ∇matmuladd
