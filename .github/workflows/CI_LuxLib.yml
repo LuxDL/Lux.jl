@@ -50,16 +50,6 @@ jobs:
             test_group: "misc"
             blas_backend: "default"
             loopvec: "false"
-          - version: "1"
-            os: macos-latest
-            test_group: "all"
-            blas_backend: "default"
-            loopvec: "true"
-          - version: "1"
-            os: windows-latest
-            test_group: "all"
-            blas_backend: "default"
-            loopvec: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -103,6 +93,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        test_group:
+          - "conv"
+          - "dense"
+          - "normalization"
+          - "misc"
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -130,7 +126,7 @@ jobs:
           include(joinpath(dir, "../test/runtests.jl"))
         shell: julia --color=yes --code-coverage=user --depwarn=yes --project=lib/LuxLib/test {0}
         env:
-          LUXLIB_TEST_GROUP: "all"
+          LUXLIB_TEST_GROUP: ${{ matrix.test_group }}
           LUXLIB_BLAS_BACKEND: "default"
           LUXLIB_LOAD_LOOPVEC: "true"
       - uses: julia-actions/julia-processcoverage@v1
