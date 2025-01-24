@@ -30,61 +30,93 @@ function sinusoidal_embedding(
     return cat(sinpi.(x_), cospi.(x_); dims=Val(3))
 end
 
-function residual_block(in_channels::Int, out_channels::Int)
-    return Parallel(+,
+@concrete struct ResidualBlock <: AbstractLuxWrapperLayer{:layer}
+    layer
+end
+
+function ResidualBlock(in_channels::Int, out_channels::Int)
+    return ResidualBlock(Parallel(+,
         in_channels == out_channels ? NoOpLayer() :
         Conv((1, 1), in_channels => out_channels; pad=SamePad(), cross_correlation=true),
         Chain(BatchNorm(in_channels; affine=false),
             Conv((3, 3), in_channels => out_channels, swish;
                 pad=SamePad(), cross_correlation=true),
             Conv((3, 3), out_channels => out_channels;
-                pad=SamePad(), cross_correlation=true));
-        name="ResidualBlock(in_chs=$in_channels, out_chs=$out_channels)")
+                pad=SamePad(), cross_correlation=true))
+    ))
 end
 
-function downsample_block(in_channels::Int, out_channels::Int, block_depth::Int)
-    #! format: off
-    return @compact(;
-        name="DownsampleBlock(in_chs=$in_channels, out_chs=$out_channels, block_depth=$block_depth)",
-        residual_blocks=Tuple(
-            residual_block(ifelse(i == 1, in_channels, out_channels), out_channels)
-            for i in 1:block_depth
-        ),
-        pool=MaxPool((2, 2)),
-        block_depth
-    ) do x
-    #! format: on
-        skips = (x,)
-        for i in 1:block_depth
-            skips = (skips..., residual_blocks[i](last(skips)))
-        end
-        y = pool(last(skips))
-        @return y, skips
+@concrete struct DownsampleBlock <: AbstractLuxContainerLayer{(:residual_blocks, :pool)}
+    residual_blocks
+    pool
+end
+
+function DownsampleBlock(in_channels::Int, out_channels::Int, block_depth::Int)
+    residual_blocks = Tuple([ResidualBlock(
+                                 ifelse(i == 1, in_channels, out_channels), out_channels)
+                             for i in 1:block_depth])
+    return DownsampleBlock(residual_blocks, MaxPool((2, 2)))
+end
+
+function (d::DownsampleBlock)(x::AbstractArray, ps, st::NamedTuple)
+    skips = (x,)
+    st_residual_blocks = ()
+    for i in eachindex(d.residual_blocks)
+        y, st_new = d.residual_blocks[i](
+            last(skips), ps.residual_blocks[i], st.residual_blocks[i]
+        )
+        skips = (skips..., y)
+        st_residual_blocks = (st_residual_blocks..., st_new)
     end
+    y, st_pool = d.pool(last(skips), ps.pool, st.pool)
+    st_new = (; residual_blocks=st_residual_blocks, pool=st_pool)
+    @assert typeof(st_new)==typeof(st) "$(typeof(st_new)) != $(typeof(st))"
+    return (y, skips), (; residual_blocks=st_residual_blocks, pool=st_pool)
 end
 
-function upsample_block(in_channels::Int, out_channels::Int, block_depth::Int)
-    #! format: off
-    return @compact(;
-        name="UpsampleBlock(in_chs=$in_channels, out_chs=$out_channels, block_depth=$block_depth)",
-        residual_blocks=Tuple(
-            residual_block(ifelse(i == 1, in_channels + out_channels, out_channels * 2), out_channels)
-            for i in 1:block_depth
-        ),
-        upsample=Upsample(:nearest; scale=2),
-        block_depth
-    ) do x_skips
-    #! format: on
-        x, skips = x_skips
-        x = upsample(x)
-        for i in 1:block_depth
-            x = residual_blocks[i](cat(x, skips[end - i + 1]; dims=Val(3)))
-        end
-        @return x
+@concrete struct UpsampleBlock <: AbstractLuxContainerLayer{(:residual_blocks, :upsample)}
+    residual_blocks
+    upsample
+end
+
+function UpsampleBlock(in_channels::Int, out_channels::Int, block_depth::Int)
+    residual_blocks = Tuple([ResidualBlock(
+                                 ifelse(
+                                     i == 1, in_channels + out_channels, out_channels * 2),
+                                 out_channels)
+                             for i in 1:block_depth])
+    return UpsampleBlock(residual_blocks, Upsample(:nearest; scale=2))
+end
+
+function (u::UpsampleBlock)((x, skips), ps, st::NamedTuple)
+    x, st_upsample = u.upsample(x, ps.upsample, st.upsample)
+    y, st_residual_blocks = x, ()
+    for i in eachindex(u.residual_blocks)
+        input = cat(y, skips[end - i + 1]; dims=Val(3))
+        y, st_new = u.residual_blocks[i](
+            input, ps.residual_blocks[i], st.residual_blocks[i]
+        )
+        st_residual_blocks = (st_residual_blocks..., st_new)
     end
+    st_new = (; residual_blocks=st_residual_blocks, upsample=st_upsample)
+    @assert typeof(st_new)==typeof(st) "$(typeof(st_new)) != $(typeof(st))"
+    return y, (; residual_blocks=st_residual_blocks, upsample=st_upsample)
 end
 
-function unet_model(
+@concrete struct UNet <: AbstractLuxContainerLayer{(
+    :conv_in, :conv_out, :down_blocks, :residual_blocks, :up_blocks, :upsample)}
+    upsample
+    conv_in
+    conv_out
+    down_blocks
+    residual_blocks
+    up_blocks
+    min_freq
+    max_freq
+    embedding_dims
+end
+
+function UNet(
         image_size::Dims{2}; channels=[32, 64, 96, 128],
         block_depth=2, min_freq=1.0f0, max_freq=1000.0f0, embedding_dims=32
 )
@@ -94,50 +126,58 @@ function unet_model(
         (1, 1), channels[1] => 3; init_weight=Lux.zeros32, cross_correlation=true)
 
     channel_input = embedding_dims + channels[1]
-    down_blocks = [
-        downsample_block(
-            i == 1 ? channel_input : channels[i - 1], channels[i], block_depth
-        ) for i in 1:(length(channels) - 1)
-    ]
-    residual_blocks = Chain(
-        [
-            residual_block(ifelse(i == 1, channels[end - 1], channels[end]), channels[end])
-            for i in 1:block_depth
-        ]...,
-    )
+    down_blocks = Tuple([DownsampleBlock(
+                             i == 1 ? channel_input : channels[i - 1], channels[i], block_depth)
+                         for i in 1:(length(channels) - 1)])
+    residual_blocks = Chain([ResidualBlock(
+                                 ifelse(i == 1, channels[end - 1], channels[end]),
+                                 channels[end]) for i in 1:block_depth]...)
 
     reverse!(channels)
-    up_blocks = [
-        upsample_block(in_chs, out_chs, block_depth) for
-        (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])
-    ]
+    up_blocks = Tuple([UpsampleBlock(in_chs, out_chs, block_depth)
+                       for (in_chs, out_chs) in zip(channels[1:(end - 1)], channels[2:end])])
 
-    return @compact(;
+    return UNet(
         upsample, conv_in, conv_out, down_blocks, residual_blocks, up_blocks,
-        min_freq, max_freq, embedding_dims,
-        num_blocks=(length(channels) - 1)
-    ) do x::Tuple{<:AbstractArray, <:AbstractArray}
-    #! format: on
-        noisy_images, noise_variances = x
+        min_freq, max_freq, embedding_dims
+    )
+end
 
-        @assert size(noise_variances)[1:3] == (1, 1, 1)
-        @assert size(noisy_images, 4) == size(noise_variances, 4)
+function (u::UNet)((noisy_images, noise_variances), ps, st::NamedTuple)
+    @assert size(noise_variances)[1:3] == (1, 1, 1)
+    @assert size(noisy_images, 4) == size(noise_variances, 4)
 
-        emb = upsample(
-            sinusoidal_embedding(noise_variances, min_freq, max_freq, embedding_dims)
-        )
-        x = cat(conv_in(noisy_images), emb; dims=Val(3))
-        skips_at_each_stage = ()
-        for i in 1:num_blocks
-            x, skips = down_blocks[i](x)
-            skips_at_each_stage = (skips_at_each_stage..., skips)
-        end
-        x = residual_blocks(x)
-        for i in 1:num_blocks
-            x = up_blocks[i]((x, skips_at_each_stage[end - i + 1]))
-        end
-        @return conv_out(x)
+    emb, st_upsample = u.upsample(
+        sinusoidal_embedding(noise_variances, u.min_freq, u.max_freq, u.embedding_dims),
+        ps.upsample, st.upsample)
+    tmp, st_conv_in = u.conv_in(noisy_images, ps.conv_in, st.conv_in)
+    x = cat(tmp, emb; dims=Val(3))
+
+    skips_at_each_stage = ()
+    st_down_blocks = ()
+    for i in eachindex(u.down_blocks)
+        (x, skips), st_new = u.down_blocks[i](x, ps.down_blocks[i], st.down_blocks[i])
+        skips_at_each_stage = (skips_at_each_stage..., skips)
+        st_down_blocks = (st_down_blocks..., st_new)
     end
+
+    x, st_residual_blocks = u.residual_blocks(x, ps.residual_blocks, st.residual_blocks)
+
+    st_up_blocks = ()
+    for i in eachindex(u.up_blocks)
+        x, st_new = u.up_blocks[i]((x, skips_at_each_stage[end - i + 1]),
+            ps.up_blocks[i], st.up_blocks[i])
+        st_up_blocks = (st_up_blocks..., st_new)
+    end
+
+    x, st_conv_out = u.conv_out(x, ps.conv_out, st.conv_out)
+
+    return (
+        x,
+        (; conv_in=st_conv_in, conv_out=st_conv_out,
+            down_blocks=st_down_blocks, residual_blocks=st_residual_blocks,
+            up_blocks=st_up_blocks, upsample=st_upsample)
+    )
 end
 
 function diffusion_schedules(
@@ -180,7 +220,7 @@ function DDIM(
         image_size::Dims{2}, args...;
         min_signal_rate=0.02f0, max_signal_rate=0.95f0, kwargs...
 )
-    unet = unet_model(image_size, args...; kwargs...)
+    unet = UNet(image_size, args...; kwargs...)
     bn = BatchNorm(3; affine=false, track_stats=true)
     return DDIM(unet, bn, min_signal_rate, max_signal_rate, (image_size..., 3))
 end
@@ -224,14 +264,16 @@ function generate(
 end
 
 function reverse_diffusion_single_step(
-        step::Int, step_size, unet, noisy_images, ones, min_signal_rate, max_signal_rate
+        step, step_size, unet, ps, st, noisy_images, ones, min_signal_rate, max_signal_rate
 )
     diffusion_times = ones .- step_size * step
 
     noise_rates, signal_rates = diffusion_schedules(
         diffusion_times, min_signal_rate, max_signal_rate
     )
-    pred_noises, pred_images = denoise(unet, noisy_images, noise_rates, signal_rates)
+
+    sunet = StatefulLuxLayer{true}(unet, ps, st)
+    pred_noises, pred_images = denoise(sunet, noisy_images, noise_rates, signal_rates)
 
     next_diffusion_times = diffusion_times .- step_size
     next_noisy_rates, next_signal_rates = diffusion_schedules(
@@ -252,12 +294,10 @@ function reverse_diffusion(
 
     next_noisy_images, pred_images = initial_noise, initial_noise
 
-    unet = StatefulLuxLayer{true}(model.unet, ps.unet, st.unet)
-
-    for step in 1:diffusion_steps
+    @trace for step in 1:diffusion_steps
         next_noisy_images, pred_images = reverse_diffusion_single_step(
-            step, step_size, unet, next_noisy_images, ones_dev,
-            model.min_signal_rate, model.max_signal_rate
+            step, step_size, model.unet, ps.unet, st.unet,
+            next_noisy_images, ones_dev, model.min_signal_rate, model.max_signal_rate
         )
     end
 
@@ -365,12 +405,10 @@ end
 
 Base.getindex(ds::FlowersDataset, idxs) = stack(Base.Fix1(getindex, ds), idxs)
 
-const maeloss = MAELoss()
-
 function loss_function(model, ps, st, data)
     (noises, images, pred_noises, pred_images), st = Lux.apply(model, data, ps, st)
-    noise_loss = maeloss(pred_noises, noises)
-    image_loss = maeloss(pred_images, images)
+    noise_loss = MAELoss()(pred_noises, noises)
+    image_loss = MAELoss()(pred_images, images)
     return noise_loss, st, (; image_loss, noise_loss)
 end
 
@@ -475,9 +513,11 @@ Comonicon.@main function main(;
     )
 
     @printf "[Info] Compiling generate function\n"
+    time_start = time()
     generate_compiled = @compile generate(
         model, ps, Lux.testmode(st), diffusion_steps, generate_n_images
     )
+    @printf "[Info] Compiled generate function in %.6f seconds\n" (time()-time_start)
 
     image_losses = Vector{Float32}(undef, length(data_loader))
     noise_losses = Vector{Float32}(undef, length(data_loader))
