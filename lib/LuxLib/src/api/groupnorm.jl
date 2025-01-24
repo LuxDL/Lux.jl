@@ -28,7 +28,7 @@ The normalized array is returned.
 [1] Wu, Yuxin, and Kaiming He. "Group normalization." Proceedings of the European conference
     on computer vision (ECCV). 2018.
 """
-function groupnorm(x::AbstractArray{<:Real, N}, scale::Optional{<:AbstractVector},
+function groupnorm(x::AbstractArray{<:Number, N}, scale::Optional{<:AbstractVector},
         bias::Optional{<:AbstractVector}, groups::Int, σ::F=identity,
         epsilon=default_epsilon(x)) where {F, N}
     assert_valid_groupnorm_arguments(x, scale, bias, groups)
