@@ -3,8 +3,8 @@ module MLDataDevicesChainRulesCoreExt
 using Adapt: Adapt
 using ChainRulesCore: ChainRulesCore, NoTangent, ProjectTo, @non_differentiable
 
-using MLDataDevices: AbstractDevice, UnknownDevice, get_device, get_device_type,
-                     reactant_device, cpu_device, gpu_device
+using MLDataDevices: AbstractDevice, MLDataDevices, UnknownDevice, get_device,
+                     get_device_type, reactant_device, cpu_device, gpu_device
 
 @non_differentiable get_device(::Any...)
 @non_differentiable get_device_type(::Any...)
@@ -28,5 +28,8 @@ function ChainRulesCore.rrule(
         return Adapt.adapt_storage(to, x), ∇adapt_storage
     end
 end
+
+MLDataDevices.isleaf(::ChainRulesCore.ZeroTangent) = true
+MLDataDevices.isleaf(::ChainRulesCore.NoTangent) = true
 
 end

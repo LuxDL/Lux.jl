@@ -47,6 +47,7 @@ for type in (:Gradient, :Jacobian)
             end
 
             $(rrule_call)
+            res = Utils.recursive_unthunk(res)
             ∇forwarddiff_ad = let pb_f = pb_f
                 Δ -> begin
                     ∂x, ∂y = pb_f(tuple(Utils.recursive_unthunk(Δ)))[(end - 1):end]

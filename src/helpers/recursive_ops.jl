@@ -39,6 +39,8 @@ recursive_eltype(x::AbstractArray, ::False) = eltype(x)
 recursive_eltype(x::AbstractArray, ::True) = Utils.eltype(x)
 recursive_eltype(x::Number, ::False) = eltype(x)
 recursive_eltype(x::Number, ::True) = Utils.eltype(x)
+recursive_eltype(::CRC.ZeroTangent, ::StaticBool) = Bool
+recursive_eltype(::CRC.NoTangent, ::StaticBool) = Bool
 recursive_eltype(::Union{Nothing, Missing, Val}, ::StaticBool) = Bool
 function recursive_eltype(x::Union{Tuple, NamedTuple}, val::StaticBool)
     leaves = x isa Tuple ? x : values(x)
