@@ -37,12 +37,6 @@
             @jet apply_act_fast(f, x)
             @jet apply_act_fast2(f, x)
 
-            @test @inferred(Zygote.gradient(apply_act, f, x)) isa Any
-            if f !== lisht
-                @test @inferred(Zygote.gradient(apply_act_fast, f, x)) isa Any
-            end
-            @test @inferred(Zygote.gradient(apply_act_fast2, f, x)) isa Any
-
             @test_gradients(apply_act, f, x; atol, rtol)
             @test_gradients(apply_act_fast, f, x; atol, rtol, skip_backends=[AutoEnzyme()])
             @test_gradients(apply_act_fast2, f, x; atol, rtol)

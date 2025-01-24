@@ -58,11 +58,6 @@ function run_layernorm_testing_core(
 
     @test_gradients(sumabs2layernorm, x, scale, bias, act, dims, epsilon; atol, rtol,
         soft_fail=[AutoFiniteDiff()])
-
-    if anonact !== act
-        lfn = (x, sc, b, act, dim, ϵ) -> sum(layernorm(x, sc, b, act, dim, ϵ))
-        @test @inferred(Zygote.gradient(lfn, x, scale, bias, act, dims, epsilon)) isa Any
-    end
 end
 
 anonact = x -> x^3

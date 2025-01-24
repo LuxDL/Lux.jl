@@ -12,6 +12,7 @@ using Static: Static, StaticBool, StaticInteger, StaticSymbol
 using StaticArraysCore: SMatrix, SVector
 
 using LuxCore: LuxCore, AbstractLuxLayer
+using MLDataDevices: MLDataDevices
 using NNlib: NNlib
 
 const CRC = ChainRulesCore
@@ -231,11 +232,7 @@ end
 calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
 
-unthunk_leaf(x) = Functors.isleaf(x)
-unthunk_leaf(x::CRC.AbstractThunk) = true
-unthunk_leaf(::CRC.AbstractTangent) = true
-
-recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=unthunk_leaf)
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 end
 

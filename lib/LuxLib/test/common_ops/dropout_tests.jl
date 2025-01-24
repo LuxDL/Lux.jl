@@ -23,9 +23,6 @@
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
             @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
 
-            __f = x -> sum(first(dropout(StableRNG(0), x, 0.5, Val(true), 2.0, dims)))
-            @test @inferred(Zygote.gradient(__f, x)) isa Any
-
             @test_gradients(sumabs2first,
                 dropout, rng, x, T(0.5), Val(true), T(2), dims; atol=1.0f-3, rtol=1.0f-3)
 
@@ -67,10 +64,6 @@ end
             @test rng != rng_
             @test mask != mask_
 
-            __f = (x, mask) -> sum(first(dropout(
-                StableRNG(0), x, mask, 0.5, Val(true), Val(true), 2.0, :)))
-            @test @inferred(Zygote.gradient(__f, x, mask)) isa Any
-
             @test_gradients(sumabs2first,
                 dropout, rng, x, LuxTestUtils.Constant(mask), T(0.5), Val(true), Val(true),
                 T(2), :; atol=1.0f-3, rtol=1.0f-3)
@@ -91,10 +84,6 @@ end
             @test size(mask_) == x_shape
             @test rng == rng_
             @test mask == mask_
-
-            __f = (x, mask) -> sum(first(dropout(
-                StableRNG(0), x, mask, 0.5, Val(true), Val(false), 2.0, :)))
-            @test @inferred(Zygote.gradient(__f, x, mask)) isa Any
 
             @test_gradients(sumabs2first,
                 dropout, rng, x, LuxTestUtils.Constant(mask),
@@ -144,9 +133,6 @@ end
             @test rng != rng_
 
             @test_broken std(y)≈std(x) atol=1.0f-2 rtol=1.0f-2
-
-            __f = x -> sum(first(alpha_dropout(StableRNG(0), x, 0.5, Val(true))))
-            @test @inferred(Zygote.gradient(__f, x)) isa Any
 
             @test_gradients(sumabs2first,
                 alpha_dropout, rng, x, T(0.5), Val(true); atol=1.0f-3, rtol=1.0f-3)

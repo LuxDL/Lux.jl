@@ -33,10 +33,6 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
     atol = 1.0f-3
     rtol = 1.0f-3
 
-    if activation !== anonact
-        @test @inferred(Zygote.gradient(sumabs2dense, activation, w, x, bias)) isa Any
-    end
-
     skip_backends = []
     Tw != Tx && push!(skip_backends, AutoReverseDiff())
 

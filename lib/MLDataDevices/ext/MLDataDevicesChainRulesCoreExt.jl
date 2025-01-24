@@ -29,7 +29,7 @@ function ChainRulesCore.rrule(
     end
 end
 
-MLDataDevices.isleaf(::ChainRulesCore.ZeroTangent) = true
-MLDataDevices.isleaf(::ChainRulesCore.NoTangent) = true
+MLDataDevices.isleaf(::ChainRulesCore.AbstractTangent) = true
+MLDataDevices.isleaf(::ChainRulesCore.AbstractThunk) = true
 
 end
