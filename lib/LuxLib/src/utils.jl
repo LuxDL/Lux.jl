@@ -208,7 +208,7 @@ expand_batchdim(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
 
 function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
     ∇expand_batchdim = @closure Δ -> begin
-        return ∂∅, CRC.@thunk(CRC.ProjectTo(x)(proj_x(view(recursive_unthunk(Δ), :, :, 1))))
+        return ∂∅, CRC.@thunk(CRC.ProjectTo(x)(view(recursive_unthunk(Δ), :, :, 1)))
     end
     return expand_batchdim(x), ∇expand_batchdim
 end
