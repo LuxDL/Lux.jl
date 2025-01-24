@@ -10,12 +10,6 @@ Quoting the Reactant.jl Readme:
 > removed. The benefits of this approach is immediately making all such code available for
 > advanced optimization with little developer effort.
 
-!!! danger "Experimental"
-
-    Reactant compilation is a very new feature and is currently experimental. Certain models
-    might not be compilable yet, but we are actively working on it. Open an issue if you
-    encounter any problems.
-
 ```@example compile_lux_model
 using Lux, Reactant, Enzyme, Random, Zygote
 using Functors, Optimisers, Printf

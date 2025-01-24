@@ -80,7 +80,7 @@ ps, st = Lux.setup(StableRNG(0), model)
 x = randn(StableRNG(0), Float32, 2, 10)
 y = randn(StableRNG(11), Float32, 2, 10)
 
-loss_function1(model, x, ps, st, y)
+loss_function1(model, x, ps, Lux.testmode(st), y)
 ```
 
 So our loss function works, let's take the gradient (forward diff doesn't nest nicely here):
@@ -106,12 +106,12 @@ nothing; # hide
 That's pretty good, of course you will have some error from the finite differences
 calculation.
 
-### Using Batched Jacobian for Multiple Inputs 
+### Using Batched Jacobian for Multiple Inputs
 
 Notice that in this example the Jacobian `J` consists on the full matrix of derivatives of `smodel` with respect
-the different inputs in `x`. In many cases, we are interested in computing the Jacobian with respect to each 
-input individually, avoiding the unnecessary calculation of zero entries of the Jacobian. This can be achieved with 
-[`batched_jacobian`](@ref) to parse the calculation of the Jacobian per each single input. Using the same example 
+the different inputs in `x`. In many cases, we are interested in computing the Jacobian with respect to each
+input individually, avoiding the unnecessary calculation of zero entries of the Jacobian. This can be achieved with
+[`batched_jacobian`](@ref) to parse the calculation of the Jacobian per each single input. Using the same example
 from the previous section:
 
 ```@example nested_ad
@@ -134,9 +134,9 @@ end
 loss_function_batched(model, x, ps, st, y)
 ```
 
-Notice that in this last example we removed `BatchNorm()` from the neural network. This is done so outputs corresponding 
-to differern inputs don't have an algebraic dependency due to the batch normalization happening in the neural network. 
-We can now verify again the value of the Jacobian: 
+Notice that in this last example we removed `BatchNorm()` from the neural network. This is done so outputs corresponding
+to different inputs don't have an algebraic dependency due to the batch normalization happening in the neural network.
+We can now verify again the value of the Jacobian:
 
 ```@example nested_ad
 ∂x_fd = FiniteDiff.finite_difference_gradient(x -> loss_function_batched(model, x, ps, st, y), x)
@@ -150,8 +150,8 @@ println("∞-norm(∂ps_b - ∂ps_fd): ", norm(ComponentArray(∂ps_b) .- ∂ps_
 @assert norm(ComponentArray(∂ps_b) .- ∂ps_fd, Inf) < 1e-2 # hide
 ```
 
-In this example, it is important to remark that now `batched_jacobian` returns a 3D array with the Jacobian calculation 
-for each independent input value in `x`. 
+In this example, it is important to remark that now `batched_jacobian` returns a 3D array with the Jacobian calculation
+for each independent input value in `x`.
 
 ## Loss Function contains Gradient Computation
 

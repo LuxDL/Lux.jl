@@ -56,14 +56,13 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
         opmode::AbstractInternalArrayOpMode, σ::F, x::AbstractArray{xT, N},
         bias::AbstractVector) where {F, N, xT}
     T = concrete_bias_act_output_eltype(σ, x, bias)
-    𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
     if unsafe_known(activation_intermediate_not_needed(σ, T))
         y = bias_activation(opmode, σ, x, bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, NotaNumber())
-            ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, NotaNumber()))
+            ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
+            return ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
         return y, ∇bias_activation_no_intermediate
     end
@@ -73,9 +72,9 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
         bias_add!(tmp, opmode, x, bias)
         y = activation(opmode, σ, tmp)
         ∇bias_activation_rrule = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, tmp)
-            ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
+            ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
+            return ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
         return y, ∇bias_activation_rrule
     end
@@ -84,7 +83,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation),
         cfg, broadcast_bias_activation_generic, σ, x, reshape_bias(x, bias))
     ∇bias_activation_rrule = @closure Δ -> begin
         _, _, ∂x, ∂bias = ∇broadcast(Δ)
-        return ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(vec(∂bias))
+        return ∂∅, ∂∅, ∂∅, CRC.ProjectTo(x)(∂x), CRC.ProjectTo(bias)(vec(∂bias))
     end
     return y, ∇bias_activation_rrule
 end
@@ -130,14 +129,13 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         opmode::AbstractInternalArrayOpMode, ::True, σ::F,
         x::AbstractArray{xT, N}, bias::AbstractVector) where {F, N, xT}
     T = concrete_bias_act_output_eltype(σ, x, bias)
-    𝒫x, 𝒫bias = CRC.ProjectTo(x), CRC.ProjectTo(bias)
 
     if unsafe_known(activation_intermediate_not_needed(σ, T))
         bias_activation!(x, opmode, σ, x, bias)
         ∇bias_activation_no_intermediate = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), x, σ, NotaNumber())
-            ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), x, σ, NotaNumber()))
+            ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
+            return ∂∅, ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
         return x, ∇bias_activation_no_intermediate
     end
@@ -145,9 +143,9 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
     if unsafe_known(activation_has_rrule(σ, T))
         y, tmp = bias_activation_cached!!(σ, x, bias)
         ∇bias_activation_rrule = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, tmp)
-            ∂b = ∇bias_add(bias, ∂x)
-            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
+            ∂x = CRC.ProjectTo(x)(∇activation(recursive_unthunk(Δ), y, σ, tmp))
+            ∂b = CRC.@thunk CRC.ProjectTo(bias)(∇bias_add(bias, ∂x))
+            return ∂∅, ∂∅, ∂∅, ∂∅, ∂x, ∂b
         end
         return y, ∇bias_activation_rrule
     end
@@ -156,7 +154,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(bias_activation!!
         cfg, bias_activation, opmode, σ, x, bias)
     ∇bias_activation_fallback = @closure Δ -> begin
         _, _, _, ∂x, ∂b = ∇bias_activation_from_ad(Δ)
-        return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x(∂x), 𝒫bias(∂b)
+        return ∂∅, ∂∅, ∂∅, ∂∅, CRC.ProjectTo(x)(∂x), CRC.ProjectTo(bias)(∂b)
     end
     return res, ∇bias_activation_fallback
 end

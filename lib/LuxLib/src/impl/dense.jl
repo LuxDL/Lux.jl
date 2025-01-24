@@ -48,7 +48,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:HasReverseMode}, ::typeof(fused_dense),
     if unsafe_known(activation_intermediate_not_needed(act, T))
         y = fused_dense(opmode, act, weight, x, b)
         ∇fused_dense_no_intermediate = @closure Δ -> begin
-            ∂y = ∇activation(CRC.unthunk(Δ), y, act, NotaNumber())
+            ∂y = ∇activation(recursive_unthunk(Δ), y, act, NotaNumber())
             ∂w, ∂x, ∂b = ∇matmul_bias(∂y, weight, x, b)
             return ∂∅, ∂∅, ∂∅, 𝒫weight(∂w), 𝒫x(∂x), 𝒫b(∂b)
         end
@@ -59,7 +59,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:HasReverseMode}, ::typeof(fused_dense),
         y = matmuladd(weight, x, b)
         z = activation(opmode, act, y)
         ∇fused_dense_cached = @closure Δ -> begin
-            ∂y = ∇activation(CRC.unthunk(Δ), z, act, y)
+            ∂y = ∇activation(recursive_unthunk(Δ), z, act, y)
             ∂w, ∂x, ∂b = ∇matmul_bias(∂y, weight, x, b)
             return ∂∅, ∂∅, ∂∅, 𝒫weight(∂w), 𝒫x(∂x), 𝒫b(∂b)
         end
@@ -85,7 +85,7 @@ function CRC.rrule(
     𝒫weight, 𝒫x, 𝒫b = CRC.ProjectTo(weight), CRC.ProjectTo(x), CRC.ProjectTo(b)
 
     ∇fused_dense = @closure Δ -> begin
-        ∂y = ∇activation(CRC.unthunk(Δ), z, NNlib.gelu, y)
+        ∂y = ∇activation(recursive_unthunk(Δ), z, NNlib.gelu, y)
         ∂w, ∂x, ∂b = ∇matmul_bias(∂y, weight, x, b)
         return ∂∅, ∂∅, ∂∅, 𝒫weight(∂w), 𝒫x(∂x), 𝒫b(∂b)
     end

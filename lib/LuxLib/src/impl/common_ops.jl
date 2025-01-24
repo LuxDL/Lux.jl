@@ -42,14 +42,16 @@ end
 function CRC.rrule(::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool=true)
     μ, σ² = mean_var(x; dims, corrected)
 
-    𝒫x = CRC.ProjectTo(x)
     ∇mean_var = @closure Δ -> begin
-        ∂μ, ∂σ² = CRC.unthunk(Δ)
-        n = dims_denom(x, dims)
-        ∂x₁ = unsum(x, CRC.unthunk(∂μ) / n, dims)
-        pre = 2 // (dims_denom(x, dims) - corrected)
-        ∂x₂ = pre .* CRC.unthunk(∂σ²) .* (x .- μ)
-        return NoTangent(), 𝒫x(add!!(∂x₁, ∂x₂))
+        ∂x = CRC.@thunk begin
+            ∂μ, ∂σ² = recursive_unthunk(Δ)
+            n = dims_denom(x, dims)
+            ∂x₁ = unsum(x, recursive_unthunk(∂μ) / n, dims)
+            pre = 2 // (dims_denom(x, dims) - corrected)
+            ∂x₂ = pre .* recursive_unthunk(∂σ²) .* (x .- μ)
+            return CRC.ProjectTo(x)(add!!(∂x₁, ∂x₂))
+        end
+        return NoTangent(), ∂x
     end
 
     return (μ, σ²), ∇mean_var

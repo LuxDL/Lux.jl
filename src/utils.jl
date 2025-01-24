@@ -6,12 +6,13 @@ using ChainRulesCore: ChainRulesCore, @non_differentiable, NoTangent
 using ConcreteStructs: @concrete
 using EnzymeCore: EnzymeRules
 using ForwardDiff: Dual
-using Functors: fmapstructure
+using Functors: Functors, fmapstructure
 using Random: AbstractRNG
 using Static: Static, StaticBool, StaticInteger, StaticSymbol
 using StaticArraysCore: SMatrix, SVector
 
 using LuxCore: LuxCore, AbstractLuxLayer
+using MLDataDevices: MLDataDevices
 using NNlib: NNlib
 
 const CRC = ChainRulesCore
@@ -111,7 +112,10 @@ vec(x::AbstractArray) = Base.vec(x)
 vec(::Nothing) = nothing
 
 function CRC.rrule(::typeof(vec), x::AbstractArray)
-    return Base.vec(x), Δ -> (NoTangent(), reshape(CRC.unthunk(Δ), size(x)))
+    return (
+        Base.vec(x),
+        Δ -> (NoTangent(), CRC.@thunk(reshape(recursive_unthunk(Δ), size(x))))
+    )
 end
 
 function sample_replicate(rng::AbstractRNG)
@@ -227,6 +231,8 @@ function calculate_gain(::typeof(NNlib.leakyrelu), ::Nothing)
 end
 calculate_gain(::typeof(NNlib.leakyrelu), x) = typeof(x)(√(2 / (1 + x^2)))
 calculate_gain(::typeof(NNlib.selu), _) = 3.0f0 / 4
+
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 end
 

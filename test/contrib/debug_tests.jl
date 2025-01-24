@@ -63,8 +63,12 @@ end
     function CRC.rrule(::typeof(offending_layer), x)
         y = offending_layer(x)
         function ∇offending_layer(Δ)
-            Δ[1:1] .= NaN
-            return NoTangent(), Δ
+            problematicΔ = CRC.@thunk begin
+                Δ = CRC.unthunk(Δ)
+                Δ[1:1] .= NaN
+                return Δ
+            end
+            return NoTangent(), problematicΔ
         end
         return y, ∇offending_layer
     end

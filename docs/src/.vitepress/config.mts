@@ -365,10 +365,6 @@ export default defineConfig({
                 text: "Distributed Training",
                 link: "/manual/distributed_utils",
               },
-              {
-                text: "Lux In GPU Kernels",
-                link: "/manual/nn_inside_gpu_kernels",
-              },
             ],
           },
         ],

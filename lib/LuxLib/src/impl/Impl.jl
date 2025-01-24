@@ -30,7 +30,7 @@ using ..Utils: Utils, NotaNumber, batchview, concrete_bias_act_output_eltype, co
                maybe_reduce_BLAS_threads, ofeltype_array, only_derivative, remove_tracking,
                reset_BLAS_threads, run_ka_kernel, safe_eltype, safe_vec, safe_warning,
                unsafe_known, unrolled_mapreduce, can_loopvec_args, is_extension_loaded,
-               @enzyme_alternative
+               recursive_unthunk, @enzyme_alternative
 using ..Traits: activation_intermediate_not_needed, activation_has_rrule, is_mutable_array,
                 fuse_cpu_activation
 using ..System: explicit_blas_loaded, use_octavian, fits_in_l1cache, fits_in_l2cache,

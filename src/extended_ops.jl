@@ -15,7 +15,7 @@ using Static: StaticBool, StaticSymbol, known
 
 using MLDataDevices: get_device_type, AbstractGPUDevice, ReactantDevice, AbstractDevice
 
-using ..Utils: Utils
+using ..Utils: Utils, recursive_unthunk
 
 const CRC = ChainRulesCore
 
@@ -115,21 +115,24 @@ function eachslice(::Type{<:AbstractDevice}, x::AbstractArray, ::Val{dims}) wher
     return [selectdim(x, dims, i) for i in axes(x, dims)]
 end
 
-function ∇eachslice(Δ′, x::AbstractArray, ::Val{dims}) where {dims}
-    Δs = CRC.unthunk(Δ′)
+function ∇eachslice(Δs, x::AbstractArray, ::Val{dims}) where {dims}
     idx = findfirst(Base.Fix2(isa, AbstractArray), Δs)
-    idx === nothing && return zero.(x)
-    Δ = similar(x)
-    fill!(Δ, false)
-    for i in axes(x, dims)
-        Δᵢ = selectdim(Δ, dims, i)
-        copyto!(Δᵢ, Δs[i])
+    idx === nothing && return CRC.ZeroTangent()
+    return CRC.@thunk begin
+        Δ = similar(x)
+        fill!(Δ, false)
+        for i in axes(x, dims)
+            copyto!(selectdim(Δ, dims, i), Δs[i])
+        end
+        return CRC.ProjectTo(x)(Δ)
     end
-    return CRC.ProjectTo(x)(Δ)
 end
 
 function CRC.rrule(::typeof(eachslice), x::AbstractArray, d::Val{dims}) where {dims}
-    ∇eachslice_internal = @closure Δ -> (NoTangent(), ∇eachslice(Δ, x, d), NoTangent())
+    ∇eachslice_internal = @closure Δ -> begin
+        ∂x = CRC.@thunk ∇eachslice(Utils.recursive_unthunk(Δ), x, d)
+        return NoTangent(), ∂x, NoTangent()
+    end
     return eachslice(x, d), ∇eachslice_internal
 end
 
@@ -201,7 +204,7 @@ end
 
 function CRC.rrule(::typeof(multigate), x::AbstractArray, c::Val{N}) where {N}
     ∇multigate_internal = @closure Δ -> (
-        NoTangent(), @thunk(∇multigate(CRC.unthunk(Δ), x, c)), NoTangent())
+        NoTangent(), @thunk(∇multigate(recursive_unthunk(Δ), x, c)), NoTangent())
     return multigate(x, c), ∇multigate_internal
 end
 

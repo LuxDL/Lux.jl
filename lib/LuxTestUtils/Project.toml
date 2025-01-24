@@ -1,7 +1,7 @@
 name = "LuxTestUtils"
 uuid = "ac9de150-d08f-4546-94fb-7472b5760531"
 authors = ["Avik Pal <avikpal@mit.edu>"]
-version = "1.7.0"
+version = "1.7.1"
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -28,7 +28,7 @@ MLDataDevices = {path = "../MLDataDevices"}
 ADTypes = "1.10"
 ArrayInterface = "7.17.1"
 ChainRulesCore = "1.24.0"
-ComponentArrays = "0.15.18"
+ComponentArrays = "0.15.22"
 DispatchDoctor = "0.4.12"
 Enzyme = "0.13.16"
 FiniteDiff = "2.23.1"
@@ -40,5 +40,5 @@ Optimisers = "0.3.4, 0.4"
 ReverseDiff = "1.15.3"
 Test = "1.10"
 Tracker = "0.2.36"
-Zygote = "0.6.70"
+Zygote = "0.6.70, 0.7"
 julia = "1.10"

@@ -1,4 +1,5 @@
 function extract_partials(::Type{Tag}, x, i) where {Tag}
+    x = Utils.recursive_unthunk(x)
     x isa ForwardDiff.Dual && return ForwardDiff.partials(Tag, x, i)
     if x isa AbstractArray
         bfn(xᵢ, iᵢ) = ForwardDiff.partials(Tag, xᵢ, iᵢ)

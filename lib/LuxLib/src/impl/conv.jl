@@ -179,7 +179,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(fused_conv),
     z, ∇bias_activation = CRC.rrule_via_ad(cfg, bias_activation, act, y, bias)
     ∇fused_conv_cached = @closure Δ -> begin
         old_threads = maybe_reduce_BLAS_threads(weight)
-        Δ = NNlib.colmajor(Δ)
+        Δ = NNlib.colmajor(recursive_unthunk(Δ))
         _, _, ∂y, ∂b = ∇bias_activation(Δ)
         ∂w, ∂x, _ = ∇conv_bias(∂y, ∂b, weight, x, bias, cdims)
         reset_BLAS_threads(old_threads)
@@ -196,7 +196,7 @@ CRC.@opt_out rrule(
 
 function ∇fused_conv(Δ′, weight, x, bias, cdims::ConvDims, z, tmp, 𝒫w, 𝒫x, 𝒫b, act)
     old_threads = maybe_reduce_BLAS_threads(weight)
-    Δ = CRC.unthunk(NNlib.colmajor(Δ′))
+    Δ = NNlib.colmajor(recursive_unthunk(Δ′))
     ∂y = ∇activation(Δ, z, act, tmp)
     ∂w, ∂x, ∂b = ∇conv_bias(∂y, weight, x, bias, cdims)
     reset_BLAS_threads(old_threads)

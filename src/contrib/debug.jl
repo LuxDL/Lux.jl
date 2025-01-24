@@ -114,7 +114,7 @@ function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(debug_lay
         nan_check_backward && check_nan_and_throw(Δ, "pullback input", layer, location)
 
         gs = try
-            ∇debug_layer_internal(Δ)
+            Utils.recursive_unthunk(∇debug_layer_internal(Δ))
         catch
             error_check &&
                 @error "Backward Pass for Layer $(layer) failed!! This layer is present at location $(location)."

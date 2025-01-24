@@ -47,11 +47,11 @@ for type in (:Gradient, :Jacobian)
             end
 
             $(rrule_call)
+            res = Utils.recursive_unthunk(res)
             ∇forwarddiff_ad = let pb_f = pb_f
                 Δ -> begin
-                    ∂x, ∂y = pb_f(tuple(Δ))[(end - 1):end]
-                    𝒫x, 𝒫y = CRC.ProjectTo(x), CRC.ProjectTo(y)
-                    return (ntuple(Returns(NoTangent()), 4)..., 𝒫x(∂x), 𝒫y(∂y))
+                    ∂x, ∂y = pb_f(tuple(Utils.recursive_unthunk(Δ)))[(end - 1):end]
+                    return (ntuple(Returns(NoTangent()), 4)..., ∂x, ∂y)
                 end
             end
             return $(ret_expr), ∇forwarddiff_ad

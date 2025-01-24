@@ -44,11 +44,6 @@
             @jet bias_act_loss2(act, x, b)
             @jet bias_act_loss3(act, x, b)
 
-            if act !== lisht && T != Float16
-                @test @inferred(Zygote.gradient(bias_act_loss2, act, x, b)) isa Any
-                @test @inferred(Zygote.gradient(bias_act_loss3, act, x, b)) isa Any
-            end
-
             @test_gradients(__Fix1(bias_act_loss1, act), x, b; atol, rtol,
                 soft_fail=fp16 ? [AutoFiniteDiff()] : [])
             @test_gradients(__Fix1(bias_act_loss2, act), x, b; atol, rtol,

@@ -148,14 +148,13 @@ use_threaded_batched_matmul(::Type{CPUDevice}) = true
 
 function CRC.rrule(::typeof(batched_matmul), x::AbstractArray{xT, 3},
         y::AbstractArray{yT, 3}) where {xT, yT}
-    ∇batched_matmul = @closure Δ_ -> begin
-        Δ = CRC.unthunk(Δ_)
+    ∇batched_matmul = @closure Δ -> begin
         ∂x = CRC.@thunk begin
-            tmp = batched_matmul(Δ, NNlib.batched_adjoint(y))
+            tmp = batched_matmul(recursive_unthunk(Δ), NNlib.batched_adjoint(y))
             size(x, 3) == 1 ? sum(tmp; dims=3) : tmp
         end
         ∂y = CRC.@thunk begin
-            tmp = batched_matmul(NNlib.batched_adjoint(x), Δ)
+            tmp = batched_matmul(NNlib.batched_adjoint(x), recursive_unthunk(Δ))
             size(y, 3) == 1 ? sum(tmp; dims=3) : tmp
         end
         return ∂∅, ∂x, ∂y

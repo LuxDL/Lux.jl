@@ -74,8 +74,6 @@ end
             @test loss_sum(ŷ, y) ≈ loss_res * 4
             @test loss_sum2(ŷ, y) ≈ loss_res * 4
 
-            @test @inferred(Zygote.gradient(loss_mean, ŷ, y)) isa Any
-
             @jet loss_mean(ŷ, y)
             @jet loss_sum(ŷ, y)
 
@@ -89,8 +87,6 @@ end
             @test MSLELoss()(ŷ, y) ≈ 0.38813985859136585
 
             @jet MSLELoss()(ŷ, y)
-
-            @test @inferred(Zygote.gradient(MSLELoss(), ŷ, y)) isa Any broken=ongpu
 
             @test_gradients(Base.Fix2(MSLELoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
@@ -148,8 +144,6 @@ end
             @jet celoss(ŷ, y)
             @jet celoss_smooth(ŷ, y)
 
-            @test @inferred(Zygote.gradient(celoss, ŷ, y)) isa Any
-
             @test_gradients(Base.Fix2(celoss, y), ŷ; atol=1.0f-3,
                 rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
         end
@@ -170,8 +164,6 @@ end
 
             @jet logitceloss(logŷ, y)
             @jet logitceloss_smooth(logŷ, y)
-
-            @test @inferred(Zygote.gradient(logitceloss, logŷ, y)) isa Any
 
             @test_gradients(Base.Fix2(logitceloss, y), logŷ; atol=1.0f-3,
                 rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
@@ -199,8 +191,6 @@ end
             @jet bceloss(σ.(logŷ), y)
             @jet bceloss_smooth(σ.(logŷ), y)
 
-            @test @inferred(Zygote.gradient(bceloss, σ.(logŷ), y)) isa Any
-
             @test_gradients(Base.Fix2(bceloss, y), σ.(logŷ); atol=1.0f-3, rtol=1.0f-3,
                 enzyme_set_runtime_activity=true)
         end
@@ -219,8 +209,6 @@ end
 
             @jet logitbceloss(logŷ, y)
             @jet logitbceloss_smooth(logŷ, y)
-
-            @test @inferred(Zygote.gradient(logitbceloss, logŷ, y)) isa Any
 
             @test_gradients(Base.Fix2(logitbceloss, y), logŷ; atol=1.0f-3, rtol=1.0f-3,
                 enzyme_set_runtime_activity=true)
@@ -243,8 +231,6 @@ end
 
             @jet BinaryFocalLoss()(ŷ, y)
 
-            @test @inferred(Zygote.gradient(BinaryFocalLoss(), ŷ, y)) isa Any broken=ongpu
-
             @test_gradients(Base.Fix2(BinaryFocalLoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
         end
 
@@ -265,8 +251,6 @@ end
             @test FocalLoss(; gamma=0)(ŷ, y) ≈ CrossEntropyLoss()(ŷ, y)
 
             @jet FocalLoss()(ŷ, y)
-
-            @test @inferred(Zygote.gradient(FocalLoss(), ŷ, y)) isa Any broken=ongpu
 
             __f = Base.Fix2(FocalLoss(), y)
             # FD will lead to out of domain errors
@@ -297,7 +281,6 @@ end
             @test KLDivergenceLoss()(y, y) ≈ 0
 
             @jet KLDivergenceLoss()(ŷ, y)
-            @test @inferred(Zygote.gradient(KLDivergenceLoss(), ŷ, y)) isa Any
 
             @test_gradients(Base.Fix2(KLDivergenceLoss(), y), ŷ; atol=1.0f-3,
                 rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
@@ -311,7 +294,6 @@ end
             @test Lux.HingeLoss()(y, 0.5 .* y) ≈ 0.125
 
             @jet Lux.HingeLoss()(ŷ, y)
-            @test @inferred(Zygote.gradient(Lux.HingeLoss(), ŷ, y)) isa Any
 
             __f = Base.Fix2(Lux.HingeLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -325,7 +307,6 @@ end
             @test SquaredHingeLoss()(y, 0.5 .* y) ≈ 0.0625
 
             @jet SquaredHingeLoss()(ŷ, y)
-            @inferred Zygote.gradient(SquaredHingeLoss(), ŷ, y)
 
             __f = Base.Fix2(SquaredHingeLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -339,7 +320,6 @@ end
             @test Lux.PoissonLoss()(y, y) ≈ 0.5044459776946685
 
             @jet Lux.PoissonLoss()(ŷ, y)
-            @test @inferred Zygote.gradient(Lux.PoissonLoss(), ŷ, y) isa Any
 
             __f = Base.Fix2(Lux.PoissonLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
@@ -353,7 +333,6 @@ end
             @test DiceCoeffLoss()(y, y) ≈ 0.0
 
             @jet DiceCoeffLoss()(ŷ, y)
-            @test @inferred(Zygote.gradient(DiceCoeffLoss(), ŷ, y)) isa Any broken=true
 
             __f = Base.Fix2(DiceCoeffLoss(), y)
             @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3,

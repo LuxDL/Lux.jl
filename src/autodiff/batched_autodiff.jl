@@ -38,7 +38,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian_
         cfg, autodiff_jacobian, jac_fn, grad_fn, f, x, y)
     ∇batched_jacobian = let ∇autodiff_jacobian = ∇autodiff_jacobian
         Δ -> begin
-            _, _, _, _, ∂x, ∂y = ∇autodiff_jacobian(tuple(CRC.unthunk(Δ)))
+            _, _, _, _, ∂x, ∂y = ∇autodiff_jacobian(tuple(Utils.recursive_unthunk(Δ)))
             return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
         end
     end
@@ -61,7 +61,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(batched_jacobian_
         cfg, batched_jacobian_internal, f̂, backend, x, nothing)
     ∇batched_jacobian = let ∇batched_jacobian_full = ∇batched_jacobian_full
         Δ -> begin
-            _, _, _, ∂x, _ = ∇batched_jacobian_full(CRC.unthunk(Δ))
+            ∂x = ∇batched_jacobian_full(Utils.recursive_unthunk(Δ))[4]
             return NoTangent(), NoTangent(), NoTangent(), ∂x
         end
     end

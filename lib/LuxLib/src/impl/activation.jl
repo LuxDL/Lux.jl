@@ -30,8 +30,9 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
         activation!(x, opmode, σ, x)
         𝒫x_no_intermediate = CRC.ProjectTo(x)
         ∇activation_no_intermediate_rrule = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), x, σ, NotaNumber())
-            return ∂∅, ∂∅, ∂∅, ∂∅, 𝒫x_no_intermediate(∂x)
+            ∂x = CRC.@thunk 𝒫x_no_intermediate(∇activation(
+                recursive_unthunk(Δ), x, σ, NotaNumber()))
+            return ∂∅, ∂∅, ∂∅, ∂∅, ∂x
         end
         return x, ∇activation_no_intermediate_rrule
     end
@@ -40,16 +41,16 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
         y = activation(opmode, σ, x)
         𝓟x_cached = CRC.ProjectTo(x)
         ∇activation_rrule = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, x)
-            return ∂∅, ∂∅, ∂∅, ∂∅, 𝓟x_cached(∂x)
+            ∂x = CRC.@thunk 𝓟x_cached(∇activation(recursive_unthunk(Δ), y, σ, x))
+            return ∂∅, ∂∅, ∂∅, ∂∅, ∂x
         end
         return y, ∇activation_rrule
     end
 
     res, ∇activation_from_ad = CRC.rrule_via_ad(cfg, activation, opmode, σ, x)
     ∇activation_fallback = @closure Δ -> begin
-        _, ∂opmode, ∂σ, ∂x = ∇activation_from_ad(Δ)
-        return ∂∅, ∂opmode, ∂∅, ∂σ, ∂x
+        ∂x = CRC.@thunk ∇activation_from_ad(Δ)[4]
+        return ∂∅, ∂∅, ∂∅, ∂∅, ∂x
     end
     return res, ∇activation_fallback
 end
@@ -71,8 +72,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
         y = activation(opmode, σ, x)
         𝓟x = CRC.ProjectTo(x)
         ∇activation_rrule = @closure Δ -> begin
-            ∂x = ∇activation(CRC.unthunk(Δ), y, σ, x)
-            return ∂∅, ∂∅, ∂∅, 𝓟x(∂x)
+            ∂x = CRC.@thunk 𝓟x(∇activation(recursive_unthunk(Δ), y, σ, x))
+            return ∂∅, ∂∅, ∂∅, ∂x
         end
         return y, ∇activation_rrule
     end

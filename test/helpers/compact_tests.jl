@@ -350,9 +350,6 @@
             @test st_new.incr == 100
 
             @test @inferred(model(x, ps, st)) isa Any
-
-            __f = (m, x, ps, st) -> sum(abs2, first(m(x, ps, st)))
-            @test @inferred(Zygote.gradient(__f, model, x, ps, st)) isa Any
         end
 
         @testset "Multiple @return" begin

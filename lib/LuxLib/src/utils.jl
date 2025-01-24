@@ -3,10 +3,11 @@ module Utils
 using ChainRulesCore: ChainRulesCore
 using EnzymeCore: EnzymeCore, EnzymeRules
 using FastClosures: @closure
+using Functors: Functors
 using ForwardDiff: ForwardDiff
 using KernelAbstractions: KernelAbstractions
 using LinearAlgebra: LinearAlgebra, BLAS
-using MLDataDevices: get_device_type, CPUDevice
+using MLDataDevices: MLDataDevices, get_device_type, CPUDevice
 using NNlib: NNlib
 using Static: Static, StaticBool, False, True, static
 using StaticArraysCore: SVector, SMatrix
@@ -206,9 +207,8 @@ expand_batchdim(x::AbstractVector) = reshape(x, :, 1)
 expand_batchdim(x::SVector{L, T}) where {L, T} = SMatrix{L, 1, T}(x)
 
 function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
-    proj_x = CRC.ProjectTo(x)
     ∇expand_batchdim = @closure Δ -> begin
-        return ∂∅, proj_x(view(Δ, :, :, 1))
+        return ∂∅, CRC.@thunk(CRC.ProjectTo(x)(view(recursive_unthunk(Δ), :, :, 1)))
     end
     return expand_batchdim(x), ∇expand_batchdim
 end
@@ -345,5 +345,7 @@ end
 CRC.@non_differentiable can_loopvec_args_check(::Any...)
 
 EnzymeRules.inactive_noinl(::typeof(can_loopvec_args_check), ::Any...) = nothing
+
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
 
 end

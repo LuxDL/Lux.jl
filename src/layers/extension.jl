@@ -100,7 +100,7 @@ function CRC.rrule(::typeof(apply_simple_chain), layer, x, ps, ::CPUDevice)
     res, pb = CRC.rrule(layer, x, ps)
     # Safety measure to prevent errors from weird Array types that SimpleChains doesn't support
     ∇apply_simple_chain = @closure Δ -> begin
-        _, ∂x, ∂ps = pb(convert(Array, Δ))
+        _, ∂x, ∂ps = pb(convert(Array, Utils.recursive_unthunk(Δ)))
         return NoTangent(), NoTangent(), 𝒫x(∂x), 𝒫ps(∂ps), NoTangent()
     end
     return res, ∇apply_simple_chain
