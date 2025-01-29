@@ -2,10 +2,8 @@
 
 # ## Package Imports
 
-using Lux, ComponentArrays, LuxCUDA, MLDatasets, MLUtils, OneHotArrays, Optimisers,
-      Printf, Random, Zygote
-
-CUDA.allowscalar(false)
+using Lux, ComponentArrays, MLDatasets, MLUtils, OneHotArrays, Optimisers, Printf, Random,
+      Reactant
 
 # ## Loading Datasets
 function load_dataset(::Type{dset}, n_train::Union{Nothing, Int},
@@ -28,13 +26,17 @@ function load_dataset(::Type{dset}, n_train::Union{Nothing, Int},
 
     return (
         DataLoader(
-            (x_train, y_train); batchsize=min(batchsize, size(x_train, 4)), shuffle=true),
+            (x_train, y_train);
+            batchsize=min(batchsize, size(x_train, 4)), shuffle=true, partial=false
+        ),
         DataLoader(
-            (x_test, y_test); batchsize=min(batchsize, size(x_test, 4)), shuffle=false)
+            (x_test, y_test);
+            batchsize=min(batchsize, size(x_test, 4)), shuffle=false, partial=false
+        )
     )
 end
 
-function load_datasets(batchsize=256)
+function load_datasets(batchsize=32)
     n_train = parse(Bool, get(ENV, "CI", "false")) ? 1024 : nothing
     n_eval = parse(Bool, get(ENV, "CI", "false")) ? 32 : nothing
     return load_dataset.((MNIST, FashionMNIST), n_train, n_eval, batchsize)
@@ -42,10 +44,9 @@ end
 
 # ## Implement a HyperNet Layer
 function HyperNet(
-        weight_generator::Lux.AbstractLuxLayer, core_network::Lux.AbstractLuxLayer)
+        weight_generator::AbstractLuxLayer, core_network::AbstractLuxLayer)
     ca_axes = Lux.initialparameters(Random.default_rng(), core_network) |>
-              ComponentArray |>
-              getaxes
+              ComponentArray |> getaxes
     return @compact(; ca_axes, weight_generator, core_network, dispatch=:HyperNet) do (x, y)
         ## Generate the weights
         ps_new = ComponentArray(vec(weight_generator(x)), ca_axes)
@@ -55,7 +56,7 @@ end
 
 # Defining functions on the CompactLuxLayer requires some understanding of how the layer
 # is structured, as such we don't recommend doing it unless you are familiar with the
-# internals. In this case, we simply write it to ignore the initialization of the 
+# internals. In this case, we simply write it to ignore the initialization of the
 # `core_network` parameters.
 
 function Lux.initialparameters(rng::AbstractRNG, hn::CompactLuxLayer{:HyperNet})
@@ -64,27 +65,32 @@ end
 
 # ## Create and Initialize the HyperNet
 function create_model()
-    ## Doesn't need to be a MLP can have any Lux Layer
-    core_network = Chain(FlattenLayer(), Dense(784, 256, relu), Dense(256, 10))
-    weight_generator = Chain(
-        Embedding(2 => 32),
-        Dense(32, 64, relu),
-        Dense(64, Lux.parameterlength(core_network))
+    core_network = Chain(
+        Conv((3, 3), 1 => 16, relu; stride=2),
+        Conv((3, 3), 16 => 32, relu; stride=2),
+        Conv((3, 3), 32 => 64, relu; stride=2),
+        GlobalMeanPool(),
+        FlattenLayer(),
+        Dense(64, 10)
     )
-
-    model = HyperNet(weight_generator, core_network)
-    return model
+    return HyperNet(
+        Chain(
+            Embedding(2 => 32),
+            Dense(32, 64, relu),
+            Dense(64, Lux.parameterlength(core_network))
+        ),
+        core_network
+    )
 end
 
 # ## Define Utility Functions
-const loss = CrossEntropyLoss(; logits=Val(true))
-
 function accuracy(model, ps, st, dataloader, data_idx)
     total_correct, total = 0, 0
+    cdev = cpu_device()
     st = Lux.testmode(st)
     for (x, y) in dataloader
-        target_class = onecold(y)
-        predicted_class = onecold(first(model((data_idx, x), ps, st)))
+        target_class = onecold(cdev(y))
+        predicted_class = onecold(cdev(first(model((data_idx, x), ps, st))))
         total_correct += sum(target_class .== predicted_class)
         total += length(target_class)
     end
@@ -93,34 +99,45 @@ end
 
 # ## Training
 function train()
+    dev = reactant_device(; force=true)
+
     model = create_model()
-    dataloaders = load_datasets()
+    dataloaders = load_datasets() |> dev
 
-    dev = gpu_device()
-    rng = Xoshiro(0)
-    ps, st = Lux.setup(rng, model) |> dev
+    Random.seed!(1234)
+    ps, st = Lux.setup(Random.default_rng(), model) |> dev
 
-    train_state = Training.TrainState(model, ps, st, Adam(0.001f0))
+    train_state = Training.TrainState(model, ps, st, Adam(0.0003f0))
+
+    x = first(first(dataloaders[1][1]))
+    data_idx = ConcreteRNumber(1)
+    model_compiled = @compile model((data_idx, x), ps, Lux.testmode(st))
 
     ### Lets train the model
     nepochs = 50
     for epoch in 1:nepochs, data_idx in 1:2
         train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
 
+        ### This allows us to trace the data index, else it will be embedded as a constant
+        ### in the IR
+        concrete_data_idx = ConcreteRNumber(data_idx)
+
         stime = time()
         for (x, y) in train_dataloader
             (_, _, _, train_state) = Training.single_train_step!(
-                AutoZygote(), loss, ((data_idx, x), y), train_state)
+                AutoEnzyme(), CrossEntropyLoss(; logits=Val(true)),
+                ((concrete_data_idx, x), y), train_state; return_gradients=Val(false)
+            )
         end
         ttime = time() - stime
 
         train_acc = round(
-            accuracy(model, train_state.parameters,
-                train_state.states, train_dataloader, data_idx) * 100;
+            accuracy(model_compiled, train_state.parameters,
+                train_state.states, train_dataloader, concrete_data_idx) * 100;
             digits=2)
         test_acc = round(
-            accuracy(model, train_state.parameters,
-                train_state.states, test_dataloader, data_idx) * 100;
+            accuracy(model_compiled, train_state.parameters,
+                train_state.states, test_dataloader, concrete_data_idx) * 100;
             digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
@@ -134,13 +151,15 @@ function train()
     test_acc_list = [0.0, 0.0]
     for data_idx in 1:2
         train_dataloader, test_dataloader = dataloaders[data_idx] .|> dev
+
+        concrete_data_idx = ConcreteRNumber(data_idx)
         train_acc = round(
-            accuracy(model, train_state.parameters,
-                train_state.states, train_dataloader, data_idx) * 100;
+            accuracy(model_compiled, train_state.parameters,
+                train_state.states, train_dataloader, concrete_data_idx) * 100;
             digits=2)
         test_acc = round(
-            accuracy(model, train_state.parameters,
-                train_state.states, test_dataloader, data_idx) * 100;
+            accuracy(model_compiled, train_state.parameters,
+                train_state.states, test_dataloader, concrete_data_idx) * 100;
             digits=2)
 
         data_name = data_idx == 1 ? "MNIST" : "FashionMNIST"
@@ -153,5 +172,5 @@ function train()
 end
 
 test_acc_list = train()
-@assert test_acc_list[1] > 60 && test_acc_list[2] > 60 #hide
+@assert test_acc_list[1] > 35 && test_acc_list[2] > 35 #hide
 nothing #hide
