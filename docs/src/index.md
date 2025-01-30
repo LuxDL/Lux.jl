@@ -29,7 +29,7 @@ features:
 
   - icon: 🐎
     title: Powered by the XLA Compiler
-    details: Lux.jl seamlessly integrates with Reactant.jl, to compiler models to run on CPU, GPU, TPU, and more.
+    details: Lux.jl seamlessly integrates with Reactant.jl, to compile models to run on CPU, GPU, TPU, and more.
     link: /manual/compiling_lux_models
 
   - icon: 🧑‍🔬
