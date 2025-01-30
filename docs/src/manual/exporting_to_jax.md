@@ -1,4 +1,4 @@
-# Exporting Lux Models to Jax (via EnzymeJAX & Reactant)
+# [Exporting Lux Models to Jax (via EnzymeJAX & Reactant)](@ref exporting_to_stablehlo)
 
 In this manual, we will go over how to export Lux models to StableHLO and use
 [EnzymeJAX](https://github.com/EnzymeAD/Enzyme-JAX) to run integrate Lux models with
