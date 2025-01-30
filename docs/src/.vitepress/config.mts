@@ -309,6 +309,10 @@ export default defineConfig({
                 text: "Initializing Weights",
                 link: "/manual/weight_initializers",
               },
+              {
+                text: "Visualizing Lux Models",
+                link: "/manual/visualize_lux_models",
+              },
             ],
           },
           {
