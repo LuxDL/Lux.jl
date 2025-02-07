@@ -1,5 +1,6 @@
 [deps]
 Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
+ConcreteStructs = "2569d6c7-a4a2-43d3-a901-331e8e4be471"
 DataDeps = "124859b0-ceae-595e-8997-d05f6a7a8dfe"
 Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"

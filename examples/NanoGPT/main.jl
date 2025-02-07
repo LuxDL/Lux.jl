@@ -1,7 +1,6 @@
 # Taken from https://github.com/FluxML/model-zoo/pull/410
-using MLUtils, Lux, Random, Optimisers, Printf, Statistics, NNlib, DataDeps, StatsBase,
-      OneHotArrays, JLD2
-using Reactant, Enzyme
+using ConcreteStructs, MLUtils, Lux, Random, Optimisers, Printf, Statistics, NNlib,
+      DataDeps, StatsBase, OneHotArrays, JLD2, Reactant, Enzyme
 using Comonicon: @main
 
 if !haskey(DataDeps.registry, "nanogpt")
@@ -13,53 +12,98 @@ if !haskey(DataDeps.registry, "nanogpt")
     ))
 end
 
-function gpt_block(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate)
-    @assert qk_dim % n_heads == 0
-    @assert v_dim % n_heads == 0
-    return @compact(;
-        name="GPTBlock(; n_embed=$n_embed, n_hidden=$n_hidden, qk_dim=$qk_dim, v_dim=$v_dim, n_heads=$n_heads, dropout_rate=$dropout_rate)",
-        ln=LayerNorm((n_embed, 1)),
-        qlayer=Dense(n_embed => qk_dim; use_bias=false),
-        klayer=Dense(n_embed => qk_dim; use_bias=false),
-        vlayer=Dense(n_embed => v_dim; use_bias=false),
-        attn_drop=Dropout(dropout_rate),
-        proj=Dense(v_dim => n_embed; use_bias=false),
-        mlp=Chain(
-            LayerNorm((n_embed, 1)),
-            Dense(n_embed => n_hidden, gelu),
-            Dense(n_hidden => n_embed),
-            Dropout(dropout_rate)
-        )) do x
-        qkv_in = ln(x)
-        q = qlayer(qkv_in)
-        k = klayer(qkv_in)
-        v = vlayer(qkv_in)
-        mha, _ = NNlib.dot_product_attention(
-            q, k, v, nothing; mask=NNlib.make_causal_mask(x)
+# Setup the model definition
+@concrete struct CausalSelfAttention <:
+                 AbstractLuxContainerLayer{(:causal_attn, :proj, :attn_drop)}
+    causal_attn
+    proj
+    attn_drop
+    n_embed::Int
+    n_heads::Int
+end
+
+function CausalSelfAttention(; n_embed, n_heads, dropout_rate, use_bias)
+    causal_attn = Dense(n_embed, 3 * n_embed; use_bias)
+    proj = Chain(
+        Dense(n_embed, n_embed; use_bias),
+        Dropout(dropout_rate)
+    )
+    attn_drop = Dropout(dropout_rate)
+    return CausalSelfAttention(causal_attn, proj, attn_drop, n_embed, n_heads)
+end
+
+function (attn::CausalSelfAttention)(x::AbstractArray{T, 3}, ps, st) where {T}
+    qkv, qkv_st = attn.causal_attn(x, ps.causal_attn, st.causal_attn)
+    q, k, v = (
+        selectdim(qkv, 1, 1:(attn.n_heads)),
+        selectdim(qkv, 1, (attn.n_heads + 1):(2 * attn.n_heads)),
+        selectdim(qkv, 1, (2 * attn.n_heads + 1):(3 * attn.n_heads))
+    )
+    dp = StatefulLuxLayer{true}(attn.attn_drop, ps.attn_drop, st.attn_drop)
+    mha, _ = NNlib.dot_product_attention(
+        q, k, v, nothing; mask=NNlib.make_causal_mask(x), fdrop=dp, nheads=attn.n_heads
+    )
+    proj, proj_st = attn.proj(mha, ps.proj, st.proj)
+    return proj, (; causal_attn=qkv_st, proj=proj_st, attn_drop=dp.attn_drop)
+end
+
+@concrete struct GPTBlock <: AbstractLuxWrapperLayer{:block}
+    block
+end
+
+function GPTBlock(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate, use_bias)
+    return GPTBlock(Chain(
+        SkipConnection(
+            Chain(
+                LayerNorm((n_embed, 1)),
+                CausalSelfAttention(; n_embed, n_heads, dropout_rate, use_bias)
+            ),
+            +
+        ),
+        SkipConnection(
+            Chain(
+                LayerNorm((n_embed, 1)),
+                Dense(n_embed => n_hidden, gelu),
+                Dense(n_hidden => n_embed),
+                Dropout(dropout_rate)
+            ),
+            +
         )
-        x = x .+ proj(mha)
-        x = x .+ mlp(x)
-        @return x
+    ))
+end
+
+struct PositionalEmbedding{E} <: AbstractLuxWrapperLayer{:embedding}
+    embedding::E
+
+    function PositionalEmbedding(args...; kwargs...)
+        embed = Embedding(args...; kwargs...)
+        return new{typeof(embed)}(embed)
     end
 end
 
+(pe::PositionalEmbedding)(x, ps, st) = pe.embedding(1:size(x, 1), ps, st)
+
+@concrete struct GPT <: AbstractLuxWrapperLayer{:layer}
+    layer
+end
+
 function GPT(;
-        n_vocab, n_embed, sequence_length, n_hidden,
-        n_layers, dropout_rate, n_heads, qk_dim, v_dim
+        n_vocab, n_embed, sequence_length, n_hidden, n_layers, dropout_rate,
+        n_heads, qk_dim, v_dim
 )
-    return @compact(;
-        token_embedding=Embedding(n_vocab => n_embed),
-        position_embedding=Embedding(sequence_length => n_embed),
-        drop=Dropout(dropout_rate),
-        blocks=Chain(ntuple(n_layers) do i
-            return gpt_block(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate)
+    return GPT(Chain(
+        Parallel(
+            +,
+            Embedding(n_vocab => n_embed),
+            PositionalEmbedding(sequence_length => n_embed)
+        ),
+        Dropout(dropout_rate),
+        Chain(ntuple(n_layers) do i
+            return GPTBlock(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate)
         end...),
-        ln=LayerNorm((n_embed, 1)),
-        output_layer=Dense(n_embed => n_vocab)) do tokens
-        x = drop(token_embedding(tokens) .+ position_embedding(1:size(tokens, 1)))
-        x = blocks(x)
-        @return output_layer(ln(x))
-    end
+        LayerNorm((n_embed, 1)),
+        Dense(n_embed => n_vocab)
+    ))
 end
 
 # Use the model to generate some text.
