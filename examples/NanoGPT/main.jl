@@ -1,6 +1,6 @@
 # Taken from https://github.com/FluxML/model-zoo/pull/410
 using ConcreteStructs, MLUtils, Lux, Random, Optimisers, Printf, Statistics, NNlib,
-      DataDeps, StatsBase, OneHotArrays, JLD2, Reactant, Enzyme
+      DataDeps, StatsBase, OneHotArrays, JLD2, Reactant, Enzyme, BytePairEncoding
 using Comonicon: @main
 
 if !haskey(DataDeps.registry, "nanogpt")
@@ -51,7 +51,7 @@ end
     block
 end
 
-function GPTBlock(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate, use_bias)
+function GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)
     return GPTBlock(Chain(
         SkipConnection(
             Chain(
@@ -63,8 +63,8 @@ function GPTBlock(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate, use
         SkipConnection(
             Chain(
                 LayerNorm((n_embed, 1)),
-                Dense(n_embed => n_hidden, gelu),
-                Dense(n_hidden => n_embed),
+                Dense(n_embed => 4 * n_embed, gelu; use_bias),
+                Dense(4 * n_embed => n_embed; use_bias),
                 Dropout(dropout_rate)
             ),
             +
@@ -87,24 +87,34 @@ end
     layer
 end
 
-function GPT(;
-        n_vocab, n_embed, sequence_length, n_hidden, n_layers, dropout_rate,
-        n_heads, qk_dim, v_dim
-)
+function GPT(; n_vocab, n_embed, block_size, n_layers, dropout_rate, n_heads, use_bias)
     return GPT(Chain(
         Parallel(
             +,
             Embedding(n_vocab => n_embed),
-            PositionalEmbedding(sequence_length => n_embed)
+            PositionalEmbedding(block_size => n_embed)
         ),
         Dropout(dropout_rate),
-        Chain(ntuple(n_layers) do i
-            return GPTBlock(; n_embed, n_hidden, qk_dim, v_dim, n_heads, dropout_rate)
-        end...),
+        Chain(ntuple(
+            Returns(GPTBlock(; n_embed, n_heads, dropout_rate, use_bias)), n_layers
+        )...),
         LayerNorm((n_embed, 1)),
-        Dense(n_embed => n_vocab)
+        Dense(n_embed => n_vocab; use_bias)
     ))
 end
+
+#=
+
+dev = reactant_device(; force=true)
+rng = Random.default_rng()
+
+model = GPT(;
+    n_vocab=50304, n_embed=768, block_size=1024, n_layers=12, dropout_rate=0.0, n_heads=12,
+    use_bias=true
+)
+ps, st = Lux.setup(rng, model) |> dev
+
+=#
 
 # Use the model to generate some text.
 function generate_text(
@@ -152,13 +162,14 @@ function get_nanogpt_data(; sequence_length, test_split)
     data_file = joinpath(datadep"nanogpt", "shakespeare_input.txt")
     text = String(read(data_file))
 
-    # For aesthetic reasons, replace newlines with strings.  This is not necessary, but makes
-    # strings print nicer.
-    text = replace(text, r"\r?\n" => " ")
+    idx = ceil(Int, length(text) * (1 - test_split))
+    train_text = text[1:idx]
+    test_text = text[(idx + 1):end]
 
-    ## an array of all unique characters
-    alphabet = [unique(text)..., '_']
-    stop = alphabet[end]
+    tokenizer = BytePairEncoding.load_gpt2()
+
+    train_tokens = tokenizer(train_text)
+    test_tokens = tokenizer(test_text)
 
     B = (length(text) - 1) ÷ sequence_length
     # We must collect() before indexing, because String indexing does strange things with multi-byte
