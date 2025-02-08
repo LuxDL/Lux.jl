@@ -8,8 +8,7 @@
 
 using ConcreteStructs, Comonicon, DataAugmentation, DataDeps, Enzyme, FileIO, ImageCore,
       ImageShow, JLD2, Lux, MLUtils, Optimisers, ParameterSchedulers, ProgressTables,
-      Printf, Random, Reactant, StableRNGs, Statistics
-using TensorBoardLogger: TBLogger, log_value, log_images
+      Printf, Random, Reactant, StableRNGs, Statistics, Wandb
 
 # ## Model Definition
 

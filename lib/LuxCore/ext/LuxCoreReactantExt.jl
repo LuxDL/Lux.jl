@@ -11,7 +11,13 @@ function Reactant.make_tracer(
 end
 
 function Reactant.traced_type_inner(
-        T::Type{<:AbstractLuxLayer}, seen, mode::Reactant.TraceMode, track_numbers::Type)
+    @nospecialize(T::Type{<:AbstractLuxLayer}),
+    seen,
+    @nospecialize(mode::Reactant.TraceMode),
+    @nospecialize(track_numbers::Type),
+    @nospecialize(sharding),
+    @nospecialize(runtime)
+)
     return T
 end
 
