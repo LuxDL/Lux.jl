@@ -67,6 +67,7 @@ Scale
 
 ```@docs
 Embedding
+SinusoidalPositionalEncoding
 ```
 
 ## Misc. Helper Layers

@@ -83,3 +83,54 @@ end
 function (e::Embedding)(::Tuple{}, _, ::NamedTuple)
     throw(ArgumentError("Input tuple must contain at least one element"))
 end
+
+"""
+    SinusoidalPositionalEncoding(....)
+
+Sinusoidal Positional Encoding. For details see [1].
+
+## Arguments
+
+## Keyword Arguments
+
+## Input
+
+## Returns
+
+## Parameters
+
+## States
+
+## References
+
+[1] Vaswani, A. "Attention is all you need." Advances in Neural Information Processing
+Systems (2017).
+"""
+@concrete struct SinusoidalPositionalEncoding{T} <: AbstractLuxLayer
+    log_min_freq::T
+    log_max_freq::T
+    dims <: IntegerType
+    scale <: Real
+    full_turns::Bool
+end
+
+function SinusoidalPositionalEncoding(dims::IntegerType; min_freq=0.0001f0, max_freq=1.0f0,
+        scale=nothing, full_turns::Bool=false)
+    T = promote_type(typeof(min_freq), typeof(max_freq))
+    scale = scale === nothing ? T(√(2 / dims)) : T(scale)
+    return SinusoidalPositionalEncoding(
+        T(log(min_freq)), T(log(max_freq)), dims, scale, full_turns)
+end
+
+function initialstates(::AbstractRNG, spe::SinusoidalPositionalEncoding{T}) where {T}
+    one_zero = range(T(1), T(0); length=spe.dims ÷ 2)
+    sigmas = exp.(one_zero .* (spe.log_max_freq - spe.log_min_freq) .+ spe.log_min_freq)
+    spe.full_turns && (@. sigmas *= 2π)
+    return (; sigmas)
+end
+
+function (spe::SinusoidalPositionalEncoding)(x::AbstractArray, ps, st::NamedTuple)
+    y = reshape(match_eltype(spe, ps, st, x), 1, size(x)...) .* st.sigmas
+    z = vcat(sin.(y), cos.(y)) .* spe.scale
+    return z, st
+end
