@@ -2,7 +2,7 @@ module LuxLibReactantExt
 
 using Reactant: Reactant, MLIR, Ops, TracedUtils, TracedRArray, AnyTracedRArray,
                 AnyTracedRVector, TracedRNumber
-using Static: False
+using Static: True, False
 
 using LuxLib: LuxLib, Impl, Optional, Utils
 
@@ -56,14 +56,11 @@ function Impl.batchnorm(
     return act.(TracedRArray{T, ndims(x)}((), res, size(x))), rμ, rσ²
 end
 
-# The following code is commented out since we don't have Batchnorm Op Adjoint registered
-# for EnzymeJAX yet
-#=
 function Impl.batchnorm(
         x::AnyTracedRArray{T},
         γ::Optional{<:AnyTracedRVector}, β::Optional{<:AnyTracedRVector},
         rμ::Optional{<:AnyTracedRVector}, rσ²::Optional{<:AnyTracedRVector},
-        training::StaticBool, act::F, momentum, ϵ
+        ::True, act::F, momentum, ϵ
 ) where {T, F}
     x = TracedUtils.materialize_traced_array(x)
 
@@ -101,6 +98,5 @@ function Impl.batchnorm(
         return res, rμ, rσ²
     end
 end
-=#
 
 end
