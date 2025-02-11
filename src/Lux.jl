@@ -71,6 +71,7 @@ include("layers/display.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
+include("layers/embedding.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/pooling.jl")
