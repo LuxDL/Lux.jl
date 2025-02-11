@@ -28,7 +28,8 @@ end
     using Reactant, Lux
     using LuxTestUtils: check_approx
 
-    rng = StableRNG(123)
+    # StableRNG uses UInt128 for seed that is not supported by Reactant inside loops
+    rng = Random.default_rng()
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
         if mode == "amdgpu"
