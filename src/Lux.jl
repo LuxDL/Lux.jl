@@ -106,7 +106,8 @@ include("deprecations.jl")
 
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
-export Bilinear, Dense, Embedding, Scale
+export Bilinear, Dense, Scale
+export Embedding, SinusoidalPositionalEncoding, RotaryPositionalEncoding
 export Conv, ConvTranspose, Upsample, PixelShuffle
 export MaxPool, MeanPool, LPPool, GlobalMaxPool, GlobalMeanPool, GlobalLPPool,
        AdaptiveMaxPool, AdaptiveMeanPool, AdaptiveLPPool
