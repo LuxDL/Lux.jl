@@ -16,7 +16,7 @@ end
 
 # Query Device from Array
 function Internal.get_device(x::Union{ConcreteRNumber, ConcreteRArray})
-    return ReactantDevice(XLA.client(x.data), XLA.device(x.data))
+    return ReactantDevice(XLA.client(x), XLA.device(x))
 end
 
 function Internal.get_device(::Union{TracedRArray, TracedRNumber})
