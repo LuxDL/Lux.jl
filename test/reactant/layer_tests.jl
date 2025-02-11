@@ -28,7 +28,8 @@ end
     using Reactant, Lux
     using LuxTestUtils: check_approx
 
-    rng = StableRNG(123)
+    # StableRNG uses UInt128 for seed that is not supported by Reactant inside loops
+    rng = Random.default_rng()
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
         if mode == "amdgpu"
@@ -45,22 +46,28 @@ end
         dev = reactant_device(; force=true)
 
         @testset for cell in (RNNCell, LSTMCell, GRUCell)
-            model = Recurrence(cell(4 => 4))
-            ps, st = Lux.setup(rng, model)
-            ps_ra, st_ra = (ps, st) |> dev
-            x = rand(Float32, 4, 16, 12)
-            x_ra = x |> dev
+            @testset for ordering in (BatchLastIndex(), TimeLastIndex())
+                model = Recurrence(cell(4 => 4); ordering)
+                ps, st = Lux.setup(rng, model)
+                ps_ra, st_ra = (ps, st) |> dev
+                if ordering isa TimeLastIndex
+                    x = rand(Float32, 4, 12, 16)
+                else
+                    x = rand(Float32, 4, 16, 12)
+                end
+                x_ra = x |> dev
 
-            y_ra, _ = @jit model(x_ra, ps_ra, st_ra)
-            y, _ = model(x, ps, st)
+                y_ra, _ = @jit model(x_ra, ps_ra, st_ra)
+                y, _ = model(x, ps, st)
 
-            @test y_ra≈y atol=1e-2 rtol=1e-2
+                @test y_ra≈y atol=1e-2 rtol=1e-2
 
-            @testset "gradient" begin
-                ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
-                ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
-                @test ∂x_ra≈∂x atol=1e-2 rtol=1e-2
-                @test check_approx(∂ps_ra, ∂ps; atol=1e-2, rtol=1e-2)
+                @testset "gradient" begin
+                    ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
+                    ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
+                    @test ∂x_ra≈∂x atol=1e-2 rtol=1e-2
+                    @test check_approx(∂ps_ra, ∂ps; atol=1e-2, rtol=1e-2)
+                end
             end
         end
     end
