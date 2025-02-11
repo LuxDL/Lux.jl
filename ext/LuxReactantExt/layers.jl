@@ -4,6 +4,8 @@ function (e::Lux.Embedding)(x::TracedRNumber{<:Reactant.ReactantInt}, ps, st::Na
 end
 
 # Recurrent Layers
+# TODO: Once we can eliminate dead-args in while loop we should remove this case and only
+#       use the later function for maintenance purposes.
 function (r::Lux.Recurrence{False})(x::AnyTracedRArray, ps, st::NamedTuple)
     if r.ordering isa Lux.TimeLastIndex ||
        (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
@@ -27,7 +29,7 @@ end
 
 function (r::Lux.Recurrence{True})(x::AnyTracedRArray, ps, st::NamedTuple)
     if r.ordering isa Lux.TimeLastIndex ||
-        (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
+       (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
         idxs = ntuple(Returns(Colon()), ndims(x) - 1)
         (out, carry), st = r.cell(x[idxs..., 1], ps, st)
         sequence = similar(out, size(out)..., size(x, ndims(x)))
