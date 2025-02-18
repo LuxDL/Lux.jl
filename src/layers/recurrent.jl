@@ -185,7 +185,7 @@ applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x,
 
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
-        init_bias=nothing, init_weight=nothing, init_state=zeros32)
+        init_bias=nothing, init_weight=nothing, init_recurrent_weight=nothing, init_state=zeros32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
@@ -201,6 +201,8 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
   - `init_bias`: Initializer for bias. If `nothing`, then we use uniform distribution with
     bounds `-bound` and `bound` where `bound = inv(sqrt(out_dims))`.
   - `init_weight`: Initializer for weight. If `nothing`, then we use uniform distribution
+    with bounds `-bound` and `bound` where `bound = inv(sqrt(out_dims))`.
+  - `init_recurrent_weight`: Initializer for recurrent weight. If `nothing`, then we use uniform distribution
     with bounds `-bound` and `bound` where `bound = inv(sqrt(out_dims))`.
   - `init_state`: Initializer for hidden state
 
@@ -242,22 +244,23 @@ An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
     out_dims <: IntegerType
     init_bias
     init_weight
+    init_recurrent_weight
     init_state
     use_bias <: StaticBool
 end
 
 function RNNCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}, activation=tanh;
         use_bias::BoolType=True(), train_state::BoolType=False(),
-        init_bias=nothing, init_weight=nothing, init_state=zeros32)
+        init_bias=nothing, init_weight=nothing, init_recurrent_weight=nothing, init_state=zeros32)
     return RNNCell(static(train_state), activation, in_dims, out_dims,
-        init_bias, init_weight, init_state, static(use_bias))
+        init_bias, init_weight, init_recurrent_weight, init_state, static(use_bias))
 end
 
 function initialparameters(rng::AbstractRNG, rnn::RNNCell)
     weight_ih = init_rnn_weight(
         rng, rnn.init_weight, rnn.out_dims, (rnn.out_dims, rnn.in_dims))
     weight_hh = init_rnn_weight(
-        rng, rnn.init_weight, rnn.out_dims, (rnn.out_dims, rnn.out_dims))
+        rng, rnn.init_recurrent_weight, rnn.out_dims, (rnn.out_dims, rnn.out_dims))
     ps = (; weight_ih, weight_hh)
     if has_bias(rnn)
         bias_ih = init_rnn_bias(rng, rnn.init_bias, rnn.out_dims, rnn.out_dims)
@@ -308,8 +311,8 @@ end
 
 @doc doc"""
     LSTMCell(in_dims => out_dims; use_bias::Bool=true, train_state::Bool=false,
-             train_memory::Bool=false, init_weight=nothing, init_bias=nothing,
-             init_state=zeros32, init_memory=zeros32)
+             train_memory::Bool=false, init_weight=nothing, init_recurrent_weight=nothing,
+             init_bias=nothing, init_state=zeros32, init_memory=zeros32)
 
 Long Short-Term (LSTM) Cell
 
@@ -336,6 +339,10 @@ Long Short-Term (LSTM) Cell
     uniform distribution with bounds `-bound` and `bound` where
     `bound = inv(sqrt(out_dims))`.
   - `init_weight`: Initializer for weight. Must be a tuple containing 4 functions. If a
+    single value is passed, it is copied into a 4 element tuple. If `nothing`, then we use
+    uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(out_dims))`.
+  - `init_recurrent_weight`: Initializer for recurrent weight. Must be a tuple containing 4 functions. If a
     single value is passed, it is copied into a 4 element tuple. If `nothing`, then we use
     uniform distribution with bounds `-bound` and `bound` where
     `bound = inv(sqrt(out_dims))`.
@@ -394,6 +401,7 @@ Long Short-Term (LSTM) Cell
     out_dims <: IntegerType
     init_bias
     init_weight
+    init_recurrent_weight
     init_state
     init_memory
     use_bias <: StaticBool
@@ -402,11 +410,14 @@ end
 function LSTMCell(
         (in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}; use_bias::BoolType=True(),
         train_state::BoolType=False(), train_memory::BoolType=False(),
-        init_weight=nothing, init_bias=nothing, init_state=zeros32, init_memory=zeros32)
+        init_weight=nothing, init_recurrent_weight=nothing, init_bias=nothing,
+        init_state=zeros32, init_memory=zeros32)
     init_weight isa NTuple{4} || (init_weight = ntuple(Returns(init_weight), 4))
+    init_recurrent_weight isa NTuple{4} ||
+        (init_recurrent_weight = ntuple(Returns(init_recurrent_weight), 4))
     init_bias isa NTuple{4} || (init_bias = ntuple(Returns(init_bias), 4))
     return LSTMCell(static(train_state), static(train_memory), in_dims, out_dims,
-        init_bias, init_weight, init_state, init_memory, static(use_bias))
+        init_bias, init_weight, init_recurrent_weight, init_state, init_memory, static(use_bias))
 end
 
 function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
@@ -414,8 +425,9 @@ function initialparameters(rng::AbstractRNG, lstm::LSTMCell)
                           rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.in_dims))
                       for init_weight in lstm.init_weight]...)
     weight_hh = vcat([init_rnn_weight(
-                          rng, init_weight, lstm.out_dims, (lstm.out_dims, lstm.out_dims))
-                      for init_weight in lstm.init_weight]...)
+                          rng, init_recurrent_weight, lstm.out_dims,
+                          (lstm.out_dims, lstm.out_dims))
+                      for init_recurrent_weight in lstm.init_recurrent_weight]...)
     ps = (; weight_ih, weight_hh)
     if has_bias(lstm)
         bias_ih = vcat([init_rnn_bias(rng, init_bias, lstm.out_dims, lstm.out_dims)
@@ -487,7 +499,7 @@ end
 
 @doc doc"""
     GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; use_bias=true, train_state::Bool=false,
-            init_weight=nothing, init_bias=nothing, init_state=zeros32)
+            init_weight=nothing, init_recurrent_weight=nothing, init_bias=nothing, init_state=zeros32)
 
 Gated Recurrent Unit (GRU) Cell
 
@@ -511,6 +523,10 @@ Gated Recurrent Unit (GRU) Cell
     uniform distribution with bounds `-bound` and `bound` where
     `bound = inv(sqrt(out_dims))`.
   - `init_weight`: Initializer for weight. Must be a tuple containing 3 functions. If a
+    single value is passed, it is copied into a 3 element tuple. If `nothing`, then we use
+    uniform distribution with bounds `-bound` and `bound` where
+    `bound = inv(sqrt(out_dims))`.
+  - `init_recurrent_weight`: Initializer for weight. Must be a tuple containing 3 functions. If a
     single value is passed, it is copied into a 3 element tuple. If `nothing`, then we use
     uniform distribution with bounds `-bound` and `bound` where
     `bound = inv(sqrt(out_dims))`.
@@ -558,17 +574,20 @@ Gated Recurrent Unit (GRU) Cell
     out_dims <: IntegerType
     init_bias
     init_weight
+    init_recurrent_weight
     init_state
     use_bias <: StaticBool
 end
 
 function GRUCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
         use_bias::BoolType=True(), train_state::BoolType=False(),
-        init_weight=glorot_uniform, init_bias=zeros32, init_state=zeros32)
+        init_weight=glorot_uniform, init_recurrent_weight=nothing, init_bias=zeros32, init_state=zeros32)
     init_weight isa NTuple{3} || (init_weight = ntuple(Returns(init_weight), 3))
+    init_recurrent_weight isa NTuple{3} ||
+        (init_recurrent_weight = ntuple(Returns(init_recurrent_weight), 3))
     init_bias isa NTuple{3} || (init_bias = ntuple(Returns(init_bias), 3))
     return GRUCell(static(train_state), in_dims, out_dims, init_bias,
-        init_weight, init_state, static(use_bias))
+        init_weight, init_recurrent_weight, init_state, static(use_bias))
 end
 
 function initialparameters(rng::AbstractRNG, gru::GRUCell)
@@ -576,8 +595,9 @@ function initialparameters(rng::AbstractRNG, gru::GRUCell)
                           rng, init_weight, gru.out_dims, (gru.out_dims, gru.in_dims))
                       for init_weight in gru.init_weight]...)
     weight_hh = vcat([init_rnn_weight(
-                          rng, init_weight, gru.out_dims, (gru.out_dims, gru.out_dims))
-                      for init_weight in gru.init_weight]...)
+                          rng, init_recurrent_weight, gru.out_dims,
+                          (gru.out_dims, gru.out_dims))
+                      for init_recurrent_weight in gru.init_recurrent_weight]...)
     ps = (; weight_ih, weight_hh)
     if has_bias(gru)
         bias_ih = vcat([init_rnn_bias(rng, init_bias, gru.out_dims, gru.out_dims)
