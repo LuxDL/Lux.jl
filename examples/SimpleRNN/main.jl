@@ -9,7 +9,7 @@
 
 # ## Package Imports
 
-using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
+using ADTypes, Lux, Zygote, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
 
 # ## Dataset
 
