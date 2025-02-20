@@ -185,7 +185,8 @@ applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x,
 
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
-        init_bias=nothing, init_weight=nothing, init_recurrent_weight=init_weight, init_state=zeros32)
+        init_bias=nothing, init_weight=nothing, init_recurrent_weight=init_weight,
+        init_state=zeros32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
