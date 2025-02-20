@@ -186,10 +186,10 @@ end
 
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
     @argcheck ndims(x)==4 "Input must be a 4D tensor"
-    @argcheck size(x, 3) ≤ rope.max_sequence_length "Sequence length must be less than \
-                                                    $(rope.max_sequence_length)"
-    @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
-                                      $(size(x, 1))"
+    @argcheck size(x, 3)≤rope.max_sequence_length "Sequence length must be less than \
+                                                  $(rope.max_sequence_length)"
+    @argcheck size(x, 1)==rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
+                                    $(size(x, 1))"
 
     h_d, n_h, seq_len, b = size(x)
     y = match_eltype(rope, ps, st, x)
