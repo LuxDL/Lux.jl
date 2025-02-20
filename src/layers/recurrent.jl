@@ -185,7 +185,7 @@ applyrecurrentcell(l::AbstractRecurrentCell, x, ps, st, ::Nothing) = apply(l, x,
 
 @doc doc"""
     RNNCell(in_dims => out_dims, activation=tanh; use_bias=True(), train_state=False(),
-        init_bias=nothing, init_weight=nothing, init_recurrent_weight=nothing, init_state=zeros32)
+        init_bias=nothing, init_weight=nothing, init_recurrent_weight=init_weight, init_state=zeros32)
 
 An Elman RNNCell cell with `activation` (typically set to `tanh` or `relu`).
 
@@ -311,7 +311,8 @@ end
 
 @doc doc"""
     LSTMCell(in_dims => out_dims; use_bias::Bool=true, train_state::Bool=false,
-             train_memory::Bool=false, init_weight=nothing, init_recurrent_weight=nothing,
+             train_memory::Bool=false, init_weight=nothing,
+             init_recurrent_weight=init_weight,
              init_bias=nothing, init_state=zeros32, init_memory=zeros32)
 
 Long Short-Term (LSTM) Cell
@@ -499,7 +500,7 @@ end
 
 @doc doc"""
     GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; use_bias=true, train_state::Bool=false,
-            init_weight=glorot_uniform, init_recurrent_weight=glorot_uniform,
+            init_weight=glorot_uniform, init_recurrent_weight=init_weight,
             init_bias=nothing, init_state=zeros32)
 
 Gated Recurrent Unit (GRU) Cell
