@@ -251,7 +251,7 @@ end
 
 function RNNCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}, activation=tanh;
         use_bias::BoolType=True(), train_state::BoolType=False(),
-        init_bias=nothing, init_weight=nothing, init_recurrent_weight=nothing, init_state=zeros32)
+        init_bias=nothing, init_weight=nothing, init_recurrent_weight=init_weight, init_state=zeros32)
     return RNNCell(static(train_state), activation, in_dims, out_dims,
         init_bias, init_weight, init_recurrent_weight, init_state, static(use_bias))
 end
@@ -410,7 +410,7 @@ end
 function LSTMCell(
         (in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType}; use_bias::BoolType=True(),
         train_state::BoolType=False(), train_memory::BoolType=False(),
-        init_weight=nothing, init_recurrent_weight=nothing, init_bias=nothing,
+        init_weight=nothing, init_recurrent_weight=init_weight, init_bias=nothing,
         init_state=zeros32, init_memory=zeros32)
     init_weight isa NTuple{4} || (init_weight = ntuple(Returns(init_weight), 4))
     init_recurrent_weight isa NTuple{4} ||
@@ -499,7 +499,8 @@ end
 
 @doc doc"""
     GRUCell((in_dims, out_dims)::Pair{<:Int,<:Int}; use_bias=true, train_state::Bool=false,
-            init_weight=nothing, init_recurrent_weight=nothing, init_bias=nothing, init_state=zeros32)
+            init_weight=glorot_uniform, init_recurrent_weight=glorot_uniform,
+            init_bias=nothing, init_state=zeros32)
 
 Gated Recurrent Unit (GRU) Cell
 
@@ -581,7 +582,7 @@ end
 
 function GRUCell((in_dims, out_dims)::Pair{<:IntegerType, <:IntegerType};
         use_bias::BoolType=True(), train_state::BoolType=False(),
-        init_weight=glorot_uniform, init_recurrent_weight=nothing, init_bias=zeros32, init_state=zeros32)
+        init_weight=glorot_uniform, init_recurrent_weight=init_weight, init_bias=zeros32, init_state=zeros32)
     init_weight isa NTuple{3} || (init_weight = ntuple(Returns(init_weight), 3))
     init_recurrent_weight isa NTuple{3} ||
         (init_recurrent_weight = ntuple(Returns(init_recurrent_weight), 3))
