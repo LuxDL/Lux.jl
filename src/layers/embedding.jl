@@ -53,29 +53,29 @@ end
 outputsize(e::Embedding, _, ::AbstractRNG) = (e.out_dims,)
 
 function (e::Embedding)(x::Number, ps, st::NamedTuple)
-    @assert Utils.eltype(x) <: Integer
+    @argcheck Utils.eltype(x) <: Integer
     return view(ps.weight, :, x), st
 end
 function (e::Embedding)(x::AbstractVector, ps, st::NamedTuple)
-    @assert Utils.eltype(x) <: Integer
+    @argcheck Utils.eltype(x) <: Integer
     return NNlib.gather(ps.weight, x), st
 end
 function (e::Embedding)(x::AbstractArray, ps, st::NamedTuple)
-    @assert Utils.eltype(x) <: Integer
+    @argcheck Utils.eltype(x) <: Integer
     y, stₙ = e(vec(x), ps, st)
     return reshape(y, :, size(x)...), stₙ
 end
 function (e::Embedding)(x::NTuple{N, T}, ps, st::NamedTuple) where {N, T}
-    @assert Utils.eltype(T) <: Integer
+    @argcheck Utils.eltype(T) <: Integer
     return view(ps.weight, :, x...), st
 end
 function (e::Embedding)(x::NTuple{N, <:AbstractVector{T}}, ps, st::NamedTuple) where {N, T}
-    @assert Utils.eltype(T) <: Integer
+    @argcheck Utils.eltype(T) <: Integer
     @argcheck allequal(size, x) DimensionMismatch("Input vectors must have the same shape")
     return NNlib.gather(ps.weight, x...), st
 end
 function (e::Embedding)(x::NTuple{N, <:AbstractArray{T}}, ps, st::NamedTuple) where {N, T}
-    @assert Utils.eltype(T) <: Integer
+    @argcheck Utils.eltype(T) <: Integer
     @argcheck allequal(size, x) DimensionMismatch("Input arrays must have the same shape")
     y, stₙ = e(vec.(x), ps, st)
     return reshape(y, :, size(first(x))...), stₙ
@@ -169,12 +169,12 @@ function RotaryPositionalEmbedding(
     return RotaryPositionalEmbedding(dim, max_sequence_length, base)
 end
 
-function initialstates(::AbstractRNG, rpe::RotaryPositionalEmbedding)
+function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
     theta = 1.0f0 ./
-            Float32.(rpe.base .^
-                     (range(0, rpe.dim - 1; step=2)[1:(rpe.dim ÷ 2)] ./ rpe.dim))
+            Float32.(rope.base .^
+                     (range(0, rope.dim - 1; step=2)[1:(rope.dim ÷ 2)] ./ rope.dim))
 
-    seq_idx = collect(Float32, 0:(rpe.max_sequence_length - 1))
+    seq_idx = collect(Float32, 0:(rope.max_sequence_length - 1))
     idx_theta = reshape(theta, :, 1) .* reshape(seq_idx, 1, :)
     return (; cos_cache=cos.(idx_theta), sin_cache=sin.(idx_theta))
 end
@@ -185,7 +185,11 @@ function (rope::RotaryPositionalEmbedding)(
 end
 
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
-    @assert ndims(x)==4 "Input must be a 4D tensor"
+    @argcheck ndims(x)==4 "Input must be a 4D tensor"
+    @argcheck size(x, 3) ≤ rope.max_sequence_length "Sequence length must be less than \
+                                                    $(rope.max_sequence_length)"
+    @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
+                                      $(size(x, 1))"
 
     h_d, n_h, seq_len, b = size(x)
     y = match_eltype(rope, ps, st, x)
