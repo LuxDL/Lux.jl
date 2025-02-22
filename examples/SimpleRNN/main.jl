@@ -9,6 +9,9 @@
 
 # ## Package Imports
 
+# Note: If you wish to use AutoZygote() for automatic differentiation,
+# add Zygote to your project dependencies and include `using Zygote`.
+
 using ADTypes, Lux, JLD2, MLUtils, Optimisers, Printf, Reactant, Random
 
 # ## Dataset
