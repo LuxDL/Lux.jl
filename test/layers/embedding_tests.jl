@@ -116,7 +116,7 @@ end
     end
 end
 
-@testitem "Reactant SinusoidalPositionalEmbedding" setup = [
+@testitem "Reactant: SinusoidalPositionalEmbedding" setup = [
     SharedTestSetup, SharedReactantLayersTestSetup
 ] tags = [:reactant] begin
     using Reactant, Lux
@@ -234,7 +234,7 @@ end
     end
 end
 
-@testitem "Reactant RotaryPositionalEmbedding" setup = [
+@testitem "Reactant: RotaryPositionalEmbedding" setup = [
     SharedTestSetup, SharedReactantLayersTestSetup
 ] tags = [:reactant] begin
     using Reactant, Lux
