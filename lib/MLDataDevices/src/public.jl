@@ -9,6 +9,7 @@ end
 struct MetalDevice <: AbstractGPUDevice end
 struct oneAPIDevice <: AbstractGPUDevice end
 
+# TODO: We need to rethink how to store the client and device. what about sharding??
 @kwdef struct ReactantDevice{C, D} <: AbstractAcceleratorDevice
     client::C = missing
     device::D = missing
