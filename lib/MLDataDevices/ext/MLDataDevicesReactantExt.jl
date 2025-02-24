@@ -1,7 +1,7 @@
 module MLDataDevicesReactantExt
 
 using Adapt: Adapt
-using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice, get_device_type
+using MLDataDevices: MLDataDevices, Internal, ReactantDevice, CPUDevice
 using Random: Random
 using Reactant: Reactant, XLA, ConcreteRArray, ConcreteRNumber, TracedRArray,
                 TracedRNumber
@@ -32,25 +32,11 @@ end
 Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothing
 
 # Device Transfer
-function Adapt.adapt_storage(
-        dev::ReactantDevice, x::AbstractArray{<:Reactant.ReactantPrimitive})
-    @warn "ReactantDevice got an array on device: $(get_device_type(x)). We will have to \
-           transfer this via CPU." maxlog=1
-    return Adapt.adapt(dev, Adapt.adapt(CPUDevice(), x))
-end
-
-function Adapt.adapt_storage(dev::ReactantDevice, x::Array{<:Reactant.ReactantPrimitive})
-    client = dev.client === missing ? XLA.default_backend[] : dev.client
-    device = dev.device === missing ? nothing : dev.device
-    return ConcreteRArray(x; client, device)
-end
-
-# XXX: Check for client and device and use faster implementation if possible
-function Adapt.adapt_storage(dev::ReactantDevice, x::ConcreteRArray)
-    dev.client === missing && dev.device === missing && return x
-    @warn "Fetching `client` and `device` from a ConcreteRArray hasn't been implemented \
-           yet. Using slow fallback path." maxlog=1
-    return Adapt.adapt(dev, Adapt.adapt(CPUDevice(), x))
+function Adapt.adapt_storage(dev::ReactantDevice, x::AbstractArray)
+    kwargs = (;)
+    dev.client === missing || (kwargs = (; kwargs..., client=dev.client))
+    dev.device === missing || (kwargs = (; kwargs..., device=dev.device))
+    return ConcreteRArray(x; kwargs...)
 end
 
 Adapt.adapt_storage(::CPUDevice, ::Reactant.ConcreteRNG) = Random.default_rng()
