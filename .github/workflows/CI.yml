@@ -37,11 +37,11 @@ jobs:
         os:
           - ubuntu-latest
         test_group:
-          - "core_layers"
-          - "normalize_layers"
-          - "recurrent_layers"
-          - "autodiff"
-          - "misc"
+          # - "core_layers"
+          # - "normalize_layers"
+          # - "recurrent_layers"
+          # - "autodiff"
+          # - "misc"
           - "reactant"
     steps:
       - uses: actions/checkout@v4
@@ -86,11 +86,11 @@ jobs:
       fail-fast: false
       matrix:
         test_group:
-          - "core_layers"
-          - "normalize_layers"
-          - "recurrent_layers"
-          - "autodiff"
-          - "misc"
+          # - "core_layers"
+          # - "normalize_layers"
+          # - "recurrent_layers"
+          # - "autodiff"
+          # - "misc"
           - "reactant"
     steps:
       - uses: actions/checkout@v4

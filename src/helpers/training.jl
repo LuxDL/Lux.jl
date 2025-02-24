@@ -63,13 +63,16 @@ Constructor for [`TrainState`](@ref).
 [`TrainState`](@ref) object.
 """
 function TrainState(model::AbstractLuxLayer, ps, st, optimizer::Optimisers.AbstractRule)
-    st_opt = if get_device_type(ps) <: ReactantDevice
-        Optimisers.setup(ReactantCompatibleOptimisers.make_reactant_compatible(optimizer), ps)
+    if get_device_type(ps) <: ReactantDevice
+        optimizer = ReactantCompatibleOptimisers.make_reactant_compatible(optimizer)
+        st_opt = optimisers_setup_with_jit(optimizer, ps)
     else
-        Optimisers.setup(optimizer, ps)
+        st_opt = Optimisers.setup(optimizer, ps)
     end
     return TrainState(nothing, nothing, model, ps, st, optimizer, st_opt, 0)
 end
+
+function optimisers_setup_with_jit end
 
 @concrete struct TrainingBackendCache
     backend
