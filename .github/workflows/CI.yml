@@ -99,7 +99,8 @@ jobs:
           version: "1.10"
       - uses: julia-actions/julia-downgrade-compat@v1
         with:
-          skip: "LuxCore,MLDataDevices,WeightInitializers,LuxLib"
+          # XXX: skip reactant till range specifier is removed
+          skip: "LuxCore,MLDataDevices,WeightInitializers,LuxLib,Reactant"
       - uses: julia-actions/julia-buildpkg@v1
       - name: "Dev Test Dependencies"
         run: |
