@@ -12,7 +12,7 @@ Neural Network Primitives with custom bindings for different accelerator backend
     Lux doesn't re-export all of `NNlib` for now. Directly loading `NNlib` is the
     recommended approach for accessing these functions.
 
-## Attention 
+## Attention
 
 ```@docs
 dot_product_attention
