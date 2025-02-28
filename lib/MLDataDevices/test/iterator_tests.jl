@@ -20,9 +20,6 @@ end
 
 if BACKEND_GROUP == "xla" || BACKEND_GROUP == "all"
     using Reactant
-    if "gpu" in keys(Reactant.XLA.backends)
-        Reactant.set_default_backend("gpu")
-    end
 end
 
 DEVICES = [CPUDevice, CUDADevice, AMDGPUDevice, MetalDevice, oneAPIDevice, ReactantDevice]

@@ -11,9 +11,6 @@ using ArrayInterface: parameterless_type
 end
 
 using Reactant
-if "gpu" in keys(Reactant.XLA.backends)
-    Reactant.set_default_backend("gpu")
-end
 
 @testset "Loaded Trigger Package" begin
     if MLDataDevices.functional(ReactantDevice)
@@ -101,8 +98,8 @@ using FillArrays, Zygote  # Extensions
     end
 
     ps_mixed = (; a=rand(2), b=device(rand(2)))
-    @test_throws ArgumentError get_device(ps_mixed)
-    @test_throws ArgumentError get_device_type(ps_mixed)
+    @test get_device(ps_mixed) isa ReactantDevice
+    @test get_device_type(ps_mixed) <: ReactantDevice
 
     @testset "get_device_type compile constant" begin
         x = rand(10, 10) |> device
