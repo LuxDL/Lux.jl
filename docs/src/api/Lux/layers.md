@@ -60,8 +60,15 @@ BidirectionalRNN
 ```@docs
 Bilinear
 Dense
-Embedding
 Scale
+```
+
+## Embedding Layers
+
+```@docs
+Embedding
+RotaryPositionalEmbedding
+SinusoidalPositionalEmbedding
 ```
 
 ## Misc. Helper Layers

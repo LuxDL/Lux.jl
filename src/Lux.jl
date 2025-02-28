@@ -71,6 +71,7 @@ include("layers/display.jl")
 # Layer Implementations
 include("layers/basic.jl")
 include("layers/containers.jl")
+include("layers/embedding.jl")
 include("layers/normalize.jl")
 include("layers/conv.jl")
 include("layers/pooling.jl")
@@ -105,7 +106,8 @@ include("deprecations.jl")
 
 # Layers
 export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, RepeatedLayer
-export Bilinear, Dense, Embedding, Scale
+export Bilinear, Dense, Scale
+export Embedding, SinusoidalPositionalEmbedding, RotaryPositionalEmbedding
 export Conv, ConvTranspose, Upsample, PixelShuffle
 export MaxPool, MeanPool, LPPool, GlobalMaxPool, GlobalMeanPool, GlobalLPPool,
        AdaptiveMaxPool, AdaptiveMeanPool, AdaptiveLPPool
