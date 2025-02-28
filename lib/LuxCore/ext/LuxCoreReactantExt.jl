@@ -10,6 +10,11 @@ function Reactant.make_tracer(
     return model
 end
 
+function Reactant.traced_type_inner(
+        T::Type{<:AbstractLuxLayer}, seen, mode::Reactant.TraceMode, track_numbers::Type)
+    return T
+end
+
 LuxCore.replicate(rng::Reactant.TracedRNG) = copy(rng)
 LuxCore.replicate(rng::Reactant.ConcreteRNG) = copy(rng)
 
