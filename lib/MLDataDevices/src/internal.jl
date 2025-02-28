@@ -126,6 +126,12 @@ function combine_devices(T1::Type{<:AbstractDevice}, T2::Type{<:AbstractDevice})
 end
 
 # Special cases for ReactantDevice
+combine_devices(dev::ReactantDevice, ::AbstractDevice) = dev
+combine_devices(::AbstractDevice, dev::ReactantDevice) = dev
+function combine_devices(dev1::ReactantDevice, dev2::ReactantDevice)
+    dev1 == dev2 && return dev1
+    throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
+end
 combine_devices(::Type{ReactantDevice}, ::Type{UnknownDevice}) = ReactantDevice
 combine_devices(::Type{UnknownDevice}, ::Type{ReactantDevice}) = ReactantDevice
 function combine_devices(::Type{ReactantDevice}, ::Type{T}) where {T <: AbstractDevice}
