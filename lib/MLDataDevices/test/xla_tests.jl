@@ -11,9 +11,6 @@ using ArrayInterface: parameterless_type
 end
 
 using Reactant
-if "gpu" in keys(Reactant.XLA.backends)
-    Reactant.set_default_backend("gpu")
-end
 
 @testset "Loaded Trigger Package" begin
     if MLDataDevices.functional(ReactantDevice)
