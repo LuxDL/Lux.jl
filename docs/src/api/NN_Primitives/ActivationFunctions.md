@@ -37,4 +37,6 @@ swish
 hardswish
 tanhshrink
 trelu
+gelu_tanh
+gelu_erf
 ```
