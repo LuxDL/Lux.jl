@@ -18,7 +18,7 @@ MLDataDevices.default_device_rng(::ReactantDevice) = Reactant.TracedRandom.defau
             Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
     })
         return ReactantDevice(
-            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding)
+            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding.sharding)
         )
     end
     function Internal.get_device_type(::Union{
@@ -32,7 +32,7 @@ elseif isdefined(Reactant, :ConcretePJRTArray)
             Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
     })
         return ReactantDevice(
-            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding)
+            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding.sharding)
         )
     end
     function Internal.get_device_type(::Union{
@@ -43,7 +43,7 @@ elseif isdefined(Reactant, :ConcretePJRTArray)
 else
     function Internal.get_device(x::Union{ConcreteRNumber, ConcreteRArray})
         return ReactantDevice(
-            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding)
+            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding.sharding)
         )
     end
     Internal.get_device_type(::Union{ConcreteRNumber, ConcreteRArray}) = ReactantDevice
