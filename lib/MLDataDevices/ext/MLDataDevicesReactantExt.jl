@@ -13,41 +13,28 @@ MLDataDevices.default_device_rng(::ReactantDevice) = Reactant.TracedRandom.defau
 
 # Query Device from Array
 @static if isdefined(Reactant, :ConcreteIFRTArray)
-    function Internal.get_device(x::Union{
-            Reactant.ConcreteIFRTNumber, Reactant.ConcreteIFRTArray,
-            Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
-    })
-        return ReactantDevice(
-            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding.sharding)
-        )
-    end
-    function Internal.get_device_type(::Union{
-            Reactant.ConcreteIFRTNumber, Reactant.ConcreteIFRTArray,
-            Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
-    })
-        return ReactantDevice
-    end
+    const AllConcreteTypes = Union{
+        Reactant.ConcreteIFRTNumber, Reactant.ConcreteIFRTArray,
+        Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
+    }
 elseif isdefined(Reactant, :ConcretePJRTArray)
-    function Internal.get_device(x::Union{
-            Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
-    })
-        return ReactantDevice(
-            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding.sharding)
-        )
-    end
-    function Internal.get_device_type(::Union{
-            Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
-    })
-        return ReactantDevice
-    end
+    const AllConcreteTypes = Union{
+        Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
+    }
 else
-    function Internal.get_device(x::Union{ConcreteRNumber, ConcreteRArray})
-        return ReactantDevice(
-            Reactant.XLA.client(x), Reactant.XLA.device(x), IdDict(x => x.sharding.sharding)
-        )
-    end
-    Internal.get_device_type(::Union{ConcreteRNumber, ConcreteRArray}) = ReactantDevice
+    const AllConcreteTypes = Union{ConcreteRNumber, ConcreteRArray}
 end
+
+function Internal.get_device(x::AllConcreteTypes)
+    return ReactantDevice(
+        Reactant.XLA.client(x),
+        Reactant.XLA.device(x),
+        IdDict{AllConcreteTypes, Reactant.Sharding.AbstractSharding}(
+            x => x.sharding.sharding
+        )
+    )
+end
+Internal.get_device_type(::AllConcreteTypes) = ReactantDevice
 
 function Internal.get_device(::Union{TracedRArray, TracedRNumber})
     error("`get_device` isn't meant to be called inside `Reactant.@compile` context.")
