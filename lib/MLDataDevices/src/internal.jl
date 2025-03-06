@@ -129,7 +129,14 @@ end
 combine_devices(dev::ReactantDevice, ::AbstractDevice) = dev
 combine_devices(::AbstractDevice, dev::ReactantDevice) = dev
 function combine_devices(dev1::ReactantDevice, dev2::ReactantDevice)
-    dev1 == dev2 && return dev1
+    if dev1 == dev2
+        # `merge(...)` of `IdDict` constructs a `Dict`
+        sharding = dev1.sharding
+        for (k, v) in dev2.sharding
+            sharding[k] = v
+        end
+        return ReactantDevice(dev1.client, dev1.device, sharding)
+    end
     throw(ArgumentError("Objects are on different devices: $(dev1) and $(dev2)."))
 end
 combine_devices(::Type{ReactantDevice}, ::Type{UnknownDevice}) = ReactantDevice

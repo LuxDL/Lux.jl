@@ -9,10 +9,10 @@ end
 struct MetalDevice <: AbstractGPUDevice end
 struct oneAPIDevice <: AbstractGPUDevice end
 
-# TODO: We need to rethink how to store the client and device. what about sharding??
-@kwdef struct ReactantDevice{C, D} <: AbstractAcceleratorDevice
+@kwdef struct ReactantDevice{C, D, S} <: AbstractAcceleratorDevice
     client::C = missing
     device::D = missing
+    sharding::S = missing
 end
 
 function Base.:(==)(x::ReactantDevice, y::ReactantDevice)
@@ -212,24 +212,26 @@ cpu_device() = CPUDevice()
 
 """
     reactant_device(;
-        force::Bool=false, client=missing, device=missing
+        force::Bool=false, client=missing, device=missing, sharding=missing
     ) -> Union{ReactantDevice, CPUDevice}
 
-Return a `ReactantDevice` object if functional. Otherwise, throw an error if `force` is `true`.
-Falls back to `CPUDevice` if `force` is `false`.
+Return a `ReactantDevice` object if functional. Otherwise, throw an error if `force` is
+`true`. Falls back to `CPUDevice` if `force` is `false`.
 
 `client` and `device` are used to specify the client and particular device to use. If not
 specified, then the default client and index are used.
 
-!!! danger
-
-    This is an experimental feature and might change without deprecations
+`sharding` is used to specify the sharding strategy. If a
+`Reactant.Sharding.AbstractSharding` is specified, then we use it to shard all abstract
+arrays. Alternatively, pass in a `IdDict` to specify the sharding for specific leaves.
 """
-function reactant_device(; force::Bool=false, client=missing, device=missing)
+function reactant_device(;
+        force::Bool=false, client=missing, device=missing, sharding=missing
+)
     msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
            calling this function. Defaulting to CPU."
     if loaded(ReactantDevice)
-        functional(ReactantDevice) && return ReactantDevice(client, device)
+        functional(ReactantDevice) && return ReactantDevice(client, device, sharding)
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
     force && throw(Internal.DeviceSelectionException("XLA"))

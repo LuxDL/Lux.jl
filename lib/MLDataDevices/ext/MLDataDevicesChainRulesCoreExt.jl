@@ -23,7 +23,10 @@ function ChainRulesCore.rrule(
         return y, ∇adapt_storage_unknown
     else
         ∇adapt_storage = let dev = dev, x = x
-            Δ -> (NoTangent(), NoTangent(), ProjectTo(x)(dev(Δ)))
+            Δ -> begin
+                ∂x = ChainRulesCore.@thunk ProjectTo(x)(dev(ChainRulesCore.unthunk(Δ)))
+                return NoTangent(), NoTangent(), ∂x
+            end
         end
         return Adapt.adapt_storage(to, x), ∇adapt_storage
     end
