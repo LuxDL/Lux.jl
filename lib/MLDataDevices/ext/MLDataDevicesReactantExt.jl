@@ -51,7 +51,8 @@ function Adapt.adapt_storage(dev::ReactantDevice, x::AbstractArray)
     dev.device === missing || (kwargs = (; kwargs..., device = dev.device))
     if dev.sharding !== missing
         if dev.sharding isa IdDict
-            sharding = dev.sharding[x]
+            sharding = haskey(dev.sharding, x) ? dev.sharding[x] :
+                Reactant.Sharding.NoSharding()
             @assert sharding isa Reactant.Sharding.AbstractSharding
             kwargs = (; kwargs..., sharding)
         elseif dev.sharding isa Reactant.Sharding.AbstractSharding
