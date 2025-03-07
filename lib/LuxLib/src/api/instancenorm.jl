@@ -34,28 +34,33 @@ mean and variance.
 [1] Ulyanov, Dmitry, Andrea Vedaldi, and Victor Lempitsky. "Instance normalization: The
     missing ingredient for fast stylization." arXiv preprint arXiv:1607.08022 (2016).
 """
-function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
+function instancenorm(
+        x::AbstractArray, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, training::TrainingType,
-        σ::F=identity, epsilon=default_epsilon(x)) where {F}
+        σ::F = identity, epsilon = default_epsilon(x)
+    ) where {F}
     # This API is kept for legacy purposes when we didn't support passing running stats
     return instancenorm(x, γ, β, nothing, nothing, training, σ, nothing, epsilon)
 end
 
-function instancenorm(x::AbstractArray, γ::Optional{<:AbstractVector},
+function instancenorm(
+        x::AbstractArray, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, training::TrainingType, σ::F=identity,
-        momentum::Optional{<:Number}=0.1f0, epsilon=default_epsilon(x)) where {F}
+        rσ²::Optional{<:AbstractVector}, training::TrainingType, σ::F = identity,
+        momentum::Optional{<:Number} = 0.1f0, epsilon = default_epsilon(x)
+    ) where {F}
     assert_valid_instancenorm_arguments(x)
 
     y, rμₙ, rσ²ₙ = instancenorm_impl(
         x, γ, β, rμ, rσ², static_training_mode(training, x, γ, β, rμ, rσ²),
-        select_fastest_activation(σ, x, γ, β), momentum, epsilon)
+        select_fastest_activation(σ, x, γ, β), momentum, epsilon
+    )
 
-    return y, (; running_mean=remove_tracking(rμₙ), running_var=remove_tracking(rσ²ₙ))
+    return y, (; running_mean = remove_tracking(rμₙ), running_var = remove_tracking(rσ²ₙ))
 end
 
 function assert_valid_instancenorm_arguments(::AbstractArray{T, N}) where {T, N}
-    @assert N>2 "`ndims(x) = $(N)` must be at least > 2."
+    @assert N > 2 "`ndims(x) = $(N)` must be at least > 2."
     return nothing
 end
 

@@ -7,67 +7,84 @@ end
 
 CRC.@non_differentiable batchnorm_reduce_dims(::Any...)
 
-function get_batchnorm_statistics(::AbstractArray, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, ::True)
+function get_batchnorm_statistics(
+        ::AbstractArray, rμ::Optional{<:AbstractVector},
+        rσ²::Optional{<:AbstractVector}, ::True
+    )
     return copy_drop_gradients(rμ), copy_drop_gradients(rσ²)
 end
 
 function get_batchnorm_statistics(x::AbstractArray, ::Nothing, ::Nothing, ::False)
-    μ, σ² = mean_var(x; dims=unsafe_known(batchnorm_reduce_dims(x)), corrected=false)
+    μ, σ² = mean_var(x; dims = unsafe_known(batchnorm_reduce_dims(x)), corrected = false)
     return safe_vec(μ), safe_vec(σ²)
 end
 
 function get_batchnorm_statistics(
-        ::AbstractArray, rμ::AbstractVector, rσ²::AbstractVector, ::False)
+        ::AbstractArray, rμ::AbstractVector, rσ²::AbstractVector, ::False
+    )
     return rμ, rσ²
 end
 
 CRC.@non_differentiable get_batchnorm_statistics(::Any...)
 
-function batchnorm(x::AbstractArray{xT, N}, γ::Optional{<:AbstractVector},
+function batchnorm(
+        x::AbstractArray{xT, N}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
         rσ²::Optional{<:AbstractVector}, training::StaticBool, act::F,
-        momentum, ϵ) where {F, xT, N}
+        momentum, ϵ
+    ) where {F, xT, N}
     (μ, σ²), (rμ, rσ²) = compute_batch_statistics(
         x, reshape_norm_dims(x, rμ), reshape_norm_dims(x, rσ²),
-        batchnorm_reduce_dims(x), training, momentum)
+        batchnorm_reduce_dims(x), training, momentum
+    )
     return batchnorm_affine_normalize(act, x, μ, σ², γ, β, ϵ), safe_vec(rμ), safe_vec(rσ²)
 end
 
 function batchnorm_affine_normalize(
         act::F, x::AbstractArray{xT, N}, μ::AbstractArray{μT, N},
         σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ) where {F, xT, μT, σ²T, N}
+        β::Optional{<:AbstractVector}, ϵ
+    ) where {F, xT, μT, σ²T, N}
     return batchnorm_affine_normalize(
-        internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ)
+        internal_operation_mode((x, μ, σ², γ, β)), act, x, μ, σ², γ, β, ϵ
+    )
 end
 
 function batchnorm_affine_normalize(
         ::GenericBroadcastOp, act::F, x::AbstractArray{xT, N}, μ::AbstractArray{μT, N},
         σ²::AbstractArray{σ²T, N}, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ) where {F, xT, μT, σ²T, N}
+        β::Optional{<:AbstractVector}, ϵ
+    ) where {F, xT, μT, σ²T, N}
     return affine_normalize(
-        act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ)
+        act, x, μ, σ², reshape_norm_dims(x, γ), reshape_norm_dims(x, β), ϵ
+    )
 end
 
 function batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{xT, N},
         μ::AbstractArray{μT, N}, σ²::AbstractArray{σ²T, N},
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector},
-        ϵ) where {F, xT, μT, σ²T, N}
+        ϵ
+    ) where {F, xT, μT, σ²T, N}
     x′ = reshape(x, :, size(x, N - 1), size(x, N))
     return reshape(
         batchnorm_affine_normalize_internal(opmode, act, x′, vec(μ), vec(σ²), γ, β, ϵ),
-        size(x))
+        size(x)
+    )
 end
 
-@stable default_mode="disable" function batchnorm_affine_normalize_internal(
+@stable default_mode = "disable" function batchnorm_affine_normalize_internal(
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ) where {F, xT}
-    y = similar(x,
-        promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
-            safe_eltype(γ), safe_eltype(β)))
+        β::Optional{<:AbstractVector}, ϵ
+    ) where {F, xT}
+    y = similar(
+        x,
+        promote_type(
+            safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
+            safe_eltype(γ), safe_eltype(β)
+        )
+    )
     batchnorm_affine_normalize_internal!(y, opmode, act, x, μ, σ², γ, β, ϵ)
     return y
 end
@@ -76,11 +93,12 @@ function batchnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 3}, opmode::LoopedArrayOp, act::F, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, ϵ,
-        γ′::Optional{<:AbstractVector}=nothing) where {F, xT, yT}
+        γ′::Optional{<:AbstractVector} = nothing
+    ) where {F, xT, yT}
     N = size(y, 2)
     γ′ = γ′ === nothing ?
-         similar(x, promote_type(safe_eltype(γ), safe_eltype(σ²), safe_eltype(ϵ)), N) :
-         γ′
+        similar(x, promote_type(safe_eltype(γ), safe_eltype(σ²), safe_eltype(ϵ)), N) :
+        γ′
     β′ = similar(x, promote_type(safe_eltype(β), safe_eltype(σ²), safe_eltype(ϵ)), N)
 
     compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
@@ -96,7 +114,7 @@ function batchnorm_affine_normalize_internal!(
 end
 
 function compute_batchnorm_scale_bias!(γ′, β′, γ, β, μ, σ², ϵ)
-    if Utils.within_enzyme_autodiff()
+    return if Utils.within_enzyme_autodiff()
         if γ === nothing && β === nothing
             for J in eachindex(γ′, β′, μ, σ²)
                 @inbounds γ′[J] = inv(sqrt(σ²[J] + ϵ))
@@ -125,8 +143,9 @@ end
 
 function apply_batchnorm_scale_bias_act_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
-    if size(y, 1) == 1
+        x::AbstractArray{xT, 3}, σ::F
+    ) where {F, xT, yT}
+    return if size(y, 1) == 1
         apply_batchnorm_scale_bias_act_2d_serial_cpu!(y, γ′, β′, x, σ)
     else
         if Utils.within_enzyme_autodiff()
@@ -139,18 +158,21 @@ end
 
 @inline function apply_batchnorm_scale_bias_act_2d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
+        x::AbstractArray{xT, 3}, σ::F
+    ) where {F, xT, yT}
     for K in axes(x, 3)
         @simd ivdep for J in axes(x, 2)
             @fastmath @inbounds y[1, J, K] = σ(x[1, J, K] * γ′[J] + β′[J])
         end
     end
+    return
 end
 
 @inline function apply_batchnorm_scale_bias_act_3d_threaded_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
-    @batch for K in axes(x, 3)
+        x::AbstractArray{xT, 3}, σ::F
+    ) where {F, xT, yT}
+    return @batch for K in axes(x, 3)
         for J in axes(x, 2)
             @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = σ(x[I, J, K] * γ′[J] + β′[J])
@@ -161,7 +183,8 @@ end
 
 @inline function apply_batchnorm_scale_bias_act_3d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}, σ::F) where {F, xT, yT}
+        x::AbstractArray{xT, 3}, σ::F
+    ) where {F, xT, yT}
     for K in axes(x, 3)
         for J in axes(x, 2)
             @simd ivdep for I in axes(x, 1)
@@ -169,13 +192,16 @@ end
             end
         end
     end
+    return
 end
 
 @enzyme_alternative apply_batchnorm_scale_bias_act_3d_threaded_cpu! apply_batchnorm_scale_bias_act_3d_serial_cpu!
 
-function apply_batchnorm_scale_bias_cpu!(y::AbstractArray{yT, 3}, γ′::AbstractVector,
-        β′::AbstractVector, x::AbstractArray{xT, 3}) where {xT, yT}
-    if size(y, 1) == 1
+function apply_batchnorm_scale_bias_cpu!(
+        y::AbstractArray{yT, 3}, γ′::AbstractVector,
+        β′::AbstractVector, x::AbstractArray{xT, 3}
+    ) where {xT, yT}
+    return if size(y, 1) == 1
         apply_batchnorm_scale_bias_2d_serial_cpu!(y, γ′, β′, x)
     else
         if Utils.within_enzyme_autodiff()
@@ -188,18 +214,21 @@ end
 
 @inline function apply_batchnorm_scale_bias_2d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}) where {xT, yT}
+        x::AbstractArray{xT, 3}
+    ) where {xT, yT}
     for K in axes(x, 3)
         @simd ivdep for J in axes(x, 2)
             @fastmath @inbounds y[1, J, K] = x[1, J, K] * γ′[J] + β′[J]
         end
     end
+    return
 end
 
 @inline function apply_batchnorm_scale_bias_3d_threaded_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}) where {xT, yT}
-    @batch for K in axes(x, 3)
+        x::AbstractArray{xT, 3}
+    ) where {xT, yT}
+    return @batch for K in axes(x, 3)
         for J in axes(x, 2)
             @simd ivdep for I in axes(x, 1)
                 @fastmath @inbounds y[I, J, K] = x[I, J, K] * γ′[J] + β′[J]
@@ -210,7 +239,8 @@ end
 
 @inline function apply_batchnorm_scale_bias_3d_serial_cpu!(
         y::AbstractArray{yT, 3}, γ′::AbstractVector, β′::AbstractVector,
-        x::AbstractArray{xT, 3}) where {xT, yT}
+        x::AbstractArray{xT, 3}
+    ) where {xT, yT}
     for K in axes(x, 3)
         for J in axes(x, 2)
             @simd ivdep for I in axes(x, 1)
@@ -218,6 +248,7 @@ end
             end
         end
     end
+    return
 end
 
 @enzyme_alternative apply_batchnorm_scale_bias_3d_threaded_cpu! apply_batchnorm_scale_bias_3d_serial_cpu!
@@ -226,48 +257,54 @@ function batchnorm_affine_normalize_internal!(
         y::AbstractArray{yT, 3}, ::GPUBroadcastOp, act::F, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, ϵ,
-        γ′::Optional{<:AbstractVector}=nothing) where {F, xT, yT}
+        γ′::Optional{<:AbstractVector} = nothing
+    ) where {F, xT, yT}
     backend = KA.get_backend(y)
     run_ka_kernel(
         batchnorm_affine_normalize_internal_kernel!, backend, nothing, size(y),
-        y, γ′, act, x, μ, σ², γ, β, ϵ)
-    KA.synchronize(backend)
+        y, γ′, act, x, μ, σ², γ, β, ϵ
+    )
+    return KA.synchronize(backend)
 end
 
-@kernel cpu=false inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+@kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
         y::AbstractArray{<:Number, 3}, @Const(γ′::Nothing),
         @Const(f), @Const(x), @Const(μ), @Const(σ²),
-        @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ))
+        @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ)
+    )
     i, j, k = @index(Global, NTuple)
     γ′′ = inv(sqrt(σ²[j] + ϵ))
     β′ = -μ[j] * γ′′
     y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
 end
 
-@kernel cpu=false inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+@kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector{<:Number},
         @Const(f), @Const(x), @Const(μ), @Const(σ²),
-        @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ))
+        @Const(γ::Nothing), @Const(β::Nothing), @Const(ϵ)
+    )
     i, j, k = @index(Global, NTuple)
     γ′[j] = inv(sqrt(σ²[j] + ϵ))
     β′ = -μ[j] * γ′[j]
     y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
 end
 
-@kernel cpu=false inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+@kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
         y::AbstractArray{<:Number, 3}, @Const(γ′::Nothing),
         @Const(f), @Const(x), @Const(μ), @Const(σ²),
-        @Const(γ), @Const(β), @Const(ϵ))
+        @Const(γ), @Const(β), @Const(ϵ)
+    )
     i, j, k = @index(Global, NTuple)
     γ′′ = γ[j] / sqrt(σ²[j] + ϵ)
     β′ = muladd(-μ[j], γ′′, β[j])
     y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
 end
 
-@kernel cpu=false inbounds=true function batchnorm_affine_normalize_internal_kernel!(
+@kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
         y::AbstractArray{<:Number, 3}, γ′::AbstractVector{<:Number},
         @Const(f), @Const(x), @Const(μ), @Const(σ²),
-        @Const(γ), @Const(β), @Const(ϵ))
+        @Const(γ), @Const(β), @Const(ϵ)
+    )
     i, j, k = @index(Global, NTuple)
     γ′[j] = γ[j] / sqrt(σ²[j] + ϵ)
     β′ = muladd(-μ[j], γ′[j], β[j])
@@ -278,16 +315,23 @@ function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(batchnorm_affine_normalize_internal),
         opmode::AbstractInternalArrayOpMode, act::F, x::AbstractArray{T, N},
         μ::AbstractVector, σ²::AbstractVector, γ::Optional{<:AbstractVector},
-        β::Optional{<:AbstractVector}, ϵ) where {F, T, N}
-    y = similar(x,
-        promote_type(safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
-            safe_eltype(γ), safe_eltype(β)))
+        β::Optional{<:AbstractVector}, ϵ
+    ) where {F, T, N}
+    y = similar(
+        x,
+        promote_type(
+            safe_eltype(x), safe_eltype(μ), safe_eltype(σ²),
+            safe_eltype(γ), safe_eltype(β)
+        )
+    )
     γ′ = similar(
-        x, promote_type(safe_eltype(γ), safe_eltype(σ²), safe_eltype(ϵ)), size(x, N - 1))
+        x, promote_type(safe_eltype(γ), safe_eltype(σ²), safe_eltype(ϵ)), size(x, N - 1)
+    )
 
     batchnorm_affine_normalize_internal!(y, opmode, identity, x, μ, σ², γ, β, ϵ, γ′)
     z, ∇activation = CRC.rrule_via_ad(
-        cfg, activation!!, opmode, is_mutable_array(y), act, y)
+        cfg, activation!!, opmode, is_mutable_array(y), act, y
+    )
 
     𝒫x, 𝒫μ, 𝒫σ² = CRC.ProjectTo(x), CRC.ProjectTo(μ), CRC.ProjectTo(σ²)
     𝒫γ = γ === nothing ? identity : CRC.ProjectTo(γ)
@@ -302,10 +346,12 @@ function CRC.rrule(
     return z, ∇batchnorm_affine_normalize_internal
 end
 
-function ∇batchnorm_affine_normalize(opmode::LoopedArrayOp, ∂y::AbstractArray{∂yT, 3},
+function ∇batchnorm_affine_normalize(
+        opmode::LoopedArrayOp, ∂y::AbstractArray{∂yT, 3},
         x::AbstractArray{xT, 3}, μ::AbstractVector, σ²::AbstractVector,
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ,
-        γ′::AbstractVector) where {∂yT, xT}
+        γ′::AbstractVector
+    ) where {∂yT, xT}
     ∂x, ∂μ, ∂σ² = similar(x), similar(μ), similar(σ²)
     ∂γ = γ === nothing ? nothing : similar(γ)
     ∂β = β === nothing ? nothing : similar(β)
@@ -322,13 +368,14 @@ function ∇batchnorm_affine_normalize_cpu!(
         ∂x::AbstractArray{∂xT, 3}, ∂μ::AbstractVector{∂μT},
         ∂σ²::AbstractVector{∂σ²T}, ::Nothing, ::Nothing, ∂y::AbstractArray{∂yT, 3},
         x::AbstractArray{xT, 3}, μ::AbstractVector, σ²::AbstractVector, ::Nothing,
-        ϵ, γ′::AbstractVector) where {∂xT, ∂μT, ∂σ²T, ∂yT, xT}
+        ϵ, γ′::AbstractVector
+    ) where {∂xT, ∂μT, ∂σ²T, ∂yT, xT}
     half = eltype(∂σ²)(0.5)
 
     fill!(∂μ, 0)
     fill!(∂σ², 0)
 
-    if size(∂y, 1) == 1
+    return if size(∂y, 1) == 1
         @fastmath @inbounds for K in axes(∂y, 3)
             @simd for J in axes(∂y, 2)
                 idenom = γ′[J]
@@ -362,7 +409,8 @@ function ∇batchnorm_affine_normalize_cpu!(
         ∂σ²::AbstractVector{∂σ²T}, ∂γ::AbstractVector{∂γT},
         ∂β::AbstractVector{∂βT}, ∂y::AbstractArray{∂yT, 3}, x::AbstractArray{xT, 3},
         μ::AbstractVector, σ²::AbstractVector, γ::AbstractVector, ϵ,
-        γ′::AbstractVector) where {∂xT, ∂μT, ∂σ²T, ∂γT, ∂βT, ∂yT, xT}
+        γ′::AbstractVector
+    ) where {∂xT, ∂μT, ∂σ²T, ∂γT, ∂βT, ∂yT, xT}
     half = eltype(∂σ²)(0.5)
 
     fill!(∂μ, 0)
@@ -370,7 +418,7 @@ function ∇batchnorm_affine_normalize_cpu!(
     fill!(∂γ, 0)
     fill!(∂β, 0)
 
-    if size(∂y, 1) == 1
+    return if size(∂y, 1) == 1
         @fastmath @inbounds for K in axes(∂y, 3)
             @simd for J in axes(∂y, 2)
                 idenom = inv(sqrt(σ²[J] + ϵ))
@@ -407,16 +455,17 @@ function ∇batchnorm_affine_normalize(
         opmode::AbstractInternalArrayOpMode, ∂y::AbstractArray{∂yT, 3},
         x::AbstractArray{xT, 3}, μ::AbstractVector, σ²::AbstractVector,
         γ::Optional{<:AbstractVector}, β::Optional{<:AbstractVector}, ϵ,
-        γ′::AbstractVector) where {∂yT, xT}
+        γ′::AbstractVector
+    ) where {∂yT, xT}
     ∂x, ∂σ² = similar(x), similar(σ², size(x))
     ∂γ = γ === nothing ? nothing : similar(γ, size(x))
 
     ∇batchnorm_affine_normalize!(∂x, ∂σ², ∂γ, opmode, ∂y, x, μ, σ², γ, ϵ, γ′)
 
-    ∂μ = dropdims(sum(-, ∂x; dims=(1, 3)); dims=(1, 3))
-    ∂σ² = dropdims(sum(∂σ²; dims=(1, 3)); dims=(1, 3))
-    ∂γ = γ === nothing ? ∂∅ : dropdims(sum(∂γ; dims=(1, 3)); dims=(1, 3))
-    ∂β = β === nothing ? ∂∅ : dropdims(sum(∂y; dims=(1, 3)); dims=(1, 3))
+    ∂μ = dropdims(sum(-, ∂x; dims = (1, 3)); dims = (1, 3))
+    ∂σ² = dropdims(sum(∂σ²; dims = (1, 3)); dims = (1, 3))
+    ∂γ = γ === nothing ? ∂∅ : dropdims(sum(∂γ; dims = (1, 3)); dims = (1, 3))
+    ∂β = β === nothing ? ∂∅ : dropdims(sum(∂y; dims = (1, 3)); dims = (1, 3))
 
     return ∂x, ∂μ, ∂σ², ∂γ, ∂β
 end
@@ -426,17 +475,20 @@ function ∇batchnorm_affine_normalize!(
         ∂γ::Optional{<:AbstractArray{<:Any, 3}}, ::GPUBroadcastOp,
         ∂y::AbstractArray{∂yT, 3}, x::AbstractArray{xT, 3}, μ::AbstractVector,
         σ²::AbstractVector, γ::Optional{<:AbstractVector}, ϵ,
-        γ′::AbstractVector) where {∂xT, ∂σ²T, ∂yT, xT}
+        γ′::AbstractVector
+    ) where {∂xT, ∂σ²T, ∂yT, xT}
     backend = KA.get_backend(∂x)
     run_ka_kernel(
         ∇batchnorm_affine_normalize_kernel!, backend, nothing, size(∂x),
-        ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′)
-    KA.synchronize(backend)
+        ∂x, ∂σ², ∂γ, ∂y, x, μ, σ², ϵ, γ′
+    )
+    return KA.synchronize(backend)
 end
 
-@kernel cpu=false inbounds=true function ∇batchnorm_affine_normalize_kernel!(
+@kernel cpu = false inbounds = true function ∇batchnorm_affine_normalize_kernel!(
         ∂x, ∂σ², @Const(∂γ::Nothing), @Const(∂y), @Const(x),
-        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′))
+        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′)
+    )
     i, j, k = @index(Global, NTuple)
     idenom = γ′[j]
     idenom² = idenom * idenom
@@ -447,9 +499,10 @@ end
     ∂σ²[i, j, k] = -∂x[i, j, k] * xμ * idenom² / 2
 end
 
-@kernel cpu=false inbounds=true function ∇batchnorm_affine_normalize_kernel!(
+@kernel cpu = false inbounds = true function ∇batchnorm_affine_normalize_kernel!(
         ∂x, ∂σ², ∂γ, @Const(∂y), @Const(x),
-        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′))
+        @Const(μ), @Const(σ²), @Const(ϵ), @Const(γ′)
+    )
     i, j, k = @index(Global, NTuple)
     idenom = inv(sqrt(σ²[j] + ϵ))
     idenom² = idenom * idenom

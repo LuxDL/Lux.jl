@@ -10,7 +10,7 @@ const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "none"))
 @testset "Issues Patches" begin
     @testset "#10 patch" begin
         dev = CPUDevice()
-        ps = (; weight=randn(10, 1), bias=randn(1))
+        ps = (; weight = randn(10, 1), bias = randn(1))
 
         ps_ca = ps |> ComponentArray
 
@@ -52,7 +52,7 @@ end
 
 @testset "CRC Tests" begin
     dev = cpu_device() # Other devices don't work with FiniteDifferences.jl
-    test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred=false)
+    test_rrule(Adapt.adapt_storage, dev, randn(Float64, 10); check_inferred = false)
 
     gdev = gpu_device()
     if !(gdev isa MetalDevice)  # On intel devices causes problems
@@ -99,9 +99,12 @@ end
 end
 
 @testset "CPU setdevice!" begin
-    @test_logs (:warn,
-        "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting.") MLDataDevices.set_device!(
-        CPUDevice, nothing, 1)
+    @test_logs (
+        :warn,
+        "Setting device for `CPUDevice` doesn't make sense. Ignoring the device setting.",
+    ) MLDataDevices.set_device!(
+        CPUDevice, nothing, 1
+    )
 end
 
 @testset "get_device on Arrays" begin
@@ -126,15 +129,21 @@ end
 end
 
 @testset "writing to preferences" begin
-    @test_logs (:info,
-        "Deleted the local preference for `gpu_backend`. Restart Julia to use the new backend.") gpu_backend!()
+    @test_logs (
+        :info,
+        "Deleted the local preference for `gpu_backend`. Restart Julia to use the new backend.",
+    ) gpu_backend!()
 
-    for backend in (:CUDA, :AMDGPU, :oneAPI, :Metal, AMDGPUDevice(),
-        CUDADevice(), MetalDevice(), oneAPIDevice())
+    for backend in (
+            :CUDA, :AMDGPU, :oneAPI, :Metal, AMDGPUDevice(),
+            CUDADevice(), MetalDevice(), oneAPIDevice(),
+        )
         backend_name = backend isa Symbol ? string(backend) :
-                       MLDataDevices.Internal.get_device_name(backend)
-        @test_logs (:info,
-            "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.") gpu_backend!(backend)
+            MLDataDevices.Internal.get_device_name(backend)
+        @test_logs (
+            :info,
+            "GPU backend has been set to $(backend_name). Restart Julia to use the new backend.",
+        ) gpu_backend!(backend)
     end
 
     gpu_backend!(:CUDA)
@@ -145,7 +154,7 @@ end
 
 @testset "get_device_type compile constant" begin
     x = rand(10, 10)
-    ps = (; weight=x, bias=x, d=(x, x))
+    ps = (; weight = x, bias = x, d = (x, x))
 
     return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
     @test @inferred(return_val(ps)) isa Val{typeof(cpu_device())}
@@ -184,9 +193,9 @@ end
 
     @testset "shared parameters" begin
         x = rand(1)
-        m = (; a=x, b=x')
+        m = (; a = x, b = x')
         count = Ref(0)
-        mcopy = Functors.fmap(m; exclude=MLDataDevices.isleaf) do x
+        mcopy = Functors.fmap(m; exclude = MLDataDevices.isleaf) do x
             count[] += 1
             return copy(x)
         end
@@ -231,9 +240,11 @@ end
     g = only(Zygote.gradient(x -> cdev(2 .* gdev(x))[1], Float32[1, 2, 3]))
     @test g isa Vector{Float32}
 
-    g = only(Zygote.gradient(
-        x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9]
-    ))
+    g = only(
+        Zygote.gradient(
+            x -> cdev(gdev(x) * gdev(x))[1, 2], Float32[1 2 3; 4 5 6; 7 8 9]
+        )
+    )
     @test g isa Matrix{Float32}
 end
 

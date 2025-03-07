@@ -23,7 +23,7 @@ function Internal.unsafe_free_internal!(::Type{MetalDevice}, x::AbstractArray)
     if applicable(Metal.unsafe_free!, x)
         Metal.unsafe_free!(x)
     else
-        @warn "Metal.unsafe_free! is not defined for $(typeof(x))." maxlog=1
+        @warn "Metal.unsafe_free! is not defined for $(typeof(x))." maxlog = 1
     end
     return
 end

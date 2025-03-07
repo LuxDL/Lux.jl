@@ -21,7 +21,8 @@ end
 
 for annotation in (:Duplicated, :DuplicatedNoNeed)
     @eval function EnzymeCore.$(annotation)(
-            ::LuxCore.AbstractLuxLayer, ::LuxCore.AbstractLuxLayer)
+            ::LuxCore.AbstractLuxLayer, ::LuxCore.AbstractLuxLayer
+        )
         throw(ArgumentError(LAYER_DERIVATIVE_ERROR_MSG))
     end
 end
@@ -29,7 +30,8 @@ end
 for annotation in (:BatchDuplicated, :BatchDuplicatedNoNeed)
     @eval function EnzymeCore.$(annotation)(
             ::LuxCore.AbstractLuxLayer, ::NTuple{N, <:LuxCore.AbstractLuxLayer},
-            check::Bool=true) where {N}
+            check::Bool = true
+        ) where {N}
         throw(ArgumentError(LAYER_DERIVATIVE_ERROR_MSG))
     end
 end

@@ -17,24 +17,26 @@ tanh(x::Number) = SLEEFPirates.tanh(x)
 tanh_fast(x::Number) = SLEEFPirates.tanh_fast(x)
 
 for (f, dfdx) in [
-    #! format: off
+        #! format: off
     (:sigmoid_fast, :(conj(Base.FastMath.mul_fast(Ω, Base.FastMath.sub_fast(1, Ω))))),
     (:softplus, :(sigmoid_fast(x))),
     (:logsigmoid, :(sigmoid_fast(-x))),
     (:swish, :(Base.FastMath.add_fast(Ω, Base.FastMath.mul_fast(sigmoid_fast(x), Base.FastMath.sub_fast(1, Ω))))),
     (:lisht, :(Base.FastMath.add_fast(x, Base.FastMath.mul_fast(tanh_fast(x), Base.FastMath.sub_fast(1, Ω))))),
     (:tanh, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω))))),
-    (:tanh_fast, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω)))))
-    #! format: on
-]
+    (:tanh_fast, :(conj(Base.FastMath.sub_fast(1, Base.FastMath.mul_fast(Ω, Ω))))),
+        #! format: on
+    ]
     @eval CRC.@scalar_rule($f(x), $(dfdx))
 
     ∇f = Symbol(:∇broadcasted_, f)
-    @eval function CRC.rrule(::typeof(Broadcast.broadcasted), ::typeof($f),
-            x::Union{Numeric, Broadcast.Broadcasted})
+    @eval function CRC.rrule(
+            ::typeof(Broadcast.broadcasted), ::typeof($f),
+            x::Union{Numeric, Broadcast.Broadcasted}
+        )
         Ω = $(f).(x)
         function $(∇f)(dΩ)
-            ∂x = CRC.InplaceableThunk(dx -> @.(dx+=dΩ * $(dfdx)), CRC.@thunk @.(dΩ*$(dfdx)))
+            ∂x = CRC.InplaceableThunk(dx -> @.(dx += dΩ * $(dfdx)), CRC.@thunk @.(dΩ * $(dfdx)))
             return CRC.NoTangent(), CRC.NoTangent(), ∂x
         end
         return Ω, $(∇f)
@@ -42,16 +44,16 @@ for (f, dfdx) in [
 end
 
 for (fbase, ffast) in [
-    #! format: off
+        #! format: off
     (NNlib.sigmoid_fast, sigmoid_fast),
     (NNlib.softplus, softplus),
     (NNlib.logsigmoid, logsigmoid),
     (NNlib.swish, swish),
     (NNlib.lisht, lisht),
     (Base.tanh, tanh),
-    (NNlib.tanh_fast, tanh_fast)
-    #! format: on
-]
+    (NNlib.tanh_fast, tanh_fast),
+        #! format: on
+    ]
     @eval Impl.sleefpirates_fast_act(::typeof($fbase)) = $ffast
 end
 

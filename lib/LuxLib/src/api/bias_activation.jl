@@ -29,14 +29,15 @@ not rely on `x` being mutated, it is recommended to use it like
 See also [`bias_activation`](@ref), [`fast_activation!!`](@ref).
 """
 function bias_activation!!(
-        σ::F, x::AbstractArray, bias::Optional{<:AbstractVector}) where {F}
+        σ::F, x::AbstractArray, bias::Optional{<:AbstractVector}
+    ) where {F}
     bias_act_check(x, bias)
     return bias_activation!!_impl(select_fastest_activation(σ, x, bias), x, bias)
 end
 
 bias_act_check(_, __) = nothing
 function bias_act_check(x::AbstractArray{xT, N}, bias::AbstractVector) where {xT, N}
-    if N == 1
+    return if N == 1
         @assert length(bias) == length(x)
     else
         @assert length(bias) == size(x, N - 1)

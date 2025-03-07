@@ -130,12 +130,15 @@ Selects GPU device based on the following criteria:
   - `force::Bool`: If `true`, then an error is thrown if no functional GPU
     device is found.
 """
-function gpu_device(device_id::Union{Nothing, <:Integer}=nothing; force::Bool=false,
-        force_gpu_usage::Union{Missing, Bool}=missing)::AbstractDevice
+function gpu_device(
+        device_id::Union{Nothing, <:Integer} = nothing; force::Bool = false,
+        force_gpu_usage::Union{Missing, Bool} = missing
+    )::AbstractDevice
     if force_gpu_usage !== missing
         Base.depwarn(
             "`force_gpu_usage` is deprecated and will be removed in v2. Use \
-             `force` instead.", :gpu_device)
+             `force` instead.", :gpu_device
+        )
         force = force_gpu_usage
     end
 
@@ -198,7 +201,7 @@ function gpu_backend!(backend::String)
         throw(ArgumentError("Invalid backend: $backend. Valid backends are $allowed_backends."))
     end
 
-    @set_preferences!("gpu_backend"=>backend)
+    @set_preferences!("gpu_backend" => backend)
     @info "GPU backend has been set to $backend. Restart Julia to use the new backend."
     return
 end
@@ -226,8 +229,8 @@ specified, then the default client and index are used.
 arrays. Alternatively, pass in a `IdDict` to specify the sharding for specific leaves.
 """
 function reactant_device(;
-        force::Bool=false, client=missing, device=missing, sharding=missing
-)
+        force::Bool = false, client = missing, device = missing, sharding = missing
+    )
     msg = "`ReactantDevice` is not loaded or not functional. Load `Reactant.jl` before \
            calling this function. Defaulting to CPU."
     if loaded(ReactantDevice)
@@ -235,7 +238,7 @@ function reactant_device(;
         msg = "`ReactantDevice` is loaded but not functional. Defaulting to CPU."
     end
     force && throw(Internal.DeviceSelectionException("XLA"))
-    @warn msg maxlog=1
+    @warn msg maxlog = 1
     return cpu_device()
 end
 
@@ -249,13 +252,15 @@ and states on the device using
 [WeightInitializers.jl](https://github.com/LuxDL/WeightInitializers.jl).
 """
 function default_device_rng(D::AbstractDevice)
-    return error("""`default_device_rng` not implemented for `$(typeof(D))`. This is \
-           either because:
+    return error(
+        """`default_device_rng` not implemented for `$(typeof(D))`. This is \
+        either because:
 
-           1. The default RNG for this device is not known / officially provided.
-           2. The trigger package for the device ($(Internal.get_device_name(D)).jl) is \
-              not loaded.
-           """)
+        1. The default RNG for this device is not known / officially provided.
+        2. The trigger package for the device ($(Internal.get_device_name(D)).jl) is \
+        not loaded.
+        """
+    )
 end
 default_device_rng(::CPUDevice) = Random.default_rng()
 
@@ -366,13 +371,13 @@ function set_device!(::Type{T}, ::Nothing, rank::Integer) where {T <: AbstractDe
 end
 
 # Dispatches for Different Data Structures
-(D::AbstractDevice)(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude=isleaf)
+(D::AbstractDevice)(x) = Functors.fmap(Base.Fix1(Adapt.adapt, D), x; exclude = isleaf)
 
 for op in (:get_device, :get_device_type)
     @eval function $(op)(x)
         Internal.fast_structure(x) && return Internal.$(op)(x)
         return mapreduce(
-            Internal.$(op), Internal.combine_devices, fleaves(x; exclude=isleaf)
+            Internal.$(op), Internal.combine_devices, fleaves(x; exclude = isleaf)
         )
     end
 end

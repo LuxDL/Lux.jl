@@ -26,7 +26,7 @@ struct Dense <: AbstractLuxLayer
 end
 
 function LuxCore.initialparameters(rng::AbstractRNG, l::Dense)
-    return (w=randn(rng, l.out, l.in), b=randn(rng, l.out))
+    return (w = randn(rng, l.out, l.in), b = randn(rng, l.out))
 end
 
 (::Dense)(x, ps, st) = x, st  # Dummy Forward Pass
@@ -49,7 +49,7 @@ end
 function (c::Chain)(x, ps, st)
     y, st1 = c.layers[1](x, ps.layers.layer_1, st.layers.layer_1)
     y, st2 = c.layers[2](y, ps.layers.layer_2, st.layers.layer_2)
-    return y, (; layers=(; layer_1=st1, layer_2=st2))
+    return y, (; layers = (; layer_1 = st1, layer_2 = st2))
 end
 
 struct ChainWrapper{L} <: AbstractLuxWrapperLayer{:layers}
@@ -59,7 +59,7 @@ end
 function (c::ChainWrapper)(x, ps, st)
     y, st1 = c.layers[1](x, ps.layer_1, st.layer_1)
     y, st2 = c.layers[2](y, ps.layer_2, st.layer_2)
-    return y, (; layer_1=st1, layer_2=st2)
+    return y, (; layer_1 = st1, layer_2 = st2)
 end
 
 struct Chain2{L1, L2} <: AbstractLuxContainerLayer{(:layer1, :layer2)}
@@ -70,7 +70,7 @@ end
 function (c::Chain2)(x, ps, st)
     y, st1 = c.layer1(x, ps.layer1, st.layer1)
     y, st2 = c.layer1(y, ps.layer2, st.layer2)
-    return y, (; layer1=st1, layer2=st2)
+    return y, (; layer1 = st1, layer2 = st2)
 end
 
 @testset "LuxCore.jl Tests" begin
@@ -86,7 +86,7 @@ end
             @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
             @test LuxCore.stateless_apply(model, x, ps) ==
-                  first(LuxCore.apply(model, x, ps, NamedTuple()))
+                first(LuxCore.apply(model, x, ps, NamedTuple()))
 
             @test_nowarn println(model)
 
@@ -114,24 +114,24 @@ end
             @test LuxCore.statelength(zeros(10, 2)) == 20
             @test LuxCore.statelength(Val(true)) == 1
             @test LuxCore.statelength((zeros(10), zeros(5, 2))) == 20
-            @test LuxCore.statelength((layer_1=zeros(10), layer_2=zeros(5, 2))) == 20
+            @test LuxCore.statelength((layer_1 = zeros(10), layer_2 = zeros(5, 2))) == 20
 
             @test LuxCore.initialparameters(rng, NamedTuple()) == NamedTuple()
             @test_throws MethodError LuxCore.initialparameters(rng, ())
             @test LuxCore.initialparameters(rng, nothing) == NamedTuple()
             @test LuxCore.initialparameters(rng, (nothing, layer)) ==
-                  (NamedTuple(), NamedTuple())
+                (NamedTuple(), NamedTuple())
 
             @test LuxCore.initialstates(rng, NamedTuple()) == NamedTuple()
             @test_throws MethodError LuxCore.initialstates(rng, ())
             @test LuxCore.initialstates(rng, nothing) == NamedTuple()
             @test LuxCore.initialparameters(rng, (nothing, layer)) ==
-                  (NamedTuple(), NamedTuple())
+                (NamedTuple(), NamedTuple())
         end
     end
 
     @testset "AbstractLuxContainerLayer Interface" begin
-        model = Chain((; layer_1=Dense(5, 5), layer_2=Dense(5, 6)))
+        model = Chain((; layer_1 = Dense(5, 5), layer_2 = Dense(5, 6)))
         x = randn(rng, Float32, 5)
         ps, st = LuxCore.setup(rng, model)
 
@@ -139,17 +139,17 @@ end
         @test fieldnames(typeof(st)) == (:layers,)
 
         @test LuxCore.parameterlength(ps) ==
-              LuxCore.parameterlength(model) ==
-              LuxCore.parameterlength(model.layers[1]) +
-              LuxCore.parameterlength(model.layers[2])
+            LuxCore.parameterlength(model) ==
+            LuxCore.parameterlength(model.layers[1]) +
+            LuxCore.parameterlength(model.layers[2])
         @test LuxCore.statelength(st) ==
-              LuxCore.statelength(model) ==
-              LuxCore.statelength(model.layers[1]) + LuxCore.statelength(model.layers[2])
+            LuxCore.statelength(model) ==
+            LuxCore.statelength(model.layers[1]) + LuxCore.statelength(model.layers[2])
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
         @test LuxCore.stateless_apply(model, x, ps) ==
-              first(LuxCore.apply(model, x, ps, st))
+            first(LuxCore.apply(model, x, ps, st))
 
         @test_nowarn println(model)
 
@@ -158,22 +158,22 @@ end
         ps, st = LuxCore.setup(rng, model)
 
         @test LuxCore.parameterlength(ps) ==
-              LuxCore.parameterlength(model) ==
-              LuxCore.parameterlength(model.layer1) + LuxCore.parameterlength(model.layer2)
+            LuxCore.parameterlength(model) ==
+            LuxCore.parameterlength(model.layer1) + LuxCore.parameterlength(model.layer2)
         @test LuxCore.statelength(st) ==
-              LuxCore.statelength(model) ==
-              LuxCore.statelength(model.layer1) + LuxCore.statelength(model.layer2)
+            LuxCore.statelength(model) ==
+            LuxCore.statelength(model.layer1) + LuxCore.statelength(model.layer2)
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
         @test LuxCore.stateless_apply(model, x, ps) ==
-              first(LuxCore.apply(model, x, ps, st))
+            first(LuxCore.apply(model, x, ps, st))
 
         @test_nowarn println(model)
     end
 
     @testset "AbstractLuxWrapperLayer Interface" begin
-        model = ChainWrapper((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
+        model = ChainWrapper((; layer_1 = Dense(5, 10), layer_2 = Dense(10, 5)))
         x = randn(rng, Float32, 5)
         ps, st = LuxCore.setup(rng, model)
 
@@ -181,51 +181,53 @@ end
         @test fieldnames(typeof(st)) == (:layer_1, :layer_2)
 
         @test LuxCore.parameterlength(ps) ==
-              LuxCore.parameterlength(model) ==
-              LuxCore.parameterlength(model.layers.layer_1) +
-              LuxCore.parameterlength(model.layers.layer_2)
+            LuxCore.parameterlength(model) ==
+            LuxCore.parameterlength(model.layers.layer_1) +
+            LuxCore.parameterlength(model.layers.layer_2)
         @test LuxCore.statelength(st) ==
-              LuxCore.statelength(model) ==
-              LuxCore.statelength(model.layers.layer_1) +
-              LuxCore.statelength(model.layers.layer_2)
+            LuxCore.statelength(model) ==
+            LuxCore.statelength(model.layers.layer_1) +
+            LuxCore.statelength(model.layers.layer_2)
 
         @test LuxCore.apply(model, x, ps, st) == model(x, ps, st)
 
         @test LuxCore.stateless_apply(model, x, ps) ==
-              first(LuxCore.apply(model, x, ps, st))
+            first(LuxCore.apply(model, x, ps, st))
 
         @test_nowarn println(model)
     end
 
     @testset "update_state API" begin
-        st = (layer_1=(training=Val(true), val=1),
-            layer_2=(layer_1=(val=2,), layer_2=(training=Val(true),)))
+        st = (
+            layer_1 = (training = Val(true), val = 1),
+            layer_2 = (layer_1 = (val = 2,), layer_2 = (training = Val(true),)),
+        )
 
         st_ = LuxCore.testmode(st)
 
         @test st_.layer_1.training == Val(false) &&
-              st_.layer_2.layer_2.training == Val(false) &&
-              st_.layer_1.val == st.layer_1.val &&
-              st_.layer_2.layer_1.val == st.layer_2.layer_1.val
+            st_.layer_2.layer_2.training == Val(false) &&
+            st_.layer_1.val == st.layer_1.val &&
+            st_.layer_2.layer_1.val == st.layer_2.layer_1.val
 
         st = st_
         st_ = LuxCore.trainmode(st)
 
         @test st_.layer_1.training == Val(true) &&
-              st_.layer_2.layer_2.training == Val(true) &&
-              st_.layer_1.val == st.layer_1.val &&
-              st_.layer_2.layer_1.val == st.layer_2.layer_1.val
+            st_.layer_2.layer_2.training == Val(true) &&
+            st_.layer_1.val == st.layer_1.val &&
+            st_.layer_2.layer_1.val == st.layer_2.layer_1.val
 
         st_ = LuxCore.update_state(st, :val, -1)
         @test st_.layer_1.training == st.layer_1.training &&
-              st_.layer_2.layer_2.training == st.layer_2.layer_2.training &&
-              st_.layer_1.val == -1 &&
-              st_.layer_2.layer_1.val == -1
+            st_.layer_2.layer_2.training == st.layer_2.layer_2.training &&
+            st_.layer_1.val == -1 &&
+            st_.layer_2.layer_1.val == -1
     end
 
     @testset "Functor Compatibility" begin
         @testset "Basic Usage" begin
-            model = Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
+            model = Chain((; layer_1 = Dense(5, 10), layer_2 = Dense(10, 5)))
 
             children, reconstructor = Functors.functor(model)
 
@@ -240,8 +242,11 @@ end
             @test children.layers.layer_2.in == 10
             @test children.layers.layer_2.out == 5
 
-            new_model = reconstructor((;
-                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))))
+            new_model = reconstructor(
+                (;
+                    layers = (; layer_1 = Dense(10, 5), layer_2 = Dense(5, 10)),
+                )
+            )
 
             @test new_model isa Chain
             @test new_model.layers.layer_1.in == 10
@@ -249,7 +254,7 @@ end
             @test new_model.layers.layer_2.in == 5
             @test new_model.layers.layer_2.out == 10
 
-            model = ChainWrapper((; layer_1=Dense(5, 10), layer_2=Dense(10, 5)))
+            model = ChainWrapper((; layer_1 = Dense(5, 10), layer_2 = Dense(10, 5)))
 
             children, reconstructor = Functors.functor(model)
 
@@ -264,8 +269,11 @@ end
             @test children.layers.layer_2.in == 10
             @test children.layers.layer_2.out == 5
 
-            new_model = reconstructor((;
-                layers=(; layer_1=Dense(10, 5), layer_2=Dense(5, 10))))
+            new_model = reconstructor(
+                (;
+                    layers = (; layer_1 = Dense(10, 5), layer_2 = Dense(5, 10)),
+                )
+            )
 
             @test new_model isa ChainWrapper
             @test new_model.layers.layer_1.in == 10
@@ -313,10 +321,14 @@ end
     end
 
     @testset "initialparameter/initialstate for Default Containers" begin
-        models1 = [Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
-            Chain2(Dense(5, 10), Dense(10, 5)), [Dense(5, 10), Dense(10, 5)]]
-        models2 = [Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
-            Chain2(Dense(5, 10), Dense(10, 5)), (Dense(5, 10), Dense(10, 5))]
+        models1 = [
+            Chain((; layer_1 = Dense(5, 10), layer_2 = Dense(10, 5))),
+            Chain2(Dense(5, 10), Dense(10, 5)), [Dense(5, 10), Dense(10, 5)],
+        ]
+        models2 = [
+            Chain((; layer_1 = Dense(5, 10), layer_2 = Dense(10, 5))),
+            Chain2(Dense(5, 10), Dense(10, 5)), (Dense(5, 10), Dense(10, 5)),
+        ]
 
         for models in (models1, models2)
             ps, st = LuxCore.setup(rng, models)
@@ -335,9 +347,9 @@ end
 
     @testset "Convenience Checks" begin
         models1 = [
-            Chain((; layer_1=Dense(5, 10), layer_2=Dense(10, 5))),
+            Chain((; layer_1 = Dense(5, 10), layer_2 = Dense(10, 5))),
             Chain2(Dense(5, 10), Dense(10, 5)),
-            [Dense(5, 10), Dense(10, 5)]
+            [Dense(5, 10), Dense(10, 5)],
         ]
 
         @test LuxCore.contains_lux_layer(models1)
@@ -346,7 +358,7 @@ end
 
         @test !LuxCore.contains_lux_layer(models2)
 
-        models3 = [1, 2, 3, (; a=Dense(5, 10), b=Dense(10, 5))]
+        models3 = [1, 2, 3, (; a = Dense(5, 10), b = Dense(10, 5))]
 
         @test LuxCore.contains_lux_layer(models3)
     end
@@ -395,17 +407,22 @@ end
         @test_logs (
             :warn, "Lux layers are stateless and hence don't participate in device \
                     transfers. Apply this function on the parameters and states generated \
-                    using `LuxCore.setup`.") dev(my_layer)
+                    using `LuxCore.setup`.",
+        ) dev(my_layer)
     end
 
     @testset "nested `training` key: Issue Lux.jl#849" begin
-        st = (encoder=(layer_1=NamedTuple(), layer_2=(; training=Val{true}())),
-            μ=NamedTuple(),
-            logσ=NamedTuple(),
-            decoder=(layer_1=NamedTuple(), layer_2=NamedTuple(), layer_3=NamedTuple(),
-                layer_4=(running_mean=Float32[0.0, 0.0], training=Val{true}())),
-            rng=Xoshiro(),
-            training=Val{true}())
+        st = (
+            encoder = (layer_1 = NamedTuple(), layer_2 = (; training = Val{true}())),
+            μ = NamedTuple(),
+            logσ = NamedTuple(),
+            decoder = (
+                layer_1 = NamedTuple(), layer_2 = NamedTuple(), layer_3 = NamedTuple(),
+                layer_4 = (running_mean = Float32[0.0, 0.0], training = Val{true}()),
+            ),
+            rng = Xoshiro(),
+            training = Val{true}(),
+        )
 
         @test st.encoder.layer_2.training isa Val{true}
         @test st.decoder.layer_4.training isa Val{true}

@@ -13,7 +13,7 @@ Internal.special_aos(::AbstractArray{<:Tracker.TrackedReal}) = true
 
 function Adapt.adapt_structure(to::AbstractDevice, x::AbstractArray{<:Tracker.TrackedReal})
     @warn "AbstractArray{<:Tracker.TrackedReal} is not supported for $(to). Converting to \
-           Tracker.TrackedArray." maxlog=1
+           Tracker.TrackedArray." maxlog = 1
     return Adapt.adapt(to, Tracker.collect(x))
 end
 

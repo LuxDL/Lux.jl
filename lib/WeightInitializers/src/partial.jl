@@ -28,7 +28,7 @@ function Base.show(io::IO, ::MIME"text/plain", f::Partial{T}) where {T}
         push!(kwargs_str, "$(k)=$(v)")
     end
     length(kwargs_str) > 0 && print(io, "; ", join(kwargs_str, ", "))
-    print(io, ")")
+    return print(io, ")")
 end
 
 function (f::Partial{<:Union{Nothing, Missing}})(args...; kwargs...)

@@ -31,9 +31,10 @@ function (f::Fix{N})(args::Vararg{Any, M}; kws...) where {N, M}
         return f.f(args...; f_kws..., kws...)
     else # Int
         M < N - 1 &&
-            throw(ArgumentError("expected at least $(N-1) arguments to a `Fix` function with `N=$(N)`, but got $M"))
+            throw(ArgumentError("expected at least $(N - 1) arguments to a `Fix` function with `N=$(N)`, but got $M"))
         return f.f(
-            args[begin:(begin + (N - 2))]..., f.x, args[(begin + (N - 1)):end]...; kws...)
+            args[begin:(begin + (N - 2))]..., f.x, args[(begin + (N - 1)):end]...; kws...
+        )
     end
 end
 
@@ -84,7 +85,8 @@ end
 check_approx(x::Tuple, y::Tuple; kwargs...) = all(check_approx.(x, y; kwargs...))
 
 function check_approx(
-        nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...) where {fields}
+        nt1::NamedTuple{fields}, nt2::NamedTuple{fields}; kwargs...
+    ) where {fields}
     _check_approx(xy) = check_approx(xy[1], xy[2]; kwargs...)
     _check_approx(t::Tuple{Nothing, Nothing}) = true
     return all(_check_approx, zip(values(nt1), values(nt2)))

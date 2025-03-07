@@ -11,9 +11,10 @@ function __init__()
     reset_gpu_device!()
     for dev in oneAPI.devices()
         SUPPORTS_FP64[dev] = oneL0.module_properties(dev).fp64flags &
-                             oneL0.ZE_DEVICE_MODULE_FLAG_FP64 ==
-                             oneL0.ZE_DEVICE_MODULE_FLAG_FP64
+            oneL0.ZE_DEVICE_MODULE_FLAG_FP64 ==
+            oneL0.ZE_DEVICE_MODULE_FLAG_FP64
     end
+    return
 end
 
 MLDataDevices.loaded(::Union{oneAPIDevice, Type{<:oneAPIDevice}}) = true
@@ -34,7 +35,7 @@ function Internal.unsafe_free_internal!(::Type{oneAPIDevice}, x::AbstractArray)
     if applicable(oneAPI.unsafe_free!, x)
         oneAPI.unsafe_free!(x)
     else
-        @warn "oneAPI.unsafe_free! is not defined for $(typeof(x))." maxlog=1
+        @warn "oneAPI.unsafe_free! is not defined for $(typeof(x))." maxlog = 1
     end
     return
 end
@@ -45,7 +46,8 @@ for (T1, T2) in ((Float64, Float32), (ComplexF64, ComplexF32))
         MLDataDevices.get_device_type(x) <: oneAPIDevice && return x
         if !SUPPORTS_FP64[oneAPI.device()]
             @warn LazyString(
-                "Double type is not supported on this device. Using `", $(T2), "` instead.")
+                "Double type is not supported on this device. Using `", $(T2), "` instead."
+            )
             return oneArray{$(T2)}(x)
         end
         return oneArray(x)

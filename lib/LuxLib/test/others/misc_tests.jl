@@ -1,4 +1,4 @@
-@testitem "internal_operation_mode: Wrapped Arrays" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "internal_operation_mode: Wrapped Arrays" tags = [:misc] setup = [SharedTestSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         x = rand(Float32, 4, 3) |> aType
         retval = ongpu ? LuxLib.GPUBroadcastOp : LuxLib.LoopedArrayOp
@@ -17,7 +17,7 @@
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
-@testitem "Matmul: StaticArrays" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "Matmul: StaticArrays" tags = [:misc] setup = [SharedTestSetup] begin
     using LuxLib.Impl: matmuladd
     using StaticArrays
 

@@ -20,16 +20,20 @@ function Impl.batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, args...)
     return y, xμ, xσ⁻²
 end
 
-function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
-        x::DenseCuArray{T, 2}, args...) where {T <: cuDNNFloat}
+function Impl.batchnorm_cudnn(
+        γ::DenseCuVector{T}, β::DenseCuVector{T},
+        x::DenseCuArray{T, 2}, args...
+    ) where {T <: cuDNNFloat}
     x = reshape(x, 1, 1, size(x, 1), size(x, 2))
     y, xμ, xσ⁻² = Impl.batchnorm_cudnn(γ, β, x, args...)
-    return dropdims(y; dims=(1, 2)), xμ, xσ⁻²
+    return dropdims(y; dims = (1, 2)), xμ, xσ⁻²
 end
 
-function Impl.batchnorm_cudnn(γ::DenseCuVector{T}, β::DenseCuVector{T},
+function Impl.batchnorm_cudnn(
+        γ::DenseCuVector{T}, β::DenseCuVector{T},
         x::Union{DenseCuArray{T, 4}, DenseCuArray{T, 5}}, rμ::Optional{<:DenseCuVector{T}},
-        rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat}
+        rσ²::Optional{<:DenseCuVector{T}}, args...
+    ) where {T <: cuDNNFloat}
     y = similar(x)
     μ, σ⁻² = batchnorm_cudnn!(y, γ, β, x, rμ, rσ², args...)
     return y, μ, σ⁻²
@@ -38,7 +42,8 @@ end
 function batchnorm_cudnn!(
         y::DenseCuArray{T}, γ′::DenseCuVector{T}, β′::DenseCuVector{T}, x::DenseCuArray{T},
         rμ′::Optional{<:DenseCuVector{T}}, rσ²′::Optional{<:DenseCuVector{T}},
-        m, ϵ, training::StaticBool) where {T <: cuDNNFloat}
+        m, ϵ, training::StaticBool
+    ) where {T <: cuDNNFloat}
     dims = wsize(x, True())
 
     γ = reshape(γ′, dims)
@@ -54,29 +59,36 @@ function batchnorm_cudnn!(
 
     xd = cudnnTensorDescriptor(x)
     yd = cudnnTensorDescriptor(y)
-    γβd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
-        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
+    γβd = cudnnTensorDescriptor(
+        CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
+        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW))
+    )
 
     if unsafe_known(training)
         μ = CUDA.zeros(T, dims)
         σ⁻² = CUDA.ones(T, dims)
 
-        cudnnBatchNormalizationForwardTraining(cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
+        cudnnBatchNormalizationForwardTraining(
+            cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
             cuDNN.scalingParameter(T, true), cuDNN.scalingParameter(T, false),
-            xd, x, yd, y, γβd, γ, β, m, rμ, rσ², ϵ, μ, σ⁻²)
+            xd, x, yd, y, γβd, γ, β, m, rμ, rσ², ϵ, μ, σ⁻²
+        )
 
         return μ, σ⁻²
     else
         cudnnBatchNormalizationForwardInference(
             cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL, cuDNN.scalingParameter(T, true),
-            cuDNN.scalingParameter(T, false), xd, x, yd, y, γβd, γ, β, rμ, rσ², ϵ)
+            cuDNN.scalingParameter(T, false), xd, x, yd, y, γβd, γ, β, rμ, rσ², ϵ
+        )
 
         return similar(x, zero.(dims)), similar(x, zero.(dims))
     end
 end
 
-function Impl.∇batchnorm_cudnn(::Nothing, ::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
-        rμ::Optional{<:DenseCuVector}, rσ²::Optional{<:DenseCuVector}, args...)
+function Impl.∇batchnorm_cudnn(
+        ::Nothing, ::Nothing, x::DenseCuArray, ∂y::DenseCuArray,
+        rμ::Optional{<:DenseCuVector}, rσ²::Optional{<:DenseCuVector}, args...
+    )
     affine_sz = wsize(x, False())
     γ = CUDA.ones(eltype(x), affine_sz)
     β = CUDA.zeros(eltype(x), affine_sz)
@@ -94,16 +106,20 @@ end
 function Impl.∇batchnorm_cudnn(
         γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T, 2},
         ∂y::DenseCuArray{T, 2}, rμ::Optional{<:DenseCuVector{T}},
-        rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat}
-    ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(γ, β, reshape(x, 1, 1, size(x, 1), size(x, 2)),
-        reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)), rμ, rσ², args...)
-    return ∂γ, ∂β, dropdims(∂x; dims=(1, 2))
+        rσ²::Optional{<:DenseCuVector{T}}, args...
+    ) where {T <: cuDNNFloat}
+    ∂γ, ∂β, ∂x = Impl.∇batchnorm_cudnn(
+        γ, β, reshape(x, 1, 1, size(x, 1), size(x, 2)),
+        reshape(∂y, 1, 1, size(∂y, 1), size(∂y, 2)), rμ, rσ², args...
+    )
+    return ∂γ, ∂β, dropdims(∂x; dims = (1, 2))
 end
 
 function Impl.∇batchnorm_cudnn(
         γ::DenseCuVector{T}, β::DenseCuVector{T}, x::DenseCuArray{T, N},
         ∂y::DenseCuArray{T, N}, rμ::Optional{<:DenseCuVector{T}},
-        rσ²::Optional{<:DenseCuVector{T}}, args...) where {T <: cuDNNFloat, N}
+        rσ²::Optional{<:DenseCuVector{T}}, args...
+    ) where {T <: cuDNNFloat, N}
     ∂γ, ∂β, ∂x = similar(γ), similar(β), similar(x)
     ∇batchnorm_cudnn!(∂γ, γ, ∂β, ∂x, x, ∂y, rμ, rσ², args...)
     return ∂γ, ∂β, ∂x
@@ -114,7 +130,8 @@ function ∇batchnorm_cudnn!(
         ∂x::DenseCuArray{T, N}, x::DenseCuArray{T, N}, ∂y::DenseCuArray{T, N},
         rμ′::Optional{<:DenseCuVector{T}}, rσ²′::Optional{<:DenseCuVector{T}},
         xμ::Optional{<:DenseCuArray{<:cuDNNFloat, N}},
-        xσ⁻²::Optional{<:DenseCuArray{<:cuDNNFloat, N}}, ϵ) where {T <: cuDNNFloat, N}
+        xσ⁻²::Optional{<:DenseCuArray{<:cuDNNFloat, N}}, ϵ
+    ) where {T <: cuDNNFloat, N}
     dims = wsize(x, True())
 
     ∂γ = reshape(∂γ′, dims)
@@ -131,14 +148,18 @@ function ∇batchnorm_cudnn!(
     xd = cudnnTensorDescriptor(x)
     ∂yd = cudnnTensorDescriptor(∂y)
     ∂xd = cudnnTensorDescriptor(∂x)
-    γd = cudnnTensorDescriptor(CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
-        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW)))
+    γd = cudnnTensorDescriptor(
+        CUDNN_TENSOR_NCHW, cudnnDataType(T), Cint(length(dims)),
+        cuDNN.dim4(dims, Val(CUDNN_TENSOR_NCHW))
+    )
 
     xμ = xμ === nothing ? CU_NULL : xμ
     xσ⁻² = xσ⁻² === nothing ? CU_NULL : xσ⁻²
 
-    return cudnnBatchNormalizationBackward(cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
+    return cudnnBatchNormalizationBackward(
+        cuDNN.handle(), CUDNN_BATCHNORM_SPATIAL,
         cuDNN.scalingParameter(T, true), cuDNN.scalingParameter(T, false),
         cuDNN.scalingParameter(T, true), cuDNN.scalingParameter(T, false),
-        xd, x, ∂yd, ∂y, ∂xd, ∂x, γd, γ, ∂γ, ∂β, ϵ, xμ, xσ⁻²)
+        xd, x, ∂yd, ∂y, ∂xd, ∂x, γd, γ, ∂γ, ∂β, ϵ, xμ, xσ⁻²
+    )
 end

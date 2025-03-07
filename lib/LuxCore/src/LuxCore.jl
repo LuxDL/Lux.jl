@@ -16,7 +16,7 @@ Creates a copy of the `rng` state depending on its type.
 end
 function replicate(rng::Random.TaskLocalRNG)
     @warn "`replicate` doesn't work for `TaskLocalRNG`. Returning the same \
-           `TaskLocalRNG`." maxlog=1
+           `TaskLocalRNG`." maxlog = 1
     return rng
 end
 
@@ -65,7 +65,7 @@ for op in (:initialparameters, :initialstates)
         $(op)(rng::AbstractRNG, l::NamedTuple) = map(Base.Fix1($op, rng), l)
         function $(op)(rng::AbstractRNG, l)
             contains_lux_layer(l) || throw(MethodError($op, (rng, l)))
-            return Internal.fmap(Base.Fix1($op, rng), l; exclude=Internal.isleaf)
+            return Internal.fmap(Base.Fix1($op, rng), l; exclude = Internal.isleaf)
         end
     end
 end
@@ -151,7 +151,7 @@ this include:
     type stability. By default this is "disable"d. For more information, see the
     [documentation](https://github.com/MilesCranmer/DispatchDoctor.jl).
 """
-@stable default_mode="disable" function apply(model::AbstractLuxLayer, x, ps, st)
+@stable default_mode = "disable" function apply(model::AbstractLuxLayer, x, ps, st)
     return model(x, ps, st)
 end
 
@@ -211,13 +211,17 @@ Users implementing their custom layer can extend the same functions as in
 """
 abstract type AbstractLuxContainerLayer{layers} <: AbstractLuxLayer end
 
-function initialparameters(rng::AbstractRNG,
-        l::AbstractLuxContainerLayer{layers}) where {layers}
+function initialparameters(
+        rng::AbstractRNG,
+        l::AbstractLuxContainerLayer{layers}
+    ) where {layers}
     return NamedTuple{layers}(initialparameters.(rng, getfield.((l,), layers)))
 end
 
-function initialstates(rng::AbstractRNG,
-        l::AbstractLuxContainerLayer{layers}) where {layers}
+function initialstates(
+        rng::AbstractRNG,
+        l::AbstractLuxContainerLayer{layers}
+    ) where {layers}
     return NamedTuple{layers}(initialstates.(rng, getfield.((l,), layers)))
 end
 
@@ -246,7 +250,8 @@ which calls `getfield(x, layer)(x, ps, st)`.
 abstract type AbstractLuxWrapperLayer{layer} <: AbstractLuxLayer end
 
 function initialparameters(
-        rng::AbstractRNG, l::AbstractLuxWrapperLayer{layer}) where {layer}
+        rng::AbstractRNG, l::AbstractLuxWrapperLayer{layer}
+    ) where {layer}
     return initialparameters(rng, getfield(l, layer))
 end
 
@@ -291,7 +296,7 @@ Recursively update all occurrences of the `key` in the state `st` with the `valu
 
     This function requires `Functors.jl` to be loaded.
 """
-function update_state(st::NamedTuple, key::Symbol, value; exclude=Internal.isleaf)
+function update_state(st::NamedTuple, key::Symbol, value; exclude = Internal.isleaf)
     fmap_fn = let key = key, value = value
         (kp, val) -> begin
             last(kp) == key && return value
@@ -335,53 +340,57 @@ end
 
 module Internal
 
-using Random: Xoshiro
-using ..LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
+    using Random: Xoshiro
+    using ..LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
 
-is_extension_loaded(::Val) = false
+    is_extension_loaded(::Val) = false
 
-function fmap_impl end            # Defined in FunctorsExt
-function fmap_with_path_impl end  # Defined in FunctorsExt
-function fleaves_impl end         # Defined in FunctorsExt
-function isleaf_impl end          # Defined in FunctorsExt
+    function fmap_impl end            # Defined in FunctorsExt
+    function fmap_with_path_impl end  # Defined in FunctorsExt
+    function fleaves_impl end         # Defined in FunctorsExt
+    function isleaf_impl end          # Defined in FunctorsExt
 
-for op in (:fmap, :fleaves, :isleaf, :fmap_with_path)
-    main_op = Symbol(op, :_impl)
-    err_msg = "`$op` requires `Functors.jl` to be loaded."
-    @eval begin
-        function $(op)(args...; kwargs...)
-            is_extension_loaded(Val(:Functors)) || throw(ArgumentError($err_msg))
-            return $main_op(args...; kwargs...)
+    for op in (:fmap, :fleaves, :isleaf, :fmap_with_path)
+        main_op = Symbol(op, :_impl)
+        err_msg = "`$op` requires `Functors.jl` to be loaded."
+        @eval begin
+            function $(op)(args...; kwargs...)
+                is_extension_loaded(Val(:Functors)) || throw(ArgumentError($err_msg))
+                return $main_op(args...; kwargs...)
+            end
         end
     end
+
+    isleaf(::AbstractLuxLayer) = true
+
+    function setfield_impl end  # Defined in SetfieldExt
+
+    function setfield(args...; kwargs...)
+        is_extension_loaded(Val(:Setfield)) && return setfield_impl(args...; kwargs...)
+        throw(ArgumentError("`setfield` requires `Setfield.jl` to be loaded."))
+    end
+
+    default_rng() = Xoshiro(1234)
+
+    get_empty_state(::AbstractLuxLayer) = NamedTuple()
+    get_empty_state(l::NamedTuple) = map(get_empty_state, l)
+    function get_empty_state(l::AbstractLuxContainerLayer{layers}) where {layers}
+        return NamedTuple{layers}(get_empty_state.(getfield.((l,), layers)))
+    end
+    function get_empty_state(l::AbstractLuxWrapperLayer{layer}) where {layer}
+        return get_empty_state(getfield(l, layer))
+    end
+
 end
 
-isleaf(::AbstractLuxLayer) = true
-
-function setfield_impl end  # Defined in SetfieldExt
-
-function setfield(args...; kwargs...)
-    is_extension_loaded(Val(:Setfield)) && return setfield_impl(args...; kwargs...)
-    throw(ArgumentError("`setfield` requires `Setfield.jl` to be loaded."))
-end
-
-default_rng() = Xoshiro(1234)
-
-get_empty_state(::AbstractLuxLayer) = NamedTuple()
-get_empty_state(l::NamedTuple) = map(get_empty_state, l)
-function get_empty_state(l::AbstractLuxContainerLayer{layers}) where {layers}
-    return NamedTuple{layers}(get_empty_state.(getfield.((l,), layers)))
-end
-function get_empty_state(l::AbstractLuxWrapperLayer{layer}) where {layer}
-    return get_empty_state(getfield(l, layer))
-end
-
-end
-
-@compat(public,
-    (replicate, trainmode, testmode, update_state, contains_lux_layer,
+@compat(
+    public,
+    (
+        replicate, trainmode, testmode, update_state, contains_lux_layer,
         check_fmap_condition, initialparameters, initialstates, parameterlength,
-        statelength, outputsize, setup, apply, stateless_apply, display_name))
+        statelength, outputsize, setup, apply, stateless_apply, display_name,
+    )
+)
 
 export AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer
 

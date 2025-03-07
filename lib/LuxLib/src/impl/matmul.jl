@@ -8,11 +8,14 @@ function matmuladd(A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
 end
 
 function matmuladd(
-        ::GenericBroadcastOp, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+        ::GenericBroadcastOp, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+    )
     return muladd(A, B, bias)
 end
-function matmuladd(opmode::AbstractInternalArrayOpMode, A::AbstractMatrix,
-        B::AbstractMatrix, bias::AbstractVector)
+function matmuladd(
+        opmode::AbstractInternalArrayOpMode, A::AbstractMatrix,
+        B::AbstractMatrix, bias::AbstractVector
+    )
     if size(A, 2) != size(B, 1)
         throw(DimensionMismatch(lazy"A has shape ($(size(A, 1)), $(size(A, 2))) but B has shape ($(size(B, 1)), $(size(B, 2)))"))
     end
@@ -47,26 +50,33 @@ function matmuladd!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, ::N
     return
 end
 function matmuladd!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+    )
     matmuladd!(C, internal_operation_mode((C, A, B, bias)), A, B, bias)
     return
 end
 
-function matmuladd!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
-        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+function matmuladd!(
+        C::AbstractMatrix, ::AbstractInternalArrayOpMode,
+        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+    )
     C .= bias
     mul!(C, A, B, true, true)
     return
 end
 
-function matmuladd!(C::AbstractMatrix, ::GPUBroadcastOp{CUDADevice},
-        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+function matmuladd!(
+        C::AbstractMatrix, ::GPUBroadcastOp{CUDADevice},
+        A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+    )
     cublasLt_fused_dense!(C, identity, A, B, bias)
     return
 end
 
-function matmuladd!(C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
-        B::AbstractMatrix, bias::AbstractVector)
+function matmuladd!(
+        C::AbstractMatrix, ::LoopedArrayOp, A::AbstractMatrix,
+        B::AbstractMatrix, bias::AbstractVector
+    )
     if can_loopvec_args(C, A, B, bias) && fits_in_l2cache(C, A, B, bias)
         matmuladd_loopvec!(C, A, B, bias)
         return
@@ -80,8 +90,10 @@ function matmul!(C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix)
     return
 end
 
-function matmul!(C::AbstractMatrix, ::AbstractInternalArrayOpMode,
-        A::AbstractMatrix, B::AbstractMatrix)
+function matmul!(
+        C::AbstractMatrix, ::AbstractInternalArrayOpMode,
+        A::AbstractMatrix, B::AbstractMatrix
+    )
     mul!(C, A, B)
     return
 end
@@ -94,13 +106,16 @@ for spl_blas in (True, False)
     @eval begin
         function matmul_cpu!( # Octavian can be used
                 C::AbstractMatrix, ::True, ::$(spl_blas),
-                A::AbstractMatrix, B::AbstractMatrix)
+                A::AbstractMatrix, B::AbstractMatrix
+            )
             if can_loopvec_args(C, A, B)
                 if fits_in_l1cache(C, A, B)
                     matmul_loopvec!(C, A, B, true, false)
                     return
-                elseif $(unsafe_known(spl_blas()) ? fits_in_l2cache :
-                         fits_in_l3cache)(C, A, B)
+                elseif $(
+                        unsafe_known(spl_blas()) ? fits_in_l2cache :
+                            fits_in_l3cache
+                    )(C, A, B)
                     matmul_octavian!(C, A, B, true, false)
                     return
                 end
@@ -111,7 +126,8 @@ for spl_blas in (True, False)
 
         function matmul_cpu!( # Octavian cannot be used
                 C::AbstractMatrix, ::False, ::$(spl_blas),
-                A::AbstractMatrix, B::AbstractMatrix)
+                A::AbstractMatrix, B::AbstractMatrix
+            )
             if can_loopvec_args(C, A, B)
                 if $(unsafe_known(spl_blas()) ? fits_in_l1cache : fits_in_l2cache)(C, A, B)
                     matmul_loopvec!(C, A, B, true, false)
@@ -128,24 +144,28 @@ end
 # We force inlining here to avoid allocations in the inner loops
 
 # Best case fallback, we are likely going to hit BLAS
-@inline function matmul_cpu_fallback!(C::AbstractMatrix{T}, A::AbstractMatrix{T},
-        B::AbstractMatrix{T}, α::Number, β::Number) where {T}
+@inline function matmul_cpu_fallback!(
+        C::AbstractMatrix{T}, A::AbstractMatrix{T},
+        B::AbstractMatrix{T}, α::Number, β::Number
+    ) where {T}
     matmul_linalg_default!(C, A, B, α, β)
     return
 end
 
-@inline function matmul_cpu_fallback!(C::AbstractMatrix{T}, A::AbstractMatrix{AT},
-        B::AbstractMatrix{BT}, α::Number, β::Number) where {T, AT, BT}
+@inline function matmul_cpu_fallback!(
+        C::AbstractMatrix{T}, A::AbstractMatrix{AT},
+        B::AbstractMatrix{BT}, α::Number, β::Number
+    ) where {T, AT, BT}
     if can_loopvec_args(C, A, B) && unsafe_known(is_extension_loaded(Val(:Octavian)))
         matmul_octavian!(C, A, B, α, β)
         return
     end
     # Generic fallback is actually quite good starting julia 1.11
     @static if VERSION ≥ v"1.11-"
-        @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Falling back to generic implementation. This may be slow." maxlog=1
+        @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Falling back to generic implementation. This may be slow." maxlog = 1
         A′, B′ = A, B
     else
-        @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Converting to common type to to attempt to use BLAS. This may be slow." maxlog=1
+        @warn lazy"Mixed-Precision `matmul_cpu_fallback!` detected and Octavian.jl cannot be used for this set of inputs (C [$(typeof(C))]: A [$(typeof(A))] x B [$(typeof(B))]). Converting to common type to to attempt to use BLAS. This may be slow." maxlog = 1
         A′, B′ = ofeltype_array(T, A), ofeltype_array(T, B)
     end
     matmul_linalg_default!(C, A′, B′, α, β)
@@ -153,7 +173,8 @@ end
 end
 
 @inline function matmul_linalg_default!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number)
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, α::Number, β::Number
+    )
     mul!(C, A, B, α, β)
     return
 end
@@ -165,7 +186,8 @@ function matmuladd_loopvec! end
 function matmul_octavian! end
 
 @inline function matmuladd_cpu_fallback!(
-        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+        C::AbstractMatrix, A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+    )
     C .= bias
     matmul_cpu_fallback!(C, A, B, true, true)
     return
@@ -183,7 +205,8 @@ function CRC.rrule(::typeof(matmul), A::AbstractMatrix, B::AbstractMatrix)
 end
 
 function CRC.rrule(
-        ::typeof(matmuladd), A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector)
+        ::typeof(matmuladd), A::AbstractMatrix, B::AbstractMatrix, bias::AbstractVector
+    )
     𝒫A, 𝒫B, 𝒫bias = CRC.ProjectTo(A), CRC.ProjectTo(B), CRC.ProjectTo(bias)
     ∇matmuladd = @closure Δ -> begin
         ∂A = CRC.@thunk 𝒫A(matmul(recursive_unthunk(Δ), B'))
@@ -195,16 +218,18 @@ function CRC.rrule(
 end
 
 # EnzymeRules
-function EnzymeRules.augmented_primal(cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
+function EnzymeRules.augmented_primal(
+        cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
         ::Type{EnzymeCore.Const{Nothing}}, C::EnzymeCore.Annotation{<:AbstractMatrix},
         opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode},
         A::EnzymeCore.Annotation{<:AbstractMatrix},
         B::EnzymeCore.Annotation{<:AbstractMatrix},
-        bias::EnzymeCore.Annotation{<:AbstractVector})
+        bias::EnzymeCore.Annotation{<:AbstractVector}
+    )
     A_cache = EnzymeRules.overwritten(cfg)[4] && !(B isa EnzymeCore.Const) &&
-              !(C isa EnzymeCore.Const) ? copy(A.val) : nothing
+        !(C isa EnzymeCore.Const) ? copy(A.val) : nothing
     B_cache = EnzymeRules.overwritten(cfg)[5] && !(A isa EnzymeCore.Const) &&
-              !(C isa EnzymeCore.Const) ? copy(B.val) : nothing
+        !(C isa EnzymeCore.Const) ? copy(B.val) : nothing
 
     if !(C isa EnzymeCore.DuplicatedNoNeed || C isa EnzymeCore.BatchDuplicatedNoNeed)
         matmuladd!(C.val, opmode.val, A.val, B.val, bias.val)
@@ -213,13 +238,15 @@ function EnzymeRules.augmented_primal(cfg, ::EnzymeCore.Const{typeof(matmuladd!)
     return EnzymeRules.AugmentedReturn(nothing, nothing, (A_cache, B_cache))
 end
 
-function EnzymeRules.reverse(cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
+function EnzymeRules.reverse(
+        cfg, ::EnzymeCore.Const{typeof(matmuladd!)},
         ::Type{EnzymeCore.Const{Nothing}}, (A_cache, B_cache),
         C::EnzymeCore.Annotation{<:AbstractMatrix},
         opmode::EnzymeCore.Const{<:AbstractInternalArrayOpMode},
         A::EnzymeCore.Annotation{<:AbstractMatrix},
         B::EnzymeCore.Annotation{<:AbstractMatrix},
-        bias::EnzymeCore.Annotation{<:AbstractVector})
+        bias::EnzymeCore.Annotation{<:AbstractVector}
+    )
     if !(C isa EnzymeCore.Const) && !(B isa EnzymeCore.Const)
         if !EnzymeRules.overwritten(cfg)[4]
             A_cache = A.val

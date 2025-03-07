@@ -7,11 +7,11 @@ using Functors: Functors
 using MLDataDevices: cpu_device, gpu_device, get_device, get_device_type, AbstractGPUDevice
 using Optimisers: Optimisers
 using Test: Test, Error, Broken, Pass, Fail, get_testset, @testset, @test, @test_skip,
-            @test_broken, eval_test, Threw, Returned
+    @test_broken, eval_test, Threw, Returned
 
 # Autodiff
 using ADTypes: AutoEnzyme, AutoFiniteDiff, AutoTracker, AutoForwardDiff, AutoReverseDiff,
-               AutoZygote
+    AutoZygote
 using ChainRulesCore: ChainRulesCore
 using FiniteDiff: FiniteDiff
 using ForwardDiff: ForwardDiff
@@ -29,7 +29,7 @@ try
     global JET_TESTING_ENABLED = v"1.10-" ≤ VERSION < v"1.11-"
 catch err
     @error "`JET.jl` did not successfully precompile on $(VERSION). All `@jet` tests will \
-            be skipped." maxlog=1 err=err
+            be skipped." maxlog = 1 err = err
     global JET_TESTING_ENABLED = false
 end
 

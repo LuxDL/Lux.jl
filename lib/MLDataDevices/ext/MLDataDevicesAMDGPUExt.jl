@@ -16,7 +16,7 @@ function check_use_amdgpu!()
     USE_AMD_GPU[] = AMDGPU.functional()
     if USE_AMD_GPU[] && !AMDGPU.functional(:MIOpen)
         @warn "MIOpen is not functional in AMDGPU.jl, some functionality will not be \
-               available." maxlog=1
+               available." maxlog = 1
     end
     return
 end
@@ -71,7 +71,7 @@ function Internal.unsafe_free_internal!(::Type{AMDGPUDevice}, x::AbstractArray)
     if applicable(AMDGPU.unsafe_free!, x)
         AMDGPU.unsafe_free!(x)
     else
-        @warn "AMDGPU.unsafe_free! is not defined for $(typeof(x))." maxlog=1
+        @warn "AMDGPU.unsafe_free! is not defined for $(typeof(x))." maxlog = 1
     end
     return
 end

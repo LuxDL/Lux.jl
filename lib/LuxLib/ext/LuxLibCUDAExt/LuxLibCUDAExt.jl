@@ -12,7 +12,8 @@ using Static: True, False
 for op in (:logsoftmax, :softmax)
     dual_op = Symbol(op, :_dual)
     @eval function NNlib.$(op)(
-            x::CuArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+            x::CuArray{<:ForwardDiff.Dual{Tag, T, P}}; dims = 1
+        ) where {Tag, T, P}
         return Impl.$(dual_op)(x; dims)
     end
 end

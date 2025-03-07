@@ -59,11 +59,11 @@ end
     @testset "DataLoader: parallel=$parallel" for parallel in (true, false)
         @info "Testing DataLoader with parallel=$parallel"
         X = rand(Float64, 3, 33)
-        post = DataLoader(X; batchsize=13, shuffle=false, parallel) |> dev
+        post = DataLoader(X; batchsize = 13, shuffle = false, parallel) |> dev
         if dev_type === ReactantDevice
             pre = post # XXX: deadlocks and other shenanigans
         else
-            pre = DataLoader(dev(X); batchsize=13, shuffle=false, parallel)
+            pre = DataLoader(dev(X); batchsize = 13, shuffle = false, parallel)
         end
 
         for epoch in 1:2
@@ -87,11 +87,11 @@ end
         end
 
         Y = rand(Float64, 1, 33)
-        post = DataLoader((; x=X, y=Y); batchsize=13, shuffle=false, parallel) |> dev
+        post = DataLoader((; x = X, y = Y); batchsize = 13, shuffle = false, parallel) |> dev
         if dev_type === ReactantDevice
             pre = post # XXX: deadlocks and other shenanigans
         else
-            pre = DataLoader((; x=dev(X), y=dev(Y)); batchsize=13, shuffle=false, parallel)
+            pre = DataLoader((; x = dev(X), y = dev(Y)); batchsize = 13, shuffle = false, parallel)
         end
 
         for epoch in 1:2

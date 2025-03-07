@@ -3,7 +3,7 @@ using LuxLib, LuxTestUtils, Random, Test, Zygote, NNlib
 
 is_training(::Val{training}) where {training} = training
 
-function setup_instancenorm(gen_f, aType, T, sz; affine::Bool=true)
+function setup_instancenorm(gen_f, aType, T, sz; affine::Bool = true)
     x = gen_f(T, sz) |> aType
     scale = affine ? aType(gen_f(T, sz[end - 1])) : nothing
     bias = affine ? aType(gen_f(T, sz[end - 1])) : nothing
@@ -31,8 +31,10 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
     @test size(y) == sz
 
     if is_training(training)
-        @test_gradients(sumabs2instancenorm, x, scale, bias, training, act, epsilon;
-            atol, rtol, soft_fail=[AutoFiniteDiff()], enzyme_set_runtime_activity=true)
+        @test_gradients(
+            sumabs2instancenorm, x, scale, bias, training, act, epsilon;
+            atol, rtol, soft_fail = [AutoFiniteDiff()], enzyme_set_runtime_activity = true
+        )
     end
 
     # Now test with running stats
@@ -41,34 +43,44 @@ function run_instancenorm_testing(gen_f, T, sz, training, act, aType)
 
     y, nt = instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
 
-    @test @inferred(instancenorm(
-        x, scale, bias, rm, rv, training, act, T(0.1), epsilon)) isa Any
+    @test @inferred(
+        instancenorm(
+            x, scale, bias, rm, rv, training, act, T(0.1), epsilon
+        )
+    ) isa Any
     @jet instancenorm(x, scale, bias, rm, rv, training, act, T(0.1), epsilon)
 
     @test y isa aType{T, length(sz)}
     @test size(y) == sz
 
     if is_training(training)
-        @test_gradients(sumabs2instancenorm, x, scale, bias, Constant(rm), Constant(rv),
+        @test_gradients(
+            sumabs2instancenorm, x, scale, bias, Constant(rm), Constant(rv),
             training, act, T(0.1), epsilon; atol, rtol,
-            soft_fail=[AutoFiniteDiff()],
-            enzyme_set_runtime_activity=true)
+            soft_fail = [AutoFiniteDiff()],
+            enzyme_set_runtime_activity = true
+        )
     end
 end
 
 const ALL_TEST_CONFIGS = Iterators.product(
     [Float32, Float64], ((4, 4, 6, 2), (3, 4, 2), (4, 4, 4, 3, 2)),
-    (Val(true), Val(false)), (identity, sigmoid_fast, anonact))
+    (Val(true), Val(false)), (identity, sigmoid_fast, anonact)
+)
 
-const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)))
+const TEST_BLOCKS = collect(
+    Iterators.partition(
+        ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 2)
+    )
+)
 
 export setup_instancenorm, ALL_TEST_CONFIGS, TEST_BLOCKS, run_instancenorm_testing
 
 end
 
-@testitem "Instance Norm: Group 1" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
+@testitem "Instance Norm: Group 1" tags = [:normalization] setup = [
+    SharedTestSetup, InstanceNormSetup,
+] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[1]
             !fp64 && T == Float64 && continue
@@ -77,8 +89,9 @@ end
     end
 end
 
-@testitem "Instance Norm: Group 2" tags=[:normalization] setup=[
-    SharedTestSetup, InstanceNormSetup] begin
+@testitem "Instance Norm: Group 2" tags = [:normalization] setup = [
+    SharedTestSetup, InstanceNormSetup,
+] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $T, size $sz, $training $act" for (T, sz, training, act) in TEST_BLOCKS[2]
             !fp64 && T == Float64 && continue

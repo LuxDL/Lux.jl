@@ -30,7 +30,9 @@ multiple operations.
     Loading `Octavian.jl` enables a polyalgorithm that uses different backends based on the
     input sizes.
 """
-function fused_dense_bias_activation(σ::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Optional{<:AbstractVector}) where {F}
+function fused_dense_bias_activation(
+        σ::F, weight::AbstractMatrix, x::AbstractMatrix,
+        b::Optional{<:AbstractVector}
+    ) where {F}
     return fused_dense_impl(select_fastest_activation(σ, weight, x, b), weight, x, b)
 end
