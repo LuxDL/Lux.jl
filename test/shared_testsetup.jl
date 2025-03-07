@@ -45,3 +45,28 @@ export BACKEND_GROUP, MODES, cpu_testing, cuda_testing, amdgpu_testing, get_defa
     sumabs2first, sumsumfirst
 
 end
+
+@testsetup module SharedReactantLayersTestSetup
+
+using Lux, Reactant, Enzyme, Zygote
+
+sumabs2(model, x, ps, st) = sum(abs2, first(model(x, ps, st)))
+
+function ∇sumabs2_zygote(model, x, ps, st)
+    return Zygote.gradient((x, ps) -> sumabs2(model, x, ps, st), x, ps)
+end
+
+function ∇sumabs2_enzyme(model, x, ps, st)
+    dx = Enzyme.make_zero(x)
+    dps = Enzyme.make_zero(ps)
+    Enzyme.autodiff(
+        Enzyme.Reverse, sumabs2, Active,
+        Const(model), Duplicated(x, dx),
+        Duplicated(ps, dps), Const(st)
+    )
+    return dx, dps
+end
+
+export ∇sumabs2_zygote, ∇sumabs2_enzyme
+
+end
