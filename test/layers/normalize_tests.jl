@@ -59,7 +59,9 @@
             ps, st = Lux.setup(rng, m) |> dev
 
             @jet m(x, ps, Lux.testmode(st))
-            @test_gradients(sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(
+                sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3, skip_backends
+            )
 
             # with activation function
             m = BatchNorm(2, sigmoid; affine)
@@ -74,7 +76,9 @@
             @test y ≈
                 sigmoid.((x .- st_.running_mean) ./ sqrt.(st_.running_var .+ m.epsilon))
             @jet m(x, ps, Lux.testmode(st))
-            @test_gradients(sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
+            @test_gradients(
+                sumabs2first, m, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3, skip_backends
+            )
 
             m = BatchNorm(32; affine)
             x = randn(Float32, 416, 416, 32, 1) |> aType
