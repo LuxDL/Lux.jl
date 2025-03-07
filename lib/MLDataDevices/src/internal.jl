@@ -93,7 +93,7 @@ function get_gpu_device(; force::Bool)
     end
 
     force && throw(DeviceSelectionException("GPU"))
-    Base.get_bool_env("MLDATADEVICES_SILENCE_WARN_NO_GPU", false) &|| @warn """No functional GPU backend found! Defaulting to CPU.
+    Base.get_bool_env("MLDATADEVICES_SILENCE_WARN_NO_GPU", false) || @warn """No functional GPU backend found! Defaulting to CPU.
 
     1. If no GPU is available, nothing needs to be done. Set `MLDATADEVICES_SILENCE_WARN_NO_GPU=1` to silence this warning.
     2. If GPU is available, load the corresponding trigger package.
