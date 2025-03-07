@@ -5,7 +5,7 @@ using InteractiveUtils, Hwloc
 
 const BACKEND_GROUP = lowercase(get(ENV, "BACKEND_GROUP", "all"))
 const ALL_LUX_TEST_GROUPS = [
-    "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc"
+    "core_layers", "normalize_layers", "autodiff", "recurrent_layers", "misc",
 ]
 
 Sys.iswindows() || push!(ALL_LUX_TEST_GROUPS, "reactant")
@@ -37,13 +37,13 @@ end
 if (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda")
     if isdir(joinpath(@__DIR__, "../lib/LuxCUDA"))
         @info "Using local LuxCUDA"
-        push!(EXTRA_DEV_PKGS, Pkg.PackageSpec(; path=joinpath(@__DIR__, "../lib/LuxCUDA")))
+        push!(EXTRA_DEV_PKGS, Pkg.PackageSpec(; path = joinpath(@__DIR__, "../lib/LuxCUDA")))
     else
         push!(EXTRA_PKGS, Pkg.PackageSpec("LuxCUDA"))
     end
 end
 (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-    push!(EXTRA_PKGS, Pkg.PackageSpec(; name="AMDGPU"))
+    push!(EXTRA_PKGS, Pkg.PackageSpec(; name = "AMDGPU"))
 
 if !isempty(EXTRA_PKGS) || !isempty(EXTRA_DEV_PKGS)
     @info "Installing Extra Packages for testing" EXTRA_PKGS EXTRA_DEV_PKGS
@@ -72,7 +72,8 @@ using Lux
         println()
 
         @test_throws ErrorException vector_jacobian_product(
-            x -> x, AutoZygote(), rand(2), rand(2))
+            x -> x, AutoZygote(), rand(2), rand(2)
+        )
 
         @test_throws ArgumentError batched_jacobian(x -> x, AutoEnzyme(), rand(2, 2))
         @test_throws ErrorException batched_jacobian(x -> x, AutoZygote(), rand(2, 2))
@@ -107,8 +108,9 @@ end
 # Eltype Matching Tests
 if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
     @testset "eltype_mismath_handling: $option" for option in (
-        "none", "warn", "convert", "error")
-        set_preferences!(Lux, "eltype_mismatch_handling" => option; force=true)
+            "none", "warn", "convert", "error",
+        )
+        set_preferences!(Lux, "eltype_mismatch_handling" => option; force = true)
         try
             run(`$(Base.julia_cmd()) --color=yes --project=$(dirname(Pkg.project().path))
                 --startup-file=no --code-coverage=user $(@__DIR__)/eltype_matching.jl`)
@@ -117,25 +119,32 @@ if ("all" in LUX_TEST_GROUP || "misc" in LUX_TEST_GROUP)
             @test false
         end
     end
-    set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force=true)
+    set_preferences!(Lux, "eltype_mismatch_handling" => "none"; force = true)
 end
 
 const RETESTITEMS_NWORKERS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKERS",
-        string(min(Hwloc.num_physical_cores(), Sys.isapple() ? 2 : 4))))
+    Int, get(
+        ENV, "RETESTITEMS_NWORKERS",
+        string(min(Hwloc.num_physical_cores(), Sys.isapple() ? 2 : 4))
+    )
+)
 
 const RETESTITEMS_NWORKER_THREADS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKER_THREADS",
-        string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))))
+    Int, get(
+        ENV, "RETESTITEMS_NWORKER_THREADS",
+        string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))
+    )
+)
 
 @testset "Lux.jl Tests" begin
     @testset "[$(tag)] [$(i)/$(length(LUX_TEST_GROUP))]" for (i, tag) in enumerate(LUX_TEST_GROUP)
         nworkers = (tag == "reactant") || (BACKEND_GROUP == "amdgpu") ? 0 :
-                   RETESTITEMS_NWORKERS
+            RETESTITEMS_NWORKERS
 
-        ReTestItems.runtests(Lux;
-            tags=(tag == "all" ? nothing : [Symbol(tag)]), testitem_timeout=2400,
-            nworkers, nworker_threads=RETESTITEMS_NWORKER_THREADS
+        ReTestItems.runtests(
+            Lux;
+            tags = (tag == "all" ? nothing : [Symbol(tag)]), testitem_timeout = 2400,
+            nworkers, nworker_threads = RETESTITEMS_NWORKER_THREADS
         )
     end
 end
@@ -190,17 +199,18 @@ if ("all" in LUX_TEST_GROUP || "others" in LUX_TEST_GROUP)
         @testset "set_dispatch_doctor_preferences!" begin
             @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!("invalid")
             @test_throws ArgumentError Lux.set_dispatch_doctor_preferences!(;
-                luxcore="invalid")
+                luxcore = "invalid"
+            )
 
             Lux.set_dispatch_doctor_preferences!("disable")
             @test Preferences.load_preference(LuxCore, "instability_check") == "disable"
             @test Preferences.load_preference(LuxLib, "instability_check") == "disable"
 
-            Lux.set_dispatch_doctor_preferences!(; luxcore="warn", luxlib="error")
+            Lux.set_dispatch_doctor_preferences!(; luxcore = "warn", luxlib = "error")
             @test Preferences.load_preference(LuxCore, "instability_check") == "warn"
             @test Preferences.load_preference(LuxLib, "instability_check") == "error"
 
-            Lux.set_dispatch_doctor_preferences!(; luxcore="error")
+            Lux.set_dispatch_doctor_preferences!(; luxcore = "error")
             @test Preferences.load_preference(LuxCore, "instability_check") == "error"
             @test Preferences.load_preference(LuxLib, "instability_check") == "disable"
         end

@@ -8,7 +8,7 @@ end
 #       use the later function for maintenance purposes.
 function (r::Lux.Recurrence{False})(x::AnyTracedRArray, ps, st::NamedTuple)
     if r.ordering isa Lux.TimeLastIndex ||
-       (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
+            (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
         idxs = ntuple(Returns(Colon()), ndims(x) - 1)
         (out, carry), st = r.cell(x[idxs..., 1], ps, st)
         @trace for i in 2:size(x, ndims(x))
@@ -29,7 +29,7 @@ end
 
 function (r::Lux.Recurrence{True})(x::AnyTracedRArray, ps, st::NamedTuple)
     if r.ordering isa Lux.TimeLastIndex ||
-       (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
+            (r.ordering isa Lux.BatchLastIndex && ndims(x) == 2)
         idxs = ntuple(Returns(Colon()), ndims(x) - 1)
         (out, carry), st = r.cell(x[idxs..., 1], ps, st)
         sequence = similar(out, size(out)..., size(x, ndims(x)))
@@ -50,5 +50,5 @@ function (r::Lux.Recurrence{True})(x::AnyTracedRArray, ps, st::NamedTuple)
     else
         error("Unknown ordering: $(r.ordering)")
     end
-    return (out, eachslice(sequence; dims=ndims(sequence))), st
+    return (out, eachslice(sequence; dims = ndims(sequence))), st
 end

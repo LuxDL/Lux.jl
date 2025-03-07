@@ -1,27 +1,29 @@
-@testitem "replicate" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "replicate" setup = [SharedTestSetup] tags = [:misc] begin
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         _rng = get_default_rng(mode)
         @test randn(_rng, 10, 2) != randn(_rng, 10, 2)
-        @test randn(Lux.replicate(_rng), 10, 2)==randn(Lux.replicate(_rng), 10, 2) broken=(mode ==
-                                                                                           "amdgpu")
+        @test randn(Lux.replicate(_rng), 10, 2) == randn(Lux.replicate(_rng), 10, 2) broken = (
+            mode ==
+                "amdgpu"
+        )
     end
 end
 
-@testitem "istraining" tags=[:misc] begin
+@testitem "istraining" tags = [:misc] begin
     using Static
 
     @test LuxOps.istraining(Val(true))
     @test !LuxOps.istraining(Val(false))
-    @test !LuxOps.istraining((training=Val(false),))
-    @test LuxOps.istraining((training=Val(true),))
-    @test !LuxOps.istraining((no_training=1,))
-    @test LuxOps.istraining((training=true,))
-    @test !LuxOps.istraining((training=false,))
+    @test !LuxOps.istraining((training = Val(false),))
+    @test LuxOps.istraining((training = Val(true),))
+    @test !LuxOps.istraining((no_training = 1,))
+    @test LuxOps.istraining((training = true,))
+    @test !LuxOps.istraining((training = false,))
     @test LuxOps.istraining(static(true))
     @test !LuxOps.istraining(static(false))
 end
 
-@testitem "ComponentArrays edge cases" tags=[:misc] begin
+@testitem "ComponentArrays edge cases" tags = [:misc] begin
     using ComponentArrays
 
     @test eltype(ComponentArray()) == Float32
@@ -31,7 +33,7 @@ end
     @test eltype(ComponentArray(Any[:a, 1], (FlatAxis(),))) == Any
 end
 
-@testitem "multigate" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "multigate" setup = [SharedTestSetup] tags = [:misc] begin
     rng = StableRNG(12345)
 
     function bcast_multigate(x)
@@ -64,17 +66,17 @@ end
         @test res ≈ sum(x[1:2, :]) + sum(x[5:6, :]) + sum(abs2, x[3:4, :])
         @test dx ≈ aType([ones(2, 5); Array(x[3:4, :] .* 2); ones(2, 5)])
 
-        @test_gradients(bcast_multigate, x; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(bcast_multigate, x; atol = 1.0f-3, rtol = 1.0f-3)
     end
 end
 
-@testitem "ComponentArrays" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "ComponentArrays" setup = [SharedTestSetup] tags = [:misc] begin
     using Optimisers, Functors
 
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        ps = (weight=randn(rng, 3, 4), bias=randn(rng, 4))
+        ps = (weight = randn(rng, 3, 4), bias = randn(rng, 4))
         p_flat, re = Optimisers.destructure(ps)
         ps_c = ComponentArray(ps)
 
@@ -113,23 +115,24 @@ end
     @test length(Zygote.gradient(l2reg, ps)) == 1
 end
 
-@testitem "Utils.init_rnn_hidden_state" setup=[SharedTestSetup] tags=[:recurrent_layers] begin
+@testitem "Utils.init_rnn_hidden_state" setup = [SharedTestSetup] tags = [:recurrent_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        rnn = RNNCell(3 => 5; init_state=Lux.zeros32)
+        rnn = RNNCell(3 => 5; init_state = Lux.zeros32)
         x = randn(rng, Float32, 3, 2, 2)
         @test Lux.Utils.init_rnn_hidden_state(rng, rnn, view(dev(x), :, 1, :)) ==
-              aType(zeros(Float32, 5, 2))
+            aType(zeros(Float32, 5, 2))
     end
 end
 
-@testitem "FP Conversions" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "FP Conversions" setup = [SharedTestSetup] tags = [:misc] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         model = Chain(
-            Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1))
+            Dense(1 => 16, relu), Chain(Dense(16 => 1), Dense(1 => 1)), BatchNorm(1)
+        )
 
         for (f, ftype) in zip((f16, f32, f64), (Float16, Float32, Float64))
             ps, st = Lux.setup(rng, model) |> dev |> f
@@ -149,7 +152,7 @@ end
             @test eltype(st.layer_3.running_var) == ftype
             @test typeof(st.layer_3.training) == Val{true}
 
-            @test_throws ArgumentError (ps.|>f)
+            @test_throws ArgumentError (ps .|> f)
             @test_throws ArgumentError f.(ps)
 
             x = [1.0, 2.0, 3.0] |> aType
@@ -160,7 +163,7 @@ end
     end
 end
 
-@testitem "Edge Cases" tags=[:misc] begin
+@testitem "Edge Cases" tags = [:misc] begin
     @test Lux.Utils.size(nothing) === nothing
     @test Lux.Utils.size(1) == ()
     @test Lux.Utils.size(1.0) == ()
@@ -176,18 +179,18 @@ end
     @test_throws ErrorException Lux.Utils.named_tuple(abc)
     @test_throws MethodError Lux.Utils.pairs(abc)
 
-    Base.NamedTuple(abc::ABC) = (a=abc.a, b=abc.b)
+    Base.NamedTuple(abc::ABC) = (a = abc.a, b = abc.b)
 
-    @test Lux.Utils.named_tuple(abc) == (a=1, b=2)
-    @test Lux.Utils.pairs(abc) == pairs((a=1, b=2))
+    @test Lux.Utils.named_tuple(abc) == (a = 1, b = 2)
+    @test Lux.Utils.pairs(abc) == pairs((a = 1, b = 2))
 
     @test Lux.Utils.merge(1.0, []) == 1.0
     @test Lux.Utils.merge([], 1.0) == 1.0
     @test_throws ArgumentError Lux.Utils.merge([2.0], 1)
-    @test Lux.Utils.merge(abc, abc) == (a=1, b=2)
+    @test Lux.Utils.merge(abc, abc) == (a = 1, b = 2)
 end
 
-@testitem "Recursive Utils (Deprecated)" tags=[:misc] begin
+@testitem "Recursive Utils (Deprecated)" tags = [:misc] begin
     using Functors, Tracker, ReverseDiff, ForwardDiff
 
     struct functorABC{A, B}
@@ -223,7 +226,8 @@ end
             x_wrapped = (
                 ForwardDiff.Dual.(x), ForwardDiff.Dual(2.0), ReverseDiff.track.(x),
                 ReverseDiff.track(2.0), ReverseDiff.track(x),
-                Tracker.param.(x), Tracker.param(x), Tracker.param(2.0))
+                Tracker.param.(x), Tracker.param(x), Tracker.param(2.0),
+            )
 
             for x in x_wrapped
                 @test Lux.recursive_eltype(x, Val(true)) == Float64
@@ -233,15 +237,19 @@ end
     end
 
     @testset "recursive_make_zero" begin
-        nt = (; a=1.0, b=rand(2), c=[rand(2), rand(4)], d=(rand(3), rand(5)),
-            e=nothing, f=Val(2), g=functorABC(randn(3, 2), randn(2, 3)))
+        nt = (;
+            a = 1.0, b = rand(2), c = [rand(2), rand(4)], d = (rand(3), rand(5)),
+            e = nothing, f = Val(2), g = functorABC(randn(3, 2), randn(2, 3)),
+        )
 
         nt_zero = Lux.recursive_make_zero(nt)
 
         @test nt_zero.e === nothing
         @test nt_zero.f === Val(2)
-        for leaf in (nt_zero.a, nt_zero.b, nt_zero.c[1], nt_zero.c[2],
-            nt_zero.d[1], nt_zero.d[2], nt_zero.g.a, nt_zero.g.b)
+        for leaf in (
+                nt_zero.a, nt_zero.b, nt_zero.c[1], nt_zero.c[2],
+                nt_zero.d[1], nt_zero.d[2], nt_zero.g.a, nt_zero.g.b,
+            )
             @test iszero(leaf)
         end
 
@@ -260,13 +268,15 @@ end
     end
 end
 
-@testitem "Functors Compatibility" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "Functors Compatibility" setup = [SharedTestSetup] tags = [:misc] begin
     using Functors
 
     rng = StableRNG(12345)
 
-    c = Parallel(+; chain=Chain(; dense_1=Dense(2 => 3), dense_2=Dense(3 => 5)),
-        dense_3=Dense(5 => 1))
+    c = Parallel(
+        +; chain = Chain(; dense_1 = Dense(2 => 3), dense_2 = Dense(3 => 5)),
+        dense_3 = Dense(5 => 1)
+    )
 
     @test fmap(println, c) isa Any
 
@@ -277,7 +287,7 @@ end
     @test new_model.layers.dense_3 == l
 end
 
-@testitem "Tracing AD: AoS to SoA" setup=[SharedTestSetup] tags=[:autodiff] begin
+@testitem "Tracing AD: AoS to SoA" setup = [SharedTestSetup] tags = [:autodiff] begin
     using ReverseDiff, Tracker
 
     rng = StableRNG(1234)

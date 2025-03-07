@@ -3,7 +3,7 @@ using Boltz, Lux, MLDataDevices
 
 using Dates, Random
 using DataAugmentation, FileIO, MLUtils, OneHotArrays, Optimisers, ParameterSchedulers,
-      Setfield
+    Setfield
 using Comonicon, Format
 using JLD2
 using Zygote
@@ -30,9 +30,9 @@ catch err
 end
 
 const local_rank = distributed_backend === nothing ? 0 :
-                   DistributedUtils.local_rank(distributed_backend)
+    DistributedUtils.local_rank(distributed_backend)
 const total_workers = distributed_backend === nothing ? 1 :
-                      DistributedUtils.total_workers(distributed_backend)
+    DistributedUtils.total_workers(distributed_backend)
 const is_distributed = total_workers > 1
 const should_log = !is_distributed || local_rank == 0
 
@@ -46,14 +46,14 @@ const IMAGENET_CORRUPTED_FILES = [
     "n03710637_5125.JPEG", "n03961711_5286.JPEG", "n04033995_2932.JPEG",
     "n04258138_17003.JPEG", "n04264628_27969.JPEG", "n04336792_7448.JPEG",
     "n04371774_5854.JPEG", "n04596742_4225.JPEG", "n07583066_647.JPEG",
-    "n13037406_4650.JPEG", "n02105855_2933.JPEG", "ILSVRC2012_val_00019877.JPEG"
+    "n13037406_4650.JPEG", "n02105855_2933.JPEG", "ILSVRC2012_val_00019877.JPEG",
 ]
 
 function load_imagenet1k(base_path::String, split::Symbol)
     @assert split in (:train, :val)
     full_path = joinpath(base_path, string(split))
     synsets = sort(readdir(full_path))
-    @assert length(synsets)==1000 "There should be 1000 subdirectories in $(full_path)."
+    @assert length(synsets) == 1000 "There should be 1000 subdirectories in $(full_path)."
 
     image_files = String[]
     labels = Int[]
@@ -76,9 +76,10 @@ default_image_size(_, size::Int) = size
 struct MakeColoredImage <: DataAugmentation.Transform end
 
 function DataAugmentation.apply(
-        ::MakeColoredImage, item::DataAugmentation.AbstractArrayItem; randstate=nothing)
+        ::MakeColoredImage, item::DataAugmentation.AbstractArrayItem; randstate = nothing
+    )
     data = itemdata(item)
-    (ndims(data) == 2 || size(data, 3) == 1) && (data = cat(data, data, data; dims=Val(3)))
+    (ndims(data) == 2 || size(data, 3) == 1) && (data = cat(data, data, data; dims = Val(3)))
     return DataAugmentation.setdata(item, data)
 end
 
@@ -97,44 +98,55 @@ function Base.getindex(dataset::FileDataset, i::Int)
 end
 
 function construct_dataloaders(;
-        base_path::String, train_batchsize, val_batchsize, image_size::Int)
+        base_path::String, train_batchsize, val_batchsize, image_size::Int
+    )
     sensible_println("=> creating dataloaders.")
 
     train_augment = ScaleFixed((256, 256)) |> Maybe(FlipX(), 0.5) |>
-                    RandomResizeCrop((image_size, image_size)) |> PinOrigin() |>
-                    ImageToTensor() |> MakeColoredImage() |>
-                    Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0)) |>
-                    ToEltype(Float32)
+        RandomResizeCrop((image_size, image_size)) |> PinOrigin() |>
+        ImageToTensor() |> MakeColoredImage() |>
+        Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0)) |>
+        ToEltype(Float32)
     train_files, train_labels = load_imagenet1k(base_path, :train)
 
     train_dataset = FileDataset(train_files, train_labels, train_augment)
 
     val_augment = ScaleFixed((image_size, image_size)) |> PinOrigin() |>
-                  ImageToTensor() |> MakeColoredImage() |>
-                  Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0)) |>
-                  ToEltype(Float32)
+        ImageToTensor() |> MakeColoredImage() |>
+        Normalize((0.485f0, 0.456f0, 0.406f0), (0.229f0, 0.224f0, 0.225f0)) |>
+        ToEltype(Float32)
     val_files, val_labels = load_imagenet1k(base_path, :val)
 
     val_dataset = FileDataset(val_files, val_labels, val_augment)
 
     if is_distributed
-        train_dataset = DistributedUtils.DistributedDataContainer(distributed_backend,
-            train_dataset)
-        val_dataset = DistributedUtils.DistributedDataContainer(distributed_backend,
-            val_dataset)
+        train_dataset = DistributedUtils.DistributedDataContainer(
+            distributed_backend,
+            train_dataset
+        )
+        val_dataset = DistributedUtils.DistributedDataContainer(
+            distributed_backend,
+            val_dataset
+        )
     end
 
-    train_dataloader = DataLoader(train_dataset; batchsize=train_batchsize ÷ total_workers,
-        partial=false, collate=true, shuffle=true, parallel=true)
-    val_dataloader = DataLoader(val_dataset; batchsize=val_batchsize ÷ total_workers,
-        partial=true, collate=true, shuffle=false, parallel=true)
+    train_dataloader = DataLoader(
+        train_dataset; batchsize = train_batchsize ÷ total_workers,
+        partial = false, collate = true, shuffle = true, parallel = true
+    )
+    val_dataloader = DataLoader(
+        val_dataset; batchsize = val_batchsize ÷ total_workers,
+        partial = true, collate = true, shuffle = false, parallel = true
+    )
 
     return gdev(train_dataloader), gdev(val_dataloader)
 end
 
 # Model Construction
-function construct_model(; rng::AbstractRNG, model_name::String, model_args,
-        pretrained::Bool=false)
+function construct_model(;
+        rng::AbstractRNG, model_name::String, model_args,
+        pretrained::Bool = false
+    )
     model = getproperty(Vision, Symbol(model_name))(model_args...; pretrained)
     ps, st = Lux.setup(rng, model) |> gdev
 
@@ -153,10 +165,12 @@ function construct_model(; rng::AbstractRNG, model_name::String, model_args,
 end
 
 # Optimizer Configuration
-function construct_optimizer_and_scheduler(; kind::String, learning_rate::AbstractFloat,
+function construct_optimizer_and_scheduler(;
+        kind::String, learning_rate::AbstractFloat,
         nesterov::Bool, momentum::AbstractFloat, weight_decay::AbstractFloat,
         scheduler_kind::String, cycle_length::Int, damp_factor::AbstractFloat,
-        lr_step_decay::AbstractFloat, lr_step::Vector{Int})
+        lr_step_decay::AbstractFloat, lr_step::Vector{Int}
+    )
     sensible_println("=> creating optimizer.")
 
     kind = Symbol(kind)
@@ -176,7 +190,7 @@ function construct_optimizer_and_scheduler(; kind::String, learning_rate::Abstra
     end
 
     optimizer = iszero(weight_decay) ? optimizer :
-                OptimiserChain(optimizer, WeightDecay(weight_decay))
+        OptimiserChain(optimizer, WeightDecay(weight_decay))
 
     sensible_println("=> creating scheduler.")
 
@@ -185,7 +199,8 @@ function construct_optimizer_and_scheduler(; kind::String, learning_rate::Abstra
         l0 = learning_rate
         l1 = learning_rate / 100
         ComposedSchedule(
-            CosAnneal(l0, l1, cycle_length), Step(l0, damp_factor, cycle_length))
+            CosAnneal(l0, l1, cycle_length), Step(l0, damp_factor, cycle_length)
+        )
     elseif scheduler_kind == :constant
         Constant(learning_rate)
     elseif scheduler_kind == :step
@@ -196,30 +211,33 @@ function construct_optimizer_and_scheduler(; kind::String, learning_rate::Abstra
     end
 
     optimizer = is_distributed ?
-                DistributedUtils.DistributedOptimizer(distributed_backend, optimizer) :
-                optimizer
+        DistributedUtils.DistributedOptimizer(distributed_backend, optimizer) :
+        optimizer
 
     return optimizer, scheduler
 end
 
 # Utility Functions
-const logitcrossentropy = CrossEntropyLoss(; logits=Val(true))
+const logitcrossentropy = CrossEntropyLoss(; logits = Val(true))
 
 function loss_function(model, ps, st, (img, y))
     ŷ, stₙ = model(img, ps, st)
-    return logitcrossentropy(ŷ, y), stₙ, (; prediction=ŷ)
+    return logitcrossentropy(ŷ, y), stₙ, (; prediction = ŷ)
 end
 
 sensible_println(msg) = should_log && println("[$(now())] ", msg)
 sensible_print(msg) = should_log && print("[$(now())] ", msg)
 
-function accuracy(ŷ::AbstractMatrix, y::AbstractMatrix, topk=(1,))
-    pred_labels = partialsortperm.(eachcol(cdev(ŷ)), Ref(1:maximum(topk)); rev=true)
+function accuracy(ŷ::AbstractMatrix, y::AbstractMatrix, topk = (1,))
+    pred_labels = partialsortperm.(eachcol(cdev(ŷ)), Ref(1:maximum(topk)); rev = true)
     true_labels = onecold(cdev(y))
     accuracies = Vector{Float64}(undef, length(topk))
     for (i, k) in enumerate(topk)
-        accuracies[i] = sum(map(
-            (a, b) -> sum(view(a, 1:k) .== b), pred_labels, true_labels))
+        accuracies[i] = sum(
+            map(
+                (a, b) -> sum(view(a, 1:k) .== b), pred_labels, true_labels
+            )
+        )
     end
     accuracies .= accuracies .* 100 ./ size(y, 2)
     return accuracies
@@ -227,7 +245,7 @@ end
 
 function save_checkpoint(state::NamedTuple; is_best::Bool, filename::String)
     should_log || return
-    @assert last(splitext(filename))==".jld2" "Filename should have a .jld2 extension."
+    @assert last(splitext(filename)) == ".jld2" "Filename should have a .jld2 extension."
     isdir(dirname(filename)) || mkpath(dirname(filename))
     save(filename; state)
     sensible_println("=> saved checkpoint `$(filename)`.")
@@ -240,7 +258,7 @@ function save_checkpoint(state::NamedTuple; is_best::Bool, filename::String)
 end
 
 function symlink_safe(src, dest)
-    rm(dest; force=true)
+    rm(dest; force = true)
     symlink(src, dest)
     return
 end
@@ -271,7 +289,7 @@ end
 end
 
 function AverageMeter(name::String, fmt::String)
-    return AverageMeter(; fmtstr=FormatExpr("$(name) {1:$(fmt)} ({2:$(fmt)})"))
+    return AverageMeter(; fmtstr = FormatExpr("$(name) {1:$(fmt)} ({2:$(fmt)})"))
 end
 
 function (meter::AverageMeter)(val, n::Int)
@@ -297,7 +315,7 @@ function reset_meter!(meter::AverageMeter)
 end
 
 function print_meter(meter::AverageMeter)
-    should_log && printfmt(meter.fmtstr, meter.val, meter.average)
+    return should_log && printfmt(meter.fmtstr, meter.val, meter.average)
 end
 
 struct ProgressMeter
@@ -305,7 +323,7 @@ struct ProgressMeter
     meters
 end
 
-function ProgressMeter(num_batches::Int, meters, prefix::String="")
+function ProgressMeter(num_batches::Int, meters, prefix::String = "")
     fmt = "%" * string(length(string(num_batches))) * "d"
     fmt2 = "{1:" * string(length(string(num_batches))) * "d}"
     prefix = prefix != "" ? endswith(prefix, " ") ? prefix : prefix * " " : ""
@@ -339,7 +357,8 @@ function validate(val_loader, model, ps, st, step, total_steps)
     top5 = AverageMeter("Acc@5", "6.4f")
 
     progress = ProgressMeter(
-        total_steps, (batch_time, data_time, forward_time, losses, top1, top5), "Val:")
+        total_steps, (batch_time, data_time, forward_time, losses, top1, top5), "Val:"
+    )
 
     st = Lux.testmode(st)
     t = time()
@@ -368,16 +387,18 @@ function validate(val_loader, model, ps, st, step, total_steps)
 end
 
 # Entry Point
-Comonicon.@main function main(; seed::Int=0, model_name::String,
-        model_kind::String="nokind", depth::Int=-1, pretrained::Bool=false,
-        base_path::String="", train_batchsize::Int=64, val_batchsize::Int=64,
-        image_size::Int=-1, optimizer_kind::String="sgd", learning_rate::Float32=0.01f0,
-        nesterov::Bool=false, momentum::Float32=0.0f0, weight_decay::Float32=0.0f0,
-        scheduler_kind::String="step", cycle_length::Int=50000, damp_factor::Float32=1.2f0,
-        lr_step_decay::Float32=0.1f0, lr_step::Vector{Int}=[100000, 250000, 500000],
-        expt_id::String="", expt_subdir::String=@__DIR__, resume::String="",
-        evaluate::Bool=false, total_steps::Int=800000, evaluate_every::Int=10000,
-        print_frequency::Int=100)
+Comonicon.@main function main(;
+        seed::Int = 0, model_name::String,
+        model_kind::String = "nokind", depth::Int = -1, pretrained::Bool = false,
+        base_path::String = "", train_batchsize::Int = 64, val_batchsize::Int = 64,
+        image_size::Int = -1, optimizer_kind::String = "sgd", learning_rate::Float32 = 0.01f0,
+        nesterov::Bool = false, momentum::Float32 = 0.0f0, weight_decay::Float32 = 0.0f0,
+        scheduler_kind::String = "step", cycle_length::Int = 50000, damp_factor::Float32 = 1.2f0,
+        lr_step_decay::Float32 = 0.1f0, lr_step::Vector{Int} = [100000, 250000, 500000],
+        expt_id::String = "", expt_subdir::String = @__DIR__, resume::String = "",
+        evaluate::Bool = false, total_steps::Int = 800000, evaluate_every::Int = 10000,
+        print_frequency::Int = 100
+    )
     best_acc1 = 0
 
     rng = Random.default_rng()
@@ -389,15 +410,17 @@ Comonicon.@main function main(; seed::Int=0, model_name::String,
     depth = depth == -1 ? nothing : depth
     model_kind = model_kind == "nokind" ? nothing : Symbol(model_kind)
     model_args = model_kind === nothing && depth === nothing ? () :
-                 model_kind !== nothing ? (model_kind,) : (depth,)
+        model_kind !== nothing ? (model_kind,) : (depth,)
     model, ps, st = construct_model(; rng, model_name, model_args, pretrained)
 
     ds_train, ds_val = construct_dataloaders(;
-        base_path, train_batchsize, val_batchsize, image_size)
+        base_path, train_batchsize, val_batchsize, image_size
+    )
 
     opt, scheduler = construct_optimizer_and_scheduler(;
-        kind=optimizer_kind, learning_rate, nesterov, momentum, weight_decay,
-        scheduler_kind, cycle_length, damp_factor, lr_step_decay, lr_step)
+        kind = optimizer_kind, learning_rate, nesterov, momentum, weight_decay,
+        scheduler_kind, cycle_length, damp_factor, lr_step_decay, lr_step
+    )
 
     expt_name = "name-$(model_name)_seed-$(seed)_id-$(expt_id)"
     ckpt_dir = joinpath(expt_subdir, "checkpoints", expt_name)
@@ -426,13 +449,15 @@ Comonicon.@main function main(; seed::Int=0, model_name::String,
     top5 = AverageMeter("Acc@5", "6.4f")
 
     progress = ProgressMeter(
-        total_steps, (batch_time, data_time, training_time, losses, top1, top5), "Train:")
+        total_steps, (batch_time, data_time, training_time, losses, top1, top5), "Train:"
+    )
 
     st = Lux.trainmode(st)
     train_state = Training.TrainState(model, ps, st, opt)
     if is_distributed
         @set! train_state.optimizer_state = DistributedUtils.synchronize!!(
-            distributed_backend, train_state.optimizer_state)
+            distributed_backend, train_state.optimizer_state
+        )
     end
 
     train_loader = Iterators.cycle(ds_train)
@@ -446,7 +471,8 @@ Comonicon.@main function main(; seed::Int=0, model_name::String,
 
         t = time()
         _, loss, stats, train_state = Training.single_train_step!(
-            AutoZygote(), loss_function, (img, y), train_state)
+            AutoZygote(), loss_function, (img, y), train_state
+        )
         t_training = time() - t
 
         isnan(loss) && throw(ArgumentError("NaN loss encountered."))
@@ -470,10 +496,11 @@ Comonicon.@main function main(; seed::Int=0, model_name::String,
             is_best = acc1 > best_acc1
             best_acc1 = max(acc1, best_acc1)
 
-            save_state = (; ps=cdev(ps), st=cdev(st), step)
+            save_state = (; ps = cdev(ps), st = cdev(st), step)
             if should_log()
                 save_checkpoint(
-                    save_state; is_best, filename=joinpath(ckpt_dir, "model_$(step).jld2"))
+                    save_state; is_best, filename = joinpath(ckpt_dir, "model_$(step).jld2")
+                )
             end
         end
 

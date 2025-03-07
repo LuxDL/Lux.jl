@@ -23,8 +23,9 @@ export ∇sumabs2_zygote, ∇sumabs2_enzyme
 
 end
 
-@testitem "Recurrent Layers" tags=[:reactant] setup=[
-    SharedTestSetup, SharedReactantLayersTestSetup] skip=:(Sys.iswindows()) begin
+@testitem "Recurrent Layers" tags = [:reactant] setup = [
+    SharedTestSetup, SharedReactantLayersTestSetup,
+] skip = :(Sys.iswindows()) begin
     using Reactant, Lux
     using LuxTestUtils: check_approx
 
@@ -43,7 +44,7 @@ end
             Reactant.set_default_backend("cpu")
         end
 
-        dev = reactant_device(; force=true)
+        dev = reactant_device(; force = true)
 
         @testset for cell in (RNNCell, LSTMCell, GRUCell)
             @testset for ordering in (BatchLastIndex(), TimeLastIndex())
@@ -60,20 +61,20 @@ end
                 y_ra, _ = @jit model(x_ra, ps_ra, st_ra)
                 y, _ = model(x, ps, st)
 
-                @test y_ra≈y atol=1e-2 rtol=1e-2
+                @test y_ra ≈ y atol = 1.0e-2 rtol = 1.0e-2
 
                 @testset "gradient" begin
                     ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
                     ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
-                    @test ∂x_ra≈∂x atol=1e-2 rtol=1e-2
-                    @test check_approx(∂ps_ra, ∂ps; atol=1e-2, rtol=1e-2)
+                    @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
+                    @test check_approx(∂ps_ra, ∂ps; atol = 1.0e-2, rtol = 1.0e-2)
                 end
             end
         end
     end
 end
 
-@testitem "Dropout Layers" tags=[:reactant] setup=[SharedTestSetup] skip=:(Sys.iswindows()) begin
+@testitem "Dropout Layers" tags = [:reactant] setup = [SharedTestSetup] skip = :(Sys.iswindows()) begin
     using Reactant, Lux, Random
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -82,7 +83,7 @@ end
             continue
         end
 
-        dev = reactant_device(; force=true)
+        dev = reactant_device(; force = true)
 
         if ongpu
             Reactant.set_default_backend("gpu")
@@ -107,8 +108,9 @@ end
     end
 end
 
-@testitem "BatchNorm Layer" tags=[:reactant] setup=[
-    SharedTestSetup, SharedReactantLayersTestSetup] skip=:(Sys.iswindows()) begin
+@testitem "BatchNorm Layer" tags = [:reactant] setup = [
+    SharedTestSetup, SharedReactantLayersTestSetup,
+] skip = :(Sys.iswindows()) begin
     using Reactant, Lux, Random
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -117,7 +119,7 @@ end
             continue
         end
 
-        dev = reactant_device(; force=true)
+        dev = reactant_device(; force = true)
 
         if ongpu
             Reactant.set_default_backend("gpu")
@@ -126,11 +128,11 @@ end
         end
 
         @testset for track_stats in (true, false), affine in (true, false),
-            act in (identity, tanh)
+                act in (identity, tanh)
 
             model = Chain(
                 Dense(2 => 3, tanh),
-                BatchNorm(3, act; track_stats, affine, init_bias=rand32, init_scale=rand32),
+                BatchNorm(3, act; track_stats, affine, init_bias = rand32, init_scale = rand32),
                 Dense(3 => 2)
             )
 
@@ -144,10 +146,10 @@ end
             y, st2 = model(x, ps, st)
             y_ra, st2_ra = @jit model(x_ra, ps_ra, st_ra)
 
-            @test y≈y_ra rtol=1e-3 atol=1e-3
+            @test y ≈ y_ra rtol = 1.0e-3 atol = 1.0e-3
             if track_stats
-                @test st2.layer_2.running_mean≈st2_ra.layer_2.running_mean rtol=1e-3 atol=1e-3
-                @test st2.layer_2.running_var≈st2_ra.layer_2.running_var rtol=1e-3 atol=1e-3
+                @test st2.layer_2.running_mean ≈ st2_ra.layer_2.running_mean rtol = 1.0e-3 atol = 1.0e-3
+                @test st2.layer_2.running_var ≈ st2_ra.layer_2.running_var rtol = 1.0e-3 atol = 1.0e-3
             end
 
             # TODO: Check for stablehlo.batch_norm_training once we emit it in LuxLib
@@ -155,17 +157,17 @@ end
             @testset "gradient" begin
                 ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
                 ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
-                @test ∂x_ra≈∂x atol=1e-2 rtol=1e-2
-                @test check_approx(∂ps_ra, ∂ps; atol=1e-2, rtol=1e-2)
+                @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
+                @test check_approx(∂ps_ra, ∂ps; atol = 1.0e-2, rtol = 1.0e-2)
             end
 
             y2, st3 = model(x, ps, Lux.testmode(st2))
             y2_ra, st3_ra = @jit model(x_ra, ps_ra, Lux.testmode(st2_ra))
 
-            @test y2≈y2_ra rtol=1e-3 atol=1e-3
+            @test y2 ≈ y2_ra rtol = 1.0e-3 atol = 1.0e-3
             if track_stats
-                @test st3.layer_2.running_mean≈st3_ra.layer_2.running_mean rtol=1e-3 atol=1e-3
-                @test st3.layer_2.running_var≈st3_ra.layer_2.running_var rtol=1e-3 atol=1e-3
+                @test st3.layer_2.running_mean ≈ st3_ra.layer_2.running_mean rtol = 1.0e-3 atol = 1.0e-3
+                @test st3.layer_2.running_var ≈ st3_ra.layer_2.running_var rtol = 1.0e-3 atol = 1.0e-3
             end
 
             hlo = @code_hlo model(x_ra, ps_ra, Lux.testmode(st_ra))

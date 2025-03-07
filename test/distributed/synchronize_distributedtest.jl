@@ -10,7 +10,7 @@ end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 const dev = input_args[1] == "cpu" ? CPUDevice() :
-            (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
+    (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
 
 function __get_array_based_on_rank(backend, dims; root)
     DistributedUtils.local_rank(backend) == root && return ones(dims...)
@@ -24,9 +24,12 @@ backend = DistributedUtils.get_distributed_backend(backend_type)
 
 # Named Tuple
 gs = (
-    a=(b=__get_array_based_on_rank(backend, (2, 3); root),
-        c=__get_array_based_on_rank(backend, (2, 3); root)),
-    d=__get_array_based_on_rank(backend, (2, 3); root)) |> dev
+    a = (
+        b = __get_array_based_on_rank(backend, (2, 3); root),
+        c = __get_array_based_on_rank(backend, (2, 3); root),
+    ),
+    d = __get_array_based_on_rank(backend, (2, 3); root),
+) |> dev
 
 gs_ = DistributedUtils.synchronize!!(backend, gs; root)
 
@@ -64,9 +67,12 @@ st_opt = Optimisers.setup(opt, gs)
 
 ## ComponentArrays
 gs = (
-    a=(b=__get_array_based_on_rank(backend, (2, 3); root),
-        c=__get_array_based_on_rank(backend, (2, 3); root)),
-    d=__get_array_based_on_rank(backend, (2, 3); root))
+    a = (
+        b = __get_array_based_on_rank(backend, (2, 3); root),
+        c = __get_array_based_on_rank(backend, (2, 3); root),
+    ),
+    d = __get_array_based_on_rank(backend, (2, 3); root),
+)
 cgs = ComponentArray(gs) |> dev
 cgs_ = DistributedUtils.synchronize!!(backend, cgs; root)
 
@@ -76,9 +82,12 @@ cgs_ = DistributedUtils.synchronize!!(backend, cgs; root)
 
 # Tuple
 gs = (
-    (__get_array_based_on_rank(backend, (2, 3); root),
-        __get_array_based_on_rank(backend, (2, 3); root)),
-    __get_array_based_on_rank(backend, (2, 3); root)) |> dev
+    (
+        __get_array_based_on_rank(backend, (2, 3); root),
+        __get_array_based_on_rank(backend, (2, 3); root),
+    ),
+    __get_array_based_on_rank(backend, (2, 3); root),
+) |> dev
 
 gs = DistributedUtils.synchronize!!(backend, gs; root)
 

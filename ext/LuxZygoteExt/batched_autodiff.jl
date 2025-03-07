@@ -9,8 +9,10 @@ function Lux.AutoDiffInternalImpl.batched_jacobian_impl(f::F, ::AutoZygote, x) w
                               (ndims(y) > 1) && size(y, ndims(y)) == size(x, ndims(x))."))
     end
 
-    J = similar(x, promote_type(eltype(y), eltype(x)), prod(size(y)[1:(end - 1)]),
-        prod(size(x)[1:(end - 1)]), size(x, ndims(x)))
+    J = similar(
+        x, promote_type(eltype(y), eltype(x)), prod(size(y)[1:(end - 1)]),
+        prod(size(x)[1:(end - 1)]), size(x, ndims(x))
+    )
     fill_chunked_jacobian!(J, 1, f, pb_f, y, x)
 
     if get_device_type(x) <: CPUDevice  # Use threads

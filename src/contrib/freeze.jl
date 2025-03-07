@@ -49,7 +49,7 @@ See also [`Lux.Experimental.freeze`](@ref), [`Lux.Experimental.unfreeze`](@ref).
 struct FrozenLayer{which_params, L <: AbstractLuxLayer} <: AbstractLuxLayer
     layer::L
 
-    function FrozenLayer(l::AbstractLuxLayer, which_params::Optional{Tuple}=nothing)
+    function FrozenLayer(l::AbstractLuxLayer, which_params::Optional{Tuple} = nothing)
         if which_params !== nothing && length(which_params) == 0
             @warn "Layer `FrozenLayer($l, (,))` is same as `l`, returning `l`."
             return l
@@ -59,7 +59,8 @@ struct FrozenLayer{which_params, L <: AbstractLuxLayer} <: AbstractLuxLayer
 end
 
 function LuxCore.initialparameters(
-        rng::AbstractRNG, l::FrozenLayer{which_params}) where {which_params}
+        rng::AbstractRNG, l::FrozenLayer{which_params}
+    ) where {which_params}
     ps = LuxCore.initialparameters(rng, l.layer)
     ps_trainable = []
     for (k, v) in pairs(ps)
@@ -70,7 +71,8 @@ function LuxCore.initialparameters(
 end
 
 function LuxCore.initialstates(
-        rng::AbstractRNG, l::FrozenLayer{which_params}) where {which_params}
+        rng::AbstractRNG, l::FrozenLayer{which_params}
+    ) where {which_params}
     ps = LuxCore.initialparameters(rng, l.layer)
     st = LuxCore.initialstates(rng, l.layer)
     ps_frozen = []
@@ -78,17 +80,17 @@ function LuxCore.initialstates(
         !(which_params === nothing || k in which_params) && continue
         push!(ps_frozen, k => v)
     end
-    return (frozen_params=(; ps_frozen...), states=st)
+    return (frozen_params = (; ps_frozen...), states = st)
 end
 
 function (f::FrozenLayer)(x, ps, st::NamedTuple)
     y, stₙ = f.layer(x, Lux.Utils.merge(ps, st.frozen_params), st.states)
-    return y, merge(st, (; states=stₙ))
+    return y, merge(st, (; states = stₙ))
 end
 
 function Base.show(io::IO, f::FrozenLayer{which_params}) where {which_params}
     which_params === nothing && return print(io, "FrozenLayer(", f.layer, ")")
-    print(io, "FrozenLayer(", f.layer, ", ", which_params, ")")
+    return print(io, "FrozenLayer(", f.layer, ", ", which_params, ")")
 end
 
 """
@@ -97,7 +99,7 @@ end
 Constructs a version of `l` with `which_params` frozen. If `which_params` is nothing,
 then all parameters are frozen.
 """
-function freeze(l::AbstractLuxLayer, which_params::Optional{Tuple}=nothing)
+function freeze(l::AbstractLuxLayer, which_params::Optional{Tuple} = nothing)
     return FrozenLayer(l, which_params)
 end
 
@@ -109,7 +111,8 @@ Construct a [`Lux.Experimental.FrozenLayer`](@ref) for `l` with the current para
 states. If `which_params` is nothing, then all parameters are frozen.
 """
 function freeze(
-        l::AbstractLuxLayer, ps, st::NamedTuple, which_params::Optional{Tuple}=nothing)
+        l::AbstractLuxLayer, ps, st::NamedTuple, which_params::Optional{Tuple} = nothing
+    )
     fl = freeze(l, which_params)
     ps_frozen = []
     ps_trainable = []
@@ -121,7 +124,7 @@ function freeze(
         end
     end
     ps = (; ps_trainable...)
-    st = (frozen_params=(; ps_frozen...), states=st)
+    st = (frozen_params = (; ps_frozen...), states = st)
     return fl, ps, st
 end
 

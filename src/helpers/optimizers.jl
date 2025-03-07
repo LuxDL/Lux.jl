@@ -13,7 +13,7 @@ abstract type ReactantCompatibleOptimisersRule <: AbstractRule end
 function make_reactant_compatible(opt::AbstractRule)
     @warn "`make_reactant_compatible` is not defined for $(opt). Returning the original \
            optimizer. This means adjusting learning rate and other parameters won't \
-           reflect in the generated MLIR." maxlog=1
+           reflect in the generated MLIR." maxlog = 1
     return opt
 end
 make_reactant_compatible(opt::ReactantCompatibleOptimisersRule) = opt
@@ -46,7 +46,7 @@ end
 end
 
 function make_reactant_compatible(opt::Optimisers.Descent)
-    return ReactantDescent(Utils.to_rarray(opt.eta; track_numbers=true))
+    return ReactantDescent(Utils.to_rarray(opt.eta; track_numbers = true))
 end
 
 Optimisers.init(::ReactantDescent, ::AbstractArray) = nothing
@@ -64,8 +64,8 @@ end
 
 function make_reactant_compatible(opt::Optimisers.Momentum)
     return ReactantMomentum(
-        Utils.to_rarray(opt.eta; track_numbers=true),
-        Utils.to_rarray(opt.rho; track_numbers=true)
+        Utils.to_rarray(opt.eta; track_numbers = true),
+        Utils.to_rarray(opt.rho; track_numbers = true)
     )
 end
 
@@ -88,9 +88,9 @@ end
 
 function make_reactant_compatible(opt::Optimisers.Adam)
     return ReactantAdam(
-        Utils.to_rarray(opt.eta; track_numbers=true),
-        Utils.to_rarray(opt.beta; track_numbers=true),
-        Utils.to_rarray(opt.epsilon; track_numbers=true)
+        Utils.to_rarray(opt.eta; track_numbers = true),
+        Utils.to_rarray(opt.beta; track_numbers = true),
+        Utils.to_rarray(opt.epsilon; track_numbers = true)
     )
 end
 
@@ -98,7 +98,7 @@ function Optimisers.init(opt::ReactantAdam, x::AbstractArray{T}) where {T}
     return (
         zero(x),
         zero(x),
-        (Utils.promote_to(T, opt.beta[1]), Utils.promote_to(T, opt.beta[2]))
+        (Utils.promote_to(T, opt.beta[1]), Utils.promote_to(T, opt.beta[2])),
     )
 end
 
@@ -124,10 +124,10 @@ end
 
 function make_reactant_compatible(opt::Optimisers.AdamW)
     return ReactantAdamW(
-        Utils.to_rarray(opt.eta; track_numbers=true),
-        Utils.to_rarray(opt.beta; track_numbers=true),
-        Utils.to_rarray(opt.lambda; track_numbers=true),
-        Utils.to_rarray(opt.epsilon; track_numbers=true),
+        Utils.to_rarray(opt.eta; track_numbers = true),
+        Utils.to_rarray(opt.beta; track_numbers = true),
+        Utils.to_rarray(opt.lambda; track_numbers = true),
+        Utils.to_rarray(opt.epsilon; track_numbers = true),
         opt.couple
     )
 end
@@ -136,7 +136,7 @@ function Optimisers.init(opt::ReactantAdamW, x::AbstractArray{T}) where {T}
     return (
         zero(x),
         zero(x),
-        (Utils.promote_to(T, opt.beta[1]), Utils.promote_to(T, opt.beta[2]))
+        (Utils.promote_to(T, opt.beta[1]), Utils.promote_to(T, opt.beta[2])),
     )
 end
 

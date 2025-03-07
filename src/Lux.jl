@@ -1,7 +1,7 @@
 module Lux
 
 using ADTypes: AbstractADType, AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker,
-               AutoZygote
+    AutoZygote
 using Adapt: Adapt, adapt
 using ArgCheck: @argcheck
 using ArrayInterface: ArrayInterface
@@ -21,12 +21,12 @@ using Reexport: Reexport, @reexport
 using Statistics: mean
 
 import LuxCore: AbstractLuxLayer, AbstractLuxContainerLayer, AbstractLuxWrapperLayer,
-                initialparameters, initialstates, parameterlength, statelength, outputsize,
-                update_state, trainmode, testmode, setup, apply, replicate
+    initialparameters, initialstates, parameterlength, statelength, outputsize,
+    update_state, trainmode, testmode, setup, apply, replicate
 
 @reexport using LuxCore, LuxLib, MLDataDevices, WeightInitializers
 using NNlib: NNlib, DenseConvDims, PoolDims, logsigmoid, logsoftmax, maxpool, meanpool,
-             pixel_shuffle, sigmoid_fast, tanh_fast
+    pixel_shuffle, sigmoid_fast, tanh_fast
 
 const CRC = ChainRulesCore
 
@@ -37,7 +37,7 @@ const DUMP_REACTANT_HLO_OPT_MODE = Ref{Union{Symbol, Nothing, Bool}}(nothing)
 
 function __init__()
     HLO_DUMP = get(ENV, "LUX_DUMP_REACTANT_HLO_OPTIMIZE", nothing)
-    if HLO_DUMP !== nothing
+    return if HLO_DUMP !== nothing
         if HLO_DUMP == "true" || HLO_DUMP == "1"
             DUMP_REACTANT_HLO_OPT_MODE[] = true
         elseif HLO_DUMP == "false" || HLO_DUMP == "0"
@@ -108,7 +108,7 @@ export Chain, Parallel, SkipConnection, PairwiseFusion, BranchLayer, Maxout, Rep
 export Bilinear, Dense, Embedding, Scale
 export Conv, ConvTranspose, Upsample, PixelShuffle
 export MaxPool, MeanPool, LPPool, GlobalMaxPool, GlobalMeanPool, GlobalLPPool,
-       AdaptiveMaxPool, AdaptiveMeanPool, AdaptiveLPPool
+    AdaptiveMaxPool, AdaptiveMeanPool, AdaptiveLPPool
 export AlphaDropout, Dropout, VariationalHiddenDropout
 export BatchNorm, GroupNorm, InstanceNorm, LayerNorm
 export WeightNorm
@@ -126,8 +126,8 @@ export batched_jacobian
 export AutoEnzyme, AutoForwardDiff, AutoReverseDiff, AutoTracker, AutoZygote
 
 export BinaryCrossEntropyLoss, BinaryFocalLoss, CrossEntropyLoss, DiceCoeffLoss, FocalLoss,
-       HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
-       PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss
+    HingeLoss, HuberLoss, KLDivergenceLoss, L1Loss, L2Loss, MAELoss, MSELoss, MSLELoss,
+    PoissonLoss, SiameseContrastiveLoss, SquaredHingeLoss
 export GenericLossFunction
 
 export f16, f32, f64, bf16
@@ -147,18 +147,18 @@ export LuxOps
 # NNlib.jl reexports
 ## Functional API for common layers. Recommended to use the LuxLib versions
 using NNlib: ConvDims, DenseConvDims, PoolDims, batched_adjoint, batched_mul, batched_mul!,
-             batched_transpose, batched_vec, bias_act!, conv, conv!, conv_bias_act,
-             conv_bias_act!, dot_product_attention, dot_product_attention_scores,
-             make_causal_mask, lpnormpool, lpnormpool!, maxpool, maxpool!, meanpool,
-             meanpool!, pixel_shuffle, imrotate, ∇conv_data, ∇conv_data!, ∇conv_filter,
-             ∇conv_filter!, ∇lpnormpool, ∇lpnormpool!, ∇maxpool, ∇maxpool!, ∇meanpool,
-             ∇meanpool!, ∇imrotate
+    batched_transpose, batched_vec, bias_act!, conv, conv!, conv_bias_act,
+    conv_bias_act!, dot_product_attention, dot_product_attention_scores,
+    make_causal_mask, lpnormpool, lpnormpool!, maxpool, maxpool!, meanpool,
+    meanpool!, pixel_shuffle, imrotate, ∇conv_data, ∇conv_data!, ∇conv_filter,
+    ∇conv_filter!, ∇lpnormpool, ∇lpnormpool!, ∇maxpool, ∇maxpool!, ∇meanpool,
+    ∇meanpool!, ∇imrotate
 export ConvDims, DenseConvDims, PoolDims, batched_adjoint, batched_mul, batched_mul!,
-       batched_transpose, batched_vec, bias_act!, conv, conv!, conv_bias_act,
-       conv_bias_act!, dot_product_attention, dot_product_attention_scores,
-       make_causal_mask, lpnormpool, lpnormpool!, maxpool, maxpool!, meanpool, meanpool!,
-       pixel_shuffle, imrotate, ∇conv_data, ∇conv_data!, ∇conv_filter, ∇conv_filter!,
-       ∇lpnormpool, ∇lpnormpool!, ∇maxpool, ∇maxpool!, ∇meanpool, ∇meanpool!, ∇imrotate
+    batched_transpose, batched_vec, bias_act!, conv, conv!, conv_bias_act,
+    conv_bias_act!, dot_product_attention, dot_product_attention_scores,
+    make_causal_mask, lpnormpool, lpnormpool!, maxpool, maxpool!, meanpool, meanpool!,
+    pixel_shuffle, imrotate, ∇conv_data, ∇conv_data!, ∇conv_filter, ∇conv_filter!,
+    ∇lpnormpool, ∇lpnormpool!, ∇maxpool, ∇maxpool!, ∇meanpool, ∇meanpool!, ∇imrotate
 
 ## Padding
 using NNlib: pad_circular, pad_constant, pad_reflect, pad_repeat, pad_symmetric, pad_zeros
@@ -166,22 +166,22 @@ export pad_circular, pad_constant, pad_reflect, pad_repeat, pad_symmetric, pad_z
 
 ## Upsample
 using NNlib: upsample_linear, upsample_bilinear, upsample_trilinear, upsample_nearest,
-             ∇upsample_linear, ∇upsample_bilinear, ∇upsample_trilinear, ∇upsample_nearest
+    ∇upsample_linear, ∇upsample_bilinear, ∇upsample_trilinear, ∇upsample_nearest
 export upsample_linear, upsample_bilinear, upsample_trilinear, upsample_nearest,
-       ∇upsample_linear, ∇upsample_bilinear, ∇upsample_trilinear, ∇upsample_nearest
+    ∇upsample_linear, ∇upsample_bilinear, ∇upsample_trilinear, ∇upsample_nearest
 
 ## Activation Functions
 using NNlib: σ, celu, elu, gelu, glu, hardsigmoid, hardswish, hardtanh, hardσ, leakyrelu,
-             lisht, logcosh, logsigmoid, logσ, mish, relu, relu6, rrelu, selu, sigmoid,
-             sigmoid_fast, softplus, softshrink, softsign, swish, tanhshrink, tanh_fast,
-             thresholdrelu, trelu
+    lisht, logcosh, logsigmoid, logσ, mish, relu, relu6, rrelu, selu, sigmoid,
+    sigmoid_fast, softplus, softshrink, softsign, swish, tanhshrink, tanh_fast,
+    thresholdrelu, trelu
 export σ, celu, elu, gelu, glu, hardsigmoid, hardswish, hardtanh, hardσ, leakyrelu, lisht,
-       logcosh, logsigmoid, logσ, mish, relu, relu6, rrelu, selu, sigmoid, sigmoid_fast,
-       softplus, softshrink, softsign, swish, tanhshrink, tanh_fast, thresholdrelu, trelu
+    logcosh, logsigmoid, logσ, mish, relu, relu6, rrelu, selu, sigmoid, sigmoid_fast,
+    softplus, softshrink, softsign, swish, tanhshrink, tanh_fast, thresholdrelu, trelu
 
 using NNlib: softmax, softmax!, logsoftmax, logsoftmax!, logsumexp, ∇logsoftmax,
-             ∇logsoftmax!, ∇softmax, ∇softmax!
+    ∇logsoftmax!, ∇softmax, ∇softmax!
 export softmax, softmax!, logsoftmax, logsoftmax!, logsumexp, ∇logsoftmax, ∇logsoftmax!,
-       ∇softmax, ∇softmax!
+    ∇softmax, ∇softmax!
 
 end

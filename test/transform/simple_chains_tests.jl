@@ -1,9 +1,11 @@
-@testitem "ToSimpleChainsAdaptor" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "ToSimpleChainsAdaptor" setup = [SharedTestSetup] tags = [:misc] begin
     import SimpleChains: static
 
-    lux_model = Chain(Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
+    lux_model = Chain(
+        Conv((5, 5), 1 => 6, relu), MaxPool((2, 2)),
         Conv((5, 5), 6 => 16, relu), MaxPool((2, 2)), FlattenLayer(3),
-        Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10)))
+        Chain(Dense(256 => 128, relu), Dense(128 => 84, relu), Dense(84 => 10))
+    )
 
     adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
 
@@ -29,8 +31,10 @@
     @test length(gs[2].params) == length(ps.params)
 
     # See https://github.com/LuxDL/Lux.jl/issues/644
-    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-        broken_backends=[AutoEnzyme(), AutoTracker()])
+    @test_gradients(
+        __f, x, ps; atol = 1.0f-3, rtol = 1.0f-3,
+        broken_backends = [AutoEnzyme(), AutoTracker()]
+    )
 
     x = randn(Float32, 28, 28, 1, 15)
     @test size(first(simple_chains_model(x, ps, st))) == (10, 15)
@@ -42,8 +46,10 @@
     @test length(gs[2].params) == length(ps.params)
 
     # See https://github.com/LuxDL/Lux.jl/issues/644
-    @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-        broken_backends=[AutoEnzyme(), AutoTracker()])
+    @test_gradients(
+        __f, x, ps; atol = 1.0f-3, rtol = 1.0f-3,
+        broken_backends = [AutoEnzyme(), AutoTracker()]
+    )
 
     @testset "Array Output" begin
         adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)), true)
@@ -57,7 +63,8 @@
     end
 
     lux_model = Chain(
-        FlattenLayer(3), Dense(784 => 20, tanh), Dropout(0.5), Dense(20 => 10))
+        FlattenLayer(3), Dense(784 => 20, tanh), Dropout(0.5), Dense(20 => 10)
+    )
 
     adaptor = ToSimpleChainsAdaptor((static(28), static(28), static(1)))
 
@@ -103,19 +110,27 @@
             @test length(gs[2].params) == length(ps.params)
 
             # See https://github.com/LuxDL/Lux.jl/issues/644
-            @test_gradients(__f, x, ps; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=[AutoEnzyme(), AutoTracker()],
-                soft_fail=[AutoForwardDiff(), AutoFiniteDiff()])
+            @test_gradients(
+                __f, x, ps; atol = 1.0f-3, rtol = 1.0f-3,
+                broken_backends = [AutoEnzyme(), AutoTracker()],
+                soft_fail = [AutoForwardDiff(), AutoFiniteDiff()]
+            )
         end
     end
 
     # Failures
-    @test_throws Lux.SimpleChainsModelConversionException adaptor(Conv(
-        (1, 1), 2 => 3; stride=(5, 5)))
-    @test_throws Lux.SimpleChainsModelConversionException adaptor(Dropout(0.2f0; dims=1))
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(
+        Conv(
+            (1, 1), 2 => 3; stride = (5, 5)
+        )
+    )
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(Dropout(0.2f0; dims = 1))
     @test_throws Lux.SimpleChainsModelConversionException adaptor(FlattenLayer())
-    @test_throws Lux.SimpleChainsModelConversionException adaptor(MaxPool(
-        (2, 2); stride=(1, 1)))
+    @test_throws Lux.SimpleChainsModelConversionException adaptor(
+        MaxPool(
+            (2, 2); stride = (1, 1)
+        )
+    )
     @test_throws Lux.SimpleChainsModelConversionException adaptor(ReshapeLayer((2, 3)))
 
     @testset "$(mode)" for (mode, aType, dev, ongpu) in MODES

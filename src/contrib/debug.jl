@@ -50,8 +50,10 @@ See [`Lux.Experimental.@debug_mode`](@ref) to construct this layer.
     location::KeyPath
 end
 
-function DebugLayer(layer::AbstractLuxLayer; nan_check::SymbolType=static(:both),
-        error_check::BoolType=True(), location::KeyPath=KeyPath())
+function DebugLayer(
+        layer::AbstractLuxLayer; nan_check::SymbolType = static(:both),
+        error_check::BoolType = True(), location::KeyPath = KeyPath()
+    )
     @argcheck dynamic(nan_check) in (:both, :forward, :backward, :none)
     return DebugLayer(static(nan_check), static(error_check), layer, location)
 end
@@ -66,8 +68,10 @@ function (d::DebugLayer)(x, ps, st)
             check_nan_and_throw(st, "states", d.layer, d.location)
         end
     end
-    y, stₙ = debug_layer_impl(d.layer, x, ps, st, d.location, known(d.error_check),
-        known(d.nan_check) ∈ (:both, :backward))
+    y, stₙ = debug_layer_impl(
+        d.layer, x, ps, st, d.location, known(d.error_check),
+        known(d.nan_check) ∈ (:both, :backward)
+    )
     CRC.ignore_derivatives() do
         if known(d.nan_check) ∈ (:both, :forward)
             check_nan_and_throw(y, "output", d.layer, d.location)
@@ -81,8 +85,10 @@ end
 function check_nan_and_throw(x, str::AbstractString, layer, location::KeyPath)
     function err(kp, x)
         loc_str = kp == KeyPath() ? " " : " (@ $(kp)) "
-        return DomainError(x,
-            "NaNs detected in $(str)$(loc_str) of layer $(layer) at location $(location).")
+        return DomainError(
+            x,
+            "NaNs detected in $(str)$(loc_str) of layer $(layer) at location $(location)."
+        )
     end
 
     function nan_check(kp, x)
@@ -106,8 +112,10 @@ function debug_layer_impl(layer, x, ps, st, location, error_check, _)
     return y, stₙ
 end
 
-function CRC.rrule(cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(debug_layer_impl),
-        layer, x, ps, st, location, error_check, nan_check_backward)
+function CRC.rrule(
+        cfg::CRC.RuleConfig{>:CRC.HasReverseMode}, ::typeof(debug_layer_impl),
+        layer, x, ps, st, location, error_check, nan_check_backward
+    )
     result, ∇debug_layer_internal = CRC.rrule_via_ad(cfg, apply, layer, x, ps, st)
     syms = ("LuxCore.apply", "layer", "x", "ps", "st")
     function ∇debug_layer_internal_with_checks(Δ)
@@ -141,10 +149,14 @@ Recurses into the `layer` and replaces the inner most non Container Layers with 
 See [`Lux.Experimental.DebugLayer`](@ref) for details about the Keyword Arguments.
 """
 macro debug_mode(layer, kwargs...)
-    return esc(:(
-        $(fmap_with_path)(
-        (kp, l) -> $(DebugLayer)(
-            l; location=$(KeyPath)($(Meta.quot(layer)), kp), $(kwargs...)),
-        $(layer); exclude=$(layer_map_leaf))
-    ))
+    return esc(
+        :(
+            $(fmap_with_path)(
+                (kp, l) -> $(DebugLayer)(
+                    l; location = $(KeyPath)($(Meta.quot(layer)), kp), $(kwargs...)
+                ),
+                $(layer); exclude = $(layer_map_leaf)
+            )
+        )
+    )
 end

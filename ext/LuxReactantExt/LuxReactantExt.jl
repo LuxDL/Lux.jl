@@ -3,7 +3,7 @@ module LuxReactantExt
 using Enzyme: Enzyme, Const, Duplicated, Active
 using Optimisers: Optimisers
 using Reactant: Reactant, @compile, @code_hlo, @trace, AnyTracedRArray, TracedRArray,
-                TracedRNumber
+    TracedRNumber
 using Setfield: @set!
 using Static: True, False
 

@@ -6,12 +6,15 @@ function (l::LuxEltypeAdaptor)(x::AbstractArray{T}) where {T}
 end
 
 function Adapt.adapt_storage(
-        ::LuxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}) where {T <: AbstractFloat}
+        ::LuxEltypeAdaptor{T}, x::AbstractArray{<:AbstractFloat}
+    ) where {T <: AbstractFloat}
     return convert(AbstractArray{T}, x)
 end
 
-function Adapt.adapt_storage(::LuxEltypeAdaptor{T},
-        x::AbstractArray{<:Complex{<:AbstractFloat}}) where {T <: AbstractFloat}
+function Adapt.adapt_storage(
+        ::LuxEltypeAdaptor{T},
+        x::AbstractArray{<:Complex{<:AbstractFloat}}
+    ) where {T <: AbstractFloat}
     return convert(AbstractArray{Complex{T}}, x)
 end
 

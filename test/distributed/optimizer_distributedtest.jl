@@ -10,13 +10,13 @@ end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 const dev = input_args[1] == "cpu" ? CPUDevice() :
-            (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
+    (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
 
 DistributedUtils.initialize(backend_type)
 backend = DistributedUtils.get_distributed_backend(backend_type)
 
 opt = Adam(0.001f0)
-ps = (a=zeros(4), b=zeros(4)) |> dev
+ps = (a = zeros(4), b = zeros(4)) |> dev
 st_opt = Optimisers.setup(opt, ps)
 
 dopt = DistributedUtils.DistributedOptimizer(backend, opt)
@@ -27,12 +27,12 @@ st_dopt = Optimisers.setup(dopt, ps)
 
 @test DistributedUtils.synchronize!!(backend, st_dopt) isa Any
 
-gs = (a=ones(4), b=ones(4)) |> dev
+gs = (a = ones(4), b = ones(4)) |> dev
 
 _, ps_dopt = Optimisers.update(st_dopt, ps, gs)
 _, ps_opt = Optimisers.update(st_opt, ps, gs)
 
-@test ps_dopt.a≈ps_opt.a atol=1.0e-5 rtol=1.0e-5
-@test ps_dopt.b≈ps_opt.b atol=1.0e-5 rtol=1.0e-5
+@test ps_dopt.a ≈ ps_opt.a atol = 1.0e-5 rtol = 1.0e-5
+@test ps_dopt.b ≈ ps_opt.b atol = 1.0e-5 rtol = 1.0e-5
 
 @test Optimisers.adjust(st_dopt, 0.1f0) isa Any

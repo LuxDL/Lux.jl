@@ -21,7 +21,8 @@ end
 
 function CRC.rrule(
         cfg::RuleConfig{>:HasReverseMode}, ::typeof(jacobian_vector_product_impl),
-        f::F, backend::AbstractADType, x, u, y) where {F}
+        f::F, backend::AbstractADType, x, u, y
+    ) where {F}
     res = jacobian_vector_product_impl(f, backend, x, u, y)
 
     pullback_fn = let cfg = cfg
@@ -37,7 +38,8 @@ function CRC.rrule(
     ∇jacvec_product = let pullback_fn = pullback_fn, f = f, x = x, y = y, u = u, cfg = cfg
         Δ -> begin
             _, ∇autodiff_pullback = CRC.rrule_via_ad(
-                cfg, autodiff_pullback, pullback_fn, f, x, y, Δ)
+                cfg, autodiff_pullback, pullback_fn, f, x, y, Δ
+            )
             _, _, _, ∂x, ∂y, _ = ∇autodiff_pullback(u)
             return NoTangent(), NoTangent(), NoTangent(), ∂x, NoTangent(), ∂y
         end

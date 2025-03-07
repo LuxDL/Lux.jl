@@ -1,5 +1,7 @@
-function Lux.Training.compute_gradients_impl(::AutoTracker, obj_fn::F, data,
-        ts::TrainState{<:TrainingBackendCache{AutoTracker}}) where {F}
+function Lux.Training.compute_gradients_impl(
+        ::AutoTracker, obj_fn::F, data,
+        ts::TrainState{<:TrainingBackendCache{AutoTracker}}
+    ) where {F}
     dps = Training.dparameters(ts.cache)
     ps_tracked = construct_tracked_params(ts.parameters, dps)
 
@@ -14,8 +16,9 @@ function Lux.Training.compute_gradients_impl(::AutoTracker, obj_fn::F, data,
 end
 
 function Lux.Training.compute_gradients_impl(
-        ad::AutoTracker, obj_fn::F, data, ts::TrainState) where {F}
-    grads = fmap(Utils.zero, ts.parameters; exclude=isleaf)
+        ad::AutoTracker, obj_fn::F, data, ts::TrainState
+    ) where {F}
+    grads = fmap(Utils.zero, ts.parameters; exclude = isleaf)
     cache = TrainingBackendCache(ad, True(), grads, nothing)
     @set! ts.cache = cache
     @set! ts.objective_function = obj_fn

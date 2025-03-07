@@ -5,7 +5,8 @@ using MLUtils: MLUtils
 using Lux: Lux, DistributedUtils
 
 function DistributedUtils.construct_distributed_data_container(
-        backend::Lux.AbstractLuxDistributedBackend, data)
+        backend::Lux.AbstractLuxDistributedBackend, data
+    )
     total_size = MLUtils.numobs(data)
     split_across = DistributedUtils.total_workers(backend)
     size_per_worker = Int(ceil(total_size / split_across))

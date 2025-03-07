@@ -36,7 +36,7 @@ function FluxLayer(l)
     return FluxLayer(l, re, Returns(copy(p)))
 end
 
-initialparameters(::AbstractRNG, l::FluxLayer) = (p=l.init_parameters(),)
+initialparameters(::AbstractRNG, l::FluxLayer) = (p = l.init_parameters(),)
 
 function (l::FluxLayer)(x, ps, st)
     y = match_eltype(l, ps, st, x)
@@ -68,20 +68,23 @@ regular `Array` or not. Default is `false`.
     to_array <: StaticBool
 end
 
-function SimpleChainsLayer(layer, to_array::BoolType=False())
+function SimpleChainsLayer(layer, to_array::BoolType = False())
     return SimpleChainsLayer(layer, nothing, static(to_array))
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::SimpleChainsLayer)
-    PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer", s.lux_layer)
+    return PrettyPrinting.print_wrapper_model(io, "SimpleChainsLayer", s.lux_layer)
 end
 
 function (sc::SimpleChainsLayer)(x, ps, st)
     y = match_eltype(sc, ps, st, x)
     return (
-        to_array(sc.to_array,
-            apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x))),
-        st)
+        to_array(
+            sc.to_array,
+            apply_simple_chain(sc.layer, y, ps.params, MLDataDevices.get_device(x))
+        ),
+        st,
+    )
 end
 
 to_array(::False, y) = y

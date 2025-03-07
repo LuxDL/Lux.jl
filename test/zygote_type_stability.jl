@@ -69,8 +69,8 @@ include("setup_modes.jl")
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "$(nameof(typeof(model)))" for (model_list, inputs) in zip(MODELS, INPUTS),
-            model in model_list,
-            input in inputs
+                model in model_list,
+                input in inputs
 
             ps, st = Lux.setup(rng, model) |> dev
             x = input |> dev

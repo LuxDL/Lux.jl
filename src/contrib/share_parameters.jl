@@ -61,7 +61,7 @@ end
 
 function share_parameters(ps, sharing, new_ps)
     assert_disjoint_sharing_list(sharing)
-    @argcheck length(sharing)==length(new_ps) "The length of sharing and new_ps must be equal"
+    @argcheck length(sharing) == length(new_ps) "The length of sharing and new_ps must be equal"
     return unsafe_share_parameters(ps, new_ps, map(construct_property_lens, sharing))
 end
 
@@ -89,10 +89,12 @@ function assert_disjoint_sharing_list(sharing)
                                   ($(sharing[j])) must be disjoint"))
         end
     end
+    return
 end
 
 construct_property_lens(x) = construct_property_lens.(x)
 function construct_property_lens(x::String)
     return foldr(
-        Setfield.ComposedLens, map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, ".")))
+        Setfield.ComposedLens, map(x -> Setfield.PropertyLens{Symbol(x)}(), split(x, "."))
+    )
 end

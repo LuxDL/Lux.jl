@@ -1,4 +1,4 @@
-@testitem "LuxOps.xlogx & LuxOps.xlogy" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "LuxOps.xlogx & LuxOps.xlogy" setup = [SharedTestSetup] tags = [:misc] begin
     using ForwardDiff, Zygote, Enzyme
 
     @test iszero(LuxOps.xlogx(0))
@@ -24,7 +24,8 @@
     ∂x2, ∂y2 = Zygote.gradient(LuxOps.xlogy, 2.0, 3.0)
     if LuxTestUtils.ENZYME_TESTING_ENABLED
         ((∂x3, ∂y3),) = Enzyme.autodiff(
-            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))
+            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0)
+        )
         @test ∂x1 ≈ ∂x2 ≈ ∂x3
         @test ∂y1 ≈ ∂y2 ≈ ∂y3
     else
@@ -38,24 +39,31 @@
     @jet LuxOps.xlogy(2, 3)
 
     if LuxTestUtils.ENZYME_TESTING_ENABLED
-        @test @inferred(Enzyme.autodiff(
-            Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0))) isa Any
+        @test @inferred(
+            Enzyme.autodiff(
+                Enzyme.Reverse, LuxOps.xlogy, Active, Active(2.0), Active(3.0)
+            )
+        ) isa Any
     else
         @test_broken false
     end
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         x = rand(10) |> aType
-        @test_gradients(sum∘Broadcast.BroadcastFunction(LuxOps.xlogx),
-            x; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
+        @test_gradients(
+            sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogx),
+            x; atol = 1.0f-3, rtol = 1.0f-3, soft_fail = [AutoFiniteDiff()]
+        )
 
         y = rand(10) |> aType
-        @test_gradients(sum∘Broadcast.BroadcastFunction(LuxOps.xlogy),
-            x, y; atol=1.0f-3, rtol=1.0f-3, soft_fail=[AutoFiniteDiff()])
+        @test_gradients(
+            sum ∘ Broadcast.BroadcastFunction(LuxOps.xlogy),
+            x, y; atol = 1.0f-3, rtol = 1.0f-3, soft_fail = [AutoFiniteDiff()]
+        )
     end
 end
 
-@testitem "Regression Loss" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "Regression Loss" setup = [SharedTestSetup] tags = [:misc] begin
     using Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -63,12 +71,13 @@ end
         ŷ = [0.9, 0.1, 0.1, 0.9] |> aType
 
         loss_res_map = Dict(
-            "MSE" => (0.1^2 + 0.9^2) / 2, "MAE" => (0.1 + 0.9) / 2, "Huber" => 0.205)
+            "MSE" => (0.1^2 + 0.9^2) / 2, "MAE" => (0.1 + 0.9) / 2, "Huber" => 0.205
+        )
 
         @testset "$(loss)" for (loss, loss_res) in loss_res_map
             loss_mean = eval(Symbol(loss * "Loss"))()
-            loss_sum = eval(Symbol(loss * "Loss"))(; agg=sum)
-            loss_sum2 = eval(Symbol(loss * "Loss"))(; agg=(args...) -> sum(args...))
+            loss_sum = eval(Symbol(loss * "Loss"))(; agg = sum)
+            loss_sum2 = eval(Symbol(loss * "Loss"))(; agg = (args...) -> sum(args...))
 
             @test loss_mean(ŷ, y) ≈ loss_res
             @test loss_sum(ŷ, y) ≈ loss_res * 4
@@ -77,7 +86,7 @@ end
             @jet loss_mean(ŷ, y)
             @jet loss_sum(ŷ, y)
 
-            @test_gradients(Base.Fix2(loss_mean, y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(loss_mean, y), ŷ; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "MSLE" begin
@@ -88,12 +97,12 @@ end
 
             @jet MSLELoss()(ŷ, y)
 
-            @test_gradients(Base.Fix2(MSLELoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(MSLELoss(), y), ŷ; atol = 1.0f-3, rtol = 1.0f-3)
         end
     end
 end
 
-@testitem "Classification Loss" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "Classification Loss" setup = [SharedTestSetup] tags = [:misc] begin
     using OneHotArrays, Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -123,20 +132,20 @@ end
             celoss = CrossEntropyLoss()
 
             @test celoss([0.1, 0.0, 0.9] |> aType, [0.1, 0.0, 0.9] |> aType) ≈
-                  celoss([0.1, 0.9] |> aType, [0.1, 0.9] |> aType)
+                celoss([0.1, 0.9] |> aType, [0.1, 0.9] |> aType)
 
             @test celoss(ŷ, y) ≈ lossvalue
             @test celoss(ŷ, y_smoothed) ≈ lossvalue_smoothed
 
-            celoss_smooth = CrossEntropyLoss(; label_smoothing=0.1)
+            celoss_smooth = CrossEntropyLoss(; label_smoothing = 0.1)
             @test celoss_smooth(ŷ, y) ≈ lossvalue_smoothed
 
-            celoss_smooth2 = CrossEntropyLoss(; label_smoothing=2sf)
+            celoss_smooth2 = CrossEntropyLoss(; label_smoothing = 2sf)
             @test celoss_smooth2(ylp, yl) ≈ sum(-yls .* log.(ylp))
 
             @test celoss(ylp, yl) ≈ sum(-yl .* log.(ylp))
 
-            @test iszero(CrossEntropyLoss(; epsilon=0)(y_same, ya))
+            @test iszero(CrossEntropyLoss(; epsilon = 0)(y_same, ya))
 
             @test celoss(y_sim, ya) < celoss_smooth(y_sim, ya)
             @test celoss(y_dis, ya) > celoss_smooth(y_dis, ya)
@@ -144,29 +153,33 @@ end
             @jet celoss(ŷ, y)
             @jet celoss_smooth(ŷ, y)
 
-            @test_gradients(Base.Fix2(celoss, y), ŷ; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
+            @test_gradients(
+                Base.Fix2(celoss, y), ŷ; atol = 1.0f-3,
+                rtol = 1.0f-3, skip_backends = VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+            )
         end
 
         @testset "Logit CrossEntropyLoss" begin
-            logitceloss = CrossEntropyLoss(; logits=Val(true))
+            logitceloss = CrossEntropyLoss(; logits = Val(true))
 
             @test logitceloss(logŷ, y) ≈ lossvalue
             @test logitceloss(logylp, yl) ≈ sum(-yl .* log.(softmax(logylp)))
 
-            logitceloss_smooth = CrossEntropyLoss(; logits=Val(true), label_smoothing=0.1)
+            logitceloss_smooth = CrossEntropyLoss(; logits = Val(true), label_smoothing = 0.1)
 
             @test logitceloss(logŷ, y_smoothed) ≈ lossvalue_smoothed
             @test logitceloss_smooth(logŷ, y) ≈ lossvalue_smoothed
 
-            logitceloss_smooth2 = CrossEntropyLoss(; logits=Val(true), label_smoothing=2sf)
+            logitceloss_smooth2 = CrossEntropyLoss(; logits = Val(true), label_smoothing = 2sf)
             @test logitceloss_smooth2(logylp, yl) ≈ sum(-yls .* log.(softmax(logylp)))
 
             @jet logitceloss(logŷ, y)
             @jet logitceloss_smooth(logŷ, y)
 
-            @test_gradients(Base.Fix2(logitceloss, y), logŷ; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
+            @test_gradients(
+                Base.Fix2(logitceloss, y), logŷ; atol = 1.0f-3,
+                rtol = 1.0f-3, skip_backends = VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+            )
         end
 
         logŷ, y = randn(3) |> aType, rand(3) |> aType
@@ -174,81 +187,104 @@ end
 
         @testset "BinaryCrossEntropyLoss" begin
             bceloss = BinaryCrossEntropyLoss()
-            bceloss_smooth = BinaryCrossEntropyLoss(; label_smoothing=2sf, epsilon=0)
+            bceloss_smooth = BinaryCrossEntropyLoss(; label_smoothing = 2sf, epsilon = 0)
 
             @test bceloss_smooth(σ.(logŷ), y) ≈
-                  -mean(yls .* log.(σ.(logŷ)) .+ (1 .- yls) .* log.(1 .- σ.(logŷ)))
+                -mean(yls .* log.(σ.(logŷ)) .+ (1 .- yls) .* log.(1 .- σ.(logŷ)))
 
             @test bceloss(σ.(logŷ), y) ≈
-                  mean(-y .* log.(σ.(logŷ)) .- (1 .- y) .* log.(1 .- σ.(logŷ)))
+                mean(-y .* log.(σ.(logŷ)) .- (1 .- y) .* log.(1 .- σ.(logŷ)))
 
-            @test bceloss(σ.(logŷ), y) ≈ mean(-y .* log.(σ.(logŷ) .+ eps.(σ.(logŷ))) -
-                       (1 .- y) .* log.(1 .- σ.(logŷ) .+ eps.(σ.(logŷ))))
+            @test bceloss(σ.(logŷ), y) ≈ mean(
+                -y .* log.(σ.(logŷ) .+ eps.(σ.(logŷ))) -
+                    (1 .- y) .* log.(1 .- σ.(logŷ) .+ eps.(σ.(logŷ)))
+            )
 
             @test bceloss([0.1, 0.2, 0.9] |> aType, 1) ≈
-                  -mean(log, [0.1, 0.2, 0.9] |> aType)  # constant label
+                -mean(log, [0.1, 0.2, 0.9] |> aType)  # constant label
 
             @jet bceloss(σ.(logŷ), y)
             @jet bceloss_smooth(σ.(logŷ), y)
 
-            @test_gradients(Base.Fix2(bceloss, y), σ.(logŷ); atol=1.0f-3, rtol=1.0f-3,
-                enzyme_set_runtime_activity=true)
+            @test_gradients(
+                Base.Fix2(bceloss, y), σ.(logŷ); atol = 1.0f-3, rtol = 1.0f-3,
+                enzyme_set_runtime_activity = true
+            )
         end
 
         @testset "Logit BinaryCrossEntropyLoss" begin
-            logitbceloss = BinaryCrossEntropyLoss(; logits=Val(true))
+            logitbceloss = BinaryCrossEntropyLoss(; logits = Val(true))
             logitbceloss_smooth = BinaryCrossEntropyLoss(;
-                logits=Val(true), label_smoothing=2sf, epsilon=0)
+                logits = Val(true), label_smoothing = 2sf, epsilon = 0
+            )
 
             @test logitbceloss_smooth(logŷ, y) ≈
-                  -mean(yls .* log.(sigmoid(logŷ)) .+
-                        (1 .- yls) .* log.(1 .- sigmoid(logŷ)))
+                -mean(
+                yls .* log.(sigmoid(logŷ)) .+
+                    (1 .- yls) .* log.(1 .- sigmoid(logŷ))
+            )
 
             @test logitbceloss(logŷ, y) ≈
-                  mean(-y .* log.(sigmoid(logŷ)) .- (1 .- y) .* log.(1 .- sigmoid(logŷ)))
+                mean(-y .* log.(sigmoid(logŷ)) .- (1 .- y) .* log.(1 .- sigmoid(logŷ)))
 
             @jet logitbceloss(logŷ, y)
             @jet logitbceloss_smooth(logŷ, y)
 
-            @test_gradients(Base.Fix2(logitbceloss, y), logŷ; atol=1.0f-3, rtol=1.0f-3,
-                enzyme_set_runtime_activity=true)
+            @test_gradients(
+                Base.Fix2(logitbceloss, y), logŷ; atol = 1.0f-3, rtol = 1.0f-3,
+                enzyme_set_runtime_activity = true
+            )
         end
 
         @testset "BinaryFocalLoss" begin
-            y = [0 1 0
-                 1 0 1] |> aType
-            ŷ = [0.268941 0.5 0.268941
-                 0.731059 0.5 0.731059] |> aType
+            y = [
+                0 1 0
+                1 0 1
+            ] |> aType
+            ŷ = [
+                0.268941 0.5 0.268941
+                0.731059 0.5 0.731059
+            ] |> aType
 
-            y1 = [1 0
-                  0 1] |> aType
-            ŷ1 = [0.6 0.3
-                  0.4 0.7] |> aType
+            y1 = [
+                1 0
+                0 1
+            ] |> aType
+            ŷ1 = [
+                0.6 0.3
+                0.4 0.7
+            ] |> aType
 
             @test BinaryFocalLoss()(ŷ, y) ≈ 0.0728675615927385
             @test BinaryFocalLoss()(ŷ1, y1) ≈ 0.05691642237852222
-            @test BinaryFocalLoss(; gamma=0)(ŷ, y) ≈ Lux.CrossEntropyLoss()(ŷ, y)
+            @test BinaryFocalLoss(; gamma = 0)(ŷ, y) ≈ Lux.CrossEntropyLoss()(ŷ, y)
 
             @jet BinaryFocalLoss()(ŷ, y)
 
-            @test_gradients(Base.Fix2(BinaryFocalLoss(), y), ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(Base.Fix2(BinaryFocalLoss(), y), ŷ; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "FocalLoss" begin
-            y = [1 0 0 0 1
-                 0 1 0 1 0
-                 0 0 1 0 0] |> aType
+            y = [
+                1 0 0 0 1
+                0 1 0 1 0
+                0 0 1 0 0
+            ] |> aType
             ŷ = softmax(reshape(-7:7, 3, 5) .* 1.0f0) |> aType
-            y1 = [1 0
-                  0 0
-                  0 1] |> aType
-            ŷ1 = [0.4 0.2
-                  0.5 0.5
-                  0.1 0.3] |> aType
+            y1 = [
+                1 0
+                0 0
+                0 1
+            ] |> aType
+            ŷ1 = [
+                0.4 0.2
+                0.5 0.5
+                0.1 0.3
+            ] |> aType
 
             @test FocalLoss()(ŷ, y) ≈ 1.1277571935622628
             @test FocalLoss()(ŷ1, y1) ≈ 0.45990566879720157
-            @test FocalLoss(; gamma=0)(ŷ, y) ≈ CrossEntropyLoss()(ŷ, y)
+            @test FocalLoss(; gamma = 0)(ŷ, y) ≈ CrossEntropyLoss()(ŷ, y)
 
             @jet FocalLoss()(ŷ, y)
 
@@ -261,13 +297,15 @@ end
             end
             skip_backends = VERSION ≥ v"1.11-" ? Any[AutoEnzyme()] : []
             push!(skip_backends, AutoFiniteDiff())
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3, skip_backends,
-                broken_backends)
+            @test_gradients(
+                __f, ŷ; atol = 1.0f-3, rtol = 1.0f-3, skip_backends,
+                broken_backends
+            )
         end
     end
 end
 
-@testitem "Other Losses" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "Other Losses" setup = [SharedTestSetup] tags = [:misc] begin
     using Zygote
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -276,14 +314,16 @@ end
             ŷ = [4.0 5.0 6.0] |> aType
 
             @test KLDivergenceLoss()([0.1, 0.0, 0.9] |> aType, [0.1, 0.0, 0.9] |> aType) ≈
-                  KLDivergenceLoss()([0.1, 0.9] |> aType, [0.1, 0.9] |> aType)
+                KLDivergenceLoss()([0.1, 0.9] |> aType, [0.1, 0.9] |> aType)
             @test KLDivergenceLoss()(ŷ, y) ≈ -1.7661057888493457
             @test KLDivergenceLoss()(y, y) ≈ 0
 
             @jet KLDivergenceLoss()(ŷ, y)
 
-            @test_gradients(Base.Fix2(KLDivergenceLoss(), y), ŷ; atol=1.0f-3,
-                rtol=1.0f-3, skip_backends=VERSION ≥ v"1.11-" ? [AutoEnzyme()] : [])
+            @test_gradients(
+                Base.Fix2(KLDivergenceLoss(), y), ŷ; atol = 1.0f-3,
+                rtol = 1.0f-3, skip_backends = VERSION ≥ v"1.11-" ? [AutoEnzyme()] : []
+            )
         end
 
         @testset "HingeLoss" begin
@@ -296,7 +336,7 @@ end
             @jet Lux.HingeLoss()(ŷ, y)
 
             __f = Base.Fix2(Lux.HingeLoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "SquaredHingeLoss" begin
@@ -309,7 +349,7 @@ end
             @jet SquaredHingeLoss()(ŷ, y)
 
             __f = Base.Fix2(SquaredHingeLoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "PoissonLoss" begin
@@ -322,7 +362,7 @@ end
             @jet Lux.PoissonLoss()(ŷ, y)
 
             __f = Base.Fix2(Lux.PoissonLoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(__f, ŷ; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "DiceCoeffLoss" begin
@@ -335,67 +375,79 @@ end
             @jet DiceCoeffLoss()(ŷ, y)
 
             __f = Base.Fix2(DiceCoeffLoss(), y)
-            @test_gradients(__f, ŷ; atol=1.0f-3, rtol=1.0f-3,
-                broken_backends=ongpu ? [AutoTracker()] : [])
+            @test_gradients(
+                __f, ŷ; atol = 1.0f-3, rtol = 1.0f-3,
+                broken_backends = ongpu ? [AutoTracker()] : []
+            )
         end
 
         @testset "Siamese Contrastive Loss" begin
-            y = [1 0
-                 0 0
-                 0 1] |> aType
-            ŷ = [0.4 0.2
-                 0.5 0.5
-                 0.1 0.3] |> aType
-            y1 = [1 0 0 0 1
-                  0 1 0 1 0
-                  0 0 1 0 0] |> aType
+            y = [
+                1 0
+                0 0
+                0 1
+            ] |> aType
+            ŷ = [
+                0.4 0.2
+                0.5 0.5
+                0.1 0.3
+            ] |> aType
+            y1 = [
+                1 0 0 0 1
+                0 1 0 1 0
+                0 0 1 0 0
+            ] |> aType
             ŷ1 = softmax(reshape(-7:7, 3, 5) .* 1.0f0) |> aType
-            y2 = [1
-                  0
-                  0
-                  1
-                  1] |> aType
-            ŷ2 = [0.6
-                  0.4
-                  0.1
-                  0.2
-                  0.7] |> aType
+            y2 = [
+                1
+                0
+                0
+                1
+                1
+            ] |> aType
+            ŷ2 = [
+                0.6
+                0.4
+                0.1
+                0.2
+                0.7
+            ] |> aType
 
             @test SiameseContrastiveLoss()(ŷ, y) ≈ 0.2333333333333333
-            @test SiameseContrastiveLoss(; margin=0.5f0)(ŷ, y) ≈ 0.10000000000000002
-            @test SiameseContrastiveLoss(; margin=1.5f0)(ŷ, y) ≈ 0.5333333333333333
+            @test SiameseContrastiveLoss(; margin = 0.5f0)(ŷ, y) ≈ 0.10000000000000002
+            @test SiameseContrastiveLoss(; margin = 1.5f0)(ŷ, y) ≈ 0.5333333333333333
             @test SiameseContrastiveLoss()(ŷ1, y1) ≈ 0.32554644f0
-            @test SiameseContrastiveLoss(; margin=0.5f0)(ŷ1, y1) ≈ 0.16271012f0
-            @test SiameseContrastiveLoss(; margin=1.5f0)(ŷ1, y1) ≈ 0.6532292f0
-            @test SiameseContrastiveLoss(; margin=1)(ŷ, y) ≈ SiameseContrastiveLoss()(ŷ, y)
+            @test SiameseContrastiveLoss(; margin = 0.5f0)(ŷ1, y1) ≈ 0.16271012f0
+            @test SiameseContrastiveLoss(; margin = 1.5f0)(ŷ1, y1) ≈ 0.6532292f0
+            @test SiameseContrastiveLoss(; margin = 1)(ŷ, y) ≈ SiameseContrastiveLoss()(ŷ, y)
             @test SiameseContrastiveLoss()(y, y) ≈ 0.0
             @test SiameseContrastiveLoss()(y1, y1) ≈ 0.0
-            @test SiameseContrastiveLoss(; margin=0)(ŷ, y) ≈ 0.09166666666666667
-            @test SiameseContrastiveLoss(; margin=0)(ŷ1, y1) ≈ 0.13161165f0
+            @test SiameseContrastiveLoss(; margin = 0)(ŷ, y) ≈ 0.09166666666666667
+            @test SiameseContrastiveLoss(; margin = 0)(ŷ1, y1) ≈ 0.13161165f0
             @test SiameseContrastiveLoss()(ŷ2, y2) ≈ 0.21200000000000005
             @test SiameseContrastiveLoss()(ŷ2, ŷ2) ≈ 0.18800000000000003
 
             @jet SiameseContrastiveLoss()(ŷ, y)
 
-            @test_throws ArgumentError SiameseContrastiveLoss(; margin=-0.5)
-            @test_throws ArgumentError SiameseContrastiveLoss(; margin=-1)
+            @test_throws ArgumentError SiameseContrastiveLoss(; margin = -0.5)
+            @test_throws ArgumentError SiameseContrastiveLoss(; margin = -1)
         end
     end
 end
 
-@testitem "Losses: Error Checks and Misc" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "Losses: Error Checks and Misc" setup = [SharedTestSetup] tags = [:misc] begin
     @testset "Size Checks" begin
         @test_throws DimensionMismatch MSELoss()([1, 2], [1, 2, 3])
     end
 
     @testset "No Aggregation" begin
-        @test MSELoss(; agg=nothing)([1, 3], [3, 1]) == [4, 4]
+        @test MSELoss(; agg = nothing)([1, 3], [3, 1]) == [4, 4]
     end
 
     @testset "Scalar Loss" begin
-        @test MSELoss(; agg=sum)(1.0, 1.0) == 0.0
-        @test MSELoss(; agg=sum)(2.0, 0.0) == 4.0
-        @test MSLELoss(; agg=sum)(2.0, 0.0) ≈
-              Lux.LossFunctionImpl.msle_loss(2.0, 0.0, nothing)
+        @test MSELoss(; agg = sum)(1.0, 1.0) == 0.0
+        @test MSELoss(; agg = sum)(2.0, 0.0) == 4.0
+        @test MSLELoss(; agg = sum)(2.0, 0.0) ≈
+            Lux.LossFunctionImpl.msle_loss(2.0, 0.0, nothing)
     end
 end

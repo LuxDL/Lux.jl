@@ -5,7 +5,7 @@ function extract_partials(::Type{Tag}, x, i) where {Tag}
         bfn(xᵢ, iᵢ) = ForwardDiff.partials(Tag, xᵢ, iᵢ)
         return bfn.(x, i)
     end
-    map_fn = @closure(xᵢ->extract_partials(Tag, xᵢ, i))
+    map_fn = @closure(xᵢ -> extract_partials(Tag, xᵢ, i))
     (x isa Tuple || x isa NamedTuple) && return map(map_fn, x)
     x isa CRC.AbstractTangent && return extract_partials(Tag, CRC.backing(x), i)
     x === nothing && return nothing
@@ -47,7 +47,8 @@ function batched_row(x::AbstractArray{T, 3}, i::Integer) where {T}
 end
 
 function compactify_if_structured_matrix(
-        J::AbstractArray{T1, N}, Δ::AbstractArray{T2}) where {T1, T2, N}
+        J::AbstractArray{T1, N}, Δ::AbstractArray{T2}
+    ) where {T1, T2, N}
     @argcheck N ∈ (2, 3) "Only 2D and 3D arrays are supported for compactifying."
     if !ArrayInterface.fast_scalar_indexing(J) && ArrayInterface.isstructured(Δ)
         J_ = similar(J)

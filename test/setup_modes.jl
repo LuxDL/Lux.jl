@@ -15,11 +15,11 @@ end
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           MLDataDevices.functional(CUDADevice)
+        MLDataDevices.functional(CUDADevice)
 end
 function amdgpu_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-           MLDataDevices.functional(AMDGPUDevice)
+        MLDataDevices.functional(AMDGPUDevice)
 end
 
 const MODES = begin

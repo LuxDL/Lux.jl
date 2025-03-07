@@ -1,7 +1,7 @@
 abstract type AbstractLuxException <: Exception end
 
 function Base.showerror(io::IO, e::Err) where {Err <: AbstractLuxException}
-    print(io, string(nameof(Err)) * "(" * (hasfield(Err, :msg) ? e.msg : "") * ")")
+    return print(io, string(nameof(Err)) * "(" * (hasfield(Err, :msg) ? e.msg : "") * ")")
 end
 
 struct LuxCompactModelParsingException <: AbstractLuxException
