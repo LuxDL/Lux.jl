@@ -109,7 +109,7 @@ Sinusoidal Positional Embedding. For details see [1].
 
 ## Returns
 
-  - If the input array is of size `(dims...,)` then the output is of size `(2, dims...)`.
+  - If the input array is of size `(insz...,)` then the output is of size `(dims, insz...)`.
 
 ## States
 

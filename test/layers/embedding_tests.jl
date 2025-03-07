@@ -77,3 +77,70 @@
         end
     end
 end
+
+@testitem "SinusoidalPositionalEmbedding" setup=[SharedTestSetup] tags=[:core_layers] begin
+    using LinearAlgebra
+
+    rng = StableRNG(12345)
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        model = SinusoidalPositionalEmbedding(16; min_freq=0.01f0)
+        x = aType(collect(Float32, 0:9))
+        ps, st = Lux.setup(rng, model) |> dev
+
+        y, st = model(x, ps, st)
+        @test hasfield(typeof(st), :sigmas)
+        @test size(y) == (16, 10)
+
+        y_cpu = Array(y)
+        similarities = y_cpu' * y_cpu
+        @test maximum(abs, diag(similarities) .- 1) ≤ 1e-5
+
+        @test_gradients(sumabs2first, model, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+    end
+end
+
+@testitem "SinusoidalPositionalEmbedding" setup=[
+    SharedTestSetup, SharedReactantLayersTestSetup] tags=[:reactant] begin
+    using Reactant, Lux
+    using LuxTestUtils: check_approx
+
+    # StableRNG uses UInt128 for seed that is not supported by Reactant inside loops
+    rng = Random.default_rng()
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        dev = reactant_device(; force=true)
+
+        model = SinusoidalPositionalEmbedding(16; min_freq=0.01f0)
+        x = collect(Float32, 0:9)
+        x_ra = x |> dev
+        ps, st = Lux.setup(rng, model)
+        ps_ra, st_ra = (ps, st) |> dev
+
+        y, st = @jit model(x_ra, ps_ra, st_ra)
+        @test hasfield(typeof(st_ra), :sigmas)
+        @test size(y) == (16, 10)
+
+        y_cpu = Array(y)
+        similarities = y_cpu' * y_cpu
+        @test maximum(abs, diag(similarities) .- 1) ≤ 1e-5
+
+        @testset "gradient" begin
+            ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
+            ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
+            @test ∂x_ra≈∂x atol=1e-2 rtol=1e-2
+            @test check_approx(∂ps_ra, ∂ps; atol=1e-2, rtol=1e-2)
+        end
+    end
+end
