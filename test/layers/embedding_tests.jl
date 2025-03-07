@@ -110,7 +110,6 @@ end
     using Reactant, Lux
     using LuxTestUtils: check_approx
 
-    # StableRNG uses UInt128 for seed that is not supported by Reactant inside loops
     rng = Random.default_rng()
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -140,6 +139,114 @@ end
         y_cpu = Array(y)
         similarities = y_cpu' * y_cpu
         @test maximum(abs, diag(similarities) .- 1) ≤ 1.0e-5
+
+        @testset "gradient" begin
+            ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)
+            ∂x_ra, ∂ps_ra = @jit ∇sumabs2_enzyme(model, x_ra, ps_ra, st_ra)
+            @test ∂x_ra ≈ ∂x atol = 1.0e-2 rtol = 1.0e-2
+            @test check_approx(∂ps_ra, ∂ps; atol = 1.0e-2, rtol = 1.0e-2)
+        end
+    end
+end
+
+# https://github.com/mashu/PositionalEmbeddings.jl/blob/1252cd50093b0154c27d9f93ad2a914098a23c15/test/runtests.jl#L55
+@testitem "RotaryPositionalEmbedding" setup = [SharedTestSetup] tags = [:core_layers] begin
+    using LinearAlgebra
+
+    rng = StableRNG(12345)
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        model = RotaryPositionalEmbedding(16; max_sequence_length = 10, base = 10000)
+        ps, st = Lux.setup(rng, model)
+
+        expected_cos = reshape(
+            [
+                1.0 0.540302 -0.416147 -0.989992 -0.653644 0.283662 0.96017 0.753902 -0.1455 -0.91113;
+                1.0 0.950415 0.806578 0.582754 0.301137 -0.0103423 -0.320796 -0.599437 -0.818632 -0.956644;
+                1.0 0.995004 0.980067 0.955337 0.921061 0.877583 0.825336 0.764842 0.696707 0.62161;
+                1.0 0.9995 0.998001 0.995503 0.992011 0.987526 0.982054 0.9756 0.96817 0.959773;
+                1.0 0.99995 0.9998 0.99955 0.9992 0.99875 0.998201 0.997551 0.996802 0.995953;
+                1.0 0.999995 0.99998 0.999955 0.99992 0.999875 0.99982 0.999755 0.99968 0.999595;
+                1.0 1.0 0.999998 0.999996 0.999992 0.999987 0.999982 0.999976 0.999968 0.99996;
+                1.0 1.0 1.0 1.0 0.999999 0.999999 0.999998 0.999998 0.999997 0.999996;
+            ], (8, 10, 1)
+        )
+
+        expected_sin = reshape(
+            [
+                0.0 0.841471 0.909297 0.14112 -0.756802 -0.958924 -0.279415 0.656987 0.989358 0.412118;
+                0.0 0.310984 0.591127 0.812649 0.953581 0.999947 0.947148 0.800422 0.574318 0.291259;
+                0.0 0.0998334 0.198669 0.29552 0.389418 0.479426 0.564642 0.644218 0.717356 0.783327;
+                0.0 0.0316175 0.0632034 0.0947261 0.126154 0.157456 0.1886 0.219556 0.250292 0.280778;
+                0.0 0.00999983 0.0199987 0.0299955 0.0399893 0.0499792 0.059964 0.0699428 0.0799147 0.0898785;
+                0.0 0.00316227 0.00632451 0.00948669 0.0126488 0.0158107 0.0189725 0.0221341 0.0252955 0.0284567;
+                0.0 0.001 0.002 0.003 0.00399999 0.00499998 0.00599996 0.00699994 0.00799991 0.00899988;
+                0.0 0.000316228 0.000632456 0.000948683 0.00126491 0.00158114 0.00189737 0.00221359 0.00252982 0.00284605;
+            ], (8, 10, 1)
+        )
+
+        @test st.sin_cache ≈ expected_sin
+        @test st.cos_cache ≈ expected_cos
+
+        x = reshape(collect(Float32, 1:320), 16, 10, 2) |> dev
+        x2 = reshape(x, 16, 1, 10, 2) |> dev
+        ps, st = (ps, st) |> dev
+
+        neg_half_x = similar(x)
+        neg_half_x[1:8, :, :] .= -x[9:16, :, :]
+        neg_half_x[9:16, :, :] .= x[1:8, :, :]
+
+        y_expected = vcat(expected_cos, expected_cos) .* x .+
+            vcat(expected_sin, expected_sin) .* neg_half_x
+
+        y, st = model(x2, ps, st)
+        y = dropdims(y; dims = 2)
+        @test size(y) == (16, 10, 2)
+        @test y ≈ y_expected atol = 1.0e-3 rtol = 1.0e-3
+
+        @test_gradients(
+            sumabs2first, model, x2, ps, st; atol = 1.0f-3, rtol = 1.0f-3,
+            broken_backends = [AutoReverseDiff()]
+        )
+    end
+end
+
+@testitem "RotaryPositionalEmbedding" setup = [
+    SharedTestSetup, SharedReactantLayersTestSetup,
+] tags = [:reactant] begin
+    using Reactant, Lux
+    using LuxTestUtils: check_approx
+
+    rng = Random.default_rng()
+
+    @testset "$mode" for (mode, aType, dev, ongpu) in MODES
+        if mode == "amdgpu"
+            @warn "Skipping AMDGPU tests for Reactant"
+            continue
+        end
+
+        if ongpu
+            Reactant.set_default_backend("gpu")
+        else
+            Reactant.set_default_backend("cpu")
+        end
+
+        dev = reactant_device(; force = true)
+
+        model = RotaryPositionalEmbedding(16; max_sequence_length = 10, base = 10000)
+        ps, st = Lux.setup(rng, model)
+
+        x = reshape(collect(Float32, 1:320), 16, 1, 10, 2)
+        x_ra = reshape(x, 16, 1, 10, 2) |> dev
+        ps_ra, st_ra = (ps, st) |> dev
+
+        y_ra, st_ra = @jit model(x_ra, ps_ra, st_ra)
+        y, st = model(x, ps, st)
+        @test hasfield(typeof(st_ra), :cos_cache)
+        @test hasfield(typeof(st_ra), :sin_cache)
+        @test size(y_ra) == (16, 1, 10, 2)
+
+        @test Array(y_ra) ≈ y atol = 1.0e-2 rtol = 1.0e-2
 
         @testset "gradient" begin
             ∂x, ∂ps = ∇sumabs2_zygote(model, x, ps, st)

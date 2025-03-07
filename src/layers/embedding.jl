@@ -207,10 +207,10 @@ function RotaryPositionalEmbedding(
 end
 
 function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
-    theta = 1.0f0 ./
+    theta = inv.(
         Float32.(
-        rope.base .^
-            (range(0, rope.dim - 1; step = 2)[1:(rope.dim ÷ 2)] ./ rope.dim)
+            rope.base .^ (range(0, rope.dim - 1; step = 2)[1:(rope.dim ÷ 2)] ./ rope.dim)
+        )
     )
 
     seq_idx = collect(Float32, 0:(rope.max_sequence_length - 1))
@@ -225,7 +225,7 @@ function (rope::RotaryPositionalEmbedding)(
 end
 
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
-    @argcheck ndims(x) == 4 "Input must be a 4D tensor"
+    @argcheck ndims(x) == 4 "Input must be a 4D tensor ([dim, nheads, seq_len, batch])"
     @argcheck size(x, 3) ≤ rope.max_sequence_length "Sequence length must be less than \
                                                      $(rope.max_sequence_length)"
     @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
@@ -243,21 +243,17 @@ function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedT
         sin_cache = st.sin_cache[:, input_pos]
     end
 
-    # reshape input; the last dimension is used for computing the output.
-    # Cast to float to match the reference implementation
-    xshaped = reshape(float.(y), 2, h_d ÷ 2, n_h, seq_len, b)
+    x_shaped1 = y[1:(h_d ÷ 2), :, :, :]
+    x_shaped2 = y[(h_d ÷ 2 + 1):end, :, :, :]
 
     # reshape the cache for broadcasting
-    cos_cache = reshape(cos_cache, 1, h_d ÷ 2, 1, seq_len, :)
-    sin_cache = reshape(sin_cache, 1, h_d ÷ 2, 1, seq_len, :)
-
-    xshaped1 = xshaped[1:1, :, :, :, :]
-    xshaped2 = xshaped[2:2, :, :, :, :]
+    cos_cache = reshape(cos_cache, :, 1, seq_len, 1)
+    sin_cache = reshape(sin_cache, :, 1, seq_len, 1)
 
     x_out = vcat(
-        xshaped1 .* cos_cache - xshaped2 .* sin_cache,
-        xshaped2 .* cos_cache + xshaped1 .* sin_cache
+        x_shaped1 .* cos_cache - x_shaped2 .* sin_cache,
+        x_shaped2 .* cos_cache + x_shaped1 .* sin_cache
     )
 
-    return reshape(x_out, h_d, n_h, seq_len, b), st
+    return x_out, st
 end
