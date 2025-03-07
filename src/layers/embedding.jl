@@ -84,22 +84,36 @@ function (e::Embedding)(::Tuple{}, _, ::NamedTuple)
     throw(ArgumentError("Input tuple must contain at least one element"))
 end
 
-"""
-    SinusoidalPositionalEmbedding(....)
+@doc doc"""
+    SinusoidalPositionalEmbedding(
+        dims::IntegerType; min_freq=0.0001f0, max_freq=1.0f0,
+        scale=nothing, full_turns::Bool=false
+    )
 
 Sinusoidal Positional Embedding. For details see [1].
 
 ## Arguments
 
+  - `dims`: The dimensionality of the resulting positional embeddings.
+
 ## Keyword Arguments
+
+  - `min_freq`: The minimum frequency expected. Default: `0.0001f0`.
+  - `max_freq`: The maximum frequency expected. Default: `1.0f0`.
+  - `scale`: A multiplicative scale for the embeddings. Default: $\sqrt{2/dims}$.
+  - `full_turns`: If `true` multiply the frequencies with $2\pi$. Default: `false`.
 
 ## Input
 
+  - AbstractArray
+
 ## Returns
 
-## Parameters
+  - If the input array is of size `(dims...,)` then the output is of size `(2, dims...)`.
 
 ## States
+
+  - NamedTuple containing `sigmas`.
 
 ## References
 
@@ -137,21 +151,40 @@ function (spe::SinusoidalPositionalEmbedding)(x::AbstractArray, ps, st::NamedTup
 end
 
 """
-    RotaryPositionalEmbedding(....)
+    RotaryPositionalEmbedding(
+        dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000
+    )
 
 Rotary Positional Embedding. For details see [1].
 
+The traditional implementation rotates consecutive pairs of elements in the feature
+dimension while the default implementation rotates pairs with stride half the feature
+dimensions for efficiency.
+
 ## Arguments
+
+  - `dim`: The feature dimensions to be rotated. If the input feature is larger than dims
+    then the rest is left unchanged.
 
 ## Keyword Arguments
 
+  - `base`: The base used to compute angular frequency for each dimension in the positional
+    encodings. Default: `10000`.
+  - `max_sequence_length`: The maximum sequence length. Default: `4096`.
+
 ## Input
+
+  - 4D AbstractArray s.t.
+      - size(x, 1) == dim
+      - size(x, 3) ≤ max_sequence_length
 
 ## Returns
 
-## Parameters
+  - 4D AbstractArray of the same size as the input.
 
 ## States
+
+  - NamedTuple containing `cos_cache` and `sin_cache`.
 
 ## References
 
