@@ -175,8 +175,9 @@ dimensions for efficiency.
 ## Input
 
   - 4D AbstractArray s.t.
-      - size(x, 1) == dim
-      - size(x, 3) ≤ max_sequence_length
+
+      + size(x, 1) == dim
+      + size(x, 3) ≤ max_sequence_length
 
 ## Returns
 

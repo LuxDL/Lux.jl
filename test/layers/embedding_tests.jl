@@ -128,7 +128,7 @@ end
         ps, st = Lux.setup(rng, model)
         ps_ra, st_ra = (ps, st) |> dev
 
-        y, st = @jit model(x_ra, ps_ra, st_ra)
+        y, st_ra = @jit model(x_ra, ps_ra, st_ra)
         @test hasfield(typeof(st_ra), :sigmas)
         @test size(y) == (16, 10)
 
