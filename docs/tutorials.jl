@@ -35,7 +35,8 @@ const BACKEND_LIST = lowercase.([
 const BACKEND_GROUP = lowercase(get(ENV, "TUTORIAL_BACKEND_GROUP", "all"))
 
 const BUILDKITE_PARALLEL_JOB_COUNT = parse(
-    Int, get(ENV, "BUILDKITE_PARALLEL_JOB_COUNT", "-1"))
+    Int, get(ENV, "BUILDKITE_PARALLEL_JOB_COUNT", "-1")
+)
 
 const TUTORIALS_WITH_BACKEND = if BACKEND_GROUP == "all"
     TUTORIALS
@@ -46,7 +47,8 @@ end
 const TUTORIALS_BUILDING = if BUILDKITE_PARALLEL_JOB_COUNT > 0
     id = parse(Int, ENV["BUILDKITE_PARALLEL_JOB"]) + 1 # Index starts from 0
     splits = Vector{Vector{eltype(TUTORIALS_WITH_BACKEND)}}(
-        undef, BUILDKITE_PARALLEL_JOB_COUNT)
+        undef, BUILDKITE_PARALLEL_JOB_COUNT
+    )
     for i in eachindex(TUTORIALS_WITH_BACKEND)
         idx = mod1(i, BUILDKITE_PARALLEL_JOB_COUNT)
         if !isassigned(splits, idx)
@@ -60,7 +62,8 @@ else
 end
 
 const NTASKS = min(
-    parse(Int, get(ENV, "LUX_DOCUMENTATION_NTASKS", "1")), length(TUTORIALS_BUILDING))
+    parse(Int, get(ENV, "LUX_DOCUMENTATION_NTASKS", "1")), length(TUTORIALS_BUILDING)
+)
 
 @info "Building Tutorials:" TUTORIALS_BUILDING
 
@@ -68,7 +71,7 @@ const NTASKS = min(
 
 run(`$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=@literate -e 'import Pkg; Pkg.add(["Literate", "InteractiveUtils"])'`)
 
-asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
+asyncmap(TUTORIALS_BUILDING; ntasks = NTASKS) do (i, (d, p))
     @info "Running Tutorial $(i): $(p) on task $(current_task())"
     path = joinpath(@__DIR__, "..", "examples", p)
     name = "$(i)_$(first(rsplit(p, "/")))"
@@ -76,9 +79,11 @@ asyncmap(TUTORIALS_BUILDING; ntasks=NTASKS) do (i, (d, p))
     tutorial_proj = dirname(path)
     file = joinpath(dirname(@__FILE__), "run_single_tutorial.jl")
 
-    withenv("JULIA_NUM_THREADS" => "$(Threads.nthreads())",
+    withenv(
+        "JULIA_NUM_THREADS" => "$(Threads.nthreads())",
         "JULIA_CUDA_HARD_MEMORY_LIMIT" => "$(100 ÷ NTASKS)%",
-        "JULIA_PKG_PRECOMPILE_AUTO" => "0", "JULIA_DEBUG" => "Literate") do
+        "JULIA_PKG_PRECOMPILE_AUTO" => "0", "JULIA_DEBUG" => "Literate"
+    ) do
         run(`$(Base.julia_cmd()) --startup=no --code-coverage=user --threads=$(Threads.nthreads()) --project=$(tutorial_proj) "$(file)" "$(name)" "$(output_directory)" "$(path)"`)
     end
 
