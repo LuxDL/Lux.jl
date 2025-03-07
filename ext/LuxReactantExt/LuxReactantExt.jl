@@ -7,7 +7,7 @@ using Reactant: Reactant, @compile, @code_hlo, @trace, AnyTracedRArray, TracedRA
 using Setfield: @set!
 using Static: True, False
 
-using Lux: Lux, LuxOps, Training, Utils
+using Lux: Lux, LuxOps, Training, Utils, StatefulLuxLayer
 using Lux.Training: TrainingBackendCache, ReactantBackend
 using LuxCore: LuxCore
 
@@ -29,5 +29,6 @@ end
 include("patches.jl")
 include("training.jl")
 include("layers.jl")
+include("tracing.jl")
 
 end
