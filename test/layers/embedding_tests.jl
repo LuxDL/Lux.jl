@@ -191,6 +191,8 @@ end
         x = reshape(collect(Float32, 1:320), 16, 10, 2) |> dev
         x2 = reshape(x, 16, 1, 10, 2) |> dev
         ps, st = (ps, st) |> dev
+        expected_sin = expected_sin |> dev
+        expected_cos = expected_cos |> dev
 
         neg_half_x = similar(x)
         neg_half_x[1:8, :, :] .= -x[9:16, :, :]

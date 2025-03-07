@@ -231,7 +231,7 @@ function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedT
     @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
                                       $(size(x, 1))"
 
-    h_d, n_h, seq_len, b = size(x)
+    h_d, _, seq_len, _ = size(x)
     y = match_eltype(rope, ps, st, x)
 
     # extract the values based on whether input_pos is set or not
