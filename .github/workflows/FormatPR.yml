@@ -10,7 +10,7 @@ jobs:
       - name: Install Runic and format
         run: |
           julia  -e 'using Pkg; Pkg.add(PackageSpec(name="Runic"))'
-          julia -e 'using Runic; exit(Runic.main(ARGS))' -- --inplace src/ examples/ test/ ext/ docs/
+          julia -e 'using Runic; exit(Runic.main(ARGS))' -- --inplace src/ examples/ test/ ext/ docs/ lib/
       - name: Create Pull Request
         id: cpr
         uses: peter-evans/create-pull-request@v7
