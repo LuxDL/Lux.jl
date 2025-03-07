@@ -5,10 +5,11 @@ using ArrayInterface: parameterless_type
     @test !MLDataDevices.functional(CUDADevice)
     @test cpu_device() isa CPUDevice
     @test gpu_device() isa CPUDevice
-    @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(; force=true)
+    @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(; force = true)
     @test_throws Exception default_device_rng(CUDADevice(nothing))
     @test_logs (:warn, "`CUDA.jl` hasn't been loaded. Ignoring the device setting.") MLDataDevices.set_device!(
-        CUDADevice, nothing, 1)
+        CUDADevice, nothing, 1
+    )
 end
 
 using LuxCUDA
@@ -19,12 +20,13 @@ using LuxCUDA
     if MLDataDevices.functional(CUDADevice)
         @info "LuxCUDA is functional"
         @test gpu_device() isa CUDADevice
-        @test gpu_device(; force=true) isa CUDADevice
+        @test gpu_device(; force = true) isa CUDADevice
     else
         @info "LuxCUDA is NOT functional"
         @test gpu_device() isa CPUDevice
         @test_throws MLDataDevices.Internal.DeviceSelectionException gpu_device(;
-            force=true)
+            force = true
+        )
     end
     @test MLDataDevices.GPU_DEVICE[] !== nothing
 end
@@ -32,11 +34,13 @@ end
 using FillArrays, Zygote  # Extensions
 
 @testset "Data Transfer" begin
-    ps = (a=(c=zeros(10, 1), d=1), b=ones(10, 1), e=:c,
-        d="string", mixed=[2.0f0, 3.0, ones(2, 3)],  # mixed array types
-        range=1:10,
-        rng_default=Random.default_rng(), rng=MersenneTwister(),
-        one_elem=Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray=Fill(1.0f0, (2, 3)))
+    ps = (
+        a = (c = zeros(10, 1), d = 1), b = ones(10, 1), e = :c,
+        d = "string", mixed = [2.0f0, 3.0, ones(2, 3)],  # mixed array types
+        range = 1:10,
+        rng_default = Random.default_rng(), rng = MersenneTwister(),
+        one_elem = Zygote.OneElement(2.0f0, (2, 3), (1:3, 1:4)), farray = Fill(1.0f0, (2, 3)),
+    )
 
     device = gpu_device()
     aType = MLDataDevices.functional(CUDADevice) ? CuArray : Array
@@ -118,7 +122,7 @@ using FillArrays, Zygote  # Extensions
         @test get_device_type(data_dev) <: CPUDevice
     end
 
-    ps_mixed = (; a=rand(2), c=(rand(2), 1), st=MyStruct(rand(2)), b=device(rand(2)))
+    ps_mixed = (; a = rand(2), c = (rand(2), 1), st = MyStruct(rand(2)), b = device(rand(2)))
     @test get_device(ps_mixed.st) isa CPUDevice
     @test get_device_type(ps_mixed.st) <: CPUDevice
     @test get_device(ps_mixed.c) isa CPUDevice
@@ -141,7 +145,7 @@ using FillArrays, Zygote  # Extensions
 
     @testset "get_device_type compile constant" begin
         x = rand(10, 10) |> device
-        ps = (; weight=x, bias=x, d=(x, x))
+        ps = (; weight = x, bias = x, d = (x, x))
 
         return_val(x) = Val(get_device_type(x))  # If it is a compile time constant then type inference will work
         @test @inferred(return_val(ps)) isa Val{parameterless_type(typeof(device))}
@@ -191,7 +195,7 @@ end
 
 @testset "Multiple Devices CUDA" begin
     if MLDataDevices.functional(CUDADevice)
-        ps = (; weight=rand(Float32, 10), bias=rand(Float32, 10))
+        ps = (; weight = rand(Float32, 10), bias = rand(Float32, 10))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
         for idx in 1:length(CUDA.devices())
@@ -218,7 +222,7 @@ using SparseArrays
 
 @testset "CUDA Sparse Arrays" begin
     if MLDataDevices.functional(CUDADevice)
-        ps = (; weight=sprand(Float32, 10, 10, 0.1), bias=sprand(Float32, 10, 0.1))
+        ps = (; weight = sprand(Float32, 10, 10, 0.1), bias = sprand(Float32, 10, 0.1))
         ps_cpu = deepcopy(ps)
         cdev = cpu_device()
         for idx in 1:length(CUDA.devices())

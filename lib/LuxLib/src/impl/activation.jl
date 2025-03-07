@@ -14,24 +14,31 @@ activation(σ::F, x::AbstractArray) where {F} = activation(internal_operation_mo
 
 # Core Implementation
 function activation!!(
-        opmode::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray) where {F}
+        opmode::AbstractInternalArrayOpMode, ::False, σ::F, x::AbstractArray
+    ) where {F}
     return activation(opmode, σ, x)
 end
-@stable default_mode="disable" function activation!!(
-        opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray) where {F}
+@stable default_mode = "disable" function activation!!(
+        opmode::AbstractInternalArrayOpMode, ::True, σ::F, x::AbstractArray
+    ) where {F}
     activation!(x, opmode, σ, x)
     return x
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation!!),
         opmode::AbstractInternalArrayOpMode, ::True,
-        σ::F, x::AbstractArray{T}) where {F, T}
+        σ::F, x::AbstractArray{T}
+    ) where {F, T}
     if unsafe_known(activation_intermediate_not_needed(σ, T))
         activation!(x, opmode, σ, x)
         𝒫x_no_intermediate = CRC.ProjectTo(x)
         ∇activation_no_intermediate_rrule = @closure Δ -> begin
-            ∂x = CRC.@thunk 𝒫x_no_intermediate(∇activation(
-                recursive_unthunk(Δ), x, σ, NotaNumber()))
+            ∂x = CRC.@thunk 𝒫x_no_intermediate(
+                ∇activation(
+                    recursive_unthunk(Δ), x, σ, NotaNumber()
+                )
+            )
             return ∂∅, ∂∅, ∂∅, ∂∅, ∂x
         end
         return x, ∇activation_no_intermediate_rrule
@@ -58,16 +65,19 @@ end
 function activation(::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) where {F}
     return broadcast(σ, x)
 end
-@stable default_mode="disable" function activation(
-        opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}) where {F, T}
+@stable default_mode = "disable" function activation(
+        opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}
+    ) where {F, T}
     RT = Core.Compiler.return_type(σ, Tuple{T})
     y = similar(x, ifelse(isconcretetype(RT), RT, T))
     activation!(y, opmode, σ, x)
     return y
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
-        opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}) where {F, T}
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
+        opmode::LoopedArrayOp, σ::F, x::AbstractArray{T}
+    ) where {F, T}
     if unsafe_known(activation_has_rrule(σ, T))
         y = activation(opmode, σ, x)
         𝓟x = CRC.ProjectTo(x)
@@ -87,7 +97,8 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(activation),
 end
 
 function activation!(
-        y::AbstractArray, ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray) where {F}
+        y::AbstractArray, ::AbstractInternalArrayOpMode, σ::F, x::AbstractArray
+    ) where {F}
     broadcast!(σ, y, x)
     return
 end
@@ -97,7 +108,7 @@ function activation!(y::AbstractArray, ::LoopedArrayOp, σ::F, x::AbstractArray)
 end
 
 function activation_simd_loop!(y::AbstractArray, σ::F, x::AbstractArray) where {F}
-    @simd ivdep for I in eachindex(y, x)
+    return @simd ivdep for I in eachindex(y, x)
         @inbounds y[I] = σ(x[I])
     end
 end
@@ -127,7 +138,8 @@ end
 # Switch some of the activations to use SLEEFPirates.jl if needed
 function select_fastest_activation(f::F, xs...) where {F}
     return select_fastest_activation(
-        f, internal_operation_mode(xs), unrolled_mapreduce(safe_eltype, promote_type, xs))
+        f, internal_operation_mode(xs), unrolled_mapreduce(safe_eltype, promote_type, xs)
+    )
 end
 
 select_fastest_activation(f::F, ::AbstractInternalArrayOpMode, ::Type{T}) where {F, T} = f

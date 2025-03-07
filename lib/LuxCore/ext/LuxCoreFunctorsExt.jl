@@ -17,10 +17,11 @@ function Functors.functor(::Type{<:LuxCore.AbstractLuxLayer}, x)
 end
 
 function Functors.functor(
-        ::Type{<:LuxCore.AbstractLuxContainerLayer{layers}}, x) where {layers}
+        ::Type{<:LuxCore.AbstractLuxContainerLayer{layers}}, x
+    ) where {layers}
     children = NamedTuple{layers}(getproperty.((x,), layers))
     layer_reconstructor = let x = x, layers = layers
-        z -> reduce(LuxCore.Internal.setfield, zip(layers, z); init=x)
+        z -> reduce(LuxCore.Internal.setfield, zip(layers, z); init = x)
     end
     return children, layer_reconstructor
 end

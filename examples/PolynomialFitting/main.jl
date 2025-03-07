@@ -25,11 +25,13 @@ Random.seed!(rng, 12345)
 # Let's visualize the dataset
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3, color=:blue)
-    s = scatter!(ax, x[1, :], y[1, :]; markersize=12, alpha=0.5,
-        color=:orange, strokecolor=:black, strokewidth=2)
+    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth = 3, color = :blue)
+    s = scatter!(
+        ax, x[1, :], y[1, :]; markersize = 12, alpha = 0.5,
+        color = :orange, strokecolor = :black, strokewidth = 2
+    )
 
     axislegend(ax, [l, s], ["True Quadratic Function", "Data Points"])
 
@@ -91,22 +93,30 @@ forward_pass = @compile Lux.apply(
     tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
 )
 
-y_pred = cdev(first(forward_pass(
-    tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
-)))
+y_pred = cdev(
+    first(
+        forward_pass(
+            tstate.model, xdev(x), tstate.parameters, Lux.testmode(tstate.states)
+        )
+    )
+)
 nothing #hide
 
 # Let's plot the results
 
 begin
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
 
-    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth=3)
-    s1 = scatter!(ax, x[1, :], y[1, :]; markersize=12, alpha=0.5,
-        color=:orange, strokecolor=:black, strokewidth=2)
-    s2 = scatter!(ax, x[1, :], y_pred[1, :]; markersize=12, alpha=0.5,
-        color=:green, strokecolor=:black, strokewidth=2)
+    l = lines!(ax, x[1, :], x -> evalpoly(x, (0, -2, 1)); linewidth = 3)
+    s1 = scatter!(
+        ax, x[1, :], y[1, :]; markersize = 12, alpha = 0.5,
+        color = :orange, strokecolor = :black, strokewidth = 2
+    )
+    s2 = scatter!(
+        ax, x[1, :], y_pred[1, :]; markersize = 12, alpha = 0.5,
+        color = :green, strokecolor = :black, strokewidth = 2
+    )
 
     axislegend(ax, [l, s1, s2], ["True Quadratic Function", "Actual Data", "Predictions"])
 

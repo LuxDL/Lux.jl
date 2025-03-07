@@ -4,9 +4,9 @@
 # based on the [CVAE implementation in MLX](https://github.com/ml-explore/mlx-examples/blob/main/cvae/).
 
 using Lux, Reactant, MLDatasets, Random, Statistics, Enzyme, MLUtils, DataAugmentation,
-      ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers
+    ConcreteStructs, OneHotArrays, ImageShow, Images, Printf, Optimisers
 
-const xdev = reactant_device(; force=true)
+const xdev = reactant_device(; force = true)
 const cdev = cpu_device()
 
 # ## Model Definition
@@ -15,29 +15,30 @@ const cdev = cpu_device()
 # space and sample a latent vector from that distribution.
 
 function cvae_encoder(
-        rng=Random.default_rng(); num_latent_dims::Int,
+        rng = Random.default_rng(); num_latent_dims::Int,
         image_shape::Dims{3}, max_num_filters::Int
-)
+    )
     flattened_dim = prod(image_shape[1:2] .÷ 8) * max_num_filters
     return @compact(;
-        embed=Chain(
+        embed = Chain(
             Chain(
-                Conv((3, 3), image_shape[3] => max_num_filters ÷ 4; stride=2, pad=1),
+                Conv((3, 3), image_shape[3] => max_num_filters ÷ 4; stride = 2, pad = 1),
                 BatchNorm(max_num_filters ÷ 4, leakyrelu)
             ),
             Chain(
-                Conv((3, 3), max_num_filters ÷ 4 => max_num_filters ÷ 2; stride=2, pad=1),
+                Conv((3, 3), max_num_filters ÷ 4 => max_num_filters ÷ 2; stride = 2, pad = 1),
                 BatchNorm(max_num_filters ÷ 2, leakyrelu)
             ),
             Chain(
-                Conv((3, 3), max_num_filters ÷ 2 => max_num_filters; stride=2, pad=1),
+                Conv((3, 3), max_num_filters ÷ 2 => max_num_filters; stride = 2, pad = 1),
                 BatchNorm(max_num_filters, leakyrelu)
             ),
             FlattenLayer()
         ),
-        proj_mu=Dense(flattened_dim, num_latent_dims; init_bias=zeros32),
-        proj_log_var=Dense(flattened_dim, num_latent_dims; init_bias=zeros32),
-        rng) do x
+        proj_mu = Dense(flattened_dim, num_latent_dims; init_bias = zeros32),
+        proj_log_var = Dense(flattened_dim, num_latent_dims; init_bias = zeros32),
+        rng
+    ) do x
         y = embed(x)
 
         μ = proj_mu(y)
@@ -63,25 +64,28 @@ end
 function cvae_decoder(; num_latent_dims::Int, image_shape::Dims{3}, max_num_filters::Int)
     flattened_dim = prod(image_shape[1:2] .÷ 8) * max_num_filters
     return @compact(;
-        linear=Dense(num_latent_dims, flattened_dim),
-        upchain=Chain(
+        linear = Dense(num_latent_dims, flattened_dim),
+        upchain = Chain(
             Chain(
                 Upsample(2),
-                Conv((3, 3), max_num_filters => max_num_filters ÷ 2; stride=1, pad=1),
+                Conv((3, 3), max_num_filters => max_num_filters ÷ 2; stride = 1, pad = 1),
                 BatchNorm(max_num_filters ÷ 2, leakyrelu)
             ),
             Chain(
                 Upsample(2),
-                Conv((3, 3), max_num_filters ÷ 2 => max_num_filters ÷ 4; stride=1, pad=1),
+                Conv((3, 3), max_num_filters ÷ 2 => max_num_filters ÷ 4; stride = 1, pad = 1),
                 BatchNorm(max_num_filters ÷ 4, leakyrelu)
             ),
             Chain(
                 Upsample(2),
-                Conv((3, 3), max_num_filters ÷ 4 => image_shape[3],
-                    sigmoid; stride=1, pad=1)
+                Conv(
+                    (3, 3), max_num_filters ÷ 4 => image_shape[3],
+                    sigmoid; stride = 1, pad = 1
+                )
             )
         ),
-        max_num_filters) do x
+        max_num_filters
+    ) do x
         y = linear(x)
         img = reshape(y, image_shape[1] ÷ 8, image_shape[2] ÷ 8, max_num_filters, :)
         @return upchain(img)
@@ -93,8 +97,10 @@ end
     decoder <: Lux.AbstractLuxLayer
 end
 
-function CVAE(rng=Random.default_rng(); num_latent_dims::Int,
-        image_shape::Dims{3}, max_num_filters::Int)
+function CVAE(
+        rng = Random.default_rng(); num_latent_dims::Int,
+        image_shape::Dims{3}, max_num_filters::Int
+    )
     decoder = cvae_decoder(; num_latent_dims, image_shape, max_num_filters)
     encoder = cvae_encoder(rng; num_latent_dims, image_shape, max_num_filters)
     return CVAE(encoder, decoder)
@@ -103,17 +109,17 @@ end
 function (cvae::CVAE)(x, ps, st)
     (z, μ, logσ²), st_enc = cvae.encoder(x, ps.encoder, st.encoder)
     x_rec, st_dec = cvae.decoder(z, ps.decoder, st.decoder)
-    return (x_rec, μ, logσ²), (; encoder=st_enc, decoder=st_dec)
+    return (x_rec, μ, logσ²), (; encoder = st_enc, decoder = st_dec)
 end
 
 function encode(cvae::CVAE, x, ps, st)
     (z, _, _), st_enc = cvae.encoder(x, ps.encoder, st.encoder)
-    return z, (; encoder=st_enc, st.decoder)
+    return z, (; encoder = st_enc, st.decoder)
 end
 
 function decode(cvae::CVAE, z, ps, st)
     x_rec, st_dec = cvae.decoder(z, ps.decoder, st.decoder)
-    return x_rec, (; decoder=st_dec, st.encoder)
+    return x_rec, (; decoder = st_dec, st.encoder)
 end
 
 # ## Loading MNIST
@@ -127,18 +133,18 @@ end
 Base.length(ds::TensorDataset) = ds.total_samples
 
 function Base.getindex(ds::TensorDataset, idxs::Union{Vector{<:Integer}, AbstractRange})
-    img = Image.(eachslice(convert2image(ds.dataset, idxs); dims=3))
+    img = Image.(eachslice(convert2image(ds.dataset, idxs); dims = 3))
     return stack(parent ∘ itemdata ∘ Base.Fix1(apply, ds.transform), img)
 end
 
 function loadmnist(batchsize, image_size::Dims{2})
     ## Load MNIST: Only 1500 for demonstration purposes on CI
-    train_dataset = MNIST(; split=:train)
+    train_dataset = MNIST(; split = :train)
     N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : length(train_dataset)
 
     train_transform = ScaleKeepAspect(image_size) |> ImageToTensor()
     trainset = TensorDataset(train_dataset, train_transform, N)
-    trainloader = DataLoader(trainset; batchsize, shuffle=true, partial=false)
+    trainloader = DataLoader(trainset; batchsize, shuffle = true, partial = false)
 
     return trainloader
 end
@@ -149,9 +155,9 @@ end
 
 function create_image_grid(imgs::AbstractArray, grid_rows::Int, grid_cols::Int)
     total_images = grid_rows * grid_cols
-    imgs = map(eachslice(imgs[:, :, :, 1:total_images]; dims=4)) do img
+    imgs = map(eachslice(imgs[:, :, :, 1:total_images]; dims = 4)) do img
         cimg = size(img, 3) == 1 ? colorview(Gray, view(img, :, :, 1)) :
-               colorview(RGB, permutedims(img, (3, 1, 2)))
+            colorview(RGB, permutedims(img, (3, 1, 2)))
         return cimg'
     end
     return create_image_grid(imgs, grid_rows, grid_cols)
@@ -186,14 +192,15 @@ end
 
 function loss_function(model, ps, st, X)
     (y, μ, logσ²), st = model(X, ps, st)
-    reconstruction_loss = MSELoss(; agg=sum)(y, X)
+    reconstruction_loss = MSELoss(; agg = sum)(y, X)
     kldiv_loss = -sum(1 .+ logσ² .- μ .^ 2 .- exp.(logσ²)) / 2
     loss = reconstruction_loss + kldiv_loss
     return loss, st, (; y, μ, logσ², reconstruction_loss, kldiv_loss)
 end
 
 function generate_images(
-        model, ps, st; num_samples::Int=128, num_latent_dims::Int, decode_compiled=nothing)
+        model, ps, st; num_samples::Int = 128, num_latent_dims::Int, decode_compiled = nothing
+    )
     z = randn(Float32, num_latent_dims, num_samples) |> get_device((ps, st))
     if decode_compiled === nothing
         images, _ = decode(model, z, ps, Lux.testmode(st))
@@ -212,12 +219,14 @@ end
 
 # ## Training the Model
 
-function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_filters=64,
-        seed=0, epochs=50, weight_decay=1e-5, learning_rate=1e-3, num_samples=batchsize)
+function main(;
+        batchsize = 128, image_size = (64, 64), num_latent_dims = 8, max_num_filters = 64,
+        seed = 0, epochs = 50, weight_decay = 1.0e-5, learning_rate = 1.0e-3, num_samples = batchsize
+    )
     rng = Xoshiro()
     Random.seed!(rng, seed)
 
-    cvae = CVAE(rng; num_latent_dims, image_shape=(image_size..., 1), max_num_filters)
+    cvae = CVAE(rng; num_latent_dims, image_shape = (image_size..., 1), max_num_filters)
     ps, st = Lux.setup(rng, cvae) |> xdev
 
     z = randn(Float32, num_latent_dims, num_samples) |> xdev
@@ -227,11 +236,11 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
 
     train_dataloader = loadmnist(batchsize, image_size) |> xdev
 
-    opt = AdamW(; eta=learning_rate, lambda=weight_decay)
+    opt = AdamW(; eta = learning_rate, lambda = weight_decay)
 
     train_state = Training.TrainState(cvae, ps, st, opt)
 
-    @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps)/1e6)
+    @printf "Total Trainable Parameters: %0.4f M\n" (Lux.parameterlength(ps) / 1.0e6)
 
     is_vscode = isdefined(Main, :VSCodeServer)
     empty_row, model_img_full = nothing, nothing
@@ -243,7 +252,7 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
         start_time = time()
         for (i, X) in enumerate(train_dataloader)
             (_, loss, _, train_state) = Training.single_train_step!(
-                AutoEnzyme(), loss_function, X, train_state; return_gradients=Val(false)
+                AutoEnzyme(), loss_function, X, train_state; return_gradients = Val(false)
             )
 
             loss_total += loss
@@ -263,10 +272,12 @@ function main(; batchsize=128, image_size=(64, 64), num_latent_dims=8, max_num_f
         if is_vscode || epoch == epochs
             recon_images = reconstruct_images(
                 cvae_compiled, train_state.parameters, train_state.states,
-                first(train_dataloader))
+                first(train_dataloader)
+            )
             gen_images = generate_images(
                 cvae, train_state.parameters, train_state.states;
-                num_samples, num_latent_dims, decode_compiled)
+                num_samples, num_latent_dims, decode_compiled
+            )
             if empty_row === nothing
                 empty_row = similar(gen_images, image_size[1], size(gen_images, 2))
                 fill!(empty_row, 0)

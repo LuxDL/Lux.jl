@@ -1,9 +1,11 @@
 for op in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter)
     patched_op = op !== :depthwiseconv ? eval(op) : getfield(NNlib, op)
 
-    @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
+    @eval function NNlib.$(op)(
+            x1::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
             x2::AbstractArray{<:Real, N}, cdims::NNlib.ConvDims;
-            kwargs...) where {N, Tag, V, P}
+            kwargs...
+        ) where {N, Tag, V, P}
         value_fn(x) = ForwardDiff.value(Tag, x)
         partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -14,9 +16,11 @@ for op in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter)
         return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
     end
 
-    @eval function NNlib.$(op)(x1::AbstractArray{<:Real, N},
+    @eval function NNlib.$(op)(
+            x1::AbstractArray{<:Real, N},
             x2::AbstractArray{<:ForwardDiff.Dual{Tag, V, P}, N},
-            cdims::NNlib.ConvDims; kwargs...) where {N, Tag, V, P}
+            cdims::NNlib.ConvDims; kwargs...
+        ) where {N, Tag, V, P}
         value_fn(x) = ForwardDiff.value(Tag, x)
         partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -27,9 +31,11 @@ for op in (:conv, :depthwiseconv, :∇conv_data, :∇conv_filter)
         return ForwardDiff.Dual{Tag, eltype(y), P}.(y, partials)
     end
 
-    @eval function NNlib.$(op)(x1::AbstractArray{<:ForwardDiff.Dual{Tag, Vₓ, P}, N},
+    @eval function NNlib.$(op)(
+            x1::AbstractArray{<:ForwardDiff.Dual{Tag, Vₓ, P}, N},
             x2::AbstractArray{<:ForwardDiff.Dual{Tag, Vₚ, P}, N},
-            cdims::NNlib.ConvDims; kwargs...) where {N, Tag, Vₓ, Vₚ, P}
+            cdims::NNlib.ConvDims; kwargs...
+        ) where {N, Tag, Vₓ, Vₚ, P}
         value_fn(x) = ForwardDiff.value(Tag, x)
         partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -52,13 +58,15 @@ end
 for op in (:logsoftmax, :softmax)
     dual_op = Symbol(op, :_dual)
     @eval function NNlib.$(op)(
-            x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+            x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims = 1
+        ) where {Tag, T, P}
         return Impl.$(dual_op)(x; dims)
     end
 end
 
 function softmax_dual(
-        x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+        x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims = 1
+    ) where {Tag, T, P}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -75,7 +83,8 @@ function softmax_dual(
 end
 
 function logsoftmax_dual(
-        x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims=1) where {Tag, T, P}
+        x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}; dims = 1
+    ) where {Tag, T, P}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -93,7 +102,8 @@ end
 
 @eval function NNlib.meanpool(
         x::AbstractArray{<:ForwardDiff.Dual{Tag, T, P}}, pdims::NNlib.PoolDims;
-        kwargs...) where {Tag, T, P}
+        kwargs...
+    ) where {Tag, T, P}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 
@@ -110,7 +120,8 @@ function NNlib.∇meanpool(
         dy::AbstractArray{<:ForwardDiff.Dual{Tag, T1, P}},
         y::AbstractArray{<:ForwardDiff.Dual{Tag, T1, P}},
         x::AbstractArray{<:ForwardDiff.Dual{Tag, T2, P}},
-        pdims::NNlib.PoolDims; kwargs...) where {Tag, T1, T2, P}
+        pdims::NNlib.PoolDims; kwargs...
+    ) where {Tag, T1, T2, P}
     value_fn(x) = ForwardDiff.value(Tag, x)
     partial_fn(x, i) = ForwardDiff.partials(Tag, x, i)
 

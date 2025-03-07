@@ -9,7 +9,7 @@ SUITE["basics"] = BenchmarkGroup()
 
 SUITE["basics"]["overhead"] = @benchmarkable begin
     dense(x, ps, st)
-end setup=begin
+end setup = begin
     dense = Dense(2, 3)
     x = ones(Float32, 2, 3)
     ps, st = Lux.setup(Xoshiro(), dense)

@@ -1,17 +1,17 @@
-@testitem "FromFluxAdaptor" setup=[SharedTestSetup] tags=[:misc] begin
+@testitem "FromFluxAdaptor" setup = [SharedTestSetup] tags = [:misc] begin
     import Flux
 
-    toluxpsst = FromFluxAdaptor(; preserve_ps_st=true)
+    toluxpsst = FromFluxAdaptor(; preserve_ps_st = true)
     tolux = FromFluxAdaptor()
-    toluxforce = FromFluxAdaptor(; force_preserve=true, preserve_ps_st=true)
+    toluxforce = FromFluxAdaptor(; force_preserve = true, preserve_ps_st = true)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "Containers" begin
             @testset "Chain" begin
                 for model in [
-                    Flux.Chain(Flux.Dense(2 => 5), Flux.Dense(5 => 1)) |> dev,
-                    Flux.Chain(; l1=Flux.Dense(2 => 5), l2=Flux.Dense(5 => 1)) |> dev
-                ]
+                        Flux.Chain(Flux.Dense(2 => 5), Flux.Dense(5 => 1)) |> dev,
+                        Flux.Chain(; l1 = Flux.Dense(2 => 5), l2 = Flux.Dense(5 => 1)) |> dev,
+                    ]
                     x = rand(Float32, 2, 1) |> aType
 
                     model_lux = toluxpsst(model)
@@ -58,9 +58,9 @@
 
             @testset "Parallel" begin
                 for model in [
-                    Flux.Parallel(+, Flux.Dense(2 => 2), Flux.Dense(2 => 2)) |> dev,
-                    Flux.Parallel(+; l1=Flux.Dense(2 => 2), l2=Flux.Dense(2 => 2)) |> dev
-                ]
+                        Flux.Parallel(+, Flux.Dense(2 => 2), Flux.Dense(2 => 2)) |> dev,
+                        Flux.Parallel(+; l1 = Flux.Dense(2 => 2), l2 = Flux.Dense(2 => 2)) |> dev,
+                    ]
                     x = rand(Float32, 2, 1) |> aType
 
                     model_lux = toluxpsst(model)
@@ -77,7 +77,7 @@
 
             @testset "Pairwise Fusion" begin
                 model = Flux.PairwiseFusion(+, Flux.Dense(2 => 2), Flux.Dense(2 => 2)) |>
-                        dev
+                    dev
                 x = (rand(Float32, 2, 1), rand(Float32, 2, 1)) .|> aType
 
                 model_lux = toluxpsst(model)
@@ -95,9 +95,9 @@
         @testset "Linear" begin
             @testset "Dense" begin
                 for model in [
-                    Flux.Dense(2 => 4) |> dev,
-                    Flux.Dense(2 => 4; bias=false) |> dev
-                ]
+                        Flux.Dense(2 => 4) |> dev,
+                        Flux.Dense(2 => 4; bias = false) |> dev,
+                    ]
                     x = randn(Float32, 2, 4) |> aType
 
                     model_lux = toluxpsst(model)
@@ -114,9 +114,9 @@
 
             @testset "Scale" begin
                 for model in [
-                    Flux.Scale(2) |> dev,
-                    Flux.Scale(2; bias=false) |> dev
-                ]
+                        Flux.Scale(2) |> dev,
+                        Flux.Scale(2; bias = false) |> dev,
+                    ]
                     x = randn(Float32, 2, 4) |> aType
 
                     model_lux = toluxpsst(model)
@@ -133,9 +133,9 @@
 
             @testset "Bilinear" begin
                 for model in [
-                    Flux.Bilinear((2, 3) => 5) |> dev,
-                    Flux.Bilinear((2, 3) => 5; bias=false) |> dev
-                ]
+                        Flux.Bilinear((2, 3) => 5) |> dev,
+                        Flux.Bilinear((2, 3) => 5; bias = false) |> dev,
+                    ]
                     x = randn(Float32, 2, 4) |> aType
                     y = randn(Float32, 3, 4) |> aType
 
@@ -177,7 +177,7 @@
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model = Flux.Conv((3, 3), 1 => 2; pad=Flux.SamePad()) |> dev
+                model = Flux.Conv((3, 3), 1 => 2; pad = Flux.SamePad()) |> dev
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
@@ -200,7 +200,7 @@
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model = Flux.CrossCor((3, 3), 1 => 2; pad=Flux.SamePad()) |> dev
+                model = Flux.CrossCor((3, 3), 1 => 2; pad = Flux.SamePad()) |> dev
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)
@@ -223,7 +223,7 @@
 
                 @test model(x) ≈ model_lux(x, ps, st)[1]
 
-                model = Flux.ConvTranspose((3, 3), 1 => 2; pad=Flux.SamePad()) |> dev
+                model = Flux.ConvTranspose((3, 3), 1 => 2; pad = Flux.SamePad()) |> dev
                 x = rand(Float32, 6, 6, 1, 4) |> aType
 
                 model_lux = toluxpsst(model)

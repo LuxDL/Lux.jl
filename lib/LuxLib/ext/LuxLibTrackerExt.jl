@@ -22,16 +22,21 @@ for T1 in (:AbstractArray, :TrackedArray), T2 in (:AbstractArray, :TrackedArray)
     for op in (:batched_mul, :batched_matmul)
         @eval begin
             $(op)(x::$T1{<:Any, 3}, y::$T2{<:Any, 3}) = Tracker.track($(op), x, y)
-            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Any, <:$T1{<:Any, 3}},
-                    y::$T2{<:Any, 3})
+            function $(op)(
+                    x::NNlib.BatchedAdjOrTrans{<:Any, <:$T1{<:Any, 3}},
+                    y::$T2{<:Any, 3}
+                )
                 return Tracker.track($(op), x, y)
             end
             function $(op)(
-                    x::$T1{<:Any, 3}, y::NNlib.BatchedAdjOrTrans{<:Any, <:$T2{<:Any, 3}})
+                    x::$T1{<:Any, 3}, y::NNlib.BatchedAdjOrTrans{<:Any, <:$T2{<:Any, 3}}
+                )
                 return Tracker.track($(op), x, y)
             end
-            function $(op)(x::NNlib.BatchedAdjOrTrans{<:Any, <:$T1{<:Any, 3}},
-                    y::NNlib.BatchedAdjOrTrans{<:Any, <:$T2{<:Any, 3}})
+            function $(op)(
+                    x::NNlib.BatchedAdjOrTrans{<:Any, <:$T1{<:Any, 3}},
+                    y::NNlib.BatchedAdjOrTrans{<:Any, <:$T2{<:Any, 3}}
+                )
                 return Tracker.track($(op), x, y)
             end
         end
@@ -43,9 +48,9 @@ for op in (:batched_mul, :batched_matmul)
         z = $(op)(tracker_data(x), tracker_data(y))
         ∇batched_matmul = @closure Δ -> begin
             ∂x = $(op)(tracker_data(Δ), NNlib.batched_adjoint(tracker_data(y)))
-            size(x, 3) == 1 && (∂x = sum(∂x; dims=3))
+            size(x, 3) == 1 && (∂x = sum(∂x; dims = 3))
             ∂y = $(op)(NNlib.batched_adjoint(tracker_data(x)), tracker_data(Δ))
-            size(y, 3) == 1 && (∂y = sum(∂y; dims=3))
+            size(y, 3) == 1 && (∂y = sum(∂y; dims = 3))
             return Tracker.nobacksies(:batched_matmul, (∂x, ∂y))
         end
         return z, ∇batched_matmul
@@ -54,20 +59,22 @@ end
 
 # Overload muladd for Traced Arrays
 for AType in (:TrackedMatrix, :AbstractMatrix),
-    xType in (:TrackedMatrix, :AbstractMatrix),
-    bType in (:TrackedVector, :AbstractVector)
+        xType in (:TrackedMatrix, :AbstractMatrix),
+        bType in (:TrackedVector, :AbstractVector)
 
     Utils.is_tracked(AType, xType, bType) || continue
 
     @eval function Impl.matmuladd(
-            ::GenericBroadcastOp, A::$(AType), x::$(xType), b::$(bType))
+            ::GenericBroadcastOp, A::$(AType), x::$(xType), b::$(bType)
+        )
         return A * x .+ b
     end
 end
 
 # NNlib: gather
 Tracker.@grad_from_chainrules NNlib.gather!(
-    dst::AbstractArray, src::TrackedArray, idx::AbstractArray)
+    dst::AbstractArray, src::TrackedArray, idx::AbstractArray
+)
 
 # Base.repeat
 Tracker.@grad_from_chainrules Base.repeat(x::TrackedArray, counts...)
@@ -89,15 +96,16 @@ end
 # Impl: batchnorm_cudnn
 ## cuDNN batchnorm -- the chain rule gets defined once cuDNN is loaded
 for RM in (:TrackedVector, :Nothing, :AbstractVector),
-    RV in (:TrackedVector, :Nothing, :AbstractVector),
-    S in (:TrackedVector, :Nothing, :AbstractVector),
-    B in (:TrackedVector, :Nothing, :AbstractVector),
-    XT in (:TrackedArray, :AbstractArray)
+        RV in (:TrackedVector, :Nothing, :AbstractVector),
+        S in (:TrackedVector, :Nothing, :AbstractVector),
+        B in (:TrackedVector, :Nothing, :AbstractVector),
+        XT in (:TrackedArray, :AbstractArray)
 
     Utils.is_tracked(RM, RV, S, B, XT) || continue
 
     @eval Tracker.@grad_from_chainrules LuxLib.Impl.batchnorm_cudnn(
-        γ::$S, β::$B, x::$XT, rμ::$RM, rσ²::$RV, m, ϵ, training::StaticBool)
+        γ::$S, β::$B, x::$XT, rμ::$RM, rσ²::$RV, m, ϵ, training::StaticBool
+    )
 end
 
 # Utils extensions

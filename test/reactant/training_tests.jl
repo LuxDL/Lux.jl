@@ -1,4 +1,4 @@
-@testitem "Reactant: Training API" tags=[:reactant] setup=[SharedTestSetup] skip=:(Sys.iswindows()) begin
+@testitem "Reactant: Training API" tags = [:reactant] setup = [SharedTestSetup] skip = :(Sys.iswindows()) begin
     using Reactant, Optimisers
 
     @testset "$(mode)" for (mode, atype, dev, ongpu) in MODES
@@ -13,7 +13,7 @@
             Reactant.set_default_backend("cpu")
         end
 
-        xdev = reactant_device(; force=true)
+        xdev = reactant_device(; force = true)
 
         @testset "MLP Training: $(version)" for version in (:iip, :oop)
             model = Chain(
@@ -46,17 +46,19 @@
             end
 
             @testset for opt in (
-                Descent(0.01f0), Momentum(0.01f0), Adam(0.01f0), AdamW(0.01f0)
-            )
+                    Descent(0.01f0), Momentum(0.01f0), Adam(0.01f0), AdamW(0.01f0),
+                )
                 train_state = Training.TrainState(model, ps, st, opt)
 
                 for epoch in 1:100, (xᵢ, yᵢ) in dataloader
                     grads, loss, stats, train_state = if version === :iip
                         Training.single_train_step!(
-                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
+                        )
                     elseif version === :oop
                         Training.single_train_step(
-                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state)
+                            AutoEnzyme(), MSELoss(), (xᵢ, yᵢ), train_state
+                        )
                     else
                         error("Invalid version: $(version)")
                     end

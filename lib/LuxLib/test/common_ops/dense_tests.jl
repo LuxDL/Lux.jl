@@ -40,16 +40,18 @@ function run_dense_testing(Tw, Tx, M, N, hasbias, activation, aType, mode, ongpu
 
     y_simple = dense_simple(activation, w, x, bias)
     y_zyg = fused_dense_bias_activation(activation, w, x, bias)
-    @test y_simple≈y_zyg atol=atol rtol=rtol
+    @test y_simple ≈ y_zyg atol = atol rtol = rtol
 
     _, ∂w_true, ∂x_true, ∂b_true = Zygote.gradient(
-        sum ∘ dense_simple, activation, w, x, bias)
+        sum ∘ dense_simple, activation, w, x, bias
+    )
     _, ∂w_zyg, ∂x_zyg, ∂b_zyg = Zygote.gradient(
-        sum ∘ fused_dense_bias_activation, activation, w, x, bias)
-    @test ∂w_true≈∂w_zyg atol=atol rtol=rtol
-    @test ∂x_true≈∂x_zyg atol=atol rtol=rtol
+        sum ∘ fused_dense_bias_activation, activation, w, x, bias
+    )
+    @test ∂w_true ≈ ∂w_zyg atol = atol rtol = rtol
+    @test ∂x_true ≈ ∂x_zyg atol = atol rtol = rtol
     if bias !== nothing
-        @test ∂b_true≈∂b_zyg atol=atol rtol=rtol
+        @test ∂b_true ≈ ∂b_zyg atol = atol rtol = rtol
     end
 end
 
@@ -58,16 +60,20 @@ const ALL_TEST_CONFIGS = Iterators.product(
     (4, 32),
     (4, 32),
     (true, false),
-    (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact))
+    (identity, tanh, tanh_fast, sigmoid, sigmoid_fast, relu, gelu, anonact)
+)
 
-const TEST_BLOCKS = collect(Iterators.partition(
-    ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)))
+const TEST_BLOCKS = collect(
+    Iterators.partition(
+        ALL_TEST_CONFIGS, ceil(Int, length(ALL_TEST_CONFIGS) / 5)
+    )
+)
 
 export ALL_TEST_CONFIGS, TEST_BLOCKS, run_dense_testing
 
 end
 
-@testitem "Fused Dense: Group 1" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 1" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[1]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
@@ -76,7 +82,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 2" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 2" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[2]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
@@ -85,7 +91,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 3" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 3" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[3]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
@@ -94,7 +100,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 4" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 4" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[4]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
@@ -103,7 +109,7 @@ end
     end
 end
 
-@testitem "Fused Dense: Group 5" tags=[:dense] setup=[SharedTestSetup, DenseSetup] begin
+@testitem "Fused Dense: Group 5" tags = [:dense] setup = [SharedTestSetup, DenseSetup] begin
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "eltype $Tw x $Tx, size $M x $N, bias $hasbias, activation $activation" for ((Tx, Tw), M, N, hasbias, activation) in TEST_BLOCKS[5]
             !fp64 && (Tx == Float64 || Tw == Float64) && continue
@@ -112,7 +118,7 @@ end
     end
 end
 
-@testitem "Fused Dense: StaticArrays" tags=[:dense] begin
+@testitem "Fused Dense: StaticArrays" tags = [:dense] begin
     using StaticArrays, NNlib
 
     x = @SArray rand(2, 4)
@@ -122,7 +128,7 @@ end
     @test @inferred(fused_dense_bias_activation(relu, weight, x, bias)) isa SArray
 end
 
-@testitem "Fused Dense: CPU No Scalar Indexing" tags=[:dense] begin
+@testitem "Fused Dense: CPU No Scalar Indexing" tags = [:dense] begin
     using JLArrays, NNlib
 
     x = JLArray(rand(Float32, 2, 4))
@@ -133,7 +139,7 @@ end
     @test LuxLib.internal_operation_mode(x) isa LuxLib.GenericBroadcastOp
 end
 
-@testitem "`LuxLib.Impl.matmul(add)` allocations" tags=[:dense] setup=[SharedTestSetup] begin
+@testitem "`LuxLib.Impl.matmul(add)` allocations" tags = [:dense] setup = [SharedTestSetup] begin
     using BenchmarkTools, Statistics
 
     if BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
@@ -141,7 +147,7 @@ end
             x = rand(Float32, N, N)
 
             trial_opt = median(@benchmark(LuxLib.Impl.matmul($x, $x)))
-            trial_baseline = median(@benchmark($x*$x))
+            trial_baseline = median(@benchmark($x * $x))
 
             @test trial_opt.allocs ≤ trial_baseline.allocs
             @test trial_opt.memory ≤ trial_baseline.memory
@@ -157,7 +163,7 @@ end
     end
 end
 
-@testitem "Enzyme.Forward patch: dense" tags=[:dense] setup=[SharedTestSetup] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme.Forward patch: dense" tags = [:dense] setup = [SharedTestSetup] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, Random, ForwardDiff, Enzyme
 
     x = rand(Float32, 2, 2)
@@ -167,7 +173,7 @@ end
     @test only(Enzyme.gradient(Forward, f, x)) ≈ ForwardDiff.gradient(f, x)
 end
 
-@testitem "Enzyme rules for fused dense" tags=[:dense] setup=[SharedTestSetup] skip=:(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
+@testitem "Enzyme rules for fused dense" tags = [:dense] setup = [SharedTestSetup] skip = :(using LuxTestUtils; !LuxTestUtils.ENZYME_TESTING_ENABLED) begin
     using LuxLib, NNlib, Zygote, Enzyme
 
     # These are mostly for testing the CUDA rules since we don't enable the CUDA tests
@@ -186,8 +192,10 @@ end
 
     rng = StableRNG(1234)
 
-    ALL_ACTS = [identity, tanh, tanh_fast, sigmoid, sigmoid_fast,
-        relu, gelu, x -> x^3, x -> gelu(x)]
+    ALL_ACTS = [
+        identity, tanh, tanh_fast, sigmoid, sigmoid_fast,
+        relu, gelu, x -> x^3, x -> gelu(x),
+    ]
 
     @testset "$mode" for (mode, aType, ongpu) in MODES
         # XXX: Enzyme 0.13 has a regression with cuda support
@@ -208,16 +216,18 @@ end
 
             b_enz = hasbias ? Duplicated(b, db) : Const(b)
 
-            Enzyme.autodiff(Reverse, fused_dense!, Duplicated(y, copy(dy)), Const(act),
-                Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
+            Enzyme.autodiff(
+                Reverse, fused_dense!, Duplicated(y, copy(dy)), Const(act),
+                Duplicated(weight, dweight), Duplicated(x, dx), b_enz
+            )
 
             _, pb_f = Zygote.pullback(fused_dense_bias_activation, act, weight, x, b)
             _, dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
 
-            @test dweight≈dweight_zyg atol=1e-3 rtol=1e-3
-            @test dx≈dx_zyg atol=1e-3 rtol=1e-3
+            @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
+            @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
             if hasbias
-                @test db≈db_zyg atol=1e-3 rtol=1e-3
+                @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
             end
 
             (act === identity && hasbias) || continue
@@ -225,15 +235,17 @@ end
             dweight .= 0
             dx .= 0
             db .= 0
-            Enzyme.autodiff(Reverse, matmuladd!, Duplicated(y, copy(dy)),
-                Duplicated(weight, dweight), Duplicated(x, dx), b_enz)
+            Enzyme.autodiff(
+                Reverse, matmuladd!, Duplicated(y, copy(dy)),
+                Duplicated(weight, dweight), Duplicated(x, dx), b_enz
+            )
 
             _, pb_f = Zygote.pullback(LuxLib.Impl.matmuladd, weight, x, b)
             dweight_zyg, dx_zyg, db_zyg = pb_f(dy)
 
-            @test dweight≈dweight_zyg atol=1e-3 rtol=1e-3
-            @test dx≈dx_zyg atol=1e-3 rtol=1e-3
-            @test db≈db_zyg atol=1e-3 rtol=1e-3
+            @test dweight ≈ dweight_zyg atol = 1.0e-3 rtol = 1.0e-3
+            @test dx ≈ dx_zyg atol = 1.0e-3 rtol = 1.0e-3
+            @test db ≈ db_zyg atol = 1.0e-3 rtol = 1.0e-3
         end
     end
 end

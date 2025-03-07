@@ -58,7 +58,8 @@ true
 """
 function layer_map(f, l, ps, st)
     return fmap_with_path(
-        l, ps, st; walk=LayerWalkWithPath(), exclude=layer_map_leaf) do kp, layer, ps_, st_
+        l, ps, st; walk = LayerWalkWithPath(), exclude = layer_map_leaf
+    ) do kp, layer, ps_, st_
         return f(layer, ps_, st_, kp)
     end
 end
@@ -67,27 +68,33 @@ struct LayerWalkWithPath <: Functors.AbstractWalk end
 
 function (::LayerWalkWithPath)(
         recurse::R, kp::KeyPath, layer::AbstractLuxWrapperLayer{field},
-        ps, st) where {R, field}
+        ps, st
+    ) where {R, field}
     layer_children, layer_re = functor(getfield(layer, field))
     ps_children, ps_re = functor(ps)
     st_children, st_re = functor(st)
 
     layer_children_new, ps_children_new, st_children_new = perform_layer_map(
-        recurse, kp, ps_children, st_children, layer_children)
+        recurse, kp, ps_children, st_children, layer_children
+    )
 
     inner_layer = layer_re(layer_children_new)
-    return (Setfield.set(layer, Setfield.PropertyLens{field}(), inner_layer),
-        ps_re(ps_children_new), st_re(st_children_new))
+    return (
+        Setfield.set(layer, Setfield.PropertyLens{field}(), inner_layer),
+        ps_re(ps_children_new), st_re(st_children_new),
+    )
 end
 
 function (::LayerWalkWithPath)(
-        recurse::R, kp::KeyPath, layer::AbstractLuxLayer, ps, st) where {R}
+        recurse::R, kp::KeyPath, layer::AbstractLuxLayer, ps, st
+    ) where {R}
     layer_children, layer_re = functor(layer)
     ps_children, ps_re = functor(ps)
     st_children, st_re = functor(st)
 
     layer_children_new, ps_children_new, st_children_new = perform_layer_map(
-        recurse, kp, ps_children, st_children, layer_children)
+        recurse, kp, ps_children, st_children, layer_children
+    )
 
     return layer_re(layer_children_new), ps_re(ps_children_new), st_re(st_children_new)
 end

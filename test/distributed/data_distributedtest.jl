@@ -1,7 +1,8 @@
 using Lux, MPI, Random, Test
 
 @test_throws ErrorException DistributedUtils.DistributedDataContainer(
-    MPIBackend(), randn(Float32, 10))
+    MPIBackend(), randn(Float32, 10)
+)
 
 using MLUtils
 
@@ -15,7 +16,7 @@ end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 const dev = input_args[1] == "cpu" ? CPUDevice() :
-            (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
+    (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
 
 rng = Xoshiro(1234)
 
@@ -34,7 +35,7 @@ if rank != tworkers - 1
     @test length(dcontainer) == ceil(length(data) / tworkers)
 else
     @test length(dcontainer) ==
-          length(data) - (tworkers - 1) * ceil(length(data) / tworkers)
+        length(data) - (tworkers - 1) * ceil(length(data) / tworkers)
 end
 
 dsum = sum(Base.Fix1(MLUtils.getobs, dcontainer), 1:MLUtils.numobs(dcontainer))

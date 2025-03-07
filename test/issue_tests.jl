@@ -1,4 +1,4 @@
-@testitem "complex differentiation: issue #977" tags=[:misc] begin
+@testitem "complex differentiation: issue #977" tags = [:misc] begin
     using Lux, Zygote, Random
 
     rng = Random.default_rng()
@@ -17,7 +17,7 @@
         return imag(f(x + ϵ * im)) / ϵ
     end
 
-    loss(t) = sum(complex_step_differentiation(τ -> U([τ], θ, st)[begin], t, 1e-5))
+    loss(t) = sum(complex_step_differentiation(τ -> U([τ], θ, st)[begin], t, 1.0e-5))
 
     if pkgversion(LuxLib) ≥ v"1.3.10"
         @test only(Zygote.gradient(loss, 1.0)) isa Float64

@@ -6,8 +6,8 @@ using Random: AbstractRNG
 
 using LuxCore: LuxCore
 using Lux: Lux, SimpleChainsModelConversionException, SimpleChainsLayer,
-           make_simplechain_network, fix_simplechain_input_dims, Chain, Conv, Dense,
-           Dropout, FlattenLayer, MaxPool, SamePad
+    make_simplechain_network, fix_simplechain_input_dims, Chain, Conv, Dense,
+    Dropout, FlattenLayer, MaxPool, SamePad
 using NNlib: NNlib
 
 function Lux.fix_simplechain_input_dims(layers::Vector, input_dims)
@@ -26,7 +26,8 @@ equivalent_simplechains_fn(f::F) where {F} = f
 
 function Lux.make_simplechain_network(layer::Dense)
     return SimpleChains.TurboDense{Lux.has_bias(layer)}(
-        equivalent_simplechains_fn(layer.activation), layer.out_dims)
+        equivalent_simplechains_fn(layer.activation), layer.out_dims
+    )
 end
 
 function Lux.make_simplechain_network(layer::Chain)
@@ -35,11 +36,12 @@ end
 
 function Lux.make_simplechain_network(layer::Conv)
     if all(==(1), layer.stride) &&
-       layer.groups == 1 &&
-       all(==(1), layer.dilation) &&
-       (!(layer.pad isa SamePad) && all(==(0), layer.pad))
+            layer.groups == 1 &&
+            all(==(1), layer.dilation) &&
+            (!(layer.pad isa SamePad) && all(==(0), layer.pad))
         return SimpleChains.Conv(
-            equivalent_simplechains_fn(layer.activation), layer.kernel_size, layer.out_chs)
+            equivalent_simplechains_fn(layer.activation), layer.kernel_size, layer.out_chs
+        )
     end
     throw(SimpleChainsModelConversionException("Conv with non-standard parameters not \
                                                 supported."))
@@ -62,7 +64,7 @@ end
 
 function Lux.make_simplechain_network(layer::MaxPool)
     if layer.layer.mode.stride == layer.layer.mode.kernel_size &&
-       all(==(0), layer.layer.mode.pad)
+            all(==(0), layer.layer.mode.pad)
         return SimpleChains.MaxPool(layer.layer.mode.kernel_size)
     end
     throw(SimpleChainsModelConversionException("MaxPool with non-standard parameters not \
@@ -72,15 +74,17 @@ end
 Lux.make_simplechain_network(layer) = throw(SimpleChainsModelConversionException(layer))
 
 function LuxCore.initialparameters(rng::AbstractRNG, layer::SimpleChainsLayer)
-    return (; params=Array(SimpleChains.init_params(layer.layer; rng)))
+    return (; params = Array(SimpleChains.init_params(layer.layer; rng)))
 end
 
 # Some type-piracy for nicer interaction with NNlib
 NNlib.logsoftmax(x::SimpleChains.StrideArray{T, 2}) where {T} = SimpleChains.logsoftmax(x)
 
-function NNlib.logsoftmax!(y::SimpleChains.StrideArray{T1, 2},
+function NNlib.logsoftmax!(
+        y::SimpleChains.StrideArray{T1, 2},
         x::Union{SimpleChains.StrideArray{T2, 2}, SimpleChains.PtrArray{T2, 2}};
-        dims=1) where {T1, T2}
+        dims = 1
+    ) where {T1, T2}
     @argcheck dims == 1
     m = similar(y, SimpleChains.static_size(y, 2))
     SimpleChains.logsoftmax!(y, m, x)

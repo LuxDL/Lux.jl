@@ -9,7 +9,7 @@
 # ## Package Imports
 
 using Lux, ComponentArrays, SciMLSensitivity, LuxCUDA, Optimisers, OrdinaryDiffEqTsit5,
-      Random, Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
+    Random, Statistics, Zygote, OneHotArrays, InteractiveUtils, Printf
 using MLDatasets: MNIST
 using MLUtils: DataLoader, splitobs
 
@@ -19,7 +19,7 @@ CUDA.allowscalar(false)
 function loadmnist(batchsize, train_split)
     ## Load MNIST: Only 1500 for demonstration purposes
     N = parse(Bool, get(ENV, "CI", "false")) ? 1500 : nothing
-    dataset = MNIST(; split=:train)
+    dataset = MNIST(; split = :train)
     if N !== nothing
         imgs = dataset.features[:, :, 1:N]
         labels_raw = dataset.targets[1:N]
@@ -31,13 +31,13 @@ function loadmnist(batchsize, train_split)
     ## Process images into (H,W,C,BS) batches
     x_data = Float32.(reshape(imgs, size(imgs, 1), size(imgs, 2), 1, size(imgs, 3)))
     y_data = onehotbatch(labels_raw, 0:9)
-    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at=train_split)
+    (x_train, y_train), (x_test, y_test) = splitobs((x_data, y_data); at = train_split)
 
     return (
         ## Use DataLoader to automatically minibatch and shuffle the data
-        DataLoader(collect.((x_train, y_train)); batchsize, shuffle=true),
+        DataLoader(collect.((x_train, y_train)); batchsize, shuffle = true),
         ## Don't shuffle the test data
-        DataLoader(collect.((x_test, y_test)); batchsize, shuffle=false)
+        DataLoader(collect.((x_test, y_test)); batchsize, shuffle = false),
     )
 end
 
@@ -46,7 +46,8 @@ end
 # First we will use the [`@compact`](@ref) macro to define the Neural ODE Layer.
 
 function NeuralODECompact(
-        model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+        model::Lux.AbstractLuxLayer; solver = Tsit5(), tspan = (0.0f0, 1.0f0), kwargs...
+    )
     return @compact(; model, solver, tspan, kwargs...) do x, p
         dudt(u, p, t) = vec(model(reshape(u, size(x)), p))
         ## Note the `p.model` here
@@ -69,7 +70,8 @@ struct NeuralODE{M <: Lux.AbstractLuxLayer, So, T, K} <: Lux.AbstractLuxWrapperL
 end
 
 function NeuralODE(
-        model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+        model::Lux.AbstractLuxLayer; solver = Tsit5(), tspan = (0.0f0, 1.0f0), kwargs...
+    )
     return NeuralODE(model, solver, tspan, kwargs)
 end
 
@@ -89,17 +91,22 @@ end
 @views diffeqsol_to_array(l::Int, x::AbstractMatrix) = reshape(x[:, end], (l, :))
 
 # ## Create and Initialize the Neural ODE Layer
-function create_model(model_fn=NeuralODE; dev=gpu_device(), use_named_tuple::Bool=false,
-        sensealg=InterpolatingAdjoint(; autojacvec=ZygoteVJP()))
+function create_model(
+        model_fn = NeuralODE; dev = gpu_device(), use_named_tuple::Bool = false,
+        sensealg = InterpolatingAdjoint(; autojacvec = ZygoteVJP())
+    )
     ## Construct the Neural ODE Model
-    model = Chain(FlattenLayer(),
+    model = Chain(
+        FlattenLayer(),
         Dense(784 => 20, tanh),
         model_fn(
             Chain(Dense(20 => 10, tanh), Dense(10 => 10, tanh), Dense(10 => 20, tanh));
-            save_everystep=false, reltol=1.0f-3,
-            abstol=1.0f-3, save_start=false, sensealg),
+            save_everystep = false, reltol = 1.0f-3,
+            abstol = 1.0f-3, save_start = false, sensealg
+        ),
         Base.Fix1(diffeqsol_to_array, 20),
-        Dense(20 => 10))
+        Dense(20 => 10)
+    )
 
     rng = Random.default_rng()
     Random.seed!(rng, 0)
@@ -112,7 +119,7 @@ function create_model(model_fn=NeuralODE; dev=gpu_device(), use_named_tuple::Boo
 end
 
 # ## Define Utility Functions
-const logitcrossentropy = CrossEntropyLoss(; logits=Val(true))
+const logitcrossentropy = CrossEntropyLoss(; logits = Val(true))
 
 function accuracy(model, ps, st, dataloader)
     total_correct, total = 0, 0
@@ -127,7 +134,7 @@ function accuracy(model, ps, st, dataloader)
 end
 
 # ## Training
-function train(model_function; cpu::Bool=false, kwargs...)
+function train(model_function; cpu::Bool = false, kwargs...)
     dev = cpu ? cpu_device() : gpu_device()
     model, ps, st = create_model(model_function; dev, kwargs...)
 
@@ -142,7 +149,8 @@ function train(model_function; cpu::Bool=false, kwargs...)
         stime = time()
         for (x, y) in train_dataloader
             _, _, _, tstate = Training.single_train_step!(
-                AutoZygote(), logitcrossentropy, (x, y), tstate)
+                AutoZygote(), logitcrossentropy, (x, y), tstate
+            )
         end
         ttime = time() - stime
 
@@ -151,6 +159,7 @@ function train(model_function; cpu::Bool=false, kwargs...)
         @printf "[%d/%d]\tTime %.4fs\tTraining Accuracy: %.5f%%\tTest \
                  Accuracy: %.5f%%\n" epoch nepochs ttime tr_acc te_acc
     end
+    return
 end
 
 train(NeuralODECompact)
@@ -164,17 +173,17 @@ nothing #hide
 # We can also change the sensealg and train the model! `GaussAdjoint` allows you to use
 # any arbitrary parameter structure and not just a flat vector (`ComponentArray`).
 
-train(NeuralODE; sensealg=GaussAdjoint(; autojacvec=ZygoteVJP()), use_named_tuple=true)
+train(NeuralODE; sensealg = GaussAdjoint(; autojacvec = ZygoteVJP()), use_named_tuple = true)
 
 # But remember some AD backends like `ReverseDiff` is not GPU compatible.
 # For a model this size, you will notice that training time is significantly lower for
 # training on CPU than on GPU.
 
-train(NeuralODE; sensealg=InterpolatingAdjoint(; autojacvec=ReverseDiffVJP()), cpu=true)
+train(NeuralODE; sensealg = InterpolatingAdjoint(; autojacvec = ReverseDiffVJP()), cpu = true)
 
 # For completeness, let's also test out discrete sensitivities!
 
-train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true)
+train(NeuralODE; sensealg = ReverseDiffAdjoint(), cpu = true)
 
 # ## Alternate Implementation using Stateful Layer
 
@@ -182,7 +191,7 @@ train(NeuralODE; sensealg=ReverseDiffAdjoint(), cpu=true)
 # to avoid the [`Box`ing of `st`](https://github.com/JuliaLang/julia/issues/15276). Using
 # the `@compact` API avoids this problem entirely.
 struct StatefulNeuralODE{M <: Lux.AbstractLuxLayer, So, T, K} <:
-       Lux.AbstractLuxWrapperLayer{:model}
+    Lux.AbstractLuxWrapperLayer{:model}
     model::M
     solver::So
     tspan::T
@@ -190,7 +199,8 @@ struct StatefulNeuralODE{M <: Lux.AbstractLuxLayer, So, T, K} <:
 end
 
 function StatefulNeuralODE(
-        model::Lux.AbstractLuxLayer; solver=Tsit5(), tspan=(0.0f0, 1.0f0), kwargs...)
+        model::Lux.AbstractLuxLayer; solver = Tsit5(), tspan = (0.0f0, 1.0f0), kwargs...
+    )
     return StatefulNeuralODE(model, solver, tspan, kwargs)
 end
 

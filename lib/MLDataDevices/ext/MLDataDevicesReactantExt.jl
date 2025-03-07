@@ -15,11 +15,11 @@ MLDataDevices.default_device_rng(::ReactantDevice) = Reactant.TracedRandom.defau
 @static if isdefined(Reactant, :ConcreteIFRTArray)
     const AllConcreteTypes = Union{
         Reactant.ConcreteIFRTNumber, Reactant.ConcreteIFRTArray,
-        Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
+        Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray,
     }
 elseif isdefined(Reactant, :ConcretePJRTArray)
     const AllConcreteTypes = Union{
-        Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray
+        Reactant.ConcretePJRTNumber, Reactant.ConcretePJRTArray,
     }
 else
     const AllConcreteTypes = Union{ConcreteRNumber, ConcreteRArray}
@@ -47,8 +47,8 @@ Internal.unsafe_free_internal!(::Type{ReactantDevice}, x::AbstractArray) = nothi
 # Device Transfer
 function Adapt.adapt_storage(dev::ReactantDevice, x::AbstractArray)
     kwargs = (;)
-    dev.client === missing || (kwargs = (; kwargs..., client=dev.client))
-    dev.device === missing || (kwargs = (; kwargs..., device=dev.device))
+    dev.client === missing || (kwargs = (; kwargs..., client = dev.client))
+    dev.device === missing || (kwargs = (; kwargs..., device = dev.device))
     if dev.sharding !== missing
         if dev.sharding isa IdDict
             sharding = dev.sharding[x]

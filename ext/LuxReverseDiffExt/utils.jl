@@ -1,7 +1,7 @@
 Utils.eltype(::Type{<:TrackedReal{T}}) where {T} = T
 
-Utils.reverse(x::TrackedArray; dims=:) = ArrayInterface.aos_to_soa(reverse(x; dims))
-function Utils.reverse(x::AbstractArray{<:TrackedReal}; dims=:)
+Utils.reverse(x::TrackedArray; dims = :) = ArrayInterface.aos_to_soa(reverse(x; dims))
+function Utils.reverse(x::AbstractArray{<:TrackedReal}; dims = :)
     return ArrayInterface.aos_to_soa(reverse(x; dims))
 end
 
@@ -21,6 +21,6 @@ end
 
 function Utils.ofeltype_array(::Type{T}, x::AbstractArray{<:TrackedReal}) where {T}
     @warn "`Utils.ofeltype_array` doesn't support converting element types of ReverseDiff \
-           `TrackedReal` arrays. Currently this is a no-op." maxlog=1
+           `TrackedReal` arrays. Currently this is a no-op." maxlog = 1
     return x
 end

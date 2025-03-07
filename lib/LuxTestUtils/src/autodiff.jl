@@ -14,7 +14,7 @@ end
 
 # Enzyme.jl
 function gradient(f::F, ::AutoEnzyme{Nothing}, args...) where {F}
-    return gradient(f, AutoEnzyme(; mode=Enzyme.Reverse), args...)
+    return gradient(f, AutoEnzyme(; mode = Enzyme.Reverse), args...)
 end
 
 function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
@@ -27,10 +27,12 @@ function gradient(f::F, ad::AutoEnzyme{<:Enzyme.ReverseMode}, args...) where {F}
         return Enzyme.Const(x)
     end
     Enzyme.autodiff(ad.mode, Enzyme.Const(f), Enzyme.Active, args_activity...)
-    return Tuple(map(enumerate(args)) do (i, x)
-        needs_gradient(x) && return args_activity[i].dval
-        return CRC.NoTangent()
-    end)
+    return Tuple(
+        map(enumerate(args)) do (i, x)
+            needs_gradient(x) && return args_activity[i].dval
+            return CRC.NoTangent()
+        end
+    )
 end
 
 function gradient(::F, ::AutoEnzyme{<:Enzyme.ForwardMode}, args...) where {F}
@@ -114,17 +116,19 @@ julia> test_gradients(f, 1.0, x, nothing)
 
 ```
 """
-function test_gradients(f, args...; skip_backends=[], broken_backends=[],
-        soft_fail::Union{Bool, Vector}=false,
-        enzyme_set_runtime_activity::Bool=false,
-        enable_enzyme_reverse_mode::Bool=false,
+function test_gradients(
+        f, args...; skip_backends = [], broken_backends = [],
+        soft_fail::Union{Bool, Vector} = false,
+        enzyme_set_runtime_activity::Bool = false,
+        enable_enzyme_reverse_mode::Bool = false,
         # Internal kwargs start
-        source::LineNumberNode=LineNumberNode(0, nothing),
-        test_expr::Expr=:(check_approx(∂args, ∂args_gt; kwargs...)),
+        source::LineNumberNode = LineNumberNode(0, nothing),
+        test_expr::Expr = :(check_approx(∂args, ∂args_gt; kwargs...)),
         # Internal kwargs end
-        kwargs...)
+        kwargs...
+    )
     on_gpu = get_device_type(args) <: AbstractGPUDevice
-    total_length = mapreduce(__length, +, Functors.fleaves(args); init=0)
+    total_length = mapreduce(__length, +, Functors.fleaves(args); init = 0)
 
     # Choose the backends to test
     backends = []
@@ -136,8 +140,8 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
         # TODO: Move Enzyme out of here once it supports GPUs
         if enable_enzyme_reverse_mode || ENZYME_TESTING_ENABLED
             mode = enzyme_set_runtime_activity ?
-                   Enzyme.set_runtime_activity(Enzyme.Reverse) :
-                   Enzyme.Reverse
+                Enzyme.set_runtime_activity(Enzyme.Reverse) :
+                Enzyme.Reverse
             push!(backends, AutoEnzyme(; mode))
         end
     end
@@ -154,14 +158,14 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
 
     @assert (backends[1] ∉ broken_backends)&&(backends[1] ∉ skip_backends) "first backend cannot be broken or skipped"
 
-    @testset "gradtest($(f))" begin
+    return @testset "gradtest($(f))" begin
         @testset "$(nameof(typeof(backends[1])))() vs $(nameof(typeof(backend)))()" for backend in backends[2:end]
             local_test_expr = :([$(nameof(typeof(backend)))] - $(test_expr))
 
             result = if check_ad_backend_in(backend, skip_backends)
                 Broken(:skipped, local_test_expr)
             elseif (soft_fail isa Bool && soft_fail) ||
-                   (soft_fail isa Vector && check_ad_backend_in(backend, soft_fail))
+                    (soft_fail isa Vector && check_ad_backend_in(backend, soft_fail))
                 try
                     ∂args = allow_unstable() do
                         return gradient(f, backend, args...)
@@ -200,12 +204,15 @@ function test_gradients(f, args...; skip_backends=[], broken_backends=[],
                     else
                         context = "\n   ∂args: $(∂args)\n∂args_gt: $(∂args_gt)"
                         Fail(
-                            :test, local_test_expr, matched, nothing, context, source, false)
+                            :test, local_test_expr, matched, nothing, context, source, false
+                        )
                     end
                 catch err
                     err isa InterruptException && rethrow()
-                    Error(:test_error, local_test_expr, err,
-                        Base.current_exceptions(), source)
+                    Error(
+                        :test_error, local_test_expr, err,
+                        Base.current_exceptions(), source
+                    )
                 end
             end
             Test.record(get_testset(), result)

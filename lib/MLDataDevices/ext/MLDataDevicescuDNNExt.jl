@@ -16,7 +16,7 @@ function _check_use_cuda!()
         if !cuDNN.has_cudnn()
             @warn """
             cuDNN is not functional. Some functionality will not be available.
-            """ maxlog=1
+            """ maxlog = 1
 
             # We make the device selectable only if cuDNN is functional
             # to avoid issues with convolutions and other deep learning operations

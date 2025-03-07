@@ -94,19 +94,19 @@ CRC.@non_differentiable total_workers(::Any...)
 Backend Agnostic API to broadcast the given buffer `sendrecvbuf` or `sendbuf` to all
 workers into `recvbuf`. The value at `root` will be broadcasted to all other workers.
 """
-function bcast!(backend::AbstractLuxDistributedBackend, sendrecvbuf; root::Int=0)
+function bcast!(backend::AbstractLuxDistributedBackend, sendrecvbuf; root::Int = 0)
     bcast_impl!(backend, sendrecvbuf, get_device(sendrecvbuf); root)
     return
 end
 
-function bcast!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf; root::Int=0)
+function bcast!(backend::AbstractLuxDistributedBackend, sendbuf, recvbuf; root::Int = 0)
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
     if send_dev == recv_dev
         bcast_impl!(backend, sendbuf, recvbuf, send_dev; root)
     else
         sendbuf_ = sendbuf |> recv_dev
-        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
+        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog = 1
         bcast_impl!(backend, sendbuf_, recvbuf, recv_dev; root)
     end
     return
@@ -133,14 +133,15 @@ function allreduce!(backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F) 
 end
 
 function allreduce!(
-        backend::AbstractLuxDistributedBackend, sendbuf, recvbuf, op::F) where {F}
+        backend::AbstractLuxDistributedBackend, sendbuf, recvbuf, op::F
+    ) where {F}
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
     if send_dev == recv_dev
         allreduce_impl!(backend, sendbuf, recvbuf, op, send_dev)
     else
         sendbuf_ = sendbuf |> recv_dev
-        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
+        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog = 1
         allreduce_impl!(backend, sendbuf_, recvbuf, op, recv_dev)
     end
     return
@@ -161,19 +162,22 @@ Backend Agnostic API to perform a reduce operation on the given buffer `sendrecv
 workers.
 """
 function reduce!(
-        backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F; root::Int=0) where {F}
+        backend::AbstractLuxDistributedBackend, sendrecvbuf, op::F; root::Int = 0
+    ) where {F}
     return reduce_impl!(backend, sendrecvbuf, op, get_device(sendrecvbuf); root)
 end
 
-function reduce!(backend::AbstractLuxDistributedBackend,
-        sendbuf, recvbuf, op::F; root::Int=0) where {F}
+function reduce!(
+        backend::AbstractLuxDistributedBackend,
+        sendbuf, recvbuf, op::F; root::Int = 0
+    ) where {F}
     send_dev = get_device(sendbuf)
     recv_dev = get_device(recvbuf)
     if send_dev == recv_dev
         reduce_impl!(backend, sendbuf, recvbuf, op, send_dev; root)
     else
         sendbuf_ = sendbuf |> recv_dev
-        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog=1
+        @warn "`sendbuf` and `recvbuf` are on different devices." maxlog = 1
         reduce_impl!(backend, sendbuf_, recvbuf, op, recv_dev; root)
     end
     return
@@ -190,19 +194,22 @@ CRC.@non_differentiable reduce!(::Any...)
 Synchronize the given structure `ps` using the given backend. The value at `root` will be
 broadcasted to all other workers.
 """
-function synchronize!!(backend::AbstractLuxDistributedBackend, ps::Tuple; root::Int=0)
+function synchronize!!(backend::AbstractLuxDistributedBackend, ps::Tuple; root::Int = 0)
     length(ps) == 0 && return ps
     return map(x -> synchronize!!(backend, x; root), ps)
 end
 
-function synchronize!!(backend::AbstractLuxDistributedBackend,
-        ps::NamedTuple{fields}; root::Int=0) where {fields}
+function synchronize!!(
+        backend::AbstractLuxDistributedBackend,
+        ps::NamedTuple{fields}; root::Int = 0
+    ) where {fields}
     length(ps) == 0 && return ps
     return NamedTuple{fields}(map(x -> synchronize!!(backend, x; root), values(ps)))
 end
 
 function synchronize!!(
-        backend::AbstractLuxDistributedBackend, ps::AbstractArray{T}; root::Int=0) where {T}
+        backend::AbstractLuxDistributedBackend, ps::AbstractArray{T}; root::Int = 0
+    ) where {T}
     if isbitstype(T)
         bcast!(backend, ps; root)
         return ps
@@ -210,7 +217,7 @@ function synchronize!!(
     return map(x -> synchronize!!(backend, x; root), ps)
 end
 
-function synchronize!!(backend::AbstractLuxDistributedBackend, ps::T; root::Int=0) where {T}
+function synchronize!!(backend::AbstractLuxDistributedBackend, ps::T; root::Int = 0) where {T}
     if isbitstype(T) || T <: Number
         psₙ = [ps]
         bcast!(backend, psₙ; root)
@@ -278,13 +285,18 @@ function Optimisers._adjust(opt::DistributedOptimizer, nt::NamedTuple)
 end
 
 function synchronize!!(
-        backend::AbstractLuxDistributedBackend, ps::Optimisers.Leaf; root::Int=0)
+        backend::AbstractLuxDistributedBackend, ps::Optimisers.Leaf; root::Int = 0
+    )
     return Optimisers.Leaf(ps.rule, synchronize!!(backend, ps.state; root), ps.frozen)
 end
 
-@compat(public,
-    (initialized, initialize, get_distributed_backend, local_rank,
+@compat(
+    public,
+    (
+        initialized, initialize, get_distributed_backend, local_rank,
         total_workers, bcast!, allreduce!, reduce!, synchronize!!,
-        DistributedDataContainer, DistributedOptimizer, avg))
+        DistributedDataContainer, DistributedOptimizer, avg,
+    )
+)
 
 end

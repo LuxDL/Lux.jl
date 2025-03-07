@@ -1,12 +1,14 @@
-@testitem "Efficient JVPs" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "Efficient JVPs" tags = [:misc] setup = [SharedTestSetup] begin
     using ForwardDiff, Zygote, ComponentArrays
     using LuxTestUtils: check_approx
 
     # Computes (∂f/∂x)u
     function jvp_forwarddiff(f::F, x, u) where {F}
         uu = reshape(u, axes(x))
-        y = ForwardDiff.Dual{typeof(ForwardDiff.Tag(f, eltype(x))), eltype(x),
-            1}.(x, ForwardDiff.Partials.(tuple.(uu)))
+        y = ForwardDiff.Dual{
+            typeof(ForwardDiff.Tag(f, eltype(x))), eltype(x),
+            1,
+        }.(x, ForwardDiff.Partials.(tuple.(uu)))
         return vec(ForwardDiff.partials.(vec(f(y)), 1))
     end
 
@@ -14,9 +16,12 @@
         xx = getdata(x)
         uu = vec(u)
         y = ComponentArray(
-            ForwardDiff.Dual{typeof(ForwardDiff.Tag(f, eltype(x))), eltype(x),
-                1}.(xx, ForwardDiff.Partials.(tuple.(uu))),
-            getaxes(x))
+            ForwardDiff.Dual{
+                typeof(ForwardDiff.Tag(f, eltype(x))), eltype(x),
+                1,
+            }.(xx, ForwardDiff.Partials.(tuple.(uu))),
+            getaxes(x)
+        )
         return vec(ForwardDiff.partials.(vec(f(y)), 1))
     end
 
@@ -24,28 +29,28 @@
     jvp_forwarddiff_concrete(f::F, x, u) where {F} = ForwardDiff.jacobian(f, x) * vec(u)
     jvp_zygote(f::F, x, u) where {F} = only(Zygote.jacobian(f, x)) * vec(u)
 
-    function test_jvp_computation(f::F, x, u, ongpu, nested=false) where {F}
+    function test_jvp_computation(f::F, x, u, ongpu, nested = false) where {F}
         jvp₁ = jvp_forwarddiff(f, x, u)
 
         if !(x isa ComponentArray && ongpu)
             # ComponentArray + ForwardDiff on GPU don't play nice
             @testset "JVP ForwardDiff Concrete" begin
                 jvp₂ = jvp_forwarddiff_concrete(f, x, u)
-                @test check_approx(jvp₁, jvp₂; atol=1e-5, rtol=1e-5)
+                @test check_approx(jvp₁, jvp₂; atol = 1.0e-5, rtol = 1.0e-5)
             end
         end
 
         if !nested
             @testset "JVP Zygote" begin
                 jvp₃ = jvp_zygote(f, x, u)
-                @test check_approx(jvp₁, jvp₃; atol=1e-5, rtol=1e-5)
+                @test check_approx(jvp₁, jvp₃; atol = 1.0e-5, rtol = 1.0e-5)
             end
         end
     end
 
     @testset "$(mode): Jacobian Vector Products" for (mode, aType, ongpu, fp64) in MODES
         @testset "$(op)(; flipped = $flipped)" for flipped in (true, false),
-            op in (depthwiseconv, conv)
+                op in (depthwiseconv, conv)
 
             op === depthwiseconv && ongpu && continue
 
@@ -57,7 +62,8 @@
             end
 
             @testset "Input Dims: $(in_dims) | Weight Dims: $(w_dims)" for (in_dims, w_dims) in zip(
-                input_dims, weight_dims)
+                    input_dims, weight_dims
+                )
                 x = randn(Float32, in_dims...) |> aType
                 w = randn(Float32, w_dims...) |> aType
                 ux = randn(Float32, size(x)...) |> aType
@@ -67,7 +73,8 @@
                 test_jvp_computation(x -> op(x, w; flipped), x, ux, ongpu)
                 test_jvp_computation(w -> op(x, w; flipped), w, uw, ongpu)
                 test_jvp_computation(
-                    xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u, ongpu)
+                    xw -> op(xw.x, xw.w; flipped), ComponentArray(; x, w), u, ongpu
+                )
 
                 op === depthwiseconv && continue
 
@@ -75,41 +82,49 @@
                 # functions. Also implicitly tests nested AD
                 test_jvp_computation(
                     x -> only(Zygote.gradient(w -> sum(abs2, op(x, w; flipped)), w)),
-                    x, ux, ongpu, true)
+                    x, ux, ongpu, true
+                )
                 test_jvp_computation(
                     x -> only(Zygote.gradient(x -> sum(abs2, op(x, w; flipped)), x)),
-                    x, ux, ongpu, true)
+                    x, ux, ongpu, true
+                )
                 test_jvp_computation(
                     w -> only(Zygote.gradient(x -> sum(abs2, op(x, w; flipped)), x)),
-                    w, uw, ongpu, true)
+                    w, uw, ongpu, true
+                )
                 test_jvp_computation(
                     w -> only(Zygote.gradient(w -> sum(abs2, op(x, w; flipped)), w)),
-                    w, uw, ongpu, true)
+                    w, uw, ongpu, true
+                )
                 test_jvp_computation(
-                    xw -> only(Zygote.gradient(
-                        xw -> sum(abs2, op(xw.x, xw.w; flipped)), xw)),
+                    xw -> only(
+                        Zygote.gradient(
+                            xw -> sum(abs2, op(xw.x, xw.w; flipped)), xw
+                        )
+                    ),
                     ComponentArray(; x, w),
                     u,
                     ongpu,
-                    true)
+                    true
+                )
             end
         end
 
         @testset for op in (logsoftmax, softmax)
             @testset for (input_dim, dim) in zip(
-                (
-                    (2, 3), (2, 3), (2, 3, 4, 5),
-                    (2, 3, 4, 5), (2, 3, 4, 5), (2, 3, 4, 5)
-                ),
-                (1, 2, 1, 2, 3, 4)
-            )
+                    (
+                        (2, 3), (2, 3), (2, 3, 4, 5),
+                        (2, 3, 4, 5), (2, 3, 4, 5), (2, 3, 4, 5),
+                    ),
+                    (1, 2, 1, 2, 3, 4)
+                )
                 x = randn(Float32, input_dim) |> aType
                 u = randn(Float32, input_dim) |> aType
 
-                test_jvp_computation(x -> op(x; dims=dim), x, u, ongpu)
+                test_jvp_computation(x -> op(x; dims = dim), x, u, ongpu)
 
                 test_jvp_computation(
-                    x -> only(Zygote.gradient(x -> sum(op(x; dims=dim)), x)),
+                    x -> only(Zygote.gradient(x -> sum(op(x; dims = dim)), x)),
                     x, u, ongpu, true
                 )
             end
@@ -117,22 +132,26 @@
 
         @testset for op in (meanpool,)
             @testset for (input_dim, kernel_size, stride, pad) in (
-                ((8, 3, 2), (4,), (2,), (0,)),
-                ((8, 3, 2), (4,), (3,), (0,)),
-                ((8, 3, 2), (4,), (3,), (1,)),
-                ((8, 8, 3, 2), (4, 4), (2, 2), (0, 0)),
-                ((8, 8, 3, 2), (4, 4), (3, 3), (0, 0)),
-                ((8, 8, 3, 2), (4, 4), (3, 3), (1, 1))
-            )
+                    ((8, 3, 2), (4,), (2,), (0,)),
+                    ((8, 3, 2), (4,), (3,), (0,)),
+                    ((8, 3, 2), (4,), (3,), (1,)),
+                    ((8, 8, 3, 2), (4, 4), (2, 2), (0, 0)),
+                    ((8, 8, 3, 2), (4, 4), (3, 3), (0, 0)),
+                    ((8, 8, 3, 2), (4, 4), (3, 3), (1, 1)),
+                )
                 x = randn(Float32, input_dim) |> aType
                 u = randn(Float32, input_dim) |> aType
 
                 test_jvp_computation(
-                    x -> op(x, kernel_size; stride, pad), x, u, ongpu)
+                    x -> op(x, kernel_size; stride, pad), x, u, ongpu
+                )
 
                 test_jvp_computation(
-                    x -> only(Zygote.gradient(
-                        x -> sum(op(x, kernel_size; stride, pad)), x)),
+                    x -> only(
+                        Zygote.gradient(
+                            x -> sum(op(x, kernel_size; stride, pad)), x
+                        )
+                    ),
                     x, u, ongpu, true
                 )
             end
@@ -140,7 +159,7 @@
     end
 end
 
-@testitem "ForwardDiff dropout" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "ForwardDiff dropout" tags = [:misc] setup = [SharedTestSetup] begin
     using ForwardDiff
     using LuxTestUtils: check_approx
 
@@ -153,8 +172,11 @@ end
         @test_nowarn dropout(rng, x_dual, 0.5f0, Val(true), 2.0f0, :)
 
         x_dropout = dropout(rng, x, 0.5f0, Val(true), 2.0f0, :)[1]
-        x_dual_dropout = ForwardDiff.value.(dropout(
-            rng, x_dual, 0.5f0, Val(true), 2.0f0, :)[1])
+        x_dual_dropout = ForwardDiff.value.(
+            dropout(
+                rng, x_dual, 0.5f0, Val(true), 2.0f0, :
+            )[1]
+        )
 
         @test check_approx(x_dropout, x_dual_dropout)
     end

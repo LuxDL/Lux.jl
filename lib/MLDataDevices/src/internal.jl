@@ -5,15 +5,15 @@ using Preferences: load_preference
 using Random: AbstractRNG
 
 using ..MLDataDevices: MLDataDevices, AbstractDevice, CPUDevice, CUDADevice, AMDGPUDevice,
-                       MetalDevice, oneAPIDevice, ReactantDevice, UnknownDevice,
-                       supported_gpu_backends, GPU_DEVICES, loaded, functional
+    MetalDevice, oneAPIDevice, ReactantDevice, UnknownDevice,
+    supported_gpu_backends, GPU_DEVICES, loaded, functional
 
 for dev in (CPUDevice, MetalDevice, oneAPIDevice)
     msg = "`device_id` is not applicable for `$dev`."
     @eval begin
         with_device(::Type{$dev}, ::Nothing) = $dev()
         function with_device(::Type{$dev}, device_id)
-            @warn $(msg) maxlog=1
+            @warn $(msg) maxlog = 1
             return $dev()
         end
     end
@@ -30,8 +30,10 @@ end
 get_device_name(::ReactantDevice) = "XLA"
 get_triggerpkg_name(::ReactantDevice) = "Reactant"
 
-for T in (CPUDevice, CUDADevice{Nothing}, AMDGPUDevice{Nothing},
-    MetalDevice, oneAPIDevice, ReactantDevice)
+for T in (
+        CPUDevice, CUDADevice{Nothing}, AMDGPUDevice{Nothing},
+        MetalDevice, oneAPIDevice, ReactantDevice,
+    )
     @eval get_device_id(::$(T)) = nothing
 end
 
@@ -52,7 +54,7 @@ function get_gpu_device(; force::Bool)
         if backend ∉ allowed_backends
             @warn "`gpu_backend` preference is set to $backend, which is not a valid \
                     backend. Valid backends are $allowed_backends. Defaulting to automatic \
-                    GPU Backend selection." maxlog=1
+                    GPU Backend selection." maxlog = 1
         else
             @debug "Using GPU backend set in preferences: $backend."
             idx = findfirst(isequal(backend), allowed_backends)
@@ -61,7 +63,7 @@ function get_gpu_device(; force::Bool)
                 @warn "Trying to use backend: $(get_device_name(device)) but the trigger \
                        package $(get_triggerpkg_name(device)) is not loaded. Ignoring the \
                        Preferences backend!!! Please load the package and call this \
-                       function again to respect the Preferences backend." maxlog=1
+                       function again to respect the Preferences backend." maxlog = 1
             else
                 if functional(device)
                     @debug "Using GPU backend: $(get_device_name(device))."
@@ -69,7 +71,7 @@ function get_gpu_device(; force::Bool)
                 else
                     @warn "GPU backend: $(get_device_name(device)) set via Preferences.jl \
                            is not functional. Defaulting to automatic GPU Backend \
-                           selection." maxlog=1
+                           selection." maxlog = 1
                 end
             end
         end
@@ -93,12 +95,12 @@ function get_gpu_device(; force::Bool)
     force && throw(DeviceSelectionException("GPU"))
     @warn """No functional GPU backend found! Defaulting to CPU.
 
-             1. If no GPU is available, nothing needs to be done.
-             2. If GPU is available, load the corresponding trigger package.
-                 a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
-                 b. `AMDGPU.jl` for AMD GPU ROCM Support.
-                 c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
-                 d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog=1
+    1. If no GPU is available, nothing needs to be done.
+    2. If GPU is available, load the corresponding trigger package.
+        a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
+        b. `AMDGPU.jl` for AMD GPU ROCM Support.
+        c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
+        d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog = 1
     return CPUDevice
 end
 

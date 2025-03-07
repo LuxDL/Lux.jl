@@ -10,9 +10,9 @@ end
 
 const backend_type = input_args[2] == "nccl" ? NCCLBackend : MPIBackend
 const dev = input_args[1] == "cpu" ? CPUDevice() :
-            (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
+    (input_args[1] == "cuda" ? CUDADevice() : AMDGPUDevice())
 const aType = input_args[1] == "cpu" ? Array :
-              (input_args[1] == "cuda" ? CuArray : ROCArray)
+    (input_args[1] == "cuda" ? CuArray : ROCArray)
 
 DistributedUtils.initialize(backend_type)
 backend = DistributedUtils.get_distributed_backend(backend_type)
@@ -30,12 +30,12 @@ for arrType in (Array, aType)
     sendbuf = (rank == 0) ? arrType(ones(512)) : arrType(zeros(512))
     recvbuf = arrType(zeros(512))
 
-    DistributedUtils.bcast!(backend, sendbuf, recvbuf; root=0)
+    DistributedUtils.bcast!(backend, sendbuf, recvbuf; root = 0)
 
     rank != 0 && @test all(recvbuf .== 1)
 
     sendrecvbuf = (rank == 0) ? arrType(ones(512)) : arrType(zeros(512))
-    DistributedUtils.bcast!(backend, sendrecvbuf; root=0)
+    DistributedUtils.bcast!(backend, sendrecvbuf; root = 0)
 
     @test all(sendrecvbuf .== 1)
 end
@@ -45,25 +45,25 @@ for arrType in (Array, aType)
     sendbuf = arrType(fill(Float64(rank + 1), 512))
     recvbuf = arrType(zeros(512))
 
-    DistributedUtils.reduce!(backend, sendbuf, recvbuf, +; root=0)
+    DistributedUtils.reduce!(backend, sendbuf, recvbuf, +; root = 0)
 
     rank == 0 && @test all(recvbuf .≈ sum(1:nworkers))
 
     sendbuf .= rank + 1
 
-    DistributedUtils.reduce!(backend, sendbuf, recvbuf, DistributedUtils.avg; root=0)
+    DistributedUtils.reduce!(backend, sendbuf, recvbuf, DistributedUtils.avg; root = 0)
 
     rank == 0 && @test all(recvbuf .≈ sum(1:nworkers) / nworkers)
 
     sendrecvbuf = arrType(fill(Float64(rank + 1), 512))
 
-    DistributedUtils.reduce!(backend, sendrecvbuf, +; root=0)
+    DistributedUtils.reduce!(backend, sendrecvbuf, +; root = 0)
 
     rank == 0 && @test all(sendrecvbuf .≈ sum(1:nworkers))
 
     sendrecvbuf .= rank + 1
 
-    DistributedUtils.reduce!(backend, sendrecvbuf, DistributedUtils.avg; root=0)
+    DistributedUtils.reduce!(backend, sendrecvbuf, DistributedUtils.avg; root = 0)
 
     rank == 0 && @test all(sendrecvbuf .≈ sum(1:nworkers) / nworkers)
 end

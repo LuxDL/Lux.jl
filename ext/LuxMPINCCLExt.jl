@@ -9,10 +9,12 @@ using Lux: MPIBackend, NCCLBackend, DistributedUtils
 using MLDataDevices: AbstractDevice, CUDADevice
 
 function DistributedUtils.force_initialize(
-        ::Type{NCCLBackend}; cuda_devices=nothing, amdgpu_devices=missing)
-    @argcheck amdgpu_devices===missing "`AMDGPU` is not supported by `NCCL`."
+        ::Type{NCCLBackend}; cuda_devices = nothing, amdgpu_devices = missing
+    )
+    @argcheck amdgpu_devices === missing "`AMDGPU` is not supported by `NCCL`."
     DistributedUtils.force_initialize(
-        MPIBackend; cuda_devices, force_cuda=true, caller="NCCLBackend", amdgpu_devices)
+        MPIBackend; cuda_devices, force_cuda = true, caller = "NCCLBackend", amdgpu_devices
+    )
     DistributedUtils.NCCL_Initialized[] = true
     return
 end
@@ -21,7 +23,7 @@ function DistributedUtils.unsafe_get_distributed_backend(::Type{NCCLBackend})
     unique_id = NCCL.UniqueID()  # Generate on all ranks to know the type
     mpi_backend = DistributedUtils.unsafe_get_distributed_backend(MPIBackend)
     buf = [unique_id.internal...]
-    DistributedUtils.bcast!(mpi_backend, buf; root=0)
+    DistributedUtils.bcast!(mpi_backend, buf; root = 0)
     @set! unique_id.internal = Tuple(buf)
 
     nranks = DistributedUtils.total_workers(mpi_backend)
@@ -37,79 +39,92 @@ DistributedUtils.total_workers(backend::NCCLBackend) = NCCL.size(backend.comm)
 # For non-CUDA Arrays, fallback to MPI
 # Broadcast
 function DistributedUtils.bcast_impl!(
-        backend::NCCLBackend, sendrecvbuf, ::CUDADevice; root=0)
+        backend::NCCLBackend, sendrecvbuf, ::CUDADevice; root = 0
+    )
     NCCL.Broadcast!(sendrecvbuf, backend.comm; root)
     return
 end
 
 function DistributedUtils.bcast_impl!(
-        backend::NCCLBackend, sendrecvbuf, dev::AbstractDevice; root=0)
+        backend::NCCLBackend, sendrecvbuf, dev::AbstractDevice; root = 0
+    )
     DistributedUtils.bcast_impl!(backend.mpi_backend, sendrecvbuf, dev; root)
     return
 end
 
 function DistributedUtils.bcast_impl!(
-        backend::NCCLBackend, sendbuf, recvbuf, ::CUDADevice; root=0)
+        backend::NCCLBackend, sendbuf, recvbuf, ::CUDADevice; root = 0
+    )
     NCCL.Broadcast!(sendbuf, recvbuf, backend.comm; root)
     return
 end
 
 function DistributedUtils.bcast_impl!(
-        backend::NCCLBackend, sendbuf, recvbuf, dev::AbstractDevice; root=0)
+        backend::NCCLBackend, sendbuf, recvbuf, dev::AbstractDevice; root = 0
+    )
     DistributedUtils.bcast_impl!(backend.mpi_backend, sendbuf, recvbuf, dev; root)
     return
 end
 
 # Allreduce
 function DistributedUtils.allreduce_impl!(
-        backend::NCCLBackend, sendrecvbuf, op::F, ::CUDADevice) where {F}
+        backend::NCCLBackend, sendrecvbuf, op::F, ::CUDADevice
+    ) where {F}
     op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
     NCCL.Allreduce!(sendrecvbuf, op, backend.comm)
     return
 end
 
 function DistributedUtils.allreduce_impl!(
-        backend::NCCLBackend, sendrecvbuf, op::F, dev::AbstractDevice) where {F}
+        backend::NCCLBackend, sendrecvbuf, op::F, dev::AbstractDevice
+    ) where {F}
     DistributedUtils.allreduce_impl!(backend.mpi_backend, sendrecvbuf, op, dev)
     return
 end
 
 function DistributedUtils.allreduce_impl!(
-        backend::NCCLBackend, sendbuf, recvbuf, op::F, ::CUDADevice) where {F}
+        backend::NCCLBackend, sendbuf, recvbuf, op::F, ::CUDADevice
+    ) where {F}
     op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
     NCCL.Allreduce!(sendbuf, recvbuf, op, backend.comm)
     return
 end
 
 function DistributedUtils.allreduce_impl!(
-        backend::NCCLBackend, sendbuf, recvbuf, op::F, dev::AbstractDevice) where {F}
+        backend::NCCLBackend, sendbuf, recvbuf, op::F, dev::AbstractDevice
+    ) where {F}
     DistributedUtils.allreduce_impl!(backend.mpi_backend, sendbuf, recvbuf, op, dev)
     return
 end
 
 # Reduce
 function DistributedUtils.reduce_impl!(
-        backend::NCCLBackend, sendrecvbuf, op::F, ::CUDADevice; root::Int) where {F}
+        backend::NCCLBackend, sendrecvbuf, op::F, ::CUDADevice; root::Int
+    ) where {F}
     op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
     NCCL.Reduce!(sendrecvbuf, op, backend.comm; root)
     return
 end
 
 function DistributedUtils.reduce_impl!(
-        backend::NCCLBackend, sendrecvbuf, op::F, dev::AbstractDevice; root::Int) where {F}
+        backend::NCCLBackend, sendrecvbuf, op::F, dev::AbstractDevice; root::Int
+    ) where {F}
     DistributedUtils.reduce_impl!(backend.mpi_backend, sendrecvbuf, op, dev; root)
     return
 end
 
 function DistributedUtils.reduce_impl!(
-        backend::NCCLBackend, sendbuf, recvbuf, op::F, ::CUDADevice; root::Int) where {F}
+        backend::NCCLBackend, sendbuf, recvbuf, op::F, ::CUDADevice; root::Int
+    ) where {F}
     op = ifelse(op === DistributedUtils.avg, NCCL.avg, op)
     NCCL.Reduce!(sendbuf, recvbuf, op, backend.comm; root)
     return
 end
 
-function DistributedUtils.reduce_impl!(backend::NCCLBackend, sendbuf, recvbuf, op::F,
-        dev::AbstractDevice; root::Int) where {F}
+function DistributedUtils.reduce_impl!(
+        backend::NCCLBackend, sendbuf, recvbuf, op::F,
+        dev::AbstractDevice; root::Int
+    ) where {F}
     DistributedUtils.reduce_impl!(backend.mpi_backend, sendbuf, recvbuf, op, dev; root)
     return
 end

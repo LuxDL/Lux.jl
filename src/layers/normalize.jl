@@ -93,24 +93,30 @@ See also [`BatchNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
     track_stats <: StaticBool
 end
 
-function BatchNorm(chs::IntegerType, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine::BoolType=True(),
-        track_stats::BoolType=True(), epsilon=1.0f-5, momentum=0.1f0)
-    return BatchNorm(activation, epsilon, momentum, chs, init_bias,
-        init_scale, static(affine), static(track_stats))
+function BatchNorm(
+        chs::IntegerType, activation = identity; init_bias = zeros32,
+        init_scale = ones32, affine::BoolType = True(),
+        track_stats::BoolType = True(), epsilon = 1.0f-5, momentum = 0.1f0
+    )
+    return BatchNorm(
+        activation, epsilon, momentum, chs, init_bias,
+        init_scale, static(affine), static(track_stats)
+    )
 end
 
 function initialparameters(rng::AbstractRNG, l::BatchNorm)
-    has_affine(l) && return (; scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
+    has_affine(l) && return (; scale = l.init_scale(rng, l.chs), bias = l.init_bias(rng, l.chs))
     return (;)
 end
 
 function initialstates(rng::AbstractRNG, l::BatchNorm)
     if has_track_stats(l)
-        return (running_mean=zeros32(rng, l.chs),
-            running_var=ones32(rng, l.chs), training=Val(true))
+        return (
+            running_mean = zeros32(rng, l.chs),
+            running_var = ones32(rng, l.chs), training = Val(true),
+        )
     end
-    return (; training=Val(true))
+    return (; training = Val(true))
 end
 
 parameterlength(l::BatchNorm) = ifelse(has_affine(l), l.chs * 2, 0)
@@ -119,7 +125,7 @@ statelength(l::BatchNorm) = ifelse(has_track_stats(l), l.chs * 2, 0) + 1
 function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
     CRC.ignore_derivatives() do
         if st.training isa Val{true}
-            @argcheck size(x, ndims(x))!=1 "Batch size for BatchNorm cannot be 1 during training"
+            @argcheck size(x, ndims(x)) != 1 "Batch size for BatchNorm cannot be 1 during training"
         end
     end
 
@@ -129,14 +135,19 @@ function (BN::BatchNorm)(x::AbstractArray, ps, st::NamedTuple)
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
         safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
         st.training, σ, convert(unwrapped_eltype(x′), BN.momentum),
-        convert(unwrapped_eltype(x′), BN.epsilon))
+        convert(unwrapped_eltype(x′), BN.epsilon)
+    )
     return y, update_batchnorm_state(BN, st, stats)
 end
 
 function update_batchnorm_state(BN::BatchNorm, st::NamedTuple, stats)
-    has_track_stats(BN) && return merge(st,
-        (; running_mean=Utils.vec(stats.running_mean),
-            running_var=Utils.vec(stats.running_var)))
+    has_track_stats(BN) && return merge(
+        st,
+        (;
+            running_mean = Utils.vec(stats.running_mean),
+            running_var = Utils.vec(stats.running_var),
+        )
+    )
     return st
 end
 
@@ -228,16 +239,18 @@ See also [`GroupNorm`](@ref), [`InstanceNorm`](@ref), [`LayerNorm`](@ref),
 end
 
 function GroupNorm(
-        chs::IntegerType, groups::IntegerType, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine::BoolType=True(), epsilon=1.0f-5)
-    @argcheck chs % groups==0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
+        chs::IntegerType, groups::IntegerType, activation = identity; init_bias = zeros32,
+        init_scale = ones32, affine::BoolType = True(), epsilon = 1.0f-5
+    )
+    @argcheck chs % groups == 0 "The number of groups ($(groups)) must divide the number of channels ($chs)"
     return GroupNorm(
-        activation, epsilon, chs, init_bias, init_scale, groups, static(affine))
+        activation, epsilon, chs, init_bias, init_scale, groups, static(affine)
+    )
 end
 
 function initialparameters(rng::AbstractRNG, l::GroupNorm)
     return has_affine(l) ?
-           (; scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs)) : (;)
+        (; scale = l.init_scale(rng, l.chs), bias = l.init_bias(rng, l.chs)) : (;)
 end
 
 parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
@@ -245,8 +258,10 @@ parameterlength(l::GroupNorm) = has_affine(l) ? (l.chs * 2) : 0
 function (GN::GroupNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(GN, ps, st, x)
     σ = NNlib.fast_act(GN.activation, x′)
-    y = groupnorm(x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        GN.groups, σ, convert(unwrapped_eltype(x′), GN.epsilon))
+    y = groupnorm(
+        x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        GN.groups, σ, convert(unwrapped_eltype(x′), GN.epsilon)
+    )
     return y, st
 end
 
@@ -354,24 +369,30 @@ See also [`BatchNorm`](@ref), [`GroupNorm`](@ref), [`LayerNorm`](@ref), [`Weight
     track_stats <: StaticBool
 end
 
-function InstanceNorm(chs::IntegerType, activation=identity; init_bias=zeros32,
-        init_scale=ones32, affine::BoolType=False(),
-        track_stats::BoolType=False(), epsilon=1.0f-5, momentum=0.1f0)
-    return InstanceNorm(activation, epsilon, momentum, chs, init_bias,
-        init_scale, static(affine), static(track_stats))
+function InstanceNorm(
+        chs::IntegerType, activation = identity; init_bias = zeros32,
+        init_scale = ones32, affine::BoolType = False(),
+        track_stats::BoolType = False(), epsilon = 1.0f-5, momentum = 0.1f0
+    )
+    return InstanceNorm(
+        activation, epsilon, momentum, chs, init_bias,
+        init_scale, static(affine), static(track_stats)
+    )
 end
 
 function initialparameters(rng::AbstractRNG, l::InstanceNorm)
-    has_affine(l) && return (scale=l.init_scale(rng, l.chs), bias=l.init_bias(rng, l.chs))
+    has_affine(l) && return (scale = l.init_scale(rng, l.chs), bias = l.init_bias(rng, l.chs))
     return (;)
 end
 
 function initialstates(rng::AbstractRNG, l::InstanceNorm)
     if has_track_stats(l)
-        return (running_mean=zeros32(rng, l.chs),
-            running_var=ones32(rng, l.chs), training=Val(true))
+        return (
+            running_mean = zeros32(rng, l.chs),
+            running_var = ones32(rng, l.chs), training = Val(true),
+        )
     end
-    return (; training=Val(true))
+    return (; training = Val(true))
 end
 
 parameterlength(l::InstanceNorm) = ifelse(has_affine(l), l.chs * 2, 0)
@@ -384,14 +405,19 @@ function (IN::InstanceNorm)(x::AbstractArray, ps, st::NamedTuple)
         x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
         safe_getproperty(st, Val(:running_mean)), safe_getproperty(st, Val(:running_var)),
         st.training, σ, convert(unwrapped_eltype(x′), IN.momentum),
-        convert(unwrapped_eltype(x′), IN.epsilon))
+        convert(unwrapped_eltype(x′), IN.epsilon)
+    )
     return y, update_instancenorm_state(IN, st, stats)
 end
 
 function update_instancenorm_state(IN::InstanceNorm, st::NamedTuple, stats)
-    has_track_stats(IN) && return merge(st,
-        (; running_mean=Utils.vec(stats.running_mean),
-            running_var=Utils.vec(stats.running_var)))
+    has_track_stats(IN) && return merge(
+        st,
+        (;
+            running_mean = Utils.vec(stats.running_mean),
+            running_var = Utils.vec(stats.running_var),
+        )
+    )
     return st
 end
 
@@ -465,16 +491,19 @@ where ``\gamma`` & ``\beta`` are trainable parameters if `affine=true`.
     affine <: StaticBool
 end
 
-function LayerNorm(shape, activation=identity; epsilon=1.0f-5, dims=Colon(),
-        affine::BoolType=True(), init_bias=zeros32, init_scale=ones32)
+function LayerNorm(
+        shape, activation = identity; epsilon = 1.0f-5, dims = Colon(),
+        affine::BoolType = True(), init_bias = zeros32, init_scale = ones32
+    )
     return LayerNorm(
-        shape, activation, epsilon, init_bias, init_scale, dims, static(affine))
+        shape, activation, epsilon, init_bias, init_scale, dims, static(affine)
+    )
 end
 
 function initialparameters(rng::AbstractRNG, ln::LayerNorm)
     if has_affine(ln)
         dims = (ln.shape..., 1)
-        return (; bias=ln.init_bias(rng, dims...), scale=ln.init_scale(rng, dims...))
+        return (; bias = ln.init_bias(rng, dims...), scale = ln.init_scale(rng, dims...))
     end
     return (;)
 end
@@ -482,8 +511,10 @@ end
 function (l::LayerNorm)(x::AbstractArray, ps, st::NamedTuple)
     x′ = match_eltype(l, ps, st, x)
     σ = NNlib.fast_act(l.activation, x′)
-    y = layernorm(x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
-        σ, l.dims, convert(unwrapped_eltype(x′), l.epsilon))
+    y = layernorm(
+        x′, safe_getproperty(ps, Val(:scale)), safe_getproperty(ps, Val(:bias)),
+        σ, l.dims, convert(unwrapped_eltype(x′), l.epsilon)
+    )
     return y, st
 end
 
@@ -541,11 +572,13 @@ parameters: one specifying the magnitude (e.g. `weight_g`) and one specifying th
     dims
 
     function WeightNorm(
-            layer::AbstractLuxLayer, which_params, dims::Union{Tuple, Nothing}=nothing)
+            layer::AbstractLuxLayer, which_params, dims::Union{Tuple, Nothing} = nothing
+        )
         which_params = static(which_params)
         dims = static(dims)
         return new{typeof(layer), typeof(which_params), typeof(dims)}(
-            layer, which_params, dims)
+            layer, which_params, dims
+        )
     end
 end
 
@@ -565,7 +598,7 @@ function initialparameters(rng::AbstractRNG, wn::WeightNorm)
                                      `init_$(k)` keyword argument."))
             end
             dim = wn.dims === nothing ? ndims(v) : known(wn.dims[i])
-            push!(ps_normalized, Symbol(string(k) * "_g") => Utils.norm_except(v; dims=dim))
+            push!(ps_normalized, Symbol(string(k) * "_g") => Utils.norm_except(v; dims = dim))
             push!(ps_normalized, Symbol(string(k) * "_v") => v)
             i += 1
         else
@@ -573,7 +606,7 @@ function initialparameters(rng::AbstractRNG, wn::WeightNorm)
         end
     end
     ps_unnormalized = length(ps_unnormalized) == 0 ? NamedTuple() : (; ps_unnormalized...)
-    return (normalized=(; ps_normalized...), unnormalized=ps_unnormalized)
+    return (normalized = (; ps_normalized...), unnormalized = ps_unnormalized)
 end
 
 initialstates(rng::AbstractRNG, wn::WeightNorm) = initialstates(rng, wn.layer)
@@ -585,7 +618,8 @@ function (wn::WeightNorm)(x, ps, st::NamedTuple)
 end
 
 @generated function get_weight_normalized_parameters(
-        ::WeightNorm{L, WP}, dims::T, ps) where {L, WP, T}
+        ::WeightNorm{L, WP}, dims::T, ps
+    ) where {L, WP, T}
     which_params = known(WP)
     v_parameter_names = Symbol.(which_params, :_v)
     g_parameter_names = Symbol.(which_params, :_g)
@@ -593,7 +627,7 @@ end
 
     function get_norm_except_invoke(i)
         return if T <: Tuple
-            :(Utils.norm_except(ps.$(v_parameter_names[i]); dims=known(dims[$i])))
+            :(Utils.norm_except(ps.$(v_parameter_names[i]); dims = known(dims[$i])))
         else
             :(Utils.norm_except(ps.$(v_parameter_names[i])))
         end
@@ -601,18 +635,30 @@ end
 
     calls = []
     for (i, (v_param, g_param)) in enumerate(zip(v_parameter_names, g_parameter_names))
-        push!(calls,
-            :($(normalized_params_symbol[i]) = ps.$(v_param) .* (ps.$(g_param) ./
-                                                ($(get_norm_except_invoke(i)) .+
-                                                 eps(eltype(ps.$(v_param)))))))
+        push!(
+            calls,
+            :(
+                $(normalized_params_symbol[i]) = ps.$(v_param) .* (
+                    ps.$(g_param) ./
+                        (
+                        $(get_norm_except_invoke(i)) .+
+                            eps(eltype(ps.$(v_param)))
+                    )
+                )
+            )
+        )
     end
-    push!(calls,
-        :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...)))))
+    push!(
+        calls,
+        :(return NamedTuple{$(which_params)}(tuple($(Tuple(normalized_params_symbol)...))))
+    )
 
     return Expr(:block, calls...)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", w::WeightNorm)
-    return print(io, "WeightNorm(", w.layer, ", dims = ", known(w.dims),
-        ", normalized_parameters = ", known(w.which_params), ")")
+    return print(
+        io, "WeightNorm(", w.layer, ", dims = ", known(w.dims),
+        ", normalized_parameters = ", known(w.which_params), ")"
+    )
 end

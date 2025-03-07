@@ -16,7 +16,7 @@ using Static: StaticSymbol, StaticBool, True, known, static, dynamic
 using ..Lux: Lux, Optional
 using ..Utils: Utils, BoolType, SymbolType
 using LuxCore: LuxCore, AbstractLuxLayer, AbstractLuxWrapperLayer,
-               AbstractLuxContainerLayer, apply
+    AbstractLuxContainerLayer, apply
 
 const CRC = ChainRulesCore
 

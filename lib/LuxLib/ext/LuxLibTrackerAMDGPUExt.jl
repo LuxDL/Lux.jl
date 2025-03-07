@@ -13,7 +13,7 @@ function nnlib_padding(dims)
         @warn """
         MIOpen does not support asymmetric padding, defaulting to symmetric choice:
         $pd -> $(pd[1:2:end]).
-        """ maxlog=1
+        """ maxlog = 1
     end
     return pd[1:2:end]
 end
@@ -24,10 +24,12 @@ for poolname in (:maxpool, :meanpool)
     @eval begin
         Tracker.@grad function NNlib.$(poolname)(
                 x_tracked::ROCTrackedArray{<:AMDGPU.MIOpen.MIOPENFloat, N},
-                pdims::PoolDims) where {N}
+                pdims::PoolDims
+            ) where {N}
             x = Tracker.data(x_tracked)
             y = similar(
-                x, NNlib.output_size(pdims)..., NNlib.channels_out(pdims), size(x, N))
+                x, NNlib.output_size(pdims)..., NNlib.channels_out(pdims), size(x, N)
+            )
             nd = max(0, 4 - N)
             npdims = NNlib.insert_singleton_spatial_dimension(pdims, nd)
 
@@ -35,8 +37,9 @@ for poolname in (:maxpool, :meanpool)
             _, workspace = AMDGPU.MIOpen.$(Symbol("$(poolname)!"))(
                 NNlib.insert_singleton_spatial_dimension(y, nd),
                 NNlib.insert_singleton_spatial_dimension(x, nd);
-                dims=NNlib.kernel_size(npdims),
-                padding=nnlib_padding(npdims), stride=NNlib.stride(npdims))
+                dims = NNlib.kernel_size(npdims),
+                padding = nnlib_padding(npdims), stride = NNlib.stride(npdims)
+            )
 
             function ∇pooling(Δ)
                 dx = similar(x)
@@ -45,8 +48,9 @@ for poolname in (:maxpool, :meanpool)
                     NNlib.insert_singleton_spatial_dimension(Δ, nd),
                     NNlib.insert_singleton_spatial_dimension(y, nd),
                     NNlib.insert_singleton_spatial_dimension(x, nd);
-                    dims=NNlib.kernel_size(npdims), padding=nnlib_padding(npdims),
-                    stride=NNlib.stride(npdims), workspace)
+                    dims = NNlib.kernel_size(npdims), padding = nnlib_padding(npdims),
+                    stride = NNlib.stride(npdims), workspace
+                )
                 return Tracker.nobacksies($(Expr(:quote, poolname)), (dx, nothing))
             end
 

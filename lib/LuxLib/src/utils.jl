@@ -25,12 +25,14 @@ EnzymeRules.inactive_noinl(::typeof(is_extension_loaded), ::Any...) = nothing
 # Simple Operations -- no rrules needed
 ofeltype_array(::Type{T}, x::AbstractArray{T}) where {T} = x
 function ofeltype_array(
-        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T, N}}) where {Tag, T, N}
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T, N}}
+    ) where {Tag, T, N}
     return x
 end
 ofeltype_array(::Type{T}, x::AbstractArray) where {T} = T.(x)
 function ofeltype_array(
-        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T2, N}}) where {Tag, T, T2, N}
+        ::Type{T}, x::AbstractArray{<:ForwardDiff.Dual{Tag, T2, N}}
+    ) where {Tag, T, T2, N}
     return ForwardDiff.Dual{Tag, T, N}.(x)
 end
 ofeltype_array(::Type{T}, ::Nothing) where {T} = nothing
@@ -116,15 +118,18 @@ default_epsilon(::AbstractArray{T}) where {T} = default_epsilon(T)
 
 CRC.@non_differentiable default_epsilon(::Any...)
 
-function concrete_bias_act_output_eltype(act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
-        b::Optional{<:AbstractVector}) where {F, Tw, Tx}
+function concrete_bias_act_output_eltype(
+        act::F, ::AbstractArray{Tw}, ::AbstractArray{Tx},
+        b::Optional{<:AbstractVector}
+    ) where {F, Tw, Tx}
     Ty = promote_type(Tw, Tx, safe_eltype(b))
     Tact = Core.Compiler.return_type(act, Tuple{Ty})
     return ifelse(isconcretetype(Tact), Tact, Ty)
 end
 
 function concrete_bias_act_output_eltype(
-        act::F, x::AbstractArray, b::Optional{<:AbstractVector}) where {F}
+        act::F, x::AbstractArray, b::Optional{<:AbstractVector}
+    ) where {F}
     return concrete_bias_act_output_eltype(act, x, x, b)
 end
 
@@ -214,10 +219,10 @@ function CRC.rrule(::typeof(expand_batchdim), x::AbstractMatrix)
 end
 
 function safe_warning(msg::String, maxlog::Int)
-    if maxlog < 0
+    return if maxlog < 0
         @warn msg
     else
-        @warn msg maxlog=maxlog
+        @warn msg maxlog = maxlog
     end
 end
 
@@ -234,31 +239,38 @@ CRC.@non_differentiable safe_minimum(::Any...)
 # through `foo` but supports `bar`. Use with caution, avoid multiple dispatch on `foo`.
 # Also the function should always return `nothing`
 macro enzyme_alternative(f₁, f₂)
-    return esc(quote
-        function EnzymeRules.augmented_primal(
-                ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
-                ::Type{RT}, args...) where {RT}
-            fwd, rev = EnzymeCore.autodiff_thunk(
-                EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof($(f₂))},
-                EnzymeCore.Const, typeof.(args)...)
+    return esc(
+        quote
+            function EnzymeRules.augmented_primal(
+                    ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
+                    ::Type{RT}, args...
+                ) where {RT}
+                fwd, rev = EnzymeCore.autodiff_thunk(
+                    EnzymeCore.ReverseSplitWithPrimal, EnzymeCore.Const{typeof($(f₂))},
+                    EnzymeCore.Const, typeof.(args)...
+                )
 
-            tape, result, shadow_result = fwd(EnzymeCore.Const($(f₂)), args...)
+                tape, result, shadow_result = fwd(EnzymeCore.Const($(f₂)), args...)
 
-            return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
+                return EnzymeRules.AugmentedReturn(result, shadow_result, (tape, rev))
+            end
+
+            function EnzymeRules.reverse(
+                    ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
+                    ::Type{RT}, (tape, rev), args...
+                ) where {RT}
+                return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
+            end
+
+            function EnzymeRules.forward(
+                    cfg::EnzymeRules.FwdConfig,
+                    ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...
+                ) where {RT}
+                EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)
+                return
+            end
         end
-
-        function EnzymeRules.reverse(
-                ::EnzymeRules.RevConfig, ::EnzymeCore.Const{typeof($(f₁))},
-                ::Type{RT}, (tape, rev), args...) where {RT}
-            return only(rev(EnzymeCore.Const($(f₂)), args..., tape))
-        end
-
-        function EnzymeRules.forward(cfg::EnzymeRules.FwdConfig,
-                ::EnzymeCore.Const{typeof($(f₁))}, ::Type{RT}, args...) where {RT}
-            EnzymeCore.autodiff(EnzymeCore.Forward, EnzymeCore.Const($(f₂)), RT, args...)
-            return
-        end
-    end)
+    )
 end
 
 @inline function run_ka_kernel(f::F, backend, workgroupsize, ndrange, args...) where {F}
@@ -292,17 +304,21 @@ end
 static_training_mode(::Nothing, args...) = within_autodiff_vararg(args...)
 
 function static_training_mode(
-        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...)
+        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...
+    )
     return static_training_mode_check(
-        training, static(training), within_autodiff_vararg(args...))
+        training, static(training), within_autodiff_vararg(args...)
+    )
 end
 
 function CRC.rrule(::typeof(static_training_mode), ::Nothing, args...)
     return True(), _ -> ntuple(Returns(∂∅), length(args) + 2)
 end
 
-function CRC.rrule(::typeof(static_training_mode),
-        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...)
+function CRC.rrule(
+        ::typeof(static_training_mode),
+        training::Union{Bool, Val{true}, Val{false}, StaticBool}, args...
+    )
     res = static_training_mode_check(training, static(training), True())
     return res, _ -> ntuple(Returns(∂∅), length(args) + 2)
 end
@@ -316,7 +332,7 @@ function static_training_mode_check(training, ::True, ::False)
            `Lux.jl` model, set it to inference (test) mode using `LuxCore.testmode`. \
            Reliance on this behavior is discouraged, and is not guaranteed by Semantic \
            Versioning, and might be removed without a deprecation cycle. It is recommended \
-           to fix this issue in your code." maxlog=1
+           to fix this issue in your code." maxlog = 1
     return True()
 end
 
@@ -324,7 +340,7 @@ function static_training_mode_check(training, ::False, ::True)
     @warn "`training` is set to `$(training)` but is being used within an autodiff call \
            (gradient, jacobian, etc...). This might lead to incorrect results. If you are \
            using a `Lux.jl` model, set it to training mode using \
-           `LuxCore.trainmode`." maxlog=1
+           `LuxCore.trainmode`." maxlog = 1
     return False()
 end
 
@@ -346,6 +362,6 @@ CRC.@non_differentiable can_loopvec_args_check(::Any...)
 
 EnzymeRules.inactive_noinl(::typeof(can_loopvec_args_check), ::Any...) = nothing
 
-recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude=MLDataDevices.isleaf)
+recursive_unthunk(x) = Functors.fmap(CRC.unthunk, x; exclude = MLDataDevices.isleaf)
 
 end

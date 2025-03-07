@@ -15,7 +15,7 @@ EnzymeRules.inactive(::typeof(calculate_pool_dims), ::Any...) = true
 end
 
 function calculate_pool_dims(m::GenericPoolMode, x)
-    return PoolDims(x, m.kernel_size; padding=m.pad, m.stride, m.dilation)
+    return PoolDims(x, m.kernel_size; padding = m.pad, m.stride, m.dilation)
 end
 
 struct GlobalPoolMode <: AbstractPoolMode end
@@ -30,7 +30,7 @@ function calculate_pool_dims(m::AdaptivePoolMode, x)
     in_size = size(x)[1:(end - 2)]
     stride = in_size .÷ m.out_size
     kernel_size = in_size .- (m.out_size .- 1) .* stride
-    return PoolDims(x, kernel_size; padding=0, stride, dilation=1)
+    return PoolDims(x, kernel_size; padding = 0, stride, dilation = 1)
 end
 
 symbol_to_pool_mode(::StaticSymbol{:generic}) = GenericPoolMode
@@ -43,13 +43,13 @@ struct MaxPoolOp <: AbstractPoolOp end
 
 (m::MaxPoolOp)(x, pdims) = maxpool(x, pdims)
 function (m::MaxPoolOp)(x, ::GlobalPoolMode)
-    return maximum(x; dims=1:(ndims(x) - 2), init=eltype(x)(-Inf))
+    return maximum(x; dims = 1:(ndims(x) - 2), init = eltype(x)(-Inf))
 end
 
 struct MeanPoolOp <: AbstractPoolOp end
 
 (m::MeanPoolOp)(x, pdims) = meanpool(x, pdims)
-(m::MeanPoolOp)(x, ::GlobalPoolMode) = mean(x; dims=1:(ndims(x) - 2))
+(m::MeanPoolOp)(x, ::GlobalPoolMode) = mean(x; dims = 1:(ndims(x) - 2))
 
 @concrete struct LpPoolOp <: AbstractPoolOp
     p
@@ -67,15 +67,21 @@ symbol_to_pool_op(::StaticSymbol{:lp}, p) = LpPoolOp(p)
     op <: AbstractPoolOp
 end
 
-function PoolingLayer(mode::SymbolType, op::SymbolType,
-        arg::Union{Nothing, Tuple{Vararg{IntegerType}}}=nothing;
-        stride=arg, pad=0, dilation=1, p=2)
-    return PoolingLayer(symbol_to_pool_mode(static(mode)),
-        symbol_to_pool_op(static(op), p), arg; stride, pad, dilation)
+function PoolingLayer(
+        mode::SymbolType, op::SymbolType,
+        arg::Union{Nothing, Tuple{Vararg{IntegerType}}} = nothing;
+        stride = arg, pad = 0, dilation = 1, p = 2
+    )
+    return PoolingLayer(
+        symbol_to_pool_mode(static(mode)),
+        symbol_to_pool_op(static(op), p), arg; stride, pad, dilation
+    )
 end
 
-function PoolingLayer(::Type{GenericPoolMode}, op::AbstractPoolOp,
-        kernel_size::Tuple{Vararg{IntegerType}}; stride=kernel_size, pad=0, dilation=1)
+function PoolingLayer(
+        ::Type{GenericPoolMode}, op::AbstractPoolOp,
+        kernel_size::Tuple{Vararg{IntegerType}}; stride = kernel_size, pad = 0, dilation = 1
+    )
     stride = Utils.expand(Val(length(kernel_size)), stride)
     pad = calc_padding(pad, kernel_size, dilation, stride)
     dilation = Utils.expand(Val(length(kernel_size)), dilation)
@@ -84,8 +90,10 @@ function PoolingLayer(::Type{GenericPoolMode}, op::AbstractPoolOp,
     return PoolingLayer(GenericPoolMode(kernel_size, stride, pad, dilation), op)
 end
 
-function PoolingLayer(::Type{AdaptivePoolMode}, op::AbstractPoolOp,
-        out_size::Tuple{Vararg{IntegerType}}; kwargs...)
+function PoolingLayer(
+        ::Type{AdaptivePoolMode}, op::AbstractPoolOp,
+        out_size::Tuple{Vararg{IntegerType}}; kwargs...
+    )
     return PoolingLayer(AdaptivePoolMode(out_size), op)
 end
 
@@ -100,10 +108,10 @@ for layer_op in (:Max, :Mean, :LP)
 
     no_gpu_danger = layer_op == :LP ? """
 
-    !!! danger "GPU Support"
+        !!! danger "GPU Support"
 
-        This layer is currently only supported on CPU.
-    """ : ""
+            This layer is currently only supported on CPU.
+        """ : ""
 
     layer_name = Symbol(layer_op, :Pool)
     extra_kwargs = layer_op == :LP ? ", p=2" : ""
@@ -201,16 +209,21 @@ for layer_op in (:Max, :Mean, :LP)
     @eval begin
         # Generic Pooling Layer
         @doc $(layer_docstring) @concrete struct $(layer_name) <:
-                                                 AbstractLuxWrapperLayer{:layer}
+            AbstractLuxWrapperLayer{:layer}
             layer <: PoolingLayer
         end
 
         Experimental.layer_map_leaf(::KeyPath, ::$(layer_name)) = true
 
         function $(layer_name)(
-                window::Tuple{Vararg{IntegerType}}; stride=window, pad=0, dilation=1, p=2)
-            return $(layer_name)(PoolingLayer(static(:generic), static($(Meta.quot(op))),
-                window; stride, pad, dilation, p))
+                window::Tuple{Vararg{IntegerType}}; stride = window, pad = 0, dilation = 1, p = 2
+            )
+            return $(layer_name)(
+                PoolingLayer(
+                    static(:generic), static($(Meta.quot(op))),
+                    window; stride, pad, dilation, p
+                )
+            )
         end
 
         function Base.show(io::IO, m::$(layer_name))
@@ -223,20 +236,20 @@ for layer_op in (:Max, :Mean, :LP)
             all(==(1), dilation) ||
                 print(io, ", dilation=", PrettyPrinting.tuple_string(dilation))
             $(Meta.quot(op)) == :lp && (op.p == 2 || print(io, ", p=", op.p))
-            print(io, ")")
+            return print(io, ")")
         end
 
         PrettyPrinting.isa_printable_leaf(::$(layer_name)) = true
 
         # Global Pooling Layer
         @doc $(global_pooling_docstring) @concrete struct $(global_layer_name) <:
-                                                          AbstractLuxWrapperLayer{:layer}
+            AbstractLuxWrapperLayer{:layer}
             layer <: PoolingLayer
         end
 
         Experimental.layer_map_leaf(::KeyPath, ::$(global_layer_name)) = true
 
-        function $(global_layer_name)(; p=2)
+        function $(global_layer_name)(; p = 2)
             return $(global_layer_name)(PoolingLayer(static(:global), $(Meta.quot(op)); p))
         end
 
@@ -244,29 +257,32 @@ for layer_op in (:Max, :Mean, :LP)
             (; op) = g.layer
             print(io, string($(Meta.quot(global_layer_name))), "(")
             $(Meta.quot(op)) == :lp && (op.p == 2 || print(io, ", p=", op.p))
-            print(io, ")")
+            return print(io, ")")
         end
 
         PrettyPrinting.isa_printable_leaf(::$(global_layer_name)) = true
 
         # Adaptive Pooling Layer
         @doc $(adaptive_pooling_docstring) @concrete struct $(adaptive_layer_name) <:
-                                                            AbstractLuxWrapperLayer{:layer}
+            AbstractLuxWrapperLayer{:layer}
             layer <: PoolingLayer
         end
 
         Experimental.layer_map_leaf(::KeyPath, ::$(adaptive_layer_name)) = true
 
-        function $(adaptive_layer_name)(out_size::Tuple{Vararg{IntegerType}}; p=2)
-            return $(adaptive_layer_name)(PoolingLayer(
-                static(:adaptive), $(Meta.quot(op)), out_size; p))
+        function $(adaptive_layer_name)(out_size::Tuple{Vararg{IntegerType}}; p = 2)
+            return $(adaptive_layer_name)(
+                PoolingLayer(
+                    static(:adaptive), $(Meta.quot(op)), out_size; p
+                )
+            )
         end
 
         function Base.show(io::IO, a::$(adaptive_layer_name))
             (; mode, op) = a.layer
             print(io, string($(Meta.quot(adaptive_layer_name))), "(", mode.out_size)
             $(Meta.quot(op)) == :lp && (op.p == 2 || print(io, ", p=", op.p))
-            print(io, ")")
+            return print(io, ")")
         end
 
         PrettyPrinting.isa_printable_leaf(::$(adaptive_layer_name)) = true

@@ -1,31 +1,39 @@
 ## Written like this to avoid dynamic dispatch from Zygote
 # Input Gradient / Jacobian
 function rewrite_autodiff_call(f::ComposedFunction{F, <:StatefulLuxLayer}) where {F}
-    (f, f.inner.ps)
+    return (f, f.inner.ps)
 end
 function rewrite_autodiff_call(f::ComposedFunction{<:StatefulLuxLayer, F}) where {F}
-    (@closure((x, ps)->f.outer(f.inner(x), ps)), f.outer.ps)
+    return (@closure((x, ps) -> f.outer(f.inner(x), ps)), f.outer.ps)
 end
 rewrite_autodiff_call(f::StatefulLuxLayer) = f, f.ps
 
 # Parameter Gradient / Jacobian
-function rewrite_autodiff_call(f::ComposedFunction{
-        F, <:Base.Fix1{<:StatefulLuxLayer}}) where {F}
-    return @closure((ps, x)->f.outer(f.inner.f(x, ps))), f.inner.x
+function rewrite_autodiff_call(
+        f::ComposedFunction{
+            F, <:Base.Fix1{<:StatefulLuxLayer},
+        }
+    ) where {F}
+    return @closure((ps, x) -> f.outer(f.inner.f(x, ps))), f.inner.x
 end
-function rewrite_autodiff_call(f::ComposedFunction{
-        <:Base.Fix1{<:StatefulLuxLayer}, F}) where {F}
-    return @closure((ps, x)->f.outer.f(x, f.inner(ps))), f.outer.x
+function rewrite_autodiff_call(
+        f::ComposedFunction{
+            <:Base.Fix1{<:StatefulLuxLayer}, F,
+        }
+    ) where {F}
+    return @closure((ps, x) -> f.outer.f(x, f.inner(ps))), f.outer.x
 end
 function rewrite_autodiff_call(f::Base.Fix1{<:StatefulLuxLayer})
-    return @closure((ps, x)->f.f(x, ps)), f.x
+    return @closure((ps, x) -> f.f(x, ps)), f.x
 end
 
 ## Break ambiguity
-for op in [ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
-    ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
-    ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}}]
+for op in [
+        ComposedFunction{<:StatefulLuxLayer, <:StatefulLuxLayer},
+        ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:StatefulLuxLayer},
+        ComposedFunction{<:StatefulLuxLayer, <:Base.Fix1{<:StatefulLuxLayer}},
+        ComposedFunction{<:Base.Fix1{<:StatefulLuxLayer}, <:Base.Fix1{<:StatefulLuxLayer}},
+    ]
     @eval function rewrite_autodiff_call(::$op)
         error("Cannot rewrite ComposedFunction with StatefulLuxLayer as inner and outer \
                layers")
@@ -37,8 +45,10 @@ for fname in (:autodiff_gradient, :autodiff_gradient_no_custom_rrule)
     @eval $fname(grad_fn::G, f::F, x, y) where {G, F} = grad_fn(Base.Fix2(f, y), x)
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient),
-        grad_fn::G, f::F, x, y) where {G, F}
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient),
+        grad_fn::G, f::F, x, y
+    ) where {G, F}
     @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(cfg, autodiff_gradient_no_custom_rrule, grad_fn, f, x, y)
     end
@@ -50,7 +60,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_gradient
         # For Zygote and such which return a tuple
         (res isa Tuple || Δ isa Tuple) && (Δ = only(Δ))
         Δ = Utils.recursive_unthunk(Δ)
-        ∂x, ∂y = forwarddiff_jvp(@closure((x, y)->grad_fn(f, x, y)), x, Δ, y)
+        ∂x, ∂y = forwarddiff_jvp(@closure((x, y) -> grad_fn(f, x, y)), x, Δ, y)
         return NoTangent(), NoTangent(), NoTangent(), ∂x, ∂y
     end
 
@@ -64,8 +74,10 @@ for fname in (:autodiff_pullback, :autodiff_pullback_no_custom_rrule)
     end
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_pullback),
-        pb_f::P, f::F, x, y, u) where {P, F}
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_pullback),
+        pb_f::P, f::F, x, y, u
+    ) where {P, F}
     @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(cfg, autodiff_pullback_no_custom_rrule, pb_f, f, x, y, u)
     end
@@ -95,11 +107,14 @@ for fname in (:autodiff_jacobian, :autodiff_jacobian_no_custom_rrule)
     end
 end
 
-function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian),
-        jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y) where {J, G, F}
+function CRC.rrule(
+        cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian),
+        jac_fn::J, grad_fn::G, f::F, x::AbstractArray, y
+    ) where {J, G, F}
     @static if !AUTOMATIC_NESTED_AD_SWITCHING
         return CRC.rrule_via_ad(
-            cfg, autodiff_jacobian_no_custom_rrule, jac_fn, grad_fn, f, x, y)
+            cfg, autodiff_jacobian_no_custom_rrule, jac_fn, grad_fn, f, x, y
+        )
     end
 
     res = autodiff_jacobian(jac_fn, grad_fn, f, x, y)
@@ -112,7 +127,7 @@ function CRC.rrule(cfg::RuleConfig{>:HasReverseMode}, ::typeof(autodiff_jacobian
             Δ = Utils.recursive_unthunk(Δ)
             Δ = compactify_if_structured_matrix(res isa Tuple ? only(res) : res, Δ)
 
-            inner_grad_fn = @closure(i->sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)
+            inner_grad_fn = @closure(i -> sum ∘ Base.Fix2(getindex, i:i) ∘ vec ∘ f)
             map_fn = @closure i -> begin
                 Δᵢ = batched_row(Δ, i)
                 __f = let fn = inner_grad_fn(i)

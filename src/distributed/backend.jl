@@ -9,7 +9,7 @@ Instead use [`DistributedUtils.get_distributed_backend(MPIBackend)`](@ref).
 struct MPIBackend{C} <: AbstractLuxDistributedBackend
     comm::C
 
-    function MPIBackend(comm=nothing)
+    function MPIBackend(comm = nothing)
         if Base.get_extension(@__MODULE__, :LuxMPIExt) === nothing
             error("`MPIBackend` requires `MPI.jl` to be loaded.")
         end
@@ -27,7 +27,7 @@ struct NCCLBackend{C, M <: Union{Nothing, MPIBackend}} <: AbstractLuxDistributed
     comm::C
     mpi_backend::M
 
-    function NCCLBackend(comm=nothing, mpi_backend=nothing)
+    function NCCLBackend(comm = nothing, mpi_backend = nothing)
         if Base.get_extension(@__MODULE__, :LuxMPINCCLExt) === nothing
             error("`NCCLBackend` requires `CUDA.jl`, `MPI.jl` and `NCCL.jl` to be loaded.")
         end

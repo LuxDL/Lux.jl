@@ -34,13 +34,16 @@ mean and variance.
     training by reducing internal covariate shift." International conference on machine
     learning. PMLR, 2015.
 """
-function batchnorm(x::AbstractArray{T, N}, γ::Optional{<:AbstractVector},
+function batchnorm(
+        x::AbstractArray{T, N}, γ::Optional{<:AbstractVector},
         β::Optional{<:AbstractVector}, rμ::Optional{<:AbstractVector},
-        rσ²::Optional{<:AbstractVector}, training::TrainingType, act::F=identity,
-        momentum=0.1f0, epsilon=default_epsilon(x)) where {F, T, N}
+        rσ²::Optional{<:AbstractVector}, training::TrainingType, act::F = identity,
+        momentum = 0.1f0, epsilon = default_epsilon(x)
+    ) where {F, T, N}
     σ = select_fastest_activation(act, x, γ, β, rμ, rσ²)
     y, rμ, rσ² = batchnorm_impl(
         x, γ, β, rμ, rσ², static_training_mode(training, x, γ, β, rμ, rσ²),
-        σ, momentum, epsilon)
-    return y, (; running_mean=remove_tracking(rμ), running_var=remove_tracking(rσ²))
+        σ, momentum, epsilon
+    )
+    return y, (; running_mean = remove_tracking(rμ), running_var = remove_tracking(rσ²))
 end

@@ -14,10 +14,10 @@ function _check_use_cuda!()
         if !cuDNN.has_cudnn()
             @warn """
             cuDNN is not functional in CUDA.jl. Some functionality will not be available.
-            """ maxlog=1
+            """ maxlog = 1
         end
     else
-        @warn "LuxCUDA is loaded but the CUDA GPU is not functional." maxlog=1
+        @warn "LuxCUDA is loaded but the CUDA GPU is not functional." maxlog = 1
     end
 
     return

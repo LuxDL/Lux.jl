@@ -6,7 +6,7 @@ const JET_TARGET_MODULES = Ref{Union{Nothing, Vector{String}}}(nothing)
 
 This sets `target_modules` for all JET tests when using [`@jet`](@ref).
 """
-function jet_target_modules!(list::Vector{String}; force::Bool=false)
+function jet_target_modules!(list::Vector{String}; force::Bool = false)
     if JET_TARGET_MODULES[] === nothing || (force && JET_TARGET_MODULES[] !== nothing)
         JET_TARGET_MODULES[] = list
         @info "JET_TARGET_MODULES set to $list"
@@ -81,10 +81,14 @@ macro jet(expr, args...)
 
     push!(all_args, expr)
 
-    ex_call = JET.call_test_ex(:report_call, Symbol("@test_call"),
-        vcat(call_extras, all_args), __module__, __source__)
-    ex_opt = JET.call_test_ex(:report_opt, Symbol("@test_opt"),
-        vcat(opt_extras, all_args), __module__, __source__)
+    ex_call = JET.call_test_ex(
+        :report_call, Symbol("@test_call"),
+        vcat(call_extras, all_args), __module__, __source__
+    )
+    ex_opt = JET.call_test_ex(
+        :report_opt, Symbol("@test_opt"),
+        vcat(opt_extras, all_args), __module__, __source__
+    )
 
     return Expr(:block, ex_call, ex_opt)
 end

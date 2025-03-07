@@ -12,8 +12,10 @@ function reshape_bias(x::AbstractArray{<:Any, N}, bias::StaticVector) where {N}
 end
 
 ## Needed for type stability
-function CRC.rrule(::typeof(reshape_bias), x::AbstractArray{xT, N},
-        bias::AbstractVector{bT}) where {xT, bT, N}
+function CRC.rrule(
+        ::typeof(reshape_bias), x::AbstractArray{xT, N},
+        bias::AbstractVector{bT}
+    ) where {xT, bT, N}
     bias_r = reshape_bias(x, bias)
     𝒫bias = CRC.ProjectTo(bias)
     return bias_r, Δ -> (∂∅, ∂∅, 𝒫bias(vec(Δ)))
@@ -34,12 +36,12 @@ function reduce_sum(x::AbstractArray, y::AbstractArray)
     return z
 end
 
-function mean_var(x::AbstractArray; dims=:, corrected::Bool=true)
+function mean_var(x::AbstractArray; dims = :, corrected::Bool = true)
     μ = mean(x; dims)
-    return μ, var(x; dims, corrected, mean=μ)
+    return μ, var(x; dims, corrected, mean = μ)
 end
 
-function CRC.rrule(::typeof(mean_var), x::AbstractArray; dims=:, corrected::Bool=true)
+function CRC.rrule(::typeof(mean_var), x::AbstractArray; dims = :, corrected::Bool = true)
     μ, σ² = mean_var(x; dims, corrected)
 
     ∇mean_var = @closure Δ -> begin
@@ -64,7 +66,7 @@ add!!(::False, x, y) = x .+ y
 dims_denom(x, dims) = size(x, dims)
 dims_denom(x, ::Colon) = length(x)
 function dims_denom(x, dims::Union{Tuple, AbstractArray})
-    return mapreduce(Base.Fix1(size, x), Base.mul_prod, unique(dims); init=1)
+    return mapreduce(Base.Fix1(size, x), Base.mul_prod, unique(dims); init = 1)
 end
 
 unsum(x, dy, _) = broadcast(last ∘ tuple, x, dy)

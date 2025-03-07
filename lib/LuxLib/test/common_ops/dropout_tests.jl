@@ -1,10 +1,10 @@
-@testitem "Dropout" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "Dropout" tags = [:misc] setup = [SharedTestSetup] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T, $x_shape, $dims" for T in (Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1)),
-            dims in (:, 1, (1, 2))
+                x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1)),
+                dims in (:, 1, (1, 2))
 
             !fp64 && T == Float64 && continue
 
@@ -23,8 +23,10 @@
             @jet sum(first(dropout(rng, x, T(0.5), Val(true), T(2), dims)))
             @test @inferred(dropout(rng, x, T(0.5), Val(true), T(2), dims)) isa Any
 
-            @test_gradients(sumabs2first,
-                dropout, rng, x, T(0.5), Val(true), T(2), dims; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                dropout, rng, x, T(0.5), Val(true), T(2), dims; atol = 1.0f-3, rtol = 1.0f-3
+            )
 
             y, mask_, rng_ = dropout(rng, x, T(0.5), Val(false), T(2), dims)
 
@@ -36,14 +38,14 @@
     end
 end
 
-@testitem "Dropout with Preset Mask" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "Dropout with Preset Mask" tags = [:misc] setup = [SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T: $x_shape" for T in (Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+                x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             !fp64 && T == Float64 && continue
 
@@ -51,11 +53,15 @@ end
             mask = rand(T, x_shape) |> aType
 
             # Update mask
-            @test @inferred(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)) isa Any
+            @test @inferred(
+                dropout(
+                    rng, x, mask, T(0.5), Val(true), Val(true), T(2), :
+                )
+            ) isa Any
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)
+                rng, x, mask, T(0.5), Val(true), Val(true), T(2), :
+            )
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -64,19 +70,30 @@ end
             @test rng != rng_
             @test mask != mask_
 
-            @test_gradients(sumabs2first,
+            @test_gradients(
+                sumabs2first,
                 dropout, rng, x, LuxTestUtils.Constant(mask), T(0.5), Val(true), Val(true),
-                T(2), :; atol=1.0f-3, rtol=1.0f-3)
+                T(2), :; atol = 1.0f-3, rtol = 1.0f-3
+            )
 
-            @jet sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(true), T(2), :)))
+            @jet sum(
+                first(
+                    dropout(
+                        rng, x, mask, T(0.5), Val(true), Val(true), T(2), :
+                    )
+                )
+            )
 
             # Try using mask if possible (possible!!)
-            @test @inferred(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)) isa Any
+            @test @inferred(
+                dropout(
+                    rng, x, mask, T(0.5), Val(true), Val(false), T(2), :
+                )
+            ) isa Any
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)
+                rng, x, mask, T(0.5), Val(true), Val(false), T(2), :
+            )
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -85,22 +102,33 @@ end
             @test rng == rng_
             @test mask == mask_
 
-            @test_gradients(sumabs2first,
+            @test_gradients(
+                sumabs2first,
                 dropout, rng, x, LuxTestUtils.Constant(mask),
                 T(0.5), Val(true), Val(false), T(2), :;
-                broken_backends=length(x_shape) > 2 ? [AutoEnzyme()] : [],
-                atol=1.0f-3, rtol=1.0f-3)
+                broken_backends = length(x_shape) > 2 ? [AutoEnzyme()] : [],
+                atol = 1.0f-3, rtol = 1.0f-3
+            )
 
-            @jet sum(first(dropout(
-                rng, x, mask, T(0.5), Val(true), Val(false), T(2), :)))
+            @jet sum(
+                first(
+                    dropout(
+                        rng, x, mask, T(0.5), Val(true), Val(false), T(2), :
+                    )
+                )
+            )
             mask = rand(T, (x_shape[1:(end - 1)]..., 13)) |> aType
 
             # Testing Mode
-            @test @inferred(dropout(
-                rng, x, mask, T(0.5), Val(false), Val(false), T(2), :)) isa Any
+            @test @inferred(
+                dropout(
+                    rng, x, mask, T(0.5), Val(false), Val(false), T(2), :
+                )
+            ) isa Any
 
             y, mask_, rng_ = dropout(
-                rng, x, mask, T(0.5), Val(false), Val(false), T(2), :)
+                rng, x, mask, T(0.5), Val(false), Val(false), T(2), :
+            )
 
             @test y isa aType{T, length(x_shape)}
             @test size(y) == x_shape
@@ -111,14 +139,14 @@ end
     end
 end
 
-@testitem "Alpha Dropout" tags=[:misc] setup=[SharedTestSetup] begin
+@testitem "Alpha Dropout" tags = [:misc] setup = [SharedTestSetup] begin
     using Statistics
 
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, ongpu, fp64) in MODES
         @testset "$T: $x_shape" for T in (Float32, Float64),
-            x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
+                x_shape in ((2, 3), (2, 2, 3), (2, 2, 3, 1), (2, 2, 1, 3, 1))
 
             !fp64 && T == Float64 && continue
 
@@ -132,10 +160,12 @@ end
             @test size(y) == x_shape
             @test rng != rng_
 
-            @test_broken std(y)≈std(x) atol=1.0f-2 rtol=1.0f-2
+            @test_broken std(y) ≈ std(x) atol = 1.0f-2 rtol = 1.0f-2
 
-            @test_gradients(sumabs2first,
-                alpha_dropout, rng, x, T(0.5), Val(true); atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(
+                sumabs2first,
+                alpha_dropout, rng, x, T(0.5), Val(true); atol = 1.0f-3, rtol = 1.0f-3
+            )
 
             @jet sum(first(alpha_dropout(rng, x, T(0.5), Val(true))))
             @test @inferred(alpha_dropout(rng, x, T(0.5), Val(false))) isa Any

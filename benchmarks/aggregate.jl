@@ -5,7 +5,8 @@ const NUM_CPU_THREADS = [1, 2, 4, 8]
 
 #Start with CPU benchmarks for 1 thread and add other results
 const CPU_results_1thread_filepath = joinpath(
-    dirname(@__FILE__), "results", "CPUbenchmarks1threads.json")
+    dirname(@__FILE__), "results", "CPUbenchmarks1threads.json"
+)
 @assert(ispath(CPU_results_1thread_filepath))
 const RESULTS = BenchmarkTools.load(CPU_results_1thread_filepath)[1]
 @assert RESULTS isa BenchmarkTools.BenchmarkGroup
@@ -54,4 +55,5 @@ for backend in GPU_BACKENDS
 end
 
 BenchmarkTools.save(
-    joinpath(dirname(@__FILE__), "results", "combinedbenchmarks.json"), RESULTS)
+    joinpath(dirname(@__FILE__), "results", "combinedbenchmarks.json"), RESULTS
+)

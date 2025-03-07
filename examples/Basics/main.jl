@@ -285,7 +285,8 @@ function train_model!(model, ps, st, opt, nepochs::Int)
     tstate = Training.TrainState(model, ps, st, opt)
     for i in 1:nepochs
         grads, loss, _, tstate = Training.single_train_step!(
-            AutoZygote(), lossfn, (x_samples, y_samples), tstate)
+            AutoZygote(), lossfn, (x_samples, y_samples), tstate
+        )
         if i % 1000 == 1 || i == nepochs
             @printf "Loss Value after %6d iterations: %.8f\n" i loss
         end

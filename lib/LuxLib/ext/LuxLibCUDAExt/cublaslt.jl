@@ -1,32 +1,40 @@
-const TransOrAdjOrRegStridedCuMatrix{T} = Union{Transpose{T, <:StridedCuMatrix{T}},
-    Adjoint{T, <:StridedCuMatrix{T}}, StridedCuMatrix{T}}
+const TransOrAdjOrRegStridedCuMatrix{T} = Union{
+    Transpose{T, <:StridedCuMatrix{T}},
+    Adjoint{T, <:StridedCuMatrix{T}}, StridedCuMatrix{T},
+}
 
 function cublaslt_matmul_fused!(
         @nospecialize(y::TransOrAdjOrRegStridedCuMatrix{<:Real}), σ::F,
         @nospecialize(w::TransOrAdjOrRegStridedCuMatrix{<:Real}),
         @nospecialize(x::TransOrAdjOrRegStridedCuMatrix{<:Real}),
         b::Optional{<:StridedCuVector{<:Real}},
-        aux::Optional{<:StridedCuMatrix{<:Real}}=nothing) where {F}
+        aux::Optional{<:StridedCuMatrix{<:Real}} = nothing
+    ) where {F}
     transy = y isa Transpose || y isa Adjoint
     transx = x isa Transpose || x isa Adjoint
     transw = w isa Transpose || x isa Adjoint
     return cublaslt_matmul_fused!(
-        transy, parent(y), σ, transw, parent(w), transx, parent(x), b, aux)
+        transy, parent(y), σ, transw, parent(w), transx, parent(x), b, aux
+    )
 end
 
-function cublaslt_matmul_fused!(transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
+function cublaslt_matmul_fused!(
+        transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
         transw::Bool, @nospecialize(w::StridedCuMatrix{wT}), transx::Bool,
         @nospecialize(x::StridedCuMatrix{xT}), b::Optional{<:StridedCuVector},
-        aux::Optional{<:StridedCuMatrix}) where {F, yT, wT, xT}
+        aux::Optional{<:StridedCuMatrix}
+    ) where {F, yT, wT, xT}
     bT = b === nothing ? Bool : eltype(b)
     auxT = aux === nothing ? Bool : eltype(aux)
     # cuBLASLt will give wrong results if the types are not correct. As a hack we are going
     # to promote the types to the largest type
     wxT = promote_type(wT, xT, bT, auxT)
     @warn "Mixed Precision Inputs received for `weight`: $(typeof(w)) and `x`: \
-           $(typeof(x)). Promoting to $(wxT)." maxlog=1
-    return cublaslt_matmul_fused!(transy, y, σ, transw, ofeltype_array(wxT, w),
-        transx, ofeltype_array(wxT, x), ofeltype_array(wxT, b), ofeltype_array(wxT, aux))
+           $(typeof(x)). Promoting to $(wxT)." maxlog = 1
+    return cublaslt_matmul_fused!(
+        transy, y, σ, transw, ofeltype_array(wxT, w),
+        transx, ofeltype_array(wxT, x), ofeltype_array(wxT, b), ofeltype_array(wxT, aux)
+    )
 end
 
 # TODO: use https://docs.nvidia.com/cuda/cublas/#cublasltmatmul for a more robust
@@ -34,10 +42,12 @@ end
 #       don't need to worry about it too much and just fall back to the generic
 #       implementation
 # Returns: 0 if successful, -1 if unsuccessful
-function cublaslt_matmul_fused!(transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
+function cublaslt_matmul_fused!(
+        transy::Bool, @nospecialize(y::StridedCuMatrix{yT}), σ::F,
         transw::Bool, @nospecialize(w::StridedCuMatrix{wxT}), transx::Bool,
         @nospecialize(x::StridedCuMatrix{wxT}), b::Optional{<:StridedCuVector},
-        aux::Optional{<:StridedCuMatrix}) where {F, yT, wxT}
+        aux::Optional{<:StridedCuMatrix}
+    ) where {F, yT, wxT}
     m = size(y, 1)
     n = size(y, 2)
     k = size(w, 2)
@@ -68,37 +78,44 @@ function cublaslt_matmul_fused!(transy::Bool, @nospecialize(y::StridedCuMatrix{y
 
     CUBLAS.cublasLtMatmulDescSetAttribute(
         operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_TRANSA,
-        Ref{CUBLAS.cublasOperation_t}(wtransop), sizeof(wtransop))
+        Ref{CUBLAS.cublasOperation_t}(wtransop), sizeof(wtransop)
+    )
     CUBLAS.cublasLtMatmulDescSetAttribute(
         operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_TRANSB,
-        Ref{CUBLAS.cublasOperation_t}(xtransop), sizeof(xtransop))
+        Ref{CUBLAS.cublasOperation_t}(xtransop), sizeof(xtransop)
+    )
     CUBLAS.cublasLtMatmulDescSetAttribute(
         operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_TRANSC,
-        Ref{CUBLAS.cublasOperation_t}(ytransop), sizeof(ytransop))
+        Ref{CUBLAS.cublasOperation_t}(ytransop), sizeof(ytransop)
+    )
 
     # Decide on the epilogue
     epilogue, activation_fused = epilogue_act(σ, b, aux)
     CUBLAS.cublasLtMatmulDescSetAttribute(
         operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE,
-        Ref{CUBLAS.cublasLtEpilogue_t}(epilogue), sizeof(epilogue))
+        Ref{CUBLAS.cublasLtEpilogue_t}(epilogue), sizeof(epilogue)
+    )
 
     # We have a bias so set the bias pointer
     if b !== nothing
         bias_ptr = Ref{CuPtr{Cvoid}}(pointer(b))
         CUBLAS.cublasLtMatmulDescSetAttribute(
             operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_BIAS_POINTER,
-            bias_ptr, sizeof(bias_ptr))
+            bias_ptr, sizeof(bias_ptr)
+        )
     end
 
     if aux !== nothing
         aux_ptr = Ref{CuPtr{Cvoid}}(pointer(aux))
         CUBLAS.cublasLtMatmulDescSetAttribute(
             operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_POINTER,
-            aux_ptr, sizeof(aux_ptr))
+            aux_ptr, sizeof(aux_ptr)
+        )
         ldaux = max(1, stride(aux, 2))
         CUBLAS.cublasLtMatmulDescSetAttribute(
             operationDesc[], CUBLAS.CUBLASLT_MATMUL_DESC_EPILOGUE_AUX_LD,
-            Ref{Csize_t}(ldaux), sizeof(ldaux))
+            Ref{Csize_t}(ldaux), sizeof(ldaux)
+        )
     end
 
     # Create the matrix layouts
@@ -107,11 +124,14 @@ function cublaslt_matmul_fused!(transy::Bool, @nospecialize(y::StridedCuMatrix{y
     ydesc = Ref{CUBLAS.cublasLtMatrixLayout_t}()
 
     CUBLAS.cublasLtMatrixLayoutCreate(
-        wdesc, convert(CUDA.cudaDataType, wxT), m, k, max(1, stride(w, 2)))
+        wdesc, convert(CUDA.cudaDataType, wxT), m, k, max(1, stride(w, 2))
+    )
     CUBLAS.cublasLtMatrixLayoutCreate(
-        xdesc, convert(CUDA.cudaDataType, wxT), k, n, max(1, stride(x, 2)))
+        xdesc, convert(CUDA.cudaDataType, wxT), k, n, max(1, stride(x, 2))
+    )
     CUBLAS.cublasLtMatrixLayoutCreate(
-        ydesc, convert(CUDA.cudaDataType, yT), m, n, max(1, stride(y, 2)))
+        ydesc, convert(CUDA.cudaDataType, yT), m, n, max(1, stride(y, 2))
+    )
 
     # Create the preference. we can customize this but we will stick to the defaults
     preference = Ref{CUBLAS.cublasLtMatmulPreference_t}()
@@ -126,13 +146,15 @@ function cublaslt_matmul_fused!(transy::Bool, @nospecialize(y::StridedCuMatrix{y
     returnedResults = Ref{Cint}(0)
     CUBLAS.cublasLtMatmulAlgoGetHeuristic(
         lthandle[], operationDesc[], wdesc[], xdesc[], ydesc[],
-        ydesc[], preference[], 1, heuristic, returnedResults)
+        ydesc[], preference[], 1, heuristic, returnedResults
+    )
 
     returnedResults[] == 0 && return -1
 
     CUBLAS.cublasLtMatmul(
         lthandle[], operationDesc[], Ref{wxT}(1), w, wdesc[], x, xdesc[], Ref{yT}(0),
-        y, ydesc[], y, ydesc[], Ref(heuristic[].algo), CUDA.CU_NULL, 0, CUDA.stream())
+        y, ydesc[], y, ydesc[], Ref(heuristic[].algo), CUDA.CU_NULL, 0, CUDA.stream()
+    )
 
     !activation_fused && (@. y = σ(y))
 
@@ -141,7 +163,7 @@ end
 
 function epilogue_act(f::F, b, aux) where {F}
     if f === identity
-        @assert aux===nothing "`aux` must be `nothing` for `identity` activation."
+        @assert aux === nothing "`aux` must be `nothing` for `identity` activation."
         b === nothing && return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, true
         return CUBLAS.CUBLASLT_EPILOGUE_BIAS, true
     elseif f === NNlib.relu
@@ -161,7 +183,7 @@ function epilogue_act(f::F, b, aux) where {F}
             return CUBLAS.CUBLASLT_EPILOGUE_GELU_AUX_BIAS, true
         end
     else
-        @assert aux===nothing "`aux` must be `nothing` for `$(f)` activation."
+        @assert aux === nothing "`aux` must be `nothing` for `$(f)` activation."
         b === nothing && return CUBLAS.CUBLASLT_EPILOGUE_DEFAULT, false
         return CUBLAS.CUBLASLT_EPILOGUE_BIAS, false
     end
@@ -170,18 +192,26 @@ end
 len(x) = length(x)
 len(::Nothing) = nothing
 
-function LuxLib.Impl.cublasLt_fused_dense(act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}, ::False) where {F}
-    z = similar(x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
-        size(weight, 1), size(x, 2))
+function LuxLib.Impl.cublasLt_fused_dense(
+        act::F, weight::AbstractMatrix,
+        x::AbstractMatrix, b::Optional{<:AbstractVector}, ::False
+    ) where {F}
+    z = similar(
+        x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
+        size(weight, 1), size(x, 2)
+    )
     LuxLib.cublasLt_fused_dense!(z, act, weight, x, b)
     return z, nothing
 end
 
-function LuxLib.Impl.cublasLt_fused_dense(act::F, weight::AbstractMatrix,
-        x::AbstractMatrix, b::Optional{<:AbstractVector}, ::True) where {F}
-    z = similar(x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
-        size(weight, 1), size(x, 2))
+function LuxLib.Impl.cublasLt_fused_dense(
+        act::F, weight::AbstractMatrix,
+        x::AbstractMatrix, b::Optional{<:AbstractVector}, ::True
+    ) where {F}
+    z = similar(
+        x, LuxLib.concrete_fba_output_eltype(act, weight, x, b),
+        size(weight, 1), size(x, 2)
+    )
     y = similar(z)
     LuxLib.cublasLt_fused_dense!(z, act, weight, x, b, y)
     return z, y
@@ -189,18 +219,22 @@ end
 
 function LuxLib.Impl.cublasLt_fused_dense!(
         z::AbstractMatrix, act::F, weight::AbstractMatrix, x::AbstractMatrix,
-        b::Optional{<:AbstractVector}, y::Optional{<:AbstractMatrix}=nothing) where {F}
-    if hasmethod(cublaslt_matmul_fused!,
-        (typeof(z), typeof(act), typeof(weight), typeof(x), typeof(b), typeof(y)))
+        b::Optional{<:AbstractVector}, y::Optional{<:AbstractMatrix} = nothing
+    ) where {F}
+    if hasmethod(
+            cublaslt_matmul_fused!,
+            (typeof(z), typeof(act), typeof(weight), typeof(x), typeof(b), typeof(y))
+        )
         retcode = cublaslt_matmul_fused!(z, act, weight, x, b, y)
         retcode == 0 && return
         warn_msg = LazyString(
             "cuBLASLt failed for the given inputs ", act, ", ", typeof(weight),
             " [", size(weight), "], ", typeof(x), " [", size(x), "], ",
-            typeof(b), " [", len(b), "]. Falling back to generic implementation.")
-        @warn warn_msg maxlog=1
+            typeof(b), " [", len(b), "]. Falling back to generic implementation."
+        )
+        @warn warn_msg maxlog = 1
     else
-        @warn "cuBLASLt not available. Falling back to generic implementation." maxlog=1
+        @warn "cuBLASLt not available. Falling back to generic implementation." maxlog = 1
     end
     # Generic fallback
     if y === nothing

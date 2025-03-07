@@ -23,7 +23,9 @@ include("traits.jl")
 include("impl/Impl.jl")
 include("api/API.jl")
 
-@compat(public,
-    (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp))
+@compat(
+    public,
+    (internal_operation_mode, GenericBroadcastOp, GPUBroadcastOp, LoopedArrayOp)
+)
 
 end

@@ -17,7 +17,7 @@
 # ## Imports packages
 
 using Lux, Optimization, OptimizationOptimisers, OptimizationOptimJL, OrdinaryDiffEqTsit5,
-      SciMLSensitivity, Random, MLUtils, CairoMakie, ComponentArrays, Printf
+    SciMLSensitivity, Random, MLUtils, CairoMakie, ComponentArrays, Printf
 
 const gdev = gpu_device()
 const cdev = cpu_device()
@@ -37,16 +37,16 @@ u0 = [1.0f0, 1.0f0]
 datasize = 32
 tspan = (0.0f0, 2.0f0)
 
-const t = range(tspan[1], tspan[2]; length=datasize)
+const t = range(tspan[1], tspan[2]; length = datasize)
 true_prob = ODEProblem(lotka_volterra, u0, (tspan[1], tspan[2]), [1.5, 1.0, 3.0, 1.0])
-const ode_data = Array(solve(true_prob, Tsit5(); saveat=t))
+const ode_data = Array(solve(true_prob, Tsit5(); saveat = t))
 
 begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1])
-    lines!(ax, t, ode_data[1, :]; label=L"u_1(t)", color=:blue, linestyle=:dot, linewidth=4)
-    lines!(ax, t, ode_data[2, :]; label=L"u_2(t)", color=:red, linestyle=:dot, linewidth=4)
-    axislegend(ax; position=:lt)
+    lines!(ax, t, ode_data[1, :]; label = L"u_1(t)", color = :blue, linestyle = :dot, linewidth = 4)
+    lines!(ax, t, ode_data[2, :]; label = L"u_2(t)", color = :red, linestyle = :dot, linewidth = 4)
+    axislegend(ax; position = :lt)
     fig
 end
 
@@ -68,7 +68,7 @@ Base.length(t::TimeWrapper) = length(t.t)
 
 Base.getindex(t::TimeWrapper, i) = TimeWrapper(t.t[i])
 
-dataloader = DataLoader((ode_data, TimeWrapper(t)); batchsize=8) |> gdev
+dataloader = DataLoader((ode_data, TimeWrapper(t)); batchsize = 8) |> gdev
 
 # ## Training the model
 
@@ -95,7 +95,7 @@ function train_model(dataloader)
 
     function callback(state, l)
         state.iter % 25 == 1 && @printf "Iteration: %5d, Loss: %.6e\n" state.iter l
-        return l < 1e-8 ## Terminate if loss is small
+        return l < 1.0e-8 ## Terminate if loss is small
     end
 
     smodel = StatefulLuxLayer{true}(model, nothing, st)
@@ -105,7 +105,7 @@ function train_model(dataloader)
         u0 = u_batch[:, 1]
         dudt(u, p, t) = smodel(u, p)
         prob = ODEProblem(dudt, u0, (t_batch[1], t_batch[end]), θ)
-        sol = solve(prob, Tsit5(); sensealg=InterpolatingAdjoint(), saveat=t_batch)
+        sol = solve(prob, Tsit5(); sensealg = InterpolatingAdjoint(), saveat = t_batch)
         pred = stack(sol.u)
         return MSELoss()(pred, u_batch)
     end
@@ -121,13 +121,13 @@ function train_model(dataloader)
 
     ## Let's finetune a bit with L-BFGS
     opt_prob = OptimizationProblem(opt_func, res_adam.u, (gdev(ode_data), TimeWrapper(t)))
-    res_lbfgs = solve(opt_prob, LBFGS(); callback, maxiters=epochs)
+    res_lbfgs = solve(opt_prob, LBFGS(); callback, maxiters = epochs)
 
     ## Now that we have a good fit, let's train it on the entire dataset without
     ## Minibatching. We need to do this since ODE solves can lead to accumulated errors if
     ## the model was trained on individual parts (without a data-shooting approach).
-    opt_prob = remake(opt_prob; u0=res_lbfgs.u)
-    res = solve(opt_prob, Optimisers.Adam(0.005); maxiters=500, callback)
+    opt_prob = remake(opt_prob; u0 = res_lbfgs.u)
+    res = solve(opt_prob, Optimisers.Adam(0.005); maxiters = 500, callback)
 
     return StatefulLuxLayer{true}(model, res.u, smodel.st)
 end
@@ -139,16 +139,16 @@ nothing #hide
 
 dudt(u, p, t) = trained_model(u, p)
 prob = ODEProblem(dudt, gdev(u0), (tspan[1], tspan[2]), trained_model.ps)
-sol = solve(prob, Tsit5(); saveat=t)
+sol = solve(prob, Tsit5(); saveat = t)
 pred = convert(AbstractArray, sol) |> cdev
 
 begin
     fig = Figure()
     ax = CairoMakie.Axis(fig[1, 1])
-    lines!(ax, t, ode_data[1, :]; label=L"u_1(t)", color=:blue, linestyle=:dot, linewidth=4)
-    lines!(ax, t, ode_data[2, :]; label=L"u_2(t)", color=:red, linestyle=:dot, linewidth=4)
-    lines!(ax, t, pred[1, :]; label=L"\hat{u}_1(t)", color=:blue, linewidth=4)
-    lines!(ax, t, pred[2, :]; label=L"\hat{u}_2(t)", color=:red, linewidth=4)
-    axislegend(ax; position=:lt)
+    lines!(ax, t, ode_data[1, :]; label = L"u_1(t)", color = :blue, linestyle = :dot, linewidth = 4)
+    lines!(ax, t, ode_data[2, :]; label = L"u_2(t)", color = :red, linestyle = :dot, linewidth = 4)
+    lines!(ax, t, pred[1, :]; label = L"\hat{u}_1(t)", color = :blue, linewidth = 4)
+    lines!(ax, t, pred[2, :]; label = L"\hat{u}_2(t)", color = :red, linewidth = 4)
+    axislegend(ax; position = :lt)
     fig
 end

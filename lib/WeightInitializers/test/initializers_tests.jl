@@ -1,19 +1,19 @@
 @testitem "Warning: truncated_normal" begin
     @test_warn "Mean is more than 2 std outside the limits in truncated_normal, so \
-        the distribution of values may be inaccurate." truncated_normal(2; mean=-5.0f0)
+        the distribution of values may be inaccurate." truncated_normal(2; mean = -5.0f0)
 end
 
 @testitem "Identity Initialization" begin
     @testset "Non-identity sizes" begin
         @test identity_init(2, 3)[:, end] == zeros(Float32, 2)
-        @test identity_init(3, 2; shift=1)[1, :] == zeros(Float32, 2)
+        @test identity_init(3, 2; shift = 1)[1, :] == zeros(Float32, 2)
         @test identity_init(1, 1, 3, 4)[:, :, :, end] == zeros(Float32, 1, 1, 3)
         @test identity_init(2, 1, 3, 3)[end, :, :, :] == zeros(Float32, 1, 3, 3)
         @test identity_init(1, 2, 3, 3)[:, end, :, :] == zeros(Float32, 1, 3, 3)
     end
 end
 
-@testitem "Orthogonal Initialization" setup=[SharedTestSetup] begin
+@testitem "Orthogonal Initialization" setup = [SharedTestSetup] begin
     using GPUArraysCore, LinearAlgebra
 
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
@@ -27,7 +27,7 @@ end
         for (rows, cols) in [(5, 3), (3, 5)]
             v = orthogonal(rng, rows, cols)
             GPUArraysCore.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
-                                       (@test v' * v ≈ I(cols))
+                (@test v' * v ≈ I(cols))
         end
 
         for mat in [(3, 4, 5), (2, 2, 5)]
@@ -36,14 +36,14 @@ end
             rows = div(prod(mat), cols)
             v = reshape(v, (rows, cols))
             GPUArraysCore.@allowscalar rows < cols ? (@test v * v' ≈ I(rows)) :
-                                       (@test v' * v ≈ I(cols))
+                (@test v' * v ≈ I(cols))
         end
 
         @testset "Orthogonal Types $T" for T in (Float32, Float64)
             !supports_fp64 && T == Float64 && continue
 
-            @test eltype(orthogonal(rng, T, 3, 4; gain=1.5)) == T
-            @test eltype(orthogonal(rng, T, 3, 4, 5; gain=1.5)) == T
+            @test eltype(orthogonal(rng, T, 3, 4; gain = 1.5)) == T
+            @test eltype(orthogonal(rng, T, 3, 4, 5; gain = 1.5)) == T
         end
 
         @testset "Orthogonal AbstractArray Type $T" for T in (Float32, Float64)
@@ -62,7 +62,7 @@ end
         end
 
         @testset "Orthogonal Closure" begin
-            cl = orthogonal(;)
+            cl = orthogonal()
             display(cl)
 
             # Sizes
@@ -78,7 +78,7 @@ end
     end
 end
 
-@testitem "Sparse Initialization" setup=[SharedTestSetup] begin
+@testitem "Sparse Initialization" setup = [SharedTestSetup] begin
     using Statistics
 
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
@@ -90,16 +90,16 @@ end
         # sparse_init should yield a kernel in its non-zero elements consistent with the std
         # parameter
 
-        @test_throws ArgumentError sparse_init(3, 4, 5, sparsity=0.1)
-        @test_throws ArgumentError sparse_init(3, sparsity=0.1)
-        v = sparse_init(100, 100; sparsity=-0.1)
+        @test_throws ArgumentError sparse_init(3, 4, 5, sparsity = 0.1)
+        @test_throws ArgumentError sparse_init(3, sparsity = 0.1)
+        v = sparse_init(100, 100; sparsity = -0.1)
         @test sum(v .== 0) == 0
-        v = sparse_init(100, 100; sparsity=1.1)
+        v = sparse_init(100, 100; sparsity = 1.1)
         @test sum(v .== 0) == length(v)
 
         for (n_in, n_out, sparsity, σ) in [(100, 100, 0.25, 0.1), (100, 400, 0.75, 0.01)]
             expected_zeros = ceil(Integer, n_in * sparsity)
-            v = sparse_init(n_in, n_out; sparsity=sparsity, std=σ)
+            v = sparse_init(n_in, n_out; sparsity = sparsity, std = σ)
             @test all([sum(v[:, col] .== 0) == expected_zeros for col in 1:n_out])
             @test 0.9 * σ < std(v[v .!= 0]) < 1.1 * σ
         end
@@ -107,26 +107,26 @@ end
         @testset "sparse_init Type $T" for T in (Float16, Float32, Float64)
             !supports_fp64 && T == Float64 && continue
 
-            @test eltype(sparse_init(rng, T, 3, 4; sparsity=0.5)) == T
+            @test eltype(sparse_init(rng, T, 3, 4; sparsity = 0.5)) == T
         end
 
         @testset "sparse_init AbstractArray Type $T" for T in (Float16, Float32, Float64)
             !supports_fp64 && T == Float64 && continue
 
-            @test sparse_init(T, 3, 5; sparsity=0.5) isa AbstractArray{T, 2}
-            @test sparse_init(rng, T, 3, 5; sparsity=0.5) isa arrtype{T, 2}
+            @test sparse_init(T, 3, 5; sparsity = 0.5) isa AbstractArray{T, 2}
+            @test sparse_init(rng, T, 3, 5; sparsity = 0.5) isa arrtype{T, 2}
 
-            cl = sparse_init(rng; sparsity=0.5)
+            cl = sparse_init(rng; sparsity = 0.5)
             display(cl)
             @test cl(T, 3, 5) isa arrtype{T, 2}
 
-            cl = sparse_init(rng, T; sparsity=0.5)
+            cl = sparse_init(rng, T; sparsity = 0.5)
             display(cl)
             @test cl(3, 5) isa arrtype{T, 2}
         end
 
         @testset "sparse_init Closure" begin
-            cl = sparse_init(; sparsity=0.5)
+            cl = sparse_init(; sparsity = 0.5)
             display(cl)
 
             # Sizes
@@ -140,18 +140,21 @@ end
     end
 end
 
-@testitem "Basic Initializations" setup=[SharedTestSetup] begin
+@testitem "Basic Initializations" setup = [SharedTestSetup] begin
     using LinearAlgebra, Statistics
 
     @testset "rng = $(typeof(rng)) & arrtype = $arrtype" for (rng, arrtype, supports_fp64, backend) in RNGS_ARRTYPES
         @testset "Sizes and Types: $init" for init in [
-            zeros32, ones32, rand32, randn32, kaiming_uniform, kaiming_normal,
-            glorot_uniform, glorot_normal, truncated_normal, identity_init]
+                zeros32, ones32, rand32, randn32, kaiming_uniform, kaiming_normal,
+                glorot_uniform, glorot_normal, truncated_normal, identity_init,
+            ]
             !supports_fp64 &&
-                (init === zeros32 ||
-                 init === ones32 ||
-                 init === rand32 ||
-                 init === randn32) &&
+                (
+                init === zeros32 ||
+                    init === ones32 ||
+                    init === rand32 ||
+                    init === randn32
+            ) &&
                 continue
 
             if backend == "oneapi" && init === truncated_normal
@@ -179,14 +182,15 @@ end
         end
 
         @testset "Sizes and Types: $init" for (init, fp) in [
-            (zeros16, Float16), (zerosC16, ComplexF16), (zeros32, Float32),
-            (zerosC32, ComplexF32), (zeros64, Float64), (zerosC64, ComplexF64),
-            (ones16, Float16), (onesC16, ComplexF16), (ones32, Float32),
-            (onesC32, ComplexF32), (ones64, Float64), (onesC64, ComplexF64),
-            (rand16, Float16), (randC16, ComplexF16), (rand32, Float32),
-            (randC32, ComplexF32), (rand64, Float64), (randC64, ComplexF64),
-            (randn16, Float16), (randnC16, ComplexF16), (randn32, Float32),
-            (randnC32, ComplexF32), (randn64, Float64), (randnC64, ComplexF64)]
+                (zeros16, Float16), (zerosC16, ComplexF16), (zeros32, Float32),
+                (zerosC32, ComplexF32), (zeros64, Float64), (zerosC64, ComplexF64),
+                (ones16, Float16), (onesC16, ComplexF16), (ones32, Float32),
+                (onesC32, ComplexF32), (ones64, Float64), (onesC64, ComplexF64),
+                (rand16, Float16), (randC16, ComplexF16), (rand32, Float32),
+                (randC32, ComplexF32), (rand64, Float64), (randC64, ComplexF64),
+                (randn16, Float16), (randnC16, ComplexF16), (randn32, Float32),
+                (randnC32, ComplexF32), (randn64, Float64), (randnC64, ComplexF64),
+            ]
             !supports_fp64 && (fp == Float64 || fp == ComplexF64) && continue
 
             # Sizes
@@ -208,7 +212,7 @@ end
             @test cl(3, 5) isa arrtype{fp, 2}
 
             # Kwargs closure
-            cl = init(;)
+            cl = init()
             display(cl)
             @test cl(rng, 3) isa arrtype{fp, 1}
             @test cl(rng, 3, 5) isa arrtype{fp, 2}
@@ -221,9 +225,10 @@ end
         end
 
         @testset "AbstractArray Type: $init $T" for init in [
-                kaiming_uniform, kaiming_normal, glorot_uniform,
-                glorot_normal, truncated_normal, identity_init],
-            T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+                    kaiming_uniform, kaiming_normal, glorot_uniform,
+                    glorot_normal, truncated_normal, identity_init,
+                ],
+                T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
 
             !supports_fp64 && (T == Float64 || T == ComplexF64) && continue
 
@@ -257,14 +262,15 @@ end
         end
 
         @testset "Closure: $init" for init in [
-            kaiming_uniform, kaiming_normal, glorot_uniform,
-            glorot_normal, truncated_normal, identity_init]
+                kaiming_uniform, kaiming_normal, glorot_uniform,
+                glorot_normal, truncated_normal, identity_init,
+            ]
             if backend == "oneapi" && init === truncated_normal
                 @test_broken size(init(rng, 3)) == (3,)  # `erfinv` not implemented
                 continue
             end
 
-            cl = init(;)
+            cl = init()
             display(cl)
 
             # Sizes
@@ -281,19 +287,20 @@ end
         end
 
         @testset "Kwargs types" for T in (
-            Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+                Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64,
+            )
             !supports_fp64 && (T == Float64 || T == ComplexF64) && continue
 
             if (T <: Real)
-                @test eltype(truncated_normal(T, 2, 5; mean=0, std=1, lo=-2, hi=2)) == T
-                @test eltype(orthogonal(T, 2, 5; gain=1.0)) == T
+                @test eltype(truncated_normal(T, 2, 5; mean = 0, std = 1, lo = -2, hi = 2)) == T
+                @test eltype(orthogonal(T, 2, 5; gain = 1.0)) == T
             end
-            @test eltype(glorot_uniform(T, 2, 5; gain=1.0)) == T
-            @test eltype(glorot_normal(T, 2, 5; gain=1.0)) == T
-            @test eltype(kaiming_uniform(T, 2, 5; gain=sqrt(2))) == T
-            @test eltype(kaiming_normal(T, 2, 5; gain=sqrt(2))) == T
-            @test eltype(identity_init(T, 2, 5; gain=1.0)) == T
-            @test eltype(sparse_init(T, 2, 5; sparsity=0.5, std=0.01)) == T
+            @test eltype(glorot_uniform(T, 2, 5; gain = 1.0)) == T
+            @test eltype(glorot_normal(T, 2, 5; gain = 1.0)) == T
+            @test eltype(kaiming_uniform(T, 2, 5; gain = sqrt(2))) == T
+            @test eltype(kaiming_normal(T, 2, 5; gain = sqrt(2))) == T
+            @test eltype(identity_init(T, 2, 5; gain = 1.0)) == T
+            @test eltype(sparse_init(T, 2, 5; sparsity = 0.5, std = 0.01)) == T
         end
 
         @testset "kaiming" begin
@@ -315,8 +322,8 @@ end
                 end
             end
             # Type
-            @test eltype(kaiming_uniform(rng, 3, 4; gain=1.5f0)) == Float32
-            @test eltype(kaiming_normal(rng, 3, 4; gain=1.5f0)) == Float32
+            @test eltype(kaiming_uniform(rng, 3, 4; gain = 1.5f0)) == Float32
+            @test eltype(kaiming_normal(rng, 3, 4; gain = 1.5f0)) == Float32
         end
 
         @testset "glorot: $init" for init in [glorot_uniform, glorot_normal]
@@ -328,7 +335,7 @@ end
                 σ2 = 2 / (fan_in + fan_out)
                 @test 0.9σ2 < var(v) < 1.1σ2
             end
-            @test eltype(init(3, 4; gain=1.5)) == Float32
+            @test eltype(init(3, 4; gain = 1.5)) == Float32
         end
 
         @testset "orthogonal" begin
@@ -344,7 +351,7 @@ end
                 v = reshape(v, (rows, cols))
                 rows < cols ? (@test v * v' ≈ I(rows)) : (@test v' * v ≈ I(cols))
             end
-            @test eltype(orthogonal(3, 4; gain=1.5)) == Float32
+            @test eltype(orthogonal(3, 4; gain = 1.5)) == Float32
         end
     end
 end

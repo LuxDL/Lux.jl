@@ -33,8 +33,10 @@ function do_softfail_test(result, orig_expr)
         end
     else
         @assert isa(result, Threw)
-        testres = Error(:test_throws, orig_expr, result.exception,
-            result.backtrace::Vector{Any}, result.source)
+        testres = Error(
+            :test_throws, orig_expr, result.exception,
+            result.backtrace::Vector{Any}, result.source
+        )
     end
-    Test.record(get_testset(), testres)
+    return Test.record(get_testset(), testres)
 end

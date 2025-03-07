@@ -18,7 +18,8 @@ function Adapt.adapt_structure(dev::AbstractDevice, dataloader::DataLoader)
         data = dataloader.shuffle ? MLUtils.shuffleobs(data) : data
         data = if dataloader.batchsize > 0
             MLUtils.BatchView(
-                data; dataloader.batchsize, dataloader.partial, dataloader.collate)
+                data; dataloader.batchsize, dataloader.partial, dataloader.collate
+            )
         else
             data
         end

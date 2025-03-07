@@ -1,5 +1,5 @@
 using ConcreteStructs, DataAugmentation, ImageShow, Lux, MLDatasets, MLUtils, OneHotArrays,
-      Printf, ProgressTables, Random, BFloat16s
+    Printf, ProgressTables, Random, BFloat16s
 using Reactant, LuxCUDA
 
 @concrete struct TensorDataset
@@ -10,7 +10,7 @@ end
 Base.length(ds::TensorDataset) = length(ds.dataset)
 
 function Base.getindex(ds::TensorDataset, idxs::Union{Vector{<:Integer}, AbstractRange})
-    img = Image.(eachslice(convert2image(ds.dataset, idxs); dims=3))
+    img = Image.(eachslice(convert2image(ds.dataset, idxs); dims = 3))
     y = onehotbatch(ds.dataset.targets[idxs], 0:9)
     return stack(parent ∘ itemdata ∘ Base.Fix1(apply, ds.transform), img), y
 end
@@ -20,18 +20,18 @@ function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
     cifar10_std = (0.2471, 0.2435, 0.2616) .|> T
 
     train_transform = RandomResizeCrop((32, 32)) |>
-                      Maybe(FlipX{2}()) |>
-                      ImageToTensor() |>
-                      Normalize(cifar10_mean, cifar10_std) |>
-                      ToEltype(T)
+        Maybe(FlipX{2}()) |>
+        ImageToTensor() |>
+        Normalize(cifar10_mean, cifar10_std) |>
+        ToEltype(T)
 
     test_transform = ImageToTensor() |> Normalize(cifar10_mean, cifar10_std) |> ToEltype(T)
 
-    trainset = TensorDataset(CIFAR10(; Tx=T, split=:train), train_transform)
-    trainloader = DataLoader(trainset; batchsize, shuffle=true, kwargs...)
+    trainset = TensorDataset(CIFAR10(; Tx = T, split = :train), train_transform)
+    trainloader = DataLoader(trainset; batchsize, shuffle = true, kwargs...)
 
-    testset = TensorDataset(CIFAR10(; Tx=T, split=:test), test_transform)
-    testloader = DataLoader(testset; batchsize, shuffle=false, kwargs...)
+    testset = TensorDataset(CIFAR10(; Tx = T, split = :test), test_transform)
+    testloader = DataLoader(testset; batchsize, shuffle = false, kwargs...)
 
     return trainloader, testloader
 end
@@ -52,9 +52,9 @@ function get_accelerator_device(backend::String)
     if backend == "gpu_if_available"
         return gpu_device()
     elseif backend == "gpu"
-        return gpu_device(; force=true)
+        return gpu_device(; force = true)
     elseif backend == "reactant"
-        return reactant_device(; force=true)
+        return reactant_device(; force = true)
     elseif backend == "cpu"
         return cpu_device()
     else
@@ -64,10 +64,10 @@ function get_accelerator_device(backend::String)
 end
 
 function train_model(
-        model, opt, scheduler=nothing;
-        backend::String, batchsize::Int=512, seed::Int=1234, epochs::Int=25,
-        bfloat16::Bool=false
-)
+        model, opt, scheduler = nothing;
+        backend::String, batchsize::Int = 512, seed::Int = 1234, epochs::Int = 25,
+        bfloat16::Bool = false
+    )
     rng = Random.default_rng()
     Random.seed!(rng, seed)
 
@@ -77,9 +77,9 @@ function train_model(
     @printf "[Info] Using %s precision\n" prec_str
 
     accelerator_device = get_accelerator_device(backend)
-    kwargs = accelerator_device isa ReactantDevice ? (; partial=false) : ()
+    kwargs = accelerator_device isa ReactantDevice ? (; partial = false) : ()
     trainloader, testloader = get_cifar10_dataloaders(prec_jl, batchsize; kwargs...) |>
-                              accelerator_device
+        accelerator_device
 
     ps, st = Lux.setup(rng, model) |> prec |> accelerator_device
 
@@ -97,17 +97,17 @@ function train_model(
         model_compiled = model
     end
 
-    loss_fn = CrossEntropyLoss(; logits=Val(true))
+    loss_fn = CrossEntropyLoss(; logits = Val(true))
 
     pt = ProgressTable(;
-        header=[
-            "Epoch", "Learning Rate", "Train Accuracy (%)", "Test Accuracy (%)", "Time (s)"
+        header = [
+            "Epoch", "Learning Rate", "Train Accuracy (%)", "Test Accuracy (%)", "Time (s)",
         ],
-        widths=[24, 24, 24, 24, 24],
-        format=["%3d", "%.6f", "%.6f", "%.6f", "%.6f"],
-        color=[:normal, :normal, :blue, :blue, :normal],
-        border=true,
-        alignment=[:center, :center, :center, :center, :center]
+        widths = [24, 24, 24, 24, 24],
+        format = ["%3d", "%.6f", "%.6f", "%.6f", "%.6f"],
+        color = [:normal, :normal, :blue, :blue, :normal],
+        border = true,
+        alignment = [:center, :center, :center, :center, :center]
     )
 
     @printf "[Info] Training model\n"
@@ -142,5 +142,5 @@ function train_model(
     end
 
     finalize(pt)
-    @printf "[Info] Finished training\n"
+    return @printf "[Info] Finished training\n"
 end

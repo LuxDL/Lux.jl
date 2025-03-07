@@ -243,6 +243,12 @@ Also consider starring [our github repo](https://github.com/LuxDL/Lux.jl/).
 This section is somewhat incomplete. You can contribute by contributing to finishing this
 section 😜.
 
+### 💎 Formatting (Runic)
+
+For instructions on how to use Runic, see
+[Runic's documentation](https://github.com/fredrikekre/Runic.jl). We recommend using
+pre-commit by invoking `pre-commit install` in the root of the repository.
+
 ### 🧪 Testing
 
 The full test of `Lux.jl` takes a long time, here's how to test a portion of the code.

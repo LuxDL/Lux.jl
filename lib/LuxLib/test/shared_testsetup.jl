@@ -48,19 +48,19 @@ end
 cpu_testing() = BACKEND_GROUP == "all" || BACKEND_GROUP == "cpu"
 function cuda_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "cuda") &&
-           MLDataDevices.functional(CUDADevice)
+        MLDataDevices.functional(CUDADevice)
 end
 function amdgpu_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "amdgpu") &&
-           MLDataDevices.functional(AMDGPUDevice)
+        MLDataDevices.functional(AMDGPUDevice)
 end
 function oneapi_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "oneapi") &&
-           MLDataDevices.functional(oneAPIDevice)
+        MLDataDevices.functional(oneAPIDevice)
 end
 function metal_testing()
     return (BACKEND_GROUP == "all" || BACKEND_GROUP == "metal") &&
-           MLDataDevices.functional(MetalDevice)
+        MLDataDevices.functional(MetalDevice)
 end
 
 const MODES = begin

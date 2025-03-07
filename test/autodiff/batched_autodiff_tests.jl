@@ -1,13 +1,16 @@
-@testitem "Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
+@testitem "Batched Jacobian" setup = [SharedTestSetup] tags = [:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
-            Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
-                Conv((3, 3), 4 => 2, gelu; pad=SamePad()), FlattenLayer(), Dense(18 => 2)),
-            Chain(Dense(2, 4, gelu), Dense(4, 2)))
+            Chain(
+                Conv((3, 3), 2 => 4, gelu; pad = SamePad()),
+                Conv((3, 3), 4 => 2, gelu; pad = SamePad()), FlattenLayer(), Dense(18 => 2)
+            ),
+            Chain(Dense(2, 4, gelu), Dense(4, 2)),
+        )
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs)
@@ -22,10 +25,12 @@
                 J2 = allow_unstable() do
                     batched_jacobian(smodel, backend, X)
                 end
-                J2_mat = mapreduce(Base.Fix1(Lux.AutoDiffInternalImpl.batched_row, J2),
-                    hcat, 1:(size(J2, 1) * size(J2, 3)))'
+                J2_mat = mapreduce(
+                    Base.Fix1(Lux.AutoDiffInternalImpl.batched_row, J2),
+                    hcat, 1:(size(J2, 1) * size(J2, 3))
+                )'
 
-                @test J1≈J2_mat atol=1.0e-3 rtol=1.0e-3
+                @test J1 ≈ J2_mat atol = 1.0e-3 rtol = 1.0e-3
 
                 ps = ps |> cpu_device() |> ComponentArray |> dev
 
@@ -35,13 +40,13 @@
                     batched_jacobian(smodel, backend, X)
                 end
 
-                @test J2≈J3 atol=1.0e-3 rtol=1.0e-3
+                @test J2 ≈ J3 atol = 1.0e-3 rtol = 1.0e-3
             end
         end
 
         @testset "Issue #636 Chunksize Specialization" begin
             for N in (2, 4, 8, 11, 12, 50, 51), backend in (AutoZygote(), AutoForwardDiff())
-                model = @compact(; potential=Dense(N => N, gelu), backend=backend) do x
+                model = @compact(; potential = Dense(N => N, gelu), backend = backend) do x
                     @return allow_unstable() do
                         batched_jacobian(potential, backend, x)
                     end
@@ -87,16 +92,19 @@
     end
 end
 
-@testitem "Nested AD: Batched Jacobian" setup=[SharedTestSetup] tags=[:autodiff] begin
+@testitem "Nested AD: Batched Jacobian" setup = [SharedTestSetup] tags = [:autodiff] begin
     using ComponentArrays, ForwardDiff, Zygote
 
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         models = (
-            Chain(Conv((3, 3), 2 => 4, gelu; pad=SamePad()),
-                Conv((3, 3), 4 => 2, gelu; pad=SamePad()), FlattenLayer(), Dense(18 => 2)),
-            Chain(Dense(2, 4, gelu), Dense(4, 2)))
+            Chain(
+                Conv((3, 3), 2 => 4, gelu; pad = SamePad()),
+                Conv((3, 3), 4 => 2, gelu; pad = SamePad()), FlattenLayer(), Dense(18 => 2)
+            ),
+            Chain(Dense(2, 4, gelu), Dense(4, 2)),
+        )
         Xs = (aType(randn(rng, Float32, 3, 3, 2, 4)), aType(randn(rng, Float32, 2, 4)))
 
         for (model, X) in zip(models, Xs), backend in (AutoZygote(), AutoForwardDiff())
@@ -131,8 +139,8 @@ end
                 Zygote.gradient(loss_function_simple, model, X, ps, st)
             end
 
-            @test ∂x_batched≈∂x_simple atol=1.0e-3 rtol=1.0e-3
-            @test check_approx(∂ps_batched, ∂ps_simple; atol=1.0e-3, rtol=1.0e-3)
+            @test ∂x_batched ≈ ∂x_simple atol = 1.0e-3 rtol = 1.0e-3
+            @test check_approx(∂ps_batched, ∂ps_simple; atol = 1.0e-3, rtol = 1.0e-3)
 
             ps = ps |> cpu_device() |> ComponentArray |> dev
 
@@ -140,13 +148,13 @@ end
                 Zygote.gradient(loss_function_batched, model, X, ps, st)
             end
 
-            @test ∂x_batched2≈∂x_batched atol=1.0e-3 rtol=1.0e-3
-            @test check_approx(∂ps_batched2, ∂ps_batched; atol=1.0e-3, rtol=1.0e-3)
+            @test ∂x_batched2 ≈ ∂x_batched atol = 1.0e-3 rtol = 1.0e-3
+            @test check_approx(∂ps_batched2, ∂ps_batched; atol = 1.0e-3, rtol = 1.0e-3)
         end
     end
 end
 
-@testitem "Nested AD: Batched Jacobian Single Input" setup=[SharedTestSetup] tags=[:autodiff] begin
+@testitem "Nested AD: Batched Jacobian Single Input" setup = [SharedTestSetup] tags = [:autodiff] begin
     using Zygote, Tracker, ReverseDiff
 
     rng = StableRNG(12345)
@@ -177,10 +185,10 @@ end
 
         ∂x_gt = true_gradient(x)
 
-        @test ∂x1_zyg≈∂x_gt atol=1.0e-3 rtol=1.0e-3
-        @test ∂x1_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
-        @test ∂x2_zyg≈∂x_gt atol=1.0e-3 rtol=1.0e-3
-        @test ∂x2_tr≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x1_zyg ≈ ∂x_gt atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x1_tr ≈ ∂x_gt atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x2_zyg ≈ ∂x_gt atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x2_tr ≈ ∂x_gt atol = 1.0e-3 rtol = 1.0e-3
 
         ongpu && continue
 
@@ -191,7 +199,7 @@ end
             ReverseDiff.gradient(sumabs2_fd, x)
         end
 
-        @test ∂x1_rdiff≈∂x_gt atol=1.0e-3 rtol=1.0e-3
-        @test ∂x2_rdiff≈∂x_gt atol=1.0e-3 rtol=1.0e-3
+        @test ∂x1_rdiff ≈ ∂x_gt atol = 1.0e-3 rtol = 1.0e-3
+        @test ∂x2_rdiff ≈ ∂x_gt atol = 1.0e-3 rtol = 1.0e-3
     end
 end

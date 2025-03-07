@@ -48,9 +48,11 @@ mutable struct StatefulLuxLayer{ST, M <: AbstractLuxLayer, psType, stType}
     fixed_state_type::ST
 
     function StatefulLuxLayer(
-            model::AbstractLuxLayer, ps, st, st_any, fixed_state_type::StaticBool)
+            model::AbstractLuxLayer, ps, st, st_any, fixed_state_type::StaticBool
+        )
         return new{typeof(fixed_state_type), typeof(model), typeof(ps), typeof(st)}(
-            model, ps, st, st_any, fixed_state_type)
+            model, ps, st, st_any, fixed_state_type
+        )
     end
 end
 
@@ -68,7 +70,8 @@ end
 for op in (:trainmode, :testmode)
     @eval function LuxCore.$(op)(s::StatefulLuxLayer)
         return StatefulLuxLayer{dynamic(s.fixed_state_type)}(
-            s.model, s.ps, LuxCore.$(op)(get_state(s)))
+            s.model, s.ps, LuxCore.$(op)(get_state(s))
+        )
     end
 end
 
@@ -78,8 +81,9 @@ function LuxCore.update_state(s::StatefulLuxLayer, key::Symbol, value; kwargs...
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::StatefulLuxLayer)
-    PrettyPrinting.print_wrapper_model(
-        io, "StatefulLuxLayer{$(dynamic(s.fixed_state_type))}", s.model)
+    return PrettyPrinting.print_wrapper_model(
+        io, "StatefulLuxLayer{$(dynamic(s.fixed_state_type))}", s.model
+    )
 end
 
 function Functors.functor(::Type{<:StatefulLuxLayer}, x)
@@ -102,11 +106,13 @@ get_state(s::StatefulLuxLayer{False}) = s.st_any
 CRC.@non_differentiable get_state(::StatefulLuxLayer)
 
 function set_state!(
-        s::StatefulLuxLayer{True, <:Any, <:Any, stType}, st::stType) where {stType}
-    s.st = st
+        s::StatefulLuxLayer{True, <:Any, <:Any, stType}, st::stType
+    ) where {stType}
+    return s.st = st
 end
 function set_state!(
-        ::StatefulLuxLayer{True, <:Any, <:Any, stType}, ::stType2) where {stType, stType2}
+        ::StatefulLuxLayer{True, <:Any, <:Any, stType}, ::stType2
+    ) where {stType, stType2}
     throw(ArgumentError("Output state from the model has type `$(stType2)`, but expected \
                          `$(stType)`. Construct the Stateful layer as \
                          `StatefulLuxLayer{false}` instead of `StatefulLuxLayer{true}`."))
@@ -115,14 +121,16 @@ set_state!(s::StatefulLuxLayer{False}, st) = (s.st_any = st)
 
 CRC.@non_differentiable set_state!(::Any...)
 
-function (s::StatefulLuxLayer)(x, p=s.ps)
+function (s::StatefulLuxLayer)(x, p = s.ps)
     y, st = apply(s.model, x, p, get_state(s))
     set_state!(s, st)
     return y
 end
 
-function CRC.rrule(::Type{<:StatefulLuxLayer}, model::AbstractLuxLayer,
-        ps, st, st_any, fixed_state_type)
+function CRC.rrule(
+        ::Type{<:StatefulLuxLayer}, model::AbstractLuxLayer,
+        ps, st, st_any, fixed_state_type
+    )
     slayer = StatefulLuxLayer(model, ps, st, st_any, fixed_state_type)
     function ∇StatefulLuxLayer(Δ)
         return NoTangent(), NoTangent(), Δ.ps, NoTangent(), NoTangent(), NoTangent()
@@ -133,7 +141,7 @@ end
 function CRC.rrule(::typeof(getproperty), s::StatefulLuxLayer, name::Symbol)
     y = getproperty(s, name)
     ∇getproperty = @closure Δ -> begin
-        name === :ps && return NoTangent(), CRC.Tangent{typeof(s)}(; ps=Δ), NoTangent()
+        name === :ps && return NoTangent(), CRC.Tangent{typeof(s)}(; ps = Δ), NoTangent()
         return NoTangent(), NoTangent(), NoTangent()
     end
     return y, ∇getproperty

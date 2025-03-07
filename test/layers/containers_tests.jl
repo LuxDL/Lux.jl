@@ -1,5 +1,4 @@
-
-@testitem "SkipConnection" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "SkipConnection" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -11,7 +10,7 @@
 
             @test layer(x, ps, st)[1] == x
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "concat size" begin
@@ -23,37 +22,40 @@
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @jet layer(x, ps, st)
             # Method ambiguity for concatenation
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
-                rtol=1.0f-3, broken_backends=[AutoReverseDiff()])
+            @test_gradients(
+                sumabs2first, layer, x, ps, st; atol = 1.0f-3,
+                rtol = 1.0f-3, broken_backends = [AutoReverseDiff()]
+            )
         end
     end
 end
 
-@testitem "Parallel" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "Parallel" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
         @testset "zero sum" begin
             layer = Parallel(
-                +, WrappedFunction(Broadcast.BroadcastFunction(zero)), NoOpLayer())
+                +, WrappedFunction(Broadcast.BroadcastFunction(zero)), NoOpLayer()
+            )
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, 10, 10, 10, 10) |> aType
 
             @test layer(x, ps, st)[1] == x
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "concat size" begin
-            layer = Parallel((a, b) -> cat(a, b; dims=2), Dense(10, 10), NoOpLayer())
+            layer = Parallel((a, b) -> cat(a, b; dims = 2), Dense(10, 10), NoOpLayer())
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = randn(rng, Float32, 10, 2) |> aType
 
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
             layer = Parallel(hcat, Dense(10, 10), NoOpLayer())
             display(layer)
@@ -62,9 +64,11 @@ end
             @test size(layer(x, ps, st)[1]) == (10, 4)
             @jet layer(x, ps, st)
             # Method ambiguity for concatenation
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3,
-                rtol=1.0f-3,
-                broken_backends=[AutoReverseDiff()])
+            @test_gradients(
+                sumabs2first, layer, x, ps, st; atol = 1.0f-3,
+                rtol = 1.0f-3,
+                broken_backends = [AutoReverseDiff()]
+            )
         end
 
         @testset "vararg input" begin
@@ -75,25 +79,26 @@ end
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "named layers" begin
-            layer = Parallel(+; d102=Dense(10, 2), d52=Dense(5, 2), d42=Dense(4, 2))
+            layer = Parallel(+; d102 = Dense(10, 2), d52 = Dense(5, 2), d42 = Dense(4, 2))
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
             x = (randn(rng, 10, 1), randn(rng, 5, 1), randn(rng, 4, 1)) .|> aType
 
             @test size(layer(x, ps, st)[1]) == (2, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "connection is called once" begin
             CNT = Ref(0)
             f_cnt = (x...) -> (CNT[] += 1; +(x...))
             layer = Parallel(
-                f_cnt, WrappedFunction(sin), WrappedFunction(cos), WrappedFunction(tan))
+                f_cnt, WrappedFunction(sin), WrappedFunction(cos), WrappedFunction(tan)
+            )
             ps, st = Lux.setup(rng, layer) |> dev
             Lux.apply(layer, 1, ps, st)
             @test CNT[] == 1
@@ -113,7 +118,7 @@ end
 
             struct L1 <: Lux.AbstractLuxLayer end
             (::L1)(x, ps, st) = (ps.x * x, st)
-            Lux.initialparameters(rng::AbstractRNG, ::L1) = (x=randn(rng, Float32, 3, 3),)
+            Lux.initialparameters(rng::AbstractRNG, ::L1) = (x = randn(rng, Float32, 3, 3),)
             Base.:*(a::AbstractArray, b::Input) = a * b.x
 
             par = Parallel(+, L1(), L1())
@@ -122,19 +127,25 @@ end
             ip = Input(rand(Float32, 3, 3) |> aType)
             ip2 = Input(rand(Float32, 3, 3) |> aType)
 
-            @test check_approx(par(ip, ps, st)[1],
+            @test check_approx(
+                par(ip, ps, st)[1],
                 par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
-                par.layers[2](ip.x, ps.layer_2, st.layer_2)[1])
-            @test check_approx(par((ip, ip2), ps, st)[1],
+                    par.layers[2](ip.x, ps.layer_2, st.layer_2)[1]
+            )
+            @test check_approx(
+                par((ip, ip2), ps, st)[1],
                 par.layers[1](ip.x, ps.layer_1, st.layer_1)[1] +
-                par.layers[2](ip2.x, ps.layer_2, st.layer_2)[1])
+                    par.layers[2](ip2.x, ps.layer_2, st.layer_2)[1]
+            )
             gs = allow_unstable() do
                 Zygote.gradient((p, x...) -> sum(par(x, p, st)[1]), ps, ip, ip2)
             end
             gs_reg = allow_unstable() do
                 Zygote.gradient(ps, ip, ip2) do p, x, y
-                    return sum(par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
-                               par.layers[2](y.x, p.layer_2, st.layer_2)[1])
+                    return sum(
+                        par.layers[1](x.x, p.layer_1, st.layer_1)[1] +
+                            par.layers[2](y.x, p.layer_2, st.layer_2)[1]
+                    )
                 end
             end
 
@@ -145,7 +156,7 @@ end
     end
 end
 
-@testitem "PairwiseFusion" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "PairwiseFusion" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -157,16 +168,16 @@ end
 
         @test size(y) == (10, 10)
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
-        layer = PairwiseFusion(+; d1=Dense(1, 30), d2=Dense(30, 10))
+        layer = PairwiseFusion(+; d1 = Dense(1, 30), d2 = Dense(30, 10))
         display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         y, _ = layer(x, ps, st)
 
         @test size(y) == (10, 10)
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
         x = rand(1, 10)
         layer = PairwiseFusion(.+, Dense(1, 10), Dense(10, 1))
@@ -176,23 +187,27 @@ end
 
         @test size(y) == (1, 10)
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
-        layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
-            WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
+        layer = PairwiseFusion(
+            vcat, WrappedFunction(x -> x .+ 1),
+            WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3)
+        )
         display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         @test layer((2, 10, 20, 40), ps, st)[1] == [125, 1728, 8000, 40]
 
-        layer = PairwiseFusion(vcat, WrappedFunction(x -> x .+ 1),
-            WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3))
+        layer = PairwiseFusion(
+            vcat, WrappedFunction(x -> x .+ 1),
+            WrappedFunction(x -> x .+ 2), WrappedFunction(x -> x .^ 3)
+        )
         display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         @test layer(7, ps, st)[1] == [1000, 729, 343, 7]
     end
 end
 
-@testitem "BranchLayer" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "BranchLayer" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -207,9 +222,9 @@ end
         @test y2 == layer.layers.layer_2(x, ps.layer_2, st.layer_2)[1]
 
         @jet layer(x, ps, st)
-        @test_gradients(sumsumfirst, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumsumfirst, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
-        layer = BranchLayer(; d1=Dense(10, 10), d2=Dense(10, 10))
+        layer = BranchLayer(; d1 = Dense(10, 10), d2 = Dense(10, 10))
         display(layer)
         ps, st = Lux.setup(rng, layer)
         x = rand(Float32, 10, 1)
@@ -220,11 +235,11 @@ end
         @test y2 == layer.layers.d2(x, ps.d2, st.d2)[1]
 
         @jet layer(x, ps, st)
-        @test_gradients(sumsumfirst, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumsumfirst, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
     end
 end
 
-@testitem "Chain" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "Chain" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -237,10 +252,11 @@ end
         @test Lux.outputsize(layer, x, rng) == (1,)
 
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
         layer = Chain(;
-            l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
+            l1 = Dense(10 => 5, sigmoid), d52 = Dense(5 => 2, tanh), d21 = Dense(2 => 1)
+        )
         display(layer)
         ps, st = Lux.setup(rng, layer) |> dev
         x = rand(Float32, 10, 1) |> aType
@@ -248,10 +264,11 @@ end
         @test size(y) == (1, 1)
 
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
         layer = Chain(;
-            l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
+            l1 = Dense(10 => 5, sigmoid), d52 = Dense(5 => 2, tanh), d21 = Dense(2 => 1)
+        )
         display(layer)
         layer = layer[1:2]
         ps, st = Lux.setup(rng, layer) |> dev
@@ -261,10 +278,11 @@ end
         @test Lux.outputsize(layer, x, rng) == (2,)
 
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
         layer = Chain(;
-            l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
+            l1 = Dense(10 => 5, sigmoid), d52 = Dense(5 => 2, tanh), d21 = Dense(2 => 1)
+        )
         display(layer)
         layer = layer[begin:(end - 1)]
         ps, st = Lux.setup(rng, layer) |> dev
@@ -274,10 +292,11 @@ end
         @test Lux.outputsize(layer, x, rng) == (2,)
 
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
         layer = Chain(;
-            l1=Dense(10 => 5, sigmoid), d52=Dense(5 => 2, tanh), d21=Dense(2 => 1))
+            l1 = Dense(10 => 5, sigmoid), d52 = Dense(5 => 2, tanh), d21 = Dense(2 => 1)
+        )
         display(layer)
         layer = layer[1]
         ps, st = Lux.setup(rng, layer) |> dev
@@ -287,7 +306,7 @@ end
         @test Lux.outputsize(layer, x, rng) == (5,)
 
         @jet layer(x, ps, st)
-        @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+        @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
 
         @testset "indexing and field access" begin
             encoder = Chain(Dense(10 => 5, sigmoid), Dense(5 => 2, tanh))
@@ -317,12 +336,12 @@ end
         @test size(y) == (2, 5)
 
         @test y ≈
-              ps.layer_2.weight * (ps.layer_1.weight * x .+ ps.layer_1.bias) .+
-              ps.layer_2.bias .+ 1 .+ 2
+            ps.layer_2.weight * (ps.layer_1.weight * x .+ ps.layer_1.bias) .+
+            ps.layer_2.bias .+ 1 .+ 2
     end
 end
 
-@testitem "Maxout" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "Maxout" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -334,14 +353,16 @@ end
 
             @test layer(x, ps, st)[1] == x
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "simple alternatives" begin
             layer1 = Maxout(
-                NoOpLayer(), WrappedFunction(x -> 2x), WrappedFunction(x -> 0.5x))
+                NoOpLayer(), WrappedFunction(x -> 2x), WrappedFunction(x -> 0.5x)
+            )
             layer2 = Maxout(;
-                l1=NoOpLayer(), l2=WrappedFunction(x -> 2x), l3=WrappedFunction(x -> 0.5x))
+                l1 = NoOpLayer(), l2 = WrappedFunction(x -> 2x), l3 = WrappedFunction(x -> 0.5x)
+            )
 
             for layer in (layer1, layer2)
                 display(layer)
@@ -350,7 +371,7 @@ end
 
                 @test layer(x, ps, st)[1] == 2 .* x
                 @jet layer(x, ps, st)
-                @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+                @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
             end
         end
 
@@ -365,7 +386,7 @@ end
 
             @test layer(x, ps, st)[1] == y
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
 
         @testset "params" begin
@@ -375,25 +396,28 @@ end
             x = [10.0f0 3.0f0]' |> aType
 
             @test Lux.parameterlength(layer) ==
-                  sum(Lux.parameterlength.(values(layer.layers)))
+                sum(Lux.parameterlength.(values(layer.layers)))
             @test size(layer(x, ps, st)[1]) == (4, 1)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
     end
 end
 
-@testitem "Repeated" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "Repeated" setup = [SharedTestSetup] tags = [:core_layers] begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
-        LAYERS = [Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)),
-            Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2))]
+        LAYERS = [
+            Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)),
+            Dense(2 => 2), Parallel(+, Dense(2 => 2), Dense(2 => 2)),
+        ]
         REPEATS = [Val(4), Val(4), Val(4), Val(4)]
         INJECTION = [Val(false), Val(true), Val(false), Val(true)]
 
         @testset "repeats = $(repeats); input_injection = $(input_injection)" for (layer, repeats, input_injection) in zip(
-            LAYERS, REPEATS, INJECTION)
+                LAYERS, REPEATS, INJECTION
+            )
             layer = RepeatedLayer(layer; repeats, input_injection)
             display(layer)
             ps, st = Lux.setup(rng, layer) |> dev
@@ -401,12 +425,12 @@ end
 
             @test size(layer(x, ps, st)[1]) == (2, 12)
             @jet layer(x, ps, st)
-            @test_gradients(sumabs2first, layer, x, ps, st; atol=1.0f-3, rtol=1.0f-3)
+            @test_gradients(sumabs2first, layer, x, ps, st; atol = 1.0f-3, rtol = 1.0f-3)
         end
     end
 end
 
-@testitem "Coupling Type Instability: #416" setup=[SharedTestSetup] tags=[:core_layers] begin
+@testitem "Coupling Type Instability: #416" setup = [SharedTestSetup] tags = [:core_layers] begin
     using ComponentArrays, Random
 
     rng = Random.default_rng()
@@ -433,6 +457,6 @@ end
         @test @inferred(froggie(x, ps_nt, st)) isa Any
 
         ps_ca = ps |> ComponentArray |> dev
-        @test @inferred(froggie(x, ps_ca, st)) isa Any broken=ongpu
+        @test @inferred(froggie(x, ps_ca, st)) isa Any broken = ongpu
     end
 end

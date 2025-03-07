@@ -58,10 +58,10 @@ function plot_data()
     y2 = last.(xt0s)
 
     fig = Figure()
-    ax = CairoMakie.Axis(fig[1, 1]; xlabel="x", ylabel="y")
+    ax = CairoMakie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
 
-    scatter!(ax, x1, y1; markersize=16, color=:red, strokecolor=:black, strokewidth=2)
-    scatter!(ax, x2, y2; markersize=16, color=:blue, strokecolor=:black, strokewidth=2)
+    scatter!(ax, x1, y1; markersize = 16, color = :red, strokecolor = :black, strokewidth = 2)
+    scatter!(ax, x2, y2; markersize = 16, color = :blue, strokecolor = :black, strokewidth = 2)
 
     return fig
 end
@@ -133,7 +133,7 @@ end
 
 ## Perform inference.
 N = 5000
-ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4; adtype=AutoTracker()), N)
+ch = sample(bayes_nn(reduce(hcat, xs), ts), HMC(0.05, 4; adtype = AutoTracker()), N)
 
 # Now we extract the parameter samples from the sampled chain as θ (this is of size
 # `5000 x 20` where `5000` is the number of iterations and `20` is the number of
@@ -157,10 +157,10 @@ _, i = findmax(ch[:lp])
 i = i.I[1]
 
 ## Plot the posterior distribution with a contour plot
-x1_range = collect(range(-6; stop=6, length=25))
-x2_range = collect(range(-6; stop=6, length=25))
+x1_range = collect(range(-6; stop = 6, length = 25))
+x2_range = collect(range(-6; stop = 6, length = 25))
 Z = [nn_forward([x1, x2], θ[i, :])[1] for x1 in x1_range, x2 in x2_range]
-contour!(x1_range, x2_range, Z; linewidth=3, colormap=:seaborn_bright)
+contour!(x1_range, x2_range, Z; linewidth = 3, colormap = :seaborn_bright)
 fig
 
 # The contour plot above shows that the MAP method is not too bad at classifying our data.
@@ -184,10 +184,10 @@ nn_predict(x, θ, num) = mean([first(nn_forward(x, view(θ, i, :))) for i in 1:1
 fig = plot_data()
 
 n_end = 1500
-x1_range = collect(range(-6; stop=6, length=25))
-x2_range = collect(range(-6; stop=6, length=25))
+x1_range = collect(range(-6; stop = 6, length = 25))
+x2_range = collect(range(-6; stop = 6, length = 25))
 Z = [nn_predict([x1, x2], θ, n_end)[1] for x1 in x1_range, x2 in x2_range]
-contour!(x1_range, x2_range, Z; linewidth=3, colormap=:seaborn_bright)
+contour!(x1_range, x2_range, Z; linewidth = 3, colormap = :seaborn_bright)
 fig
 
 # Suppose we are interested in how the predictive power of our Bayesian neural network
@@ -196,7 +196,7 @@ fig
 
 fig = plot_data()
 Z = [first(nn_forward([x1, x2], θ[1, :])) for x1 in x1_range, x2 in x2_range]
-c = contour!(x1_range, x2_range, Z; linewidth=3, colormap=:seaborn_bright)
+c = contour!(x1_range, x2_range, Z; linewidth = 3, colormap = :seaborn_bright)
 record(fig, "results.gif", 1:250:size(θ, 1)) do i
     fig.current_axis[].title = "Iteration: $i"
     Z = [first(nn_forward([x1, x2], θ[i, :])) for x1 in x1_range, x2 in x2_range]

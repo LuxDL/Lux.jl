@@ -26,8 +26,8 @@ end
 function test_enzyme_gradients(model, x, ps, st)
     dx, dps = compute_enzyme_gradient(model, x, ps, st)
     dx_zygote, dps_zygote = compute_zygote_gradient(model, x, ps, st)
-    @test check_approx(dx, dx_zygote; atol=1.0f-3, rtol=1.0f-3)
-    @test check_approx(dps, dps_zygote; atol=1.0f-3, rtol=1.0f-3)
+    @test check_approx(dx, dx_zygote; atol = 1.0f-3, rtol = 1.0f-3)
+    @test check_approx(dps, dps_zygote; atol = 1.0f-3, rtol = 1.0f-3)
 end
 
 #! format: off
@@ -79,11 +79,12 @@ end
 #! format: on
 
 export generic_loss_function, compute_enzyme_gradient, compute_zygote_gradient,
-       test_enzyme_gradients, MODELS_LIST
+    test_enzyme_gradients, MODELS_LIST
 end
 
-@testitem "Enzyme Integration" setup=[EnzymeTestSetup, SharedTestSetup] tags=[
-    :autodiff, :enzyme] timeout=3600 begin
+@testitem "Enzyme Integration" setup = [EnzymeTestSetup, SharedTestSetup] tags = [
+    :autodiff, :enzyme,
+] timeout = 3600 begin
     rng = StableRNG(12345)
 
     @testset "$mode" for (mode, aType, dev, ongpu) in MODES
@@ -104,8 +105,9 @@ end
     end
 end
 
-@testitem "Enzyme Integration ComponentArray" setup=[EnzymeTestSetup, SharedTestSetup] timeout=3600 tags=[
-    :autodiff, :enzyme] begin
+@testitem "Enzyme Integration ComponentArray" setup = [EnzymeTestSetup, SharedTestSetup] timeout = 3600 tags = [
+    :autodiff, :enzyme,
+] begin
     using ComponentArrays
 
     rng = StableRNG(12345)

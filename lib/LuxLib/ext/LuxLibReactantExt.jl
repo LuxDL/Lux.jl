@@ -1,7 +1,7 @@
 module LuxLibReactantExt
 
 using Reactant: Reactant, MLIR, Ops, TracedUtils, TracedRArray, AnyTracedRArray,
-                AnyTracedRVector, TracedRNumber
+    AnyTracedRVector, TracedRNumber
 using Static: False
 
 using LuxLib: LuxLib, Impl, Optional, Utils
@@ -14,7 +14,7 @@ function Impl.batchnorm(
         γ::Optional{<:AnyTracedRVector}, β::Optional{<:AnyTracedRVector},
         rμ::Optional{<:AnyTracedRVector}, rσ²::Optional{<:AnyTracedRVector},
         ::False, act::F, momentum, ϵ
-) where {T, F}
+    ) where {T, F}
     x = TracedUtils.materialize_traced_array(x)
 
     γ = if γ === nothing
@@ -30,7 +30,7 @@ function Impl.batchnorm(
 
     if rμ === nothing && rσ² === nothing
         μ, σ² = Impl.mean_var(
-            x; dims=Utils.unsafe_known(Impl.batchnorm_reduce_dims(x)), corrected=false
+            x; dims = Utils.unsafe_known(Impl.batchnorm_reduce_dims(x)), corrected = false
         )
         μ = TracedUtils.materialize_traced_array(vec(μ))
         σ² = TracedUtils.materialize_traced_array(vec(σ²))
@@ -47,8 +47,8 @@ function Impl.batchnorm(
             TracedUtils.get_mlir_data(β),
             TracedUtils.get_mlir_data(μ),
             TracedUtils.get_mlir_data(σ²);
-            epsilon=Float32(ϵ),
-            feature_index=Int64(ndims(x) - 2)
+            epsilon = Float32(ϵ),
+            feature_index = Int64(ndims(x) - 2)
         ),
         1
     )

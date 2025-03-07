@@ -29,15 +29,21 @@ Dropout: Simple Way to prevent Neural Networks for Overfitting. For details see 
 [1] Srivastava, Nitish, et al. "Dropout: a simple way to prevent neural networks from
 overfitting." The journal of machine learning research 15.1 (2014): 1929-1958.
 """
-function dropout(rng::AbstractRNG, x::AbstractArray, p::T, training::TrainingType, invp::T,
-        dims) where {T}
+function dropout(
+        rng::AbstractRNG, x::AbstractArray, p::T, training::TrainingType, invp::T,
+        dims
+    ) where {T}
     return dropout_impl(rng, x, p, static_training_mode(training, x), invp, dims)
 end
 
-function dropout(rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
-        p::T, training::TrainingType, update_mask::TrainingType, invp::T, dims) where {T}
-    return dropout_impl(rng, x, mask, p, static_training_mode(training, x),
-        static(update_mask), invp, dims)
+function dropout(
+        rng::AbstractRNG, x::AbstractArray, mask::AbstractArray,
+        p::T, training::TrainingType, update_mask::TrainingType, invp::T, dims
+    ) where {T}
+    return dropout_impl(
+        rng, x, mask, p, static_training_mode(training, x),
+        static(update_mask), invp, dims
+    )
 end
 
 """
@@ -75,6 +81,7 @@ function alpha_dropout(rng::AbstractRNG, x::AbstractArray, p, training::Training
 end
 
 function alpha_dropout(
-        rng::AbstractRNG, x::AbstractArray, p, training::TrainingType, α, A, B)
+        rng::AbstractRNG, x::AbstractArray, p, training::TrainingType, α, A, B
+    )
     return alpha_dropout_impl(rng, x, p, static_training_mode(training, x), α, A, B)
 end
