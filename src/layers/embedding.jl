@@ -38,12 +38,12 @@ This layer is often used to store word embeddings and retrieve them using indice
     init_weight
 end
 
-function Embedding((in_dims, out_dims)::Pair; init_weight=rand32)
+function Embedding((in_dims, out_dims)::Pair; init_weight = rand32)
     return Embedding(in_dims, out_dims, init_weight)
 end
 
 function initialparameters(rng::AbstractRNG, e::Embedding)
-    return (weight=e.init_weight(rng, e.out_dims, e.in_dims...),)
+    return (weight = e.init_weight(rng, e.out_dims, e.in_dims...),)
 end
 
 function Base.show(io::IO, e::Embedding)
@@ -129,16 +129,18 @@ Systems (2017).
 end
 
 function SinusoidalPositionalEmbedding(
-        dims::IntegerType; min_freq=0.0001f0, max_freq=1.0f0,
-        scale=nothing, full_turns::Bool=false)
+        dims::IntegerType; min_freq = 0.0001f0, max_freq = 1.0f0,
+        scale = nothing, full_turns::Bool = false
+    )
     T = promote_type(typeof(min_freq), typeof(max_freq))
     scale = scale === nothing ? T(√(2 / dims)) : T(scale)
     return SinusoidalPositionalEmbedding(
-        T(log(min_freq)), T(log(max_freq)), dims, scale, full_turns)
+        T(log(min_freq)), T(log(max_freq)), dims, scale, full_turns
+    )
 end
 
 function initialstates(::AbstractRNG, spe::SinusoidalPositionalEmbedding{T}) where {T}
-    one_zero = range(T(1), T(0); length=spe.dims ÷ 2)
+    one_zero = range(T(1), T(0); length = spe.dims ÷ 2)
     sigmas = exp.(one_zero .* (spe.log_max_freq - spe.log_min_freq) .+ spe.log_min_freq)
     spe.full_turns && (@. sigmas *= 2π)
     return (; sigmas)
@@ -199,31 +201,35 @@ dimensions for efficiency.
 end
 
 function RotaryPositionalEmbedding(
-        dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000)
+        dim::IntegerType; max_sequence_length::IntegerType = 4096, base::IntegerType = 10000
+    )
     return RotaryPositionalEmbedding(dim, max_sequence_length, base)
 end
 
 function initialstates(::AbstractRNG, rope::RotaryPositionalEmbedding)
     theta = 1.0f0 ./
-            Float32.(rope.base .^
-                     (range(0, rope.dim - 1; step=2)[1:(rope.dim ÷ 2)] ./ rope.dim))
+        Float32.(
+        rope.base .^
+            (range(0, rope.dim - 1; step = 2)[1:(rope.dim ÷ 2)] ./ rope.dim)
+    )
 
     seq_idx = collect(Float32, 0:(rope.max_sequence_length - 1))
     idx_theta = reshape(theta, :, 1) .* reshape(seq_idx, 1, :)
-    return (; cos_cache=cos.(idx_theta), sin_cache=sin.(idx_theta))
+    return (; cos_cache = cos.(idx_theta), sin_cache = sin.(idx_theta))
 end
 
 function (rope::RotaryPositionalEmbedding)(
-        x::AbstractArray{T, 4}, ps, st::NamedTuple) where {T}
+        x::AbstractArray{T, 4}, ps, st::NamedTuple
+    ) where {T}
     return rope((x, nothing), ps, st)
 end
 
 function (rope::RotaryPositionalEmbedding)((x, input_pos)::Tuple, ps, st::NamedTuple)
-    @argcheck ndims(x)==4 "Input must be a 4D tensor"
-    @argcheck size(x, 3)≤rope.max_sequence_length "Sequence length must be less than \
-                                                  $(rope.max_sequence_length)"
-    @argcheck size(x, 1)==rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
-                                    $(size(x, 1))"
+    @argcheck ndims(x) == 4 "Input must be a 4D tensor"
+    @argcheck size(x, 3) ≤ rope.max_sequence_length "Sequence length must be less than \
+                                                     $(rope.max_sequence_length)"
+    @argcheck size(x, 1) == rope.dim "Input Dimension Mismatch: Expected $(rope.dim), got \
+                                      $(size(x, 1))"
 
     h_d, n_h, seq_len, b = size(x)
     y = match_eltype(rope, ps, st, x)

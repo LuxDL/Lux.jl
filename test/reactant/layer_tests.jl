@@ -1,5 +1,6 @@
-@testitem "Recurrent Layers" tags=[:reactant] setup=[
-    SharedTestSetup, SharedReactantLayersTestSetup] skip=:(Sys.iswindows()) begin
+@testitem "Recurrent Layers" tags = [:reactant] setup = [
+    SharedTestSetup, SharedReactantLayersTestSetup,
+] skip = :(Sys.iswindows()) begin
     using Reactant, Lux
     using LuxTestUtils: check_approx
 
