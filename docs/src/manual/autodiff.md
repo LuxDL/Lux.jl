@@ -33,7 +33,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
 
 ## [Recommendations](@id autodiff-recommendations)
 
-  * For CPU Usacases:
+  * For CPU Use cases:
 
     1. Use `Reactant.jl` + `Enzyme.jl` for the best performance as well as mutation-support.
        When available, this is the most reliable and fastest option.
@@ -43,7 +43,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
     4. If `Enzyme.jl` fails for some reason, (open an issue and) try
        `ReverseDiff.jl` ([possibly with compiled mode](https://juliadiff.org/ReverseDiff.jl/dev/api/#ReverseDiff.compile)).
 
-  * For GPU Usacases:
+  * For GPU Use cases:
 
     1. Use `Reactant.jl` + `Enzyme.jl` for the best performance. This is the most reliable and fastest option, but presently
        only supports NVIDIA GPU's. AMD GPUs are currently not supported.
@@ -51,7 +51,7 @@ Lux. Additionally, we provide some convenience functions for working with AD.
        non-`Reactant.jl` option for GPU for the time-being. We are working on supporting `Enzyme.jl` without
        `Reactant.jl` for GPU as well.
 
-  * For TPU Usacases:
+  * For TPU Use cases:
     1. Use `Reactant.jl`. This is the only supported (and fastest) option.
 
 ## Support Class
