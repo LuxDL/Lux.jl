@@ -1,4 +1,4 @@
-# # [Training Lux Models using Optimization.jl](@id Optimization-Lux-Tutorial)
+# # [Fitting with Optimization.jl](@id Optimization-Lux-Tutorial)
 
 # Lux's native [Training.TrainState](@ref) is a great API for gradient-based learning of
 # neural networks, however, it is geared towards using `Optimisers.jl` as the backend.
