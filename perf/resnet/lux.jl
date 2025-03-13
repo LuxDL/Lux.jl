@@ -1,35 +1,67 @@
 using Comonicon, BenchmarkTools
-using Lux, LuxCUDA, Random
+using Lux, LuxCUDA, Random, Zygote
 
 include("resnet.jl")
 
+function toy_loss_function(model, ps, st, x, y)
+    return first(MSELoss()(model, ps, st, (x, y)))
+end
+
 Comonicon.@main function main(;
-        batch_size::Vector{Int} = [1, 4, 32, 128], model_size::Int = 50
+        batch_size::Vector{Int} = [1, 4, 32, 128],
+        model_size::Vector{Int} = [18, 34, 50],
     )
     dev = gpu_device(; force = true)
 
-    model = ResNet(model_size)
-    ps, st = Lux.setup(Random.default_rng(), model) |> dev
+    timings = Dict{Int, Dict{Int, Dict{String, Float64}}}()
 
-    println("Param count: $(Lux.parameterlength(ps))")
-    println("State count: $(Lux.statelength(st))")
+    for m in model_size
+        println("model_size=$m")
+        model = ResNet(m)
+        ps, st = Lux.setup(Random.default_rng(), model) |> dev
 
-    timings = Dict{Int, Float64}()
+        println("Param count: $(Lux.parameterlength(ps))")
+        println("State count: $(Lux.statelength(st))")
 
-    for b in batch_size
-        println("batch_size=$b")
+        timings[m] = Dict{Int, Dict{String, Float64}}()
 
-        x = rand(Float32, 224, 224, 3, b) |> dev
+        for b in batch_size
+            x = rand(Float32, 224, 224, 3, b) |> dev
 
-        timings[b] = @belapsed begin
-            y, _ = $(model)($(x), $(ps), $(Lux.testmode(st)))
-            CUDA.synchronize()
+            fwd_time = @belapsed begin
+                y, _ = $(model)($(x), $(ps), $(Lux.testmode(st)))
+                CUDA.synchronize()
+            end setup = begin
+                GC.gc(true)
+                CUDA.reclaim()
+            end
+
+            y = rand(Float32, 1000, b) |> dev
+
+            fn = (ps, x) -> toy_loss_function(model, ps, st, x, y)
+
+            if b == 1
+                bwd_time = 0.0 # batchnorm cannot support batch size 1
+            else
+                bwd_time = @belapsed begin
+                    Zygote.gradient($(fn), $(ps), $(x))
+                    CUDA.synchronize()
+                end setup = begin
+                    GC.gc(true)
+                    CUDA.reclaim()
+                end
+            end
+
+            timings[m][b] = Dict{String, Float64}(
+                "fwd" => fwd_time,
+                "bwd" => bwd_time,
+            )
         end
 
-        println("Best timing: $(timings[b]) s")
+        println(timings[m])
     end
 
-    println(timings)
+    display(timings)
 end
 
 main()
