@@ -134,47 +134,78 @@ ResNet200 = partial(ResNet, stage_sizes=[3, 24, 36, 3], block_cls=BottleneckResN
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch-size", type=list, default=[1, 4, 32, 128])
-    parser.add_argument("--model-size", type=int, default=50)
+    parser.add_argument("--model-size", type=list, default=[18, 34, 50])
     args = parser.parse_args()
-
-    if args.model_size == 18:
-        model = ResNet18
-    elif args.model_size == 34:
-        model = ResNet34
-    elif args.model_size == 50:
-        model = ResNet50
-    elif args.model_size == 101:
-        model = ResNet101
-    elif args.model_size == 152:
-        model = ResNet152
-    elif args.model_size == 200:
-        model = ResNet200
-
-    model = model(num_classes=1000)
 
     timings = dict()
 
-    for b in args.batch_size:
-        print(f"batch_size={b}")
+    for model_size in args.model_size:
+        if model_size == 18:
+            model = ResNet18
+        elif model_size == 34:
+            model = ResNet34
+        elif model_size == 50:
+            model = ResNet50
+        elif model_size == 101:
+            model = ResNet101
+        elif model_size == 152:
+            model = ResNet152
+        elif model_size == 200:
+            model = ResNet200
 
-        x = jnp.ones((b, 224, 224, 3), jnp.float32)
-        params = model.init(random.PRNGKey(0), x, train=False)
-        param_count = sum(x.size for x in jax.tree.leaves(params))
+        model = model(num_classes=1000)
 
-        print(f"Param count: {param_count}")
+        timings[model_size] = dict()
 
-        apply_fn_compiled = (
-            jax.jit(partial(model.apply, train=False)).lower(params, x).compile()
-        )
+        for b in args.batch_size:
+            print(f"batch_size={b}")
 
-        best_timing = np.inf
-        for i in range(100):
-            t1 = time.time()
-            apply_fn_compiled(params, x).block_until_ready()
-            t2 = time.time()
-            best_timing = min(best_timing, t2 - t1)
+            x = jnp.ones((b, 224, 224, 3), jnp.float32)
+            y_true = jnp.ones((b, 1000), jnp.float32)  # Dummy true labels
+            params = model.init(random.PRNGKey(0), x, train=False)
+            param_count = sum(x.size for x in jax.tree.leaves(params))
 
-        timings[b] = best_timing
-        print(f"Best timing: {best_timing:.5f} s")
+            print(f"Param count: {param_count}")
+
+            apply_fn_compiled = (
+                jax.jit(partial(model.apply, train=False)).lower(params, x).compile()
+            )
+            grad_fn_compiled = (
+                jax.jit(
+                    jax.grad(
+                        lambda p, x, y: jnp.mean(
+                            # XXX: train=True???
+                            (model.apply(p, x, train=False) - y)
+                            ** 2
+                        )
+                    )
+                )
+                .lower(params, x, y_true)
+                .compile()
+            )
+
+            best_forward_timing = np.inf
+            for i in range(100):
+                t1 = time.time()
+                apply_fn_compiled(params, x).block_until_ready()
+                t2 = time.time()
+                best_forward_timing = min(best_forward_timing, t2 - t1)
+
+            # Backward pass timing
+            best_backward_timing = np.inf
+            for i in range(100):
+                t1 = time.time()
+                jax.tree_util.tree_map(
+                    lambda x: x.block_until_ready(), grad_fn_compiled(params, x, y_true)
+                )
+                t2 = time.time()
+                best_backward_timing = min(best_backward_timing, t2 - t1)
+
+            timings[model_size][b] = {
+                "forward": best_forward_timing,
+                "backward": best_backward_timing,
+            }
+            print(f"Best forward timing: {best_forward_timing:.5f} s")
+            print(f"Best backward timing: {best_backward_timing:.5f} s")
 
     print(timings)
