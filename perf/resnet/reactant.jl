@@ -6,10 +6,10 @@ Reactant.set_default_backend("gpu")
 include("resnet.jl")
 
 Comonicon.@main function main(;
-        optimize::String="all", batch_size::Vector{Int}=[1, 4, 32, 128],
-        model_size::Int=50
-)
-    dev = reactant_device(; force=true)
+        optimize::String = "all", batch_size::Vector{Int} = [1, 4, 32, 128],
+        model_size::Int = 50
+    )
+    dev = reactant_device(; force = true)
 
     model = ResNet(model_size)
     ps, st = Lux.setup(Random.default_rng(), model) |> dev
@@ -25,7 +25,7 @@ Comonicon.@main function main(;
         x = rand(Float32, 224, 224, 3, b) |> dev
 
         model_compiled = Reactant.compile(
-            model, (x, ps, Lux.testmode(st)); sync=true, optimize=Symbol(optimize)
+            model, (x, ps, Lux.testmode(st)); sync = true, optimize = Symbol(optimize)
         )
 
         timings[b] = @belapsed $(model_compiled)($(x), $(ps), $(Lux.testmode(st)))

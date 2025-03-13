@@ -1,20 +1,20 @@
 using Lux, Random
 
-conv_layer(args...; kwargs...) = Conv(args...; use_bias=false, kwargs...)
-norm_layer(args...; kwargs...) = BatchNorm(args...; epsilon=1e-5, momentum=0.1, kwargs...)
+conv_layer(args...; kwargs...) = Conv(args...; use_bias = false, kwargs...)
+norm_layer(args...; kwargs...) = BatchNorm(args...; epsilon = 1.0e-5, momentum = 0.1, kwargs...)
 
 addact(act) = (x, y) -> act.(x .+ y)
 addact(act, x, y) = @. act(x + y)
 
 function ResNetBlock(;
-        in_chs::Int, out_chs::Int, conv_layer=conv_layer, norm_layer=norm_layer, act,
-        stride::Tuple{Int, Int}=(1, 1)
-)
+        in_chs::Int, out_chs::Int, conv_layer = conv_layer, norm_layer = norm_layer, act,
+        stride::Tuple{Int, Int} = (1, 1)
+    )
     main_block = Chain(
-        conv_layer((3, 3), in_chs => out_chs; stride, pad=1),
+        conv_layer((3, 3), in_chs => out_chs; stride, pad = 1),
         norm_layer(out_chs, act),
-        conv_layer((3, 3), out_chs => out_chs; pad=1),
-        norm_layer(out_chs, act; init_scale=zeros32)
+        conv_layer((3, 3), out_chs => out_chs; pad = 1),
+        norm_layer(out_chs, act; init_scale = zeros32)
     )
     residual_block = if out_chs != in_chs || !all(==(1), stride)
         Chain(
@@ -28,16 +28,16 @@ function ResNetBlock(;
 end
 
 function BottleneckResNetBlock(;
-        in_chs::Int, out_chs::Int, conv_layer=conv_layer, norm_layer=norm_layer, act,
-        stride::Tuple{Int, Int}=(1, 1)
-)
+        in_chs::Int, out_chs::Int, conv_layer = conv_layer, norm_layer = norm_layer, act,
+        stride::Tuple{Int, Int} = (1, 1)
+    )
     main_block = Chain(
         conv_layer((1, 1), in_chs => out_chs),
         norm_layer(out_chs, act),
-        conv_layer((3, 3), out_chs => out_chs; stride, pad=1),
+        conv_layer((3, 3), out_chs => out_chs; stride, pad = 1),
         norm_layer(out_chs, act),
         conv_layer((1, 1), out_chs => out_chs * 4),
-        norm_layer(out_chs * 4; init_scale=zeros32)
+        norm_layer(out_chs * 4; init_scale = zeros32)
     )
     residual_block = if in_chs != out_chs * 4 || !all(==(1), stride)
         Chain(
@@ -52,12 +52,12 @@ end
 
 function ResNet(;
         stage_sizes::Vector{Int}, num_classes::Int,
-        num_filters::Int=64, block, in_chs::Int, act=relu
-)
+        num_filters::Int = 64, block, in_chs::Int, act = relu
+    )
     initial_block = Chain(
-        conv_layer((7, 7), in_chs => num_filters; stride=(2, 2), pad=(3, 3)),
+        conv_layer((7, 7), in_chs => num_filters; stride = (2, 2), pad = (3, 3)),
         norm_layer(num_filters, relu),
-        MaxPool((3, 3); stride=(2, 2), pad=SamePad())
+        MaxPool((3, 3); stride = (2, 2), pad = SamePad())
     )
 
     blocks = []
@@ -94,19 +94,19 @@ function ResNet(;
 end
 
 function ResNet(sz::Int)
-    kwargs = (; num_classes=1000, num_filters=64, act=relu, in_chs=3)
+    kwargs = (; num_classes = 1000, num_filters = 64, act = relu, in_chs = 3)
     if sz == 18
-        return ResNet(; stage_sizes=[2, 2, 2, 2], block=ResNetBlock, kwargs...)
+        return ResNet(; stage_sizes = [2, 2, 2, 2], block = ResNetBlock, kwargs...)
     elseif sz == 34
-        return ResNet(; stage_sizes=[3, 4, 6, 3], block=ResNetBlock, kwargs...)
+        return ResNet(; stage_sizes = [3, 4, 6, 3], block = ResNetBlock, kwargs...)
     elseif sz == 50
-        return ResNet(; stage_sizes=[3, 4, 6, 3], block=BottleneckResNetBlock, kwargs...)
+        return ResNet(; stage_sizes = [3, 4, 6, 3], block = BottleneckResNetBlock, kwargs...)
     elseif sz == 101
-        return ResNet(; stage_sizes=[3, 4, 23, 3], block=BottleneckResNetBlock, kwargs...)
+        return ResNet(; stage_sizes = [3, 4, 23, 3], block = BottleneckResNetBlock, kwargs...)
     elseif sz == 152
-        return ResNet(; stage_sizes=[3, 8, 36, 3], block=BottleneckResNetBlock, kwargs...)
+        return ResNet(; stage_sizes = [3, 8, 36, 3], block = BottleneckResNetBlock, kwargs...)
     elseif sz == 200
-        return ResNet(; stage_sizes=[3, 24, 36, 3], block=BottleneckResNetBlock, kwargs...)
+        return ResNet(; stage_sizes = [3, 24, 36, 3], block = BottleneckResNetBlock, kwargs...)
     else
         error("Invalid model size: $(sz)")
     end
