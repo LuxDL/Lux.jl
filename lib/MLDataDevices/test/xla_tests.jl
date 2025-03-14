@@ -119,7 +119,9 @@ using FillArrays, Zygote  # Extensions
     @testset "Issue #1129: no new object" begin
         x = rand(Float32, 10, 10) |> device
         y = x |> device
-        @test x === y
+        # This is hard to guarantee since we rely on Reactant to do the transfer for
+        # sharding
+        @test_broken x === y
     end
 end
 
