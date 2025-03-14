@@ -1,5 +1,4 @@
 using BenchmarkTools: BenchmarkTools, BenchmarkGroup, @btime, @benchmarkable
-using CpuId: CpuId
 using InteractiveUtils: versioninfo
 using LinearAlgebra: BLAS
 using Statistics: median
@@ -15,13 +14,15 @@ const BENCHMARK_GROUP = get(ENV, "BENCHMARK_GROUP", "CPU")
 
 BenchmarkTools.DEFAULT_PARAMETERS.seconds = 20
 
+const CPU_MODEL = lowercase(string(first(Sys.cpu_info()).model))
+
 if BENCHMARK_GROUP == "CPU"
     if Sys.isapple() && (Sys.ARCH == :aarch64 || Sys.ARCH == :arm64)
         @info "Running benchmarks on Apple with ARM CPUs. Using `AppleAccelerate.jl`."
         using AppleAccelerate: AppleAccelerate
     end
 
-    if Sys.ARCH == :x86_64 && occursin("intel", lowercase(CpuId.cpubrand()))
+    if Sys.ARCH == :x86_64 && contains(CPU_MODEL, "intel")
         @info "Running benchmarks on Intel CPUs. Loading `MKL.jl`."
         using MKL: MKL
     end

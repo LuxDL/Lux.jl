@@ -90,43 +90,22 @@ end
 
 module System
 
+    using CPUSummary: CPUSummary
     using ChainRulesCore: ChainRulesCore
     using EnzymeCore: EnzymeCore
-    using Hwloc: Hwloc
     using Static: static, False, True
 
     using ..LuxLib: DISABLE_LOOP_VECTORIZATION
-    using ..Utils: is_extension_loaded, safe_minimum, within_enzyme_autodiff
+    using ..Utils: is_extension_loaded, within_enzyme_autodiff
 
     const CRC = ChainRulesCore
 
+    const CPU_MODEL = lowercase(string(first(Sys.cpu_info()).model))
+
     # Technically Octavian works fine on non-server AMD CPUs, but for safety we disable it
     # on non Intel CPUs.
-    const INTEL_HARDWARE = @static if Sys.ARCH === :x86_64 || Sys.ARCH === :i686
-        try
-            using CpuId: CpuId
-            static(lowercase(string(CpuId.cpuvendor())) == "intel")
-        catch
-            @warn "Could not detect cpu vendor via CpuId.jl, assuming not Intel. Open an \
-               issue in `LuxLib.jl` if this is unexpected."
-            False()
-        end
-    else
-        False()
-    end
-
-    const AMD_RYZEN_HARDWARE = @static if Sys.ARCH === :x86_64 || Sys.ARCH === :i686
-        try
-            using CpuId: CpuId
-            static(occursin("ryzen", lowercase(string(CpuId.cpubrand()))))
-        catch
-            @warn "Could not detect cpu brand via CpuId.jl, assuming not Ryzen. Open an issue \
-               in `LuxLib.jl` if this is unexpected."
-            False()
-        end
-    else
-        False()
-    end
+    const INTEL_HARDWARE = static(contains(CPU_MODEL, "intel"))
+    const AMD_RYZEN_HARDWARE = static(contains(CPU_MODEL, "ryzen"))
 
     function is_x86_64()
         @static if Sys.ARCH === :x86_64
@@ -158,9 +137,9 @@ module System
 
     CRC.@non_differentiable use_octavian()
 
-    const L1CacheSize::Int = safe_minimum(Hwloc.l1cache_sizes(), 0)
-    const L2CacheSize::Int = safe_minimum(Hwloc.l2cache_sizes(), 0)
-    const L3CacheSize::Int = safe_minimum(Hwloc.l3cache_sizes(), 0)
+    const L1CacheSize::Int = Int(CPUSummary.cache_size(Val(1)))
+    const L2CacheSize::Int = Int(CPUSummary.cache_size(Val(2)))
+    const L3CacheSize::Int = Int(CPUSummary.cache_size(Val(3)))
 
     # NOTE: some systems might not have L3 cache, so we check whether it fits in L(N - 1) cache
     fits_in_l1cache(xs::AbstractArray...) = sum(sizeof, xs) ≤ L1CacheSize

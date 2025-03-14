@@ -1,5 +1,5 @@
 using Pkg, ReTestItems, WeightInitializers
-using InteractiveUtils, Hwloc
+using InteractiveUtils, CPUSummary
 
 @info sprint(versioninfo)
 
@@ -24,13 +24,13 @@ if !isempty(EXTRA_PKGS)
 end
 
 const RETESTITEMS_NWORKERS = parse(
-    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Hwloc.num_physical_cores(), 4)))
+    Int, get(ENV, "RETESTITEMS_NWORKERS", string(min(Int(CPUSummary.num_cores()), 4)))
 )
 const RETESTITEMS_NWORKER_THREADS = parse(
     Int,
     get(
         ENV, "RETESTITEMS_NWORKER_THREADS",
-        string(max(Hwloc.num_virtual_cores() ÷ RETESTITEMS_NWORKERS, 1))
+        string(max(Int(CPUSummary.sys_threads()) ÷ RETESTITEMS_NWORKERS, 1))
     )
 )
 
