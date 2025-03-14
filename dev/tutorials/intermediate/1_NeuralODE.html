@@ -9,11 +9,11 @@
     <link rel="preload stylesheet" href="/dev/assets/style.DNA6T3je.css" as="style">
     <link rel="preload stylesheet" href="/dev/vp-icons.css" as="style">
     
-    <script type="module" src="/dev/assets/app.Br9qhIrw.js"></script>
+    <script type="module" src="/dev/assets/app.DcKVwnHN.js"></script>
     <link rel="preload" href="/dev/assets/inter-roman-latin.Di8DUHzh.woff2" as="font" type="font/woff2" crossorigin="">
-    <link rel="modulepreload" href="/dev/assets/chunks/theme.D33L4t-K.js">
+    <link rel="modulepreload" href="/dev/assets/chunks/theme.n4cLP3NJ.js">
     <link rel="modulepreload" href="/dev/assets/chunks/framework.BCN3FD2k.js">
-    <link rel="modulepreload" href="/dev/assets/tutorials_intermediate_1_NeuralODE.md.Bp9yuKjh.lean.js">
+    <link rel="modulepreload" href="/dev/assets/tutorials_intermediate_1_NeuralODE.md.BEw0l09Z.lean.js">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Q8GYTEVTZ2"></script>
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-Q8GYTEVTZ2");</script>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -33,193 +33,184 @@
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MLDatasets</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MNIST</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">using</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> MLUtils</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">:</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> DataLoader, splitobs</span></span>
 <span class="line"></span>
-<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">CUDA</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">allowscalar</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">false</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>Precompiling SciMLSensitivity...</span></span>
-<span class="line"><span>    618.8 ms  ✓ MuladdMacro</span></span>
-<span class="line"><span>    527.2 ms  ✓ PositiveFactorizations</span></span>
-<span class="line"><span>    325.6 ms  ✓ CommonSolve</span></span>
-<span class="line"><span>    975.0 ms  ✓ Cassette</span></span>
-<span class="line"><span>    404.2 ms  ✓ PoissonRandom</span></span>
-<span class="line"><span>    349.8 ms  ✓ FastPower</span></span>
-<span class="line"><span>    401.7 ms  ✓ RuntimeGeneratedFunctions</span></span>
-<span class="line"><span>    443.1 ms  ✓ Parameters</span></span>
-<span class="line"><span>    395.3 ms  ✓ FunctionWrappersWrappers</span></span>
-<span class="line"><span>   1988.2 ms  ✓ ExproniconLite</span></span>
-<span class="line"><span>    890.3 ms  ✓ DifferentiationInterface</span></span>
-<span class="line"><span>    885.3 ms  ✓ PDMats</span></span>
-<span class="line"><span>    401.7 ms  ✓ SciMLStructures</span></span>
-<span class="line"><span>    503.5 ms  ✓ TruncatedStacktraces</span></span>
-<span class="line"><span>   1892.1 ms  ✓ SciMLOperators</span></span>
-<span class="line"><span>   1142.7 ms  ✓ Rmath_jll</span></span>
-<span class="line"><span>    700.3 ms  ✓ oneTBB_jll</span></span>
-<span class="line"><span>   6211.7 ms  ✓ Krylov</span></span>
-<span class="line"><span>    651.8 ms  ✓ ResettableStacks</span></span>
-<span class="line"><span>   1807.9 ms  ✓ RecipesBase</span></span>
-<span class="line"><span>   1085.6 ms  ✓ QuadGK</span></span>
-<span class="line"><span>   1152.6 ms  ✓ HypergeometricFunctions</span></span>
-<span class="line"><span>   1303.6 ms  ✓ IntelOpenMP_jll</span></span>
-<span class="line"><span>    870.9 ms  ✓ PreallocationTools</span></span>
-<span class="line"><span>    866.1 ms  ✓ FastBroadcast</span></span>
-<span class="line"><span>   1328.9 ms  ✓ NLSolversBase</span></span>
-<span class="line"><span>    627.3 ms  ✓ FunctionProperties</span></span>
-<span class="line"><span>  12117.6 ms  ✓ ArrayLayouts</span></span>
-<span class="line"><span>   1371.7 ms  ✓ FastPower → FastPowerTrackerExt</span></span>
-<span class="line"><span>    813.7 ms  ✓ FastPower → FastPowerForwardDiffExt</span></span>
-<span class="line"><span>   1621.6 ms  ✓ SymbolicIndexingInterface</span></span>
-<span class="line"><span>   3670.8 ms  ✓ FastPower → FastPowerReverseDiffExt</span></span>
-<span class="line"><span>   2166.1 ms  ✓ Jieko</span></span>
-<span class="line"><span>    682.8 ms  ✓ DifferentiationInterface → DifferentiationInterfaceStaticArraysExt</span></span>
-<span class="line"><span>   6566.5 ms  ✓ FastPower → FastPowerEnzymeExt</span></span>
-<span class="line"><span>    507.1 ms  ✓ DifferentiationInterface → DifferentiationInterfaceFiniteDiffExt</span></span>
-<span class="line"><span>    453.0 ms  ✓ DifferentiationInterface → DifferentiationInterfaceChainRulesCoreExt</span></span>
-<span class="line"><span>   1179.3 ms  ✓ DifferentiationInterface → DifferentiationInterfaceTrackerExt</span></span>
-<span class="line"><span>    812.3 ms  ✓ DifferentiationInterface → DifferentiationInterfaceForwardDiffExt</span></span>
-<span class="line"><span>   3864.0 ms  ✓ DifferentiationInterface → DifferentiationInterfaceReverseDiffExt</span></span>
-<span class="line"><span>    650.3 ms  ✓ DifferentiationInterface → DifferentiationInterfaceSparseArraysExt</span></span>
-<span class="line"><span>   1671.1 ms  ✓ DifferentiationInterface → DifferentiationInterfaceZygoteExt</span></span>
-<span class="line"><span>    675.9 ms  ✓ FillArrays → FillArraysPDMatsExt</span></span>
-<span class="line"><span>    563.2 ms  ✓ SciMLOperators → SciMLOperatorsStaticArraysCoreExt</span></span>
-<span class="line"><span>   1443.2 ms  ✓ Tracker → TrackerPDMatsExt</span></span>
-<span class="line"><span>    839.1 ms  ✓ SciMLOperators → SciMLOperatorsSparseArraysExt</span></span>
-<span class="line"><span>    819.6 ms  ✓ Rmath</span></span>
-<span class="line"><span>   1277.5 ms  ✓ MKL_jll</span></span>
-<span class="line"><span>   5914.1 ms  ✓ DifferentiationInterface → DifferentiationInterfaceEnzymeExt</span></span>
-<span class="line"><span>   1829.1 ms  ✓ LineSearches</span></span>
-<span class="line"><span>   3495.7 ms  ✓ PreallocationTools → PreallocationToolsReverseDiffExt</span></span>
-<span class="line"><span>    818.8 ms  ✓ ArrayLayouts → ArrayLayoutsSparseArraysExt</span></span>
-<span class="line"><span>   5849.4 ms  ✓ QuadGK → QuadGKEnzymeExt</span></span>
-<span class="line"><span>   1858.3 ms  ✓ StatsFuns</span></span>
-<span class="line"><span>   2294.0 ms  ✓ RecursiveArrayTools</span></span>
-<span class="line"><span>   2504.0 ms  ✓ LazyArrays</span></span>
-<span class="line"><span>   3295.6 ms  ✓ Optim</span></span>
-<span class="line"><span>    740.7 ms  ✓ StatsFuns → StatsFunsInverseFunctionsExt</span></span>
-<span class="line"><span>   1625.5 ms  ✓ StatsFuns → StatsFunsChainRulesCoreExt</span></span>
-<span class="line"><span>    824.4 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsFastBroadcastExt</span></span>
-<span class="line"><span>    638.0 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsStructArraysExt</span></span>
-<span class="line"><span>    921.0 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsSparseArraysExt</span></span>
-<span class="line"><span>   9528.8 ms  ✓ Moshi</span></span>
-<span class="line"><span>   5074.5 ms  ✓ Distributions</span></span>
-<span class="line"><span>   1286.1 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsTrackerExt</span></span>
-<span class="line"><span>    795.8 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsForwardDiffExt</span></span>
-<span class="line"><span>   1373.0 ms  ✓ LazyArrays → LazyArraysStaticArraysExt</span></span>
-<span class="line"><span>   3401.6 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsZygoteExt</span></span>
-<span class="line"><span>   1700.9 ms  ✓ Distributions → DistributionsChainRulesCoreExt</span></span>
-<span class="line"><span>   5851.8 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsReverseDiffExt</span></span>
-<span class="line"><span>  10676.1 ms  ✓ SciMLBase</span></span>
-<span class="line"><span>   1123.9 ms  ✓ SciMLBase → SciMLBaseChainRulesCoreExt</span></span>
-<span class="line"><span>   2765.5 ms  ✓ SciMLJacobianOperators</span></span>
-<span class="line"><span>   3634.3 ms  ✓ SciMLBase → SciMLBaseZygoteExt</span></span>
-<span class="line"><span>   6005.1 ms  ✓ DiffEqBase</span></span>
-<span class="line"><span>   1413.4 ms  ✓ DiffEqBase → DiffEqBaseChainRulesCoreExt</span></span>
-<span class="line"><span>   2451.0 ms  ✓ DiffEqBase → DiffEqBaseTrackerExt</span></span>
-<span class="line"><span>   1809.1 ms  ✓ DiffEqBase → DiffEqBaseForwardDiffExt</span></span>
-<span class="line"><span>   2083.6 ms  ✓ DiffEqBase → DiffEqBaseDistributionsExt</span></span>
-<span class="line"><span>   5251.5 ms  ✓ DiffEqBase → DiffEqBaseReverseDiffExt</span></span>
-<span class="line"><span>   1585.8 ms  ✓ DiffEqBase → DiffEqBaseSparseArraysExt</span></span>
-<span class="line"><span>   4528.9 ms  ✓ DiffEqCallbacks</span></span>
-<span class="line"><span>  16784.5 ms  ✓ LinearSolve</span></span>
-<span class="line"><span>   4002.5 ms  ✓ DiffEqNoiseProcess</span></span>
-<span class="line"><span>   3667.5 ms  ✓ LinearSolve → LinearSolveKernelAbstractionsExt</span></span>
-<span class="line"><span>   8613.1 ms  ✓ DiffEqBase → DiffEqBaseEnzymeExt</span></span>
-<span class="line"><span>   1790.9 ms  ✓ LinearSolve → LinearSolveEnzymeExt</span></span>
-<span class="line"><span>   4851.2 ms  ✓ LinearSolve → LinearSolveSparseArraysExt</span></span>
-<span class="line"><span>   5038.3 ms  ✓ DiffEqNoiseProcess → DiffEqNoiseProcessReverseDiffExt</span></span>
-<span class="line"><span>  21567.9 ms  ✓ SciMLSensitivity</span></span>
-<span class="line"><span>  90 dependencies successfully precompiled in 103 seconds. 186 already precompiled.</span></span>
+<span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">CUDA</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">allowscalar</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">false</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>Precompiling Lux...</span></span>
+<span class="line"><span>   1147.5 ms  ✓ WeightInitializers → WeightInitializersChainRulesCoreExt</span></span>
+<span class="line"><span>   9387.1 ms  ✓ Lux</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 11 seconds. 105 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxComponentArraysExt...</span></span>
+<span class="line"><span>   1451.6 ms  ✓ Lux → LuxComponentArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 111 already precompiled.</span></span>
+<span class="line"><span>Precompiling SciMLSensitivity...</span></span>
+<span class="line"><span>    424.6 ms  ✓ StructArrays → StructArraysAdaptExt</span></span>
+<span class="line"><span>   1142.3 ms  ✓ HypergeometricFunctions</span></span>
+<span class="line"><span>    769.0 ms  ✓ PreallocationTools</span></span>
+<span class="line"><span>    717.4 ms  ✓ StructArrays → StructArraysGPUArraysCoreExt</span></span>
+<span class="line"><span>   2019.1 ms  ✓ RecursiveArrayTools</span></span>
+<span class="line"><span>   4893.5 ms  ✓ Tracker</span></span>
+<span class="line"><span>   4736.4 ms  ✓ GPUArrays</span></span>
+<span class="line"><span>   5804.7 ms  ✓ Enzyme → EnzymeGPUArraysCoreExt</span></span>
+<span class="line"><span>   1797.6 ms  ✓ StatsFuns</span></span>
+<span class="line"><span>    788.9 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsFastBroadcastExt</span></span>
+<span class="line"><span>    629.9 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsStructArraysExt</span></span>
+<span class="line"><span>    907.5 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsSparseArraysExt</span></span>
+<span class="line"><span>   3479.0 ms  ✓ PreallocationTools → PreallocationToolsReverseDiffExt</span></span>
+<span class="line"><span>   5376.0 ms  ✓ ChainRules</span></span>
+<span class="line"><span>    781.0 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsForwardDiffExt</span></span>
+<span class="line"><span>   1106.6 ms  ✓ FastPower → FastPowerTrackerExt</span></span>
+<span class="line"><span>   1392.7 ms  ✓ Tracker → TrackerPDMatsExt</span></span>
+<span class="line"><span>   1128.1 ms  ✓ DifferentiationInterface → DifferentiationInterfaceTrackerExt</span></span>
+<span class="line"><span>   1028.0 ms  ✓ ArrayInterface → ArrayInterfaceTrackerExt</span></span>
+<span class="line"><span>    698.9 ms  ✓ StatsFuns → StatsFunsInverseFunctionsExt</span></span>
+<span class="line"><span>   1238.8 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsTrackerExt</span></span>
+<span class="line"><span>   1524.4 ms  ✓ StatsFuns → StatsFunsChainRulesCoreExt</span></span>
+<span class="line"><span>   4950.3 ms  ✓ Distributions</span></span>
+<span class="line"><span>    832.6 ms  ✓ ArrayInterface → ArrayInterfaceChainRulesExt</span></span>
+<span class="line"><span>  10479.7 ms  ✓ SciMLBase</span></span>
+<span class="line"><span>   1448.3 ms  ✓ Distributions → DistributionsChainRulesCoreExt</span></span>
+<span class="line"><span>   1135.2 ms  ✓ SciMLBase → SciMLBaseChainRulesCoreExt</span></span>
+<span class="line"><span>   2775.9 ms  ✓ SciMLJacobianOperators</span></span>
+<span class="line"><span>   5585.6 ms  ✓ DiffEqBase</span></span>
+<span class="line"><span>   1359.6 ms  ✓ DiffEqBase → DiffEqBaseChainRulesCoreExt</span></span>
+<span class="line"><span>   2328.7 ms  ✓ DiffEqBase → DiffEqBaseTrackerExt</span></span>
+<span class="line"><span>   4835.8 ms  ✓ DiffEqBase → DiffEqBaseReverseDiffExt</span></span>
+<span class="line"><span>   1600.9 ms  ✓ DiffEqBase → DiffEqBaseForwardDiffExt</span></span>
+<span class="line"><span>   1839.2 ms  ✓ DiffEqBase → DiffEqBaseDistributionsExt</span></span>
+<span class="line"><span>  16102.2 ms  ✓ LinearSolve</span></span>
+<span class="line"><span>   1431.6 ms  ✓ DiffEqBase → DiffEqBaseSparseArraysExt</span></span>
+<span class="line"><span>   4112.7 ms  ✓ DiffEqCallbacks</span></span>
+<span class="line"><span>   3511.9 ms  ✓ LinearSolve → LinearSolveKernelAbstractionsExt</span></span>
+<span class="line"><span>  33384.5 ms  ✓ Zygote</span></span>
+<span class="line"><span>   8231.6 ms  ✓ DiffEqBase → DiffEqBaseEnzymeExt</span></span>
+<span class="line"><span>   1744.7 ms  ✓ LinearSolve → LinearSolveEnzymeExt</span></span>
+<span class="line"><span>   1914.5 ms  ✓ Zygote → ZygoteTrackerExt</span></span>
+<span class="line"><span>   3809.4 ms  ✓ DiffEqNoiseProcess</span></span>
+<span class="line"><span>   1594.8 ms  ✓ DifferentiationInterface → DifferentiationInterfaceZygoteExt</span></span>
+<span class="line"><span>   4608.9 ms  ✓ LinearSolve → LinearSolveSparseArraysExt</span></span>
+<span class="line"><span>   3248.9 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsZygoteExt</span></span>
+<span class="line"><span>   3486.9 ms  ✓ SciMLBase → SciMLBaseZygoteExt</span></span>
+<span class="line"><span>   4986.3 ms  ✓ DiffEqNoiseProcess → DiffEqNoiseProcessReverseDiffExt</span></span>
+<span class="line"><span>   5579.9 ms  ✓ RecursiveArrayTools → RecursiveArrayToolsReverseDiffExt</span></span>
+<span class="line"><span>  21085.9 ms  ✓ SciMLSensitivity</span></span>
+<span class="line"><span>  50 dependencies successfully precompiled in 81 seconds. 226 already precompiled.</span></span>
 <span class="line"><span>Precompiling MLDataDevicesRecursiveArrayToolsExt...</span></span>
-<span class="line"><span>    655.0 ms  ✓ MLDataDevices → MLDataDevicesRecursiveArrayToolsExt</span></span>
+<span class="line"><span>    630.8 ms  ✓ MLDataDevices → MLDataDevicesRecursiveArrayToolsExt</span></span>
 <span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 47 already precompiled.</span></span>
 <span class="line"><span>Precompiling ComponentArraysRecursiveArrayToolsExt...</span></span>
-<span class="line"><span>    707.8 ms  ✓ ComponentArrays → ComponentArraysRecursiveArrayToolsExt</span></span>
+<span class="line"><span>    728.1 ms  ✓ ComponentArrays → ComponentArraysRecursiveArrayToolsExt</span></span>
 <span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 69 already precompiled.</span></span>
 <span class="line"><span>Precompiling ComponentArraysSciMLBaseExt...</span></span>
-<span class="line"><span>   1418.1 ms  ✓ ComponentArrays → ComponentArraysSciMLBaseExt</span></span>
-<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 89 already precompiled.</span></span>
+<span class="line"><span>   1102.4 ms  ✓ ComponentArrays → ComponentArraysSciMLBaseExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 89 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibEnzymeExt...</span></span>
+<span class="line"><span>   1327.7 ms  ✓ LuxLib → LuxLibEnzymeExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 130 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxEnzymeExt...</span></span>
+<span class="line"><span>   6819.5 ms  ✓ Lux → LuxEnzymeExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 7 seconds. 146 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesTrackerExt...</span></span>
+<span class="line"><span>   1193.5 ms  ✓ MLDataDevices → MLDataDevicesTrackerExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 60 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibTrackerExt...</span></span>
+<span class="line"><span>   1139.1 ms  ✓ LuxCore → LuxCoreArrayInterfaceTrackerExt</span></span>
+<span class="line"><span>   3362.7 ms  ✓ LuxLib → LuxLibTrackerExt</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 4 seconds. 98 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxTrackerExt...</span></span>
+<span class="line"><span>   2043.8 ms  ✓ Lux → LuxTrackerExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 112 already precompiled.</span></span>
+<span class="line"><span>Precompiling ComponentArraysTrackerExt...</span></span>
+<span class="line"><span>   1203.8 ms  ✓ ComponentArrays → ComponentArraysTrackerExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 71 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibReverseDiffExt...</span></span>
+<span class="line"><span>   4237.8 ms  ✓ LuxLib → LuxLibReverseDiffExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 4 seconds. 97 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxReverseDiffExt...</span></span>
+<span class="line"><span>   4332.8 ms  ✓ Lux → LuxReverseDiffExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 5 seconds. 113 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesChainRulesExt...</span></span>
+<span class="line"><span>    841.8 ms  ✓ MLDataDevices → MLDataDevicesChainRulesExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 41 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesZygoteExt...</span></span>
+<span class="line"><span>   1595.2 ms  ✓ MLDataDevices → MLDataDevicesGPUArraysExt</span></span>
+<span class="line"><span>   1614.3 ms  ✓ MLDataDevices → MLDataDevicesZygoteExt</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 2 seconds. 109 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxZygoteExt...</span></span>
+<span class="line"><span>   1693.0 ms  ✓ WeightInitializers → WeightInitializersGPUArraysExt</span></span>
+<span class="line"><span>   2740.1 ms  ✓ Lux → LuxZygoteExt</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 3 seconds. 165 already precompiled.</span></span>
+<span class="line"><span>Precompiling ComponentArraysZygoteExt...</span></span>
+<span class="line"><span>   1600.6 ms  ✓ ComponentArrays → ComponentArraysZygoteExt</span></span>
+<span class="line"><span>   1812.5 ms  ✓ ComponentArrays → ComponentArraysGPUArraysExt</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 2 seconds. 117 already precompiled.</span></span>
 <span class="line"><span>Precompiling LuxCUDA...</span></span>
-<span class="line"><span>   6873.9 ms  ✓ LuxCUDA</span></span>
-<span class="line"><span>  1 dependency successfully precompiled in 8 seconds. 103 already precompiled.</span></span>
+<span class="line"><span>  45914.3 ms  ✓ CUDA</span></span>
+<span class="line"><span>   5520.9 ms  ✓ Atomix → AtomixCUDAExt</span></span>
+<span class="line"><span>   8604.7 ms  ✓ cuDNN</span></span>
+<span class="line"><span>   5816.0 ms  ✓ LuxCUDA</span></span>
+<span class="line"><span>  4 dependencies successfully precompiled in 66 seconds. 100 already precompiled.</span></span>
+<span class="line"><span>Precompiling ZygoteColorsExt...</span></span>
+<span class="line"><span>   1811.0 ms  ✓ Zygote → ZygoteColorsExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 106 already precompiled.</span></span>
+<span class="line"><span>Precompiling ArrayInterfaceCUDAExt...</span></span>
+<span class="line"><span>   5347.4 ms  ✓ ArrayInterface → ArrayInterfaceCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 105 already precompiled.</span></span>
+<span class="line"><span>Precompiling NNlibCUDAExt...</span></span>
+<span class="line"><span>   5462.6 ms  ✓ CUDA → ChainRulesCoreExt</span></span>
+<span class="line"><span>   5832.9 ms  ✓ NNlib → NNlibCUDAExt</span></span>
+<span class="line"><span>  2 dependencies successfully precompiled in 6 seconds. 106 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesCUDAExt...</span></span>
+<span class="line"><span>   5394.0 ms  ✓ MLDataDevices → MLDataDevicesCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 108 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibCUDAExt...</span></span>
+<span class="line"><span>   5589.3 ms  ✓ CUDA → EnzymeCoreExt</span></span>
+<span class="line"><span>   5592.5 ms  ✓ CUDA → SpecialFunctionsExt</span></span>
+<span class="line"><span>   5946.4 ms  ✓ LuxLib → LuxLibCUDAExt</span></span>
+<span class="line"><span>  3 dependencies successfully precompiled in 7 seconds. 170 already precompiled.</span></span>
 <span class="line"><span>Precompiling DiffEqBaseCUDAExt...</span></span>
-<span class="line"><span>   6230.6 ms  ✓ DiffEqBase → DiffEqBaseCUDAExt</span></span>
+<span class="line"><span>   6007.8 ms  ✓ DiffEqBase → DiffEqBaseCUDAExt</span></span>
 <span class="line"><span>  1 dependency successfully precompiled in 7 seconds. 172 already precompiled.</span></span>
 <span class="line"><span>Precompiling LinearSolveCUDAExt...</span></span>
-<span class="line"><span>   7393.8 ms  ✓ LinearSolve → LinearSolveCUDAExt</span></span>
-<span class="line"><span>  1 dependency successfully precompiled in 8 seconds. 164 already precompiled.</span></span>
+<span class="line"><span>   6600.6 ms  ✓ LinearSolve → LinearSolveCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 7 seconds. 164 already precompiled.</span></span>
+<span class="line"><span>Precompiling WeightInitializersCUDAExt...</span></span>
+<span class="line"><span>   5487.4 ms  ✓ WeightInitializers → WeightInitializersCUDAExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 113 already precompiled.</span></span>
+<span class="line"><span>Precompiling NNlibCUDACUDNNExt...</span></span>
+<span class="line"><span>   5891.0 ms  ✓ NNlib → NNlibCUDACUDNNExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 110 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicescuDNNExt...</span></span>
+<span class="line"><span>   5489.8 ms  ✓ MLDataDevices → MLDataDevicescuDNNExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 6 seconds. 111 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxLibcuDNNExt...</span></span>
+<span class="line"><span>   6175.7 ms  ✓ LuxLib → LuxLibcuDNNExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 7 seconds. 177 already precompiled.</span></span>
 <span class="line"><span>Precompiling OrdinaryDiffEqTsit5...</span></span>
-<span class="line"><span>    361.4 ms  ✓ SimpleUnPack</span></span>
-<span class="line"><span>   4205.4 ms  ✓ OrdinaryDiffEqCore</span></span>
-<span class="line"><span>   1276.4 ms  ✓ OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span></span>
-<span class="line"><span>   7399.2 ms  ✓ OrdinaryDiffEqTsit5</span></span>
-<span class="line"><span>  4 dependencies successfully precompiled in 13 seconds. 96 already precompiled.</span></span>
+<span class="line"><span>   3952.5 ms  ✓ OrdinaryDiffEqCore</span></span>
+<span class="line"><span>   1255.6 ms  ✓ OrdinaryDiffEqCore → OrdinaryDiffEqCoreEnzymeCoreExt</span></span>
+<span class="line"><span>   6855.6 ms  ✓ OrdinaryDiffEqTsit5</span></span>
+<span class="line"><span>  3 dependencies successfully precompiled in 12 seconds. 97 already precompiled.</span></span>
+<span class="line"><span>Precompiling OneHotArrays...</span></span>
+<span class="line"><span>    976.8 ms  ✓ OneHotArrays</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 28 already precompiled.</span></span>
+<span class="line"><span>Precompiling MLDataDevicesOneHotArraysExt...</span></span>
+<span class="line"><span>    734.7 ms  ✓ MLDataDevices → MLDataDevicesOneHotArraysExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 35 already precompiled.</span></span>
 <span class="line"><span>Precompiling MLDatasets...</span></span>
-<span class="line"><span>    407.7 ms  ✓ Glob</span></span>
-<span class="line"><span>    448.7 ms  ✓ WorkerUtilities</span></span>
-<span class="line"><span>    455.9 ms  ✓ TensorCore</span></span>
-<span class="line"><span>    503.5 ms  ✓ BufferedStreams</span></span>
-<span class="line"><span>    466.2 ms  ✓ PaddedViews</span></span>
-<span class="line"><span>    623.2 ms  ✓ URIs</span></span>
-<span class="line"><span>    377.8 ms  ✓ SimpleBufferStream</span></span>
-<span class="line"><span>    412.6 ms  ✓ LazyModules</span></span>
-<span class="line"><span>    349.4 ms  ✓ PackageExtensionCompat</span></span>
-<span class="line"><span>    383.9 ms  ✓ BitFlags</span></span>
-<span class="line"><span>    439.0 ms  ✓ MappedArrays</span></span>
-<span class="line"><span>    434.0 ms  ✓ StackViews</span></span>
-<span class="line"><span>    695.3 ms  ✓ GZip</span></span>
-<span class="line"><span>    745.2 ms  ✓ ConcurrentUtilities</span></span>
-<span class="line"><span>    630.3 ms  ✓ ZipFile</span></span>
-<span class="line"><span>    864.0 ms  ✓ StructTypes</span></span>
-<span class="line"><span>   1041.4 ms  ✓ MbedTLS</span></span>
-<span class="line"><span>    623.7 ms  ✓ MPIPreferences</span></span>
-<span class="line"><span>    392.0 ms  ✓ InternedStrings</span></span>
-<span class="line"><span>    542.5 ms  ✓ ExceptionUnwrapping</span></span>
-<span class="line"><span>    632.5 ms  ✓ Chemfiles_jll</span></span>
-<span class="line"><span>    680.5 ms  ✓ libaec_jll</span></span>
-<span class="line"><span>    519.7 ms  ✓ MicrosoftMPI_jll</span></span>
-<span class="line"><span>   1064.2 ms  ✓ FilePathsBase</span></span>
-<span class="line"><span>    590.6 ms  ✓ StringEncodings</span></span>
-<span class="line"><span>    869.1 ms  ✓ WeakRefStrings</span></span>
-<span class="line"><span>   4545.3 ms  ✓ FileIO</span></span>
-<span class="line"><span>   2330.2 ms  ✓ ColorVectorSpace</span></span>
-<span class="line"><span>    474.4 ms  ✓ StridedViews</span></span>
-<span class="line"><span>    504.0 ms  ✓ MosaicViews</span></span>
-<span class="line"><span>   2205.2 ms  ✓ OpenSSL</span></span>
-<span class="line"><span>   1177.6 ms  ✓ OpenMPI_jll</span></span>
-<span class="line"><span>   1546.2 ms  ✓ MPICH_jll</span></span>
-<span class="line"><span>   1199.0 ms  ✓ MPItrampoline_jll</span></span>
-<span class="line"><span>    583.9 ms  ✓ FilePathsBase → FilePathsBaseMmapExt</span></span>
-<span class="line"><span>   1353.3 ms  ✓ FilePathsBase → FilePathsBaseTestExt</span></span>
-<span class="line"><span>   2096.3 ms  ✓ NPZ</span></span>
-<span class="line"><span>  10125.4 ms  ✓ JSON3</span></span>
-<span class="line"><span>  21375.9 ms  ✓ Unitful</span></span>
-<span class="line"><span>   3878.2 ms  ✓ ColorSchemes</span></span>
-<span class="line"><span>   2565.0 ms  ✓ Pickle</span></span>
-<span class="line"><span>  19352.0 ms  ✓ ImageCore</span></span>
-<span class="line"><span>   2035.8 ms  ✓ HDF5_jll</span></span>
-<span class="line"><span>  19589.5 ms  ✓ HTTP</span></span>
-<span class="line"><span>    665.2 ms  ✓ Unitful → ConstructionBaseUnitfulExt</span></span>
-<span class="line"><span>    801.8 ms  ✓ Unitful → InverseFunctionsUnitfulExt</span></span>
-<span class="line"><span>   3036.2 ms  ✓ UnitfulAtomic</span></span>
-<span class="line"><span>   2488.2 ms  ✓ PeriodicTable</span></span>
-<span class="line"><span>    643.2 ms  ✓ Accessors → UnitfulExt</span></span>
-<span class="line"><span>  35702.7 ms  ✓ JLD2</span></span>
-<span class="line"><span>   2233.4 ms  ✓ ImageBase</span></span>
-<span class="line"><span>   3213.2 ms  ✓ DataDeps</span></span>
-<span class="line"><span>   1997.4 ms  ✓ FileIO → HTTPExt</span></span>
-<span class="line"><span>   7697.4 ms  ✓ HDF5</span></span>
-<span class="line"><span>  17494.4 ms  ✓ CSV</span></span>
-<span class="line"><span>   2348.4 ms  ✓ AtomsBase</span></span>
-<span class="line"><span>   1969.3 ms  ✓ ImageShow</span></span>
-<span class="line"><span>   2462.5 ms  ✓ MAT</span></span>
-<span class="line"><span>   2371.4 ms  ✓ Chemfiles</span></span>
-<span class="line"><span>  10131.2 ms  ✓ MLDatasets</span></span>
-<span class="line"><span>  60 dependencies successfully precompiled in 77 seconds. 140 already precompiled.</span></span>
+<span class="line"><span>    687.8 ms  ✓ Transducers → TransducersAdaptExt</span></span>
+<span class="line"><span>   5840.0 ms  ✓ MLUtils</span></span>
+<span class="line"><span>   9893.9 ms  ✓ MLDatasets</span></span>
+<span class="line"><span>  3 dependencies successfully precompiled in 17 seconds. 197 already precompiled.</span></span>
 <span class="line"><span>Precompiling DistributionsTestExt...</span></span>
-<span class="line"><span>   1497.4 ms  ✓ Distributions → DistributionsTestExt</span></span>
+<span class="line"><span>   1411.1 ms  ✓ Distributions → DistributionsTestExt</span></span>
 <span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 53 already precompiled.</span></span>
 <span class="line"><span>Precompiling SciMLBaseMLStyleExt...</span></span>
-<span class="line"><span>   1137.0 ms  ✓ SciMLBase → SciMLBaseMLStyleExt</span></span>
+<span class="line"><span>   1102.2 ms  ✓ SciMLBase → SciMLBaseMLStyleExt</span></span>
 <span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 61 already precompiled.</span></span>
-<span class="line"><span>Precompiling TransducersLazyArraysExt...</span></span>
-<span class="line"><span>   1270.1 ms  ✓ Transducers → TransducersLazyArraysExt</span></span>
-<span class="line"><span>  1 dependency successfully precompiled in 1 seconds. 48 already precompiled.</span></span></code></pre></div><h2 id="Loading-MNIST" tabindex="-1">Loading MNIST <a class="header-anchor" href="#Loading-MNIST" aria-label="Permalink to &quot;Loading MNIST {#Loading-MNIST}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> loadmnist</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(batchsize, train_split)</span></span>
+<span class="line"><span>Precompiling MLDataDevicesMLUtilsExt...</span></span>
+<span class="line"><span>   1580.8 ms  ✓ MLDataDevices → MLDataDevicesMLUtilsExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 2 seconds. 104 already precompiled.</span></span>
+<span class="line"><span>Precompiling LuxMLUtilsExt...</span></span>
+<span class="line"><span>   2094.0 ms  ✓ Lux → LuxMLUtilsExt</span></span>
+<span class="line"><span>  1 dependency successfully precompiled in 3 seconds. 167 already precompiled.</span></span></code></pre></div><h2 id="Loading-MNIST" tabindex="-1">Loading MNIST <a class="header-anchor" href="#Loading-MNIST" aria-label="Permalink to &quot;Loading MNIST {#Loading-MNIST}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">function</span><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;"> loadmnist</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(batchsize, train_split)</span></span>
 <span class="line"><span style="--shiki-light:#6A737D;--shiki-dark:#6A737D;">    # Load MNIST: Only 1500 for demonstration purposes</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    N </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> parse</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(Bool, </span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">get</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">ENV</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;CI&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, </span><span style="--shiki-light:#032F62;--shiki-dark:#9ECBFF;">&quot;false&quot;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">?</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> 1500</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;"> :</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> nothing</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    dataset </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> MNIST</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; split </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> :train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span>
@@ -337,47 +328,47 @@
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span>
 <span class="line"></span>
-<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODECompact)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 146.9311s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
-<span class="line"><span>[2/9]	Time 0.8216s	Training Accuracy: 58.22222%	Test Accuracy: 57.33333%</span></span>
-<span class="line"><span>[3/9]	Time 1.0646s	Training Accuracy: 67.85185%	Test Accuracy: 70.66667%</span></span>
-<span class="line"><span>[4/9]	Time 0.8538s	Training Accuracy: 74.29630%	Test Accuracy: 74.66667%</span></span>
-<span class="line"><span>[5/9]	Time 1.0689s	Training Accuracy: 76.29630%	Test Accuracy: 76.00000%</span></span>
-<span class="line"><span>[6/9]	Time 0.8333s	Training Accuracy: 78.74074%	Test Accuracy: 80.00000%</span></span>
-<span class="line"><span>[7/9]	Time 1.0549s	Training Accuracy: 82.22222%	Test Accuracy: 81.33333%</span></span>
-<span class="line"><span>[8/9]	Time 0.8210s	Training Accuracy: 83.62963%	Test Accuracy: 83.33333%</span></span>
-<span class="line"><span>[9/9]	Time 0.8249s	Training Accuracy: 85.18519%	Test Accuracy: 82.66667%</span></span></code></pre></div><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 35.9996s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
-<span class="line"><span>[2/9]	Time 0.6250s	Training Accuracy: 57.18519%	Test Accuracy: 57.33333%</span></span>
-<span class="line"><span>[3/9]	Time 0.6530s	Training Accuracy: 68.37037%	Test Accuracy: 68.00000%</span></span>
-<span class="line"><span>[4/9]	Time 0.6341s	Training Accuracy: 73.77778%	Test Accuracy: 75.33333%</span></span>
-<span class="line"><span>[5/9]	Time 0.8622s	Training Accuracy: 76.14815%	Test Accuracy: 77.33333%</span></span>
-<span class="line"><span>[6/9]	Time 0.6281s	Training Accuracy: 79.48148%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[7/9]	Time 0.9201s	Training Accuracy: 81.25926%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[8/9]	Time 0.6353s	Training Accuracy: 83.40741%	Test Accuracy: 82.66667%</span></span>
-<span class="line"><span>[9/9]	Time 0.6291s	Training Accuracy: 84.81481%	Test Accuracy: 82.00000%</span></span></code></pre></div><p>We can also change the sensealg and train the model! <code>GaussAdjoint</code> allows you to use any arbitrary parameter structure and not just a flat vector (<code>ComponentArray</code>).</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE; sensealg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> GaussAdjoint</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; autojacvec </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ZygoteVJP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()), use_named_tuple </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 41.6490s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
-<span class="line"><span>[2/9]	Time 0.6059s	Training Accuracy: 58.44444%	Test Accuracy: 58.00000%</span></span>
-<span class="line"><span>[3/9]	Time 0.7753s	Training Accuracy: 66.96296%	Test Accuracy: 68.00000%</span></span>
-<span class="line"><span>[4/9]	Time 0.6138s	Training Accuracy: 72.44444%	Test Accuracy: 73.33333%</span></span>
-<span class="line"><span>[5/9]	Time 0.6501s	Training Accuracy: 76.37037%	Test Accuracy: 76.00000%</span></span>
-<span class="line"><span>[6/9]	Time 0.6149s	Training Accuracy: 78.81481%	Test Accuracy: 79.33333%</span></span>
-<span class="line"><span>[7/9]	Time 0.6000s	Training Accuracy: 80.51852%	Test Accuracy: 81.33333%</span></span>
-<span class="line"><span>[8/9]	Time 0.8558s	Training Accuracy: 82.74074%	Test Accuracy: 83.33333%</span></span>
-<span class="line"><span>[9/9]	Time 0.6038s	Training Accuracy: 85.25926%	Test Accuracy: 82.66667%</span></span></code></pre></div><p>But remember some AD backends like <code>ReverseDiff</code> is not GPU compatible. For a model this size, you will notice that training time is significantly lower for training on CPU than on GPU.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE; sensealg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> InterpolatingAdjoint</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; autojacvec </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ReverseDiffVJP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()), cpu </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 39.7240s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
-<span class="line"><span>[2/9]	Time 0.4356s	Training Accuracy: 58.74074%	Test Accuracy: 56.66667%</span></span>
-<span class="line"><span>[3/9]	Time 0.3644s	Training Accuracy: 69.92593%	Test Accuracy: 71.33333%</span></span>
-<span class="line"><span>[4/9]	Time 0.3735s	Training Accuracy: 72.81481%	Test Accuracy: 74.00000%</span></span>
-<span class="line"><span>[5/9]	Time 0.3752s	Training Accuracy: 76.37037%	Test Accuracy: 78.66667%</span></span>
-<span class="line"><span>[6/9]	Time 0.3699s	Training Accuracy: 79.03704%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[7/9]	Time 0.3610s	Training Accuracy: 81.62963%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[8/9]	Time 0.3638s	Training Accuracy: 83.33333%	Test Accuracy: 80.00000%</span></span>
-<span class="line"><span>[9/9]	Time 0.3709s	Training Accuracy: 85.40741%	Test Accuracy: 82.00000%</span></span></code></pre></div><p>For completeness, let&#39;s also test out discrete sensitivities!</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE; sensealg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ReverseDiffAdjoint</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), cpu </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 38.0484s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
-<span class="line"><span>[2/9]	Time 11.8893s	Training Accuracy: 58.66667%	Test Accuracy: 57.33333%</span></span>
-<span class="line"><span>[3/9]	Time 11.2469s	Training Accuracy: 69.70370%	Test Accuracy: 71.33333%</span></span>
-<span class="line"><span>[4/9]	Time 11.0207s	Training Accuracy: 72.74074%	Test Accuracy: 74.00000%</span></span>
-<span class="line"><span>[5/9]	Time 10.7469s	Training Accuracy: 76.14815%	Test Accuracy: 78.66667%</span></span>
-<span class="line"><span>[6/9]	Time 10.7892s	Training Accuracy: 79.03704%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[7/9]	Time 10.9633s	Training Accuracy: 81.55556%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[8/9]	Time 10.5584s	Training Accuracy: 83.40741%	Test Accuracy: 80.00000%</span></span>
-<span class="line"><span>[9/9]	Time 10.9576s	Training Accuracy: 85.25926%	Test Accuracy: 81.33333%</span></span></code></pre></div><h2 id="Alternate-Implementation-using-Stateful-Layer" tabindex="-1">Alternate Implementation using Stateful Layer <a class="header-anchor" href="#Alternate-Implementation-using-Stateful-Layer" aria-label="Permalink to &quot;Alternate Implementation using Stateful Layer {#Alternate-Implementation-using-Stateful-Layer}&quot;">​</a></h2><p>Starting <code>v0.5.5</code>, Lux provides a <a href="/dev/api/Lux/utilities#Lux.StatefulLuxLayer"><code>StatefulLuxLayer</code></a> which can be used to avoid the <a href="https://github.com/JuliaLang/julia/issues/15276" target="_blank" rel="noreferrer"><code>Box</code>ing of <code>st</code></a>. Using the <code>@compact</code> API avoids this problem entirely.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> StatefulNeuralODE{M </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Lux.AbstractLuxLayer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, So, T, K} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
+<span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODECompact)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 144.5789s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
+<span class="line"><span>[2/9]	Time 0.8593s	Training Accuracy: 58.22222%	Test Accuracy: 57.33333%</span></span>
+<span class="line"><span>[3/9]	Time 0.7225s	Training Accuracy: 67.85185%	Test Accuracy: 70.66667%</span></span>
+<span class="line"><span>[4/9]	Time 0.9094s	Training Accuracy: 74.29630%	Test Accuracy: 74.66667%</span></span>
+<span class="line"><span>[5/9]	Time 0.7141s	Training Accuracy: 76.29630%	Test Accuracy: 76.00000%</span></span>
+<span class="line"><span>[6/9]	Time 0.9345s	Training Accuracy: 78.74074%	Test Accuracy: 80.00000%</span></span>
+<span class="line"><span>[7/9]	Time 0.7195s	Training Accuracy: 82.22222%	Test Accuracy: 81.33333%</span></span>
+<span class="line"><span>[8/9]	Time 0.9597s	Training Accuracy: 83.62963%	Test Accuracy: 83.33333%</span></span>
+<span class="line"><span>[9/9]	Time 0.7310s	Training Accuracy: 85.18519%	Test Accuracy: 82.66667%</span></span></code></pre></div><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 32.5705s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
+<span class="line"><span>[2/9]	Time 0.7596s	Training Accuracy: 57.18519%	Test Accuracy: 57.33333%</span></span>
+<span class="line"><span>[3/9]	Time 0.6521s	Training Accuracy: 68.37037%	Test Accuracy: 68.00000%</span></span>
+<span class="line"><span>[4/9]	Time 0.6374s	Training Accuracy: 73.77778%	Test Accuracy: 75.33333%</span></span>
+<span class="line"><span>[5/9]	Time 0.6265s	Training Accuracy: 76.14815%	Test Accuracy: 77.33333%</span></span>
+<span class="line"><span>[6/9]	Time 0.8789s	Training Accuracy: 79.48148%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[7/9]	Time 0.6386s	Training Accuracy: 81.25926%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[8/9]	Time 0.6338s	Training Accuracy: 83.40741%	Test Accuracy: 82.66667%</span></span>
+<span class="line"><span>[9/9]	Time 0.9258s	Training Accuracy: 84.81481%	Test Accuracy: 82.00000%</span></span></code></pre></div><p>We can also change the sensealg and train the model! <code>GaussAdjoint</code> allows you to use any arbitrary parameter structure and not just a flat vector (<code>ComponentArray</code>).</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE; sensealg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> GaussAdjoint</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; autojacvec </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ZygoteVJP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()), use_named_tuple </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 41.8518s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
+<span class="line"><span>[2/9]	Time 0.6161s	Training Accuracy: 58.44444%	Test Accuracy: 58.00000%</span></span>
+<span class="line"><span>[3/9]	Time 0.8129s	Training Accuracy: 66.96296%	Test Accuracy: 68.00000%</span></span>
+<span class="line"><span>[4/9]	Time 0.6124s	Training Accuracy: 72.44444%	Test Accuracy: 73.33333%</span></span>
+<span class="line"><span>[5/9]	Time 0.6188s	Training Accuracy: 76.37037%	Test Accuracy: 76.00000%</span></span>
+<span class="line"><span>[6/9]	Time 0.8640s	Training Accuracy: 78.81481%	Test Accuracy: 79.33333%</span></span>
+<span class="line"><span>[7/9]	Time 0.6128s	Training Accuracy: 80.51852%	Test Accuracy: 81.33333%</span></span>
+<span class="line"><span>[8/9]	Time 0.6126s	Training Accuracy: 82.74074%	Test Accuracy: 83.33333%</span></span>
+<span class="line"><span>[9/9]	Time 0.8885s	Training Accuracy: 85.25926%	Test Accuracy: 82.66667%</span></span></code></pre></div><p>But remember some AD backends like <code>ReverseDiff</code> is not GPU compatible. For a model this size, you will notice that training time is significantly lower for training on CPU than on GPU.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE; sensealg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> InterpolatingAdjoint</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(; autojacvec </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ReverseDiffVJP</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">()), cpu </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 39.1769s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
+<span class="line"><span>[2/9]	Time 0.4351s	Training Accuracy: 58.74074%	Test Accuracy: 56.66667%</span></span>
+<span class="line"><span>[3/9]	Time 0.5363s	Training Accuracy: 69.92593%	Test Accuracy: 71.33333%</span></span>
+<span class="line"><span>[4/9]	Time 0.3722s	Training Accuracy: 72.81481%	Test Accuracy: 74.00000%</span></span>
+<span class="line"><span>[5/9]	Time 0.3639s	Training Accuracy: 76.37037%	Test Accuracy: 78.66667%</span></span>
+<span class="line"><span>[6/9]	Time 0.3709s	Training Accuracy: 79.03704%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[7/9]	Time 0.3711s	Training Accuracy: 81.62963%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[8/9]	Time 0.3757s	Training Accuracy: 83.33333%	Test Accuracy: 80.00000%</span></span>
+<span class="line"><span>[9/9]	Time 0.3732s	Training Accuracy: 85.40741%	Test Accuracy: 82.00000%</span></span></code></pre></div><p>For completeness, let&#39;s also test out discrete sensitivities!</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE; sensealg </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ReverseDiffAdjoint</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(), cpu </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> true</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 37.7470s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
+<span class="line"><span>[2/9]	Time 11.2826s	Training Accuracy: 58.66667%	Test Accuracy: 57.33333%</span></span>
+<span class="line"><span>[3/9]	Time 10.7020s	Training Accuracy: 69.70370%	Test Accuracy: 71.33333%</span></span>
+<span class="line"><span>[4/9]	Time 10.9626s	Training Accuracy: 72.74074%	Test Accuracy: 74.00000%</span></span>
+<span class="line"><span>[5/9]	Time 10.8047s	Training Accuracy: 76.14815%	Test Accuracy: 78.66667%</span></span>
+<span class="line"><span>[6/9]	Time 10.7834s	Training Accuracy: 79.03704%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[7/9]	Time 10.5665s	Training Accuracy: 81.55556%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[8/9]	Time 10.6132s	Training Accuracy: 83.40741%	Test Accuracy: 80.00000%</span></span>
+<span class="line"><span>[9/9]	Time 10.6373s	Training Accuracy: 85.25926%	Test Accuracy: 81.33333%</span></span></code></pre></div><h2 id="Alternate-Implementation-using-Stateful-Layer" tabindex="-1">Alternate Implementation using Stateful Layer <a class="header-anchor" href="#Alternate-Implementation-using-Stateful-Layer" aria-label="Permalink to &quot;Alternate Implementation using Stateful Layer {#Alternate-Implementation-using-Stateful-Layer}&quot;">​</a></h2><p>Starting <code>v0.5.5</code>, Lux provides a <a href="/dev/api/Lux/utilities#Lux.StatefulLuxLayer"><code>StatefulLuxLayer</code></a> which can be used to avoid the <a href="https://github.com/JuliaLang/julia/issues/15276" target="_blank" rel="noreferrer"><code>Box</code>ing of <code>st</code></a>. Using the <code>@compact</code> API avoids this problem entirely.</p><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">struct</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;"> StatefulNeuralODE{M </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;:</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> Lux.AbstractLuxLayer</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">, So, T, K} </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">&lt;</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">:</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    Lux</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">AbstractLuxWrapperLayer{</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">:model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">}</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    model</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">M</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    solver</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">::</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">So</span></span>
@@ -396,15 +387,15 @@
 <span class="line"><span style="--shiki-light:#6F42C1;--shiki-dark:#B392F0;">    dudt</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(u, p, t) </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> st_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(u, p)</span></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">    prob </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> ODEProblem{false}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">ODEFunction{false}</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(dudt), x, n</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">tspan, ps)</span></span>
 <span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">    return</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> solve</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(prob, n</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">solver; n</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">kwargs</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">...</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">), st_model</span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">.</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">st</span></span>
-<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><h2 id="Train-the-new-Stateful-Neural-ODE" tabindex="-1">Train the new Stateful Neural ODE <a class="header-anchor" href="#Train-the-new-Stateful-Neural-ODE" aria-label="Permalink to &quot;Train the new Stateful Neural ODE {#Train-the-new-Stateful-Neural-ODE}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(StatefulNeuralODE)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 36.7343s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
-<span class="line"><span>[2/9]	Time 0.6411s	Training Accuracy: 58.22222%	Test Accuracy: 55.33333%</span></span>
-<span class="line"><span>[3/9]	Time 0.6665s	Training Accuracy: 68.29630%	Test Accuracy: 68.66667%</span></span>
-<span class="line"><span>[4/9]	Time 0.9576s	Training Accuracy: 73.11111%	Test Accuracy: 76.00000%</span></span>
-<span class="line"><span>[5/9]	Time 0.6310s	Training Accuracy: 75.92593%	Test Accuracy: 76.66667%</span></span>
-<span class="line"><span>[6/9]	Time 0.6411s	Training Accuracy: 78.96296%	Test Accuracy: 80.66667%</span></span>
-<span class="line"><span>[7/9]	Time 0.6729s	Training Accuracy: 80.81481%	Test Accuracy: 81.33333%</span></span>
-<span class="line"><span>[8/9]	Time 1.0656s	Training Accuracy: 83.25926%	Test Accuracy: 82.66667%</span></span>
-<span class="line"><span>[9/9]	Time 0.6349s	Training Accuracy: 84.59259%	Test Accuracy: 82.00000%</span></span></code></pre></div><p>We might not see a significant difference in the training time, but let us investigate the type stabilities of the layers.</p><h2 id="Type-Stability" tabindex="-1">Type Stability <a class="header-anchor" href="#Type-Stability" aria-label="Permalink to &quot;Type Stability {#Type-Stability}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model, ps, st </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> create_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE)</span></span>
+<span class="line"><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">end</span></span></code></pre></div><h2 id="Train-the-new-Stateful-Neural-ODE" tabindex="-1">Train the new Stateful Neural ODE <a class="header-anchor" href="#Train-the-new-Stateful-Neural-ODE" aria-label="Permalink to &quot;Train the new Stateful Neural ODE {#Train-the-new-Stateful-Neural-ODE}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;">train</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(StatefulNeuralODE)</span></span></code></pre></div><div class="language- vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>[1/9]	Time 36.3545s	Training Accuracy: 37.48148%	Test Accuracy: 40.00000%</span></span>
+<span class="line"><span>[2/9]	Time 0.6439s	Training Accuracy: 58.22222%	Test Accuracy: 55.33333%</span></span>
+<span class="line"><span>[3/9]	Time 0.8981s	Training Accuracy: 68.29630%	Test Accuracy: 68.66667%</span></span>
+<span class="line"><span>[4/9]	Time 0.6493s	Training Accuracy: 73.11111%	Test Accuracy: 76.00000%</span></span>
+<span class="line"><span>[5/9]	Time 0.6556s	Training Accuracy: 75.92593%	Test Accuracy: 76.66667%</span></span>
+<span class="line"><span>[6/9]	Time 1.0519s	Training Accuracy: 78.96296%	Test Accuracy: 80.66667%</span></span>
+<span class="line"><span>[7/9]	Time 0.6457s	Training Accuracy: 80.81481%	Test Accuracy: 81.33333%</span></span>
+<span class="line"><span>[8/9]	Time 0.6426s	Training Accuracy: 83.25926%	Test Accuracy: 82.66667%</span></span>
+<span class="line"><span>[9/9]	Time 0.6362s	Training Accuracy: 84.59259%	Test Accuracy: 82.00000%</span></span></code></pre></div><p>We might not see a significant difference in the training time, but let us investigate the type stabilities of the layers.</p><h2 id="Type-Stability" tabindex="-1">Type Stability <a class="header-anchor" href="#Type-Stability" aria-label="Permalink to &quot;Type Stability {#Type-Stability}&quot;">​</a></h2><div class="language-julia vp-adaptive-theme"><button title="Copy Code" class="copy"></button><span class="lang">julia</span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model, ps, st </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> create_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(NeuralODE)</span></span>
 <span class="line"></span>
 <span class="line"><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">model_stateful, ps_stateful, st_stateful </span><span style="--shiki-light:#D73A49;--shiki-dark:#F97583;">=</span><span style="--shiki-light:#005CC5;--shiki-dark:#79B8FF;"> create_model</span><span style="--shiki-light:#24292E;--shiki-dark:#E1E4E8;">(StatefulNeuralODE)</span></span>
 <span class="line"></span>
@@ -502,8 +493,8 @@
 <span class="line"><span>- JULIA_CUDA_HARD_MEMORY_LIMIT: 100%</span></span>
 <span class="line"><span></span></span>
 <span class="line"><span>1 device:</span></span>
-<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 3.920 GiB / 4.750 GiB available)</span></span></code></pre></div><hr><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl" target="_blank" rel="noreferrer">Literate.jl</a>.</em></p></div></div></main><footer class="VPDocFooter" data-v-83890dd9 data-v-4f9813fa><!--[--><!--]--><div class="edit-info" data-v-4f9813fa><div class="edit-link" data-v-4f9813fa><a class="VPLink link vp-external-link-icon no-icon edit-link-button" href="https://github.com/LuxDL/Lux.jl/edit/main/docs/src/tutorials/intermediate/1_NeuralODE.md" target="_blank" rel="noreferrer" data-v-4f9813fa><!--[--><span class="vpi-square-pen edit-link-icon" data-v-4f9813fa></span> Edit this page on GitHub<!--]--></a></div><!----></div><nav class="prev-next" aria-labelledby="doc-footer-aria-label" data-v-4f9813fa><span class="visually-hidden" id="doc-footer-aria-label" data-v-4f9813fa>Pager</span><div class="pager" data-v-4f9813fa><a class="VPLink link pager-link prev" href="/dev/tutorials/beginner/5_OptimizationIntegration" data-v-4f9813fa><!--[--><span class="desc" data-v-4f9813fa>Previous page</span><span class="title" data-v-4f9813fa>Fitting with Optimization.jl</span><!--]--></a></div><div class="pager" data-v-4f9813fa><a class="VPLink link pager-link next" href="/dev/tutorials/intermediate/2_BayesianNN" data-v-4f9813fa><!--[--><span class="desc" data-v-4f9813fa>Next page</span><span class="title" data-v-4f9813fa>Bayesian Neural Network</span><!--]--></a></div></nav></footer><!--[--><!--]--></div></div></div><!--[--><!--]--></div></div><footer class="VPFooter has-sidebar" data-v-a9a9e638 data-v-c970a860><div class="container" data-v-c970a860><p class="message" data-v-c970a860>Made with <a href="https://documenter.juliadocs.org/stable/" target="_blank"><strong>Documenter.jl</strong></a>, <a href="https://vitepress.dev" target="_blank"><strong>VitePress</strong></a> and <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable" target="_blank"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href="https://www.julialang.org">Julia Programming Language</a>.<br></p><p class="copyright" data-v-c970a860>© Copyright 2025 Avik Pal.</p></div></footer><!--[--><!--]--></div></div>
-    <script>window.__VP_HASH_MAP__=JSON.parse("{\"api_accelerator_support_mldatadevices.md\":\"D44VChiD\",\"api_building_blocks_luxcore.md\":\"C7vmAEcm\",\"api_building_blocks_weightinitializers.md\":\"CWviyE-W\",\"api_lux_autodiff.md\":\"CtwycOEI\",\"api_lux_contrib.md\":\"BtbHRzdT\",\"api_lux_distributed_utils.md\":\"BZCrb4SN\",\"api_lux_interop.md\":\"C48rYHWF\",\"api_lux_layers.md\":\"BycY9Q9P\",\"api_lux_utilities.md\":\"Bbpbi2yw\",\"api_nn_primitives_activationfunctions.md\":\"D685xckh\",\"api_nn_primitives_luxlib.md\":\"rRD_3WIE\",\"api_nn_primitives_nnlib.md\":\"DPRKwAF8\",\"api_testing_functionality_luxtestutils.md\":\"rFjxHCJS\",\"index.md\":\"C7aDLyXW\",\"introduction_citation.md\":\"B9D4A24W\",\"introduction_index.md\":\"D9iWcln6\",\"introduction_overview.md\":\"DCinaohW\",\"introduction_resources.md\":\"DWvweAp4\",\"introduction_updating_to_v1.md\":\"9lo0SQI7\",\"manual_autodiff.md\":\"BSP_50Il\",\"manual_compiling_lux_models.md\":\"DPkD28FT\",\"manual_debugging.md\":\"CR3I5NVk\",\"manual_dispatch_custom_input.md\":\"DAZTju6U\",\"manual_distributed_utils.md\":\"DieAEoku\",\"manual_exporting_to_jax.md\":\"CiZtyG2I\",\"manual_freezing_model_parameters.md\":\"CEzG98ce\",\"manual_gpu_management.md\":\"qOLyX9dX\",\"manual_interface.md\":\"Mr0RYxnN\",\"manual_migrate_from_flux.md\":\"gDLUAo5u\",\"manual_nested_autodiff.md\":\"BYMOnQdB\",\"manual_performance_pitfalls.md\":\"CF0zEusl\",\"manual_preferences.md\":\"BBDNKX_i\",\"manual_visualize_lux_models.md\":\"CECBTQJ1\",\"manual_weight_initializers.md\":\"CjNdMI3M\",\"tutorials_advanced_1_gravitationalwaveform.md\":\"c_Jc4X9D\",\"tutorials_beginner_1_basics.md\":\"Sc6h32gC\",\"tutorials_beginner_2_polynomialfitting.md\":\"DQDbquVR\",\"tutorials_beginner_3_simplernn.md\":\"C6GgXjlx\",\"tutorials_beginner_4_simplechains.md\":\"CNAAplo2\",\"tutorials_beginner_5_optimizationintegration.md\":\"PGxFkGis\",\"tutorials_index.md\":\"B0-k2epD\",\"tutorials_intermediate_1_neuralode.md\":\"Bp9yuKjh\",\"tutorials_intermediate_2_bayesiannn.md\":\"C0CVt2kj\",\"tutorials_intermediate_3_hypernet.md\":\"CJb9_Xj2\",\"tutorials_intermediate_4_pinn2dpde.md\":\"sS8g_rfw\",\"tutorials_intermediate_5_convolutionalvae.md\":\"ChZmZhAj\",\"tutorials_intermediate_6_gcn_cora.md\":\"CB6x2rwR\",\"tutorials_intermediate_7_realnvp.md\":\"DyoPR7td\"}");window.__VP_SITE_DATA__=JSON.parse("{\"lang\":\"en-US\",\"dir\":\"ltr\",\"title\":\"Lux.jl Docs\",\"description\":\"Documentation for LuxDL Repositories\",\"base\":\"/dev/\",\"head\":[],\"router\":{\"prefetchLinks\":true},\"appearance\":true,\"themeConfig\":{\"outline\":\"deep\",\"logo\":{\"light\":\"/lux-logo.svg\",\"dark\":\"/lux-logo-dark.svg\"},\"search\":{\"provider\":\"local\",\"options\":{\"detailedView\":true}},\"nav\":[{\"text\":\"Home\",\"link\":\"/\"},{\"text\":\"Getting Started\",\"link\":\"/introduction\"},{\"text\":\"Benchmarks\",\"link\":\"https://lux.csail.mit.edu/benchmarks/\"},{\"text\":\"Tutorials\",\"link\":\"/tutorials/\"},{\"text\":\"Manual\",\"link\":\"/manual/interface\"},{\"text\":\"API\",\"items\":[{\"text\":\"Lux\",\"items\":[{\"text\":\"Built-In Layers\",\"link\":\"/api/Lux/layers\"},{\"text\":\"Automatic Differentiation\",\"link\":\"/api/Lux/autodiff\"},{\"text\":\"Utilities\",\"link\":\"/api/Lux/utilities\"},{\"text\":\"Experimental\",\"link\":\"/api/Lux/contrib\"},{\"text\":\"InterOp\",\"link\":\"/api/Lux/interop\"},{\"text\":\"DistributedUtils\",\"link\":\"/api/Lux/distributed_utils\"}]},{\"text\":\"Accelerator Support\",\"items\":[{\"text\":\"MLDataDevices\",\"link\":\"/api/Accelerator_Support/MLDataDevices\"}]},{\"text\":\"NN Primitives\",\"items\":[{\"text\":\"LuxLib\",\"link\":\"/api/NN_Primitives/LuxLib\"},{\"text\":\"NNlib\",\"link\":\"/api/NN_Primitives/NNlib\"},{\"text\":\"Activation Functions\",\"link\":\"/api/NN_Primitives/ActivationFunctions\"}]},{\"text\":\"Building Blocks\",\"items\":[{\"text\":\"LuxCore\",\"link\":\"/api/Building_Blocks/LuxCore\"},{\"text\":\"WeightInitializers\",\"link\":\"/api/Building_Blocks/WeightInitializers\"}]},{\"text\":\"Testing Functionality\",\"items\":[{\"text\":\"LuxTestUtils\",\"link\":\"/api/Testing_Functionality/LuxTestUtils\"}]}]},{\"component\":\"VersionPicker\"}],\"sidebar\":{\"/introduction/\":{\"text\":\"Getting Started\",\"collapsed\":false,\"items\":[{\"text\":\"Introduction\",\"link\":\"/introduction\"},{\"text\":\"Overview\",\"link\":\"/introduction/overview\"},{\"text\":\"Resources\",\"link\":\"/introduction/resources\"},{\"text\":\"Updating to v1\",\"link\":\"/introduction/updating_to_v1\"},{\"text\":\"Citation\",\"link\":\"/introduction/citation\"}]},\"/tutorials/\":{\"text\":\"Tutorials\",\"collapsed\":false,\"items\":[{\"text\":\"Overview\",\"link\":\"/tutorials/\"},{\"text\":\"Beginner\",\"collapsed\":false,\"items\":[{\"text\":\"Julia & Lux for the Uninitiated\",\"link\":\"/tutorials/beginner/1_Basics\"},{\"text\":\"Fitting a Polynomial using MLP\",\"link\":\"/tutorials/beginner/2_PolynomialFitting\"},{\"text\":\"Training a Simple LSTM\",\"link\":\"/tutorials/beginner/3_SimpleRNN\"},{\"text\":\"MNIST Classification with SimpleChains\",\"link\":\"/tutorials/beginner/4_SimpleChains\"},{\"text\":\"Fitting with Optimization.jl\",\"link\":\"/tutorials/beginner/5_OptimizationIntegration\"}]},{\"text\":\"Intermediate\",\"collapsed\":false,\"items\":[{\"text\":\"MNIST Classification using Neural ODEs\",\"link\":\"/tutorials/intermediate/1_NeuralODE\"},{\"text\":\"Bayesian Neural Network\",\"link\":\"/tutorials/intermediate/2_BayesianNN\"},{\"text\":\"Training a HyperNetwork on MNIST and FashionMNIST\",\"link\":\"/tutorials/intermediate/3_HyperNet\"},{\"text\":\"Training a PINN on 2D PDE\",\"link\":\"/tutorials/intermediate/4_PINN2DPDE\"},{\"text\":\"Convolutional VAE for MNIST using Reactant\",\"link\":\"/tutorials/intermediate/5_ConvolutionalVAE\"},{\"text\":\"Graph Convolutional Network on Cora\",\"link\":\"/tutorials/intermediate/6_GCN_Cora\"},{\"text\":\"Normalizing Flows for Density Estimation\",\"link\":\"/tutorials/intermediate/7_RealNVP\"}]},{\"text\":\"Advanced\",\"collapsed\":false,\"items\":[{\"text\":\"Training a Neural ODE to Model Gravitational Waveforms\",\"link\":\"/tutorials/advanced/1_GravitationalWaveForm\"}]},{\"text\":\"Larger Models\",\"collapsed\":true,\"items\":[{\"text\":\"Training Image Classification Models on ImageNet with Distributed Data Parallel Training\",\"link\":\"https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet\"},{\"text\":\"Training a DDIM (Diffusion Model) for Image Generation\",\"link\":\"https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM\"},{\"text\":\"Different Vision Models on CIFAR-10\",\"link\":\"https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10\"}]},{\"text\":\"3rd Party Tutorials\",\"collapsed\":true,\"items\":[{\"text\":\"PINNs (NeuralPDE.jl)\",\"link\":\"https://docs.sciml.ai/NeuralPDE/stable/tutorials/pdesystem/\"},{\"text\":\"UDEs (SciMLSensitivity.jl)\",\"link\":\"https://docs.sciml.ai/SciMLSensitivity/stable/tutorials/data_parallel/\"},{\"text\":\"Neural DEs (DiffEqFlux.jl)\",\"link\":\"https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode/\"},{\"text\":\"DEQs (DeepEquilibriumNetworks.jl)\",\"link\":\"https://docs.sciml.ai/DeepEquilibriumNetworks/stable/tutorials/basic_mnist_deq/\"},{\"text\":\"Medical Image Segmentation\",\"link\":\"https://github.com/Dale-Black/ComputerVisionTutorials.jl/\"},{\"text\":\"Neural Closure Models\",\"link\":\"https://github.com/agdestein/NeuralClosureTutorials/\"}]}]},\"/manual/\":{\"text\":\"Manual\",\"collapsed\":false,\"items\":[{\"text\":\"Basics\",\"items\":[{\"text\":\"Lux Interface\",\"link\":\"/manual/interface\"},{\"text\":\"Freezing Parameters\",\"link\":\"/manual/freezing_model_parameters\"},{\"text\":\"GPU Management\",\"link\":\"/manual/gpu_management\"},{\"text\":\"Initializing Weights\",\"link\":\"/manual/weight_initializers\"},{\"text\":\"Visualizing Lux Models\",\"link\":\"/manual/visualize_lux_models\"}]},{\"text\":\"Reactant Compilation\",\"items\":[{\"text\":\"Compiling Lux Models\",\"link\":\"/manual/compiling_lux_models\"},{\"text\":\"Exporting Lux Models to Jax\",\"link\":\"/manual/exporting_to_jax\"}]},{\"text\":\"Automatic Differentiation\",\"items\":[{\"text\":\"Automatic Differentiation\",\"link\":\"/manual/autodiff\"},{\"text\":\"Nested AutoDiff\",\"link\":\"/manual/nested_autodiff\"}]},{\"text\":\"Debugging / Performance Enhancement Tools\",\"items\":[{\"text\":\"Debugging Lux Models\",\"link\":\"/manual/debugging\"},{\"text\":\"Performance Pitfalls\",\"link\":\"/manual/performance_pitfalls\"}]},{\"text\":\"Migration Guides\",\"items\":[{\"text\":\"Migrating from Flux\",\"link\":\"/manual/migrate_from_flux\"}]},{\"text\":\"Advanced Usage\",\"items\":[{\"text\":\"Custom Input Types\",\"link\":\"/manual/dispatch_custom_input\"},{\"text\":\"Configuration via Preferences\",\"link\":\"/manual/preferences\"},{\"text\":\"Distributed Training\",\"link\":\"/manual/distributed_utils\"}]}]},\"/api/\":{\"text\":\"API Reference\",\"collapsed\":false,\"items\":[{\"text\":\"Lux\",\"collapsed\":false,\"items\":[{\"text\":\"Built-In Layers\",\"link\":\"/api/Lux/layers\"},{\"text\":\"Automatic Differentiation\",\"link\":\"/api/Lux/autodiff\"},{\"text\":\"Utilities\",\"link\":\"/api/Lux/utilities\"},{\"text\":\"Experimental Features\",\"link\":\"/api/Lux/contrib\"},{\"text\":\"Interoperability\",\"link\":\"/api/Lux/interop\"},{\"text\":\"DistributedUtils\",\"link\":\"/api/Lux/distributed_utils\"}]},{\"text\":\"Accelerator Support\",\"collapsed\":false,\"items\":[{\"text\":\"MLDataDevices\",\"link\":\"/api/Accelerator_Support/MLDataDevices\"}]},{\"text\":\"NN Primitives\",\"collapsed\":false,\"items\":[{\"text\":\"LuxLib\",\"link\":\"/api/NN_Primitives/LuxLib\"},{\"text\":\"NNlib\",\"link\":\"/api/NN_Primitives/NNlib\"},{\"text\":\"Activation Functions\",\"link\":\"/api/NN_Primitives/ActivationFunctions\"}]},{\"text\":\"Building Blocks\",\"collapsed\":false,\"items\":[{\"text\":\"LuxCore\",\"link\":\"/api/Building_Blocks/LuxCore\"},{\"text\":\"WeightInitializers\",\"link\":\"/api/Building_Blocks/WeightInitializers\"}]},{\"text\":\"Testing Functionality\",\"collapsed\":false,\"items\":[{\"text\":\"LuxTestUtils\",\"link\":\"/api/Testing_Functionality/LuxTestUtils\"}]}]}},\"editLink\":{\"pattern\":\"https://github.com/LuxDL/Lux.jl/edit/main/docs/src/:path\",\"text\":\"Edit this page on GitHub\"},\"socialLinks\":[{\"icon\":\"github\",\"link\":\"https://github.com/LuxDL/Lux.jl\"},{\"icon\":\"twitter\",\"link\":\"https://twitter.com/avikpal1410\"},{\"icon\":\"slack\",\"link\":\"https://julialang.org/slack/\"}],\"footer\":{\"message\":\"Made with <a href=\\\"https://documenter.juliadocs.org/stable/\\\" target=\\\"_blank\\\"><strong>Documenter.jl</strong></a>, <a href=\\\"https://vitepress.dev\\\" target=\\\"_blank\\\"><strong>VitePress</strong></a> and <a href=\\\"https://luxdl.github.io/DocumenterVitepress.jl/stable\\\" target=\\\"_blank\\\"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href=\\\"https://www.julialang.org\\\">Julia Programming Language</a>.<br>\",\"copyright\":\"© Copyright 2025 Avik Pal.\"},\"lastUpdated\":{\"text\":\"Updated at\",\"formatOptions\":{\"dateStyle\":\"full\",\"timeStyle\":\"medium\"}}},\"locales\":{},\"scrollOffset\":134,\"cleanUrls\":true}");</script>
+<span class="line"><span>  0: NVIDIA A100-PCIE-40GB MIG 1g.5gb (sm_80, 4.014 GiB / 4.750 GiB available)</span></span></code></pre></div><hr><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl" target="_blank" rel="noreferrer">Literate.jl</a>.</em></p></div></div></main><footer class="VPDocFooter" data-v-83890dd9 data-v-4f9813fa><!--[--><!--]--><div class="edit-info" data-v-4f9813fa><div class="edit-link" data-v-4f9813fa><a class="VPLink link vp-external-link-icon no-icon edit-link-button" href="https://github.com/LuxDL/Lux.jl/edit/main/docs/src/tutorials/intermediate/1_NeuralODE.md" target="_blank" rel="noreferrer" data-v-4f9813fa><!--[--><span class="vpi-square-pen edit-link-icon" data-v-4f9813fa></span> Edit this page on GitHub<!--]--></a></div><!----></div><nav class="prev-next" aria-labelledby="doc-footer-aria-label" data-v-4f9813fa><span class="visually-hidden" id="doc-footer-aria-label" data-v-4f9813fa>Pager</span><div class="pager" data-v-4f9813fa><a class="VPLink link pager-link prev" href="/dev/tutorials/beginner/5_OptimizationIntegration" data-v-4f9813fa><!--[--><span class="desc" data-v-4f9813fa>Previous page</span><span class="title" data-v-4f9813fa>Fitting with Optimization.jl</span><!--]--></a></div><div class="pager" data-v-4f9813fa><a class="VPLink link pager-link next" href="/dev/tutorials/intermediate/2_BayesianNN" data-v-4f9813fa><!--[--><span class="desc" data-v-4f9813fa>Next page</span><span class="title" data-v-4f9813fa>Bayesian Neural Network</span><!--]--></a></div></nav></footer><!--[--><!--]--></div></div></div><!--[--><!--]--></div></div><footer class="VPFooter has-sidebar" data-v-a9a9e638 data-v-c970a860><div class="container" data-v-c970a860><p class="message" data-v-c970a860>Made with <a href="https://documenter.juliadocs.org/stable/" target="_blank"><strong>Documenter.jl</strong></a>, <a href="https://vitepress.dev" target="_blank"><strong>VitePress</strong></a> and <a href="https://luxdl.github.io/DocumenterVitepress.jl/stable" target="_blank"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href="https://www.julialang.org">Julia Programming Language</a>.<br></p><p class="copyright" data-v-c970a860>© Copyright 2025 Avik Pal.</p></div></footer><!--[--><!--]--></div></div>
+    <script>window.__VP_HASH_MAP__=JSON.parse("{\"api_accelerator_support_mldatadevices.md\":\"Duhz9yZz\",\"api_building_blocks_luxcore.md\":\"BfJxe3e5\",\"api_building_blocks_weightinitializers.md\":\"RPa_FR5O\",\"api_lux_autodiff.md\":\"C0t27PmZ\",\"api_lux_contrib.md\":\"AC-hc2qG\",\"api_lux_distributed_utils.md\":\"CWaa_nTy\",\"api_lux_interop.md\":\"1gC4lVdm\",\"api_lux_layers.md\":\"DJYI9jHL\",\"api_lux_utilities.md\":\"BaySkOPV\",\"api_nn_primitives_activationfunctions.md\":\"D685xckh\",\"api_nn_primitives_luxlib.md\":\"DJx0Wpae\",\"api_nn_primitives_nnlib.md\":\"DPRKwAF8\",\"api_testing_functionality_luxtestutils.md\":\"58Cg2NZ7\",\"index.md\":\"D-IrzlfK\",\"introduction_citation.md\":\"B9D4A24W\",\"introduction_index.md\":\"BrwPrxlH\",\"introduction_overview.md\":\"DCinaohW\",\"introduction_resources.md\":\"DWvweAp4\",\"introduction_updating_to_v1.md\":\"9lo0SQI7\",\"manual_autodiff.md\":\"BSP_50Il\",\"manual_compiling_lux_models.md\":\"yJqrLQUp\",\"manual_debugging.md\":\"PIGbHWa9\",\"manual_dispatch_custom_input.md\":\"CVikVS_O\",\"manual_distributed_utils.md\":\"DieAEoku\",\"manual_exporting_to_jax.md\":\"CiZtyG2I\",\"manual_freezing_model_parameters.md\":\"D6RxX9Vq\",\"manual_gpu_management.md\":\"qOLyX9dX\",\"manual_interface.md\":\"Mr0RYxnN\",\"manual_migrate_from_flux.md\":\"C8wD_aNq\",\"manual_nested_autodiff.md\":\"B34njce2\",\"manual_performance_pitfalls.md\":\"CF0zEusl\",\"manual_preferences.md\":\"BBDNKX_i\",\"manual_visualize_lux_models.md\":\"CECBTQJ1\",\"manual_weight_initializers.md\":\"BnuKy2Yz\",\"tutorials_advanced_1_gravitationalwaveform.md\":\"DYEsMPsh\",\"tutorials_beginner_1_basics.md\":\"BcXmjTQt\",\"tutorials_beginner_2_polynomialfitting.md\":\"CYp9LqJF\",\"tutorials_beginner_3_simplernn.md\":\"CqOx3pEd\",\"tutorials_beginner_4_simplechains.md\":\"B0z4Vk0Q\",\"tutorials_beginner_5_optimizationintegration.md\":\"CEbgYOCV\",\"tutorials_index.md\":\"B0-k2epD\",\"tutorials_intermediate_1_neuralode.md\":\"BEw0l09Z\",\"tutorials_intermediate_2_bayesiannn.md\":\"BisaTh-H\",\"tutorials_intermediate_3_hypernet.md\":\"BKqykhmr\",\"tutorials_intermediate_4_pinn2dpde.md\":\"C_8AG0jT\",\"tutorials_intermediate_5_convolutionalvae.md\":\"DriT2VEM\",\"tutorials_intermediate_6_gcn_cora.md\":\"Cpxe5GUp\",\"tutorials_intermediate_7_realnvp.md\":\"C0pMT7ot\"}");window.__VP_SITE_DATA__=JSON.parse("{\"lang\":\"en-US\",\"dir\":\"ltr\",\"title\":\"Lux.jl Docs\",\"description\":\"Documentation for LuxDL Repositories\",\"base\":\"/dev/\",\"head\":[],\"router\":{\"prefetchLinks\":true},\"appearance\":true,\"themeConfig\":{\"outline\":\"deep\",\"logo\":{\"light\":\"/lux-logo.svg\",\"dark\":\"/lux-logo-dark.svg\"},\"search\":{\"provider\":\"local\",\"options\":{\"detailedView\":true}},\"nav\":[{\"text\":\"Home\",\"link\":\"/\"},{\"text\":\"Getting Started\",\"link\":\"/introduction\"},{\"text\":\"Benchmarks\",\"link\":\"https://lux.csail.mit.edu/benchmarks/\"},{\"text\":\"Tutorials\",\"link\":\"/tutorials/\"},{\"text\":\"Manual\",\"link\":\"/manual/interface\"},{\"text\":\"API\",\"items\":[{\"text\":\"Lux\",\"items\":[{\"text\":\"Built-In Layers\",\"link\":\"/api/Lux/layers\"},{\"text\":\"Automatic Differentiation\",\"link\":\"/api/Lux/autodiff\"},{\"text\":\"Utilities\",\"link\":\"/api/Lux/utilities\"},{\"text\":\"Experimental\",\"link\":\"/api/Lux/contrib\"},{\"text\":\"InterOp\",\"link\":\"/api/Lux/interop\"},{\"text\":\"DistributedUtils\",\"link\":\"/api/Lux/distributed_utils\"}]},{\"text\":\"Accelerator Support\",\"items\":[{\"text\":\"MLDataDevices\",\"link\":\"/api/Accelerator_Support/MLDataDevices\"}]},{\"text\":\"NN Primitives\",\"items\":[{\"text\":\"LuxLib\",\"link\":\"/api/NN_Primitives/LuxLib\"},{\"text\":\"NNlib\",\"link\":\"/api/NN_Primitives/NNlib\"},{\"text\":\"Activation Functions\",\"link\":\"/api/NN_Primitives/ActivationFunctions\"}]},{\"text\":\"Building Blocks\",\"items\":[{\"text\":\"LuxCore\",\"link\":\"/api/Building_Blocks/LuxCore\"},{\"text\":\"WeightInitializers\",\"link\":\"/api/Building_Blocks/WeightInitializers\"}]},{\"text\":\"Testing Functionality\",\"items\":[{\"text\":\"LuxTestUtils\",\"link\":\"/api/Testing_Functionality/LuxTestUtils\"}]}]},{\"component\":\"VersionPicker\"}],\"sidebar\":{\"/introduction/\":{\"text\":\"Getting Started\",\"collapsed\":false,\"items\":[{\"text\":\"Introduction\",\"link\":\"/introduction\"},{\"text\":\"Overview\",\"link\":\"/introduction/overview\"},{\"text\":\"Resources\",\"link\":\"/introduction/resources\"},{\"text\":\"Updating to v1\",\"link\":\"/introduction/updating_to_v1\"},{\"text\":\"Citation\",\"link\":\"/introduction/citation\"}]},\"/tutorials/\":{\"text\":\"Tutorials\",\"collapsed\":false,\"items\":[{\"text\":\"Overview\",\"link\":\"/tutorials/\"},{\"text\":\"Beginner\",\"collapsed\":false,\"items\":[{\"text\":\"Julia & Lux for the Uninitiated\",\"link\":\"/tutorials/beginner/1_Basics\"},{\"text\":\"Fitting a Polynomial using MLP\",\"link\":\"/tutorials/beginner/2_PolynomialFitting\"},{\"text\":\"Training a Simple LSTM\",\"link\":\"/tutorials/beginner/3_SimpleRNN\"},{\"text\":\"MNIST Classification with SimpleChains\",\"link\":\"/tutorials/beginner/4_SimpleChains\"},{\"text\":\"Fitting with Optimization.jl\",\"link\":\"/tutorials/beginner/5_OptimizationIntegration\"}]},{\"text\":\"Intermediate\",\"collapsed\":false,\"items\":[{\"text\":\"MNIST Classification using Neural ODEs\",\"link\":\"/tutorials/intermediate/1_NeuralODE\"},{\"text\":\"Bayesian Neural Network\",\"link\":\"/tutorials/intermediate/2_BayesianNN\"},{\"text\":\"Training a HyperNetwork on MNIST and FashionMNIST\",\"link\":\"/tutorials/intermediate/3_HyperNet\"},{\"text\":\"Training a PINN on 2D PDE\",\"link\":\"/tutorials/intermediate/4_PINN2DPDE\"},{\"text\":\"Convolutional VAE for MNIST using Reactant\",\"link\":\"/tutorials/intermediate/5_ConvolutionalVAE\"},{\"text\":\"Graph Convolutional Network on Cora\",\"link\":\"/tutorials/intermediate/6_GCN_Cora\"},{\"text\":\"Normalizing Flows for Density Estimation\",\"link\":\"/tutorials/intermediate/7_RealNVP\"}]},{\"text\":\"Advanced\",\"collapsed\":false,\"items\":[{\"text\":\"Training a Neural ODE to Model Gravitational Waveforms\",\"link\":\"/tutorials/advanced/1_GravitationalWaveForm\"}]},{\"text\":\"Larger Models\",\"collapsed\":true,\"items\":[{\"text\":\"Training Image Classification Models on ImageNet with Distributed Data Parallel Training\",\"link\":\"https://github.com/LuxDL/Lux.jl/tree/main/examples/ImageNet\"},{\"text\":\"Training a DDIM (Diffusion Model) for Image Generation\",\"link\":\"https://github.com/LuxDL/Lux.jl/tree/main/examples/DDIM\"},{\"text\":\"Different Vision Models on CIFAR-10\",\"link\":\"https://github.com/LuxDL/Lux.jl/tree/main/examples/CIFAR10\"}]},{\"text\":\"3rd Party Tutorials\",\"collapsed\":true,\"items\":[{\"text\":\"PINNs (NeuralPDE.jl)\",\"link\":\"https://docs.sciml.ai/NeuralPDE/stable/tutorials/pdesystem/\"},{\"text\":\"UDEs (SciMLSensitivity.jl)\",\"link\":\"https://docs.sciml.ai/SciMLSensitivity/stable/tutorials/data_parallel/\"},{\"text\":\"Neural DEs (DiffEqFlux.jl)\",\"link\":\"https://docs.sciml.ai/DiffEqFlux/stable/examples/neural_ode/\"},{\"text\":\"DEQs (DeepEquilibriumNetworks.jl)\",\"link\":\"https://docs.sciml.ai/DeepEquilibriumNetworks/stable/tutorials/basic_mnist_deq/\"},{\"text\":\"Medical Image Segmentation\",\"link\":\"https://github.com/Dale-Black/ComputerVisionTutorials.jl/\"},{\"text\":\"Neural Closure Models\",\"link\":\"https://github.com/agdestein/NeuralClosureTutorials/\"}]}]},\"/manual/\":{\"text\":\"Manual\",\"collapsed\":false,\"items\":[{\"text\":\"Basics\",\"items\":[{\"text\":\"Lux Interface\",\"link\":\"/manual/interface\"},{\"text\":\"Freezing Parameters\",\"link\":\"/manual/freezing_model_parameters\"},{\"text\":\"GPU Management\",\"link\":\"/manual/gpu_management\"},{\"text\":\"Initializing Weights\",\"link\":\"/manual/weight_initializers\"},{\"text\":\"Visualizing Lux Models\",\"link\":\"/manual/visualize_lux_models\"}]},{\"text\":\"Reactant Compilation\",\"items\":[{\"text\":\"Compiling Lux Models\",\"link\":\"/manual/compiling_lux_models\"},{\"text\":\"Exporting Lux Models to Jax\",\"link\":\"/manual/exporting_to_jax\"}]},{\"text\":\"Automatic Differentiation\",\"items\":[{\"text\":\"Automatic Differentiation\",\"link\":\"/manual/autodiff\"},{\"text\":\"Nested AutoDiff\",\"link\":\"/manual/nested_autodiff\"}]},{\"text\":\"Debugging / Performance Enhancement Tools\",\"items\":[{\"text\":\"Debugging Lux Models\",\"link\":\"/manual/debugging\"},{\"text\":\"Performance Pitfalls\",\"link\":\"/manual/performance_pitfalls\"}]},{\"text\":\"Migration Guides\",\"items\":[{\"text\":\"Migrating from Flux\",\"link\":\"/manual/migrate_from_flux\"}]},{\"text\":\"Advanced Usage\",\"items\":[{\"text\":\"Custom Input Types\",\"link\":\"/manual/dispatch_custom_input\"},{\"text\":\"Configuration via Preferences\",\"link\":\"/manual/preferences\"},{\"text\":\"Distributed Training\",\"link\":\"/manual/distributed_utils\"}]}]},\"/api/\":{\"text\":\"API Reference\",\"collapsed\":false,\"items\":[{\"text\":\"Lux\",\"collapsed\":false,\"items\":[{\"text\":\"Built-In Layers\",\"link\":\"/api/Lux/layers\"},{\"text\":\"Automatic Differentiation\",\"link\":\"/api/Lux/autodiff\"},{\"text\":\"Utilities\",\"link\":\"/api/Lux/utilities\"},{\"text\":\"Experimental Features\",\"link\":\"/api/Lux/contrib\"},{\"text\":\"Interoperability\",\"link\":\"/api/Lux/interop\"},{\"text\":\"DistributedUtils\",\"link\":\"/api/Lux/distributed_utils\"}]},{\"text\":\"Accelerator Support\",\"collapsed\":false,\"items\":[{\"text\":\"MLDataDevices\",\"link\":\"/api/Accelerator_Support/MLDataDevices\"}]},{\"text\":\"NN Primitives\",\"collapsed\":false,\"items\":[{\"text\":\"LuxLib\",\"link\":\"/api/NN_Primitives/LuxLib\"},{\"text\":\"NNlib\",\"link\":\"/api/NN_Primitives/NNlib\"},{\"text\":\"Activation Functions\",\"link\":\"/api/NN_Primitives/ActivationFunctions\"}]},{\"text\":\"Building Blocks\",\"collapsed\":false,\"items\":[{\"text\":\"LuxCore\",\"link\":\"/api/Building_Blocks/LuxCore\"},{\"text\":\"WeightInitializers\",\"link\":\"/api/Building_Blocks/WeightInitializers\"}]},{\"text\":\"Testing Functionality\",\"collapsed\":false,\"items\":[{\"text\":\"LuxTestUtils\",\"link\":\"/api/Testing_Functionality/LuxTestUtils\"}]}]}},\"editLink\":{\"pattern\":\"https://github.com/LuxDL/Lux.jl/edit/main/docs/src/:path\",\"text\":\"Edit this page on GitHub\"},\"socialLinks\":[{\"icon\":\"github\",\"link\":\"https://github.com/LuxDL/Lux.jl\"},{\"icon\":\"twitter\",\"link\":\"https://twitter.com/avikpal1410\"},{\"icon\":\"slack\",\"link\":\"https://julialang.org/slack/\"}],\"footer\":{\"message\":\"Made with <a href=\\\"https://documenter.juliadocs.org/stable/\\\" target=\\\"_blank\\\"><strong>Documenter.jl</strong></a>, <a href=\\\"https://vitepress.dev\\\" target=\\\"_blank\\\"><strong>VitePress</strong></a> and <a href=\\\"https://luxdl.github.io/DocumenterVitepress.jl/stable\\\" target=\\\"_blank\\\"><strong>DocumenterVitepress.jl</strong></a><br>Released under the MIT License. Powered by the <a href=\\\"https://www.julialang.org\\\">Julia Programming Language</a>.<br>\",\"copyright\":\"© Copyright 2025 Avik Pal.\"},\"lastUpdated\":{\"text\":\"Updated at\",\"formatOptions\":{\"dateStyle\":\"full\",\"timeStyle\":\"medium\"}}},\"locales\":{},\"scrollOffset\":134,\"cleanUrls\":true}");</script>
     
   </body>
 </html>
