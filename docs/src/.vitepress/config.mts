@@ -346,6 +346,10 @@ export default defineConfig({
                 text: "Exporting Lux Models to Jax",
                 link: "/manual/exporting_to_jax",
               },
+              {
+                text: "Nested AutoDiff",
+                link: "/manual/nested_autodiff_reactant",
+              }
             ],
           },
           {
