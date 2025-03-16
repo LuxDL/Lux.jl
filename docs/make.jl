@@ -4,8 +4,6 @@ using LuxTestUtils, MLDataDevices
 
 using Optimisers # for some docstrings
 
-#! format: off
-
 pages = [
     "Lux.jl" => "index.md",
     "Getting Started" => [
@@ -13,7 +11,7 @@ pages = [
         "Overview" => "introduction/overview.md",
         "Resources" => "introduction/resources.md",
         "Updating to v1" => "introduction/updating_to_v1.md",
-        "Citation" => "introduction/citation.md"
+        "Citation" => "introduction/citation.md",
     ],
     "Tutorials" => [
         "Overview" => "tutorials/index.md",
@@ -22,7 +20,7 @@ pages = [
             "tutorials/beginner/2_PolynomialFitting.md",
             "tutorials/beginner/3_SimpleRNN.md",
             "tutorials/beginner/4_SimpleChains.md",
-            "tutorials/beginner/5_OptimizationIntegration.md"
+            "tutorials/beginner/5_OptimizationIntegration.md",
         ],
         "Intermediate" => [
             "tutorials/intermediate/1_NeuralODE.md",
@@ -33,9 +31,7 @@ pages = [
             "tutorials/intermediate/6_GCN_Cora.md",
             "tutorials/intermediate/7_RealNVP.md",
         ],
-        "Advanced" => [
-            "tutorials/advanced/1_GravitationalWaveForm.md"
-        ]
+        "Advanced" => ["tutorials/advanced/1_GravitationalWaveForm.md"],
     ],
     "Manual" => [
         "manual/interface.md",
@@ -58,25 +54,19 @@ pages = [
             "api/Lux/interop.md",
             "api/Lux/distributed_utils.md",
         ],
-        "Accelerator Support" => [
-            "api/Accelerator_Support/MLDataDevices.md"
-        ],
+        "Accelerator Support" => ["api/Accelerator_Support/MLDataDevices.md"],
         "NN Primitives" => [
             "api/NN_Primitives/LuxLib.md",
             "api/NN_Primitives/NNlib.md",
-            "api/NN_Primitives/ActivationFunctions.md"
+            "api/NN_Primitives/ActivationFunctions.md",
         ],
         "Building Blocks" => [
             "api/Building_Blocks/LuxCore.md",
-            "api/Building_Blocks/WeightInitializers.md"
+            "api/Building_Blocks/WeightInitializers.md",
         ],
-        "Testing Functionality" => [
-            "api/Testing_Functionality/LuxTestUtils.md"
-        ]
-    ]
+        "Testing Functionality" => ["api/Testing_Functionality/LuxTestUtils.md"],
+    ],
 ]
-
-#! format: on
 
 deploy_config = Documenter.auto_detect_deploy_system()
 deploy_decision = Documenter.deploy_folder(
