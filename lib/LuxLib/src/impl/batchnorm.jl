@@ -339,7 +339,8 @@ end
     i, j, k = @index(Global, NTuple)
     γ′′ = inv(sqrt(σ²[j] + ϵ))
     β′ = -μ[j] * γ′′
-    return y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
+    y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
@@ -356,7 +357,8 @@ end
     i, j, k = @index(Global, NTuple)
     γ′[j] = inv(sqrt(σ²[j] + ϵ))
     β′ = -μ[j] * γ′[j]
-    return y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
+    y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
@@ -373,7 +375,8 @@ end
     i, j, k = @index(Global, NTuple)
     γ′′ = γ[j] / sqrt(σ²[j] + ϵ)
     β′ = muladd(-μ[j], γ′′, β[j])
-    return y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
+    y[i, j, k] = f(muladd(x[i, j, k], γ′′, β′))
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function batchnorm_affine_normalize_internal_kernel!(
@@ -390,7 +393,8 @@ end
     i, j, k = @index(Global, NTuple)
     γ′[j] = γ[j] / sqrt(σ²[j] + ϵ)
     β′ = muladd(-μ[j], γ′[j], β[j])
-    return y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
+    y[i, j, k] = f(muladd(x[i, j, k], γ′[j], β′))
+    return nothing
 end
 
 function CRC.rrule(
@@ -632,7 +636,8 @@ end
     xμ = x[i, j, k] - μ[j]
 
     ∂x[i, j, k] = ∂y[i, j, k] * γ′[j]
-    return ∂σ²[i, j, k] = -∂x[i, j, k] * xμ * idenom² / 2
+    ∂σ²[i, j, k] = -∂x[i, j, k] * xμ * idenom² / 2
+    return nothing
 end
 
 @kernel cpu = false inbounds = true function ∇batchnorm_affine_normalize_kernel!(
@@ -646,5 +651,6 @@ end
 
     ∂x[i, j, k] = ∂y[i, j, k] * γ′[j]
     ∂σ²[i, j, k] = -∂x[i, j, k] * xμ * idenom² / 2
-    return ∂γ[i, j, k] = ∂y[i, j, k] * xμ * idenom
+    ∂γ[i, j, k] = ∂y[i, j, k] * xμ * idenom
+    return nothing
 end
