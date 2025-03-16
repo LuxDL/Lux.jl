@@ -28,10 +28,11 @@ function get_cifar10_dataloaders(::Type{T}, batchsize; kwargs...) where {T}
     cifar10_mean = T.((0.4914, 0.4822, 0.4465))
     cifar10_std = T.((0.2471, 0.2435, 0.2616))
 
-    train_transform =
-        ToEltype(T)(Normalize(cifar10_mean, cifar10_std)(ImageToTensor()(Maybe(
-            FlipX{2}()
-        )(RandomResizeCrop((32, 32))))))
+    train_transform = ToEltype(T)(
+        Normalize(cifar10_mean, cifar10_std)(
+            ImageToTensor()(Maybe(FlipX{2}())(RandomResizeCrop((32, 32))))
+        ),
+    )
 
     test_transform = ToEltype(T)(Normalize(cifar10_mean, cifar10_std)(ImageToTensor()))
 
@@ -91,8 +92,9 @@ function train_model(
 
     accelerator_device = get_accelerator_device(backend)
     kwargs = accelerator_device isa ReactantDevice ? (; partial=false) : ()
-    trainloader, testloader =
-        accelerator_device(get_cifar10_dataloaders(prec_jl, batchsize; kwargs...))
+    trainloader, testloader = accelerator_device(
+        get_cifar10_dataloaders(prec_jl, batchsize; kwargs...)
+    )
 
     ps, st = accelerator_device(prec(Lux.setup(rng, model)))
 

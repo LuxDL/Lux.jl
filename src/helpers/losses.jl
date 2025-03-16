@@ -21,7 +21,7 @@ function check_sizes(ŷ::AbstractArray, y::AbstractArray)
         if size(ŷ, d) != size(y, d)
             throw(
                 DimensionMismatch("loss function expects size(ŷ) = $(size(ŷ)) to match \
-                               size(y) = $(size(y))")
+                           size(y) = $(size(y))")
             )
         end
     end
@@ -405,10 +405,10 @@ end
 for logits in (true, false)
     return_expr = if logits
         :(
-        return LossFunctionImpl.fused_agg(
-            loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims)
+            return LossFunctionImpl.fused_agg(
+                loss.agg, -, sum(ỹ .* logsoftmax(ŷ; loss.dims); loss.dims)
+            )
         )
-    )
     else
         :(return LossFunctionImpl.fused_agg(loss.agg, -, sum(xlogy.(ỹ, ŷ .+ ϵ); loss.dims)))
     end

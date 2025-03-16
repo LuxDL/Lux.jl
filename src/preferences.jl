@@ -43,7 +43,7 @@ function set_dispatch_doctor_preferences!(package, mode::String)
     end
     set_preferences!(package, "instability_check" => mode; force=true)
     @info "Dispatch Doctor preference for $(package) set to $mode. Please restart Julia \
-       for this change to take effect."
+   for this change to take effect."
     return nothing
 end
 

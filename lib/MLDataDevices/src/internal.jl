@@ -111,12 +111,12 @@ function get_gpu_device(; force::Bool)
     Base.get_bool_env("MLDATADEVICES_SILENCE_WARN_NO_GPU", false) ||
         @warn """No functional GPU backend found! Defaulting to CPU.
 
-1. If no GPU is available, nothing needs to be done. Set `MLDATADEVICES_SILENCE_WARN_NO_GPU=1` to silence this warning.
-2. If GPU is available, load the corresponding trigger package.
-    a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
-    b. `AMDGPU.jl` for AMD GPU ROCM Support.
-    c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
-    d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog = 1
+    1. If no GPU is available, nothing needs to be done. Set `MLDATADEVICES_SILENCE_WARN_NO_GPU=1` to silence this warning.
+    2. If GPU is available, load the corresponding trigger package.
+        a. `CUDA.jl` and `cuDNN.jl` (or just `LuxCUDA.jl`) for  NVIDIA CUDA Support.
+        b. `AMDGPU.jl` for AMD GPU ROCM Support.
+        c. `Metal.jl` for Apple Metal GPU Support. (Experimental)
+        d. `oneAPI.jl` for Intel oneAPI GPU Support. (Experimental)""" maxlog = 1
     return CPUDevice
 end
 

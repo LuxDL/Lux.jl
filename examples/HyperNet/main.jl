@@ -49,8 +49,9 @@ end
 
 # ## Implement a HyperNet Layer
 function HyperNet(weight_generator::AbstractLuxLayer, core_network::AbstractLuxLayer)
-    ca_axes =
-        getaxes(ComponentArray(Lux.initialparameters(Random.default_rng(), core_network)))
+    ca_axes = getaxes(
+        ComponentArray(Lux.initialparameters(Random.default_rng(), core_network))
+    )
     return @compact(; ca_axes, weight_generator, core_network, dispatch=:HyperNet) do (x, y)
         ## Generate the weights
         ps_new = ComponentArray(vec(weight_generator(x)), ca_axes)

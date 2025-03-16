@@ -160,10 +160,12 @@ function train_model(
     pinn = PINN(; hidden_dims)
     ps, st = xdev(Lux.setup(rng, pinn))
 
-    bc_dataloader =
-        xdev(DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false))
-    pde_dataloader =
-        xdev(DataLoader((xyt, target_data); batchsize=32, shuffle=true, partial=false))
+    bc_dataloader = xdev(
+        DataLoader((xyt_bc, target_bc); batchsize=32, shuffle=true, partial=false)
+    )
+    pde_dataloader = xdev(
+        DataLoader((xyt, target_data); batchsize=32, shuffle=true, partial=false)
+    )
 
     train_state = Training.TrainState(pinn, ps, st, Adam(0.05f0))
     lr = i -> i < 5000 ? 0.05f0 : (i < 10000 ? 0.005f0 : 0.0005f0)

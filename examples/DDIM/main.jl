@@ -349,9 +349,9 @@ function Base.getindex(ds::FlowersDataset, i::Int)
 end
 
 function preprocess_image(image::Matrix{<:RGB}, image_size::Int)
-    return itemdata(apply(
-        CenterResizeCrop((image_size, image_size)), DataAugmentation.Image(image)
-    ))
+    return itemdata(
+        apply(CenterResizeCrop((image_size, image_size)), DataAugmentation.Image(image))
+    )
 end
 
 const maeloss = MAELoss()
@@ -427,13 +427,15 @@ Comonicon.@main function main(;
         states = gdev(states)
         model = StatefulLuxLayer{true}(model, parameters, Lux.testmode(states))
 
-        generated_images = cpu_device()(generate(
-            model,
-            StableRNG(generate_image_seed),
-            (image_size, image_size, 3, generate_n_images),
-            diffusion_steps,
-            gdev,
-        ))
+        generated_images = cpu_device()(
+            generate(
+                model,
+                StableRNG(generate_image_seed),
+                (image_size, image_size, 3, generate_n_images),
+                diffusion_steps,
+                gdev,
+            ),
+        )
 
         path = joinpath(image_dir, "inference")
         @info "Saving generated images to $(path)"
@@ -491,13 +493,15 @@ Comonicon.@main function main(;
             model_test = StatefulLuxLayer{true}(
                 tstate.model, tstate.parameters, Lux.testmode(tstate.states)
             )
-            generated_images = cpu_device()(generate(
-                model_test,
-                StableRNG(generate_image_seed),
-                (image_size, image_size, 3, generate_n_images),
-                diffusion_steps,
-                gdev,
-            ))
+            generated_images = cpu_device()(
+                generate(
+                    model_test,
+                    StableRNG(generate_image_seed),
+                    (image_size, image_size, 3, generate_n_images),
+                    diffusion_steps,
+                    gdev,
+                ),
+            )
 
             path = joinpath(image_dir, "epoch_$(epoch)")
             @info "Saving generated images to $(path)"

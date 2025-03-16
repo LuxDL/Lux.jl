@@ -54,8 +54,8 @@ function named_tuple(x::T) where {T}
     NT = Core.Compiler.return_type(NamedTuple, Tuple{T})
     if NT === Union{} || NT === NamedTuple
         error("`NamedTuple` is not defined for type `$(T)`. Please define \
-           `Lux.Utils.named_tuple(::$(T))` method (or preferably \
-           `NamedTuple(::$(T))`).")
+       `Lux.Utils.named_tuple(::$(T))` method (or preferably \
+       `NamedTuple(::$(T))`).")
     end
     return NamedTuple(x)
 end

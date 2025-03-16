@@ -135,8 +135,9 @@ end
 const StatefulRealNVP{M} = StatefulLuxLayer{M,<:RealNVP}
 
 function Lux.initialstates(rng::AbstractRNG, l::RealNVP)
-    mask_list =
-        Vector{Bool}([collect(1:(l.dist_dims)) .% 2 .== i % 2 for i in 1:(l.n_transforms)])
+    mask_list = Vector{Bool}([
+        collect(1:(l.dist_dims)) .% 2 .== i % 2 for i in 1:(l.n_transforms)
+    ])
     return (; mask_list, conditioners=Lux.initialstates(rng, l.conditioners))
 end
 
@@ -224,9 +225,9 @@ function main(;
     rng = Random.default_rng()
     Random.seed!(rng, 0)
 
-    dataloader = Iterators.cycle(xdev(load_moons_dataloader(
-        rng, Float32, n_train_samples; batchsize, noise
-    )))
+    dataloader = Iterators.cycle(
+        xdev(load_moons_dataloader(rng, Float32, n_train_samples; batchsize, noise))
+    )
 
     model = RealNVP(; n_transforms, dist_dims=2, hidden_dims, n_layers)
     ps, st = xdev(Lux.setup(rng, model))

@@ -30,12 +30,12 @@ function preprocess(path, str)
     if warn_old_version
         str =
             """
-          # !!! danger "Using older version of Lux.jl"
+            # !!! danger "Using older version of Lux.jl"
 
-          #     This tutorial cannot be run on the latest Lux.jl release due to downstream
-          #     packages not being updated yet.
+            #     This tutorial cannot be run on the latest Lux.jl release due to downstream
+            #     packages not being updated yet.
 
-          \n\n""" * str
+            \n\n""" * str
     end
     new_str = replace(str, "__DIR = @__DIR__" => "__DIR = \"$(dirname(path))\"")
     appendix_code = """

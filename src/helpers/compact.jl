@@ -503,7 +503,7 @@ function compact_macro_impl(__source__, __module__, _exs...)
         isa(fex_args, Symbol) ? string(fex_args) : join(fex_args.args, ", ")
     catch e
         @warn "Function stringifying does not yet handle all cases. Falling back to empty \
-           string for input arguments"
+       string for input arguments"
     end
 
     # Remove compact specific macros
@@ -578,8 +578,8 @@ function supportself(fex::Expr, vars, splatted_kwargs, __source__)
         end
         if has_return_macro && MacroTools.@capture(x, return val_)
             throw(LuxCompactModelParsingException("Encountered a return statement \
-                                               after the last @return statement. \
-                                               This is not supported."))
+                                           after the last @return statement. \
+                                           This is not supported."))
         end
         return x
     end
@@ -587,7 +587,7 @@ function supportself(fex::Expr, vars, splatted_kwargs, __source__)
     if !has_return_macro
         @gensym fname
         @warn "No @return macro found in the function body. This will lead to the \
-           generation of inefficient code."
+       generation of inefficient code."
         modified_body = quote
             $fname = () -> $(sdef[:body])
             $res = $(fname)()

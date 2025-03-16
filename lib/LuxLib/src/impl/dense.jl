@@ -156,16 +156,16 @@ function EnzymeRules.augmented_primal(
 
     weight_cache =
         if EnzymeRules.overwritten(cfg)[5] &&
-           !(x isa EnzymeCore.Const) &&
-           !(y isa EnzymeCore.Const)
+            !(x isa EnzymeCore.Const) &&
+            !(y isa EnzymeCore.Const)
             copy(weight.val)
         else
             nothing
         end
     x_cache =
         if EnzymeRules.overwritten(cfg)[6] &&
-           !(weight isa EnzymeCore.Const) &&
-           !(y isa EnzymeCore.Const)
+            !(weight isa EnzymeCore.Const) &&
+            !(y isa EnzymeCore.Const)
             copy(x.val)
         else
             nothing
