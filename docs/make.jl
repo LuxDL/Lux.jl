@@ -1,4 +1,4 @@
-using Documenter, DocumenterVitepress, Pkg
+using Documenter, DocumenterVitepress, DocumenterCitations
 using Lux, LuxCore, LuxLib, WeightInitializers, NNlib
 using LuxTestUtils, MLDataDevices
 
@@ -105,6 +105,7 @@ makedocs(;
         deploy_url="https://lux.csail.mit.edu",
         deploy_decision,
     ),
+    plugins=[CitationBibliography(; joinpath(@__DIR__, "references.bib"))],
     draft=false,
     pages,
 )

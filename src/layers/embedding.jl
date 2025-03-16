@@ -90,7 +90,7 @@ end
         scale=nothing, full_turns::Bool=false
     )
 
-Sinusoidal Positional Embedding. For details see [1].
+Sinusoidal Positional Embedding. For details see [vaswani2017attention](@citet).
 
 ## Arguments
 
@@ -114,11 +114,6 @@ Sinusoidal Positional Embedding. For details see [1].
 ## States
 
   - NamedTuple containing `sigmas`.
-
-## References
-
-[1] Vaswani, A. "Attention is all you need." Advances in Neural Information Processing
-Systems (2017).
 """
 @concrete struct SinusoidalPositionalEmbedding{T} <: AbstractLuxLayer
     log_min_freq::T
@@ -160,7 +155,7 @@ end
         dim::IntegerType; max_sequence_length::IntegerType=4096, base::IntegerType=10000
     )
 
-Rotary Positional Embedding. For details see [1].
+Rotary Positional Embedding. For details see [su2024roformer](@citet).
 
 The traditional implementation rotates consecutive pairs of elements in the feature
 dimension while the default implementation rotates pairs with stride half the feature
@@ -191,11 +186,6 @@ dimensions for efficiency.
 ## States
 
   - NamedTuple containing `cos_cache` and `sin_cache`.
-
-## References
-
-[1] Su, Jianlin, et al. "Roformer: Enhanced transformer with rotary position embedding.
-"Neurocomputing 568 (2024): 127063.
 """
 @concrete struct RotaryPositionalEmbedding <: AbstractLuxLayer
     dim <: IntegerType

@@ -548,7 +548,8 @@ Base.firstindex(c::Chain) = firstindex(c.layers)
 This contains a number of internal layers, each of which receives the same input. Its output
 is the elementwise maximum of the the internal layers' outputs.
 
-Maxout over linear dense layers satisfies the universal approximation theorem. See [1].
+Maxout over linear dense layers satisfies the universal approximation theorem
+[goodfellow2013maxout](@cite).
 
 See also [`Parallel`](@ref) to reduce with other operators.
 
@@ -581,11 +582,6 @@ See also [`Parallel`](@ref) to reduce with other operators.
 
   - States of each `layer` wrapped in a NamedTuple with
     `fields = layer_1, layer_2, ..., layer_N` (naming changes if using the kwargs API)
-
-## References
-
-[1] Goodfellow, Warde-Farley, Mirza, Courville & Bengio "Maxout Networks"
-[https://arxiv.org/abs/1302.4389](https://arxiv.org/abs/1302.4389)
 """
 @concrete struct Maxout <: AbstractLuxWrapperLayer{:layers}
     layers <: NamedTuple

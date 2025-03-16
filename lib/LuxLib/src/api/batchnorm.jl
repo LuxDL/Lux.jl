@@ -2,7 +2,7 @@
     batchnorm(x, scale, bias, running_mean, running_var, training,
         σ=identity, momentum = 0.1f0, epsilon = eps(eltype(x)) ^ (5 // 7))
 
-Batch Normalization. For details see [1].
+Batch Normalization. For details see [ioffe2015batch](@citet).
 
 Batch Normalization computes the mean and variance for each
 ``D_1 \times ... \times D_{N - 2} \times 1 \times D_N`` input slice and normalises the input
@@ -27,12 +27,6 @@ accordingly.
 
 Normalized Array of same size as `x`. And a Named Tuple containing the updated running
 mean and variance.
-
-## References
-
-[1] Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network
-    training by reducing internal covariate shift." International conference on machine
-    learning. PMLR, 2015.
 """
 function batchnorm(
     x::AbstractArray{T,N},
